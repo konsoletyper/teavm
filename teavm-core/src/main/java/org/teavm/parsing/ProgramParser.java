@@ -300,7 +300,7 @@ public class ProgramParser {
             insn.setCondition(getVariable(--currentDepth));
             insn.getEntries().addAll(Arrays.asList(table));
             builder.add(insn);
-            int defaultIndex = labelIndexes.get(insn);
+            int defaultIndex = labelIndexes.get(dflt);
             insn.setDefaultTarget(getBasicBlock(defaultIndex));
             nextIndexes[labels.length] = defaultIndex;
         }

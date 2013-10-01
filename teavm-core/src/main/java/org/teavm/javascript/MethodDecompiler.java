@@ -15,7 +15,16 @@
  */
 package org.teavm.javascript;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.*;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.tree.ClassNode;
+import org.teavm.codegen.DefaultAliasProvider;
+import org.teavm.codegen.DefaultNamingStrategy;
+import org.teavm.codegen.SourceWriter;
 import org.teavm.common.*;
 import org.teavm.javascript.ast.*;
 import org.teavm.model.*;
@@ -201,9 +210,50 @@ public class MethodDecompiler {
         this.loops = loops;
     }
 
-    public static void main(String... args) {
+    public static void main(String... args) throws IOException {
         ClassHolderSource source = new ClassHolderSource();
-        Parser parser = new Parser();
-        parser.parseClass(null);
+        ClassHolder arrayListCls = Parser.parseClass(readClass(ArrayList.class.getName()));
+        source.putClassHolder(arrayListCls);
+        source.putClassHolder(Parser.parseClass(readClass(AbstractList.class.getName())));
+        source.putClassHolder(Parser.parseClass(readClass(StringBuilder.class.getName())));
+        source.putClassHolder(Parser.parseClass(readClass(IllegalArgumentException.class.getName())));
+        source.putClassHolder(Parser.parseClass(readClass(IndexOutOfBoundsException.class.getName())));
+        source.putClassHolder(Parser.parseClass(readClass(Exception.class.getName())));
+        source.putClassHolder(Parser.parseClass(readClass(RuntimeException.class.getName())));
+        source.putClassHolder(Parser.parseClass(readClass(Throwable.class.getName())));
+        source.putClassHolder(Parser.parseClass(readClass(System.class.getName())));
+        source.putClassHolder(Parser.parseClass(readClass(Object.class.getName())));
+        source.putClassHolder(Parser.parseClass(readClass(Arrays.class.getName())));
+        source.putClassHolder(Parser.parseClass(readClass(ArrayList.class.getName() + "$ListItr")));
+        source.putClassHolder(Parser.parseClass(readClass(ArrayList.class.getName() + "$Itr")));
+        source.putClassHolder(Parser.parseClass(readClass(ArrayList.class.getName() + "$SubList")));
+        source.putClassHolder(Parser.parseClass(readClass(Collection.class.getName())));
+        source.putClassHolder(Parser.parseClass(readClass(ObjectOutputStream.class.getName())));
+        source.putClassHolder(Parser.parseClass(readClass(ObjectInputStream.class.getName())));
+        source.putClassHolder(Parser.parseClass(readClass(ConcurrentModificationException.class.getName())));
+        source.putClassHolder(Parser.parseClass(readClass(Math.class.getName())));
+        source.putClassHolder(Parser.parseClass(readClass(OutOfMemoryError.class.getName())));
+        MethodDecompiler decompiler = new MethodDecompiler(source);
+        DefaultAliasProvider aliasProvider = new DefaultAliasProvider();
+        DefaultNamingStrategy naming = new DefaultNamingStrategy(aliasProvider, source);
+        SourceWriter writer = new SourceWriter(naming);
+        Renderer renderer = new Renderer(writer, source);
+        Optimizer optimizer = new Optimizer();
+        for (MethodHolder method : arrayListCls.getMethods()) {
+            RenderableMethod renderableMethod = decompiler.decompile(method);
+            optimizer.optimize(renderableMethod);
+            renderer.render(renderableMethod);
+        }
+        System.out.println(writer);
+    }
+
+    private static ClassNode readClass(String className) throws IOException {
+        ClassLoader classLoader = MethodDecompiler.class.getClassLoader();
+        try (InputStream input = classLoader.getResourceAsStream(className.replace('.', '/') + ".class")) {
+            ClassReader reader = new ClassReader(input);
+            ClassNode node = new ClassNode();
+            reader.accept(node, 0);
+            return node;
+        }
     }
 }

@@ -210,7 +210,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                 first = false;
                 writer.append(variableName(i));
             }
-            writer.append(";\n");
+            writer.append(";").newLine();
         }
         method.getBody().acceptVisitor(this);
         writer.outdent().append("}").newLine();
@@ -240,7 +240,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         writer.append(") {").newLine().indent();
         statement.getConsequent().acceptVisitor(this);
         if (statement.getAlternative() != null) {
-            writer.outdent().append("} else {\n").indent().newLine();
+            writer.outdent().append("} else {").indent().newLine();
             statement.getAlternative().acceptVisitor(this);
         }
         writer.outdent().append("}").newLine();
@@ -354,9 +354,9 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         }
         --index;
         if (index < variableNames.length()) {
-            return String.valueOf(variableNames.charAt(index));
+            return Character.toString(variableNames.charAt(index));
         } else {
-            return String.valueOf(variableNames.charAt(index % variableNames.length())) +
+            return Character.toString(variableNames.charAt(index % variableNames.length())) +
                     index / variableNames.length();
         }
     }

@@ -67,6 +67,7 @@ public class Program {
         for (int i = 0; i < basicBlocks.size(); ++i) {
             BasicBlock block = basicBlocks.get(i);
             if (block != null) {
+                block.setIndex(sz);
                 basicBlocks.set(sz++, block);
             }
         }

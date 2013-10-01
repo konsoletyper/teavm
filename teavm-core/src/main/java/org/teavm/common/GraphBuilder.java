@@ -12,19 +12,23 @@ import java.util.List;
 public class GraphBuilder {
     private GraphImpl builtGraph;
     private List<IntegerArray> addedEdges = new ArrayList<>();
+    private int sz = 0;
 
     public GraphBuilder() {
     }
 
     public GraphBuilder(int sz) {
         addedEdges.addAll(Collections.<IntegerArray>nCopies(sz, null));
+        this.sz = sz;
     }
 
     public void clear() {
         addedEdges.clear();
+        sz = 0;
     }
 
     public void addEdge(int from, int to) {
+        sz = Math.max(sz, Math.max(from, to) + 1);
         builtGraph = null;
         if (addedEdges.size() == from) {
             addedEdges.add(IntegerArray.of(to));
@@ -43,11 +47,11 @@ public class GraphBuilder {
 
     public Graph build() {
         if (builtGraph == null) {
-            IntegerArray[] incomingEdges = new IntegerArray[addedEdges.size()];
-            for (int i = 0; i < addedEdges.size(); ++i) {
+            IntegerArray[] incomingEdges = new IntegerArray[sz];
+            for (int i = 0; i < sz; ++i) {
                 incomingEdges[i] = new IntegerArray(1);
             }
-            int[][] outgoingEdgeList = new int[addedEdges.size()][];
+            int[][] outgoingEdgeList = new int[sz][];
             for (int i = 0; i < addedEdges.size(); ++i) {
                 IntegerArray edgeList = addedEdges.get(i);
                 outgoingEdgeList[i] = edgeList != null ? edgeList.getAll() : new int[0];
@@ -55,8 +59,11 @@ public class GraphBuilder {
                     incomingEdges[j].add(i);
                 }
             }
-            int[][] incomingEdgeList = new int[addedEdges.size()][];
-            for (int i = 0; i < addedEdges.size(); ++i) {
+            for (int i = addedEdges.size(); i < sz; ++i) {
+                outgoingEdgeList[i] = new int[0];
+            }
+            int[][] incomingEdgeList = new int[sz][];
+            for (int i = 0; i < sz; ++i) {
                 incomingEdgeList[i] = incomingEdges[i].getAll();
             }
             builtGraph = new GraphImpl(incomingEdgeList, outgoingEdgeList);

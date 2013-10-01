@@ -16,6 +16,10 @@ public class SourceWriter {
         this.naming = naming;
     }
 
+    public void clear() {
+        sb.setLength(0);
+    }
+
     public SourceWriter append(String value) {
         appendIndent();
         sb.append(value);
@@ -29,6 +33,12 @@ public class SourceWriter {
     }
 
     public SourceWriter append(int value) {
+        appendIndent();
+        sb.append(value);
+        return this;
+    }
+
+    public SourceWriter append(char value) {
         appendIndent();
         sb.append(value);
         return this;
@@ -69,7 +79,6 @@ public class SourceWriter {
 
     public SourceWriter indent() {
         ++indentSize;
-        newLine();
         return this;
     }
 
