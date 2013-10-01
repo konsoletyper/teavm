@@ -21,6 +21,7 @@ public class StatementGenerator implements InstructionVisitor {
     MethodDecompiler.Block[] blockMap;
     Program program;
     ClassHolderSource classSource;
+    Incoming[][] outgoings;
 
     @Override
     public void visit(EmptyInstruction insn) {
@@ -527,7 +528,7 @@ public class StatementGenerator implements InstructionVisitor {
         assign(castToInteger(Expr.binary(op, Expr.var(first), Expr.var(second))), result);
     }
 
-    private Statement generateJumpStatement(BasicBlock target) {
+    private Statement generateJumpStatementWithoutPhis(BasicBlock target) {
         if (nextBlock == target) {
             return null;
         }
@@ -543,14 +544,34 @@ public class StatementGenerator implements InstructionVisitor {
         }
     }
 
-    private Statement generateJumpStatement(SwitchStatement stmt, int target) {
-        Statement body = generateJumpStatement(program.basicBlockAt(target));
+    private Statement wrapWithPhis(Statement rawJump) {
+        SequentialStatement seq = new SequentialStatement();
+        for (Incoming outgoing : outgoings[currentBlock.getIndex()]) {
+            seq.getSequence().add(Statement.assign(Expr.var(outgoing.getPhi().getReceiver().getIndex()),
+                    Expr.var(outgoing.getValue().getIndex())));
+        }
+        if (rawJump != null) {
+            seq.getSequence().add(rawJump);
+        }
+        return !seq.getSequence().isEmpty() ? seq : null;
+    }
+
+    private Statement generateJumpStatement(BasicBlock target) {
+        return wrapWithPhis(generateJumpStatementWithoutPhis(target));
+    }
+
+    private Statement generateJumpStatementWithoutPhis(SwitchStatement stmt, int target) {
+        Statement body = generateJumpStatementWithoutPhis(program.basicBlockAt(target));
         if (body == null) {
             BreakStatement breakStmt = new BreakStatement();
             breakStmt.setTarget(stmt);
             body = breakStmt;
         }
         return body;
+    }
+
+    private Statement generateJumpStatement(SwitchStatement stmt, int target) {
+        return wrapWithPhis(generateJumpStatementWithoutPhis(stmt, target));
     }
 
     private void branch(Expr condition, BasicBlock consequentBlock, BasicBlock alternativeBlock) {

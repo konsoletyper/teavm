@@ -87,6 +87,7 @@ public class MethodDecompiler {
         generator.program = program;
         generator.blockMap = blockMap;
         generator.indexer = indexer;
+        generator.outgoings = getPhiOutgoings(program);
         parentNode = codeTree.getRoot();
         currentNode = parentNode.getFirstChild();
         for (int i = 0; i < this.graph.size(); ++i) {
@@ -126,6 +127,26 @@ public class MethodDecompiler {
         renderable.setBody(result);
         renderable.setVariableCount(program.variableCount());
         return renderable;
+    }
+
+    private Incoming[][] getPhiOutgoings(Program program) {
+        List<List<Incoming>> outgoings = new ArrayList<>();
+        for (int i = 0; i < program.basicBlockCount(); ++i) {
+            outgoings.add(new ArrayList<Incoming>());
+        }
+        for (int i = 0; i < program.basicBlockCount(); ++i) {
+            BasicBlock basicBlock = program.basicBlockAt(i);
+            for (Phi phi : basicBlock.getPhis()) {
+                for (Incoming incoming : phi.getIncomings()) {
+                    outgoings.get(incoming.getSource().getIndex()).add(incoming);
+                }
+            }
+        }
+        Incoming[][] result = new Incoming[outgoings.size()][];
+        for (int i = 0; i < outgoings.size(); ++i) {
+            result[i] = outgoings.get(i).toArray(new Incoming[0]);
+        }
+        return result;
     }
 
     private List<Block> createBlocks(int start) {
