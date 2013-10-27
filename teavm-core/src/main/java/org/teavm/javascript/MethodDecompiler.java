@@ -232,7 +232,7 @@ public class MethodDecompiler {
     }
 
     public static void main(String... args) throws IOException {
-        ClassHolderSource source = new ClassHolderSource();
+        MutableClassHolderSource source = new MutableClassHolderSource();
         ClassHolder arrayListCls = Parser.parseClass(readClass(ArrayList.class.getName()));
         source.putClassHolder(arrayListCls);
         source.putClassHolder(Parser.parseClass(readClass(AbstractList.class.getName())));

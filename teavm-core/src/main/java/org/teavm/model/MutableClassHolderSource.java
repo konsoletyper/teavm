@@ -13,40 +13,24 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript.ast;
+package org.teavm.model;
 
-import org.teavm.model.MethodHolder;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class RenderableMethod {
-    private Statement body;
-    private MethodHolder metadata;
-    private int variableCount;
+public class MutableClassHolderSource implements ClassHolderSource {
+    private ConcurrentMap<String, ClassHolder> classes = new ConcurrentHashMap<>();
 
-    public RenderableMethod(MethodHolder metadata) {
-        this.metadata = metadata;
+    @Override
+    public ClassHolder getClassHolder(String name) {
+        return classes.get(name);
     }
 
-    public Statement getBody() {
-        return body;
-    }
-
-    public void setBody(Statement body) {
-        this.body = body;
-    }
-
-    public MethodHolder getMetadata() {
-        return metadata;
-    }
-
-    public int getVariableCount() {
-        return variableCount;
-    }
-
-    public void setVariableCount(int variableCount) {
-        this.variableCount = variableCount;
+    public void putClassHolder(ClassHolder classHolder) {
+        classes.put(classHolder.getName(), classHolder);
     }
 }

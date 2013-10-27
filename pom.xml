@@ -27,5 +27,6 @@
   </build>
   <modules>
     <module>teavm-core</module>
+    <module>teavm-classlib</module>
   </modules>
 </project>

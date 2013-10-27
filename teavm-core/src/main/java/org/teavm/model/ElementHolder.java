@@ -49,10 +49,6 @@ public abstract class ElementHolder {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public Map<String, AnnotationHolder> getAnnotations() {
         return annotations;
     }

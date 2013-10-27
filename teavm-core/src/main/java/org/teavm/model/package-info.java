@@ -4,7 +4,7 @@
  * it allows to disassemble method bodies into three-address code that is very
  * close to JVM bytecode (see {@link org.teavm.instructions}.
  *
- * <p>The entry point is some implementation of {@link ClassHolderSource} class.
+ * <p>The entry point is some implementation of {@link MutableClassHolderSource} class.
  *
  */
 package org.teavm.model;
