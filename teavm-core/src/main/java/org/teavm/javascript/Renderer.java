@@ -15,7 +15,6 @@
  */
 package org.teavm.javascript;
 
-import java.util.Set;
 import org.teavm.codegen.NamingStrategy;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.javascript.ast.*;
@@ -37,88 +36,12 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         this.classSource = classSource;
     }
 
-    public void render(RenderableClass cls) {
-        ClassHolder metadata = cls.getMetadata();
-        writer.appendClass(metadata.getName()).append(" = function() {\n").indent().newLine();
-        for (FieldHolder field : cls.getFields()) {
-            if (field.getModifiers().contains(ElementModifier.STATIC)) {
-                continue;
-            }
-            Object value = field.getInitialValue();
-            if (value == null) {
-                value = getDefaultValue(field.getType());
-            }
-            writer.append("this.").appendField(metadata.getName(), field.getName()).append(" = ")
-                    .append(constantToString(value)).append(";").newLine();
-        }
-        writer.append("this.$class = ").appendClass(metadata.getName()).append(";").newLine();
-        writer.outdent().append("}").newLine();
-
-        for (FieldHolder field : cls.getFields()) {
-            if (!field.getModifiers().contains(ElementModifier.STATIC)) {
-                continue;
-            }
-            Object value = field.getInitialValue();
-            if (value == null) {
-                value = getDefaultValue(field.getType());
-            }
-            writer.appendClass(metadata.getName()).append('.')
-                    .appendField(metadata.getName(), field.getName()).append(" = ")
-                    .append(constantToString(value)).append(";").newLine();
-        }
-
-        writer.appendClass(metadata.getName()).append(".prototype = new ")
-                .append(metadata.getParent() != null ? naming.getNameFor(metadata.getParent()) :
-                "Object").append("();").newLine();
-        writer.appendClass(metadata.getName()).append(".$meta = { ");
-        writer.append("supertypes : [");
-        boolean first = true;
-        if (metadata.getParent() != null) {
-            writer.appendClass(metadata.getParent());
-            first = false;
-        }
-        for (String iface : metadata.getInterfaces()) {
-            if (!first) {
-                writer.append(", ");
-            }
-            first = false;
-            writer.appendClass(iface);
-        }
-        writer.append("]");
-        writer.append(" };").newLine();
-        for (RenderableMethod method : cls.getMethods()) {
-            MethodHolder methodMetadata = method.getMetadata();
-            Set<ElementModifier> modifiers = methodMetadata.getModifiers();
-            if (modifiers.contains(ElementModifier.ABSTRACT)) {
-                continue;
-            }
-            render(method);
-        }
+    public SourceWriter getWriter() {
+        return writer;
     }
 
-    private static Object getDefaultValue(ValueType type) {
-        if (type instanceof ValueType.Primitive) {
-            ValueType.Primitive primitive = (ValueType.Primitive)type;
-            switch (primitive.getKind()) {
-                case BOOLEAN:
-                    return false;
-                case BYTE:
-                    return (byte)0;
-                case SHORT:
-                    return (short)0;
-                case INTEGER:
-                    return 0;
-                case CHARACTER:
-                    return '\0';
-                case LONG:
-                    return 0L;
-                case FLOAT:
-                    return 0F;
-                case DOUBLE:
-                    return 0.0;
-            }
-        }
-        return null;
+    public NamingStrategy getNaming() {
+        return naming;
     }
 
     private void renderInitializer(RenderableMethod method) {

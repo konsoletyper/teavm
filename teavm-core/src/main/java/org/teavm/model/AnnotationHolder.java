@@ -24,7 +24,7 @@ import java.util.Map;
  */
 public class AnnotationHolder {
     private String type;
-    private Map<String, AnnotationValueHolder> values = new HashMap<>();
+    private Map<String, AnnotationValue> values = new HashMap<>();
 
     public AnnotationHolder(String type) {
         this.type = type;
@@ -34,7 +34,7 @@ public class AnnotationHolder {
         return type;
     }
 
-    public Map<String, AnnotationValueHolder> getValues() {
+    public Map<String, AnnotationValue> getValues() {
         return values;
     }
 }

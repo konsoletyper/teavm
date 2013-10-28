@@ -16,8 +16,6 @@
 package org.teavm.model;
 
 import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  *
@@ -25,7 +23,7 @@ import java.util.Map;
  */
 public abstract class ElementHolder {
     private EnumSet<ElementModifier> modifiers = EnumSet.noneOf(ElementModifier.class);
-    private Map<String, AnnotationHolder> annotations = new HashMap<>();
+    private AnnotationContainer annotations = new AnnotationContainer();
     private AccessLevel level = AccessLevel.PACKAGE_PRIVATE;
     private String name;
 
@@ -49,7 +47,7 @@ public abstract class ElementHolder {
         return name;
     }
 
-    public Map<String, AnnotationHolder> getAnnotations() {
+    public AnnotationContainer getAnnotations() {
         return annotations;
     }
 }

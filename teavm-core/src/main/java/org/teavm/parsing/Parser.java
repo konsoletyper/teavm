@@ -1,16 +1,11 @@
 package org.teavm.parsing;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
-import org.objectweb.asm.ClassReader;
+import java.util.List;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.FieldNode;
-import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.*;
 import org.teavm.model.*;
-import org.teavm.model.util.ListingBuilder;
 import org.teavm.optimization.UnreachableBasicBlockEliminator;
 
 /**
@@ -28,6 +23,7 @@ public class Parser {
         SSATransformer ssaProducer = new SSATransformer();
         ssaProducer.transformToSSA(program, method.getParameterTypes());
         method.setProgram(program);
+        parseAnnotations(method.getAnnotations(), node);
         return method;
     }
 
@@ -50,6 +46,7 @@ public class Parser {
             MethodNode methodNode = (MethodNode)obj;
             cls.addMethod(parseMethod(methodNode));
         }
+        parseAnnotations(cls.getAnnotations(), node);
         return cls;
     }
 
@@ -58,6 +55,7 @@ public class Parser {
         field.setType(ValueType.parse(node.desc));
         field.setInitialValue(node.value);
         parseModifiers(node.access, field);
+        parseAnnotations(field.getAnnotations(), node);
         return field;
     }
 
@@ -120,59 +118,77 @@ public class Parser {
         }
     }
 
-    public static void main(String[] args) throws IOException {
-        Class<?>[] classesToParse = { Object.class, String.class, ArrayList.class,
-                StringBuilder.class, HashMap.class };
-        ClassLoader classLoader = Parser.class.getClassLoader();
-        for (Class<?> cls : classesToParse) {
-            try (InputStream input = classLoader.getResourceAsStream(cls.getName().replace('.', '/') + ".class")) {
-                ClassReader reader = new ClassReader(input);
-                ClassNode node = new ClassNode();
-                reader.accept(node, 0);
-                display(parseClass(node));
+    @SuppressWarnings("unchecked")
+    private static void parseAnnotations(AnnotationContainer annotations, MemberNode node) {
+        List<Object> annotNodes = new ArrayList<>();
+        if (node.visibleAnnotations != null) {
+            annotNodes.addAll(node.visibleAnnotations);
+        }
+        if (node.invisibleAnnotations != null) {
+            annotNodes.addAll(node.invisibleAnnotations);
+        }
+        for (Object obj : annotNodes) {
+            AnnotationNode annotNode = (AnnotationNode)obj;
+            String desc = annotNode.desc;
+            if (desc.startsWith("L") && desc.endsWith(";")) {
+                desc = desc.substring(1, desc.length() - 1);
             }
+            desc = desc.replace('/', '.');
+            AnnotationHolder annot = new AnnotationHolder(desc);
+            parseAnnotationValues(annot, annotNode.values);
+            annotations.add(annot);
         }
     }
 
-    private static void display(ClassHolder cls) {
-        System.out.print(cls.getLevel());
-        for (ElementModifier modifier : cls.getModifiers()) {
-            System.out.print(" " + modifier);
+    private static void parseAnnotationValues(AnnotationHolder annot, List<Object> values) {
+        if (values == null) {
+            return;
         }
-        System.out.print(" class " + cls.getName());
-        if (cls.getParent() != null) {
-            System.out.print(" extends " + cls.getParent());
+        for (int i = 0; i < values.size(); i += 2) {
+            String key = (String)values.get(i);
+            Object value = values.get(i + 1);
+            annot.getValues().put(key, parseAnnotationValue(value));
         }
-        if (!cls.getInterfaces().isEmpty()) {
-            System.out.print(" implements ");
-            boolean first = true;
-            for (String iface : cls.getInterfaces()) {
-                if (!first) {
-                    System.out.print(", ");
-                } else {
-                    first = false;
-                }
-                System.out.print(iface);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static AnnotationValue parseAnnotationValue(Object value) {
+        if (value instanceof String[]) {
+            String[] enumInfo = (String[])value;
+            return new AnnotationValue(new FieldReference(enumInfo[0], enumInfo[1]));
+        } else if (value instanceof Type) {
+            Type cls = (Type)value;
+            return new AnnotationValue(ValueType.parse(cls.getDescriptor()));
+        } else if (value instanceof List<?>) {
+            List<?> originalList = (List<?>)value;
+            List<AnnotationValue> resultList = new ArrayList<>();
+            for (Object item : originalList) {
+                resultList.add(parseAnnotationValue(item));
             }
+            return new AnnotationValue(resultList);
+        } else if (value instanceof AnnotationNode) {
+            AnnotationNode annotNode = (AnnotationNode)value;
+            AnnotationHolder annotation = new AnnotationHolder(annotNode.desc.replace('.', '/'));
+            parseAnnotationValues(annotation, annotNode.values);
+            return new AnnotationValue(annotation);
+        } else if (value instanceof String) {
+            return new AnnotationValue((String)value);
+        } else if (value instanceof Boolean) {
+            return new AnnotationValue((Boolean)value);
+        } else if (value instanceof Byte) {
+            return new AnnotationValue((Byte)value);
+        } else if (value instanceof Short) {
+            return new AnnotationValue((Short)value);
+        } else if (value instanceof Integer) {
+            return new AnnotationValue((Integer)value);
+        } else if (value instanceof Long) {
+            return new AnnotationValue((Long)value);
+        } else if (value instanceof Float) {
+            return new AnnotationValue((Float)value);
+        } else if (value instanceof Double) {
+            return new AnnotationValue((Double)value);
+        } else {
+            throw new AssertionError();
         }
-        System.out.println();
-        for (FieldHolder field : cls.getFields()) {
-            System.out.print("    " + field.getLevel());
-            for (ElementModifier modifier : field.getModifiers()) {
-                System.out.print(" " + modifier);
-            }
-            System.out.println(" " + field.getName() + " : " + field.getType());
-        }
-        ListingBuilder listingBuilder = new ListingBuilder();
-        for (MethodHolder method : cls.getMethods()) {
-            System.out.print("    " + method.getLevel());
-            for (ElementModifier modifier : method.getModifiers()) {
-                System.out.print(" " + modifier);
-            }
-            System.out.println(" " + method.getDescriptor());
-            System.out.println(listingBuilder.buildListing(method.getProgram(), "        "));
-        }
-        System.out.println();
-        System.out.println();
     }
 }
