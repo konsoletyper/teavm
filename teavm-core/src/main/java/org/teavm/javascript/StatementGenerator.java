@@ -18,7 +18,7 @@ public class StatementGenerator implements InstructionVisitor {
     GraphIndexer indexer;
     BasicBlock nextBlock;
     BasicBlock currentBlock;
-    MethodDecompiler.Block[] blockMap;
+    Decompiler.Block[] blockMap;
     Program program;
     ClassHolderSource classSource;
     Incoming[][] outgoings;
@@ -532,7 +532,7 @@ public class StatementGenerator implements InstructionVisitor {
         if (nextBlock == target) {
             return null;
         }
-        MethodDecompiler.Block block = blockMap[target.getIndex()];
+        Decompiler.Block block = blockMap[target.getIndex()];
         if (target.getIndex() == indexer.nodeAt(block.end)) {
             BreakStatement breakStmt = new BreakStatement();
             breakStmt.setTarget(block.statement);

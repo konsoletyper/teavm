@@ -47,19 +47,19 @@ public class DefaultNamingStrategy implements NamingStrategy {
     }
 
     @Override
-    public String getNameFor(String cls, MethodDescriptor method) {
-        if (method.getName().equals("<clinit>")) {
+    public String getNameFor(MethodReference method) {
+        if (method.getDescriptor().getName().equals("<clinit>")) {
             return "$clinit";
         }
-        ClassHolder clsHolder = classSource.getClassHolder(cls);
-        MethodHolder methodHolder = clsHolder.getMethod(method);
+        ClassHolder clsHolder = classSource.getClassHolder(method.getClassName());
+        MethodHolder methodHolder = clsHolder.getMethod(method.getDescriptor());
         if (methodHolder.getModifiers().contains(ElementModifier.STATIC) ||
-                method.getName().equals("<init>") ||
+                method.getDescriptor().getName().equals("<init>") ||
                 methodHolder.getLevel() == AccessLevel.PRIVATE) {
-            String key = cls + "#" + method.toString();
+            String key = method.getClassName() + "#" + method.toString();
             String alias = privateAliases.get(key);
             if (alias == null) {
-                alias = aliasProvider.getAlias(cls, method);
+                alias = aliasProvider.getAlias(method);
                 privateAliases.put(key, alias);
             }
             return alias;
@@ -67,7 +67,7 @@ public class DefaultNamingStrategy implements NamingStrategy {
             String key = method.toString();
             String alias = aliases.get(key);
             if (alias == null) {
-                alias = aliasProvider.getAlias(cls, method);
+                alias = aliasProvider.getAlias(method);
                 aliases.put(key, alias);
             }
             return alias;
@@ -75,11 +75,11 @@ public class DefaultNamingStrategy implements NamingStrategy {
     }
 
     @Override
-    public String getNameFor(String cls, String field) {
-        String realCls = getRealFieldOwner(cls, field);
-        if (!realCls.equals(cls)) {
-            String alias = getNameFor(realCls, field);
-            fieldAliases.put(cls + "#" + field, alias);
+    public String getNameFor(FieldReference field) {
+        String realCls = getRealFieldOwner(field.getClassName(), field.getFieldName());
+        if (!realCls.equals(field.getClassName())) {
+            String alias = getNameFor(new FieldReference(realCls, field.getFieldName()));
+            fieldAliases.put(field.getClassName() + "#" + field, alias);
             return alias;
         } else {
             String key = realCls + "#" + field;

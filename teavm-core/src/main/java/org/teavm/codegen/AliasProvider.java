@@ -15,16 +15,17 @@
  */
 package org.teavm.codegen;
 
-import org.teavm.model.MethodDescriptor;
+import org.teavm.model.FieldReference;
+import org.teavm.model.MethodReference;
 
 /**
  *
  * @author Alexey Andreev
  */
 public interface AliasProvider {
-    String getAlias(String className, String fieldName);
+    String getAlias(FieldReference field);
 
-    String getAlias(String className, MethodDescriptor methodDesc);
+    String getAlias(MethodReference method);
 
     String getAlias(String className);
 }

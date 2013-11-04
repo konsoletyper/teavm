@@ -1,103 +1,98 @@
+/*
+ *  Copyright 2011 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 package org.teavm.javascript;
 
-import java.util.Set;
-import org.teavm.codegen.NamingStrategy;
-import org.teavm.codegen.SourceWriter;
-import org.teavm.javascript.ast.RenderableMethod;
+import java.util.*;
+import org.teavm.common.*;
+import org.teavm.javascript.ast.*;
 import org.teavm.javascript.ni.GeneratedBy;
 import org.teavm.javascript.ni.Generator;
-import org.teavm.javascript.ni.GeneratorContext;
 import org.teavm.model.*;
+import org.teavm.model.util.ProgramUtils;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class Decompiler {
-    private SourceWriter writer;
-    private MethodDecompiler methodDecompiler;
-    private NamingStrategy naming;
-    private Renderer renderer;
+    private ClassHolderSource classSource;
+    private Graph graph;
+    private LoopGraph loopGraph;
+    private GraphIndexer indexer;
+    private int[] loops;
+    private int[] loopSuccessors;
+    private Block[] blockMap;
+    private int lastBlockId;
+    private RangeTree codeTree;
+    private RangeTree.Node currentNode;
+    private RangeTree.Node parentNode;
 
-    public Decompiler(ClassHolderSource classSource, NamingStrategy naming, SourceWriter writer) {
-        this.methodDecompiler = new MethodDecompiler(classSource);
-        this.renderer = new Renderer(writer, classSource);
-        this.writer = writer;
-        this.naming = naming;
+    public Decompiler(ClassHolderSource classSource) {
+        this.classSource = classSource;
     }
 
-    public void decompile(ClassHolder cls) {
-        writer.appendClass(cls.getName()).append(" = function() {\n").indent().newLine();
-        for (FieldHolder field : cls.getFields()) {
-            if (field.getModifiers().contains(ElementModifier.STATIC)) {
-                continue;
-            }
-            Object value = field.getInitialValue();
-            if (value == null) {
-                value = getDefaultValue(field.getType());
-            }
-            writer.append("this.").appendField(cls.getName(), field.getName()).append(" = ")
-                    .append(renderer.constantToString(value)).append(";").newLine();
-        }
-        writer.append("this.$class = ").appendClass(cls.getName()).append(";").newLine();
-        writer.outdent().append("}").newLine();
+    public int getGraphSize() {
+        return this.graph.size();
+    }
 
-        for (FieldHolder field : cls.getFields()) {
-            if (!field.getModifiers().contains(ElementModifier.STATIC)) {
-                continue;
-            }
-            Object value = field.getInitialValue();
-            if (value == null) {
-                value = getDefaultValue(field.getType());
-            }
-            writer.appendClass(cls.getName()).append('.')
-                    .appendField(cls.getName(), field.getName()).append(" = ")
-                    .append(renderer.constantToString(value)).append(";").newLine();
-        }
+    class Block {
+        public final IdentifiedStatement statement;
+        public final List<Statement> body;
+        public final int end;
+        public final int start;
 
-        writer.appendClass(cls.getName()).append(".prototype = new ")
-                .append(cls.getParent() != null ? naming.getNameFor(cls.getParent()) :
-                "Object").append("();").newLine();
-        writer.appendClass(cls.getName()).append(".$meta = { ");
-        writer.append("supertypes : [");
-        boolean first = true;
-        if (cls.getParent() != null) {
-            writer.appendClass(cls.getParent());
-            first = false;
+        public Block(IdentifiedStatement statement, List<Statement> body, int start, int end) {
+            this.statement = statement;
+            this.body = body;
+            this.start = start;
+            this.end = end;
         }
-        for (String iface : cls.getInterfaces()) {
-            if (!first) {
-                writer.append(", ");
-            }
-            first = false;
-            writer.appendClass(iface);
+    }
+
+    public ClassNode decompile(ClassHolder cls) {
+        ClassNode clsNode = new ClassNode(cls.getName(), cls.getParent());
+        for (FieldHolder field : cls.getFields()) {
+            FieldNode fieldNode = new FieldNode(field.getName(), field.getType());
+            fieldNode.getModifiers().addAll(mapModifiers(field.getModifiers()));
+            fieldNode.setInitialValue(field.getInitialValue());
+            clsNode.getFields().add(fieldNode);
         }
-        writer.append("]");
-        writer.append(" };").newLine();
         for (MethodHolder method : cls.getMethods()) {
-            Set<ElementModifier> modifiers = method.getModifiers();
-            if (modifiers.contains(ElementModifier.ABSTRACT)) {
+            if (method.getModifiers().contains(ElementModifier.ABSTRACT)) {
                 continue;
             }
-            if (modifiers.contains(ElementModifier.NATIVE)) {
-                AnnotationHolder annotHolder = method.getAnnotations().get(GeneratedBy.class.getName());
-                if (annotHolder == null) {
-                    throw new DecompilationException("Method " + cls.getName() + "." + method.getDescriptor() +
-                            " is native, but no " + GeneratedBy.class.getName() + " annotation found");
-                }
-                ValueType annotValue = annotHolder.getValues().get("value").getJavaClass();
-                String generatorClassName = ((ValueType.Object)annotValue).getClassName();
-                generateNativeMethod(generatorClassName, method);
-            } else {
-                RenderableMethod renderableMethod = methodDecompiler.decompile(method);
-                Optimizer optimizer = new Optimizer();
-                optimizer.optimize(renderableMethod);
-                renderer.render(renderableMethod);
-            }
+            clsNode.getMethods().add(decompile(method));
         }
+        clsNode.getInterfaces().addAll(cls.getInterfaces());
+        return clsNode;
     }
 
-    private void generateNativeMethod(String generatorClassName, MethodHolder method) {
+    public MethodNode decompile(MethodHolder method) {
+        return method.getModifiers().contains(ElementModifier.NATIVE) ?
+                decompileNative(method) : decompileRegular(method);
+    }
+
+    public NativeMethodNode decompileNative(MethodHolder method) {
+        AnnotationHolder annotHolder = method.getAnnotations().get(GeneratedBy.class.getName());
+        if (annotHolder == null) {
+            throw new DecompilationException("Method " + method.getOwner().getName() + "." + method.getDescriptor() +
+                    " is native, but no " + GeneratedBy.class.getName() + " annotation found");
+        }
+        ValueType annotValue = annotHolder.getValues().get("value").getJavaClass();
+        String generatorClassName = ((ValueType.Object)annotValue).getClassName();
         Generator generator;
         try {
             Class<?> generatorClass = Class.forName(generatorClassName);
@@ -106,44 +101,183 @@ public class Decompiler {
             throw new DecompilationException("Error instantiating generator " + generatorClassName +
                     " for native method " + method.getOwner().getName() + "." + method.getDescriptor());
         }
-        MethodReference ref = new MethodReference(method.getOwner().getName(), method.getDescriptor());
-        generator.generate(new Context(), writer, ref);
+        NativeMethodNode methodNode = new NativeMethodNode(new MethodReference(method.getOwner().getName(),
+                method.getDescriptor()));
+        methodNode.getModifiers().addAll(mapModifiers(method.getModifiers()));
+        methodNode.setGenerator(generator);
+        return methodNode;
     }
 
-    private static Object getDefaultValue(ValueType type) {
-        if (type instanceof ValueType.Primitive) {
-            ValueType.Primitive primitive = (ValueType.Primitive)type;
-            switch (primitive.getKind()) {
-                case BOOLEAN:
-                    return false;
-                case BYTE:
-                    return (byte)0;
-                case SHORT:
-                    return (short)0;
-                case INTEGER:
-                    return 0;
-                case CHARACTER:
-                    return '\0';
-                case LONG:
-                    return 0L;
-                case FLOAT:
-                    return 0F;
-                case DOUBLE:
-                    return 0.0;
+    public RegularMethodNode decompileRegular(MethodHolder method) {
+        lastBlockId = 1;
+        indexer = new GraphIndexer(ProgramUtils.buildControlFlowGraph(method.getProgram()));
+        graph = indexer.getGraph();
+        loopGraph = new LoopGraph(this.graph);
+        unflatCode();
+        Program program = method.getProgram();
+        blockMap = new Block[program.basicBlockCount() * 2 + 1];
+        Deque<Block> stack = new ArrayDeque<>();
+        BlockStatement rootStmt = new BlockStatement();
+        rootStmt.setId("root");
+        stack.push(new Block(rootStmt, rootStmt.getBody(), -1, -1));
+        StatementGenerator generator = new StatementGenerator();
+        generator.classSource = classSource;
+        generator.program = program;
+        generator.blockMap = blockMap;
+        generator.indexer = indexer;
+        generator.outgoings = getPhiOutgoings(program);
+        parentNode = codeTree.getRoot();
+        currentNode = parentNode.getFirstChild();
+        for (int i = 0; i < this.graph.size(); ++i) {
+            Block block = stack.peek();
+            while (block.end == i) {
+                stack.pop();
+                block = stack.peek();
+            }
+            while (parentNode.getEnd() == i) {
+                currentNode = parentNode.getNext();
+                parentNode = parentNode.getParent();
+            }
+            for (Block newBlock : createBlocks(i)) {
+                block.body.add(newBlock.statement);
+                stack.push(newBlock);
+                block = newBlock;
+            }
+            int node = i < indexer.size() ? indexer.nodeAt(i) : -1;
+            int next = i + 1;
+            int head = loops[i];
+            if (head != -1 && loopSuccessors[head] == next) {
+                next = head;
+            }
+            if (node >= 0) {
+                generator.currentBlock = program.basicBlockAt(node);
+                generator.nextBlock = next < indexer.size() ? program.basicBlockAt(indexer.nodeAt(next)) : null;
+                generator.statements.clear();
+                for (Instruction insn : generator.currentBlock.getInstructions()) {
+                    insn.acceptVisitor(generator);
+                }
+                block.body.addAll(generator.statements);
             }
         }
-        return null;
+        SequentialStatement result = new SequentialStatement();
+        result.getSequence().addAll(rootStmt.getBody());
+        MethodReference reference = new MethodReference(method.getOwner().getName(), method.getDescriptor());
+        RegularMethodNode methodNode = new RegularMethodNode(reference);
+        methodNode.getModifiers().addAll(mapModifiers(method.getModifiers()));
+        methodNode.setBody(result);
+        methodNode.setVariableCount(program.variableCount());
+        Optimizer optimizer = new Optimizer();
+        optimizer.optimize(methodNode);
+        return methodNode;
     }
 
-    private class Context implements GeneratorContext {
-        @Override
-        public String getParameterName(int index) {
-            return renderer.variableName(index);
+    private Set<NodeModifier> mapModifiers(Set<ElementModifier> modifiers) {
+        Set<NodeModifier> result = EnumSet.noneOf(NodeModifier.class);
+        if (modifiers.contains(ElementModifier.STATIC)) {
+            result.add(NodeModifier.STATIC);
+        }
+        return result;
+    }
+
+    private Incoming[][] getPhiOutgoings(Program program) {
+        List<List<Incoming>> outgoings = new ArrayList<>();
+        for (int i = 0; i < program.basicBlockCount(); ++i) {
+            outgoings.add(new ArrayList<Incoming>());
+        }
+        for (int i = 0; i < program.basicBlockCount(); ++i) {
+            BasicBlock basicBlock = program.basicBlockAt(i);
+            for (Phi phi : basicBlock.getPhis()) {
+                for (Incoming incoming : phi.getIncomings()) {
+                    outgoings.get(incoming.getSource().getIndex()).add(incoming);
+                }
+            }
+        }
+        Incoming[][] result = new Incoming[outgoings.size()][];
+        for (int i = 0; i < outgoings.size(); ++i) {
+            result[i] = outgoings.get(i).toArray(new Incoming[0]);
+        }
+        return result;
+    }
+
+    private List<Block> createBlocks(int start) {
+        List<Block> result = new ArrayList<>();
+        while (currentNode != null && currentNode.getStart() == start) {
+            Block block;
+            IdentifiedStatement statement;
+            if (loopSuccessors[start] == currentNode.getEnd()) {
+                WhileStatement whileStatement = new WhileStatement();
+                statement = whileStatement;
+                block = new Block(statement, whileStatement.getBody(), start,
+                        currentNode.getEnd());
+            } else {
+                BlockStatement blockStatement = new BlockStatement();
+                statement = blockStatement;
+                block = new Block(statement, blockStatement.getBody(), start,
+                        currentNode.getEnd());
+            }
+            result.add(block);
+            int mappedIndex = indexer.nodeAt(currentNode.getEnd());
+            if (mappedIndex >= 0 && (blockMap[mappedIndex] == null ||
+                    !(blockMap[mappedIndex].statement instanceof WhileStatement))) {
+                blockMap[mappedIndex] = block;
+            }
+            if (loopSuccessors[start] == currentNode.getEnd()) {
+                blockMap[indexer.nodeAt(start)] = block;
+            }
+            parentNode = currentNode;
+            currentNode = currentNode.getFirstChild();
+        }
+        for (Block block : result) {
+            block.statement.setId("block" + lastBlockId++);
+        }
+        return result;
+    }
+
+    private void unflatCode() {
+        Graph graph = this.graph;
+        int sz = graph.size();
+
+        // Find where each loop ends
+        //
+        int[] loopSuccessors = new int[sz];
+        Arrays.fill(loopSuccessors, sz + 1);
+        for (int node = 0; node < sz; ++node) {
+            Loop loop = loopGraph.loopAt(node);
+            while (loop != null) {
+                loopSuccessors[loop.getHead()] = node + 1;
+                loop = loop.getParent();
+            }
         }
 
-        @Override
-        public NamingStrategy getNaming() {
-            return naming;
+        // For each node find head of loop this node belongs to.
+        //
+        int[] loops = new int[sz];
+        Arrays.fill(loops, -1);
+        for (int head = 0; head < sz; ++head) {
+            int end = loopSuccessors[head];
+            if (end > sz) {
+                continue;
+            }
+            for (int node = head + 1; node < end; ++node) {
+                loops[node] = head;
+            }
         }
+
+        List<RangeTree.Range> ranges = new ArrayList<>();
+        for (int node = 0; node < sz; ++node) {
+            if (loopSuccessors[node] <= sz) {
+                ranges.add(new RangeTree.Range(node, loopSuccessors[node]));
+            }
+            int start = sz;
+            for (int prev : graph.incomingEdges(node)) {
+                start = Math.min(start, prev);
+            }
+            if (start < node - 1) {
+                ranges.add(new RangeTree.Range(start, node));
+            }
+        }
+        codeTree = new RangeTree(sz + 1, ranges);
+        this.loopSuccessors = loopSuccessors;
+        this.loops = loops;
     }
 }

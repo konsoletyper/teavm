@@ -15,7 +15,7 @@
  */
 package org.teavm.javascript;
 
-import org.teavm.javascript.ast.RenderableMethod;
+import org.teavm.javascript.ast.RegularMethodNode;
 import org.teavm.javascript.ast.Statement;
 import org.teavm.model.MethodHolder;
 
@@ -33,13 +33,13 @@ public class Optimizer {
         return optimizer.resultStmt;
     }
 
-    public void optimize(RenderableMethod method) {
+    public void optimize(RegularMethodNode method) {
         ReadWriteStatsBuilder stats = new ReadWriteStatsBuilder(method.getVariableCount());
         method.getBody().acceptVisitor(stats);
         OptimizingVisitor optimizer = new OptimizingVisitor(stats);
         method.getBody().acceptVisitor(optimizer);
         method.setBody(optimizer.resultStmt);
-        int paramCount = method.getMetadata().parameterCount();
+        int paramCount = method.getReference().parameterCount();
         UnusedVariableEliminator unusedEliminator = new UnusedVariableEliminator(paramCount, method.getVariableCount());
         method.getBody().acceptVisitor(unusedEliminator);
         method.setVariableCount(unusedEliminator.lastIndex);

@@ -21,6 +21,10 @@ public class MethodReference {
         return descriptor;
     }
 
+    public int parameterCount() {
+        return descriptor.getParameterTypes().length;
+    }
+
     @Override
     public int hashCode() {
         return className.hashCode() ^ descriptor.hashCode();

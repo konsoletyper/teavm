@@ -1,6 +1,7 @@
 package org.teavm.codegen;
 
-import org.teavm.model.MethodDescriptor;
+import org.teavm.model.FieldReference;
+import org.teavm.model.MethodReference;
 
 /**
  *
@@ -50,15 +51,15 @@ public class SourceWriter {
         return this;
     }
 
-    public SourceWriter appendField(String cls, String field) {
+    public SourceWriter appendField(FieldReference field) {
         appendIndent();
-        sb.append(naming.getNameFor(cls, field));
+        sb.append(naming.getNameFor(field));
         return this;
     }
 
-    public SourceWriter appendMethod(String cls, MethodDescriptor method) {
+    public SourceWriter appendMethod(MethodReference method) {
         appendIndent();
-        sb.append(naming.getNameFor(cls, method));
+        sb.append(naming.getNameFor(method));
         return this;
     }
 

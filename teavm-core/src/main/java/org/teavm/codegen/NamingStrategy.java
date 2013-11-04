@@ -15,7 +15,8 @@
  */
 package org.teavm.codegen;
 
-import org.teavm.model.MethodDescriptor;
+import org.teavm.model.FieldReference;
+import org.teavm.model.MethodReference;
 
 /**
  *
@@ -24,7 +25,7 @@ import org.teavm.model.MethodDescriptor;
 public interface NamingStrategy {
     String getNameFor(String cls);
 
-    String getNameFor(String cls, MethodDescriptor method);
+    String getNameFor(MethodReference method);
 
-    String getNameFor(String cls, String field);
+    String getNameFor(FieldReference field);
 }

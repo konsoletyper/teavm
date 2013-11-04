@@ -42,9 +42,9 @@ public class TObjectNativeGenerator implements Generator {
         String classClass = "java.lang.Class";
         writer.append("var cls = ").append(thisArg).append(".$class.classObject;").newLine();
         writer.append("if (cls === undefined) {").newLine().indent();
-        writer.append("cls = ").appendClass(classClass)
-                .appendMethod(classClass, new MethodDescriptor("createNew", ValueType.object(classClass)))
-                .append("();").newLine();
+        MethodReference createMethodRef = new MethodReference(classClass, new MethodDescriptor("createNew",
+                ValueType.object(classClass)));
+        writer.append("cls = ").appendClass(classClass).appendMethod(createMethodRef).append("();").newLine();
         writer.append("cls.$data = ").append(thisArg).append(".$class;").newLine().outdent().append("}").newLine();
         writer.append("return cls;").newLine();
     }

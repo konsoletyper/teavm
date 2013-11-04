@@ -15,38 +15,30 @@
  */
 package org.teavm.javascript.ast;
 
-import org.teavm.model.MethodHolder;
+import java.util.EnumSet;
+import java.util.Set;
+import org.teavm.model.MethodReference;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class RenderableMethod {
-    private Statement body;
-    private MethodHolder metadata;
-    private int variableCount;
+public abstract class MethodNode {
+    private MethodReference reference;
+    private Set<NodeModifier> modifiers = EnumSet.noneOf(NodeModifier.class);
 
-    public RenderableMethod(MethodHolder metadata) {
-        this.metadata = metadata;
+    public MethodNode(MethodReference reference) {
+        this.reference = reference;
+        this.modifiers = EnumSet.copyOf(modifiers);
     }
 
-    public Statement getBody() {
-        return body;
+    public MethodReference getReference() {
+        return reference;
     }
 
-    public void setBody(Statement body) {
-        this.body = body;
+    public Set<NodeModifier> getModifiers() {
+        return modifiers;
     }
 
-    public MethodHolder getMetadata() {
-        return metadata;
-    }
-
-    public int getVariableCount() {
-        return variableCount;
-    }
-
-    public void setVariableCount(int variableCount) {
-        this.variableCount = variableCount;
-    }
+    public abstract void acceptVisitor(MethodNodeVisitor visitor);
 }
