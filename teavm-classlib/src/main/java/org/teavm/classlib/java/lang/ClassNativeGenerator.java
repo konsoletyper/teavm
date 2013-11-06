@@ -9,7 +9,7 @@ import org.teavm.model.MethodReference;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class TClassNativeGenerator implements Generator {
+public class ClassNativeGenerator implements Generator {
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
         switch (methodRef.getClassName()) {

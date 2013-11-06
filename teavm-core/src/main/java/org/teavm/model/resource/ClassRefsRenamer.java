@@ -21,7 +21,7 @@ class ClassRefsRenamer implements InstructionVisitor {
         ClassHolder renamedCls = new ClassHolder(classNameMapper.map(cls.getName()));
         renamedCls.getModifiers().addAll(cls.getModifiers());
         renamedCls.setLevel(cls.getLevel());
-        if (cls != null) {
+        if (cls.getParent() != null) {
             renamedCls.setParent(classNameMapper.map(cls.getParent()));
         }
         for (MethodHolder method : cls.getMethods()) {
@@ -79,7 +79,7 @@ class ClassRefsRenamer implements InstructionVisitor {
 
     private AnnotationHolder rename(AnnotationHolder annot) {
         AnnotationHolder renamedAnnot = new AnnotationHolder(classNameMapper.map(annot.getType()));
-        for (Map.Entry<String, AnnotationValue> entry : renamedAnnot.getValues().entrySet()) {
+        for (Map.Entry<String, AnnotationValue> entry : annot.getValues().entrySet()) {
             renamedAnnot.getValues().put(entry.getKey(), entry.getValue());
         }
         return renamedAnnot;
@@ -216,6 +216,11 @@ class ClassRefsRenamer implements InstructionVisitor {
     @Override
     public void visit(InvokeInstruction insn) {
         insn.setClassName(classNameMapper.map(insn.getClassName()));
+        ValueType[] signature = insn.getMethod().getSignature();
+        for (int i = 0; i < signature.length; ++i) {
+            signature[i] = rename(signature[i]);
+        }
+        insn.setMethod(new MethodDescriptor(insn.getMethod().getName(), signature));
     }
 
     @Override

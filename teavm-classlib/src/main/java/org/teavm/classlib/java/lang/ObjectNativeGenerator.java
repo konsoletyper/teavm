@@ -11,7 +11,7 @@ import org.teavm.model.ValueType;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class TObjectNativeGenerator implements Generator {
+public class ObjectNativeGenerator implements Generator {
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
         switch (methodRef.getDescriptor().getName()) {
@@ -44,7 +44,8 @@ public class TObjectNativeGenerator implements Generator {
         writer.append("if (cls === undefined) {").newLine().indent();
         MethodReference createMethodRef = new MethodReference(classClass, new MethodDescriptor("createNew",
                 ValueType.object(classClass)));
-        writer.append("cls = ").appendClass(classClass).appendMethod(createMethodRef).append("();").newLine();
+        writer.append("cls = ").appendClass(classClass).append('.').appendMethod(createMethodRef)
+                .append("();").newLine();
         writer.append("cls.$data = ").append(thisArg).append(".$class;").newLine().outdent().append("}").newLine();
         writer.append("return cls;").newLine();
     }
@@ -59,7 +60,7 @@ public class TObjectNativeGenerator implements Generator {
     }
 
     private void generateClone(GeneratorContext context, SourceWriter writer) {
-        writer.append("var copy = new ").append(context.getParameterName(0)).append("obj.$class();").newLine();
+        writer.append("var copy = new ").append(context.getParameterName(0)).append(".$class();").newLine();
         writer.append("for (var field in obj) {").newLine().indent();
         writer.append("if (!obj.hasOwnProperty(field)) {").newLine().indent();
         writer.append("continue;").newLine().outdent().append("}").newLine();

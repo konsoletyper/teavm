@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.*;
+import org.teavm.codegen.ConcurrentCachedMapper;
 import org.teavm.codegen.Mapper;
 import org.teavm.model.ClassHolder;
 
@@ -16,6 +17,7 @@ public class ClasspathResourceMapper implements Mapper<String, ClassHolder> {
     private static String CLASS_PREFIX = "classPrefix.";
     private Mapper<String, ClassHolder> innerMapper;
     private List<Transformation> transformations = new ArrayList<>();
+    private ClassRefsRenamer renamer;
 
     private static class Transformation {
         String packageName;
@@ -41,6 +43,7 @@ public class ClasspathResourceMapper implements Mapper<String, ClassHolder> {
         } catch (IOException e) {
             throw new RuntimeException("Error reading resources", e);
         }
+        renamer = new ClassRefsRenamer(new ConcurrentCachedMapper<>(classNameMapper));
     }
 
     private void loadProperties(Properties properties, Map<String, Transformation> cache) {
@@ -78,24 +81,31 @@ public class ClasspathResourceMapper implements Mapper<String, ClassHolder> {
                 String packageName = name.substring(0, index);
                 ClassHolder classHolder = innerMapper.map(transformation.packagePrefix + "." + packageName +
                         "." + transformation.classPrefix + className);
-                return classHolder;
+                return renamer.rename(classHolder);
             }
         }
         return innerMapper.map(name);
     }
 
-    String renameClass(String name) {
+    private String renameClass(String name) {
         for (Transformation transformation : transformations) {
             if (name.startsWith(transformation.fullPrefix)) {
                 int index = name.lastIndexOf('.');
                 String className = name.substring(index + 1);
                 String packageName = name.substring(0, index);
                 if (className.startsWith(transformation.classPrefix)) {
-                    return packageName.substring(transformation.fullPrefix.length()) + "." +
+                    return packageName.substring(transformation.packagePrefix.length()) + "." +
                             className.substring(transformation.classPrefix.length());
                 }
             }
         }
         return name;
     }
+
+    private Mapper<String, String> classNameMapper = new Mapper<String, String>() {
+        @Override
+        public String map(String preimage) {
+            return renameClass(preimage);
+        }
+    };
 }

@@ -12,22 +12,22 @@ public class TObject {
         init();
     }
 
-    @GeneratedBy(TObjectNativeGenerator.class)
+    @GeneratedBy(ObjectNativeGenerator.class)
     private native void init();
 
-    @GeneratedBy(TObjectNativeGenerator.class)
+    @GeneratedBy(ObjectNativeGenerator.class)
     @Rename("getClass")
     public native final TClass<?> getClass0();
 
     @Override
-    @GeneratedBy(TObjectNativeGenerator.class)
+    @GeneratedBy(ObjectNativeGenerator.class)
     public native int hashCode();
 
-    @GeneratedBy(TObjectNativeGenerator.class)
+    @GeneratedBy(ObjectNativeGenerator.class)
     public native boolean equals(TObject other);
 
     @Override
-    @GeneratedBy(TObjectNativeGenerator.class)
+    @GeneratedBy(ObjectNativeGenerator.class)
     protected native TObject clone();
 
     @Rename("notify")

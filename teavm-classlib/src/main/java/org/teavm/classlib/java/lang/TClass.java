@@ -7,6 +7,10 @@ import org.teavm.javascript.ni.GeneratedBy;
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public class TClass<T> extends TObject {
-    @GeneratedBy(TClassNativeGenerator.class)
+    static TClass<?> createNew() {
+        return new TClass<>();
+    }
+
+    @GeneratedBy(ClassNativeGenerator.class)
     public native boolean isInstance(TObject obj);
 }

@@ -401,31 +401,31 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                 visitBinary(expr, "+");
                 break;
             case ADD_LONG:
-                visitBinaryFunction(expr, "Long.add");
+                visitBinaryFunction(expr, "Long_add");
                 break;
             case SUBTRACT:
                 visitBinary(expr, "-");
                 break;
             case SUBTRACT_LONG:
-                visitBinaryFunction(expr, "Long.sub");
+                visitBinaryFunction(expr, "Long_sub");
                 break;
             case MULTIPLY:
                 visitBinary(expr, "*");
                 break;
             case MULTIPLY_LONG:
-                visitBinaryFunction(expr, "Long.mul");
+                visitBinaryFunction(expr, "Long_mul");
                 break;
             case DIVIDE:
                 visitBinary(expr, "/");
                 break;
             case DIVIDE_LONG:
-                visitBinaryFunction(expr, "Long.div");
+                visitBinaryFunction(expr, "Long_div");
                 break;
             case MODULO:
                 visitBinary(expr, "%");
                 break;
             case MODULO_LONG:
-                visitBinaryFunction(expr, "Long.rem");
+                visitBinaryFunction(expr, "Long_rem");
                 break;
             case EQUALS:
                 visitBinary(expr, "==");
@@ -452,10 +452,10 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                 visitBinary(expr, "!==");
                 break;
             case COMPARE:
-                visitBinaryFunction(expr, "$rt.compare");
+                visitBinaryFunction(expr, "$rt_compare");
                 break;
             case COMPARE_LONG:
-                visitBinaryFunction(expr, "Long.compare");
+                visitBinaryFunction(expr, "Long_compare");
                 break;
             case OR:
                 visitBinary(expr, "||");
@@ -467,37 +467,37 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                 visitBinary(expr, "|");
                 break;
             case BITWISE_OR_LONG:
-                visitBinaryFunction(expr, "Long.or");
+                visitBinaryFunction(expr, "Long_or");
                 break;
             case BITWISE_AND:
                 visitBinary(expr, "&");
                 break;
             case BITWISE_AND_LONG:
-                visitBinaryFunction(expr, "Long.and");
+                visitBinaryFunction(expr, "Long_and");
                 break;
             case BITWISE_XOR:
                 visitBinary(expr, "^");
                 break;
             case BITWISE_XOR_LONG:
-                visitBinaryFunction(expr, "Long.xor");
+                visitBinaryFunction(expr, "Long_xor");
                 break;
             case LEFT_SHIFT:
                 visitBinary(expr, "<<");
                 break;
             case LEFT_SHIFT_LONG:
-                visitBinaryFunction(expr, "Long.lsh");
+                visitBinaryFunction(expr, "Long_lsh");
                 break;
             case RIGHT_SHIFT:
                 visitBinary(expr, ">>");
                 break;
             case RIGHT_SHIFT_LONG:
-                visitBinaryFunction(expr, "Long.rsh");
+                visitBinaryFunction(expr, "Long_rsh");
                 break;
             case UNSIGNED_RIGHT_SHIFT:
                 visitBinary(expr, ">>>");
                 break;
             case UNSIGNED_RIGHT_SHIFT_LONG:
-                visitBinaryFunction(expr, "Long.rshu");
+                visitBinaryFunction(expr, "Long_rshu");
                 break;
         }
     }
@@ -520,27 +520,27 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                 writer.append(".length");
                 break;
             case INT_TO_LONG:
-                writer.append("Long.fromInt(");
+                writer.append("Long_fromInt(");
                 expr.getOperand().acceptVisitor(this);
                 writer.append(')');
                 break;
             case NUM_TO_LONG:
-                writer.append("Long.fromNumber(");
+                writer.append("Long_fromNumber(");
                 expr.getOperand().acceptVisitor(this);
                 writer.append(')');
                 break;
             case LONG_TO_NUM:
-                writer.append("Long.toNumber(");
+                writer.append("Long_toNumber(");
                 expr.getOperand().acceptVisitor(this);
                 writer.append(')');
                 break;
             case NEGATE_LONG:
-                writer.append("Long.neg(");
+                writer.append("Long_neg(");
                 expr.getOperand().acceptVisitor(this);
                 writer.append(')');
                 break;
             case NOT_LONG:
-                writer.append("Long.not(");
+                writer.append("Long_not(");
                 expr.getOperand().acceptVisitor(this);
                 writer.append(')');
                 break;
@@ -569,15 +569,15 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         }
         if (cst instanceof ValueType) {
             ValueType type = (ValueType)cst;
-            return "$rt.cls(" + typeToClsString(naming, type) + ")";
+            return "$rt_cls(" + typeToClsString(naming, type) + ")";
         } else if (cst instanceof String) {
-            return "$rt.str(\"" + escapeString((String)cst) + "\")";
+            return "$rt_str(\"" + escapeString((String)cst) + "\")";
         } else if (cst instanceof Long) {
             long value = (Long)cst;
             if (value == 0) {
-                return "Long.ZERO";
+                return "Long_ZERO";
             } else if ((int)value == value) {
-                return "Long.fromInt(" + value + ")";
+                return "Long_fromInt(" + value + ")";
             } else {
                 return "new Long(" + (value & 0xFFFFFFFF) + ", " + (value >>> 32) + ")";
             }
@@ -597,33 +597,33 @@ public class Renderer implements ExprVisitor, StatementVisitor {
             ValueType.Object objType = (ValueType.Object)type;
             value = naming.getNameFor(objType.getClassName());
         } else if (type instanceof ValueType.Void) {
-            value = "$rt.voidcls()";
+            value = "$rt_voidcls()";
         } else if (type instanceof ValueType.Primitive) {
             ValueType.Primitive primitiveType = (ValueType.Primitive)type;
             switch (primitiveType.getKind()) {
                 case BOOLEAN:
-                    value = "$rt.booleancls()";
+                    value = "$rt_booleancls()";
                     break;
                 case CHARACTER:
-                    value = "$rt.charcls()";
+                    value = "$rt_charcls()";
                     break;
                 case BYTE:
-                    value = "$rt.bytecls()";
+                    value = "$rt_bytecls()";
                     break;
                 case SHORT:
-                    value = "$rt.shortcls()";
+                    value = "$rt_shortcls()";
                     break;
                 case INTEGER:
-                    value = "$rt.intcls()";
+                    value = "$rt_intcls()";
                     break;
                 case LONG:
-                    value = "$rt.longcls()";
+                    value = "$rt_longcls()";
                     break;
                 case FLOAT:
-                    value = "$rt.floatcls()";
+                    value = "$rt_floatcls()";
                     break;
                 case DOUBLE:
-                    value = "$rt.doublecls()";
+                    value = "$rt_doublecls()";
                     break;
                 default:
                     throw new IllegalArgumentException("The type is not renderable");
@@ -633,7 +633,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         }
 
         for (int i = 0; i < arrayCount; ++i) {
-            value = "$rt.arraycls(" + value + ")";
+            value = "$rt_arraycls(" + value + ")";
         }
         return value;
     }
@@ -755,48 +755,48 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         if (type instanceof ValueType.Primitive) {
             switch (((ValueType.Primitive)type).getKind()) {
                 case BOOLEAN:
-                    writer.append("$rt.createBooleanArray($rt.booleancls(), ");
+                    writer.append("$rt_createBooleanArray($rt_booleancls(), ");
                     expr.getLength().acceptVisitor(this);
                     writer.append(")");
                     break;
                 case BYTE:
-                    writer.append("$rt.createNumericArray($rt.bytecls(), ");
+                    writer.append("$rt_createNumericArray($rt_bytecls(), ");
                     expr.getLength().acceptVisitor(this);
                     writer.append(")");
                     break;
                 case SHORT:
-                    writer.append("$rt.createNumericArray($rt.shortcls(), ");
+                    writer.append("$rt_createNumericArray($rt_shortcls(), ");
                     expr.getLength().acceptVisitor(this);
                     writer.append(")");
                     break;
                 case INTEGER:
-                    writer.append("$rt.createNumericArray($rt.intcls(), ");
+                    writer.append("$rt_createNumericArray($rt_intcls(), ");
                     expr.getLength().acceptVisitor(this);
                     writer.append(")");
                     break;
                 case LONG:
-                    writer.append("$rt.createLongArray(");
+                    writer.append("$rt_createLongArray(");
                     expr.getLength().acceptVisitor(this);
                     writer.append(")");
                     break;
                 case FLOAT:
-                    writer.append("$rt.createNumericArray($rt.floatcls(), ");
+                    writer.append("$rt_createNumericArray($rt_floatcls(), ");
                     expr.getLength().acceptVisitor(this);
                     writer.append(")");
                     break;
                 case DOUBLE:
-                    writer.append("$rt.createNumericArray($rt.doublecls(), ");
+                    writer.append("$rt_createNumericArray($rt_doublecls(), ");
                     expr.getLength().acceptVisitor(this);
                     writer.append(")");
                     break;
                 case CHARACTER:
-                    writer.append("$rt.createNumericArray($rt.charcls(), ");
+                    writer.append("$rt_createNumericArray($rt_charcls(), ");
                     expr.getLength().acceptVisitor(this);
                     writer.append(")");
                     break;
             }
         } else {
-            writer.append("$rt.createArray(").append(typeToClsString(naming, expr.getType())).append(", ");
+            writer.append("$rt_createArray(").append(typeToClsString(naming, expr.getType())).append(", ");
             expr.getLength().acceptVisitor(this);
             writer.append(")");
         }
@@ -804,7 +804,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(NewMultiArrayExpr expr) {
-        writer.append("$rt.createMultiArray(").append(typeToClsString(naming, expr.getType()))
+        writer.append("$rt_createMultiArray(").append(typeToClsString(naming, expr.getType()))
                 .append(", [");
         boolean first = true;
         for (Expr dimension : expr.getDimensions()) {
@@ -829,7 +829,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                 return;
             }
         }
-        writer.append("$rt.isInstance(");
+        writer.append("$rt_isInstance(");
         expr.getExpr().acceptVisitor(this);
         writer.append(", ").append(typeToClsString(naming, expr.getType())).append(")");
     }
