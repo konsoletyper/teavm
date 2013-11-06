@@ -20,6 +20,7 @@ public class ClasspathResourceMapper implements Mapper<String, ClassHolder> {
     private static class Transformation {
         String packageName;
         String packagePrefix = "";
+        String fullPrefix = "";
         String classPrefix = "";
     }
 
@@ -48,6 +49,7 @@ public class ClasspathResourceMapper implements Mapper<String, ClassHolder> {
                 String packageName = propertyName.substring(PACKAGE_PREFIX.length());
                 Transformation transformation = getTransformation(cache, packageName);
                 transformation.packagePrefix = properties.getProperty(propertyName) + ".";
+                transformation.fullPrefix = transformation.packagePrefix + transformation.packageName + ".";
             } else if (propertyName.startsWith(CLASS_PREFIX)) {
                 String packageName = propertyName.substring(CLASS_PREFIX.length());
                 Transformation transformation = getTransformation(cache, packageName);
@@ -61,6 +63,7 @@ public class ClasspathResourceMapper implements Mapper<String, ClassHolder> {
         if (transformation == null) {
             transformation = new Transformation();
             transformation.packageName = packageName;
+            transformation.fullPrefix = packageName + ".";
             cache.put(packageName, transformation);
         }
         return transformation;
@@ -79,5 +82,20 @@ public class ClasspathResourceMapper implements Mapper<String, ClassHolder> {
             }
         }
         return innerMapper.map(name);
+    }
+
+    String renameClass(String name) {
+        for (Transformation transformation : transformations) {
+            if (name.startsWith(transformation.fullPrefix)) {
+                int index = name.lastIndexOf('.');
+                String className = name.substring(index + 1);
+                String packageName = name.substring(0, index);
+                if (className.startsWith(transformation.classPrefix)) {
+                    return packageName.substring(transformation.fullPrefix.length()) + "." +
+                            className.substring(transformation.classPrefix.length());
+                }
+            }
+        }
+        return name;
     }
 }

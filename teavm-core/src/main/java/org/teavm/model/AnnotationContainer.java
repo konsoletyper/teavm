@@ -1,7 +1,7 @@
 package org.teavm.model;
 
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  *
@@ -31,5 +31,9 @@ public class AnnotationContainer {
 
     public void remove(String type) {
         annotations.remove(type);
+    }
+
+    public Iterable<AnnotationHolder> all() {
+        return annotations.values();
     }
 }

@@ -230,7 +230,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         public String getParameterName(int index) {
             return variableName(index);
         }
-    };
+    }
 
     @Override
     public void visit(AssignmentStatement statement) {
