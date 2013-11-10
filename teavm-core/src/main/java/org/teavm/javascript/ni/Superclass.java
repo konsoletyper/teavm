@@ -7,10 +7,10 @@ import java.lang.annotation.Target;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.METHOD, ElementType.CONSTRUCTOR })
-public @interface Rename {
+@Target(ElementType.TYPE)
+public @interface Superclass {
     String value();
 }

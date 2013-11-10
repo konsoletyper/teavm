@@ -489,7 +489,7 @@ public class StatementGenerator implements InstructionVisitor {
     public String findDeclaringClass(String className, MethodDescriptor method) {
         ClassHolder cls = classSource.getClassHolder(className);
         while (cls != null && cls.getMethod(method) == null) {
-            cls = classSource.getClassHolder(cls.getParent());
+            cls = cls.getParent() != null ? classSource.getClassHolder(cls.getParent()) : null;
         }
         return cls != null ? cls.getName() : null;
     }

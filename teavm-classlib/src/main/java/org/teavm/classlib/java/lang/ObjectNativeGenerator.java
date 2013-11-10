@@ -15,7 +15,7 @@ public class ObjectNativeGenerator implements Generator {
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
         switch (methodRef.getDescriptor().getName()) {
-            case "init":
+            case "<init>":
                 generateInit(context, writer);
                 break;
             case "getClass":
