@@ -153,7 +153,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         }
         renderWorkingMethod(method);
         int startParam = 0;
-        if (method.getModifiers().contains(ElementModifier.STATIC)) {
+        if (method.getModifiers().contains(NodeModifier.STATIC)) {
             startParam = 1;
         }
         writer.appendClass(ref.getClassName()).append('.');
@@ -186,7 +186,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         MethodReference ref = method.getReference();
         writer.append("function ").appendClass(ref.getClassName()).append('_').appendMethod(ref).append('(');
         int startParam = 0;
-        if (method.getModifiers().contains(ElementModifier.STATIC)) {
+        if (method.getModifiers().contains(NodeModifier.STATIC)) {
             startParam = 1;
         }
         for (int i = startParam; i <= ref.parameterCount(); ++i) {

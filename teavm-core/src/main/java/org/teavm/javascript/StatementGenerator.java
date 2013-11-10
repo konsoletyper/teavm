@@ -302,11 +302,11 @@ public class StatementGenerator implements InstructionVisitor {
                         insn.getAlternative());
                 break;
             case NOT_NULL:
-                branch(Expr.binary(BinaryOperation.STRICT_EQUALS, Expr.var(insn.getOperand().getIndex()),
+                branch(Expr.binary(BinaryOperation.STRICT_NOT_EQUALS, Expr.var(insn.getOperand().getIndex()),
                         Expr.constant(null)), insn.getConsequent(), insn.getAlternative());
                 break;
             case NULL:
-                branch(Expr.binary(BinaryOperation.STRICT_NOT_EQUALS, Expr.var(insn.getOperand().getIndex()),
+                branch(Expr.binary(BinaryOperation.STRICT_EQUALS, Expr.var(insn.getOperand().getIndex()),
                         Expr.constant(null)), insn.getConsequent(), insn.getAlternative());
                 break;
         }
