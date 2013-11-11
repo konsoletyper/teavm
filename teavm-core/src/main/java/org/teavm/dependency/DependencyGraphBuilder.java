@@ -30,6 +30,7 @@ class DependencyGraphBuilder {
     private DependencyNode resultNode;
     private Program program;
     private ValueType resultType;
+    private TypeAnalyzer typeAnalyzer;
 
     public DependencyGraphBuilder(DependencyChecker dependencyChecker) {
         this.dependencyChecker = dependencyChecker;
