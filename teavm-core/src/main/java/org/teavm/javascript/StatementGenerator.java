@@ -302,11 +302,11 @@ public class StatementGenerator implements InstructionVisitor {
                         insn.getAlternative());
                 break;
             case NOT_NULL:
-                branch(Expr.binary(BinaryOperation.STRICT_EQUALS, Expr.var(insn.getOperand().getIndex()),
+                branch(Expr.binary(BinaryOperation.STRICT_NOT_EQUALS, Expr.var(insn.getOperand().getIndex()),
                         Expr.constant(null)), insn.getConsequent(), insn.getAlternative());
                 break;
             case NULL:
-                branch(Expr.binary(BinaryOperation.STRICT_NOT_EQUALS, Expr.var(insn.getOperand().getIndex()),
+                branch(Expr.binary(BinaryOperation.STRICT_EQUALS, Expr.var(insn.getOperand().getIndex()),
                         Expr.constant(null)), insn.getConsequent(), insn.getAlternative());
                 break;
         }
@@ -489,7 +489,7 @@ public class StatementGenerator implements InstructionVisitor {
     public String findDeclaringClass(String className, MethodDescriptor method) {
         ClassHolder cls = classSource.getClassHolder(className);
         while (cls != null && cls.getMethod(method) == null) {
-            cls = classSource.getClassHolder(cls.getParent());
+            cls = cls.getParent() != null ? classSource.getClassHolder(cls.getParent()) : null;
         }
         return cls != null ? cls.getName() : null;
     }

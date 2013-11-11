@@ -2,17 +2,20 @@ package org.teavm.classlib.java.lang;
 
 import org.teavm.javascript.ni.GeneratedBy;
 import org.teavm.javascript.ni.Rename;
+import org.teavm.javascript.ni.Superclass;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
+@Superclass("")
 public class TObject {
+    @Rename("fakeInit")
     public TObject() {
-        init();
     }
 
     @GeneratedBy(ObjectNativeGenerator.class)
+    @Rename("<init>")
     private native void init();
 
     @GeneratedBy(ObjectNativeGenerator.class)

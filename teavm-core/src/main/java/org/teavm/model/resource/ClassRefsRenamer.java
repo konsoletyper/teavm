@@ -3,6 +3,7 @@ package org.teavm.model.resource;
 import java.util.Map;
 import org.teavm.codegen.Mapper;
 import org.teavm.javascript.ni.Rename;
+import org.teavm.javascript.ni.Superclass;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 
@@ -21,9 +22,15 @@ class ClassRefsRenamer implements InstructionVisitor {
         ClassHolder renamedCls = new ClassHolder(classNameMapper.map(cls.getName()));
         renamedCls.getModifiers().addAll(cls.getModifiers());
         renamedCls.setLevel(cls.getLevel());
-        if (cls.getParent() != null) {
-            renamedCls.setParent(classNameMapper.map(cls.getParent()));
+        String parent = cls.getParent();
+        AnnotationHolder superclassAnnot = cls.getAnnotations().get(Superclass.class.getName());
+        if (superclassAnnot != null) {
+            parent = superclassAnnot.getValues().get("value").getString();
+            if (parent.isEmpty()) {
+                parent = null;
+            }
         }
+        renamedCls.setParent(parent != null ? classNameMapper.map(parent) : null);
         for (MethodHolder method : cls.getMethods()) {
             renamedCls.addMethod(rename(method));
         }
@@ -71,7 +78,8 @@ class ClassRefsRenamer implements InstructionVisitor {
 
     private void rename(AnnotationContainer source, AnnotationContainer target) {
         for (AnnotationHolder annot : source.all()) {
-            if (!annot.getType().equals(Rename.class.getName())) {
+            if (!annot.getType().equals(Rename.class.getName()) &&
+                    !annot.getType().equals(Superclass.class.getName())) {
                 target.add(rename(annot));
             }
         }
