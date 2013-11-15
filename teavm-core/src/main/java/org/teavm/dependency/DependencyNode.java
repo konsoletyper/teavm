@@ -17,47 +17,76 @@ package org.teavm.dependency;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class DependencyNode implements DependencyConsumer {
+public class DependencyNode {
     private DependencyChecker dependencyChecker;
     private static final Object mapValue = new Object();
     private ConcurrentMap<DependencyConsumer, Object> followers = new ConcurrentHashMap<>();
     private ConcurrentMap<String, Object> types = new ConcurrentHashMap<>();
+    private ConcurrentMap<DependencyNode, DependencyNodeToNodeTransition> transitions = new ConcurrentHashMap<>();
     private volatile String tag;
+    private final AtomicReference<DependencyNode> arrayItemNode = new AtomicReference<>();
+    private volatile CountDownLatch arrayItemNodeLatch = new CountDownLatch(1);
 
     DependencyNode(DependencyChecker dependencyChecker) {
         this.dependencyChecker = dependencyChecker;
     }
 
-    @Override
     public void propagate(String type) {
         if (types.putIfAbsent(type, mapValue) == null) {
             if (DependencyChecker.shouldLog) {
                 System.out.println(tag + " -> " + type);
             }
-            for (DependencyConsumer follower : followers.keySet().toArray(new DependencyConsumer[0])) {
-                if (follower.hasType(type)) {
-                    dependencyChecker.schedulePropagation(follower, type);
-                }
+            for (DependencyConsumer consumer : followers.keySet().toArray(new DependencyConsumer[0])) {
+                dependencyChecker.schedulePropagation(consumer, type);
             }
         }
     }
 
-    public void connect(DependencyConsumer follower) {
-        if (followers.putIfAbsent(follower, mapValue) == null) {
+    public void addConsumer(DependencyConsumer consumer) {
+        if (followers.putIfAbsent(consumer, mapValue) == null) {
             for (String type : types.keySet().toArray(new String[0])) {
-                if (follower.hasType(type)) {
-                    dependencyChecker.schedulePropagation(follower, type);
-                }
+                dependencyChecker.schedulePropagation(consumer, type);
             }
         }
     }
 
-    @Override
+    public void connect(DependencyNode node) {
+        DependencyNodeToNodeTransition transition = new DependencyNodeToNodeTransition(this, node);
+        if (transitions.putIfAbsent(node, transition) == null) {
+            addConsumer(transition);
+        }
+    }
+
+    public DependencyNode getArrayItemNode() {
+        DependencyNode result = arrayItemNode.get();
+        if (result == null) {
+            result = new DependencyNode(dependencyChecker);
+            if (arrayItemNode.compareAndSet(null, result)) {
+                arrayItemNodeLatch.countDown();
+                arrayItemNodeLatch = null;
+            } else {
+                CountDownLatch latch = arrayItemNodeLatch;
+                if (latch != null) {
+                    try {
+                        latch.await();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        return result;
+                    }
+                }
+                result = arrayItemNode.get();
+            }
+        }
+        return result;
+    }
+
     public boolean hasType(String type) {
         return types.containsKey(type);
     }

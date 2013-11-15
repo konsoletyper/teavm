@@ -71,16 +71,16 @@ public class DependencyChecker {
         }
         MethodGraph graph = attachMethodGraph(methodRef);
         DependencyNode[] varNodes = graph.getVariableNodes();
-        schedulePropagation(varNodes[0], methodRef.getClassName());
+        varNodes[0].propagate(methodRef.getClassName());
         for (int i = 0; i < argumentTypes.length; ++i) {
-            schedulePropagation(varNodes[i + 1], argumentTypes[i]);
+            varNodes[i + 1].propagate(argumentTypes[i]);
         }
     }
 
-    public void schedulePropagation(final DependencyConsumer targetNode, final String type) {
+    public void schedulePropagation(final DependencyConsumer consumer, final String type) {
         schedule(new Runnable() {
             @Override public void run() {
-                targetNode.propagate(type);
+                consumer.consume(type);
             }
         });
     }

@@ -30,7 +30,6 @@ class DependencyGraphBuilder {
     private DependencyNode resultNode;
     private Program program;
     private ValueType resultType;
-    private TypeAnalyzer typeAnalyzer;
 
     public DependencyGraphBuilder(DependencyChecker dependencyChecker) {
         this.dependencyChecker = dependencyChecker;
@@ -86,7 +85,7 @@ class DependencyGraphBuilder {
         }
 
         @Override
-        public void propagate(String className) {
+        public void consume(String className) {
             if (DependencyChecker.shouldLog) {
                 System.out.println("Virtual call of " + methodDesc + " detected on " +
                         node.getTag() + ". Target class is " + className);
@@ -100,21 +99,10 @@ class DependencyGraphBuilder {
             DependencyNode[] targetParams = targetGraph.getVariableNodes();
             for (int i = 0; i < parameters.length; ++i) {
                 parameters[i].connect(targetParams[i]);
-                if (hasBody(method)) {// && isPossibleArrayPair(paramTypes[i], method.getProgram().variableAt(i))) {
-                    targetParams[i].connect(parameters[i]);
-                }
             }
             if (targetGraph.getResultNode() != null) {
                 targetGraph.getResultNode().connect(result);
-                if (isPossibleArrayPair(method.getResultType(), resultType)) {
-                    result.connect(targetGraph.getResultNode());
-                }
             }
-        }
-
-        @Override
-        public boolean hasType(String type) {
-            return false;
         }
     }
 
