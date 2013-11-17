@@ -38,7 +38,7 @@ public class DependencyChecker {
     private volatile RuntimeException exceptionOccured;
 
     public DependencyChecker(ClassHolderSource classSource) {
-        this(classSource, 1);
+        this(classSource, Runtime.getRuntime().availableProcessors());
     }
 
     public DependencyChecker(ClassHolderSource classSource, int numThreads) {
@@ -103,7 +103,7 @@ public class DependencyChecker {
         exceptionOccured = null;
         while (true) {
             try {
-                if (executor.awaitTermination(1, TimeUnit.SECONDS)) {
+                if (executor.getActiveCount() == 0 || executor.awaitTermination(1, TimeUnit.SECONDS)) {
                     break;
                 }
             } catch (InterruptedException e) {
@@ -125,7 +125,7 @@ public class DependencyChecker {
     }
 
     private void initClass(String className) {
-        MethodDescriptor clinitDesc = new MethodDescriptor("<clinit>");
+        MethodDescriptor clinitDesc = new MethodDescriptor("<clinit>", ValueType.VOID);
         while (className != null) {
             if (initializedClasses.putIfAbsent(className, clinitDesc) != null) {
                 break;
@@ -166,6 +166,7 @@ public class DependencyChecker {
         MethodGraph graph = new MethodGraph(parameterNodes, paramCount, resultNode, this);
         DependencyGraphBuilder graphBuilder = new DependencyGraphBuilder(this);
         graphBuilder.buildGraph(method, graph);
+        achieveClass(methodRef.getClassName());
         return graph;
     }
 

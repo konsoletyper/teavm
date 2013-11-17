@@ -57,11 +57,15 @@ public class DependencyNode {
         }
     }
 
-    public void connect(DependencyNode node) {
-        DependencyNodeToNodeTransition transition = new DependencyNodeToNodeTransition(this, node);
+    public void connect(DependencyNode node, DependencyTypeFilter filter) {
+        DependencyNodeToNodeTransition transition = new DependencyNodeToNodeTransition(this, node, filter);
         if (transitions.putIfAbsent(node, transition) == null) {
             addConsumer(transition);
         }
+    }
+
+    public void connect(DependencyNode node) {
+        connect(node, null);
     }
 
     public DependencyNode getArrayItemNode() {
@@ -85,6 +89,10 @@ public class DependencyNode {
             }
         }
         return result;
+    }
+
+    public boolean hasArrayType() {
+        return arrayItemNode.get() != null && !arrayItemNode.get().types.isEmpty();
     }
 
     public boolean hasType(String type) {
