@@ -197,12 +197,14 @@ class ClassRefsRenamer implements InstructionVisitor {
 
     @Override
     public void visit(GetFieldInstruction insn) {
-        insn.setClassName(classNameMapper.map(insn.getClassName()));
+        String className = classNameMapper.map(insn.getField().getClassName());
+        insn.setField(new FieldReference(className, insn.getField().getFieldName()));
     }
 
     @Override
     public void visit(PutFieldInstruction insn) {
-        insn.setClassName(classNameMapper.map(insn.getClassName()));
+        String className = classNameMapper.map(insn.getField().getClassName());
+        insn.setField(new FieldReference(className, insn.getField().getFieldName()));
     }
 
     @Override
@@ -223,12 +225,12 @@ class ClassRefsRenamer implements InstructionVisitor {
 
     @Override
     public void visit(InvokeInstruction insn) {
-        insn.setClassName(classNameMapper.map(insn.getClassName()));
+        String className =  classNameMapper.map(insn.getMethod().getClassName());
         ValueType[] signature = insn.getMethod().getSignature();
         for (int i = 0; i < signature.length; ++i) {
             signature[i] = rename(signature[i]);
         }
-        insn.setMethod(new MethodDescriptor(insn.getMethod().getName(), signature));
+        insn.setMethod(new MethodReference(className, new MethodDescriptor(insn.getMethod().getName(), signature)));
     }
 
     @Override

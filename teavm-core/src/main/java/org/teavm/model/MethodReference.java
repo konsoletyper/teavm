@@ -22,7 +22,19 @@ public class MethodReference {
     }
 
     public int parameterCount() {
-        return descriptor.getParameterTypes().length;
+        return descriptor.parameterCount();
+    }
+
+    public ValueType[] getParameterTypes() {
+        return descriptor.getParameterTypes();
+    }
+
+    public ValueType[] getSignature() {
+        return descriptor.getSignature();
+    }
+
+    public String getName() {
+        return descriptor.getName();
     }
 
     @Override

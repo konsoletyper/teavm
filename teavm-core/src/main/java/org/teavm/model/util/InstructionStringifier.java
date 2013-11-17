@@ -236,7 +236,7 @@ public class InstructionStringifier implements InstructionVisitor {
         if (insn.getInstance() != null) {
             sb.append("@").append(insn.getInstance().getIndex());
         } else {
-            sb.append(insn.getClassName());
+            sb.append(insn.getField().getClassName());
         }
         sb.append(".").append(insn.getField());
     }
@@ -246,7 +246,7 @@ public class InstructionStringifier implements InstructionVisitor {
         if (insn.getInstance() != null) {
             sb.append("@").append(insn.getInstance().getIndex());
         } else {
-            sb.append(insn.getClassName());
+            sb.append(insn.getField().getClassName());
         }
         sb.append(".").append(insn.getField()).append(" := @").append(insn.getValue().getIndex());
     }
@@ -273,7 +273,7 @@ public class InstructionStringifier implements InstructionVisitor {
         if (insn.getInstance() != null) {
             sb.append("@").append(insn.getInstance().getIndex());
         } else {
-            sb.append(insn.getClassName());
+            sb.append(insn.getMethod().getClassName());
         }
         sb.append(".").append(insn.getMethod().getName()).append("(");
         List<Variable> arguments = insn.getArguments();

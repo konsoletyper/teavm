@@ -95,26 +95,23 @@ public abstract class Expr implements Cloneable {
         return expr;
     }
 
-    public static Expr constructObject(String cls, MethodDescriptor method, Expr[] arguments) {
+    public static Expr constructObject(MethodReference method, Expr[] arguments) {
         InvocationExpr expr = new InvocationExpr();
-        expr.setClassName(cls);
         expr.setMethod(method);
         expr.setType(InvocationType.CONSTRUCTOR);
         expr.getArguments().addAll(Arrays.asList(arguments));
         return expr;
     }
 
-    public static Expr qualify(Expr target, String className, String field) {
+    public static Expr qualify(Expr target, FieldReference field) {
         QualificationExpr expr = new QualificationExpr();
         expr.setQualified(target);
-        expr.setClassName(className);
         expr.setField(field);
         return expr;
     }
 
-    public static Expr invoke(String cls, MethodDescriptor method, Expr target, Expr[] arguments) {
+    public static Expr invoke(MethodReference method, Expr target, Expr[] arguments) {
         InvocationExpr expr = new InvocationExpr();
-        expr.setClassName(cls);
         expr.setMethod(method);
         expr.setType(InvocationType.DYNAMIC);
         expr.getArguments().add(target);
@@ -122,10 +119,8 @@ public abstract class Expr implements Cloneable {
         return expr;
     }
 
-    public static Expr invokeSpecial(String cls, MethodDescriptor method,
-            Expr target, Expr[] arguments) {
+    public static Expr invokeSpecial(MethodReference method, Expr target, Expr[] arguments) {
         InvocationExpr expr = new InvocationExpr();
-        expr.setClassName(cls);
         expr.setMethod(method);
         expr.setType(InvocationType.SPECIAL);
         expr.getArguments().add(target);
@@ -133,9 +128,8 @@ public abstract class Expr implements Cloneable {
         return expr;
     }
 
-    public static Expr invokeStatic(String cls, MethodDescriptor method, Expr[] arguments) {
+    public static Expr invokeStatic(MethodReference method, Expr[] arguments) {
         InvocationExpr expr = new InvocationExpr();
-        expr.setClassName(cls);
         expr.setMethod(method);
         expr.setType(InvocationType.STATIC);
         expr.getArguments().addAll(Arrays.asList(arguments));

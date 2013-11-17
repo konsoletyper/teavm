@@ -16,6 +16,7 @@
 package org.teavm.javascript.ast;
 
 import java.util.Map;
+import org.teavm.model.FieldReference;
 
 /**
  *
@@ -23,8 +24,7 @@ import java.util.Map;
  */
 public class QualificationExpr extends Expr {
     private Expr qualified;
-    private String className;
-    private String field;
+    private FieldReference field;
 
     public Expr getQualified() {
         return qualified;
@@ -34,19 +34,11 @@ public class QualificationExpr extends Expr {
         this.qualified = qualified;
     }
 
-    public String getClassName() {
-        return className;
-    }
-
-    public void setClassName(String className) {
-        this.className = className;
-    }
-
-    public String getField() {
+    public FieldReference getField() {
         return field;
     }
 
-    public void setField(String field) {
+    public void setField(FieldReference field) {
         this.field = field;
     }
 
@@ -63,7 +55,6 @@ public class QualificationExpr extends Expr {
         }
         QualificationExpr copy = new QualificationExpr();
         cache.put(this, copy);
-        copy.setClassName(className);
         copy.setField(field);
         copy.setQualified(qualified != null ? qualified.clone(cache) : null);
         return copy;

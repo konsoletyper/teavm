@@ -10,8 +10,7 @@ import org.teavm.model.*;
  */
 public class InvokeInstruction extends Instruction {
     private InvocationType type;
-    private String className;
-    private MethodDescriptor method;
+    private MethodReference method;
     private Variable instance;
     private List<Variable> arguments = new ArrayList<>();
     private Variable receiver;
@@ -36,19 +35,11 @@ public class InvokeInstruction extends Instruction {
         return arguments;
     }
 
-    public String getClassName() {
-        return className;
-    }
-
-    public void setClassName(String className) {
-        this.className = className;
-    }
-
-    public MethodDescriptor getMethod() {
+    public MethodReference getMethod() {
         return method;
     }
 
-    public void setMethod(MethodDescriptor method) {
+    public void setMethod(MethodReference method) {
         this.method = method;
     }
 

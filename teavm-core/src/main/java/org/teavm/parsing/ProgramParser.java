@@ -357,8 +357,7 @@ public class ProgramParser {
                         }
                         args[--j] = getVariable(--currentDepth);
                     }
-                    MethodDescriptor method = new MethodDescriptor(name,
-                            MethodDescriptor.parseSignature(desc));
+                    MethodDescriptor method = new MethodDescriptor(name, MethodDescriptor.parseSignature(desc));
                     int instance = -1;
                     if (opcode != Opcodes.INVOKESTATIC) {
                         instance = --currentDepth;
@@ -374,8 +373,7 @@ public class ProgramParser {
                     }
                     if (instance == -1) {
                         InvokeInstruction insn = new InvokeInstruction();
-                        insn.setClassName(ownerCls);
-                        insn.setMethod(method);
+                        insn.setMethod(new MethodReference(ownerCls, method));
                         if (result >= 0) {
                             insn.setReceiver(getVariable(result));
                         }
@@ -388,8 +386,7 @@ public class ProgramParser {
                         } else {
                             insn.setType(InvocationType.VIRTUAL);
                         }
-                        insn.setClassName(ownerCls);
-                        insn.setMethod(method);
+                        insn.setMethod(new MethodReference(ownerCls, method));
                         if (result >= 0) {
                             insn.setReceiver(getVariable(result));
                         }
@@ -1292,8 +1289,7 @@ public class ProgramParser {
                     }
                     GetFieldInstruction insn = new GetFieldInstruction();
                     insn.setInstance(getVariable(instance));
-                    insn.setClassName(ownerCls);
-                    insn.setField(name);
+                    insn.setField(new FieldReference(ownerCls, name));
                     insn.setFieldType(type);
                     insn.setReceiver(getVariable(value));
                     builder.add(insn);
@@ -1309,8 +1305,7 @@ public class ProgramParser {
                     int instance = --currentDepth;
                     PutFieldInstruction insn = new PutFieldInstruction();
                     insn.setInstance(getVariable(instance));
-                    insn.setClassName(ownerCls);
-                    insn.setField(name);
+                    insn.setField(new FieldReference(ownerCls, name));
                     insn.setValue(getVariable(value));
                     builder.add(insn);
                     break;
@@ -1322,8 +1317,7 @@ public class ProgramParser {
                         currentDepth++;
                     }
                     GetFieldInstruction insn = new GetFieldInstruction();
-                    insn.setClassName(ownerCls);
-                    insn.setField(name);
+                    insn.setField(new FieldReference(ownerCls, name));
                     insn.setFieldType(type);
                     insn.setReceiver(getVariable(value));
                     builder.add(insn);
@@ -1335,8 +1329,7 @@ public class ProgramParser {
                     }
                     int value = --currentDepth;
                     PutFieldInstruction insn = new PutFieldInstruction();
-                    insn.setClassName(ownerCls);
-                    insn.setField(name);
+                    insn.setField(new FieldReference(ownerCls, name));
                     insn.setValue(getVariable(value));
                     builder.add(insn);
                     break;

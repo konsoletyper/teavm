@@ -18,31 +18,22 @@ package org.teavm.javascript.ast;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodReference;
 
 /**
  *
  * @author Alexey Andreev
  */
 public class InvocationExpr extends Expr {
-    private String className;
-    private MethodDescriptor method;
+    private MethodReference method;
     private InvocationType type;
     private List<Expr> arguments = new ArrayList<>();
 
-    public String getClassName() {
-        return className;
-    }
-
-    public void setClassName(String className) {
-        this.className = className;
-    }
-
-    public MethodDescriptor getMethod() {
+    public MethodReference getMethod() {
         return method;
     }
 
-    public void setMethod(MethodDescriptor method) {
+    public void setMethod(MethodReference method) {
         this.method = method;
     }
 
@@ -72,7 +63,6 @@ public class InvocationExpr extends Expr {
         InvocationExpr copy = new InvocationExpr();
         cache.put(this, copy);
         copy.setMethod(method);
-        copy.setClassName(className);
         for (Expr arg : arguments) {
             copy.getArguments().add(arg.clone(cache));
         }

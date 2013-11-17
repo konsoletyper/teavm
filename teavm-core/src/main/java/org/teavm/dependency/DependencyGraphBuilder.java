@@ -129,8 +129,7 @@ class DependencyGraphBuilder {
         }
 
         private void invokeSpecial(InvokeInstruction insn) {
-            MethodReference method = new MethodReference(insn.getClassName(), insn.getMethod());
-            MethodGraph targetGraph = dependencyChecker.attachMethodGraph(method);
+            MethodGraph targetGraph = dependencyChecker.attachMethodGraph(insn.getMethod());
             DependencyNode[] targetParams = targetGraph.getVariableNodes();
             List<Variable> arguments = insn.getArguments();
             for (int i = 0; i < arguments.size(); ++i) {
@@ -152,7 +151,7 @@ class DependencyGraphBuilder {
             }
             actualArgs[0] = nodes[insn.getInstance().getIndex()];
             DependencyConsumer listener = new VirtualCallPropagationListener(nodes[insn.getInstance().getIndex()],
-                    insn.getMethod(), dependencyChecker, actualArgs,
+                    insn.getMethod().getDescriptor(), dependencyChecker, actualArgs,
                     insn.getReceiver() != null ? nodes[insn.getReceiver().getIndex()] : null);
             nodes[insn.getInstance().getIndex()].addConsumer(listener);
         }
@@ -190,16 +189,14 @@ class DependencyGraphBuilder {
 
         @Override
         public void visit(PutFieldInstruction insn) {
-            DependencyNode fieldNode = dependencyChecker.getFieldNode(new FieldReference(insn.getClassName(),
-                    insn.getField()));
+            DependencyNode fieldNode = dependencyChecker.getFieldNode(insn.getField());
             DependencyNode valueNode = nodes[insn.getValue().getIndex()];
             valueNode.connect(fieldNode);
         }
 
         @Override
         public void visit(GetFieldInstruction insn) {
-            DependencyNode fieldNode = dependencyChecker.getFieldNode(new FieldReference(insn.getClassName(),
-                    insn.getField()));
+            DependencyNode fieldNode = dependencyChecker.getFieldNode(insn.getField());
             DependencyNode receiverNode = nodes[insn.getReceiver().getIndex()];
             fieldNode.connect(receiverNode);
         }

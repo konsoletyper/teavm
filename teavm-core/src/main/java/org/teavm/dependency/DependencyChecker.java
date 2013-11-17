@@ -17,10 +17,7 @@ package org.teavm.dependency;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import org.teavm.codegen.ConcurrentCachedMapper;
 import org.teavm.codegen.ConcurrentCachedMapper.KeyListener;
 import org.teavm.codegen.Mapper;
@@ -48,6 +45,13 @@ public class DependencyChecker {
     public DependencyChecker(ClassHolderSource classSource, int numThreads) {
         this.classSource = classSource;
         executor = new ScheduledThreadPoolExecutor(numThreads);
+        executor.setThreadFactory(new ThreadFactory() {
+            @Override public Thread newThread(Runnable r) {
+                Thread thread = new Thread(r);
+                thread.setDaemon(true);
+                return thread;
+            }
+        });
         methodCache = new ConcurrentCachedMapper<>(new Mapper<MethodReference, MethodGraph>() {
             @Override public MethodGraph map(MethodReference preimage) {
                 return createMethodGraph(preimage);

@@ -689,8 +689,8 @@ public class Renderer implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(InvocationExpr expr) {
-        String className = naming.getNameFor(expr.getClassName());
-        String name = naming.getNameFor(new MethodReference(expr.getClassName(), expr.getMethod()));
+        String className = naming.getNameFor(expr.getMethod().getClassName());
+        String name = naming.getNameFor(expr.getMethod());
         switch (expr.getType()) {
             case STATIC:
                 writer.append(className).append("_").append(name).append("(");
@@ -738,7 +738,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
     @Override
     public void visit(QualificationExpr expr) {
         expr.getQualified().acceptVisitor(this);
-        writer.append('.').appendField(new FieldReference(expr.getClassName(), expr.getField()));
+        writer.append('.').appendField(expr.getField());
     }
 
     @Override

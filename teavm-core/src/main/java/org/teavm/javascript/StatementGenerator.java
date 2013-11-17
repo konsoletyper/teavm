@@ -412,10 +412,10 @@ public class StatementGenerator implements InstructionVisitor {
     public void visit(GetFieldInstruction insn) {
         if (insn.getInstance() != null) {
             statements.add(Statement.assign(Expr.var(insn.getReceiver().getIndex()),
-                    Expr.qualify(Expr.var(insn.getInstance().getIndex()), insn.getClassName(), insn.getField())));
+                    Expr.qualify(Expr.var(insn.getInstance().getIndex()), insn.getField())));
         } else {
-            Expr fieldExpr = Expr.qualify(Expr.staticClass(ValueType.object(insn.getClassName())),
-                    insn.getClassName(), insn.getField());
+            Expr fieldExpr = Expr.qualify(Expr.staticClass(ValueType.object(insn.getField().getClassName())),
+                    insn.getField());
             statements.add(Statement.assign(Expr.var(insn.getReceiver().getIndex()), fieldExpr));
         }
     }
@@ -423,11 +423,11 @@ public class StatementGenerator implements InstructionVisitor {
     @Override
     public void visit(PutFieldInstruction insn) {
         if (insn.getInstance() != null) {
-            statements.add(Statement.assign(Expr.qualify(Expr.var(insn.getInstance().getIndex()),
-                    insn.getClassName(), insn.getField()), Expr.var(insn.getValue().getIndex())));
+            statements.add(Statement.assign(Expr.qualify(Expr.var(insn.getInstance().getIndex()), insn.getField()),
+                    Expr.var(insn.getValue().getIndex())));
         } else {
-            Expr fieldExpr = Expr.qualify(Expr.staticClass(ValueType.object(insn.getClassName())),
-                    insn.getClassName(), insn.getField());
+            Expr fieldExpr = Expr.qualify(Expr.staticClass(ValueType.object(insn.getField().getClassName())),
+                    insn.getField());
             statements.add(Statement.assign(fieldExpr, Expr.var(insn.getValue().getIndex())));
         }
     }
@@ -439,8 +439,9 @@ public class StatementGenerator implements InstructionVisitor {
 
     @Override
     public void visit(CloneArrayInstruction insn) {
-        MethodDescriptor cloneMethod = new MethodDescriptor("clone", ValueType.object("java.lang.Object"));
-        assign(Expr.invoke("java.lang.Object", cloneMethod, Expr.var(insn.getArray().getIndex()), new Expr[0]),
+        MethodDescriptor cloneMethodDesc = new MethodDescriptor("clone", ValueType.object("java.lang.Object"));
+        MethodReference cloneMethod = new MethodReference("java.lang.Object", cloneMethodDesc);
+        assign(Expr.invoke(cloneMethod, Expr.var(insn.getArray().getIndex()), new Expr[0]),
                 insn.getReceiver().getIndex());
     }
 
@@ -458,10 +459,9 @@ public class StatementGenerator implements InstructionVisitor {
 
     @Override
     public void visit(InvokeInstruction insn) {
-        String declaringClass = findDeclaringClass(insn.getClassName(), insn.getMethod());
-        if (declaringClass == null) {
-            throw new IllegalArgumentException("Method not found: " + insn.getClassName() + "." +
-                    insn.getMethod());
+        MethodReference method = findDeclaringClass(insn.getMethod());
+        if (method == null) {
+            throw new IllegalArgumentException("Method not found: " + insn.getMethod());
         }
         Expr[] exprArgs = new Expr[insn.getMethod().getParameterTypes().length];
         for (int i = 0; i < insn.getArguments().size(); ++i) {
@@ -470,14 +470,12 @@ public class StatementGenerator implements InstructionVisitor {
         Expr invocationExpr;
         if (insn.getInstance() != null) {
             if (insn.getType() == InvocationType.VIRTUAL) {
-                invocationExpr = Expr.invoke(declaringClass, insn.getMethod(),
-                        Expr.var(insn.getInstance().getIndex()), exprArgs);
+                invocationExpr = Expr.invoke(insn.getMethod(), Expr.var(insn.getInstance().getIndex()), exprArgs);
             } else {
-                invocationExpr = Expr.invokeSpecial(declaringClass, insn.getMethod(),
-                        Expr.var(insn.getInstance().getIndex()), exprArgs);
+                invocationExpr = Expr.invokeSpecial(method, Expr.var(insn.getInstance().getIndex()), exprArgs);
             }
         } else {
-            invocationExpr = Expr.invokeStatic(declaringClass, insn.getMethod(), exprArgs);
+            invocationExpr = Expr.invokeStatic(method, exprArgs);
         }
         if (insn.getReceiver() != null) {
             assign(invocationExpr, insn.getReceiver().getIndex());
@@ -486,12 +484,12 @@ public class StatementGenerator implements InstructionVisitor {
         }
     }
 
-    public String findDeclaringClass(String className, MethodDescriptor method) {
-        ClassHolder cls = classSource.getClassHolder(className);
-        while (cls != null && cls.getMethod(method) == null) {
+    public MethodReference findDeclaringClass(MethodReference method) {
+        ClassHolder cls = classSource.getClassHolder(method.getClassName());
+        while (cls != null && cls.getMethod(method.getDescriptor()) == null) {
             cls = cls.getParent() != null ? classSource.getClassHolder(cls.getParent()) : null;
         }
-        return cls != null ? cls.getName() : null;
+        return cls != null ? new MethodReference(cls.getName(), method.getDescriptor()) : null;
     }
 
     @Override

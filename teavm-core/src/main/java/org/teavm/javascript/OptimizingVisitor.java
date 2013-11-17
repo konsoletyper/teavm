@@ -156,18 +156,16 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         }
         switch (expr.getType()) {
             case STATIC:
-                resultExpr = Expr.invokeStatic(expr.getClassName(), expr.getMethod(), args);
+                resultExpr = Expr.invokeStatic(expr.getMethod(), args);
                 break;
             case DYNAMIC:
-                resultExpr = Expr.invoke(expr.getClassName(), expr.getMethod(), args[0], Arrays.copyOfRange(
-                        args, 1, args.length));
+                resultExpr = Expr.invoke(expr.getMethod(), args[0], Arrays.copyOfRange(args, 1, args.length));
                 break;
             case SPECIAL:
-                resultExpr = Expr.invokeSpecial(expr.getClassName(), expr.getMethod(), args[0], Arrays.copyOfRange(
-                        args, 1, args.length));
+                resultExpr = Expr.invokeSpecial(expr.getMethod(), args[0], Arrays.copyOfRange(args, 1, args.length));
                 break;
             case CONSTRUCTOR:
-                resultExpr = Expr.constructObject(expr.getClassName(), expr.getMethod(), args);
+                resultExpr = Expr.constructObject(expr.getMethod(), args);
                 break;
         }
     }
@@ -199,12 +197,12 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
             return false;
         }
         NewExpr constructed = (NewExpr)assignment.getRightValue();
-        if (!constructed.getConstructedClass().equals(expr.getClassName())) {
+        if (!constructed.getConstructedClass().equals(expr.getMethod().getClassName())) {
             return false;
         }
         Expr[] args = expr.getArguments().toArray(new Expr[0]);
         args = Arrays.copyOfRange(args, 1, args.length);
-        assignment.setRightValue(Expr.constructObject(expr.getClassName(), expr.getMethod(), args));
+        assignment.setRightValue(Expr.constructObject(expr.getMethod(), args));
         stats.reads[var.getIndex()]--;
         return true;
     }
@@ -213,7 +211,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     public void visit(QualificationExpr expr) {
         expr.getQualified().acceptVisitor(this);
         Expr qualified = resultExpr;
-        resultExpr = Expr.qualify(qualified, expr.getClassName(), expr.getField());
+        resultExpr = Expr.qualify(qualified, expr.getField());
     }
 
     @Override

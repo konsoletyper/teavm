@@ -1,5 +1,6 @@
 package org.teavm.model.instructions;
 
+import org.teavm.model.FieldReference;
 import org.teavm.model.Instruction;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
@@ -10,8 +11,7 @@ import org.teavm.model.Variable;
  */
 public class GetFieldInstruction extends Instruction {
     private Variable instance;
-    private String className;
-    private String field;
+    private FieldReference field;
     private ValueType fieldType;
     private Variable receiver;
 
@@ -23,19 +23,11 @@ public class GetFieldInstruction extends Instruction {
         this.instance = instance;
     }
 
-    public String getClassName() {
-        return className;
-    }
-
-    public void setClassName(String className) {
-        this.className = className;
-    }
-
-    public String getField() {
+    public FieldReference getField() {
         return field;
     }
 
-    public void setField(String field) {
+    public void setField(FieldReference field) {
         this.field = field;
     }
 
