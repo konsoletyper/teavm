@@ -17,8 +17,12 @@ package org.teavm.dependency;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import org.teavm.codegen.ConcurrentCachedMapper;
+import org.teavm.codegen.ConcurrentCachedMapper.KeyListener;
 import org.teavm.codegen.Mapper;
 import org.teavm.model.*;
 
@@ -52,6 +56,11 @@ public class DependencyChecker {
         fieldCache = new ConcurrentCachedMapper<>(new Mapper<FieldReference, DependencyNode>() {
             @Override public DependencyNode map(FieldReference preimage) {
                 return createFieldNode(preimage);
+            }
+        });
+        methodCache.addKeyListener(new KeyListener<MethodReference>() {
+            @Override public void keyAdded(MethodReference key) {
+                activateDependencyPlugin(key);
             }
         });
     }
@@ -197,5 +206,29 @@ public class DependencyChecker {
             node.setTag(fieldRef.getClassName() + "#" + fieldRef.getFieldName());
         }
         return node;
+    }
+
+    private void activateDependencyPlugin(MethodReference methodRef) {
+        ClassHolder cls = classSource.getClassHolder(methodRef.getClassName());
+        MethodHolder method = cls.getMethod(methodRef.getDescriptor());
+        AnnotationHolder depAnnot = method.getAnnotations().get(PluggableDependency.class.getName());
+        if (depAnnot == null) {
+            return;
+        }
+        ValueType depType = depAnnot.getValues().get("value").getJavaClass();
+        String depClassName = ((ValueType.Object)depType).getClassName();
+        Class<?> depClass;
+        try {
+            depClass = Class.forName(depClassName);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("Dependency plugin not found: " + depClassName, e);
+        }
+        DependencyPlugin plugin;
+        try {
+            plugin = (DependencyPlugin)depClass.newInstance();
+        } catch (IllegalAccessException | InstantiationException e) {
+            throw new RuntimeException("Can't instantiate dependency plugin " + depClassName, e);
+        }
+        plugin.methodAchieved(this, methodRef);
     }
 }

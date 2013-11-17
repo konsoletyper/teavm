@@ -1,5 +1,6 @@
 package org.teavm.classlib.java.lang;
 
+import org.teavm.dependency.PluggableDependency;
 import org.teavm.javascript.ni.GeneratedBy;
 import org.teavm.javascript.ni.Rename;
 import org.teavm.javascript.ni.Superclass;
@@ -20,6 +21,7 @@ public class TObject {
 
     @GeneratedBy(ObjectNativeGenerator.class)
     @Rename("getClass")
+    @PluggableDependency(ObjectNativeGenerator.class)
     public native final TClass<?> getClass0();
 
     @Override
@@ -31,6 +33,7 @@ public class TObject {
 
     @Override
     @GeneratedBy(ObjectNativeGenerator.class)
+    @PluggableDependency(ObjectNativeGenerator.class)
     protected native TObject clone();
 
     @Rename("notify")

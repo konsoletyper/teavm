@@ -1,7 +1,9 @@
 package org.teavm.codegen;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
@@ -13,6 +15,7 @@ import java.util.concurrent.CountDownLatch;
 public class ConcurrentCachedMapper<T, R> implements Mapper<T, R> {
     private Mapper<T, R> innerMapper;
     private ConcurrentMap<T, Wrapper<R>> cache = new ConcurrentHashMap<>();
+    private List<KeyListener<T>> keyListeners = new ArrayList<>();
 
     private static class Wrapper<S> {
         volatile S value;
@@ -33,6 +36,9 @@ public class ConcurrentCachedMapper<T, R> implements Mapper<T, R> {
                 wrapper.value = innerMapper.map(preimage);
                 wrapper.latch.countDown();
                 wrapper.latch = null;
+                for (KeyListener<T> listener : keyListeners) {
+                    listener.keyAdded(preimage);
+                }
             } else {
                 CountDownLatch latch = oldWrapper.latch;
                 try {
@@ -51,5 +57,13 @@ public class ConcurrentCachedMapper<T, R> implements Mapper<T, R> {
 
     public Collection<T> getCachedPreimages() {
         return new HashSet<>(cache.keySet());
+    }
+
+    public void addKeyListener(KeyListener<T> listener) {
+        keyListeners.add(listener);
+    }
+
+    public static interface KeyListener<S> {
+        void keyAdded(S key);
     }
 }
