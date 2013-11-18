@@ -41,12 +41,16 @@ public class ClasslibTestGenerator {
         renderer = new Renderer(writer, classSource);
         DependencyChecker dependencyChecker = new DependencyChecker(classSource);
         for (String testClass : testClasses) {
-            findTests(classSource.getClassHolder(testClass));
+            ClassHolder classHolder = classSource.getClassHolder(testClass);
+            findTests(classHolder);
+            MethodReference cons = new MethodReference(testClass, new MethodDescriptor("<init>", ValueType.VOID));
+            dependencyChecker.addEntryPoint(cons);
         }
         for (MethodReference methodRef : testMethods) {
             dependencyChecker.addEntryPoint(methodRef);
         }
         dependencyChecker.checkDependencies();
+        dependencyChecker.cutUnachievableClasses();
         for (String className : dependencyChecker.getAchievableClasses()) {
             decompileClass(className);
         }

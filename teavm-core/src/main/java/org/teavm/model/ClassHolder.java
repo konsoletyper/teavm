@@ -64,10 +64,6 @@ public class ClassHolder extends ElementHolder {
     }
 
     public void removeMethod(MethodHolder method) {
-        if (method.getOwner() != null) {
-            throw new IllegalArgumentException("Method " + method.getDescriptor() +
-                    " is not a member of " + getName());
-        }
         if (method.getOwner() != this) {
             throw new IllegalArgumentException("Method " + method.getOwner().getName() +
                     "." + method.getDescriptor() + " is not a member of " + getName());
@@ -97,10 +93,6 @@ public class ClassHolder extends ElementHolder {
     }
 
     public void removeField(FieldHolder field) {
-        if (field.getOwner() != null) {
-            throw new IllegalArgumentException("Field " + field.getName() +
-                    " is not a member of " + getName());
-        }
         if (field.getOwner() != this) {
             throw new IllegalArgumentException("Field " + field.getOwner().getName() + "." +
                     field.getName() + " is not a member of " + getName());
