@@ -61,7 +61,9 @@ public class ObjectNativeGenerator implements Generator, DependencyPlugin {
                 ValueType.object(classClass)));
         writer.append("cls = ").appendClass(classClass).append('.').appendMethod(createMethodRef)
                 .append("();").newLine();
-        writer.append("cls.$data = ").append(thisArg).append(".$class;").newLine().outdent().append("}").newLine();
+        writer.append("cls.$data = ").append(thisArg).append(".$class;").newLine();
+        writer.append(thisArg).append(".$class.classObject = cls;").newLine();
+        writer.outdent().append("}").newLine();
         writer.append("return cls;").newLine();
     }
 
