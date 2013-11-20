@@ -62,6 +62,36 @@ public class Decompiler {
         }
     }
 
+    public List<ClassNode> decompile(Collection<String> classNames) {
+        List<String> sequence = new ArrayList<>();
+        Set<String> visited = new HashSet<>();
+        for (String className : classNames) {
+            orderClasses(className, visited, sequence);
+        }
+        List<ClassNode> result = new ArrayList<>();
+        for (String className : sequence) {
+            result.add(decompile(classSource.getClassHolder(className)));
+        }
+        return result;
+    }
+
+    private void orderClasses(String className, Set<String> visited, List<String> order) {
+        if (!visited.add(className)) {
+            return;
+        }
+        ClassHolder cls = classSource.getClassHolder(className);
+        if (cls == null) {
+            throw new IllegalArgumentException("Class not found: " + className);
+        }
+        if (cls.getParent() != null) {
+            orderClasses(cls.getParent(), visited, order);
+        }
+        for (String iface : cls.getInterfaces()) {
+            orderClasses(iface, visited, order);
+        }
+        order.add(className);
+    }
+
     public ClassNode decompile(ClassHolder cls) {
         ClassNode clsNode = new ClassNode(cls.getName(), cls.getParent());
         for (FieldHolder field : cls.getFields()) {

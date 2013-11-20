@@ -81,6 +81,9 @@ class DependencyGraphBuilder {
                 return;
             }
             MethodGraph targetGraph = checker.attachMethodGraph(methodRef);
+            if (targetGraph == null) {
+                throw new RuntimeException("Method not found: " + methodRef);
+            }
             DependencyNode[] targetParams = targetGraph.getVariableNodes();
             for (int i = 0; i < parameters.length; ++i) {
                 parameters[i].connect(targetParams[i]);

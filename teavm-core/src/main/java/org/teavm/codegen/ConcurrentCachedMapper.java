@@ -41,6 +41,7 @@ public class ConcurrentCachedMapper<T, R> implements Mapper<T, R> {
                 }
             } else {
                 CountDownLatch latch = oldWrapper.latch;
+                wrapper = oldWrapper;
                 try {
                     latch.await();
                 } catch (InterruptedException e) {

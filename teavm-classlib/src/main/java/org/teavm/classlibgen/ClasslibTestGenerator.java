@@ -2,10 +2,7 @@ package org.teavm.classlibgen;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import org.apache.commons.io.IOUtils;
 import org.teavm.codegen.DefaultAliasProvider;
 import org.teavm.codegen.DefaultNamingStrategy;
@@ -51,9 +48,7 @@ public class ClasslibTestGenerator {
         }
         dependencyChecker.checkDependencies();
         dependencyChecker.cutUnachievableClasses();
-        for (String className : dependencyChecker.getAchievableClasses()) {
-            decompileClass(className);
-        }
+        decompileClasses(dependencyChecker.getAchievableClasses());
         renderHead();
         ClassLoader classLoader = ClasslibTestGenerator.class.getClassLoader();
         try (InputStream input = classLoader.getResourceAsStream("org/teavm/classlib/junit-support.js")) {
@@ -69,10 +64,11 @@ public class ClasslibTestGenerator {
         renderFoot();
     }
 
-    private static void decompileClass(String className) {
-        ClassHolder cls = classSource.getClassHolder(className);
-        ClassNode clsNode = decompiler.decompile(cls);
-        renderer.render(clsNode);
+    private static void decompileClasses(Collection<String> classNames) {
+        List<ClassNode> clsNodes = decompiler.decompile(classNames);
+        for (ClassNode clsNode : clsNodes) {
+            renderer.render(clsNode);
+        }
     }
 
     private static void renderHead() {

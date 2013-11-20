@@ -18,6 +18,7 @@ package org.teavm.dependency;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 import org.teavm.codegen.ConcurrentCachedMapper;
 import org.teavm.codegen.ConcurrentCachedMapper.KeyListener;
 import org.teavm.codegen.Mapper;
@@ -36,7 +37,7 @@ public class DependencyChecker {
     private ConcurrentCachedMapper<FieldReference, DependencyNode> fieldCache;
     private ConcurrentMap<String, Object> achievableClasses = new ConcurrentHashMap<>();
     private ConcurrentMap<String, Object> initializedClasses = new ConcurrentHashMap<>();
-    private volatile RuntimeException exceptionOccured;
+    private AtomicReference<RuntimeException> exceptionOccured = new AtomicReference<>();
 
     public DependencyChecker(ClassHolderSource classSource) {
         this(classSource, Runtime.getRuntime().availableProcessors());
@@ -99,21 +100,24 @@ public class DependencyChecker {
     }
 
     void schedule(final Runnable runnable) {
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    runnable.run();
-                } catch (RuntimeException e) {
-                    exceptionOccured = e;
-                    executor.shutdownNow();
+        try {
+            executor.execute(new Runnable() {
+                @Override public void run() {
+                    try {
+                        runnable.run();
+                    } catch (RuntimeException e) {
+                        exceptionOccured.compareAndSet(null, e);
+                        executor.shutdownNow();
+                    }
                 }
-            }
-        });
+            });
+        } catch (RejectedExecutionException e) {
+            throw exceptionOccured.get();
+        }
     }
 
     public void checkDependencies() {
-        exceptionOccured = null;
+        exceptionOccured.set(null);
         while (true) {
             try {
                 if (executor.getActiveCount() == 0 || executor.awaitTermination(1, TimeUnit.SECONDS)) {
@@ -124,8 +128,9 @@ public class DependencyChecker {
                 break;
             }
         }
-        if (exceptionOccured != null) {
-            throw exceptionOccured;
+        RuntimeException e = exceptionOccured.get();
+        if (e != null) {
+            throw exceptionOccured.get();
         }
     }
 
@@ -144,6 +149,9 @@ public class DependencyChecker {
                 break;
             }
             ClassHolder cls = classSource.getClassHolder(className);
+            if (cls == null) {
+                throw new RuntimeException("Class not found: " + className);
+            }
             if (cls.getMethod(clinitDesc) != null) {
                 attachMethodGraph(new MethodReference(className, clinitDesc));
             }
