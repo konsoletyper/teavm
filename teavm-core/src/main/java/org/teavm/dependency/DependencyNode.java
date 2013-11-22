@@ -76,16 +76,16 @@ public class DependencyNode {
                 arrayItemNodeLatch.countDown();
                 arrayItemNodeLatch = null;
             } else {
-                CountDownLatch latch = arrayItemNodeLatch;
-                if (latch != null) {
-                    try {
-                        latch.await();
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        return result;
-                    }
-                }
                 result = arrayItemNode.get();
+            }
+        }
+        CountDownLatch latch = arrayItemNodeLatch;
+        if (latch != null) {
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return result;
             }
         }
         return result;

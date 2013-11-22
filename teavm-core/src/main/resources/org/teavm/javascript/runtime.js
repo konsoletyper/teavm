@@ -20,6 +20,26 @@ $rt_isAssignable = function(from, to) {
     }
     return false;
 }
+$rt_createArray = function(cls, sz) {
+    var arr = new Array(sz);
+    arr.$class = $rt_arraycls(cls);
+    arr.$id = $rt_lastObjectId++;
+    for (var i = 0; i < sz; i = (i + 1) | 0) {
+        arr[i] = null;
+    }
+    return arr;
+}
+$rt_arraycls = function(cls) {
+    if (cls.$array == undefined) {
+        cls.$array = {
+            $meta : { item : cls },
+        };
+        if ($rt.objcls) {
+            cls.$array.$meta.supertypes = [$rt.objcls()];
+        }
+    }
+    return cls.$array;
+}
 
 $rt = {
     createBooleanArray : function(cls, sz) {
@@ -40,15 +60,6 @@ $rt = {
         var arr = $rt.createArray($rt.longcls(), sz);
         for (var i = 0; i < sz; i = (i + 1) | 0) {
             arr[i] = Long.ZERO;
-        }
-        return arr;
-    },
-    createArray : function(cls, sz) {
-        var arr = new Array(sz);
-        arr.$class = $rt.arraycls(cls);
-        arr.$id = $rt.lastObjectId++;
-        for (var i = 0; i < sz; i = (i + 1) | 0) {
-            arr[i] = null;
         }
         return arr;
     },
@@ -74,17 +85,6 @@ $rt = {
         arr.$class = $rt.arraycls(cls);
         $rt.setId(arr, $rt.lastObjectId++);
         return arr;
-    },
-    arraycls : function(cls) {
-        if (cls.$array == undefined) {
-            cls.$array = {
-                $meta : { item : cls },
-            };
-            if ($rt.objcls) {
-                cls.$array.$meta.supertypes = [$rt.objcls()];
-            }
-        }
-        return cls.$array;
     },
     createcls : function() {
         return {

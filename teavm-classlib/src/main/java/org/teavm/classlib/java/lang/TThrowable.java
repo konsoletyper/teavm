@@ -6,4 +6,6 @@ package org.teavm.classlib.java.lang;
  */
 public class TThrowable extends Throwable {
     private static final long serialVersionUID = 2026791432677149320L;
+    private TString message;
+    private TThrowable cause;
 }

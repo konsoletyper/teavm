@@ -31,6 +31,9 @@ public class TObject {
     @GeneratedBy(ObjectNativeGenerator.class)
     public native boolean equals(TObject other);
 
+    @Rename("toString")
+    public native TString toString0();
+
     @Override
     @GeneratedBy(ObjectNativeGenerator.class)
     @PluggableDependency(ObjectNativeGenerator.class)

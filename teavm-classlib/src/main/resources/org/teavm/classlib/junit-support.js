@@ -19,10 +19,14 @@ runTestCase = function(instance, methodName, realMethodName) {
     } catch (e) {
         if (e instanceof JUnitAssertionFailure) {
             statusCell.appendChild(document.createTextNode("assertion failed"));
-            exceptionCell.appendChild(document.createTextNode(e.stack));
+            var exceptionText = document.createElement("pre");
+            exceptionText.appendChild(document.createTextNode(e.stack));
+            exceptionCell.appendChild(exceptionText);
         } else {
             statusCell.appendChild(document.createTextNode("unexpected exception"));
-            exceptionCell.appendChild(document.createTextNode(e.stack));
+            var exceptionText = document.createElement("pre");
+            exceptionText.appendChild(document.createTextNode(e.stack));
+            exceptionCell.appendChild(exceptionText);
         }
     }
 }

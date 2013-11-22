@@ -45,4 +45,9 @@ class TObjectTests {
     public void properInstanceDetected() {
         assertTrue(Object.class.isInstance(new Object()));
     }
+
+    @Test
+    public void alwaysFails() {
+        fail();
+    }
 }

@@ -40,13 +40,15 @@ public class ConcurrentCachedMapper<T, R> implements Mapper<T, R> {
                     listener.keyAdded(preimage);
                 }
             } else {
-                CountDownLatch latch = oldWrapper.latch;
                 wrapper = oldWrapper;
-                try {
-                    latch.await();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
+            }
+        }
+        CountDownLatch latch = wrapper.latch;
+        if (latch != null) {
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
         }
         return wrapper.value;

@@ -1,7 +1,9 @@
 package org.teavm.classlibgen;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.util.*;
 import org.apache.commons.io.IOUtils;
 import org.teavm.codegen.DefaultAliasProvider;
@@ -19,6 +21,7 @@ import org.teavm.model.resource.ClasspathClassHolderSource;
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public class ClasslibTestGenerator {
+    private static PrintStream out;
     private static ClasspathClassHolderSource classSource;
     private static Decompiler decompiler;
     private static DefaultAliasProvider aliasProvider;
@@ -27,9 +30,13 @@ public class ClasslibTestGenerator {
     private static Renderer renderer;
     private static List<MethodReference> testMethods = new ArrayList<>();
     private static Map<String, List<MethodReference>> groupedMethods = new HashMap<>();
-    private static String[] testClasses = { "java.lang.ObjectTests" };
+    private static String[] testClasses = { "java.lang.ObjectTests", "java.lang.SystemTests" };
 
     public static void main(String[] args) throws IOException {
+        out = System.out;
+        if (args.length > 0) {
+            out = new PrintStream(new FileOutputStream(args[0]));
+        }
         classSource = new ClasspathClassHolderSource();
         decompiler = new Decompiler(classSource);
         aliasProvider = new DefaultAliasProvider();
@@ -52,15 +59,16 @@ public class ClasslibTestGenerator {
         renderHead();
         ClassLoader classLoader = ClasslibTestGenerator.class.getClassLoader();
         try (InputStream input = classLoader.getResourceAsStream("org/teavm/classlib/junit-support.js")) {
-            System.out.println(IOUtils.toString(input));
+            out.println(IOUtils.toString(input));
         }
         try (InputStream input = classLoader.getResourceAsStream("org/teavm/javascript/runtime.js")) {
-            System.out.println(IOUtils.toString(input));
+            out.println(IOUtils.toString(input));
         }
+        renderer.renderRuntime();
         for (String testClass : testClasses) {
             renderClassTest(classSource.getClassHolder(testClass));
         }
-        System.out.println(writer);
+        out.println(writer);
         renderFoot();
     }
 
@@ -72,21 +80,21 @@ public class ClasslibTestGenerator {
     }
 
     private static void renderHead() {
-        System.out.println("<!DOCTYPE html>");
-        System.out.println("<html>");
-        System.out.println("  <head>");
-        System.out.println("    <title>TeaVM JUnit tests</title>");
-        System.out.println("    <meta http-equiv=\"Content-Type\" content=\"text/html;charset=UTF-8\"/>");
-        System.out.println("    <title>TeaVM JUnit tests</title>");
-        System.out.println("  </head>");
-        System.out.println("  <body>");
-        System.out.println("    <script type=\"text/javascript\">");
+        out.println("<!DOCTYPE html>");
+        out.println("<html>");
+        out.println("  <head>");
+        out.println("    <title>TeaVM JUnit tests</title>");
+        out.println("    <meta http-equiv=\"Content-Type\" content=\"text/html;charset=UTF-8\"/>");
+        out.println("    <title>TeaVM JUnit tests</title>");
+        out.println("  </head>");
+        out.println("  <body>");
+        out.println("    <script type=\"text/javascript\">");
     }
 
     private static void renderFoot() {
-        System.out.println("    </script>");
-        System.out.println("  </body>");
-        System.out.println("</html>");
+        out.println("    </script>");
+        out.println("  </body>");
+        out.println("</html>");
     }
 
     private static void renderClassTest(ClassHolder cls) {

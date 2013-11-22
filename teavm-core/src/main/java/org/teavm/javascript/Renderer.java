@@ -45,6 +45,26 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         return naming;
     }
 
+    public void renderRuntime() {
+        renderRuntimeCls();
+    }
+
+    private void renderRuntimeCls() {
+        writer.append("$rt_cls = function(cls) {").indent().newLine();
+        String classClass = "java.lang.Class";
+        writer.append("var cls = cls.classObject;").newLine();
+        writer.append("if (cls === undefined) {").newLine().indent();
+        MethodReference createMethodRef = new MethodReference(classClass, new MethodDescriptor("createNew",
+                ValueType.object(classClass)));
+        writer.append("cls = ").appendClass(classClass).append('.').appendMethod(createMethodRef)
+                .append("();").newLine();
+        writer.append("cls.$data = cls;").newLine();
+        writer.append("cls.classObject = cls;").newLine();
+        writer.outdent().append("}").newLine();
+        writer.append("return cls;").newLine();
+        writer.outdent().append("}").newLine();
+    }
+
     public void render(ClassNode cls) {
         writer.appendClass(cls.getName()).append(" = function() {").indent().newLine();
         for (FieldNode field : cls.getFields()) {
