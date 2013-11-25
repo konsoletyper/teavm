@@ -1,12 +1,13 @@
 package org.teavm.classlib.java.lang;
 
+import org.teavm.classlib.java.lang.io.TSerializable;
 import org.teavm.javascript.ni.GeneratedBy;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class TString extends TObject {
+public class TString extends TObject implements TSerializable {
     private char[] characters;
 
     public TString() {
@@ -29,6 +30,21 @@ public class TString extends TObject {
         for (int i = 0; i < count; ++i) {
             this.characters[i] = value[i + offset];
         }
+    }
+
+    public char charAt(int index) {
+        if (index < 0 || index >= characters.length) {
+            throw new StringIndexOutOfBoundsException(null);
+        }
+        return characters[index];
+    }
+
+    public int length() {
+        return characters.length;
+    }
+
+    public static TString valueOf(int index) {
+        return new TStringBuilder().append(index).toString0();
     }
 
     @GeneratedBy(StringNativeGenerator.class)
