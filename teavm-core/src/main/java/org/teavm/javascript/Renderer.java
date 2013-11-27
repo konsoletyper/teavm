@@ -47,6 +47,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
 
     public void renderRuntime() {
         renderRuntimeCls();
+        renderRuntimeString();
     }
 
     private void renderRuntimeCls() {
@@ -62,6 +63,20 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         writer.append("cls.classObject = cls;").newLine();
         writer.outdent().append("}").newLine();
         writer.append("return cls;").newLine();
+        writer.outdent().append("}").newLine();
+    }
+
+    private void renderRuntimeString() {
+        String stringClass = "java.lang.String";
+        MethodReference stringCons = new MethodReference(stringClass, new MethodDescriptor("<init>",
+                ValueType.arrayOf(ValueType.CHARACTER), ValueType.VOID));
+        writer.append("$rt_str = function(str) {").indent().newLine();
+        writer.append("var characters = $rt_createNumericArray($rt_charcls(), str.length);").newLine();
+        writer.append("for (var i = 0; i < str.length; i = (i + 1) | 0) {").indent().newLine();
+        writer.append("characters[i] = str.charCodeAt(i);").newLine();
+        writer.outdent().append("}").newLine();
+        writer.append("return $rt_init(").appendClass("java.lang.String").append(", '")
+                .appendMethod(stringCons).append("', characters);").newLine();
         writer.outdent().append("}").newLine();
     }
 

@@ -29,6 +29,20 @@ $rt_createArray = function(cls, sz) {
     }
     return arr;
 }
+$rt_createNumericArray = function(cls, sz) {
+    var arr = $rt_createArray(cls, sz);
+    for (var i = 0; i < sz; i = (i + 1) | 0) {
+        arr[i] = 0;
+    }
+    return arr;
+}
+$rt_createLongArray = function(sz) {
+    var arr = $rt.createArray($rt_longcls(), sz);
+    for (var i = 0; i < sz; i = (i + 1) | 0) {
+        arr[i] = Long.ZERO;
+    }
+    return arr;
+},
 $rt_arraycls = function(cls) {
     if (cls.$array == undefined) {
         cls.$array = {
@@ -40,26 +54,115 @@ $rt_arraycls = function(cls) {
     }
     return cls.$array;
 }
+$rt_createcls = function() {
+    return {
+        $meta : {
+            supertypes : []
+        }
+    };
+}
+$rt_booleanclsCache = null;
+$rt_booleancls = function() {
+    if ($rt_booleanclsCache == null) {
+        $rt_booleanclsCache = $rt_createcls();
+    }
+    return $rt_booleanclsCache;
+}
+$rt_booleanclsCache = null;
+$rt_booleancls = function() {
+    if ($rt_booleanclsCache == null) {
+        $rt_booleanclsCache = $rt_createcls();
+    }
+    return $rt_booleanclsCache;
+}
+$rt_charclsCache = null;
+$rt_charcls = function() {
+    if ($rt_charclsCache == null) {
+        $rt_charclsCache = $rt_createcls();
+    }
+    return $rt_charclsCache;
+}
+$rt_byteclsCache = null;
+$rt_bytecls = function() {
+    if ($rt_byteclsCache == null) {
+        $rt_byteclsCache = $rt_createcls();
+    }
+    return $rt_byteclsCache;
+}
+$rt_shortclsCache = null;
+$rt_shortcls = function() {
+    if ($rt_shortclsCache == null) {
+        $rt_shortclsCache = $rt_createcls();
+    }
+    return $rt_shortclsCache;
+}
+$rt_intclsCache = null;
+$rt_intcls = function() {
+    if ($rt_intclsCache == null) {
+        $rt_intclsCache = $rt_createcls();
+    }
+    return $rt_intclsCache;
+}
+$rt_longclsCache = null;
+$rt_longcls = function() {
+    if ($rt_longclsCache == null) {
+        $rt_longclsCache = $rt_createcls();
+    }
+    return $rt_longclsCache;
+}
+$rt_floatclsCache = null;
+$rt_floatcls = function() {
+    if ($rt_floatclsCache == null) {
+        $rt_floatclsCache = $rt_createcls();
+    }
+    return $rt_floatclsCache;
+}
+$rt_doubleclsCache = null;
+$rt_doublecls = function() {
+    if ($rt_doubleclsCache == null) {
+        $rt_doubleclsCache = $rt_createcls();
+    }
+    return $rt_doubleclsCache;
+}
+$rt_voidclsCache = null;
+$rt_voidcls = function() {
+    if ($rt_voidclsCache == null) {
+        $rt_voidclsCache = $rt_createcls();
+    }
+    return $rt_voidclsCache;
+}
+$rt_equals = function(a, b) {
+    if (a === b) {
+        return true;
+    }
+    if (a === null || b === null) {
+        return false;
+    }
+    if (typeof(a) == 'object') {
+        return a.equals(b);
+    } else {
+        return false;
+    }
+}
+$rt_clinit = function(cls) {
+    if (cls.$clinit) {
+        var f = cls.$clinit;
+        delete cls.$clinit;
+        f();
+    }
+    return cls;
+}
+$rt_init = function(cls, constructor, args) {
+    var obj = new cls();
+    cls.prototype[constructor].apply(obj, args);
+    return obj;
+}
 
 $rt = {
     createBooleanArray : function(cls, sz) {
         var arr = $rt.createArray(cls, sz);
         for (var i = 0; i < sz; i = (i + 1) | 0) {
             arr[i] = false;
-        }
-        return arr;
-    },
-    createNumericArray : function(cls, sz) {
-        var arr = $rt.createArray(cls, sz);
-        for (var i = 0; i < sz; i = (i + 1) | 0) {
-            arr[i] = 0;
-        }
-        return arr;
-    },
-    createLongArray : function(sz) {
-        var arr = $rt.createArray($rt.longcls(), sz);
-        for (var i = 0; i < sz; i = (i + 1) | 0) {
-            arr[i] = Long.ZERO;
         }
         return arr;
     },
@@ -85,93 +188,6 @@ $rt = {
         arr.$class = $rt.arraycls(cls);
         $rt.setId(arr, $rt.lastObjectId++);
         return arr;
-    },
-    createcls : function() {
-        return {
-            $meta : {
-                supertypes : []
-            }
-        };
-    },
-    booleancls : function() {
-        if ($rt.booleanclsCache == null) {
-            $rt.booleanclsCache = $rt.createcls();
-        }
-        return $rt.booleanclsCache;
-    },
-    charcls : function() {
-        if ($rt.charclsCache == null) {
-            $rt.charclsCache = $rt.createcls();
-        }
-        return $rt.charclsCache;
-    },
-    bytecls : function() {
-        if ($rt.byteclsCache == null) {
-            $rt.byteclsCache = $rt.createcls();
-        }
-        return $rt.byteclsCache;
-    },
-    shortcls : function() {
-        if ($rt.shortclsCache == null) {
-            $rt.shortclsCache = $rt.createcls();
-        }
-        return $rt.shortclsCache;
-    },
-    intcls : function() {
-        if ($rt.intclsCache == null) {
-            $rt.intclsCache = $rt.createcls();
-        }
-        return $rt.intclsCache;
-    },
-    longcls : function() {
-        if ($rt.longclsCache == null) {
-            $rt.longclsCache = $rt.createcls();
-        }
-        return $rt.longclsCache;
-    },
-    floatcls : function() {
-        if ($rt.floatclsCache == null) {
-            $rt.floatclsCache = $rt.createcls();
-        }
-        return $rt.floatclsCache;
-    },
-    doublecls : function() {
-        if ($rt.doubleclsCache == null) {
-            $rt.doubleclsCache = $rt.createcls();
-        }
-        return $rt.doubleclsCache;
-    },
-    voidcls : function() {
-        if ($rt.voidclsCache == null) {
-            $rt.voidclsCache = $rt.createcls();
-        }
-        return $rt.voidclsCache;
-    },
-    equals : function(a, b) {
-        if (a === b) {
-            return true;
-        }
-        if (a === null || b === null) {
-            return false;
-        }
-        if (typeof(a) == 'object') {
-            return a.equals(b);
-        } else {
-            return false;
-        }
-    },
-    clinit : function(cls) {
-        if (cls.$clinit) {
-            var f = cls.$clinit;
-            delete cls.$clinit;
-            f();
-        }
-        return cls;
-    },
-    init : function(cls, constructor, args) {
-        var obj = new cls();
-        cls.prototype[constructor].apply(obj, args);
-        return obj;
     },
     assertNotNaN : function(value) {
         if (typeof value == 'number' && isNaN(value)) {

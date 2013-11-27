@@ -156,6 +156,7 @@ class DependencyGraphBuilder {
             DependencyConsumer listener = new VirtualCallPropagationListener(nodes[insn.getInstance().getIndex()],
                     insn.getMethod().getDescriptor(), dependencyChecker, actualArgs,
                     insn.getReceiver() != null ? nodes[insn.getReceiver().getIndex()] : null);
+            dependencyChecker.addAbstractMethod(insn.getMethod());
             nodes[insn.getInstance().getIndex()].addConsumer(listener);
         }
 
@@ -280,6 +281,8 @@ class DependencyGraphBuilder {
         @Override
         public void visit(StringConstantInstruction insn) {
             nodes[insn.getReceiver().getIndex()].propagate("java.lang.String");
+            dependencyChecker.attachMethodGraph(new MethodReference("java.lang.String", new MethodDescriptor(
+                    "<init>", ValueType.arrayOf(ValueType.CHARACTER), ValueType.VOID)));
         }
 
         @Override

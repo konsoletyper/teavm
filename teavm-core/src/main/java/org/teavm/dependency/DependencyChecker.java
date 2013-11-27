@@ -33,6 +33,7 @@ public class DependencyChecker {
     static final boolean shouldLog = System.getProperty("org.teavm.logDependencies", "false").equals("true");
     private ClassHolderSource classSource;
     private ScheduledThreadPoolExecutor executor;
+    private ConcurrentMap<MethodReference, Object> abstractMethods = new ConcurrentHashMap<>();
     private ConcurrentCachedMapper<MethodReference, MethodGraph> methodCache;
     private ConcurrentCachedMapper<FieldReference, DependencyNode> fieldCache;
     private ConcurrentMap<String, Object> achievableClasses = new ConcurrentHashMap<>();
@@ -210,6 +211,10 @@ public class DependencyChecker {
         return methodCache.caches(methodRef);
     }
 
+    public boolean isAbstractMethodAchievable(MethodReference methodRef) {
+        return abstractMethods.containsKey(methodRef);
+    }
+
     public Collection<MethodReference> getAchievableMethods() {
         return methodCache.getCachedPreimages();
     }
@@ -262,6 +267,24 @@ public class DependencyChecker {
         plugin.methodAchieved(this, methodRef);
     }
 
+    public void addAbstractMethod(MethodReference methodRef) {
+        if (abstractMethods.putIfAbsent(methodRef, methodRef) == null) {
+            String className = methodRef.getClassName();
+            while (className != null) {
+                ClassHolder cls = classSource.getClassHolder(className);
+                if (cls == null) {
+                    return;
+                }
+                MethodHolder method = cls.getMethod(methodRef.getDescriptor());
+                if (method != null) {
+                    abstractMethods.put(methodRef, methodRef);
+                    return;
+                }
+                className = cls.getParent();
+            }
+        }
+    }
+
     public ListableClassHolderSource cutUnachievableClasses() {
         MutableClassHolderSource cutClasses = new MutableClassHolderSource();
         for (String className : achievableClasses.keySet()) {
@@ -269,7 +292,12 @@ public class DependencyChecker {
             for (MethodHolder method : classHolder.getMethods().toArray(new MethodHolder[0])) {
                 MethodReference methodRef = new MethodReference(className, method.getDescriptor());
                 if (!methodCache.getCachedPreimages().contains(methodRef)) {
-                    classHolder.removeMethod(method);
+                    if (abstractMethods.containsKey(methodRef)) {
+                        method.getModifiers().add(ElementModifier.ABSTRACT);
+                        method.setProgram(null);
+                    } else {
+                        classHolder.removeMethod(method);
+                    }
                 }
             }
             for (FieldHolder field : classHolder.getFields().toArray(new FieldHolder[0])) {

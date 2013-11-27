@@ -53,6 +53,9 @@ public class DefaultNamingStrategy implements NamingStrategy {
         }
         ClassHolder clsHolder = classSource.getClassHolder(method.getClassName());
         MethodHolder methodHolder = clsHolder.getMethod(method.getDescriptor());
+        if (methodHolder == null) {
+            throw new RuntimeException("Method not found: " + method);
+        }
         if (methodHolder.getModifiers().contains(ElementModifier.STATIC) ||
                 method.getDescriptor().getName().equals("<init>") ||
                 methodHolder.getLevel() == AccessLevel.PRIVATE) {

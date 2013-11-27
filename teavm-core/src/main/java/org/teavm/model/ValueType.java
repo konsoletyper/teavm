@@ -116,7 +116,7 @@ public abstract class ValueType {
         @Override
         public String toString() {
             if (reprCache == null) {
-                reprCache = itemType.toString();
+                reprCache = "[" + itemType.toString();
             }
             return reprCache;
         }
