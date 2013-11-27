@@ -159,10 +159,20 @@ public class DependencyChecker {
         }
     }
 
-    private MethodGraph createMethodGraph(MethodReference methodRef) {
+    private MethodGraph createMethodGraph(final MethodReference methodRef) {
         initClass(methodRef.getClassName());
         ClassHolder cls = classSource.getClassHolder(methodRef.getClassName());
         MethodHolder method = cls.getMethod(methodRef.getDescriptor());
+        if (method == null) {
+            while (cls != null) {
+                method = cls.getMethod(methodRef.getDescriptor());
+                if (method != null) {
+                    return methodCache.map(new MethodReference(cls.getName(), methodRef.getDescriptor()));
+                }
+                cls = classSource.getClassHolder(cls.getParent());
+            }
+            throw new RuntimeException("Method not found: " + methodRef);
+        }
         ValueType[] arguments = method.getParameterTypes();
         int paramCount = arguments.length + 1;
         int varCount = Math.max(paramCount, method.getProgram().variableCount());
@@ -184,10 +194,15 @@ public class DependencyChecker {
                         method.getName() + MethodDescriptor.get(method) + ":RESULT");
             }
         }
-        MethodGraph graph = new MethodGraph(parameterNodes, paramCount, resultNode, this);
-        DependencyGraphBuilder graphBuilder = new DependencyGraphBuilder(this);
-        graphBuilder.buildGraph(method, graph);
-        achieveClass(methodRef.getClassName());
+        final MethodGraph graph = new MethodGraph(parameterNodes, paramCount, resultNode, this);
+        final MethodHolder currentMethod = method;
+        executor.submit(new Runnable() {
+            @Override public void run() {
+                DependencyGraphBuilder graphBuilder = new DependencyGraphBuilder(DependencyChecker.this);
+                graphBuilder.buildGraph(currentMethod, graph);
+                achieveClass(methodRef.getClassName());
+            }
+        });
         return graph;
     }
 
@@ -223,6 +238,9 @@ public class DependencyChecker {
     private void activateDependencyPlugin(MethodReference methodRef) {
         ClassHolder cls = classSource.getClassHolder(methodRef.getClassName());
         MethodHolder method = cls.getMethod(methodRef.getDescriptor());
+        if (method == null) {
+            return;
+        }
         AnnotationHolder depAnnot = method.getAnnotations().get(PluggableDependency.class.getName());
         if (depAnnot == null) {
             return;

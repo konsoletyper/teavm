@@ -4,7 +4,7 @@ package org.teavm.classlib.java.lang;
  *
  * @author Alexey Andreev
  */
-public class TStringBuilder extends AbstractStringBuilder {
+public class TStringBuilder extends TAbstractStringBuilder {
     @Override
     public TStringBuilder append(TString string) {
         super.append(string);

@@ -2,24 +2,25 @@ package org.teavm.classlib.java.lang;
 
 import org.teavm.classlib.java.lang.io.TSerializable;
 import org.teavm.classlib.java.util.TArrays;
+import org.teavm.javascript.ni.Rename;
 
 /**
  *
  * @author Alexey Andreev
  */
-class AbstractStringBuilder extends TObject implements TSerializable {
+class TAbstractStringBuilder extends TObject implements TSerializable {
     private char[] buffer;
     private int length;
 
-    public AbstractStringBuilder() {
+    public TAbstractStringBuilder() {
         this(16);
     }
 
-    public AbstractStringBuilder(int capacity) {
+    public TAbstractStringBuilder(int capacity) {
         buffer = new char[capacity];
     }
 
-    protected AbstractStringBuilder append(TString string) {
+    protected TAbstractStringBuilder append(TString string) {
         ensureCapacity(length + string.length());
         int j = length;
         for (int i = 0; i < string.length(); ++i) {
@@ -29,13 +30,20 @@ class AbstractStringBuilder extends TObject implements TSerializable {
         return this;
     }
 
-    protected AbstractStringBuilder append(int value) {
+    protected TAbstractStringBuilder append(int value) {
+        boolean positive = true;
         if (value < 0) {
-            append('-');
+            positive = false;
             value = -value;
         }
         if (value < 10) {
-            append((char)('0' + value));
+            if (!positive) {
+                ensureCapacity(length + 2);
+                buffer[length++] = '-';
+            } else {
+                ensureCapacity(length + 1);
+            }
+            buffer[length++] = (char)('0' + value);
         } else {
             int pos = 10;
             int sz = 1;
@@ -43,7 +51,14 @@ class AbstractStringBuilder extends TObject implements TSerializable {
                 pos *= 10;
                 ++sz;
             }
+            if (!positive) {
+                ++sz;
+            }
             ensureCapacity(length + sz);
+            if (!positive) {
+                buffer[length++] = '-';
+            }
+            pos /= 10;
             while (pos > 0) {
                 buffer[length++] = (char)('0' + value / pos);
                 value %= pos;
@@ -53,7 +68,7 @@ class AbstractStringBuilder extends TObject implements TSerializable {
         return this;
     }
 
-    protected AbstractStringBuilder append(char c) {
+    protected TAbstractStringBuilder append(char c) {
         ensureCapacity(length + 1);
         buffer[length++] = c;
         return this;
@@ -64,5 +79,11 @@ class AbstractStringBuilder extends TObject implements TSerializable {
             return;
         }
         buffer = TArrays.copyOf(buffer, capacity * 2 + 1);
+    }
+
+    @Override
+    @Rename("toString")
+    public TString toString0() {
+        return new TString(buffer, 0, length);
     }
 }

@@ -98,5 +98,6 @@ public class ClassHolder extends ElementHolder {
                     field.getName() + " is not a member of " + getName());
         }
         fields.remove(field.getName());
+        field.setOwner(null);
     }
 }
