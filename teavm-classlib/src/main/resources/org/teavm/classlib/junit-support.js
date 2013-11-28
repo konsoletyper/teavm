@@ -1,6 +1,3 @@
-JUnitAssertionFailure = function() {}
-JUnitAssertionFailure.prototype = new Error();
-
 currentTestReportBody = null;
 
 runTestCase = function(instance, methodName, realMethodName) {
@@ -17,17 +14,10 @@ runTestCase = function(instance, methodName, realMethodName) {
         instance[realMethodName]();
         statusCell.appendChild(document.createTextNode("ok"));
     } catch (e) {
-        if (e instanceof JUnitAssertionFailure) {
-            statusCell.appendChild(document.createTextNode("assertion failed"));
-            var exceptionText = document.createElement("pre");
-            exceptionText.appendChild(document.createTextNode(e.stack));
-            exceptionCell.appendChild(exceptionText);
-        } else {
-            statusCell.appendChild(document.createTextNode("unexpected exception"));
-            var exceptionText = document.createElement("pre");
-            exceptionText.appendChild(document.createTextNode(e.stack));
-            exceptionCell.appendChild(exceptionText);
-        }
+        statusCell.appendChild(document.createTextNode("unexpected exception"));
+        var exceptionText = document.createElement("pre");
+        exceptionText.appendChild(document.createTextNode(e.stack));
+        exceptionCell.appendChild(exceptionText);
     }
 }
 

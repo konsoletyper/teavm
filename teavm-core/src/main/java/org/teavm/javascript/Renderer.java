@@ -75,8 +75,8 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         writer.append("for (var i = 0; i < str.length; i = (i + 1) | 0) {").indent().newLine();
         writer.append("characters[i] = str.charCodeAt(i);").newLine();
         writer.outdent().append("}").newLine();
-        writer.append("return $rt_init(").appendClass("java.lang.String").append(", '")
-                .appendMethod(stringCons).append("', characters);").newLine();
+        writer.append("return ").appendClass("java.lang.String").append(".")
+                .appendMethod(stringCons).append("(characters);").newLine();
         writer.outdent().append("}").newLine();
     }
 

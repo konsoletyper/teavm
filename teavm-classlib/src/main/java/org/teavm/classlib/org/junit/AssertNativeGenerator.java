@@ -20,6 +20,6 @@ public class AssertNativeGenerator implements Generator {
     }
 
     private void generateFail(SourceWriter writer) {
-        writer.append("throw new JUnitAssertionFailure();").newLine();
+        writer.append("throw new Error();").newLine();
     }
 }

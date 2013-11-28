@@ -59,7 +59,7 @@ public class DefaultNamingStrategy implements NamingStrategy {
         if (methodHolder.getModifiers().contains(ElementModifier.STATIC) ||
                 method.getDescriptor().getName().equals("<init>") ||
                 methodHolder.getLevel() == AccessLevel.PRIVATE) {
-            String key = method.getClassName() + "#" + method.toString();
+            String key = method.toString();
             String alias = privateAliases.get(key);
             if (alias == null) {
                 alias = aliasProvider.getAlias(method);
@@ -67,7 +67,7 @@ public class DefaultNamingStrategy implements NamingStrategy {
             }
             return alias;
         } else {
-            String key = method.toString();
+            String key = method.getDescriptor().toString();
             String alias = aliases.get(key);
             if (alias == null) {
                 alias = aliasProvider.getAlias(method);
