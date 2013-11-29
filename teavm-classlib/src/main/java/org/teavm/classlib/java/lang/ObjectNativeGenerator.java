@@ -33,6 +33,9 @@ public class ObjectNativeGenerator implements Generator, DependencyPlugin {
             case "clone":
                 generateClone(context, writer);
                 break;
+            case "wrap":
+                generateWrap(context, writer);
+                break;
         }
     }
 
@@ -44,6 +47,9 @@ public class ObjectNativeGenerator implements Generator, DependencyPlugin {
                 break;
             case "getClass":
                 achieveGetClass(checker);
+                break;
+            case "wrap":
+                achieveWrap(checker, method);
                 break;
         }
     }
@@ -95,5 +101,14 @@ public class ObjectNativeGenerator implements Generator, DependencyPlugin {
     private void achieveClone(DependencyChecker checker, MethodReference method) {
         MethodGraph graph = checker.attachMethodGraph(method);
         graph.getVariableNode(0).connect(graph.getResultNode());
+    }
+
+    private void generateWrap(GeneratorContext context, SourceWriter writer) {
+        writer.append("return ").append(context.getParameterName(1));
+    }
+
+    private void achieveWrap(DependencyChecker checker, MethodReference method) {
+        MethodGraph graph = checker.attachMethodGraph(method);
+        graph.getVariableNode(1).connect(graph.getResultNode());
     }
 }

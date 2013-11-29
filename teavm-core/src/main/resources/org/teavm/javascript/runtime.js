@@ -157,6 +157,11 @@ $rt_init = function(cls, constructor, args) {
     cls.prototype[constructor].apply(obj, args);
     return obj;
 }
+$rt_throw = function(ex) {
+    var err = new Error("Java exception thrown");
+    err.$javaException = ex;
+    throw err;
+}
 
 $rt = {
     createBooleanArray : function(cls, sz) {

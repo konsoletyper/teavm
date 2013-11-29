@@ -1246,6 +1246,7 @@ public class ProgramParser {
                     ArrayLengthInstruction insn = new ArrayLengthInstruction();
                     insn.setArray(getVariable(a));
                     insn.setReceiver(getVariable(a));
+                    builder.add(insn);
                     break;
                 }
                 case Opcodes.ATHROW: {

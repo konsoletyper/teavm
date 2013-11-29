@@ -65,4 +65,8 @@ public class TObject {
     @Override
     protected void finalize() throws TThrowable {
     }
+
+    @GeneratedBy(ObjectNativeGenerator.class)
+    @PluggableDependency(ObjectNativeGenerator.class)
+    public static native TObject wrap(Object obj);
 }

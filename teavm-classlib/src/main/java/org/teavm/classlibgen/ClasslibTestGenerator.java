@@ -66,9 +66,12 @@ public class ClasslibTestGenerator {
             out.println(IOUtils.toString(input));
         }
         renderer.renderRuntime();
+        writer.append("runTests = function() {").newLine().indent();
+        writer.append("document.getElementById(\"start-button\").style.display = 'none';").newLine();
         for (String testClass : testClasses) {
             renderClassTest(classSource.getClassHolder(testClass));
         }
+        writer.outdent().append("}").newLine();
         out.println(writer);
         renderFoot();
     }
@@ -87,6 +90,16 @@ public class ClasslibTestGenerator {
         out.println("    <title>TeaVM JUnit tests</title>");
         out.println("    <meta http-equiv=\"Content-Type\" content=\"text/html;charset=UTF-8\"/>");
         out.println("    <title>TeaVM JUnit tests</title>");
+        out.println("    <style type=\"text/css\">");
+        out.println("       table {");
+        out.println("           border-collapse: collapse;");
+        out.println("           border: 2px solid black;");
+        out.println("           margin: 2em 1em 2em 1em;");
+        out.println("       }");
+        out.println("       table td {");
+        out.println("           border: 1px solid gray;");
+        out.println("       }");
+        out.println("    </style>");
         out.println("  </head>");
         out.println("  <body>");
         out.println("    <script type=\"text/javascript\">");
@@ -94,6 +107,7 @@ public class ClasslibTestGenerator {
 
     private static void renderFoot() {
         out.println("    </script>");
+        out.println("    <button id=\"start-button\" onclick=\"runTests()\">Run tests</button>");
         out.println("  </body>");
         out.println("</html>");
     }
