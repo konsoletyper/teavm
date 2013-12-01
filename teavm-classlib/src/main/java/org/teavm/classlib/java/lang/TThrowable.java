@@ -14,22 +14,45 @@ public class TThrowable extends RuntimeException {
     private TString message;
     private TThrowable cause;
 
+    @Rename("fakeInit")
     public TThrowable() {
+    }
+
+    @Rename("<init>")
+    private void init() {
         fillInStackTrace();
     }
 
-    public TThrowable(TString message) {
+    @Rename("fakeInit")
+    public TThrowable(@SuppressWarnings("unused") TString message) {
+    }
+
+    @Rename("<init>")
+    private void init(TString message) {
         fillInStackTrace();
         this.message = message;
     }
 
+    @SuppressWarnings("unused")
+    @Rename("fakeInit")
     public TThrowable(TString message, TThrowable cause) {
+    }
+
+    @Rename("<init>")
+    private void init(TString message, TThrowable cause) {
         fillInStackTrace();
         this.message = message;
         this.cause = cause;
     }
 
+    @SuppressWarnings("unused")
+    @Rename("fakeInit")
     public TThrowable(TThrowable cause) {
+    }
+
+    @Rename("<init>")
+    private void init(TThrowable cause) {
+        fillInStackTrace();
         this.cause = cause;
     }
 

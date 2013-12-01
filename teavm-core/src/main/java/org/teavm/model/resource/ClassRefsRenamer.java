@@ -224,6 +224,10 @@ class ClassRefsRenamer implements InstructionVisitor {
     }
 
     @Override
+    public void visit(UnwrapArrayInstruction insn) {
+    }
+
+    @Override
     public void visit(InvokeInstruction insn) {
         String className =  classNameMapper.map(insn.getMethod().getClassName());
         ValueType[] signature = insn.getMethod().getSignature();

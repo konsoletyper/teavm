@@ -698,11 +698,15 @@ public class ProgramParser {
             builder.add(insn);
         }
 
-        private void loadArrayElement(int sz) {
+        private void loadArrayElement(int sz, ArrayElementType type) {
             int arrIndex = --currentDepth;
             int array = --currentDepth;
             int var = currentDepth;
             currentDepth += sz;
+            UnwrapArrayInstruction unwrapInsn = new UnwrapArrayInstruction(type);
+            unwrapInsn.setArray(getVariable(array));
+            unwrapInsn.setReceiver(unwrapInsn.getArray());
+            builder.add(unwrapInsn);
             GetElementInstruction insn = new GetElementInstruction();
             insn.setArray(getVariable(array));
             insn.setIndex(getVariable(arrIndex));
@@ -710,11 +714,15 @@ public class ProgramParser {
             builder.add(insn);
         }
 
-        private void storeArrayElement(int sz) {
+        private void storeArrayElement(int sz, ArrayElementType type) {
             currentDepth -= sz;
             int value = currentDepth;
             int arrIndex = --currentDepth;
             int array = --currentDepth;
+            UnwrapArrayInstruction unwrapInsn = new UnwrapArrayInstruction(type);
+            unwrapInsn.setArray(getVariable(array));
+            unwrapInsn.setReceiver(unwrapInsn.getArray());
+            builder.add(unwrapInsn);
             PutElementInstruction insn = new PutElementInstruction();
             insn.setArray(getVariable(array));
             insn.setIndex(getVariable(arrIndex));
@@ -775,28 +783,52 @@ public class ProgramParser {
                     pushConstant(2F);
                     break;
                 case Opcodes.BALOAD:
+                    loadArrayElement(1, ArrayElementType.BYTE);
+                    break;
                 case Opcodes.IALOAD:
+                    loadArrayElement(1, ArrayElementType.INT);
+                    break;
                 case Opcodes.FALOAD:
+                    loadArrayElement(1, ArrayElementType.FLOAT);
+                    break;
                 case Opcodes.SALOAD:
+                    loadArrayElement(1, ArrayElementType.SHORT);
+                    break;
                 case Opcodes.CALOAD:
+                    loadArrayElement(1, ArrayElementType.CHAR);
+                    break;
                 case Opcodes.AALOAD:
-                    loadArrayElement(1);
+                    loadArrayElement(1, ArrayElementType.OBJECT);
                     break;
                 case Opcodes.DALOAD:
+                    loadArrayElement(2, ArrayElementType.DOUBLE);
+                    break;
                 case Opcodes.LALOAD:
-                    loadArrayElement(2);
+                    loadArrayElement(2, ArrayElementType.LONG);
                     break;
                 case Opcodes.BASTORE:
+                    storeArrayElement(1, ArrayElementType.BYTE);
+                    break;
                 case Opcodes.IASTORE:
+                    storeArrayElement(1, ArrayElementType.INT);
+                    break;
                 case Opcodes.FASTORE:
+                    storeArrayElement(1, ArrayElementType.FLOAT);
+                    break;
                 case Opcodes.SASTORE:
+                    storeArrayElement(1, ArrayElementType.SHORT);
+                    break;
                 case Opcodes.CASTORE:
+                    storeArrayElement(1, ArrayElementType.CHAR);
+                    break;
                 case Opcodes.AASTORE:
-                    storeArrayElement(1);
+                    storeArrayElement(1, ArrayElementType.OBJECT);
                     break;
                 case Opcodes.DASTORE:
+                    storeArrayElement(2, ArrayElementType.DOUBLE);
+                    break;
                 case Opcodes.LASTORE:
-                    storeArrayElement(2);
+                    storeArrayElement(2, ArrayElementType.LONG);
                     break;
                 case Opcodes.POP:
                     --currentDepth;
@@ -1243,6 +1275,10 @@ public class ProgramParser {
                 }
                 case Opcodes.ARRAYLENGTH: {
                     int a = currentDepth - 1;
+                    UnwrapArrayInstruction unwrapInsn = new UnwrapArrayInstruction(ArrayElementType.OBJECT);
+                    unwrapInsn.setArray(getVariable(a));
+                    unwrapInsn.setReceiver(getVariable(a));
+                    builder.add(unwrapInsn);
                     ArrayLengthInstruction insn = new ArrayLengthInstruction();
                     insn.setArray(getVariable(a));
                     insn.setReceiver(getVariable(a));

@@ -175,6 +175,13 @@ class DependencyGraphBuilder {
         }
 
         @Override
+        public void visit(UnwrapArrayInstruction insn) {
+            DependencyNode arrayNode = nodes[insn.getArray().getIndex()];
+            DependencyNode receiverNode = nodes[insn.getReceiver().getIndex()];
+            arrayNode.connect(receiverNode);
+        }
+
+        @Override
         public void visit(CloneArrayInstruction insn) {
             DependencyNode arrayNode = nodes[insn.getArray().getIndex()];
             final DependencyNode receiverNode = nodes[insn.getReceiver().getIndex()];

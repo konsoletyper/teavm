@@ -125,6 +125,11 @@ public class DefinitionExtractor implements InstructionVisitor {
     }
 
     @Override
+    public void visit(UnwrapArrayInstruction insn) {
+        definedVariables = new Variable[] { insn.getReceiver() };
+    }
+
+    @Override
     public void visit(GetElementInstruction insn) {
         definedVariables = new Variable[] { insn.getReceiver() };
     }

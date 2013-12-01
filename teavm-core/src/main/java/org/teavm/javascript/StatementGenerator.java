@@ -438,6 +438,13 @@ public class StatementGenerator implements InstructionVisitor {
     }
 
     @Override
+    public void visit(UnwrapArrayInstruction insn) {
+        UnwrapArrayExpr unwrapExpr = new UnwrapArrayExpr(insn.getElementType());
+        unwrapExpr.setArray(Expr.var(insn.getArray().getIndex()));
+        assign(unwrapExpr, insn.getReceiver().getIndex());
+    }
+
+    @Override
     public void visit(CloneArrayInstruction insn) {
         MethodDescriptor cloneMethodDesc = new MethodDescriptor("clone", ValueType.object("java.lang.Object"));
         MethodReference cloneMethod = new MethodReference("java.lang.Object", cloneMethodDesc);

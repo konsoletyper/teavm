@@ -121,7 +121,7 @@ public class DependencyChecker {
         exceptionOccured.set(null);
         while (true) {
             try {
-                if (executor.getActiveCount() == 0 || executor.awaitTermination(1, TimeUnit.SECONDS)) {
+                if (executor.getActiveCount() == 0 || executor.awaitTermination(10, TimeUnit.MILLISECONDS)) {
                     break;
                 }
             } catch (InterruptedException e) {
@@ -197,7 +197,7 @@ public class DependencyChecker {
         }
         final MethodGraph graph = new MethodGraph(parameterNodes, paramCount, resultNode, this);
         final MethodHolder currentMethod = method;
-        executor.submit(new Runnable() {
+        schedule(new Runnable() {
             @Override public void run() {
                 DependencyGraphBuilder graphBuilder = new DependencyGraphBuilder(DependencyChecker.this);
                 graphBuilder.buildGraph(currentMethod, graph);

@@ -40,7 +40,7 @@ public class TArrayNativeGenerator implements Generator, DependencyPlugin {
         MethodReference cons = new MethodReference(clsName, new MethodDescriptor("<init>", ValueType.VOID));
         writer.append("$rt_throw(").appendClass(clsName).append(".").appendMethod(cons).append("());").newLine();
         writer.outdent().append("}").newLine();
-        writer.append("return array.length");
+        writer.append("return " + array + ".data.length;").newLine();
     }
 
     private void achieveGetLength(final DependencyChecker checker, MethodReference methodRef) {

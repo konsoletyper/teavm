@@ -32,6 +32,8 @@ public interface ExprVisitor {
 
     void visit(SubscriptExpr expr);
 
+    void visit(UnwrapArrayExpr expr);
+
     void visit(InvocationExpr expr);
 
     void visit(QualificationExpr expr);

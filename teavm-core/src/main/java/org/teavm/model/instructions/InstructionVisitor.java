@@ -57,6 +57,8 @@ public interface InstructionVisitor {
 
     void visit(CloneArrayInstruction insn);
 
+    void visit(UnwrapArrayInstruction insn);
+
     void visit(GetElementInstruction insn);
 
     void visit(PutElementInstruction insn);

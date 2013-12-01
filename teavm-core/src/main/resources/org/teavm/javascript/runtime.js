@@ -21,36 +21,37 @@ $rt_isAssignable = function(from, to) {
     return false;
 }
 $rt_createArray = function(cls, sz) {
-    var arr = new Array(sz);
-    arr.$class = $rt_arraycls(cls);
-    arr.$id = $rt_lastObjectId++;
+    var data = new Array(sz);
+    var arr = new ($rt_arraycls(cls))(data);
+    arr.$id = $rt_nextId();
     for (var i = 0; i < sz; i = (i + 1) | 0) {
-        arr[i] = null;
+        arr.data[i] = null;
     }
     return arr;
 }
 $rt_createNumericArray = function(cls, sz) {
     var arr = $rt_createArray(cls, sz);
     for (var i = 0; i < sz; i = (i + 1) | 0) {
-        arr[i] = 0;
+        arr.data[i] = 0;
     }
     return arr;
 }
 $rt_createLongArray = function(sz) {
     var arr = $rt.createArray($rt_longcls(), sz);
     for (var i = 0; i < sz; i = (i + 1) | 0) {
-        arr[i] = Long.ZERO;
+        arr.data[i] = Long.ZERO;
     }
     return arr;
 },
 $rt_arraycls = function(cls) {
     if (cls.$array == undefined) {
-        cls.$array = {
-            $meta : { item : cls },
+        var arraycls = function(data) {
+            this.data = data;
+            this.$cls = arraycls;
         };
-        if ($rt.objcls) {
-            cls.$array.$meta.supertypes = [$rt.objcls()];
-        }
+        arraycls.prototype = new ($rt_objcls())();
+        arraycls.$meta = { item : cls, supertypes : [$rt_objcls()] };
+        cls.$array = arraycls;
     }
     return cls.$array;
 }

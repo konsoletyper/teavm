@@ -358,6 +358,12 @@ public class SSATransformer {
         }
 
         @Override
+        public void visit(UnwrapArrayInstruction insn) {
+            insn.setArray(use(insn.getArray()));
+            insn.setReceiver(define(insn.getReceiver()));
+        }
+
+        @Override
         public void visit(CloneArrayInstruction insn) {
             insn.setArray(use(insn.getArray()));
             insn.setReceiver(define(insn.getReceiver()));

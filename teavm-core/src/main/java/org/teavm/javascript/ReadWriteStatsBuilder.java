@@ -64,6 +64,11 @@ class ReadWriteStatsBuilder implements StatementVisitor, ExprVisitor {
     }
 
     @Override
+    public void visit(UnwrapArrayExpr expr) {
+        expr.getArray().acceptVisitor(this);
+    }
+
+    @Override
     public void visit(InvocationExpr expr) {
         for (Expr arg : expr.getArguments()) {
             arg.acceptVisitor(this);

@@ -148,6 +148,15 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     }
 
     @Override
+    public void visit(UnwrapArrayExpr expr) {
+        expr.getArray().acceptVisitor(this);
+        Expr arrayExpr = resultExpr;
+        UnwrapArrayExpr result = new UnwrapArrayExpr(expr.getElementType());
+        result.setArray(arrayExpr);
+        resultExpr = result;
+    }
+
+    @Override
     public void visit(InvocationExpr expr) {
         Expr[] args = new Expr[expr.getArguments().size()];
         for (int i = expr.getArguments().size() - 1; i >= 0; --i) {

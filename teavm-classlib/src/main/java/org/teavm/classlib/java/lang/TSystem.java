@@ -15,12 +15,12 @@ public final class TSystem extends TObject {
         if (src == null || dest == null) {
             throw new TNullPointerException(TString.wrap("Either src or dest is null"));
         }
-        if (src.getClass0() != dest.getClass0()) {
-            throw new ArrayStoreException();
+        if (src.getClass() != dest.getClass()) {
+            throw new TArrayStoreException();
         }
         if (srcPos < 0 || destPos < 0 || length < 0 || srcPos + length > TArray.getLength(src) ||
                 destPos + length > TArray.getLength(dest)) {
-            throw new IndexOutOfBoundsException();
+            throw new TIndexOutOfBoundsException();
         }
         doArrayCopy(src, srcPos, dest, destPos, length);
     }

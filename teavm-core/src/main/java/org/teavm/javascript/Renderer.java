@@ -48,6 +48,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
     public void renderRuntime() {
         renderRuntimeCls();
         renderRuntimeString();
+        renderRuntimeObjcls();
     }
 
     private void renderRuntimeCls() {
@@ -72,12 +73,17 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                 ValueType.arrayOf(ValueType.CHARACTER), ValueType.VOID));
         writer.append("$rt_str = function(str) {").indent().newLine();
         writer.append("var characters = $rt_createNumericArray($rt_charcls(), str.length);").newLine();
+        writer.append("var charsBuffer = characters.data;").newLine();
         writer.append("for (var i = 0; i < str.length; i = (i + 1) | 0) {").indent().newLine();
-        writer.append("characters[i] = str.charCodeAt(i);").newLine();
+        writer.append("charsBuffer[i] = str.charCodeAt(i);").newLine();
         writer.outdent().append("}").newLine();
         writer.append("return ").appendClass("java.lang.String").append(".")
                 .appendMethod(stringCons).append("(characters);").newLine();
         writer.outdent().append("}").newLine();
+    }
+
+    private void renderRuntimeObjcls() {
+        writer.append("$rt_objcls = function() { return ").appendClass("java.lang.Object").append("; }").newLine();
     }
 
     public void render(ClassNode cls) {
@@ -375,9 +381,9 @@ public class Renderer implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(ThrowStatement statement) {
-        writer.append("throw ");
+        writer.append("$rt_throw(");
         statement.getException().acceptVisitor(this);
-        writer.append(";").newLine();
+        writer.append(");").newLine();
     }
 
     @Override
@@ -720,6 +726,12 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         writer.append('[');
         expr.getIndex().acceptVisitor(this);
         writer.append(']');
+    }
+
+    @Override
+    public void visit(UnwrapArrayExpr expr) {
+        expr.getArray().acceptVisitor(this);
+        writer.append(".data");
     }
 
     @Override

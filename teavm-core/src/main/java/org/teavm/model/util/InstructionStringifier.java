@@ -308,8 +308,14 @@ public class InstructionStringifier implements InstructionVisitor {
     }
 
     @Override
+    public void visit(UnwrapArrayInstruction insn) {
+        sb.append("@").append(insn.getReceiver().getIndex()).append("@").append(" := @")
+                .append(insn.getArray()).append(".data");
+    }
+
+    @Override
     public void visit(ArrayLengthInstruction insn) {
-        sb.append("@").append(insn.getReceiver().getIndex()).append("@")
+        sb.append("@").append(insn.getReceiver().getIndex()).append(" := @")
                 .append(insn.getArray().getIndex()).append(".length");
     }
 
