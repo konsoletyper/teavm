@@ -119,7 +119,16 @@ public class ClasslibTestGenerator {
         for (MethodReference method : methods) {
             writer.append("runTestCase(").appendClass(cls.getName()).append(".").appendMethod(cons)
                     .append("(), \"" + method.getDescriptor().getName() + "\", \"").appendMethod(method)
-                    .append("\");").newLine();
+                    .append("\", [");
+            MethodHolder methodHolder = classSource.getClassHolder(method.getClassName()).getMethod(
+                    method.getDescriptor());
+            AnnotationHolder annot = methodHolder.getAnnotations().get("org.junit.Test");
+            AnnotationValue expectedAnnot = annot.getValues().get("expected");
+            if (expectedAnnot != null) {
+                String className = ((ValueType.Object)expectedAnnot.getJavaClass()).getClassName();
+                writer.appendClass(className);
+            }
+            writer.append("]);").newLine();
         }
         writer.outdent().append("})").newLine();
     }

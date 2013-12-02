@@ -104,7 +104,7 @@ public class ObjectNativeGenerator implements Generator, DependencyPlugin {
     }
 
     private void generateWrap(GeneratorContext context, SourceWriter writer) {
-        writer.append("return ").append(context.getParameterName(1));
+        writer.append("return ").append(context.getParameterName(1)).append(";").newLine();
     }
 
     private void achieveWrap(DependencyChecker checker, MethodReference method) {

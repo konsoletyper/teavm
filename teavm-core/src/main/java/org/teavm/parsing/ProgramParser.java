@@ -496,6 +496,7 @@ public class ProgramParser {
             NegateInstruction insn = new NegateInstruction(operandType);
             insn.setOperand(getVariable(operand));
             insn.setReceiver(getVariable(receiver));
+            builder.add(insn);
         }
 
         private void emitCast(ValueType targetType, int value, int result) {

@@ -1,6 +1,6 @@
 currentTestReportBody = null;
 
-runTestCase = function(instance, methodName, realMethodName) {
+runTestCase = function(instance, methodName, realMethodName, expectedExceptions) {
     var row = document.createElement("tr");
     currentTestReportBody.appendChild(row);
     var nameCell = document.createElement("td");
@@ -12,13 +12,32 @@ runTestCase = function(instance, methodName, realMethodName) {
     row.appendChild(exceptionCell);
     try {
         instance[realMethodName]();
-        statusCell.appendChild(document.createTextNode("ok"));
+        if (expectedExceptions.length > 0) {
+            statusCell.appendChild(document.createTextNode("expected exception not thrown"));
+        } else {
+            statusCell.appendChild(document.createTextNode("ok"));
+        }
     } catch (e) {
-        statusCell.appendChild(document.createTextNode("unexpected exception"));
-        var exceptionText = document.createElement("pre");
-        exceptionText.appendChild(document.createTextNode(e.stack));
-        exceptionCell.appendChild(exceptionText);
+        if (isExpectedException(e, expectedExceptions)) {
+            statusCell.appendChild(document.createTextNode("ok"));
+        } else {
+            statusCell.appendChild(document.createTextNode("unexpected exception"));
+            var exceptionText = document.createElement("pre");
+            exceptionText.appendChild(document.createTextNode(e.stack));
+            exceptionCell.appendChild(exceptionText);
+        }
     }
+}
+
+isExpectedException = function(e, expectedExceptions) {
+    if (e.$javaException !== undefined) {
+        for (var i = 0; i < expectedExceptions.length; ++i) {
+            if (expectedExceptions[i] === e.$javaException.$class) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 testClass = function(className, classTests) {

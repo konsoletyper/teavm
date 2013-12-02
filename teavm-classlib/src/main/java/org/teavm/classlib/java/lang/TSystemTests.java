@@ -20,12 +20,12 @@ class TSystemTests {
         assertSame(a, dest[2]);
     }
 
-    @Test
+    @Test(expected = IndexOutOfBoundsException.class)
     public void failsToCopyArraysWithInvalidIndexes() {
         TSystem.arraycopy(TObject.wrap(new TObject[0]), 0, TObject.wrap(new TObject[0]), 0, 1);
     }
 
-    @Test
+    @Test(expected = ArrayStoreException.class)
     public void failsToCopyArraysWithIncompatibleElements() {
         TSystem.arraycopy(TObject.wrap(new TObject[1]), 0, TObject.wrap(new int[1]), 0, 1);
     }

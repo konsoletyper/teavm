@@ -47,7 +47,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable {
         } else {
             int pos = 10;
             int sz = 1;
-            while (pos <= 1000000000 && pos <= value) {
+            while (pos < 1000000000 && pos * 10 <= value) {
                 pos *= 10;
                 ++sz;
             }
@@ -58,7 +58,6 @@ class TAbstractStringBuilder extends TObject implements TSerializable {
             if (!positive) {
                 buffer[length++] = '-';
             }
-            pos /= 10;
             while (pos > 0) {
                 buffer[length++] = (char)('0' + value / pos);
                 value %= pos;
