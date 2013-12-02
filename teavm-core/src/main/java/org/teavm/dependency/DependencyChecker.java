@@ -289,6 +289,7 @@ public class DependencyChecker {
         MutableClassHolderSource cutClasses = new MutableClassHolderSource();
         for (String className : achievableClasses.keySet()) {
             ClassHolder classHolder = classSource.getClassHolder(className);
+            cutClasses.putClassHolder(classHolder);
             for (MethodHolder method : classHolder.getMethods().toArray(new MethodHolder[0])) {
                 MethodReference methodRef = new MethodReference(className, method.getDescriptor());
                 if (!methodCache.getCachedPreimages().contains(methodRef)) {

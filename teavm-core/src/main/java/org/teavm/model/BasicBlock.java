@@ -66,7 +66,7 @@ public class BasicBlock  {
 
         @Override
         public Instruction remove(int index) {
-            Instruction insn = super.remove(index);
+            Instruction insn = instructions.remove(index);
             insn.setBasicBlock(null);
             return insn;
         }

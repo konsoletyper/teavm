@@ -15,6 +15,7 @@ import org.teavm.javascript.Renderer;
 import org.teavm.javascript.ast.ClassNode;
 import org.teavm.model.*;
 import org.teavm.model.resource.ClasspathClassHolderSource;
+import org.teavm.optimization.ClassSetOptimizer;
 
 /**
  *
@@ -55,8 +56,10 @@ public class ClasslibTestGenerator {
             dependencyChecker.addEntryPoint(methodRef);
         }
         dependencyChecker.checkDependencies();
-        dependencyChecker.cutUnachievableClasses();
-        decompileClasses(dependencyChecker.getAchievableClasses());
+        ListableClassHolderSource classSet = dependencyChecker.cutUnachievableClasses();
+        ClassSetOptimizer optimizer = new ClassSetOptimizer();
+        optimizer.optimizeAll(classSet);
+        decompileClasses(classSet.getClassNames());
         renderHead();
         ClassLoader classLoader = ClasslibTestGenerator.class.getClassLoader();
         try (InputStream input = classLoader.getResourceAsStream("org/teavm/classlib/junit-support.js")) {

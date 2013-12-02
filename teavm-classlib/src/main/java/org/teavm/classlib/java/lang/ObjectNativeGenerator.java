@@ -27,9 +27,6 @@ public class ObjectNativeGenerator implements Generator, DependencyPlugin {
             case "hashCode":
                 generateHashCode(context, writer);
                 break;
-            case "equals":
-                generateEquals(context, writer);
-                break;
             case "clone":
                 generateClone(context, writer);
                 break;
@@ -82,11 +79,6 @@ public class ObjectNativeGenerator implements Generator, DependencyPlugin {
 
     private void generateHashCode(GeneratorContext context, SourceWriter writer) {
         writer.append("return ").append(context.getParameterName(0)).append(".$id;").newLine();
-    }
-
-    private void generateEquals(GeneratorContext context, SourceWriter writer) {
-        writer.append("return ").append(context.getParameterName(0)).append(" == ")
-                .append(context.getParameterName(1)).append(";").newLine();
     }
 
     private void generateClone(GeneratorContext context, SourceWriter writer) {

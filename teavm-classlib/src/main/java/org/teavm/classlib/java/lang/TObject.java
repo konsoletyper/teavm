@@ -28,8 +28,9 @@ public class TObject {
     @GeneratedBy(ObjectNativeGenerator.class)
     public native int hashCode();
 
-    @GeneratedBy(ObjectNativeGenerator.class)
-    public native boolean equals(TObject other);
+    public boolean equals(TObject other) {
+        return this == other;
+    }
 
     @Rename("toString")
     public native TString toString0();
