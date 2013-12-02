@@ -137,6 +137,9 @@ public class VariableUsageGraphBuilder {
 
         @Override
         public void visit(GetFieldInstruction insn) {
+            if (insn.getInstance() != null) {
+                use(insn.getReceiver(), insn.getInstance());
+            }
         }
 
         @Override
