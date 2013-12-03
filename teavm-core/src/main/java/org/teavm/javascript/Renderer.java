@@ -119,6 +119,8 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                 .append(cls.getParentName() != null ? naming.getNameFor(cls.getParentName()) :
                 "Object").append("();").newLine();
         writer.appendClass(cls.getName()).append(".$meta = { ");
+        writer.append("name : \"").append(cls.getName()).append("\", ");
+        writer.append("primitive : false, ");
         writer.append("supertypes : [");
         boolean first = true;
         if (cls.getParentName() != null) {

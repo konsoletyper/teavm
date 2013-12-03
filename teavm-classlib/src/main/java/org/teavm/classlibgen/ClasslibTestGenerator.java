@@ -99,8 +99,12 @@ public class ClasslibTestGenerator {
         out.println("           border: 2px solid black;");
         out.println("           margin: 2em 1em 2em 1em;");
         out.println("       }");
-        out.println("       table td {");
+        out.println("       table td, table th {");
         out.println("           border: 1px solid gray;");
+        out.println("           padding: 0.1em 0.5em 0.2em 0.5em;");
+        out.println("       }");
+        out.println("       table thead, table tfoot {");
+        out.println("           border: 2px solid black;");
         out.println("       }");
         out.println("    </style>");
         out.println("  </head>");

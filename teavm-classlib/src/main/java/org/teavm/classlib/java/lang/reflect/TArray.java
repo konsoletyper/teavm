@@ -10,7 +10,7 @@ import org.teavm.javascript.ni.GeneratedBy;
  * @author Alexey Andreev
  */
 public final class TArray extends TObject {
-    @GeneratedBy(TArrayNativeGenerator.class)
-    @PluggableDependency(TArrayNativeGenerator.class)
+    @GeneratedBy(ArrayNativeGenerator.class)
+    @PluggableDependency(ArrayNativeGenerator.class)
     public static native int getLength(TObject array) throws TIllegalArgumentException;
 }

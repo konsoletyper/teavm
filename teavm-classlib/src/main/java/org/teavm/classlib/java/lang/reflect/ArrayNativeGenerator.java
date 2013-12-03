@@ -15,7 +15,7 @@ import org.teavm.model.ValueType;
  *
  * @author Alexey Andreev
  */
-public class TArrayNativeGenerator implements Generator, DependencyPlugin {
+public class ArrayNativeGenerator implements Generator, DependencyPlugin {
     @Override
     public void methodAchieved(DependencyChecker checker, MethodReference method) {
         if (method.getName().equals("getLength")) {
@@ -34,7 +34,7 @@ public class TArrayNativeGenerator implements Generator, DependencyPlugin {
 
     private void generateGetLength(GeneratorContext context, SourceWriter writer) {
         String array = context.getParameterName(1);
-        writer.append("if (" + array + " === null || " + array + " .$cls.$meta.item === undefined) {")
+        writer.append("if (" + array + " === null || " + array + " .$class.$meta.item === undefined) {")
                 .newLine().indent();
         String clsName = "java.lang.IllegalArgumentException";
         MethodReference cons = new MethodReference(clsName, new MethodDescriptor("<init>", ValueType.VOID));

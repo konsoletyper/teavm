@@ -47,7 +47,7 @@ $rt_arraycls = function(cls) {
     if (cls.$array == undefined) {
         var arraycls = function(data) {
             this.data = data;
-            this.$cls = arraycls;
+            this.$class = arraycls;
         };
         arraycls.prototype = new ($rt_objcls())();
         arraycls.$meta = { item : cls, supertypes : [$rt_objcls()] };
@@ -66,13 +66,8 @@ $rt_booleanclsCache = null;
 $rt_booleancls = function() {
     if ($rt_booleanclsCache == null) {
         $rt_booleanclsCache = $rt_createcls();
-    }
-    return $rt_booleanclsCache;
-}
-$rt_booleanclsCache = null;
-$rt_booleancls = function() {
-    if ($rt_booleanclsCache == null) {
-        $rt_booleanclsCache = $rt_createcls();
+        $rt_booleanclsCache.primitive = true;
+        $rt_booleanclsCache.name = "boolean";
     }
     return $rt_booleanclsCache;
 }
@@ -80,6 +75,8 @@ $rt_charclsCache = null;
 $rt_charcls = function() {
     if ($rt_charclsCache == null) {
         $rt_charclsCache = $rt_createcls();
+        $rt_charclsCache.primitive = true;
+        $rt_charclsCache.name = "char";
     }
     return $rt_charclsCache;
 }
@@ -87,6 +84,8 @@ $rt_byteclsCache = null;
 $rt_bytecls = function() {
     if ($rt_byteclsCache == null) {
         $rt_byteclsCache = $rt_createcls();
+        $rt_byteclsCache.primitive = true;
+        $rt_byteclsCache.name = "byte";
     }
     return $rt_byteclsCache;
 }
@@ -94,6 +93,8 @@ $rt_shortclsCache = null;
 $rt_shortcls = function() {
     if ($rt_shortclsCache == null) {
         $rt_shortclsCache = $rt_createcls();
+        $rt_shortclsCache.primitive = true;
+        $rt_shortclsCache.name = "short";
     }
     return $rt_shortclsCache;
 }
@@ -101,6 +102,8 @@ $rt_intclsCache = null;
 $rt_intcls = function() {
     if ($rt_intclsCache == null) {
         $rt_intclsCache = $rt_createcls();
+        $rt_intclsCache.primitive = true;
+        $rt_intclsCache.name = "int";
     }
     return $rt_intclsCache;
 }
@@ -108,6 +111,8 @@ $rt_longclsCache = null;
 $rt_longcls = function() {
     if ($rt_longclsCache == null) {
         $rt_longclsCache = $rt_createcls();
+        $rt_longclsCache.primitive = true;
+        $rt_longclsCache.name = "long";
     }
     return $rt_longclsCache;
 }
@@ -115,6 +120,8 @@ $rt_floatclsCache = null;
 $rt_floatcls = function() {
     if ($rt_floatclsCache == null) {
         $rt_floatclsCache = $rt_createcls();
+        $rt_floatclsCache.primitive = true;
+        $rt_floatclsCache.name = "float";
     }
     return $rt_floatclsCache;
 }
@@ -122,6 +129,8 @@ $rt_doubleclsCache = null;
 $rt_doublecls = function() {
     if ($rt_doubleclsCache == null) {
         $rt_doubleclsCache = $rt_createcls();
+        $rt_doubleclsCache.primitive = true;
+        $rt_doubleclsCache.name = "double";
     }
     return $rt_doubleclsCache;
 }
@@ -129,6 +138,8 @@ $rt_voidclsCache = null;
 $rt_voidcls = function() {
     if ($rt_voidclsCache == null) {
         $rt_voidclsCache = $rt_createcls();
+        $rt_voidclsCache.primitive = true;
+        $rt_voidclsCache.name = "void";
     }
     return $rt_voidclsCache;
 }
