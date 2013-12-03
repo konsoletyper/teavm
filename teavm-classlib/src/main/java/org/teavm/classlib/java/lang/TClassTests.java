@@ -25,6 +25,16 @@ class TClassTests {
 
     @Test
     public void arrayClassConsideredArray() {
-        assertFalse(Object[].class.isArray());
+        assertTrue(Object[].class.isArray());
+    }
+
+    @Test
+    public void arrayComponentTypeDetected() {
+        assertEquals(Object.class, Object[].class.getComponentType());
+    }
+
+    @Test
+    public void nonArrayComponentTypeIsNull() {
+        assertNull(Object.class.getComponentType());
     }
 }
