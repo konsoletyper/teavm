@@ -32,7 +32,7 @@ public class ClasslibTestGenerator {
     private static List<MethodReference> testMethods = new ArrayList<>();
     private static Map<String, List<MethodReference>> groupedMethods = new HashMap<>();
     private static String[] testClasses = { "java.lang.ObjectTests", "java.lang.SystemTests",
-            "java.lang.StringBuilderTests" };
+            "java.lang.StringBuilderTests", "java.lang.ClassTests" };
 
     public static void main(String[] args) throws IOException {
         out = System.out;

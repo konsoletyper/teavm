@@ -57,17 +57,7 @@ public class ObjectNativeGenerator implements Generator, DependencyPlugin {
 
     private void generateGetClass(GeneratorContext context, SourceWriter writer) {
         String thisArg = context.getParameterName(0);
-        String classClass = "java.lang.Class";
-        writer.append("var cls = ").append(thisArg).append(".$class.classObject;").newLine();
-        writer.append("if (cls === undefined) {").newLine().indent();
-        MethodReference createMethodRef = new MethodReference(classClass, new MethodDescriptor("createNew",
-                ValueType.object(classClass)));
-        writer.append("cls = ").appendClass(classClass).append('.').appendMethod(createMethodRef)
-                .append("();").newLine();
-        writer.append("cls.$data = ").append(thisArg).append(".$class;").newLine();
-        writer.append(thisArg).append(".$class.classObject = cls;").newLine();
-        writer.outdent().append("}").newLine();
-        writer.append("return cls;").newLine();
+        writer.append("return $rt_cls(").append(thisArg).append(".$class);").newLine();
     }
 
     private void achieveGetClass(DependencyChecker checker) {

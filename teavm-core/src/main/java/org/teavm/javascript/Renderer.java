@@ -52,16 +52,28 @@ public class Renderer implements ExprVisitor, StatementVisitor {
     }
 
     private void renderRuntimeCls() {
-        writer.append("$rt_cls = function(cls) {").indent().newLine();
+        writer.append("$rt_cls = function(clsProto) {").indent().newLine();
         String classClass = "java.lang.Class";
-        writer.append("var cls = cls.classObject;").newLine();
+        writer.append("var cls = clsProto.classObject;").newLine();
         writer.append("if (cls === undefined) {").newLine().indent();
         MethodReference createMethodRef = new MethodReference(classClass, new MethodDescriptor("createNew",
                 ValueType.object(classClass)));
         writer.append("cls = ").appendClass(classClass).append('.').appendMethod(createMethodRef)
                 .append("();").newLine();
-        writer.append("cls.$data = cls;").newLine();
-        writer.append("cls.classObject = cls;").newLine();
+        writer.append("cls.$data = clsProto;").newLine();
+        if (classSource.getClassHolder(classClass).getField("name") != null) {
+            writer.append("cls.").appendField(new FieldReference(classClass, "name"))
+                    .append(" = clsProto.$meta.name !== undefined ? $rt_str(clsProto.$meta.name) : null;").newLine();
+        }
+        if (classSource.getClassHolder(classClass).getField("primitive") != null) {
+            writer.append("cls.").appendField(new FieldReference(classClass, "primitive"))
+                    .append(" = clsProto.$meta.primitive ? 1 : 0;").newLine();
+        }
+        if (classSource.getClassHolder(classClass).getField("array") != null) {
+            writer.append("cls.").appendField(new FieldReference(classClass, "array"))
+                    .append(" = clsProto.$meta.item ? 1 : 0;").newLine();
+        }
+        writer.append("clsProto.classObject = cls;").newLine();
         writer.outdent().append("}").newLine();
         writer.append("return cls;").newLine();
         writer.outdent().append("}").newLine();

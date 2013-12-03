@@ -19,6 +19,9 @@ public class ClassNativeGenerator implements Generator {
             case "isAssignable":
                 generateIsAssignableFrom(context, writer);
                 break;
+            case "getComponentType":
+                generateGetComponentType(context, writer);
+                break;
         }
     }
 
@@ -30,5 +33,11 @@ public class ClassNativeGenerator implements Generator {
     private void generateIsAssignableFrom(GeneratorContext context, SourceWriter writer) {
         writer.append("return $rt_isAssignable(").append(context.getParameterName(1)).append(".$data, ")
                 .append(context.getParameterName(0)).append(".$data;").newLine();
+    }
+
+    private void generateGetComponentType(GeneratorContext context, SourceWriter writer) {
+        String thisArg = context.getParameterName(0);
+        writer.append("var item = " + thisArg + ".$data.$meta.item;").newLine();
+        writer.append("return item != null ? $rt_cls(item) : null;").newLine();
     }
 }

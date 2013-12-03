@@ -50,7 +50,7 @@ $rt_arraycls = function(cls) {
             this.$class = arraycls;
         };
         arraycls.prototype = new ($rt_objcls())();
-        arraycls.$meta = { item : cls, supertypes : [$rt_objcls()] };
+        arraycls.$meta = { item : cls, supertypes : [$rt_objcls()], primitive : false };
         cls.$array = arraycls;
     }
     return cls.$array;
