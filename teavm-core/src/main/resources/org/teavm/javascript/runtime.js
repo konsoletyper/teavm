@@ -218,17 +218,17 @@ Long = function(lo, hi) {
     this.lo = lo | 0;
     this.hi = hi | 0;
 }
-Long.ZERO = new Long(0, 0);
-Long.fromInt = function(val) {
+Long_ZERO = new Long(0, 0);
+Long_fromInt = function(val) {
     return new Long(val, 0);
 }
-Long.fromNumber = function(val) {
+Long_fromNumber = function(val) {
     return new Long(val | 0, (val / 0x100000000) | 0);
 }
-Long.toNumber = function(val) {
+Long_toNumber = function(val) {
     return val.lo + 0x100000000 * val.hi;
 }
-Long.add = function(a, b) {
+Long_add = function(a, b) {
     var a_lolo = a.lo & 0xFFFF;
     var a_lohi = a.lo >>> 16;
     var a_hilo = a.hi & 0xFFFF;
@@ -245,7 +245,7 @@ Long.add = function(a, b) {
     return new Long((lolo & 0xFFFF) | ((lohi & 0xFFFF) << 16),
             (hilo & 0xFFFF) | ((hihi & 0xFFFF) << 16));
 }
-Long.inc = function(a) {
+Long_inc = function(a) {
     var lo = (a.lo + 1) | 0;
     var hi = a.hi;
     if (lo === 0) {
@@ -253,7 +253,7 @@ Long.inc = function(a) {
     }
     return new Long(lo, hi);
 }
-Long.dec = function(a) {
+Long_dec = function(a) {
     var lo = (a.lo - 1) | 0;
     var hi = a.hi;
     if (lo === -1) {
@@ -261,10 +261,10 @@ Long.dec = function(a) {
     }
     return new Long(lo, hi);
 }
-Long.neg = function(a) {
+Long_neg = function(a) {
     return Long.inc(new Long(a.lo ^ 0xFFFFFFFF, a.hi ^ 0xFFFFFFFF));
 }
-Long.sub = function(a, b) {
+Long_sub = function(a, b) {
     var a_lolo = a.lo & 0xFFFF;
     var a_lohi = a.lo >>> 16;
     var a_hilo = a.hi & 0xFFFF;
@@ -281,17 +281,17 @@ Long.sub = function(a, b) {
     return new Long((lolo & 0xFFFF) | ((lohi & 0xFFFF) << 16),
             (hilo & 0xFFFF) | ((hihi & 0xFFFF) << 16));
 }
-Long.compare = function(a, b) {
+Long_compare = function(a, b) {
     var r = a.hi - a.hi;
     if (r != 0) {
         return r;
     }
     return a.lo - b.lo;
 }
-Long.isNegative = function(a) {
+Long_isNegative = function(a) {
     return a.hi < 0;
 }
-Long.mul = function(a, b) {
+Long_mul = function(a, b) {
     var a_lolo = a.lo & 0xFFFF;
     var a_lohi = a.lo >>> 16;
     var a_hilo = a.hi & 0xFFFF;
@@ -309,38 +309,38 @@ Long.mul = function(a, b) {
     return new Long((lolo & 0xFFFF) | ((lohi & 0xFFFF) << 16),
             (hilo & 0xFFFF) | ((hihi & 0xFFFF) << 16));
 }
-Long.div = function(a, b) {
+Long_div = function(a, b) {
     var result = (a.hi * 0x100000000 + a.lo) / (b.hi * 0x100000000 + b.lo);
     return new Long(result | 0, (result / 0x100000000) | 0);
 }
-Long.rem = function(a, b) {
+Long_rem = function(a, b) {
     var result = (a.hi * 0x100000000 + a.lo) % (b.hi * 0x100000000 + b.lo);
     return new Long(result | 0, (result / 0x100000000) | 0);
 }
-Long.and = function(a, b) {
+Long_and = function(a, b) {
     return new Long(a.lo & b.lo, a.hi & b.hi);
 }
-Long.or = function(a, b) {
+Long_or = function(a, b) {
     return new Long(a.lo | b.lo, a.hi | b.hi);
 }
-Long.xor = function(a, b) {
+Long_xor = function(a, b) {
     return new Long(a.lo ^ b.lo, a.hi ^ b.hi);
 }
-Long.shl = function(a, b) {
+Long_shl = function(a, b) {
     if (b < 32) {
         return new Long(a.lo << b, (a.lo >>> (32 - b)) | (a.hi << b));
     } else {
         return new Long(0, a.lo << (b - 32));
     }
 }
-Long.shr = function(a, b) {
+Long_shr = function(a, b) {
     if (b < 32) {
         return new Long((a.lo >>> b) | (a.hi << (32 - b)), a.hi >> b);
     } else {
         return new Long((a.hi >> (b - 32)), -1);
     }
 }
-Long.shru = function(a, b) {
+Long_shru = function(a, b) {
     if (b < 32) {
         return new Long((a.lo >>> b) | (a.hi << (32 - b)), a.hi >>> b);
     } else {

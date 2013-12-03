@@ -34,6 +34,11 @@ class TClassTests {
     }
 
     @Test
+    public void arrayOfArraysComponentTypeDetected() {
+        assertEquals(Object[].class, Object[][].class.getComponentType());
+    }
+
+    @Test
     public void nonArrayComponentTypeIsNull() {
         assertNull(Object.class.getComponentType());
     }

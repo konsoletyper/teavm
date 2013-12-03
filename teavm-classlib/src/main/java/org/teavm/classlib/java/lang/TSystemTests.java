@@ -29,4 +29,14 @@ class TSystemTests {
     public void failsToCopyArraysWithIncompatibleElements() {
         TSystem.arraycopy(TObject.wrap(new TObject[1]), 0, TObject.wrap(new int[1]), 0, 1);
     }
+
+    @Test(expected = NullPointerException.class)
+    public void failsToCopyFromNullSource() {
+        TSystem.arraycopy(null, 0, TObject.wrap(new int[1]), 0, 1);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void failsToCopyToNullTarget() {
+        TSystem.arraycopy(TObject.wrap(new TObject[1]), 0, null, 0, 1);
+    }
 }

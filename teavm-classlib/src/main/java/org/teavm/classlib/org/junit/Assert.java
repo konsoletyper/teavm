@@ -34,6 +34,18 @@ public class Assert {
         }
     }
 
+    public static void assertEquals(long expected, long actual) {
+        if (expected != actual) {
+            fail();
+        }
+    }
+
+    public static void assertNotEquals(long expected, long actual) {
+        if (expected == actual) {
+            fail();
+        }
+    }
+
     public static void assertNotNull(Object object) {
         if (object == null) {
             fail();

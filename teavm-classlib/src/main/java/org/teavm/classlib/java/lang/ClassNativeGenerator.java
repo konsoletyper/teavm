@@ -12,14 +12,14 @@ import org.teavm.model.MethodReference;
 public class ClassNativeGenerator implements Generator {
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
-        switch (methodRef.getClassName()) {
+        switch (methodRef.getName()) {
             case "isInstance":
                 generateIsInstance(context, writer);
                 break;
             case "isAssignable":
                 generateIsAssignableFrom(context, writer);
                 break;
-            case "getComponentType":
+            case "getComponentType0":
                 generateGetComponentType(context, writer);
                 break;
         }

@@ -170,7 +170,7 @@ public class DependencyChecker {
                 if (method != null) {
                     return methodCache.map(new MethodReference(cls.getName(), methodRef.getDescriptor()));
                 }
-                cls = classSource.getClassHolder(cls.getParent());
+                cls = cls.getParent() != null ? classSource.getClassHolder(cls.getParent()) : null;
             }
             throw new RuntimeException("Method not found: " + methodRef);
         }
