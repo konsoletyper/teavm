@@ -7,7 +7,7 @@ import org.junit.Test;
  *
  * @author Alexey Andreev
  */
-class TObjectTests {
+public class ObjectTests {
     @Test
     public void objectCreated() {
         Object a = new Object();

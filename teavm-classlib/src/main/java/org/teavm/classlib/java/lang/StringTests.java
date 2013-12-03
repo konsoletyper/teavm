@@ -7,7 +7,7 @@ import org.junit.Test;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-class TStringTests {
+public class StringTests {
     @Test
     public void charsExtracted() {
         String str = "123";

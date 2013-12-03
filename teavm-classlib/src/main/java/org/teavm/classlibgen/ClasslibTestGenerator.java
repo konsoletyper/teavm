@@ -46,6 +46,9 @@ public class ClasslibTestGenerator {
         writer = new SourceWriter(naming);
         renderer = new Renderer(writer, classSource);
         DependencyChecker dependencyChecker = new DependencyChecker(classSource);
+        for (int i = 0; i < testClasses.length; ++i) {
+            testClasses[i] = "org.teavm.classlib." + testClasses[i];
+        }
         for (String testClass : testClasses) {
             ClassHolder classHolder = classSource.getClassHolder(testClass);
             findTests(classHolder);
