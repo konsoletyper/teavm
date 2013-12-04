@@ -308,6 +308,13 @@ public class InstructionStringifier implements InstructionVisitor {
     }
 
     @Override
+    public void visit(CastIntegerInstruction insn) {
+        sb.append("@").append(insn.getReceiver().getIndex()).append(" := cast @")
+                .append(insn.getValue().getIndex())
+                .append(" from INT to ").append(insn.getTargetType());
+    }
+
+    @Override
     public void visit(UnwrapArrayInstruction insn) {
         sb.append("@").append(insn.getReceiver().getIndex()).append("@").append(" := @")
                 .append(insn.getArray()).append(".data");

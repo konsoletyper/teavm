@@ -98,6 +98,11 @@ public class VariableUsageGraphBuilder {
         }
 
         @Override
+        public void visit(CastIntegerInstruction insn) {
+            use(insn.getReceiver(), insn.getValue());
+        }
+
+        @Override
         public void visit(BranchingInstruction insn) {
         }
 

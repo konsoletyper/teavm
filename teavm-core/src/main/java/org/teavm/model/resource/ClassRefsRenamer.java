@@ -157,6 +157,10 @@ class ClassRefsRenamer implements InstructionVisitor {
     }
 
     @Override
+    public void visit(CastIntegerInstruction insn) {
+    }
+
+    @Override
     public void visit(BranchingInstruction insn) {
     }
 

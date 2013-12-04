@@ -23,9 +23,9 @@ import org.teavm.model.MethodReference;
  * @author Alexey Andreev
  */
 public interface NamingStrategy {
-    String getNameFor(String cls);
+    String getNameFor(String cls) throws NamingException;
 
-    String getNameFor(MethodReference method);
+    String getNameFor(MethodReference method) throws NamingException;
 
-    String getNameFor(FieldReference field);
+    String getNameFor(FieldReference field) throws NamingException;
 }

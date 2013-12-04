@@ -174,6 +174,12 @@ $rt_throw = function(ex) {
     err.$javaException = ex;
     throw err;
 }
+$rt_byteToInt = function(value) {
+    return value > 0xFF ? value | 0xFFFFFF00 : value;
+}
+$rt_shortToInt = function(value) {
+    return value > 0xFFFF ? value | 0xFFFF0000 : value;
+}
 
 $rt = {
     createBooleanArray : function(cls, sz) {

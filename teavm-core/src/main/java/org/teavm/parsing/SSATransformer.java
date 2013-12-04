@@ -352,6 +352,12 @@ public class SSATransformer {
         }
 
         @Override
+        public void visit(CastIntegerInstruction insn) {
+            insn.setValue(use(insn.getValue()));
+            insn.setReceiver(define(insn.getReceiver()));
+        }
+
+        @Override
         public void visit(ArrayLengthInstruction insn) {
             insn.setArray(use(insn.getArray()));
             insn.setReceiver(define(insn.getReceiver()));

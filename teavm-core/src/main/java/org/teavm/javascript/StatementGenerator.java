@@ -275,6 +275,37 @@ public class StatementGenerator implements InstructionVisitor {
     }
 
     @Override
+    public void visit(CastIntegerInstruction insn) {
+        Expr value = Expr.var(insn.getValue().getIndex());
+        switch (insn.getDirection()) {
+            case FROM_INTEGER:
+                switch (insn.getTargetType()) {
+                    case BYTE:
+                        value = Expr.binary(BinaryOperation.BITWISE_AND, value, Expr.constant(0xFF));
+                        break;
+                    case SHORT:
+                    case CHARACTER:
+                        value = Expr.binary(BinaryOperation.BITWISE_AND, value, Expr.constant(0xFFFF));
+                        break;
+                }
+                break;
+            case TO_INTEGER:
+                switch (insn.getTargetType()) {
+                    case BYTE:
+                        value = Expr.unary(UnaryOperation.BYTE_TO_INT, value);
+                        break;
+                    case SHORT:
+                        value = Expr.unary(UnaryOperation.SHORT_TO_INT, value);
+                        break;
+                    case CHARACTER:
+                        break;
+                }
+                break;
+        }
+        assign(value, insn.getReceiver().getIndex());
+    }
+
+    @Override
     public void visit(BranchingInstruction insn) {
         switch (insn.getCondition()) {
             case EQUAL:

@@ -45,19 +45,19 @@ public class SourceWriter {
         return this;
     }
 
-    public SourceWriter appendClass(String cls) {
+    public SourceWriter appendClass(String cls) throws NamingException {
         appendIndent();
         sb.append(naming.getNameFor(cls));
         return this;
     }
 
-    public SourceWriter appendField(FieldReference field) {
+    public SourceWriter appendField(FieldReference field) throws NamingException {
         appendIndent();
         sb.append(naming.getNameFor(field));
         return this;
     }
 
-    public SourceWriter appendMethod(MethodReference method) {
+    public SourceWriter appendMethod(MethodReference method) throws NamingException {
         appendIndent();
         sb.append(naming.getNameFor(method));
         return this;

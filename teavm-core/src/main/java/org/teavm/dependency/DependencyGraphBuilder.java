@@ -271,6 +271,10 @@ class DependencyGraphBuilder {
         }
 
         @Override
+        public void visit(CastIntegerInstruction insn) {
+        }
+
+        @Override
         public void visit(AssignInstruction insn) {
             DependencyNode valueNode = nodes[insn.getAssignee().getIndex()];
             DependencyNode receiverNode = nodes[insn.getReceiver().getIndex()];

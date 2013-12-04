@@ -39,6 +39,7 @@ public class ProgramParser {
     private List<List<Instruction>> targetInstructions;
     private List<Instruction> builder = new ArrayList<>();
     private List<BasicBlock> basicBlocks = new ArrayList<>();
+    private int[] localsMap;
     private int minLocal;
     private Program program;
 
@@ -71,13 +72,18 @@ public class ProgramParser {
         if ((method.access & Opcodes.ACC_STATIC) == 0) {
             getVariable(var++);
         }
-        ValueType[] desc = MethodDescriptor.parseSignature(method.desc);
-        for (ValueType paramType : desc) {
+        ValueType[] desc = MethodDescriptor.parse(method.desc).getParameterTypes();
+        int mappedLocal = 0;
+        localsMap = new int[desc.length * 2];
+        for (int i = 0; i < desc.length; ++i) {
+            ValueType paramType = desc[i];
+            localsMap[mappedLocal++] = i;
             getVariable(var++);
             if (paramType instanceof ValueType.Primitive) {
                 switch (((ValueType.Primitive)paramType).getKind()) {
                     case LONG:
                     case DOUBLE:
+                        localsMap[mappedLocal++] = i;
                         getVariable(var++);
                         break;
                     default:
@@ -85,6 +91,7 @@ public class ProgramParser {
                 }
             }
         }
+        localsMap = Arrays.copyOf(localsMap, mappedLocal);
     }
 
     private void prepare(MethodNode method) {
@@ -199,6 +206,13 @@ public class ProgramParser {
         builder.add(insn);
     }
 
+    private int mapLocal(int local) {
+        if (local < localsMap.length) {
+            local = localsMap[local];
+        }
+        return local;
+    }
+
     private MethodVisitor methodVisitor = new MethodVisitor() {
         @Override
         public void visitVarInsn(int opcode, int local) {
@@ -206,24 +220,24 @@ public class ProgramParser {
                 case Opcodes.ILOAD:
                 case Opcodes.FLOAD:
                 case Opcodes.ALOAD:
-                    emitAssignInsn(minLocal + local, currentDepth);
+                    emitAssignInsn(minLocal + mapLocal(local), currentDepth);
                     currentDepth++;
                     break;
                 case Opcodes.LLOAD:
                 case Opcodes.DLOAD:
-                    emitAssignInsn(minLocal + local, currentDepth);
+                    emitAssignInsn(minLocal + mapLocal(local), currentDepth);
                     currentDepth += 2;
                     break;
                 case Opcodes.ISTORE:
                 case Opcodes.FSTORE:
                 case Opcodes.ASTORE:
                     currentDepth--;
-                    emitAssignInsn(currentDepth, minLocal + local);
+                    emitAssignInsn(currentDepth, minLocal + mapLocal(local));
                     break;
                 case Opcodes.LSTORE:
                 case Opcodes.DSTORE:
                     currentDepth -= 2;
-                    emitAssignInsn(currentDepth, minLocal + local);
+                    emitAssignInsn(currentDepth, minLocal + mapLocal(local));
                     break;
             }
         }
@@ -499,11 +513,10 @@ public class ProgramParser {
             builder.add(insn);
         }
 
-        private void emitCast(ValueType targetType, int value, int result) {
-            CastInstruction insn = new CastInstruction();
+        private void emitNumberCast(NumericOperandType source, NumericOperandType target, int value, int result) {
+            CastNumberInstruction insn = new CastNumberInstruction(source, target);
             insn.setReceiver(getVariable(result));
             insn.setValue(getVariable(value));
-            insn.setTargetType(targetType);
             builder.add(insn);
         }
 
@@ -783,21 +796,39 @@ public class ProgramParser {
                 case Opcodes.FCONST_2:
                     pushConstant(2F);
                     break;
-                case Opcodes.BALOAD:
+                case Opcodes.BALOAD: {
                     loadArrayElement(1, ArrayElementType.BYTE);
+                    CastIntegerInstruction insn = new CastIntegerInstruction(IntegerSubtype.BYTE,
+                            CastIntegerDirection.TO_INTEGER);
+                    insn.setValue(getVariable(currentDepth));
+                    insn.setReceiver(getVariable(currentDepth));
+                    builder.add(insn);
                     break;
+                }
                 case Opcodes.IALOAD:
                     loadArrayElement(1, ArrayElementType.INT);
                     break;
                 case Opcodes.FALOAD:
                     loadArrayElement(1, ArrayElementType.FLOAT);
                     break;
-                case Opcodes.SALOAD:
+                case Opcodes.SALOAD: {
                     loadArrayElement(1, ArrayElementType.SHORT);
+                    CastIntegerInstruction insn = new CastIntegerInstruction(IntegerSubtype.SHORT,
+                            CastIntegerDirection.TO_INTEGER);
+                    insn.setValue(getVariable(currentDepth));
+                    insn.setReceiver(getVariable(currentDepth));
+                    builder.add(insn);
                     break;
-                case Opcodes.CALOAD:
+                }
+                case Opcodes.CALOAD: {
                     loadArrayElement(1, ArrayElementType.CHAR);
+                    CastIntegerInstruction insn = new CastIntegerInstruction(IntegerSubtype.CHARACTER,
+                            CastIntegerDirection.TO_INTEGER);
+                    insn.setValue(getVariable(currentDepth));
+                    insn.setReceiver(getVariable(currentDepth));
+                    builder.add(insn);
                     break;
+                }
                 case Opcodes.AALOAD:
                     loadArrayElement(1, ArrayElementType.OBJECT);
                     break;
@@ -1169,85 +1200,97 @@ public class ProgramParser {
                 }
                 case Opcodes.I2B: {
                     int val = currentDepth - 1;
-                    emitCast(ValueType.BYTE, val, val);
+                    CastIntegerInstruction insn = new CastIntegerInstruction(IntegerSubtype.BYTE,
+                            CastIntegerDirection.FROM_INTEGER);
+                    insn.setValue(getVariable(val));
+                    insn.setReceiver(getVariable(val));
+                    builder.add(insn);
                     break;
                 }
                 case Opcodes.I2C: {
                     int val = currentDepth - 1;
-                    emitCast(ValueType.CHARACTER, val, val);
+                    CastIntegerInstruction insn = new CastIntegerInstruction(IntegerSubtype.CHARACTER,
+                            CastIntegerDirection.FROM_INTEGER);
+                    insn.setValue(getVariable(val));
+                    insn.setReceiver(getVariable(val));
+                    builder.add(insn);
                     break;
                 }
                 case Opcodes.I2S: {
                     int val = currentDepth - 1;
-                    emitCast(ValueType.SHORT, val, val);
+                    CastIntegerInstruction insn = new CastIntegerInstruction(IntegerSubtype.SHORT,
+                            CastIntegerDirection.FROM_INTEGER);
+                    insn.setValue(getVariable(val));
+                    insn.setReceiver(getVariable(val));
+                    builder.add(insn);
                     break;
                 }
                 case Opcodes.I2F: {
                     int val = currentDepth - 1;
-                    emitCast(ValueType.FLOAT, val, val);
+                    emitNumberCast(NumericOperandType.INT, NumericOperandType.FLOAT, val, val);
                     break;
                 }
                 case Opcodes.I2L: {
                     int val = currentDepth - 1;
                     ++currentDepth;
-                    emitCast(ValueType.LONG, val, val);
+                    emitNumberCast(NumericOperandType.INT, NumericOperandType.LONG, val, val);
                     break;
                 }
                 case Opcodes.I2D: {
                     int val = currentDepth - 1;
                     ++currentDepth;
-                    emitCast(ValueType.DOUBLE, val, val);
+                    emitNumberCast(NumericOperandType.INT, NumericOperandType.DOUBLE, val, val);
                     break;
                 }
                 case Opcodes.F2I: {
                     int val = currentDepth - 1;
-                    emitCast(ValueType.INTEGER, val, val);
+                    emitNumberCast(NumericOperandType.FLOAT, NumericOperandType.INT, val, val);
                     break;
                 }
                 case Opcodes.F2L: {
                     int val = currentDepth - 1;
                     ++currentDepth;
-                    emitCast(ValueType.LONG, val, val);
+                    emitNumberCast(NumericOperandType.FLOAT, NumericOperandType.LONG, val, val);
                     break;
                 }
                 case Opcodes.F2D: {
                     int val = currentDepth - 1;
                     ++currentDepth;
-                    emitCast(ValueType.DOUBLE, val, val);
+                    emitNumberCast(NumericOperandType.FLOAT, NumericOperandType.DOUBLE, val, val);
                     break;
                 }
                 case Opcodes.D2L: {
                     int val = currentDepth - 2;
-                    emitCast(ValueType.LONG, val, val);
+                    emitNumberCast(NumericOperandType.DOUBLE, NumericOperandType.LONG, val, val);
                     break;
                 }
                 case Opcodes.D2I: {
                     --currentDepth;
                     int val = currentDepth - 1;
-                    emitCast(ValueType.INTEGER, val, val);
+                    emitNumberCast(NumericOperandType.DOUBLE, NumericOperandType.INT, val, val);
                     break;
                 }
                 case Opcodes.D2F: {
                     --currentDepth;
                     int val = currentDepth - 1;
-                    emitCast(ValueType.FLOAT, val, val);
+                    emitNumberCast(NumericOperandType.DOUBLE, NumericOperandType.FLOAT, val, val);
                     break;
                 }
                 case Opcodes.L2I: {
                     --currentDepth;
                     int val = currentDepth - 1;
-                    emitCast(ValueType.INTEGER, val, val);
+                    emitNumberCast(NumericOperandType.LONG, NumericOperandType.INT, val, val);
                     break;
                 }
                 case Opcodes.L2F: {
                     --currentDepth;
                     int val = currentDepth - 1;
-                    emitCast(ValueType.FLOAT, val, val);
+                    emitNumberCast(NumericOperandType.LONG, NumericOperandType.FLOAT, val, val);
                     break;
                 }
                 case Opcodes.L2D: {
                     int val = currentDepth - 2;
-                    emitCast(ValueType.DOUBLE, val, val);
+                    emitNumberCast(NumericOperandType.LONG, NumericOperandType.DOUBLE, val, val);
                     break;
                 }
                 case Opcodes.IRETURN:
@@ -1302,6 +1345,7 @@ public class ProgramParser {
 
         @Override
         public void visitIincInsn(int var, int increment) {
+            var = mapLocal(var);
             var += minLocal;
             IntegerConstantInstruction intInsn = new IntegerConstantInstruction();
             intInsn.setConstant(increment);

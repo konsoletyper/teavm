@@ -15,6 +15,7 @@
  */
 package org.teavm.javascript;
 
+import org.teavm.codegen.NamingException;
 import org.teavm.codegen.NamingStrategy;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.javascript.ast.*;
@@ -45,10 +46,14 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         return naming;
     }
 
-    public void renderRuntime() {
-        renderRuntimeCls();
-        renderRuntimeString();
-        renderRuntimeObjcls();
+    public void renderRuntime() throws RenderingException {
+        try {
+            renderRuntimeCls();
+            renderRuntimeString();
+            renderRuntimeObjcls();
+        } catch (NamingException e) {
+            throw new RenderingException("Error rendering runtime methods. See a cause for details", e);
+        }
     }
 
     private void renderRuntimeCls() {
@@ -87,7 +92,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         writer.append("var characters = $rt_createNumericArray($rt_charcls(), str.length);").newLine();
         writer.append("var charsBuffer = characters.data;").newLine();
         writer.append("for (var i = 0; i < str.length; i = (i + 1) | 0) {").indent().newLine();
-        writer.append("charsBuffer[i] = str.charCodeAt(i);").newLine();
+        writer.append("charsBuffer[i] = str.charCodeAt(i) & 0xFFFF;").newLine();
         writer.outdent().append("}").newLine();
         writer.append("return ").appendClass("java.lang.String").append(".")
                 .appendMethod(stringCons).append("(characters);").newLine();
@@ -98,58 +103,62 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         writer.append("$rt_objcls = function() { return ").appendClass("java.lang.Object").append("; }").newLine();
     }
 
-    public void render(ClassNode cls) {
-        writer.appendClass(cls.getName()).append(" = function() {").indent().newLine();
-        for (FieldNode field : cls.getFields()) {
-            if (field.getModifiers().contains(NodeModifier.STATIC)) {
-                continue;
+    public void render(ClassNode cls) throws RenderingException {
+        try {
+            writer.appendClass(cls.getName()).append(" = function() {").indent().newLine();
+            for (FieldNode field : cls.getFields()) {
+                if (field.getModifiers().contains(NodeModifier.STATIC)) {
+                    continue;
+                }
+                Object value = field.getInitialValue();
+                if (value == null) {
+                    value = getDefaultValue(field.getType());
+                }
+                writer.append("this.").appendField(new FieldReference(cls.getName(), field.getName())).append(" = ")
+                        .append(constantToString(value)).append(";").newLine();
             }
-            Object value = field.getInitialValue();
-            if (value == null) {
-                value = getDefaultValue(field.getType());
-            }
-            writer.append("this.").appendField(new FieldReference(cls.getName(), field.getName())).append(" = ")
-                    .append(constantToString(value)).append(";").newLine();
-        }
-        writer.append("this.$class = ").appendClass(cls.getName()).append(";").newLine();
-        writer.outdent().append("}").newLine();
+            writer.append("this.$class = ").appendClass(cls.getName()).append(";").newLine();
+            writer.outdent().append("}").newLine();
 
-        for (FieldNode field : cls.getFields()) {
-            if (!field.getModifiers().contains(NodeModifier.STATIC)) {
-                continue;
+            for (FieldNode field : cls.getFields()) {
+                if (!field.getModifiers().contains(NodeModifier.STATIC)) {
+                    continue;
+                }
+                Object value = field.getInitialValue();
+                if (value == null) {
+                    value = getDefaultValue(field.getType());
+                }
+                writer.appendClass(cls.getName()).append('.')
+                        .appendField(new FieldReference(cls.getName(), field.getName())).append(" = ")
+                        .append(constantToString(value)).append(";").newLine();
             }
-            Object value = field.getInitialValue();
-            if (value == null) {
-                value = getDefaultValue(field.getType());
-            }
-            writer.appendClass(cls.getName()).append('.')
-                    .appendField(new FieldReference(cls.getName(), field.getName())).append(" = ")
-                    .append(constantToString(value)).append(";").newLine();
-        }
 
-        writer.appendClass(cls.getName()).append(".prototype = new ")
-                .append(cls.getParentName() != null ? naming.getNameFor(cls.getParentName()) :
-                "Object").append("();").newLine();
-        writer.appendClass(cls.getName()).append(".$meta = { ");
-        writer.append("name : \"").append(cls.getName()).append("\", ");
-        writer.append("primitive : false, ");
-        writer.append("supertypes : [");
-        boolean first = true;
-        if (cls.getParentName() != null) {
-            writer.appendClass(cls.getParentName());
-            first = false;
-        }
-        for (String iface : cls.getInterfaces()) {
-            if (!first) {
-                writer.append(", ");
+            writer.appendClass(cls.getName()).append(".prototype = new ")
+                    .append(cls.getParentName() != null ? naming.getNameFor(cls.getParentName()) :
+                    "Object").append("();").newLine();
+            writer.appendClass(cls.getName()).append(".$meta = { ");
+            writer.append("name : \"").append(cls.getName()).append("\", ");
+            writer.append("primitive : false, ");
+            writer.append("supertypes : [");
+            boolean first = true;
+            if (cls.getParentName() != null) {
+                writer.appendClass(cls.getParentName());
+                first = false;
             }
-            first = false;
-            writer.appendClass(iface);
-        }
-        writer.append("]");
-        writer.append(" };").newLine();
-        for (MethodNode method : cls.getMethods()) {
-            render(method);
+            for (String iface : cls.getInterfaces()) {
+                if (!first) {
+                    writer.append(", ");
+                }
+                first = false;
+                writer.appendClass(iface);
+            }
+            writer.append("]");
+            writer.append(" };").newLine();
+            for (MethodNode method : cls.getMethods()) {
+                render(method);
+            }
+        } catch (NamingException e) {
+            throw new RenderingException("Error rendering class " + cls.getName() + ". See a cause for details", e);
         }
     }
 
@@ -201,40 +210,45 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         writer.outdent().append("}").newLine();
     }
 
-    public void render(MethodNode method) {
-        MethodReference ref = method.getReference();
-        if (ref.getDescriptor().getName().equals("<init>")) {
-            renderInitializer(method);
-        }
-        renderWorkingMethod(method);
-        int startParam = 0;
-        if (method.getModifiers().contains(NodeModifier.STATIC)) {
-            startParam = 1;
-        }
-        writer.appendClass(ref.getClassName()).append('.');
-        if (startParam == 0) {
-            writer.append("prototype.");
-        }
-        writer.appendMethod(ref).append(" = function(");
-        for (int i = 1; i <= ref.parameterCount(); ++i) {
-            if (i > 1) {
-                writer.append(", ");
+    public void render(MethodNode method) throws RenderingException {
+        try {
+            MethodReference ref = method.getReference();
+            if (ref.getDescriptor().getName().equals("<init>")) {
+                renderInitializer(method);
             }
-            writer.append(variableName(i));
-        }
-        writer.append(") {").newLine().indent();
-        writer.append("return ").appendClass(ref.getClassName()).append('_').appendMethod(ref).append("(");
-        if (startParam == 0) {
-            writer.append("this");
-        }
-        for (int i = 1; i <= ref.parameterCount(); ++i) {
-            if (i > 1 || startParam == 0) {
-                writer.append(", ");
+            renderWorkingMethod(method);
+            int startParam = 0;
+            if (method.getModifiers().contains(NodeModifier.STATIC)) {
+                startParam = 1;
             }
-            writer.append(variableName(i));
+            writer.appendClass(ref.getClassName()).append('.');
+            if (startParam == 0) {
+                writer.append("prototype.");
+            }
+            writer.appendMethod(ref).append(" = function(");
+            for (int i = 1; i <= ref.parameterCount(); ++i) {
+                if (i > 1) {
+                    writer.append(", ");
+                }
+                writer.append(variableName(i));
+            }
+            writer.append(") {").newLine().indent();
+            writer.append("return ").appendClass(ref.getClassName()).append('_').appendMethod(ref).append("(");
+            if (startParam == 0) {
+                writer.append("this");
+            }
+            for (int i = 1; i <= ref.parameterCount(); ++i) {
+                if (i > 1 || startParam == 0) {
+                    writer.append(", ");
+                }
+                writer.append(variableName(i));
+            }
+            writer.append(");").newLine();
+            writer.outdent().append("}").newLine();
+        } catch (NamingException e) {
+            throw new RenderingException("Error rendering method " + method.getReference() + ". " +
+                    "See cause for details", e);
         }
-        writer.append(");").newLine();
-        writer.outdent().append("}").newLine();
     }
 
     private void renderWorkingMethod(MethodNode method) {
@@ -596,6 +610,16 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                 break;
             case NOT_LONG:
                 writer.append("Long_not(");
+                expr.getOperand().acceptVisitor(this);
+                writer.append(')');
+                break;
+            case BYTE_TO_INT:
+                writer.append("$rt_byteToInt(");
+                expr.getOperand().acceptVisitor(this);
+                writer.append(')');
+                break;
+            case SHORT_TO_INT:
+                writer.append("$rt_shortToInt(");
                 expr.getOperand().acceptVisitor(this);
                 writer.append(')');
                 break;

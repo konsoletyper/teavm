@@ -83,6 +83,10 @@ public class VariableEscapeAnalyzer {
         }
 
         @Override
+        public void visit(CastIntegerInstruction insn) {
+        }
+
+        @Override
         public void visit(BranchingInstruction insn) {
             escaping[insn.getOperand().getIndex()] = true;
         }

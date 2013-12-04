@@ -161,6 +161,11 @@ public class InstructionTransitionExtractor implements InstructionVisitor {
     }
 
     @Override
+    public void visit(CastIntegerInstruction insn) {
+        targets = null;
+    }
+
+    @Override
     public void visit(ArrayLengthInstruction insn) {
         targets = null;
     }

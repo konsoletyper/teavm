@@ -138,6 +138,11 @@ public class UnusedVariableElimination implements MethodOptimization {
         }
 
         @Override
+        public void visit(CastIntegerInstruction insn) {
+            requestUsage(insn.getReceiver());
+        }
+
+        @Override
         public void visit(BranchingInstruction insn) {
         }
 

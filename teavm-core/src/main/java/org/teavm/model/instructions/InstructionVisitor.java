@@ -31,6 +31,8 @@ public interface InstructionVisitor {
 
     void visit(CastNumberInstruction insn);
 
+    void visit(CastIntegerInstruction insn);
+
     void visit(BranchingInstruction insn);
 
     void visit(BinaryBranchingInstruction insn);

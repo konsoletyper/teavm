@@ -22,7 +22,7 @@ public class SystemTests {
 
     @Test(expected = IndexOutOfBoundsException.class)
     public void failsToCopyArraysWithInvalidIndexes() {
-        System.arraycopy(new Object[0], 0, new TObject[0], 0, 1);
+        System.arraycopy(new Object[0], 0, new Object[0], 0, 1);
     }
 
     @Test(expected = ArrayStoreException.class)
@@ -37,6 +37,6 @@ public class SystemTests {
 
     @Test(expected = NullPointerException.class)
     public void failsToCopyToNullTarget() {
-        System.arraycopy(new TObject[1], 0, null, 0, 1);
+        System.arraycopy(new Object[1], 0, null, 0, 1);
     }
 }

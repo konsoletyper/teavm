@@ -164,6 +164,11 @@ public class DefinitionExtractor implements InstructionVisitor {
     }
 
     @Override
+    public void visit(CastIntegerInstruction insn) {
+        definedVariables = new Variable[] { insn.getReceiver() };
+    }
+
+    @Override
     public void visit(ArrayLengthInstruction insn) {
         definedVariables = new Variable[] { insn.getReceiver() };
     }

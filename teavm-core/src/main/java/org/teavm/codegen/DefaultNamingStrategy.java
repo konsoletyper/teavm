@@ -51,11 +51,12 @@ public class DefaultNamingStrategy implements NamingStrategy {
         if (method.getDescriptor().getName().equals("<clinit>")) {
             return "$clinit";
         }
+        method = getRealMethod(method);
+        if (method == null) {
+            throw new NamingException("Can't provide name for method as it was not found: " + method);
+        }
         ClassHolder clsHolder = classSource.getClassHolder(method.getClassName());
         MethodHolder methodHolder = clsHolder.getMethod(method.getDescriptor());
-        if (methodHolder == null) {
-            throw new RuntimeException("Method not found: " + method);
-        }
         if (methodHolder.getModifiers().contains(ElementModifier.STATIC) ||
                 method.getDescriptor().getName().equals("<init>") ||
                 methodHolder.getLevel() == AccessLevel.PRIVATE) {
@@ -95,13 +96,32 @@ public class DefaultNamingStrategy implements NamingStrategy {
         }
     }
 
+    private MethodReference getRealMethod(MethodReference methodRef) {
+        String className = methodRef.getClassName();
+        while (className != null) {
+            ClassHolder cls = classSource.getClassHolder(className);
+            if (cls == null) {
+                return null;
+            }
+            MethodHolder method = cls.getMethod(methodRef.getDescriptor());
+            if (method != null) {
+                if (method.getLevel() == AccessLevel.PRIVATE && !className.equals(methodRef.getClassName())) {
+                    return null;
+                }
+                return new MethodReference(className, method.getDescriptor());
+            }
+            className = cls.getParent();
+        }
+        return null;
+    }
+
     private String getRealFieldOwner(String cls, String field) {
         String initialCls = cls;
         while (!fieldExists(cls, field)) {
             ClassHolder clsHolder = classSource.getClassHolder(cls);
             cls = clsHolder.getParent();
             if (cls == null) {
-                throw new IllegalArgumentException("Field not found: " +
+                throw new NamingException("Can't provide name for field as the field not found: " +
                         initialCls + "." + field);
             }
         }
