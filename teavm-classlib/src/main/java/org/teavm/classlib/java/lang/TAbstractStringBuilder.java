@@ -8,9 +8,9 @@ import org.teavm.javascript.ni.Rename;
  *
  * @author Alexey Andreev
  */
-class TAbstractStringBuilder extends TObject implements TSerializable {
-    private char[] buffer;
-    private int length;
+class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequence {
+    char[] buffer;
+    int length;
 
     public TAbstractStringBuilder() {
         this(16);
@@ -84,5 +84,24 @@ class TAbstractStringBuilder extends TObject implements TSerializable {
     @Rename("toString")
     public TString toString0() {
         return new TString(buffer, 0, length);
+    }
+
+    @Override
+    public int length() {
+        return length;
+    }
+
+    @Override
+    public char charAt(int index) {
+        if (index < 0 || index >= length) {
+            throw new TIndexOutOfBoundsException();
+        }
+        return buffer[index];
+    }
+
+    @Override
+    public TCharSequence subSequence(int start, int end) {
+        // TODO: implement
+        throw new TUnsupportedOperationException();
     }
 }

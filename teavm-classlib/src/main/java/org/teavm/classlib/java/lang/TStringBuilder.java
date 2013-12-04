@@ -16,4 +16,10 @@ public class TStringBuilder extends TAbstractStringBuilder {
         super.append(value);
         return this;
     }
+
+    @Override
+    public TStringBuilder append(char c) {
+        super.append(c);
+        return this;
+    }
 }

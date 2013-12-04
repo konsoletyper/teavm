@@ -7,7 +7,7 @@ import org.teavm.javascript.ni.GeneratedBy;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class TString extends TObject implements TSerializable {
+public class TString extends TObject implements TSerializable, TComparable<TString> {
     private char[] characters;
     private transient int hashCode;
 
@@ -33,6 +33,10 @@ public class TString extends TObject implements TSerializable {
         }
     }
 
+    public TString(TStringBuilder sb) {
+        this(sb.buffer, 0, sb.length);
+    }
+
     public char charAt(int index) {
         if (index < 0 || index >= characters.length) {
             throw new StringIndexOutOfBoundsException(null);
@@ -42,6 +46,67 @@ public class TString extends TObject implements TSerializable {
 
     public int length() {
         return characters.length;
+    }
+
+    public boolean isEmpty() {
+        return characters.length == 0;
+    }
+
+    public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
+        if (srcBegin < 0 || srcBegin > srcEnd || srcEnd > length() || dstBegin < 0 ||
+                dstBegin + (srcEnd - srcBegin) > dst.length) {
+            throw new TIndexOutOfBoundsException();
+        }
+        while (srcBegin < srcEnd) {
+            dst[dstBegin++] = charAt(srcBegin++);
+        }
+    }
+
+    public boolean contentEquals(TCharSequence charSeq) {
+        if (this == charSeq) {
+            return true;
+        }
+        if (characters.length != charSeq.length()) {
+            return false;
+        }
+        for (int i = 0; i < characters.length; ++i) {
+            if (characters[i] != charSeq.charAt(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public int compareTo(TString anotherString) {
+        if (this == anotherString) {
+            return 0;
+        }
+        int l = TMath.min(length(), anotherString.length());
+        for (int i = 0; i < l; ++i) {
+            char a = charAt(i);
+            char b = anotherString.charAt(i);
+            if (a - b != 0) {
+                return a - b;
+            }
+        }
+        return length() - anotherString.length();
+    }
+
+    public boolean startsWith(TString prefix, int toffset) {
+        if (toffset + prefix.length() > length()) {
+            return false;
+        }
+        for (int i = 0; i < prefix.length(); ++i) {
+            if (prefix.charAt(i) != charAt(toffset++)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public boolean startsWith(TString prefix) {
+        return startsWith(prefix, 0);
     }
 
     public static TString valueOf(int index) {
