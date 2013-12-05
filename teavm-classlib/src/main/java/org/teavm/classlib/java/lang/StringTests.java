@@ -77,4 +77,91 @@ public class StringTests {
     public void startsWithWorks() {
         assertTrue("123".startsWith("12"));
     }
+
+    @Test
+    public void regionsMatched() {
+        assertTrue("12345".regionMatches(2, "23456", 1, 2));
+    }
+
+    @Test
+    public void endsWithWorkds() {
+        assertTrue("12345".endsWith("45"));
+    }
+
+    @Test
+    public void exposesSupplementaryCodePoint() {
+        String str = new String(new char[] { (char)56178, (char)56972 });
+        assertEquals(969356, str.codePointAt(0));
+        assertEquals(56972, str.codePointAt(1));
+    }
+
+    @Test
+    public void exposesWrongSurrogates() {
+        String str = new String(new char[] { (char)56972, (char)56178 });
+        assertEquals(56972, str.codePointAt(0));
+        assertEquals(56178, str.codePointAt(1));
+    }
+
+    @Test
+    public void exposesSupplementaryCodePointBefore() {
+        String str = new String(new char[] { (char)56178, (char)56972 });
+        assertEquals(969356, str.codePointBefore(2));
+        assertEquals(56178, str.codePointBefore(1));
+    }
+
+    @Test
+    public void countsCodePoints() {
+        String str = new String(new char[] { (char)56178, (char)56972, 'a', 'b' });
+        assertEquals(3, str.codePointCount(0, 4));
+        assertEquals(1, str.codePointCount(0, 2));
+        assertEquals(2, str.codePointCount(2, 4));
+        assertEquals(3, str.codePointCount(1, 4));
+    }
+
+    @Test
+    public void givesOffsetByCodePoint() {
+        String str = new String(new char[] { (char)56178, (char)56972, 'a', 'b' });
+        assertEquals(2, str.offsetByCodePoints(0, 1));
+        assertEquals(2, str.offsetByCodePoints(1, 1));
+        assertEquals(4, str.offsetByCodePoints(0, 3));
+        assertEquals(4, str.offsetByCodePoints(1, 3));
+    }
+
+    @Test
+    public void findsCodePoint() {
+        String str = new String(new char[] { 'a', 'b', (char)56178, (char)56972, 'c',
+                (char)56178, (char)56972, 'c', 'd' });
+        assertEquals(2, str.indexOf(969356));
+        assertEquals(4, str.indexOf('c'));
+    }
+
+    @Test
+    public void findsCodePointBackward() {
+        String str = new String(new char[] { 'a', 'b', (char)56178, (char)56972, 'c',
+                (char)56178, (char)56972, 'c', 'd' });
+        assertEquals(5, str.lastIndexOf(969356));
+        assertEquals(7, str.lastIndexOf('c'));
+    }
+
+    @Test
+    public void findsString() {
+        assertEquals(1, "abcdbcd".indexOf("bc"));
+        assertEquals(-1, "abcdbcd".indexOf("bb"));
+    }
+
+    @Test
+    public void findsStringBackward() {
+        assertEquals(4, "abcdbcd".lastIndexOf("bc"));
+        assertEquals(-1, "abcdbcd".lastIndexOf("bb"));
+    }
+
+    @Test
+    public void concatenatesStrings() {
+        assertEquals("abcd", "ab".concat("cd"));
+    }
+
+    @Test
+    public void replacesCharacter() {
+        assertEquals("abbdbbd", "abcdbcd".replace('c', 'b'));
+    }
 }

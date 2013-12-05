@@ -7,7 +7,14 @@ import org.teavm.javascript.ni.GeneratedBy;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class TString extends TObject implements TSerializable, TComparable<TString> {
+public class TString extends TObject implements TSerializable, TComparable<TString>,
+        TCharSequence {
+    static int SURROGATE_BIT_MASK = 0xFC00;
+    static int SURROGATE_BIT_INV_MASK = 0x03FF;
+    static int HIGH_SURROGATE_BITS = 0xF800;
+    static int LOW_SURROGATE_BITS = 0xF800;
+    static int MEANINGFUL_SURROGATE_BITS = 10;
+    static int SUPPLEMENTARY_PLANE = 0x10000;
     private char[] characters;
     private transient int hashCode;
 
@@ -37,13 +44,57 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         this(sb.buffer, 0, sb.length);
     }
 
+    @Override
     public char charAt(int index) {
         if (index < 0 || index >= characters.length) {
-            throw new StringIndexOutOfBoundsException(null);
+            throw new TStringIndexOutOfBoundsException(null);
         }
         return characters[index];
     }
 
+    public int codePointAt(int index) {
+        if (index == characters.length - 1 || (characters[index] & SURROGATE_BIT_MASK) != HIGH_SURROGATE_BITS ||
+                (characters[index + 1] & SURROGATE_BIT_MASK) != LOW_SURROGATE_BITS) {
+            return characters[index];
+        }
+        return ((characters[index] & SURROGATE_BIT_INV_MASK) << MEANINGFUL_SURROGATE_BITS) |
+                (characters[index + 1] & SURROGATE_BIT_INV_MASK) + SUPPLEMENTARY_PLANE;
+    }
+
+    public int codePointBefore(int index) {
+        if (index == 1 || (characters[index] & SURROGATE_BIT_MASK) != LOW_SURROGATE_BITS ||
+                (characters[index - 1] & SURROGATE_BIT_MASK) != HIGH_SURROGATE_BITS) {
+            return characters[index - 1];
+        }
+        return ((characters[index - 1] & SURROGATE_BIT_INV_MASK) << MEANINGFUL_SURROGATE_BITS) |
+                (characters[index] & SURROGATE_BIT_INV_MASK) + SUPPLEMENTARY_PLANE;
+    }
+
+    public int codePointCount(int beginIndex, int endIndex) {
+        int count = endIndex;
+        --endIndex;
+        for (int i = beginIndex; i < endIndex; ++i) {
+            if ((characters[i] & SURROGATE_BIT_MASK) == HIGH_SURROGATE_BITS &&
+                    (characters[i + 1] & SURROGATE_BIT_MASK) == LOW_SURROGATE_BITS) {
+                --count;
+            }
+        }
+        return count;
+    }
+
+    public int offsetByCodePoints(int index, int codePointOffset) {
+        for (int i = 0; i < codePointOffset; ++i) {
+            if (index < characters.length - 1 && (characters[index] & SURROGATE_BIT_MASK) == HIGH_SURROGATE_BITS &&
+                    (characters[index + 1] & SURROGATE_BIT_MASK) == LOW_SURROGATE_BITS) {
+                index += 2;
+            } else {
+                index++;
+            }
+        }
+        return index;
+    }
+
+    @Override
     public int length() {
         return characters.length;
     }
@@ -106,7 +157,175 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public boolean startsWith(TString prefix) {
+        if (this == prefix) {
+            return true;
+        }
         return startsWith(prefix, 0);
+    }
+
+    public boolean regionMatches(int toffset, TString other, int ooffset, int len) {
+        if (toffset < 0 || ooffset < 0 || toffset + len > length() || ooffset + len > other.length()) {
+            return false;
+        }
+        for (int i = 0; i < len; ++i) {
+            if (charAt(toffset++) != other.charAt(ooffset++)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public boolean endsWith(TString suffix) {
+        if (this == suffix) {
+            return true;
+        }
+        if (suffix.length() > length()) {
+            return false;
+        }
+        int j = 0;
+        for (int i = length() - suffix.length(); i < length(); ++i) {
+            if (charAt(i) != suffix.charAt(j++)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static char highSurrogate(int codePoint) {
+        return (char)(TString.HIGH_SURROGATE_BITS | (codePoint >> TString.MEANINGFUL_SURROGATE_BITS) &
+                TString.SURROGATE_BIT_INV_MASK);
+    }
+
+    static char lowSurrogate(int codePoint) {
+        return (char)(TString.HIGH_SURROGATE_BITS | codePoint & TString.SURROGATE_BIT_INV_MASK);
+    }
+
+    public int indexOf(int ch, int fromIndex) {
+        if (ch < SUPPLEMENTARY_PLANE) {
+            char bmpChar = (char)ch;
+            for (int i = fromIndex; i < characters.length; ++i) {
+                if (characters[i] == bmpChar) {
+                    return i;
+                }
+            }
+            return -1;
+        } else {
+            char hi = highSurrogate(ch);
+            char lo = lowSurrogate(ch);
+            for (int i = fromIndex; i < characters.length - 1; ++i) {
+                if (characters[i] == hi && characters[i + 1] == lo) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+    }
+
+    public int indexOf(int ch) {
+        return indexOf(ch, 0);
+    }
+
+    public int lastIndexOf(int ch, int fromIndex) {
+        if (ch < SUPPLEMENTARY_PLANE) {
+            char bmpChar = (char)ch;
+            for (int i = fromIndex; i >= 0; --i) {
+                if (characters[i] == bmpChar) {
+                    return i;
+                }
+            }
+            return -1;
+        } else {
+            char hi = highSurrogate(ch);
+            char lo = lowSurrogate(ch);
+            for (int i = fromIndex; i >= 1; --i) {
+                if (characters[i] == lo && characters[i - 1] == hi) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+    }
+
+    public int lastIndexOf(int ch) {
+        return lastIndexOf(ch, length() - 1);
+    }
+
+    public int indexOf(TString str, int fromIndex) {
+        int toIndex = length() - str.length();
+        outer:
+        for (int i = fromIndex; i < toIndex; ++i) {
+            for (int j = 0; j < str.length(); ++j) {
+                if (charAt(i + j) != str.charAt(j)) {
+                    continue outer;
+                }
+            }
+            return i;
+        }
+        return -1;
+    }
+
+    public int indexOf(TString str) {
+        return indexOf(str, 0);
+    }
+
+    public int lastIndexOf(TString str, int fromIndex) {
+        fromIndex = Math.min(fromIndex, length() - str.length());
+        outer:
+        for (int i = fromIndex; i >= 0; --i) {
+            for (int j = 0; j < str.length(); ++j) {
+                if (charAt(i + j) != str.charAt(j)) {
+                    continue outer;
+                }
+            }
+            return i;
+        }
+        return -1;
+    }
+
+    public int lastIndexOf(TString str) {
+        return lastIndexOf(str, length());
+    }
+
+    public TString substring(int beginIndex, int endIndex) {
+        if (beginIndex > endIndex) {
+            throw new TIndexOutOfBoundsException();
+        }
+        return new TString(characters, beginIndex, endIndex - beginIndex);
+    }
+
+    public TString substring(int beginIndex) {
+        return substring(beginIndex, length());
+    }
+
+    @Override
+    public TCharSequence subSequence(int beginIndex, int endIndex) {
+        return substring(beginIndex, endIndex);
+    }
+
+    public TString concat(TString str) {
+        if (str.isEmpty()) {
+            return this;
+        }
+        char[] buffer = new char[length() + str.length()];
+        int index = 0;
+        for (int i = 0; i < length(); ++i) {
+            buffer[index++] = charAt(i);
+        }
+        for (int i = 0; i < str.length(); ++i) {
+            buffer[index++] = str.charAt(i);
+        }
+        return new TString(buffer);
+    }
+
+    public TString replace(char oldChar, char newChar) {
+        if (oldChar == newChar) {
+            return this;
+        }
+        char[] buffer = new char[length()];
+        for (int i = 0; i < length(); ++i) {
+            buffer[i] = charAt(i) == oldChar ? newChar : charAt(i);
+        }
+        return new TString(buffer);
     }
 
     public static TString valueOf(int index) {

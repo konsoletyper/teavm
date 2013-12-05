@@ -22,4 +22,10 @@ public class TStringBuilder extends TAbstractStringBuilder {
         super.append(c);
         return this;
     }
+
+    @Override
+    public TStringBuilder appendCodePoint(int codePoint) {
+        super.appendCodePoint(codePoint);
+        return this;
+    }
 }

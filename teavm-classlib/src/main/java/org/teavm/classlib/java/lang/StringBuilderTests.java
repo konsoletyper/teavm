@@ -34,4 +34,12 @@ public class StringBuilderTests {
         sb.append(2147483647);
         assertEquals("2147483647", sb.toString());
     }
+
+    @Test
+    public void appendsCodePoint() {
+        StringBuilder sb = new StringBuilder();
+        sb.appendCodePoint(969356);
+        assertEquals(56178, sb.charAt(0));
+        assertEquals(56972, sb.charAt(1));
+    }
 }
