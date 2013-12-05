@@ -28,4 +28,16 @@ public class TStringBuilder extends TAbstractStringBuilder {
         super.appendCodePoint(codePoint);
         return this;
     }
+
+    @Override
+    public TStringBuilder append(TCharSequence s, int start, int end) {
+        super.append(s, start, end);
+        return this;
+    }
+
+    @Override
+    public TStringBuilder append(TCharSequence s) {
+        super.append(s);
+        return this;
+    }
 }

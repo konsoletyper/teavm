@@ -164,4 +164,30 @@ public class StringTests {
     public void replacesCharacter() {
         assertEquals("abbdbbd", "abcdbcd".replace('c', 'b'));
     }
+
+    @Test
+    public void containsWorks() {
+        assertTrue("abcd".contains("bc"));
+    }
+
+    @Test
+    public void sequenceReplaced() {
+        assertEquals("ba", "aaa".replace("aa", "b"));
+    }
+
+    @Test
+    public void trimWorks() {
+        assertEquals("ab", "  ab   ".trim());
+        assertEquals("ab", "ab".trim());
+        assertEquals("", "  ".trim());
+    }
+
+    @Test
+    public void convertedToCharArray() {
+        char[] array = "123".toCharArray();
+        assertEquals(3, array.length);
+        assertEquals('1', array[0]);
+        assertEquals('2', array[1]);
+        assertEquals('3', array[2]);
+    }
 }

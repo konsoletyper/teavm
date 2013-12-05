@@ -110,6 +110,21 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
         return buffer[index];
     }
 
+    public TAbstractStringBuilder append(TCharSequence s, int start, int end) {
+        if (start > end || end > s.length() || start < 0) {
+            throw new TIndexOutOfBoundsException();
+        }
+        ensureCapacity(end - start);
+        for (int i = start; i < end; ++i) {
+            buffer[length++] = s.charAt(i);
+        }
+        return this;
+    }
+
+    public TAbstractStringBuilder append(TCharSequence s) {
+        return append(s, 0, s.length());
+    }
+
     @Override
     public TCharSequence subSequence(int start, int end) {
         // TODO: implement

@@ -2,6 +2,7 @@ package org.teavm.classlib.java.lang;
 
 import org.teavm.classlib.java.lang.io.TSerializable;
 import org.teavm.javascript.ni.GeneratedBy;
+import org.teavm.javascript.ni.Rename;
 
 /**
  *
@@ -328,8 +329,66 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         return new TString(buffer);
     }
 
+    public boolean contains(TCharSequence s) {
+        outer:
+        for (int i = 0; i < length(); ++i) {
+            for (int j = 0; j < s.length(); ++j) {
+                if (charAt(i + j) != s.charAt(j)) {
+                    continue outer;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public TString replace(TCharSequence target, TCharSequence replacement) {
+        TStringBuilder sb = new TStringBuilder();
+        int sz = length() - target.length();
+        int i = 0;
+        outer:
+        for (; i < sz; ++i) {
+            for (int j = 0; j < target.length(); ++j) {
+                if (charAt(i + j) != target.charAt(j)) {
+                    sb.append(charAt(i));
+                    continue outer;
+                }
+            }
+            sb.append(replacement);
+            i += target.length() - 1;
+        }
+        sb.append(substring(i));
+        return TString.wrap(sb.toString());
+    }
+
+    public TString trim() {
+        int lower = 0;
+        int upper = length() - 1;
+        while (lower <= upper && charAt(lower) <= ' ') {
+            ++lower;
+        }
+        while (lower <= upper && charAt(upper) <= ' ') {
+            --upper;
+        }
+        return substring(lower, upper + 1);
+    }
+
     public static TString valueOf(int index) {
         return new TStringBuilder().append(index).toString0();
+    }
+
+    @Override
+    @Rename("toString")
+    public TString toString0() {
+        return this;
+    }
+
+    public char[] toCharArray() {
+        char[] array = new char[characters.length];
+        for (int i = 0; i < array.length; ++i) {
+            array[i] = characters[i];
+        }
+        return array;
     }
 
     @Override
