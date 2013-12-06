@@ -331,7 +331,6 @@ public class ProgramParser {
             Variable[] dimensions = new Variable[dims];
             for (int i = dims - 1; i >= 0; --i) {
                 dimensions[i] = getVariable(--currentDepth);
-                arrayType = ValueType.arrayOf(arrayType);
             }
             int var = currentDepth++;
             ConstructMultiArrayInstruction insn = new ConstructMultiArrayInstruction();

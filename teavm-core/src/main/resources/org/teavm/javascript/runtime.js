@@ -25,24 +25,62 @@ $rt_createArray = function(cls, sz) {
     var arr = new ($rt_arraycls(cls))(data);
     arr.$id = $rt_nextId();
     for (var i = 0; i < sz; i = (i + 1) | 0) {
-        arr.data[i] = null;
-    }
-    return arr;
-}
-$rt_createNumericArray = function(cls, sz) {
-    var arr = $rt_createArray(cls, sz);
-    for (var i = 0; i < sz; i = (i + 1) | 0) {
-        arr.data[i] = 0;
+        data[i] = null;
     }
     return arr;
 }
 $rt_createLongArray = function(sz) {
-    var arr = $rt.createArray($rt_longcls(), sz);
+    var data = new Array(sz);
+    var arr = new ($rt_arraycls($rt_longcls()))(data);
+    arr.$id = $rt_nextId();
     for (var i = 0; i < sz; i = (i + 1) | 0) {
-        arr.data[i] = Long.ZERO;
+        data[i] = Long.ZERO;
     }
     return arr;
-},
+}
+if (ArrayBuffer) {
+    $rt_createNumericArray = function(cls, nativeArray) {
+        return new ($rt_arraycls(cls))(nativeArray);
+    }
+    $rt_createByteArray = function(sz) {
+        return $rt_createNumericArray($rt_bytecls(), new Int8Array(new ArrayBuffer(sz)), 0);
+    };
+    $rt_createShortArray = function(sz) {
+        return $rt_createNumericArray($rt_shortcls(), new Int16Array(new ArrayBuffer(sz << 1)), 0);
+    };
+    $rt_createIntArray = function(sz) {
+        return $rt_createNumericArray($rt_intcls(), new Int32Array(new ArrayBuffer(sz << 2)), 0);
+    };
+    $rt_createBooleanArray = function(sz) {
+        return $rt_createNumericArray($rt_booleancls(), new Int8Array(new ArrayBuffer(sz)), 0);
+    };
+    $rt_createFloatArray = function(sz) {
+        return $rt_createNumericArray($rt_floatcls(), new Float32Array(new ArrayBuffer(sz << 2)), 0);
+    };
+    $rt_createDoubleArray = function(sz) {
+        return $rt_createNumericArray($rt_doublecls(), new Float64Array(new ArrayBuffer(sz << 3)), 0);
+    };
+    $rt_createCharArray = function(sz) {
+        return $rt_createNumericArray($rt_charcls(), new Uint16Array(new ArrayBuffer(sz << 1)), 0);
+    };
+} else {
+    $rt_createNumericArray = function(cls, sz) {
+        var data = new Array(sz);
+        var arr = new ($rt_arraycls(cls))(data);
+        arr.$id = $rt_nextId();
+        for (var i = 0; i < sz; i = (i + 1) | 0) {
+            data[i] = 0;
+        }
+        return arr;
+    }
+    $rt_createByteArray = function(sz) { return $rt_createNumericArray($rt_bytecls(), sz); }
+    $rt_createShortArray = function(sz) { return $rt_createNumericArray($rt_shortcls(), sz); }
+    $rt_createIntArray = function(sz) { return $rt_createNumericArray($rt_intcls(), sz); }
+    $rt_createBooleanArray = function(sz) { return $rt_createNumericArray($rt_booleancls(), sz); }
+    $rt_createFloatArray = function(sz) { return $rt_createNumericArray($rt_floatcls(), sz); }
+    $rt_createDoubleArray = function(sz) { return $rt_createNumericArray($rt_doublecls(), sz); }
+    $rt_createCharArray = function(sz) { return $rt_createNumericArray($rt_charcls(), sz); }
+}
 $rt_arraycls = function(cls) {
     if (cls.$array == undefined) {
         var arraycls = function(data) {
@@ -180,45 +218,26 @@ $rt_byteToInt = function(value) {
 $rt_shortToInt = function(value) {
     return value > 0xFFFF ? value | 0xFFFF0000 : value;
 }
-
-$rt = {
-    createBooleanArray : function(cls, sz) {
-        var arr = $rt.createArray(cls, sz);
-        for (var i = 0; i < sz; i = (i + 1) | 0) {
-            arr[i] = false;
+$rt_createMultiArray = function(cls, dimensions) {
+    return $rt_createMultiArrayImpl(cls, dimensions, 0);
+}
+$rt_createMultiArrayImpl = function(cls, dimensions, offset) {
+    cls = cls.$meta.item;
+    var result = $rt_createArray(cls, dimensions[offset]);
+    offset = (offset + 1) | 0;
+    if (offset < dimensions.length) {
+        for (var i = 0; i < result.data.length; i = (i + 1) | 0) {
+            result.data[i] = $rt_createMultiArrayImpl(cls, dimensions, offset);
         }
-        return arr;
-    },
-    createMultiArray : function(cls, dimensions) {
-        for (var i = 1; i < dimensions.length; i = (i + 1) | 0) {
-            cls = $rt.arraycls(cls);
-        }
-        return $rt.createMultiArrayImpl(cls, dimensions, 0);
-    },
-    createMultiArrayImpl : function(cls, dimensions, offset) {
-        var result = $rt.createArray(cls, dimensions[offset]);
-        offset = (offset + 1) | 0;
-        if (offset < dimensions.length) {
-            cls = cls.$meta.item;
-            for (var i = 0; i < result.length; i = (i + 1) | 0) {
-                result[i] = $rt.createMultiArrayImpl(cls, dimensions, offset);
-            }
-        }
-        return result;
-    },
-    initializeArray : function(cls, initial) {
-        var arr = initial.slice();
-        arr.$class = $rt.arraycls(cls);
-        $rt.setId(arr, $rt.lastObjectId++);
-        return arr;
-    },
-    assertNotNaN : function(value) {
-        if (typeof value == 'number' && isNaN(value)) {
-            throw "NaN";
-        }
-        return value;
     }
-};
+    return result;
+}
+$rt_assertNotNaN = function(value) {
+    if (typeof value == 'number' && isNaN(value)) {
+        throw "NaN";
+    }
+    return value;
+}
 
 Long = function(lo, hi) {
     this.lo = lo | 0;
@@ -268,7 +287,7 @@ Long_dec = function(a) {
     return new Long(lo, hi);
 }
 Long_neg = function(a) {
-    return Long.inc(new Long(a.lo ^ 0xFFFFFFFF, a.hi ^ 0xFFFFFFFF));
+    return Long_inc(new Long(a.lo ^ 0xFFFFFFFF, a.hi ^ 0xFFFFFFFF));
 }
 Long_sub = function(a, b) {
     var a_lolo = a.lo & 0xFFFF;

@@ -373,10 +373,6 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         return substring(lower, upper + 1);
     }
 
-    public static TString valueOf(int index) {
-        return new TStringBuilder().append(index).toString0();
-    }
-
     @Override
     @Rename("toString")
     public TString toString0() {
@@ -389,6 +385,38 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
             array[i] = characters[i];
         }
         return array;
+    }
+
+    public static TString valueOf(TObject obj) {
+        return obj != null ? obj.toString0() : TString.wrap("null");
+    }
+
+    public static TString valueOf(char[] data) {
+        return new TString(data);
+    }
+
+    public static TString valueOf(char[] data, int offset, int count) {
+        return new TString(data, offset, count);
+    }
+
+    public static TString copyValueOf(char[] data) {
+        return valueOf(data);
+    }
+
+    public static TString copyValueOf(char[] data, int offset, int count) {
+        return valueOf(data, offset, count);
+    }
+
+    public static TString valueOf(boolean b) {
+        return b ? TString.wrap("true") : TString.wrap("false");
+    }
+
+    public static TString valueOf(char c) {
+        return new TString(new char[] { c });
+    }
+
+    public static TString valueOf(int index) {
+        return new TStringBuilder().append(index).toString0();
     }
 
     @Override

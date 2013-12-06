@@ -89,7 +89,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         MethodReference stringCons = new MethodReference(stringClass, new MethodDescriptor("<init>",
                 ValueType.arrayOf(ValueType.CHARACTER), ValueType.VOID));
         writer.append("$rt_str = function(str) {").indent().newLine();
-        writer.append("var characters = $rt_createNumericArray($rt_charcls(), str.length);").newLine();
+        writer.append("var characters = $rt_createCharArray(str.length);").newLine();
         writer.append("var charsBuffer = characters.data;").newLine();
         writer.append("for (var i = 0; i < str.length; i = (i + 1) | 0) {").indent().newLine();
         writer.append("charsBuffer[i] = str.charCodeAt(i) & 0xFFFF;").newLine();
@@ -840,22 +840,22 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         if (type instanceof ValueType.Primitive) {
             switch (((ValueType.Primitive)type).getKind()) {
                 case BOOLEAN:
-                    writer.append("$rt_createBooleanArray($rt_booleancls(), ");
+                    writer.append("$rt_createBooleanArray(");
                     expr.getLength().acceptVisitor(this);
                     writer.append(")");
                     break;
                 case BYTE:
-                    writer.append("$rt_createNumericArray($rt_bytecls(), ");
+                    writer.append("$rt_createByteArray(");
                     expr.getLength().acceptVisitor(this);
                     writer.append(")");
                     break;
                 case SHORT:
-                    writer.append("$rt_createNumericArray($rt_shortcls(), ");
+                    writer.append("$rt_createShortArray(");
                     expr.getLength().acceptVisitor(this);
                     writer.append(")");
                     break;
                 case INTEGER:
-                    writer.append("$rt_createNumericArray($rt_intcls(), ");
+                    writer.append("$rt_createIntArray(");
                     expr.getLength().acceptVisitor(this);
                     writer.append(")");
                     break;
@@ -865,17 +865,17 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                     writer.append(")");
                     break;
                 case FLOAT:
-                    writer.append("$rt_createNumericArray($rt_floatcls(), ");
+                    writer.append("$rt_createFloatArray(");
                     expr.getLength().acceptVisitor(this);
                     writer.append(")");
                     break;
                 case DOUBLE:
-                    writer.append("$rt_createNumericArray($rt_doublecls(), ");
+                    writer.append("$rt_createDoubleArray(");
                     expr.getLength().acceptVisitor(this);
                     writer.append(")");
                     break;
                 case CHARACTER:
-                    writer.append("$rt_createNumericArray($rt_charcls(), ");
+                    writer.append("$rt_createCharArray(");
                     expr.getLength().acceptVisitor(this);
                     writer.append(")");
                     break;
@@ -889,8 +889,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(NewMultiArrayExpr expr) {
-        writer.append("$rt_createMultiArray(").append(typeToClsString(naming, expr.getType()))
-                .append(", [");
+        writer.append("$rt_createMultiArray(").append(typeToClsString(naming, expr.getType())).append(", [");
         boolean first = true;
         for (Expr dimension : expr.getDimensions()) {
             if (!first) {
