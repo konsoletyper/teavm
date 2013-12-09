@@ -154,8 +154,21 @@ public class Renderer implements ExprVisitor, StatementVisitor {
             }
             writer.append("]");
             writer.append(" };").newLine();
+            writer.appendClass(cls.getName()).append(".clinit = function() {").newLine().indent();
+            writer.appendClass(cls.getName()).append(".clinit = null;").newLine();
             for (MethodNode method : cls.getMethods()) {
-                render(method);
+                renderBody(method);
+            }
+            MethodHolder methodHolder = classSource.getClassHolder(cls.getName()).getMethod(
+                    new MethodDescriptor("<clinit>", ValueType.VOID));
+            if (methodHolder != null) {
+                writer.appendClass(cls.getName()).append("_").appendMethod(new MethodReference(
+                        cls.getName(), methodHolder.getDescriptor())).append("();").newLine();
+            }
+            writer.outdent().append("}").newLine();
+            for (MethodNode method : cls.getMethods()) {
+                renderDeclaration(method);
+                renderStub(method);
             }
         } catch (NamingException e) {
             throw new RenderingException("Error rendering class " + cls.getName() + ". See a cause for details", e);
@@ -210,13 +223,12 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         writer.outdent().append("}").newLine();
     }
 
-    public void render(MethodNode method) throws RenderingException {
+    public void renderDeclaration(MethodNode method) throws RenderingException {
         try {
             MethodReference ref = method.getReference();
             if (ref.getDescriptor().getName().equals("<init>")) {
                 renderInitializer(method);
             }
-            renderWorkingMethod(method);
             int startParam = 0;
             if (method.getModifiers().contains(NodeModifier.STATIC)) {
                 startParam = 1;
@@ -251,9 +263,34 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         }
     }
 
-    private void renderWorkingMethod(MethodNode method) {
+    public void renderStub(MethodNode method) {
         MethodReference ref = method.getReference();
-        writer.append("function ").appendClass(ref.getClassName()).append('_').appendMethod(ref).append('(');
+        writer.appendClass(ref.getClassName()).append('_').appendMethod(ref).append(" = function(");
+        int startParam = 0;
+        if (method.getModifiers().contains(NodeModifier.STATIC)) {
+            startParam = 1;
+        }
+        for (int i = startParam; i <= ref.parameterCount(); ++i) {
+            if (i > startParam) {
+                writer.append(", ");
+            }
+            writer.append(variableName(i));
+        }
+        String owner = ref.getClassName();
+        writer.append(") { ").appendClass(owner).append(".clinit(); ").append("return ").appendClass(owner)
+                .append("_").appendMethod(ref).append("(");
+        for (int i = startParam; i <= ref.parameterCount(); ++i) {
+            if (i > startParam) {
+                writer.append(", ");
+            }
+            writer.append(variableName(i));
+        }
+        writer.append("); };").newLine();
+    }
+
+    public void renderBody(MethodNode method) {
+        MethodReference ref = method.getReference();
+        writer.appendClass(ref.getClassName()).append('_').appendMethod(ref).append(" = function(");
         int startParam = 0;
         if (method.getModifiers().contains(NodeModifier.STATIC)) {
             startParam = 1;
