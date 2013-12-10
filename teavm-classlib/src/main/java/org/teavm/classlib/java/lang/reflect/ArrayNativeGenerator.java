@@ -35,12 +35,12 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
     private void generateGetLength(GeneratorContext context, SourceWriter writer) {
         String array = context.getParameterName(1);
         writer.append("if (" + array + " === null || " + array + " .$class.$meta.item === undefined) {")
-                .newLine().indent();
+                .softNewLine().indent();
         String clsName = "java.lang.IllegalArgumentException";
         MethodReference cons = new MethodReference(clsName, new MethodDescriptor("<init>", ValueType.VOID));
-        writer.append("$rt_throw(").appendClass(clsName).append(".").appendMethod(cons).append("());").newLine();
-        writer.outdent().append("}").newLine();
-        writer.append("return " + array + ".data.length;").newLine();
+        writer.append("$rt_throw(").appendClass(clsName).append(".").appendMethod(cons).append("());").softNewLine();
+        writer.outdent().append("}").softNewLine();
+        writer.append("return " + array + ".data.length;").softNewLine();
     }
 
     private void achieveGetLength(final DependencyChecker checker, MethodReference methodRef) {

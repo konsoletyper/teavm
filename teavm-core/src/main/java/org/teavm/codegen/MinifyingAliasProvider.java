@@ -8,8 +8,8 @@ import org.teavm.model.MethodReference;
  * @author Alexey Andreev
  */
 public class MinifyingAliasProvider implements AliasProvider {
-    private String startLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    private String letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    private static String startLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    private static String letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     private int lastSuffix;
 
     @Override
@@ -28,7 +28,7 @@ public class MinifyingAliasProvider implements AliasProvider {
     }
 
     private String getNewAlias() {
-        int index = lastSuffix;
+        int index = lastSuffix++;
         StringBuilder sb = new StringBuilder();
         sb.append(startLetters.charAt(index % startLetters.length()));
         index /= startLetters.length();

@@ -20,6 +20,6 @@ public class StringNativeGenerator implements Generator {
     }
 
     private void generateWrap(GeneratorContext context, SourceWriter writer) {
-        writer.append("return ").append(context.getParameterName(1)).newLine();
+        writer.append("return ").append(context.getParameterName(1)).softNewLine();
     }
 }

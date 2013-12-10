@@ -122,7 +122,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                         .append("=").ws().append(constantToString(value)).append(";").softNewLine();
             }
             writer.append("this.$class").ws().append("=").ws().appendClass(cls.getName()).append(";").softNewLine();
-            writer.outdent().append("}").softNewLine();
+            writer.outdent().append("}").newLine();
 
             for (FieldNode field : cls.getFields()) {
                 if (!field.getModifiers().contains(NodeModifier.STATIC)) {
@@ -243,25 +243,25 @@ public class Renderer implements ExprVisitor, StatementVisitor {
             if (startParam == 0) {
                 writer.append("prototype.");
             }
-            writer.appendMethod(ref).append(" = function(");
+            writer.appendMethod(ref).ws().append("=").ws().append("function(");
             for (int i = 1; i <= ref.parameterCount(); ++i) {
                 if (i > 1) {
                     writer.append(", ");
                 }
                 writer.append(variableName(i));
             }
-            writer.append(") {").newLine().indent();
-            writer.append("return ").appendClass(ref.getClassName()).append('_').appendMethod(ref).append("(");
+            writer.append(")").ws().append("{").softNewLine().indent();
+            writer.append("return ").appendMethodBody(ref).append("(");
             if (startParam == 0) {
                 writer.append("this");
             }
             for (int i = 1; i <= ref.parameterCount(); ++i) {
                 if (i > 1 || startParam == 0) {
-                    writer.append(", ");
+                    writer.append(",").ws();
                 }
                 writer.append(variableName(i));
             }
-            writer.append(");").newLine();
+            writer.append(");").softNewLine();
             writer.outdent().append("}").newLine();
         } catch (NamingException e) {
             throw new RenderingException("Error rendering method " + method.getReference() + ". " +
@@ -271,32 +271,32 @@ public class Renderer implements ExprVisitor, StatementVisitor {
 
     public void renderStub(MethodNode method) {
         MethodReference ref = method.getReference();
-        writer.appendClass(ref.getClassName()).append('_').appendMethod(ref).append(" = function(");
+        writer.appendMethodBody(ref).ws().append("=").ws().append("function(");
         int startParam = 0;
         if (method.getModifiers().contains(NodeModifier.STATIC)) {
             startParam = 1;
         }
         for (int i = startParam; i <= ref.parameterCount(); ++i) {
             if (i > startParam) {
-                writer.append(", ");
+                writer.append(",").ws();
             }
             writer.append(variableName(i));
         }
         String owner = ref.getClassName();
-        writer.append(") { ").appendClass(owner).append(".clinit(); ").append("return ").appendClass(owner)
-                .append("_").appendMethod(ref).append("(");
+        writer.append(")").ws().append("{").ws().appendClass(owner).append(".clinit();")
+                .ws().append("return ").appendMethodBody(ref).append("(");
         for (int i = startParam; i <= ref.parameterCount(); ++i) {
             if (i > startParam) {
                 writer.append(", ");
             }
             writer.append(variableName(i));
         }
-        writer.append("); };").newLine();
+        writer.append(");").ws().append("};").newLine();
     }
 
     public void renderBody(MethodNode method) {
         MethodReference ref = method.getReference();
-        writer.appendClass(ref.getClassName()).append('_').appendMethod(ref).append(" = function(");
+        writer.appendMethodBody(ref).ws().append("=").ws().append("function(");
         int startParam = 0;
         if (method.getModifiers().contains(NodeModifier.STATIC)) {
             startParam = 1;
@@ -307,7 +307,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
             }
             writer.append(variableName(i));
         }
-        writer.append(") {").newLine().indent();
+        writer.append(")").ws().append("{").softNewLine().indent();
         method.acceptVisitor(new MethodBodyRenderer());
         writer.outdent().append("}").newLine();
     }
@@ -333,7 +333,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                     first = false;
                     writer.append(variableName(i));
                 }
-                writer.append(";").newLine();
+                writer.append(";").softNewLine();
             }
             method.getBody().acceptVisitor(Renderer.this);
         }
@@ -348,10 +348,10 @@ public class Renderer implements ExprVisitor, StatementVisitor {
     public void visit(AssignmentStatement statement) {
         if (statement.getLeftValue() != null) {
             statement.getLeftValue().acceptVisitor(this);
-            writer.append(" = ");
+            writer.ws().append("=").ws();
         }
         statement.getRightValue().acceptVisitor(this);
-        writer.append(";").newLine();
+        writer.append(";").softNewLine();
     }
 
     @Override
@@ -363,15 +363,15 @@ public class Renderer implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(ConditionalStatement statement) {
-        writer.append("if (");
+        writer.append("if").ws().append("(");
         statement.getCondition().acceptVisitor(this);
-        writer.append(") {").newLine().indent();
+        writer.append(")").ws().append("{").softNewLine().indent();
         statement.getConsequent().acceptVisitor(this);
         if (statement.getAlternative() != null) {
-            writer.outdent().append("} else {").indent().newLine();
+            writer.outdent().append("}").ws().append("else").ws().append("{").indent().softNewLine();
             statement.getAlternative().acceptVisitor(this);
         }
-        writer.outdent().append("}").newLine();
+        writer.outdent().append("}").softNewLine();
     }
 
     @Override
@@ -379,50 +379,50 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         if (statement.getId() != null) {
             writer.append(statement.getId()).append(": ");
         }
-        writer.append("switch (");
+        writer.append("switch").ws().append("(");
         statement.getValue().acceptVisitor(this);
-        writer.append(") {").newLine().indent();
+        writer.append(")").ws().append("{").softNewLine().indent();
         for (SwitchClause clause : statement.getClauses()) {
             for (int condition : clause.getConditions()) {
-                writer.append("case ").append(condition).append(":").newLine();
+                writer.append("case ").append(condition).append(":").softNewLine();
             }
             writer.indent();
             clause.getStatement().acceptVisitor(this);
             writer.outdent();
         }
         if (statement.getDefaultClause() != null) {
-            writer.append("default:").newLine().indent();
+            writer.append("default:").softNewLine().indent();
             statement.getDefaultClause().acceptVisitor(this);
             writer.outdent();
         }
-        writer.outdent().append("}").newLine();
+        writer.outdent().append("}").softNewLine();
     }
 
     @Override
     public void visit(WhileStatement statement) {
         if (statement.getId() != null) {
-            writer.append(statement.getId()).append(": ");
+            writer.append(statement.getId()).append(":").ws();
         }
-        writer.append("while (");
+        writer.append("while").ws().append("(");
         if (statement.getCondition() != null) {
             statement.getCondition().acceptVisitor(this);
         } else {
             writer.append("true");
         }
-        writer.append(") {").newLine().indent();
+        writer.append(")").ws().append("{").softNewLine().indent();
         for (Statement part : statement.getBody()) {
             part.acceptVisitor(this);
         }
-        writer.outdent().append("}").newLine();
+        writer.outdent().append("}").softNewLine();
     }
 
     @Override
     public void visit(BlockStatement statement) {
-        writer.append(statement.getId()).append(": {").newLine().indent();
+        writer.append(statement.getId()).append(":").ws().append("{").softNewLine().indent();
         for (Statement part : statement.getBody()) {
             part.acceptVisitor(this);
         }
-        writer.outdent().append("}").newLine();
+        writer.outdent().append("}").softNewLine();
     }
 
     @Override
@@ -432,12 +432,12 @@ public class Renderer implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(BreakStatement statement) {
-        writer.append("break ").append(statement.getTarget().getId()).append(";").newLine();
+        writer.append("break ").append(statement.getTarget().getId()).append(";").softNewLine();
     }
 
     @Override
     public void visit(ContinueStatement statement) {
-        writer.append("continue ").append(statement.getTarget().getId()).append(";").newLine();
+        writer.append("continue ").append(statement.getTarget().getId()).append(";").softNewLine();
     }
 
     @Override
@@ -447,14 +447,14 @@ public class Renderer implements ExprVisitor, StatementVisitor {
             writer.append(' ');
             statement.getResult().acceptVisitor(this);
         }
-        writer.append(";").newLine();
+        writer.append(";").softNewLine();
     }
 
     @Override
     public void visit(ThrowStatement statement) {
         writer.append("$rt_throw(");
         statement.getException().acceptVisitor(this);
-        writer.append(");").newLine();
+        writer.append(");").softNewLine();
     }
 
     @Override
@@ -464,16 +464,16 @@ public class Renderer implements ExprVisitor, StatementVisitor {
             if (statement.getAmount() == 1) {
                 writer.append("++");
             } else {
-                writer.append(" += ").append(statement.getAmount());
+                writer.ws().append("+=").ws().append(statement.getAmount());
             }
         } else {
             if (statement.getAmount() == -1) {
                 writer.append("--");
             } else {
-                writer.append(" -= ").append(statement.getAmount());
+                writer.ws().append("-=").ws().append(statement.getAmount());
             }
         }
-        writer.append(";").newLine();
+        writer.append(";").softNewLine();
     }
 
     public String variableName(int index) {
@@ -492,7 +492,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
     private void visitBinary(BinaryExpr expr, String op) {
         writer.append('(');
         expr.getFirstOperand().acceptVisitor(this);
-        writer.append(' ').append(op).append(' ');
+        writer.ws().append(op).ws();
         expr.getSecondOperand().acceptVisitor(this);
         writer.append(')');
     }
@@ -501,7 +501,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         writer.append(function);
         writer.append('(');
         expr.getFirstOperand().acceptVisitor(this);
-        writer.append(", ");
+        writer.append(",").ws();
         expr.getSecondOperand().acceptVisitor(this);
         writer.append(')');
     }
@@ -673,9 +673,9 @@ public class Renderer implements ExprVisitor, StatementVisitor {
     public void visit(ConditionalExpr expr) {
         writer.append('(');
         expr.getCondition().acceptVisitor(this);
-        writer.append(" ? ");
+        writer.ws().append("?").ws();
         expr.getConsequent().acceptVisitor(this);
-        writer.append(" : ");
+        writer.ws().append(":").ws();
         expr.getAlternative().acceptVisitor(this);
         writer.append(')');
     }
@@ -819,22 +819,23 @@ public class Renderer implements ExprVisitor, StatementVisitor {
     public void visit(InvocationExpr expr) {
         String className = naming.getNameFor(expr.getMethod().getClassName());
         String name = naming.getNameFor(expr.getMethod());
+        String fullName = naming.getFullNameFor(expr.getMethod());
         switch (expr.getType()) {
             case STATIC:
-                writer.append(className).append("_").append(name).append("(");
+                writer.append(fullName).append("(");
                 for (int i = 0; i < expr.getArguments().size(); ++i) {
                     if (i > 0) {
-                        writer.append(", ");
+                        writer.append(",").ws();
                     }
                     expr.getArguments().get(i).acceptVisitor(this);
                 }
                 writer.append(')');
                 break;
             case SPECIAL:
-                writer.append(className).append("_").append(name).append("(");
+                writer.append(fullName).append("(");
                 expr.getArguments().get(0).acceptVisitor(this);
                 for (int i = 1; i < expr.getArguments().size(); ++i) {
-                    writer.append(", ");
+                    writer.append(",").ws();
                     expr.getArguments().get(i).acceptVisitor(this);
                 }
                 writer.append(")");
@@ -844,7 +845,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                 writer.append(".").append(name).append("(");
                 for (int i = 1; i < expr.getArguments().size(); ++i) {
                     if (i > 1) {
-                        writer.append(", ");
+                        writer.append(",").ws();
                     }
                     expr.getArguments().get(i).acceptVisitor(this);
                 }
@@ -854,7 +855,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                 writer.append(className).append(".").append(name).append("(");
                 for (int i = 0; i < expr.getArguments().size(); ++i) {
                     if (i > 0) {
-                        writer.append(", ");
+                        writer.append(",").ws();
                     }
                     expr.getArguments().get(i).acceptVisitor(this);
                 }
@@ -932,11 +933,12 @@ public class Renderer implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(NewMultiArrayExpr expr) {
-        writer.append("$rt_createMultiArray(").append(typeToClsString(naming, expr.getType())).append(", [");
+        writer.append("$rt_createMultiArray(").append(typeToClsString(naming, expr.getType())).append(",")
+                .ws().append("[");
         boolean first = true;
         for (Expr dimension : expr.getDimensions()) {
             if (!first) {
-                writer.append(", ");
+                writer.append(",").ws();
             }
             first = false;
             dimension.acceptVisitor(this);
@@ -958,7 +960,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         }
         writer.append("$rt_isInstance(");
         expr.getExpr().acceptVisitor(this);
-        writer.append(", ").append(typeToClsString(naming, expr.getType())).append(")");
+        writer.append(",").ws().append(typeToClsString(naming, expr.getType())).append(")");
     }
 
     @Override

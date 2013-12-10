@@ -52,12 +52,12 @@ public class ObjectNativeGenerator implements Generator, DependencyPlugin {
     }
 
     private void generateInit(GeneratorContext context, SourceWriter writer) {
-        writer.append(context.getParameterName(0)).append(".$id = $rt_nextId();").newLine();
+        writer.append(context.getParameterName(0)).append(".$id = $rt_nextId();").softNewLine();
     }
 
     private void generateGetClass(GeneratorContext context, SourceWriter writer) {
         String thisArg = context.getParameterName(0);
-        writer.append("return $rt_cls(").append(thisArg).append(".$class);").newLine();
+        writer.append("return $rt_cls(").append(thisArg).append(".$class);").softNewLine();
     }
 
     private void achieveGetClass(DependencyChecker checker) {
@@ -68,16 +68,16 @@ public class ObjectNativeGenerator implements Generator, DependencyPlugin {
     }
 
     private void generateHashCode(GeneratorContext context, SourceWriter writer) {
-        writer.append("return ").append(context.getParameterName(0)).append(".$id;").newLine();
+        writer.append("return ").append(context.getParameterName(0)).append(".$id;").softNewLine();
     }
 
     private void generateClone(GeneratorContext context, SourceWriter writer) {
-        writer.append("var copy = new ").append(context.getParameterName(0)).append(".$class();").newLine();
-        writer.append("for (var field in obj) {").newLine().indent();
-        writer.append("if (!obj.hasOwnProperty(field)) {").newLine().indent();
-        writer.append("continue;").newLine().outdent().append("}").newLine();
-        writer.append("copy[field] = obj[field];").newLine().outdent().append("}").newLine();
-        writer.append("return copy;").newLine();
+        writer.append("var copy = new ").append(context.getParameterName(0)).append(".$class();").softNewLine();
+        writer.append("for (var field in obj) {").softNewLine().indent();
+        writer.append("if (!obj.hasOwnProperty(field)) {").softNewLine().indent();
+        writer.append("continue;").softNewLine().outdent().append("}").softNewLine();
+        writer.append("copy[field] = obj[field];").softNewLine().outdent().append("}").softNewLine();
+        writer.append("return copy;").softNewLine();
     }
 
     private void achieveClone(DependencyChecker checker, MethodReference method) {
@@ -86,7 +86,7 @@ public class ObjectNativeGenerator implements Generator, DependencyPlugin {
     }
 
     private void generateWrap(GeneratorContext context, SourceWriter writer) {
-        writer.append("return ").append(context.getParameterName(1)).append(";").newLine();
+        writer.append("return ").append(context.getParameterName(1)).append(";").softNewLine();
     }
 
     private void achieveWrap(DependencyChecker checker, MethodReference method) {
