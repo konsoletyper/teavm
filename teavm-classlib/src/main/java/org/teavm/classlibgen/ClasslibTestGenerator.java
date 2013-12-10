@@ -6,9 +6,7 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.*;
 import org.apache.commons.io.IOUtils;
-import org.teavm.codegen.DefaultAliasProvider;
-import org.teavm.codegen.DefaultNamingStrategy;
-import org.teavm.codegen.SourceWriter;
+import org.teavm.codegen.*;
 import org.teavm.dependency.DependencyChecker;
 import org.teavm.javascript.Decompiler;
 import org.teavm.javascript.Renderer;
@@ -25,7 +23,7 @@ public class ClasslibTestGenerator {
     private static PrintStream out;
     private static ClasspathClassHolderSource classSource;
     private static Decompiler decompiler;
-    private static DefaultAliasProvider aliasProvider;
+    private static AliasProvider aliasProvider;
     private static DefaultNamingStrategy naming;
     private static SourceWriter writer;
     private static Renderer renderer;
@@ -42,9 +40,12 @@ public class ClasslibTestGenerator {
         }
         classSource = new ClasspathClassHolderSource();
         decompiler = new Decompiler(classSource);
-        aliasProvider = new DefaultAliasProvider();
+        aliasProvider = new MinifyingAliasProvider();
         naming = new DefaultNamingStrategy(aliasProvider, classSource);
-        writer = new SourceWriter(naming);
+        naming.setMinifying(true);
+        SourceWriterBuilder builder = new SourceWriterBuilder(naming);
+        builder.setMinified(true);
+        writer = builder.build();
         renderer = new Renderer(writer, classSource);
         DependencyChecker dependencyChecker = new DependencyChecker(classSource);
         for (int i = 0; i < testClasses.length; ++i) {

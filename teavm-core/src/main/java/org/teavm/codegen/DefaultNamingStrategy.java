@@ -30,10 +30,19 @@ public class DefaultNamingStrategy implements NamingStrategy {
     private Map<String, String> privateAliases = new HashMap<>();
     private Map<String, String> classAliases = new HashMap<>();
     private Map<String, String> fieldAliases = new HashMap<>();
+    private boolean minifying;
 
     public DefaultNamingStrategy(AliasProvider aliasProvider, ClassHolderSource classSource) {
         this.aliasProvider = aliasProvider;
         this.classSource = classSource;
+    }
+
+    public boolean isMinifying() {
+        return minifying;
+    }
+
+    public void setMinifying(boolean minifying) {
+        this.minifying = minifying;
     }
 
     @Override
@@ -76,6 +85,11 @@ public class DefaultNamingStrategy implements NamingStrategy {
             }
             return alias;
         }
+    }
+
+    @Override
+    public String getFullNameFor(MethodReference method) throws NamingException {
+        return minifying ? getNameFor(method) : getNameFor(method.getClassName()) + "_" + getNameFor(method);
     }
 
     @Override

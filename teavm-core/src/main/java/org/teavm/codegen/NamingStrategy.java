@@ -27,5 +27,7 @@ public interface NamingStrategy {
 
     String getNameFor(MethodReference method) throws NamingException;
 
+    String getFullNameFor(MethodReference method) throws NamingException;
+
     String getNameFor(FieldReference field) throws NamingException;
 }

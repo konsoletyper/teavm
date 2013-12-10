@@ -57,30 +57,33 @@ public class Renderer implements ExprVisitor, StatementVisitor {
     }
 
     private void renderRuntimeCls() {
-        writer.append("$rt_cls = function(clsProto) {").indent().newLine();
+        writer.append("$rt_cls").ws().append("=").ws().append("function(clsProto)").ws().append("{")
+                .indent().softNewLine();
         String classClass = "java.lang.Class";
-        writer.append("var cls = clsProto.classObject;").newLine();
-        writer.append("if (cls === undefined) {").newLine().indent();
+        writer.append("var cls").ws().append("=").ws().append("clsProto.classObject;").softNewLine();
+        writer.append("if").softNewLine().append("(cls").ws().append("===").ws().append("undefined)").ws()
+                .append("{").softNewLine().indent();
         MethodReference createMethodRef = new MethodReference(classClass, new MethodDescriptor("createNew",
                 ValueType.object(classClass)));
-        writer.append("cls = ").appendClass(classClass).append('.').appendMethod(createMethodRef)
-                .append("();").newLine();
-        writer.append("cls.$data = clsProto;").newLine();
+        writer.append("cls").ws().append("=").ws().appendMethodBody(createMethodRef).append("();").softNewLine();
+        writer.append("cls.$data = clsProto;").softNewLine();
         if (classSource.getClassHolder(classClass).getField("name") != null) {
-            writer.append("cls.").appendField(new FieldReference(classClass, "name"))
-                    .append(" = clsProto.$meta.name !== undefined ? $rt_str(clsProto.$meta.name) : null;").newLine();
+            writer.append("cls.").appendField(new FieldReference(classClass, "name")).ws().append("=").ws()
+                    .append("clsProto.$meta.name").ws().append("!==").ws().append("undefined").ws().append("?").ws()
+                    .append("$rt_str(clsProto.$meta.name)").ws().append(":").ws().append("null;").softNewLine();
         }
         if (classSource.getClassHolder(classClass).getField("primitive") != null) {
             writer.append("cls.").appendField(new FieldReference(classClass, "primitive"))
                     .append(" = clsProto.$meta.primitive ? 1 : 0;").newLine();
         }
         if (classSource.getClassHolder(classClass).getField("array") != null) {
-            writer.append("cls.").appendField(new FieldReference(classClass, "array"))
-                    .append(" = clsProto.$meta.item ? 1 : 0;").newLine();
+            writer.append("cls.").appendField(new FieldReference(classClass, "array")).ws()
+                    .append("=").ws().append("clsProto.$meta.item").ws().append("?").ws()
+                    .append("1").ws().append(":").ws().append("0;").softNewLine();
         }
-        writer.append("clsProto.classObject = cls;").newLine();
-        writer.outdent().append("}").newLine();
-        writer.append("return cls;").newLine();
+        writer.append("clsProto.classObject").ws().append("=").ws().append("cls;").softNewLine();
+        writer.outdent().append("}").softNewLine();
+        writer.append("return cls;").softNewLine();
         writer.outdent().append("}").newLine();
     }
 
@@ -88,14 +91,14 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         String stringClass = "java.lang.String";
         MethodReference stringCons = new MethodReference(stringClass, new MethodDescriptor("<init>",
                 ValueType.arrayOf(ValueType.CHARACTER), ValueType.VOID));
-        writer.append("$rt_str = function(str) {").indent().newLine();
-        writer.append("var characters = $rt_createCharArray(str.length);").newLine();
-        writer.append("var charsBuffer = characters.data;").newLine();
-        writer.append("for (var i = 0; i < str.length; i = (i + 1) | 0) {").indent().newLine();
-        writer.append("charsBuffer[i] = str.charCodeAt(i) & 0xFFFF;").newLine();
-        writer.outdent().append("}").newLine();
+        writer.append("$rt_str = function(str) {").indent().softNewLine();
+        writer.append("var characters = $rt_createCharArray(str.length);").softNewLine();
+        writer.append("var charsBuffer = characters.data;").softNewLine();
+        writer.append("for (var i = 0; i < str.length; i = (i + 1) | 0) {").indent().softNewLine();
+        writer.append("charsBuffer[i] = str.charCodeAt(i) & 0xFFFF;").softNewLine();
+        writer.outdent().append("}").softNewLine();
         writer.append("return ").appendClass("java.lang.String").append(".")
-                .appendMethod(stringCons).append("(characters);").newLine();
+                .appendMethod(stringCons).append("(characters);").softNewLine();
         writer.outdent().append("}").newLine();
     }
 
@@ -105,7 +108,8 @@ public class Renderer implements ExprVisitor, StatementVisitor {
 
     public void render(ClassNode cls) throws RenderingException {
         try {
-            writer.appendClass(cls.getName()).append(" = function() {").indent().newLine();
+            writer.appendClass(cls.getName()).ws().append("=").ws().append("function()").ws().append("{")
+                    .indent().softNewLine();
             for (FieldNode field : cls.getFields()) {
                 if (field.getModifiers().contains(NodeModifier.STATIC)) {
                     continue;
@@ -114,11 +118,11 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                 if (value == null) {
                     value = getDefaultValue(field.getType());
                 }
-                writer.append("this.").appendField(new FieldReference(cls.getName(), field.getName())).append(" = ")
-                        .append(constantToString(value)).append(";").newLine();
+                writer.append("this.").appendField(new FieldReference(cls.getName(), field.getName())).ws()
+                        .append("=").ws().append(constantToString(value)).append(";").softNewLine();
             }
-            writer.append("this.$class = ").appendClass(cls.getName()).append(";").newLine();
-            writer.outdent().append("}").newLine();
+            writer.append("this.$class").ws().append("=").ws().appendClass(cls.getName()).append(";").softNewLine();
+            writer.outdent().append("}").softNewLine();
 
             for (FieldNode field : cls.getFields()) {
                 if (!field.getModifiers().contains(NodeModifier.STATIC)) {
@@ -129,17 +133,17 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                     value = getDefaultValue(field.getType());
                 }
                 writer.appendClass(cls.getName()).append('.')
-                        .appendField(new FieldReference(cls.getName(), field.getName())).append(" = ")
-                        .append(constantToString(value)).append(";").newLine();
+                        .appendField(new FieldReference(cls.getName(), field.getName())).ws().append("=").ws()
+                        .append(constantToString(value)).append(";").softNewLine();
             }
 
-            writer.appendClass(cls.getName()).append(".prototype = new ")
+            writer.appendClass(cls.getName()).append(".prototype").ws().append("=").append("new ")
                     .append(cls.getParentName() != null ? naming.getNameFor(cls.getParentName()) :
-                    "Object").append("();").newLine();
-            writer.appendClass(cls.getName()).append(".$meta = { ");
-            writer.append("name : \"").append(cls.getName()).append("\", ");
-            writer.append("primitive : false, ");
-            writer.append("supertypes : [");
+                    "Object").append("();").softNewLine();
+            writer.appendClass(cls.getName()).append(".$meta").ws().append("=").append("{").ws();
+            writer.append("name").ws().append(":").ws().append("\"").append(cls.getName()).append("\",").ws();
+            writer.append("primitive").ws().append(":").ws().append("false,").ws();
+            writer.append("supertypes").ws().append(":").ws().append("[");
             boolean first = true;
             if (cls.getParentName() != null) {
                 writer.appendClass(cls.getParentName());
@@ -153,7 +157,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                 writer.appendClass(iface);
             }
             writer.append("]");
-            writer.append(" };").newLine();
+            writer.ws().append("};").softNewLine();
             for (MethodNode method : cls.getMethods()) {
                 render(method);
             }
