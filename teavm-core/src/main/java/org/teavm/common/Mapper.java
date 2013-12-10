@@ -1,4 +1,4 @@
-package org.teavm.codegen;
+package org.teavm.common;
 
 /**
  *

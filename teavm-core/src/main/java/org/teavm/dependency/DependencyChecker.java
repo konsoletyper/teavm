@@ -19,9 +19,9 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
-import org.teavm.codegen.ConcurrentCachedMapper;
-import org.teavm.codegen.ConcurrentCachedMapper.KeyListener;
-import org.teavm.codegen.Mapper;
+import org.teavm.common.ConcurrentCachedMapper;
+import org.teavm.common.Mapper;
+import org.teavm.common.ConcurrentCachedMapper.KeyListener;
 import org.teavm.model.*;
 
 /**

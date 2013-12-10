@@ -1,4 +1,4 @@
-package org.teavm.codegen;
+package org.teavm.common;
 
 import java.util.ArrayList;
 import java.util.Collection;

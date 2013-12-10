@@ -1,7 +1,7 @@
 package org.teavm.model.resource;
 
 import java.util.Map;
-import org.teavm.codegen.Mapper;
+import org.teavm.common.Mapper;
 import org.teavm.javascript.ni.Rename;
 import org.teavm.javascript.ni.Superclass;
 import org.teavm.model.*;

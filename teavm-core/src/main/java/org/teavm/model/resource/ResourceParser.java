@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
-import org.teavm.codegen.Mapper;
+import org.teavm.common.Mapper;
 import org.teavm.model.ClassHolder;
 import org.teavm.parsing.Parser;
 

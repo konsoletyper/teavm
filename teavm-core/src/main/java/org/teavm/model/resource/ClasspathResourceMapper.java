@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.*;
-import org.teavm.codegen.ConcurrentCachedMapper;
-import org.teavm.codegen.Mapper;
+import org.teavm.common.ConcurrentCachedMapper;
+import org.teavm.common.Mapper;
 import org.teavm.model.ClassHolder;
 
 /**

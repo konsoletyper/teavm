@@ -238,6 +238,16 @@ $rt_assertNotNaN = function(value) {
     }
     return value;
 }
+$rt_methodStubs = function(clinit, names) {
+    for (var i = 0; i < names.length; i = (i + 1) | 0) {
+        window[names[i]] = (function(name) {
+            return function() {
+                clinit();
+                return window[name].apply(window, arguments);
+            }
+        })(names[i]);
+    }
+}
 
 Long = function(lo, hi) {
     this.lo = lo | 0;
