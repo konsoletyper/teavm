@@ -307,14 +307,21 @@ Long_sub = function(a, b) {
             (hilo & 0xFFFF) | ((hihi & 0xFFFF) << 16));
 }
 Long_compare = function(a, b) {
-    var r = a.hi - a.hi;
-    if (r != 0) {
+    var r = a.hi - b.hi;
+    if (r !== 0) {
         return r;
     }
-    return a.lo - b.lo;
+    var r = (a.lo >>> 1) - (b.lo >>> 1);
+    if (r !== 0) {
+        return r;
+    }
+    return (a.lo & 1) - (b.lo & 1);
+}
+Long_isPositive = function(a) {
+    return (a.hi & 0x80000000) === 0;
 }
 Long_isNegative = function(a) {
-    return a.hi < 0;
+    return (a.hi & 0x80000000) !== 0;
 }
 Long_mul = function(a, b) {
     var a_lolo = a.lo & 0xFFFF;
@@ -329,18 +336,35 @@ Long_mul = function(a, b) {
     var lolo = (a_lolo * b_lolo) | 0;
     var lohi = (a_lohi * b_lolo + a_lolo * b_lohi + (lolo >> 16)) | 0;
     var hilo = (a_hilo * b_lolo + a_lohi * b_lohi + a_lolo * b_hilo + (lohi >> 16)) | 0;
-    var hihi = (a_hihi * b_lolo + a_hilo * b_lohi + a_lohi * b_hilo + a_lolo * b_hihi +
-            (hilo >> 16)) | 0;
-    return new Long((lolo & 0xFFFF) | ((lohi & 0xFFFF) << 16),
-            (hilo & 0xFFFF) | ((hihi & 0xFFFF) << 16));
+    var hihi = (a_hihi * b_lolo + a_hilo * b_lohi + a_lohi * b_hilo + a_lolo * b_hihi + (hilo >> 16)) | 0;
+    return new Long((lolo & 0xFFFF) | ((lohi & 0xFFFF) << 16), (hilo & 0xFFFF) | ((hihi & 0xFFFF) << 16));
 }
 Long_div = function(a, b) {
-    var result = (a.hi * 0x100000000 + a.lo) / (b.hi * 0x100000000 + b.lo);
-    return new Long(result | 0, (result / 0x100000000) | 0);
+    return Long_divRem(a, b)[0];
 }
 Long_rem = function(a, b) {
-    var result = (a.hi * 0x100000000 + a.lo) % (b.hi * 0x100000000 + b.lo);
-    return new Long(result | 0, (result / 0x100000000) | 0);
+    return Long_divRem(a, b)[1];
+}
+Long_divRem = function(a, b) {
+    var positive = Long_isNegative(a) === Long_isNegative(b);
+    if (Long_isNegative(a)) {
+        a = Long_neg(a);
+    }
+    if (Long_isNegative(b)) {
+        b = Long_neg(b);
+    }
+    a = new LongInt(a.lo, a.hi, 0);
+    b = new LongInt(b.lo, b.hi, 0);
+    var q = LongInt_div(a, b);
+    a = new Long(a.lo, a.hi);
+    q = new Long(q.lo, q.hi);
+    return positive ? [q, a] : [Long_neg(q), Long_neg(a)];
+}
+Long_shiftLeft16 = function(a) {
+    return new Long(a.lo << 16, (a.lo >>> 16) | (a.hi << 16));
+}
+Long_shiftRight16 = function(a) {
+    return new Long((a.lo >>> 16) | (a.hi << 16), a.hi >>> 16);
 }
 Long_and = function(a, b) {
     return new Long(a.lo & b.lo, a.hi & b.hi);
@@ -371,4 +395,168 @@ Long_shru = function(a, b) {
     } else {
         return new Long((a.hi >>> (b - 32)), 0);
     }
+}
+
+// Represents a mutable 80-bit unsigned integer
+LongInt = function(lo, hi, sup) {
+    this.lo = lo;
+    this.hi = hi;
+    this.sup = sup;
+}
+LongInt_mul = function(a, b) {
+    var a_lolo = ((a.lo & 0xFFFF) * b) | 0;
+    var a_lohi = ((a.lo >>> 16) * b) | 0;
+    var a_hilo = ((a.hi & 0xFFFF) * b) | 0;
+    var a_hihi = ((a.hi >>> 16) * b) | 0;
+    var sup = (a.sup * b) | 0;
+
+    a_lohi = (a_lohi + (a_lolo >> 16)) | 0;
+    a_hilo = (a_hilo + (a_lohi >> 16)) | 0;
+    a_hihi = (a_hihi + (a_hilo >> 16)) | 0;
+    sup = (sup + (a_hihi >> 16)) | 0;
+    a.lo = (a_lolo & 0xFFFF) | (a_lohi << 16);
+    a.hi = (a_hilo & 0xFFFF) | (a_hihi << 16);
+    a.sup = sup & 0xFFFF;
+}
+LongInt_sub = function(a, b) {
+    var a_lolo = a.lo & 0xFFFF;
+    var a_lohi = a.lo >>> 16;
+    var a_hilo = a.hi & 0xFFFF;
+    var a_hihi = a.hi >>> 16;
+    var b_lolo = b.lo & 0xFFFF;
+    var b_lohi = b.lo >>> 16;
+    var b_hilo = b.hi & 0xFFFF;
+    var b_hihi = b.hi >>> 16;
+
+    a_lolo = (a_lolo - b_lolo) | 0;
+    a_lohi = (a_lohi - b_lohi + (a_lolo >> 16)) | 0;
+    a_hilo = (a_hilo - b_hilo + (a_lohi >> 16)) | 0;
+    a_hihi = (a_hihi - b_hihi + (a_hilo >> 16)) | 0;
+    sup = (a.sup - b.sup + (a_hihi >> 16)) | 0;
+    a.lo = (a_lolo & 0xFFFF) | ((a_lohi & 0xFFFF) << 16);
+    a.hi = (a_hilo & 0xFFFF) | ((a_hihi & 0xFFFF) << 16);
+    a.sup = sup;
+}
+LongInt_add = function(a, b) {
+    var a_lolo = a.lo & 0xFFFF;
+    var a_lohi = a.lo >>> 16;
+    var a_hilo = a.hi & 0xFFFF;
+    var a_hihi = a.hi >>> 16;
+    var b_lolo = b.lo & 0xFFFF;
+    var b_lohi = b.lo >>> 16;
+    var b_hilo = b.hi & 0xFFFF;
+    var b_hihi = b.hi >>> 16;
+
+    a_lolo = (a_lolo + b_lolo) | 0;
+    a_lohi = (a_lohi + b_lohi + (a_lolo >> 16)) | 0;
+    a_hilo = (a_hilo + b_hilo + (a_lohi >> 16)) | 0;
+    a_hihi = (a_hihi + b_hihi + (a_hilo >> 16)) | 0;
+    sup = (a.sup + b.sup + (a_hihi >> 16)) | 0;
+    a.lo = (a_lolo & 0xFFFF) | (a_lohi << 16);
+    a.hi = (a_hilo & 0xFFFF) | (a_hihi << 16);
+    a.sup = sup;
+}
+LongInt_ucompare = function(a, b) {
+    var r = (a.sup - b.sup);
+    if (r != 0) {
+        return r;
+    }
+    var r = (a.hi >>> 1) - (b.hi >>> 1);
+    if (r != 0) {
+        return r;
+    }
+    var r = (a.hi & 1) - (b.hi & 1);
+    if (r != 0) {
+        return r;
+    }
+    var r = (a.lo >>> 1) - (b.lo >>> 1);
+    if (r != 0) {
+        return r;
+    }
+    return (a.lo & 1) - (b.lo & 1);
+}
+LongInt_numOfLeadingZeroBits = function(a) {
+    var n = 0;
+    var d = 16;
+    while (d > 0) {
+        if ((a >>> d) !== 0) {
+            a >>>= d;
+            n = (n + d) | 0;
+        }
+        d = (d / 2) | 0;
+    }
+    return 31 - n;
+}
+LongInt_shl = function(a, b) {
+    if (b < 32) {
+        a.sup = ((a.hi >>> (32 - b)) | (a.sup << b)) & 0xFFFF;
+        a.hi = (a.lo >>> (32 - b)) | (a.hi << b);
+        a.lo <<= b;
+    } else if (b < 64) {
+        a.sup = ((a.lo >>> (64 - b)) | (a.hi << (b - 32))) & 0xFFFF;
+        a.hi = a.lo << b;
+        a.lo = 0;
+    } else {
+        a.sup = (a.lo << (b - 64)) & 0xFFFF;
+        a.hi = 0;
+        a.lo = 0;
+    }
+}
+LongInt_shr = function(a, b) {
+    if (b < 32) {
+        a.lo = (a.lo >>> b) | (a.hi << (32 - b));
+        a.hi = (a.hi >>> b) | (a.sup << (32 - b));
+        a.sup >>>= b;
+    } else if (b < 64) {
+        a.lo = (a.hi >>> (b - 32)) | (a.sup << (64 - b));
+        a.hi = a.sup >>> (b - 32);
+        a.sup = 0;
+    } else {
+        a.lo = a.sup >>> (b - 64);
+        a.hi = 0;
+        a.sup = 0;
+    }
+}
+LongInt_copy = function(a) {
+    return new LongInt(a.lo, a.hi, a.sup);
+}
+LongInt_div = function(a, b) {
+    // Normalize divisor
+    var bits = b.hi !== 0 ? LongInt_numOfLeadingZeroBits(b.hi) : LongInt_numOfLeadingZeroBits(b.lo) + 32;
+    var sz = 1 + ((bits / 16) | 0);
+    var dividentBits = bits % 16;
+    LongInt_shl(b, bits);
+    LongInt_shl(a, dividentBits);
+    q = new LongInt(0, 0, 0);
+    while (sz-- > 0) {
+        LongInt_shl(q, 16);
+        // Calculate approximate q
+        var digitA = (a.hi >>> 16) + (0x10000 * a.sup);
+        var digitB = b.hi >>> 16;
+        var digit = (digitA / digitB) | 0;
+        var t = LongInt_copy(b);
+        LongInt_mul(t, digit);
+        // Adjust q either down or up
+        if (LongInt_ucompare(t, a) >= 0) {
+            while (LongInt_ucompare(t, a) > 0) {
+                LongInt_sub(t, b);
+                q = (q - 1) | 0;
+            }
+        } else {
+            while (true) {
+                var nextT = LongInt_copy(t);
+                LongInt_add(nextT, b);
+                if (LongInt_ucompare(nextT, a) > 0) {
+                    break;
+                }
+                t = nextT;
+                q = (q + 1) | 0;
+            }
+        }
+        LongInt_sub(a, t);
+        q.lo |= digit;
+        LongInt_shl(a, 16);
+    }
+    LongInt_shr(a, bits + 16);
+    return q;
 }
