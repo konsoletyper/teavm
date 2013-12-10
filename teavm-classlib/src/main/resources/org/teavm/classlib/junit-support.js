@@ -2,23 +2,64 @@ currentTestReportBody = null;
 currentTimeSpent = 0;
 totalTimeSpent = 0;
 currentMethodCount = 0;
+currentStatusCell = null;
+currentExceptionCell = null;
+currentTimeCell = null;
+currentStartTime = 0;
+currentExpectedExceptions = [];
+currentFrame = null;
 
-runTestCase = function(instance, methodName, realMethodName, expectedExceptions) {
+window.addEventListener("message", function(event) {
+    endTime = new Date().getTime();
+    var message = JSON.parse(event.data);
+    if (message.status == "ok") {
+        if (currentExpectedExceptions.length > 0) {
+            currentStatusCell.appendChild(document.createTextNode("expected exception not thrown"));
+            currentStatusCell.style.color = 'yellow';
+        } else {
+            currentStatusCell.appendChild(document.createTextNode("ok"));
+            currentStatusCell.style.color = 'green';
+        }
+    } else if (message.status == "exception") {
+        if (isExpectedException(e)) {
+            currentStatusCell.appendChild(document.createTextNode("ok"));
+            currentStatusCell.style.color = 'green';
+        } else {
+            currentStatusCell.appendChild(document.createTextNode("unexpected exception"));
+            var exceptionText = document.createElement("pre");
+            exceptionText.appendChild(document.createTextNode(e.stack));
+            currentExceptionCell.appendChild(exceptionText);
+            currentStatusCell.style.color = 'red';
+        }
+    }
+    ++currentMethodCount;
+    var timeSpent = (endTime - currentStartTime) / 1000;
+    currentTimeSpent += timeSpent;
+    currentTimeCell.appendChild(document.createTextNode(timeSpent.toFixed(3)));
+    document.body.removeChild(currentFrame);
+}, false);
+
+runTestCase = function(methodName, path, expectedExceptions) {
     var row = document.createElement("tr");
     currentTestReportBody.appendChild(row);
     var nameCell = document.createElement("td");
     row.appendChild(nameCell);
     nameCell.appendChild(document.createTextNode(methodName));
-    var statusCell = document.createElement("td");
-    row.appendChild(statusCell);
-    var exceptionCell = document.createElement("td");
-    row.appendChild(exceptionCell);
-    var timeCell = document.createElement("td");
-    row.appendChild(timeCell);
-    var startTime = new Date().getTime();
-    var endTime;
-    try {
-        instance[realMethodName]();
+    currentStatusCell = document.createElement("td");
+    row.appendChild(currentStatusCell);
+    currentExceptionCell = document.createElement("td");
+    row.appendChild(currentExceptionCell);
+    currentTimeCell = document.createElement("td");
+    row.appendChild(currentTimeCell);
+    currentStartTime = new Date().getTime();
+    currentExpectedExceptions = expectedExceptions;
+    var frame = document.createElement("iframe");
+    cirremtFrame = frame;
+    document.body.appendChild(frame);
+    var frameDoc = frame.contentWindow.document;
+    var frameScript = frameDoc.createElement("script");
+    frameScript.src = path;
+    frameDoc.body.appendChild(frameScript);
         endTime = new Date().getTime();
         if (expectedExceptions.length > 0) {
             statusCell.appendChild(document.createTextNode("expected exception not thrown"));
@@ -46,10 +87,10 @@ runTestCase = function(instance, methodName, realMethodName, expectedExceptions)
     timeCell.appendChild(document.createTextNode(timeSpent.toFixed(3)));
 }
 
-isExpectedException = function(e, expectedExceptions) {
-    if (e.$javaException !== undefined) {
-        for (var i = 0; i < expectedExceptions.length; ++i) {
-            if (expectedExceptions[i] === e.$javaException.$class) {
+isExpectedException = function(e) {
+    if (e.javaException !== undefined) {
+        for (var i = 0; i < currentExpectedExceptions.length; ++i) {
+            if (currentExpectedExceptions[i] === e.javaException) {
                 return true;
             }
         }

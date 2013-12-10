@@ -1,0 +1,19 @@
+table {
+    border-collapse: collapse;
+    border: 2px solid black;
+    margin: 2em 1em 2em 1em;
+}
+table td, table th {
+    border: 1px solid gray;
+    padding: 0.1em 0.5em 0.2em 0.5em;
+}
+table thead, table tfoot {
+    border: 2px solid black;
+}
+iframe {
+    with: 1px;
+    height: 1px;
+    padding: 0px;
+    margin: 0px;
+    border-style: none;
+}
