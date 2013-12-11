@@ -1,114 +1,135 @@
-currentTestReportBody = null;
-currentTimeSpent = 0;
-totalTimeSpent = 0;
-currentMethodCount = 0;
-currentStatusCell = null;
-currentExceptionCell = null;
-currentTimeCell = null;
-currentStartTime = 0;
-currentExpectedExceptions = [];
-currentFrame = null;
-
-window.addEventListener("message", function(event) {
-    endTime = new Date().getTime();
-    var message = JSON.parse(event.data);
-    if (message.status == "ok") {
-        if (currentExpectedExceptions.length > 0) {
-            currentStatusCell.appendChild(document.createTextNode("expected exception not thrown"));
-            currentStatusCell.style.color = 'yellow';
-        } else {
-            currentStatusCell.appendChild(document.createTextNode("ok"));
-            currentStatusCell.style.color = 'green';
-        }
-    } else if (message.status == "exception") {
-        if (isExpectedException(e)) {
-            currentStatusCell.appendChild(document.createTextNode("ok"));
-            currentStatusCell.style.color = 'green';
-        } else {
-            currentStatusCell.appendChild(document.createTextNode("unexpected exception"));
-            var exceptionText = document.createElement("pre");
-            exceptionText.appendChild(document.createTextNode(e.stack));
-            currentExceptionCell.appendChild(exceptionText);
-            currentStatusCell.style.color = 'red';
-        }
-    }
-    ++currentMethodCount;
-    var timeSpent = (endTime - currentStartTime) / 1000;
-    currentTimeSpent += timeSpent;
-    currentTimeCell.appendChild(document.createTextNode(timeSpent.toFixed(3)));
-    document.body.removeChild(currentFrame);
-}, false);
-
-runTestCase = function(methodName, path, expectedExceptions) {
-    var row = document.createElement("tr");
-    currentTestReportBody.appendChild(row);
-    var nameCell = document.createElement("td");
-    row.appendChild(nameCell);
-    nameCell.appendChild(document.createTextNode(methodName));
-    currentStatusCell = document.createElement("td");
-    row.appendChild(currentStatusCell);
-    currentExceptionCell = document.createElement("td");
-    row.appendChild(currentExceptionCell);
-    currentTimeCell = document.createElement("td");
-    row.appendChild(currentTimeCell);
-    currentStartTime = new Date().getTime();
-    currentExpectedExceptions = expectedExceptions;
-    var frame = document.createElement("iframe");
-    cirremtFrame = frame;
-    document.body.appendChild(frame);
-    var frameDoc = frame.contentWindow.document;
-    var frameScript = frameDoc.createElement("script");
-    frameScript.src = path;
-    frameDoc.body.appendChild(frameScript);
-        endTime = new Date().getTime();
-        if (expectedExceptions.length > 0) {
-            statusCell.appendChild(document.createTextNode("expected exception not thrown"));
-            statusCell.style.color = 'yellow';
-        } else {
-            statusCell.appendChild(document.createTextNode("ok"));
-            statusCell.style.color = 'green';
-        }
-    } catch (e) {
-        endTime = new Date().getTime();
-        if (isExpectedException(e, expectedExceptions)) {
-            statusCell.appendChild(document.createTextNode("ok"));
-            statusCell.style.color = 'green';
-        } else {
-            statusCell.appendChild(document.createTextNode("unexpected exception"));
-            var exceptionText = document.createElement("pre");
-            exceptionText.appendChild(document.createTextNode(e.stack));
-            exceptionCell.appendChild(exceptionText);
-            statusCell.style.color = 'red';
-        }
-    }
-    ++currentMethodCount;
-    var timeSpent = (endTime - startTime) / 1000;
-    currentTimeSpent += timeSpent;
-    timeCell.appendChild(document.createTextNode(timeSpent.toFixed(3)));
+JUnitServer = function(container) {
+    this.container = container;
+    this.timeSpent = 0;
+    this.totalTimeSpent = 0;
+    this.methodCount = 0;
+    this.statusCell = null;
+    this.exceptionCell = null;
+    this.timeCell = null;
+    this.startTime = 0;
+    this.expectedExceptions = [];
+    this.table = null;
+    this.tableBody = null;
+    this.frame = null;
 }
-
-isExpectedException = function(e) {
-    if (e.javaException !== undefined) {
-        for (var i = 0; i < currentExpectedExceptions.length; ++i) {
-            if (currentExpectedExceptions[i] === e.javaException) {
-                return true;
-            }
+JUnitServer.prototype = new Object();
+JUnitServer.prototype.handleEvent = function(message, callback) {
+    endTime = new Date().getTime();
+    if (message.status === "ok") {
+        if (this.expectedExceptions.length > 0) {
+            this.statusCell.appendChild(document.createTextNode("expected exception not thrown"));
+            this.statusCell.style.color = 'yellow';
+        } else {
+            this.statusCell.appendChild(document.createTextNode("ok"));
+            this.statusCell.style.color = 'green';
+        }
+    } else if (message.status === "exception") {
+        if (message.exception && this.isExpectedException(message.exception)) {
+            this.statusCell.appendChild(document.createTextNode("ok"));
+            this.statusCell.style.color = 'green';
+        } else {
+            this.statusCell.appendChild(document.createTextNode("unexpected exception"));
+            var exceptionText = document.createElement("pre");
+            exceptionText.appendChild(document.createTextNode(message.stack));
+            this.exceptionCell.appendChild(exceptionText);
+            this.statusCell.style.color = 'red';
+        }
+    }
+    ++this.methodCount;
+    var timeSpent = (endTime - this.startTime) / 1000;
+    this.timeSpent += timeSpent;
+    this.timeCell.appendChild(document.createTextNode(timeSpent.toFixed(3)));
+    document.body.removeChild(this.frame);
+    self.frame = null;
+    callback();
+}
+JUnitServer.prototype.isExpectedException = function(ex) {
+    for (var i = 0; i < this.expectedExceptions.length; ++i) {
+        if (this.expectedExceptions[i] === ex) {
+            return true;
         }
     }
     return false;
 }
-
-testClass = function(className, classTests) {
-    currentTimeSpent = 0;
-    currentMethodCount = 0;
-    var table = document.createElement("table");
-    document.body.appendChild(table);
+JUnitServer.prototype.runTestCase = function(methodName, path, expectedExceptions, callback) {
+    this.createRow(methodName);
+    this.startTime = new Date().getTime();
+    this.expectedExceptions = expectedExceptions;
+    var self = this;
+    this.loadCode(path, function() {
+        messageHandler = function(event) {
+            window.removeEventListener("message", messageHandler);
+            self.handleEvent(JSON.parse(event.data), callback);
+        };
+        window.addEventListener("message", messageHandler);
+        self.frame.contentWindow.postMessage("runTest", "*");
+    });
+}
+JUnitServer.prototype.createRow = function(methodName) {
+    var row = document.createElement("tr");
+    this.tableBody.appendChild(row);
+    var nameCell = document.createElement("td");
+    row.appendChild(nameCell);
+    nameCell.appendChild(document.createTextNode(methodName));
+    this.statusCell = document.createElement("td");
+    row.appendChild(this.statusCell);
+    this.exceptionCell = document.createElement("td");
+    row.appendChild(this.exceptionCell);
+    this.timeCell = document.createElement("td");
+    row.appendChild(this.timeCell);
+}
+JUnitServer.prototype.loadCode = function(path, callback) {
+    this.frame = document.createElement("iframe");
+    document.body.appendChild(this.frame);
+    var frameDoc = this.frame.contentWindow.document;
+    var self = this;
+    this.loadScript("junit-support.js", function() {
+        self.loadScript("runtime.js", function() {
+            self.loadScript(path, callback);
+        });
+    });
+}
+JUnitServer.prototype.loadScript = function(name, callback) {
+    var doc = this.frame.contentWindow.document;
+    var script = doc.createElement("script");
+    script.src = name;
+    doc.body.appendChild(script);
+    script.onload = function() {
+        callback();
+    }
+}
+JUnitServer.prototype.runTest = function(test, callback) {
+    this.timeSpent = 0;
+    this.methodCount = 0;
+    this.createTable(test.name);
+    this.runMethodFromList(test.methods, 0, function() {
+        callback();
+    });
+}
+JUnitServer.prototype.runMethodFromList = function(methods, index, callback) {
+    if (index < methods.length) {
+        var method = methods[index];
+        var self = this;
+        this.runTestCase(method.name, method.script, method.expected, function() {
+            self.runMethodFromList(methods, index + 1, callback);
+        });
+    } else {
+        callback();
+    }
+}
+JUnitServer.prototype.createTable = function(name) {
+    this.table = document.createElement("table");
+    this.container.appendChild(this.table);
     var caption = document.createElement("caption");
-    table.appendChild(caption);
-    caption.appendChild(document.createTextNode(className));
-
+    this.table.appendChild(caption);
+    this.createHeader();
+    caption.appendChild(document.createTextNode(name));
+    this.tableBody = document.createElement("tbody");
+    this.table.appendChild(this.tableBody);
+}
+JUnitServer.prototype.createHeader = function() {
     var head = document.createElement("thead");
-    table.appendChild(head);
+    this.table.appendChild(head);
     var headRow = document.createElement("tr");
     head.appendChild(headRow);
     var headCell = document.createElement("th");
@@ -123,14 +144,11 @@ testClass = function(className, classTests) {
     headCell = document.createElement("th");
     headRow.appendChild(headCell);
     headCell.appendChild(document.createTextNode("Time spent, s"));
-
-    var tbody = document.createElement("tbody");
-    table.appendChild(tbody);
-    currentTestReportBody = tbody;
-    classTests();
-
+    this.table.appendChild(head);
+}
+JUnitServer.prototype.createFooter = function() {
     var foot = document.createElement("tfoot");
-    table.appendChild(foot);
+    this.table.appendChild(foot);
     var footRow = document.createElement("tr");
     foot.appendChild(footRow);
     var footName = document.createElement("td");
@@ -138,14 +156,30 @@ testClass = function(className, classTests) {
     footName.appendChild(document.createTextNode("---"));
     var footMethods = document.createElement("td");
     footRow.appendChild(footMethods);
-    footMethods.appendChild(document.createTextNode(currentMethodCount));
+    footMethods.appendChild(document.createTextNode(this.methodCount));
     var footSpace = document.createElement("td");
     footRow.appendChild(footSpace);
     footSpace.appendChild(document.createTextNode("---"));
     var footTime = document.createElement("td");
     footRow.appendChild(footTime);
-    footTime.appendChild(document.createTextNode(currentTimeSpent.toFixed(3)));
-    totalTimeSpent += currentTimeSpent;
+    footTime.appendChild(document.createTextNode(this.timeSpent.toFixed(3)));
+}
 
-    currentTestReportBody = null;
+JUnitClient = {};
+JUnitClient.run = function(runner) {
+    var handler = window.addEventListener("message", function() {
+        window.removeEventListener("message", handler);
+        var message = {};
+        try {
+            runner();
+            message.status = "ok";
+        } catch (e) {
+            message.status = "exception";
+            if (e.$javaException && e.$javaException.$class && e.$javaException.$class.$meta) {
+                message.exception = e.$javaException.$class.$meta.name;
+            }
+            message.stack = e.stack;
+        }
+        window.parent.postMessage(JSON.stringify(message), "*");
+    });
 }

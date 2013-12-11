@@ -1,9 +1,6 @@
 package org.teavm.classlibgen;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintStream;
+import java.io.*;
 import java.util.*;
 import org.apache.commons.io.IOUtils;
 import org.teavm.codegen.*;
@@ -20,7 +17,7 @@ import org.teavm.optimization.ClassSetOptimizer;
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public class ClasslibTestGenerator {
-    private static PrintStream out;
+    private static File outputDir;
     private static ClasspathClassHolderSource classSource;
     private static Decompiler decompiler;
     private static AliasProvider aliasProvider;
@@ -34,11 +31,28 @@ public class ClasslibTestGenerator {
             "java.lang.VMTests" };
 
     public static void main(String[] args) throws IOException {
-        out = System.out;
-        if (args.length > 0) {
-            out = new PrintStream(new FileOutputStream(args[0]));
-        }
+        outputDir = new File(args[0]);
+        outputDir.mkdirs();
+        resourceToFile("org/teavm/javascript/runtime.js", "runtime.js");
+        resourceToFile("org/teavm/classlib/junit-support.js", "junit-support.js");
+        resourceToFile("org/teavm/classlib/junit.css", "junit.css");
         classSource = new ClasspathClassHolderSource();
+        for (int i = 0; i < testClasses.length; ++i) {
+            testClasses[i] = "org.teavm.classlib." + testClasses[i];
+        }
+        for (String testClass : testClasses) {
+            ClassHolder classHolder = classSource.getClassHolder(testClass);
+            findTests(classHolder);
+        }
+        writer.append("runTests = function() {").newLine().indent();
+        writer.append("document.getElementById(\"start-button\").style.display = 'none';").newLine();
+        for (String testClass : testClasses) {
+            renderClassTest(classSource.getClassHolder(testClass));
+        }
+        writer.outdent().append("}").newLine();
+    }
+
+    private static void decompileClassesForTest(MethodReference methodRef, String targetName) throws IOException {
         decompiler = new Decompiler(classSource);
         aliasProvider = new MinifyingAliasProvider();
         naming = new DefaultNamingStrategy(aliasProvider, classSource);
@@ -47,41 +61,21 @@ public class ClasslibTestGenerator {
         builder.setMinified(true);
         writer = builder.build();
         renderer = new Renderer(writer, classSource);
+        renderer.renderRuntime();
         DependencyChecker dependencyChecker = new DependencyChecker(classSource);
-        for (int i = 0; i < testClasses.length; ++i) {
-            testClasses[i] = "org.teavm.classlib." + testClasses[i];
-        }
-        for (String testClass : testClasses) {
-            ClassHolder classHolder = classSource.getClassHolder(testClass);
-            findTests(classHolder);
-            MethodReference cons = new MethodReference(testClass, new MethodDescriptor("<init>", ValueType.VOID));
-            dependencyChecker.addEntryPoint(cons);
-        }
-        for (MethodReference methodRef : testMethods) {
-            dependencyChecker.addEntryPoint(methodRef);
-        }
+        MethodReference cons = new MethodReference(methodRef.getClassName(),
+                new MethodDescriptor("<init>", ValueType.VOID));
+        dependencyChecker.addEntryPoint(cons);
+        dependencyChecker.addEntryPoint(methodRef);
         dependencyChecker.checkDependencies();
         ListableClassHolderSource classSet = dependencyChecker.cutUnachievableClasses();
         ClassSetOptimizer optimizer = new ClassSetOptimizer();
         optimizer.optimizeAll(classSet);
-        decompileClasses(classSet.getClassNames());
-        renderHead();
-        ClassLoader classLoader = ClasslibTestGenerator.class.getClassLoader();
-        try (InputStream input = classLoader.getResourceAsStream("org/teavm/classlib/junit-support.js")) {
-            out.println(IOUtils.toString(input));
-        }
-        try (InputStream input = classLoader.getResourceAsStream("org/teavm/javascript/runtime.js")) {
-            out.println(IOUtils.toString(input));
-        }
         renderer.renderRuntime();
-        writer.append("runTests = function() {").newLine().indent();
-        writer.append("document.getElementById(\"start-button\").style.display = 'none';").newLine();
-        for (String testClass : testClasses) {
-            renderClassTest(classSource.getClassHolder(testClass));
+        decompileClasses(classSet.getClassNames());
+        try (Writer out = new OutputStreamWriter(new FileOutputStream(new File(outputDir, targetName)), "UTF-8")) {
+            out.write(writer.toString());
         }
-        writer.outdent().append("}").newLine();
-        out.println(writer);
-        renderFoot();
     }
 
     private static void decompileClasses(Collection<String> classNames) {
@@ -89,39 +83,6 @@ public class ClasslibTestGenerator {
         for (ClassNode clsNode : clsNodes) {
             renderer.render(clsNode);
         }
-    }
-
-    private static void renderHead() {
-        out.println("<!DOCTYPE html>");
-        out.println("<html>");
-        out.println("  <head>");
-        out.println("    <title>TeaVM JUnit tests</title>");
-        out.println("    <meta http-equiv=\"Content-Type\" content=\"text/html;charset=UTF-8\"/>");
-        out.println("    <title>TeaVM JUnit tests</title>");
-        out.println("    <style type=\"text/css\">");
-        out.println("       table {");
-        out.println("           border-collapse: collapse;");
-        out.println("           border: 2px solid black;");
-        out.println("           margin: 2em 1em 2em 1em;");
-        out.println("       }");
-        out.println("       table td, table th {");
-        out.println("           border: 1px solid gray;");
-        out.println("           padding: 0.1em 0.5em 0.2em 0.5em;");
-        out.println("       }");
-        out.println("       table thead, table tfoot {");
-        out.println("           border: 2px solid black;");
-        out.println("       }");
-        out.println("    </style>");
-        out.println("  </head>");
-        out.println("  <body>");
-        out.println("    <script type=\"text/javascript\">");
-    }
-
-    private static void renderFoot() {
-        out.println("    </script>");
-        out.println("    <button id=\"start-button\" onclick=\"runTests()\">Run tests</button>");
-        out.println("  </body>");
-        out.println("</html>");
     }
 
     private static void renderClassTest(ClassHolder cls) {
@@ -156,6 +117,14 @@ public class ClasslibTestGenerator {
                     groupedMethods.put(cls.getName(), group);
                 }
                 group.add(ref);
+            }
+        }
+    }
+
+    private static void resourceToFile(String resource, String fileName) throws IOException {
+        try (InputStream input = ClasslibTestGenerator.class.getClassLoader().getResourceAsStream(resource)) {
+            try (OutputStream output = new FileOutputStream(new File(outputDir, fileName))) {
+                IOUtils.copy(input, output);
             }
         }
     }
