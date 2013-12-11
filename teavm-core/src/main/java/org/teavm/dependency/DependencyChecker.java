@@ -121,7 +121,7 @@ public class DependencyChecker {
         exceptionOccured.set(null);
         while (true) {
             try {
-                if (executor.getActiveCount() == 0 || executor.awaitTermination(10, TimeUnit.MILLISECONDS)) {
+                if (executor.getActiveCount() == 0 || executor.awaitTermination(2, TimeUnit.MILLISECONDS)) {
                     break;
                 }
             } catch (InterruptedException e) {

@@ -102,9 +102,25 @@ JUnitServer.prototype.runTest = function(test, callback) {
     this.timeSpent = 0;
     this.methodCount = 0;
     this.createTable(test.name);
+    var self = this;
     this.runMethodFromList(test.methods, 0, function() {
+        self.createFooter();
         callback();
     });
+}
+JUnitServer.prototype.runAllTests = function(tests, callback) {
+    this.runTestFromList(tests, 0, callback);
+}
+JUnitServer.prototype.runTestFromList = function(tests, index, callback) {
+    if (index < tests.length) {
+        var test = tests[index];
+        var self = this;
+        this.runTest(test, function() {
+            self.runTestFromList(tests, index + 1, callback);
+        });
+    } else {
+        callback();
+    }
 }
 JUnitServer.prototype.runMethodFromList = function(methods, index, callback) {
     if (index < methods.length) {
