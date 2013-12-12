@@ -43,7 +43,7 @@ public class ObjectNativeGenerator implements Generator, DependencyPlugin {
                 achieveClone(checker, method);
                 break;
             case "getClass":
-                achieveGetClass(checker);
+                achieveGetClass(checker, method);
                 break;
             case "wrap":
                 achieveWrap(checker, method);
@@ -60,11 +60,12 @@ public class ObjectNativeGenerator implements Generator, DependencyPlugin {
         writer.append("return $rt_cls(").append(thisArg).append(".$class);").softNewLine();
     }
 
-    private void achieveGetClass(DependencyChecker checker) {
+    private void achieveGetClass(DependencyChecker checker, MethodReference method) {
         String classClass = "java.lang.Class";
-        MethodReference method = new MethodReference(classClass, new MethodDescriptor("createNew",
+        MethodReference initMethod = new MethodReference(classClass, new MethodDescriptor("createNew",
                 ValueType.object(classClass)));
-        checker.addEntryPoint(method);
+        checker.addEntryPoint(initMethod);
+        checker.attachMethodGraph(method).getResultNode().propagate("java.lang.Class");
     }
 
     private void generateHashCode(GeneratorContext context, SourceWriter writer) {

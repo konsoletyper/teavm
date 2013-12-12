@@ -75,6 +75,9 @@ class DependencyGraphBuilder {
                 System.out.println("Virtual call of " + methodDesc + " detected on " + node.getTag() + ". " +
                         "Target class is " + className);
             }
+            if (className.startsWith("[")) {
+                className = "java.lang.Object";
+            }
             MethodReference methodRef = new MethodReference(className, methodDesc);
             MethodHolder method = findMethod(methodRef, checker.getClassSource());
             if (method == null) {
