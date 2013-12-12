@@ -2,7 +2,7 @@ TeaVM
 =====
 
 What is TeaVM?
--------------
+--------------
 
 In short, TeaVM gets a bytecode, running over JVM, and translates it to the JavaScript code,
 which does exactly the same thing as the original bytecode does.
@@ -39,3 +39,10 @@ Good static typed languages can [infer variable types for you](http://en.wikiped
 And they usually have a lot more useful features like [lambda functions](http://en.wikipedia.org/wiki/Lambda_function),
 [lexical closures](http://en.wikipedia.org/wiki/Closure_%28computer_science%29),
 [implicit type casting](http://en.wikipedia.org/wiki/Type_conversion#Implicit_type_conversion), etc.
+
+With JavaScript you sometimes have to include large library for only one feature. Or you include many different
+libraries for different purposes and your project size grows. TeaVM translates only the methods which
+are really needed. So you can depend on as much libraries as you want and get 
+
+With JavaScript you are limited to one language. TeaVM supports many of the JVM languages.
+
