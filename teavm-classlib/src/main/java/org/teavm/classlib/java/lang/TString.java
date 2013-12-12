@@ -48,7 +48,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     @Override
     public char charAt(int index) {
         if (index < 0 || index >= characters.length) {
-            throw new TStringIndexOutOfBoundsException(null);
+            throw new TStringIndexOutOfBoundsException();
         }
         return characters[index];
     }

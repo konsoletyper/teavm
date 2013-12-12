@@ -47,7 +47,7 @@ public class BasicBlock  {
         @Override
         public void add(int index, Instruction e) {
             if (e.getBasicBlock() != null) {
-                throw new IllegalArgumentException("This instruction is some basic block");
+                throw new IllegalArgumentException("This instruction is in some basic block");
             }
             e.setBasicBlock(BasicBlock.this);
             instructions.add(index, e);
@@ -56,7 +56,7 @@ public class BasicBlock  {
         @Override
         public Instruction set(int index, Instruction element) {
             if (element.getBasicBlock() != null) {
-                throw new IllegalArgumentException("This instruction is some basic block");
+                throw new IllegalArgumentException("This instruction is in some basic block");
             }
             Instruction oldInsn = instructions.get(index);
             oldInsn.setBasicBlock(null);
