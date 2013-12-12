@@ -74,6 +74,10 @@ public class Program {
         while (basicBlocks.size() > sz) {
             basicBlocks.remove(basicBlocks.size() - 1);
         }
+        sz = 0;
+        for (int i = 0; i < basicBlocks.size(); ++i) {
+
+        }
     }
 
     public int variableCount() {
