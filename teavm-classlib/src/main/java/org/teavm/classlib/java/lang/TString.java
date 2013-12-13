@@ -423,6 +423,10 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         return new TStringBuilder().append(l).toString0();
     }
 
+    public static TString valueOf(float f) {
+        return new TStringBuilder().append(f).toString0();
+    }
+
     @Override
     public boolean equals(TObject other) {
         if (this == other) {

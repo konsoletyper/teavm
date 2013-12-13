@@ -1,6 +1,6 @@
 package org.teavm.classlib.java.lang;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 /**
@@ -62,6 +62,76 @@ public class StringBuilderTests {
         StringBuilder sb = new StringBuilder();
         sb.append(9223372036854775807L);
         assertEquals("9223372036854775807", sb.toString());
+    }
+
+    @Test
+    public void floatAppended() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(1.234E25F);
+        assertEquals("1.234E25", sb.toString());
+    }
+
+    @Test
+    public void floatAppended2() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(9.8765E30F);
+        assertEquals("9.8765E30", sb.toString());
+    }
+
+    @Test
+    public void negativeFloatAppended() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(-1.234E25F);
+        assertEquals("-1.234E25", sb.toString());
+    }
+
+    @Test
+    public void negativeFloatAppended2() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(9.8765E30F);
+        assertEquals("9.8765E30", sb.toString());
+    }
+
+    @Test
+    public void maxFloatAppended() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(3.402823E38f);
+        assertEquals("3.402823E38", sb.toString());
+    }
+
+    @Test
+    public void smallFloatAppended() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(1.234E-25F);
+        assertEquals("1.234E-25", sb.toString());
+    }
+
+    @Test
+    public void smallFloatAppended2() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(9.8764E-30F);
+        assertEquals("9.8764E-30", sb.toString());
+    }
+
+    @Test
+    public void negativeSmallFloatAppended() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(-1.234E-25F);
+        assertEquals("-1.234E-25", sb.toString());
+    }
+
+    @Test
+    public void negativeSmallFloatAppended2() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(-9.8764E-30F);
+        assertEquals("-9.8764E-30", sb.toString());
+    }
+
+    @Test
+    public void minFloatAppended() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(1.175494E-38f);
+        assertEquals("1.175494E-38", sb.toString());
     }
 
     @Test
