@@ -415,8 +415,12 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         return new TString(new char[] { c });
     }
 
-    public static TString valueOf(int index) {
-        return new TStringBuilder().append(index).toString0();
+    public static TString valueOf(int i) {
+        return new TStringBuilder().append(i).toString0();
+    }
+
+    public static TString valueOf(long l) {
+        return new TStringBuilder().append(l).toString0();
     }
 
     @Override

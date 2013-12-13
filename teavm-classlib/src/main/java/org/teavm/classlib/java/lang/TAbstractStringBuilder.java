@@ -67,6 +67,43 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
         return this;
     }
 
+    protected TAbstractStringBuilder append(long value) {
+        boolean positive = true;
+        if (value < 0) {
+            positive = false;
+            value = -value;
+        }
+        if (value < 10) {
+            if (!positive) {
+                ensureCapacity(length + 2);
+                buffer[length++] = '-';
+            } else {
+                ensureCapacity(length + 1);
+            }
+            buffer[length++] = (char)('0' + value);
+        } else {
+            int pos = 10;
+            int sz = 1;
+            while (pos < 1000000000000000000L && pos * 10 <= value) {
+                pos *= 10;
+                ++sz;
+            }
+            if (!positive) {
+                ++sz;
+            }
+            ensureCapacity(length + sz);
+            if (!positive) {
+                buffer[length++] = '-';
+            }
+            while (pos > 0) {
+                buffer[length++] = (char)('0' + value / pos);
+                value %= pos;
+                pos /= 10;
+            }
+        }
+        return this;
+    }
+
     protected TAbstractStringBuilder append(char c) {
         ensureCapacity(length + 1);
         buffer[length++] = c;

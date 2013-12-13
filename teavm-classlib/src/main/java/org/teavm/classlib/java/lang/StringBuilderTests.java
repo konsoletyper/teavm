@@ -8,6 +8,7 @@ import org.junit.Test;
  * @author Alexey Andreev
  */
 public class StringBuilderTests {
+    @Test
     public void integerAppended() {
         StringBuilder sb = new StringBuilder();
         sb.append(23);
@@ -33,6 +34,34 @@ public class StringBuilderTests {
         StringBuilder sb = new StringBuilder();
         sb.append(2147483647);
         assertEquals("2147483647", sb.toString());
+    }
+
+    @Test
+    public void longAppended() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(23L);
+        assertEquals("23", sb.toString());
+    }
+
+    @Test
+    public void negativeLongAppended() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(-23L);
+        assertEquals("-23", sb.toString());
+    }
+
+    @Test
+    public void largeLongAppended() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(12345678901234L);
+        assertEquals("12345678901234", sb.toString());
+    }
+
+    @Test
+    public void maxLongAppended() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(9223372036854775807L);
+        assertEquals("9223372036854775807", sb.toString());
     }
 
     @Test
