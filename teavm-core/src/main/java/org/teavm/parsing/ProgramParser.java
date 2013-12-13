@@ -69,21 +69,22 @@ public class ProgramParser {
 
     private void prepareParameters(MethodNode method) {
         int var = 0;
+        int offset = 0;
         if ((method.access & Opcodes.ACC_STATIC) == 0) {
             getVariable(var++);
+            ++offset;
         }
         ValueType[] desc = MethodDescriptor.parse(method.desc).getParameterTypes();
-        int mappedLocal = 0;
-        localsMap = new int[desc.length * 2];
+        localsMap = new int[desc.length * 2 + 1];
         for (int i = 0; i < desc.length; ++i) {
             ValueType paramType = desc[i];
-            localsMap[mappedLocal++] = i;
+            localsMap[var] = i + offset;
             getVariable(var++);
             if (paramType instanceof ValueType.Primitive) {
                 switch (((ValueType.Primitive)paramType).getKind()) {
                     case LONG:
                     case DOUBLE:
-                        localsMap[mappedLocal++] = i;
+                        localsMap[var] = i + offset;
                         getVariable(var++);
                         break;
                     default:
@@ -91,7 +92,7 @@ public class ProgramParser {
                 }
             }
         }
-        localsMap = Arrays.copyOf(localsMap, mappedLocal);
+        localsMap = Arrays.copyOf(localsMap, var);
     }
 
     private void prepare(MethodNode method) {

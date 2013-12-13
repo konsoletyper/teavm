@@ -82,7 +82,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
             }
             buffer[length++] = (char)('0' + value);
         } else {
-            int pos = 10;
+            long pos = 10;
             int sz = 1;
             while (pos < 1000000000000000000L && pos * 10 <= value) {
                 pos *= 10;

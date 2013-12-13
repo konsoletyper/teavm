@@ -701,7 +701,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
             } else if ((int)value == value) {
                 return "Long_fromInt(" + value + ")";
             } else {
-                return "new Long(" + (value & 0xFFFFFFFF) + ", " + (value >>> 32) + ")";
+                return "new Long(" + (value & 0xFFFFFFFFL) + ", " + (value >>> 32) + ")";
             }
         } else {
             return cst.toString();

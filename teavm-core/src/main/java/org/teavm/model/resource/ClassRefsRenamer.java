@@ -2,6 +2,7 @@ package org.teavm.model.resource;
 
 import java.util.Map;
 import org.teavm.common.Mapper;
+import org.teavm.javascript.ni.Remove;
 import org.teavm.javascript.ni.Rename;
 import org.teavm.javascript.ni.Superclass;
 import org.teavm.model.*;
@@ -32,6 +33,9 @@ class ClassRefsRenamer implements InstructionVisitor {
         }
         renamedCls.setParent(parent != null ? classNameMapper.map(parent) : null);
         for (MethodHolder method : cls.getMethods()) {
+            if (method.getAnnotations().get(Remove.class.getName()) != null) {
+                continue;
+            }
             renamedCls.addMethod(rename(method));
         }
         for (FieldHolder field : cls.getFields().toArray(new FieldHolder[0])) {

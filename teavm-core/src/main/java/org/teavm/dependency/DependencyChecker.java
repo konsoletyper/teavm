@@ -133,6 +133,7 @@ public class DependencyChecker {
         if (e != null) {
             throw exceptionOccured.get();
         }
+        executor.shutdown();
     }
 
     void achieveClass(String className) {

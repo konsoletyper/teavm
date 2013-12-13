@@ -255,7 +255,7 @@ Long = function(lo, hi) {
 }
 Long_ZERO = new Long(0, 0);
 Long_fromInt = function(val) {
-    return new Long(val, 0);
+    return val >= 0 ? new Long(val, 0) : new Long(val, -1);
 }
 Long_fromNumber = function(val) {
     return new Long(val | 0, (val / 0x100000000) | 0);
