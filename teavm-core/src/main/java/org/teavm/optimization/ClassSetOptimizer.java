@@ -12,14 +12,16 @@ import org.teavm.model.MethodHolder;
  */
 public class ClassSetOptimizer {
     private List<MethodOptimization> optimizations = Arrays.<MethodOptimization>asList(
-            new UnusedVariableElimination());
+            new CommonSubexpressionElimination(), new UnusedVariableElimination());
 
     public void optimizeAll(ListableClassHolderSource classSource) {
         for (String className : classSource.getClassNames()) {
             ClassHolder cls = classSource.getClassHolder(className);
             for (MethodHolder method : cls.getMethods()) {
-                for (MethodOptimization optimization : optimizations) {
-                    optimization.optimize(method);
+                if (method.getProgram() != null && method.getProgram().basicBlockCount() > 0) {
+                    for (MethodOptimization optimization : optimizations) {
+                        optimization.optimize(method);
+                    }
                 }
             }
         }

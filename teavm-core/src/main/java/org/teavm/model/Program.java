@@ -53,6 +53,7 @@ public class Program {
         variables.set(index, null);
         variable.setIndex(-1);
         variable.setProgram(null);
+        packed = false;
     }
 
     public boolean isPacked() {
@@ -75,9 +76,17 @@ public class Program {
             basicBlocks.remove(basicBlocks.size() - 1);
         }
         sz = 0;
-        for (int i = 0; i < basicBlocks.size(); ++i) {
-
+        for (int i = 0; i < variables.size(); ++i) {
+            Variable var = variables.get(i);
+            if (var != null) {
+                var.setIndex(sz);
+                variables.set(sz++, var);
+            }
         }
+        while (variables.size() > sz) {
+            variables.remove(variables.size() - 1);
+        }
+        packed = true;
     }
 
     public int variableCount() {
