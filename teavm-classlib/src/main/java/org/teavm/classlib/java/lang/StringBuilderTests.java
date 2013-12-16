@@ -135,6 +135,55 @@ public class StringBuilderTests {
     }
 
     @Test
+    public void normalFloatAppended() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(1200f);
+        assertEquals("1200.0", sb.toString());
+    }
+
+    @Test
+    public void normalSmallFloatAppended() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(0.023f);
+        assertEquals("0.023", sb.toString());
+    }
+
+    @Test
+    public void zeroFloatAppended() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(0f);
+        assertEquals("0.0", sb.toString());
+    }
+
+    @Test
+    public void oneFloatAppended() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(1f);
+        assertEquals("1.0", sb.toString());
+    }
+
+    @Test
+    public void nanFloatAppended() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(Float.NaN);
+        assertEquals("NaN", sb.toString());
+    }
+
+    @Test
+    public void positiveInfinityAppended() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(Float.POSITIVE_INFINITY);
+        assertEquals("Infinity", sb.toString());
+    }
+
+    @Test
+    public void negativeInfinityAppended() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(Float.NEGATIVE_INFINITY);
+        assertEquals("-Infinity", sb.toString());
+    }
+
+    @Test
     public void appendsCodePoint() {
         StringBuilder sb = new StringBuilder();
         sb.appendCodePoint(969356);

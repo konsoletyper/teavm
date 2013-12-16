@@ -10,8 +10,14 @@ import org.teavm.javascript.ni.Rename;
  * @author Alexey Andreev
  */
 class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequence {
-    private static float[] powersOfTen = { 1E1f, 1E2f, 1E4f, 1E8f, 1E16f, 1E32f };
-    private static float[] negPowersOfTen = { 1E-1f, 1E-2f, 1E-4f, 1E-8f, 1E-16f, 1E-32f };
+    private static final float[] powersOfTen = { 1E1f, 1E2f, 1E4f, 1E8f, 1E16f, 1E32f };
+    private static final float[] negPowersOfTen = { 1E-1f, 1E-2f, 1E-4f, 1E-8f, 1E-16f, 1E-32f };
+    private static final int[] intPowersOfTen = { 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000,
+            1000000000 };
+    private static final int FLOAT_DECIMAL_PRECISION = 7;
+    private static final float FLOAT_DECIMAL_FACTOR = 1E6f;
+    private static final int FLOAT_MAX_EXPONENT = 38;
+    private static final int FLOAT_MAX_POS = 1000000;
     char[] buffer;
     int length;
 
@@ -108,27 +114,70 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
     }
 
     protected TAbstractStringBuilder append(float value) {
+        if (value == 0) {
+            ensureCapacity(length + 3);
+            buffer[length++] = '0';
+            buffer[length++] = '.';
+            buffer[length++] = '0';
+            return this;
+        } else if (value == -0) {
+            ensureCapacity(length + 4);
+            buffer[length++] = '-';
+            buffer[length++] = '0';
+            buffer[length++] = '.';
+            buffer[length++] = '0';
+            return this;
+        } else if (Float.isNaN(value)) {
+            ensureCapacity(length + 3);
+            buffer[length++] = 'N';
+            buffer[length++] = 'a';
+            buffer[length++] = 'N';
+            return this;
+        } else if (Float.isInfinite(value)) {
+            if (value > 0) {
+                ensureCapacity(8);
+            } else {
+                ensureCapacity(9);
+                buffer[length++] = '-';
+            }
+            buffer[length++] = 'I';
+            buffer[length++] = 'n';
+            buffer[length++] = 'f';
+            buffer[length++] = 'i';
+            buffer[length++] = 'n';
+            buffer[length++] = 'i';
+            buffer[length++] = 't';
+            buffer[length++] = 'y';
+            return this;
+        }
+        // Get absolute value
         boolean negative = false;
-        int sz = 10;
+        int sz = 1; // Decimal point always included
         if (value < 0) {
             negative = true;
             value = -value;
-            ++sz;
+            ++sz; // including '-' sign of mantissa
         }
+
+        // Split into decimal mantissa and decimal exponent
         int exp = 0;
-        if (value > 1) {
+        int mantissa = 0;
+        int intPart = 1;
+        int digits = 0;
+        if (value >= 1) {
             int bit = 32;
             exp = 0;
             float digit = 1;
             for (int i = powersOfTen.length - 1; i >= 0; --i) {
-                if ((exp | bit) <= 38 && powersOfTen[i] * digit < value) {
+                if ((exp | bit) <= FLOAT_MAX_EXPONENT && powersOfTen[i] * digit  < value) {
                     digit *= powersOfTen[i];
                     exp |= bit;
                 }
                 bit >>= 1;
             }
-            value /= digit;
+            mantissa = (int)((value / (digit / FLOAT_DECIMAL_FACTOR)) + 0.5f);
         } else {
+            ++sz;
             int bit = 32;
             exp = 0;
             float digit = 1;
@@ -139,44 +188,98 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
                 }
                 bit >>= 1;
             }
-            value /= digit;
             exp = -exp;
-            ++sz;
+            mantissa = (int)(((value * FLOAT_MAX_POS) / digit) + 0.5f);
         }
-        value += 5E-7F;
-        if (exp > 10) {
-            ++sz;
+
+        // Remove trailing zeros
+        digits = FLOAT_DECIMAL_PRECISION;
+        int zeros = trailingDecimalZeros(mantissa);
+        if (zeros > 0) {
+            digits -= zeros;
         }
+
+        // Handle special case of exponent close to 0
+        if (exp < 7 && exp >= -3) {
+            if (exp >= 0) {
+                intPart = exp + 1;
+                digits = Math.max(digits, intPart + 1);
+                exp = 0;
+            } else if (exp < 0) {
+                mantissa /= intPowersOfTen[-exp];
+                digits -= exp;
+                exp = 0;
+            }
+        }
+        sz += digits;
+
+        // Extend buffer to store exponent
+        if (exp != 0) {
+            sz += 2;
+            if (exp < 10 || exp > 10) {
+                ++sz;
+            }
+        }
+
+        // Print mantissa
         ensureCapacity(length + sz);
         if (negative) {
             buffer[length++] = '-';
         }
-        int intDigit = (int)value;
-        buffer[length++] = (char)('0' + intDigit);
-        buffer[length++] = '.';
-        value = (value - intDigit) * 10;
-        int zeros = 0;
-        for (int i = 0; i < 6; ++i) {
-            intDigit = (int)value;
-            if (intDigit == 0) {
-                ++zeros;
+        int pos = FLOAT_MAX_POS;
+        for (int i = 0; i < digits; ++i) {
+            int intDigit;
+            if (pos > 0) {
+                intDigit = mantissa / pos;
+                mantissa %= pos;
             } else {
-                zeros = 0;
+                intDigit = 0;
             }
             buffer[length++] = (char)('0' + intDigit);
             value = (value - intDigit) * 10;
+            if (--intPart == 0) {
+                buffer[length++] = '.';
+            }
+            pos /= 10;
         }
-        length -= Math.min(zeros, 5);
-        buffer[length++] = 'E';
-        if (exp < 0) {
-            exp = -exp;
-            buffer[length++] = '-';
+
+        // Print exponent
+        if (exp != 0) {
+            buffer[length++] = 'E';
+            if (exp < 0) {
+                exp = -exp;
+                buffer[length++] = '-';
+            }
+            if (exp > 10) {
+                buffer[length++] = (char)('0' + exp / 10);
+            }
+            buffer[length++] = (char)('0' + exp % 10);
         }
-        if (exp > 10) {
-            buffer[length++] = (char)('0' + exp / 10);
-        }
-        buffer[length++] = (char)('0' + exp % 10);
         return this;
+    }
+
+    private static int trailingDecimalZeros(int n) {
+        if (n % 1000000000 == 0) {
+            return 9;
+        }
+        int result = 0;
+        int zeros = 1;
+        if (n % 100000000 == 0) {
+            result |= 8;
+            zeros *= 100000000;
+        }
+        if (n % (zeros * 10000) == 0) {
+            result |= 4;
+            zeros *= 10000;
+        }
+        if (n % (zeros * 100) == 0) {
+            result |= 2;
+            zeros *= 100;
+        }
+        if (n % (zeros * 10) == 0) {
+            result |= 1;
+        }
+        return result;
     }
 
     protected TAbstractStringBuilder append(char c) {
