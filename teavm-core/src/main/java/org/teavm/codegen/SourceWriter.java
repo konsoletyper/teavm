@@ -1,5 +1,6 @@
 package org.teavm.codegen;
 
+import java.io.IOException;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 
@@ -7,87 +8,98 @@ import org.teavm.model.MethodReference;
  *
  * @author Alexey Andreev
  */
-public class SourceWriter {
-    private StringBuilder sb = new StringBuilder();
+public class SourceWriter implements Appendable {
+    private Appendable innerWriter;
     private int indentSize = 0;
     private NamingStrategy naming;
     private boolean lineStart;
     private boolean minified;
 
-    SourceWriter(NamingStrategy naming) {
+    SourceWriter(NamingStrategy naming, Appendable innerWriter) {
         this.naming = naming;
+        this.innerWriter = innerWriter;
     }
 
     void setMinified(boolean minified) {
         this.minified = minified;
     }
 
-    public void clear() {
-        sb.setLength(0);
-    }
-
-    public SourceWriter append(String value) {
+    public SourceWriter append(String value) throws IOException {
         appendIndent();
-        sb.append(value);
+        innerWriter.append(value);
         return this;
     }
 
-    public SourceWriter append(Object value) {
+    public SourceWriter append(Object value) throws IOException {
         return append(String.valueOf(value));
     }
 
-    public SourceWriter append(int value) {
+    public SourceWriter append(int value) throws IOException {
         return append(String.valueOf(value));
     }
 
-    public SourceWriter append(char value) {
-        return append(String.valueOf(value));
+    @Override
+    public SourceWriter append(char value) throws IOException {
+        innerWriter.append(value);
+        return this;
     }
 
-    public SourceWriter appendClass(String cls) throws NamingException {
+    @Override
+    public SourceWriter append(CharSequence csq) throws IOException {
+        innerWriter.append(csq);
+        return this;
+    }
+
+    @Override
+    public SourceWriter append(CharSequence csq, int start, int end) throws IOException {
+        innerWriter.append(csq, start, end);
+        return this;
+    }
+
+    public SourceWriter appendClass(String cls) throws NamingException, IOException {
         return append(naming.getNameFor(cls));
     }
 
-    public SourceWriter appendField(FieldReference field) throws NamingException {
+    public SourceWriter appendField(FieldReference field) throws NamingException, IOException {
         return append(naming.getNameFor(field));
     }
 
-    public SourceWriter appendMethod(MethodReference method) throws NamingException {
+    public SourceWriter appendMethod(MethodReference method) throws NamingException, IOException {
         return append(naming.getNameFor(method));
     }
 
-    public SourceWriter appendMethodBody(MethodReference method) throws NamingException {
+    public SourceWriter appendMethodBody(MethodReference method) throws NamingException, IOException {
         return append(naming.getFullNameFor(method));
     }
 
-    private void appendIndent() {
+    private void appendIndent() throws IOException {
         if (minified) {
             return;
         }
         if (lineStart) {
             for (int i = 0; i < indentSize; ++i) {
-                sb.append("    ");
+                innerWriter.append("    ");
             }
             lineStart = false;
         }
     }
 
-    public SourceWriter newLine() {
-        sb.append('\n');
+    public SourceWriter newLine() throws IOException{
+        innerWriter.append('\n');
         lineStart = true;
         return this;
     }
 
-    public SourceWriter ws() {
+    public SourceWriter ws() throws IOException{
         if (!minified) {
-            sb.append(' ');
+            innerWriter.append(' ');
         }
         return this;
     }
 
-    public SourceWriter softNewLine() {
+    public SourceWriter softNewLine() throws IOException{
         if (!minified) {
-            sb.append('\n');
+            innerWriter.append('\n');
             lineStart = true;
         }
         return this;
@@ -105,10 +117,5 @@ public class SourceWriter {
 
     public NamingStrategy getNaming() {
         return naming;
-    }
-
-    @Override
-    public String toString() {
-        return sb.toString();
     }
 }

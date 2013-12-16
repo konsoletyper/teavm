@@ -1,5 +1,6 @@
 package org.teavm.classlib.java.lang;
 
+import java.io.IOException;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.GeneratorContext;
@@ -11,7 +12,7 @@ import org.teavm.model.MethodReference;
  */
 public class StringNativeGenerator implements Generator {
     @Override
-    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
+    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
         switch (methodRef.getName()) {
             case "wrap":
                 generateWrap(context, writer);
@@ -19,7 +20,7 @@ public class StringNativeGenerator implements Generator {
         }
     }
 
-    private void generateWrap(GeneratorContext context, SourceWriter writer) {
+    private void generateWrap(GeneratorContext context, SourceWriter writer) throws IOException {
         writer.append("return ").append(context.getParameterName(1)).softNewLine();
     }
 }

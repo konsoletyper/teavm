@@ -1,16 +1,14 @@
 package org.teavm.classlibgen;
 
 import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.commons.io.IOUtils;
-import org.teavm.codegen.*;
-import org.teavm.dependency.DependencyChecker;
-import org.teavm.javascript.Decompiler;
-import org.teavm.javascript.Renderer;
-import org.teavm.javascript.ast.ClassNode;
+import org.teavm.javascript.JavascriptBuilder;
 import org.teavm.model.*;
 import org.teavm.model.resource.ClasspathClassHolderSource;
-import org.teavm.optimization.ClassSetOptimizer;
 
 /**
  *
@@ -19,11 +17,6 @@ import org.teavm.optimization.ClassSetOptimizer;
 public class ClasslibTestGenerator {
     private static File outputDir;
     private static ClasspathClassHolderSource classSource;
-    private static Decompiler decompiler;
-    private static AliasProvider aliasProvider;
-    private static DefaultNamingStrategy naming;
-    private static SourceWriter writer;
-    private static Renderer renderer;
     private static List<MethodReference> testMethods = new ArrayList<>();
     private static Map<String, List<MethodReference>> groupedMethods = new HashMap<>();
     private static Map<MethodReference, String> fileNames = new HashMap<>();
@@ -90,46 +83,19 @@ public class ClasslibTestGenerator {
     }
 
     private static void decompileClassesForTest(MethodReference methodRef, String targetName) throws IOException {
-        classSource = new ClasspathClassHolderSource();
-        decompiler = new Decompiler(classSource);
-        aliasProvider = new DefaultAliasProvider();
-        naming = new DefaultNamingStrategy(aliasProvider, classSource);
-        naming.setMinifying(false);
-        SourceWriterBuilder builder = new SourceWriterBuilder(naming);
-        builder.setMinified(false);
-        writer = builder.build();
-        renderer = new Renderer(writer, classSource);
-        renderer.renderRuntime();
-        DependencyChecker dependencyChecker = new DependencyChecker(classSource);
+        JavascriptBuilder builder = new JavascriptBuilder();
+        builder.setMinifying(true);
+        @SuppressWarnings("resource")
+        Writer innerWriter = new OutputStreamWriter(new FileOutputStream(new File(outputDir, targetName)), "UTF-8");
         MethodReference cons = new MethodReference(methodRef.getClassName(),
                 new MethodDescriptor("<init>", ValueType.VOID));
-        dependencyChecker.addEntryPoint(cons);
-        dependencyChecker.addEntryPoint(methodRef);
-        dependencyChecker.attachMethodGraph(new MethodReference("java.lang.Class", new MethodDescriptor("createNew",
-                ValueType.object("java.lang.Class"))));
-        dependencyChecker.attachMethodGraph(new MethodReference("java.lang.String", new MethodDescriptor("<init>",
-                ValueType.arrayOf(ValueType.CHARACTER), ValueType.VOID)));
-        dependencyChecker.checkDependencies();
-        ListableClassHolderSource classSet = dependencyChecker.cutUnachievableClasses();
-        ClassSetOptimizer optimizer = new ClassSetOptimizer();
-        optimizer.optimizeAll(classSet);
-        renderer.renderRuntime();
-        decompileClasses(classSet.getClassNames());
-        writer.append("JUnitClient.run(function() {").softNewLine().indent();
-        writer.append("var testObj = ").appendClass(methodRef.getClassName()).append(".")
-                .appendMethod(cons).append("();").softNewLine();
-        writer.append("testObj.").appendMethod(methodRef).append("();").softNewLine();
-        writer.outdent().append("});").newLine();
-        try (Writer out = new OutputStreamWriter(new FileOutputStream(new File(outputDir, targetName)), "UTF-8")) {
-            out.write(writer.toString());
-        }
-    }
-
-    private static void decompileClasses(Collection<String> classNames) {
-        List<ClassNode> clsNodes = decompiler.decompile(classNames);
-        for (ClassNode clsNode : clsNodes) {
-            renderer.render(clsNode);
-        }
+        builder.entryPoint("initInstance", cons);
+        builder.entryPoint("runTest", methodRef).withValue(0, cons.getClassName());
+        builder.exportType("TestClass", cons.getClassName());
+        builder.build(innerWriter);
+        innerWriter.append("\n");
+        innerWriter.append("\nJUnitClient.run();");
+        innerWriter.close();
     }
 
     private static void findTests(ClassHolder cls) {

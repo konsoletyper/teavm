@@ -1,5 +1,6 @@
 package org.teavm.classlib.java.lang.reflect;
 
+import java.io.IOException;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.dependency.DependencyChecker;
 import org.teavm.dependency.DependencyConsumer;
@@ -24,7 +25,7 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
     }
 
     @Override
-    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
+    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
         switch (methodRef.getName()) {
             case "getLength":
                 generateGetLength(context, writer);
@@ -32,7 +33,7 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
         }
     }
 
-    private void generateGetLength(GeneratorContext context, SourceWriter writer) {
+    private void generateGetLength(GeneratorContext context, SourceWriter writer) throws IOException {
         String array = context.getParameterName(1);
         writer.append("if (" + array + " === null || " + array + " .$class.$meta.item === undefined) {")
                 .softNewLine().indent();

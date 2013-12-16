@@ -182,12 +182,14 @@ JUnitServer.prototype.createFooter = function() {
 }
 
 JUnitClient = {};
-JUnitClient.run = function(runner) {
+JUnitClient.run = function() {
     var handler = window.addEventListener("message", function() {
         window.removeEventListener("message", handler);
         var message = {};
         try {
-            runner();
+            var instance = new TestClass();
+            initInstance(instance);
+            runTest(instance);
             message.status = "ok";
         } catch (e) {
             message.status = "exception";

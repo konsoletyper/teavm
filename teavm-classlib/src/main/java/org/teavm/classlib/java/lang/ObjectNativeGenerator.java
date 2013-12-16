@@ -1,5 +1,6 @@
 package org.teavm.classlib.java.lang;
 
+import java.io.IOException;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.dependency.DependencyChecker;
 import org.teavm.dependency.DependencyPlugin;
@@ -16,7 +17,7 @@ import org.teavm.model.ValueType;
  */
 public class ObjectNativeGenerator implements Generator, DependencyPlugin {
     @Override
-    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
+    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
         switch (methodRef.getDescriptor().getName()) {
             case "<init>":
                 generateInit(context, writer);
@@ -51,11 +52,11 @@ public class ObjectNativeGenerator implements Generator, DependencyPlugin {
         }
     }
 
-    private void generateInit(GeneratorContext context, SourceWriter writer) {
+    private void generateInit(GeneratorContext context, SourceWriter writer) throws IOException {
         writer.append(context.getParameterName(0)).append(".$id = $rt_nextId();").softNewLine();
     }
 
-    private void generateGetClass(GeneratorContext context, SourceWriter writer) {
+    private void generateGetClass(GeneratorContext context, SourceWriter writer) throws IOException {
         String thisArg = context.getParameterName(0);
         writer.append("return $rt_cls(").append(thisArg).append(".$class);").softNewLine();
     }
@@ -68,11 +69,11 @@ public class ObjectNativeGenerator implements Generator, DependencyPlugin {
         checker.attachMethodGraph(method).getResultNode().propagate("java.lang.Class");
     }
 
-    private void generateHashCode(GeneratorContext context, SourceWriter writer) {
+    private void generateHashCode(GeneratorContext context, SourceWriter writer) throws IOException {
         writer.append("return ").append(context.getParameterName(0)).append(".$id;").softNewLine();
     }
 
-    private void generateClone(GeneratorContext context, SourceWriter writer) {
+    private void generateClone(GeneratorContext context, SourceWriter writer) throws IOException {
         writer.append("var copy = new ").append(context.getParameterName(0)).append(".$class();").softNewLine();
         writer.append("for (var field in obj) {").softNewLine().indent();
         writer.append("if (!obj.hasOwnProperty(field)) {").softNewLine().indent();
@@ -86,7 +87,7 @@ public class ObjectNativeGenerator implements Generator, DependencyPlugin {
         graph.getVariableNode(0).connect(graph.getResultNode());
     }
 
-    private void generateWrap(GeneratorContext context, SourceWriter writer) {
+    private void generateWrap(GeneratorContext context, SourceWriter writer) throws IOException {
         writer.append("return ").append(context.getParameterName(1)).append(";").softNewLine();
     }
 

@@ -12,7 +12,7 @@ import org.teavm.model.instructions.InvocationType;
  *
  * @author Alexey Andreev
  */
-public class StatementGenerator implements InstructionVisitor {
+class StatementGenerator implements InstructionVisitor {
     private int lastSwitchId;
     List<Statement> statements = new ArrayList<>();
     GraphIndexer indexer;

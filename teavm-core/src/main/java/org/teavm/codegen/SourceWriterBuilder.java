@@ -1,6 +1,5 @@
 package org.teavm.codegen;
 
-
 /**
  *
  * @author Alexey Andreev
@@ -21,8 +20,8 @@ public class SourceWriterBuilder {
         this.minified = minified;
     }
 
-    public SourceWriter build() {
-        SourceWriter writer = new SourceWriter(naming);
+    public SourceWriter build(Appendable innerWriter) {
+        SourceWriter writer = new SourceWriter(naming, innerWriter);
         writer.setMinified(minified);
         return writer;
     }

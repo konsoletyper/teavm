@@ -15,6 +15,7 @@
  */
 package org.teavm.javascript;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import org.teavm.codegen.NamingException;
@@ -64,10 +65,12 @@ public class Renderer implements ExprVisitor, StatementVisitor {
             renderRuntimeObjcls();
         } catch (NamingException e) {
             throw new RenderingException("Error rendering runtime methods. See a cause for details", e);
+        } catch (IOException e) {
+            throw new RenderingException("IO error", e);
         }
     }
 
-    private void renderRuntimeCls() {
+    private void renderRuntimeCls() throws IOException {
         writer.append("$rt_cls").ws().append("=").ws().append("function(clsProto)").ws().append("{")
                 .indent().softNewLine();
         String classClass = "java.lang.Class";
@@ -98,7 +101,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         writer.outdent().append("}").newLine();
     }
 
-    private void renderRuntimeString() {
+    private void renderRuntimeString() throws IOException {
         String stringClass = "java.lang.String";
         MethodReference stringCons = new MethodReference(stringClass, new MethodDescriptor("<init>",
                 ValueType.arrayOf(ValueType.CHARACTER), ValueType.VOID));
@@ -113,7 +116,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         writer.outdent().append("}").newLine();
     }
 
-    private void renderRuntimeObjcls() {
+    private void renderRuntimeObjcls() throws IOException {
         writer.append("$rt_objcls = function() { return ").appendClass("java.lang.Object").append("; }").newLine();
     }
 
@@ -202,6 +205,8 @@ public class Renderer implements ExprVisitor, StatementVisitor {
             }
         } catch (NamingException e) {
             throw new RenderingException("Error rendering class " + cls.getName() + ". See a cause for details", e);
+        } catch (IOException e) {
+            throw new RenderingException("IO error occured", e);
         }
     }
 
@@ -230,7 +235,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         return null;
     }
 
-    private void renderInitializer(MethodNode method) {
+    private void renderInitializer(MethodNode method) throws IOException {
         MethodReference ref = method.getReference();
         writer.appendClass(ref.getClassName()).append(".").appendMethod(ref).ws().append("=").ws().append("function(");
         for (int i = 1; i <= ref.parameterCount(); ++i) {
@@ -254,7 +259,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         writer.outdent().append("}").newLine();
     }
 
-    public void renderDeclaration(MethodNode method) throws RenderingException {
+    public void renderDeclaration(MethodNode method) throws RenderingException, IOException {
         try {
             MethodReference ref = method.getReference();
             if (ref.getDescriptor().getName().equals("<init>")) {
@@ -294,7 +299,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         }
     }
 
-    public void renderBody(MethodNode method) {
+    public void renderBody(MethodNode method) throws IOException {
         MethodReference ref = method.getReference();
         writer.appendMethodBody(ref).ws().append("=").ws().append("function(");
         int startParam = 0;
@@ -315,27 +320,35 @@ public class Renderer implements ExprVisitor, StatementVisitor {
     private class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
         @Override
         public void visit(NativeMethodNode methodNode) {
-            methodNode.getGenerator().generate(this, writer, methodNode.getReference());
+            try {
+                methodNode.getGenerator().generate(this, writer, methodNode.getReference());
+            } catch (IOException e) {
+                throw new RenderingException("IO error occured", e);
+            }
         }
 
         @Override
         public void visit(RegularMethodNode method) {
-            MethodReference ref = method.getReference();
-            int variableCount = method.getVariableCount();
-            boolean hasVars = variableCount > ref.parameterCount() + 1;
-            if (hasVars) {
-                writer.append("var ");
-                boolean first = true;
-                for (int i = ref.parameterCount() + 1; i < variableCount; ++i) {
-                    if (!first) {
-                        writer.append(",").ws();
+            try {
+                MethodReference ref = method.getReference();
+                int variableCount = method.getVariableCount();
+                boolean hasVars = variableCount > ref.parameterCount() + 1;
+                if (hasVars) {
+                    writer.append("var ");
+                    boolean first = true;
+                    for (int i = ref.parameterCount() + 1; i < variableCount; ++i) {
+                        if (!first) {
+                            writer.append(",").ws();
+                        }
+                        first = false;
+                        writer.append(variableName(i));
                     }
-                    first = false;
-                    writer.append(variableName(i));
+                    writer.append(";").softNewLine();
                 }
-                writer.append(";").softNewLine();
+                method.getBody().acceptVisitor(Renderer.this);
+            } catch (IOException e) {
+                throw new RenderingException("IO error occured", e);
             }
-            method.getBody().acceptVisitor(Renderer.this);
         }
 
         @Override
@@ -345,13 +358,17 @@ public class Renderer implements ExprVisitor, StatementVisitor {
     }
 
     @Override
-    public void visit(AssignmentStatement statement) {
-        if (statement.getLeftValue() != null) {
-            statement.getLeftValue().acceptVisitor(this);
-            writer.ws().append("=").ws();
+    public void visit(AssignmentStatement statement) throws RenderingException {
+        try {
+            if (statement.getLeftValue() != null) {
+                statement.getLeftValue().acceptVisitor(this);
+                writer.ws().append("=").ws();
+            }
+            statement.getRightValue().acceptVisitor(this);
+            writer.append(";").softNewLine();
+        } catch (IOException e) {
+            throw new RenderingException("IO error occured", e);
         }
-        statement.getRightValue().acceptVisitor(this);
-        writer.append(";").softNewLine();
     }
 
     @Override
@@ -363,66 +380,82 @@ public class Renderer implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(ConditionalStatement statement) {
-        writer.append("if").ws().append("(");
-        statement.getCondition().acceptVisitor(this);
-        writer.append(")").ws().append("{").softNewLine().indent();
-        statement.getConsequent().acceptVisitor(this);
-        if (statement.getAlternative() != null) {
-            writer.outdent().append("}").ws().append("else").ws().append("{").indent().softNewLine();
-            statement.getAlternative().acceptVisitor(this);
+        try {
+            writer.append("if").ws().append("(");
+            statement.getCondition().acceptVisitor(this);
+            writer.append(")").ws().append("{").softNewLine().indent();
+            statement.getConsequent().acceptVisitor(this);
+            if (statement.getAlternative() != null) {
+                writer.outdent().append("}").ws().append("else").ws().append("{").indent().softNewLine();
+                statement.getAlternative().acceptVisitor(this);
+            }
+            writer.outdent().append("}").softNewLine();
+        } catch (IOException e) {
+            throw new RenderingException("IO error occured", e);
         }
-        writer.outdent().append("}").softNewLine();
     }
 
     @Override
     public void visit(SwitchStatement statement) {
-        if (statement.getId() != null) {
-            writer.append(statement.getId()).append(": ");
-        }
-        writer.append("switch").ws().append("(");
-        statement.getValue().acceptVisitor(this);
-        writer.append(")").ws().append("{").softNewLine().indent();
-        for (SwitchClause clause : statement.getClauses()) {
-            for (int condition : clause.getConditions()) {
-                writer.append("case ").append(condition).append(":").softNewLine();
+        try {
+            if (statement.getId() != null) {
+                writer.append(statement.getId()).append(": ");
             }
-            writer.indent();
-            clause.getStatement().acceptVisitor(this);
-            writer.outdent();
+            writer.append("switch").ws().append("(");
+            statement.getValue().acceptVisitor(this);
+            writer.append(")").ws().append("{").softNewLine().indent();
+            for (SwitchClause clause : statement.getClauses()) {
+                for (int condition : clause.getConditions()) {
+                    writer.append("case ").append(condition).append(":").softNewLine();
+                }
+                writer.indent();
+                clause.getStatement().acceptVisitor(this);
+                writer.outdent();
+            }
+            if (statement.getDefaultClause() != null) {
+                writer.append("default:").softNewLine().indent();
+                statement.getDefaultClause().acceptVisitor(this);
+                writer.outdent();
+            }
+            writer.outdent().append("}").softNewLine();
+        } catch (IOException e) {
+            throw new RenderingException("IO error occured", e);
         }
-        if (statement.getDefaultClause() != null) {
-            writer.append("default:").softNewLine().indent();
-            statement.getDefaultClause().acceptVisitor(this);
-            writer.outdent();
-        }
-        writer.outdent().append("}").softNewLine();
     }
 
     @Override
     public void visit(WhileStatement statement) {
-        if (statement.getId() != null) {
-            writer.append(statement.getId()).append(":").ws();
+        try {
+            if (statement.getId() != null) {
+                writer.append(statement.getId()).append(":").ws();
+            }
+            writer.append("while").ws().append("(");
+            if (statement.getCondition() != null) {
+                statement.getCondition().acceptVisitor(this);
+            } else {
+                writer.append("true");
+            }
+            writer.append(")").ws().append("{").softNewLine().indent();
+            for (Statement part : statement.getBody()) {
+                part.acceptVisitor(this);
+            }
+            writer.outdent().append("}").softNewLine();
+        } catch (IOException e) {
+            throw new RenderingException("IO error occured", e);
         }
-        writer.append("while").ws().append("(");
-        if (statement.getCondition() != null) {
-            statement.getCondition().acceptVisitor(this);
-        } else {
-            writer.append("true");
-        }
-        writer.append(")").ws().append("{").softNewLine().indent();
-        for (Statement part : statement.getBody()) {
-            part.acceptVisitor(this);
-        }
-        writer.outdent().append("}").softNewLine();
     }
 
     @Override
     public void visit(BlockStatement statement) {
-        writer.append(statement.getId()).append(":").ws().append("{").softNewLine().indent();
-        for (Statement part : statement.getBody()) {
-            part.acceptVisitor(this);
+        try {
+            writer.append(statement.getId()).append(":").ws().append("{").softNewLine().indent();
+            for (Statement part : statement.getBody()) {
+                part.acceptVisitor(this);
+            }
+            writer.outdent().append("}").softNewLine();
+        } catch (IOException e) {
+            throw new RenderingException("IO error occured", e);
         }
-        writer.outdent().append("}").softNewLine();
     }
 
     @Override
@@ -432,48 +465,68 @@ public class Renderer implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(BreakStatement statement) {
-        writer.append("break ").append(statement.getTarget().getId()).append(";").softNewLine();
+        try {
+            writer.append("break ").append(statement.getTarget().getId()).append(";").softNewLine();
+        } catch (IOException e) {
+            throw new RenderingException("IO error occured", e);
+        }
     }
 
     @Override
     public void visit(ContinueStatement statement) {
-        writer.append("continue ").append(statement.getTarget().getId()).append(";").softNewLine();
+        try {
+            writer.append("continue ").append(statement.getTarget().getId()).append(";").softNewLine();
+        } catch (IOException e) {
+            throw new RenderingException("IO error occured", e);
+        }
     }
 
     @Override
     public void visit(ReturnStatement statement) {
-        writer.append("return");
-        if (statement.getResult() != null) {
-            writer.append(' ');
-            statement.getResult().acceptVisitor(this);
+        try {
+            writer.append("return");
+            if (statement.getResult() != null) {
+                writer.append(' ');
+                statement.getResult().acceptVisitor(this);
+            }
+            writer.append(";").softNewLine();
+        } catch (IOException e) {
+            throw new RenderingException("IO error occured", e);
         }
-        writer.append(";").softNewLine();
     }
 
     @Override
     public void visit(ThrowStatement statement) {
-        writer.append("$rt_throw(");
-        statement.getException().acceptVisitor(this);
-        writer.append(");").softNewLine();
+        try {
+            writer.append("$rt_throw(");
+            statement.getException().acceptVisitor(this);
+            writer.append(");").softNewLine();
+        } catch (IOException e) {
+            throw new RenderingException("IO error occured", e);
+        }
     }
 
     @Override
     public void visit(IncrementStatement statement) {
-        writer.append(variableName(statement.getVar()));
-        if (statement.getAmount() > 0) {
-            if (statement.getAmount() == 1) {
-                writer.append("++");
+        try {
+            writer.append(variableName(statement.getVar()));
+            if (statement.getAmount() > 0) {
+                if (statement.getAmount() == 1) {
+                    writer.append("++");
+                } else {
+                    writer.ws().append("+=").ws().append(statement.getAmount());
+                }
             } else {
-                writer.ws().append("+=").ws().append(statement.getAmount());
+                if (statement.getAmount() == -1) {
+                    writer.append("--");
+                } else {
+                    writer.ws().append("-=").ws().append(statement.getAmount());
+                }
             }
-        } else {
-            if (statement.getAmount() == -1) {
-                writer.append("--");
-            } else {
-                writer.ws().append("-=").ws().append(statement.getAmount());
-            }
+            writer.append(";").softNewLine();
+        } catch (IOException e) {
+            throw new RenderingException("IO error occured", e);
         }
-        writer.append(";").softNewLine();
     }
 
     public String variableName(int index) {
@@ -490,20 +543,28 @@ public class Renderer implements ExprVisitor, StatementVisitor {
     }
 
     private void visitBinary(BinaryExpr expr, String op) {
-        writer.append('(');
-        expr.getFirstOperand().acceptVisitor(this);
-        writer.ws().append(op).ws();
-        expr.getSecondOperand().acceptVisitor(this);
-        writer.append(')');
+        try {
+            writer.append('(');
+            expr.getFirstOperand().acceptVisitor(this);
+            writer.ws().append(op).ws();
+            expr.getSecondOperand().acceptVisitor(this);
+            writer.append(')');
+        } catch (IOException e) {
+            throw new RenderingException("IO error occured", e);
+        }
     }
 
     private void visitBinaryFunction(BinaryExpr expr, String function) {
-        writer.append(function);
-        writer.append('(');
-        expr.getFirstOperand().acceptVisitor(this);
-        writer.append(",").ws();
-        expr.getSecondOperand().acceptVisitor(this);
-        writer.append(')');
+        try {
+            writer.append(function);
+            writer.append('(');
+            expr.getFirstOperand().acceptVisitor(this);
+            writer.append(",").ws();
+            expr.getSecondOperand().acceptVisitor(this);
+            writer.append(')');
+        } catch (IOException e) {
+            throw new RenderingException("IO error occured", e);
+        }
     }
 
     @Override
@@ -616,73 +677,85 @@ public class Renderer implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(UnaryExpr expr) {
-        switch (expr.getOperation()) {
-            case NOT:
-                writer.append("(!");
-                expr.getOperand().acceptVisitor(this);
-                writer.append(')');
-                break;
-            case NEGATE:
-                writer.append("(-");
-                expr.getOperand().acceptVisitor(this);
-                writer.append(')');
-                break;
-            case LENGTH:
-                expr.getOperand().acceptVisitor(this);
-                writer.append(".length");
-                break;
-            case INT_TO_LONG:
-                writer.append("Long_fromInt(");
-                expr.getOperand().acceptVisitor(this);
-                writer.append(')');
-                break;
-            case NUM_TO_LONG:
-                writer.append("Long_fromNumber(");
-                expr.getOperand().acceptVisitor(this);
-                writer.append(')');
-                break;
-            case LONG_TO_NUM:
-                writer.append("Long_toNumber(");
-                expr.getOperand().acceptVisitor(this);
-                writer.append(')');
-                break;
-            case NEGATE_LONG:
-                writer.append("Long_neg(");
-                expr.getOperand().acceptVisitor(this);
-                writer.append(')');
-                break;
-            case NOT_LONG:
-                writer.append("Long_not(");
-                expr.getOperand().acceptVisitor(this);
-                writer.append(')');
-                break;
-            case BYTE_TO_INT:
-                writer.append("$rt_byteToInt(");
-                expr.getOperand().acceptVisitor(this);
-                writer.append(')');
-                break;
-            case SHORT_TO_INT:
-                writer.append("$rt_shortToInt(");
-                expr.getOperand().acceptVisitor(this);
-                writer.append(')');
-                break;
+        try {
+            switch (expr.getOperation()) {
+                case NOT:
+                    writer.append("(!");
+                    expr.getOperand().acceptVisitor(this);
+                    writer.append(')');
+                    break;
+                case NEGATE:
+                    writer.append("(-");
+                    expr.getOperand().acceptVisitor(this);
+                    writer.append(')');
+                    break;
+                case LENGTH:
+                    expr.getOperand().acceptVisitor(this);
+                    writer.append(".length");
+                    break;
+                case INT_TO_LONG:
+                    writer.append("Long_fromInt(");
+                    expr.getOperand().acceptVisitor(this);
+                    writer.append(')');
+                    break;
+                case NUM_TO_LONG:
+                    writer.append("Long_fromNumber(");
+                    expr.getOperand().acceptVisitor(this);
+                    writer.append(')');
+                    break;
+                case LONG_TO_NUM:
+                    writer.append("Long_toNumber(");
+                    expr.getOperand().acceptVisitor(this);
+                    writer.append(')');
+                    break;
+                case NEGATE_LONG:
+                    writer.append("Long_neg(");
+                    expr.getOperand().acceptVisitor(this);
+                    writer.append(')');
+                    break;
+                case NOT_LONG:
+                    writer.append("Long_not(");
+                    expr.getOperand().acceptVisitor(this);
+                    writer.append(')');
+                    break;
+                case BYTE_TO_INT:
+                    writer.append("$rt_byteToInt(");
+                    expr.getOperand().acceptVisitor(this);
+                    writer.append(')');
+                    break;
+                case SHORT_TO_INT:
+                    writer.append("$rt_shortToInt(");
+                    expr.getOperand().acceptVisitor(this);
+                    writer.append(')');
+                    break;
+            }
+        } catch (IOException e) {
+            throw new RenderingException("IO error occured", e);
         }
     }
 
     @Override
     public void visit(ConditionalExpr expr) {
-        writer.append('(');
-        expr.getCondition().acceptVisitor(this);
-        writer.ws().append("?").ws();
-        expr.getConsequent().acceptVisitor(this);
-        writer.ws().append(":").ws();
-        expr.getAlternative().acceptVisitor(this);
-        writer.append(')');
+        try {
+            writer.append('(');
+            expr.getCondition().acceptVisitor(this);
+            writer.ws().append("?").ws();
+            expr.getConsequent().acceptVisitor(this);
+            writer.ws().append(":").ws();
+            expr.getAlternative().acceptVisitor(this);
+            writer.append(')');
+        } catch (IOException e) {
+            throw new RenderingException("IO error occured", e);
+        }
     }
 
     @Override
     public void visit(ConstantExpr expr) {
-        writer.append(constantToString(expr.getValue()));
+        try {
+            writer.append(constantToString(expr.getValue()));
+        } catch (IOException e) {
+            throw new RenderingException("IO error occured", e);
+        }
     }
 
     public String constantToString(Object cst) {
@@ -798,173 +871,213 @@ public class Renderer implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(VariableExpr expr) {
-        writer.append(variableName(expr.getIndex()));
+        try {
+            writer.append(variableName(expr.getIndex()));
+        } catch (IOException e) {
+            throw new RenderingException("IO error occured", e);
+        }
     }
 
     @Override
     public void visit(SubscriptExpr expr) {
-        expr.getArray().acceptVisitor(this);
-        writer.append('[');
-        expr.getIndex().acceptVisitor(this);
-        writer.append(']');
+        try {
+            expr.getArray().acceptVisitor(this);
+            writer.append('[');
+            expr.getIndex().acceptVisitor(this);
+            writer.append(']');
+        } catch (IOException e) {
+            throw new RenderingException("IO error occured", e);
+        }
     }
 
     @Override
     public void visit(UnwrapArrayExpr expr) {
-        expr.getArray().acceptVisitor(this);
-        writer.append(".data");
+        try {
+            expr.getArray().acceptVisitor(this);
+            writer.append(".data");
+        } catch (IOException e) {
+            throw new RenderingException("IO error occured", e);
+        }
     }
 
     @Override
     public void visit(InvocationExpr expr) {
-        String className = naming.getNameFor(expr.getMethod().getClassName());
-        String name = naming.getNameFor(expr.getMethod());
-        String fullName = naming.getFullNameFor(expr.getMethod());
-        switch (expr.getType()) {
-            case STATIC:
-                writer.append(fullName).append("(");
-                for (int i = 0; i < expr.getArguments().size(); ++i) {
-                    if (i > 0) {
-                        writer.append(",").ws();
+        try {
+            String className = naming.getNameFor(expr.getMethod().getClassName());
+            String name = naming.getNameFor(expr.getMethod());
+            String fullName = naming.getFullNameFor(expr.getMethod());
+            switch (expr.getType()) {
+                case STATIC:
+                    writer.append(fullName).append("(");
+                    for (int i = 0; i < expr.getArguments().size(); ++i) {
+                        if (i > 0) {
+                            writer.append(",").ws();
+                        }
+                        expr.getArguments().get(i).acceptVisitor(this);
                     }
-                    expr.getArguments().get(i).acceptVisitor(this);
-                }
-                writer.append(')');
-                break;
-            case SPECIAL:
-                writer.append(fullName).append("(");
-                expr.getArguments().get(0).acceptVisitor(this);
-                for (int i = 1; i < expr.getArguments().size(); ++i) {
-                    writer.append(",").ws();
-                    expr.getArguments().get(i).acceptVisitor(this);
-                }
-                writer.append(")");
-                break;
-            case DYNAMIC:
-                expr.getArguments().get(0).acceptVisitor(this);
-                writer.append(".").append(name).append("(");
-                for (int i = 1; i < expr.getArguments().size(); ++i) {
-                    if (i > 1) {
+                    writer.append(')');
+                    break;
+                case SPECIAL:
+                    writer.append(fullName).append("(");
+                    expr.getArguments().get(0).acceptVisitor(this);
+                    for (int i = 1; i < expr.getArguments().size(); ++i) {
                         writer.append(",").ws();
+                        expr.getArguments().get(i).acceptVisitor(this);
                     }
-                    expr.getArguments().get(i).acceptVisitor(this);
-                }
-                writer.append(')');
-                break;
-            case CONSTRUCTOR:
-                writer.append(className).append(".").append(name).append("(");
-                for (int i = 0; i < expr.getArguments().size(); ++i) {
-                    if (i > 0) {
-                        writer.append(",").ws();
+                    writer.append(")");
+                    break;
+                case DYNAMIC:
+                    expr.getArguments().get(0).acceptVisitor(this);
+                    writer.append(".").append(name).append("(");
+                    for (int i = 1; i < expr.getArguments().size(); ++i) {
+                        if (i > 1) {
+                            writer.append(",").ws();
+                        }
+                        expr.getArguments().get(i).acceptVisitor(this);
                     }
-                    expr.getArguments().get(i).acceptVisitor(this);
-                }
-                writer.append(')');
-                break;
+                    writer.append(')');
+                    break;
+                case CONSTRUCTOR:
+                    writer.append(className).append(".").append(name).append("(");
+                    for (int i = 0; i < expr.getArguments().size(); ++i) {
+                        if (i > 0) {
+                            writer.append(",").ws();
+                        }
+                        expr.getArguments().get(i).acceptVisitor(this);
+                    }
+                    writer.append(')');
+                    break;
+            }
+        } catch (IOException e) {
+            throw new RenderingException("IO error occured", e);
         }
     }
 
     @Override
     public void visit(QualificationExpr expr) {
-        expr.getQualified().acceptVisitor(this);
-        writer.append('.').appendField(expr.getField());
+        try {
+            expr.getQualified().acceptVisitor(this);
+            writer.append('.').appendField(expr.getField());
+        } catch (IOException e) {
+            throw new RenderingException("IO error occured", e);
+        }
     }
 
     @Override
     public void visit(NewExpr expr) {
-        writer.append("new ").append(naming.getNameFor(expr.getConstructedClass())).append("()");
+        try {
+            writer.append("new ").append(naming.getNameFor(expr.getConstructedClass())).append("()");
+        } catch (IOException e) {
+            throw new RenderingException("IO error occured", e);
+        }
     }
 
     @Override
     public void visit(NewArrayExpr expr) {
-        ValueType type = expr.getType();
-        while (type instanceof ValueType.Array) {
-            type = ((ValueType.Array)type).getItemType();
-        }
-        if (type instanceof ValueType.Primitive) {
-            switch (((ValueType.Primitive)type).getKind()) {
-                case BOOLEAN:
-                    writer.append("$rt_createBooleanArray(");
-                    expr.getLength().acceptVisitor(this);
-                    writer.append(")");
-                    break;
-                case BYTE:
-                    writer.append("$rt_createByteArray(");
-                    expr.getLength().acceptVisitor(this);
-                    writer.append(")");
-                    break;
-                case SHORT:
-                    writer.append("$rt_createShortArray(");
-                    expr.getLength().acceptVisitor(this);
-                    writer.append(")");
-                    break;
-                case INTEGER:
-                    writer.append("$rt_createIntArray(");
-                    expr.getLength().acceptVisitor(this);
-                    writer.append(")");
-                    break;
-                case LONG:
-                    writer.append("$rt_createLongArray(");
-                    expr.getLength().acceptVisitor(this);
-                    writer.append(")");
-                    break;
-                case FLOAT:
-                    writer.append("$rt_createFloatArray(");
-                    expr.getLength().acceptVisitor(this);
-                    writer.append(")");
-                    break;
-                case DOUBLE:
-                    writer.append("$rt_createDoubleArray(");
-                    expr.getLength().acceptVisitor(this);
-                    writer.append(")");
-                    break;
-                case CHARACTER:
-                    writer.append("$rt_createCharArray(");
-                    expr.getLength().acceptVisitor(this);
-                    writer.append(")");
-                    break;
+        try {
+            ValueType type = expr.getType();
+            while (type instanceof ValueType.Array) {
+                type = ((ValueType.Array)type).getItemType();
             }
-        } else {
-            writer.append("$rt_createArray(").append(typeToClsString(naming, expr.getType())).append(", ");
-            expr.getLength().acceptVisitor(this);
-            writer.append(")");
+            if (type instanceof ValueType.Primitive) {
+                switch (((ValueType.Primitive)type).getKind()) {
+                    case BOOLEAN:
+                        writer.append("$rt_createBooleanArray(");
+                        expr.getLength().acceptVisitor(this);
+                        writer.append(")");
+                        break;
+                    case BYTE:
+                        writer.append("$rt_createByteArray(");
+                        expr.getLength().acceptVisitor(this);
+                        writer.append(")");
+                        break;
+                    case SHORT:
+                        writer.append("$rt_createShortArray(");
+                        expr.getLength().acceptVisitor(this);
+                        writer.append(")");
+                        break;
+                    case INTEGER:
+                        writer.append("$rt_createIntArray(");
+                        expr.getLength().acceptVisitor(this);
+                        writer.append(")");
+                        break;
+                    case LONG:
+                        writer.append("$rt_createLongArray(");
+                        expr.getLength().acceptVisitor(this);
+                        writer.append(")");
+                        break;
+                    case FLOAT:
+                        writer.append("$rt_createFloatArray(");
+                        expr.getLength().acceptVisitor(this);
+                        writer.append(")");
+                        break;
+                    case DOUBLE:
+                        writer.append("$rt_createDoubleArray(");
+                        expr.getLength().acceptVisitor(this);
+                        writer.append(")");
+                        break;
+                    case CHARACTER:
+                        writer.append("$rt_createCharArray(");
+                        expr.getLength().acceptVisitor(this);
+                        writer.append(")");
+                        break;
+                }
+            } else {
+                writer.append("$rt_createArray(").append(typeToClsString(naming, expr.getType())).append(", ");
+                expr.getLength().acceptVisitor(this);
+                writer.append(")");
+            }
+        } catch (IOException e) {
+            throw new RenderingException("IO error occured", e);
         }
     }
 
     @Override
     public void visit(NewMultiArrayExpr expr) {
-        writer.append("$rt_createMultiArray(").append(typeToClsString(naming, expr.getType())).append(",")
-                .ws().append("[");
-        boolean first = true;
-        for (Expr dimension : expr.getDimensions()) {
-            if (!first) {
-                writer.append(",").ws();
+        try {
+            writer.append("$rt_createMultiArray(").append(typeToClsString(naming, expr.getType())).append(",")
+                    .ws().append("[");
+            boolean first = true;
+            for (Expr dimension : expr.getDimensions()) {
+                if (!first) {
+                    writer.append(",").ws();
+                }
+                first = false;
+                dimension.acceptVisitor(this);
             }
-            first = false;
-            dimension.acceptVisitor(this);
+            writer.append("])");
+        } catch (IOException e) {
+            throw new RenderingException("IO error occured", e);
         }
-        writer.append("])");
     }
 
     @Override
     public void visit(InstanceOfExpr expr) {
-        if (expr.getType() instanceof ValueType.Object) {
-            String clsName = ((ValueType.Object)expr.getType()).getClassName();
-            ClassHolder cls = classSource.getClassHolder(clsName);
-            if (!cls.getModifiers().contains(ElementModifier.INTERFACE)) {
-                writer.append("(");
-                expr.getExpr().acceptVisitor(this);
-                writer.append(" instanceof ").appendClass(clsName).append(")");
-                return;
+        try {
+            if (expr.getType() instanceof ValueType.Object) {
+                String clsName = ((ValueType.Object)expr.getType()).getClassName();
+                ClassHolder cls = classSource.getClassHolder(clsName);
+                if (!cls.getModifiers().contains(ElementModifier.INTERFACE)) {
+                    writer.append("(");
+                    expr.getExpr().acceptVisitor(this);
+                    writer.append(" instanceof ").appendClass(clsName).append(")");
+                    return;
+                }
             }
+            writer.append("$rt_isInstance(");
+            expr.getExpr().acceptVisitor(this);
+            writer.append(",").ws().append(typeToClsString(naming, expr.getType())).append(")");
+        } catch (IOException e) {
+            throw new RenderingException("IO error occured", e);
         }
-        writer.append("$rt_isInstance(");
-        expr.getExpr().acceptVisitor(this);
-        writer.append(",").ws().append(typeToClsString(naming, expr.getType())).append(")");
     }
 
     @Override
     public void visit(StaticClassExpr expr) {
-        writer.append(typeToClsString(naming, expr.getType()));
+        try {
+            writer.append(typeToClsString(naming, expr.getType()));
+        } catch (IOException e) {
+            throw new RenderingException("IO error occured", e);
+        }
     }
 }

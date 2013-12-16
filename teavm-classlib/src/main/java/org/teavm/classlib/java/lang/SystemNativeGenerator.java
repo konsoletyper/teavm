@@ -1,5 +1,6 @@
 package org.teavm.classlib.java.lang;
 
+import java.io.IOException;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.dependency.DependencyChecker;
 import org.teavm.dependency.DependencyNode;
@@ -15,7 +16,7 @@ import org.teavm.model.MethodReference;
  */
 public class SystemNativeGenerator implements Generator, DependencyPlugin {
     @Override
-    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
+    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
         switch (methodRef.getName()) {
             case "doArrayCopy":
                 generateArrayCopy(context, writer);
@@ -32,7 +33,7 @@ public class SystemNativeGenerator implements Generator, DependencyPlugin {
         }
     }
 
-    private void generateArrayCopy(GeneratorContext context, SourceWriter writer) {
+    private void generateArrayCopy(GeneratorContext context, SourceWriter writer) throws IOException {
         String src = context.getParameterName(1);
         String srcPos = context.getParameterName(2);
         String dest = context.getParameterName(3);

@@ -1,5 +1,6 @@
 package org.teavm.classlib.java.lang;
 
+import java.io.IOException;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.GeneratorContext;
@@ -11,7 +12,8 @@ import org.teavm.model.MethodReference;
  */
 public class ClassNativeGenerator implements Generator {
     @Override
-    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) {
+    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef)
+            throws IOException {
         switch (methodRef.getName()) {
             case "isInstance":
                 generateIsInstance(context, writer);
@@ -25,17 +27,17 @@ public class ClassNativeGenerator implements Generator {
         }
     }
 
-    private void generateIsInstance(GeneratorContext context, SourceWriter writer) {
+    private void generateIsInstance(GeneratorContext context, SourceWriter writer) throws IOException {
         writer.append("return $rt_isInstance(").append(context.getParameterName(1)).append(", ")
                 .append(context.getParameterName(0)).append(".$data);").softNewLine();
     }
 
-    private void generateIsAssignableFrom(GeneratorContext context, SourceWriter writer) {
+    private void generateIsAssignableFrom(GeneratorContext context, SourceWriter writer) throws IOException {
         writer.append("return $rt_isAssignable(").append(context.getParameterName(1)).append(".$data, ")
                 .append(context.getParameterName(0)).append(".$data;").softNewLine();
     }
 
-    private void generateGetComponentType(GeneratorContext context, SourceWriter writer) {
+    private void generateGetComponentType(GeneratorContext context, SourceWriter writer) throws IOException {
         String thisArg = context.getParameterName(0);
         writer.append("var item = " + thisArg + ".$data.$meta.item;").softNewLine();
         writer.append("return item != null ? $rt_cls(item) : null;").softNewLine();
