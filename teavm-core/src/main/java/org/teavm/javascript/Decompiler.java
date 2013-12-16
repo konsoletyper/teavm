@@ -155,7 +155,6 @@ public class Decompiler {
         generator.program = program;
         generator.blockMap = blockMap;
         generator.indexer = indexer;
-        generator.outgoings = getPhiOutgoings(program);
         parentNode = codeTree.getRoot();
         currentNode = parentNode.getFirstChild();
         for (int i = 0; i < this.graph.size(); ++i) {
@@ -205,26 +204,6 @@ public class Decompiler {
         Set<NodeModifier> result = EnumSet.noneOf(NodeModifier.class);
         if (modifiers.contains(ElementModifier.STATIC)) {
             result.add(NodeModifier.STATIC);
-        }
-        return result;
-    }
-
-    private Incoming[][] getPhiOutgoings(Program program) {
-        List<List<Incoming>> outgoings = new ArrayList<>();
-        for (int i = 0; i < program.basicBlockCount(); ++i) {
-            outgoings.add(new ArrayList<Incoming>());
-        }
-        for (int i = 0; i < program.basicBlockCount(); ++i) {
-            BasicBlock basicBlock = program.basicBlockAt(i);
-            for (Phi phi : basicBlock.getPhis()) {
-                for (Incoming incoming : phi.getIncomings()) {
-                    outgoings.get(incoming.getSource().getIndex()).add(incoming);
-                }
-            }
-        }
-        Incoming[][] result = new Incoming[outgoings.size()][];
-        for (int i = 0; i < outgoings.size(); ++i) {
-            result[i] = outgoings.get(i).toArray(new Incoming[0]);
         }
         return result;
     }

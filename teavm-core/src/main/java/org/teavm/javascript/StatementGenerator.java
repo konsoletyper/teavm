@@ -21,7 +21,6 @@ public class StatementGenerator implements InstructionVisitor {
     Decompiler.Block[] blockMap;
     Program program;
     ClassHolderSource classSource;
-    Incoming[][] outgoings;
 
     @Override
     public void visit(EmptyInstruction insn) {
@@ -580,11 +579,15 @@ public class StatementGenerator implements InstructionVisitor {
         }
     }
 
-    private Statement wrapWithPhis(Statement rawJump) {
+    private Statement wrapWithPhis(Statement rawJump, BasicBlock target) {
         SequentialStatement seq = new SequentialStatement();
-        for (Incoming outgoing : outgoings[currentBlock.getIndex()]) {
-            seq.getSequence().add(Statement.assign(Expr.var(outgoing.getPhi().getReceiver().getIndex()),
-                    Expr.var(outgoing.getValue().getIndex())));
+        for (Phi phi : target.getPhis()) {
+            for (Incoming outgoing : phi.getIncomings()) {
+                if (outgoing.getSource() == currentBlock) {
+                    seq.getSequence().add(Statement.assign(Expr.var(outgoing.getPhi().getReceiver().getIndex()),
+                            Expr.var(outgoing.getValue().getIndex())));
+                }
+            }
         }
         if (rawJump != null) {
             seq.getSequence().add(rawJump);
@@ -593,7 +596,7 @@ public class StatementGenerator implements InstructionVisitor {
     }
 
     private Statement generateJumpStatement(BasicBlock target) {
-        return wrapWithPhis(generateJumpStatementWithoutPhis(target));
+        return wrapWithPhis(generateJumpStatementWithoutPhis(target), target);
     }
 
     private Statement generateJumpStatementWithoutPhis(SwitchStatement stmt, int target) {
@@ -607,7 +610,7 @@ public class StatementGenerator implements InstructionVisitor {
     }
 
     private Statement generateJumpStatement(SwitchStatement stmt, int target) {
-        return wrapWithPhis(generateJumpStatementWithoutPhis(stmt, target));
+        return wrapWithPhis(generateJumpStatementWithoutPhis(stmt, target), program.basicBlockAt(target));
     }
 
     private void branch(Expr condition, BasicBlock consequentBlock, BasicBlock alternativeBlock) {

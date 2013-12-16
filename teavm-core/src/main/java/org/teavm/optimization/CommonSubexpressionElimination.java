@@ -49,6 +49,23 @@ public class CommonSubexpressionElimination implements MethodOptimization {
             int v = stack[--top];
             currentBlockIndex = v;
             BasicBlock block = program.basicBlockAt(v);
+            for (int i = 0; i < block.getPhis().size(); ++i) {
+                Phi phi = block.getPhis().get(i);
+                int sharedValue = -2;
+                for (Incoming incoming : phi.getIncomings()) {
+                    int value = map[incoming.getValue().getIndex()];
+                    incoming.setValue(program.variableAt(value));
+                    if (sharedValue != -2 && sharedValue != incoming.getValue().getIndex()) {
+                        sharedValue = -1;
+                    } else {
+                        sharedValue = incoming.getValue().getIndex();
+                    }
+                }
+                if (sharedValue != -1) {
+                    map[phi.getReceiver().getIndex()] = sharedValue;
+                    block.getPhis().remove(i--);
+                }
+            }
             for (int i = 0; i < block.getInstructions().size(); ++i) {
                 Instruction currentInsn = block.getInstructions().get(i);
                 currentInsn.acceptVisitor(optimizer);
