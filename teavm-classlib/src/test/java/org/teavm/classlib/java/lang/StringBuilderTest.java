@@ -7,7 +7,7 @@ import org.junit.Test;
  *
  * @author Alexey Andreev
  */
-public class StringBuilderTests {
+public class StringBuilderTest {
     @Test
     public void integerAppended() {
         StringBuilder sb = new StringBuilder();

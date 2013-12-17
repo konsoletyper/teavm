@@ -129,10 +129,14 @@ public class BuildJavascriptJUnitMojo extends AbstractMojo {
                 }
                 allTestsWriter.write("], function() {}); }");
             }
+            int methodsGenerated = 0;
+            log.info("Generating test files");
             for (MethodReference method : testMethods) {
-                log.info("Building test for " + method);
+                log.debug("Building test for " + method);
                 decompileClassesForTest(classLoader, method, fileNames.get(method));
+                ++methodsGenerated;
             }
+            log.info("Test files successfully generated for " + methodsGenerated + " method(s)");
         } catch (IOException e) {
             throw new MojoFailureException("IO error occured generating JavaScript files", e);
         }

@@ -7,7 +7,7 @@ import org.junit.Test;
  *
  * @author Alexey Andreev
  */
-public class VMTests {
+public class VMTest {
     @Test
     public void multiArrayCreated() {
         int[][] array = new int[2][3];

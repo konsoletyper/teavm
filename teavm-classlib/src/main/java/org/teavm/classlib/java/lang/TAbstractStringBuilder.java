@@ -351,4 +351,17 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
         // TODO: implement
         throw new TUnsupportedOperationException();
     }
+
+    public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
+        if (srcBegin > srcEnd) {
+            throw new TIndexOutOfBoundsException(TString.wrap("Index out of bounds"));
+        }
+        while (srcBegin < srcEnd) {
+            dst[dstBegin++] = buffer[srcBegin++];
+        }
+    }
+
+    public void setLength(int newLength) {
+        length = 0;
+    }
 }

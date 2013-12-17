@@ -7,7 +7,7 @@ import org.junit.Test;
  *
  * @author Alexey Andreev
  */
-public class ClassTests {
+public class ClassTest {
     @Test
     public void classNameEvaluated() {
         assertEquals("java.lang.Object", Object.class.getName());

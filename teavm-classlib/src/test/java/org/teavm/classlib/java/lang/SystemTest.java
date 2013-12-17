@@ -7,7 +7,7 @@ import org.junit.Test;
  *
  * @author Alexey Andreev
  */
-public class SystemTests {
+public class SystemTest {
     @Test
     public void copiesArray() {
         Object a = new Object();

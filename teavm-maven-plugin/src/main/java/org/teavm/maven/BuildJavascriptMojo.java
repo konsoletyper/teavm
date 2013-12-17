@@ -14,6 +14,9 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.teavm.javascript.JavascriptBuilder;
+import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 
 /**
  *
@@ -35,6 +38,9 @@ public class BuildJavascriptMojo extends AbstractMojo {
 
     @Parameter
     private boolean minifiying = true;
+
+    @Parameter
+    private String mainClass;
 
     public void setProject(MavenProject project) {
         this.project = project;
@@ -60,6 +66,10 @@ public class BuildJavascriptMojo extends AbstractMojo {
             log.info("Building JavaScript file");
             JavascriptBuilder builder = new JavascriptBuilder(classLoader);
             builder.setMinifying(minifiying);
+            MethodDescriptor mainMethodDesc = new MethodDescriptor("main", ValueType.arrayOf(
+                    ValueType.object("java.lang.String")), ValueType.VOID);
+            builder.entryPoint("main", new MethodReference(mainClass, mainMethodDesc))
+                    .withValue(1, "java.lang.String");
             builder.build(targetFile);
             log.info("JavaScript file successfully built");
         } catch (RuntimeException e) {
