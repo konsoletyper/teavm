@@ -1,5 +1,6 @@
 package org.teavm.classlib.java.lang.io;
 
+import org.teavm.classlib.java.lang.TMath;
 import org.teavm.classlib.java.lang.TStringBuilder;
 
 /**
@@ -95,7 +96,16 @@ public class TPrintStream extends TFilterOutputStream {
     }
 
     public void print(char[] s) {
+        print(s, 0, s.length);
+    }
 
+    private void print(char[] s, int begin, int end) {
+        int[] codePoints = new int[TMath.min(s.length, 4096)];
+    }
+
+    public void print(char c) {
+        buffer[0] = c;
+        print(buffer, 0, 1);
     }
 
     public void print(int i) {

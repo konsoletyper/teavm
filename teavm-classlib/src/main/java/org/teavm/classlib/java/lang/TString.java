@@ -1,5 +1,6 @@
 package org.teavm.classlib.java.lang;
 
+import org.teavm.classlib.impl.charset.UTF16Helper;
 import org.teavm.classlib.java.lang.io.TSerializable;
 import org.teavm.javascript.ni.GeneratedBy;
 import org.teavm.javascript.ni.Rename;
@@ -10,12 +11,6 @@ import org.teavm.javascript.ni.Rename;
  */
 public class TString extends TObject implements TSerializable, TComparable<TString>,
         TCharSequence {
-    static int SURROGATE_BIT_MASK = 0xFC00;
-    static int SURROGATE_BIT_INV_MASK = 0x03FF;
-    static int HIGH_SURROGATE_BITS = 0xF800;
-    static int LOW_SURROGATE_BITS = 0xF800;
-    static int MEANINGFUL_SURROGATE_BITS = 10;
-    static int SUPPLEMENTARY_PLANE = 0x10000;
     private char[] characters;
     private transient int hashCode;
 
@@ -54,29 +49,26 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public int codePointAt(int index) {
-        if (index == characters.length - 1 || (characters[index] & SURROGATE_BIT_MASK) != HIGH_SURROGATE_BITS ||
-                (characters[index + 1] & SURROGATE_BIT_MASK) != LOW_SURROGATE_BITS) {
+        if (index == characters.length - 1 || !UTF16Helper.isHighSurrogate(characters[index]) ||
+                !UTF16Helper.isLowSurrogate(characters[index + 1])) {
             return characters[index];
         }
-        return ((characters[index] & SURROGATE_BIT_INV_MASK) << MEANINGFUL_SURROGATE_BITS) |
-                (characters[index + 1] & SURROGATE_BIT_INV_MASK) + SUPPLEMENTARY_PLANE;
+        return UTF16Helper.buildCodePoint(characters[index], characters[index + 1]);
     }
 
     public int codePointBefore(int index) {
-        if (index == 1 || (characters[index] & SURROGATE_BIT_MASK) != LOW_SURROGATE_BITS ||
-                (characters[index - 1] & SURROGATE_BIT_MASK) != HIGH_SURROGATE_BITS) {
+        if (index == 1 || !UTF16Helper.isHighSurrogate(characters[index]) ||
+                UTF16Helper.isLowSurrogate(characters[index - 1])) {
             return characters[index - 1];
         }
-        return ((characters[index - 1] & SURROGATE_BIT_INV_MASK) << MEANINGFUL_SURROGATE_BITS) |
-                (characters[index] & SURROGATE_BIT_INV_MASK) + SUPPLEMENTARY_PLANE;
+        return UTF16Helper.buildCodePoint(characters[index - 1], characters[index]);
     }
 
     public int codePointCount(int beginIndex, int endIndex) {
         int count = endIndex;
         --endIndex;
         for (int i = beginIndex; i < endIndex; ++i) {
-            if ((characters[i] & SURROGATE_BIT_MASK) == HIGH_SURROGATE_BITS &&
-                    (characters[i + 1] & SURROGATE_BIT_MASK) == LOW_SURROGATE_BITS) {
+            if (UTF16Helper.isHighSurrogate(characters[i]) && UTF16Helper.isLowSurrogate(characters[i + 1])) {
                 --count;
             }
         }
@@ -85,8 +77,8 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
 
     public int offsetByCodePoints(int index, int codePointOffset) {
         for (int i = 0; i < codePointOffset; ++i) {
-            if (index < characters.length - 1 && (characters[index] & SURROGATE_BIT_MASK) == HIGH_SURROGATE_BITS &&
-                    (characters[index + 1] & SURROGATE_BIT_MASK) == LOW_SURROGATE_BITS) {
+            if (index < characters.length - 1 && UTF16Helper.isHighSurrogate(characters[index]) &&
+                    UTF16Helper.isLowSurrogate(characters[index + 1])) {
                 index += 2;
             } else {
                 index++;
@@ -192,17 +184,8 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         return true;
     }
 
-    static char highSurrogate(int codePoint) {
-        return (char)(TString.HIGH_SURROGATE_BITS | (codePoint >> TString.MEANINGFUL_SURROGATE_BITS) &
-                TString.SURROGATE_BIT_INV_MASK);
-    }
-
-    static char lowSurrogate(int codePoint) {
-        return (char)(TString.HIGH_SURROGATE_BITS | codePoint & TString.SURROGATE_BIT_INV_MASK);
-    }
-
     public int indexOf(int ch, int fromIndex) {
-        if (ch < SUPPLEMENTARY_PLANE) {
+        if (ch < UTF16Helper.SUPPLEMENTARY_PLANE) {
             char bmpChar = (char)ch;
             for (int i = fromIndex; i < characters.length; ++i) {
                 if (characters[i] == bmpChar) {
@@ -211,8 +194,8 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
             }
             return -1;
         } else {
-            char hi = highSurrogate(ch);
-            char lo = lowSurrogate(ch);
+            char hi = UTF16Helper.highSurrogate(ch);
+            char lo = UTF16Helper.lowSurrogate(ch);
             for (int i = fromIndex; i < characters.length - 1; ++i) {
                 if (characters[i] == hi && characters[i + 1] == lo) {
                     return i;
@@ -227,7 +210,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public int lastIndexOf(int ch, int fromIndex) {
-        if (ch < SUPPLEMENTARY_PLANE) {
+        if (ch < UTF16Helper.SUPPLEMENTARY_PLANE) {
             char bmpChar = (char)ch;
             for (int i = fromIndex; i >= 0; --i) {
                 if (characters[i] == bmpChar) {
@@ -236,8 +219,8 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
             }
             return -1;
         } else {
-            char hi = highSurrogate(ch);
-            char lo = lowSurrogate(ch);
+            char hi = UTF16Helper.highSurrogate(ch);
+            char lo = UTF16Helper.lowSurrogate(ch);
             for (int i = fromIndex; i >= 1; --i) {
                 if (characters[i] == lo && characters[i - 1] == hi) {
                     return i;
