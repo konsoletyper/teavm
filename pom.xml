@@ -12,6 +12,12 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
+  <modules>
+    <module>teavm-core</module>
+    <module>teavm-classlib</module>
+    <module>teavm-maven-plugin</module>
+  </modules>
+
   <build>
     <plugins>
       <plugin>
@@ -25,8 +31,4 @@
       </plugin>
     </plugins>
   </build>
-  <modules>
-    <module>teavm-core</module>
-    <module>teavm-classlib</module>
-  </modules>
 </project>

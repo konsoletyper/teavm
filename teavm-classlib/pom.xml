@@ -11,15 +11,75 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.teavm</groupId>
-      <artifactId>teavm-core</artifactId>
-      <version>0.0.1-SNAPSHOT</version>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>4.11</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.teavm</groupId>
+      <artifactId>teavm-core</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.teavm</groupId>
+        <artifactId>teavm-maven-plugin</artifactId>
+        <version>${project.version}</version>
+        <dependencies>
+          <dependency>
+            <groupId>org.teavm</groupId>
+            <artifactId>teavm-core</artifactId>
+            <version>${project.version}</version>
+          </dependency>
+        </dependencies>
+        <executions>
+          <execution>
+            <id>generate-javascript-tests</id>
+            <goals>
+              <goal>build-junit</goal>
+            </goals>
+            <phase>process-test-classes</phase>
+            <configuration>
+              <minifiying>true</minifiying>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+    <pluginManagement>
+      <plugins>
+        <!--This plugin's configuration is used to store Eclipse m2e settings only.
+        It has no influence on the Maven build itself.-->
+        <plugin>
+          <groupId>org.eclipse.m2e</groupId>
+          <artifactId>lifecycle-mapping</artifactId>
+          <version>1.0.0</version>
+          <configuration>
+            <lifecycleMappingMetadata>
+              <pluginExecutions>
+                <pluginExecution>
+                  <pluginExecutionFilter>
+                    <groupId>org.teavm</groupId>
+                    <artifactId>teavm-maven-plugin</artifactId>
+                    <versionRange>[0.0.1-SNAPSHOT,)</versionRange>
+                    <goals>
+                      <goal>build-junit</goal>
+                    </goals>
+                  </pluginExecutionFilter>
+                  <action>
+                    <ignore></ignore>
+                  </action>
+                </pluginExecution>
+              </pluginExecutions>
+            </lifecycleMappingMetadata>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
 </project>

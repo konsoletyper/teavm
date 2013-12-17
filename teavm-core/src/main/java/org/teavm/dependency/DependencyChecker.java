@@ -32,6 +32,7 @@ public class DependencyChecker {
     private static Object dummyValue = new Object();
     static final boolean shouldLog = System.getProperty("org.teavm.logDependencies", "false").equals("true");
     private ClassHolderSource classSource;
+    private ClassLoader classLoader;
     private ScheduledThreadPoolExecutor executor;
     private ConcurrentMap<MethodReference, Object> abstractMethods = new ConcurrentHashMap<>();
     private ConcurrentCachedMapper<MethodReference, MethodGraph> methodCache;
@@ -40,12 +41,13 @@ public class DependencyChecker {
     private ConcurrentMap<String, Object> initializedClasses = new ConcurrentHashMap<>();
     private AtomicReference<RuntimeException> exceptionOccured = new AtomicReference<>();
 
-    public DependencyChecker(ClassHolderSource classSource) {
-        this(classSource, Runtime.getRuntime().availableProcessors());
+    public DependencyChecker(ClassHolderSource classSource, ClassLoader classLoader) {
+        this(classSource, classLoader, Runtime.getRuntime().availableProcessors());
     }
 
-    public DependencyChecker(ClassHolderSource classSource, int numThreads) {
+    public DependencyChecker(ClassHolderSource classSource, ClassLoader classLoader, int numThreads) {
         this.classSource = classSource;
+        this.classLoader = classLoader;
         executor = new ScheduledThreadPoolExecutor(numThreads);
         executor.setThreadFactory(new ThreadFactory() {
             @Override public Thread newThread(Runnable r) {
@@ -255,7 +257,7 @@ public class DependencyChecker {
         String depClassName = ((ValueType.Object)depType).getClassName();
         Class<?> depClass;
         try {
-            depClass = Class.forName(depClassName);
+            depClass = Class.forName(depClassName, true, classLoader);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("Dependency plugin not found: " + depClassName, e);
         }

@@ -29,6 +29,7 @@ import org.teavm.model.util.ProgramUtils;
  */
 public class Decompiler {
     private ClassHolderSource classSource;
+    private ClassLoader classLoader;
     private Graph graph;
     private LoopGraph loopGraph;
     private GraphIndexer indexer;
@@ -40,8 +41,9 @@ public class Decompiler {
     private RangeTree.Node currentNode;
     private RangeTree.Node parentNode;
 
-    public Decompiler(ClassHolderSource classSource) {
+    public Decompiler(ClassHolderSource classSource, ClassLoader classLoader) {
         this.classSource = classSource;
+        this.classLoader = classLoader;
     }
 
     public int getGraphSize() {
@@ -125,7 +127,7 @@ public class Decompiler {
         String generatorClassName = ((ValueType.Object)annotValue).getClassName();
         Generator generator;
         try {
-            Class<?> generatorClass = Class.forName(generatorClassName);
+            Class<?> generatorClass = Class.forName(generatorClassName, true, classLoader);
             generator = (Generator)generatorClass.newInstance();
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
             throw new DecompilationException("Error instantiating generator " + generatorClassName +

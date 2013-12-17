@@ -18,17 +18,23 @@ import org.teavm.optimization.ClassSetOptimizer;
 public class JavascriptBuilder {
     private ClassHolderSource classSource;
     private DependencyChecker dependencyChecker;
+    private ClassLoader classLoader;
     private boolean minifying = true;
     private Map<String, JavascriptEntryPoint> entryPoints = new HashMap<>();
     private Map<String, String> exportedClasses = new HashMap<>();
 
-    public JavascriptBuilder(ClassHolderSource classSource) {
+    public JavascriptBuilder(ClassHolderSource classSource, ClassLoader classLoader) {
         this.classSource = classSource;
-        dependencyChecker = new DependencyChecker(classSource);
+        this.classLoader = classLoader;
+        dependencyChecker = new DependencyChecker(classSource, classLoader);
+    }
+
+    public JavascriptBuilder(ClassLoader classLoader) {
+        this(new ClasspathClassHolderSource(classLoader), classLoader);
     }
 
     public JavascriptBuilder() {
-        this(new ClasspathClassHolderSource());
+        this(JavascriptBuilder.class.getClassLoader());
     }
 
     public boolean isMinifying() {
@@ -63,7 +69,7 @@ public class JavascriptBuilder {
     }
 
     public void build(Appendable writer) throws RenderingException {
-        Decompiler decompiler = new Decompiler(classSource);
+        Decompiler decompiler = new Decompiler(classSource, classLoader);
         AliasProvider aliasProvider = minifying ? new MinifyingAliasProvider() : new DefaultAliasProvider();
         DefaultNamingStrategy naming = new DefaultNamingStrategy(aliasProvider, classSource);
         naming.setMinifying(minifying);

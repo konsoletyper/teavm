@@ -11,7 +11,7 @@ public class ClasspathClassHolderSource implements ClassHolderSource {
     private MapperClassHolderSource innerClassSource;
 
     public ClasspathClassHolderSource(ClassLoader classLoader) {
-        ClasspathResourceReader reader = new ClasspathResourceReader();
+        ClasspathResourceReader reader = new ClasspathResourceReader(classLoader);
         ResourceClassHolderMapper rawMapper = new ResourceClassHolderMapper(reader);
         ClasspathResourceMapper classPathMapper = new ClasspathResourceMapper(classLoader, rawMapper);
         innerClassSource = new MapperClassHolderSource(classPathMapper);
