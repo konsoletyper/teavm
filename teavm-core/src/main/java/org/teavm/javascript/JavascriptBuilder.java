@@ -111,7 +111,7 @@ public class JavascriptBuilder {
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException("Platform does not support UTF-8", e);
         } catch (IOException e) {
-            throw new RenderingException();
+            throw new RenderingException("IO error occured", e);
         }
     }
 }

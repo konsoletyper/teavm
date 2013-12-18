@@ -5,9 +5,14 @@ package org.teavm.classlib.impl.charset;
  * @author Alexey Andreev
  */
 public abstract class Charset {
-    public abstract int encode(int[] buffer, int offset, int length, byte[] dest, int destOffset, int destLength);
+    public abstract void encode(CharBuffer source, ByteBuffer dest);
 
-    public abstract int decode(byte[] buffer, int offset, int length, int[] dest, int destOffset, int destLength);
+    public abstract void decode(ByteBuffer source, CharBuffer dest);
 
-    public static native Charset get(String name);
+    public static Charset get(String name) {
+        if (name.equals("UTF-8")) {
+            return new UTF8Charset();
+        }
+        return null;
+    }
 }

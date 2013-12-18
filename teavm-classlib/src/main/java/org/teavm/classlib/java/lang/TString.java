@@ -1,7 +1,7 @@
 package org.teavm.classlib.java.lang;
 
 import org.teavm.classlib.impl.charset.UTF16Helper;
-import org.teavm.classlib.java.lang.io.TSerializable;
+import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.javascript.ni.GeneratedBy;
 import org.teavm.javascript.ni.Rename;
 

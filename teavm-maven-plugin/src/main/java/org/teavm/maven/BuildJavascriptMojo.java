@@ -12,6 +12,7 @@ import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.teavm.javascript.JavascriptBuilder;
 import org.teavm.model.MethodDescriptor;
@@ -22,7 +23,8 @@ import org.teavm.model.ValueType;
  *
  * @author Alexey Andreev
  */
-@Mojo(name = "build-javascript")
+@Mojo(name = "build-javascript", requiresDependencyResolution = ResolutionScope.COMPILE,
+        requiresDependencyCollection = ResolutionScope.COMPILE)
 public class BuildJavascriptMojo extends AbstractMojo {
     private static Set<String> compileScopes = new HashSet<>(Arrays.asList(
             Artifact.SCOPE_COMPILE, Artifact.SCOPE_PROVIDED, Artifact.SCOPE_SYSTEM));
@@ -70,6 +72,7 @@ public class BuildJavascriptMojo extends AbstractMojo {
                     ValueType.object("java.lang.String")), ValueType.VOID);
             builder.entryPoint("main", new MethodReference(mainClass, mainMethodDesc))
                     .withValue(1, "java.lang.String");
+            targetFile.getParentFile().mkdirs();
             builder.build(targetFile);
             log.info("JavaScript file successfully built");
         } catch (RuntimeException e) {
@@ -94,9 +97,13 @@ public class BuildJavascriptMojo extends AbstractMojo {
                 classpath.append(file.getPath());
                 urls.add(file.toURI().toURL());
             }
-            log.info("Using the following classpath for JavaScript generation: " + classpath);
+            if (classpath.length() > 0) {
+                classpath.append(':');
+            }
+            classpath.append(classFiles.getPath());
             urls.add(classFiles.toURI().toURL());
-            return new URLClassLoader(urls.toArray(new URL[urls.size()]));
+            log.info("Using the following classpath for JavaScript generation: " + classpath);
+            return new URLClassLoader(urls.toArray(new URL[urls.size()]), BuildJavascriptMojo.class.getClassLoader());
         } catch (MalformedURLException e) {
             throw new MojoExecutionException("Error gathering classpath information", e);
         }

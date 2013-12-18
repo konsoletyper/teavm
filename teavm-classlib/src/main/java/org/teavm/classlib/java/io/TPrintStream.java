@@ -1,6 +1,10 @@
-package org.teavm.classlib.java.lang.io;
+package org.teavm.classlib.java.io;
 
+import org.teavm.classlib.impl.charset.ByteBuffer;
+import org.teavm.classlib.impl.charset.CharBuffer;
+import org.teavm.classlib.impl.charset.Charset;
 import org.teavm.classlib.java.lang.TMath;
+import org.teavm.classlib.java.lang.TString;
 import org.teavm.classlib.java.lang.TStringBuilder;
 
 /**
@@ -12,10 +16,21 @@ public class TPrintStream extends TFilterOutputStream {
     private boolean errorState;
     private TStringBuilder sb = new TStringBuilder();
     private char[] buffer = new char[32];
+    private Charset charset;
+
+    public TPrintStream(TOutputStream out, boolean autoFlush, TString encoding) throws TUnsupportedEncodingException {
+        super(out);
+        this.autoFlush = autoFlush;
+        charset = Charset.get(encoding.toString());
+        if (charset == null) {
+            throw new TUnsupportedEncodingException(TString.wrap("Unsupported encoding: ").concat(encoding));
+        }
+    }
 
     public TPrintStream(TOutputStream out, boolean autoFlush) {
         super(out);
         this.autoFlush = autoFlush;
+        this.charset = Charset.get("UTF-8");
     }
 
     public TPrintStream(TOutputStream out) {
@@ -100,7 +115,14 @@ public class TPrintStream extends TFilterOutputStream {
     }
 
     private void print(char[] s, int begin, int end) {
-        int[] codePoints = new int[TMath.min(s.length, 4096)];
+        CharBuffer src = new CharBuffer(s, begin, end);
+        byte[] destBytes = new byte[TMath.max(16, TMath.min(s.length, 1024))];
+        ByteBuffer dest = new ByteBuffer(new byte[TMath.max(16, TMath.min(s.length, 1024))]);
+        while (!src.end()) {
+            charset.encode(src, dest);
+            write(destBytes, 0, dest.position());
+            dest.rewind(0);
+        }
     }
 
     public void print(char c) {
@@ -111,6 +133,20 @@ public class TPrintStream extends TFilterOutputStream {
     public void print(int i) {
         sb.append(i);
         printSB();
+    }
+
+    public void print(TString s) {
+        sb.append(s).append('\n');
+        printSB();
+    }
+
+    public void println(TString s) {
+        sb.append(s);
+        printSB();
+    }
+
+    public void println() {
+        print('\n');
     }
 
     private void printSB() {

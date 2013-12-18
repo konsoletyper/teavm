@@ -1,4 +1,4 @@
-package org.teavm.classlib.java.lang.io;
+package org.teavm.classlib.java.io;
 
 import org.teavm.classlib.java.lang.TException;
 import org.teavm.classlib.java.lang.TString;

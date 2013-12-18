@@ -18,7 +18,7 @@ public class Parser {
         MethodHolder method = new MethodHolder(node.name, signature);
         parseModifiers(node.access, method);
         ProgramParser programParser = new ProgramParser();
-        Program program = programParser.parser(node);
+        Program program = programParser.parse(node);
         new UnreachableBasicBlockEliminator().optimize(program);
         SSATransformer ssaProducer = new SSATransformer();
         ssaProducer.transformToSSA(program, method.getParameterTypes());

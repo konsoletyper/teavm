@@ -79,7 +79,7 @@ public class ClasspathResourceMapper implements Mapper<String, ClassHolder> {
                 int index = name.lastIndexOf('.');
                 String className = name.substring(index + 1);
                 String packageName = name.substring(0, index);
-                ClassHolder classHolder = innerMapper.map(transformation.packagePrefix + "." + packageName +
+                ClassHolder classHolder = innerMapper.map(transformation.packagePrefix + packageName +
                         "." + transformation.classPrefix + className);
                 if (classHolder != null) {
                     classHolder = renamer.rename(classHolder);

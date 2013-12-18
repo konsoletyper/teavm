@@ -16,6 +16,7 @@
     <module>teavm-core</module>
     <module>teavm-classlib</module>
     <module>teavm-maven-plugin</module>
+    <module>teavm-samples</module>
   </modules>
 
   <build>

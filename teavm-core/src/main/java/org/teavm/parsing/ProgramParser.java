@@ -53,7 +53,7 @@ public class ProgramParser {
         }
     }
 
-    public Program parser(MethodNode method) {
+    public Program parse(MethodNode method) {
         program = new Program();
         InsnList instructions = method.instructions;
         if (instructions.size() == 0) {
@@ -61,7 +61,11 @@ public class ProgramParser {
         }
         prepare(method);
         prepareParameters(method);
+        program.createBasicBlock();
         getBasicBlock(0);
+        JumpInstruction insn = new JumpInstruction();
+        insn.setTarget(program.basicBlockAt(1));
+        program.basicBlockAt(0).getInstructions().add(insn);
         doAnalyze(method);
         assemble();
         return program;

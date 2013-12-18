@@ -1,25 +1,19 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-
   <parent>
     <groupId>org.teavm</groupId>
     <artifactId>teavm</artifactId>
     <version>0.0.1-SNAPSHOT</version>
   </parent>
-  <artifactId>teavm-classlib</artifactId>
+  <artifactId>teavm-samples</artifactId>
 
   <dependencies>
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.11</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.teavm</groupId>
-      <artifactId>teavm-core</artifactId>
-      <version>${project.version}</version>
+      <artifactId>teavm-classlib</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
 
@@ -38,13 +32,14 @@
         </dependencies>
         <executions>
           <execution>
-            <id>generate-javascript-tests</id>
+            <id>generate-javascript</id>
             <goals>
-              <goal>build-junit</goal>
+              <goal>build-javascript</goal>
             </goals>
-            <phase>process-test-classes</phase>
+            <phase>process-classes</phase>
             <configuration>
-              <minifiying>true</minifiying>
+              <minifiying>false</minifiying>
+              <mainClass>org.teavm.samples.HelloWorld</mainClass>
             </configuration>
           </execution>
         </executions>
@@ -53,7 +48,7 @@
     <pluginManagement>
       <plugins>
         <!--This plugin's configuration is used to store Eclipse m2e settings only.
-        It has no influence on the Maven build itself.-->
+         It has no influence on the Maven build itself.-->
         <plugin>
           <groupId>org.eclipse.m2e</groupId>
           <artifactId>lifecycle-mapping</artifactId>
@@ -67,7 +62,7 @@
                     <artifactId>teavm-maven-plugin</artifactId>
                     <versionRange>[0.0.1-SNAPSHOT,)</versionRange>
                     <goals>
-                      <goal>build-junit</goal>
+                      <goal>build-javascript</goal>
                     </goals>
                   </pluginExecutionFilter>
                   <action>

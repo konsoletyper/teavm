@@ -248,6 +248,28 @@ $rt_methodStubs = function(clinit, names) {
         })(names[i]);
     }
 }
+$rt_stdoutBuffer = "";
+$rt_putStdout = function(ch) {
+    if (ch == '\n') {
+        if (console) {
+            console.info($rt_stdoutBuffer);
+        }
+        $rt_stdoutBuffer = "";
+    } else {
+        $rt_stdoutBuffer += String.fromCharCode(ch);
+    }
+}
+$rt_stderrBuffer = "";
+$rt_putStderr = function(ch) {
+    if (ch == '\n') {
+        if (console) {
+            console.info($rt_stderrBuffer);
+        }
+        $rt_stderrBuffer = "";
+    } else {
+        $rt_stderrBuffer += String.fromCharCode(ch);
+    }
+}
 
 Long = function(lo, hi) {
     this.lo = lo | 0;

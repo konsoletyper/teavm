@@ -68,7 +68,7 @@ public class TThrowable extends RuntimeException {
 
     @Rename("getLocalizedMessage")
     public TString getLocalizedMessage0() {
-        return getMessage0();
+        return TString.wrap(getMessage());
     }
 
     @Override

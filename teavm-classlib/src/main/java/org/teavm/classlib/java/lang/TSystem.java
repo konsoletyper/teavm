@@ -1,5 +1,6 @@
 package org.teavm.classlib.java.lang;
 
+import org.teavm.classlib.java.io.TPrintStream;
 import org.teavm.classlib.java.lang.reflect.TArray;
 import org.teavm.javascript.ni.GeneratedBy;
 
@@ -8,6 +9,9 @@ import org.teavm.javascript.ni.GeneratedBy;
  * @author Alexey Andreev
  */
 public final class TSystem extends TObject {
+    public static final TPrintStream out = new TPrintStream(new TConsoleOutputStream_stdout(), false);
+    public static final TPrintStream err = new TPrintStream(new TConsoleOutputStream_stderr(), false);
+
     private TSystem() {
     }
 
