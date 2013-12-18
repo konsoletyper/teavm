@@ -14,6 +14,66 @@ But there is something more:
     loop invariant motion and many other;
   * implementation of subset of core Java library;
 
+How to use
+----------
+
+There are some options of using TeaVM. One is the maven build. First, you write your code as if it were an
+ordinary Java project:
+
+    package org.teavm.samples;
+
+    public class HelloWorld {
+        public static void main(String[] args) {
+            System.out.println("Hello, world!");
+        }
+    }
+
+Second, you include the following dependency in your `pom.xml`:
+
+      <dependency>
+        <groupId>org.teavm</groupId>
+        <artifactId>teavm-classlib</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+        <scope>provided</scope>
+      </dependency>
+
+Third, you add `teavm-maven-plugin` in your build configuration:
+
+    <plugin>
+      <groupId>org.teavm</groupId>
+      <artifactId>teavm-maven-plugin</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+      <executions>
+        <execution>
+          <id>generate-javascript</id>
+          <goals>
+            <goal>build-javascript</goal>
+          </goals>
+          <phase>process-classes</phase>
+          <configuration>
+            <minifiying>true</minifiying>
+            <mainClass>org.teavm.samples.HelloWorld</mainClass>
+          </configuration>
+        </execution>
+      </executions>
+    </plugin>
+
+Now you can execute `mvn clean package` and get the generated JavaScript file `target/javascript/classes.js`.
+It contains the `main` global function, which you may call. In the general case you should provide
+an HTML page, which includes both of
+[runtime.js](https://github.com/konsoletyper/teavm/blob/master/teavm-core/src/main/resources/org/teavm/javascript/runtime.js)
+and `classes.js` files and calls `main` function in some condition. Here is an example:
+
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <script type="text/javascript" src="runtime.js">
+        <script type="text/javascript" src="classes.js">
+      </head>
+      <body onload="main()">
+      </body>
+    </html>
+
 Advantages over GWT
 -------------------
 
