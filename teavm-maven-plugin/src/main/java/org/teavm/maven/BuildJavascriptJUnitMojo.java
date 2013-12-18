@@ -51,7 +51,7 @@ public class BuildJavascriptJUnitMojo extends AbstractMojo {
     private File testFiles;
 
     @Parameter
-    private boolean minifiying = true;
+    private boolean minifying = true;
 
     public void setProject(MavenProject project) {
         this.project = project;
@@ -69,8 +69,8 @@ public class BuildJavascriptJUnitMojo extends AbstractMojo {
         this.testFiles = testFiles;
     }
 
-    public void setMinifiying(boolean minifiying) {
-        this.minifiying = minifiying;
+    public void setMinifying(boolean minifying) {
+        this.minifying = minifying;
     }
 
     @Override
@@ -177,7 +177,7 @@ public class BuildJavascriptJUnitMojo extends AbstractMojo {
     private void decompileClassesForTest(ClassLoader classLoader, MethodReference methodRef, String targetName)
             throws IOException {
         JavascriptBuilder builder = new JavascriptBuilder(classLoader);
-        builder.setMinifying(minifiying);
+        builder.setMinifying(minifying);
         File file = new File(outputDir, targetName);
         try (Writer innerWriter = new OutputStreamWriter(new FileOutputStream(file), "UTF-8")) {
             MethodReference cons = new MethodReference(methodRef.getClassName(),

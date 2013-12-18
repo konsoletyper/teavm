@@ -31,8 +31,9 @@
             </goals>
             <phase>process-classes</phase>
             <configuration>
-              <minifiying>false</minifiying>
+              <minifying>false</minifying>
               <mainClass>org.teavm.samples.HelloWorld</mainClass>
+              <mainPageIncluded>true</mainPageIncluded>
             </configuration>
           </execution>
         </executions>

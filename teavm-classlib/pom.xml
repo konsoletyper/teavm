@@ -37,7 +37,7 @@
             </goals>
             <phase>process-test-classes</phase>
             <configuration>
-              <minifiying>true</minifiying>
+              <minifying>true</minifying>
             </configuration>
           </execution>
         </executions>
