@@ -51,28 +51,17 @@ Third, you add `teavm-maven-plugin` in your build configuration:
           </goals>
           <phase>process-classes</phase>
           <configuration>
-            <minifiying>true</minifiying>
+            <minifying>true</minifying>
             <mainClass>org.teavm.samples.HelloWorld</mainClass>
+            <mainPageIncluded>true</mainPageIncluded>
           </configuration>
         </execution>
       </executions>
     </plugin>
 
-Now you can execute `mvn clean package` and get the generated JavaScript file `target/javascript/classes.js`.
-It contains the `main` global function, which you may call. In the general case you should provide
-an HTML page, which includes both of
-[runtime.js](https://github.com/konsoletyper/teavm/blob/master/teavm-core/src/main/resources/org/teavm/javascript/runtime.js)
-and `classes.js` files and calls `main` function in some condition. Here is an example:
-
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <script type="text/javascript" src="runtime.js">
-        <script type="text/javascript" src="classes.js">
-      </head>
-      <body onload="main()">
-      </body>
-    </html>
+Now you can execute `mvn clean package` and get the generated JavaScript files in `target/javascript` folder.
+Just open `target/javascript/main.html` page in your browser, open developer's console and press *Refresh* and
+see what happen.
 
 Advantages over GWT
 -------------------
