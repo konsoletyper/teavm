@@ -23,13 +23,6 @@
         <groupId>org.teavm</groupId>
         <artifactId>teavm-maven-plugin</artifactId>
         <version>${project.version}</version>
-        <dependencies>
-          <dependency>
-            <groupId>org.teavm</groupId>
-            <artifactId>teavm-core</artifactId>
-            <version>${project.version}</version>
-          </dependency>
-        </dependencies>
         <executions>
           <execution>
             <id>generate-javascript</id>
