@@ -193,8 +193,8 @@ public class StringBuilderTest {
     @Test
     public void doubleAppended() {
         StringBuilder sb = new StringBuilder();
-        sb.append(1.2345678E150);
-        assertEquals("1.2345678E150", sb.toString());
+        sb.append(1.23456789E150);
+        assertEquals("1.23456789E150", sb.toString());
     }
 
     @Test

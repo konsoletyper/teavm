@@ -25,7 +25,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
     private static final int FLOAT_DECIMAL_PRECISION = 7;
     private static final int DOUBLE_DECIMAL_PRECISION = 16;
     private static final float FLOAT_DECIMAL_FACTOR = 1E6f;
-    private static final double DOUBLE_DECIMAL_FACTOR = 1E15f;
+    private static final double DOUBLE_DECIMAL_FACTOR = 1E15;
     private static final int FLOAT_MAX_EXPONENT = 38;
     private static final int DOUBLE_MAX_EXPONENT = 308;
     private static final int FLOAT_MAX_POS = 1000000;
@@ -331,7 +331,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
                 }
                 bit >>= 1;
             }
-            mantissa = (long)((value / (digit / DOUBLE_DECIMAL_FACTOR)) + 0.5f);
+            mantissa = (long)(((value / digit) * DOUBLE_DECIMAL_FACTOR) + 0.5);
         } else {
             ++sz;
             int bit = 256;
@@ -449,7 +449,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
         int result = 0;
         int bit = 16;
         for (int i = longLogPowersOfTen.length - 1; i >= 0; --i) {
-            if (n % zeros == 0) {
+            if (n % (zeros * longLogPowersOfTen[i]) == 0) {
                 result |= bit;
                 zeros *= longLogPowersOfTen[i];
             }
