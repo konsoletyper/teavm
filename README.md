@@ -17,7 +17,7 @@ But there is something more:
 How to use
 ----------
 
-There are some options of using TeaVM. One is the maven build. First, you write your code as if it were an
+There are several options of using TeaVM. One is the maven build. First, you write your code as if it were an
 ordinary Java project:
 
     package org.teavm.samples;
@@ -28,21 +28,17 @@ ordinary Java project:
         }
     }
 
-Second, you include the following dependency in your `pom.xml`:
-
-      <dependency>
-        <groupId>org.teavm</groupId>
-        <artifactId>teavm-classlib</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
-        <scope>provided</scope>
-      </dependency>
-
-Third, you add `teavm-maven-plugin` in your build configuration:
+Second, you include the following plugin in your `pom.xml` build section:
 
     <plugin>
       <groupId>org.teavm</groupId>
       <artifactId>teavm-maven-plugin</artifactId>
       <version>0.0.1-SNAPSHOT</version>
+      <dependency>
+        <groupId>org.teavm</groupId>
+        <artifactId>teavm-classlib</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+      </dependency>
       <executions>
         <execution>
           <id>generate-javascript</id>
@@ -63,6 +59,9 @@ Now you can execute `mvn clean package` and get the generated JavaScript files i
 Just open `target/javascript/main.html` page in your browser, open developer's console and press *Refresh* and
 see what happen.
 
+There is [teavm-samples](https://github.com/konsoletyper/teavm/tree/master/teavm-samples) module,
+containing a complete buildable and runnable example.
+
 Advantages over GWT
 -------------------
 
@@ -76,6 +75,9 @@ and TeaVM compiler remains unbroken. Also you may want thigs Scala, Kotlin or Ce
 To represent a source code, GWT uses abstract syntax trees (AST).
 TeaVM uses control flow graph (CFG) of methods. CFG are much easier to optimize,
 so TeaVM **applies aggressive optimizations** to you code to make it running faster.
+
+TeaVM compiler is faster. And TeaVM does not produce permutations.
+So with TeaVM you have no permutation explosion problem.
 
 Advantages over JavaScript
 --------------------------
