@@ -191,6 +191,13 @@ public class StringBuilderTest {
     }
 
     @Test
+    public void doubleAppended() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(1.2345678E150);
+        assertEquals("1.2345678E150", sb.toString());
+    }
+
+    @Test
     public void appendsCodePoint() {
         StringBuilder sb = new StringBuilder();
         sb.appendCodePoint(969356);
