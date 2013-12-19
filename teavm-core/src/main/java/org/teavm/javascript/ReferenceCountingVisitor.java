@@ -100,4 +100,7 @@ class ReferenceCountingVisitor implements StatementVisitor {
     public void visit(IncrementStatement statement) {
     }
 
+    @Override
+    public void visit(InitClassStatement statement) {
+    }
 }

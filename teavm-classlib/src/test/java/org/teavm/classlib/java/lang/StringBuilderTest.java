@@ -44,6 +44,13 @@ public class StringBuilderTest {
     }
 
     @Test
+    public void longAppended2() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(2971215073L);
+        assertEquals("2971215073", sb.toString());
+    }
+
+    @Test
     public void negativeLongAppended() {
         StringBuilder sb = new StringBuilder();
         sb.append(-23L);

@@ -63,4 +63,10 @@ public abstract class Statement {
     public static Statement cond(Expr predicate, Statement consequent) {
         return cond(predicate, consequent, null);
     }
+
+    public static Statement initClass(String className) {
+        InitClassStatement stmt = new InitClassStatement();
+        stmt.setClassName(className);
+        return stmt;
+    }
 }

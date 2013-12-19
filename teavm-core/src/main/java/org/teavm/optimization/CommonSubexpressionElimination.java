@@ -358,5 +358,9 @@ public class CommonSubexpressionElimination implements MethodOptimization {
             insn.setValue(program.variableAt(val));
             bind(insn.getReceiver().getIndex(), "@" + val + " :? " + insn.getType());
         }
+
+        @Override
+        public void visit(InitClassInstruction insn) {
+        }
     };
 }

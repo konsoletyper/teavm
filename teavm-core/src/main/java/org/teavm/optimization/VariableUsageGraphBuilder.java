@@ -183,5 +183,9 @@ public class VariableUsageGraphBuilder {
         public void visit(IsInstanceInstruction insn) {
             use(insn.getReceiver(), insn.getValue());
         }
+
+        @Override
+        public void visit(InitClassInstruction insn) {
+        }
     }
 }

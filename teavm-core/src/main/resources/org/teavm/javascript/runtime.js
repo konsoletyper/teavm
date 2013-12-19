@@ -250,7 +250,7 @@ $rt_methodStubs = function(clinit, names) {
 }
 $rt_stdoutBuffer = "";
 $rt_putStdout = function(ch) {
-    if (ch == '\n') {
+    if (ch === 0xA) {
         if (console) {
             console.info($rt_stdoutBuffer);
         }
@@ -261,7 +261,7 @@ $rt_putStdout = function(ch) {
 }
 $rt_stderrBuffer = "";
 $rt_putStderr = function(ch) {
-    if (ch == '\n') {
+    if (ch === 0xA) {
         if (console) {
             console.info($rt_stderrBuffer);
         }

@@ -628,4 +628,9 @@ class StatementGenerator implements InstructionVisitor {
     private Expr compare(BinaryOperation op, Variable value) {
         return Expr.binary(op, Expr.var(value.getIndex()), Expr.constant(0));
     }
+
+    @Override
+    public void visit(InitClassInstruction insn) {
+        statements.add(Statement.initClass(insn.getClassName()));
+    }
 }

@@ -117,7 +117,7 @@ public class TPrintStream extends TFilterOutputStream {
     private void print(char[] s, int begin, int end) {
         CharBuffer src = new CharBuffer(s, begin, end);
         byte[] destBytes = new byte[TMath.max(16, TMath.min(s.length, 1024))];
-        ByteBuffer dest = new ByteBuffer(new byte[TMath.max(16, TMath.min(s.length, 1024))]);
+        ByteBuffer dest = new ByteBuffer(destBytes);
         while (!src.end()) {
             charset.encode(src, dest);
             write(destBytes, 0, dest.position());
@@ -135,13 +135,28 @@ public class TPrintStream extends TFilterOutputStream {
         printSB();
     }
 
+    public void println(int i) {
+        sb.append(i).append('\n');
+        printSB();
+    }
+
+    public void print(long l) {
+        sb.append(l);
+        printSB();
+    }
+
+    public void println(long l) {
+        sb.append(l).append('\n');
+        printSB();
+    }
+
     public void print(TString s) {
-        sb.append(s).append('\n');
+        sb.append(s);
         printSB();
     }
 
     public void println(TString s) {
-        sb.append(s);
+        sb.append(s).append('\n');
         printSB();
     }
 
@@ -152,7 +167,7 @@ public class TPrintStream extends TFilterOutputStream {
     private void printSB() {
         char[] buffer = sb.length() > this.buffer.length ? new char[sb.length()] : this.buffer;
         sb.getChars(0, sb.length(), buffer, 0);
-        print(buffer);
+        print(buffer, 0, sb.length());
         sb.setLength(0);
     }
 }

@@ -13,12 +13,12 @@ import org.teavm.optimization.UnreachableBasicBlockEliminator;
  * @author Alexey Andreev
  */
 public class Parser {
-    public static MethodHolder parseMethod(MethodNode node) {
+    public static MethodHolder parseMethod(MethodNode node, String className) {
         ValueType[] signature = MethodDescriptor.parseSignature(node.desc);
         MethodHolder method = new MethodHolder(node.name, signature);
         parseModifiers(node.access, method);
         ProgramParser programParser = new ProgramParser();
-        Program program = programParser.parse(node);
+        Program program = programParser.parse(node, className);
         new UnreachableBasicBlockEliminator().optimize(program);
         SSATransformer ssaProducer = new SSATransformer();
         ssaProducer.transformToSSA(program, method.getParameterTypes());
@@ -44,7 +44,7 @@ public class Parser {
         }
         for (Object obj : node.methods) {
             MethodNode methodNode = (MethodNode)obj;
-            cls.addMethod(parseMethod(methodNode));
+            cls.addMethod(parseMethod(methodNode, node.name));
         }
         parseAnnotations(cls.getAnnotations(), node);
         return cls;

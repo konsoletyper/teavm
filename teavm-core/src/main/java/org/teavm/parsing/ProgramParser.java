@@ -42,6 +42,7 @@ public class ProgramParser {
     private int[] localsMap;
     private int minLocal;
     private Program program;
+    private String currentClassName;
 
     private static class Step {
         public final int source;
@@ -53,8 +54,9 @@ public class ProgramParser {
         }
     }
 
-    public Program parse(MethodNode method) {
+    public Program parse(MethodNode method, String className) {
         program = new Program();
+        this.currentClassName = className;
         InsnList instructions = method.instructions;
         if (instructions.size() == 0) {
             return program;
@@ -1402,6 +1404,11 @@ public class ProgramParser {
                     if (desc.equals("D") || desc.equals("J")) {
                         currentDepth++;
                     }
+                    if (!owner.equals(currentClassName)) {
+                        InitClassInstruction initInsn = new InitClassInstruction();
+                        initInsn.setClassName(ownerCls);
+                        builder.add(initInsn);
+                    }
                     GetFieldInstruction insn = new GetFieldInstruction();
                     insn.setField(new FieldReference(ownerCls, name));
                     insn.setFieldType(type);
@@ -1412,6 +1419,11 @@ public class ProgramParser {
                 case Opcodes.PUTSTATIC: {
                     if (desc.equals("D") || desc.equals("J")) {
                         currentDepth--;
+                    }
+                    if (!owner.equals(currentClassName)) {
+                        InitClassInstruction initInsn = new InitClassInstruction();
+                        initInsn.setClassName(ownerCls);
+                        builder.add(initInsn);
                     }
                     int value = --currentDepth;
                     PutFieldInstruction insn = new PutFieldInstruction();

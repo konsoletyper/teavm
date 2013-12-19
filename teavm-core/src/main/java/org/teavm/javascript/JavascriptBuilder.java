@@ -77,7 +77,6 @@ public class JavascriptBuilder {
         builder.setMinified(minifying);
         SourceWriter sourceWriter = builder.build(writer);
         Renderer renderer = new Renderer(sourceWriter, classSource);
-        renderer.renderRuntime();
         dependencyChecker.attachMethodGraph(new MethodReference("java.lang.Class", new MethodDescriptor("createNew",
                 ValueType.object("java.lang.Class"))));
         dependencyChecker.attachMethodGraph(new MethodReference("java.lang.String", new MethodDescriptor("<init>",

@@ -191,4 +191,8 @@ class ReadWriteStatsBuilder implements StatementVisitor, ExprVisitor {
         reads[statement.getVar()]++;
         writes[statement.getVar()]++;
     }
+
+    @Override
+    public void visit(InitClassStatement statement) {
+    }
 }

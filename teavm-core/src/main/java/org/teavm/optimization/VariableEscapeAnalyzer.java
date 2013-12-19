@@ -178,5 +178,9 @@ public class VariableEscapeAnalyzer {
         @Override
         public void visit(IsInstanceInstruction insn) {
         }
+
+        @Override
+        public void visit(InitClassInstruction insn) {
+        }
     }
 }

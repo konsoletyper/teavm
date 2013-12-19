@@ -331,4 +331,9 @@ public class InstructionStringifier implements InstructionVisitor {
         sb.append("@").append(insn.getReceiver().getIndex()).append("@")
                 .append(insn.getArray().getIndex()).append(".clone()");
     }
+
+    @Override
+    public void visit(InitClassInstruction insn) {
+        sb.append("initclass ").append(insn.getClassName());
+    }
 }

@@ -1,6 +1,6 @@
 package org.teavm.classlib.java.lang;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 
 /**
@@ -35,5 +35,12 @@ public class VMTest {
         long b = 1062912L;
         assertEquals(11997458712L, a / b);
         assertEquals(-11997458712L, a / -b);
+    }
+
+    @Test
+    public void longAdditionWorks() {
+        long a = 1134903170;
+        long b = 1836311903;
+        assertEquals(2971215073L, a + b);
     }
 }

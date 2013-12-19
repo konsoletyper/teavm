@@ -179,4 +179,9 @@ public class InstructionTransitionExtractor implements InstructionVisitor {
     public void visit(CloneArrayInstruction insn) {
         targets = null;
     }
+
+    @Override
+    public void visit(InitClassInstruction insn) {
+        targets = null;
+    }
 }

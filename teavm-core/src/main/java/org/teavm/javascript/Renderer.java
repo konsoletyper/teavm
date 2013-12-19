@@ -174,7 +174,8 @@ public class Renderer implements ExprVisitor, StatementVisitor {
             writer.ws().append("};").softNewLine();
             writer.appendClass(cls.getName()).append("_$clinit").ws().append("=").ws().append("function()").ws()
                     .append("{").softNewLine().indent();
-            writer.appendClass(cls.getName()).append("_$clinit").ws().append("=").ws().append("null;").newLine();
+            writer.appendClass(cls.getName()).append("_$clinit").ws().append("=").ws()
+                    .append("function(){};").newLine();
             List<String> stubNames = new ArrayList<>();
             for (MethodNode method : cls.getMethods()) {
                 renderBody(method);
@@ -524,6 +525,15 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                 }
             }
             writer.append(";").softNewLine();
+        } catch (IOException e) {
+            throw new RenderingException("IO error occured", e);
+        }
+    }
+
+    @Override
+    public void visit(InitClassStatement statement) {
+        try {
+            writer.appendClass(statement.getClassName()).append("_$clinit();").softNewLine();
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
         }

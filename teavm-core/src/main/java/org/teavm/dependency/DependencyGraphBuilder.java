@@ -334,5 +334,10 @@ class DependencyGraphBuilder {
         @Override
         public void visit(EmptyInstruction insn) {
         }
+
+        @Override
+        public void visit(InitClassInstruction insn) {
+            dependencyChecker.initClass(insn.getClassName());
+        }
     };
 }

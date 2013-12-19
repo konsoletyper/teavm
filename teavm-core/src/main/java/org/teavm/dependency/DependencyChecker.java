@@ -146,7 +146,7 @@ public class DependencyChecker {
         return methodCache.map(methodRef);
     }
 
-    private void initClass(String className) {
+    public void initClass(String className) {
         MethodDescriptor clinitDesc = new MethodDescriptor("<clinit>", ValueType.VOID);
         while (className != null) {
             if (initializedClasses.putIfAbsent(className, clinitDesc) != null) {
@@ -184,8 +184,7 @@ public class DependencyChecker {
         for (int i = 0; i < varCount; ++i) {
             parameterNodes[i] = new DependencyNode(this);
             if (shouldLog) {
-                parameterNodes[i].setTag(method.getOwner().getName() + "#" +
-                        method.getName() + method.getDescriptor() + ":" + i);
+                parameterNodes[i].setTag(method.getOwner().getName() + "#" + method.getDescriptor() + ":" + i);
             }
         }
         DependencyNode resultNode;
@@ -194,8 +193,7 @@ public class DependencyChecker {
         } else {
             resultNode = new DependencyNode(this);
             if (shouldLog) {
-                resultNode.setTag(method.getOwner().getName() + "#" +
-                        method.getName() + MethodDescriptor.get(method) + ":RESULT");
+                resultNode.setTag(method.getOwner().getName() + "#" + method.getDescriptor() + ":RESULT");
             }
         }
         final MethodGraph graph = new MethodGraph(parameterNodes, paramCount, resultNode, this);
@@ -236,6 +234,21 @@ public class DependencyChecker {
 
     private DependencyNode createFieldNode(FieldReference fieldRef) {
         initClass(fieldRef.getClassName());
+        ClassHolder cls = classSource.getClassHolder(fieldRef.getClassName());
+        if (cls == null) {
+            throw new RuntimeException("Class not found: " + fieldRef.getClassName());
+        }
+        FieldHolder field = cls.getField(fieldRef.getFieldName());
+        if (field == null) {
+            while (cls != null) {
+                field = cls.getField(fieldRef.getFieldName());
+                if (field != null) {
+                    return fieldCache.map(new FieldReference(cls.getName(), fieldRef.getFieldName()));
+                }
+                cls = cls.getParent() != null ? classSource.getClassHolder(cls.getParent()) : null;
+            }
+            throw new RuntimeException("Field not found: " + fieldRef);
+        }
         DependencyNode node = new DependencyNode(this);
         if (shouldLog) {
             node.setTag(fieldRef.getClassName() + "#" + fieldRef.getFieldName());

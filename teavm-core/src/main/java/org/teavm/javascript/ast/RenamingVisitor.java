@@ -166,4 +166,8 @@ public class RenamingVisitor implements StatementVisitor, ExprVisitor {
     public void visit(IncrementStatement statement) {
         statement.setVar(varNames[statement.getVar()]);
     }
+
+    @Override
+    public void visit(InitClassStatement statement) {
+    }
 }

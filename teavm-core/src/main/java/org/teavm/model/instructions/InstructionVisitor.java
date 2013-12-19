@@ -68,4 +68,6 @@ public interface InstructionVisitor {
     void visit(InvokeInstruction insn);
 
     void visit(IsInstanceInstruction insn);
+
+    void visit(InitClassInstruction insn);
 }

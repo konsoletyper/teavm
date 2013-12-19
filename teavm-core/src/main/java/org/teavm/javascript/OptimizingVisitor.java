@@ -478,4 +478,9 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     public void visit(IncrementStatement statement) {
         resultStmt = Statement.increment(statement.getVar(), statement.getAmount());
     }
+
+    @Override
+    public void visit(InitClassStatement statement) {
+        resultStmt = statement;
+    }
 }

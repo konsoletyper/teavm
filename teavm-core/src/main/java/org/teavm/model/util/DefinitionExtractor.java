@@ -177,4 +177,8 @@ public class DefinitionExtractor implements InstructionVisitor {
     public void visit(CloneArrayInstruction insn) {
         definedVariables = new Variable[] { insn.getReceiver() };
     }
+
+    @Override
+    public void visit(InitClassInstruction insn) {
+    }
 }

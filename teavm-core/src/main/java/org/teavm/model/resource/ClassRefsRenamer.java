@@ -249,4 +249,9 @@ class ClassRefsRenamer implements InstructionVisitor {
     public void visit(IsInstanceInstruction insn) {
         insn.setType(rename(insn.getType()));
     }
+
+    @Override
+    public void visit(InitClassInstruction insn) {
+        insn.setClassName(classNameMapper.map(insn.getClassName()));
+    }
 }

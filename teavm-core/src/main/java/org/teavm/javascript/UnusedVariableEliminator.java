@@ -196,4 +196,8 @@ class UnusedVariableEliminator implements ExprVisitor, StatementVisitor {
     @Override
     public void visit(StaticClassExpr expr) {
     }
+
+    @Override
+    public void visit(InitClassStatement statement) {
+    }
 }

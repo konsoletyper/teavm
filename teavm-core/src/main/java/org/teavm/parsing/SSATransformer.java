@@ -374,5 +374,9 @@ public class SSATransformer {
             insn.setArray(use(insn.getArray()));
             insn.setReceiver(define(insn.getReceiver()));
         }
+
+        @Override
+        public void visit(InitClassInstruction insn) {
+        }
     };
 }
