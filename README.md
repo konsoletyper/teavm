@@ -20,16 +20,19 @@ How to use
 There are several options of using TeaVM. One is the maven build. First, you write your code as if it were an
 ordinary Java project:
 
-    package org.teavm.samples;
+```Java
+package org.teavm.samples;
 
-    public class HelloWorld {
-        public static void main(String[] args) {
-            System.out.println("Hello, world!");
-        }
+public class HelloWorld {
+    public static void main(String[] args) {
+        System.out.println("Hello, world!");
     }
+}
+```
 
 Second, you include the following plugin in your `pom.xml` build section:
 
+```XML
     <plugin>
       <groupId>org.teavm</groupId>
       <artifactId>teavm-maven-plugin</artifactId>
@@ -54,12 +57,13 @@ Second, you include the following plugin in your `pom.xml` build section:
         </execution>
       </executions>
     </plugin>
+```
 
 Now you can execute `mvn clean package` and get the generated JavaScript files in `target/javascript` folder.
 Just open `target/javascript/main.html` page in your browser, open developer's console and press *Refresh* and
 see what happen.
 
-There is [teavm-samples](https://github.com/konsoletyper/teavm/tree/master/teavm-samples) module,
+There is [teavm-samples](teavm-samples) module,
 containing a complete buildable and runnable example.
 
 Advantages over GWT
