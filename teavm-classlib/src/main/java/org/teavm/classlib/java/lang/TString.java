@@ -425,6 +425,10 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         return new TStringBuilder().append(f).toString0();
     }
 
+    public static TString valueOf(double d) {
+        return new TStringBuilder().append(d).toString0();
+    }
+
     @Override
     public boolean equals(TObject other) {
         if (this == other) {

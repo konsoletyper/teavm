@@ -213,6 +213,69 @@ public class StringBuilderTest {
     }
 
     @Test
+    public void negativeDoubleAppended() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(-1.23456789E150);
+        assertEquals("-1.23456789E150", sb.toString());
+    }
+
+    @Test
+    public void smallDoubleAppended() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(1.23456789E-150);
+        assertEquals("1.23456789E-150", sb.toString());
+    }
+
+    @Test
+    public void maxDoubleAppended() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(1.79769313486231E308);
+        assertEquals("1.79769313486231E308", sb.toString());
+    }
+
+    @Test
+    public void minDoubleAppended() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(2.2250738585072E-308);
+        assertEquals("2.2250738585072E-308", sb.toString());
+    }
+
+    @Test
+    public void zeroDoubleAppended() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(0);
+        assertEquals("0", sb.toString());
+    }
+
+    @Test
+    public void doubleInfinityAppended() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(Double.POSITIVE_INFINITY);
+        assertEquals("Infinity", sb.toString());
+    }
+
+    @Test
+    public void doubleNaNAppended() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(Double.NaN);
+        assertEquals("NaN", sb.toString());
+    }
+
+    @Test
+    public void normalDoubleAppended() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(1200.0);
+        assertEquals("1200.0", sb.toString());
+    }
+
+    @Test
+    public void normalSmallDoubleAppended() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(0.023);
+        assertEquals("0.023", sb.toString());
+    }
+
+    @Test
     public void appendsCodePoint() {
         StringBuilder sb = new StringBuilder();
         sb.appendCodePoint(969356);

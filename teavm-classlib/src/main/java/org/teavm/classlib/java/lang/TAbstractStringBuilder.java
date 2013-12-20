@@ -243,7 +243,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
         // Extend buffer to store exponent
         if (exp != 0) {
             sz += 2;
-            if (exp < 10 || exp > 10) {
+            if (exp <= -10 || exp >= 10) {
                 ++sz;
             }
         }
@@ -276,7 +276,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
                 exp = -exp;
                 buffer[length++] = '-';
             }
-            if (exp > 10) {
+            if (exp >= 10) {
                 buffer[length++] = (char)('0' + exp / 10);
             }
             buffer[length++] = (char)('0' + exp % 10);
@@ -354,13 +354,13 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
             double digit = 1;
             for (int i = negDoublePowersOfTen.length - 1; i >= 0; --i) {
                 if ((exp | bit) <= DOUBLE_MAX_EXPONENT && negDoublePowersOfTen[i] * digit * 10 > value) {
-                    digit *= negPowersOfTen[i];
+                    digit *= negDoublePowersOfTen[i];
                     exp |= bit;
                 }
                 bit >>= 1;
             }
             exp = -exp;
-            mantissa = (long)(((value * DOUBLE_MAX_POS) / digit) + 0.5f);
+            mantissa = (long)(((value * DOUBLE_MAX_POS) / digit) + 0.5);
         }
 
         // Remove trailing zeros
@@ -387,10 +387,10 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
         // Extend buffer to store exponent
         if (exp != 0) {
             sz += 2;
-            if (exp < 10 || exp > 10) {
+            if (exp <= -10 || exp >= 10) {
                 ++sz;
             }
-            if (exp < 100 || exp > 100) {
+            if (exp <= -100 || exp >= 100) {
                 ++sz;
             }
         }
@@ -423,11 +423,11 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
                 exp = -exp;
                 buffer[length++] = '-';
             }
-            if (exp > 100) {
+            if (exp >= 100) {
                 buffer[length++] = (char)('0' + exp / 100);
                 exp %= 100;
-            }
-            if (exp > 10) {
+                buffer[length++] = (char)('0' + exp / 10);
+            } else if (exp >= 10) {
                 buffer[length++] = (char)('0' + exp / 10);
             }
             buffer[length++] = (char)('0' + exp % 10);
