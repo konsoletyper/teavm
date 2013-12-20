@@ -15,12 +15,10 @@
  */
 package org.teavm.classlib.java.lang;
 
-import org.teavm.classlib.impl.charset.ByteBuffer;
-import org.teavm.classlib.impl.charset.CharBuffer;
-import org.teavm.classlib.impl.charset.Charset;
-import org.teavm.classlib.impl.charset.UTF16Helper;
+import org.teavm.classlib.impl.charset.*;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.io.TUnsupportedEncodingException;
+import org.teavm.classlib.java.util.TArrays;
 import org.teavm.javascript.ni.GeneratedBy;
 import org.teavm.javascript.ni.Rename;
 
@@ -63,7 +61,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public TString(byte[] bytes, int offset, int length) {
-        initWithBytes(bytes, offset, length, Charset.get("UTF-8"));
+        initWithBytes(bytes, offset, length, new UTF8Charset());
     }
 
     public TString(byte[] bytes) {
@@ -485,6 +483,37 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
             }
         }
         return true;
+    }
+
+    public byte[] getBytes(TString charsetName) throws TUnsupportedEncodingException {
+        Charset charset = Charset.get(charsetName.toString());
+        if (charset == null) {
+            throw new TUnsupportedEncodingException(TString.wrap("Unsupported encoding: " + charsetName));
+        }
+        return getBytes(charset);
+    }
+
+    public byte[] getBytes() {
+        return getBytes(new UTF8Charset());
+    }
+
+    private byte[] getBytes(Charset charset) {
+        byte[] result = new byte[length() * 2];
+        int resultLength = 0;
+        byte[] destArray = new byte[TMath.max(16, TMath.min(length() * 2, 4096))];
+        ByteBuffer dest = new ByteBuffer(destArray);
+        CharBuffer src = new CharBuffer(characters);
+        while (!src.end()) {
+            charset.encode(src, dest);
+            if (resultLength + dest.position() > result.length) {
+                result = TArrays.copyOf(result, result.length * 2);
+            }
+            for (int i = 0; i < dest.position(); ++i) {
+                result[resultLength++] = destArray[i];
+            }
+            dest.rewind(0);
+        }
+        return TArrays.copyOf(result, resultLength);
     }
 
     @Override

@@ -218,4 +218,56 @@ public class StringTest {
         byte[] bytes = { 65, -62, -69, -32, -82, -69, -16, -66, -78, -69 };
         assertEquals("A\u00BB\u0BBB\uD8BB\uDCBB", new String(bytes, "UTF-8"));
     }
+
+    @Test
+    public void createFromLongUTF8ByteArray() throws UnsupportedEncodingException {
+        byte[] bytes = new byte[16384];
+        for (int i = 0; i < bytes.length;) {
+             bytes[i++] = -16;
+             bytes[i++] = -66;
+             bytes[i++] = -78;
+             bytes[i++] = -69;
+        }
+        String str = new String(bytes, "UTF-8");
+        assertEquals('\uD8BB', str.charAt(8190));
+        assertEquals('\uDCBB', str.charAt(8191));
+    }
+
+    @Test
+    public void getByteArray() throws UnsupportedEncodingException {
+        byte[] bytes = "123".getBytes("UTF-8");
+        assertEquals(49, bytes[0]);
+        assertEquals(50, bytes[1]);
+        assertEquals(51, bytes[2]);
+        assertEquals(3, bytes.length);
+    }
+
+    @Test
+    public void getUTF8ByteArray() throws UnsupportedEncodingException {
+        byte[] bytes = "A\u00BB\u0BBB\uD8BB\uDCBB".getBytes("UTF-8");
+        assertEquals(65, bytes[0]);
+        assertEquals(-62, bytes[1]);
+        assertEquals(-69, bytes[2]);
+        assertEquals(-32, bytes[3]);
+        assertEquals(-82, bytes[4]);
+        assertEquals(-69, bytes[5]);
+        assertEquals(-16, bytes[6]);
+        assertEquals(-66, bytes[7]);
+        assertEquals(-78, bytes[8]);
+        assertEquals(-69, bytes[9]);
+    }
+
+    @Test
+    public void getUTF8ByteArrayOfLongString() throws UnsupportedEncodingException {
+        char[] chars = new char[8192];
+        for (int i = 0; i < chars.length;) {
+             chars[i++] = '\uD8BB';
+             chars[i++] = '\uDCBB';
+        }
+        byte[] bytes = new String(chars).getBytes("UTF-8");
+        assertEquals(-16, bytes[16380]);
+        assertEquals(-66, bytes[16381]);
+        assertEquals(-78, bytes[16382]);
+        assertEquals(-69, bytes[16383]);
+    }
 }

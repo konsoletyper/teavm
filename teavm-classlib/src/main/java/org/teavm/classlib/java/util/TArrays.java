@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.util;
 
+import org.teavm.classlib.java.lang.TMath;
 import org.teavm.classlib.java.lang.TObject;
 
 /**
@@ -24,7 +25,16 @@ import org.teavm.classlib.java.lang.TObject;
 public class TArrays extends TObject {
     public static char[] copyOf(char[] array, int length) {
         char[] result = new char[length];
-        int sz = Math.min(length, array.length);
+        int sz = TMath.min(length, array.length);
+        for (int i = 0; i < sz; ++i) {
+            result[i] = array[i];
+        }
+        return result;
+    }
+
+    public static byte[] copyOf(byte[] array, int length) {
+        byte[] result = new byte[length];
+        int sz = TMath.min(length, array.length);
         for (int i = 0; i < sz; ++i) {
             result[i] = array[i];
         }
