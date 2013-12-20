@@ -46,7 +46,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
     private static final int FLOAT_MAX_POS = 1000000;
     private static final long DOUBLE_MAX_POS = 1000000000000000L;
     char[] buffer;
-    int length;
+    private int length;
 
     public TAbstractStringBuilder() {
         this(16);
@@ -490,6 +490,11 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
         return this;
     }
 
+    protected TAbstractStringBuilder append(TObject obj) {
+        append(TString.wrap(obj != null ? obj.toString() : "null"));
+        return this;
+    }
+
     private void ensureCapacity(int capacity) {
         if (buffer.length >= capacity) {
             return;
@@ -522,7 +527,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
         return buffer[index];
     }
 
-    public TAbstractStringBuilder append(TCharSequence s, int start, int end) {
+    protected TAbstractStringBuilder append(TCharSequence s, int start, int end) {
         if (start > end || end > s.length() || start < 0) {
             throw new TIndexOutOfBoundsException();
         }
@@ -533,8 +538,17 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
         return this;
     }
 
-    public TAbstractStringBuilder append(TCharSequence s) {
+    protected TAbstractStringBuilder append(TCharSequence s) {
         return append(s, 0, s.length());
+    }
+
+    protected TAbstractStringBuilder append(char[] chars, int offset, int len) {
+        ensureCapacity(length + len);
+        len += offset;
+        while (offset < len) {
+            buffer[length++] = chars[offset++];
+        }
+        return this;
     }
 
     @Override

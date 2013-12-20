@@ -20,6 +20,14 @@ package org.teavm.classlib.java.lang;
  * @author Alexey Andreev
  */
 public class TStringBuilder extends TAbstractStringBuilder {
+    public TStringBuilder(int capacity) {
+        super(capacity);
+    }
+
+    public TStringBuilder() {
+        super();
+    }
+
     @Override
     public TStringBuilder append(TString string) {
         super.append(string);
@@ -57,6 +65,12 @@ public class TStringBuilder extends TAbstractStringBuilder {
     }
 
     @Override
+    public TStringBuilder append(char[] chars, int offset, int len) {
+        super.append(chars, offset, len);
+        return this;
+    }
+
+    @Override
     public TStringBuilder appendCodePoint(int codePoint) {
         super.appendCodePoint(codePoint);
         return this;
@@ -71,6 +85,12 @@ public class TStringBuilder extends TAbstractStringBuilder {
     @Override
     public TStringBuilder append(TCharSequence s) {
         super.append(s);
+        return this;
+    }
+
+    @Override
+    public TStringBuilder append(TObject obj) {
+        super.append(obj);
         return this;
     }
 }

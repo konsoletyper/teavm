@@ -15,8 +15,12 @@
  */
 package org.teavm.classlib.java.lang;
 
+import org.teavm.classlib.impl.charset.ByteBuffer;
+import org.teavm.classlib.impl.charset.CharBuffer;
+import org.teavm.classlib.impl.charset.Charset;
 import org.teavm.classlib.impl.charset.UTF16Helper;
 import org.teavm.classlib.java.io.TSerializable;
+import org.teavm.classlib.java.io.TUnsupportedEncodingException;
 import org.teavm.javascript.ni.GeneratedBy;
 import org.teavm.javascript.ni.Rename;
 
@@ -24,8 +28,7 @@ import org.teavm.javascript.ni.Rename;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class TString extends TObject implements TSerializable, TComparable<TString>,
-        TCharSequence {
+public class TString extends TObject implements TSerializable, TComparable<TString>, TCharSequence {
     private char[] characters;
     private transient int hashCode;
 
@@ -51,8 +54,43 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         }
     }
 
+    public TString(byte[] bytes, int offset, int length, TString charsetName) throws TUnsupportedEncodingException {
+        Charset charset = Charset.get(charsetName.toString());
+        if (charset == null) {
+            throw new TUnsupportedEncodingException(TString.wrap("Unknown encoding:" + charsetName));
+        }
+        initWithBytes(bytes, offset, length, charset);
+    }
+
+    public TString(byte[] bytes, int offset, int length) {
+        initWithBytes(bytes, offset, length, Charset.get("UTF-8"));
+    }
+
+    public TString(byte[] bytes) {
+        this(bytes, 0, bytes.length);
+    }
+
+    public TString(byte[] bytes, TString charsetName) throws TUnsupportedEncodingException {
+        this(bytes, 0, bytes.length, charsetName);
+    }
+
+    private void initWithBytes(byte[] bytes, int offset, int length, Charset charset) {
+        TStringBuilder sb = new TStringBuilder(bytes.length * 2);
+        this.characters = new char[sb.length()];
+        ByteBuffer source = new ByteBuffer(bytes, offset, offset + length);
+        char[] destChars = new char[TMath.max(8, TMath.min(length * 2, 1024))];
+        CharBuffer dest = new CharBuffer(destChars, 0, length * 2);
+        while (!source.end()) {
+            charset.decode(source, dest);
+            sb.append(destChars, 0, dest.position());
+            dest.rewind(0);
+        }
+        characters = new char[sb.length()];
+        sb.getChars(0, sb.length(), characters, 0);
+    }
+
     public TString(TStringBuilder sb) {
-        this(sb.buffer, 0, sb.length);
+        this(sb.buffer, 0, sb.length());
     }
 
     @Override

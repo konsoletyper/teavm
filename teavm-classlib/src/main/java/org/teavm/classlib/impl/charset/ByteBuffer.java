@@ -54,6 +54,10 @@ public class ByteBuffer {
         return pos == end;
     }
 
+    public void skip(int count) {
+        pos += count;
+    }
+
     public byte get() {
         return data[pos++];
     }

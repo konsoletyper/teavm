@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.lang;
 
 import static org.junit.Assert.*;
+import java.io.UnsupportedEncodingException;
 import org.junit.Test;
 
 /**
@@ -204,5 +205,17 @@ public class StringTest {
         assertEquals('1', array[0]);
         assertEquals('2', array[1]);
         assertEquals('3', array[2]);
+    }
+
+    @Test
+    public void createdFromByteArray() throws UnsupportedEncodingException {
+        byte[] bytes = { 49, 50, 51 };
+        assertEquals("123", new String(bytes, "UTF-8"));
+    }
+
+    @Test
+    public void createdFromUTF8ByteArray() throws UnsupportedEncodingException {
+        byte[] bytes = { 65, -62, -69, -32, -82, -69, -16, -66, -78, -69 };
+        assertEquals("A\u00BB\u0BBB\uD8BB\uDCBB", new String(bytes, "UTF-8"));
     }
 }

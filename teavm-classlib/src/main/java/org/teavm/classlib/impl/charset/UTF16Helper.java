@@ -34,7 +34,7 @@ public class UTF16Helper {
     }
 
     public static char lowSurrogate(int codePoint) {
-        return (char)(HIGH_SURROGATE_BITS | codePoint & SURROGATE_BIT_INV_MASK);
+        return (char)(LOW_SURROGATE_BITS | codePoint & SURROGATE_BIT_INV_MASK);
     }
 
     public static boolean isHighSurrogate(char c) {
