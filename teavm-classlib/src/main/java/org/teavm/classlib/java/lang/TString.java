@@ -1,7 +1,24 @@
+/*
+ *  Copyright 2013 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 package org.teavm.classlib.java.lang;
 
-import org.teavm.classlib.impl.charset.UTF16Helper;
+import org.teavm.classlib.impl.charset.*;
 import org.teavm.classlib.java.io.TSerializable;
+import org.teavm.classlib.java.io.TUnsupportedEncodingException;
+import org.teavm.classlib.java.util.TArrays;
 import org.teavm.javascript.ni.GeneratedBy;
 import org.teavm.javascript.ni.Rename;
 
@@ -9,8 +26,7 @@ import org.teavm.javascript.ni.Rename;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class TString extends TObject implements TSerializable, TComparable<TString>,
-        TCharSequence {
+public class TString extends TObject implements TSerializable, TComparable<TString>, TCharSequence {
     private char[] characters;
     private transient int hashCode;
 
@@ -36,8 +52,43 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         }
     }
 
+    public TString(byte[] bytes, int offset, int length, TString charsetName) throws TUnsupportedEncodingException {
+        Charset charset = Charset.get(charsetName.toString());
+        if (charset == null) {
+            throw new TUnsupportedEncodingException(TString.wrap("Unknown encoding:" + charsetName));
+        }
+        initWithBytes(bytes, offset, length, charset);
+    }
+
+    public TString(byte[] bytes, int offset, int length) {
+        initWithBytes(bytes, offset, length, new UTF8Charset());
+    }
+
+    public TString(byte[] bytes) {
+        this(bytes, 0, bytes.length);
+    }
+
+    public TString(byte[] bytes, TString charsetName) throws TUnsupportedEncodingException {
+        this(bytes, 0, bytes.length, charsetName);
+    }
+
+    private void initWithBytes(byte[] bytes, int offset, int length, Charset charset) {
+        TStringBuilder sb = new TStringBuilder(bytes.length * 2);
+        this.characters = new char[sb.length()];
+        ByteBuffer source = new ByteBuffer(bytes, offset, offset + length);
+        char[] destChars = new char[TMath.max(8, TMath.min(length * 2, 1024))];
+        CharBuffer dest = new CharBuffer(destChars, 0, length * 2);
+        while (!source.end()) {
+            charset.decode(source, dest);
+            sb.append(destChars, 0, dest.position());
+            dest.rewind(0);
+        }
+        characters = new char[sb.length()];
+        sb.getChars(0, sb.length(), characters, 0);
+    }
+
     public TString(TStringBuilder sb) {
-        this(sb.buffer, 0, sb.length);
+        this(sb.buffer, 0, sb.length());
     }
 
     @Override
@@ -410,6 +461,10 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         return new TStringBuilder().append(f).toString0();
     }
 
+    public static TString valueOf(double d) {
+        return new TStringBuilder().append(d).toString0();
+    }
+
     @Override
     public boolean equals(TObject other) {
         if (this == other) {
@@ -428,6 +483,37 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
             }
         }
         return true;
+    }
+
+    public byte[] getBytes(TString charsetName) throws TUnsupportedEncodingException {
+        Charset charset = Charset.get(charsetName.toString());
+        if (charset == null) {
+            throw new TUnsupportedEncodingException(TString.wrap("Unsupported encoding: " + charsetName));
+        }
+        return getBytes(charset);
+    }
+
+    public byte[] getBytes() {
+        return getBytes(new UTF8Charset());
+    }
+
+    private byte[] getBytes(Charset charset) {
+        byte[] result = new byte[length() * 2];
+        int resultLength = 0;
+        byte[] destArray = new byte[TMath.max(16, TMath.min(length() * 2, 4096))];
+        ByteBuffer dest = new ByteBuffer(destArray);
+        CharBuffer src = new CharBuffer(characters);
+        while (!src.end()) {
+            charset.encode(src, dest);
+            if (resultLength + dest.position() > result.length) {
+                result = TArrays.copyOf(result, result.length * 2);
+            }
+            for (int i = 0; i < dest.position(); ++i) {
+                result[resultLength++] = destArray[i];
+            }
+            dest.rewind(0);
+        }
+        return TArrays.copyOf(result, resultLength);
     }
 
     @Override
