@@ -69,7 +69,6 @@ public class JavascriptBuilder {
     }
 
     public void build(Appendable writer) throws RenderingException {
-        Decompiler decompiler = new Decompiler(classSource, classLoader);
         AliasProvider aliasProvider = minifying ? new MinifyingAliasProvider() : new DefaultAliasProvider();
         DefaultNamingStrategy naming = new DefaultNamingStrategy(aliasProvider, classSource);
         naming.setMinifying(minifying);
@@ -83,6 +82,7 @@ public class JavascriptBuilder {
                 ValueType.arrayOf(ValueType.CHARACTER), ValueType.VOID)));
         dependencyChecker.checkDependencies();
         ListableClassHolderSource classSet = dependencyChecker.cutUnachievableClasses();
+        Decompiler decompiler = new Decompiler(classSet, classLoader);
         ClassSetOptimizer optimizer = new ClassSetOptimizer();
         optimizer.optimizeAll(classSet);
         renderer.renderRuntime();

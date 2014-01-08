@@ -18,6 +18,7 @@ package org.teavm.dependency;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.teavm.common.ConcurrentCachedMapper;
 import org.teavm.common.Mapper;
@@ -40,6 +41,8 @@ public class DependencyChecker {
     private ConcurrentMap<String, Object> achievableClasses = new ConcurrentHashMap<>();
     private ConcurrentMap<String, Object> initializedClasses = new ConcurrentHashMap<>();
     private AtomicReference<RuntimeException> exceptionOccured = new AtomicReference<>();
+    private AtomicInteger activeTaskCount = new AtomicInteger(0);
+    private final Object activeTaskMonitor = new Object();
 
     public DependencyChecker(ClassHolderSource classSource, ClassLoader classLoader) {
         this(classSource, classLoader, Runtime.getRuntime().availableProcessors());
@@ -103,14 +106,21 @@ public class DependencyChecker {
     }
 
     void schedule(final Runnable runnable) {
+        activeTaskCount.incrementAndGet();
         try {
             executor.execute(new Runnable() {
                 @Override public void run() {
                     try {
                         runnable.run();
                     } catch (RuntimeException e) {
+                        activeTaskMonitor.notifyAll();
                         exceptionOccured.compareAndSet(null, e);
                         executor.shutdownNow();
+                    }
+                    if (activeTaskCount.decrementAndGet() == 0) {
+                        synchronized (activeTaskMonitor) {
+                            activeTaskMonitor.notifyAll();
+                        }
                     }
                 }
             });
@@ -120,11 +130,13 @@ public class DependencyChecker {
     }
 
     public void checkDependencies() {
-        exceptionOccured.set(null);
         while (true) {
+            if (activeTaskCount.get() == 0 || exceptionOccured.get() != null) {
+                break;
+            }
             try {
-                if (executor.getActiveCount() == 0 || executor.awaitTermination(2, TimeUnit.MILLISECONDS)) {
-                    break;
+                synchronized (activeTaskMonitor) {
+                    activeTaskMonitor.wait();
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -138,8 +150,8 @@ public class DependencyChecker {
         executor.shutdown();
     }
 
-    void achieveClass(String className) {
-        achievableClasses.put(className, dummyValue);
+    boolean achieveClass(String className) {
+        return achievableClasses.putIfAbsent(className, dummyValue) == null;
     }
 
     public MethodGraph attachMethodGraph(MethodReference methodRef) {
@@ -152,6 +164,8 @@ public class DependencyChecker {
             if (initializedClasses.putIfAbsent(className, clinitDesc) != null) {
                 break;
             }
+            achieveClass(className);
+            achieveInterfaces(className);
             ClassHolder cls = classSource.getClassHolder(className);
             if (cls == null) {
                 throw new RuntimeException("Class not found: " + className);
@@ -160,6 +174,18 @@ public class DependencyChecker {
                 attachMethodGraph(new MethodReference(className, clinitDesc));
             }
             className = cls.getParent();
+        }
+    }
+
+    private void achieveInterfaces(String className) {
+        ClassHolder cls = classSource.getClassHolder(className);
+        if (cls == null) {
+            throw new RuntimeException("Class not found: " + className);
+        }
+        for (String iface : cls.getInterfaces()) {
+            if (achieveClass(iface)) {
+                achieveInterfaces(iface);
+            }
         }
     }
 
@@ -202,7 +228,6 @@ public class DependencyChecker {
             @Override public void run() {
                 DependencyGraphBuilder graphBuilder = new DependencyGraphBuilder(DependencyChecker.this);
                 graphBuilder.buildGraph(currentMethod, graph);
-                achieveClass(methodRef.getClassName());
             }
         });
         return graph;
