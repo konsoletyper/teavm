@@ -252,7 +252,7 @@ class ClassRefsRenamer implements InstructionVisitor {
 
     @Override
     public void visit(InvokeInstruction insn) {
-        String className =  classNameMapper.map(insn.getMethod().getClassName());
+        String className = classNameMapper.map(insn.getMethod().getClassName());
         ValueType[] signature = insn.getMethod().getSignature();
         for (int i = 0; i < signature.length; ++i) {
             signature[i] = rename(signature[i]);

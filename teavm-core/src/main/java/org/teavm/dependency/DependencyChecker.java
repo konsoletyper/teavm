@@ -106,7 +106,9 @@ public class DependencyChecker {
     }
 
     void schedule(final Runnable runnable) {
-        activeTaskCount.incrementAndGet();
+        synchronized (activeTaskMonitor) {
+            activeTaskCount.incrementAndGet();
+        }
         try {
             executor.execute(new Runnable() {
                 @Override public void run() {
@@ -117,8 +119,8 @@ public class DependencyChecker {
                         exceptionOccured.compareAndSet(null, e);
                         executor.shutdownNow();
                     }
-                    if (activeTaskCount.decrementAndGet() == 0) {
-                        synchronized (activeTaskMonitor) {
+                    synchronized (activeTaskMonitor) {
+                        if (activeTaskCount.decrementAndGet() == 0) {
                             activeTaskMonitor.notifyAll();
                         }
                     }
@@ -131,11 +133,11 @@ public class DependencyChecker {
 
     public void checkDependencies() {
         while (true) {
-            if (activeTaskCount.get() == 0 || exceptionOccured.get() != null) {
-                break;
-            }
             try {
                 synchronized (activeTaskMonitor) {
+                    if (activeTaskCount.get() == 0 || exceptionOccured.get() != null) {
+                        break;
+                    }
                     activeTaskMonitor.wait();
                 }
             } catch (InterruptedException e) {
