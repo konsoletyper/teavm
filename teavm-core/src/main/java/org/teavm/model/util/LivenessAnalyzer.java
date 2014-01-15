@@ -15,28 +15,71 @@
  */
 package org.teavm.model.util;
 
-import java.util.ArrayList;
-import java.util.List;
-import org.teavm.common.DominatorTree;
+import java.util.ArrayDeque;
+import java.util.BitSet;
+import java.util.Deque;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphUtils;
-import org.teavm.model.Program;
+import org.teavm.model.*;
 
 /**
  *
  * @author Alexey Andreev
  */
 public class LivenessAnalyzer {
-    private BackNode[] backNodeGraph;
+    private BitSet[] liveVars;
     private int[] domLeft;
     private int[] domRight;
 
+    public boolean liveIn(int block, int var) {
+        return liveVars[block].get(var);
+    }
+
     public void analyze(Program program) {
         Graph cfg = ProgramUtils.buildControlFlowGraph(program);
-        DominatorTree domTree = GraphUtils.buildDominatorTree(cfg);
-        Graph domGraph = GraphUtils.buildDominatorGraph(domTree, cfg.size());
-        computeDomLeftRight(domGraph);
-        prepareBackGraph(domTree, cfg);
+        computeDomLeftRight(GraphUtils.buildDominatorGraph(GraphUtils.buildDominatorTree(cfg), cfg.size()));
+        liveVars = new BitSet[cfg.size()];
+        for (int i = 0; i < liveVars.length; ++i) {
+            liveVars[i] = new BitSet(program.basicBlockCount());
+        }
+
+        UsageExtractor usageExtractor = new UsageExtractor();
+        DefinitionExtractor defExtractor = new DefinitionExtractor();
+        Deque<Task> stack = new ArrayDeque<>();
+        int[] definitions = new int[program.variableCount()];
+        for (int i = 0; i < program.basicBlockCount(); ++i) {
+            BasicBlock block = program.basicBlockAt(i);
+            for (Instruction insn : block.getInstructions()) {
+                insn.acceptVisitor(usageExtractor);
+                for (Variable var : usageExtractor.getUsedVariables()) {
+                    Task task = new Task();
+                    task.block = i;
+                    task.var = var.getIndex();
+                    stack.push(task);
+                }
+                insn.acceptVisitor(defExtractor);
+                for (Variable var : defExtractor.getDefinedVariables()) {
+                    definitions[var.getIndex()] = i;
+                }
+            }
+            for (Phi phi : block.getPhis()) {
+                definitions[phi.getReceiver().getIndex()] = i;
+            }
+        }
+
+        while (stack.isEmpty()) {
+            Task task = stack.pop();
+            if (liveVars[task.block].get(task.var) || !dominates(definitions[task.var], task.block)) {
+                continue;
+            }
+            liveVars[task.block].set(task.var, true);
+            for (int pred : cfg.incomingEdges(task.block)) {
+                Task nextTask = new Task();
+                nextTask.block = pred;
+                nextTask.var = task.var;
+                stack.push(nextTask);
+            }
+        }
     }
 
     private void computeDomLeftRight(Graph domGraph) {
@@ -66,26 +109,12 @@ public class LivenessAnalyzer {
         }
     }
 
-    private void prepareBackGraph(DominatorTree domTree, Graph cfg) {
-        backNodeGraph = new BackNode[cfg.size() * 2];
-        int[] stack = new int[cfg.size() * 2];
-        int top = 0;
-        for (int i = 0; i < cfg.size(); ++i) {
-            if (cfg.outgoingEdgesCount(i) == 0) {
-                stack[top++] = i;
-            }
-        }
-        while (top > 0) {
-
-        }
-    }
-
     private boolean dominates(int a, int b) {
         return domLeft[a] <= domLeft[b] && domRight[a] >= domRight[b];
     }
 
-    private static class BackNode {
-        final List<BackNode> successors = new ArrayList<>();
-        int blockIndex;
+    private static class Task {
+        int block;
+        int var;
     }
 }
