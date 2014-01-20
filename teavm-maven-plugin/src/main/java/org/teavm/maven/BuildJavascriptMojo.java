@@ -68,6 +68,9 @@ public class BuildJavascriptMojo extends AbstractMojo {
     @Parameter
     private boolean mainPageIncluded;
 
+    @Parameter
+    private boolean bytecodeLogging;
+
     public void setProject(MavenProject project) {
         this.project = project;
     }
@@ -82,6 +85,10 @@ public class BuildJavascriptMojo extends AbstractMojo {
 
     public void setMinifying(boolean minifying) {
         this.minifying = minifying;
+    }
+
+    public void setBytecodeLogging(boolean bytecodeLogging) {
+        this.bytecodeLogging = bytecodeLogging;
     }
 
     public void setRuntimeSuppressed(boolean runtimeSuppressed) {
@@ -100,6 +107,7 @@ public class BuildJavascriptMojo extends AbstractMojo {
             log.info("Building JavaScript file");
             JavascriptBuilder builder = new JavascriptBuilder(classLoader);
             builder.setMinifying(minifying);
+            builder.setBytecodeLogging(bytecodeLogging);
             MethodDescriptor mainMethodDesc = new MethodDescriptor("main", ValueType.arrayOf(
                     ValueType.object("java.lang.String")), ValueType.VOID);
             builder.entryPoint("main", new MethodReference(mainClass, mainMethodDesc))

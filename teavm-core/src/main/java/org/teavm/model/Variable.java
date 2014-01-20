@@ -22,6 +22,7 @@ package org.teavm.model;
 public class Variable {
     private Program program;
     private int index;
+    private int representative;
 
     Variable(Program program) {
         this.program = program;
@@ -41,5 +42,13 @@ public class Variable {
 
     void setProgram(Program program) {
         this.program = program;
+    }
+
+    public int getRepresentative() {
+        return representative;
+    }
+
+    public void setRepresentative(int representative) {
+        this.representative = representative;
     }
 }

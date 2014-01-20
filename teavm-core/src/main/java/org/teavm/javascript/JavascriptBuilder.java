@@ -19,11 +19,13 @@ import java.io.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.teavm.codegen.*;
 import org.teavm.dependency.DependencyChecker;
 import org.teavm.javascript.ast.ClassNode;
 import org.teavm.model.*;
 import org.teavm.model.resource.ClasspathClassHolderSource;
+import org.teavm.model.util.ListingBuilder;
 import org.teavm.optimization.ClassSetOptimizer;
 
 /**
@@ -35,6 +37,8 @@ public class JavascriptBuilder {
     private DependencyChecker dependencyChecker;
     private ClassLoader classLoader;
     private boolean minifying = true;
+    private boolean bytecodeLogging;
+    private OutputStream logStream = System.out;
     private Map<String, JavascriptEntryPoint> entryPoints = new HashMap<>();
     private Map<String, String> exportedClasses = new HashMap<>();
 
@@ -58,6 +62,14 @@ public class JavascriptBuilder {
 
     public void setMinifying(boolean minifying) {
         this.minifying = minifying;
+    }
+
+    public boolean isBytecodeLogging() {
+        return bytecodeLogging;
+    }
+
+    public void setBytecodeLogging(boolean bytecodeLogging) {
+        this.bytecodeLogging = bytecodeLogging;
     }
 
     public JavascriptEntryPoint entryPoint(String name, MethodReference ref) {
@@ -97,6 +109,13 @@ public class JavascriptBuilder {
                 ValueType.arrayOf(ValueType.CHARACTER), ValueType.VOID)));
         dependencyChecker.checkDependencies();
         ListableClassHolderSource classSet = dependencyChecker.cutUnachievableClasses();
+        if (bytecodeLogging) {
+            try {
+                logBytecode(new PrintWriter(new OutputStreamWriter(logStream, "UTF-8")), classSet);
+            } catch (IOException e) {
+                // Just don't do anything
+            }
+        }
         Decompiler decompiler = new Decompiler(classSet, classLoader);
         ClassSetOptimizer optimizer = new ClassSetOptimizer();
         optimizer.optimizeAll(classSet);
@@ -116,6 +135,102 @@ public class JavascriptBuilder {
             }
         } catch (IOException e) {
             throw new RenderingException("IO Error occured", e);
+        }
+    }
+
+    private void logBytecode(PrintWriter writer, ListableClassHolderSource classes) {
+        for (String className : classes.getClassNames()) {
+            ClassHolder classHolder = classes.getClassHolder(className);
+            printModifiers(writer, classHolder);
+            writer.println("class " + className);
+            for (MethodHolder method : classHolder.getMethods()) {
+                logMethodBytecode(writer, method);
+            }
+        }
+    }
+
+    private void logMethodBytecode(PrintWriter writer, MethodHolder method) {
+        writer.print("    ");
+        printModifiers(writer, method);
+        writer.print(method.getName() + "(");
+        ValueType[] parameterTypes = method.getParameterTypes();
+        for (int i = 0; i < parameterTypes.length; ++i) {
+            if (i > 0) {
+                writer.print(", ");
+            }
+            printType(writer, parameterTypes[i]);
+        }
+        writer.println(")");
+        if (method.getProgram() != null) {
+            ListingBuilder builder = new ListingBuilder();
+            writer.println(builder.buildListing(method.getProgram(), "        "));
+        } else {
+            writer.println();
+        }
+    }
+
+    private void printType(PrintWriter writer, ValueType type) {
+        if (type instanceof ValueType.Object) {
+            writer.print(((ValueType.Object)type).getClassName());
+        } else if (type instanceof ValueType.Array) {
+            printType(writer, ((ValueType.Array)type).getItemType());
+            writer.print("[]");
+        } else if (type instanceof ValueType.Primitive) {
+            switch (((ValueType.Primitive)type).getKind()) {
+                case BOOLEAN:
+                    writer.print("boolean");
+                    break;
+                case SHORT:
+                    writer.print("short");
+                    break;
+                case BYTE:
+                    writer.print("byte");
+                    break;
+                case CHARACTER:
+                    writer.print("character");
+                    break;
+                case DOUBLE:
+                    writer.print("double");
+                    break;
+                case FLOAT:
+                    writer.print("float");
+                    break;
+                case INTEGER:
+                    writer.print("int");
+                    break;
+                case LONG:
+                    writer.print("long");
+                    break;
+            }
+        }
+    }
+
+    private void printModifiers(PrintWriter writer, ElementHolder element) {
+        switch (element.getLevel()) {
+            case PRIVATE:
+                writer.print("private ");
+                break;
+            case PUBLIC:
+                writer.print("public ");
+                break;
+            case PROTECTED:
+                writer.print("protected ");
+                break;
+            default:
+                break;
+        }
+        Set<ElementModifier> modifiers = element.getModifiers();
+        if (modifiers.contains(ElementModifier.ABSTRACT)) {
+            writer.print("abstract ");
+        }
+        if (modifiers.contains(ElementModifier.FINAL)) {
+            writer.print("final ");
+        }
+        if (modifiers.contains(ElementModifier.STATIC)) {
+            writer.print("static ");
+        }
+        if (modifiers.contains(ElementModifier.NATIVE)) {
+            writer.print("native ");
         }
     }
 
