@@ -35,6 +35,10 @@ public class LivenessAnalyzer {
         return liveVars[block].get(var);
     }
 
+    public BitSet liveIn(int block) {
+        return (BitSet)liveVars[block].clone();
+    }
+
     public void analyze(Program program) {
         Graph cfg = ProgramUtils.buildControlFlowGraph(program);
         computeDomLeftRight(GraphUtils.buildDominatorGraph(GraphUtils.buildDominatorTree(cfg), cfg.size()));
@@ -64,6 +68,12 @@ public class LivenessAnalyzer {
             }
             for (Phi phi : block.getPhis()) {
                 definitions[phi.getReceiver().getIndex()] = i;
+                for (Incoming incoming : phi.getIncomings()) {
+                    Task task = new Task();
+                    task.block = incoming.getSource().getIndex();
+                    task.var = incoming.getValue().getIndex();
+                    stack.push(task);
+                }
             }
         }
 
