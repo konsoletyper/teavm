@@ -31,16 +31,14 @@ public class ListingBuilder {
             sb.append(prefix).append("$").append(i).append(":\n");
             for (Phi phi : block.getPhis()) {
                 sb.append(prefix).append("    ");
-                sb.append("@").append(phi.getReceiver().getIndex()).append(":")
-                        .append(phi.getReceiver().getRepresentative()).append(" := ");
+                sb.append("@").append(phi.getReceiver().getIndex()).append(" := ");
                 List<Incoming> incomings = phi.getIncomings();
                 for (int j = 0; j < incomings.size(); ++j) {
                     if (j > 0) {
                         sb.append(", ");
                     }
                     Incoming incoming = incomings.get(j);
-                    sb.append("@").append(incoming.getValue().getIndex()).append(":")
-                            .append(incoming.getValue().getRepresentative()).append(" from ")
+                    sb.append("@").append(incoming.getValue().getIndex()).append(" from ")
                             .append("$").append(incoming.getSource().getIndex());
                 }
                 sb.append("\n");

@@ -109,6 +109,9 @@ public class JavascriptBuilder {
                 ValueType.arrayOf(ValueType.CHARACTER), ValueType.VOID)));
         dependencyChecker.checkDependencies();
         ListableClassHolderSource classSet = dependencyChecker.cutUnachievableClasses();
+        Decompiler decompiler = new Decompiler(classSet, classLoader);
+        ClassSetOptimizer optimizer = new ClassSetOptimizer();
+        optimizer.optimizeAll(classSet);
         if (bytecodeLogging) {
             try {
                 logBytecode(new PrintWriter(new OutputStreamWriter(logStream, "UTF-8")), classSet);
@@ -116,9 +119,6 @@ public class JavascriptBuilder {
                 // Just don't do anything
             }
         }
-        Decompiler decompiler = new Decompiler(classSet, classLoader);
-        ClassSetOptimizer optimizer = new ClassSetOptimizer();
-        optimizer.optimizeAll(classSet);
         renderer.renderRuntime();
         List<ClassNode> clsNodes = decompiler.decompile(classSet.getClassNames());
         for (ClassNode clsNode : clsNodes) {

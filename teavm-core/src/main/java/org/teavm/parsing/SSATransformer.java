@@ -77,9 +77,6 @@ public class SSATransformer {
                 }
             }
         }
-        for (int i = 0; i <= arguments.length; ++i) {
-            program.variableAt(i).setRepresentative(i);
-        }
         arguments = null;
     }
 
@@ -126,7 +123,6 @@ public class SSATransformer {
             for (Phi phi : currentBlock.getPhis()) {
                 Variable var = program.createVariable();
                 variableMap[phi.getReceiver().getIndex()] = var;
-                var.setRepresentative(phi.getReceiver().getIndex());
                 phi.setReceiver(var);
             }
             for (Instruction insn : currentBlock.getInstructions()) {
@@ -185,7 +181,6 @@ public class SSATransformer {
 
     private Variable define(Variable var) {
         Variable result = program.createVariable();
-        result.setRepresentative(var.getIndex());
         variableMap[var.getIndex()] = result;
         return result;
     }

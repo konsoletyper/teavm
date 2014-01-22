@@ -37,7 +37,6 @@ public class Program {
     public Variable createVariable() {
         Variable variable = new Variable(this);
         variable.setIndex(variables.size());
-        variable.setRepresentative(variable.getIndex());
         variables.add(variable);
         return variable;
     }
