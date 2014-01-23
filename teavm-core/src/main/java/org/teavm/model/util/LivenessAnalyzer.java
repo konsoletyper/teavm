@@ -77,7 +77,7 @@ public class LivenessAnalyzer {
             }
         }
 
-        while (stack.isEmpty()) {
+        while (!stack.isEmpty()) {
             Task task = stack.pop();
             if (liveVars[task.block].get(task.var) || !dominates(definitions[task.var], task.block)) {
                 continue;
@@ -98,23 +98,21 @@ public class LivenessAnalyzer {
         int index = 1;
         int[] stack = new int[domGraph.size() * 2];
         int top = 0;
-        for (int i = domGraph.size(); i >= 0; --i) {
+        for (int i = domGraph.size() - 1; i >= 0; --i) {
             if (domGraph.incomingEdgesCount(i) == 0) {
                 stack[top++] = i;
             }
         }
         while (top > 0) {
-            int v = stack[top--];
+            int v = stack[--top];
             if (domLeft[v] == 0) {
                 domLeft[v] = index++;
+                stack[top++] = v;
                 for (int succ : domGraph.outgoingEdges(v)) {
                     stack[top++] = succ;
                 }
             } else if (domRight[v] == 0) {
                 domRight[v] = index++;
-                if (domGraph.incomingEdgesCount(0) > 0) {
-                    stack[top++] = domGraph.incomingEdges(v)[0];
-                }
             }
         }
     }

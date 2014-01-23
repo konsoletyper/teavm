@@ -15,6 +15,7 @@
  */
 package org.teavm.model.util;
 
+import java.util.BitSet;
 import org.teavm.common.Graph;
 
 /**
@@ -22,30 +23,64 @@ import org.teavm.common.Graph;
  * @author Alexey Andreev
  */
 public class GraphColorer {
-    public void colorize(Graph graph) {
-
+    public int[] colorize(Graph graph, int preservedColors) {
+        int[] colors = new int[graph.size()];
+        boolean[] visited = new boolean[graph.size()];
+        for (int i = 0; i < preservedColors; ++i) {
+            colors[i] = i;
+            visited[i] = true;
+        }
+        BitSet usedColors = new BitSet();
+        for (int v : getOrdering(graph)) {
+            if (v < preservedColors) {
+                continue;
+            }
+            usedColors.clear();
+            usedColors.set(0);
+            for (int succ : graph.outgoingEdges(v)) {
+                if (visited[succ]) {
+                    usedColors.set(colors[succ]);
+                }
+            }
+            colors[v] = usedColors.nextClearBit(0);
+            visited[v] = true;
+        }
+        return colors;
     }
 
     private int[] getOrdering(Graph graph) {
         boolean[] visited = new boolean[graph.size()];
-        int[] sets = new int[graph.size()];
-        int[] next = new int[graph.size()];
-        for (int i = 0; i < next.length; ++i) {
-            next[i] = i + 1;
-        }
-        int node = 0;
-        while (node < next.length) {
-            if (visited[node]) {
+        int[] ordering = new int[graph.size()];
+        int index = 0;
+        int[] queue = new int[graph.size() * 2];
+        for (int root = 0; root < graph.size(); ++root) {
+            if (visited[root]) {
                 continue;
             }
-            visited[node] = true;
-            for (int succ : graph.outgoingEdges(node)) {
-                if (visited[succ]) {
-
+            int head = 0;
+            int tail = 0;
+            queue[head++] = root;
+            while (head != tail) {
+                int v = queue[tail++];
+                if (tail == queue.length) {
+                    tail = 0;
+                }
+                if (visited[v]) {
+                    continue;
+                }
+                visited[v] = true;
+                ordering[index++] = v;
+                for (int succ : graph.outgoingEdges(v)) {
+                    if (visited[succ]) {
+                        continue;
+                    }
+                    if (++head == queue.length) {
+                        head = 0;
+                    }
+                    queue[head] = succ;
                 }
             }
-            graph.outgoingEdges(node);
         }
-        return next;
+        return ordering;
     }
 }

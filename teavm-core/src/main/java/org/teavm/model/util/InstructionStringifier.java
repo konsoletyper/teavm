@@ -253,7 +253,7 @@ public class InstructionStringifier implements InstructionVisitor {
         } else {
             sb.append(insn.getField().getClassName());
         }
-        sb.append(".").append(insn.getField());
+        sb.append(".").append(insn.getField().getFieldName());
     }
 
     @Override
@@ -263,7 +263,7 @@ public class InstructionStringifier implements InstructionVisitor {
         } else {
             sb.append(insn.getField().getClassName());
         }
-        sb.append(".").append(insn.getField()).append(" := @").append(insn.getValue().getIndex());
+        sb.append(".").append(insn.getField().getFieldName()).append(" := @").append(insn.getValue().getIndex());
     }
 
     @Override
@@ -332,7 +332,7 @@ public class InstructionStringifier implements InstructionVisitor {
     @Override
     public void visit(UnwrapArrayInstruction insn) {
         sb.append("@").append(insn.getReceiver().getIndex()).append(" := @")
-                .append(insn.getArray()).append(".data");
+                .append(insn.getArray().getIndex()).append(".data");
     }
 
     @Override

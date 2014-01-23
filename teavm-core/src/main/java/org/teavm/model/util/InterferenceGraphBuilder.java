@@ -33,6 +33,7 @@ public class InterferenceGraphBuilder {
         UsageExtractor useExtractor = new UsageExtractor();
         DefinitionExtractor defExtractor = new DefinitionExtractor();
         InstructionTransitionExtractor succExtractor = new InstructionTransitionExtractor();
+        List<List<Incoming>> outgoings = getOutgoings(program);
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
             block.getLastInstruction().acceptVisitor(succExtractor);
@@ -45,6 +46,9 @@ public class InterferenceGraphBuilder {
                 if (liveOut.get(j)) {
                     live.add(j);
                 }
+            }
+            for (Incoming outgoing : outgoings.get(i)) {
+                live.add(outgoing.getValue().getIndex());
             }
             for (int j = block.getInstructions().size() - 1; j >= 0; --j) {
                 Instruction insn = block.getInstructions().get(j);
@@ -82,5 +86,21 @@ public class InterferenceGraphBuilder {
             }
         }
         return builder.build();
+    }
+
+    private List<List<Incoming>> getOutgoings(Program program) {
+        List<List<Incoming>> outgoings = new ArrayList<>();
+        for (int i = 0; i < program.basicBlockCount(); ++i) {
+            outgoings.add(new ArrayList<Incoming>());
+        }
+        for (int i = 0; i < program.basicBlockCount(); ++i) {
+            BasicBlock block = program.basicBlockAt(i);
+            for (Phi phi : block.getPhis()) {
+                for(Incoming incoming : phi.getIncomings()) {
+                    outgoings.get(incoming.getSource().getIndex()).add(incoming);
+                }
+            }
+        }
+        return outgoings;
     }
 }

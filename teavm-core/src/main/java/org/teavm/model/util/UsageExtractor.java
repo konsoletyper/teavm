@@ -184,11 +184,12 @@ public class UsageExtractor implements InstructionVisitor {
     public void visit(InvokeInstruction insn) {
         if (insn.getInstance() != null) {
             usedVariables = new Variable[insn.getArguments().size() + 1];
+            insn.getArguments().toArray(usedVariables);
             usedVariables[insn.getArguments().size()] = insn.getInstance();
         } else {
             usedVariables = new Variable[insn.getArguments().size()];
+            insn.getArguments().toArray(usedVariables);
         }
-        insn.getArguments().toArray(usedVariables);
     }
 
     @Override
