@@ -37,10 +37,9 @@ public class RegisterAllocator {
         for (int i = 0; i < method.parameterCount(); ++i) {
             colors[i] = i;
         }
-        List<List<Incoming>> involvedIncomings = getInvolvedIncomings(method.getProgram());
         GraphBuilder graphBuilder = new GraphBuilder();
         Program program = method.getProgram();
-        for (int v = 0; v < program.variableCount(); ++v) {
+        for (int v = 0; v < interferenceGraph.size(); ++v) {
             for (int w : interferenceGraph.outgoingEdges(v)) {
                 if (w <= v) {
                     continue;
@@ -55,20 +54,21 @@ public class RegisterAllocator {
         return colors;
     }
 
-    private List<List<Incoming>> getInvolvedIncomings(Program program) {
-        List<List<Incoming>> involvedIncomings = new ArrayList<>();
-        for (int i = 0; i < program.variableCount(); ++i) {
-            involvedIncomings.add(new ArrayList<Incoming>());
-        }
+    private static class PhiArgumentCopy {
+        Incoming incoming;
+        int original;
+    }
+
+    private List<PhiArgumentCopy> insertPhiArgumentsCopies(Program program) {
+        List<PhiArgumentCopy> copies = new ArrayList<>();
         for (int i = 0; i < program.basicBlockCount(); ++i) {
-            BasicBlock block = program.basicBlockAt(i);
-            for (Phi phi : block.getPhis()) {
+            for (Phi phi : program.basicBlockAt(i).getPhis()) {
                 for (Incoming incoming : phi.getIncomings()) {
-                    involvedIncomings.get(incoming.getValue().getIndex()).add(incoming);
+
                 }
             }
         }
-        return involvedIncomings;
+        return copies;
     }
 
     private int[] buildPhiCongruenceClasses(Program program) {
