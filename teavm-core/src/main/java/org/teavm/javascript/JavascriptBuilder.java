@@ -21,15 +21,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.teavm.codegen.*;
-import org.teavm.common.Graph;
 import org.teavm.dependency.DependencyChecker;
 import org.teavm.javascript.ast.ClassNode;
 import org.teavm.model.*;
 import org.teavm.model.resource.ClasspathClassHolderSource;
-import org.teavm.model.util.GraphColorer;
-import org.teavm.model.util.InterferenceGraphBuilder;
-import org.teavm.model.util.ListingBuilder;
-import org.teavm.model.util.LivenessAnalyzer;
+import org.teavm.model.util.*;
 import org.teavm.optimization.ClassSetOptimizer;
 
 /**
@@ -171,11 +167,8 @@ public class JavascriptBuilder {
             writer.print("        Register allocation:");
             LivenessAnalyzer analyzer = new LivenessAnalyzer();
             analyzer.analyze(method.getProgram());
-            InterferenceGraphBuilder interferenceBuilder = new InterferenceGraphBuilder();
-            Graph interferenceGraph = interferenceBuilder.build(method.getProgram(), analyzer);
-            GraphColorer colorer = new GraphColorer();
-            int[] colors = colorer.colorize(interferenceGraph,
-                    Math.min(method.parameterCount() + 1, interferenceGraph.size()));
+            RegisterAllocator allocator = new RegisterAllocator();
+            int[] colors = allocator.allocateRegisters(method, analyzer);
             for (int i = 0; i < colors.length; ++i) {
                 writer.print(i + ":" + colors[i] + " ");
             }

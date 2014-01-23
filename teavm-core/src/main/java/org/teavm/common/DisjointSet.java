@@ -41,6 +41,23 @@ public class DisjointSet {
         return node;
     }
 
+    public int[] pack(int count) {
+        int[] packed = new int[count];
+        int[] packedIndexes = new int[size];
+        Arrays.fill(packedIndexes, -1);
+        int lastIndex = 0;
+        for (int i = 0; i < count; ++i) {
+            int cls = find(i);
+            int packedIndex = packedIndexes[cls];
+            if (packedIndex < 0) {
+                packedIndex = lastIndex++;
+                packedIndexes[cls] = packedIndex;
+            }
+            packed[i] = packedIndex;
+        }
+        return packed;
+    }
+
     private void ensureCapacity(int size) {
         if (parent.length >= size) {
             return;

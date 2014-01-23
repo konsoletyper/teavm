@@ -24,7 +24,7 @@ import org.teavm.model.*;
  *
  * @author Alexey Andreev
  */
-public class InterferenceGraphBuilder {
+class InterferenceGraphBuilder {
     public Graph build(Program program, LivenessAnalyzer liveness) {
         List<Set<Integer>> edges = new ArrayList<>();
         for (int i = 0; i < program.variableCount(); ++i) {

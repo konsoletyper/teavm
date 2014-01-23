@@ -22,30 +22,22 @@ import org.teavm.common.Graph;
  *
  * @author Alexey Andreev
  */
-public class GraphColorer {
-    public int[] colorize(Graph graph, int preservedColors) {
-        int[] colors = new int[graph.size()];
-        boolean[] visited = new boolean[graph.size()];
-        for (int i = 0; i < preservedColors; ++i) {
-            colors[i] = i;
-            visited[i] = true;
-        }
+class GraphColorer {
+    public void colorize(Graph graph, int[] colors) {
         BitSet usedColors = new BitSet();
         for (int v : getOrdering(graph)) {
-            if (v < preservedColors) {
+            if (colors[v] >= 0) {
                 continue;
             }
             usedColors.clear();
             usedColors.set(0);
             for (int succ : graph.outgoingEdges(v)) {
-                if (visited[succ]) {
+                if (colors[succ] >= 0) {
                     usedColors.set(colors[succ]);
                 }
             }
             colors[v] = usedColors.nextClearBit(0);
-            visited[v] = true;
         }
-        return colors;
     }
 
     private int[] getOrdering(Graph graph) {
