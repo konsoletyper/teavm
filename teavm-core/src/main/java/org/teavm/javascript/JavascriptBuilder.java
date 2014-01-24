@@ -163,12 +163,10 @@ public class JavascriptBuilder {
         writer.println(")");
         if (method.getProgram() != null && method.getProgram().basicBlockCount() > 0) {
             ListingBuilder builder = new ListingBuilder();
+            RegisterAllocator allocator = new RegisterAllocator();
+            int[] colors = allocator.allocateRegisters(method);
             writer.print(builder.buildListing(method.getProgram(), "        "));
             writer.print("        Register allocation:");
-            LivenessAnalyzer analyzer = new LivenessAnalyzer();
-            analyzer.analyze(method.getProgram());
-            RegisterAllocator allocator = new RegisterAllocator();
-            int[] colors = allocator.allocateRegisters(method, analyzer);
             for (int i = 0; i < colors.length; ++i) {
                 writer.print(i + ":" + colors[i] + " ");
             }

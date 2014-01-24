@@ -15,7 +15,9 @@
  */
 package org.teavm.model.util;
 
+import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.List;
 import org.teavm.common.Graph;
 
 /**
@@ -23,7 +25,25 @@ import org.teavm.common.Graph;
  * @author Alexey Andreev
  */
 class GraphColorer {
-    public void colorize(Graph graph, int[] colors) {
+    public void colorize(Graph graph, int[] classes, int[] colors) {
+        List<List<Integer>> classMembers = new ArrayList<>();
+        for (int i = 0; i < classes.length; ++i) {
+            int cls = classes[i];
+            while (cls >= classMembers.size()) {
+                classMembers.add(new ArrayList<Integer>());
+            }
+            classMembers.get(cls).add(i);
+        }
+        for (int i = 0; i < colors.length; ++i) {
+            int color = colors[i];
+            if (color != -1) {
+                int cls = classes[i];
+                for (int member : classMembers.get(cls)) {
+                    colors[member] = color;
+                }
+                classMembers.get(cls).clear();
+            }
+        }
         BitSet usedColors = new BitSet();
         for (int v : getOrdering(graph)) {
             if (colors[v] >= 0) {
@@ -36,7 +56,10 @@ class GraphColorer {
                     usedColors.set(colors[succ]);
                 }
             }
-            colors[v] = usedColors.nextClearBit(0);
+            int color = usedColors.nextClearBit(0);
+            for (int member : classMembers.get(classes[v])) {
+                colors[member] = color;
+            }
         }
     }
 

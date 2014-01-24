@@ -182,7 +182,11 @@ public class Decompiler {
             }
             if (node >= 0) {
                 generator.currentBlock = program.basicBlockAt(node);
-                generator.nextBlock = next < indexer.size() ? program.basicBlockAt(indexer.nodeAt(next)) : null;
+                int tmp = indexer.nodeAt(next);
+                if (tmp == -1) {
+                    System.out.println();
+                }
+                generator.nextBlock = next < indexer.size() ? program.basicBlockAt(tmp) : null;
                 generator.statements.clear();
                 for (Instruction insn : generator.currentBlock.getInstructions()) {
                     insn.acceptVisitor(generator);
