@@ -27,8 +27,7 @@ import org.teavm.model.MethodHolder;
  */
 public class ClassSetOptimizer {
     private List<MethodOptimization> optimizations = Arrays.<MethodOptimization>asList(
-            new CommonSubexpressionElimination(), new UnusedVariableElimination(),
-            new EmptyBlockElimination());
+            new CommonSubexpressionElimination(), new UnusedVariableElimination());
 
     public void optimizeAll(ListableClassHolderSource classSource) {
         for (String className : classSource.getClassNames()) {

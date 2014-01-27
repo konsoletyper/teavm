@@ -118,7 +118,7 @@ public class LivenessAnalyzer {
     }
 
     private boolean dominates(int a, int b) {
-        return domLeft[a] <= domLeft[b] && domRight[a] >= domRight[b];
+        return domLeft[a] < domLeft[b] && domRight[a] > domRight[b];
     }
 
     private static class Task {

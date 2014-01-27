@@ -15,9 +15,7 @@
  */
 package org.teavm.model.util;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import org.teavm.common.DisjointSet;
 import org.teavm.common.Graph;
 import org.teavm.model.*;
@@ -42,7 +40,7 @@ public class RegisterAllocator {
         int[] classArray = congruenceClasses.pack(program.variableCount());
         int[] colors = new int[program.variableCount()];
         Arrays.fill(colors, -1);
-        for (int i = 0; i < method.parameterCount(); ++i) {
+        for (int i = 0; i <= method.parameterCount(); ++i) {
             colors[i] = i;
         }
         GraphColorer colorer = new GraphColorer();
@@ -61,6 +59,7 @@ public class RegisterAllocator {
     private List<PhiArgumentCopy> insertPhiArgumentsCopies(Program program) {
         List<PhiArgumentCopy> copies = new ArrayList<>();
         for (int i = 0; i < program.basicBlockCount(); ++i) {
+            Map<BasicBlock, BasicBlock> blockMap = new HashMap<>();
             for (final Phi phi : program.basicBlockAt(i).getPhis()) {
                 for (Incoming incoming : phi.getIncomings()) {
                     PhiArgumentCopy copy = new PhiArgumentCopy();
@@ -70,6 +69,12 @@ public class RegisterAllocator {
                     copyInstruction.setReceiver(program.createVariable());
                     copyInstruction.setAssignee(incoming.getValue());
                     copy.var = copyInstruction.getReceiver().getIndex();
+                    BasicBlock source = blockMap.get(incoming.getSource());
+                    if (source == null) {
+                        source = incoming.getSource();
+                    } else {
+                        incoming.setSource(source);
+                    }
                     if (incoming.getSource().getLastInstruction() instanceof JumpInstruction) {
                         copy.index = incoming.getSource().getInstructions().size() - 1;
                         copy.block = incoming.getSource();
@@ -89,10 +94,12 @@ public class RegisterAllocator {
                                 }
                             }
                         });
+                        blockMap.put(source, copyBlock);
                         incoming.setSource(copyBlock);
                         copy.index = 0;
                         copy.block = incoming.getSource();
                     }
+                    incoming.setValue(copyInstruction.getReceiver());
                     copies.add(copy);
                 }
             }
