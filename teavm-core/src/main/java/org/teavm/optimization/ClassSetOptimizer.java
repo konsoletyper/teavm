@@ -17,6 +17,7 @@ package org.teavm.optimization;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Executor;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ListableClassHolderSource;
 import org.teavm.model.MethodHolder;
@@ -28,15 +29,26 @@ import org.teavm.model.MethodHolder;
 public class ClassSetOptimizer {
     private List<MethodOptimization> optimizations = Arrays.<MethodOptimization>asList(
             new CommonSubexpressionElimination(), new UnusedVariableElimination());
+    private Executor executor;
+
+    public ClassSetOptimizer(Executor executor) {
+        super();
+        this.executor = executor;
+    }
 
     public void optimizeAll(ListableClassHolderSource classSource) {
         for (String className : classSource.getClassNames()) {
             ClassHolder cls = classSource.getClassHolder(className);
-            for (MethodHolder method : cls.getMethods()) {
+            for (final MethodHolder method : cls.getMethods()) {
                 if (method.getProgram() != null && method.getProgram().basicBlockCount() > 0) {
-                    for (MethodOptimization optimization : optimizations) {
-                        optimization.optimize(method);
-                    }
+                    executor.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            for (MethodOptimization optimization : optimizations) {
+                                optimization.optimize(method);
+                            }
+                        }
+                    });
                 }
             }
         }

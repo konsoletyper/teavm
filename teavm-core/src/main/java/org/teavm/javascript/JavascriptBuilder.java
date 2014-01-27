@@ -104,9 +104,11 @@ public class JavascriptBuilder {
         executor.complete();
         ListableClassHolderSource classSet = dependencyChecker.cutUnachievableClasses();
         Decompiler decompiler = new Decompiler(classSet, classLoader);
-        ClassSetOptimizer optimizer = new ClassSetOptimizer();
+        ClassSetOptimizer optimizer = new ClassSetOptimizer(executor);
         optimizer.optimizeAll(classSet);
+        executor.complete();
         allocateRegisters(classSet);
+        executor.complete();
         if (bytecodeLogging) {
             try {
                 logBytecode(new PrintWriter(new OutputStreamWriter(logStream, "UTF-8")), classSet);
@@ -134,12 +136,16 @@ public class JavascriptBuilder {
     }
 
     private void allocateRegisters(ListableClassHolderSource classes) {
-        RegisterAllocator allocator = new RegisterAllocator();
         for (String className : classes.getClassNames()) {
             ClassHolder cls = classes.getClassHolder(className);
-            for (MethodHolder method : cls.getMethods()) {
+            for (final MethodHolder method : cls.getMethods()) {
                 if (method.getProgram() != null && method.getProgram().basicBlockCount() > 0) {
-                    allocator.allocateRegisters(method);
+                    executor.execute(new Runnable() {
+                        @Override public void run() {
+                            RegisterAllocator allocator = new RegisterAllocator();
+                            allocator.allocateRegisters(method);
+                        }
+                    });
                 }
             }
         }
