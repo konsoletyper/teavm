@@ -34,14 +34,17 @@ public class Optimizer {
     }
 
     public void optimize(RegularMethodNode method) {
-        ReadWriteStatsBuilder stats = new ReadWriteStatsBuilder(method.getVariableCount());
+        ReadWriteStatsBuilder stats = new ReadWriteStatsBuilder(method.getVariables().size());
         method.getBody().acceptVisitor(stats);
         OptimizingVisitor optimizer = new OptimizingVisitor(stats);
         method.getBody().acceptVisitor(optimizer);
         method.setBody(optimizer.resultStmt);
         int paramCount = method.getReference().parameterCount();
-        UnusedVariableEliminator unusedEliminator = new UnusedVariableEliminator(paramCount, method.getVariableCount());
+        UnusedVariableEliminator unusedEliminator = new UnusedVariableEliminator(paramCount, method.getVariables());
         method.getBody().acceptVisitor(unusedEliminator);
-        method.setVariableCount(unusedEliminator.lastIndex);
+        method.getVariables().subList(unusedEliminator.lastIndex, method.getVariables().size()).clear();
+        for (int i = 0; i < method.getVariables().size(); ++i) {
+            method.getVariables().set(i, i);
+        }
     }
 }

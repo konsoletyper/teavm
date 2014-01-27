@@ -16,6 +16,7 @@
 package org.teavm.javascript;
 
 import java.util.Arrays;
+import java.util.List;
 import org.teavm.javascript.ast.*;
 
 /**
@@ -23,10 +24,18 @@ import org.teavm.javascript.ast.*;
  * @author Alexey Andreev
  */
 class UnusedVariableEliminator implements ExprVisitor, StatementVisitor {
+    int[] variables;
     int[] indexes;
     int lastIndex;
 
-    public UnusedVariableEliminator(int parameterCount, int variableCount) {
+    public UnusedVariableEliminator(int parameterCount, List<Integer> variables) {
+        this.variables = new int[variables.size()];
+        int variableCount = 0;
+        for (int i = 0; i < variables.size(); ++i) {
+            int var = variables.get(i);
+            this.variables[i] = var;
+            variableCount = Math.max(variableCount, var + 1);
+        }
         indexes = new int[variableCount];
         Arrays.fill(indexes, -1);
         for (int i = 0; i <= parameterCount; ++i) {
@@ -109,10 +118,10 @@ class UnusedVariableEliminator implements ExprVisitor, StatementVisitor {
     }
 
     private int renumber(int var) {
-        int index = indexes[var];
+        int index = indexes[variables[var]];
         if (index == -1) {
             index = lastIndex++;
-            indexes[var] = index;
+            indexes[variables[var]] = index;
         }
         return index;
     }

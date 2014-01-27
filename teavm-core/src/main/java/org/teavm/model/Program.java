@@ -27,6 +27,7 @@ public class Program {
     private List<Variable> variables = new ArrayList<>();
     private MethodHolder method;
     private boolean packed;
+    private int lastUsedRegister;
 
     public BasicBlock createBasicBlock() {
         BasicBlock block = new BasicBlock(this, basicBlocks.size());
@@ -38,6 +39,7 @@ public class Program {
         Variable variable = new Variable(this);
         variable.setIndex(variables.size());
         variables.add(variable);
+        variable.setRegister(lastUsedRegister++);
         return variable;
     }
 

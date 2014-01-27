@@ -112,6 +112,7 @@ public class JavascriptBuilder {
         Decompiler decompiler = new Decompiler(classSet, classLoader);
         ClassSetOptimizer optimizer = new ClassSetOptimizer();
         optimizer.optimizeAll(classSet);
+        allocateRegisters(classSet);
         if (bytecodeLogging) {
             try {
                 logBytecode(new PrintWriter(new OutputStreamWriter(logStream, "UTF-8")), classSet);
@@ -138,6 +139,18 @@ public class JavascriptBuilder {
         }
     }
 
+    private void allocateRegisters(ListableClassHolderSource classes) {
+        RegisterAllocator allocator = new RegisterAllocator();
+        for (String className : classes.getClassNames()) {
+            ClassHolder cls = classes.getClassHolder(className);
+            for (MethodHolder method : cls.getMethods()) {
+                if (method.getProgram() != null && method.getProgram().basicBlockCount() > 0) {
+                    allocator.allocateRegisters(method);
+                }
+            }
+        }
+    }
+
     private void logBytecode(PrintWriter writer, ListableClassHolderSource classes) {
         for (String className : classes.getClassNames()) {
             ClassHolder classHolder = classes.getClassHolder(className);
@@ -161,14 +174,13 @@ public class JavascriptBuilder {
             printType(writer, parameterTypes[i]);
         }
         writer.println(")");
-        if (method.getProgram() != null && method.getProgram().basicBlockCount() > 0) {
+        Program program = method.getProgram();
+        if (program != null && program.basicBlockCount() > 0) {
             ListingBuilder builder = new ListingBuilder();
-            RegisterAllocator allocator = new RegisterAllocator();
-            int[] colors = allocator.allocateRegisters(method);
-            writer.print(builder.buildListing(method.getProgram(), "        "));
+            writer.print(builder.buildListing(program, "        "));
             writer.print("        Register allocation:");
-            for (int i = 0; i < colors.length; ++i) {
-                writer.print(i + ":" + colors[i] + " ");
+            for (int i = 0; i < program.variableCount(); ++i) {
+                writer.print(i + ":" + program.variableAt(i).getRegister() + " ");
             }
             writer.println();
             writer.println();

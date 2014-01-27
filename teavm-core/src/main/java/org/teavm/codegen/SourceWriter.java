@@ -55,18 +55,21 @@ public class SourceWriter implements Appendable {
 
     @Override
     public SourceWriter append(char value) throws IOException {
+        appendIndent();
         innerWriter.append(value);
         return this;
     }
 
     @Override
     public SourceWriter append(CharSequence csq) throws IOException {
+        appendIndent();
         innerWriter.append(csq);
         return this;
     }
 
     @Override
     public SourceWriter append(CharSequence csq, int start, int end) throws IOException {
+        appendIndent();
         innerWriter.append(csq, start, end);
         return this;
     }

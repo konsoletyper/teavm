@@ -271,16 +271,8 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         } else {
             statement.getRightValue().acceptVisitor(this);
             Expr right = resultExpr;
-            Expr left;
-            if (statement.getLeftValue() instanceof VariableExpr) {
-                VariableExpr leftVar = (VariableExpr)statement.getLeftValue();
-                left = statement.getLeftValue();
-                if (stats.reads[leftVar.getIndex()] == 0) {
-                    left = null;
-                } else {
-                    left = statement.getLeftValue();
-                }
-            } else {
+            Expr left = statement.getLeftValue();
+            if (!(statement.getLeftValue() instanceof VariableExpr)) {
                 statement.getLeftValue().acceptVisitor(this);
                 left = resultExpr;
             }

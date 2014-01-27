@@ -22,6 +22,7 @@ package org.teavm.model;
 public class Variable {
     private Program program;
     private int index;
+    private int register;
 
     Variable(Program program) {
         this.program = program;
@@ -41,5 +42,13 @@ public class Variable {
 
     void setProgram(Program program) {
         this.program = program;
+    }
+
+    public int getRegister() {
+        return register;
+    }
+
+    public void setRegister(int register) {
+        this.register = register;
     }
 }

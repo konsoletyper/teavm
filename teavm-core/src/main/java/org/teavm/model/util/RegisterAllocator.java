@@ -28,7 +28,7 @@ import org.teavm.model.instructions.JumpInstruction;
  * @author Alexey Andreev
  */
 public class RegisterAllocator {
-    public int[] allocateRegisters(MethodHolder method) {
+    public void allocateRegisters(MethodHolder method) {
         Program program = method.getProgram();
         List<PhiArgumentCopy> phiArgsCopies = insertPhiArgumentsCopies(program);
         InterferenceGraphBuilder interferenceBuilder = new InterferenceGraphBuilder();
@@ -45,7 +45,9 @@ public class RegisterAllocator {
         }
         GraphColorer colorer = new GraphColorer();
         colorer.colorize(interferenceGraph, classArray, colors);
-        return colors;
+        for (int i = 0; i < colors.length; ++i) {
+            method.getProgram().variableAt(i).setRegister(colors[i]);
+        }
     }
 
     private static class PhiArgumentCopy {

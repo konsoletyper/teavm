@@ -52,7 +52,7 @@
             </goals>
             <phase>process-test-classes</phase>
             <configuration>
-              <minifying>false</minifying>
+              <minifying>true</minifying>
             </configuration>
           </execution>
         </executions>

@@ -15,6 +15,8 @@
  */
 package org.teavm.javascript.ast;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.teavm.model.MethodReference;
 
 /**
@@ -23,7 +25,7 @@ import org.teavm.model.MethodReference;
  */
 public class RegularMethodNode extends MethodNode {
     private Statement body;
-    private int variableCount;
+    private List<Integer> variables = new ArrayList<>();
 
     public RegularMethodNode(MethodReference reference) {
         super(reference);
@@ -37,12 +39,8 @@ public class RegularMethodNode extends MethodNode {
         this.body = body;
     }
 
-    public int getVariableCount() {
-        return variableCount;
-    }
-
-    public void setVariableCount(int variableCount) {
-        this.variableCount = variableCount;
+    public List<Integer> getVariables() {
+        return variables;
     }
 
     @Override

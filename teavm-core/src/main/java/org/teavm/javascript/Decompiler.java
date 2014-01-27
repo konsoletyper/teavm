@@ -183,9 +183,6 @@ public class Decompiler {
             if (node >= 0) {
                 generator.currentBlock = program.basicBlockAt(node);
                 int tmp = indexer.nodeAt(next);
-                if (tmp == -1) {
-                    System.out.println();
-                }
                 generator.nextBlock = next < indexer.size() ? program.basicBlockAt(tmp) : null;
                 generator.statements.clear();
                 for (Instruction insn : generator.currentBlock.getInstructions()) {
@@ -200,7 +197,9 @@ public class Decompiler {
         RegularMethodNode methodNode = new RegularMethodNode(reference);
         methodNode.getModifiers().addAll(mapModifiers(method.getModifiers()));
         methodNode.setBody(result);
-        methodNode.setVariableCount(program.variableCount());
+        for (int i = 0; i < program.variableCount(); ++i) {
+            methodNode.getVariables().add(program.variableAt(i).getRegister());
+        }
         Optimizer optimizer = new Optimizer();
         optimizer.optimize(methodNode);
         return methodNode;

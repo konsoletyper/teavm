@@ -578,7 +578,7 @@ class StatementGenerator implements InstructionVisitor {
         assign(castToInteger(Expr.binary(op, Expr.var(first), Expr.var(second))), result);
     }
 
-    private Statement generateJumpStatementWithoutPhis(BasicBlock target) {
+    private Statement generateJumpStatement(BasicBlock target) {
         if (nextBlock == target) {
             return null;
         }
@@ -593,29 +593,8 @@ class StatementGenerator implements InstructionVisitor {
             return contStmt;
         }
     }
-
-    private Statement wrapWithPhis(Statement rawJump, BasicBlock target) {
-        SequentialStatement seq = new SequentialStatement();
-        for (Phi phi : target.getPhis()) {
-            for (Incoming outgoing : phi.getIncomings()) {
-                if (outgoing.getSource() == currentBlock) {
-                    seq.getSequence().add(Statement.assign(Expr.var(outgoing.getPhi().getReceiver().getIndex()),
-                            Expr.var(outgoing.getValue().getIndex())));
-                }
-            }
-        }
-        if (rawJump != null) {
-            seq.getSequence().add(rawJump);
-        }
-        return !seq.getSequence().isEmpty() ? seq : null;
-    }
-
-    private Statement generateJumpStatement(BasicBlock target) {
-        return wrapWithPhis(generateJumpStatementWithoutPhis(target), target);
-    }
-
-    private Statement generateJumpStatementWithoutPhis(SwitchStatement stmt, int target) {
-        Statement body = generateJumpStatementWithoutPhis(program.basicBlockAt(target));
+    private Statement generateJumpStatement(SwitchStatement stmt, int target) {
+        Statement body = generateJumpStatement(program.basicBlockAt(target));
         if (body == null) {
             BreakStatement breakStmt = new BreakStatement();
             breakStmt.setTarget(stmt);
@@ -623,11 +602,6 @@ class StatementGenerator implements InstructionVisitor {
         }
         return body;
     }
-
-    private Statement generateJumpStatement(SwitchStatement stmt, int target) {
-        return wrapWithPhis(generateJumpStatementWithoutPhis(stmt, target), program.basicBlockAt(target));
-    }
-
     private void branch(Expr condition, BasicBlock consequentBlock, BasicBlock alternativeBlock) {
         Statement consequent = generateJumpStatement(consequentBlock);
         Statement alternative = generateJumpStatement(alternativeBlock);

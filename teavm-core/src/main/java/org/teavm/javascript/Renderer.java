@@ -332,7 +332,10 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         public void visit(RegularMethodNode method) {
             try {
                 MethodReference ref = method.getReference();
-                int variableCount = method.getVariableCount();
+                int variableCount = 0;
+                for (int var : method.getVariables()) {
+                    variableCount = Math.max(variableCount, var + 1);
+                }
                 boolean hasVars = variableCount > ref.parameterCount() + 1;
                 if (hasVars) {
                     writer.append("var ");
