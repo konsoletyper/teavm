@@ -34,7 +34,11 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.junit.Test;
+import org.teavm.common.FiniteExecutor;
+import org.teavm.common.SimpleFiniteExecutor;
+import org.teavm.common.ThreadPoolFiniteExecutor;
 import org.teavm.javascript.JavascriptBuilder;
+import org.teavm.javascript.JavascriptBuilderFactory;
 import org.teavm.model.*;
 import org.teavm.model.resource.ClasspathClassHolderSource;
 
@@ -68,6 +72,9 @@ public class BuildJavascriptJUnitMojo extends AbstractMojo {
     @Parameter
     private boolean minifying = true;
 
+    @Parameter
+    private int numThreads = 1;
+
     public void setProject(MavenProject project) {
         this.project = project;
     }
@@ -88,8 +95,13 @@ public class BuildJavascriptJUnitMojo extends AbstractMojo {
         this.minifying = minifying;
     }
 
+    public void setNumThreads(int numThreads) {
+        this.numThreads = numThreads;
+    }
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
+        Runnable finalizer = null;
         try {
             ClassLoader classLoader = prepareClassLoader();
             getLog().info("Searching for tests in the directory `" + testFiles.getAbsolutePath() + "'");
@@ -146,14 +158,29 @@ public class BuildJavascriptJUnitMojo extends AbstractMojo {
             }
             int methodsGenerated = 0;
             log.info("Generating test files");
+            FiniteExecutor executor = new SimpleFiniteExecutor();
+            if (numThreads != 1) {
+                int threads = numThreads != 0 ? numThreads : Runtime.getRuntime().availableProcessors();
+                final ThreadPoolFiniteExecutor threadedExecutor = new ThreadPoolFiniteExecutor(threads);
+                finalizer = new Runnable() {
+                    @Override public void run() {
+                        threadedExecutor.stop();
+                    }
+                };
+                executor = threadedExecutor;
+            }
             for (MethodReference method : testMethods) {
                 log.debug("Building test for " + method);
-                decompileClassesForTest(classLoader, method, fileNames.get(method));
+                decompileClassesForTest(classLoader, method, fileNames.get(method), executor);
                 ++methodsGenerated;
             }
             log.info("Test files successfully generated for " + methodsGenerated + " method(s)");
         } catch (IOException e) {
             throw new MojoFailureException("IO error occured generating JavaScript files", e);
+        } finally {
+            if (finalizer != null) {
+                finalizer.run();
+            }
         }
     }
 
@@ -189,9 +216,13 @@ public class BuildJavascriptJUnitMojo extends AbstractMojo {
         }
     }
 
-    private void decompileClassesForTest(ClassLoader classLoader, MethodReference methodRef, String targetName)
-            throws IOException {
-        JavascriptBuilder builder = new JavascriptBuilder(classLoader);
+    private void decompileClassesForTest(ClassLoader classLoader, MethodReference methodRef, String targetName,
+            FiniteExecutor executor) throws IOException {
+        JavascriptBuilderFactory builderFactory = new JavascriptBuilderFactory();
+        builderFactory.setClassLoader(classLoader);
+        builderFactory.setClassSource(new ClasspathClassHolderSource(classLoader));
+        builderFactory.setExecutor(executor);
+        JavascriptBuilder builder = builderFactory.create();
         builder.setMinifying(minifying);
         File file = new File(outputDir, targetName);
         try (Writer innerWriter = new OutputStreamWriter(new FileOutputStream(file), "UTF-8")) {

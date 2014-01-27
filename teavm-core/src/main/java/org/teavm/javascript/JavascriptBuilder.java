@@ -21,10 +21,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.teavm.codegen.*;
+import org.teavm.common.FiniteExecutor;
 import org.teavm.dependency.DependencyChecker;
 import org.teavm.javascript.ast.ClassNode;
 import org.teavm.model.*;
-import org.teavm.model.resource.ClasspathClassHolderSource;
 import org.teavm.model.util.*;
 import org.teavm.optimization.ClassSetOptimizer;
 
@@ -35,25 +35,19 @@ import org.teavm.optimization.ClassSetOptimizer;
 public class JavascriptBuilder {
     private ClassHolderSource classSource;
     private DependencyChecker dependencyChecker;
+    private FiniteExecutor executor;
     private ClassLoader classLoader;
     private boolean minifying = true;
-    private boolean bytecodeLogging = true;
+    private boolean bytecodeLogging;
     private OutputStream logStream = System.out;
     private Map<String, JavascriptEntryPoint> entryPoints = new HashMap<>();
     private Map<String, String> exportedClasses = new HashMap<>();
 
-    public JavascriptBuilder(ClassHolderSource classSource, ClassLoader classLoader) {
+    JavascriptBuilder(ClassHolderSource classSource, ClassLoader classLoader, FiniteExecutor executor) {
         this.classSource = classSource;
         this.classLoader = classLoader;
-        dependencyChecker = new DependencyChecker(classSource, classLoader);
-    }
-
-    public JavascriptBuilder(ClassLoader classLoader) {
-        this(new ClasspathClassHolderSource(classLoader), classLoader);
-    }
-
-    public JavascriptBuilder() {
-        this(JavascriptBuilder.class.getClassLoader());
+        dependencyChecker = new DependencyChecker(classSource, classLoader, executor);
+        this.executor = executor;
     }
 
     public boolean isMinifying() {
@@ -107,7 +101,7 @@ public class JavascriptBuilder {
                 ValueType.object("java.lang.Class"))));
         dependencyChecker.attachMethodGraph(new MethodReference("java.lang.String", new MethodDescriptor("<init>",
                 ValueType.arrayOf(ValueType.CHARACTER), ValueType.VOID)));
-        dependencyChecker.checkDependencies();
+        executor.complete();
         ListableClassHolderSource classSet = dependencyChecker.cutUnachievableClasses();
         Decompiler decompiler = new Decompiler(classSet, classLoader);
         ClassSetOptimizer optimizer = new ClassSetOptimizer();

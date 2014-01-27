@@ -18,10 +18,10 @@ package org.teavm.dependency;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import org.teavm.common.ConcurrentCachedMapper;
+import org.teavm.common.FiniteExecutor;
 import org.teavm.common.Mapper;
+import org.teavm.common.SimpleFiniteExecutor;
 import org.teavm.common.ConcurrentCachedMapper.KeyListener;
 import org.teavm.model.*;
 
@@ -34,31 +34,21 @@ public class DependencyChecker {
     static final boolean shouldLog = System.getProperty("org.teavm.logDependencies", "false").equals("true");
     private ClassHolderSource classSource;
     private ClassLoader classLoader;
-    private ScheduledThreadPoolExecutor executor;
+    private FiniteExecutor executor;
     private ConcurrentMap<MethodReference, Object> abstractMethods = new ConcurrentHashMap<>();
     private ConcurrentCachedMapper<MethodReference, MethodGraph> methodCache;
     private ConcurrentCachedMapper<FieldReference, DependencyNode> fieldCache;
     private ConcurrentMap<String, Object> achievableClasses = new ConcurrentHashMap<>();
     private ConcurrentMap<String, Object> initializedClasses = new ConcurrentHashMap<>();
-    private AtomicReference<RuntimeException> exceptionOccured = new AtomicReference<>();
-    private AtomicInteger activeTaskCount = new AtomicInteger(0);
-    private final Object activeTaskMonitor = new Object();
 
     public DependencyChecker(ClassHolderSource classSource, ClassLoader classLoader) {
-        this(classSource, classLoader, Runtime.getRuntime().availableProcessors());
+        this(classSource, classLoader, new SimpleFiniteExecutor());
     }
 
-    public DependencyChecker(ClassHolderSource classSource, ClassLoader classLoader, int numThreads) {
+    public DependencyChecker(ClassHolderSource classSource, ClassLoader classLoader, FiniteExecutor executor) {
         this.classSource = classSource;
         this.classLoader = classLoader;
-        executor = new ScheduledThreadPoolExecutor(numThreads);
-        executor.setThreadFactory(new ThreadFactory() {
-            @Override public Thread newThread(Runnable r) {
-                Thread thread = new Thread(r);
-                thread.setDaemon(true);
-                return thread;
-            }
-        });
+        this.executor = executor;
         methodCache = new ConcurrentCachedMapper<>(new Mapper<MethodReference, MethodGraph>() {
             @Override public MethodGraph map(MethodReference preimage) {
                 return createMethodGraph(preimage);
@@ -98,58 +88,15 @@ public class DependencyChecker {
     }
 
     public void schedulePropagation(final DependencyConsumer consumer, final String type) {
-        schedule(new Runnable() {
+        executor.executeFast(new Runnable() {
             @Override public void run() {
                 consumer.consume(type);
             }
         });
     }
 
-    void schedule(final Runnable runnable) {
-        synchronized (activeTaskMonitor) {
-            activeTaskCount.incrementAndGet();
-        }
-        try {
-            executor.execute(new Runnable() {
-                @Override public void run() {
-                    try {
-                        runnable.run();
-                    } catch (RuntimeException e) {
-                        activeTaskMonitor.notifyAll();
-                        exceptionOccured.compareAndSet(null, e);
-                        executor.shutdownNow();
-                    }
-                    synchronized (activeTaskMonitor) {
-                        if (activeTaskCount.decrementAndGet() == 0) {
-                            activeTaskMonitor.notifyAll();
-                        }
-                    }
-                }
-            });
-        } catch (RejectedExecutionException e) {
-            throw exceptionOccured.get();
-        }
-    }
-
-    public void checkDependencies() {
-        while (true) {
-            try {
-                synchronized (activeTaskMonitor) {
-                    if (activeTaskCount.get() == 0 || exceptionOccured.get() != null) {
-                        break;
-                    }
-                    activeTaskMonitor.wait();
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                break;
-            }
-        }
-        RuntimeException e = exceptionOccured.get();
-        if (e != null) {
-            throw exceptionOccured.get();
-        }
-        executor.shutdown();
+    public FiniteExecutor getExecutor() {
+        return executor;
     }
 
     boolean achieveClass(String className) {
@@ -226,7 +173,7 @@ public class DependencyChecker {
         }
         final MethodGraph graph = new MethodGraph(parameterNodes, paramCount, resultNode, this);
         final MethodHolder currentMethod = method;
-        schedule(new Runnable() {
+        executor.execute(new Runnable() {
             @Override public void run() {
                 DependencyGraphBuilder graphBuilder = new DependencyGraphBuilder(DependencyChecker.this);
                 graphBuilder.buildGraph(currentMethod, graph);

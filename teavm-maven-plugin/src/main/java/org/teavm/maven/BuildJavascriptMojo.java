@@ -30,10 +30,13 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
+import org.teavm.common.ThreadPoolFiniteExecutor;
 import org.teavm.javascript.JavascriptBuilder;
+import org.teavm.javascript.JavascriptBuilderFactory;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
+import org.teavm.model.resource.ClasspathClassHolderSource;
 
 /**
  *
@@ -71,6 +74,9 @@ public class BuildJavascriptMojo extends AbstractMojo {
     @Parameter
     private boolean bytecodeLogging;
 
+    @Parameter(required = false)
+    private int numThreads = 1;
+
     public void setProject(MavenProject project) {
         this.project = project;
     }
@@ -99,13 +105,31 @@ public class BuildJavascriptMojo extends AbstractMojo {
         this.mainPageIncluded = mainPageIncluded;
     }
 
+    public void setNumThreads(int numThreads) {
+        this.numThreads = numThreads;
+    }
+
     @Override
     public void execute() throws MojoExecutionException {
         Log log = getLog();
+        Runnable finalizer = null;
         try {
             ClassLoader classLoader = prepareClassLoader();
             log.info("Building JavaScript file");
-            JavascriptBuilder builder = new JavascriptBuilder(classLoader);
+            JavascriptBuilderFactory builderFactory = new JavascriptBuilderFactory();
+            builderFactory.setClassLoader(classLoader);
+            builderFactory.setClassSource(new ClasspathClassHolderSource(classLoader));
+            if (numThreads != 1) {
+                int threads = numThreads != 0 ? numThreads : Runtime.getRuntime().availableProcessors();
+                final ThreadPoolFiniteExecutor executor = new ThreadPoolFiniteExecutor(threads);
+                finalizer = new Runnable() {
+                    @Override public void run() {
+                        executor.stop();
+                    }
+                };
+                builderFactory.setExecutor(executor);
+            }
+            JavascriptBuilder builder = builderFactory.create();
             builder.setMinifying(minifying);
             builder.setBytecodeLogging(bytecodeLogging);
             MethodDescriptor mainMethodDesc = new MethodDescriptor("main", ValueType.arrayOf(
@@ -133,6 +157,10 @@ public class BuildJavascriptMojo extends AbstractMojo {
             throw new MojoExecutionException("Unexpected error occured", e);
         } catch (IOException e) {
             throw new MojoExecutionException("IO error occured", e);
+        } finally {
+            if (finalizer != null) {
+                finalizer.run();
+            }
         }
     }
 
