@@ -25,7 +25,7 @@ import org.teavm.model.*;
  * @author Alexey Andreev
  */
 class InterferenceGraphBuilder {
-    public Graph build(Program program, LivenessAnalyzer liveness) {
+    public Graph build(Program program, int paramCount, LivenessAnalyzer liveness) {
         List<Set<Integer>> edges = new ArrayList<>();
         for (int i = 0; i < program.variableCount(); ++i) {
             edges.add(new HashSet<Integer>());
@@ -62,6 +62,11 @@ class InterferenceGraphBuilder {
                 }
                 for (Variable var : useExtractor.getUsedVariables()) {
                     live.add(var.getIndex());
+                }
+            }
+            if (block.getIndex() == 0) {
+                for (int j = 0; j <= paramCount; ++j) {
+                    edges.get(j).addAll(live);
                 }
             }
             BitSet liveIn = liveness.liveIn(i);

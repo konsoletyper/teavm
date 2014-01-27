@@ -201,7 +201,7 @@ public class Decompiler {
             methodNode.getVariables().add(program.variableAt(i).getRegister());
         }
         Optimizer optimizer = new Optimizer();
-        optimizer.optimize(methodNode);
+        optimizer.optimize(methodNode, method.getProgram());
         return methodNode;
     }
 

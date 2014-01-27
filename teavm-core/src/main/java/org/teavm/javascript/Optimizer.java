@@ -16,8 +16,7 @@
 package org.teavm.javascript;
 
 import org.teavm.javascript.ast.RegularMethodNode;
-import org.teavm.javascript.ast.Statement;
-import org.teavm.model.MethodHolder;
+import org.teavm.model.Program;
 
 
 /**
@@ -25,17 +24,9 @@ import org.teavm.model.MethodHolder;
  * @author Alexey Andreev
  */
 public class Optimizer {
-    public Statement optimize(MethodHolder method, Statement statement) {
-        ReadWriteStatsBuilder stats = new ReadWriteStatsBuilder(method.getProgram().variableCount());
-        statement.acceptVisitor(stats);
-        OptimizingVisitor optimizer = new OptimizingVisitor(stats);
-        statement.acceptVisitor(optimizer);
-        return optimizer.resultStmt;
-    }
-
-    public void optimize(RegularMethodNode method) {
+    public void optimize(RegularMethodNode method, Program program) {
         ReadWriteStatsBuilder stats = new ReadWriteStatsBuilder(method.getVariables().size());
-        method.getBody().acceptVisitor(stats);
+        stats.analyze(program);
         OptimizingVisitor optimizer = new OptimizingVisitor(stats);
         method.getBody().acceptVisitor(optimizer);
         method.setBody(optimizer.resultStmt);

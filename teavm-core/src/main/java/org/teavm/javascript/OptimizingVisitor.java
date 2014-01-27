@@ -377,7 +377,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         WhileStatement result = new WhileStatement();
         result.setId(statement.getId());
         visitIdentified(statement, result);
-        List<Statement> statements = processSequence(statement.getBody(), false);
+        List<Statement> statements = processSequence(statement.getBody(), true);
         if (statement.getCondition() != null) {
             statement.getCondition().acceptVisitor(this);
             result.setCondition(resultExpr);

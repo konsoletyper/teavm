@@ -37,7 +37,7 @@ public class JavascriptBuilder {
     private DependencyChecker dependencyChecker;
     private ClassLoader classLoader;
     private boolean minifying = true;
-    private boolean bytecodeLogging;
+    private boolean bytecodeLogging = true;
     private OutputStream logStream = System.out;
     private Map<String, JavascriptEntryPoint> entryPoints = new HashMap<>();
     private Map<String, String> exportedClasses = new HashMap<>();

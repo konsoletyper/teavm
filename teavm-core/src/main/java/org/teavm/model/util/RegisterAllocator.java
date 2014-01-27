@@ -34,7 +34,7 @@ public class RegisterAllocator {
         InterferenceGraphBuilder interferenceBuilder = new InterferenceGraphBuilder();
         LivenessAnalyzer liveness = new LivenessAnalyzer();
         liveness.analyze(program);
-        Graph interferenceGraph = interferenceBuilder.build(program, liveness);
+        Graph interferenceGraph = interferenceBuilder.build(program, method.parameterCount(), liveness);
         DisjointSet congruenceClasses = buildPhiCongruenceClasses(program);
         removeRedundantCopies(program, phiArgsCopies, interferenceGraph, congruenceClasses);
         int[] classArray = congruenceClasses.pack(program.variableCount());

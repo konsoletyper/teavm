@@ -35,13 +35,11 @@ class GraphColorer {
             classMembers.get(cls).add(i);
         }
         for (int i = 0; i < colors.length; ++i) {
-            int color = colors[i];
-            if (color != -1) {
+            if (colors[i] >= 0) {
                 int cls = classes[i];
                 for (int member : classMembers.get(cls)) {
-                    colors[member] = color;
+                    colors[member] = colors[i];
                 }
-                classMembers.get(cls).clear();
             }
         }
         BitSet usedColors = new BitSet();
@@ -49,15 +47,18 @@ class GraphColorer {
             if (colors[v] >= 0) {
                 continue;
             }
+            int cls = classes[v];
             usedColors.clear();
             usedColors.set(0);
-            for (int succ : graph.outgoingEdges(v)) {
-                if (colors[succ] >= 0) {
-                    usedColors.set(colors[succ]);
+            for (int member : classMembers.get(cls)) {
+                for (int succ : graph.outgoingEdges(member)) {
+                    if (colors[succ] >= 0) {
+                        usedColors.set(colors[succ]);
+                    }
                 }
             }
             int color = usedColors.nextClearBit(0);
-            for (int member : classMembers.get(classes[v])) {
+            for (int member : classMembers.get(cls)) {
                 colors[member] = color;
             }
         }
