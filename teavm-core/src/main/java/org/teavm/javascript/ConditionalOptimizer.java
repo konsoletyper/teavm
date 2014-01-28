@@ -15,6 +15,7 @@
  */
 package org.teavm.javascript;
 
+import java.util.List;
 import java.util.Map;
 import org.teavm.javascript.ast.*;
 
@@ -53,8 +54,8 @@ class ConditionalOptimizer {
             return stmt;
         }
         SequentialStatement altBody = new SequentialStatement();
-        for (int i = 1; i < stmt.getBody().size(); ++i) {
-            altBody.getSequence().add(stmt.getBody().get(i));
+        for (int j = 1; j < stmt.getBody().size(); ++j) {
+            altBody.getSequence().add(stmt.getBody().get(j));
         }
         if (!altBody.getSequence().isEmpty()) {
             condStmt.setAlternative(altBody.getSequence().size() != 1 ?
@@ -75,51 +76,47 @@ class ConditionalOptimizer {
     }
 
     public Statement tryOptimize(BlockStatement stmt) {
-        Expr condition = null;
-        while (true) {
+        for (int i = 0; i < stmt.getBody().size(); ++i) {
             if (stmt.getBody().isEmpty()) {
-                break;
+                continue;
             }
-            if (!(stmt.getBody().get(0) instanceof ConditionalStatement)) {
-                break;
+            if (!(stmt.getBody().get(i) instanceof ConditionalStatement)) {
+                continue;
             }
-            ConditionalStatement condStmt = (ConditionalStatement)stmt.getBody().get(0);
+            ConditionalStatement condStmt = (ConditionalStatement)stmt.getBody().get(i);
             if (condStmt.getAlternative() != null) {
-                break;
+                continue;
             }
             if (!(condStmt.getConsequent() instanceof BreakStatement)) {
-                break;
+                continue;
             }
             BreakStatement breakStmt = (BreakStatement)condStmt.getConsequent();
             if (breakStmt.getTarget() != stmt) {
-                break;
+                continue;
             }
-            stmt.getBody().remove(0);
-            if (condition == null) {
-                condition = ExprOptimizer.invert(condStmt.getCondition());
-            } else {
-                condition = Expr.binary(BinaryOperation.AND, condition,
-                        ExprOptimizer.invert(condStmt.getCondition()));
-            }
+            stmt.getBody().remove(i);
             referencedStatements.put(stmt, referencedStatements.get(stmt) - 1);
-        }
-        if (condition == null) {
-            return stmt;
-        }
-        ConditionalStatement newCond = new ConditionalStatement();
-        newCond.setCondition(condition);
-        if (referencedStatements.get(stmt) > 0) {
-            newCond.setConsequent(stmt);
-        } else {
-            if (stmt.getBody().size() == 1) {
-                newCond.setConsequent(stmt.getBody().get(0));
+            ConditionalStatement newCond = new ConditionalStatement();
+            newCond.setCondition(ExprOptimizer.invert(condStmt.getCondition()));
+            List<Statement> remaining = stmt.getBody().subList(i, stmt.getBody().size());
+            if (remaining.size() == 1) {
+                newCond.setConsequent(remaining.get(0));
             } else {
-                SequentialStatement consequent = new SequentialStatement();
-                consequent.getSequence().addAll(stmt.getBody());
-                newCond.setConsequent(consequent);
+                SequentialStatement newConsequent = new SequentialStatement();
+                newConsequent.getSequence().addAll(remaining);
+                newCond.setConsequent(newConsequent);
+            }
+            remaining.clear();
+            stmt.getBody().add(newCond);
+            if (referencedStatements.get(stmt) == 0) {
+                SequentialStatement flat = new SequentialStatement();
+                flat.getSequence().addAll(stmt.getBody());
+                return flat;
+            } else {
+                --i;
             }
         }
-        return newCond;
+        return stmt;
     }
 
     public void tryOptimize(WhileStatement stmt) {
