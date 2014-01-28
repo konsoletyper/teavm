@@ -21,19 +21,22 @@ import java.util.concurrent.Executor;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ListableClassHolderSource;
 import org.teavm.model.MethodHolder;
+import org.teavm.model.Program;
+import org.teavm.model.util.ProgramUtils;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public class ClassSetOptimizer {
-    private List<MethodOptimization> optimizations = Arrays.<MethodOptimization>asList(
-            new CommonSubexpressionElimination(), new UnusedVariableElimination());
     private Executor executor;
 
     public ClassSetOptimizer(Executor executor) {
-        super();
         this.executor = executor;
+    }
+
+    private List<MethodOptimization> getOptimizations() {
+        return Arrays.<MethodOptimization>asList(new CommonSubexpressionElimination(), new UnusedVariableElimination());
     }
 
     public void optimizeAll(ListableClassHolderSource classSource) {
@@ -44,9 +47,11 @@ public class ClassSetOptimizer {
                     executor.execute(new Runnable() {
                         @Override
                         public void run() {
-                            for (MethodOptimization optimization : optimizations) {
-                                optimization.optimize(method);
+                            Program program = ProgramUtils.copy(method.getProgram());
+                            for (MethodOptimization optimization : getOptimizations()) {
+                                optimization.optimize(method, program);
                             }
+                            method.setProgram(program);
                         }
                     });
                 }

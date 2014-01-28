@@ -47,7 +47,7 @@
               <minifying>false</minifying>
               <mainClass>org.teavm.samples.HelloWorld</mainClass>
               <mainPageIncluded>true</mainPageIncluded>
-              <bytecodeLogging>true</bytecodeLogging>
+              <bytecodeLogging>false</bytecodeLogging>
             </configuration>
           </execution>
         </executions>

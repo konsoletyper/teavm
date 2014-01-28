@@ -25,12 +25,12 @@ import org.teavm.model.instructions.*;
  */
 public class UnusedVariableElimination implements MethodOptimization {
     @Override
-    public void optimize(MethodHolder method) {
+    public void optimize(MethodReader method, Program program) {
         if (method.getProgram() == null) {
             return;
         }
-        Graph graph = VariableUsageGraphBuilder.build(method.getProgram());
-        boolean[] escaping = VariableEscapeAnalyzer.findEscapingVariables(method.getProgram());
+        Graph graph = VariableUsageGraphBuilder.build(program);
+        boolean[] escaping = VariableEscapeAnalyzer.findEscapingVariables(program);
         boolean[] used = new boolean[escaping.length];
 
         int[] stack = new int[graph.size() * 2];
@@ -54,7 +54,6 @@ public class UnusedVariableElimination implements MethodOptimization {
             }
         }
 
-        Program program = method.getProgram();
         InstructionOptimizer insnOptimizer = new InstructionOptimizer(used);
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);

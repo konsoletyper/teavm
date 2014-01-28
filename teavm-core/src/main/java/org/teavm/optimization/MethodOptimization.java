@@ -15,12 +15,13 @@
  */
 package org.teavm.optimization;
 
-import org.teavm.model.MethodHolder;
+import org.teavm.model.MethodReader;
+import org.teavm.model.Program;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public interface MethodOptimization {
-    void optimize(MethodHolder method);
+    void optimize(MethodReader method, Program program);
 }

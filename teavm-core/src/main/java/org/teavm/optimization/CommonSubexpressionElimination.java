@@ -42,10 +42,10 @@ public class CommonSubexpressionElimination implements MethodOptimization {
     }
 
     @Override
-    public void optimize(MethodHolder method) {
-        program = method.getProgram();
+    public void optimize(MethodReader method, Program program) {
+        this.program = program;
         knownValues.clear();
-        Graph cfg = ProgramUtils.buildControlFlowGraph(method.getProgram());
+        Graph cfg = ProgramUtils.buildControlFlowGraph(program);
         domTree = GraphUtils.buildDominatorTree(cfg);
         Graph dom = GraphUtils.buildDominatorGraph(domTree, cfg.size());
         map = new int[program.variableCount()];

@@ -53,7 +53,7 @@
             <phase>process-test-classes</phase>
             <configuration>
               <minifying>false</minifying>
-              <numThreads>1</numThreads>
+              <numThreads>0</numThreads>
             </configuration>
           </execution>
         </executions>

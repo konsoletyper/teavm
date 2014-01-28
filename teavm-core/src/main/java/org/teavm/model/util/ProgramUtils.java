@@ -48,10 +48,10 @@ public class ProgramUtils {
         CopyVisitor insnCopier = new CopyVisitor();
         insnCopier.programCopy = copy;
         for (int i = 0; i < program.variableCount(); ++i) {
-            program.createVariable();
+            copy.createVariable();
         }
         for (int i = 0; i < program.basicBlockCount(); ++i) {
-            program.createBasicBlock();
+            copy.createBasicBlock();
         }
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
@@ -346,7 +346,7 @@ public class ProgramUtils {
             insnCopy.setMethod(insn.getMethod());
             insnCopy.setType(insn.getType());
             insnCopy.setInstance(insn.getInstance() != null ? copyVar(insn.getInstance()) : null);
-            insnCopy.setReceiver(copyVar(insn.getReceiver()));
+            insnCopy.setReceiver(insn.getReceiver() != null ? copyVar(insn.getReceiver()) : null);
             for (Variable arg : insn.getArguments()) {
                 insnCopy.getArguments().add(copyVar(arg));
             }

@@ -66,17 +66,19 @@ public class ThreadPoolFiniteExecutor implements FiniteExecutor {
     @Override
     public void complete() {
         synchronized (monitor) {
-            try {
-                monitor.wait();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return;
-            }
-            if (thrownException.get() != null) {
-                throw thrownException.get();
-            }
-            if (runningTasks.get() == 0) {
-                return;
+            while (true) {
+                if (thrownException.get() != null) {
+                    throw thrownException.get();
+                }
+                if (runningTasks.get() == 0) {
+                    return;
+                }
+                try {
+                    monitor.wait();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
             }
         }
     }

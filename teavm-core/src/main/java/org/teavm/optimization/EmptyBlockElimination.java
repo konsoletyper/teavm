@@ -16,7 +16,7 @@
 package org.teavm.optimization;
 
 import org.teavm.model.BasicBlock;
-import org.teavm.model.MethodHolder;
+import org.teavm.model.MethodReader;
 import org.teavm.model.Program;
 import org.teavm.model.instructions.JumpInstruction;
 import org.teavm.model.util.BasicBlockMapper;
@@ -27,8 +27,7 @@ import org.teavm.model.util.BasicBlockMapper;
  */
 public class EmptyBlockElimination implements MethodOptimization {
     @Override
-    public void optimize(MethodHolder method) {
-        final Program program = method.getProgram();
+    public void optimize(MethodReader method, final Program program) {
         final int[] blockMapping = new int[program.basicBlockCount()];
         for (int i = 0; i < blockMapping.length; ++i) {
             blockMapping[i] = i;

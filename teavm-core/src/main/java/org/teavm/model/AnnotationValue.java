@@ -15,6 +15,7 @@
  */
 package org.teavm.model;
 
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -22,18 +23,18 @@ import java.util.List;
  * @author Alexey Andreev
  */
 public class AnnotationValue {
-    private static final byte BOOLEAN = 0;
-    private static final byte BYTE = 1;
-    private static final byte SHORT = 2;
-    private static final byte INT = 3;
-    private static final byte LONG = 4;
-    private static final byte FLOAT = 5;
-    private static final byte DOUBLE = 6;
-    private static final byte STRING = 7;
-    private static final byte CLASS = 8;
-    private static final byte LIST = 9;
-    private static final byte ENUM = 10;
-    private static final byte ANNOTATION = 11;
+    public static final byte BOOLEAN = 0;
+    public static final byte BYTE = 1;
+    public static final byte SHORT = 2;
+    public static final byte INT = 3;
+    public static final byte LONG = 4;
+    public static final byte FLOAT = 5;
+    public static final byte DOUBLE = 6;
+    public static final byte STRING = 7;
+    public static final byte CLASS = 8;
+    public static final byte LIST = 9;
+    public static final byte ENUM = 10;
+    public static final byte ANNOTATION = 11;
     private byte type;
     private Object value;
 
@@ -165,7 +166,7 @@ public class AnnotationValue {
         if (type != LIST) {
             throw new IllegalStateException("There is no List value");
         }
-        return (List<AnnotationValue>)value;
+        return Collections.unmodifiableList((List<AnnotationValue>)value);
     }
 
     public FieldReference getEnumValue() {
@@ -180,5 +181,9 @@ public class AnnotationValue {
             throw new IllegalStateException("There is no annotation value");
         }
         return (AnnotationHolder)value;
+    }
+
+    public byte getType() {
+        return type;
     }
 }

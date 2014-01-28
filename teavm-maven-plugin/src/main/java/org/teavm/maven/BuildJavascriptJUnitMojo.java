@@ -103,16 +103,16 @@ public class BuildJavascriptJUnitMojo extends AbstractMojo {
     public void execute() throws MojoExecutionException, MojoFailureException {
         Runnable finalizer = null;
         try {
-            ClassLoader classLoader = prepareClassLoader();
+            final ClassLoader classLoader = prepareClassLoader();
             getLog().info("Searching for tests in the directory `" + testFiles.getAbsolutePath() + "'");
             findTestClasses(classLoader, testFiles, "");
-            Log log = getLog();
+            final Log log = getLog();
             new File(outputDir, "tests").mkdirs();
             resourceToFile("org/teavm/javascript/runtime.js", "runtime.js");
             resourceToFile("org/teavm/maven/junit-support.js", "junit-support.js");
             resourceToFile("org/teavm/maven/junit.css", "junit.css");
             resourceToFile("org/teavm/maven/junit.html", "junit.html");
-            ClassHolderSource classSource = new ClasspathClassHolderSource(classLoader);
+            final ClassHolderSource classSource = new ClasspathClassHolderSource(classLoader);
             for (String testClass : testClasses) {
                 ClassHolder classHolder = classSource.getClassHolder(testClass);
                 if (classHolder == null) {
@@ -169,12 +169,22 @@ public class BuildJavascriptJUnitMojo extends AbstractMojo {
                 };
                 executor = threadedExecutor;
             }
-            for (MethodReference method : testMethods) {
-                log.debug("Building test for " + method);
-                decompileClassesForTest(classLoader, method, fileNames.get(method), executor);
+            for (final MethodReference method : testMethods) {
+                executor.execute(new Runnable() {
+                    @Override public void run() {
+                        log.debug("Building test for " + method);
+                        try {
+                            decompileClassesForTest(classLoader, new CopyClassHolderSource(classSource), method,
+                                    fileNames.get(method), new SimpleFiniteExecutor());
+                        } catch (IOException e) {
+                            log.error("Error generating JavaScript", e);
+                        }
+                    }
+                });
                 ++methodsGenerated;
             }
-            log.info("Test files successfully generated for " + methodsGenerated + " method(s)");
+            executor.complete();
+            log.info("Test files successfully generated for " + methodsGenerated + " method(s).");
         } catch (IOException e) {
             throw new MojoFailureException("IO error occured generating JavaScript files", e);
         } finally {
@@ -216,11 +226,11 @@ public class BuildJavascriptJUnitMojo extends AbstractMojo {
         }
     }
 
-    private void decompileClassesForTest(ClassLoader classLoader, MethodReference methodRef, String targetName,
-            FiniteExecutor executor) throws IOException {
+    private void decompileClassesForTest(ClassLoader classLoader, ClassHolderSource classSource,
+            MethodReference methodRef, String targetName, FiniteExecutor executor) throws IOException {
         JavascriptBuilderFactory builderFactory = new JavascriptBuilderFactory();
         builderFactory.setClassLoader(classLoader);
-        builderFactory.setClassSource(new ClasspathClassHolderSource(classLoader));
+        builderFactory.setClassSource(classSource);
         builderFactory.setExecutor(executor);
         JavascriptBuilder builder = builderFactory.create();
         builder.setMinifying(minifying);

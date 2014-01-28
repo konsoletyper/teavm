@@ -103,7 +103,7 @@ public class JavascriptBuilder {
                 ValueType.arrayOf(ValueType.CHARACTER), ValueType.VOID)));
         executor.complete();
         ListableClassHolderSource classSet = dependencyChecker.cutUnachievableClasses();
-        Decompiler decompiler = new Decompiler(classSet, classLoader);
+        Decompiler decompiler = new Decompiler(classSet, classLoader, executor);
         ClassSetOptimizer optimizer = new ClassSetOptimizer(executor);
         optimizer.optimizeAll(classSet);
         executor.complete();
@@ -143,7 +143,9 @@ public class JavascriptBuilder {
                     executor.execute(new Runnable() {
                         @Override public void run() {
                             RegisterAllocator allocator = new RegisterAllocator();
-                            allocator.allocateRegisters(method);
+                            Program program = ProgramUtils.copy(method.getProgram());
+                            allocator.allocateRegisters(method, program);
+                            method.setProgram(program);
                         }
                     });
                 }
@@ -208,7 +210,7 @@ public class JavascriptBuilder {
                     writer.print("byte");
                     break;
                 case CHARACTER:
-                    writer.print("character");
+                    writer.print("char");
                     break;
                 case DOUBLE:
                     writer.print("double");
