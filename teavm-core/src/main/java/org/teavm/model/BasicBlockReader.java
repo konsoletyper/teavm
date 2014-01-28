@@ -1,5 +1,5 @@
 /*
- *  Copyright 2012 Alexey Andreev.
+ *  Copyright 2014 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,15 +15,23 @@
  */
 package org.teavm.model;
 
+import java.util.List;
+import org.teavm.model.instructions.InstructionReader;
+
 /**
  *
  * @author Alexey Andreev
  */
-public abstract class MemberHolder extends ElementHolder implements MemberReader {
-    public MemberHolder(String name) {
-        super(name);
-    }
+public interface BasicBlockReader {
+    ProgramReader getProgram();
 
-    @Override
-    public abstract String getOwnerName();
+    int getIndex();
+
+    List<? extends PhiReader> readPhis();
+
+    int instructionCount();
+
+    void readInstruction(int index, InstructionReader reader);
+
+    void readAllInstructions(InstructionReader reader);
 }

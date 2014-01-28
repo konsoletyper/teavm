@@ -17,17 +17,19 @@ package org.teavm.model;
 
 import java.util.AbstractList;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class Phi {
+public class Phi implements PhiReader {
     private BasicBlock basicBlock;
     private Variable receiver;
     private List<Incoming> incomings = new ArrayList<>();
 
+    @Override
     public BasicBlock getBasicBlock() {
         return basicBlock;
     }
@@ -36,6 +38,7 @@ public class Phi {
         this.basicBlock = basicBlock;
     }
 
+    @Override
     public Variable getReceiver() {
         return receiver;
     }
@@ -94,5 +97,12 @@ public class Phi {
 
     public List<Incoming> getIncomings() {
         return safeIncomings;
+    }
+
+    private List<? extends IncomingReader> immutableIncomings = Collections.unmodifiableList(incomings);
+
+    @Override
+    public List<? extends IncomingReader> readIncomings() {
+        return immutableIncomings;
     }
 }

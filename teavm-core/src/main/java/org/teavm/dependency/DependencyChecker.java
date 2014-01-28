@@ -159,7 +159,7 @@ public class DependencyChecker {
         for (int i = 0; i < varCount; ++i) {
             parameterNodes[i] = new DependencyNode(this);
             if (shouldLog) {
-                parameterNodes[i].setTag(method.getOwner().getName() + "#" + method.getDescriptor() + ":" + i);
+                parameterNodes[i].setTag(method.getOwnerName() + "#" + method.getDescriptor() + ":" + i);
             }
         }
         DependencyNode resultNode;
@@ -168,7 +168,7 @@ public class DependencyChecker {
         } else {
             resultNode = new DependencyNode(this);
             if (shouldLog) {
-                resultNode.setTag(method.getOwner().getName() + "#" + method.getDescriptor() + ":RESULT");
+                resultNode.setTag(method.getOwnerName() + "#" + method.getDescriptor() + ":RESULT");
             }
         }
         final MethodGraph graph = new MethodGraph(parameterNodes, paramCount, resultNode, this);

@@ -21,7 +21,7 @@ import java.util.EnumSet;
  *
  * @author Alexey Andreev
  */
-public abstract class ElementHolder {
+public abstract class ElementHolder implements ElementReader {
     private EnumSet<ElementModifier> modifiers = EnumSet.noneOf(ElementModifier.class);
     private AnnotationContainer annotations = new AnnotationContainer();
     private AccessLevel level = AccessLevel.PACKAGE_PRIVATE;
@@ -31,10 +31,21 @@ public abstract class ElementHolder {
         this.name = name;
     }
 
+    @Override
+    public EnumSet<ElementModifier> readModifiers() {
+        return modifiers.clone();
+    }
+
+    @Override
+    public boolean hasModifier(ElementModifier modifier) {
+        return modifiers.contains(modifier);
+    }
+
     public EnumSet<ElementModifier> getModifiers() {
         return modifiers;
     }
 
+    @Override
     public AccessLevel getLevel() {
         return level;
     }
@@ -43,6 +54,7 @@ public abstract class ElementHolder {
         this.level = level;
     }
 
+    @Override
     public String getName() {
         return name;
     }

@@ -20,7 +20,7 @@ package org.teavm.model;
  *
  * @author Alexey Andreev
  */
-public class FieldHolder extends MemberHolder {
+public class FieldHolder extends MemberHolder implements FieldReader {
     private ValueType type;
     private Object initialValue;
     private ClassHolder owner;
@@ -29,6 +29,7 @@ public class FieldHolder extends MemberHolder {
         super(name);
     }
 
+    @Override
     public ValueType getType() {
         return type;
     }
@@ -37,6 +38,7 @@ public class FieldHolder extends MemberHolder {
         this.type = type;
     }
 
+    @Override
     public Object getInitialValue() {
         return initialValue;
     }
@@ -45,12 +47,16 @@ public class FieldHolder extends MemberHolder {
         this.initialValue = initialValue;
     }
 
-    @Override
-    public ClassHolder getOwner() {
+    ClassHolder getOwner() {
         return owner;
     }
 
     void setOwner(ClassHolder owner) {
         this.owner = owner;
+    }
+
+    @Override
+    public String getOwnerName() {
+        return owner != null ? owner.getName() : null;
     }
 }

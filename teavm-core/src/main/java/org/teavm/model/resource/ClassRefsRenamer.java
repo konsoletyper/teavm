@@ -54,7 +54,7 @@ class ClassRefsRenamer implements InstructionVisitor {
             renamedCls.addMethod(rename(method));
         }
         for (FieldHolder field : cls.getFields().toArray(new FieldHolder[0])) {
-            field.getOwner().removeField(field);
+            cls.removeField(field);
             renamedCls.addField(field);
         }
         rename(cls.getAnnotations(), renamedCls.getAnnotations());

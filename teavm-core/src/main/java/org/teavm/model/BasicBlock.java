@@ -16,12 +16,13 @@
 package org.teavm.model;
 
 import java.util.*;
+import org.teavm.model.instructions.InstructionReader;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class BasicBlock  {
+public class BasicBlock implements BasicBlockReader {
     private Program program;
     private int index;
     private List<Phi> phis = new ArrayList<>();
@@ -32,10 +33,12 @@ public class BasicBlock  {
         this.index = index;
     }
 
+    @Override
     public Program getProgram() {
         return program;
     }
 
+    @Override
     public int getIndex() {
         return index;
     }
@@ -152,5 +155,30 @@ public class BasicBlock  {
 
     public List<Phi> getPhis() {
         return safePhis;
+    }
+
+    private List<Phi> immutablePhis = Collections.unmodifiableList(phis);
+
+    @Override
+    public List<? extends PhiReader> readPhis() {
+        return immutablePhis;
+    }
+
+    @Override
+    public int instructionCount() {
+        return instructions.size();
+    }
+
+    @Override
+    public void readInstruction(int index, InstructionReader reader) {
+        instructions.get(index).acceptVisitor(new InstructionReadVisitor(reader));
+    }
+
+    @Override
+    public void readAllInstructions(InstructionReader reader) {
+        InstructionReadVisitor visitor = new InstructionReadVisitor(reader);
+        for (Instruction insn : instructions) {
+            insn.acceptVisitor(visitor);
+        }
     }
 }

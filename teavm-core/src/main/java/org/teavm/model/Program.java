@@ -22,7 +22,7 @@ import java.util.List;
  *
  * @author Alexey Andreev
  */
-public class Program {
+public class Program implements ProgramReader {
     private List<BasicBlock> basicBlocks = new ArrayList<>();
     private List<Variable> variables = new ArrayList<>();
     private MethodHolder method;
@@ -54,10 +54,12 @@ public class Program {
         packed = false;
     }
 
+    @Override
     public int basicBlockCount() {
         return basicBlocks.size();
     }
 
+    @Override
     public BasicBlock basicBlockAt(int index) {
         return basicBlocks.get(index);
     }
@@ -106,15 +108,22 @@ public class Program {
         packed = true;
     }
 
+    @Override
     public int variableCount() {
         return variables.size();
     }
 
+    @Override
     public Variable variableAt(int index) {
         return variables.get(index);
     }
 
-    public MethodHolder getMethod() {
+    @Override
+    public MethodReference getMethodReference() {
+        return method != null ? method.getReference() : null;
+    }
+
+    MethodHolder getMethod() {
         return method;
     }
 

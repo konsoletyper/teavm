@@ -21,7 +21,7 @@ import org.teavm.model.BasicBlock;
  *
  * @author Alexey Andreev
  */
-public class SwitchTableEntry {
+public class SwitchTableEntry implements SwitchTableEntryReader {
     private int condition;
     private BasicBlock target;
     private SwitchInstruction instruction;
@@ -34,6 +34,7 @@ public class SwitchTableEntry {
         this.instruction = instruction;
     }
 
+    @Override
     public int getCondition() {
         return condition;
     }
@@ -42,6 +43,7 @@ public class SwitchTableEntry {
         this.condition = condition;
     }
 
+    @Override
     public BasicBlock getTarget() {
         return target;
     }

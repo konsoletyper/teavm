@@ -19,10 +19,10 @@ package org.teavm.model;
  *
  * @author Alexey Andreev
  */
-public class MethodHolder extends MemberHolder {
+public class MethodHolder extends MemberHolder implements MethodReader {
     private MethodDescriptor descriptor;
     private ClassHolder owner;
-    private Program program;
+    private volatile Program program;
 
     public MethodHolder(MethodDescriptor descriptor) {
         super(descriptor.getName());
@@ -33,28 +33,37 @@ public class MethodHolder extends MemberHolder {
         this(new MethodDescriptor(name, signature));
     }
 
+    @Override
     public ValueType getResultType() {
         return descriptor.getResultType();
     }
 
+    @Override
     public int parameterCount() {
         return descriptor.parameterCount();
     }
 
+    @Override
     public ValueType[] getSignature() {
         return descriptor.getSignature();
     }
 
+    @Override
     public ValueType parameterType(int index) {
         return descriptor.parameterType(index);
     }
 
+    @Override
     public ValueType[] getParameterTypes() {
         return descriptor.getParameterTypes();
     }
 
     @Override
-    public ClassHolder getOwner() {
+    public String getOwnerName() {
+        return owner != null ? owner.getName() : null;
+    }
+
+    ClassHolder getOwner() {
         return owner;
     }
 
@@ -62,10 +71,17 @@ public class MethodHolder extends MemberHolder {
         this.owner = owner;
     }
 
+    @Override
     public MethodDescriptor getDescriptor() {
         return descriptor;
     }
 
+    @Override
+    public MethodReference getReference() {
+        return owner != null ? new MethodReference(owner.getName(), descriptor) : null;
+    }
+
+    @Override
     public Program getProgram() {
         return program;
     }

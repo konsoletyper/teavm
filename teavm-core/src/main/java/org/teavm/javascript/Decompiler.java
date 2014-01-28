@@ -120,7 +120,7 @@ public class Decompiler {
     public NativeMethodNode decompileNative(MethodHolder method) {
         AnnotationHolder annotHolder = method.getAnnotations().get(GeneratedBy.class.getName());
         if (annotHolder == null) {
-            throw new DecompilationException("Method " + method.getOwner().getName() + "." + method.getDescriptor() +
+            throw new DecompilationException("Method " + method.getOwnerName() + "." + method.getDescriptor() +
                     " is native, but no " + GeneratedBy.class.getName() + " annotation found");
         }
         ValueType annotValue = annotHolder.getValues().get("value").getJavaClass();
@@ -131,9 +131,9 @@ public class Decompiler {
             generator = (Generator)generatorClass.newInstance();
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
             throw new DecompilationException("Error instantiating generator " + generatorClassName +
-                    " for native method " + method.getOwner().getName() + "." + method.getDescriptor());
+                    " for native method " + method.getOwnerName() + "." + method.getDescriptor());
         }
-        NativeMethodNode methodNode = new NativeMethodNode(new MethodReference(method.getOwner().getName(),
+        NativeMethodNode methodNode = new NativeMethodNode(new MethodReference(method.getOwnerName(),
                 method.getDescriptor()));
         methodNode.getModifiers().addAll(mapModifiers(method.getModifiers()));
         methodNode.setGenerator(generator);
@@ -193,7 +193,7 @@ public class Decompiler {
         }
         SequentialStatement result = new SequentialStatement();
         result.getSequence().addAll(rootStmt.getBody());
-        MethodReference reference = new MethodReference(method.getOwner().getName(), method.getDescriptor());
+        MethodReference reference = new MethodReference(method.getOwnerName(), method.getDescriptor());
         RegularMethodNode methodNode = new RegularMethodNode(reference);
         methodNode.getModifiers().addAll(mapModifiers(method.getModifiers()));
         methodNode.setBody(result);

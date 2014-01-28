@@ -19,11 +19,12 @@ package org.teavm.model;
  *
  * @author Alexey Andreev
  */
-public class Incoming {
+public class Incoming implements IncomingReader {
     private Phi phi;
     private Variable value;
     private BasicBlock source;
 
+    @Override
     public Variable getValue() {
         return value;
     }
@@ -32,6 +33,7 @@ public class Incoming {
         this.value = value;
     }
 
+    @Override
     public BasicBlock getSource() {
         return source;
     }
@@ -40,6 +42,7 @@ public class Incoming {
         this.source = source;
     }
 
+    @Override
     public Phi getPhi() {
         return phi;
     }

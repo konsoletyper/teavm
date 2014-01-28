@@ -21,7 +21,7 @@ import java.util.*;
  *
  * @author Alexey Andreev
  */
-public class ClassHolder extends ElementHolder {
+public class ClassHolder extends ElementHolder implements ClassReader {
     private String parent = Object.class.getName();
     private Set<String> interfaces = new HashSet<>();
     private Map<MethodDescriptor, MethodHolder> methods = new HashMap<>();
@@ -31,6 +31,7 @@ public class ClassHolder extends ElementHolder {
         super(name);
     }
 
+    @Override
     public String getParent() {
         return parent;
     }
@@ -39,14 +40,17 @@ public class ClassHolder extends ElementHolder {
         this.parent = parent;
     }
 
+    @Override
     public Set<String> getInterfaces() {
         return interfaces;
     }
 
+    @Override
     public MethodHolder getMethod(MethodDescriptor method) {
         return methods.get(method);
     }
 
+    @Override
     public Collection<MethodHolder> getMethods() {
         return methods.values();
     }
@@ -72,10 +76,12 @@ public class ClassHolder extends ElementHolder {
         method.setOwner(null);
     }
 
+    @Override
     public FieldHolder getField(String name) {
         return fields.get(name);
     }
 
+    @Override
     public Collection<FieldHolder> getFields() {
         return fields.values();
     }

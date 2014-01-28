@@ -1,5 +1,5 @@
 /*
- *  Copyright 2012 Alexey Andreev.
+ *  Copyright 2014 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,11 +19,20 @@ package org.teavm.model;
  *
  * @author Alexey Andreev
  */
-public abstract class MemberHolder extends ElementHolder implements MemberReader {
-    public MemberHolder(String name) {
-        super(name);
-    }
+public interface MethodReader extends MemberReader {
+    ValueType getResultType();
 
-    @Override
-    public abstract String getOwnerName();
+    int parameterCount();
+
+    ValueType[] getSignature();
+
+    ValueType parameterType(int index);
+
+    ValueType[] getParameterTypes();
+
+    MethodDescriptor getDescriptor();
+
+    MethodReference getReference();
+
+    ProgramReader getProgram();
 }

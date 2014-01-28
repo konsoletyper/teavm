@@ -19,7 +19,7 @@ package org.teavm.model;
  *
  * @author Alexey Andreev
  */
-public class Variable {
+public class Variable implements VariableReader {
     private Program program;
     private int index;
     private int register;
@@ -28,6 +28,7 @@ public class Variable {
         this.program = program;
     }
 
+    @Override
     public int getIndex() {
         return index;
     }
@@ -36,6 +37,7 @@ public class Variable {
         this.index = index;
     }
 
+    @Override
     public Program getProgram() {
         return program;
     }
@@ -44,6 +46,7 @@ public class Variable {
         this.program = program;
     }
 
+    @Override
     public int getRegister() {
         return register;
     }
