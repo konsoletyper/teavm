@@ -1,5 +1,5 @@
 /*
- *  Copyright 2012 Alexey Andreev.
+ *  Copyright 2014 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,19 +15,16 @@
  */
 package org.teavm.javascript;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.teavm.javascript.ast.*;
 
 /**
  *
  * @author Alexey Andreev
  */
-class ReferenceCountingVisitor implements StatementVisitor {
-    private IdentifiedStatement target;
-    public int count;
-
-    public ReferenceCountingVisitor(IdentifiedStatement target) {
-        this.target = target;
-    }
+class BlockRefCountVisitor implements StatementVisitor {
+    Map<IdentifiedStatement, Integer> refs = new HashMap<>();
 
     @Override
     public void visit(AssignmentStatement statement) {
@@ -42,11 +39,11 @@ class ReferenceCountingVisitor implements StatementVisitor {
 
     @Override
     public void visit(ConditionalStatement statement) {
-        for (Statement part : statement.getConsequent()) {
-            part.acceptVisitor(this);
+        for (Statement stmt : statement.getConsequent()) {
+            stmt.acceptVisitor(this);
         }
-        for (Statement part : statement.getAlternative()) {
-            part.acceptVisitor(this);
+        for (Statement stmt : statement.getAlternative()) {
+            stmt.acceptVisitor(this);
         }
     }
 
@@ -64,6 +61,7 @@ class ReferenceCountingVisitor implements StatementVisitor {
 
     @Override
     public void visit(WhileStatement statement) {
+        refs.put(statement, 0);
         for (Statement part : statement.getBody()) {
             part.acceptVisitor(this);
         }
@@ -71,6 +69,7 @@ class ReferenceCountingVisitor implements StatementVisitor {
 
     @Override
     public void visit(BlockStatement statement) {
+        refs.put(statement, 0);
         for (Statement part : statement.getBody()) {
             part.acceptVisitor(this);
         }
@@ -82,16 +81,12 @@ class ReferenceCountingVisitor implements StatementVisitor {
 
     @Override
     public void visit(BreakStatement statement) {
-        if (statement.getTarget() == target) {
-            ++count;
-        }
+        refs.put(statement.getTarget(), refs.get(statement.getTarget()) + 1);
     }
 
     @Override
     public void visit(ContinueStatement statement) {
-        if (statement.getTarget() == target) {
-            ++count;
-        }
+        refs.put(statement.getTarget(), refs.get(statement.getTarget()) + 1);
     }
 
     @Override

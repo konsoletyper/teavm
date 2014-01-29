@@ -413,10 +413,16 @@ class StatementGenerator implements InstructionVisitor {
                 conditions[i] = conditionList.get(i);
             }
             clause.setConditions(conditions);
-            clause.setStatement(generateJumpStatement(stmt, target));
+            Statement jumpStmt = generateJumpStatement(stmt, target);
+            if (jumpStmt != null) {
+                clause.getBody().add(jumpStmt);
+            }
             stmt.getClauses().add(clause);
         }
-        stmt.setDefaultClause(generateJumpStatement(insn.getDefaultTarget()));
+        Statement breakStmt = generateJumpStatement(insn.getDefaultTarget());
+        if (breakStmt != null) {
+            stmt.getDefaultClause().add(breakStmt);
+        }
         statements.add(stmt);
     }
 
@@ -605,13 +611,9 @@ class StatementGenerator implements InstructionVisitor {
     private void branch(Expr condition, BasicBlock consequentBlock, BasicBlock alternativeBlock) {
         Statement consequent = generateJumpStatement(consequentBlock);
         Statement alternative = generateJumpStatement(alternativeBlock);
-        if (consequent == null) {
-            consequent = Statement.empty();
-        }
-        if (alternative == null) {
-            alternative = Statement.empty();
-        }
-        statements.add(Statement.cond(condition, consequent, alternative));
+        statements.add(Statement.cond(condition,
+                consequent != null ? Arrays.asList(consequent) : Collections.<Statement>emptyList(),
+                alternative != null ? Arrays.asList(alternative) : Collections.<Statement>emptyList()));
     }
 
     private Expr compare(BinaryOperation op, Variable value) {

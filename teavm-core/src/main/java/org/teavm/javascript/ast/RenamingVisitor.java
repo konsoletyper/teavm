@@ -119,9 +119,11 @@ public class RenamingVisitor implements StatementVisitor, ExprVisitor {
     @Override
     public void visit(ConditionalStatement statement) {
         statement.getCondition().acceptVisitor(this);
-        statement.getConsequent().acceptVisitor(this);
-        if (statement.getAlternative() != null) {
-            statement.getAlternative().acceptVisitor(this);
+        for (Statement part : statement.getConsequent()) {
+            part.acceptVisitor(this);
+        }
+        for (Statement part : statement.getAlternative()) {
+            part.acceptVisitor(this);
         }
     }
 
@@ -129,10 +131,12 @@ public class RenamingVisitor implements StatementVisitor, ExprVisitor {
     public void visit(SwitchStatement statement) {
         statement.getValue().acceptVisitor(this);
         for (SwitchClause clause : statement.getClauses()) {
-            clause.getStatement().acceptVisitor(this);
+            for (Statement part : clause.getBody()) {
+                part.acceptVisitor(this);
+            }
         }
-        if (statement.getDefaultClause() != null) {
-            statement.getDefaultClause().acceptVisitor(this);
+        for (Statement part : statement.getDefaultClause()) {
+            part.acceptVisitor(this);
         }
     }
 

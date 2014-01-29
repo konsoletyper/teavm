@@ -15,7 +15,9 @@
  */
 package org.teavm.javascript.ast;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  *
@@ -23,7 +25,7 @@ import java.util.Arrays;
  */
 public class SwitchClause {
     private int[] conditions;
-    private Statement statement;
+    private List<Statement> body = new ArrayList<>();
 
     public int[] getConditions() {
         return conditions != null ? Arrays.copyOf(conditions, conditions.length) : null;
@@ -33,11 +35,7 @@ public class SwitchClause {
         this.conditions = conditions != null ? Arrays.copyOf(conditions, conditions.length) : null;
     }
 
-    public Statement getStatement() {
-        return statement;
-    }
-
-    public void setStatement(Statement statement) {
-        this.statement = statement;
+    public List<Statement> getBody() {
+        return body;
     }
 }

@@ -61,9 +61,11 @@ class UnusedVariableEliminator implements ExprVisitor, StatementVisitor {
     @Override
     public void visit(ConditionalStatement statement) {
         statement.getCondition().acceptVisitor(this);
-        statement.getConsequent().acceptVisitor(this);
-        if (statement.getAlternative() != null) {
-            statement.getAlternative().acceptVisitor(this);
+        for (Statement part : statement.getConsequent()) {
+            part.acceptVisitor(this);
+        }
+        for (Statement part : statement.getAlternative()) {
+            part.acceptVisitor(this);
         }
     }
 
@@ -71,9 +73,13 @@ class UnusedVariableEliminator implements ExprVisitor, StatementVisitor {
     public void visit(SwitchStatement statement) {
         statement.getValue().acceptVisitor(this);
         for (SwitchClause clause : statement.getClauses()) {
-            clause.getStatement().acceptVisitor(this);
+            for (Statement part : clause.getBody()) {
+                part.acceptVisitor(this);
+            }
         }
-        statement.getDefaultClause().acceptVisitor(this);
+        for (Statement part : statement.getDefaultClause()) {
+            part.acceptVisitor(this);
+        }
     }
 
     @Override

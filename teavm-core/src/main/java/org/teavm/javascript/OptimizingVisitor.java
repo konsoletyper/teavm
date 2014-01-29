@@ -26,15 +26,11 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     public Expr resultExpr;
     public Statement resultStmt;
     private ReadWriteStatsBuilder stats;
-    private Map<IdentifiedStatement, IdentifiedStatement> copies = new HashMap<>();
-    private Map<IdentifiedStatement, Integer> referencedStatements = new HashMap<>();
-    private ConditionalOptimizer conditionalOptimizer = new ConditionalOptimizer();
+    Map<IdentifiedStatement, Integer> referencedStatements = new HashMap<>();
     private List<Statement> resultSequence;
 
     public OptimizingVisitor(ReadWriteStatsBuilder stats) {
         this.stats = stats;
-        conditionalOptimizer.referencedStatements = referencedStatements;
-        conditionalOptimizer.stats = stats;
     }
 
     private static boolean isZero(Expr expr) {
@@ -83,14 +79,17 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                     break;
             }
         }
-        resultExpr = Expr.binary(expr.getOperation(), a, b);
+        expr.setFirstOperand(a);
+        expr.setSecondOperand(b);
+        resultExpr = expr;
     }
 
     @Override
     public void visit(UnaryExpr expr) {
         expr.getOperand().acceptVisitor(this);
         Expr operand = resultExpr;
-        resultExpr = Expr.unary(expr.getOperation(), operand);
+        expr.setOperand(operand);
+        resultExpr = expr;
     }
 
     @Override
@@ -101,22 +100,21 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         Expr consequent = resultExpr;
         expr.getAlternative().acceptVisitor(this);
         Expr alternative = resultExpr;
-        ConditionalExpr result = new ConditionalExpr();
-        result.setCondition(cond);
-        result.setConsequent(consequent);
-        result.setAlternative(alternative);
-        resultExpr = result;
+        expr.setCondition(cond);
+        expr.setConsequent(consequent);
+        expr.setAlternative(alternative);
+        resultExpr = expr;
     }
 
     @Override
     public void visit(ConstantExpr expr) {
-        resultExpr = Expr.constant(expr.getValue());
+        resultExpr = expr;
     }
 
     @Override
     public void visit(VariableExpr expr) {
         int index = expr.getIndex();
-        resultExpr = Expr.var(index);
+        resultExpr = expr;
         if (stats.reads[index] != 1 || stats.writes[index] != 1) {
             return;
         }
@@ -144,16 +142,17 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         Expr index = resultExpr;
         expr.getArray().acceptVisitor(this);
         Expr array = resultExpr;
-        resultExpr = Expr.subscript(array, index);
+        expr.setArray(array);
+        expr.setIndex(index);
+        resultExpr = expr;
     }
 
     @Override
     public void visit(UnwrapArrayExpr expr) {
         expr.getArray().acceptVisitor(this);
         Expr arrayExpr = resultExpr;
-        UnwrapArrayExpr result = new UnwrapArrayExpr(expr.getElementType());
-        result.setArray(arrayExpr);
-        resultExpr = result;
+        expr.setArray(arrayExpr);
+        resultExpr = expr;
     }
 
     @Override
@@ -163,20 +162,10 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
             expr.getArguments().get(i).acceptVisitor(this);
             args[i] = resultExpr;
         }
-        switch (expr.getType()) {
-            case STATIC:
-                resultExpr = Expr.invokeStatic(expr.getMethod(), args);
-                break;
-            case DYNAMIC:
-                resultExpr = Expr.invoke(expr.getMethod(), args[0], Arrays.copyOfRange(args, 1, args.length));
-                break;
-            case SPECIAL:
-                resultExpr = Expr.invokeSpecial(expr.getMethod(), args[0], Arrays.copyOfRange(args, 1, args.length));
-                break;
-            case CONSTRUCTOR:
-                resultExpr = Expr.constructObject(expr.getMethod(), args);
-                break;
+        for (int i = 0; i < args.length; ++i) {
+            expr.getArguments().set(i, args[i]);
         }
+        resultExpr = expr;
     }
 
     private boolean tryApplyConstructor(InvocationExpr expr) {
@@ -220,42 +209,43 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     public void visit(QualificationExpr expr) {
         expr.getQualified().acceptVisitor(this);
         Expr qualified = resultExpr;
-        resultExpr = Expr.qualify(qualified, expr.getField());
+        expr.setQualified(qualified);
+        resultExpr = expr;
     }
 
     @Override
     public void visit(NewExpr expr) {
-        resultExpr = Expr.createObject(expr.getConstructedClass());
+        resultExpr = expr;
     }
 
     @Override
     public void visit(NewArrayExpr expr) {
         expr.getLength().acceptVisitor(this);
         Expr length = resultExpr;
-        resultExpr = Expr.createArray(expr.getType(), length);
+        expr.setLength(length);
+        resultExpr = expr;
     }
 
     @Override
     public void visit(NewMultiArrayExpr expr) {
-        NewMultiArrayExpr result = new NewMultiArrayExpr();
-        result.setType(expr.getType());
-        for (Expr dimension : expr.getDimensions()) {
+        for (int i = 0; i < expr.getDimensions().size(); ++i) {
+            Expr dimension = expr.getDimensions().get(i);
             dimension.acceptVisitor(this);
-            result.getDimensions().add(resultExpr);
+            expr.getDimensions().set(i, resultExpr);
         }
-        resultExpr = result;
+        resultExpr = expr;
     }
 
     @Override
     public void visit(InstanceOfExpr expr) {
         expr.getExpr().acceptVisitor(this);
-        Expr value = resultExpr;
-        resultExpr = Expr.instanceOf(value, expr.getType());
+        expr.setExpr(resultExpr);
+        resultExpr = expr;
     }
 
     @Override
     public void visit(StaticClassExpr expr) {
-        resultExpr = Expr.staticClass(expr.getType());
+        resultExpr = expr;
     }
 
     @Override
@@ -266,7 +256,8 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                     tryApplyConstructor((InvocationExpr)resultExpr)) {
                 resultStmt = new SequentialStatement();
             } else {
-                resultStmt = Statement.assign(null, resultExpr);
+                statement.setRightValue(resultExpr);
+                resultStmt = statement;
             }
         } else {
             statement.getRightValue().acceptVisitor(this);
@@ -276,7 +267,9 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                 statement.getLeftValue().acceptVisitor(this);
                 left = resultExpr;
             }
-            resultStmt = Statement.assign(left, right);
+            statement.setLeftValue(left);
+            statement.setRightValue(right);
+            resultStmt = statement;
         }
     }
 
@@ -286,14 +279,21 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         if (strict) {
             resultSequence = result;
         }
-        for (Statement part : statements) {
+        outer: for (int i = 0; i < statements.size(); ++i) {
+            Statement part = statements.get(i);
             part.acceptVisitor(this);
-            if (resultStmt != null) {
+            List<Statement> newStatements = new ArrayList<>();
+            if (resultStmt instanceof SequentialStatement) {
+                newStatements.addAll(((SequentialStatement)resultStmt).getSequence());
+            } else {
+                newStatements.add(resultStmt);
+            }
+            for (int j = 0; j < newStatements.size(); ++j) {
+                Statement newStatement = newStatements.get(j);
                 resultSequence = result;
-                if (resultStmt instanceof SequentialStatement) {
-                    result.addAll(((SequentialStatement)resultStmt).getSequence());
-                } else {
-                    result.add(resultStmt);
+                result.add(newStatement);
+                if (newStatement instanceof BreakStatement) {
+                    break outer;
                 }
             }
         }
@@ -301,118 +301,168 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         return result;
     }
 
+    private void eliminateRedundantBreaks(List<Statement> statements, Set<IdentifiedStatement> currentExits,
+            Set<IdentifiedStatement> exits) {
+        if (statements.isEmpty()) {
+            return;
+        }
+        Statement last = statements.get(statements.size() - 1);
+        if (last instanceof BreakStatement) {
+            IdentifiedStatement target = ((BreakStatement)last).getTarget();
+            if (exits.contains(target)) {
+                statements.remove(statements.size() - 1);
+            }
+        }
+        if (statements.isEmpty()) {
+            return;
+        }
+        Set<IdentifiedStatement> nestedExits = new HashSet<>();
+        nestedExits.addAll(currentExits);
+        for (int i = 0; i < statements.size(); ++i) {
+            if (i == statements.size() - 1) {
+                nestedExits.addAll(exits);
+            }
+            Statement stmt = statements.get(i);
+            if (stmt instanceof ConditionalStatement) {
+                ConditionalStatement cond = (ConditionalStatement)stmt;
+                last = cond.getConsequent().get(cond.getConsequent().size() - 1);
+                if (last instanceof BreakStatement) {
+                    BreakStatement breakStmt = (BreakStatement)last;
+                    if (currentExits.contains(breakStmt.getTarget()) || exits.contains(breakStmt.getTarget())) {
+                        int refs = referencedStatements.get(breakStmt.getTarget());
+                        referencedStatements.put(breakStmt.getTarget(), refs - 1);
+                        cond.getConsequent().remove(cond.getConsequent().size() - 1);
+                        List<Statement> remaining = statements.subList(i + 1, statements.size());
+                        cond.getAlternative().addAll(remaining);
+                        remaining.clear();
+                        visit(cond);
+                        if (resultStmt == cond) {
+                            eliminateRedundantBreaks(cond.getConsequent(),
+                                    Collections.<IdentifiedStatement>emptySet(), nestedExits);
+                            eliminateRedundantBreaks(cond.getAlternative(),
+                                    Collections.<IdentifiedStatement>emptySet(), nestedExits);
+                        } else {
+                            statements.set(i, resultStmt);
+                        }
+                        break;
+                    }
+                }
+                last = cond.getAlternative().isEmpty() ? null :
+                        cond.getAlternative().get(cond.getAlternative().size() - 1);
+                if (last instanceof BreakStatement) {
+                    BreakStatement breakStmt = (BreakStatement)last;
+                    if (currentExits.contains(breakStmt.getTarget()) || exits.contains(breakStmt.getTarget())) {
+                        int refs = referencedStatements.get(breakStmt.getTarget());
+                        referencedStatements.put(breakStmt.getTarget(), refs - 1);
+                        cond.getAlternative().remove(cond.getConsequent().size() - 1);
+                        List<Statement> remaining = statements.subList(i + 1, statements.size());
+                        cond.getConsequent().addAll(remaining);
+                        remaining.clear();
+                        visit(cond);
+                        if (resultStmt == cond) {
+                            eliminateRedundantBreaks(cond.getConsequent(),
+                                    Collections.<IdentifiedStatement>emptySet(), nestedExits);
+                            eliminateRedundantBreaks(cond.getAlternative(),
+                                    Collections.<IdentifiedStatement>emptySet(), nestedExits);
+                        }
+                        statements.set(i, resultStmt);
+                        break;
+                    }
+                }
+            } else if (stmt instanceof BlockStatement) {
+                BlockStatement nestedBlock = (BlockStatement)stmt;
+                eliminateRedundantBreaks(nestedBlock.getBody(),
+                        Collections.<IdentifiedStatement>singleton(nestedBlock), nestedExits);
+            } else if (stmt instanceof WhileStatement) {
+                WhileStatement whileStmt = (WhileStatement)stmt;
+                eliminateRedundantBreaks(whileStmt.getBody(), Collections.<IdentifiedStatement>emptySet(),
+                        Collections.<IdentifiedStatement>emptySet());
+            } else if (stmt instanceof SwitchStatement) {
+                SwitchStatement switchStmt = (SwitchStatement)stmt;
+                for (SwitchClause clause : switchStmt.getClauses()) {
+                    eliminateRedundantBreaks(clause.getBody(), Collections.<IdentifiedStatement>emptySet(),
+                            Collections.<IdentifiedStatement>emptySet());
+                }
+                eliminateRedundantBreaks(switchStmt.getDefaultClause(), null,
+                        Collections.<IdentifiedStatement>emptySet());
+            }
+        }
+    }
+
     @Override
     public void visit(SequentialStatement statement) {
         List<Statement> statements = processSequence(statement.getSequence(), false);
-        if (statements.isEmpty()) {
-            resultStmt = null;
-            return;
-        }
         if (statements.size() == 1) {
             resultStmt = statements.get(0);
         } else {
-            SequentialStatement result = new SequentialStatement();
-            result.getSequence().addAll(statements);
-            resultStmt = result;
+            statement.getSequence().clear();
+            statement.getSequence().addAll(statements);
+            resultStmt = statement;
         }
     }
 
     @Override
     public void visit(ConditionalStatement statement) {
         statement.getCondition().acceptVisitor(this);
-        Expr predicate = resultExpr;
-        List<Statement> sequenceBackup = resultSequence;
-        resultSequence = new ArrayList<>();
-        statement.getConsequent().acceptVisitor(this);
-        Statement consequent = resultStmt;
-        Statement alternative = null;
-        if (statement.getAlternative() != null) {
-            statement.getAlternative().acceptVisitor(this);
-            alternative = resultStmt;
+        statement.setCondition(resultExpr);
+        List<Statement> consequent = processSequence(statement.getConsequent(), true);
+        List<Statement> alternative = processSequence(statement.getAlternative(), true);
+        if (consequent.isEmpty()) {
+            consequent.addAll(alternative);
+            alternative.clear();
+            statement.setCondition(ExprOptimizer.invert(statement.getCondition()));
         }
-        if (consequent == null) {
-            if (alternative != null) {
-                Statement tmp = alternative;
-                alternative = consequent;
-                consequent = tmp;
-                predicate = ExprOptimizer.invert(predicate);
-            } else {
-                consequent = Statement.empty();
-            }
+        if (consequent.isEmpty()) {
+            resultStmt = Statement.empty();
+            return;
         }
-        resultStmt = conditionalOptimizer.tryMakeInline(
-                (ConditionalStatement)Statement.cond(predicate, consequent, alternative));
-        resultSequence = sequenceBackup;
-    }
-
-    private void visitIdentified(IdentifiedStatement stmt, IdentifiedStatement copy) {
-        copies.put(stmt, copy);
+        statement.getConsequent().clear();
+        statement.getConsequent().addAll(consequent);
+        statement.getAlternative().clear();
+        statement.getAlternative().addAll(alternative);
+        resultStmt = statement;
     }
 
     @Override
     public void visit(SwitchStatement statement) {
-        SwitchStatement result = new SwitchStatement();
-        result.setId(statement.getId());
-        visitIdentified(statement, result);
         statement.getValue().acceptVisitor(this);
-        result.setValue(resultExpr);
+        statement.setValue(resultExpr);
         for (SwitchClause clause : statement.getClauses()) {
-            clause.getStatement().acceptVisitor(this);
-            SwitchClause resultClause = new SwitchClause();
-            resultClause.setConditions(clause.getConditions());
-            resultClause.setStatement(resultStmt != null ? resultStmt : Statement.empty());
-            result.getClauses().add(resultClause);
+            List<Statement> newBody = processSequence(clause.getBody(), true);
+            clause.getBody().clear();
+            clause.getBody().addAll(newBody);
         }
-        if (statement.getDefaultClause() != null) {
-            statement.getDefaultClause().acceptVisitor(this);
-        } else {
-            resultStmt = null;
-        }
-        result.setDefaultClause(resultStmt != null ? resultStmt : Statement.empty());
-        resultStmt = result;
+        List<Statement> newDefault = processSequence(statement.getDefaultClause(), true);
+        statement.getDefaultClause().clear();
+        statement.getDefaultClause().addAll(newDefault);
+        resultStmt = statement;
     }
 
     @Override
     public void visit(WhileStatement statement) {
-        WhileStatement result = new WhileStatement();
-        result.setId(statement.getId());
-        visitIdentified(statement, result);
         List<Statement> statements = processSequence(statement.getBody(), true);
+        statement.getBody().clear();
+        statement.getBody().addAll(statements);
         if (statement.getCondition() != null) {
             statement.getCondition().acceptVisitor(this);
-            result.setCondition(resultExpr);
-        } else {
-            result.setCondition(null);
+            statement.setCondition(resultExpr);
         }
-        result.getBody().addAll(statements);
-        conditionalOptimizer.tryOptimize(result);
-        resultStmt = result;
+        resultStmt = statement;
     }
 
     @Override
     public void visit(BlockStatement statement) {
-        BlockStatement result = new BlockStatement();
-        result.setId(statement.getId());
-        visitIdentified(statement, result);
         List<Statement> statements = processSequence(statement.getBody(), false);
-        result.getBody().addAll(statements);
-        if (referencedStatements.containsKey(result)) {
-            resultStmt = conditionalOptimizer.tryOptimize(result);
+        eliminateRedundantBreaks(statements, Collections.<IdentifiedStatement>singleton(statement),
+                Collections.<IdentifiedStatement>emptySet());
+        if (referencedStatements.get(statement).equals(0)) {
+            SequentialStatement result = new SequentialStatement();
+            result.getSequence().addAll(statements);
+            resultStmt = result;
         } else {
-            SequentialStatement altResult = new SequentialStatement();
-            altResult.getSequence().addAll(result.getBody());
-            resultStmt = altResult;
-        }
-        if (resultStmt instanceof BlockStatement) {
-            resultStmt = conditionalOptimizer.tryOptimizeElse((BlockStatement)resultStmt);
-        }
-        if (resultStmt instanceof BlockStatement) {
-            resultStmt = conditionalOptimizer.tryOptimizeSwitch((BlockStatement)resultStmt);
-        }
-        if (resultStmt instanceof ConditionalStatement) {
-            ConditionalStatement conditional = (ConditionalStatement)resultStmt;
-            conditional.getCondition().acceptVisitor(this);
-            conditional.setCondition(resultExpr);
+            statement.getBody().clear();
+            statement.getBody().addAll(statements);
+            resultStmt = statement;
         }
     }
 
@@ -422,48 +472,28 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(BreakStatement statement) {
-        BreakStatement result = new BreakStatement();
-        if (statement.getTarget() != null) {
-            IdentifiedStatement targetCopy = copies.get(statement.getTarget());
-            result.setTarget(targetCopy);
-            Integer refCount = referencedStatements.get(targetCopy);
-            if (refCount == null) {
-                refCount = 0;
-            }
-            referencedStatements.put(targetCopy, refCount + 1);
-        }
-        resultStmt = result;
+        resultStmt = statement;
     }
 
     @Override
     public void visit(ContinueStatement statement) {
-        ContinueStatement result = new ContinueStatement();
-        if (statement.getTarget() != null) {
-            IdentifiedStatement targetCopy = copies.get(statement.getTarget());
-            result.setTarget(targetCopy);
-            Integer refCount = referencedStatements.get(targetCopy);
-            if (refCount == null) {
-                refCount = 0;
-            }
-            referencedStatements.put(targetCopy, refCount + 1);
-        }
-        resultStmt = result;
+        resultStmt = statement;
     }
 
     @Override
     public void visit(ReturnStatement statement) {
-        if (statement.getResult() == null) {
-            resultStmt = Statement.exitFunction(null);
-        } else {
+        if (statement.getResult() != null) {
             statement.getResult().acceptVisitor(this);
-            resultStmt = Statement.exitFunction(resultExpr);
+            statement.setResult(resultExpr);
         }
+        resultStmt = statement;
     }
 
     @Override
     public void visit(ThrowStatement statement) {
         statement.getException().acceptVisitor(this);
-        resultStmt = Statement.raiseException(resultExpr);
+        statement.setException(resultExpr);
+        resultStmt = statement;
     }
 
     @Override

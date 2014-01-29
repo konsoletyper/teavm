@@ -15,6 +15,9 @@
  */
 package org.teavm.javascript.ast;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  *
  * @author Alexey Andreev
@@ -52,16 +55,16 @@ public abstract class Statement {
         return stmt;
     }
 
-    public static Statement cond(Expr predicate, Statement consequent, Statement alternative) {
+    public static Statement cond(Expr predicate, List<Statement> consequent, List<Statement> alternative) {
         ConditionalStatement statement = new ConditionalStatement();
         statement.setCondition(predicate);
-        statement.setConsequent(consequent);
-        statement.setAlternative(alternative);
+        statement.getConsequent().addAll(consequent);
+        statement.getAlternative().addAll(alternative);
         return statement;
     }
 
-    public static Statement cond(Expr predicate, Statement consequent) {
-        return cond(predicate, consequent, null);
+    public static Statement cond(Expr predicate, List<Statement> consequent) {
+        return cond(predicate, consequent, Collections.<Statement>emptyList());
     }
 
     public static Statement initClass(String className) {

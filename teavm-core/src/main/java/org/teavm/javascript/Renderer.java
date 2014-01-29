@@ -388,10 +388,14 @@ public class Renderer implements ExprVisitor, StatementVisitor {
             writer.append("if").ws().append("(");
             statement.getCondition().acceptVisitor(this);
             writer.append(")").ws().append("{").softNewLine().indent();
-            statement.getConsequent().acceptVisitor(this);
-            if (statement.getAlternative() != null) {
+            for (Statement part : statement.getConsequent()) {
+                part.acceptVisitor(this);
+            }
+            if (!statement.getAlternative().isEmpty()) {
                 writer.outdent().append("}").ws().append("else").ws().append("{").indent().softNewLine();
-                statement.getAlternative().acceptVisitor(this);
+                for (Statement part : statement.getAlternative()) {
+                    part.acceptVisitor(this);
+                }
             }
             writer.outdent().append("}").softNewLine();
         } catch (IOException e) {
@@ -413,12 +417,16 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                     writer.append("case ").append(condition).append(":").softNewLine();
                 }
                 writer.indent();
-                clause.getStatement().acceptVisitor(this);
+                for (Statement part : clause.getBody()) {
+                    part.acceptVisitor(this);
+                }
                 writer.outdent();
             }
             if (statement.getDefaultClause() != null) {
                 writer.append("default:").softNewLine().indent();
-                statement.getDefaultClause().acceptVisitor(this);
+                for (Statement part : statement.getDefaultClause()) {
+                    part.acceptVisitor(this);
+                }
                 writer.outdent();
             }
             writer.outdent().append("}").softNewLine();

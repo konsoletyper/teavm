@@ -25,18 +25,14 @@ import java.util.List;
 public class SwitchStatement extends IdentifiedStatement {
     private Expr value;
     private List<SwitchClause> clauses = new ArrayList<>();
-    private Statement defaultClause;
+    private List<Statement> defaultClause = new ArrayList<>();
 
     public List<SwitchClause> getClauses() {
         return clauses;
     }
 
-    public Statement getDefaultClause() {
+    public List<Statement> getDefaultClause() {
         return defaultClause;
-    }
-
-    public void setDefaultClause(Statement defaultClause) {
-        this.defaultClause = defaultClause;
     }
 
     public Expr getValue() {
