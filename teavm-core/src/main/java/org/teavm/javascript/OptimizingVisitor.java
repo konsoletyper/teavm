@@ -447,12 +447,38 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(WhileStatement statement) {
+        if (statement.getBody().size() == 1 && statement.getBody().get(0) instanceof WhileStatement) {
+            WhileStatement innerLoop = (WhileStatement)statement.getBody().get(0);
+            BreakToContinueReplacer replacer = new BreakToContinueReplacer(innerLoop, statement);
+            replacer.visitSequence(innerLoop.getBody());
+            statement.getBody().clear();
+            statement.getBody().addAll(innerLoop.getBody());
+        }
         List<Statement> statements = processSequence(statement.getBody(), true);
         statement.getBody().clear();
         statement.getBody().addAll(statements);
         if (statement.getCondition() != null) {
             statement.getCondition().acceptVisitor(this);
             statement.setCondition(resultExpr);
+        }
+        while (true) {
+            if (!statement.getBody().isEmpty() && statement.getBody().get(0) instanceof ConditionalStatement) {
+                ConditionalStatement cond = (ConditionalStatement)statement.getBody().get(0);
+                if (cond.getConsequent().size() == 1 && cond.getConsequent().get(0) instanceof BreakStatement) {
+                    BreakStatement breakStmt = (BreakStatement)cond.getConsequent().get(0);
+                    if (breakStmt.getTarget() == statement) {
+                        statement.getBody().remove(0);
+                        if (statement.getCondition() != null) {
+                            statement.setCondition(Expr.binary(BinaryOperation.AND, statement.getCondition(),
+                                    ExprOptimizer.invert(cond.getCondition())));
+                        } else {
+                            statement.setCondition(ExprOptimizer.invert(cond.getCondition()));
+                        }
+                        continue;
+                    }
+                }
+            }
+            break;
         }
         resultStmt = statement;
     }
