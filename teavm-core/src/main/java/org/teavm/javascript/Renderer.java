@@ -393,13 +393,14 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                     part.acceptVisitor(this);
                 }
                 if (!statement.getAlternative().isEmpty()) {
-                    writer.outdent().append("}").ws().append("else").ws();
+                    writer.outdent().append("}").ws();
                     if (statement.getAlternative().size() == 1 &&
                             statement.getAlternative().get(0) instanceof ConditionalStatement) {
                         statement = (ConditionalStatement)statement.getAlternative().get(0);
+                        writer.append("else ");
                         continue;
                     }
-                    writer.append("{").indent().softNewLine();
+                    writer.append("else").ws().append("{").indent().softNewLine();
                     for (Statement part : statement.getAlternative()) {
                         part.acceptVisitor(this);
                     }
