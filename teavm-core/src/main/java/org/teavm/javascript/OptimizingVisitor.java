@@ -301,91 +301,98 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         return result;
     }
 
-    private void eliminateRedundantBreaks(List<Statement> statements, Set<IdentifiedStatement> currentExits,
-            Set<IdentifiedStatement> exits) {
+    private void eliminateRedundantBreaks(List<Statement> statements, IdentifiedStatement exit) {
         if (statements.isEmpty()) {
             return;
         }
         Statement last = statements.get(statements.size() - 1);
-        if (last instanceof BreakStatement) {
+        if (last instanceof BreakStatement && exit != null) {
             IdentifiedStatement target = ((BreakStatement)last).getTarget();
-            if (exits.contains(target)) {
+            if (exit == target) {
                 statements.remove(statements.size() - 1);
             }
         }
         if (statements.isEmpty()) {
             return;
         }
-        Set<IdentifiedStatement> nestedExits = new HashSet<>();
-        nestedExits.addAll(currentExits);
         for (int i = 0; i < statements.size(); ++i) {
-            if (i == statements.size() - 1) {
-                nestedExits.addAll(exits);
-            }
             Statement stmt = statements.get(i);
             if (stmt instanceof ConditionalStatement) {
                 ConditionalStatement cond = (ConditionalStatement)stmt;
-                last = cond.getConsequent().get(cond.getConsequent().size() - 1);
-                if (last instanceof BreakStatement) {
-                    BreakStatement breakStmt = (BreakStatement)last;
-                    if (currentExits.contains(breakStmt.getTarget()) || exits.contains(breakStmt.getTarget())) {
-                        int refs = referencedStatements.get(breakStmt.getTarget());
-                        referencedStatements.put(breakStmt.getTarget(), refs - 1);
-                        cond.getConsequent().remove(cond.getConsequent().size() - 1);
-                        List<Statement> remaining = statements.subList(i + 1, statements.size());
-                        cond.getAlternative().addAll(remaining);
-                        remaining.clear();
-                        visit(cond);
-                        if (resultStmt == cond) {
-                            eliminateRedundantBreaks(cond.getConsequent(),
-                                    Collections.<IdentifiedStatement>emptySet(), nestedExits);
-                            eliminateRedundantBreaks(cond.getAlternative(),
-                                    Collections.<IdentifiedStatement>emptySet(), nestedExits);
-                        } else {
-                            statements.set(i, resultStmt);
+                check_conditional: {
+                    last = cond.getConsequent().isEmpty() ? null :
+                            cond.getConsequent().get(cond.getConsequent().size() - 1);
+                    if (last instanceof BreakStatement) {
+                        BreakStatement breakStmt = (BreakStatement)last;
+                        if (exit != null && exit == breakStmt.getTarget()) {
+                            int refs = referencedStatements.get(breakStmt.getTarget());
+                            referencedStatements.put(breakStmt.getTarget(), refs - 1);
+                            cond.getConsequent().remove(cond.getConsequent().size() - 1);
+                            List<Statement> remaining = statements.subList(i + 1, statements.size());
+                            cond.getAlternative().addAll(remaining);
+                            remaining.clear();
+                            break check_conditional;
                         }
-                        break;
+                    }
+                    last = cond.getAlternative().isEmpty() ? null :
+                            cond.getAlternative().get(cond.getAlternative().size() - 1);
+                    if (last instanceof BreakStatement) {
+                        BreakStatement breakStmt = (BreakStatement)last;
+                        if (exit != null && exit == breakStmt.getTarget()) {
+                            int refs = referencedStatements.get(breakStmt.getTarget());
+                            referencedStatements.put(breakStmt.getTarget(), refs - 1);
+                            cond.getAlternative().remove(cond.getConsequent().size() - 1);
+                            List<Statement> remaining = statements.subList(i + 1, statements.size());
+                            cond.getConsequent().addAll(remaining);
+                            remaining.clear();
+                            break check_conditional;
+                        }
                     }
                 }
-                last = cond.getAlternative().isEmpty() ? null :
-                        cond.getAlternative().get(cond.getAlternative().size() - 1);
-                if (last instanceof BreakStatement) {
-                    BreakStatement breakStmt = (BreakStatement)last;
-                    if (currentExits.contains(breakStmt.getTarget()) || exits.contains(breakStmt.getTarget())) {
-                        int refs = referencedStatements.get(breakStmt.getTarget());
-                        referencedStatements.put(breakStmt.getTarget(), refs - 1);
-                        cond.getAlternative().remove(cond.getConsequent().size() - 1);
-                        List<Statement> remaining = statements.subList(i + 1, statements.size());
-                        cond.getConsequent().addAll(remaining);
-                        remaining.clear();
-                        visit(cond);
-                        if (resultStmt == cond) {
-                            eliminateRedundantBreaks(cond.getConsequent(),
-                                    Collections.<IdentifiedStatement>emptySet(), nestedExits);
-                            eliminateRedundantBreaks(cond.getAlternative(),
-                                    Collections.<IdentifiedStatement>emptySet(), nestedExits);
+                if (i == statements.size() - 1) {
+                    eliminateRedundantBreaks(cond.getConsequent(), exit);
+                    eliminateRedundantBreaks(cond.getAlternative(), exit);
+                }
+                normalizeConditional(cond);
+                if (cond.getConsequent().size() == 1 && cond.getConsequent().get(0) instanceof ConditionalStatement) {
+                    ConditionalStatement innerCond = (ConditionalStatement)cond.getConsequent().get(0);
+                    if (innerCond.getAlternative().isEmpty()) {
+                        if (cond.getAlternative().isEmpty()) {
+                            cond.getConsequent().clear();
+                            cond.getConsequent().addAll(innerCond.getConsequent());
+                            cond.setCondition(Expr.binary(BinaryOperation.AND, cond.getCondition(),
+                                    innerCond.getCondition()));
+                        } else {
+                            cond.setCondition(ExprOptimizer.invert(cond.getCondition()));
+                            cond.getConsequent().clear();
+                            cond.getConsequent().addAll(cond.getAlternative());
+                            cond.getAlternative().clear();
+                            cond.getAlternative().add(innerCond);
                         }
-                        statements.set(i, resultStmt);
-                        break;
+                        --i;
                     }
                 }
             } else if (stmt instanceof BlockStatement) {
                 BlockStatement nestedBlock = (BlockStatement)stmt;
-                eliminateRedundantBreaks(nestedBlock.getBody(),
-                        Collections.<IdentifiedStatement>singleton(nestedBlock), nestedExits);
+                eliminateRedundantBreaks(nestedBlock.getBody(), nestedBlock);
             } else if (stmt instanceof WhileStatement) {
                 WhileStatement whileStmt = (WhileStatement)stmt;
-                eliminateRedundantBreaks(whileStmt.getBody(), Collections.<IdentifiedStatement>emptySet(),
-                        Collections.<IdentifiedStatement>emptySet());
+                eliminateRedundantBreaks(whileStmt.getBody(), null);
             } else if (stmt instanceof SwitchStatement) {
                 SwitchStatement switchStmt = (SwitchStatement)stmt;
                 for (SwitchClause clause : switchStmt.getClauses()) {
-                    eliminateRedundantBreaks(clause.getBody(), Collections.<IdentifiedStatement>emptySet(),
-                            Collections.<IdentifiedStatement>emptySet());
+                    eliminateRedundantBreaks(clause.getBody(), null);
                 }
-                eliminateRedundantBreaks(switchStmt.getDefaultClause(), null,
-                        Collections.<IdentifiedStatement>emptySet());
+                eliminateRedundantBreaks(switchStmt.getDefaultClause(), null);
             }
+        }
+    }
+
+    private void normalizeConditional(ConditionalStatement stmt) {
+        if (stmt.getConsequent().isEmpty()) {
+            stmt.getConsequent().addAll(stmt.getAlternative());
+            stmt.getAlternative().clear();
+            stmt.setCondition(ExprOptimizer.invert(stmt.getCondition()));
         }
     }
 
@@ -453,8 +460,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     @Override
     public void visit(BlockStatement statement) {
         List<Statement> statements = processSequence(statement.getBody(), false);
-        eliminateRedundantBreaks(statements, Collections.<IdentifiedStatement>singleton(statement),
-                Collections.<IdentifiedStatement>emptySet());
+        eliminateRedundantBreaks(statements, statement);
         if (referencedStatements.get(statement).equals(0)) {
             SequentialStatement result = new SequentialStatement();
             result.getSequence().addAll(statements);

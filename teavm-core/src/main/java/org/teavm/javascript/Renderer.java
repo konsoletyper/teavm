@@ -385,17 +385,26 @@ public class Renderer implements ExprVisitor, StatementVisitor {
     @Override
     public void visit(ConditionalStatement statement) {
         try {
-            writer.append("if").ws().append("(");
-            statement.getCondition().acceptVisitor(this);
-            writer.append(")").ws().append("{").softNewLine().indent();
-            for (Statement part : statement.getConsequent()) {
-                part.acceptVisitor(this);
-            }
-            if (!statement.getAlternative().isEmpty()) {
-                writer.outdent().append("}").ws().append("else").ws().append("{").indent().softNewLine();
-                for (Statement part : statement.getAlternative()) {
+            while (true) {
+                writer.append("if").ws().append("(");
+                statement.getCondition().acceptVisitor(this);
+                writer.append(")").ws().append("{").softNewLine().indent();
+                for (Statement part : statement.getConsequent()) {
                     part.acceptVisitor(this);
                 }
+                if (!statement.getAlternative().isEmpty()) {
+                    writer.outdent().append("}").ws().append("else").ws();
+                    if (statement.getAlternative().size() == 1 &&
+                            statement.getAlternative().get(0) instanceof ConditionalStatement) {
+                        statement = (ConditionalStatement)statement.getAlternative().get(0);
+                        continue;
+                    }
+                    writer.append("{").indent().softNewLine();
+                    for (Statement part : statement.getAlternative()) {
+                        part.acceptVisitor(this);
+                    }
+                }
+                break;
             }
             writer.outdent().append("}").softNewLine();
         } catch (IOException e) {
