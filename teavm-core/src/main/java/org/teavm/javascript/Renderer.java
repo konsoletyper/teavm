@@ -122,7 +122,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
 
     public void render(ClassNode cls) throws RenderingException {
         try {
-            writer.appendClass(cls.getName()).ws().append("=").ws().append("function()").ws().append("{")
+            writer.append("function ").appendClass(cls.getName()).append("()").ws().append("{")
                     .indent().softNewLine();
             for (FieldNode field : cls.getFields()) {
                 if (field.getModifiers().contains(NodeModifier.STATIC)) {
@@ -135,7 +135,6 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                 writer.append("this.").appendField(new FieldReference(cls.getName(), field.getName())).ws()
                         .append("=").ws().append(constantToString(value)).append(";").softNewLine();
             }
-            writer.append("this.$class").ws().append("=").ws().appendClass(cls.getName()).append(";").softNewLine();
             writer.outdent().append("}").newLine();
 
             for (FieldNode field : cls.getFields()) {
@@ -154,6 +153,8 @@ public class Renderer implements ExprVisitor, StatementVisitor {
             writer.appendClass(cls.getName()).append(".prototype").ws().append("=").ws().append("new ")
                     .append(cls.getParentName() != null ? naming.getNameFor(cls.getParentName()) :
                     "Object").append("();").softNewLine();
+            writer.appendClass(cls.getName()).append(".prototype.constructor").ws().append("=").ws()
+                    .appendClass(cls.getName()).append(';').softNewLine();
             writer.appendClass(cls.getName()).append(".$meta").ws().append("=").ws().append("{").ws();
             writer.append("name").ws().append(":").ws().append("\"").append(cls.getName()).append("\",").ws();
             writer.append("primitive").ws().append(":").ws().append("false,").ws();

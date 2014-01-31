@@ -73,7 +73,7 @@ public class ObjectNativeGenerator implements Generator, DependencyPlugin {
 
     private void generateGetClass(GeneratorContext context, SourceWriter writer) throws IOException {
         String thisArg = context.getParameterName(0);
-        writer.append("return $rt_cls(").append(thisArg).append(".$class);").softNewLine();
+        writer.append("return $rt_cls(").append(thisArg).append(".constructor);").softNewLine();
     }
 
     private void achieveGetClass(DependencyChecker checker, MethodReference method) {
@@ -89,7 +89,7 @@ public class ObjectNativeGenerator implements Generator, DependencyPlugin {
     }
 
     private void generateClone(GeneratorContext context, SourceWriter writer) throws IOException {
-        writer.append("var copy = new ").append(context.getParameterName(0)).append(".$class();").softNewLine();
+        writer.append("var copy = new ").append(context.getParameterName(0)).append(".constructor();").softNewLine();
         writer.append("for (var field in obj) {").softNewLine().indent();
         writer.append("if (!obj.hasOwnProperty(field)) {").softNewLine().indent();
         writer.append("continue;").softNewLine().outdent().append("}").softNewLine();

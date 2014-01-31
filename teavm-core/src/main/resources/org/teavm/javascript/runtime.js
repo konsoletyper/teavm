@@ -21,7 +21,7 @@ $rt_compare = function(a, b) {
     return a > b ? 1 : a < b ? -1 : 0;
 }
 $rt_isInstance = function(obj, cls) {
-    return $rt_isAssignable(obj.$class, cls);
+    return $rt_isAssignable(obj.constructor, cls);
 }
 $rt_isAssignable = function(from, to) {
     if (from === to) {
@@ -100,9 +100,9 @@ $rt_arraycls = function(cls) {
     if (cls.$array == undefined) {
         var arraycls = function(data) {
             this.data = data;
-            this.$class = arraycls;
         };
         arraycls.prototype = new ($rt_objcls())();
+        arraycls.prototype.constructor = arraycls;
         arraycls.$meta = { item : cls, supertypes : [$rt_objcls()], primitive : false };
         cls.$array = arraycls;
     }

@@ -208,8 +208,8 @@ JUnitClient.run = function() {
             message.status = "ok";
         } catch (e) {
             message.status = "exception";
-            if (e.$javaException && e.$javaException.$class && e.$javaException.$class.$meta) {
-                message.exception = e.$javaException.$class.$meta.name;
+            if (e.$javaException && e.$javaException.constructor.$meta) {
+                message.exception = e.$javaException.constructor.$meta.name;
             }
             message.stack = e.stack;
         }

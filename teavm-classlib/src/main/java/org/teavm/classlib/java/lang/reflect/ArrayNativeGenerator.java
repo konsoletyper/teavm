@@ -50,7 +50,7 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
 
     private void generateGetLength(GeneratorContext context, SourceWriter writer) throws IOException {
         String array = context.getParameterName(1);
-        writer.append("if (" + array + " === null || " + array + " .$class.$meta.item === undefined) {")
+        writer.append("if (" + array + " === null || " + array + ".constructor.$meta.item === undefined) {")
                 .softNewLine().indent();
         String clsName = "java.lang.IllegalArgumentException";
         MethodReference cons = new MethodReference(clsName, new MethodDescriptor("<init>", ValueType.VOID));
