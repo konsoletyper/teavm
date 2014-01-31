@@ -28,10 +28,6 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     private ReadWriteStatsBuilder stats;
     Map<IdentifiedStatement, Integer> referencedStatements = new HashMap<>();
     private List<Statement> resultSequence;
-    private int[] variableDecl;
-    private List<Boolean> invocations;
-    private int lastMethodCall;
-    private boolean hasMethodCall;
 
     public OptimizingVisitor(ReadWriteStatsBuilder stats) {
         this.stats = stats;
@@ -122,27 +118,22 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         if (stats.reads[index] != 1 || stats.writes[index] != 1) {
             return;
         }
-        int declIndex = variableDecl[index];
-        if (declIndex < 0 || declIndex >= lastMethodCall) {
+        if (resultSequence.isEmpty()) {
             return;
         }
-        if (invocations.get(declIndex)) {
-            for (int i = lastMethodCall - 1; i > declIndex; --i) {
-                if (invocations.get(i)) {
-                    return;
-                }
-            }
+        Statement last = resultSequence.get(resultSequence.size() - 1);
+        if (!(last instanceof AssignmentStatement)) {
+            return;
         }
-        for (int i = declIndex; i < lastMethodCall; ++i) {
-            if (invocations.get(i)) {
-                lastMethodCall = i;
-                break;
-            }
+        AssignmentStatement assignment = (AssignmentStatement)last;
+        if (!(assignment.getLeftValue() instanceof VariableExpr)) {
+            return;
         }
-        AssignmentStatement decl = (AssignmentStatement)resultSequence.get(declIndex);
-        resultSequence.set(declIndex, null);
-        variableDecl[index] = -1;
-        resultExpr = decl.getRightValue();
+        VariableExpr var = (VariableExpr)assignment.getLeftValue();
+        if (var.getIndex() == index) {
+            resultSequence.remove(resultSequence.size() - 1);
+            assignment.getRightValue().acceptVisitor(this);
+        }
     }
 
     @Override
@@ -166,7 +157,6 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(InvocationExpr expr) {
-        hasMethodCall = true;
         Expr[] args = new Expr[expr.getArguments().size()];
         for (int i = expr.getArguments().size() - 1; i >= 0; --i) {
             expr.getArguments().get(i).acceptVisitor(this);
@@ -276,9 +266,6 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
             if (!(statement.getLeftValue() instanceof VariableExpr)) {
                 statement.getLeftValue().acceptVisitor(this);
                 left = resultExpr;
-            } else {
-                VariableExpr var = (VariableExpr)statement.getLeftValue();
-                variableDecl[var.getIndex()] = resultSequence.size();
             }
             statement.setLeftValue(left);
             statement.setRightValue(right);
@@ -287,14 +274,8 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     }
 
     private List<Statement> processSequence(List<Statement> statements) {
-        boolean hasMethodCallBackup = hasMethodCall;
         List<Statement> backup = resultSequence;
-        int[] variableDeclBackup = variableDecl;
-        List<Boolean> invocationsBackup = invocations;
-        invocations = new ArrayList<>();
         resultSequence = new ArrayList<>();
-        variableDecl = new int[stats.reads.length];
-        Arrays.fill(variableDecl, -1);
         processSequenceImpl(statements);
         List<Statement> result = new ArrayList<>();
         for (Statement part : resultSequence) {
@@ -303,9 +284,6 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
             }
         }
         resultSequence = backup;
-        variableDecl = variableDeclBackup;
-        invocations = invocationsBackup;
-        hasMethodCall = hasMethodCallBackup;
         return result;
     }
 
@@ -318,10 +296,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                 }
                 continue;
             }
-            hasMethodCall = false;
-            lastMethodCall = resultSequence.size();
             part.acceptVisitor(this);
-            invocations.add(hasMethodCall);
             part = resultStmt;
             if (part instanceof SequentialStatement) {
                 if (!processSequenceImpl(((SequentialStatement)part).getSequence())) {
@@ -464,7 +439,6 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         statement.getAlternative().clear();
         statement.getAlternative().addAll(alternative);
         resultStmt = statement;
-        hasMethodCall = true;
     }
 
     @Override
@@ -480,7 +454,6 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         statement.getDefaultClause().clear();
         statement.getDefaultClause().addAll(newDefault);
         resultStmt = statement;
-        hasMethodCall = true;
     }
 
     @Override
@@ -519,7 +492,6 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
             break;
         }
         resultStmt = statement;
-        hasMethodCall = true;
     }
 
     @Override
@@ -544,13 +516,11 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     @Override
     public void visit(BreakStatement statement) {
         resultStmt = statement;
-        hasMethodCall = true;
     }
 
     @Override
     public void visit(ContinueStatement statement) {
         resultStmt = statement;
-        hasMethodCall = true;
     }
 
     @Override
@@ -560,7 +530,6 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
             statement.setResult(resultExpr);
         }
         resultStmt = statement;
-        hasMethodCall = true;
     }
 
     @Override
@@ -568,7 +537,6 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         statement.getException().acceptVisitor(this);
         statement.setException(resultExpr);
         resultStmt = statement;
-        hasMethodCall = true;
     }
 
     @Override
