@@ -150,11 +150,13 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                         .append(constantToString(value)).append(";").softNewLine();
             }
 
-            writer.appendClass(cls.getName()).append(".prototype").ws().append("=").ws().append("new ")
-                    .append(cls.getParentName() != null ? naming.getNameFor(cls.getParentName()) :
-                    "Object").append("();").softNewLine();
-            writer.appendClass(cls.getName()).append(".prototype.constructor").ws().append("=").ws()
-                    .appendClass(cls.getName()).append(';').softNewLine();
+            if (!cls.getModifiers().contains(NodeModifier.INTERFACE)) {
+                writer.appendClass(cls.getName()).append(".prototype").ws().append("=").ws().append("new ")
+                        .append(cls.getParentName() != null ? naming.getNameFor(cls.getParentName()) :
+                        "Object").append("();").softNewLine();
+                writer.appendClass(cls.getName()).append(".prototype.constructor").ws().append("=").ws()
+                        .appendClass(cls.getName()).append(';').softNewLine();
+            }
             writer.appendClass(cls.getName()).append(".$meta").ws().append("=").ws().append("{").ws();
             writer.append("name").ws().append(":").ws().append("\"").append(cls.getName()).append("\",").ws();
             writer.append("primitive").ws().append(":").ws().append("false,").ws();
@@ -173,37 +175,39 @@ public class Renderer implements ExprVisitor, StatementVisitor {
             }
             writer.append("]");
             writer.ws().append("};").softNewLine();
-            writer.appendClass(cls.getName()).append("_$clinit").ws().append("=").ws().append("function()").ws()
-                    .append("{").softNewLine().indent();
-            writer.appendClass(cls.getName()).append("_$clinit").ws().append("=").ws()
-                    .append("function(){};").newLine();
-            List<String> stubNames = new ArrayList<>();
-            for (MethodNode method : cls.getMethods()) {
-                renderBody(method);
-                stubNames.add(naming.getFullNameFor(method.getReference()));
-            }
-            MethodHolder methodHolder = classSource.getClassHolder(cls.getName()).getMethod(
-                    new MethodDescriptor("<clinit>", ValueType.VOID));
-            if (methodHolder != null) {
-                writer.appendMethodBody(new MethodReference(cls.getName(), methodHolder.getDescriptor()))
-                        .append("();").softNewLine();
-            }
-            writer.outdent().append("}").newLine();
-            for (MethodNode method : cls.getMethods()) {
-                if (!method.getModifiers().contains(NodeModifier.STATIC)) {
-                    renderDeclaration(method);
+            if (!cls.getModifiers().contains(NodeModifier.INTERFACE)) {
+                writer.appendClass(cls.getName()).append("_$clinit").ws().append("=").ws().append("function()").ws()
+                        .append("{").softNewLine().indent();
+                writer.appendClass(cls.getName()).append("_$clinit").ws().append("=").ws()
+                        .append("function(){};").newLine();
+                List<String> stubNames = new ArrayList<>();
+                for (MethodNode method : cls.getMethods()) {
+                    renderBody(method);
+                    stubNames.add(naming.getFullNameFor(method.getReference()));
                 }
-            }
-            if (stubNames.size() > 0) {
-                writer.append("$rt_methodStubs(").appendClass(cls.getName()).append("_$clinit")
-                        .append(",").ws().append("[");
-                for (int i = 0; i < stubNames.size(); ++i) {
-                    if (i > 0) {
-                        writer.append(",").ws();
+                MethodHolder methodHolder = classSource.getClassHolder(cls.getName()).getMethod(
+                        new MethodDescriptor("<clinit>", ValueType.VOID));
+                if (methodHolder != null) {
+                    writer.appendMethodBody(new MethodReference(cls.getName(), methodHolder.getDescriptor()))
+                            .append("();").softNewLine();
+                }
+                writer.outdent().append("}").newLine();
+                for (MethodNode method : cls.getMethods()) {
+                    if (!method.getModifiers().contains(NodeModifier.STATIC)) {
+                        renderDeclaration(method);
                     }
-                    writer.append("'").append(stubNames.get(i)).append("'");
                 }
-                writer.append("]);").newLine();
+                if (stubNames.size() > 0) {
+                    writer.append("$rt_methodStubs(").appendClass(cls.getName()).append("_$clinit")
+                            .append(",").ws().append("[");
+                    for (int i = 0; i < stubNames.size(); ++i) {
+                        if (i > 0) {
+                            writer.append(",").ws();
+                        }
+                        writer.append("'").append(stubNames.get(i)).append("'");
+                    }
+                    writer.append("]);").newLine();
+                }
             }
         } catch (NamingException e) {
             throw new RenderingException("Error rendering class " + cls.getName() + ". See a cause for details", e);
@@ -489,7 +493,11 @@ public class Renderer implements ExprVisitor, StatementVisitor {
     @Override
     public void visit(BreakStatement statement) {
         try {
-            writer.append("break ").append(statement.getTarget().getId()).append(";").softNewLine();
+            writer.append("break");
+            if (statement.getTarget() != null) {
+                writer.append(' ').append(statement.getTarget().getId());
+            }
+            writer.append(";").softNewLine();
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
         }
@@ -498,7 +506,11 @@ public class Renderer implements ExprVisitor, StatementVisitor {
     @Override
     public void visit(ContinueStatement statement) {
         try {
-            writer.append("continue ").append(statement.getTarget().getId()).append(";").softNewLine();
+            writer.append("continue");
+            if (statement.getTarget() != null) {
+                writer.append(' ').append(statement.getTarget().getId());
+            }
+            writer.append(";").softNewLine();
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
         }

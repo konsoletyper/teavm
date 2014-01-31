@@ -16,7 +16,9 @@
 package org.teavm.javascript.ast;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  *
@@ -25,6 +27,7 @@ import java.util.List;
 public class ClassNode {
     private String name;
     private String parentName;
+    private Set<NodeModifier> modifiers = EnumSet.noneOf(NodeModifier.class);
     private List<FieldNode> fields = new ArrayList<>();
     private List<MethodNode> methods = new ArrayList<>();
     private List<String> interfaces = new ArrayList<>();
@@ -52,5 +55,9 @@ public class ClassNode {
 
     public List<String> getInterfaces() {
         return interfaces;
+    }
+
+    public Set<NodeModifier> getModifiers() {
+        return modifiers;
     }
 }

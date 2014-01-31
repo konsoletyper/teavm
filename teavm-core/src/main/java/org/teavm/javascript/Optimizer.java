@@ -37,6 +37,8 @@ public class Optimizer {
         UnusedVariableEliminator unusedEliminator = new UnusedVariableEliminator(paramCount, method.getVariables());
         method.getBody().acceptVisitor(unusedEliminator);
         method.getVariables().subList(unusedEliminator.lastIndex, method.getVariables().size()).clear();
+        RedundantLabelEliminator labelEliminator = new RedundantLabelEliminator();
+        method.getBody().acceptVisitor(labelEliminator);
         for (int i = 0; i < method.getVariables().size(); ++i) {
             method.getVariables().set(i, i);
         }

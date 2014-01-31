@@ -120,6 +120,7 @@ public class Decompiler {
             clsNode.getMethods().add(decompile(method));
         }
         clsNode.getInterfaces().addAll(cls.getInterfaces());
+        clsNode.getModifiers().addAll(mapModifiers(cls.getModifiers()));
         return clsNode;
     }
 
@@ -213,6 +214,7 @@ public class Decompiler {
         }
         Optimizer optimizer = new Optimizer();
         optimizer.optimize(methodNode, method.getProgram());
+        methodNode.getModifiers().addAll(mapModifiers(method.getModifiers()));
         return methodNode;
     }
 
@@ -220,6 +222,8 @@ public class Decompiler {
         Set<NodeModifier> result = EnumSet.noneOf(NodeModifier.class);
         if (modifiers.contains(ElementModifier.STATIC)) {
             result.add(NodeModifier.STATIC);
+        } else if (modifiers.contains(ElementModifier.INTERFACE)) {
+            result.add(NodeModifier.INTERFACE);
         }
         return result;
     }
