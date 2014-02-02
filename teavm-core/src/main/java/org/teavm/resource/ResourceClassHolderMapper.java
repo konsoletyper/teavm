@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.model.resource;
+package org.teavm.resource;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,19 +25,23 @@ import org.teavm.parsing.Parser;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author konsoletyper
  */
-public class ResourceParser implements Mapper<String, ClassHolder> {
+public class ResourceClassHolderMapper implements Mapper<String, ClassHolder> {
     private ResourceReader resourceReader;
 
-    public ResourceParser(ResourceReader resourceReader) {
+    public ResourceClassHolderMapper(ResourceReader resourceReader) {
         this.resourceReader = resourceReader;
     }
 
     @Override
     public ClassHolder map(String name) {
         ClassNode clsNode = new ClassNode();
-        try (InputStream input = resourceReader.openResource(name.replace('.', '/') + ".class")) {
+        String resourceName = name.replace('.', '/') + ".class";
+        if (!resourceReader.hasResource(resourceName)) {
+            return null;
+        }
+        try (InputStream input = resourceReader.openResource(resourceName)) {
             ClassReader reader = new ClassReader(input);
             reader.accept(clsNode, 0);
         } catch (IOException e) {

@@ -19,8 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.teavm.common.Mapper;
-import org.teavm.model.resource.MapperClassHolderSource;
 import org.teavm.model.util.ProgramUtils;
+import org.teavm.resource.MapperClassHolderSource;
 
 /**
  *

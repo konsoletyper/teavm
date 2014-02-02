@@ -13,26 +13,33 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.model.resource;
+package org.teavm.resource;
 
-import org.teavm.common.ConcurrentCachedMapper;
-import org.teavm.common.Mapper;
-import org.teavm.model.ClassHolder;
-import org.teavm.model.ClassHolderSource;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class MapperClassHolderSource implements ClassHolderSource {
-    private Mapper<String, ClassHolder> mapper;
+public class ClasspathResourceReader implements ResourceReader {
+    private ClassLoader classLoader;
 
-    public MapperClassHolderSource(Mapper<String, ClassHolder> mapper) {
-        this.mapper = new ConcurrentCachedMapper<>(mapper);
+    public ClasspathResourceReader(ClassLoader classLoader) {
+        this.classLoader = classLoader;
+    }
+
+    public ClasspathResourceReader() {
+        this(ClasspathResourceReader.class.getClassLoader());
     }
 
     @Override
-    public ClassHolder getClassHolder(String name) {
-        return mapper.map(name);
+    public boolean hasResource(String name) {
+        return classLoader.getResource(name) != null;
+    }
+
+    @Override
+    public InputStream openResource(String name) throws IOException {
+        return classLoader.getResourceAsStream(name);
     }
 }

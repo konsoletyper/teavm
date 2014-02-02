@@ -13,8 +13,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.model.resource;
+package org.teavm.resource;
 
+import org.teavm.common.ConcurrentCachedMapper;
+import org.teavm.common.Mapper;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderSource;
 
@@ -22,22 +24,15 @@ import org.teavm.model.ClassHolderSource;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class ClasspathClassHolderSource implements ClassHolderSource {
-    private MapperClassHolderSource innerClassSource;
+public class MapperClassHolderSource implements ClassHolderSource {
+    private Mapper<String, ClassHolder> mapper;
 
-    public ClasspathClassHolderSource(ClassLoader classLoader) {
-        ClasspathResourceReader reader = new ClasspathResourceReader(classLoader);
-        ResourceClassHolderMapper rawMapper = new ResourceClassHolderMapper(reader);
-        ClasspathResourceMapper classPathMapper = new ClasspathResourceMapper(classLoader, rawMapper);
-        innerClassSource = new MapperClassHolderSource(classPathMapper);
-    }
-
-    public ClasspathClassHolderSource() {
-        this(ClasspathClassHolderSource.class.getClassLoader());
+    public MapperClassHolderSource(Mapper<String, ClassHolder> mapper) {
+        this.mapper = new ConcurrentCachedMapper<>(mapper);
     }
 
     @Override
     public ClassHolder getClassHolder(String name) {
-        return innerClassSource.getClassHolder(name);
+        return mapper.map(name);
     }
 }

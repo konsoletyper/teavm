@@ -36,7 +36,7 @@ import org.teavm.javascript.JavascriptBuilderFactory;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
-import org.teavm.model.resource.ClasspathClassHolderSource;
+import org.teavm.parsing.ClasspathClassHolderSource;
 
 /**
  *

@@ -40,7 +40,7 @@ import org.teavm.common.ThreadPoolFiniteExecutor;
 import org.teavm.javascript.JavascriptBuilder;
 import org.teavm.javascript.JavascriptBuilderFactory;
 import org.teavm.model.*;
-import org.teavm.model.resource.ClasspathClassHolderSource;
+import org.teavm.parsing.ClasspathClassHolderSource;
 
 /**
  *

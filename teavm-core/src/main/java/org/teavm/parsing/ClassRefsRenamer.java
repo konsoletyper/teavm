@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.model.resource;
+package org.teavm.parsing;
 
 import java.util.Map;
 import org.teavm.common.Mapper;
