@@ -24,7 +24,7 @@ import org.teavm.model.MethodReference;
  *
  * @author Alexey Andreev
  */
-public class JSRootNativeGenerator implements Generator {
+public class JSNativeGenerator implements Generator {
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef)
             throws IOException {
@@ -42,17 +42,53 @@ public class JSRootNativeGenerator implements Generator {
                     writer.append("return ").append(context.getParameterName(1)).append(";").softNewLine();
                 }
                 break;
+            case "get":
+                writer.append("return ").append(context.getParameterName(1)).append("[")
+                        .append(context.getParameterName(2)).append("];").softNewLine();
+                break;
+            case "set":
+                writer.append(context.getParameterName(1)).append("[").append(context.getParameterName(2))
+                        .append("] = ").append(context.getParameterName(3)).softNewLine();
+                break;
+            case "invoke":
+                generateInvoke(context, writer, methodRef.parameterCount() - 2);
+                break;
+            case "isUndefined":
+                writer.append("return ").append(context.getParameterName(1)).append(" === undefined;");
+                break;
+            default:
+                if (methodRef.getName().startsWith("unwrap")) {
+                    if (methodRef.getDescriptor().getResultType().isObject("java.lang.String")) {
+                        writer.append("return $rt_str(").append(context.getParameterName(1)).append(");")
+                                .softNewLine();
+                    } else {
+                        writer.append("return ").append(context.getParameterName(1)).append(";").softNewLine();
+                    }
+                }
+                break;
         }
     }
 
     private void generateWrapString(GeneratorContext context, SourceWriter writer) throws IOException {
         FieldReference charsField = new FieldReference("java.lang.String", "characters");
         writer.append("var result = \"\";").softNewLine();
-        writer.append("var data = ").append(context.getParameterName(1))
+        writer.append("var data = ").append(context.getParameterName(1)).append('.')
                 .appendField(charsField).append(".data;").softNewLine();
         writer.append("for (var i = 0; i < data.length; i = (i + 1) | 0) {").indent().softNewLine();
         writer.append("result += String.fromCharCode(data[i]);").softNewLine();
         writer.outdent().append("}").softNewLine();
         writer.append("return result;").softNewLine();
+    }
+
+    private void generateInvoke(GeneratorContext context, SourceWriter writer, int argNum) throws IOException {
+        writer.append("return ").append(context.getParameterName(1)).append("[")
+                .append(context.getParameterName(2)).append("](");
+        for (int i = 0; i < argNum; ++i) {
+            if (i > 0) {
+                writer.append(",").ws();
+            }
+            writer.append(context.getParameterName(i + 3));
+        }
+        writer.append(");").softNewLine();
     }
 }

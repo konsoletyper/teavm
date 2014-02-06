@@ -19,12 +19,13 @@ package org.teavm.javascript.ni;
  *
  * @author Alexey Andreev
  */
-public interface JSArray<T extends JSObject> extends JSObject, Iterable<T> {
+public interface JSArray<T extends JSObject> extends JSObject {
     @JSProperty
     int getLength();
 
-    @Override
+    @JSIndexer
     T get(int index);
 
-    <S extends T> JSArray<S> cast();
+    @JSIndexer
+    void set(int index, T value);
 }

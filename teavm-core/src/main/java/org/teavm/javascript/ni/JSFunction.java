@@ -24,7 +24,7 @@ public interface JSFunction extends JSObject {
     int getLength();
 
     @JSProperty
-    JSString getName();
+    String getName();
 
     JSObject call(JSObject thisArg);
 

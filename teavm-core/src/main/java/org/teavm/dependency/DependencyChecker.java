@@ -17,11 +17,9 @@ package org.teavm.dependency;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.concurrent.*;
-import org.teavm.common.ConcurrentCachedMapper;
-import org.teavm.common.FiniteExecutor;
-import org.teavm.common.Mapper;
-import org.teavm.common.SimpleFiniteExecutor;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import org.teavm.common.*;
 import org.teavm.common.ConcurrentCachedMapper.KeyListener;
 import org.teavm.model.*;
 

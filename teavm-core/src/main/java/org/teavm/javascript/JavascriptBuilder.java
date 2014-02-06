@@ -44,9 +44,9 @@ public class JavascriptBuilder {
     private Map<String, String> exportedClasses = new HashMap<>();
 
     JavascriptBuilder(ClassHolderSource classSource, ClassLoader classLoader, FiniteExecutor executor) {
-        this.classSource = classSource;
+        this.classSource = new JavascriptProcessedClassSource(classSource);
         this.classLoader = classLoader;
-        dependencyChecker = new DependencyChecker(classSource, classLoader, executor);
+        dependencyChecker = new DependencyChecker(this.classSource, classLoader, executor);
         this.executor = executor;
     }
 

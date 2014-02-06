@@ -15,22 +15,48 @@
  */
 package org.teavm.samples;
 
+import org.teavm.dom.core.Document;
+import org.teavm.dom.core.Element;
+import org.teavm.dom.core.Window;
+import org.teavm.javascript.ni.JS;
+
+
 /**
  *
  * @author Alexey Andreev
  */
 public class HelloWorld {
+    private static Window window;
+    private static Document document;
+    private static Element body;
+
     public static void main(String[] args) {
-        System.out.println("Hello, world!");
-        System.out.println("Here is the Fibonacci sequence:");
+        window = (Window)JS.getGlobal();
+        document = window.getDocument();
+        body = document.getDocumentElement().getElementsByTagName("body").item(0);
+
+        println("Hello, world!");
+        println("Here is the Fibonacci sequence:");
         long a = 0;
         long b = 1;
         for (int i = 0; i < 70; ++i) {
-            System.out.println(a);
+            println(a);
             long c = a + b;
             a = b;
             b = c;
         }
-        System.out.println("And so on...");
+        println("And so on...");
+    }
+
+    private static void println(Object obj) {
+        Element elem = document.createElement("div");
+        elem.appendChild(document.createTextNode(String.valueOf(obj)));
+        body.appendChild(elem);
+    }
+
+    private static void println(long val) {
+        Element elem = document.createElement("div");
+        elem.appendChild(document.createTextNode(String.valueOf(val)));
+        body.appendChild(elem);
     }
 }

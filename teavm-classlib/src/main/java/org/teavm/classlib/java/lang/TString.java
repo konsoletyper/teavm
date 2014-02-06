@@ -422,7 +422,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public static TString valueOf(TObject obj) {
-        return obj != null ? obj.toString0() : TString.wrap("null");
+        return obj != null ? TString.wrap(obj.toString()) : TString.wrap("null");
     }
 
     public static TString valueOf(char[] data) {
@@ -450,19 +450,19 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public static TString valueOf(int i) {
-        return new TStringBuilder().append(i).toString0();
+        return TString.wrap(new TStringBuilder().append(i).toString());
     }
 
     public static TString valueOf(long l) {
-        return new TStringBuilder().append(l).toString0();
+        return TString.wrap(new TStringBuilder().append(l).toString());
     }
 
     public static TString valueOf(float f) {
-        return new TStringBuilder().append(f).toString0();
+        return TString.wrap(new TStringBuilder().append(f).toString());
     }
 
     public static TString valueOf(double d) {
-        return new TStringBuilder().append(d).toString0();
+        return TString.wrap(new TStringBuilder().append(d).toString());
     }
 
     @Override
