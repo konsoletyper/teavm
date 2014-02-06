@@ -16,13 +16,20 @@
 package org.teavm.javascript;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.teavm.codegen.NamingException;
 import org.teavm.codegen.NamingStrategy;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.javascript.ast.*;
 import org.teavm.javascript.ni.GeneratorContext;
+import org.teavm.javascript.ni.InjectedBy;
+import org.teavm.javascript.ni.Injector;
+import org.teavm.javascript.ni.InjectorContext;
 import org.teavm.model.*;
 
 /**
@@ -34,12 +41,23 @@ public class Renderer implements ExprVisitor, StatementVisitor {
     private NamingStrategy naming;
     private SourceWriter writer;
     private ClassHolderSource classSource;
+    private ClassLoader classLoader;
     private boolean minifying;
+    private Map<MethodReference, InjectorHolder> injectorMap = new HashMap<>();
 
-    public Renderer(SourceWriter writer, ClassHolderSource classSource) {
+    private static class InjectorHolder {
+        public final Injector injector;
+
+        public InjectorHolder(Injector injector) {
+            this.injector = injector;
+        }
+    }
+
+    public Renderer(SourceWriter writer, ClassHolderSource classSource, ClassLoader classLoader) {
         this.naming = writer.getNaming();
         this.writer = writer;
         this.classSource = classSource;
+        this.classLoader = classLoader;
     }
 
     public SourceWriter getWriter() {
@@ -193,6 +211,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                 }
                 writer.outdent().append("}").newLine();
                 for (MethodNode method : cls.getMethods()) {
+                    cls.getMethods();
                     if (!method.getModifiers().contains(NodeModifier.STATIC)) {
                         renderDeclaration(method);
                     }
@@ -947,6 +966,11 @@ public class Renderer implements ExprVisitor, StatementVisitor {
     @Override
     public void visit(InvocationExpr expr) {
         try {
+            Injector injector = getInjector(expr.getMethod());
+            if (injector != null) {
+                injector.generate(new InjectorContextImpl(expr.getArguments()), expr.getMethod());
+                return;
+            }
             String className = naming.getNameFor(expr.getMethod().getClassName());
             String name = naming.getNameFor(expr.getMethod());
             String fullName = naming.getFullNameFor(expr.getMethod());
@@ -1122,6 +1146,79 @@ public class Renderer implements ExprVisitor, StatementVisitor {
             writer.append(typeToClsString(naming, expr.getType()));
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
+        }
+    }
+
+    private Injector getInjector(MethodReference ref) {
+        InjectorHolder holder = injectorMap.get(ref);
+        if (holder == null) {
+            MethodHolder method = classSource.getClassHolder(ref.getClassName()).getMethod(ref.getDescriptor());
+            AnnotationHolder injectedByAnnot = method.getAnnotations().get(InjectedBy.class.getName());
+            if (injectedByAnnot != null) {
+                ValueType type = injectedByAnnot.getValues().get("value").getJavaClass();
+                holder = new InjectorHolder(instantiateInjector(((ValueType.Object)type).getClassName()));
+            } else {
+                holder = new InjectorHolder(null);
+            }
+            injectorMap.put(ref, holder);
+        }
+        return holder.injector;
+    }
+
+    private Injector instantiateInjector(String type) {
+        try {
+            Class<? extends Injector> cls = Class.forName(type, true, classLoader).asSubclass(Injector.class);
+            Constructor<? extends Injector> cons = cls.getConstructor();
+            return cons.newInstance();
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("Illegal injector: " + type, e);
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException("Default constructor was not found in the " + type + " injector", e);
+        } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
+            throw new RuntimeException("Error instantiating injector " + type, e);
+        }
+    }
+
+    private class InjectorContextImpl implements InjectorContext {
+        private List<Expr> arguments;
+
+        public InjectorContextImpl(List<Expr> arguments) {
+            this.arguments = arguments;
+        }
+
+        @Override
+        public Expr getArgument(int index) {
+            return arguments.get(index);
+        }
+
+        @Override
+        public boolean isMinifying() {
+            return minifying;
+        }
+
+        @Override
+        public SourceWriter getWriter() {
+            return writer;
+        }
+
+        @Override
+        public void writeEscaped(String str) throws IOException {
+            writer.append(escapeString(str));
+        }
+
+        @Override
+        public void writeType(ValueType type) throws IOException {
+            writer.append(typeToClsString(naming, type));
+        }
+
+        @Override
+        public void writeExpr(Expr expr) throws IOException {
+            expr.acceptVisitor(Renderer.this);
+        }
+
+        @Override
+        public int argumentCount() {
+            return arguments.size();
         }
     }
 }

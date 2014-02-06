@@ -17,6 +17,9 @@ package org.teavm.javascript.ni;
 
 import java.io.IOException;
 import org.teavm.codegen.SourceWriter;
+import org.teavm.javascript.ast.ConstantExpr;
+import org.teavm.javascript.ast.Expr;
+import org.teavm.javascript.ast.InvocationExpr;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 
@@ -24,47 +27,62 @@ import org.teavm.model.MethodReference;
  *
  * @author Alexey Andreev
  */
-public class JSNativeGenerator implements Generator {
+public class JSNativeGenerator implements Generator, Injector {
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef)
             throws IOException {
+        if (methodRef.getName().equals("wrap")) {
+            generateWrapString(context, writer);
+        } else if (methodRef.getName().equals("unwrapString")) {
+            writer.append("return $rt_str(").append(context.getParameterName(1)).append(");")
+                    .softNewLine();
+        }
+    }
+
+    @Override
+    public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
+        SourceWriter writer = context.getWriter();
         switch (methodRef.getName()) {
-            case "getTypeName":
-                writer.append("return typeof ").append(context.getParameterName(1)).append(";").softNewLine();
-                break;
             case "getGlobal":
-                writer.append("return window;").softNewLine();
-                break;
-            case "wrap":
-                if (methodRef.getParameterTypes()[0].isObject("java.lang.String")) {
-                    generateWrapString(context, writer);
-                } else {
-                    writer.append("return ").append(context.getParameterName(1)).append(";").softNewLine();
-                }
-                break;
-            case "get":
-                writer.append("return ").append(context.getParameterName(1)).append("[")
-                        .append(context.getParameterName(2)).append("];").softNewLine();
-                break;
-            case "set":
-                writer.append(context.getParameterName(1)).append("[").append(context.getParameterName(2))
-                        .append("] = ").append(context.getParameterName(3)).softNewLine();
-                break;
-            case "invoke":
-                generateInvoke(context, writer, methodRef.parameterCount() - 2);
+                writer.append("window");
                 break;
             case "isUndefined":
-                writer.append("return ").append(context.getParameterName(1)).append(" === undefined;");
+                writer.append("(");
+                context.writeExpr(context.getArgument(0));
+                writer.ws().append("===").ws().append("undefined)");
                 break;
-            default:
-                if (methodRef.getName().startsWith("unwrap")) {
-                    if (methodRef.getDescriptor().getResultType().isObject("java.lang.String")) {
-                        writer.append("return $rt_str(").append(context.getParameterName(1)).append(");")
-                                .softNewLine();
-                    } else {
-                        writer.append("return ").append(context.getParameterName(1)).append(";").softNewLine();
+            case "getTypeName":
+                writer.append("(typeof ");
+                context.writeExpr(context.getArgument(0));
+                writer.append(")");
+                break;
+            case "get":
+                context.writeExpr(context.getArgument(0));
+                renderProperty(context.getArgument(1), context);
+                break;
+            case "set":
+                writer.append('(');
+                context.writeExpr(context.getArgument(0));
+                renderProperty(context.getArgument(1), context);
+                writer.ws().append('=').ws();
+                context.writeExpr(context.getArgument(2));
+                writer.append(')');
+                break;
+            case "invoke":
+                context.writeExpr(context.getArgument(0));
+                renderProperty(context.getArgument(1), context);
+                writer.append('(');
+                for (int i = 2; i < context.argumentCount(); ++i) {
+                    if (i > 2) {
+                        writer.append(',').ws();
                     }
+                    context.writeExpr(context.getArgument(i));
                 }
+                writer.append(')');
+                break;
+            case "wrap":
+            case "unwrap":
+                context.writeExpr(context.getArgument(0));
                 break;
         }
     }
@@ -80,15 +98,51 @@ public class JSNativeGenerator implements Generator {
         writer.append("return result;").softNewLine();
     }
 
-    private void generateInvoke(GeneratorContext context, SourceWriter writer, int argNum) throws IOException {
-        writer.append("return ").append(context.getParameterName(1)).append("[")
-                .append(context.getParameterName(2)).append("](");
-        for (int i = 0; i < argNum; ++i) {
-            if (i > 0) {
-                writer.append(",").ws();
-            }
-            writer.append(context.getParameterName(i + 3));
+    private void renderProperty(Expr property, InjectorContext context) throws IOException {
+        SourceWriter writer = context.getWriter();
+        String name = extractPropertyName(property);
+        if (name == null) {
+            writer.append('[');
+            context.writeExpr(property);
+            writer.append(']');
+        } else if (!isIdentifier(name)) {
+            writer.append("[\"");
+            context.writeEscaped(name);
+            writer.append("\"]");
+        } else {
+            writer.append(".").append(name);
         }
-        writer.append(");").softNewLine();
+    }
+
+    private String extractPropertyName(Expr propertyName) {
+        if (!(propertyName instanceof InvocationExpr)) {
+            return null;
+        }
+        InvocationExpr invoke = (InvocationExpr)propertyName;
+        if (!invoke.getMethod().getClassName().equals(JS.class.getName())) {
+            return null;
+        }
+        if (!invoke.getMethod().getName().equals("wrap") ||
+                !invoke.getMethod().getDescriptor().parameterType(0).isObject("java.lang.String")) {
+            return null;
+        }
+        Expr arg = invoke.getArguments().get(0);
+        if (!(arg instanceof ConstantExpr)) {
+            return null;
+        }
+        ConstantExpr constant = (ConstantExpr)arg;
+        return constant.getValue() instanceof String ? (String)constant.getValue() : null;
+    }
+
+    private boolean isIdentifier(String name) {
+        if (name.isEmpty() || !Character.isJavaIdentifierStart(name.charAt(0))) {
+            return false;
+        }
+        for (int i = 1; i < name.length(); ++i) {
+            if (!Character.isJavaIdentifierPart(name.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 }

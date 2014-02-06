@@ -96,7 +96,6 @@ public class JavascriptBuilder {
         SourceWriterBuilder builder = new SourceWriterBuilder(naming);
         builder.setMinified(minifying);
         SourceWriter sourceWriter = builder.build(writer);
-        Renderer renderer = new Renderer(sourceWriter, classSource);
         dependencyChecker.attachMethodGraph(new MethodReference("java.lang.Class", new MethodDescriptor("createNew",
                 ValueType.object("java.lang.Class"))));
         dependencyChecker.attachMethodGraph(new MethodReference("java.lang.String", new MethodDescriptor("<init>",
@@ -104,6 +103,7 @@ public class JavascriptBuilder {
         executor.complete();
         ListableClassHolderSource classSet = dependencyChecker.cutUnachievableClasses();
         Decompiler decompiler = new Decompiler(classSet, classLoader, executor);
+        Renderer renderer = new Renderer(sourceWriter, classSet, classLoader);
         ClassSetOptimizer optimizer = new ClassSetOptimizer(executor);
         optimizer.optimizeAll(classSet);
         executor.complete();

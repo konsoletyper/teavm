@@ -45,25 +45,25 @@ public final class JS {
 
     public static native <T extends JSObject> JSArray<T> createArray(int size);
 
-    @GeneratedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeGenerator.class)
     public static native JSObject getTypeName(JSObject obj);
 
-    @GeneratedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeGenerator.class)
     public static native JSObject getGlobal();
 
     @GeneratedBy(JSNativeGenerator.class)
     public static native JSObject wrap(String str);
 
-    @GeneratedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeGenerator.class)
     public static native JSObject wrap(char c);
 
-    @GeneratedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeGenerator.class)
     public static native JSObject wrap(int num);
 
-    @GeneratedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeGenerator.class)
     public static native JSObject wrap(float num);
 
-    @GeneratedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeGenerator.class)
     public static native JSObject wrap(double num);
 
     public static <T extends JSObject> JSArray<T> wrap(T[] array) {
@@ -90,7 +90,7 @@ public final class JS {
         return result;
     }
 
-    @GeneratedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeGenerator.class)
     public static native boolean unwrapBoolean(JSObject obj);
 
     public static byte unwrapByte(JSObject obj) {
@@ -101,53 +101,53 @@ public final class JS {
         return (short)unwrapInt(obj);
     }
 
-    @GeneratedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeGenerator.class)
     public static native int unwrapInt(JSObject obj);
 
-    @GeneratedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeGenerator.class)
     public static native float unwrapFloat(JSObject obj);
 
-    @GeneratedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeGenerator.class)
     public static native double unwrapDouble(JSObject obj);
 
     @GeneratedBy(JSNativeGenerator.class)
     public static native String unwrapString(JSObject obj);
 
-    @GeneratedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeGenerator.class)
     public static native char unwrapCharacter(JSObject obj);
 
-    @GeneratedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeGenerator.class)
     public static native boolean isUndefined(JSObject obj);
 
-    @GeneratedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeGenerator.class)
     public static native JSObject invoke(JSObject instance, JSObject method);
 
-    @GeneratedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeGenerator.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a);
 
-    @GeneratedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeGenerator.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b);
 
-    @GeneratedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeGenerator.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c);
 
-    @GeneratedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeGenerator.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d);
 
-    @GeneratedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeGenerator.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e);
 
-    @GeneratedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeGenerator.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e, JSObject f);
 
-    @GeneratedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeGenerator.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e, JSObject f, JSObject g);
 
-    @GeneratedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeGenerator.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e, JSObject f, JSObject g, JSObject h);
 
@@ -170,9 +170,9 @@ public final class JS {
         };
     }
 
-    @GeneratedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeGenerator.class)
     public static native JSObject get(JSObject instance, JSObject index);
 
-    @GeneratedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeGenerator.class)
     public static native void set(JSObject instance, JSObject index, JSObject obj);
 }
