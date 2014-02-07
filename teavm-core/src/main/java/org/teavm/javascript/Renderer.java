@@ -290,15 +290,8 @@ public class Renderer implements ExprVisitor, StatementVisitor {
             if (ref.getDescriptor().getName().equals("<init>")) {
                 renderInitializer(method);
             }
-            int startParam = 0;
-            if (method.getModifiers().contains(NodeModifier.STATIC)) {
-                startParam = 1;
-            }
-            writer.appendClass(ref.getClassName()).append('.');
-            if (startParam == 0) {
-                writer.append("prototype.");
-            }
-            writer.appendMethod(ref).ws().append("=").ws().append("function(");
+            writer.appendClass(ref.getClassName()).append(".prototype.").appendMethod(ref)
+                    .ws().append("=").ws().append("function(");
             for (int i = 1; i <= ref.parameterCount(); ++i) {
                 if (i > 1) {
                     writer.append(", ");
@@ -307,17 +300,17 @@ public class Renderer implements ExprVisitor, StatementVisitor {
             }
             writer.append(")").ws().append("{").softNewLine().indent();
             writer.append("return ").appendMethodBody(ref).append("(");
-            if (startParam == 0) {
-                writer.append("this");
-            }
+            writer.append("this");
             for (int i = 1; i <= ref.parameterCount(); ++i) {
-                if (i > 1 || startParam == 0) {
-                    writer.append(",").ws();
-                }
-                writer.append(variableName(i));
+                writer.append(",").ws().append(variableName(i));
             }
             writer.append(");").softNewLine();
             writer.outdent().append("}").newLine();
+            if (method.isOriginalNamePreserved()) {
+                writer.appendClass(ref.getClassName()).append(".prototype.").append(ref.getName()).ws().append("=")
+                        .ws().appendClass(ref.getClassName()).append(".prototype.").appendMethod(ref)
+                        .append(';').newLine();
+            }
         } catch (NamingException e) {
             throw new RenderingException("Error rendering method " + method.getReference() + ". " +
                     "See cause for details", e);

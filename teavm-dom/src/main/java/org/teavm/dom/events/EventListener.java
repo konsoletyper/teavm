@@ -16,12 +16,13 @@
 package org.teavm.dom.events;
 
 import org.teavm.javascript.ni.JSFunctor;
+import org.teavm.javascript.ni.JSObject;
 
 /**
  *
  * @author Alexey Andreev
  */
 @JSFunctor
-public interface EventListener {
+public interface EventListener extends JSObject {
     void handleEvent(Event evt);
 }

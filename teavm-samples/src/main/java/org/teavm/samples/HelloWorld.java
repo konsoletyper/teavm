@@ -18,6 +18,9 @@ package org.teavm.samples;
 import org.teavm.dom.core.Document;
 import org.teavm.dom.core.Element;
 import org.teavm.dom.core.Window;
+import org.teavm.dom.events.Event;
+import org.teavm.dom.events.EventListener;
+import org.teavm.dom.events.EventTarget;
 import org.teavm.javascript.ni.JS;
 
 
@@ -34,7 +37,24 @@ public class HelloWorld {
         window = (Window)JS.getGlobal();
         document = window.getDocument();
         body = document.getDocumentElement().getElementsByTagName("body").item(0);
+        createButton();
+    }
 
+    private static void createButton() {
+        Element elem = document.createElement("div");
+        body.appendChild(elem);
+        final Element button = document.createElement("button");
+        button.appendChild(document.createTextNode("Click me!"));
+        elem.appendChild(button);
+        ((EventTarget)button).addEventListener("click", new EventListener() {
+            @Override public void handleEvent(Event evt) {
+                button.getParentNode().removeChild(button);
+                printHelloWorld();
+            }
+        }, false);
+    }
+
+    private static void printHelloWorld() {
         println("Hello, world!");
         println("Here is the Fibonacci sequence:");
         long a = 0;

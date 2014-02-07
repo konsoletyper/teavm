@@ -21,6 +21,7 @@ import org.teavm.javascript.ast.*;
 import org.teavm.javascript.ni.GeneratedBy;
 import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.InjectedBy;
+import org.teavm.javascript.ni.PreserveOriginalName;
 import org.teavm.model.*;
 import org.teavm.model.util.ProgramUtils;
 
@@ -121,7 +122,11 @@ public class Decompiler {
             if (method.getAnnotations().get(InjectedBy.class.getName()) != null) {
                 continue;
             }
-            clsNode.getMethods().add(decompile(method));
+            MethodNode methodNode = decompile(method);
+            clsNode.getMethods().add(methodNode);
+            if (method.getAnnotations().get(PreserveOriginalName.class.getName()) != null) {
+                methodNode.setOriginalNamePreserved(true);
+            }
         }
         clsNode.getInterfaces().addAll(cls.getInterfaces());
         clsNode.getModifiers().addAll(mapModifiers(cls.getModifiers()));

@@ -62,6 +62,9 @@ public class SSATransformer {
     }
 
     private void applySignature() {
+        if (program.variableCount() == 0) {
+            return;
+        }
         int index = 0;
         variableMap[index] = program.variableAt(index);
         ++index;

@@ -26,13 +26,38 @@ import org.teavm.model.instructions.*;
  */
 class JavascriptNativeProcessor {
     private ClassHolderSource classSource;
-    private Map<String, Boolean> knownJavaScriptClasses = new HashMap<>();
     private Program program;
     private List<Instruction> replacement = new ArrayList<>();
+    private NativeJavascriptClassRepository nativeRepos;
 
     public JavascriptNativeProcessor(ClassHolderSource classSource) {
         this.classSource = classSource;
-        knownJavaScriptClasses.put(JSObject.class.getName(), true);
+        nativeRepos = new NativeJavascriptClassRepository(classSource);
+    }
+
+    public void processClass(ClassHolder cls) {
+        Set<MethodDescriptor> preservedMethods = new HashSet<>();
+        for (String iface : cls.getInterfaces()) {
+            if (nativeRepos.isJavaScriptClass(iface)) {
+                addPreservedMethods(iface, preservedMethods);
+            }
+        }
+        for (MethodHolder method : cls.getMethods()) {
+            if (preservedMethods.contains(method.getDescriptor()) &&
+                    method.getAnnotations().get(PreserveOriginalName.class.getName()) == null) {
+                method.getAnnotations().add(new AnnotationHolder(PreserveOriginalName.class.getName()));
+            }
+        }
+    }
+
+    private void addPreservedMethods(String ifaceName, Set<MethodDescriptor> methods) {
+        ClassHolder iface = classSource.getClassHolder(ifaceName);
+        for (MethodHolder method : iface.getMethods()) {
+            methods.add(method.getDescriptor());
+        }
+        for (String superIfaceName : iface.getInterfaces()) {
+            addPreservedMethods(superIfaceName, methods);
+        }
     }
 
     public void processProgram(Program program) {
@@ -46,7 +71,7 @@ class JavascriptNativeProcessor {
                     continue;
                 }
                 InvokeInstruction invoke = (InvokeInstruction)insn;
-                if (!isJavaScriptClass(invoke.getMethod().getClassName())) {
+                if (!nativeRepos.isJavaScriptClass(invoke.getMethod().getClassName())) {
                     continue;
                 }
                 replacement.clear();
@@ -86,7 +111,7 @@ class JavascriptNativeProcessor {
                                 "a proper native JavaScript indexer declaration");
                     }
                 } else {
-                    if (!isSupportedType(method.getResultType())) {
+                    if (method.getResultType() != ValueType.VOID && !isSupportedType(method.getResultType())) {
                         throw new RuntimeException("Method " + invoke.getMethod() + " is not " +
                                 "a proper native JavaScript method declaration");
                     }
@@ -258,28 +283,6 @@ class JavascriptNativeProcessor {
         return result;
     }
 
-    private boolean isJavaScriptClass(String className) {
-        Boolean known = knownJavaScriptClasses.get(className);
-        if (known == null) {
-            known = exploreIfJavaScriptClass(className);
-            knownJavaScriptClasses.put(className, known);
-        }
-        return known;
-    }
-
-    private boolean exploreIfJavaScriptClass(String className) {
-        ClassHolder cls = classSource.getClassHolder(className);
-        if (cls == null || !cls.getModifiers().contains(ElementModifier.INTERFACE)) {
-            return false;
-        }
-        for (String iface : cls.getInterfaces()) {
-            if (isJavaScriptClass(iface)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private MethodHolder getMethod(MethodReference ref) {
         ClassHolder cls = classSource.getClassHolder(ref.getClassName());
         MethodHolder method = cls.getMethod(ref.getDescriptor());
@@ -359,7 +362,7 @@ class JavascriptNativeProcessor {
             return isSupportedType(((ValueType.Array)type).getItemType());
         } else if (type instanceof ValueType.Object) {
             String typeName = ((ValueType.Object)type).getClassName();
-            return typeName.equals("java.lang.String") || isJavaScriptClass(typeName);
+            return typeName.equals("java.lang.String") || nativeRepos.isJavaScriptClass(typeName);
         } else {
             return false;
         }

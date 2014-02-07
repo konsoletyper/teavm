@@ -39,6 +39,9 @@ public class Parser {
         ssaProducer.transformToSSA(program, method.getParameterTypes());
         method.setProgram(program);
         parseAnnotations(method.getAnnotations(), node);
+        while (program.variableCount() <= method.parameterCount()) {
+            program.createVariable();
+        }
         return method;
     }
 

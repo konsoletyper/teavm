@@ -144,7 +144,7 @@ class DependencyGraphBuilder {
             if (insn.getInstance() != null) {
                 nodes[insn.getInstance().getIndex()].connect(targetParams[0]);
             }
-            if (targetGraph.getResultNode() != null) {
+            if (targetGraph.getResultNode() != null && insn.getReceiver() != null) {
                 targetGraph.getResultNode().connect(nodes[insn.getReceiver().getIndex()]);
             }
         }

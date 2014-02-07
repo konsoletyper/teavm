@@ -24,6 +24,7 @@ import org.teavm.model.MethodHolder;
  * @author Alexey Andreev
  */
 public class JavascriptProcessedClassSource implements ClassHolderSource {
+    private ThreadLocal<JavascriptNativeProcessor> processor = new ThreadLocal<>();
     private ClassHolderSource innerSource;
 
     public JavascriptProcessedClassSource(ClassHolderSource innerSource) {
@@ -40,11 +41,19 @@ public class JavascriptProcessedClassSource implements ClassHolderSource {
     }
 
     private void transformClass(ClassHolder cls) {
-        JavascriptNativeProcessor processor = new JavascriptNativeProcessor(innerSource);
+        JavascriptNativeProcessor processor = getProcessor();
+        processor.processClass(cls);
         for (MethodHolder method : cls.getMethods()) {
             if (method.getProgram() != null) {
                 processor.processProgram(method.getProgram());
             }
         }
+    }
+
+    private JavascriptNativeProcessor getProcessor() {
+        if (processor.get() == null) {
+            processor.set(new JavascriptNativeProcessor(innerSource));
+        }
+        return processor.get();
     }
 }

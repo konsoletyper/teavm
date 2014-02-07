@@ -17,17 +17,23 @@ package org.teavm.javascript.ni;
 
 import java.io.IOException;
 import org.teavm.codegen.SourceWriter;
+import org.teavm.dependency.DependencyChecker;
+import org.teavm.dependency.DependencyConsumer;
+import org.teavm.dependency.DependencyPlugin;
+import org.teavm.dependency.MethodGraph;
 import org.teavm.javascript.ast.ConstantExpr;
 import org.teavm.javascript.ast.Expr;
 import org.teavm.javascript.ast.InvocationExpr;
+import org.teavm.model.ClassHolder;
 import org.teavm.model.FieldReference;
+import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class JSNativeGenerator implements Generator, Injector {
+public class JSNativeGenerator implements Generator, Injector, DependencyPlugin {
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef)
             throws IOException {
@@ -84,6 +90,27 @@ public class JSNativeGenerator implements Generator, Injector {
             case "unwrap":
                 context.writeExpr(context.getArgument(0));
                 break;
+        }
+    }
+
+    @Override
+    public void methodAchieved(final DependencyChecker checker, MethodReference method) {
+        MethodGraph graph = checker.attachMethodGraph(method);
+        for (int i = 0; i < method.parameterCount(); ++i) {
+            graph.getVariableNode(i).addConsumer(new DependencyConsumer() {
+                @Override public void consume(String type) {
+                    achieveFunctorMethods(checker, type);
+                }
+            });
+        }
+    }
+
+    private void achieveFunctorMethods(DependencyChecker checker, String type) {
+        ClassHolder cls = checker.getClassSource().getClassHolder(type);
+        if (cls != null) {
+            for (MethodHolder method : cls.getMethods()) {
+                checker.attachMethodGraph(method.getReference());
+            }
         }
     }
 
