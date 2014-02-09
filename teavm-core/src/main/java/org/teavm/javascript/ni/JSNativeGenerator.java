@@ -90,6 +90,9 @@ public class JSNativeGenerator implements Generator, Injector, DependencyPlugin 
             case "unwrap":
                 context.writeExpr(context.getArgument(0));
                 break;
+            case "function":
+                generateFunction(context);
+                break;
         }
     }
 
@@ -123,6 +126,18 @@ public class JSNativeGenerator implements Generator, Injector, DependencyPlugin 
         writer.append("result += String.fromCharCode(data[i]);").softNewLine();
         writer.outdent().append("}").softNewLine();
         writer.append("return result;").softNewLine();
+    }
+
+    private void generateFunction(InjectorContext context) throws IOException {
+        SourceWriter writer = context.getWriter();
+        writer.append("(function()").ws().append("{").indent().softNewLine();
+        writer.append("return ");
+        context.writeExpr(context.getArgument(1));
+        renderProperty(context.getArgument(2), context);
+        writer.append(".apply(");
+        context.writeExpr(context.getArgument(1));
+        writer.append(",").ws().append("arguments);").softNewLine();
+        writer.outdent().append("})");
     }
 
     private void renderProperty(Expr property, InjectorContext context) throws IOException {

@@ -188,4 +188,7 @@ public final class JS {
 
     @InjectedBy(JSNativeGenerator.class)
     public static native void set(JSObject instance, JSObject index, JSObject obj);
+
+    @InjectedBy(JSNativeGenerator.class)
+    public static native JSObject function(JSObject instance, JSObject property);
 }

@@ -13,18 +13,16 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript.ni;
+package org.teavm.dom.browser;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import org.teavm.javascript.ni.JSFunctor;
+import org.teavm.javascript.ni.JSObject;
 
 /**
  *
  * @author Alexey Andreev
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface PreserveOriginalName {
+@JSFunctor
+public interface TimerHandler extends JSObject {
+    void onTimer();
 }

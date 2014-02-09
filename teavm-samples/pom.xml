@@ -51,7 +51,7 @@
         </dependencies>
         <executions>
           <execution>
-            <id>generate-javascript</id>
+            <id>generate-hello</id>
             <goals>
               <goal>build-javascript</goal>
             </goals>
@@ -60,7 +60,20 @@
               <minifying>false</minifying>
               <mainClass>org.teavm.samples.HelloWorld</mainClass>
               <mainPageIncluded>true</mainPageIncluded>
-              <bytecodeLogging>false</bytecodeLogging>
+              <targetDirectory>${project.build.directory}/javascript/hello</targetDirectory>
+            </configuration>
+          </execution>
+          <execution>
+            <id>generate-matrix</id>
+            <goals>
+              <goal>build-javascript</goal>
+            </goals>
+            <phase>process-classes</phase>
+            <configuration>
+              <minifying>false</minifying>
+              <mainClass>org.teavm.samples.MatrixMultiplication</mainClass>
+              <mainPageIncluded>true</mainPageIncluded>
+              <targetDirectory>${project.build.directory}/javascript/matrix</targetDirectory>
             </configuration>
           </execution>
         </executions>

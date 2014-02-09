@@ -13,18 +13,34 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript.ni;
+package org.teavm.dom.browser;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import org.teavm.dom.core.Document;
+import org.teavm.dom.core.Element;
+import org.teavm.javascript.ni.JSGlobal;
+import org.teavm.javascript.ni.JSObject;
+import org.teavm.javascript.ni.JSProperty;
 
 /**
  *
  * @author Alexey Andreev
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface PreserveOriginalName {
+public interface Window extends JSGlobal {
+    @JSProperty
+    Document getDocument();
+
+    @JSProperty
+    Element getBody();
+
+    void alert(JSObject message);
+
+    void alert(String message);
+
+    int setTimeout(TimerHandler handler, int delay);
+
+    void clearTimeout(int timeoutId);
+
+    int setInterval(TimerHandler handler, int delay);
+
+    void clearInterval(int timeoutId);
 }

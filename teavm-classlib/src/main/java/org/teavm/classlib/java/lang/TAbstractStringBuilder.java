@@ -162,9 +162,9 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
             return this;
         } else if (TFloat.isInfinite(value)) {
             if (value > 0) {
-                ensureCapacity(8);
+                ensureCapacity(length + 8);
             } else {
-                ensureCapacity(9);
+                ensureCapacity(length + 9);
                 buffer[length++] = '-';
             }
             buffer[length++] = 'I';
@@ -306,9 +306,9 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
             return this;
         } else if (TDouble.isInfinite(value)) {
             if (value > 0) {
-                ensureCapacity(8);
+                ensureCapacity(length + 8);
             } else {
-                ensureCapacity(9);
+                ensureCapacity(length + 9);
                 buffer[length++] = '-';
             }
             buffer[length++] = 'I';
@@ -531,7 +531,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
         if (start > end || end > s.length() || start < 0) {
             throw new TIndexOutOfBoundsException();
         }
-        ensureCapacity(end - start);
+        ensureCapacity(end - start + length);
         for (int i = start; i < end; ++i) {
             buffer[length++] = s.charAt(i);
         }

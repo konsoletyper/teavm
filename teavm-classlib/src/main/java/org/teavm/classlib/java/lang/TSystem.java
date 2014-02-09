@@ -46,4 +46,7 @@ public final class TSystem extends TObject {
 
     @GeneratedBy(SystemNativeGenerator.class)
     private static native void doArrayCopy(Object src, int srcPos, Object dest, int destPos, int length);
+
+    @GeneratedBy(SystemNativeGenerator.class)
+    public static native long currentTimeMillis();
 }

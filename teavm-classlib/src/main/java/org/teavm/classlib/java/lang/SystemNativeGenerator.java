@@ -36,6 +36,9 @@ public class SystemNativeGenerator implements Generator, DependencyPlugin {
             case "doArrayCopy":
                 generateArrayCopy(context, writer);
                 break;
+            case "currentTimeMillis":
+                generateCurrentTimeMillis(writer);
+                break;
         }
     }
 
@@ -57,6 +60,10 @@ public class SystemNativeGenerator implements Generator, DependencyPlugin {
         writer.append("for (var i = 0; i < " + length + "; i = (i + 1) | 0) {").indent().softNewLine();
         writer.append(dest + ".data[" + srcPos + "++] = " + src + ".data[" + destPos + "++];").softNewLine();
         writer.outdent().append("}").softNewLine();
+    }
+
+    private void generateCurrentTimeMillis(SourceWriter writer) throws IOException {
+        writer.append("return Long_fromNumber(new Date().getTime());").softNewLine();
     }
 
     private void achieveArrayCopy(DependencyChecker checker, MethodReference method) {

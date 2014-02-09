@@ -15,9 +15,9 @@
  */
 package org.teavm.samples;
 
+import org.teavm.dom.browser.Window;
 import org.teavm.dom.core.Document;
 import org.teavm.dom.core.Element;
-import org.teavm.dom.core.Window;
 import org.teavm.dom.events.Event;
 import org.teavm.dom.events.EventListener;
 import org.teavm.dom.events.EventTarget;

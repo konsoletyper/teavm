@@ -13,24 +13,18 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.dom.core;
+package org.teavm.classlib.java.lang;
 
-import org.teavm.javascript.ni.JSGlobal;
-import org.teavm.javascript.ni.JSObject;
-import org.teavm.javascript.ni.JSProperty;
+import org.teavm.classlib.java.io.TIOException;
 
 /**
  *
  * @author Alexey Andreev
  */
-public interface Window extends JSGlobal {
-    @JSProperty
-    Document getDocument();
+public interface TAppendable {
+    TAppendable append(TCharSequence csq) throws TIOException;
 
-    @JSProperty
-    Element getBody();
+    TAppendable append(TCharSequence csq, int start, int end) throws TIOException;
 
-    void alert(JSObject message);
-
-    void alert(String message);
+    TAppendable append(char c) throws TIOException;
 }

@@ -132,7 +132,7 @@ class JavascriptNativeProcessor {
                     newInvoke.getArguments().add(invoke.getInstance());
                     newInvoke.getArguments().add(addStringWrap(addString(method.getName())));
                     for (int k = 0; k < invoke.getArguments().size(); ++k) {
-                        Variable arg = wrap(invoke.getArguments().get(k), method.parameterType(k));
+                        Variable arg = wrapArgument(invoke.getArguments().get(k), method.parameterType(k));
                         newInvoke.getArguments().add(arg);
                     }
                     replacement.add(newInvoke);
@@ -263,6 +263,34 @@ class JavascriptNativeProcessor {
         insn.setType(InvocationType.SPECIAL);
         replacement.add(insn);
         return result;
+    }
+
+    private Variable wrapArgument(Variable var, ValueType type) {
+        if (type instanceof ValueType.Object) {
+            String className = ((ValueType.Object)type).getClassName();
+            ClassHolder cls = classSource.getClassHolder(className);
+            if (cls.getAnnotations().get(JSFunctor.class.getName()) != null) {
+                return wrapFunctor(var, cls);
+            }
+        }
+        return wrap(var, type);
+    }
+
+    private Variable wrapFunctor(Variable var, ClassHolder type) {
+        if (!type.hasModifier(ElementModifier.INTERFACE) || type.getMethods().size() != 1) {
+            throw new RuntimeException("Wrong functor: " + type.getName());
+        }
+        String name = type.getMethods().iterator().next().getName();
+        Variable functor = program.createVariable();
+        Variable nameVar = addString(name);
+        InvokeInstruction insn = new InvokeInstruction();
+        insn.setMethod(new MethodReference(JS.class.getName(), new MethodDescriptor("function",
+                ValueType.object(JSObject.class.getName()), ValueType.object(JSObject.class.getName()),
+                ValueType.object(JSObject.class.getName()))));
+        insn.setReceiver(functor);
+        insn.getArguments().add(var);
+        insn.getArguments().add(nameVar);
+        return functor;
     }
 
     private Variable wrap(Variable var, ValueType type) {
