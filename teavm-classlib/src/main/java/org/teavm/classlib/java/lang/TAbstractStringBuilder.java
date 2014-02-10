@@ -66,13 +66,17 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
         return this;
     }
 
-    protected TAbstractStringBuilder append(int value) {
+    TAbstractStringBuilder append(int value) {
+        return append(value, 10);
+    }
+
+    TAbstractStringBuilder append(int value, int radix) {
         boolean positive = true;
         if (value < 0) {
             positive = false;
             value = -value;
         }
-        if (value < 10) {
+        if (value < radix) {
             if (!positive) {
                 ensureCapacity(length + 2);
                 buffer[length++] = '-';
@@ -81,10 +85,12 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
             }
             buffer[length++] = (char)('0' + value);
         } else {
-            int pos = 10;
+            int pos = 1;
             int sz = 1;
-            while (pos < 1000000000 && pos * 10 <= value) {
-                pos *= 10;
+            int valueCopy = value;
+            while (valueCopy > radix) {
+                pos *= radix;
+                valueCopy /= radix;
                 ++sz;
             }
             if (!positive) {
@@ -95,9 +101,9 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
                 buffer[length++] = '-';
             }
             while (pos > 0) {
-                buffer[length++] = (char)('0' + value / pos);
+                buffer[length++] = TCharacter.forDigit(value / pos, radix);
                 value %= pos;
-                pos /= 10;
+                pos /= radix;
             }
         }
         return this;

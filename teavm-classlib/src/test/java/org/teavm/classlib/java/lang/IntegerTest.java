@@ -45,4 +45,11 @@ public class IntegerTest {
     public void rejectsIntegerWithDigitsOutOfRadix() {
         Integer.parseInt("99", 8);
     }
+
+    @Test
+    public void writesInteger() {
+        assertEquals("473", Integer.toString(473, 10));
+        assertEquals("-ff", Integer.toString(-255, 16));
+        assertEquals("kona", Integer.toString(411787, 27));
+    }
 }

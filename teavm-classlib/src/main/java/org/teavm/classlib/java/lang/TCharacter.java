@@ -64,6 +64,13 @@ public class TCharacter {
         return -1;
     }
 
+    public static char forDigit(int digit, int radix) {
+        if (radix < MIN_RADIX || radix > MAX_RADIX || digit >= radix) {
+            return '\0';
+        }
+        return digit < 10 ? (char)('0' + digit) : (char)('a' + digit - 10);
+    }
+
     private static int[] getDigitMapping() {
         if (digitMapping == null) {
             digitMapping = UnicodeHelper.decodeIntByte(obtainDigitMapping());

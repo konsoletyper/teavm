@@ -34,6 +34,13 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
         this(parseInt(s));
     }
 
+    public static TString toString(int i, int radix) {
+        if (radix < MIN_VALUE || radix > MAX_VALUE) {
+            radix = 10;
+        }
+        return TString.wrap(new TAbstractStringBuilder(20).append(i, radix).toString());
+    }
+
     @Override
     public int compareTo(TInteger other) {
         return compare(value, other.value);
