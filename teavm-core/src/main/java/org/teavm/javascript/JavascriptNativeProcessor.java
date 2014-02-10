@@ -282,7 +282,7 @@ class JavascriptNativeProcessor {
         }
         String name = type.getMethods().iterator().next().getName();
         Variable functor = program.createVariable();
-        Variable nameVar = addString(name);
+        Variable nameVar = addStringWrap(addString(name));
         InvokeInstruction insn = new InvokeInstruction();
         insn.setMethod(new MethodReference(JS.class.getName(), new MethodDescriptor("function",
                 ValueType.object(JSObject.class.getName()), ValueType.object(JSObject.class.getName()),
@@ -290,6 +290,7 @@ class JavascriptNativeProcessor {
         insn.setReceiver(functor);
         insn.getArguments().add(var);
         insn.getArguments().add(nameVar);
+        replacement.add(insn);
         return functor;
     }
 

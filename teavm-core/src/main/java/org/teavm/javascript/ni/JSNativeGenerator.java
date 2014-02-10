@@ -132,10 +132,10 @@ public class JSNativeGenerator implements Generator, Injector, DependencyPlugin 
         SourceWriter writer = context.getWriter();
         writer.append("(function()").ws().append("{").indent().softNewLine();
         writer.append("return ");
-        context.writeExpr(context.getArgument(1));
-        renderProperty(context.getArgument(2), context);
+        context.writeExpr(context.getArgument(0));
+        renderProperty(context.getArgument(1), context);
         writer.append(".apply(");
-        context.writeExpr(context.getArgument(1));
+        context.writeExpr(context.getArgument(0));
         writer.append(",").ws().append("arguments);").softNewLine();
         writer.outdent().append("})");
     }

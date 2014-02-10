@@ -190,5 +190,6 @@ public final class JS {
     public static native void set(JSObject instance, JSObject index, JSObject obj);
 
     @InjectedBy(JSNativeGenerator.class)
+    @PluggableDependency(JSNativeGenerator.class)
     public static native JSObject function(JSObject instance, JSObject property);
 }
