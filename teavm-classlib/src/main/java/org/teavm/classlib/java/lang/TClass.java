@@ -66,5 +66,5 @@ public class TClass<T> extends TObject {
     static native TClass<TBoolean> booleanClass();
 
     @InjectedBy(ClassNativeGenerator.class)
-    static native TClass<TInteger> integerClass();
+    static native TClass<TInteger> intClass();
 }

@@ -21,13 +21,17 @@ package org.teavm.classlib.java.lang;
  */
 public class TInteger extends TNumber implements TComparable<TInteger> {
     public static final int SIZE = 32;
-    public static final int MIN_VALUE = (2 << (SIZE - 1));
-    public static final int MAX_VALUE = (2 << (SIZE - 1)) - 1;
-    public static final TClass<TInteger> TYPE = TClass.integerClass();
+    public static final int MIN_VALUE = 0x80000000;
+    public static final int MAX_VALUE = 0x7FFFFFFF;
+    public static final TClass<TInteger> TYPE = TClass.intClass();
     private int value;
 
     public TInteger(int value) {
         this.value = value;
+    }
+
+    public TInteger(TString s) throws NumberFormatException {
+        this(parseInt(s));
     }
 
     @Override
@@ -59,7 +63,46 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
         return x > y ? 1 : x < y ? -1 : 0;
     }
 
-    /*public static int parseInt(TString s, int radix) throws TNumberFormatException {
-        return 0;
-    }*/
+    public static int parseInt(TString s, int radix) throws TNumberFormatException {
+        if (radix < TCharacter.MIN_RADIX || radix > TCharacter.MAX_RADIX) {
+            throw new TNumberFormatException(TString.wrap("Illegal radix: " + radix));
+        }
+        if (s == null || s.isEmpty()) {
+            throw new TNumberFormatException(TString.wrap("String is null or empty"));
+        }
+        boolean negative = false;
+        int index = 0;
+        switch (s.charAt(0)) {
+            case '-':
+                negative = true;
+                index = 1;
+                break;
+            case '+':
+                index = 1;
+                break;
+        }
+        int value = 0;
+        while (index < s.length()) {
+            int digit = TCharacter.digit(s.charAt(index++));
+            if (digit < 0) {
+                throw new TNumberFormatException(TString.wrap("String contains invalid digits: " + s));
+            }
+            if (digit >= radix) {
+                throw new TNumberFormatException(TString.wrap("String contains digits out of radix " + radix +
+                        ": " + s));
+            }
+            value = radix * value + digit;
+            if (value < 0) {
+                if (index == s.length() && value == MIN_VALUE && negative) {
+                    return MIN_VALUE;
+                }
+                throw new TNumberFormatException(TString.wrap("The value is too big for int type: " + s));
+            }
+        }
+        return negative ? -value : value;
+    }
+
+    public static int parseInt(TString s) throws TNumberFormatException {
+        return parseInt(s, 10);
+    }
 }

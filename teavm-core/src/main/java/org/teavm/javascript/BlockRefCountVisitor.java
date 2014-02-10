@@ -49,6 +49,7 @@ class BlockRefCountVisitor implements StatementVisitor {
 
     @Override
     public void visit(SwitchStatement statement) {
+        refs.put(statement, 0);
         for (SwitchClause clause : statement.getClauses()) {
             for (Statement part : clause.getBody()) {
                 part.acceptVisitor(this);
