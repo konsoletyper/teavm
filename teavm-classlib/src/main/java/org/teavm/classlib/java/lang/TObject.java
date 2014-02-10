@@ -17,6 +17,7 @@ package org.teavm.classlib.java.lang;
 
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.javascript.ni.GeneratedBy;
+import org.teavm.javascript.ni.InjectedBy;
 import org.teavm.javascript.ni.Rename;
 import org.teavm.javascript.ni.Superclass;
 
@@ -34,7 +35,7 @@ public class TObject {
     @Rename("<init>")
     private native void init();
 
-    @GeneratedBy(ObjectNativeGenerator.class)
+    @InjectedBy(ObjectNativeGenerator.class)
     @Rename("getClass")
     @PluggableDependency(ObjectNativeGenerator.class)
     public native final TClass<?> getClass0();
@@ -82,7 +83,7 @@ public class TObject {
     protected void finalize() throws TThrowable {
     }
 
-    @GeneratedBy(ObjectNativeGenerator.class)
+    @InjectedBy(ObjectNativeGenerator.class)
     @PluggableDependency(ObjectNativeGenerator.class)
     public static native TObject wrap(Object obj);
 }

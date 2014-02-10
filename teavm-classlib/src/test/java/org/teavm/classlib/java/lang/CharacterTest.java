@@ -1,5 +1,5 @@
 /*
- *  Copyright 2013 Alexey Andreev.
+ *  Copyright 2014 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,27 +15,19 @@
  */
 package org.teavm.classlib.java.lang;
 
-import java.io.IOException;
-import org.teavm.javascript.ni.Injector;
-import org.teavm.javascript.ni.InjectorContext;
-import org.teavm.model.MethodReference;
+import static org.junit.Assert.*;
+import org.junit.Test;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class StringNativeGenerator implements Injector {
-
-    @Override
-    public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
-        switch (methodRef.getName()) {
-            case "wrap":
-                generateWrap(context);
-                break;
-        }
-    }
-
-    private void generateWrap(InjectorContext context) throws IOException {
-        context.writeExpr(context.getArgument(0));
+public class CharacterTest {
+    @Test
+    public void digitsRecognized() {
+        assertEquals(2, Character.digit('2', 10));
+        assertEquals(-1, Character.digit('.', 10));
+        assertEquals(6, Character.digit('\u096C', 10));
+        assertEquals(15, Character.digit('F', 16));
     }
 }

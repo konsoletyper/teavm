@@ -22,6 +22,8 @@ import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodGraph;
 import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.GeneratorContext;
+import org.teavm.javascript.ni.Injector;
+import org.teavm.javascript.ni.InjectorContext;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -30,15 +32,12 @@ import org.teavm.model.ValueType;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class ObjectNativeGenerator implements Generator, DependencyPlugin {
+public class ObjectNativeGenerator implements Generator, Injector, DependencyPlugin {
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
         switch (methodRef.getDescriptor().getName()) {
             case "<init>":
                 generateInit(context, writer);
-                break;
-            case "getClass":
-                generateGetClass(context, writer);
                 break;
             case "hashCode":
                 generateHashCode(context, writer);
@@ -46,8 +45,17 @@ public class ObjectNativeGenerator implements Generator, DependencyPlugin {
             case "clone":
                 generateClone(context, writer);
                 break;
+        }
+    }
+
+    @Override
+    public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
+        switch (methodRef.getName()) {
+            case "getClass":
+                generateGetClass(context);
+                break;
             case "wrap":
-                generateWrap(context, writer);
+                generateWrap(context);
                 break;
         }
     }
@@ -71,9 +79,11 @@ public class ObjectNativeGenerator implements Generator, DependencyPlugin {
         writer.append(context.getParameterName(0)).append(".$id = $rt_nextId();").softNewLine();
     }
 
-    private void generateGetClass(GeneratorContext context, SourceWriter writer) throws IOException {
-        String thisArg = context.getParameterName(0);
-        writer.append("return $rt_cls(").append(thisArg).append(".constructor);").softNewLine();
+    private void generateGetClass(InjectorContext context) throws IOException {
+        SourceWriter writer = context.getWriter();
+        writer.append("$rt_cls(");
+        context.writeExpr(context.getArgument(0));
+        writer.append(".constructor)");
     }
 
     private void achieveGetClass(DependencyChecker checker, MethodReference method) {
@@ -102,8 +112,8 @@ public class ObjectNativeGenerator implements Generator, DependencyPlugin {
         graph.getVariableNode(0).connect(graph.getResultNode());
     }
 
-    private void generateWrap(GeneratorContext context, SourceWriter writer) throws IOException {
-        writer.append("return ").append(context.getParameterName(1)).append(";").softNewLine();
+    private void generateWrap(InjectorContext context) throws IOException {
+        context.writeExpr(context.getArgument(0));
     }
 
     private void achieveWrap(DependencyChecker checker, MethodReference method) {

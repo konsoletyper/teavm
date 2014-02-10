@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.lang;
 
 import org.teavm.javascript.ni.GeneratedBy;
+import org.teavm.javascript.ni.InjectedBy;
 
 /**
  *
@@ -32,8 +33,11 @@ public class TClass<T> extends TObject {
         return new TClass<>();
     }
 
-    @GeneratedBy(ClassNativeGenerator.class)
+    @InjectedBy(ClassNativeGenerator.class)
     public native boolean isInstance(TObject obj);
+
+    @InjectedBy(ClassNativeGenerator.class)
+    public native boolean isAssignableFrom(TClass<?> obj);
 
     public String getName() {
         return name;
@@ -57,4 +61,10 @@ public class TClass<T> extends TObject {
 
     @GeneratedBy(ClassNativeGenerator.class)
     private native TClass<?> getComponentType0();
+
+    @InjectedBy(ClassNativeGenerator.class)
+    static native TClass<TBoolean> booleanClass();
+
+    @InjectedBy(ClassNativeGenerator.class)
+    static native TClass<TInteger> integerClass();
 }

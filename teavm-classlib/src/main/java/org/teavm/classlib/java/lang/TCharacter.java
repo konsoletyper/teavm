@@ -15,6 +15,8 @@
  */
 package org.teavm.classlib.java.lang;
 
+import org.teavm.classlib.impl.unicode.UnicodeHelper;
+import org.teavm.dependency.PluggableDependency;
 import org.teavm.javascript.ni.GeneratedBy;
 
 /**
@@ -22,9 +24,54 @@ import org.teavm.javascript.ni.GeneratedBy;
  * @author Alexey Andreev
  */
 public class TCharacter {
+    public static final int MIN_RADIX = 2;
+    public static final int MAX_RADIX = 36;
+    private static int[] digitMapping;
+
     @GeneratedBy(CharacterNativeGenerator.class)
     public static native char toLowerCase(char ch);
 
     @GeneratedBy(CharacterNativeGenerator.class)
     public static native int toLowerCase(int ch);
+
+    public static int digit(char ch, int radix) {
+        return digit((int)ch, radix);
+    }
+
+    public static int digit(int codePoint, int radix) {
+        if (radix < MIN_RADIX || radix > MAX_RADIX) {
+            return -1;
+        }
+        int d = digit(codePoint);
+        return d <= radix ? d : -1;
+    }
+
+    static int digit(int codePoint) {
+        int[] digitMapping = getDigitMapping();
+        int l = 0;
+        int u = (digitMapping.length / 2) - 1;
+        while (u >= l) {
+            int idx = (l + u) / 2;
+            int val = digitMapping[idx * 2];
+            if (codePoint > val) {
+                l = idx + 1;
+            } else if (codePoint < val) {
+                u = idx - 1;
+            } else {
+                return digitMapping[idx * 2 + 1];
+            }
+        }
+        return -1;
+    }
+
+    private static int[] getDigitMapping() {
+        if (digitMapping == null) {
+            digitMapping = UnicodeHelper.decodeIntByte(obtainDigitMapping());
+        }
+        return digitMapping;
+    }
+
+    @GeneratedBy(CharacterNativeGenerator.class)
+    @PluggableDependency(CharacterNativeGenerator.class)
+    private static native String obtainDigitMapping();
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2013 Alexey Andreev.
+ *  Copyright 2014 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,27 +15,18 @@
  */
 package org.teavm.classlib.java.lang;
 
-import java.io.IOException;
-import org.teavm.javascript.ni.Injector;
-import org.teavm.javascript.ni.InjectorContext;
-import org.teavm.model.MethodReference;
-
 /**
  *
  * @author Alexey Andreev
  */
-public class StringNativeGenerator implements Injector {
+public class TNumberFormatException extends TIllegalArgumentException {
+    private static final long serialVersionUID = 6872736757931546482L;
 
-    @Override
-    public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
-        switch (methodRef.getName()) {
-            case "wrap":
-                generateWrap(context);
-                break;
-        }
+    public TNumberFormatException() {
+        super();
     }
 
-    private void generateWrap(InjectorContext context) throws IOException {
-        context.writeExpr(context.getArgument(0));
+    public TNumberFormatException(TString message) {
+        super(message);
     }
 }

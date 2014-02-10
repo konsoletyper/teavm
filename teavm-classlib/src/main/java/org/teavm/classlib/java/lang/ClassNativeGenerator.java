@@ -19,42 +19,72 @@ import java.io.IOException;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.GeneratorContext;
+import org.teavm.javascript.ni.Injector;
+import org.teavm.javascript.ni.InjectorContext;
 import org.teavm.model.MethodReference;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class ClassNativeGenerator implements Generator {
+public class ClassNativeGenerator implements Generator, Injector {
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef)
             throws IOException {
         switch (methodRef.getName()) {
-            case "isInstance":
-                generateIsInstance(context, writer);
-                break;
-            case "isAssignable":
-                generateIsAssignableFrom(context, writer);
-                break;
             case "getComponentType0":
                 generateGetComponentType(context, writer);
                 break;
         }
     }
 
-    private void generateIsInstance(GeneratorContext context, SourceWriter writer) throws IOException {
-        writer.append("return $rt_isInstance(").append(context.getParameterName(1)).append(", ")
-                .append(context.getParameterName(0)).append(".$data);").softNewLine();
-    }
-
-    private void generateIsAssignableFrom(GeneratorContext context, SourceWriter writer) throws IOException {
-        writer.append("return $rt_isAssignable(").append(context.getParameterName(1)).append(".$data, ")
-                .append(context.getParameterName(0)).append(".$data;").softNewLine();
-    }
-
     private void generateGetComponentType(GeneratorContext context, SourceWriter writer) throws IOException {
         String thisArg = context.getParameterName(0);
         writer.append("var item = " + thisArg + ".$data.$meta.item;").softNewLine();
         writer.append("return item != null ? $rt_cls(item) : null;").softNewLine();
+    }
+
+    @Override
+    public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
+        switch (methodRef.getName()) {
+            case "isInstance":
+                generateIsInstance(context);
+                break;
+            case "isAssignableFrom":
+                generateIsAssignableFrom(context);
+                break;
+            case "booleanClass":
+                generateBooleanClass(context);
+                break;
+            case "intClass":
+                generateIntClass(context);
+                break;
+        }
+    }
+
+    private void generateIsAssignableFrom(InjectorContext context) throws IOException {
+        SourceWriter writer = context.getWriter();
+        writer.append("$rt_isAssignable(");
+        context.writeExpr(context.getArgument(1));
+        writer.append(".$data,").ws();
+        context.writeExpr(context.getArgument(0));
+        writer.append(".$data)");
+    }
+
+    private void generateIsInstance(InjectorContext context) throws IOException {
+        SourceWriter writer = context.getWriter();
+        writer.append("$rt_isInstance(");
+        context.writeExpr(context.getArgument(1));
+        writer.append(",").ws();
+        context.writeExpr(context.getArgument(0));
+        writer.append(".$data)");
+    }
+
+    private void generateBooleanClass(InjectorContext context) throws IOException {
+        context.getWriter().append("$rt_cls($rt_booleancls())");
+    }
+
+    private void generateIntClass(InjectorContext context) throws IOException {
+        context.getWriter().append("$rt_cls($rt_intcls())");
     }
 }

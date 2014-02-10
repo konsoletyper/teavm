@@ -1,5 +1,5 @@
 /*
- *  Copyright 2013 Alexey Andreev.
+ *  Copyright 2014 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,27 +15,26 @@
  */
 package org.teavm.classlib.java.lang;
 
-import java.io.IOException;
-import org.teavm.javascript.ni.Injector;
-import org.teavm.javascript.ni.InjectorContext;
-import org.teavm.model.MethodReference;
+import org.teavm.classlib.java.io.TSerializable;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class StringNativeGenerator implements Injector {
+public abstract class TNumber extends TObject implements TSerializable {
+    public abstract int intValue();
 
-    @Override
-    public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
-        switch (methodRef.getName()) {
-            case "wrap":
-                generateWrap(context);
-                break;
-        }
+    public abstract long longValue();
+
+    public abstract float floatValue();
+
+    public abstract double doubleValue();
+
+    public byte byteValue() {
+        return (byte)intValue();
     }
 
-    private void generateWrap(InjectorContext context) throws IOException {
-        context.writeExpr(context.getArgument(0));
+    public short shortValue() {
+        return (short)intValue();
     }
 }

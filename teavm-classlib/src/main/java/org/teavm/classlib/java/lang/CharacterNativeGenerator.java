@@ -16,7 +16,11 @@
 package org.teavm.classlib.java.lang;
 
 import java.io.IOException;
+import org.teavm.classlib.impl.unicode.UnicodeHelper;
+import org.teavm.classlib.impl.unicode.UnicodeSupport;
 import org.teavm.codegen.SourceWriter;
+import org.teavm.dependency.DependencyChecker;
+import org.teavm.dependency.DependencyPlugin;
 import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.GeneratorContext;
 import org.teavm.model.MethodReference;
@@ -26,7 +30,7 @@ import org.teavm.model.ValueType;
  *
  * @author Alexey Andreev
  */
-public class CharacterNativeGenerator implements Generator {
+public class CharacterNativeGenerator implements Generator, DependencyPlugin {
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
         switch (methodRef.getName()) {
@@ -36,6 +40,18 @@ public class CharacterNativeGenerator implements Generator {
                 } else {
                     generateToLowerCaseInt(context, writer);
                 }
+                break;
+            case "obtainDigitMapping":
+                generateObtainDigitMapping(writer);
+                break;
+        }
+    }
+
+    @Override
+    public void methodAchieved(DependencyChecker checker, MethodReference method) {
+        switch (method.getName()) {
+            case "obtainDigitMapping":
+                achieveObtainDigitMapping(checker, method);
                 break;
         }
     }
@@ -48,5 +64,14 @@ public class CharacterNativeGenerator implements Generator {
     private void generateToLowerCaseInt(GeneratorContext context, SourceWriter writer) throws IOException{
         writer.append("return String.fromCharCode(").append(context.getParameterName(1))
                 .append(").toLowerCase().charCodeAt(0);").softNewLine();
+    }
+
+    private void generateObtainDigitMapping(SourceWriter writer) throws IOException {
+        writer.append("return $rt_str(\"").append(UnicodeHelper.encodeIntByte(UnicodeSupport.getDigitValues()))
+                .append("\");").softNewLine();
+    }
+
+    private void achieveObtainDigitMapping(DependencyChecker checker, MethodReference method) {
+        checker.attachMethodGraph(method).getResultNode().propagate("java.lang.String");
     }
 }

@@ -26,7 +26,7 @@ import org.teavm.javascript.ni.Rename;
 public class TBoolean extends TObject implements TSerializable, TComparable<TBoolean> {
     public static final TBoolean TRUE = new TBoolean(true);
     public static final TBoolean FALSE = new TBoolean(false);
-    public static final Class<Boolean> TYPE = boolean.class;
+    public static final TClass<TBoolean> TYPE = TClass.booleanClass();
     private boolean value;
 
     public TBoolean(boolean value) {
