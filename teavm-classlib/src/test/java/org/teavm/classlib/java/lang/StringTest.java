@@ -270,4 +270,24 @@ public class StringTest {
         assertEquals(-78, bytes[16382]);
         assertEquals(-69, bytes[16383]);
     }
+
+    @Test
+    public void createsStringFromCodePoints() {
+        int[] codePoints = { 97, 98, 969356, 99, 969356, 99, 100 };
+        String str = new String(codePoints, 0, codePoints.length);
+        assertEquals('a', str.charAt(0));
+        assertEquals('b', str.charAt(1));
+        assertEquals(56178, str.charAt(2));
+        assertEquals(56972, str.charAt(3));
+        assertEquals('c', str.charAt(4));
+        assertEquals(56178, str.charAt(5));
+        assertEquals(56972, str.charAt(6));
+        assertEquals('c', str.charAt(7));
+        assertEquals('d', str.charAt(8));
+    }
+
+    @Test
+    public void makesLowerCase() {
+        assertEquals("foo bar", "FoO bAr".toLowerCase());
+    }
 }

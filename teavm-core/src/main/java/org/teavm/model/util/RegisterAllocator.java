@@ -35,7 +35,8 @@ public class RegisterAllocator {
         liveness.analyze(program);
         Graph interferenceGraph = interferenceBuilder.build(program, method.parameterCount(), liveness);
         DisjointSet congruenceClasses = buildPhiCongruenceClasses(program);
-        removeRedundantCopies(program, phiArgsCopies, interferenceGraph, congruenceClasses);
+        List<MutableGraphNode> classInterferenceGraph = makeMutableGraph(interferenceGraph, congruenceClasses);
+        removeRedundantCopies(program, phiArgsCopies, classInterferenceGraph, congruenceClasses);
         int[] classArray = congruenceClasses.pack(program.variableCount());
         int[] colors = new int[program.variableCount()];
         Arrays.fill(colors, -1);
@@ -55,6 +56,25 @@ public class RegisterAllocator {
         int index;
         BasicBlock block;
         int var;
+    }
+
+    private static List<MutableGraphNode> makeMutableGraph(Graph graph, DisjointSet classes) {
+        List<MutableGraphNode> mutableGraph = new ArrayList<>();
+        for (int i = 0; i < graph.size(); ++i) {
+            int cls = classes.find(i);
+            while (cls >= mutableGraph.size()) {
+                mutableGraph.add(new MutableGraphNode(mutableGraph.size()));
+            }
+            MutableGraphNode node = mutableGraph.get(cls);
+            for (int j : graph.outgoingEdges(i)) {
+                int otherCls = classes.find(j);
+                while (otherCls >= mutableGraph.size()) {
+                    mutableGraph.add(new MutableGraphNode(mutableGraph.size()));
+                }
+                node.connect(mutableGraph.get(otherCls));
+            }
+        }
+        return mutableGraph;
     }
 
     private List<PhiArgumentCopy> insertPhiArgumentsCopies(Program program) {
@@ -108,24 +128,34 @@ public class RegisterAllocator {
         return copies;
     }
 
-    private void removeRedundantCopies(Program program, List<PhiArgumentCopy> copies, Graph inteferenceGraph,
-            DisjointSet congruenceClasses) {
+    private void removeRedundantCopies(Program program, List<PhiArgumentCopy> copies,
+            List<MutableGraphNode> interferenceGraph, DisjointSet congruenceClasses) {
         for (PhiArgumentCopy copy : copies) {
             boolean interfere = false;
-            for (int neighbour : inteferenceGraph.outgoingEdges(copy.original)) {
-                if (neighbour == copy.var || neighbour == copy.original) {
+            int varClass = congruenceClasses.find(copy.var);
+            int origClass = congruenceClasses.find(copy.original);
+            for (MutableGraphEdge edge : interferenceGraph.get(copy.original).getEdges()) {
+                if (edge.getFirst() == edge.getSecond()) {
                     continue;
                 }
-                if (congruenceClasses.find(neighbour) == congruenceClasses.find(copy.var) ||
-                        congruenceClasses.find(neighbour) == congruenceClasses.find(copy.original)) {
+                int neighbour = congruenceClasses.find(edge.getSecond().getTag());
+                if (neighbour == varClass || neighbour == origClass) {
                     interfere = true;
                     break;
                 }
             }
             if (!interfere) {
-                congruenceClasses.union(copy.var, copy.original);
+                int newClass = congruenceClasses.union(varClass, origClass);
                 copy.block.getInstructions().set(copy.index, new EmptyInstruction());
                 copy.incoming.setValue(program.variableAt(copy.original));
+                for (MutableGraphEdge edge : interferenceGraph.get(varClass).getEdges()
+                        .toArray(new MutableGraphEdge[0])) {
+                    edge.setFirst(interferenceGraph.get(newClass));
+                }
+                for (MutableGraphEdge edge : interferenceGraph.get(origClass).getEdges()
+                        .toArray(new MutableGraphEdge[0])) {
+                    edge.setFirst(interferenceGraph.get(newClass));
+                }
             }
         }
     }

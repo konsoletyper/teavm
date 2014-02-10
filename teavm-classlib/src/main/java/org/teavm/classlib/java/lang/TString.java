@@ -72,6 +72,23 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         this(bytes, 0, bytes.length, charsetName);
     }
 
+    public TString(int[] codePoints, int offset, int count) {
+        characters = new char[count * 2];
+        int charCount = 0;
+        for (int i = 0; i < count; ++i) {
+            int codePoint = codePoints[offset++];
+            if (codePoint >= UTF16Helper.SUPPLEMENTARY_PLANE) {
+                characters[charCount++] = UTF16Helper.highSurrogate(codePoint);
+                characters[charCount++] = UTF16Helper.lowSurrogate(codePoint);
+            } else {
+                characters[charCount++] = (char)codePoint;
+            }
+        }
+        if (charCount < characters.length) {
+            characters = TArrays.copyOf(characters, charCount);
+        }
+    }
+
     private void initWithBytes(byte[] bytes, int offset, int length, Charset charset) {
         TStringBuilder sb = new TStringBuilder(bytes.length * 2);
         this.characters = new char[sb.length()];
@@ -533,4 +550,23 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
 
     @GeneratedBy(StringNativeGenerator.class)
     public static native TString wrap(String str);
+
+    public TString toLowerCase() {
+        if (isEmpty()) {
+            return this;
+        }
+        int[] codePoints = new int[characters.length];
+        int codePointCount = 0;
+        for (int i = 0; i < characters.length; ++i) {
+            if (i == characters.length - 1 || !UTF16Helper.isHighSurrogate(characters[i]) ||
+                    !UTF16Helper.isLowSurrogate(characters[i + 1])) {
+                codePoints[codePointCount++] = TCharacter.toLowerCase(characters[i]);
+            } else {
+                codePoints[codePointCount++] = TCharacter.toLowerCase(UTF16Helper.buildCodePoint(
+                        characters[i], characters[i + 1]));
+                ++i;
+            }
+        }
+        return new TString(codePoints, 0, codePointCount);
+    }
 }

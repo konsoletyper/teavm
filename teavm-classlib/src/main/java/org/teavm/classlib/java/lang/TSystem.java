@@ -49,4 +49,9 @@ public final class TSystem extends TObject {
 
     @GeneratedBy(SystemNativeGenerator.class)
     public static native long currentTimeMillis();
+
+    public static TString getProperty(@SuppressWarnings("unused") TString key) {
+        // TODO: make implementation
+        return null;
+    }
 }
