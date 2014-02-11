@@ -23,7 +23,7 @@ import java.io.IOException;
  */
 public class MatrixMultiplication {
     public static void main(String[] args) throws IOException {
-        for (int k = 0; k < 100; ++k) {
+        for (int k = 0; k < 20; ++k) {
             long startTime = System.currentTimeMillis();
 
             Matrix m1 = new Matrix(5);

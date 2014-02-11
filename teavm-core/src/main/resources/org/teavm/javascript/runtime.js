@@ -38,22 +38,23 @@ $rt_isAssignable = function(from, to) {
 $rt_createArray = function(cls, sz) {
     var data = new Array(sz);
     var arr = new ($rt_arraycls(cls))(data);
-    arr.$id = $rt_nextId();
     for (var i = 0; i < sz; i = (i + 1) | 0) {
         data[i] = null;
     }
     return arr;
 }
+$rt_createUnfilledArray = function(cls, sz) {
+    return new ($rt_arraycls(cls))(new Array(sz));
+}
 $rt_createLongArray = function(sz) {
     var data = new Array(sz);
     var arr = new ($rt_arraycls($rt_longcls()))(data);
-    arr.$id = $rt_nextId();
     for (var i = 0; i < sz; i = (i + 1) | 0) {
         data[i] = Long.ZERO;
     }
     return arr;
 }
-if (ArrayBuffer) {
+if (false) {
     $rt_createNumericArray = function(cls, nativeArray) {
         return new ($rt_arraycls(cls))(nativeArray);
     }
@@ -82,7 +83,6 @@ if (ArrayBuffer) {
     $rt_createNumericArray = function(cls, sz) {
         var data = new Array(sz);
         var arr = new ($rt_arraycls(cls))(data);
-        arr.$id = $rt_nextId();
         for (var i = 0; i < sz; i = (i + 1) | 0) {
             data[i] = 0;
         }
@@ -100,6 +100,7 @@ $rt_arraycls = function(cls) {
     if (cls.$array == undefined) {
         var arraycls = function(data) {
             this.data = data;
+            this.$id = $rt_nextId();
         };
         arraycls.prototype = new ($rt_objcls())();
         arraycls.prototype.constructor = arraycls;
@@ -153,7 +154,7 @@ $rt_shortcls = function() {
 }
 $rt_intclsCache = null;
 $rt_intcls = function() {
-    if ($rt_intclsCache == null) {
+    if ($rt_intclsCache === null) {
         $rt_intclsCache = $rt_createcls();
         $rt_intclsCache.primitive = true;
         $rt_intclsCache.name = "int";
@@ -162,7 +163,7 @@ $rt_intcls = function() {
 }
 $rt_longclsCache = null;
 $rt_longcls = function() {
-    if ($rt_longclsCache == null) {
+    if ($rt_longclsCache === null) {
         $rt_longclsCache = $rt_createcls();
         $rt_longclsCache.primitive = true;
         $rt_longclsCache.name = "long";
@@ -171,7 +172,7 @@ $rt_longcls = function() {
 }
 $rt_floatclsCache = null;
 $rt_floatcls = function() {
-    if ($rt_floatclsCache == null) {
+    if ($rt_floatclsCache === null) {
         $rt_floatclsCache = $rt_createcls();
         $rt_floatclsCache.primitive = true;
         $rt_floatclsCache.name = "float";
@@ -180,7 +181,7 @@ $rt_floatcls = function() {
 }
 $rt_doubleclsCache = null;
 $rt_doublecls = function() {
-    if ($rt_doubleclsCache == null) {
+    if ($rt_doubleclsCache === null) {
         $rt_doubleclsCache = $rt_createcls();
         $rt_doubleclsCache.primitive = true;
         $rt_doubleclsCache.name = "double";
@@ -189,7 +190,7 @@ $rt_doublecls = function() {
 }
 $rt_voidclsCache = null;
 $rt_voidcls = function() {
-    if ($rt_voidclsCache == null) {
+    if ($rt_voidclsCache === null) {
         $rt_voidclsCache = $rt_createcls();
         $rt_voidclsCache.primitive = true;
         $rt_voidclsCache.name = "void";
@@ -234,18 +235,95 @@ $rt_shortToInt = function(value) {
     return value > 0xFFFF ? value | 0xFFFF0000 : value;
 }
 $rt_createMultiArray = function(cls, dimensions) {
-    return $rt_createMultiArrayImpl(cls, dimensions, 0);
-}
-$rt_createMultiArrayImpl = function(cls, dimensions, offset) {
-    cls = cls.$meta.item;
-    var result = $rt_createArray(cls, dimensions[offset]);
-    offset = (offset + 1) | 0;
-    if (offset < dimensions.length) {
-        for (var i = 0; i < result.data.length; i = (i + 1) | 0) {
-            result.data[i] = $rt_createMultiArrayImpl(cls, dimensions, offset);
-        }
+    var arrays = new Array($rt_primitiveArrayCount(dimensions));
+    var firstDim = dimensions[0] | 0;
+    for (var i = 0 | 0; i < arrays.length; i = (i + 1) | 0) {
+        arrays[i] = $rt_createArray(cls, firstDim);
     }
-    return result;
+    return $rt_createMultiArrayImpl(cls, arrays, dimensions);
+}
+$rt_createByteMultiArray = function(dimensions) {
+    var arrays = new Array($rt_primitiveArrayCount(dimensions));
+    var firstDim = dimensions[0] | 0;
+    for (var i = 0 | 0; i < arrays.length; i = (i + 1) | 0) {
+        arrays[i] = $rt_createByteArray(firstDim);
+    }
+    return $rt_createMultiArrayImpl($rt_bytecls(), arrays, dimensions);
+}
+$rt_createBooleanMultiArray = function(dimensions) {
+    var arrays = new Array($rt_primitiveArrayCount(dimensions));
+    var firstDim = dimensions[0] | 0;
+    for (var i = 0 | 0; i < arrays.length; i = (i + 1) | 0) {
+        arrays[i] = $rt_createBooleanArray(firstDim);
+    }
+    return $rt_createMultiArrayImpl($rt_booleancls(), arrays, dimensions);
+}
+$rt_createShortMultiArray = function(dimensions) {
+    var arrays = new Array($rt_primitiveArrayCount(dimensions));
+    var firstDim = dimensions[0] | 0;
+    for (var i = 0 | 0; i < arrays.length; i = (i + 1) | 0) {
+        arrays[i] = $rt_createShortArray(firstDim);
+    }
+    return $rt_createMultiArrayImpl($rt_shortcls(), arrays, dimensions);
+}
+$rt_createIntMultiArray = function(dimensions) {
+    var arrays = new Array($rt_primitiveArrayCount(dimensions));
+    var firstDim = dimensions[0] | 0;
+    for (var i = 0 | 0; i < arrays.length; i = (i + 1) | 0) {
+        arrays[i] = $rt_createIntArray(firstDim);
+    }
+    return $rt_createMultiArrayImpl($rt_intcls(), arrays, dimensions);
+}
+$rt_createLongMultiArray = function(dimensions) {
+    var arrays = new Array($rt_primitiveArrayCount(dimensions));
+    var firstDim = dimensions[0] | 0;
+    for (var i = 0 | 0; i < arrays.length; i = (i + 1) | 0) {
+        arrays[i] = $rt_createLongArray(firstDim);
+    }
+    return $rt_createMultiArrayImpl($rt_longcls(), arrays, dimensions);
+}
+$rt_createFloatMultiArray = function(dimensions) {
+    var arrays = new Array($rt_primitiveArrayCount(dimensions));
+    var firstDim = dimensions[0] | 0;
+    for (var i = 0 | 0; i < arrays.length; i = (i + 1) | 0) {
+        arrays[i] = $rt_createFloatArray(firstDim);
+    }
+    return $rt_createMultiArrayImpl($rt_floatcls(), arrays, dimensions);
+}
+$rt_createDoubleMultiArray = function(dimensions) {
+    var arrays = new Array($rt_primitiveArrayCount(dimensions));
+    var firstDim = dimensions[0] | 0;
+    for (var i = 0 | 0; i < arrays.length; i = (i + 1) | 0) {
+        arrays[i] = $rt_createDoubleArray(firstDim);
+    }
+    return $rt_createMultiArrayImpl($rt_doublecls(), arrays, dimensions);
+}
+$rt_primitiveArrayCount = function(dimensions) {
+    var val = dimensions[1] | 0;
+    for (var i = 2 | 0; i < dimensions.length; i = (i + 1) | 0) {
+        val = (val * (dimensions[i] | 0)) | 0;
+    }
+    return val;
+}
+$rt_createMultiArrayImpl = function(cls, arrays, dimensions) {
+    var limit = arrays.length;
+    for (var i = 1 | 0; i < dimensions.length; i = (i + 1) | 0) {
+        cls = $rt_arraycls(cls);
+        var dim = dimensions[i];
+        var index = 0;
+        var packedIndex = 0;
+        while (index < limit) {
+            var arr = $rt_createUnfilledArray(cls, dim);
+            for (var j = 0; j < dim; j = (j + 1) | 0) {
+                arr.data[j] = arrays[index];
+                index = (index + 1) | 0;
+            }
+            arrays[packedIndex] = arr;
+            packedIndex = (packedIndex + 1) | 0;
+        }
+        limit = packedIndex;
+    }
+    return arrays[0];
 }
 $rt_assertNotNaN = function(value) {
     if (typeof value == 'number' && isNaN(value)) {

@@ -18,10 +18,7 @@ package org.teavm.javascript;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import org.teavm.codegen.NamingException;
 import org.teavm.codegen.NamingStrategy;
 import org.teavm.codegen.SourceWriter;
@@ -1084,7 +1081,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                         break;
                 }
             } else {
-                writer.append("$rt_createArray(").append(typeToClsString(naming, expr.getType())).append(", ");
+                writer.append("$rt_createArray(").append(typeToClsString(naming, expr.getType())).append(",").ws();
                 expr.getLength().acceptVisitor(this);
                 writer.append(")");
             }
@@ -1096,10 +1093,46 @@ public class Renderer implements ExprVisitor, StatementVisitor {
     @Override
     public void visit(NewMultiArrayExpr expr) {
         try {
-            writer.append("$rt_createMultiArray(").append(typeToClsString(naming, expr.getType())).append(",")
-                    .ws().append("[");
+            ValueType type = expr.getType();
+            for (int i = 0; i < expr.getDimensions().size(); ++i) {
+                type = ((ValueType.Array)type).getItemType();
+            }
+            if (type instanceof ValueType.Primitive) {
+                switch (((ValueType.Primitive)type).getKind()) {
+                    case BOOLEAN:
+                        writer.append("$rt_createBooleanMultiArray(");
+                        break;
+                    case BYTE:
+                        writer.append("$rt_createByteMultiArray(");
+                        break;
+                    case SHORT:
+                        writer.append("$rt_createShortMultiArray(");
+                        break;
+                    case INTEGER:
+                        writer.append("$rt_createIntMultiArray(");
+                        break;
+                    case LONG:
+                        writer.append("$rt_createLongMultiArray(");
+                        break;
+                    case FLOAT:
+                        writer.append("$rt_createFloatMultiArray(");
+                        break;
+                    case DOUBLE:
+                        writer.append("$rt_createDoubleMultiArray(");
+                        break;
+                    case CHARACTER:
+                        writer.append("$rt_createCharMultiArray(");
+                        break;
+                }
+            } else {
+                writer.append("$rt_createMultiArray(").append(typeToClsString(naming, expr.getType()))
+                        .append(",").ws();
+            }
+            writer.append("[");
             boolean first = true;
-            for (Expr dimension : expr.getDimensions()) {
+            List<Expr> dimensions = new ArrayList<>(expr.getDimensions());
+            Collections.reverse(dimensions);
+            for (Expr dimension : dimensions) {
                 if (!first) {
                     writer.append(",").ws();
                 }
