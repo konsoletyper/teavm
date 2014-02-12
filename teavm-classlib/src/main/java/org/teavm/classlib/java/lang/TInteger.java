@@ -15,6 +15,8 @@
  */
 package org.teavm.classlib.java.lang;
 
+import org.teavm.javascript.ni.Rename;
+
 /**
  *
  * @author Alexey Andreev
@@ -24,6 +26,7 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
     public static final int MIN_VALUE = 0x80000000;
     public static final int MAX_VALUE = 0x7FFFFFFF;
     public static final TClass<TInteger> TYPE = TClass.intClass();
+    private static TInteger[] integerCache;
     private int value;
 
     public TInteger(int value) {
@@ -41,33 +44,20 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
         return TString.wrap(new TAbstractStringBuilder(20).append(i, radix).toString());
     }
 
-    @Override
-    public int compareTo(TInteger other) {
-        return compare(value, other.value);
+    public static TString toHexString(int i) {
+        return toString(i, 16);
     }
 
-    @Override
-    public int intValue() {
-        return value;
+    public static TString toOctalString(int i) {
+        return toString(i, 8);
     }
 
-    @Override
-    public long longValue() {
-        return value;
+    public static TString toBinaryString(int i) {
+        return toString(i, 2);
     }
 
-    @Override
-    public float floatValue() {
-        return value;
-    }
-
-    @Override
-    public double doubleValue() {
-        return value;
-    }
-
-    public static int compare(int x, int y) {
-        return x > y ? 1 : x < y ? -1 : 0;
+    public static TString toString(int i) {
+        return toString(i, 10);
     }
 
     public static int parseInt(TString s, int radix) throws TNumberFormatException {
@@ -111,5 +101,154 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
 
     public static int parseInt(TString s) throws TNumberFormatException {
         return parseInt(s, 10);
+    }
+
+    public static TInteger valueOf(TString s, int radix) throws TNumberFormatException {
+        return valueOf(parseInt(s, radix));
+    }
+
+    public static TInteger valueOf(TString s) throws TNumberFormatException {
+        return valueOf(s, 10);
+    }
+
+    public static TInteger valueOf(int i) {
+        if (i >= -128 && i <= 127) {
+            ensureIntegerCache();
+            return integerCache[i + 128];
+        }
+        return new TInteger(i);
+    }
+
+    private static void ensureIntegerCache() {
+        if (integerCache == null) {
+            integerCache = new TInteger[256];
+            for (int j = 0; j < integerCache.length; ++j) {
+                integerCache[j - 128] = new TInteger(j);
+            }
+        }
+    }
+
+    @Override
+    public int intValue() {
+        return value;
+    }
+
+    @Override
+    public long longValue() {
+        return value;
+    }
+
+    @Override
+    public float floatValue() {
+        return value;
+    }
+
+    @Override
+    public double doubleValue() {
+        return value;
+    }
+
+    @Override
+    @Rename("toString")
+    public TString toString0() {
+        return toString(value);
+    }
+
+    @Override
+    public int hashCode() {
+        return (value >>> 4) ^ (value << 28) ^ (value << 8) ^ (value >>> 24);
+    }
+
+    @Override
+    public boolean equals(TObject other) {
+        if (this == other) {
+            return true;
+        }
+        return other instanceof TInteger && ((TInteger)other).value == value;
+    }
+
+    public static TInteger getInteger(TString nm) {
+        return getInteger(nm, null);
+    }
+
+    public static TInteger getInteger(TString nm, int val) {
+        return getInteger(nm, val);
+    }
+
+    public static TInteger getInteger(TString nm, TInteger val) {
+        TString result = TSystem.getProperty(nm);
+        return result != null ? TInteger.valueOf(result) : val;
+    }
+
+    public static TInteger decode(TString nm) throws TNumberFormatException {
+        if (nm == null || nm.isEmpty()) {
+            throw new TNumberFormatException(TString.wrap("Can't parse empty or null string"));
+        }
+        int index = 0;
+        boolean negaive = false;
+        if (nm.charAt(index) == '+') {
+            ++index;
+        } else if (nm.charAt(index) == '-') {
+            ++index;
+            negaive = true;
+        }
+        if (index >= nm.length()) {
+            throw new TNumberFormatException(TString.wrap("The string does not represent a number"));
+        }
+        int radix = 10;
+        if (nm.charAt(index) == '#') {
+            radix = 16;
+            ++index;
+        } else if (nm.charAt(index) == '0') {
+            ++index;
+            if (index == nm.length()) {
+                return TInteger.valueOf(0);
+            }
+            if (nm.charAt(index) == 'x' || nm.charAt(index) == 'X') {
+                radix = 16;
+                ++index;
+            } else {
+                radix = 8;
+            }
+        }
+        if (index >= nm.length()) {
+            throw new TNumberFormatException(TString.wrap("The string does not represent a number"));
+        }
+        int value = 0;
+        while (index < nm.length()) {
+            int digit = decodeDigit(nm.charAt(index++));
+            if (digit >= radix) {
+                throw new TNumberFormatException(TString.wrap("The string does not represent a number"));
+            }
+            value = value * radix + digit;
+            if (value < 0) {
+                if (negaive && value == MIN_VALUE && index == nm.length()) {
+                    return TInteger.valueOf(MIN_VALUE);
+                }
+                throw new TNumberFormatException(TString.wrap("The string represents a too big number"));
+            }
+        }
+        return TInteger.valueOf(negaive ? -value : value);
+    }
+
+    private static int decodeDigit(char c) {
+        if (c >= '0' && c <= '9') {
+            return c - '0';
+        } else if (c >= 'a' && c <= 'z') {
+            return c - 'a' + 10;
+        } else if (c >= 'A' && c <= 'Z') {
+            return c - 'A' + 10;
+        } else {
+            return 255;
+        }
+    }
+
+    @Override
+    public int compareTo(TInteger other) {
+        return compare(value, other.value);
+    }
+
+    public static int compare(int x, int y) {
+        return x > y ? 1 : x < y ? -1 : 0;
     }
 }

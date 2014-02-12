@@ -32,8 +32,13 @@ public class IntegerTest {
         assertEquals(-255, Integer.parseInt("-FF", 16));
         assertEquals(102, Integer.parseInt("1100110", 2));
         assertEquals(2147483647, Integer.parseInt("2147483647", 10));
-        assertEquals(-2147483648, Integer.parseInt("-2147483648", 10));
         assertEquals(411787, Integer.parseInt("Kona", 27));
+    }
+
+    @Test
+    public void parsesMinInteger() {
+        assertEquals(-2147483648, Integer.parseInt("-2147483648", 10));
+        assertEquals(-2147483648, Integer.parseInt("-80000000", 16));
     }
 
     @Test(expected = NumberFormatException.class)
@@ -51,5 +56,15 @@ public class IntegerTest {
         assertEquals("473", Integer.toString(473, 10));
         assertEquals("-ff", Integer.toString(-255, 16));
         assertEquals("kona", Integer.toString(411787, 27));
+    }
+
+    @Test
+    public void decodes() {
+        assertEquals(Integer.valueOf(123), Integer.decode("123"));
+        assertEquals(Integer.valueOf(83), Integer.decode("0123"));
+        assertEquals(Integer.valueOf(255), Integer.decode("0xFF"));
+        assertEquals(Integer.valueOf(65535), Integer.decode("+0xFFFF"));
+        assertEquals(Integer.valueOf(-255), Integer.decode("-0xFF"));
+        assertEquals(Integer.valueOf(2748), Integer.decode("+#ABC"));
     }
 }

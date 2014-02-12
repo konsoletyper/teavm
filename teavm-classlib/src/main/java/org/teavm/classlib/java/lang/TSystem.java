@@ -54,4 +54,10 @@ public final class TSystem extends TObject {
         // TODO: make implementation
         return null;
     }
+
+    public static TString getProperty(@SuppressWarnings("unused") TString key,
+            @SuppressWarnings("unused") TString def) {
+        // TODO: make implementation
+        return null;
+    }
 }
