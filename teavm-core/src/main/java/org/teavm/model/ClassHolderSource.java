@@ -19,6 +19,7 @@ package org.teavm.model;
  *
  * @author konsoletyper
  */
-public interface ClassHolderSource {
-    ClassHolder getClassHolder(String name);
+public interface ClassHolderSource extends ClassReaderSource {
+    @Override
+    ClassHolder get(String name);
 }

@@ -26,6 +26,11 @@ public class ConcurrentCachedMapper<T, R> implements Mapper<T, R> {
         this.innerMapper = innerMapper;
     }
 
+    public R getKnown(T preimage) {
+        Wrapper<R> wrapper = cache.get(preimage);
+        return wrapper != null ? wrapper.value : null;
+    }
+
     @Override
     public R map(T preimage) {
         Wrapper<R> wrapper = cache.get(preimage);

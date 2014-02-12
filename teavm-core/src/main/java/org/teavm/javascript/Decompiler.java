@@ -82,7 +82,7 @@ public class Decompiler {
             executor.execute(new Runnable() {
                 @Override public void run() {
                     Decompiler copy = new Decompiler(classSource, classLoader, executor);
-                    result.set(index, copy.decompile(classSource.getClassHolder(className)));
+                    result.set(index, copy.decompile(classSource.get(className)));
                 }
             });
         }
@@ -94,7 +94,7 @@ public class Decompiler {
         if (!visited.add(className)) {
             return;
         }
-        ClassHolder cls = classSource.getClassHolder(className);
+        ClassHolder cls = classSource.get(className);
         if (cls == null) {
             throw new IllegalArgumentException("Class not found: " + className);
         }

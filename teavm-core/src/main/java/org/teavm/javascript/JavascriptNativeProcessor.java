@@ -51,7 +51,7 @@ class JavascriptNativeProcessor {
     }
 
     private void addPreservedMethods(String ifaceName, Set<MethodDescriptor> methods) {
-        ClassHolder iface = classSource.getClassHolder(ifaceName);
+        ClassHolder iface = classSource.get(ifaceName);
         for (MethodHolder method : iface.getMethods()) {
             methods.add(method.getDescriptor());
         }
@@ -268,7 +268,7 @@ class JavascriptNativeProcessor {
     private Variable wrapArgument(Variable var, ValueType type) {
         if (type instanceof ValueType.Object) {
             String className = ((ValueType.Object)type).getClassName();
-            ClassHolder cls = classSource.getClassHolder(className);
+            ClassHolder cls = classSource.get(className);
             if (cls.getAnnotations().get(JSFunctor.class.getName()) != null) {
                 return wrapFunctor(var, cls);
             }
@@ -313,7 +313,7 @@ class JavascriptNativeProcessor {
     }
 
     private MethodHolder getMethod(MethodReference ref) {
-        ClassHolder cls = classSource.getClassHolder(ref.getClassName());
+        ClassHolder cls = classSource.get(ref.getClassName());
         MethodHolder method = cls.getMethod(ref.getDescriptor());
         if (method != null) {
             return method;

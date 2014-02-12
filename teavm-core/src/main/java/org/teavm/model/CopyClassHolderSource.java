@@ -39,12 +39,12 @@ public class CopyClassHolderSource implements ClassHolderSource {
     }
 
     @Override
-    public ClassHolder getClassHolder(String name) {
-        return mapperSource.getClassHolder(name);
+    public ClassHolder get(String name) {
+        return mapperSource.get(name);
     }
 
     private ClassHolder copyClass(String className) {
-        ClassHolder original = innerSource.getClassHolder(className);
+        ClassHolder original = innerSource.get(className);
         if (original == null) {
             return null;
         }

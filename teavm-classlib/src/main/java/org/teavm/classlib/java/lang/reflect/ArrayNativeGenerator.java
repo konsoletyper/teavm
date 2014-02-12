@@ -61,7 +61,7 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
 
     private void achieveGetLength(final DependencyChecker checker, MethodReference methodRef) {
         final MethodGraph graph = checker.attachMethodGraph(methodRef);
-        graph.getVariableNode(1).addConsumer(new DependencyConsumer() {
+        graph.getVariable(1).addConsumer(new DependencyConsumer() {
             @Override public void consume(String type) {
                 if (!type.startsWith("[")) {
                     MethodReference cons = new MethodReference("java.lang.IllegalArgumentException",

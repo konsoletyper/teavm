@@ -1,5 +1,5 @@
 /*
- *  Copyright 2013 Alexey Andreev.
+ *  Copyright 2014 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,26 +13,24 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.resource;
+package org.teavm.dependency;
 
-import org.teavm.common.ConcurrentCachedMapper;
-import org.teavm.common.Mapper;
-import org.teavm.model.ClassHolder;
-import org.teavm.model.ClassHolderSource;
+import java.util.Collection;
+import org.teavm.model.FieldReference;
+import org.teavm.model.MethodReference;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class MapperClassHolderSource implements ClassHolderSource {
-    private Mapper<String, ClassHolder> mapper;
+public interface DependencyInformation {
+    Collection<MethodReference> getAchievableMethods();
 
-    public MapperClassHolderSource(Mapper<String, ClassHolder> mapper) {
-        this.mapper = new ConcurrentCachedMapper<>(mapper);
-    }
+    Collection<FieldReference> getAchievableFields();
 
-    @Override
-    public ClassHolder get(String name) {
-        return mapper.map(name);
-    }
+    Collection<String> getAchievableClasses();
+
+    DependencyValueInformation getField(FieldReference fieldRef);
+
+    DependencyMethodInformation getMethod(MethodReference methodRef);
 }

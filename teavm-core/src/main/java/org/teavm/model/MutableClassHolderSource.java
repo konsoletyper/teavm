@@ -32,7 +32,7 @@ public class MutableClassHolderSource implements ListableClassHolderSource {
     }
 
     @Override
-    public ClassHolder getClassHolder(String name) {
+    public ClassHolder get(String name) {
         return classes.get(name);
     }
 

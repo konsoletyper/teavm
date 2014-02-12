@@ -91,7 +91,7 @@ public class ObjectNativeGenerator implements Generator, Injector, DependencyPlu
         MethodReference initMethod = new MethodReference(classClass, new MethodDescriptor("createNew",
                 ValueType.object(classClass)));
         checker.addEntryPoint(initMethod);
-        checker.attachMethodGraph(method).getResultNode().propagate("java.lang.Class");
+        checker.attachMethodGraph(method).getResult().propagate("java.lang.Class");
     }
 
     private void generateHashCode(GeneratorContext context, SourceWriter writer) throws IOException {
@@ -109,7 +109,7 @@ public class ObjectNativeGenerator implements Generator, Injector, DependencyPlu
 
     private void achieveClone(DependencyChecker checker, MethodReference method) {
         MethodGraph graph = checker.attachMethodGraph(method);
-        graph.getVariableNode(0).connect(graph.getResultNode());
+        graph.getVariable(0).connect(graph.getResult());
     }
 
     private void generateWrap(InjectorContext context) throws IOException {
@@ -118,6 +118,6 @@ public class ObjectNativeGenerator implements Generator, Injector, DependencyPlu
 
     private void achieveWrap(DependencyChecker checker, MethodReference method) {
         MethodGraph graph = checker.attachMethodGraph(method);
-        graph.getVariableNode(1).connect(graph.getResultNode());
+        graph.getVariable(1).connect(graph.getResult());
     }
 }

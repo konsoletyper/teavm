@@ -96,16 +96,16 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                 ValueType.object(classClass)));
         writer.append("cls").ws().append("=").ws().appendMethodBody(createMethodRef).append("();").softNewLine();
         writer.append("cls.$data = clsProto;").softNewLine();
-        if (classSource.getClassHolder(classClass).getField("name") != null) {
+        if (classSource.get(classClass).getField("name") != null) {
             writer.append("cls.").appendField(new FieldReference(classClass, "name")).ws().append("=").ws()
                     .append("clsProto.$meta.name").ws().append("!==").ws().append("undefined").ws().append("?").ws()
                     .append("$rt_str(clsProto.$meta.name)").ws().append(":").ws().append("null;").softNewLine();
         }
-        if (classSource.getClassHolder(classClass).getField("primitive") != null) {
+        if (classSource.get(classClass).getField("primitive") != null) {
             writer.append("cls.").appendField(new FieldReference(classClass, "primitive"))
                     .append(" = clsProto.$meta.primitive ? 1 : 0;").newLine();
         }
-        if (classSource.getClassHolder(classClass).getField("array") != null) {
+        if (classSource.get(classClass).getField("array") != null) {
             writer.append("cls.").appendField(new FieldReference(classClass, "array")).ws()
                     .append("=").ws().append("clsProto.$meta.item").ws().append("?").ws()
                     .append("1").ws().append(":").ws().append("0;").softNewLine();
@@ -200,7 +200,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                     renderBody(method);
                     stubNames.add(naming.getFullNameFor(method.getReference()));
                 }
-                MethodHolder methodHolder = classSource.getClassHolder(cls.getName()).getMethod(
+                MethodHolder methodHolder = classSource.get(cls.getName()).getMethod(
                         new MethodDescriptor("<clinit>", ValueType.VOID));
                 if (methodHolder != null) {
                     writer.appendMethodBody(new MethodReference(cls.getName(), methodHolder.getDescriptor()))
@@ -1150,7 +1150,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         try {
             if (expr.getType() instanceof ValueType.Object) {
                 String clsName = ((ValueType.Object)expr.getType()).getClassName();
-                ClassHolder cls = classSource.getClassHolder(clsName);
+                ClassHolder cls = classSource.get(clsName);
                 if (!cls.getModifiers().contains(ElementModifier.INTERFACE)) {
                     writer.append("(");
                     expr.getExpr().acceptVisitor(this);
@@ -1178,7 +1178,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
     private Injector getInjector(MethodReference ref) {
         InjectorHolder holder = injectorMap.get(ref);
         if (holder == null) {
-            MethodHolder method = classSource.getClassHolder(ref.getClassName()).getMethod(ref.getDescriptor());
+            MethodHolder method = classSource.get(ref.getClassName()).getMethod(ref.getDescriptor());
             AnnotationHolder injectedByAnnot = method.getAnnotations().get(InjectedBy.class.getName());
             if (injectedByAnnot != null) {
                 ValueType type = injectedByAnnot.getValues().get("value").getJavaClass();

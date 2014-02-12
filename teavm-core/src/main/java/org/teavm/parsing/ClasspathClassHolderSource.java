@@ -40,7 +40,7 @@ public class ClasspathClassHolderSource implements ClassHolderSource {
     }
 
     @Override
-    public ClassHolder getClassHolder(String name) {
-        return innerClassSource.getClassHolder(name);
+    public ClassHolder get(String name) {
+        return innerClassSource.get(name);
     }
 }

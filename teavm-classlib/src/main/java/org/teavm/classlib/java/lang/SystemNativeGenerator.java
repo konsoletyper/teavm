@@ -68,8 +68,8 @@ public class SystemNativeGenerator implements Generator, DependencyPlugin {
 
     private void achieveArrayCopy(DependencyChecker checker, MethodReference method) {
         MethodGraph graph = checker.attachMethodGraph(method);
-        DependencyNode src = graph.getVariableNode(1);
-        DependencyNode dest = graph.getVariableNode(3);
-        src.getArrayItemNode().connect(dest.getArrayItemNode());
+        DependencyNode src = graph.getVariable(1);
+        DependencyNode dest = graph.getVariable(3);
+        src.getArrayItem().connect(dest.getArrayItem());
     }
 }

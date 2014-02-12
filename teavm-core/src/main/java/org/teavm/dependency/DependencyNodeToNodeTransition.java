@@ -39,8 +39,8 @@ class DependencyNodeToNodeTransition implements DependencyConsumer {
         if (!destination.hasType(type)) {
             destination.propagate(type);
             if (type.startsWith("[")) {
-                source.getArrayItemNode().connect(destination.getArrayItemNode());
-                destination.getArrayItemNode().connect(destination.getArrayItemNode());
+                source.getArrayItem().connect(destination.getArrayItem());
+                destination.getArrayItem().connect(destination.getArrayItem());
             }
         }
     }

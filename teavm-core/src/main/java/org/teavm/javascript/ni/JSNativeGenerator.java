@@ -100,7 +100,7 @@ public class JSNativeGenerator implements Generator, Injector, DependencyPlugin 
     public void methodAchieved(final DependencyChecker checker, MethodReference method) {
         MethodGraph graph = checker.attachMethodGraph(method);
         for (int i = 0; i < method.parameterCount(); ++i) {
-            graph.getVariableNode(i).addConsumer(new DependencyConsumer() {
+            graph.getVariable(i).addConsumer(new DependencyConsumer() {
                 @Override public void consume(String type) {
                     achieveFunctorMethods(checker, type);
                 }
@@ -109,7 +109,7 @@ public class JSNativeGenerator implements Generator, Injector, DependencyPlugin 
     }
 
     private void achieveFunctorMethods(DependencyChecker checker, String type) {
-        ClassHolder cls = checker.getClassSource().getClassHolder(type);
+        ClassHolder cls = checker.getClassSource().get(type);
         if (cls != null) {
             for (MethodHolder method : cls.getMethods()) {
                 checker.attachMethodGraph(method.getReference());

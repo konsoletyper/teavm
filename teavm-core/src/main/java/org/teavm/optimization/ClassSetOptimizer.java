@@ -41,7 +41,7 @@ public class ClassSetOptimizer {
 
     public void optimizeAll(ListableClassHolderSource classSource) {
         for (String className : classSource.getClassNames()) {
-            ClassHolder cls = classSource.getClassHolder(className);
+            ClassHolder cls = classSource.get(className);
             for (final MethodHolder method : cls.getMethods()) {
                 if (method.getProgram() != null && method.getProgram().basicBlockCount() > 0) {
                     executor.execute(new Runnable() {

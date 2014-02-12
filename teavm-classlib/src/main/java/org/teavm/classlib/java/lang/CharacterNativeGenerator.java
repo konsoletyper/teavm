@@ -72,6 +72,6 @@ public class CharacterNativeGenerator implements Generator, DependencyPlugin {
     }
 
     private void achieveObtainDigitMapping(DependencyChecker checker, MethodReference method) {
-        checker.attachMethodGraph(method).getResultNode().propagate("java.lang.String");
+        checker.attachMethodGraph(method).getResult().propagate("java.lang.String");
     }
 }

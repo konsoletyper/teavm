@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * @author Alexey Andreev
  */
-public class DependencyNode {
+public class DependencyNode implements DependencyValueInformation {
     private DependencyChecker dependencyChecker;
     private static final Object mapValue = new Object();
     private ConcurrentMap<DependencyConsumer, Object> followers = new ConcurrentHashMap<>();
@@ -68,7 +68,8 @@ public class DependencyNode {
         connect(node, null);
     }
 
-    public DependencyNode getArrayItemNode() {
+    @Override
+    public DependencyNode getArrayItem() {
         DependencyNode result = arrayItemNode.get();
         if (result == null) {
             result = new DependencyNode(dependencyChecker);
@@ -91,14 +92,17 @@ public class DependencyNode {
         return result;
     }
 
+    @Override
     public boolean hasArrayType() {
         return arrayItemNode.get() != null && !arrayItemNode.get().types.isEmpty();
     }
 
+    @Override
     public boolean hasType(String type) {
         return types.containsKey(type);
     }
 
+    @Override
     public String[] getTypes() {
         return types != null ? types.keySet().toArray(new String[types.size()]) : new String[0];
     }

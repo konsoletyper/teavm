@@ -32,8 +32,8 @@ public class JavascriptProcessedClassSource implements ClassHolderSource {
     }
 
     @Override
-    public ClassHolder getClassHolder(String name) {
-        ClassHolder cls = innerSource.getClassHolder(name);
+    public ClassHolder get(String name) {
+        ClassHolder cls = innerSource.get(name);
         if (cls != null) {
             transformClass(cls);
         }

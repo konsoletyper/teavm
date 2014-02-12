@@ -27,7 +27,7 @@ import org.teavm.model.*;
  *
  * @author Alexey Andreev
  */
-public class DependencyChecker {
+public class DependencyChecker implements DependencyInformation {
     private static Object dummyValue = new Object();
     static final boolean shouldLog = System.getProperty("org.teavm.logDependencies", "false").equals("true");
     private ClassHolderSource classSource;
@@ -78,7 +78,7 @@ public class DependencyChecker {
             throw new IllegalArgumentException("argumentTypes length does not match the number of method's arguments");
         }
         MethodGraph graph = attachMethodGraph(methodRef);
-        DependencyNode[] varNodes = graph.getVariableNodes();
+        DependencyNode[] varNodes = graph.getVariables();
         varNodes[0].propagate(methodRef.getClassName());
         for (int i = 0; i < argumentTypes.length; ++i) {
             varNodes[i + 1].propagate(argumentTypes[i]);
@@ -113,7 +113,7 @@ public class DependencyChecker {
             }
             achieveClass(className);
             achieveInterfaces(className);
-            ClassHolder cls = classSource.getClassHolder(className);
+            ClassHolder cls = classSource.get(className);
             if (cls == null) {
                 throw new RuntimeException("Class not found: " + className);
             }
@@ -125,7 +125,7 @@ public class DependencyChecker {
     }
 
     private void achieveInterfaces(String className) {
-        ClassHolder cls = classSource.getClassHolder(className);
+        ClassHolder cls = classSource.get(className);
         if (cls == null) {
             throw new RuntimeException("Class not found: " + className);
         }
@@ -138,7 +138,7 @@ public class DependencyChecker {
 
     private MethodGraph createMethodGraph(final MethodReference methodRef) {
         initClass(methodRef.getClassName());
-        ClassHolder cls = classSource.getClassHolder(methodRef.getClassName());
+        ClassHolder cls = classSource.get(methodRef.getClassName());
         MethodHolder method = cls.getMethod(methodRef.getDescriptor());
         if (method == null) {
             while (cls != null) {
@@ -146,7 +146,7 @@ public class DependencyChecker {
                 if (method != null) {
                     return methodCache.map(new MethodReference(cls.getName(), methodRef.getDescriptor()));
                 }
-                cls = cls.getParent() != null ? classSource.getClassHolder(cls.getParent()) : null;
+                cls = cls.getParent() != null ? classSource.get(cls.getParent()) : null;
             }
             throw new RuntimeException("Method not found: " + methodRef);
         }
@@ -169,7 +169,7 @@ public class DependencyChecker {
                 resultNode.setTag(method.getOwnerName() + "#" + method.getDescriptor() + ":RESULT");
             }
         }
-        final MethodGraph graph = new MethodGraph(parameterNodes, paramCount, resultNode, this);
+        final MethodGraph graph = new MethodGraph(parameterNodes, paramCount, resultNode);
         final MethodHolder currentMethod = method;
         executor.execute(new Runnable() {
             @Override public void run() {
@@ -188,25 +188,29 @@ public class DependencyChecker {
         return abstractMethods.containsKey(methodRef);
     }
 
+    @Override
     public Collection<MethodReference> getAchievableMethods() {
         return methodCache.getCachedPreimages();
     }
 
+    @Override
     public Collection<FieldReference> getAchievableFields() {
         return fieldCache.getCachedPreimages();
     }
 
+    @Override
     public Collection<String> getAchievableClasses() {
         return new HashSet<>(achievableClasses.keySet());
     }
 
-    public DependencyNode getFieldNode(FieldReference fieldRef) {
+    @Override
+    public DependencyNode getField(FieldReference fieldRef) {
         return fieldCache.map(fieldRef);
     }
 
     private DependencyNode createFieldNode(FieldReference fieldRef) {
         initClass(fieldRef.getClassName());
-        ClassHolder cls = classSource.getClassHolder(fieldRef.getClassName());
+        ClassHolder cls = classSource.get(fieldRef.getClassName());
         if (cls == null) {
             throw new RuntimeException("Class not found: " + fieldRef.getClassName());
         }
@@ -217,7 +221,7 @@ public class DependencyChecker {
                 if (field != null) {
                     return fieldCache.map(new FieldReference(cls.getName(), fieldRef.getFieldName()));
                 }
-                cls = cls.getParent() != null ? classSource.getClassHolder(cls.getParent()) : null;
+                cls = cls.getParent() != null ? classSource.get(cls.getParent()) : null;
             }
             throw new RuntimeException("Field not found: " + fieldRef);
         }
@@ -229,7 +233,7 @@ public class DependencyChecker {
     }
 
     private void activateDependencyPlugin(MethodReference methodRef) {
-        ClassHolder cls = classSource.getClassHolder(methodRef.getClassName());
+        ClassHolder cls = classSource.get(methodRef.getClassName());
         MethodHolder method = cls.getMethod(methodRef.getDescriptor());
         if (method == null) {
             return;
@@ -259,7 +263,7 @@ public class DependencyChecker {
         if (abstractMethods.putIfAbsent(methodRef, methodRef) == null) {
             String className = methodRef.getClassName();
             while (className != null) {
-                ClassHolder cls = classSource.getClassHolder(className);
+                ClassHolder cls = classSource.get(className);
                 if (cls == null) {
                     return;
                 }
@@ -276,7 +280,7 @@ public class DependencyChecker {
     public ListableClassHolderSource cutUnachievableClasses() {
         MutableClassHolderSource cutClasses = new MutableClassHolderSource();
         for (String className : achievableClasses.keySet()) {
-            ClassHolder classHolder = classSource.getClassHolder(className);
+            ClassHolder classHolder = classSource.get(className);
             cutClasses.putClassHolder(classHolder);
             for (MethodHolder method : classHolder.getMethods().toArray(new MethodHolder[0])) {
                 MethodReference methodRef = new MethodReference(className, method.getDescriptor());
@@ -297,5 +301,10 @@ public class DependencyChecker {
             }
         }
         return cutClasses;
+    }
+
+    @Override
+    public DependencyMethodInformation getMethod(MethodReference methodRef) {
+        return methodCache.getKnown(methodRef);
     }
 }

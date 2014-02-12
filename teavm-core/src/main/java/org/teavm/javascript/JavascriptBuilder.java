@@ -23,10 +23,12 @@ import java.util.Set;
 import org.teavm.codegen.*;
 import org.teavm.common.FiniteExecutor;
 import org.teavm.dependency.DependencyChecker;
+import org.teavm.dependency.DependencyInformation;
 import org.teavm.javascript.ast.ClassNode;
 import org.teavm.model.*;
 import org.teavm.model.util.*;
 import org.teavm.optimization.ClassSetOptimizer;
+import org.teavm.optimization.Devirtualization;
 
 /**
  *
@@ -103,7 +105,8 @@ public class JavascriptBuilder {
         executor.complete();
         ListableClassHolderSource classSet = dependencyChecker.cutUnachievableClasses();
         Decompiler decompiler = new Decompiler(classSet, classLoader, executor);
-        Renderer renderer = new Renderer(sourceWriter, classSet, classLoader);
+        devirtualize(classSet, dependencyChecker);
+        executor.complete();
         ClassSetOptimizer optimizer = new ClassSetOptimizer(executor);
         optimizer.optimizeAll(classSet);
         executor.complete();
@@ -116,6 +119,7 @@ public class JavascriptBuilder {
                 // Just don't do anything
             }
         }
+        Renderer renderer = new Renderer(sourceWriter, classSet, classLoader);
         renderer.renderRuntime();
         List<ClassNode> clsNodes = decompiler.decompile(classSet.getClassNames());
         for (ClassNode clsNode : clsNodes) {
@@ -135,9 +139,23 @@ public class JavascriptBuilder {
         }
     }
 
+    private void devirtualize(ListableClassHolderSource classes, DependencyInformation dependency) {
+        final Devirtualization devirtualization = new Devirtualization(dependency, classes);
+        for (String className : classes.getClassNames()) {
+            ClassHolder cls = classes.get(className);
+            for (final MethodHolder method : cls.getMethods()) {
+                executor.execute(new Runnable() {
+                    @Override public void run() {
+                        devirtualization.apply(method);
+                    }
+                });
+            }
+        }
+    }
+
     private void allocateRegisters(ListableClassHolderSource classes) {
         for (String className : classes.getClassNames()) {
-            ClassHolder cls = classes.getClassHolder(className);
+            ClassHolder cls = classes.get(className);
             for (final MethodHolder method : cls.getMethods()) {
                 if (method.getProgram() != null && method.getProgram().basicBlockCount() > 0) {
                     executor.execute(new Runnable() {
@@ -155,7 +173,7 @@ public class JavascriptBuilder {
 
     private void logBytecode(PrintWriter writer, ListableClassHolderSource classes) {
         for (String className : classes.getClassNames()) {
-            ClassHolder classHolder = classes.getClassHolder(className);
+            ClassHolder classHolder = classes.get(className);
             printModifiers(writer, classHolder);
             writer.println("class " + className);
             for (MethodHolder method : classHolder.getMethods()) {

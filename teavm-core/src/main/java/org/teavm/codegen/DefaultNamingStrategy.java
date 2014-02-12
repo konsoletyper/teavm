@@ -61,7 +61,7 @@ public class DefaultNamingStrategy implements NamingStrategy {
         if (method == null) {
             throw new NamingException("Can't provide name for method as it was not found: " + method);
         }
-        ClassHolder clsHolder = classSource.getClassHolder(method.getClassName());
+        ClassHolder clsHolder = classSource.get(method.getClassName());
         MethodHolder methodHolder = clsHolder.getMethod(method.getDescriptor());
         if (methodHolder.getModifiers().contains(ElementModifier.STATIC) ||
                 method.getDescriptor().getName().equals("<init>") ||
@@ -123,7 +123,7 @@ public class DefaultNamingStrategy implements NamingStrategy {
     private MethodReference getRealMethod(MethodReference methodRef) {
         String className = methodRef.getClassName();
         while (className != null) {
-            ClassHolder cls = classSource.getClassHolder(className);
+            ClassHolder cls = classSource.get(className);
             if (cls == null) {
                 return null;
             }
@@ -142,7 +142,7 @@ public class DefaultNamingStrategy implements NamingStrategy {
     private String getRealFieldOwner(String cls, String field) {
         String initialCls = cls;
         while (!fieldExists(cls, field)) {
-            ClassHolder clsHolder = classSource.getClassHolder(cls);
+            ClassHolder clsHolder = classSource.get(cls);
             cls = clsHolder.getParent();
             if (cls == null) {
                 throw new NamingException("Can't provide name for field as the field not found: " +
@@ -153,7 +153,7 @@ public class DefaultNamingStrategy implements NamingStrategy {
     }
 
     private boolean fieldExists(String cls, String field) {
-        ClassHolder classHolder = classSource.getClassHolder(cls);
+        ClassHolder classHolder = classSource.get(cls);
         return classHolder.getField(field) != null;
     }
 }

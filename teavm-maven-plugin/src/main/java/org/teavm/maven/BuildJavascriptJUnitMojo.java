@@ -114,7 +114,7 @@ public class BuildJavascriptJUnitMojo extends AbstractMojo {
             resourceToFile("org/teavm/maven/junit.html", "junit.html");
             final ClassHolderSource classSource = new ClasspathClassHolderSource(classLoader);
             for (String testClass : testClasses) {
-                ClassHolder classHolder = classSource.getClassHolder(testClass);
+                ClassHolder classHolder = classSource.get(testClass);
                 if (classHolder == null) {
                     throw new MojoFailureException("Could not find class " + testClass);
                 }
@@ -142,7 +142,7 @@ public class BuildJavascriptJUnitMojo extends AbstractMojo {
                         firstMethod = false;
                         allTestsWriter.append("\n            { name : \"" + methodRef.getName() + "\", script : \"" +
                                 scriptName + "\", expected : [");
-                        MethodHolder methodHolder = classSource.getClassHolder(testClass).getMethod(
+                        MethodHolder methodHolder = classSource.get(testClass).getMethod(
                                 methodRef.getDescriptor());
                         AnnotationHolder annot = methodHolder.getAnnotations().get("org.junit.Test");
                         AnnotationValue expectedAnnot = annot.getValues().get("expected");

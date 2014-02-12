@@ -38,8 +38,8 @@ class DependencyGraphBuilder {
             return;
         }
         program = method.getProgram();
-        resultNode = graph.getResultNode();
-        nodes = graph.getVariableNodes();
+        resultNode = graph.getResult();
+        nodes = graph.getVariables();
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
             for (Instruction insn : block.getInstructions()) {
@@ -87,12 +87,12 @@ class DependencyGraphBuilder {
             if (targetGraph == null) {
                 throw new RuntimeException("Method not found: " + methodRef);
             }
-            DependencyNode[] targetParams = targetGraph.getVariableNodes();
+            DependencyNode[] targetParams = targetGraph.getVariables();
             for (int i = 0; i < parameters.length; ++i) {
                 parameters[i].connect(targetParams[i]);
             }
-            if (targetGraph.getResultNode() != null) {
-                targetGraph.getResultNode().connect(result);
+            if (targetGraph.getResult() != null) {
+                targetGraph.getResult().connect(result);
             }
         }
     }
@@ -100,7 +100,7 @@ class DependencyGraphBuilder {
     private static MethodHolder findMethod(MethodReference methodRef, ClassHolderSource classSource) {
         String className = methodRef.getClassName();
         while (className != null) {
-            ClassHolder cls = classSource.getClassHolder(className);
+            ClassHolder cls = classSource.get(className);
             if (cls == null) {
                 break;
             }
@@ -136,7 +136,7 @@ class DependencyGraphBuilder {
 
         private void invokeSpecial(InvokeInstruction insn) {
             MethodGraph targetGraph = dependencyChecker.attachMethodGraph(insn.getMethod());
-            DependencyNode[] targetParams = targetGraph.getVariableNodes();
+            DependencyNode[] targetParams = targetGraph.getVariables();
             List<Variable> arguments = insn.getArguments();
             for (int i = 0; i < arguments.size(); ++i) {
                 nodes[arguments.get(i).getIndex()].connect(targetParams[i + 1]);
@@ -144,8 +144,8 @@ class DependencyGraphBuilder {
             if (insn.getInstance() != null) {
                 nodes[insn.getInstance().getIndex()].connect(targetParams[0]);
             }
-            if (targetGraph.getResultNode() != null && insn.getReceiver() != null) {
-                targetGraph.getResultNode().connect(nodes[insn.getReceiver().getIndex()]);
+            if (targetGraph.getResult() != null && insn.getReceiver() != null) {
+                targetGraph.getResult().connect(nodes[insn.getReceiver().getIndex()]);
             }
         }
 
@@ -167,14 +167,14 @@ class DependencyGraphBuilder {
         public void visit(PutElementInstruction insn) {
             DependencyNode valueNode = nodes[insn.getValue().getIndex()];
             DependencyNode arrayNode = nodes[insn.getArray().getIndex()];
-            valueNode.connect(arrayNode.getArrayItemNode());
+            valueNode.connect(arrayNode.getArrayItem());
         }
 
         @Override
         public void visit(GetElementInstruction insn) {
             DependencyNode arrayNode = nodes[insn.getArray().getIndex()];
             DependencyNode receiverNode = nodes[insn.getReceiver().getIndex()];
-            arrayNode.getArrayItemNode().connect(receiverNode);
+            arrayNode.getArrayItem().connect(receiverNode);
         }
 
         @Override
@@ -194,7 +194,7 @@ class DependencyGraphBuilder {
 
                 }
             });
-            arrayNode.getArrayItemNode().connect(receiverNode.getArrayItemNode());
+            arrayNode.getArrayItem().connect(receiverNode.getArrayItem());
         }
 
         @Override
@@ -203,14 +203,14 @@ class DependencyGraphBuilder {
 
         @Override
         public void visit(PutFieldInstruction insn) {
-            DependencyNode fieldNode = dependencyChecker.getFieldNode(insn.getField());
+            DependencyNode fieldNode = dependencyChecker.getField(insn.getField());
             DependencyNode valueNode = nodes[insn.getValue().getIndex()];
             valueNode.connect(fieldNode);
         }
 
         @Override
         public void visit(GetFieldInstruction insn) {
-            DependencyNode fieldNode = dependencyChecker.getFieldNode(insn.getField());
+            DependencyNode fieldNode = dependencyChecker.getField(insn.getField());
             DependencyNode receiverNode = nodes[insn.getReceiver().getIndex()];
             fieldNode.connect(receiverNode);
         }

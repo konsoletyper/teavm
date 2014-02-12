@@ -21,41 +21,39 @@ import java.util.Arrays;
  *
  * @author Alexey Andreev
  */
-public class MethodGraph {
+public class MethodGraph implements DependencyMethodInformation {
     private DependencyNode[] variableNodes;
     private int parameterCount;
     private DependencyNode resultNode;
-    private DependencyNode sideEffectNode;
 
-    MethodGraph(DependencyNode[] variableNodes, int parameterCount, DependencyNode resultNode,
-            DependencyChecker checker) {
+    MethodGraph(DependencyNode[] variableNodes, int parameterCount, DependencyNode resultNode) {
         this.variableNodes = Arrays.copyOf(variableNodes, variableNodes.length);
         this.parameterCount = parameterCount;
         this.resultNode = resultNode;
-        this.sideEffectNode = checker.createNode();
     }
 
-    public DependencyNode[] getVariableNodes() {
+    @Override
+    public DependencyNode[] getVariables() {
         return Arrays.copyOf(variableNodes, variableNodes.length);
     }
 
-    public int getVariableNodesCount() {
+    @Override
+    public int getVariableCount() {
         return variableNodes.length;
     }
 
-    public DependencyNode getVariableNode(int index) {
+    @Override
+    public DependencyNode getVariable(int index) {
         return variableNodes[index];
     }
 
+    @Override
     public int getParameterCount() {
         return parameterCount;
     }
 
-    public DependencyNode getResultNode() {
+    @Override
+    public DependencyNode getResult() {
         return resultNode;
-    }
-
-    public DependencyNode getSideEffectNode() {
-        return sideEffectNode;
     }
 }

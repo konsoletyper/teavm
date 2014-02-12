@@ -41,7 +41,7 @@ public class JavascriptEntryPoint {
         if (argument > reference.parameterCount()) {
             throw new IllegalArgumentException("Illegal argument #" + argument + " of " + reference.parameterCount());
         }
-        graph.getVariableNode(argument).propagate(type);
+        graph.getVariable(argument).propagate(type);
         return this;
     }
 }
