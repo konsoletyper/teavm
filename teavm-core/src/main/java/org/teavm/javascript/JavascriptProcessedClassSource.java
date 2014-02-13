@@ -20,14 +20,12 @@ import java.util.List;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ClassHolderTransformer;
-import org.teavm.model.MethodHolder;
 
 /**
  *
  * @author Alexey Andreev
  */
 class JavascriptProcessedClassSource implements ClassHolderSource {
-    private ThreadLocal<JavascriptNativeProcessor> processor = new ThreadLocal<>();
     private ClassHolderSource innerSource;
     private List<ClassHolderTransformer> transformers = new ArrayList<>();
 
@@ -49,22 +47,8 @@ class JavascriptProcessedClassSource implements ClassHolderSource {
     }
 
     private void transformClass(ClassHolder cls) {
-        JavascriptNativeProcessor processor = getProcessor();
-        processor.processClass(cls);
-        for (MethodHolder method : cls.getMethods()) {
-            if (method.getProgram() != null) {
-                processor.processProgram(method.getProgram());
-            }
-        }
         for (ClassHolderTransformer transformer : transformers) {
-            transformer.transformClass(cls);
+            transformer.transformClass(cls, innerSource);
         }
-    }
-
-    private JavascriptNativeProcessor getProcessor() {
-        if (processor.get() == null) {
-            processor.set(new JavascriptNativeProcessor(innerSource));
-        }
-        return processor.get();
     }
 }

@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript;
+package org.teavm.javascript.ni.plugin;
 
 import java.util.*;
 import org.teavm.javascript.ni.*;
@@ -25,12 +25,12 @@ import org.teavm.model.instructions.*;
  * @author Alexey Andreev
  */
 class JavascriptNativeProcessor {
-    private ClassHolderSource classSource;
+    private ClassReaderSource classSource;
     private Program program;
     private List<Instruction> replacement = new ArrayList<>();
     private NativeJavascriptClassRepository nativeRepos;
 
-    public JavascriptNativeProcessor(ClassHolderSource classSource) {
+    public JavascriptNativeProcessor(ClassReaderSource classSource) {
         this.classSource = classSource;
         nativeRepos = new NativeJavascriptClassRepository(classSource);
     }
@@ -51,8 +51,8 @@ class JavascriptNativeProcessor {
     }
 
     private void addPreservedMethods(String ifaceName, Set<MethodDescriptor> methods) {
-        ClassHolder iface = classSource.get(ifaceName);
-        for (MethodHolder method : iface.getMethods()) {
+        ClassReader iface = classSource.get(ifaceName);
+        for (MethodReader method : iface.getMethods()) {
             methods.add(method.getDescriptor());
         }
         for (String superIfaceName : iface.getInterfaces()) {
@@ -75,7 +75,7 @@ class JavascriptNativeProcessor {
                     continue;
                 }
                 replacement.clear();
-                MethodHolder method = getMethod(invoke.getMethod());
+                MethodReader method = getMethod(invoke.getMethod());
                 if (method.getAnnotations().get(JSProperty.class.getName()) != null) {
                     if (isProperGetter(method.getDescriptor())) {
                         String propertyName = method.getName().charAt(0) == 'i' ? cutPrefix(method.getName(), 2) :
@@ -268,7 +268,7 @@ class JavascriptNativeProcessor {
     private Variable wrapArgument(Variable var, ValueType type) {
         if (type instanceof ValueType.Object) {
             String className = ((ValueType.Object)type).getClassName();
-            ClassHolder cls = classSource.get(className);
+            ClassReader cls = classSource.get(className);
             if (cls.getAnnotations().get(JSFunctor.class.getName()) != null) {
                 return wrapFunctor(var, cls);
             }
@@ -276,7 +276,7 @@ class JavascriptNativeProcessor {
         return wrap(var, type);
     }
 
-    private Variable wrapFunctor(Variable var, ClassHolder type) {
+    private Variable wrapFunctor(Variable var, ClassReader type) {
         if (!type.hasModifier(ElementModifier.INTERFACE) || type.getMethods().size() != 1) {
             throw new RuntimeException("Wrong functor: " + type.getName());
         }
@@ -312,9 +312,9 @@ class JavascriptNativeProcessor {
         return result;
     }
 
-    private MethodHolder getMethod(MethodReference ref) {
-        ClassHolder cls = classSource.get(ref.getClassName());
-        MethodHolder method = cls.getMethod(ref.getDescriptor());
+    private MethodReader getMethod(MethodReference ref) {
+        ClassReader cls = classSource.get(ref.getClassName());
+        MethodReader method = cls.getMethod(ref.getDescriptor());
         if (method != null) {
             return method;
         }

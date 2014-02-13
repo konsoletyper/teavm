@@ -303,7 +303,7 @@ public class JavascriptBuilder implements JavascriptBuilderHost {
     }
 
     public void installPlugins() {
-        for (JavascriptBuilderPlugin plugin : ServiceLoader.load(JavascriptBuilderPlugin.class)) {
+        for (JavascriptBuilderPlugin plugin : ServiceLoader.load(JavascriptBuilderPlugin.class, classLoader)) {
             plugin.install(this);
         }
     }

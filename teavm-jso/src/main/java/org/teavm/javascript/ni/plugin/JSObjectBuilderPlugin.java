@@ -13,22 +13,18 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.model;
+package org.teavm.javascript.ni.plugin;
 
-import java.util.EnumSet;
+import org.teavm.javascript.JavascriptBuilderHost;
+import org.teavm.javascript.JavascriptBuilderPlugin;
 
 /**
  *
  * @author Alexey Andreev
  */
-public interface ElementReader {
-    AccessLevel getLevel();
-
-    EnumSet<ElementModifier> readModifiers();
-
-    boolean hasModifier(ElementModifier modifier);
-
-    String getName();
-
-    AnnotationContainerReader getAnnotations();
+public class JSObjectBuilderPlugin implements JavascriptBuilderPlugin {
+    @Override
+    public void install(JavascriptBuilderHost host) {
+        host.add(new JSObjectClassTransformer());
+    }
 }

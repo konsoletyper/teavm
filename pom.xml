@@ -18,6 +18,7 @@
     <module>teavm-maven-plugin</module>
     <module>teavm-samples</module>
     <module>teavm-dom</module>
+    <module>teavm-jso</module>
   </modules>
 
   <build>

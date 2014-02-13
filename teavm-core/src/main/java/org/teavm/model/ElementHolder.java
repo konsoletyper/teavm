@@ -59,6 +59,7 @@ public abstract class ElementHolder implements ElementReader {
         return name;
     }
 
+    @Override
     public AnnotationContainer getAnnotations() {
         return annotations;
     }

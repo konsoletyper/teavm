@@ -22,7 +22,7 @@ import java.util.Map;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class AnnotationContainer {
+public class AnnotationContainer implements AnnotationContainerReader {
     private Map<String, AnnotationHolder> annotations = new HashMap<>();
 
     public void add(AnnotationHolder annotation) {
@@ -32,6 +32,7 @@ public class AnnotationContainer {
         annotations.put(annotation.getType(), annotation);
     }
 
+    @Override
     public AnnotationHolder get(String type) {
         return annotations.get(type);
     }
@@ -48,6 +49,7 @@ public class AnnotationContainer {
         annotations.remove(type);
     }
 
+    @Override
     public Iterable<AnnotationHolder> all() {
         return annotations.values();
     }

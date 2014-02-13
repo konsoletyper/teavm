@@ -22,7 +22,7 @@ import java.util.Map;
  * Represents an annotation of Java element.
  * @author Alexey Andreev
  */
-public class AnnotationHolder {
+public class AnnotationHolder implements AnnotationReader {
     private String type;
     private Map<String, AnnotationValue> values = new HashMap<>();
 
@@ -30,11 +30,22 @@ public class AnnotationHolder {
         this.type = type;
     }
 
+    @Override
     public String getType() {
         return type;
     }
 
     public Map<String, AnnotationValue> getValues() {
         return values;
+    }
+
+    @Override
+    public AnnotationValue getValue(String fieldName) {
+        return values.get(fieldName);
+    }
+
+    @Override
+    public Iterable<String> getAvailableFields() {
+        return values.keySet();
     }
 }

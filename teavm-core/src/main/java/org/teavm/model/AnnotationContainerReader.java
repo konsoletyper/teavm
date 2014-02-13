@@ -15,20 +15,12 @@
  */
 package org.teavm.model;
 
-import java.util.EnumSet;
-
 /**
  *
  * @author Alexey Andreev
  */
-public interface ElementReader {
-    AccessLevel getLevel();
+public interface AnnotationContainerReader {
+    AnnotationHolder get(String type);
 
-    EnumSet<ElementModifier> readModifiers();
-
-    boolean hasModifier(ElementModifier modifier);
-
-    String getName();
-
-    AnnotationContainerReader getAnnotations();
+    Iterable<? extends AnnotationReader> all();
 }

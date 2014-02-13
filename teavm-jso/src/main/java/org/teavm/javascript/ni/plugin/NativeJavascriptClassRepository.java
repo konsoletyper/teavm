@@ -13,13 +13,13 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript;
+package org.teavm.javascript.ni.plugin;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.teavm.javascript.ni.JSObject;
-import org.teavm.model.ClassHolder;
-import org.teavm.model.ClassHolderSource;
+import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 
 /**
@@ -27,10 +27,10 @@ import org.teavm.model.ElementModifier;
  * @author Alexey Andreev
  */
 class NativeJavascriptClassRepository {
-    private ClassHolderSource classSource;
+    private ClassReaderSource classSource;
     private Map<String, Boolean> knownJavaScriptClasses = new HashMap<>();
 
-    public NativeJavascriptClassRepository(ClassHolderSource classSource) {
+    public NativeJavascriptClassRepository(ClassReaderSource classSource) {
         this.classSource = classSource;
         knownJavaScriptClasses.put(JSObject.class.getName(), true);
     }
@@ -45,8 +45,8 @@ class NativeJavascriptClassRepository {
     }
 
     private boolean figureOutIfJavaScriptClass(String className) {
-        ClassHolder cls = classSource.get(className);
-        if (cls == null || !cls.getModifiers().contains(ElementModifier.INTERFACE)) {
+        ClassReader cls = classSource.get(className);
+        if (cls == null || !cls.hasModifier(ElementModifier.INTERFACE)) {
             return false;
         }
         for (String iface : cls.getInterfaces()) {
