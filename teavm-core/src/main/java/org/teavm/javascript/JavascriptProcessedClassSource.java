@@ -15,20 +15,28 @@
  */
 package org.teavm.javascript;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderSource;
+import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.MethodHolder;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class JavascriptProcessedClassSource implements ClassHolderSource {
+class JavascriptProcessedClassSource implements ClassHolderSource {
     private ThreadLocal<JavascriptNativeProcessor> processor = new ThreadLocal<>();
     private ClassHolderSource innerSource;
+    private List<ClassHolderTransformer> transformers = new ArrayList<>();
 
     public JavascriptProcessedClassSource(ClassHolderSource innerSource) {
         this.innerSource = innerSource;
+    }
+
+    public void addTransformer(ClassHolderTransformer transformer) {
+        transformers.add(transformer);
     }
 
     @Override
@@ -47,6 +55,9 @@ public class JavascriptProcessedClassSource implements ClassHolderSource {
             if (method.getProgram() != null) {
                 processor.processProgram(method.getProgram());
             }
+        }
+        for (ClassHolderTransformer transformer : transformers) {
+            transformer.transformClass(cls);
         }
     }
 

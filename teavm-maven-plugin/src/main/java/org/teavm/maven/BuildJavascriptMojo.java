@@ -132,12 +132,13 @@ public class BuildJavascriptMojo extends AbstractMojo {
             JavascriptBuilder builder = builderFactory.create();
             builder.setMinifying(minifying);
             builder.setBytecodeLogging(bytecodeLogging);
+            builder.installPlugins();
             MethodDescriptor mainMethodDesc = new MethodDescriptor("main", ValueType.arrayOf(
                     ValueType.object("java.lang.String")), ValueType.VOID);
             builder.entryPoint("main", new MethodReference(mainClass, mainMethodDesc))
                     .withValue(1, "java.lang.String");
             targetDirectory.mkdirs();
-            builder.build(new File(targetDirectory, targetFileName));
+            builder.build(targetDirectory, targetFileName);
             log.info("JavaScript file successfully built");
             if (!runtimeSuppressed) {
                 resourceToFile("org/teavm/javascript/runtime.js", "runtime.js");
@@ -194,7 +195,7 @@ public class BuildJavascriptMojo extends AbstractMojo {
     }
 
     private void resourceToFile(String resource, String fileName) throws IOException {
-        try (InputStream input = BuildJavascriptJUnitMojo.class.getClassLoader().getResourceAsStream(resource)) {
+        try (InputStream input = BuildJavascriptMojo.class.getClassLoader().getResourceAsStream(resource)) {
             try (OutputStream output = new FileOutputStream(new File(targetDirectory, fileName))) {
                 IOUtils.copy(input, output);
             }

@@ -37,6 +37,7 @@ import org.junit.Test;
 import org.teavm.common.FiniteExecutor;
 import org.teavm.common.SimpleFiniteExecutor;
 import org.teavm.common.ThreadPoolFiniteExecutor;
+import org.teavm.javascript.DirectoryBuildTarget;
 import org.teavm.javascript.JavascriptBuilder;
 import org.teavm.javascript.JavascriptBuilderFactory;
 import org.teavm.model.*;
@@ -234,6 +235,7 @@ public class BuildJavascriptJUnitMojo extends AbstractMojo {
         builderFactory.setExecutor(executor);
         JavascriptBuilder builder = builderFactory.create();
         builder.setMinifying(minifying);
+        builder.installPlugins();
         File file = new File(outputDir, targetName);
         try (Writer innerWriter = new OutputStreamWriter(new FileOutputStream(file), "UTF-8")) {
             MethodReference cons = new MethodReference(methodRef.getClassName(),
@@ -241,7 +243,7 @@ public class BuildJavascriptJUnitMojo extends AbstractMojo {
             builder.entryPoint("initInstance", cons);
             builder.entryPoint("runTest", methodRef).withValue(0, cons.getClassName());
             builder.exportType("TestClass", cons.getClassName());
-            builder.build(innerWriter);
+            builder.build(innerWriter, new DirectoryBuildTarget(outputDir));
             innerWriter.append("\n");
             innerWriter.append("\nJUnitClient.run();");
             innerWriter.close();

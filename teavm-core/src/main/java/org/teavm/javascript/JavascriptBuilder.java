@@ -16,14 +16,12 @@
 package org.teavm.javascript;
 
 import java.io.*;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import org.teavm.codegen.*;
 import org.teavm.common.FiniteExecutor;
 import org.teavm.dependency.DependencyChecker;
 import org.teavm.dependency.DependencyInformation;
+import org.teavm.dependency.DependencyListener;
 import org.teavm.javascript.ast.ClassNode;
 import org.teavm.model.*;
 import org.teavm.model.util.*;
@@ -34,8 +32,8 @@ import org.teavm.optimization.Devirtualization;
  *
  * @author Alexey Andreev
  */
-public class JavascriptBuilder {
-    private ClassHolderSource classSource;
+public class JavascriptBuilder implements JavascriptBuilderHost {
+    private JavascriptProcessedClassSource classSource;
     private DependencyChecker dependencyChecker;
     private FiniteExecutor executor;
     private ClassLoader classLoader;
@@ -44,12 +42,28 @@ public class JavascriptBuilder {
     private OutputStream logStream = System.out;
     private Map<String, JavascriptEntryPoint> entryPoints = new HashMap<>();
     private Map<String, String> exportedClasses = new HashMap<>();
+    private List<JavascriptResourceRenderer> ressourceRenderers = new ArrayList<>();
 
     JavascriptBuilder(ClassHolderSource classSource, ClassLoader classLoader, FiniteExecutor executor) {
         this.classSource = new JavascriptProcessedClassSource(classSource);
         this.classLoader = classLoader;
         dependencyChecker = new DependencyChecker(this.classSource, classLoader, executor);
         this.executor = executor;
+    }
+
+    @Override
+    public void add(DependencyListener listener) {
+        dependencyChecker.addDependencyListener(listener);
+    }
+
+    @Override
+    public void add(ClassHolderTransformer transformer) {
+        classSource.addTransformer(transformer);
+    }
+
+    @Override
+    public void add(JavascriptResourceRenderer resourceRenderer) {
+        ressourceRenderers.add(resourceRenderer);
     }
 
     public boolean isMinifying() {
@@ -91,7 +105,7 @@ public class JavascriptBuilder {
         return classSource;
     }
 
-    public void build(Appendable writer) throws RenderingException {
+    public void build(Appendable writer, JavascriptBuildTarget target) throws RenderingException {
         AliasProvider aliasProvider = minifying ? new MinifyingAliasProvider() : new DefaultAliasProvider();
         DefaultNamingStrategy naming = new DefaultNamingStrategy(aliasProvider, classSource);
         naming.setMinifying(minifying);
@@ -133,6 +147,9 @@ public class JavascriptBuilder {
             for (Map.Entry<String, String> entry : exportedClasses.entrySet()) {
                 sourceWriter.append(entry.getKey()).ws().append("=").ws().appendClass(entry.getValue()).append(";")
                         .softNewLine();
+            }
+            for (JavascriptResourceRenderer resourceRenderer : ressourceRenderers) {
+                resourceRenderer.render(target);
             }
         } catch (IOException e) {
             throw new RenderingException("IO Error occured", e);
@@ -275,13 +292,19 @@ public class JavascriptBuilder {
         }
     }
 
-    public void build(File file) throws RenderingException {
-        try (Writer writer = new OutputStreamWriter(new FileOutputStream(file), "UTF-8")) {
-            build(writer);
+    public void build(File dir, String fileName) throws RenderingException {
+        try (Writer writer = new OutputStreamWriter(new FileOutputStream(new File(dir, fileName)), "UTF-8")) {
+            build(writer, new DirectoryBuildTarget(dir));
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException("Platform does not support UTF-8", e);
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
+        }
+    }
+
+    public void installPlugins() {
+        for (JavascriptBuilderPlugin plugin : ServiceLoader.load(JavascriptBuilderPlugin.class)) {
+            plugin.install(this);
         }
     }
 }

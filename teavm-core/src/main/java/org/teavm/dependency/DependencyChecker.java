@@ -15,8 +15,10 @@
  */
 package org.teavm.dependency;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.teavm.common.*;
@@ -38,6 +40,7 @@ public class DependencyChecker implements DependencyInformation {
     private ConcurrentCachedMapper<FieldReference, DependencyNode> fieldCache;
     private ConcurrentMap<String, Object> achievableClasses = new ConcurrentHashMap<>();
     private ConcurrentMap<String, Object> initializedClasses = new ConcurrentHashMap<>();
+    private List<DependencyListener> listeners = new ArrayList<>();
 
     public DependencyChecker(ClassHolderSource classSource, ClassLoader classLoader) {
         this(classSource, classLoader, new SimpleFiniteExecutor());
@@ -59,7 +62,17 @@ public class DependencyChecker implements DependencyInformation {
         });
         methodCache.addKeyListener(new KeyListener<MethodReference>() {
             @Override public void keyAdded(MethodReference key) {
+                for (DependencyListener listener : listeners) {
+                    listener.methodAchieved(DependencyChecker.this, key);
+                }
                 activateDependencyPlugin(key);
+            }
+        });
+        fieldCache.addKeyListener(new KeyListener<FieldReference>() {
+            @Override public void keyAdded(FieldReference key) {
+                for (DependencyListener listener : listeners) {
+                    listener.fieldAchieved(DependencyChecker.this, key);
+                }
             }
         });
     }
@@ -70,6 +83,10 @@ public class DependencyChecker implements DependencyInformation {
 
     public ClassHolderSource getClassSource() {
         return classSource;
+    }
+
+    public void addDependencyListener(DependencyListener listener) {
+        listeners.add(listener);
     }
 
     public void addEntryPoint(MethodReference methodRef, String... argumentTypes) {
@@ -98,7 +115,13 @@ public class DependencyChecker implements DependencyInformation {
     }
 
     boolean achieveClass(String className) {
-        return achievableClasses.putIfAbsent(className, dummyValue) == null;
+        boolean result = achievableClasses.putIfAbsent(className, dummyValue) == null;
+        if (result) {
+            for (DependencyListener listener : listeners) {
+                listener.classAchieved(this, className);
+            }
+        }
+        return result;
     }
 
     public MethodGraph attachMethodGraph(MethodReference methodRef) {
