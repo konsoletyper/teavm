@@ -105,6 +105,10 @@ public class JavascriptBuilder implements JavascriptBuilderHost {
         return classSource;
     }
 
+    public void prepare() {
+        dependencyChecker.startListeners();
+    }
+
     public void build(Appendable writer, JavascriptBuildTarget target) throws RenderingException {
         AliasProvider aliasProvider = minifying ? new MinifyingAliasProvider() : new DefaultAliasProvider();
         DefaultNamingStrategy naming = new DefaultNamingStrategy(aliasProvider, classSource);
@@ -112,7 +116,6 @@ public class JavascriptBuilder implements JavascriptBuilderHost {
         SourceWriterBuilder builder = new SourceWriterBuilder(naming);
         builder.setMinified(minifying);
         SourceWriter sourceWriter = builder.build(writer);
-        dependencyChecker.startListeners();
         dependencyChecker.attachMethodGraph(new MethodReference("java.lang.Class", new MethodDescriptor("createNew",
                 ValueType.object("java.lang.Class"))));
         dependencyChecker.attachMethodGraph(new MethodReference("java.lang.String", new MethodDescriptor("<init>",

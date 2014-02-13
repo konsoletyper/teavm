@@ -236,6 +236,7 @@ public class BuildJavascriptJUnitMojo extends AbstractMojo {
         JavascriptBuilder builder = builderFactory.create();
         builder.setMinifying(minifying);
         builder.installPlugins();
+        builder.prepare();
         File file = new File(outputDir, targetName);
         try (Writer innerWriter = new OutputStreamWriter(new FileOutputStream(file), "UTF-8")) {
             MethodReference cons = new MethodReference(methodRef.getClassName(),

@@ -133,6 +133,7 @@ public class BuildJavascriptMojo extends AbstractMojo {
             builder.setMinifying(minifying);
             builder.setBytecodeLogging(bytecodeLogging);
             builder.installPlugins();
+            builder.prepare();
             MethodDescriptor mainMethodDesc = new MethodDescriptor("main", ValueType.arrayOf(
                     ValueType.object("java.lang.String")), ValueType.VOID);
             builder.entryPoint("main", new MethodReference(mainClass, mainMethodDesc))

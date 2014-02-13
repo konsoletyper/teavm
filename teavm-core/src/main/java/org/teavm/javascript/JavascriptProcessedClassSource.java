@@ -17,6 +17,8 @@ package org.teavm.javascript;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.teavm.common.ConcurrentCachedMapper;
+import org.teavm.common.Mapper;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ClassHolderTransformer;
@@ -28,6 +30,12 @@ import org.teavm.model.ClassHolderTransformer;
 class JavascriptProcessedClassSource implements ClassHolderSource {
     private ClassHolderSource innerSource;
     private List<ClassHolderTransformer> transformers = new ArrayList<>();
+    private ConcurrentCachedMapper<String, ClassHolder> mapper = new ConcurrentCachedMapper<>(
+            new Mapper<String, ClassHolder>() {
+        @Override public ClassHolder map(String preimage) {
+            return getTransformed(preimage);
+        }
+    });
 
     public JavascriptProcessedClassSource(ClassHolderSource innerSource) {
         this.innerSource = innerSource;
@@ -39,6 +47,10 @@ class JavascriptProcessedClassSource implements ClassHolderSource {
 
     @Override
     public ClassHolder get(String name) {
+        return mapper.map(name);
+    }
+
+    private ClassHolder getTransformed(String name) {
         ClassHolder cls = innerSource.get(name);
         if (cls != null) {
             transformClass(cls);
