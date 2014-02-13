@@ -89,6 +89,12 @@ public class DependencyChecker implements DependencyInformation {
         listeners.add(listener);
     }
 
+    public void startListeners() {
+        for (DependencyListener listener : listeners) {
+            listener.started(this);
+        }
+    }
+
     public void addEntryPoint(MethodReference methodRef, String... argumentTypes) {
         ValueType[] parameters = methodRef.getDescriptor().getParameterTypes();
         if (parameters.length != argumentTypes.length) {

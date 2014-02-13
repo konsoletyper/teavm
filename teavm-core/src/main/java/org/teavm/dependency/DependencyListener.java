@@ -23,6 +23,8 @@ import org.teavm.model.MethodReference;
  * @author Alexey Andreev
  */
 public interface DependencyListener {
+    void started(DependencyChecker dependencyChecker);
+
     void classAchieved(DependencyChecker dependencyChecker, String className);
 
     void methodAchieved(DependencyChecker dependencyChecker, MethodReference method);

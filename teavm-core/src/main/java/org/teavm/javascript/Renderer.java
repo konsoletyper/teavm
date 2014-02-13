@@ -373,6 +373,11 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         public String getParameterName(int index) {
             return variableName(index);
         }
+
+        @Override
+        public ClassReaderSource getClassSource() {
+            return classSource;
+        }
     }
 
     @Override

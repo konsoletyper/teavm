@@ -15,10 +15,14 @@
  */
 package org.teavm.javascript.ni;
 
+import org.teavm.model.ClassReaderSource;
+
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public interface GeneratorContext {
     String getParameterName(int index);
+
+    ClassReaderSource getClassSource();
 }
