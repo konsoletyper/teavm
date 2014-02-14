@@ -34,4 +34,13 @@
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <id>enable-html4j-support</id>
+      <modules>
+        <module>teavm-html4j</module>
+      </modules>
+    </profile>
+  </profiles>
 </project>
