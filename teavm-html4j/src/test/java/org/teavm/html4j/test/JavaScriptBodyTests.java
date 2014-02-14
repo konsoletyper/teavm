@@ -58,9 +58,12 @@ public class JavaScriptBodyTests {
         assertEquals(23, first[0].foo());
     }
 
-    private static interface A {
-        public int foo();
+    @Test
+    public void valuePropagatedToCallback() {
+        A a = new AImpl();
+        assertEquals(23, invokeCallback(a));
     }
+
     private static class AImpl implements A {
         @Override public int foo() {
             return 23;
@@ -78,4 +81,13 @@ public class JavaScriptBodyTests {
 
     @JavaScriptBody(args = {}, body = "return window._global_;")
     private native Object retrieveObject();
+
+    @JavaScriptBody(args = { "callback" }, body = "return callback." +
+            "@org.teavm.html4j.test.A::foo()()", javacall = true)
+    private native int invokeCallback(A callback);
+
+    @JavaScriptBody(args = { "callback" }, body = "return callback." +
+            "@org.teavm.html4j.test.B::bar(" +
+            "Lorg/teavm/html4j/test/A;)(_global_)", javacall = true)
+    private native int invokeCallback(B callback);
 }

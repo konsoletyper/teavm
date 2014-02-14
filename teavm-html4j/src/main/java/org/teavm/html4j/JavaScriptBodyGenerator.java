@@ -66,20 +66,10 @@ public class JavaScriptBodyGenerator implements Generator {
             this.naming = naming;
         }
         @Override protected CharSequence callMethod(String ident, String fqn, String method, String params) {
-            MethodDescriptor desc = MethodDescriptor.parse(method + "V");
+            MethodDescriptor desc = MethodDescriptor.parse(method + params + "V");
             MethodReader reader = findMethod(fqn, desc);
-            StringBuilder sb = new StringBuilder();
-            String name = naming.getNameFor(naming.getNameFor(reader.getReference()));
-            if (ident != null) {
-                if (reader.hasModifier(ElementModifier.FINAL)) {
-                    sb.append(name).append("(").append(ident).append(",").append(params.substring(1));
-                } else {
-                    sb.append(ident).append('.').append(name).append(params);
-                }
-            } else {
-                sb.append("(").append(ident).append(",").append(params.substring(1));
-            }
-            return sb.toString();
+            return ident == null ? naming.getFullNameFor(reader.getReference()) + "(" :
+                    ident + "." + naming.getNameFor(reader.getReference()) + "(";
         }
         private MethodReader findMethod(String clsName, MethodDescriptor desc) {
             while (clsName != null) {

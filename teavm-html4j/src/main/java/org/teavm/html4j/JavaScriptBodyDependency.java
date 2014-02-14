@@ -112,7 +112,7 @@ public class JavaScriptBodyDependency implements DependencyListener {
             this.dependencyChecker = dependencyChecker;
         }
         @Override protected CharSequence callMethod(String ident, String fqn, String method, String params) {
-            MethodDescriptor desc = MethodDescriptor.parse(method + "V");
+            MethodDescriptor desc = MethodDescriptor.parse(method + params + "V");
             MethodReader reader = findMethod(classSource, fqn, desc);
             if (reader != null) {
                 if (reader.hasModifier(ElementModifier.STATIC) || reader.hasModifier(ElementModifier.FINAL)) {
@@ -142,7 +142,7 @@ public class JavaScriptBodyDependency implements DependencyListener {
             MethodReader reader = findMethod(classSource, type, desc);
             if (reader != null) {
                 MethodGraph graph = dependencyChecker.attachMethodGraph(reader.getReference());
-                for (int i = 0; i <= graph.getParameterCount(); ++i) {
+                for (int i = 0; i < graph.getParameterCount(); ++i) {
                     allClassesNode.connect(graph.getVariable(i));
                 }
             }
