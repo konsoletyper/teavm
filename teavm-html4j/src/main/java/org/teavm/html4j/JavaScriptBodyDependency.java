@@ -30,6 +30,18 @@ public class JavaScriptBodyDependency implements DependencyListener {
     public void started(DependencyChecker dependencyChecker) {
         allClassesNode = dependencyChecker.createNode();
         allClassesNode.setTag("JavaScriptBody:global");
+        allClassesNode.getArrayItem().addConsumer(new OneDirectionalConnection(allClassesNode));
+        allClassesNode.getArrayItem().getArrayItem().addConsumer(new OneDirectionalConnection(allClassesNode));
+    }
+
+    private static class OneDirectionalConnection implements DependencyConsumer {
+        private DependencyNode target;
+        public OneDirectionalConnection( DependencyNode target) {
+            this.target = target;
+        }
+        @Override public void consume(String type) {
+            target.propagate(type);
+        }
     }
 
     @Override
@@ -47,12 +59,15 @@ public class JavaScriptBodyDependency implements DependencyListener {
             MethodGraph graph = dependencyChecker.attachMethodGraph(methodRef);
             if (graph.getResult() != null) {
                 allClassesNode.connect(graph.getResult());
+                allClassesNode.addConsumer(new OneDirectionalConnection(graph.getResult().getArrayItem()));
+                allClassesNode.addConsumer(new OneDirectionalConnection(graph.getResult().getArrayItem()
+                        .getArrayItem()));
             }
             for (int i = 0; i < graph.getParameterCount(); ++i) {
                 graph.getVariable(i).connect(allClassesNode);
-                allClassesNode.getArrayItem().connect(graph.getVariable(i).getArrayItem());
-                allClassesNode.getArrayItem().getArrayItem().connect(graph.getVariable(i)
-                        .getArrayItem().getArrayItem());
+                allClassesNode.addConsumer(new OneDirectionalConnection(graph.getVariable(i).getArrayItem()));
+                allClassesNode.addConsumer(new OneDirectionalConnection(graph.getVariable(i).getArrayItem()
+                        .getArrayItem()));
             }
             if (javacall != null && javacall.getBoolean()) {
                 String body = annot.getValue("body").getString();

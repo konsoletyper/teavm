@@ -44,6 +44,13 @@ public class JavaScriptBodyTests {
 
     @Test
     public void dependencyPropagatedThroughArray() {
+        storeObject(new Object[] { new AImpl() });
+        A[] array = (A[])retrieveObject();
+        assertEquals(23, array[0].foo());
+    }
+
+    @Test
+    public void dependencyPropagatedBackThroughArray() {
         A[] first = new A[1];
         storeObject(first);
         Object[] second = (Object[])retrieveObject();
