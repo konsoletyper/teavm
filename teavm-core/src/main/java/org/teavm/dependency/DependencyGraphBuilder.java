@@ -18,6 +18,7 @@ package org.teavm.dependency;
 import java.util.List;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
+import org.teavm.model.util.ListingBuilder;
 
 /**
  *
@@ -38,6 +39,10 @@ class DependencyGraphBuilder {
             return;
         }
         program = method.getProgram();
+        if (DependencyChecker.shouldLog) {
+            System.out.println("Method achieved: " + method.getReference());
+            System.out.println(new ListingBuilder().buildListing(program, "    "));
+        }
         resultNode = graph.getResult();
         nodes = graph.getVariables();
         for (int i = 0; i < program.basicBlockCount(); ++i) {

@@ -60,6 +60,9 @@ public class DependencyNode implements DependencyValueInformation {
     public void connect(DependencyNode node, DependencyTypeFilter filter) {
         DependencyNodeToNodeTransition transition = new DependencyNodeToNodeTransition(this, node, filter);
         if (transitions.putIfAbsent(node, transition) == null) {
+            if (DependencyChecker.shouldLog) {
+                System.out.println("Connecting " + tag + " to " + node.tag);
+            }
             addConsumer(transition);
         }
     }
@@ -74,6 +77,9 @@ public class DependencyNode implements DependencyValueInformation {
         if (result == null) {
             result = new DependencyNode(dependencyChecker);
             if (arrayItemNode.compareAndSet(null, result)) {
+                if (DependencyChecker.shouldLog) {
+                    arrayItemNode.get().tag = tag + "[";
+                }
                 arrayItemNodeLatch.countDown();
                 arrayItemNodeLatch = null;
             } else {

@@ -15,7 +15,7 @@
  */
 package org.teavm.html4j.test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import net.java.html.js.JavaScriptBody;
 import org.junit.Test;
 
@@ -29,13 +29,26 @@ public class JavaScriptBodyTests {
         assertEquals(23, simpleNativeMethod());
     }
 
-    @JavaScriptBody(args = {}, body = "return 23;")
-    private native int simpleNativeMethod();
-
     @Test
     public void dependencyPropagated() {
         A a = (A)returnValuePassed(new AImpl());
         assertEquals(23, a.foo());
+    }
+
+    @Test
+    public void dependencyPropagatedThroughProperty() {
+        storeObject(new AImpl());
+        A a = (A)retrieveObject();
+        assertEquals(23, a.foo());
+    }
+
+    @Test
+    public void dependencyPropagatedThroughArray() {
+        A[] first = new A[1];
+        storeObject(first);
+        Object[] second = (Object[])retrieveObject();
+        second[0] = new AImpl();
+        assertEquals(23, first[0].foo());
     }
 
     private static interface A {
@@ -46,6 +59,16 @@ public class JavaScriptBodyTests {
             return 23;
         }
     }
+
+    @JavaScriptBody(args = {}, body = "return 23;")
+    private native int simpleNativeMethod();
+
     @JavaScriptBody(args = { "value" }, body = "return value;")
     private native Object returnValuePassed(Object value);
+
+    @JavaScriptBody(args = { "obj" }, body = "window._global_ = obj;")
+    private native void storeObject(Object obj);
+
+    @JavaScriptBody(args = {}, body = "return window._global_;")
+    private native Object retrieveObject();
 }

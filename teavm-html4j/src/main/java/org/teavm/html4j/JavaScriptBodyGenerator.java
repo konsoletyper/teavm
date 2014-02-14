@@ -55,7 +55,7 @@ public class JavaScriptBodyGenerator implements Generator {
             writer.append(",").ws();
             writer.append(context.getParameterName(i + 1));
         }
-        writer.append(");");
+        writer.append(");").softNewLine();
     }
 
     private static class GeneratorJsCallback extends JsCallback {
