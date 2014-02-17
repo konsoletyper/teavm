@@ -25,7 +25,6 @@ import org.teavm.model.MethodReference;
  * @author Alexey Andreev
  */
 public class StringNativeGenerator implements Injector {
-
     @Override
     public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
         switch (methodRef.getName()) {

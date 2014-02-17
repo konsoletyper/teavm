@@ -73,6 +73,16 @@ public class JavaScriptBodyDependency implements DependencyListener {
                 String body = annot.getValue("body").getString();
                 new GeneratorJsCallback(dependencyChecker.getClassSource(), dependencyChecker).parse(body);
             }
+            for (int i = 0; i < methodRef.parameterCount(); ++i) {
+                ValueType type = methodRef.getDescriptor().parameterType(i);
+                if (type.isObject("java.lang.Object")) {
+                    MethodGraph convGraph = dependencyChecker.attachMethodGraph(new MethodReference(
+                            JavaScriptBodyConverter.class.getName(),
+                            new MethodDescriptor("toJavaScript", ValueType.object("java.lang.Object"),
+                            ValueType.object("java.lang.Object"))));
+                    graph.getVariable(i + 1).connect(convGraph.getVariable(i + 1));
+                }
+            }
         }
     }
 

@@ -53,9 +53,20 @@ public class JavaScriptBodyGenerator implements Generator {
         writer.outdent().append("}).call(").append(context.getParameterName(0));
         for (int i = 0; i < args.size(); ++i) {
             writer.append(",").ws();
-            writer.append(context.getParameterName(i + 1));
+            wrapParameter(writer, methodRef.getDescriptor().parameterType(i), context.getParameterName(i + 1));
         }
         writer.append(");").softNewLine();
+    }
+
+    private void wrapParameter(SourceWriter writer, ValueType type, String param) throws IOException {
+        if (type.isObject("java.lang.Object")) {
+            writer.appendMethodBody(new MethodReference(JavaScriptBodyConverter.class.getName(),
+                    new MethodDescriptor("toJavaScript", ValueType.object("java.lang.Object"),
+                    ValueType.object("java.lang.Object"))));
+            writer.append("(").append(param).append(")");
+        } else {
+            writer.append(param);
+        }
     }
 
     private static class GeneratorJsCallback extends JsCallback {
