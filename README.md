@@ -17,6 +17,10 @@ But there is something more:
 How to use
 ----------
 
+There is no TeaVM artifacts in the central Maven repository yet.
+So first you need to clone project and install it into the local repository.
+In order to install project, just run `mvn install` when you are in the project's root directory.
+
 There are several options of using TeaVM. One is the maven build. First, you write your code as if it were an
 ordinary Java project:
 
@@ -37,11 +41,13 @@ Second, you include the following plugin in your `pom.xml` build section:
       <groupId>org.teavm</groupId>
       <artifactId>teavm-maven-plugin</artifactId>
       <version>0.0.1-SNAPSHOT</version>
-      <dependency>
-        <groupId>org.teavm</groupId>
-        <artifactId>teavm-classlib</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
-      </dependency>
+      <dependencies>
+        <dependency>
+          <groupId>org.teavm</groupId>
+          <artifactId>teavm-classlib</artifactId>
+          <version>0.0.1-SNAPSHOT</version>
+        </dependency>
+      </dependencies>
       <executions>
         <execution>
           <id>generate-javascript</id>
