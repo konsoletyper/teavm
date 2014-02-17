@@ -29,6 +29,14 @@ public class JavaScriptBodyConversionTests {
         assertEquals(23, returnAsInt(23));
     }
 
+    @Test
+    public void convertsIntegerResult() {
+        assertEquals(23, returnAsObject(23));
+    }
+
     @JavaScriptBody(args = { "value" }, body = "return value;")
     private native int returnAsInt(Object value);
+
+    @JavaScriptBody(args = { "value" }, body = "return value;")
+    private native Object returnAsObject(int value);
 }

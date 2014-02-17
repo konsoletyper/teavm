@@ -21,13 +21,13 @@ import org.teavm.javascript.ni.GeneratedBy;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public final class JavaScriptBodyConverter {
-    private JavaScriptBodyConverter() {
+public final class JavaScriptConv {
+    private JavaScriptConv() {
     }
 
-    @GeneratedBy(JavaScriptBodyConverterGenerator.class)
+    @GeneratedBy(JavaScriptConvGenerator.class)
     public static native Object toJavaScript(Object obj);
 
-    @GeneratedBy(JavaScriptBodyConverterGenerator.class)
+    @GeneratedBy(JavaScriptConvGenerator.class)
     public static native Object fromJavaScript(Object obj);
 }

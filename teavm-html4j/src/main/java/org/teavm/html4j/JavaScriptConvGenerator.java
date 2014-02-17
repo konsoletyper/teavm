@@ -25,10 +25,12 @@ import org.teavm.model.*;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class JavaScriptBodyConverterGenerator implements Generator {
-    private static final String convCls = JavaScriptBodyConverter.class.getName();
+public class JavaScriptConvGenerator implements Generator {
+    private static final String convCls = JavaScriptConv.class.getName();
     static final MethodReference intValueMethod = new MethodReference("java.lang.Integer",
             new MethodDescriptor("intValue", ValueType.INTEGER));
+    static final MethodReference valueOfIntMethod = new MethodReference("java.lang.Integer",
+            new MethodDescriptor("valueOf", ValueType.INTEGER, ValueType.object("java.lang.Integer")));
     private static final ValueType objType = ValueType.object("java.lang.Object");
     static final MethodReference toJsMethod = new MethodReference(convCls, new MethodDescriptor(
             "toJavaScript", objType, objType));
@@ -86,8 +88,9 @@ public class JavaScriptBodyConverterGenerator implements Generator {
         writer.append(" else if (" + obj + ".constructor === ").appendClass("java.lang.String")
                 .append(") {").indent().softNewLine();
         writer.append("return $rt_str(" + obj + ");").softNewLine();
-        writer.outdent().append("}");
-        writer.ws().append("else").ws().append("{").indent().softNewLine();
+        writer.outdent().append("} else if (" + obj + " | 0 === " + obj + ") {").indent().softNewLine();
+        writer.append("return ").appendMethodBody(valueOfIntMethod).append("(" + obj + ");").softNewLine();
+        writer.outdent().append("} else {").indent().softNewLine();
         writer.append("return ").append(obj).append(";").softNewLine();
         writer.outdent().append("}").softNewLine();
     }

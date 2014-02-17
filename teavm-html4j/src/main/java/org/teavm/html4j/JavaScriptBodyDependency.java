@@ -76,9 +76,10 @@ public class JavaScriptBodyDependency implements DependencyListener {
     }
 
     private void includeDefaultDependencies(DependencyChecker dependencyChecker) {
-        dependencyChecker.attachMethodGraph(JavaScriptBodyConverterGenerator.fromJsMethod);
-        dependencyChecker.attachMethodGraph(JavaScriptBodyConverterGenerator.toJsMethod);
-        dependencyChecker.attachMethodGraph(JavaScriptBodyConverterGenerator.intValueMethod);
+        dependencyChecker.attachMethodGraph(JavaScriptConvGenerator.fromJsMethod);
+        dependencyChecker.attachMethodGraph(JavaScriptConvGenerator.toJsMethod);
+        dependencyChecker.attachMethodGraph(JavaScriptConvGenerator.intValueMethod);
+        dependencyChecker.attachMethodGraph(JavaScriptConvGenerator.valueOfIntMethod);
     }
 
     @Override

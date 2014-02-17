@@ -63,7 +63,7 @@ public class JavaScriptBodyGenerator implements Generator {
 
     private void wrapParameter(SourceWriter writer, ValueType type, String param) throws IOException {
         if (type.isObject("java.lang.Object")) {
-            writer.appendMethodBody(JavaScriptBodyConverterGenerator.toJsMethod);
+            writer.appendMethodBody(JavaScriptConvGenerator.toJsMethod);
             writer.append("(").append(param).append(")");
         } else {
             writer.append(param);
@@ -72,7 +72,7 @@ public class JavaScriptBodyGenerator implements Generator {
 
     private void unwrapValue(SourceWriter writer, ValueType type, String param) throws IOException {
         if (type.isObject("java.lang.Object")) {
-            writer.appendMethodBody(JavaScriptBodyConverterGenerator.fromJsMethod);
+            writer.appendMethodBody(JavaScriptConvGenerator.fromJsMethod);
             writer.append("(").append(param).append(")");
         } else {
             writer.append(param);
