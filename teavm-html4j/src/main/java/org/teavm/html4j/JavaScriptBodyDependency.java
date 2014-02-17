@@ -30,8 +30,6 @@ public class JavaScriptBodyDependency implements DependencyListener {
     public void started(DependencyChecker dependencyChecker) {
         allClassesNode = dependencyChecker.createNode();
         allClassesNode.setTag("JavaScriptBody:global");
-        allClassesNode.getArrayItem().addConsumer(new OneDirectionalConnection(allClassesNode));
-        allClassesNode.getArrayItem().getArrayItem().addConsumer(new OneDirectionalConnection(allClassesNode));
     }
 
     private static class OneDirectionalConnection implements DependencyConsumer {
@@ -55,6 +53,7 @@ public class JavaScriptBodyDependency implements DependencyListener {
         MethodHolder method = cls.getMethod(methodRef.getDescriptor());
         AnnotationReader annot = method.getAnnotations().get(JavaScriptBody.class.getName());
         if (annot != null) {
+            includeDefaultDependencies(dependencyChecker);
             AnnotationValue javacall = annot.getValue("javacall");
             MethodGraph graph = dependencyChecker.attachMethodGraph(methodRef);
             if (graph.getResult() != null) {
@@ -73,17 +72,13 @@ public class JavaScriptBodyDependency implements DependencyListener {
                 String body = annot.getValue("body").getString();
                 new GeneratorJsCallback(dependencyChecker.getClassSource(), dependencyChecker).parse(body);
             }
-            for (int i = 0; i < methodRef.parameterCount(); ++i) {
-                ValueType type = methodRef.getDescriptor().parameterType(i);
-                if (type.isObject("java.lang.Object")) {
-                    MethodGraph convGraph = dependencyChecker.attachMethodGraph(new MethodReference(
-                            JavaScriptBodyConverter.class.getName(),
-                            new MethodDescriptor("toJavaScript", ValueType.object("java.lang.Object"),
-                            ValueType.object("java.lang.Object"))));
-                    graph.getVariable(i + 1).connect(convGraph.getVariable(i + 1));
-                }
-            }
         }
+    }
+
+    private void includeDefaultDependencies(DependencyChecker dependencyChecker) {
+        dependencyChecker.attachMethodGraph(JavaScriptBodyConverterGenerator.fromJsMethod);
+        dependencyChecker.attachMethodGraph(JavaScriptBodyConverterGenerator.toJsMethod);
+        dependencyChecker.attachMethodGraph(JavaScriptBodyConverterGenerator.intValueMethod);
     }
 
     @Override

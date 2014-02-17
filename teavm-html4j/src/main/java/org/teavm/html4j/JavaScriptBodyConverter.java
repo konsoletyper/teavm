@@ -15,7 +15,6 @@
  */
 package org.teavm.html4j;
 
-import org.teavm.dependency.PluggableDependency;
 import org.teavm.javascript.ni.GeneratedBy;
 
 /**
@@ -27,6 +26,8 @@ public final class JavaScriptBodyConverter {
     }
 
     @GeneratedBy(JavaScriptBodyConverterGenerator.class)
-    @PluggableDependency(JavaScriptBodyConverterGenerator.class)
     public static native Object toJavaScript(Object obj);
+
+    @GeneratedBy(JavaScriptBodyConverterGenerator.class)
+    public static native Object fromJavaScript(Object obj);
 }

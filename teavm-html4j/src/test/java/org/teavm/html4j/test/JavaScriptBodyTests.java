@@ -50,15 +50,6 @@ public class JavaScriptBodyTests {
     }
 
     @Test
-    public void dependencyPropagatedBackThroughArray() {
-        A[] first = new A[1];
-        storeObject(first);
-        Object[] second = (Object[])retrieveObject();
-        second[0] = new AImpl();
-        assertEquals(23, first[0].foo());
-    }
-
-    @Test
     public void valuePropagatedToCallback() {
         A a = new AImpl();
         assertEquals(23, invokeCallback(a));

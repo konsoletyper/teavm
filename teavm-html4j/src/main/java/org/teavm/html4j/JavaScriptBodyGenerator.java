@@ -41,7 +41,7 @@ public class JavaScriptBodyGenerator implements Generator {
             GeneratorJsCallback callbackGen = new GeneratorJsCallback(context.getClassSource(), writer.getNaming());
             body = callbackGen.parse(body);
         }
-        writer.append("return (function(");
+        writer.append("var result = (function(");
         for (int i = 0; i < args.size(); ++i) {
             if (i > 0) {
                 writer.append(",").ws();
@@ -55,14 +55,24 @@ public class JavaScriptBodyGenerator implements Generator {
             writer.append(",").ws();
             wrapParameter(writer, methodRef.getDescriptor().parameterType(i), context.getParameterName(i + 1));
         }
-        writer.append(");").softNewLine();
+        writer.append(")").softNewLine();
+        writer.append("return ");
+        unwrapValue(writer, method.getResultType(), "result");
+        writer.append(";").softNewLine();
     }
 
     private void wrapParameter(SourceWriter writer, ValueType type, String param) throws IOException {
         if (type.isObject("java.lang.Object")) {
-            writer.appendMethodBody(new MethodReference(JavaScriptBodyConverter.class.getName(),
-                    new MethodDescriptor("toJavaScript", ValueType.object("java.lang.Object"),
-                    ValueType.object("java.lang.Object"))));
+            writer.appendMethodBody(JavaScriptBodyConverterGenerator.toJsMethod);
+            writer.append("(").append(param).append(")");
+        } else {
+            writer.append(param);
+        }
+    }
+
+    private void unwrapValue(SourceWriter writer, ValueType type, String param) throws IOException {
+        if (type.isObject("java.lang.Object")) {
+            writer.appendMethodBody(JavaScriptBodyConverterGenerator.fromJsMethod);
             writer.append("(").append(param).append(")");
         } else {
             writer.append(param);

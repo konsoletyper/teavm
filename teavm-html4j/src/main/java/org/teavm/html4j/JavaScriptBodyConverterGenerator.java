@@ -17,10 +17,6 @@ package org.teavm.html4j;
 
 import java.io.IOException;
 import org.teavm.codegen.SourceWriter;
-import org.teavm.dependency.DependencyChecker;
-import org.teavm.dependency.DependencyConsumer;
-import org.teavm.dependency.DependencyPlugin;
-import org.teavm.dependency.MethodGraph;
 import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.GeneratorContext;
 import org.teavm.model.*;
@@ -29,29 +25,15 @@ import org.teavm.model.*;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class JavaScriptBodyConverterGenerator implements Generator, DependencyPlugin {
-    private static final MethodReference intValueMethod = new MethodReference("java.lang.Integer",
+public class JavaScriptBodyConverterGenerator implements Generator {
+    private static final String convCls = JavaScriptBodyConverter.class.getName();
+    static final MethodReference intValueMethod = new MethodReference("java.lang.Integer",
             new MethodDescriptor("intValue", ValueType.INTEGER));
-
-    @Override
-    public void methodAchieved(DependencyChecker checker, MethodReference method) {
-        switch (method.getName()) {
-            case "toJavaScript":
-                achieveToJavaScript(checker, method);
-                break;
-        }
-    }
-
-    private void achieveToJavaScript(final DependencyChecker checker, MethodReference method) {
-        MethodGraph graph = checker.attachMethodGraph(method);
-        graph.getVariable(1).addConsumer(new DependencyConsumer() {
-            @Override public void consume(String type) {
-                if (type.equals("java.lang.Integer")) {
-                    checker.attachMethodGraph(intValueMethod);
-                }
-            }
-        });
-    }
+    private static final ValueType objType = ValueType.object("java.lang.Object");
+    static final MethodReference toJsMethod = new MethodReference(convCls, new MethodDescriptor(
+            "toJavaScript", objType, objType));
+    static final MethodReference fromJsMethod = new MethodReference(convCls, new MethodDescriptor(
+            "fromJavaScript", objType, objType));
 
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
@@ -59,32 +41,52 @@ public class JavaScriptBodyConverterGenerator implements Generator, DependencyPl
             case "toJavaScript":
                 generateToJavaScript(context, writer);
                 break;
+            case "fromJavaScript":
+                generateFromJavaScript(context, writer);
+                break;
         }
     }
 
     private void generateToJavaScript(GeneratorContext context, SourceWriter writer) throws IOException {
-        ClassReaderSource classSource = context.getClassSource();
         String obj = context.getParameterName(1);
-        writer.append("if").ws().append("(").append(obj).ws().append("===").ws().append("null)").ws().append("{")
+        writer.append("if (" + obj + " === null) {").softNewLine().indent();
+        writer.append("return null;").softNewLine();
+        writer.outdent().append("} else if (" + obj + ".constructor.$meta.item) {").indent().softNewLine();
+        writer.append("var arr = new Array(" + obj + ".data.length);").softNewLine();
+        writer.append("for (var i = 0; i < arr.length; ++i) {").indent().softNewLine();
+        writer.append("arr[i] = ").appendMethodBody(toJsMethod).append("(" + obj + ".data[i]);").softNewLine();
+        writer.outdent().append("}").softNewLine();
+        writer.append("return arr;").softNewLine();
+        writer.outdent().append("}");
+        writer.append(" else if (" + obj + ".constructor === ").appendClass("java.lang.String")
+                .append(") {").indent().softNewLine();
+        generateStringToJavaScript(context, writer);
+        writer.outdent().append("} else if (" + obj + ".constructor === ").appendClass("java.lang.Integer")
+                .append(") {").indent().softNewLine();
+        writer.append("return ").appendMethodBody(intValueMethod).append("(" + obj + ");").softNewLine();
+        writer.outdent().append("}");
+        writer.append(" else {").indent().softNewLine();
+        writer.append("return " + obj + ";").softNewLine();
+        writer.outdent().append("}").softNewLine();
+    }
+
+    private void generateFromJavaScript(GeneratorContext context, SourceWriter writer) throws IOException {
+        String obj = context.getParameterName(1);
+        writer.append("if (" + obj +" === null || " + obj + " === undefined)").ws().append("{")
                 .softNewLine().indent();
         writer.append("return null;").softNewLine();
-        writer.outdent().append("}").ws().append("else if").ws().append('(').append(obj)
-                .append(".constructor.$meta.item)").ws().append("{").indent().softNewLine();
-        writer.append("return ").append(obj).append(".data;").softNewLine();
+        writer.outdent().append("} else if (" + obj + " instanceof Array) {").indent().softNewLine();
+        writer.append("var arr = $rt_createArray($rt_objcls(), " + obj + ".length);").softNewLine();
+        writer.append("for (var i = 0; i < arr.data.length; ++i) {").indent().softNewLine();
+        writer.append("arr.data[i] = ").appendMethodBody(fromJsMethod).append("(" + obj + "[i]);")
+                .softNewLine();
+        writer.outdent().append("}").softNewLine();
+        writer.append("return arr;").softNewLine();
         writer.outdent().append("}");
-        if (classSource.get("java.lang.String") != null) {
-            writer.ws().append("else if").ws().append("(").append(obj).append(".constructor").ws().append("===").ws()
-                    .appendClass("java.lang.String").append(")").ws().append("{").indent().softNewLine();
-            generateStringToJavaScript(context, writer);
-            writer.outdent().append("}");
-        }
-        if (classSource.get("java.lang.Integer") != null) {
-            writer.ws().append("else if").ws().append("(").append(obj).append(".constructor").ws().append("===").ws()
-                    .appendClass("java.lang.Integer").append(")").ws().append("{").indent().softNewLine();
-            writer.append("return ").appendMethodBody(intValueMethod).append("(").append(obj)
-                    .append(");").softNewLine();
-            writer.outdent().append("}");
-        }
+        writer.append(" else if (" + obj + ".constructor === ").appendClass("java.lang.String")
+                .append(") {").indent().softNewLine();
+        writer.append("return $rt_str(" + obj + ");").softNewLine();
+        writer.outdent().append("}");
         writer.ws().append("else").ws().append("{").indent().softNewLine();
         writer.append("return ").append(obj).append(";").softNewLine();
         writer.outdent().append("}").softNewLine();
