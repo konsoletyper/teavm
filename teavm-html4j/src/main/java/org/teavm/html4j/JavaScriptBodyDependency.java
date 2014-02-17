@@ -30,8 +30,6 @@ public class JavaScriptBodyDependency implements DependencyListener {
     public void started(DependencyChecker dependencyChecker) {
         allClassesNode = dependencyChecker.createNode();
         allClassesNode.setTag("JavaScriptBody:global");
-        allClassesNode.getArrayItem().addConsumer(new OneDirectionalConnection(allClassesNode));
-        allClassesNode.getArrayItem().getArrayItem().addConsumer(new OneDirectionalConnection(allClassesNode));
     }
 
     private static class OneDirectionalConnection implements DependencyConsumer {
@@ -55,6 +53,7 @@ public class JavaScriptBodyDependency implements DependencyListener {
         MethodHolder method = cls.getMethod(methodRef.getDescriptor());
         AnnotationReader annot = method.getAnnotations().get(JavaScriptBody.class.getName());
         if (annot != null) {
+            includeDefaultDependencies(dependencyChecker);
             AnnotationValue javacall = annot.getValue("javacall");
             MethodGraph graph = dependencyChecker.attachMethodGraph(methodRef);
             if (graph.getResult() != null) {
@@ -74,6 +73,12 @@ public class JavaScriptBodyDependency implements DependencyListener {
                 new GeneratorJsCallback(dependencyChecker.getClassSource(), dependencyChecker).parse(body);
             }
         }
+    }
+
+    private void includeDefaultDependencies(DependencyChecker dependencyChecker) {
+        dependencyChecker.attachMethodGraph(JavaScriptBodyConverterGenerator.fromJsMethod);
+        dependencyChecker.attachMethodGraph(JavaScriptBodyConverterGenerator.toJsMethod);
+        dependencyChecker.attachMethodGraph(JavaScriptBodyConverterGenerator.intValueMethod);
     }
 
     @Override

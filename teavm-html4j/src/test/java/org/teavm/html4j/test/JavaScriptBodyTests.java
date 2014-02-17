@@ -50,18 +50,14 @@ public class JavaScriptBodyTests {
     }
 
     @Test
-    public void dependencyPropagatedBackThroughArray() {
-        A[] first = new A[1];
-        storeObject(first);
-        Object[] second = (Object[])retrieveObject();
-        second[0] = new AImpl();
-        assertEquals(23, first[0].foo());
-    }
-
-    @Test
     public void valuePropagatedToCallback() {
         A a = new AImpl();
         assertEquals(23, invokeCallback(a));
+    }
+
+    @Test
+    public void staticCallbackInvoked() {
+        assertEquals(23, invokeStaticCallback(new AImpl()));
     }
 
     private static class AImpl implements A {
@@ -90,4 +86,13 @@ public class JavaScriptBodyTests {
             "@org.teavm.html4j.test.B::bar(" +
             "Lorg/teavm/html4j/test/A;)(_global_)", javacall = true)
     private native int invokeCallback(B callback);
+
+    public static int staticCallback(A a) {
+        return a.foo();
+    }
+
+    @JavaScriptBody(args = { "a" }, body = "return " +
+            "@org.teavm.html4j.test.JavaScriptBodyTests::staticCallback(" +
+            "Lorg/teavm/html4j/test/A;)(a)", javacall = true)
+    private native int invokeStaticCallback(A a);
 }

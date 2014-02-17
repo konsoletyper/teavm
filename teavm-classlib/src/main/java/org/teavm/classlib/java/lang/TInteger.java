@@ -123,7 +123,7 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
         if (integerCache == null) {
             integerCache = new TInteger[256];
             for (int j = 0; j < integerCache.length; ++j) {
-                integerCache[j - 128] = new TInteger(j);
+                integerCache[j] = new TInteger(j - 128);
             }
         }
     }

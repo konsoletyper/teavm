@@ -43,6 +43,10 @@ $rt_createArray = function(cls, sz) {
     }
     return arr;
 }
+$rt_wrapArray = function(cls, data) {
+    var arr = new ($rt_arraycls(cls))(data);
+    return arr;
+}
 $rt_createUnfilledArray = function(cls, sz) {
     return new ($rt_arraycls(cls))(new Array(sz));
 }

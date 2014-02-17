@@ -57,9 +57,10 @@ public class DefaultNamingStrategy implements NamingStrategy {
 
     @Override
     public String getNameFor(MethodReference method) {
+        MethodReference origMethod = method;
         method = getRealMethod(method);
         if (method == null) {
-            throw new NamingException("Can't provide name for method as it was not found: " + method);
+            throw new NamingException("Can't provide name for method as it was not found: " + origMethod);
         }
         ClassHolder clsHolder = classSource.get(method.getClassName());
         MethodHolder methodHolder = clsHolder.getMethod(method.getDescriptor());
