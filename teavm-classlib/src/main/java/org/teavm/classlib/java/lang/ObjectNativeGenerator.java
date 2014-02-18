@@ -19,7 +19,7 @@ import java.io.IOException;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.dependency.DependencyChecker;
 import org.teavm.dependency.DependencyPlugin;
-import org.teavm.dependency.MethodGraph;
+import org.teavm.dependency.MethodDependency;
 import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.GeneratorContext;
 import org.teavm.javascript.ni.Injector;
@@ -40,6 +40,7 @@ public class ObjectNativeGenerator implements Generator, Injector, DependencyPlu
                 generateInit(context, writer);
                 break;
             case "hashCode":
+            case "identity":
                 generateHashCode(context, writer);
                 break;
             case "clone":
@@ -61,7 +62,7 @@ public class ObjectNativeGenerator implements Generator, Injector, DependencyPlu
     }
 
     @Override
-    public void methodAchieved(DependencyChecker checker, MethodGraph graph) {
+    public void methodAchieved(DependencyChecker checker, MethodDependency graph) {
         switch (graph.getReference().getName()) {
             case "clone":
                 achieveClone(graph);
@@ -86,7 +87,7 @@ public class ObjectNativeGenerator implements Generator, Injector, DependencyPlu
         writer.append(".constructor)");
     }
 
-    private void achieveGetClass(DependencyChecker checker, MethodGraph graph) {
+    private void achieveGetClass(DependencyChecker checker, MethodDependency graph) {
         String classClass = "java.lang.Class";
         MethodReference initMethod = new MethodReference(classClass, new MethodDescriptor("createNew",
                 ValueType.object(classClass)));
@@ -107,7 +108,7 @@ public class ObjectNativeGenerator implements Generator, Injector, DependencyPlu
         writer.append("return copy;").softNewLine();
     }
 
-    private void achieveClone(MethodGraph graph) {
+    private void achieveClone(MethodDependency graph) {
         graph.getVariable(0).connect(graph.getResult());
     }
 
@@ -115,7 +116,7 @@ public class ObjectNativeGenerator implements Generator, Injector, DependencyPlu
         context.writeExpr(context.getArgument(0));
     }
 
-    private void achieveWrap(MethodGraph graph) {
+    private void achieveWrap(MethodDependency graph) {
         graph.getVariable(1).connect(graph.getResult());
     }
 }

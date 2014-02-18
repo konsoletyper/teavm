@@ -23,7 +23,7 @@ import org.teavm.javascript.ni.InjectedBy;
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public class TClass<T> extends TObject {
-    String name;
+    TString name;
     boolean primitive;
     boolean array;
     private TClass<?> componentType;
@@ -39,7 +39,7 @@ public class TClass<T> extends TObject {
     @InjectedBy(ClassNativeGenerator.class)
     public native boolean isAssignableFrom(TClass<?> obj);
 
-    public String getName() {
+    public TString getName() {
         return name;
     }
 

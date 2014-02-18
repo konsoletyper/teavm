@@ -48,10 +48,11 @@ public class JavaScriptBodyDependency implements DependencyListener {
     }
 
     @Override
-    public void methodAchieved(DependencyChecker dependencyChecker, MethodGraph graph) {
-        ClassHolder cls = dependencyChecker.getClassSource().get(graph.getReference().getClassName());
-        MethodHolder method = cls.getMethod(graph.getReference().getDescriptor());
-        AnnotationReader annot = method.getAnnotations().get(JavaScriptBody.class.getName());
+    public void methodAchieved(DependencyChecker dependencyChecker, MethodDependency graph) {
+        if (graph.isMissing()) {
+            return;
+        }
+        AnnotationReader annot = graph.getMethod().getAnnotations().get(JavaScriptBody.class.getName());
         if (annot != null) {
             includeDefaultDependencies(dependencyChecker);
             AnnotationValue javacall = annot.getValue("javacall");
@@ -75,12 +76,12 @@ public class JavaScriptBodyDependency implements DependencyListener {
     }
 
     private void includeDefaultDependencies(DependencyChecker dependencyChecker) {
-        dependencyChecker.attachMethodGraph(JavaScriptConvGenerator.fromJsMethod, DependencyStack.ROOT);
-        dependencyChecker.attachMethodGraph(JavaScriptConvGenerator.toJsMethod, DependencyStack.ROOT);
-        dependencyChecker.attachMethodGraph(JavaScriptConvGenerator.intValueMethod, DependencyStack.ROOT);
-        dependencyChecker.attachMethodGraph(JavaScriptConvGenerator.valueOfIntMethod, DependencyStack.ROOT);
-        dependencyChecker.attachMethodGraph(JavaScriptConvGenerator.booleanValueMethod, DependencyStack.ROOT);
-        dependencyChecker.attachMethodGraph(JavaScriptConvGenerator.valueOfBooleanMethod, DependencyStack.ROOT);
+        dependencyChecker.linkMethod(JavaScriptConvGenerator.fromJsMethod, DependencyStack.ROOT);
+        dependencyChecker.linkMethod(JavaScriptConvGenerator.toJsMethod, DependencyStack.ROOT);
+        dependencyChecker.linkMethod(JavaScriptConvGenerator.intValueMethod, DependencyStack.ROOT);
+        dependencyChecker.linkMethod(JavaScriptConvGenerator.valueOfIntMethod, DependencyStack.ROOT);
+        dependencyChecker.linkMethod(JavaScriptConvGenerator.booleanValueMethod, DependencyStack.ROOT);
+        dependencyChecker.linkMethod(JavaScriptConvGenerator.valueOfBooleanMethod, DependencyStack.ROOT);
     }
 
     @Override
@@ -114,9 +115,9 @@ public class JavaScriptBodyDependency implements DependencyListener {
     private class GeneratorJsCallback extends JsCallback {
         private ClassReaderSource classSource;
         private DependencyChecker dependencyChecker;
-        private MethodGraph caller;
+        private MethodDependency caller;
         public GeneratorJsCallback(ClassReaderSource classSource, DependencyChecker dependencyChecker,
-                MethodGraph caller) {
+                MethodDependency caller) {
             this.classSource = classSource;
             this.dependencyChecker = dependencyChecker;
             this.caller = caller;
@@ -126,13 +127,13 @@ public class JavaScriptBodyDependency implements DependencyListener {
             MethodReader reader = findMethod(classSource, fqn, desc);
             if (reader != null) {
                 if (reader.hasModifier(ElementModifier.STATIC) || reader.hasModifier(ElementModifier.FINAL)) {
-                    MethodGraph graph = dependencyChecker.attachMethodGraph(reader.getReference(), caller.getStack());
+                    MethodDependency graph = dependencyChecker.linkMethod(reader.getReference(), caller.getStack());
                     for (int i = 0; i <= graph.getParameterCount(); ++i) {
                         allClassesNode.connect(graph.getVariable(i));
                     }
                 } else {
-                    allClassesNode.addConsumer(new VirtualCallbackConsumer(classSource, dependencyChecker, desc,
-                            caller));
+                    allClassesNode.addConsumer(new VirtualCallbackConsumer(dependencyChecker,
+                            reader.getReference(), caller));
                 }
             }
             return "";
@@ -140,24 +141,21 @@ public class JavaScriptBodyDependency implements DependencyListener {
     }
 
     private class VirtualCallbackConsumer implements DependencyConsumer {
-        private ClassReaderSource classSource;
+        private String superClass;
         private DependencyChecker dependencyChecker;
-        private MethodDescriptor desc;
-        private MethodGraph caller;
-        public VirtualCallbackConsumer(ClassReaderSource classSource, DependencyChecker dependencyChecker,
-                MethodDescriptor desc, MethodGraph caller) {
-            this.classSource = classSource;
+        private MethodReference superMethod;
+        private MethodDependency caller;
+        public VirtualCallbackConsumer(DependencyChecker dependencyChecker, MethodReference superMethod,
+                MethodDependency caller) {
             this.dependencyChecker = dependencyChecker;
-            this.desc = desc;
+            this.superMethod = superMethod;
             this.caller = caller;
         }
         @Override public void consume(String type) {
-            MethodReader reader = findMethod(classSource, type, desc);
-            if (reader != null) {
-                MethodGraph graph = dependencyChecker.attachMethodGraph(reader.getReference(), caller.getStack());
-                for (int i = 0; i < graph.getParameterCount(); ++i) {
-                    allClassesNode.connect(graph.getVariable(i));
-                }
+            MethodReference method = new MethodReference(type, superMethod.getDescriptor());
+            MethodDependency graph = dependencyChecker.linkMethod(method, caller.getStack());
+            for (int i = 0; i < graph.getParameterCount(); ++i) {
+                allClassesNode.connect(graph.getVariable(i));
             }
         }
     }

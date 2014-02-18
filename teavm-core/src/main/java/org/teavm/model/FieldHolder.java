@@ -59,4 +59,9 @@ public class FieldHolder extends MemberHolder implements FieldReader {
     public String getOwnerName() {
         return owner != null ? owner.getName() : null;
     }
+
+    @Override
+    public FieldReference getReference() {
+        return new FieldReference(getOwnerName(), getName());
+    }
 }

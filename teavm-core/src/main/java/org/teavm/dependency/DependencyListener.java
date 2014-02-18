@@ -26,7 +26,7 @@ public interface DependencyListener {
 
     void classAchieved(DependencyChecker dependencyChecker, String className);
 
-    void methodAchieved(DependencyChecker dependencyChecker, MethodGraph method);
+    void methodAchieved(DependencyChecker dependencyChecker, MethodDependency method);
 
     void fieldAchieved(DependencyChecker dependencyChecker, FieldReference field, DependencyNode node);
 }

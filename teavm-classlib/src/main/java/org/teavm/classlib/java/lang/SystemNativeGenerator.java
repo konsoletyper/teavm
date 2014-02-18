@@ -20,7 +20,7 @@ import org.teavm.codegen.SourceWriter;
 import org.teavm.dependency.DependencyChecker;
 import org.teavm.dependency.DependencyNode;
 import org.teavm.dependency.DependencyPlugin;
-import org.teavm.dependency.MethodGraph;
+import org.teavm.dependency.MethodDependency;
 import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.GeneratorContext;
 import org.teavm.model.MethodReference;
@@ -43,7 +43,7 @@ public class SystemNativeGenerator implements Generator, DependencyPlugin {
     }
 
     @Override
-    public void methodAchieved(DependencyChecker checker, MethodGraph graph) {
+    public void methodAchieved(DependencyChecker checker, MethodDependency graph) {
         switch (graph.getReference().getName()) {
             case "doArrayCopy":
                 achieveArrayCopy(graph);
@@ -66,7 +66,7 @@ public class SystemNativeGenerator implements Generator, DependencyPlugin {
         writer.append("return Long_fromNumber(new Date().getTime());").softNewLine();
     }
 
-    private void achieveArrayCopy(MethodGraph graph) {
+    private void achieveArrayCopy(MethodDependency graph) {
         DependencyNode src = graph.getVariable(1);
         DependencyNode dest = graph.getVariable(3);
         src.getArrayItem().connect(dest.getArrayItem());

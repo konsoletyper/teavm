@@ -15,7 +15,7 @@
  */
 package org.teavm.javascript;
 
-import org.teavm.dependency.MethodGraph;
+import org.teavm.dependency.MethodDependency;
 import org.teavm.model.MethodReference;
 
 /**
@@ -25,9 +25,9 @@ import org.teavm.model.MethodReference;
 public class JavascriptEntryPoint {
     private String publicName;
     MethodReference reference;
-    private MethodGraph graph;
+    private MethodDependency graph;
 
-    JavascriptEntryPoint(String publicName, MethodReference reference, MethodGraph graph) {
+    JavascriptEntryPoint(String publicName, MethodReference reference, MethodDependency graph) {
         this.publicName = publicName;
         this.reference = reference;
         this.graph = graph;

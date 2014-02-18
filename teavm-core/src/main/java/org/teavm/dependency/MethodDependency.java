@@ -16,25 +16,28 @@
 package org.teavm.dependency;
 
 import java.util.Arrays;
+import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class MethodGraph implements DependencyMethodInformation {
+public class MethodDependency implements DependencyMethodInformation {
     private DependencyNode[] variableNodes;
     private int parameterCount;
     private DependencyNode resultNode;
     private DependencyStack stack;
+    private MethodReader method;
     private MethodReference reference;
 
-    MethodGraph(DependencyNode[] variableNodes, int parameterCount, DependencyNode resultNode,
-            DependencyStack stack, MethodReference reference) {
+    MethodDependency(DependencyNode[] variableNodes, int parameterCount, DependencyNode resultNode,
+            DependencyStack stack, MethodReader method, MethodReference reference) {
         this.variableNodes = Arrays.copyOf(variableNodes, variableNodes.length);
         this.parameterCount = parameterCount;
         this.resultNode = resultNode;
         this.stack = stack;
+        this.method = method;
         this.reference = reference;
     }
 
@@ -69,5 +72,13 @@ public class MethodGraph implements DependencyMethodInformation {
 
     public MethodReference getReference() {
         return reference;
+    }
+
+    public MethodReader getMethod() {
+        return method;
+    }
+
+    public boolean isMissing() {
+        return method == null;
     }
 }

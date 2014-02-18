@@ -49,7 +49,12 @@ public class TObject {
     }
 
     @Rename("toString")
-    public native TString toString0();
+    public TString toString0() {
+        return TString.wrap(getClass().getName() + "@" + identity());
+    }
+
+    @GeneratedBy(ObjectNativeGenerator.class)
+    native int identity();
 
     @Override
     @GeneratedBy(ObjectNativeGenerator.class)

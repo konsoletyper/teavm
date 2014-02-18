@@ -16,14 +16,14 @@
 package org.teavm.model.util;
 
 import java.util.List;
-import org.teavm.model.Variable;
+import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class InstructionStringifier implements InstructionVisitor {
+public class InstructionStringifier implements InstructionReader {
     private StringBuilder sb;
 
     public InstructionStringifier(StringBuilder sb) {
@@ -31,56 +31,50 @@ public class InstructionStringifier implements InstructionVisitor {
     }
 
     @Override
-    public void visit(EmptyInstruction insn) {
+    public void nop() {
         sb.append("nop");
     }
 
     @Override
-    public void visit(ClassConstantInstruction insn) {
-        sb.append("@").append(insn.getReceiver().getIndex()).append(" := classOf ")
-                .append(insn.getConstant());
+    public void classConstant(VariableReader receiver, ValueType cst) {
+        sb.append("@").append(receiver.getIndex()).append(" := classOf ").append(cst);
     }
 
     @Override
-    public void visit(NullConstantInstruction insn) {
-        sb.append("@").append(insn.getReceiver().getIndex()).append(" := null");
+    public void nullConstant(VariableReader receiver) {
+        sb.append("@").append(receiver.getIndex()).append(" := null");
     }
 
     @Override
-    public void visit(IntegerConstantInstruction insn) {
-        sb.append("@").append(insn.getReceiver().getIndex()).append(" := ")
-                .append(insn.getConstant());
+    public void integerConstant(VariableReader receiver, int cst) {
+        sb.append("@").append(receiver.getIndex()).append(" := ").append(cst);
     }
 
     @Override
-    public void visit(LongConstantInstruction insn) {
-        sb.append("@").append(insn.getReceiver().getIndex()).append(" := ")
-                .append(insn.getConstant());
+    public void longConstant(VariableReader receiver, long cst) {
+        sb.append("@").append(receiver.getIndex()).append(" := ").append(cst);
     }
 
     @Override
-    public void visit(FloatConstantInstruction insn) {
-        sb.append("@").append(insn.getReceiver().getIndex()).append(" := ")
-                .append(insn.getConstant());
+    public void floatConstant(VariableReader receiver, float cst) {
+        sb.append("@").append(receiver.getIndex()).append(" := ").append(cst);
     }
 
     @Override
-    public void visit(DoubleConstantInstruction insn) {
-        sb.append("@").append(insn.getReceiver().getIndex()).append(" := ")
-                .append(insn.getConstant());
+    public void doubleConstant(VariableReader receiver, double cst) {
+        sb.append("@").append(receiver.getIndex()).append(" := ").append(cst);
     }
 
     @Override
-    public void visit(StringConstantInstruction insn) {
-        sb.append("@").append(insn.getReceiver().getIndex()).append(" := '")
-                .append(insn.getConstant()).append("'");
+    public void stringConstant(VariableReader receiver, String cst) {
+        sb.append("@").append(receiver.getIndex()).append(" := '").append(cst).append("'");
     }
 
     @Override
-    public void visit(BinaryInstruction insn) {
-        sb.append("@").append(insn.getReceiver().getIndex()).append(" := @")
-                .append(insn.getFirstOperand().getIndex()).append(" ");
-        switch (insn.getOperation()) {
+    public void binary(BinaryOperation op, VariableReader receiver, VariableReader first, VariableReader second,
+            NumericOperandType type) {
+        sb.append("@").append(receiver.getIndex()).append(" := @").append(first.getIndex()).append(" ");
+        switch (op) {
             case ADD:
                 sb.append("+");
                 break;
@@ -118,25 +112,51 @@ public class InstructionStringifier implements InstructionVisitor {
                 sb.append("^");
                 break;
         }
-        sb.append(" @").append(insn.getSecondOperand().getIndex());
+        sb.append(" @").append(second.getIndex());
     }
 
     @Override
-    public void visit(NegateInstruction insn) {
-        sb.append("@").append(insn.getReceiver().getIndex()).append(" := -")
-                .append(" @").append(insn.getOperand().getIndex());
+    public void negate(VariableReader receiver, VariableReader operand, NumericOperandType type) {
+        sb.append("@").append(receiver.getIndex()).append(" := -").append(" @").append(operand.getIndex());
     }
 
     @Override
-    public void visit(AssignInstruction insn) {
-        sb.append("@").append(insn.getReceiver().getIndex()).append(" := @")
-                .append(insn.getAssignee().getIndex());
+    public void assign(VariableReader receiver, VariableReader assignee) {
+        sb.append("@").append(receiver.getIndex()).append(" := @").append(assignee.getIndex());
     }
 
     @Override
-    public void visit(BranchingInstruction insn) {
-        sb.append("if @").append(insn.getOperand().getIndex()).append(" ");
-        switch (insn.getCondition()) {
+    public void cast(VariableReader receiver, VariableReader value, ValueType targetType) {
+        sb.append("@").append(receiver.getIndex()).append(" := cast @").append(value.getIndex())
+                .append(" to ").append(targetType);
+    }
+
+    @Override
+    public void cast(VariableReader receiver, VariableReader value, NumericOperandType sourceType,
+            NumericOperandType targetType) {
+        sb.append("@").append(receiver.getIndex()).append(" := cast @").append(value.getIndex())
+                .append(" from ").append(sourceType).append(" to ").append(targetType);
+    }
+
+    @Override
+    public void cast(VariableReader receiver, VariableReader value, IntegerSubtype type,
+            CastIntegerDirection direction) {
+        sb.append("@").append(receiver.getIndex()).append(" := cast @").append(value.getIndex());
+        switch (direction) {
+            case FROM_INTEGER:
+                sb.append(" from INT to ").append(type);
+                break;
+            case TO_INTEGER:
+                sb.append(" from ").append(type).append(" to INT");
+                break;
+        }
+    }
+
+    @Override
+    public void jumpIf(BranchingCondition cond, VariableReader operand, BasicBlockReader consequent,
+            BasicBlockReader alternative) {
+        sb.append("if @").append(operand.getIndex()).append(" ");
+        switch (cond) {
             case EQUAL:
                 sb.append("== 0");
                 break;
@@ -162,14 +182,14 @@ public class InstructionStringifier implements InstructionVisitor {
                 sb.append("== null");
                 break;
         }
-        sb.append(" then goto $").append(insn.getConsequent().getIndex()).append(" else goto $")
-                .append(insn.getAlternative().getIndex());
+        sb.append(" then goto $").append(consequent.getIndex()).append(" else goto $").append(alternative.getIndex());
     }
 
     @Override
-    public void visit(BinaryBranchingInstruction insn) {
-        sb.append("if @").append(insn.getFirstOperand().getIndex()).append(" ");
-        switch (insn.getCondition()) {
+    public void jumpIf(BinaryBranchingCondition cond, VariableReader first, VariableReader second,
+            BasicBlockReader consequent, BasicBlockReader alternative) {
+        sb.append("if @").append(first.getIndex()).append(" ");
+        switch (cond) {
             case EQUAL:
             case REFERENCE_EQUAL:
                 sb.append("==");
@@ -179,119 +199,125 @@ public class InstructionStringifier implements InstructionVisitor {
                 sb.append("!=");
                 break;
         }
-        sb.append("@").append(insn.getSecondOperand().getIndex())
-                .append(" then goto $").append(insn.getConsequent().getIndex())
-                .append(" else goto $").append(insn.getAlternative().getIndex());
+        sb.append("@").append(second.getIndex()).append(" then goto $").append(consequent.getIndex())
+                .append(" else goto $").append(alternative.getIndex());
     }
 
     @Override
-    public void visit(JumpInstruction insn) {
-        sb.append("goto $").append(insn.getTarget().getIndex());
+    public void jump(BasicBlockReader target) {
+        sb.append("goto $").append(target.getIndex());
     }
 
     @Override
-    public void visit(SwitchInstruction insn) {
-        sb.append("switch @").append(insn.getCondition().getIndex()).append(" ");
-        List<SwitchTableEntry> entries = insn.getEntries();
-        for (int i = 0; i < entries.size(); ++i) {
+    public void choose(VariableReader condition, List<? extends SwitchTableEntryReader> table,
+            BasicBlockReader defaultTarget) {
+        sb.append("switch @").append(condition.getIndex()).append(" ");
+        for (int i = 0; i < table.size(); ++i) {
             if (i > 0) {
                 sb.append("; ");
             }
-            SwitchTableEntry entry = entries.get(i);
-            sb.append("case ").append(entry.getCondition()).append(": goto $")
-                    .append(entry.getTarget());
+            SwitchTableEntryReader entry = table.get(i);
+            sb.append("case ").append(entry.getCondition()).append(": goto $").append(entry.getTarget());
         }
-        sb.append(", default: goto $").append(insn.getDefaultTarget());
+        sb.append(", default: goto $").append(defaultTarget.getIndex());
     }
 
     @Override
-    public void visit(ExitInstruction insn) {
+    public void exit(VariableReader valueToReturn) {
         sb.append("return");
-        if (insn.getValueToReturn() != null) {
-            sb.append(" @").append(insn.getValueToReturn().getIndex());
+        if (valueToReturn != null) {
+            sb.append(" @").append(valueToReturn.getIndex());
         }
     }
 
     @Override
-    public void visit(RaiseInstruction insn) {
-        sb.append("throw @").append(insn.getException().getIndex());
+    public void raise(VariableReader exception) {
+        sb.append("throw @").append(exception.getIndex());
     }
 
     @Override
-    public void visit(ConstructArrayInstruction insn) {
-        sb.append("@").append(insn.getReceiver().getIndex()).append(" = new ")
-                .append(insn.getItemType()).append("[@").append(insn.getSize().getIndex())
-                .append(']');
+    public void createArray(VariableReader receiver, ValueType itemType, VariableReader size) {
+        sb.append("@").append(receiver.getIndex()).append(" = new ").append(itemType).append("[@")
+                .append(size.getIndex()).append(']');
     }
 
     @Override
-    public void visit(ConstructInstruction insn) {
-        sb.append("@").append(insn.getReceiver().getIndex()).append(" = new ")
-                .append(insn.getType()).append("()");
-    }
-
-    @Override
-    public void visit(ConstructMultiArrayInstruction insn) {
-        sb.append("@").append(insn.getReceiver().getIndex()).append(" = new ")
-                .append(insn.getItemType()).append("[");
-        List<Variable> dimensions = insn.getDimensions();
+    public void createArray(VariableReader receiver, ValueType itemType, List<? extends VariableReader> dimensions) {
+        sb.append("@").append(receiver.getIndex()).append(" = new ").append(itemType).append("[");
         for (int i = 0; i < dimensions.size(); ++i) {
             if (i > 0) {
                 sb.append(", ");
             }
-            Variable dimension = dimensions.get(i);
-            sb.append("@").append(dimension.getIndex());
+            sb.append("@").append(dimensions.get(i).getIndex());
         }
         sb.append("]");
     }
 
     @Override
-    public void visit(GetFieldInstruction insn) {
-        sb.append("@").append(insn.getReceiver().getIndex()).append(" := ");
-        if (insn.getInstance() != null) {
-            sb.append("@").append(insn.getInstance().getIndex());
+    public void create(VariableReader receiver, String type) {
+        sb.append("@").append(receiver.getIndex()).append(" = new ").append(type).append("()");
+    }
+
+    @Override
+    public void getField(VariableReader receiver, VariableReader instance, FieldReference field, ValueType fieldType) {
+        sb.append("@").append(receiver.getIndex()).append(" := ");
+        if (instance != null) {
+            sb.append("@").append(instance.getIndex());
         } else {
-            sb.append(insn.getField().getClassName());
+            sb.append(field.getClassName());
         }
-        sb.append(".").append(insn.getField().getFieldName());
+        sb.append(".").append(field.getFieldName());
     }
 
     @Override
-    public void visit(PutFieldInstruction insn) {
-        if (insn.getInstance() != null) {
-            sb.append("@").append(insn.getInstance().getIndex());
+    public void putField(VariableReader instance, FieldReference field, VariableReader value) {
+        if (instance != null) {
+            sb.append("@").append(instance.getIndex());
         } else {
-            sb.append(insn.getField().getClassName());
+            sb.append(field.getClassName());
         }
-        sb.append(".").append(insn.getField().getFieldName()).append(" := @").append(insn.getValue().getIndex());
+        sb.append(".").append(field.getFieldName()).append(" := @").append(value.getIndex());
     }
 
     @Override
-    public void visit(GetElementInstruction insn) {
-        sb.append("@").append(insn.getReceiver().getIndex()).append(" := @")
-                .append(insn.getArray().getIndex()).append("[@")
-                .append(insn.getIndex().getIndex()).append("]");
+    public void arrayLength(VariableReader receiver, VariableReader array) {
+        sb.append("@").append(receiver.getIndex()).append(" := @").append(array.getIndex()).append(".length");
     }
 
     @Override
-    public void visit(PutElementInstruction insn) {
-        sb.append("@").append(insn.getArray().getIndex()).append("[@")
-                .append(insn.getIndex().getIndex()).append("] := @")
-                .append(insn.getValue().getIndex());
+    public void cloneArray(VariableReader receiver, VariableReader array) {
+        sb.append("@").append(receiver.getIndex()).append("@").append(array.getIndex()).append(".clone()");
     }
 
     @Override
-    public void visit(InvokeInstruction insn) {
-        if (insn.getReceiver() != null) {
-            sb.append("@").append(insn.getReceiver().getIndex()).append(" := ");
+    public void unwrapArray(VariableReader receiver, VariableReader array, ArrayElementType elementType) {
+        sb.append("@").append(receiver.getIndex()).append(" := @").append(array.getIndex()).append(".data");
+    }
+
+    @Override
+    public void getElement(VariableReader receiver, VariableReader array, VariableReader index) {
+        sb.append("@").append(receiver.getIndex()).append(" := @").append(array.getIndex()).append("[@")
+                .append(index.getIndex()).append("]");
+    }
+
+    @Override
+    public void putElement(VariableReader array, VariableReader index, VariableReader value) {
+        sb.append("@").append(array.getIndex()).append("[@").append(index.getIndex()).append("] := @")
+                .append(value.getIndex());
+    }
+
+    @Override
+    public void invoke(VariableReader receiver, VariableReader instance, MethodReference method,
+            List<? extends VariableReader> arguments, InvocationType type) {
+        if (receiver != null) {
+            sb.append("@").append(receiver.getIndex()).append(" := ");
         }
-        if (insn.getInstance() != null) {
-            sb.append("@").append(insn.getInstance().getIndex());
+        if (instance != null) {
+            sb.append("@").append(instance.getIndex());
         } else {
-            sb.append(insn.getMethod().getClassName());
+            sb.append(method.getClassName());
         }
-        sb.append(".").append(insn.getMethod().getName()).append("(");
-        List<Variable> arguments = insn.getArguments();
+        sb.append(".").append(method.getName()).append("(");
         for (int i = 0; i < arguments.size(); ++i) {
             if (i > 0) {
                 sb.append(", ");
@@ -302,53 +328,13 @@ public class InstructionStringifier implements InstructionVisitor {
     }
 
     @Override
-    public void visit(IsInstanceInstruction insn) {
-        sb.append("@").append(insn.getReceiver().getIndex()).append(" := @")
-                .append(insn.getValue().getIndex()).append(" instanceof ").append(insn.getType());
+    public void isInstance(VariableReader receiver, VariableReader value, ValueType type) {
+        sb.append("@").append(receiver.getIndex()).append(" := @").append(value.getIndex())
+                .append(" instanceof ").append(type);
     }
 
     @Override
-    public void visit(CastInstruction insn) {
-        sb.append("@").append(insn.getReceiver().getIndex()).append(" := cast @")
-                .append(insn.getValue().getIndex()).append(" to ")
-                .append(insn.getTargetType());
-    }
-
-    @Override
-    public void visit(CastNumberInstruction insn) {
-        sb.append("@").append(insn.getReceiver().getIndex()).append(" := cast @")
-                .append(insn.getValue().getIndex())
-                .append(" from ").append(insn.getSourceType())
-                .append(" to ").append(insn.getTargetType());
-    }
-
-    @Override
-    public void visit(CastIntegerInstruction insn) {
-        sb.append("@").append(insn.getReceiver().getIndex()).append(" := cast @")
-                .append(insn.getValue().getIndex())
-                .append(" from INT to ").append(insn.getTargetType());
-    }
-
-    @Override
-    public void visit(UnwrapArrayInstruction insn) {
-        sb.append("@").append(insn.getReceiver().getIndex()).append(" := @")
-                .append(insn.getArray().getIndex()).append(".data");
-    }
-
-    @Override
-    public void visit(ArrayLengthInstruction insn) {
-        sb.append("@").append(insn.getReceiver().getIndex()).append(" := @")
-                .append(insn.getArray().getIndex()).append(".length");
-    }
-
-    @Override
-    public void visit(CloneArrayInstruction insn) {
-        sb.append("@").append(insn.getReceiver().getIndex()).append("@")
-                .append(insn.getArray().getIndex()).append(".clone()");
-    }
-
-    @Override
-    public void visit(InitClassInstruction insn) {
-        sb.append("initclass ").append(insn.getClassName());
+    public void initClass(String className) {
+        sb.append("initclass ").append(className);
     }
 }

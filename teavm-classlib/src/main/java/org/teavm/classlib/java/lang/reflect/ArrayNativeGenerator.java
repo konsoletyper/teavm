@@ -20,7 +20,7 @@ import org.teavm.codegen.SourceWriter;
 import org.teavm.dependency.DependencyChecker;
 import org.teavm.dependency.DependencyConsumer;
 import org.teavm.dependency.DependencyPlugin;
-import org.teavm.dependency.MethodGraph;
+import org.teavm.dependency.MethodDependency;
 import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.GeneratorContext;
 import org.teavm.model.MethodDescriptor;
@@ -33,7 +33,7 @@ import org.teavm.model.ValueType;
  */
 public class ArrayNativeGenerator implements Generator, DependencyPlugin {
     @Override
-    public void methodAchieved(DependencyChecker checker, MethodGraph graph) {
+    public void methodAchieved(DependencyChecker checker, MethodDependency graph) {
         if (graph.getReference().getName().equals("getLength")) {
             achieveGetLength(checker, graph);
         }
@@ -59,7 +59,7 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
         writer.append("return " + array + ".data.length;").softNewLine();
     }
 
-    private void achieveGetLength(final DependencyChecker checker, final MethodGraph graph) {
+    private void achieveGetLength(final DependencyChecker checker, final MethodDependency graph) {
         graph.getVariable(1).addConsumer(new DependencyConsumer() {
             @Override public void consume(String type) {
                 if (!type.startsWith("[")) {

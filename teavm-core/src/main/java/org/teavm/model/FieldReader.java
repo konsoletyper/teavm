@@ -23,4 +23,6 @@ public interface FieldReader extends MemberReader {
     ValueType getType();
 
     Object getInitialValue();
+
+    FieldReference getReference();
 }

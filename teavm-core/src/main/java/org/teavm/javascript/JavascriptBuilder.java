@@ -91,7 +91,7 @@ public class JavascriptBuilder implements JavascriptBuilderHost {
                     "for method " + ref);
         }
         JavascriptEntryPoint entryPoint = new JavascriptEntryPoint(name, ref,
-                dependencyChecker.attachMethodGraph(ref, DependencyStack.ROOT));
+                dependencyChecker.linkMethod(ref, DependencyStack.ROOT));
         entryPoints.put(name, entryPoint);
         return entryPoint;
     }
@@ -119,13 +119,13 @@ public class JavascriptBuilder implements JavascriptBuilderHost {
         SourceWriterBuilder builder = new SourceWriterBuilder(naming);
         builder.setMinified(minifying);
         SourceWriter sourceWriter = builder.build(writer);
-        dependencyChecker.attachMethodGraph(new MethodReference("java.lang.Class", new MethodDescriptor("createNew",
+        dependencyChecker.linkMethod(new MethodReference("java.lang.Class", new MethodDescriptor("createNew",
                 ValueType.object("java.lang.Class"))), DependencyStack.ROOT);
-        dependencyChecker.attachMethodGraph(new MethodReference("java.lang.String", new MethodDescriptor("<init>",
+        dependencyChecker.linkMethod(new MethodReference("java.lang.String", new MethodDescriptor("<init>",
                 ValueType.arrayOf(ValueType.CHARACTER), ValueType.VOID)), DependencyStack.ROOT);
         executor.complete();
         dependencyChecker.checkForMissingItems();
-        ListableClassHolderSource classSet = dependencyChecker.cutUnachievableClasses();
+        ListableClassHolderSource classSet = dependencyChecker.cutUnachievableClasses(classSource);
         Decompiler decompiler = new Decompiler(classSet, classLoader, executor);
         devirtualize(classSet, dependencyChecker);
         executor.complete();

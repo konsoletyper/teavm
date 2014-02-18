@@ -23,29 +23,29 @@ import org.teavm.model.*;
  * @author Alexey Andreev
  */
 public class ListingBuilder {
-    public String buildListing(Program program, String prefix) {
+    public String buildListing(ProgramReader program, String prefix) {
         StringBuilder sb = new StringBuilder();
         InstructionStringifier stringifier = new InstructionStringifier(sb);
         for (int i = 0; i < program.basicBlockCount(); ++i) {
-            BasicBlock block = program.basicBlockAt(i);
+            BasicBlockReader block = program.basicBlockAt(i);
             sb.append(prefix).append("$").append(i).append(":\n");
-            for (Phi phi : block.getPhis()) {
+            for (PhiReader phi : block.readPhis()) {
                 sb.append(prefix).append("    ");
                 sb.append("@").append(phi.getReceiver().getIndex()).append(" := ");
-                List<Incoming> incomings = phi.getIncomings();
+                List<? extends IncomingReader> incomings = phi.readIncomings();
                 for (int j = 0; j < incomings.size(); ++j) {
                     if (j > 0) {
                         sb.append(", ");
                     }
-                    Incoming incoming = incomings.get(j);
+                    IncomingReader incoming = incomings.get(j);
                     sb.append("@").append(incoming.getValue().getIndex()).append(" from ")
                             .append("$").append(incoming.getSource().getIndex());
                 }
                 sb.append("\n");
             }
-            for (Instruction insn : block.getInstructions()) {
+            for (int j = 0; j < block.instructionCount(); ++j) {
                 sb.append(prefix).append("    ");
-                insn.acceptVisitor(stringifier);
+                block.readInstruction(j, stringifier);
                 sb.append("\n");
             }
         }

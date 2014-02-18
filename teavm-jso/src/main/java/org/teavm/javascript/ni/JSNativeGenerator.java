@@ -20,14 +20,11 @@ import org.teavm.codegen.SourceWriter;
 import org.teavm.dependency.DependencyChecker;
 import org.teavm.dependency.DependencyConsumer;
 import org.teavm.dependency.DependencyPlugin;
-import org.teavm.dependency.MethodGraph;
+import org.teavm.dependency.MethodDependency;
 import org.teavm.javascript.ast.ConstantExpr;
 import org.teavm.javascript.ast.Expr;
 import org.teavm.javascript.ast.InvocationExpr;
-import org.teavm.model.ClassHolder;
-import org.teavm.model.FieldReference;
-import org.teavm.model.MethodHolder;
-import org.teavm.model.MethodReference;
+import org.teavm.model.*;
 
 /**
  *
@@ -97,7 +94,7 @@ public class JSNativeGenerator implements Generator, Injector, DependencyPlugin 
     }
 
     @Override
-    public void methodAchieved(final DependencyChecker checker, final MethodGraph graph) {
+    public void methodAchieved(final DependencyChecker checker, final MethodDependency graph) {
         for (int i = 0; i < graph.getReference().parameterCount(); ++i) {
             graph.getVariable(i).addConsumer(new DependencyConsumer() {
                 @Override public void consume(String type) {
@@ -107,11 +104,14 @@ public class JSNativeGenerator implements Generator, Injector, DependencyPlugin 
         }
     }
 
-    private void achieveFunctorMethods(DependencyChecker checker, String type, MethodGraph caller) {
-        ClassHolder cls = checker.getClassSource().get(type);
+    private void achieveFunctorMethods(DependencyChecker checker, String type, MethodDependency caller) {
+        if (caller.isMissing()) {
+            return;
+        }
+        ClassReader cls = checker.getClassSource().get(type);
         if (cls != null) {
-            for (MethodHolder method : cls.getMethods()) {
-                checker.attachMethodGraph(method.getReference(), caller.getStack());
+            for (MethodReader method : cls.getMethods()) {
+                checker.linkMethod(method.getReference(), caller.getStack());
             }
         }
     }

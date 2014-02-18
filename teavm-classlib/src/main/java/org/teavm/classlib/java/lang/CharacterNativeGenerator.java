@@ -21,7 +21,7 @@ import org.teavm.classlib.impl.unicode.UnicodeSupport;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.dependency.DependencyChecker;
 import org.teavm.dependency.DependencyPlugin;
-import org.teavm.dependency.MethodGraph;
+import org.teavm.dependency.MethodDependency;
 import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.GeneratorContext;
 import org.teavm.model.MethodReference;
@@ -49,7 +49,7 @@ public class CharacterNativeGenerator implements Generator, DependencyPlugin {
     }
 
     @Override
-    public void methodAchieved(DependencyChecker checker, MethodGraph graph) {
+    public void methodAchieved(DependencyChecker checker, MethodDependency graph) {
         switch (graph.getReference().getName()) {
             case "obtainDigitMapping":
                 achieveObtainDigitMapping(graph);
@@ -72,7 +72,7 @@ public class CharacterNativeGenerator implements Generator, DependencyPlugin {
                 .append("\");").softNewLine();
     }
 
-    private void achieveObtainDigitMapping(MethodGraph graph) {
+    private void achieveObtainDigitMapping(MethodDependency graph) {
         graph.getResult().propagate("java.lang.String");
     }
 }
