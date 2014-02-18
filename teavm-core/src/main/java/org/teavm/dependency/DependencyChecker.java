@@ -355,24 +355,19 @@ public class DependencyChecker implements DependencyInformation {
         if (missingClasses.isEmpty() && missingMethods.isEmpty() && missingFields.isEmpty()) {
             return;
         }
+        List<String> items = new ArrayList<>();
+        items.addAll(missingClasses);
+        for (MethodReference method : missingMethods) {
+            items.add(method.toString());
+        }
+        for (FieldReference field : missingFields) {
+            items.add(field.toString());
+        }
+        Collections.sort(items);
         StringBuilder sb = new StringBuilder();
-        if (!missingClasses.isEmpty()) {
-            sb.append("Missing classes:\n");
-            for (String cls : missingClasses) {
-                sb.append("  ").append(cls).append("\n");
-            }
-        }
-        if (!missingMethods.isEmpty()) {
-            sb.append("Missing methods:\n");
-            for (MethodReference method : missingMethods) {
-                sb.append("  ").append(method).append("\n");
-            }
-        }
-        if (!missingMethods.isEmpty()) {
-            sb.append("Missing fields:\n");
-            for (FieldReference field : missingFields) {
-                sb.append("  ").append(field).append("\n");
-            }
+        sb.append("Can't compile due to the following items missing:\n");
+        for (String item : items) {
+            sb.append("  ").append(item).append("\n");
         }
         throw new IllegalStateException(sb.toString());
     }

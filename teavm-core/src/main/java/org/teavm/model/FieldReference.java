@@ -52,4 +52,9 @@ public class FieldReference {
         FieldReference other = (FieldReference)obj;
         return className.equals(other.className) && fieldName.equals(other.fieldName);
     }
+
+    @Override
+    public String toString() {
+        return className + "." + fieldName;
+    }
 }

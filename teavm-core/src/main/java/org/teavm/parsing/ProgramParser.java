@@ -30,9 +30,13 @@ import org.teavm.model.util.InstructionTransitionExtractor;
  * @author Alexey Andreev
  */
 public class ProgramParser {
-    private int[] depthsBefore;
-    private int[] depthsAfter;
-    private int currentDepth;
+    static final byte ROOT = 0;
+    static final byte SINGLE = 1;
+    static final byte DOUBLE_FIRST_HALF = 2;
+    static final byte DOUBLE_SECOND_HALF = 3;
+    private StackFrame[] stackBefore;
+    private StackFrame[] stackAfter;
+    private StackFrame stack;
     private int index;
     private int[] nextIndexes;
     private Map<Label, Integer> labelIndexes;
@@ -54,6 +58,24 @@ public class ProgramParser {
         }
     }
 
+    private static class StackFrame {
+        public final StackFrame next;
+        public final byte type;
+        public final int depth;
+
+        public StackFrame(int depth) {
+            this.next = null;
+            this.type = ROOT;
+            this.depth = depth;
+        }
+
+        public StackFrame(StackFrame next, byte type) {
+            this.next = next;
+            this.type = type;
+            this.depth = next != null ? next.depth + 1 : 0;
+        }
+    }
+
     public Program parse(MethodNode method, String className) {
         program = new Program();
         this.currentClassName = className;
@@ -71,6 +93,39 @@ public class ProgramParser {
         doAnalyze(method);
         assemble();
         return program;
+    }
+
+    private int pushSingle() {
+        stack = new StackFrame(stack, SINGLE);
+        return stack.depth;
+    }
+
+    private int pushDouble() {
+        stack = new StackFrame(stack, DOUBLE_FIRST_HALF);
+        stack = new StackFrame(stack, DOUBLE_SECOND_HALF);
+        return stack.next.depth;
+    }
+
+    private int popSingle() {
+        if (stack == null || stack.type != SINGLE) {
+            throw new AssertionError("Illegal stack state at " + index);
+        }
+        int depth = stack.depth;
+        stack = stack.next;
+        return depth;
+    }
+
+    private int popDouble() {
+        if (stack == null || stack.type != DOUBLE_SECOND_HALF) {
+            throw new AssertionError("Illegal stack state at " + index);
+        }
+        stack = stack.next;
+        if (stack == null || stack.type != DOUBLE_FIRST_HALF) {
+            throw new AssertionError("Illegal stack state at " + index);
+        }
+        int depth = stack.depth;
+        stack = stack.next;
+        return depth;
     }
 
     private void prepareParameters(MethodNode method) {
@@ -118,34 +173,31 @@ public class ProgramParser {
         targetInstructions.addAll(Collections.<List<Instruction>>nCopies(
                 instructions.size(), null));
         basicBlocks.addAll(Collections.<BasicBlock>nCopies(instructions.size(), null));
-        depthsBefore = new int[instructions.size()];
-        depthsAfter = new int[instructions.size()];
-        Arrays.fill(depthsBefore, -1);
-        Arrays.fill(depthsAfter, -1);
+        stackBefore = new StackFrame[instructions.size()];
+        stackAfter = new StackFrame[instructions.size()];
     }
 
     private void doAnalyze(MethodNode method) {
         InsnList instructions = method.instructions;
-        Deque<Step> stack = new ArrayDeque<>();
-        stack.push(new Step(-1, 0));
-        while (!stack.isEmpty()) {
-            Step step = stack.pop();
+        Deque<Step> workStack = new ArrayDeque<>();
+        workStack.push(new Step(-1, 0));
+        while (!workStack.isEmpty()) {
+            Step step = workStack.pop();
             index = step.target;
-            if (depthsBefore[index] != -1) {
+            if (stackBefore[index] != null) {
                 continue;
             }
-            currentDepth = step.source != -1 ? depthsAfter[step.source] :
-                    minLocal + method.maxLocals;
-            depthsBefore[index] = currentDepth;
+            stack = step.source != -1 ? stackAfter[step.source] : new StackFrame(minLocal + method.maxLocals - 1);
+            stackBefore[index] = stack;
             nextIndexes = new int[] { index + 1 };
             instructions.get(index).accept(methodVisitor);
-            depthsAfter[index] = currentDepth;
+            stackAfter[index] = stack;
             flushInstructions();
             if (nextIndexes.length != 1) {
                 emitNextBasicBlock();
             }
             for (int next : nextIndexes) {
-                stack.push(new Step(index, next));
+                workStack.push(new Step(index, next));
             }
         }
     }
@@ -227,24 +279,20 @@ public class ProgramParser {
                 case Opcodes.ILOAD:
                 case Opcodes.FLOAD:
                 case Opcodes.ALOAD:
-                    emitAssignInsn(minLocal + mapLocal(local), currentDepth);
-                    currentDepth++;
+                    emitAssignInsn(minLocal + mapLocal(local), pushSingle());
                     break;
                 case Opcodes.LLOAD:
                 case Opcodes.DLOAD:
-                    emitAssignInsn(minLocal + mapLocal(local), currentDepth);
-                    currentDepth += 2;
+                    emitAssignInsn(minLocal + mapLocal(local), pushDouble());
                     break;
                 case Opcodes.ISTORE:
                 case Opcodes.FSTORE:
                 case Opcodes.ASTORE:
-                    currentDepth--;
-                    emitAssignInsn(currentDepth, minLocal + mapLocal(local));
+                    emitAssignInsn(popSingle(), minLocal + mapLocal(local));
                     break;
                 case Opcodes.LSTORE:
                 case Opcodes.DSTORE:
-                    currentDepth -= 2;
-                    emitAssignInsn(currentDepth, minLocal + mapLocal(local));
+                    emitAssignInsn(popDouble(), minLocal + mapLocal(local));
                     break;
             }
         }
@@ -263,36 +311,32 @@ public class ProgramParser {
                 case Opcodes.NEW: {
                     String cls = type.replace('/', '.');
                     ConstructInstruction insn = new ConstructInstruction();
-                    insn.setReceiver(getVariable(currentDepth));
+                    insn.setReceiver(getVariable(pushSingle()));
                     insn.setType(cls);
                     builder.add(insn);
-                    currentDepth++;
                     break;
                 }
                 case Opcodes.ANEWARRAY: {
-                    int var = currentDepth - 1;
                     ValueType valueType = parseType(type);
                     ConstructArrayInstruction insn = new ConstructArrayInstruction();
-                    insn.setSize(getVariable(var));
-                    insn.setReceiver(getVariable(var));
+                    insn.setSize(getVariable(popSingle()));
+                    insn.setReceiver(getVariable(pushSingle()));
                     insn.setItemType(valueType);
                     builder.add(insn);
                     break;
                 }
                 case Opcodes.INSTANCEOF: {
-                    int var = currentDepth - 1;
                     IsInstanceInstruction insn = new IsInstanceInstruction();
-                    insn.setReceiver(getVariable(var));
-                    insn.setValue(getVariable(var));
+                    insn.setValue(getVariable(popSingle()));
+                    insn.setReceiver(getVariable(pushSingle()));
                     insn.setType(parseType(type));
                     builder.add(insn);
                     break;
                 }
                 case Opcodes.CHECKCAST: {
-                    int var = currentDepth - 1;
                     CastInstruction insn = new CastInstruction();
-                    insn.setValue(getVariable(var));
-                    insn.setReceiver(getVariable(var));
+                    insn.setValue(getVariable(popSingle()));
+                    insn.setReceiver(getVariable(pushSingle()));
                     insn.setTargetType(parseType(type));
                     builder.add(insn);
                     break;
@@ -318,7 +362,7 @@ public class ProgramParser {
                 nextIndexes[i] = target;
             }
             SwitchInstruction insn = new SwitchInstruction();
-            insn.setCondition(getVariable(--currentDepth));
+            insn.setCondition(getVariable(popSingle()));
             insn.getEntries().addAll(Arrays.asList(table));
             builder.add(insn);
             int defaultIndex = labelIndexes.get(dflt);
@@ -337,12 +381,11 @@ public class ProgramParser {
             ValueType arrayType = parseType(desc);
             Variable[] dimensions = new Variable[dims];
             for (int i = dims - 1; i >= 0; --i) {
-                dimensions[i] = getVariable(--currentDepth);
+                dimensions[i] = getVariable(popSingle());
             }
-            int var = currentDepth++;
             ConstructMultiArrayInstruction insn = new ConstructMultiArrayInstruction();
             insn.setItemType(arrayType);
-            insn.setReceiver(getVariable(var));
+            insn.setReceiver(getVariable(pushSingle()));
             insn.getDimensions().addAll(Arrays.asList(dimensions));
             builder.add(insn);
         }
@@ -357,10 +400,9 @@ public class ProgramParser {
                     String ownerCls;
                     if (owner.startsWith("[")) {
                         if (name.equals("clone") && desc.startsWith("()")) {
-                            int var = currentDepth - 1;
                             CloneArrayInstruction insn = new CloneArrayInstruction();
-                            insn.setArray(getVariable(var));
-                            insn.setReceiver(getVariable(var));
+                            insn.setArray(getVariable(popSingle()));
+                            insn.setReceiver(getVariable(pushSingle()));
                             builder.add(insn);
                             break;
                         }
@@ -372,24 +414,17 @@ public class ProgramParser {
                     Variable[] args = new Variable[types.length];
                     int j = args.length;
                     for (int i = types.length - 1; i >= 0; --i) {
-                        if (types[i].getSize() == 2) {
-                            --currentDepth;
-                        }
-                        args[--j] = getVariable(--currentDepth);
+                        args[--j] = types[i].getSize() == 2 ? getVariable(popDouble()) : getVariable(popSingle());
                     }
                     MethodDescriptor method = new MethodDescriptor(name, MethodDescriptor.parseSignature(desc));
                     int instance = -1;
                     if (opcode != Opcodes.INVOKESTATIC) {
-                        instance = --currentDepth;
+                        instance = popSingle();
                     }
                     Type returnType = Type.getReturnType(desc);
                     int result = -1;
                     if (returnType.getSize() > 0) {
-                        int var = currentDepth++;
-                        result = var;
-                        if (returnType.getSize() == 2) {
-                            currentDepth++;
-                        }
+                        result = returnType.getSize() == 2 ? pushDouble() : pushSingle();
                     }
                     if (instance == -1) {
                         InvokeInstruction insn = new InvokeInstruction();
@@ -437,7 +472,7 @@ public class ProgramParser {
                 nextIndexes[i] = target;
             }
             SwitchInstruction insn = new SwitchInstruction();
-            insn.setCondition(getVariable(--currentDepth));
+            insn.setCondition(getVariable(popSingle()));
             insn.getEntries().addAll(Arrays.asList(table));
             builder.add(insn);
             int defaultTarget = labelIndexes.get(dflt);
@@ -465,16 +500,14 @@ public class ProgramParser {
             } else if (cst instanceof Double) {
                 pushConstant((Double)cst);
             } else if (cst instanceof String) {
-                int var = currentDepth++;
                 StringConstantInstruction insn = new StringConstantInstruction();
                 insn.setConstant((String)cst);
-                insn.setReceiver(getVariable(var));
+                insn.setReceiver(getVariable(pushSingle()));
                 builder.add(insn);
             } else if (cst instanceof Type) {
-                int var = currentDepth++;
                 ClassConstantInstruction insn = new ClassConstantInstruction();
                 insn.setConstant(ValueType.parse(((Type)cst).getDescriptor()));
-                insn.setReceiver(getVariable(var));
+                insn.setReceiver(getVariable(pushSingle()));
                 builder.add(insn);
             } else {
                 throw new IllegalArgumentException();
@@ -529,90 +562,83 @@ public class ProgramParser {
         @Override
         public void visitJumpInsn(int opcode, Label label) {
             int target = labelIndexes.get(label);
-            int var = currentDepth - 1;
             switch (opcode) {
                 case Opcodes.IFEQ:
-                    currentDepth--;
-                    emitBranching(BranchingCondition.EQUAL, var, target);
+                    emitBranching(BranchingCondition.EQUAL, popSingle(), target);
                     break;
                 case Opcodes.IFNE:
-                    currentDepth--;
-                    emitBranching(BranchingCondition.NOT_EQUAL, var, target);
+                    emitBranching(BranchingCondition.NOT_EQUAL, popSingle(), target);
                     break;
                 case Opcodes.IFNULL:
-                    currentDepth--;
-                    emitBranching(BranchingCondition.NULL, var, target);
+                    emitBranching(BranchingCondition.NULL, popSingle(), target);
                     break;
                 case Opcodes.IFNONNULL:
-                    currentDepth--;
-                    emitBranching(BranchingCondition.NOT_NULL, var, target);
+                    emitBranching(BranchingCondition.NOT_NULL, popSingle(), target);
                     break;
                 case Opcodes.IFGT:
-                    currentDepth--;
-                    emitBranching(BranchingCondition.GREATER, var, target);
+                    emitBranching(BranchingCondition.GREATER, popSingle(), target);
                     break;
                 case Opcodes.IFGE:
-                    currentDepth--;
-                    emitBranching(BranchingCondition.GREATER_OR_EQUAL, var, target);
+                    emitBranching(BranchingCondition.GREATER_OR_EQUAL, popSingle(), target);
                     break;
                 case Opcodes.IFLT:
-                    currentDepth--;
-                    emitBranching(BranchingCondition.LESS, var, target);
+                    emitBranching(BranchingCondition.LESS, popSingle(), target);
                     break;
                 case Opcodes.IFLE:
-                    currentDepth--;
-                    emitBranching(BranchingCondition.LESS_OR_EQUAL, var, target);
+                    emitBranching(BranchingCondition.LESS_OR_EQUAL, popSingle(), target);
                     break;
                 case Opcodes.IF_ACMPEQ: {
-                    currentDepth -= 2;
-                    emitBranching(BinaryBranchingCondition.REFERENCE_EQUAL, var - 1, var, target);
+                    int b = popSingle();
+                    int a = popSingle();
+                    emitBranching(BinaryBranchingCondition.REFERENCE_EQUAL, a, b, target);
                     break;
                 }
                 case Opcodes.IF_ACMPNE: {
-                    currentDepth -= 2;
-                    emitBranching(BinaryBranchingCondition.REFERENCE_NOT_EQUAL, var - 1, var, target);
+                    int b = popSingle();
+                    int a = popSingle();
+                    emitBranching(BinaryBranchingCondition.REFERENCE_NOT_EQUAL, a, b, target);
                     break;
                 }
                 case Opcodes.IF_ICMPEQ: {
-                    int r = currentDepth;
-                    currentDepth -= 2;
-                    emitBinary(BinaryOperation.COMPARE, NumericOperandType.INT, var - 1, var, r);
-                    emitBranching(BranchingCondition.EQUAL, r, target);
+                    int b = popSingle();
+                    int a = popSingle();
+                    emitBinary(BinaryOperation.COMPARE, NumericOperandType.INT, a, b, a);
+                    emitBranching(BranchingCondition.EQUAL, a, target);
                     break;
                 }
                 case Opcodes.IF_ICMPNE: {
-                    int r = currentDepth;
-                    currentDepth -= 2;
-                    emitBinary(BinaryOperation.COMPARE, NumericOperandType.INT, var - 1, var, r);
-                    emitBranching(BranchingCondition.NOT_EQUAL, r, target);
+                    int b = popSingle();
+                    int a = popSingle();
+                    emitBinary(BinaryOperation.COMPARE, NumericOperandType.INT, a, b, a);
+                    emitBranching(BranchingCondition.NOT_EQUAL, a, target);
                     break;
                 }
                 case Opcodes.IF_ICMPGE: {
-                    int r = currentDepth;
-                    currentDepth -= 2;
-                    emitBinary(BinaryOperation.COMPARE, NumericOperandType.INT, var - 1, var, r);
-                    emitBranching(BranchingCondition.GREATER_OR_EQUAL, r, target);
+                    int b = popSingle();
+                    int a = popSingle();
+                    emitBinary(BinaryOperation.COMPARE, NumericOperandType.INT, a, b, a);
+                    emitBranching(BranchingCondition.GREATER_OR_EQUAL, a, target);
                     break;
                 }
                 case Opcodes.IF_ICMPGT: {
-                    int r = currentDepth;
-                    currentDepth -= 2;
-                    emitBinary(BinaryOperation.COMPARE, NumericOperandType.INT, var - 1, var, r);
-                    emitBranching(BranchingCondition.GREATER, r, target);
+                    int b = popSingle();
+                    int a = popSingle();
+                    emitBinary(BinaryOperation.COMPARE, NumericOperandType.INT, a, b, a);
+                    emitBranching(BranchingCondition.GREATER, a, target);
                     break;
                 }
                 case Opcodes.IF_ICMPLE: {
-                    int r = currentDepth;
-                    currentDepth -= 2;
-                    emitBinary(BinaryOperation.COMPARE, NumericOperandType.INT, var - 1, var, r);
-                    emitBranching(BranchingCondition.LESS_OR_EQUAL, r, target);
+                    int b = popSingle();
+                    int a = popSingle();
+                    emitBinary(BinaryOperation.COMPARE, NumericOperandType.INT, a, b, a);
+                    emitBranching(BranchingCondition.LESS_OR_EQUAL, a, target);
                     break;
                 }
                 case Opcodes.IF_ICMPLT: {
-                    int r = currentDepth;
-                    currentDepth -= 2;
-                    emitBinary(BinaryOperation.COMPARE, NumericOperandType.INT, var - 1, var, r);
-                    emitBranching(BranchingCondition.LESS, r, target);
+                    int b = popSingle();
+                    int a = popSingle();
+                    emitBinary(BinaryOperation.COMPARE, NumericOperandType.INT, a, b, a);
+                    emitBranching(BranchingCondition.LESS, a, target);
                     break;
                 }
                 case Opcodes.GOTO: {
@@ -632,23 +658,20 @@ public class ProgramParser {
         public void visitIntInsn(int opcode, int operand) {
             switch (opcode) {
                 case Opcodes.BIPUSH: {
-                    int var = currentDepth++;
                     IntegerConstantInstruction insn = new IntegerConstantInstruction();
                     insn.setConstant(operand);
-                    insn.setReceiver(getVariable(var));
+                    insn.setReceiver(getVariable(pushSingle()));
                     builder.add(insn);
                     break;
                 }
                 case Opcodes.SIPUSH: {
-                    int var = currentDepth++;
                     IntegerConstantInstruction insn = new IntegerConstantInstruction();
                     insn.setConstant(operand);
-                    insn.setReceiver(getVariable(var));
+                    insn.setReceiver(getVariable(pushSingle()));
                     builder.add(insn);
                     break;
                 }
                 case Opcodes.NEWARRAY: {
-                    int var = currentDepth - 1;
                     ValueType itemType;
                     switch (operand) {
                         case Opcodes.T_BOOLEAN:
@@ -679,8 +702,8 @@ public class ProgramParser {
                             throw new RuntimeException("Illegal opcode");
                     }
                     ConstructArrayInstruction insn = new ConstructArrayInstruction();
-                    insn.setSize(getVariable(var));
-                    insn.setReceiver(getVariable(var));
+                    insn.setSize(getVariable(popSingle()));
+                    insn.setReceiver(getVariable(pushSingle()));
                     insn.setItemType(itemType);
                     builder.add(insn);
                     break;
@@ -691,38 +714,35 @@ public class ProgramParser {
         private void pushConstant(int value) {
             IntegerConstantInstruction insn = new IntegerConstantInstruction();
             insn.setConstant(value);
-            insn.setReceiver(getVariable(currentDepth++));
+            insn.setReceiver(getVariable(pushSingle()));
             builder.add(insn);
         }
 
         private void pushConstant(long value) {
             LongConstantInstruction insn = new LongConstantInstruction();
             insn.setConstant(value);
-            insn.setReceiver(getVariable(currentDepth));
+            insn.setReceiver(getVariable(pushDouble()));
             builder.add(insn);
-            currentDepth += 2;
         }
 
         private void pushConstant(double value) {
             DoubleConstantInstruction insn = new DoubleConstantInstruction();
             insn.setConstant(value);
-            insn.setReceiver(getVariable(currentDepth));
+            insn.setReceiver(getVariable(pushDouble()));
             builder.add(insn);
-            currentDepth += 2;
         }
 
         private void pushConstant(float value) {
             FloatConstantInstruction insn = new FloatConstantInstruction();
             insn.setConstant(value);
-            insn.setReceiver(getVariable(currentDepth++));
+            insn.setReceiver(getVariable(pushSingle()));
             builder.add(insn);
         }
 
         private void loadArrayElement(int sz, ArrayElementType type) {
-            int arrIndex = --currentDepth;
-            int array = --currentDepth;
-            int var = currentDepth;
-            currentDepth += sz;
+            int arrIndex = popSingle();
+            int array = popSingle();
+            int var = sz == 1 ? pushSingle() : pushDouble();
             UnwrapArrayInstruction unwrapInsn = new UnwrapArrayInstruction(type);
             unwrapInsn.setArray(getVariable(array));
             unwrapInsn.setReceiver(unwrapInsn.getArray());
@@ -735,10 +755,9 @@ public class ProgramParser {
         }
 
         private void storeArrayElement(int sz, ArrayElementType type) {
-            currentDepth -= sz;
-            int value = currentDepth;
-            int arrIndex = --currentDepth;
-            int array = --currentDepth;
+            int value = sz == 1 ? popSingle() : popDouble();
+            int arrIndex = popSingle();
+            int array = popSingle();
             UnwrapArrayInstruction unwrapInsn = new UnwrapArrayInstruction(type);
             unwrapInsn.setArray(getVariable(array));
             unwrapInsn.setReceiver(unwrapInsn.getArray());
@@ -754,9 +773,8 @@ public class ProgramParser {
         public void visitInsn(int opcode) {
             switch (opcode) {
                 case Opcodes.ACONST_NULL: {
-                    int var = currentDepth++;
                     NullConstantInstruction insn = new NullConstantInstruction();
-                    insn.setReceiver(getVariable(var));
+                    insn.setReceiver(getVariable(pushSingle()));
                     builder.add(insn);
                     break;
                 }
@@ -806,8 +824,8 @@ public class ProgramParser {
                     loadArrayElement(1, ArrayElementType.BYTE);
                     CastIntegerInstruction insn = new CastIntegerInstruction(IntegerSubtype.BYTE,
                             CastIntegerDirection.TO_INTEGER);
-                    insn.setValue(getVariable(currentDepth));
-                    insn.setReceiver(getVariable(currentDepth));
+                    insn.setValue(getVariable(popSingle()));
+                    insn.setReceiver(getVariable(pushSingle()));
                     builder.add(insn);
                     break;
                 }
@@ -821,8 +839,8 @@ public class ProgramParser {
                     loadArrayElement(1, ArrayElementType.SHORT);
                     CastIntegerInstruction insn = new CastIntegerInstruction(IntegerSubtype.SHORT,
                             CastIntegerDirection.TO_INTEGER);
-                    insn.setValue(getVariable(currentDepth));
-                    insn.setReceiver(getVariable(currentDepth));
+                    insn.setValue(getVariable(popSingle()));
+                    insn.setReceiver(getVariable(pushSingle()));
                     builder.add(insn);
                     break;
                 }
@@ -830,8 +848,8 @@ public class ProgramParser {
                     loadArrayElement(1, ArrayElementType.CHAR);
                     CastIntegerInstruction insn = new CastIntegerInstruction(IntegerSubtype.CHARACTER,
                             CastIntegerDirection.TO_INTEGER);
-                    insn.setValue(getVariable(currentDepth));
-                    insn.setReceiver(getVariable(currentDepth));
+                    insn.setValue(getVariable(popSingle()));
+                    insn.setReceiver(getVariable(pushSingle()));
                     builder.add(insn);
                     break;
                 }
@@ -869,450 +887,551 @@ public class ProgramParser {
                     storeArrayElement(2, ArrayElementType.LONG);
                     break;
                 case Opcodes.POP:
-                    --currentDepth;
+                    popSingle();
                     break;
                 case Opcodes.POP2:
-                    currentDepth -= 2;
+                    if (stack.type == SINGLE) {
+                        popSingle();
+                    } else {
+                        popDouble();
+                    }
                     break;
-                case Opcodes.DUP:
-                    emitAssignInsn(currentDepth - 1, currentDepth++);
+                case Opcodes.DUP: {
+                    popSingle();
+                    int orig = pushSingle();
+                    int copy = pushSingle();
+                    emitAssignInsn(orig, copy);
                     break;
-                case Opcodes.DUP_X1:
-                    emitAssignInsn(currentDepth - 1, currentDepth);
-                    emitAssignInsn(currentDepth - 2, currentDepth - 1);
-                    emitAssignInsn(currentDepth, currentDepth - 2);
-                    ++currentDepth;
+                }
+                case Opcodes.DUP_X1: {
+                    popSingle();
+                    popSingle();
+                    int ins = pushSingle();
+                    int b = pushSingle();
+                    int a = pushSingle();
+                    emitAssignInsn(a - 1, a);
+                    emitAssignInsn(b - 1, b);
+                    emitAssignInsn(a, ins);
                     break;
-                case Opcodes.DUP_X2:
-                    emitAssignInsn(currentDepth - 1, currentDepth);
-                    emitAssignInsn(currentDepth - 2, currentDepth - 1);
-                    emitAssignInsn(currentDepth - 3, currentDepth - 2);
-                    emitAssignInsn(currentDepth, currentDepth - 3);
-                    ++currentDepth;
+                }
+                case Opcodes.DUP_X2: {
+                    popSingle();
+                    if (stack.type == SINGLE) {
+                        popSingle();
+                        popSingle();
+                        int ins = pushSingle();
+                        int c = pushSingle();
+                        int b = pushSingle();
+                        int a = pushSingle();
+                        emitAssignInsn(a - 1, a);
+                        emitAssignInsn(b - 1, b);
+                        emitAssignInsn(c - 1, c);
+                        emitAssignInsn(a, ins);
+                    } else {
+                        popDouble();
+                        int ins = pushSingle();
+                        int b = pushDouble();
+                        int a = pushSingle();
+                        emitAssignInsn(a - 1, a);
+                        emitAssignInsn(b - 1, b);
+                        emitAssignInsn(a, ins);
+                    }
                     break;
-                case Opcodes.DUP2:
-                    emitAssignInsn(currentDepth - 2, currentDepth);
-                    emitAssignInsn(currentDepth - 1, currentDepth + 1);
-                    currentDepth += 2;
+                }
+                case Opcodes.DUP2: {
+                    if (stack.type == SINGLE) {
+                        popSingle();
+                        popSingle();
+                        int origA = pushSingle();
+                        int origB = pushSingle();
+                        int copyA = pushSingle();
+                        int copyB = pushSingle();
+                        emitAssignInsn(origA, copyA);
+                        emitAssignInsn(origB, copyB);
+                    } else {
+                        popDouble();
+                        int orig = pushDouble();
+                        int copy = pushDouble();
+                        emitAssignInsn(orig, copy);
+                    }
                     break;
-                case Opcodes.DUP2_X1:
-                    emitAssignInsn(currentDepth - 1, currentDepth + 1);
-                    emitAssignInsn(currentDepth - 2, currentDepth);
-                    emitAssignInsn(currentDepth - 3, currentDepth - 1);
-                    emitAssignInsn(currentDepth - 4, currentDepth - 2);
-                    emitAssignInsn(currentDepth, currentDepth - 4);
-                    emitAssignInsn(currentDepth + 1, currentDepth - 3);
-                    currentDepth += 2;
+                }
+                case Opcodes.DUP2_X1:{
+                    if (stack.type == SINGLE) {
+                        popSingle();
+                        popSingle();
+                        popSingle();
+                        int ins1 = pushSingle();
+                        int ins2 = pushSingle();
+                        int b = pushSingle();
+                        int a1 = pushSingle();
+                        int a2 = pushSingle();
+                        emitAssignInsn(a2 - 2, a2);
+                        emitAssignInsn(a1 - 2, a1);
+                        emitAssignInsn(b - 2, b);
+                        emitAssignInsn(a1, ins1);
+                        emitAssignInsn(a2, ins2);
+                        break;
+                    } else {
+                        popDouble();
+                        popSingle();
+                        int ins = pushDouble();
+                        int b = pushSingle();
+                        int a = pushDouble();
+                        emitAssignInsn(a - 2, a);
+                        emitAssignInsn(b - 2, b);
+                        emitAssignInsn(a, ins);
+                        break;
+                    }
+                }
+                case Opcodes.DUP2_X2: {
+                    if (stack.type == SINGLE) {
+                        popSingle();
+                        popSingle();
+                        if (stack.type == SINGLE) {
+                            popSingle();
+                            popSingle();
+                            int ins1 = pushSingle();
+                            int ins2 = pushSingle();
+                            int c = pushSingle();
+                            int b = pushSingle();
+                            int a1 = pushSingle();
+                            int a2 = pushSingle();
+                            emitAssignInsn(a2 - 2, a2);
+                            emitAssignInsn(a1 - 2, a1);
+                            emitAssignInsn(b - 2, b);
+                            emitAssignInsn(c - 2, c);
+                            emitAssignInsn(a1, ins1);
+                            emitAssignInsn(a2, ins2);
+                        } else {
+                            popDouble();
+                            int ins1 = pushSingle();
+                            int ins2 = pushSingle();
+                            int b = pushDouble();
+                            int a1 = pushSingle();
+                            int a2 = pushSingle();
+                            emitAssignInsn(a2 - 2, a2);
+                            emitAssignInsn(a1 - 2, a1);
+                            emitAssignInsn(b - 2, b);
+                            emitAssignInsn(a1, ins1);
+                            emitAssignInsn(a2, ins2);
+                        }
+                    } else {
+                        popDouble();
+                        if (stack.type == SINGLE) {
+                            popSingle();
+                            popSingle();
+                            int ins = pushDouble();
+                            int c = pushSingle();
+                            int b = pushSingle();
+                            int a = pushDouble();
+                            emitAssignInsn(a - 2, a);
+                            emitAssignInsn(b - 2, b);
+                            emitAssignInsn(c - 2, c);
+                            emitAssignInsn(a, ins);
+                        } else {
+                            popDouble();
+                            int ins = pushDouble();
+                            int b = pushDouble();
+                            int a = pushDouble();
+                            emitAssignInsn(a - 2, a);
+                            emitAssignInsn(b - 2, b);
+                            emitAssignInsn(a, ins);
+                        }
+                    }
                     break;
-                case Opcodes.DUP2_X2:
-                    emitAssignInsn(currentDepth - 1, currentDepth + 1);
-                    emitAssignInsn(currentDepth - 2, currentDepth);
-                    emitAssignInsn(currentDepth - 3, currentDepth - 1);
-                    emitAssignInsn(currentDepth - 4, currentDepth - 2);
-                    emitAssignInsn(currentDepth - 5, currentDepth - 3);
-                    emitAssignInsn(currentDepth - 6, currentDepth - 4);
-                    emitAssignInsn(currentDepth, currentDepth - 6);
-                    emitAssignInsn(currentDepth + 1, currentDepth - 5);
-                    currentDepth += 2;
+                }
+                case Opcodes.SWAP: {
+                    int b = popSingle();
+                    int a = popSingle();
+                    int tmp = pushSingle();
+                    popSingle();
+                    emitAssignInsn(a, tmp);
+                    emitAssignInsn(b, a);
+                    emitAssignInsn(tmp, b);
                     break;
-                case Opcodes.SWAP:
-                    emitAssignInsn(currentDepth - 2, currentDepth);
-                    emitAssignInsn(currentDepth - 1, currentDepth - 2);
-                    emitAssignInsn(currentDepth, currentDepth - 1);
-                    break;
+                }
                 case Opcodes.ISUB: {
-                    int b = --currentDepth;
-                    int a = --currentDepth;
-                    int r = currentDepth++;
+                    int b = popSingle();
+                    int a = popSingle();
+                    int r = pushSingle();
                     emitBinary(BinaryOperation.SUBTRACT, NumericOperandType.INT, a, b, r);
                     break;
                 }
                 case Opcodes.FSUB: {
-                    int b = --currentDepth;
-                    int a = --currentDepth;
-                    int r = currentDepth++;
+                    int b = popSingle();
+                    int a = popSingle();
+                    int r = pushSingle();
                     emitBinary(BinaryOperation.SUBTRACT, NumericOperandType.FLOAT, a, b, r);
                     break;
                 }
                 case Opcodes.IADD: {
-                    int b = --currentDepth;
-                    int a = --currentDepth;
-                    int r = currentDepth++;
+                    int b = popSingle();
+                    int a = popSingle();
+                    int r = pushSingle();
                     emitBinary(BinaryOperation.ADD, NumericOperandType.INT, a, b, r);
                     break;
                 }
                 case Opcodes.FADD: {
-                    int b = --currentDepth;
-                    int a = --currentDepth;
-                    int r = currentDepth++;
+                    int b = popSingle();
+                    int a = popSingle();
+                    int r = pushSingle();
                     emitBinary(BinaryOperation.ADD, NumericOperandType.FLOAT, a, b, r);
                     break;
                 }
                 case Opcodes.IMUL: {
-                    int b = --currentDepth;
-                    int a = --currentDepth;
-                    int r = currentDepth++;
+                    int b = popSingle();
+                    int a = popSingle();
+                    int r = pushSingle();
                     emitBinary(BinaryOperation.MULTIPLY, NumericOperandType.INT, a, b, r);
                     break;
                 }
                 case Opcodes.FMUL: {
-                    int b = --currentDepth;
-                    int a = --currentDepth;
-                    int r = currentDepth++;
+                    int b = popSingle();
+                    int a = popSingle();
+                    int r = pushSingle();
                     emitBinary(BinaryOperation.MULTIPLY, NumericOperandType.FLOAT, a, b, r);
                     break;
                 }
                 case Opcodes.IDIV: {
-                    int b = --currentDepth;
-                    int a = --currentDepth;
-                    int r = currentDepth++;
+                    int b = popSingle();
+                    int a = popSingle();
+                    int r = pushSingle();
                     emitBinary(BinaryOperation.DIVIDE, NumericOperandType.INT, a, b, r);
                     break;
                 }
                 case Opcodes.FDIV: {
-                    int b = --currentDepth;
-                    int a = --currentDepth;
-                    int r = currentDepth++;
+                    int b = popSingle();
+                    int a = popSingle();
+                    int r = pushSingle();
                     emitBinary(BinaryOperation.DIVIDE, NumericOperandType.FLOAT, a, b, r);
                     break;
                 }
                 case Opcodes.IREM: {
-                    int b = --currentDepth;
-                    int a = --currentDepth;
-                    int r = currentDepth++;
+                    int b = popSingle();
+                    int a = popSingle();
+                    int r = pushSingle();
                     emitBinary(BinaryOperation.MODULO, NumericOperandType.INT, a, b, r);
                     break;
                 }
                 case Opcodes.FREM: {
-                    int b = --currentDepth;
-                    int a = --currentDepth;
-                    int r = currentDepth++;
+                    int b = popSingle();
+                    int a = popSingle();
+                    int r = pushSingle();
                     emitBinary(BinaryOperation.MODULO, NumericOperandType.FLOAT, a, b, r);
                     break;
                 }
                 case Opcodes.LADD: {
-                    currentDepth -= 2;
-                    int b = currentDepth;
-                    int a = currentDepth - 2;
-                    int r = currentDepth - 2;
+                    int b = popDouble();
+                    int a = popDouble();
+                    int r = pushDouble();
                     emitBinary(BinaryOperation.ADD, NumericOperandType.LONG, a, b, r);
                     break;
                 }
                 case Opcodes.DADD: {
-                    currentDepth -= 2;
-                    int b = currentDepth;
-                    int a = currentDepth - 2;
-                    int r = currentDepth - 2;
+                    int b = popDouble();
+                    int a = popDouble();
+                    int r = pushDouble();
                     emitBinary(BinaryOperation.ADD, NumericOperandType.DOUBLE, a, b, r);
                     break;
                 }
                 case Opcodes.LSUB: {
-                    currentDepth -= 2;
-                    int b = currentDepth;
-                    int a = currentDepth - 2;
-                    int r = currentDepth - 2;
+                    int b = popDouble();
+                    int a = popDouble();
+                    int r = pushDouble();
                     emitBinary(BinaryOperation.SUBTRACT, NumericOperandType.LONG, a, b, r);
                     break;
                 }
                 case Opcodes.DSUB: {
-                    currentDepth -= 2;
-                    int b = currentDepth;
-                    int a = currentDepth - 2;
-                    int r = currentDepth - 2;
+                    int b = popDouble();
+                    int a = popDouble();
+                    int r = pushDouble();
                     emitBinary(BinaryOperation.SUBTRACT, NumericOperandType.DOUBLE, a, b, r);
                     break;
                 }
                 case Opcodes.LMUL: {
-                    currentDepth -= 2;
-                    int b = currentDepth;
-                    int a = currentDepth - 2;
-                    int r = currentDepth - 2;
+                    int b = popDouble();
+                    int a = popDouble();
+                    int r = pushDouble();
                     emitBinary(BinaryOperation.MULTIPLY, NumericOperandType.LONG, a, b, r);
                     break;
                 }
                 case Opcodes.DMUL: {
-                    currentDepth -= 2;
-                    int b = currentDepth;
-                    int a = currentDepth - 2;
-                    int r = currentDepth - 2;
+                    int b = popDouble();
+                    int a = popDouble();
+                    int r = pushDouble();
                     emitBinary(BinaryOperation.MULTIPLY, NumericOperandType.DOUBLE, a, b, r);
                     break;
                 }
                 case Opcodes.DDIV: {
-                    currentDepth -= 2;
-                    int b = currentDepth;
-                    int a = currentDepth - 2;
-                    int r = currentDepth - 2;
+                    int b = popDouble();
+                    int a = popDouble();
+                    int r = pushDouble();
                     emitBinary(BinaryOperation.DIVIDE, NumericOperandType.DOUBLE, a, b, r);
                     break;
                 }
                 case Opcodes.LDIV: {
-                    currentDepth -= 2;
-                    int b = currentDepth;
-                    int a = currentDepth - 2;
-                    int r = currentDepth - 2;
+                    int b = popDouble();
+                    int a = popDouble();
+                    int r = pushDouble();
                     emitBinary(BinaryOperation.DIVIDE, NumericOperandType.LONG, a, b, r);
                     break;
                 }
                 case Opcodes.LREM: {
-                    currentDepth -= 2;
-                    int b = currentDepth;
-                    int a = currentDepth - 2;
-                    int r = currentDepth - 2;
+                    int b = popDouble();
+                    int a = popDouble();
+                    int r = pushDouble();
                     emitBinary(BinaryOperation.MODULO, NumericOperandType.LONG, a, b, r);
                     break;
                 }
                 case Opcodes.DREM: {
-                    currentDepth -= 2;
-                    int b = currentDepth;
-                    int a = currentDepth - 2;
-                    int r = currentDepth - 2;
+                    int b = popDouble();
+                    int a = popDouble();
+                    int r = pushDouble();
                     emitBinary(BinaryOperation.MODULO, NumericOperandType.DOUBLE, a, b, r);
                     break;
                 }
                 case Opcodes.INEG: {
-                    int var = currentDepth - 1;
-                    emitNeg(NumericOperandType.INT, var, var);
+                    int a = popSingle();
+                    int r = pushSingle();
+                    emitNeg(NumericOperandType.INT, a, r);
                     break;
                 }
                 case Opcodes.FNEG: {
-                    int var = currentDepth - 1;
-                    emitNeg(NumericOperandType.FLOAT, var, var);
+                    int a = popSingle();
+                    int r = pushSingle();
+                    emitNeg(NumericOperandType.FLOAT, a, r);
                     break;
                 }
                 case Opcodes.LNEG: {
-                    int var = currentDepth - 2;
-                    emitNeg(NumericOperandType.LONG, var, var);
+                    int a = popDouble();
+                    int r = pushDouble();
+                    emitNeg(NumericOperandType.LONG, a, r);
                     break;
                 }
                 case Opcodes.DNEG: {
-                    int var = currentDepth - 2;
-                    emitNeg(NumericOperandType.DOUBLE, var, var);
+                    int a = popDouble();
+                    int r = pushDouble();
+                    emitNeg(NumericOperandType.DOUBLE, a, r);
                     break;
                 }
                 case Opcodes.FCMPG:
                 case Opcodes.FCMPL: {
-                    int b = --currentDepth;
-                    int a = --currentDepth;
-                    int r = currentDepth++;
+                    int b = popSingle();
+                    int a = popSingle();
+                    int r = pushSingle();
                     emitBinary(BinaryOperation.COMPARE, NumericOperandType.FLOAT, a, b, r);
                     break;
                 }
                 case Opcodes.LCMP: {
-                    int b = currentDepth - 2;
-                    int a = currentDepth - 4;
-                    int r = a;
-                    currentDepth -= 3;
+                    int b = popDouble();
+                    int a = popDouble();
+                    int r = pushSingle();
                     emitBinary(BinaryOperation.COMPARE, NumericOperandType.LONG, a, b, r);
                     break;
                 }
                 case Opcodes.DCMPG:
                 case Opcodes.DCMPL: {
-                    int b = currentDepth - 2;
-                    int a = currentDepth - 4;
-                    int r = a;
-                    currentDepth -= 3;
+                    int b = popDouble();
+                    int a = popDouble();
+                    int r = pushSingle();
                     emitBinary(BinaryOperation.COMPARE, NumericOperandType.DOUBLE, a, b, r);
                     break;
                 }
                 case Opcodes.ISHL: {
-                    int b = --currentDepth;
-                    int a = --currentDepth;
-                    int r = currentDepth++;
+                    int b = popSingle();
+                    int a = popSingle();
+                    int r = pushSingle();
                     emitBinary(BinaryOperation.SHIFT_LEFT, NumericOperandType.INT, a, b, r);
                     break;
                 }
                 case Opcodes.ISHR: {
-                    int b = --currentDepth;
-                    int a = --currentDepth;
-                    int r = currentDepth++;
+                    int b = popSingle();
+                    int a = popSingle();
+                    int r = pushSingle();
                     emitBinary(BinaryOperation.SHIFT_RIGHT, NumericOperandType.INT, a, b, r);
                     break;
                 }
                 case Opcodes.IUSHR: {
-                    int b = --currentDepth;
-                    int a = --currentDepth;
-                    int r = currentDepth++;
+                    int b = popSingle();
+                    int a = popSingle();
+                    int r = pushSingle();
                     emitBinary(BinaryOperation.SHIFT_RIGHT_UNSIGNED,
                             NumericOperandType.INT, a, b, r);
                     break;
                 }
                 case Opcodes.LSHL: {
-                    int b = --currentDepth;
-                    int a = currentDepth - 2;
-                    int r = currentDepth - 2;
+                    int b = popSingle();
+                    int a = popDouble();
+                    int r = pushDouble();
                     emitBinary(BinaryOperation.SHIFT_LEFT, NumericOperandType.LONG, a, b, r);
                     break;
                 }
                 case Opcodes.LSHR: {
-                    int b = --currentDepth;
-                    int a = currentDepth - 2;
-                    int r = currentDepth - 2;
+                    int b = popSingle();
+                    int a = popDouble();
+                    int r = pushDouble();
                     emitBinary(BinaryOperation.SHIFT_RIGHT, NumericOperandType.LONG, a, b, r);
                     break;
                 }
                 case Opcodes.LUSHR: {
-                    int b = --currentDepth;
-                    int a = currentDepth - 2;
-                    int r = currentDepth - 2;
-                    emitBinary(BinaryOperation.SHIFT_RIGHT_UNSIGNED,
-                            NumericOperandType.LONG, a, b, r);
+                    int b = popSingle();
+                    int a = popDouble();
+                    int r = pushDouble();
+                    emitBinary(BinaryOperation.SHIFT_RIGHT_UNSIGNED, NumericOperandType.LONG, a, b, r);
                     break;
                 }
                 case Opcodes.IAND: {
-                    int b = --currentDepth;
-                    int a = --currentDepth;
-                    int r = currentDepth++;
+                    int b = popSingle();
+                    int a = popSingle();
+                    int r = pushSingle();
                     emitBinary(BinaryOperation.AND, NumericOperandType.INT, a, b, r);
                     break;
                 }
                 case Opcodes.IOR: {
-                    int b = --currentDepth;
-                    int a = --currentDepth;
-                    int r = currentDepth++;
+                    int b = popSingle();
+                    int a = popSingle();
+                    int r = pushSingle();
                     emitBinary(BinaryOperation.OR, NumericOperandType.INT, a, b, r);
                     break;
                 }
                 case Opcodes.IXOR: {
-                    int b = --currentDepth;
-                    int a = --currentDepth;
-                    int r = currentDepth++;
+                    int b = popSingle();
+                    int a = popSingle();
+                    int r = pushSingle();
                     emitBinary(BinaryOperation.XOR, NumericOperandType.INT, a, b, r);
                     break;
                 }
                 case Opcodes.LAND: {
-                    currentDepth -= 2;
-                    int b = currentDepth;
-                    int a = currentDepth - 2;
-                    int r = currentDepth - 2;
+                    int b = popDouble();
+                    int a = popDouble();
+                    int r = pushDouble();
                     emitBinary(BinaryOperation.AND, NumericOperandType.LONG, a, b, r);
                     break;
                 }
                 case Opcodes.LOR: {
-                    currentDepth -= 2;
-                    int b = currentDepth;
-                    int a = currentDepth - 2;
-                    int r = currentDepth - 2;
+                    int b = popDouble();
+                    int a = popDouble();
+                    int r = pushDouble();
                     emitBinary(BinaryOperation.OR, NumericOperandType.LONG, a, b, r);
                     break;
                 }
                 case Opcodes.LXOR: {
-                    currentDepth -= 2;
-                    int b = currentDepth;
-                    int a = currentDepth - 2;
-                    int r = currentDepth - 2;
+                    int b = popDouble();
+                    int a = popDouble();
+                    int r = pushDouble();
                     emitBinary(BinaryOperation.XOR, NumericOperandType.LONG, a, b, r);
                     break;
                 }
                 case Opcodes.I2B: {
-                    int val = currentDepth - 1;
                     CastIntegerInstruction insn = new CastIntegerInstruction(IntegerSubtype.BYTE,
                             CastIntegerDirection.FROM_INTEGER);
-                    insn.setValue(getVariable(val));
-                    insn.setReceiver(getVariable(val));
+                    insn.setValue(getVariable(popSingle()));
+                    insn.setReceiver(getVariable(pushSingle()));
                     builder.add(insn);
                     break;
                 }
                 case Opcodes.I2C: {
-                    int val = currentDepth - 1;
                     CastIntegerInstruction insn = new CastIntegerInstruction(IntegerSubtype.CHARACTER,
                             CastIntegerDirection.FROM_INTEGER);
-                    insn.setValue(getVariable(val));
-                    insn.setReceiver(getVariable(val));
+                    insn.setValue(getVariable(popSingle()));
+                    insn.setReceiver(getVariable(pushSingle()));
                     builder.add(insn);
                     break;
                 }
                 case Opcodes.I2S: {
-                    int val = currentDepth - 1;
                     CastIntegerInstruction insn = new CastIntegerInstruction(IntegerSubtype.SHORT,
                             CastIntegerDirection.FROM_INTEGER);
-                    insn.setValue(getVariable(val));
-                    insn.setReceiver(getVariable(val));
+                    insn.setValue(getVariable(popSingle()));
+                    insn.setReceiver(getVariable(pushSingle()));
                     builder.add(insn);
                     break;
                 }
                 case Opcodes.I2F: {
-                    int val = currentDepth - 1;
-                    emitNumberCast(NumericOperandType.INT, NumericOperandType.FLOAT, val, val);
+                    int a = popSingle();
+                    int r = pushSingle();
+                    emitNumberCast(NumericOperandType.INT, NumericOperandType.FLOAT, a, r);
                     break;
                 }
                 case Opcodes.I2L: {
-                    int val = currentDepth - 1;
-                    ++currentDepth;
-                    emitNumberCast(NumericOperandType.INT, NumericOperandType.LONG, val, val);
+                    int a = popSingle();
+                    int r = pushDouble();
+                    emitNumberCast(NumericOperandType.INT, NumericOperandType.LONG, a, r);
                     break;
                 }
                 case Opcodes.I2D: {
-                    int val = currentDepth - 1;
-                    ++currentDepth;
-                    emitNumberCast(NumericOperandType.INT, NumericOperandType.DOUBLE, val, val);
+                    int a = popSingle();
+                    int r = pushDouble();
+                    emitNumberCast(NumericOperandType.INT, NumericOperandType.DOUBLE, a, r);
                     break;
                 }
                 case Opcodes.F2I: {
-                    int val = currentDepth - 1;
-                    emitNumberCast(NumericOperandType.FLOAT, NumericOperandType.INT, val, val);
+                    int a = popSingle();
+                    int r = pushSingle();
+                    emitNumberCast(NumericOperandType.FLOAT, NumericOperandType.INT, a, r);
                     break;
                 }
                 case Opcodes.F2L: {
-                    int val = currentDepth - 1;
-                    ++currentDepth;
-                    emitNumberCast(NumericOperandType.FLOAT, NumericOperandType.LONG, val, val);
+                    int a = popSingle();
+                    int r = pushDouble();
+                    emitNumberCast(NumericOperandType.FLOAT, NumericOperandType.LONG, a, r);
                     break;
                 }
                 case Opcodes.F2D: {
-                    int val = currentDepth - 1;
-                    ++currentDepth;
-                    emitNumberCast(NumericOperandType.FLOAT, NumericOperandType.DOUBLE, val, val);
+                    int a = popSingle();
+                    int r = pushDouble();
+                    emitNumberCast(NumericOperandType.FLOAT, NumericOperandType.DOUBLE, a, r);
                     break;
                 }
                 case Opcodes.D2L: {
-                    int val = currentDepth - 2;
-                    emitNumberCast(NumericOperandType.DOUBLE, NumericOperandType.LONG, val, val);
+                    int a = popDouble();
+                    int r = pushDouble();
+                    emitNumberCast(NumericOperandType.DOUBLE, NumericOperandType.LONG, a, r);
                     break;
                 }
                 case Opcodes.D2I: {
-                    --currentDepth;
-                    int val = currentDepth - 1;
-                    emitNumberCast(NumericOperandType.DOUBLE, NumericOperandType.INT, val, val);
+                    int a = popDouble();
+                    int r = pushSingle();
+                    emitNumberCast(NumericOperandType.DOUBLE, NumericOperandType.INT, a, r);
                     break;
                 }
                 case Opcodes.D2F: {
-                    --currentDepth;
-                    int val = currentDepth - 1;
-                    emitNumberCast(NumericOperandType.DOUBLE, NumericOperandType.FLOAT, val, val);
+                    int a = popDouble();
+                    int r = pushSingle();
+                    emitNumberCast(NumericOperandType.DOUBLE, NumericOperandType.FLOAT, a, r);
                     break;
                 }
                 case Opcodes.L2I: {
-                    --currentDepth;
-                    int val = currentDepth - 1;
-                    emitNumberCast(NumericOperandType.LONG, NumericOperandType.INT, val, val);
+                    int a = popDouble();
+                    int r = pushSingle();
+                    emitNumberCast(NumericOperandType.LONG, NumericOperandType.INT, a, r);
                     break;
                 }
                 case Opcodes.L2F: {
-                    --currentDepth;
-                    int val = currentDepth - 1;
-                    emitNumberCast(NumericOperandType.LONG, NumericOperandType.FLOAT, val, val);
+                    int a = popDouble();
+                    int r = pushSingle();
+                    emitNumberCast(NumericOperandType.LONG, NumericOperandType.FLOAT, a, r);
                     break;
                 }
                 case Opcodes.L2D: {
-                    int val = currentDepth - 2;
-                    emitNumberCast(NumericOperandType.LONG, NumericOperandType.DOUBLE, val, val);
+                    int a = popDouble();
+                    int r = pushDouble();
+                    emitNumberCast(NumericOperandType.LONG, NumericOperandType.DOUBLE, a, r);
                     break;
                 }
                 case Opcodes.IRETURN:
                 case Opcodes.FRETURN:
                 case Opcodes.ARETURN: {
                     ExitInstruction insn = new ExitInstruction();
-                    insn.setValueToReturn(getVariable(--currentDepth));
+                    insn.setValueToReturn(getVariable(popSingle()));
                     builder.add(insn);
                     nextIndexes = new int[0];
                     return;
                 }
                 case Opcodes.LRETURN:
                 case Opcodes.DRETURN: {
-                    currentDepth -= 2;
                     ExitInstruction insn = new ExitInstruction();
-                    insn.setValueToReturn(getVariable(currentDepth));
+                    insn.setValueToReturn(getVariable(popDouble()));
                     builder.add(insn);
                     nextIndexes = new int[0];
                     return;
@@ -1324,27 +1443,28 @@ public class ProgramParser {
                     return;
                 }
                 case Opcodes.ARRAYLENGTH: {
-                    int a = currentDepth - 1;
+                    int a = popSingle();
+                    int r = pushSingle();
                     UnwrapArrayInstruction unwrapInsn = new UnwrapArrayInstruction(ArrayElementType.OBJECT);
                     unwrapInsn.setArray(getVariable(a));
-                    unwrapInsn.setReceiver(getVariable(a));
+                    unwrapInsn.setReceiver(getVariable(r));
                     builder.add(unwrapInsn);
                     ArrayLengthInstruction insn = new ArrayLengthInstruction();
                     insn.setArray(getVariable(a));
-                    insn.setReceiver(getVariable(a));
+                    insn.setReceiver(getVariable(r));
                     builder.add(insn);
                     break;
                 }
                 case Opcodes.ATHROW: {
                     RaiseInstruction insn = new RaiseInstruction();
-                    insn.setException(getVariable(--currentDepth));
+                    insn.setException(getVariable(popSingle()));
                     builder.add(insn);
                     nextIndexes = new int[0];
                     return;
                 }
                 case Opcodes.MONITORENTER:
                 case Opcodes.MONITOREXIT:
-                    --currentDepth;
+                    popSingle();
                     break;
             }
         }
@@ -1353,11 +1473,13 @@ public class ProgramParser {
         public void visitIincInsn(int var, int increment) {
             var = mapLocal(var);
             var += minLocal;
+            int tmp = pushSingle();
+            popSingle();
             IntegerConstantInstruction intInsn = new IntegerConstantInstruction();
             intInsn.setConstant(increment);
-            intInsn.setReceiver(getVariable(currentDepth));
+            intInsn.setReceiver(getVariable(tmp));
             builder.add(intInsn);
-            emitBinary(BinaryOperation.ADD, NumericOperandType.INT, var, currentDepth, var);
+            emitBinary(BinaryOperation.ADD, NumericOperandType.INT, var, tmp, var);
         }
 
         @Override
@@ -1369,12 +1491,9 @@ public class ProgramParser {
             String ownerCls = owner.replace('/', '.');
             switch (opcode) {
                 case Opcodes.GETFIELD: {
-                    int instance = currentDepth - 1;
+                    int instance = popSingle();
                     ValueType type = ValueType.parse(desc);
-                    int value = instance;
-                    if (desc.equals("D") || desc.equals("J")) {
-                        currentDepth++;
-                    }
+                    int value = desc.equals("D") || desc.equals("J") ? pushDouble() : pushSingle();
                     GetFieldInstruction insn = new GetFieldInstruction();
                     insn.setInstance(getVariable(instance));
                     insn.setField(new FieldReference(ownerCls, name));
@@ -1384,13 +1503,8 @@ public class ProgramParser {
                     break;
                 }
                 case Opcodes.PUTFIELD: {
-                    if (desc.equals("D") || desc.equals("J")) {
-                        currentDepth -= 2;
-                    } else {
-                        currentDepth--;
-                    }
-                    int value = currentDepth;
-                    int instance = --currentDepth;
+                    int value = desc.equals("D") || desc.equals("J") ? popDouble() : popSingle();
+                    int instance = popSingle();
                     PutFieldInstruction insn = new PutFieldInstruction();
                     insn.setInstance(getVariable(instance));
                     insn.setField(new FieldReference(ownerCls, name));
@@ -1400,10 +1514,7 @@ public class ProgramParser {
                 }
                 case Opcodes.GETSTATIC: {
                     ValueType type = ValueType.parse(desc);
-                    int value = currentDepth++;
-                    if (desc.equals("D") || desc.equals("J")) {
-                        currentDepth++;
-                    }
+                    int value = desc.equals("D") || desc.equals("J") ? pushDouble() : pushSingle();
                     if (!owner.equals(currentClassName)) {
                         InitClassInstruction initInsn = new InitClassInstruction();
                         initInsn.setClassName(ownerCls);
@@ -1417,15 +1528,12 @@ public class ProgramParser {
                     break;
                 }
                 case Opcodes.PUTSTATIC: {
-                    if (desc.equals("D") || desc.equals("J")) {
-                        currentDepth--;
-                    }
                     if (!owner.equals(currentClassName)) {
                         InitClassInstruction initInsn = new InitClassInstruction();
                         initInsn.setClassName(ownerCls);
                         builder.add(initInsn);
                     }
-                    int value = --currentDepth;
+                    int value = desc.equals("D") || desc.equals("J") ? popDouble() : popSingle();
                     PutFieldInstruction insn = new PutFieldInstruction();
                     insn.setField(new FieldReference(ownerCls, name));
                     insn.setValue(getVariable(value));
