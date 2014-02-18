@@ -34,9 +34,28 @@ public class JavaScriptBodyConversionTests {
         assertEquals(23, returnAsObject(23));
     }
 
+    @Test
+    public void convertsArray() {
+        assertEquals(42, getArrayItem(new Integer[] { 23, 42 }, 1));
+    }
+
+    @Test
+    public void copiesArray() {
+        Integer[] array = { 23, 42 };
+        Integer[] arrayCopy = (Integer[])modifyIntegerArray(array);
+        assertEquals(Integer.valueOf(23), array[0]);
+        assertEquals(Integer.valueOf(1), arrayCopy[0]);
+    }
+
     @JavaScriptBody(args = { "value" }, body = "return value;")
     private native int returnAsInt(Object value);
 
     @JavaScriptBody(args = { "value" }, body = "return value;")
     private native Object returnAsObject(int value);
+
+    @JavaScriptBody(args = { "value" }, body = "value[0] = 1; return value;")
+    private native Object modifyIntegerArray(Object value);
+
+    @JavaScriptBody(args = { "array", "index" }, body = "return array[index];")
+    private native Object getArrayItem(Object array, int index);
 }
