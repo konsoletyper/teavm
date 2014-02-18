@@ -33,9 +33,9 @@ import org.teavm.model.ValueType;
  */
 public class ArrayNativeGenerator implements Generator, DependencyPlugin {
     @Override
-    public void methodAchieved(DependencyChecker checker, MethodReference method) {
-        if (method.getName().equals("getLength")) {
-            achieveGetLength(checker, method);
+    public void methodAchieved(DependencyChecker checker, MethodGraph graph) {
+        if (graph.getReference().getName().equals("getLength")) {
+            achieveGetLength(checker, graph);
         }
     }
 
@@ -59,8 +59,7 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
         writer.append("return " + array + ".data.length;").softNewLine();
     }
 
-    private void achieveGetLength(final DependencyChecker checker, MethodReference methodRef) {
-        final MethodGraph graph = checker.attachMethodGraph(methodRef);
+    private void achieveGetLength(final DependencyChecker checker, final MethodGraph graph) {
         graph.getVariable(1).addConsumer(new DependencyConsumer() {
             @Override public void consume(String type) {
                 if (!type.startsWith("[")) {

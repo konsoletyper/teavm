@@ -16,7 +16,6 @@
 package org.teavm.dependency;
 
 import org.teavm.model.FieldReference;
-import org.teavm.model.MethodReference;
 
 /**
  *
@@ -27,7 +26,7 @@ public interface DependencyListener {
 
     void classAchieved(DependencyChecker dependencyChecker, String className);
 
-    void methodAchieved(DependencyChecker dependencyChecker, MethodReference method);
+    void methodAchieved(DependencyChecker dependencyChecker, MethodGraph method);
 
-    void fieldAchieved(DependencyChecker dependencyChecker, FieldReference field);
+    void fieldAchieved(DependencyChecker dependencyChecker, FieldReference field, DependencyNode node);
 }

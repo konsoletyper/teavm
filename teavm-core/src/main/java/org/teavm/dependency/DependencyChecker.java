@@ -33,14 +33,17 @@ public class DependencyChecker implements DependencyInformation {
     private ClassLoader classLoader;
     private FiniteExecutor executor;
     private ConcurrentMap<MethodReference, Object> abstractMethods = new ConcurrentHashMap<>();
+    private ConcurrentMap<MethodReference, DependencyStack> stacks = new ConcurrentHashMap<>();
+    private ConcurrentMap<FieldReference, DependencyStack> fieldStacks = new ConcurrentHashMap<>();
+    private ConcurrentMap<String, DependencyStack> classStacks = new ConcurrentHashMap<>();
     private ConcurrentCachedMapper<MethodReference, MethodGraph> methodCache;
     private ConcurrentCachedMapper<FieldReference, DependencyNode> fieldCache;
     private ConcurrentMap<String, Object> achievableClasses = new ConcurrentHashMap<>();
     private ConcurrentMap<String, Object> initializedClasses = new ConcurrentHashMap<>();
     private List<DependencyListener> listeners = new ArrayList<>();
-    Set<MethodReference> missingMethods = new HashSet<>();
-    Set<String> missingClasses = new HashSet<>();
-    Set<FieldReference> missingFields = new HashSet<>();
+    ConcurrentMap<MethodReference, DependencyStack> missingMethods = new ConcurrentHashMap<>();
+    ConcurrentMap<String, DependencyStack> missingClasses = new ConcurrentHashMap<>();
+    ConcurrentMap<FieldReference, DependencyStack> missingFields = new ConcurrentHashMap<>();
 
     public DependencyChecker(ClassHolderSource classSource, ClassLoader classLoader) {
         this(classSource, classLoader, new SimpleFiniteExecutor());
@@ -52,26 +55,28 @@ public class DependencyChecker implements DependencyInformation {
         this.executor = executor;
         methodCache = new ConcurrentCachedMapper<>(new Mapper<MethodReference, MethodGraph>() {
             @Override public MethodGraph map(MethodReference preimage) {
-                return createMethodGraph(preimage);
+                return createMethodGraph(preimage, stacks.get(preimage));
             }
         });
         fieldCache = new ConcurrentCachedMapper<>(new Mapper<FieldReference, DependencyNode>() {
             @Override public DependencyNode map(FieldReference preimage) {
-                return createFieldNode(preimage);
+                return createFieldNode(preimage, fieldStacks.get(preimage));
             }
         });
         methodCache.addKeyListener(new KeyListener<MethodReference>() {
             @Override public void keyAdded(MethodReference key) {
+                MethodGraph graph = methodCache.getKnown(key);
                 for (DependencyListener listener : listeners) {
-                    listener.methodAchieved(DependencyChecker.this, key);
+                    listener.methodAchieved(DependencyChecker.this, graph);
                 }
-                activateDependencyPlugin(key);
+                activateDependencyPlugin(graph);
             }
         });
         fieldCache.addKeyListener(new KeyListener<FieldReference>() {
             @Override public void keyAdded(FieldReference key) {
+                DependencyNode node = fieldCache.getKnown(key);
                 for (DependencyListener listener : listeners) {
-                    listener.fieldAchieved(DependencyChecker.this, key);
+                    listener.fieldAchieved(DependencyChecker.this, key, node);
                 }
             }
         });
@@ -100,7 +105,7 @@ public class DependencyChecker implements DependencyInformation {
         if (parameters.length != argumentTypes.length) {
             throw new IllegalArgumentException("argumentTypes length does not match the number of method's arguments");
         }
-        MethodGraph graph = attachMethodGraph(methodRef);
+        MethodGraph graph = attachMethodGraph(methodRef, DependencyStack.ROOT);
         DependencyNode[] varNodes = graph.getVariables();
         varNodes[0].propagate(methodRef.getClassName());
         for (int i = 0; i < argumentTypes.length; ++i) {
@@ -120,7 +125,8 @@ public class DependencyChecker implements DependencyInformation {
         return executor;
     }
 
-    boolean achieveClass(String className) {
+    boolean achieveClass(String className, DependencyStack stack) {
+        classStacks.putIfAbsent(className, stack);
         boolean result = achievableClasses.putIfAbsent(className, dummyValue) == null;
         if (result) {
             for (DependencyListener listener : listeners) {
@@ -130,49 +136,56 @@ public class DependencyChecker implements DependencyInformation {
         return result;
     }
 
-    public MethodGraph attachMethodGraph(MethodReference methodRef) {
+    public MethodGraph attachMethodGraph(MethodReference methodRef, DependencyStack stack) {
+        stacks.putIfAbsent(methodRef, stack);
         return methodCache.map(methodRef);
     }
 
-    public void initClass(String className) {
+    public void initClass(String className, DependencyStack stack) {
+        classStacks.putIfAbsent(className, stack);
         MethodDescriptor clinitDesc = new MethodDescriptor("<clinit>", ValueType.VOID);
         while (className != null) {
             if (initializedClasses.putIfAbsent(className, clinitDesc) != null) {
                 break;
             }
-            achieveClass(className);
-            achieveInterfaces(className);
+            achieveClass(className, stack);
+            achieveInterfaces(className, stack);
             ClassHolder cls = classSource.get(className);
             if (cls == null) {
-                missingClasses.add(className);
+                missingClasses.put(className, stack);
                 return;
             }
             if (cls.getMethod(clinitDesc) != null) {
-                attachMethodGraph(new MethodReference(className, clinitDesc));
+                MethodReference methodRef = new MethodReference(className, clinitDesc);
+                attachMethodGraph(methodRef, new DependencyStack(methodRef, stack));
             }
             className = cls.getParent();
         }
     }
 
-    private void achieveInterfaces(String className) {
+    private void achieveInterfaces(String className, DependencyStack stack) {
+        classStacks.putIfAbsent(className, stack);
         ClassHolder cls = classSource.get(className);
         if (cls == null) {
-            missingClasses.add(className);
+            missingClasses.put(className, stack);
             return;
         }
         for (String iface : cls.getInterfaces()) {
-            if (achieveClass(iface)) {
-                achieveInterfaces(iface);
+            if (achieveClass(iface, stack)) {
+                achieveInterfaces(iface, stack);
             }
         }
     }
 
-    private MethodGraph createMethodGraph(final MethodReference methodRef) {
-        initClass(methodRef.getClassName());
+    private MethodGraph createMethodGraph(final MethodReference methodRef, DependencyStack stack) {
+        if (stack == null) {
+            stack = DependencyStack.ROOT;
+        }
+        initClass(methodRef.getClassName(), stack);
         ClassHolder cls = classSource.get(methodRef.getClassName());
         MethodHolder method;
         if (cls == null) {
-            missingClasses.add(methodRef.getClassName());
+            missingClasses.put(methodRef.getClassName(), stack);
             method = null;
         } else {
             method = cls.getMethod(methodRef.getDescriptor());
@@ -180,11 +193,11 @@ public class DependencyChecker implements DependencyInformation {
                 while (cls != null) {
                     method = cls.getMethod(methodRef.getDescriptor());
                     if (method != null) {
-                        return methodCache.map(new MethodReference(cls.getName(), methodRef.getDescriptor()));
+                        return attachMethodGraph(method.getReference(), stack);
                     }
                     cls = cls.getParent() != null ? classSource.get(cls.getParent()) : null;
                 }
-                missingMethods.add(methodRef);
+                missingMethods.put(methodRef, stack);
             }
         }
         ValueType[] arguments = methodRef.getParameterTypes();
@@ -206,7 +219,8 @@ public class DependencyChecker implements DependencyInformation {
                 resultNode.setTag(methodRef + ":RESULT");
             }
         }
-        final MethodGraph graph = new MethodGraph(parameterNodes, paramCount, resultNode);
+        stack = new DependencyStack(methodRef, stack);
+        final MethodGraph graph = new MethodGraph(parameterNodes, paramCount, resultNode, stack, methodRef);
         if (method != null) {
             final MethodHolder currentMethod = method;
             executor.execute(new Runnable() {
@@ -242,27 +256,32 @@ public class DependencyChecker implements DependencyInformation {
         return new HashSet<>(achievableClasses.keySet());
     }
 
-    @Override
-    public DependencyNode getField(FieldReference fieldRef) {
+    public DependencyNode attachFieldNode(FieldReference fieldRef, DependencyStack stack) {
+        fieldStacks.putIfAbsent(fieldRef, stack);
         return fieldCache.map(fieldRef);
     }
 
-    private DependencyNode createFieldNode(FieldReference fieldRef) {
-        initClass(fieldRef.getClassName());
+    @Override
+    public DependencyNode getField(FieldReference fieldRef) {
+        return fieldCache.getKnown(fieldRef);
+    }
+
+    private DependencyNode createFieldNode(FieldReference fieldRef, DependencyStack stack) {
+        initClass(fieldRef.getClassName(), stack);
         ClassHolder cls = classSource.get(fieldRef.getClassName());
         if (cls == null) {
-            missingClasses.add(fieldRef.getClassName());
+            missingClasses.put(fieldRef.getClassName(), stack);
         } else {
             FieldHolder field = cls.getField(fieldRef.getFieldName());
             if (field == null) {
                 while (cls != null) {
                     field = cls.getField(fieldRef.getFieldName());
                     if (field != null) {
-                        return fieldCache.map(new FieldReference(cls.getName(), fieldRef.getFieldName()));
+                        return attachFieldNode(new FieldReference(cls.getName(), fieldRef.getFieldName()), stack);
                     }
                     cls = cls.getParent() != null ? classSource.get(cls.getParent()) : null;
                 }
-                missingFields.add(fieldRef);
+                missingFields.put(fieldRef, stack);
             }
         }
         DependencyNode node = new DependencyNode(this);
@@ -272,7 +291,8 @@ public class DependencyChecker implements DependencyInformation {
         return node;
     }
 
-    private void activateDependencyPlugin(MethodReference methodRef) {
+    private void activateDependencyPlugin(MethodGraph graph) {
+        MethodReference methodRef = graph.getReference();
         ClassHolder cls = classSource.get(methodRef.getClassName());
         if (cls == null) {
             return;
@@ -299,10 +319,11 @@ public class DependencyChecker implements DependencyInformation {
         } catch (IllegalAccessException | InstantiationException e) {
             throw new RuntimeException("Can't instantiate dependency plugin " + depClassName, e);
         }
-        plugin.methodAchieved(this, methodRef);
+        plugin.methodAchieved(this, graph);
     }
 
-    public void addAbstractMethod(MethodReference methodRef) {
+    public void addAbstractMethod(MethodReference methodRef, DependencyStack stack) {
+        stacks.putIfAbsent(methodRef, stack);
         if (abstractMethods.putIfAbsent(methodRef, methodRef) == null) {
             String className = methodRef.getClassName();
             while (className != null) {
@@ -356,11 +377,17 @@ public class DependencyChecker implements DependencyInformation {
             return;
         }
         List<String> items = new ArrayList<>();
-        items.addAll(missingClasses);
-        for (MethodReference method : missingMethods) {
+        Map<String, DependencyStack> stackMap = new HashMap<>();
+        for (String cls : missingClasses.keySet()) {
+            stackMap.put(cls, missingClasses.get(cls));
+            items.add(cls);
+        }
+        for (MethodReference method : missingMethods.keySet()) {
+            stackMap.put(method.toString(), missingMethods.get(method));
             items.add(method.toString());
         }
-        for (FieldReference field : missingFields) {
+        for (FieldReference field : missingFields.keySet()) {
+            stackMap.put(field.toString(), missingFields.get(field));
             items.add(field.toString());
         }
         Collections.sort(items);
@@ -368,6 +395,15 @@ public class DependencyChecker implements DependencyInformation {
         sb.append("Can't compile due to the following items missing:\n");
         for (String item : items) {
             sb.append("  ").append(item).append("\n");
+            DependencyStack stack = stackMap.get(item);
+            if (stack == null) {
+                sb.append("    at unknown location\n");
+            }
+            while (stack.getMethod() != null) {
+                sb.append("    at " + stack.getMethod() + "\n");
+                stack = stack.getCause();
+            }
+            sb.append('\n');
         }
         throw new IllegalStateException(sb.toString());
     }

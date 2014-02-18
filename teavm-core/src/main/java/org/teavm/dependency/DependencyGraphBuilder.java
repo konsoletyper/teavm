@@ -29,6 +29,7 @@ class DependencyGraphBuilder {
     private DependencyNode[] nodes;
     private DependencyNode resultNode;
     private Program program;
+    private DependencyStack callerStack;
 
     public DependencyGraphBuilder(DependencyChecker dependencyChecker) {
         this.dependencyChecker = dependencyChecker;
@@ -38,6 +39,7 @@ class DependencyGraphBuilder {
         if (method.getProgram().basicBlockCount() == 0) {
             return;
         }
+        callerStack = graph.getStack();
         program = method.getProgram();
         if (DependencyChecker.shouldLog) {
             System.out.println("Method achieved: " + method.getReference());
@@ -64,14 +66,17 @@ class DependencyGraphBuilder {
         private final DependencyChecker checker;
         private final DependencyNode[] parameters;
         private final DependencyNode result;
+        private final DependencyStack stack;
 
         public VirtualCallPropagationListener(DependencyNode node, MethodDescriptor methodDesc,
-                DependencyChecker checker, DependencyNode[] parameters, DependencyNode result) {
+                DependencyChecker checker, DependencyNode[] parameters, DependencyNode result,
+                DependencyStack stack) {
             this.node = node;
             this.methodDesc = methodDesc;
             this.checker = checker;
             this.parameters = parameters;
             this.result = result;
+            this.stack = stack;
         }
 
         @Override
@@ -88,7 +93,7 @@ class DependencyGraphBuilder {
             if (method == null) {
                 return;
             }
-            MethodGraph targetGraph = checker.attachMethodGraph(methodRef);
+            MethodGraph targetGraph = checker.attachMethodGraph(methodRef, stack);
             DependencyNode[] targetParams = targetGraph.getVariables();
             for (int i = 0; i < parameters.length; ++i) {
                 parameters[i].connect(targetParams[i]);
@@ -137,7 +142,7 @@ class DependencyGraphBuilder {
         }
 
         private void invokeSpecial(InvokeInstruction insn) {
-            MethodGraph targetGraph = dependencyChecker.attachMethodGraph(insn.getMethod());
+            MethodGraph targetGraph = dependencyChecker.attachMethodGraph(insn.getMethod(), callerStack);
             DependencyNode[] targetParams = targetGraph.getVariables();
             List<Variable> arguments = insn.getArguments();
             for (int i = 0; i < arguments.size(); ++i) {
@@ -160,8 +165,8 @@ class DependencyGraphBuilder {
             actualArgs[0] = nodes[insn.getInstance().getIndex()];
             DependencyConsumer listener = new VirtualCallPropagationListener(nodes[insn.getInstance().getIndex()],
                     insn.getMethod().getDescriptor(), dependencyChecker, actualArgs,
-                    insn.getReceiver() != null ? nodes[insn.getReceiver().getIndex()] : null);
-            dependencyChecker.addAbstractMethod(insn.getMethod());
+                    insn.getReceiver() != null ? nodes[insn.getReceiver().getIndex()] : null, callerStack);
+            dependencyChecker.addAbstractMethod(insn.getMethod(), callerStack);
             nodes[insn.getInstance().getIndex()].addConsumer(listener);
         }
 
@@ -205,14 +210,14 @@ class DependencyGraphBuilder {
 
         @Override
         public void visit(PutFieldInstruction insn) {
-            DependencyNode fieldNode = dependencyChecker.getField(insn.getField());
+            DependencyNode fieldNode = dependencyChecker.attachFieldNode(insn.getField(), callerStack);
             DependencyNode valueNode = nodes[insn.getValue().getIndex()];
             valueNode.connect(fieldNode);
         }
 
         @Override
         public void visit(GetFieldInstruction insn) {
-            DependencyNode fieldNode = dependencyChecker.getField(insn.getField());
+            DependencyNode fieldNode = dependencyChecker.attachFieldNode(insn.getField(), callerStack);
             DependencyNode receiverNode = nodes[insn.getReceiver().getIndex()];
             fieldNode.connect(receiverNode);
         }
@@ -298,7 +303,7 @@ class DependencyGraphBuilder {
         public void visit(StringConstantInstruction insn) {
             nodes[insn.getReceiver().getIndex()].propagate("java.lang.String");
             dependencyChecker.attachMethodGraph(new MethodReference("java.lang.String", new MethodDescriptor(
-                    "<init>", ValueType.arrayOf(ValueType.CHARACTER), ValueType.VOID)));
+                    "<init>", ValueType.arrayOf(ValueType.CHARACTER), ValueType.VOID)), callerStack);
         }
 
         @Override
@@ -329,7 +334,7 @@ class DependencyGraphBuilder {
                 type = ((ValueType.Array)type).getItemType();
             }
             if (type instanceof ValueType.Object) {
-                dependencyChecker.achieveClass(((ValueType.Object)type).getClassName());
+                dependencyChecker.achieveClass(((ValueType.Object)type).getClassName(), callerStack);
             }
         }
 
@@ -339,7 +344,7 @@ class DependencyGraphBuilder {
 
         @Override
         public void visit(InitClassInstruction insn) {
-            dependencyChecker.initClass(insn.getClassName());
+            dependencyChecker.initClass(insn.getClassName(), callerStack);
         }
     };
 }

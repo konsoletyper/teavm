@@ -22,9 +22,12 @@ import org.teavm.common.FiniteExecutor;
 import org.teavm.dependency.DependencyChecker;
 import org.teavm.dependency.DependencyInformation;
 import org.teavm.dependency.DependencyListener;
+import org.teavm.dependency.DependencyStack;
 import org.teavm.javascript.ast.ClassNode;
 import org.teavm.model.*;
-import org.teavm.model.util.*;
+import org.teavm.model.util.ListingBuilder;
+import org.teavm.model.util.ProgramUtils;
+import org.teavm.model.util.RegisterAllocator;
 import org.teavm.optimization.ClassSetOptimizer;
 import org.teavm.optimization.Devirtualization;
 
@@ -88,7 +91,7 @@ public class JavascriptBuilder implements JavascriptBuilderHost {
                     "for method " + ref);
         }
         JavascriptEntryPoint entryPoint = new JavascriptEntryPoint(name, ref,
-                dependencyChecker.attachMethodGraph(ref));
+                dependencyChecker.attachMethodGraph(ref, DependencyStack.ROOT));
         entryPoints.put(name, entryPoint);
         return entryPoint;
     }
@@ -117,9 +120,9 @@ public class JavascriptBuilder implements JavascriptBuilderHost {
         builder.setMinified(minifying);
         SourceWriter sourceWriter = builder.build(writer);
         dependencyChecker.attachMethodGraph(new MethodReference("java.lang.Class", new MethodDescriptor("createNew",
-                ValueType.object("java.lang.Class"))));
+                ValueType.object("java.lang.Class"))), DependencyStack.ROOT);
         dependencyChecker.attachMethodGraph(new MethodReference("java.lang.String", new MethodDescriptor("<init>",
-                ValueType.arrayOf(ValueType.CHARACTER), ValueType.VOID)));
+                ValueType.arrayOf(ValueType.CHARACTER), ValueType.VOID)), DependencyStack.ROOT);
         executor.complete();
         dependencyChecker.checkForMissingItems();
         ListableClassHolderSource classSet = dependencyChecker.cutUnachievableClasses();

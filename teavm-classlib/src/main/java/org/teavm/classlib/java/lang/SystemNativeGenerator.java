@@ -43,10 +43,10 @@ public class SystemNativeGenerator implements Generator, DependencyPlugin {
     }
 
     @Override
-    public void methodAchieved(DependencyChecker checker, MethodReference method) {
-        switch (method.getName()) {
+    public void methodAchieved(DependencyChecker checker, MethodGraph graph) {
+        switch (graph.getReference().getName()) {
             case "doArrayCopy":
-                achieveArrayCopy(checker, method);
+                achieveArrayCopy(graph);
                 break;
         }
     }
@@ -66,8 +66,7 @@ public class SystemNativeGenerator implements Generator, DependencyPlugin {
         writer.append("return Long_fromNumber(new Date().getTime());").softNewLine();
     }
 
-    private void achieveArrayCopy(DependencyChecker checker, MethodReference method) {
-        MethodGraph graph = checker.attachMethodGraph(method);
+    private void achieveArrayCopy(MethodGraph graph) {
         DependencyNode src = graph.getVariable(1);
         DependencyNode dest = graph.getVariable(3);
         src.getArrayItem().connect(dest.getArrayItem());

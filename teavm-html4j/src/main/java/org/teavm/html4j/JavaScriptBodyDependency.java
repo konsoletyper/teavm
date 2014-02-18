@@ -48,14 +48,13 @@ public class JavaScriptBodyDependency implements DependencyListener {
     }
 
     @Override
-    public void methodAchieved(DependencyChecker dependencyChecker, MethodReference methodRef) {
-        ClassHolder cls = dependencyChecker.getClassSource().get(methodRef.getClassName());
-        MethodHolder method = cls.getMethod(methodRef.getDescriptor());
+    public void methodAchieved(DependencyChecker dependencyChecker, MethodGraph graph) {
+        ClassHolder cls = dependencyChecker.getClassSource().get(graph.getReference().getClassName());
+        MethodHolder method = cls.getMethod(graph.getReference().getDescriptor());
         AnnotationReader annot = method.getAnnotations().get(JavaScriptBody.class.getName());
         if (annot != null) {
             includeDefaultDependencies(dependencyChecker);
             AnnotationValue javacall = annot.getValue("javacall");
-            MethodGraph graph = dependencyChecker.attachMethodGraph(methodRef);
             if (graph.getResult() != null) {
                 allClassesNode.connect(graph.getResult());
                 allClassesNode.addConsumer(new OneDirectionalConnection(graph.getResult().getArrayItem()));
@@ -70,20 +69,20 @@ public class JavaScriptBodyDependency implements DependencyListener {
             }
             if (javacall != null && javacall.getBoolean()) {
                 String body = annot.getValue("body").getString();
-                new GeneratorJsCallback(dependencyChecker.getClassSource(), dependencyChecker).parse(body);
+                new GeneratorJsCallback(dependencyChecker.getClassSource(), dependencyChecker, graph).parse(body);
             }
         }
     }
 
     private void includeDefaultDependencies(DependencyChecker dependencyChecker) {
-        dependencyChecker.attachMethodGraph(JavaScriptConvGenerator.fromJsMethod);
-        dependencyChecker.attachMethodGraph(JavaScriptConvGenerator.toJsMethod);
-        dependencyChecker.attachMethodGraph(JavaScriptConvGenerator.intValueMethod);
-        dependencyChecker.attachMethodGraph(JavaScriptConvGenerator.valueOfIntMethod);
+        dependencyChecker.attachMethodGraph(JavaScriptConvGenerator.fromJsMethod, DependencyStack.ROOT);
+        dependencyChecker.attachMethodGraph(JavaScriptConvGenerator.toJsMethod, DependencyStack.ROOT);
+        dependencyChecker.attachMethodGraph(JavaScriptConvGenerator.intValueMethod, DependencyStack.ROOT);
+        dependencyChecker.attachMethodGraph(JavaScriptConvGenerator.valueOfIntMethod, DependencyStack.ROOT);
     }
 
     @Override
-    public void fieldAchieved(DependencyChecker dependencyChecker, FieldReference field) {
+    public void fieldAchieved(DependencyChecker dependencyChecker, FieldReference field, DependencyNode node) {
     }
 
     private static MethodReader findMethod(ClassReaderSource classSource, String clsName, MethodDescriptor desc) {
@@ -113,21 +112,25 @@ public class JavaScriptBodyDependency implements DependencyListener {
     private class GeneratorJsCallback extends JsCallback {
         private ClassReaderSource classSource;
         private DependencyChecker dependencyChecker;
-        public GeneratorJsCallback(ClassReaderSource classSource, DependencyChecker dependencyChecker) {
+        private MethodGraph caller;
+        public GeneratorJsCallback(ClassReaderSource classSource, DependencyChecker dependencyChecker,
+                MethodGraph caller) {
             this.classSource = classSource;
             this.dependencyChecker = dependencyChecker;
+            this.caller = caller;
         }
         @Override protected CharSequence callMethod(String ident, String fqn, String method, String params) {
             MethodDescriptor desc = MethodDescriptor.parse(method + params + "V");
             MethodReader reader = findMethod(classSource, fqn, desc);
             if (reader != null) {
                 if (reader.hasModifier(ElementModifier.STATIC) || reader.hasModifier(ElementModifier.FINAL)) {
-                    MethodGraph graph = dependencyChecker.attachMethodGraph(reader.getReference());
+                    MethodGraph graph = dependencyChecker.attachMethodGraph(reader.getReference(), caller.getStack());
                     for (int i = 0; i <= graph.getParameterCount(); ++i) {
                         allClassesNode.connect(graph.getVariable(i));
                     }
                 } else {
-                    allClassesNode.addConsumer(new VirtualCallbackConsumer(classSource, dependencyChecker, desc));
+                    allClassesNode.addConsumer(new VirtualCallbackConsumer(classSource, dependencyChecker, desc,
+                            caller));
                 }
             }
             return "";
@@ -138,16 +141,18 @@ public class JavaScriptBodyDependency implements DependencyListener {
         private ClassReaderSource classSource;
         private DependencyChecker dependencyChecker;
         private MethodDescriptor desc;
+        private MethodGraph caller;
         public VirtualCallbackConsumer(ClassReaderSource classSource, DependencyChecker dependencyChecker,
-                MethodDescriptor desc) {
+                MethodDescriptor desc, MethodGraph caller) {
             this.classSource = classSource;
             this.dependencyChecker = dependencyChecker;
             this.desc = desc;
+            this.caller = caller;
         }
         @Override public void consume(String type) {
             MethodReader reader = findMethod(classSource, type, desc);
             if (reader != null) {
-                MethodGraph graph = dependencyChecker.attachMethodGraph(reader.getReference());
+                MethodGraph graph = dependencyChecker.attachMethodGraph(reader.getReference(), caller.getStack());
                 for (int i = 0; i < graph.getParameterCount(); ++i) {
                     allClassesNode.connect(graph.getVariable(i));
                 }

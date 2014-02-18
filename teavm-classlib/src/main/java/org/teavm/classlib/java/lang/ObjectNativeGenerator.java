@@ -61,16 +61,16 @@ public class ObjectNativeGenerator implements Generator, Injector, DependencyPlu
     }
 
     @Override
-    public void methodAchieved(DependencyChecker checker, MethodReference method) {
-        switch (method.getDescriptor().getName()) {
+    public void methodAchieved(DependencyChecker checker, MethodGraph graph) {
+        switch (graph.getReference().getName()) {
             case "clone":
-                achieveClone(checker, method);
+                achieveClone(graph);
                 break;
             case "getClass":
-                achieveGetClass(checker, method);
+                achieveGetClass(checker, graph);
                 break;
             case "wrap":
-                achieveWrap(checker, method);
+                achieveWrap(graph);
                 break;
         }
     }
@@ -86,12 +86,12 @@ public class ObjectNativeGenerator implements Generator, Injector, DependencyPlu
         writer.append(".constructor)");
     }
 
-    private void achieveGetClass(DependencyChecker checker, MethodReference method) {
+    private void achieveGetClass(DependencyChecker checker, MethodGraph graph) {
         String classClass = "java.lang.Class";
         MethodReference initMethod = new MethodReference(classClass, new MethodDescriptor("createNew",
                 ValueType.object(classClass)));
         checker.addEntryPoint(initMethod);
-        checker.attachMethodGraph(method).getResult().propagate("java.lang.Class");
+        graph.getResult().propagate("java.lang.Class");
     }
 
     private void generateHashCode(GeneratorContext context, SourceWriter writer) throws IOException {
@@ -107,8 +107,7 @@ public class ObjectNativeGenerator implements Generator, Injector, DependencyPlu
         writer.append("return copy;").softNewLine();
     }
 
-    private void achieveClone(DependencyChecker checker, MethodReference method) {
-        MethodGraph graph = checker.attachMethodGraph(method);
+    private void achieveClone(MethodGraph graph) {
         graph.getVariable(0).connect(graph.getResult());
     }
 
@@ -116,8 +115,7 @@ public class ObjectNativeGenerator implements Generator, Injector, DependencyPlu
         context.writeExpr(context.getArgument(0));
     }
 
-    private void achieveWrap(DependencyChecker checker, MethodReference method) {
-        MethodGraph graph = checker.attachMethodGraph(method);
+    private void achieveWrap(MethodGraph graph) {
         graph.getVariable(1).connect(graph.getResult());
     }
 }
