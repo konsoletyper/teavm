@@ -79,6 +79,8 @@ public class JavaScriptBodyDependency implements DependencyListener {
         dependencyChecker.attachMethodGraph(JavaScriptConvGenerator.toJsMethod, DependencyStack.ROOT);
         dependencyChecker.attachMethodGraph(JavaScriptConvGenerator.intValueMethod, DependencyStack.ROOT);
         dependencyChecker.attachMethodGraph(JavaScriptConvGenerator.valueOfIntMethod, DependencyStack.ROOT);
+        dependencyChecker.attachMethodGraph(JavaScriptConvGenerator.booleanValueMethod, DependencyStack.ROOT);
+        dependencyChecker.attachMethodGraph(JavaScriptConvGenerator.valueOfBooleanMethod, DependencyStack.ROOT);
     }
 
     @Override

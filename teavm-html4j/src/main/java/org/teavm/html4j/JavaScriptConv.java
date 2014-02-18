@@ -29,5 +29,5 @@ public final class JavaScriptConv {
     public static native Object toJavaScript(Object obj);
 
     @GeneratedBy(JavaScriptConvGenerator.class)
-    public static native Object fromJavaScript(Object obj);
+    public static native Object fromJavaScript(Object obj, Object cls);
 }

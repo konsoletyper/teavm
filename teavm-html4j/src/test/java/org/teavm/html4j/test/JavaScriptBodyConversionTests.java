@@ -27,15 +27,30 @@ public class JavaScriptBodyConversionTests {
     @Test
     public void convertsInteger() {
         assertEquals(23, returnAsInt(23));
+        assertEquals(Integer.valueOf(23), returnAsInteger(23));
+        assertEquals(23, returnAsObject(23));
+        assertEquals(24, addOne((Object)23));
+        assertEquals(Integer.valueOf(24), addOne(Integer.valueOf(23)));
+        assertEquals(24, addOne(23));
     }
 
     @Test
     public void convertsIntegerResult() {
         assertEquals(23, returnAsObject(23));
+        assertEquals(Integer.valueOf(23), returnAsInteger(23));
+        assertEquals(23, returnAsInt(23));
+    }
+
+    @Test
+    public void convertsBoolean() {
+        assertTrue(returnAsBoolean(true));
+        assertTrue(returnAsBooleanWrapper(true));
+        assertEquals(Boolean.TRUE, returnAsObject(true));
     }
 
     @Test
     public void convertsArray() {
+        assertEquals(42, getArrayItem(new int[] { 23, 42 }, 1));
         assertEquals(42, getArrayItem(new Integer[] { 23, 42 }, 1));
     }
 
@@ -47,11 +62,45 @@ public class JavaScriptBodyConversionTests {
         assertEquals(Integer.valueOf(1), arrayCopy[0]);
     }
 
+    @Test
+    public void createsArrayOfProperType() {
+        assertEquals(Object[].class, returnAsObject(new int[] { 23, 42 }).getClass());
+        assertEquals(Integer[].class, returnAsIntegerArray(new Integer[] { 23, 42 }).getClass());
+        assertEquals(int[].class, returnAsIntArray(new Integer[] { 23, 42 }).getClass());
+    }
+
     @JavaScriptBody(args = { "value" }, body = "return value;")
     private native int returnAsInt(Object value);
 
     @JavaScriptBody(args = { "value" }, body = "return value;")
+    private native boolean returnAsBoolean(Object value);
+
+    @JavaScriptBody(args = { "value" }, body = "return value;")
+    private native Boolean returnAsBooleanWrapper(boolean value);
+
+    @JavaScriptBody(args = { "value" }, body = "return value;")
+    private native Integer returnAsInteger(Integer value);
+
+    @JavaScriptBody(args = { "value" }, body = "return value;")
     private native Object returnAsObject(int value);
+
+    @JavaScriptBody(args = { "value" }, body = "return value + 1;")
+    private native int addOne(Object value);
+
+    @JavaScriptBody(args = { "value" }, body = "return value + 1;")
+    private native Integer addOne(Integer value);
+
+    @JavaScriptBody(args = { "value" }, body = "return value + 1;")
+    private native int addOne(int value);
+
+    @JavaScriptBody(args = { "value" }, body = "return value;")
+    private native Object returnAsObject(Object array);
+
+    @JavaScriptBody(args = { "value" }, body = "return value;")
+    private native int[] returnAsIntArray(Object array);
+
+    @JavaScriptBody(args = { "value" }, body = "return value;")
+    private native Integer[] returnAsIntegerArray(Object array);
 
     @JavaScriptBody(args = { "value" }, body = "value[0] = 1; return value;")
     private native Object modifyIntegerArray(Object value);

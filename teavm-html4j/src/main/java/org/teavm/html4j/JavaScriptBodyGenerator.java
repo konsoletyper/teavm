@@ -20,6 +20,7 @@ import java.util.List;
 import net.java.html.js.JavaScriptBody;
 import org.teavm.codegen.NamingStrategy;
 import org.teavm.codegen.SourceWriter;
+import org.teavm.javascript.Renderer;
 import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.GeneratorContext;
 import org.teavm.model.*;
@@ -53,7 +54,7 @@ public class JavaScriptBodyGenerator implements Generator {
         writer.outdent().append("}).call(").append(context.getParameterName(0));
         for (int i = 0; i < args.size(); ++i) {
             writer.append(",").ws();
-            wrapParameter(writer, methodRef.getDescriptor().parameterType(i), context.getParameterName(i + 1));
+            wrapParameter(writer, context.getParameterName(i + 1));
         }
         writer.append(")").softNewLine();
         writer.append("return ");
@@ -61,22 +62,15 @@ public class JavaScriptBodyGenerator implements Generator {
         writer.append(";").softNewLine();
     }
 
-    private void wrapParameter(SourceWriter writer, ValueType type, String param) throws IOException {
-        if (type.isObject("java.lang.Object")) {
-            writer.appendMethodBody(JavaScriptConvGenerator.toJsMethod);
-            writer.append("(").append(param).append(")");
-        } else {
-            writer.append(param);
-        }
+    private void wrapParameter(SourceWriter writer, String param) throws IOException {
+        writer.appendMethodBody(JavaScriptConvGenerator.toJsMethod);
+        writer.append("(").append(param).append(")");
     }
 
     private void unwrapValue(SourceWriter writer, ValueType type, String param) throws IOException {
-        if (type.isObject("java.lang.Object")) {
-            writer.appendMethodBody(JavaScriptConvGenerator.fromJsMethod);
-            writer.append("(").append(param).append(")");
-        } else {
-            writer.append(param);
-        }
+        writer.appendMethodBody(JavaScriptConvGenerator.fromJsMethod);
+        writer.append("(").append(param).append(",").ws().append(Renderer.typeToClsString(writer.getNaming(), type))
+                .append(")");
     }
 
     private static class GeneratorJsCallback extends JsCallback {

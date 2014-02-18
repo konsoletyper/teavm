@@ -29,13 +29,17 @@ public class JavaScriptConvGenerator implements Generator {
     private static final String convCls = JavaScriptConv.class.getName();
     static final MethodReference intValueMethod = new MethodReference("java.lang.Integer",
             new MethodDescriptor("intValue", ValueType.INTEGER));
+    static final MethodReference booleanValueMethod = new MethodReference("java.lang.Boolean",
+            new MethodDescriptor("booleanValue", ValueType.BOOLEAN));
     static final MethodReference valueOfIntMethod = new MethodReference("java.lang.Integer",
             new MethodDescriptor("valueOf", ValueType.INTEGER, ValueType.object("java.lang.Integer")));
+    static final MethodReference valueOfBooleanMethod = new MethodReference("java.lang.Boolean",
+            new MethodDescriptor("valueOf", ValueType.BOOLEAN, ValueType.object("java.lang.Boolean")));
     private static final ValueType objType = ValueType.object("java.lang.Object");
     static final MethodReference toJsMethod = new MethodReference(convCls, new MethodDescriptor(
             "toJavaScript", objType, objType));
     static final MethodReference fromJsMethod = new MethodReference(convCls, new MethodDescriptor(
-            "fromJavaScript", objType, objType));
+            "fromJavaScript", objType, objType, objType));
 
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
@@ -53,43 +57,67 @@ public class JavaScriptConvGenerator implements Generator {
         String obj = context.getParameterName(1);
         writer.append("if (" + obj + " === null) {").softNewLine().indent();
         writer.append("return null;").softNewLine();
+        writer.outdent().append("} else if (typeof " + obj + " === 'number') {").indent().softNewLine();
+        writer.append("return " + obj + ";").softNewLine();
         writer.outdent().append("} else if (" + obj + ".constructor.$meta.item) {").indent().softNewLine();
         writer.append("var arr = new Array(" + obj + ".data.length);").softNewLine();
         writer.append("for (var i = 0; i < arr.length; ++i) {").indent().softNewLine();
         writer.append("arr[i] = ").appendMethodBody(toJsMethod).append("(" + obj + ".data[i]);").softNewLine();
         writer.outdent().append("}").softNewLine();
         writer.append("return arr;").softNewLine();
-        writer.outdent().append("}");
-        writer.append(" else if (" + obj + ".constructor === ").appendClass("java.lang.String")
+        writer.outdent().append("} else if (" + obj + ".constructor === ").appendClass("java.lang.String")
                 .append(") {").indent().softNewLine();
         generateStringToJavaScript(context, writer);
         writer.outdent().append("} else if (" + obj + ".constructor === ").appendClass("java.lang.Integer")
                 .append(") {").indent().softNewLine();
         writer.append("return ").appendMethodBody(intValueMethod).append("(" + obj + ");").softNewLine();
-        writer.outdent().append("}");
-        writer.append(" else {").indent().softNewLine();
+        writer.outdent().append("} else if (" + obj + ".constructor === ").appendClass("java.lang.Boolean")
+                .append(") {").indent().softNewLine();
+        writer.append("return ").appendMethodBody(booleanValueMethod).append("(" + obj + ")!==0;").softNewLine();
+        writer.outdent().append("} else {").indent().softNewLine();
         writer.append("return " + obj + ";").softNewLine();
         writer.outdent().append("}").softNewLine();
     }
 
     private void generateFromJavaScript(GeneratorContext context, SourceWriter writer) throws IOException {
         String obj = context.getParameterName(1);
+        String type = context.getParameterName(2);
         writer.append("if (" + obj +" === null || " + obj + " === undefined)").ws().append("{")
                 .softNewLine().indent();
         writer.append("return null;").softNewLine();
-        writer.outdent().append("} else if (" + obj + " instanceof Array) {").indent().softNewLine();
-        writer.append("var arr = $rt_createArray($rt_objcls(), " + obj + ".length);").softNewLine();
+        writer.outdent().append("} else if (" + type + ".$meta.item) {").indent().softNewLine();
+        writer.append("var arr = $rt_createArray(" + type + ".$meta.item, " + obj + ".length);").softNewLine();
         writer.append("for (var i = 0; i < arr.data.length; ++i) {").indent().softNewLine();
-        writer.append("arr.data[i] = ").appendMethodBody(fromJsMethod).append("(" + obj + "[i]);")
+        writer.append("arr.data[i] = ").appendMethodBody(fromJsMethod).append("(" + obj + "[i], " + type + ");")
                 .softNewLine();
         writer.outdent().append("}").softNewLine();
         writer.append("return arr;").softNewLine();
-        writer.outdent().append("}");
-        writer.append(" else if (" + obj + ".constructor === ").appendClass("java.lang.String")
+        writer.outdent().append("} else if (" + type + " === ").appendClass("java.lang.String")
                 .append(") {").indent().softNewLine();
         writer.append("return $rt_str(" + obj + ");").softNewLine();
-        writer.outdent().append("} else if (" + obj + " | 0 === " + obj + ") {").indent().softNewLine();
+        writer.outdent().append("} else if (" + type + " === ").appendClass("java.lang.Integer")
+                .append(") {").indent().softNewLine();
         writer.append("return ").appendMethodBody(valueOfIntMethod).append("(" + obj + ");").softNewLine();
+        writer.outdent().append("} else if (" + type + " === $rt_intcls()) {").indent().softNewLine();
+        writer.append("return " + obj + "|0;").softNewLine();
+        writer.outdent().append("} else if (" + type + " === ").appendClass("java.lang.Boolean")
+                .append(") {").indent().softNewLine();
+        writer.append("return ").appendMethodBody(valueOfBooleanMethod).append("(" + obj + "?1:0);").softNewLine();
+        writer.outdent().append("} else if (" + type + " === $rt_booleancls()) {").indent().softNewLine();
+        writer.append("return " + obj + "?1:0;").softNewLine();
+        writer.outdent().append("} else if (" + obj + " instanceof Array) {").indent().softNewLine();
+        writer.append("var arr = $rt_createArray($rt_objcls(), " + obj + ".length);").softNewLine();
+        writer.append("for (var i = 0; i < arr.data.length; ++i) {").indent().softNewLine();
+        writer.append("arr.data[i] = ").appendMethodBody(fromJsMethod).append("(" + obj + "[i], $rt_objcls());")
+                .softNewLine();
+        writer.outdent().append("}").softNewLine();
+        writer.append("return arr;").softNewLine();
+        writer.outdent().append("} else if (typeof " + obj + " === 'number') {").indent().softNewLine();
+        writer.append("if (" + obj + "|0 === " + obj + ") {").indent().softNewLine();
+        writer.append("return ").appendMethodBody(valueOfIntMethod).append("(" + obj + ");").softNewLine();
+        writer.outdent().append("}").softNewLine();
+        writer.outdent().append("} else if (typeof " + obj + " === 'boolean') {").indent().softNewLine();
+        writer.append("return ").appendMethodBody(valueOfBooleanMethod).append("(" + obj + "?1:0);").softNewLine();
         writer.outdent().append("} else {").indent().softNewLine();
         writer.append("return ").append(obj).append(";").softNewLine();
         writer.outdent().append("}").softNewLine();
