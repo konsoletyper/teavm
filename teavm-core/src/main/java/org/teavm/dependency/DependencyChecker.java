@@ -66,17 +66,21 @@ public class DependencyChecker implements DependencyInformation {
         methodCache.addKeyListener(new KeyListener<MethodReference>() {
             @Override public void keyAdded(MethodReference key) {
                 MethodGraph graph = methodCache.getKnown(key);
-                for (DependencyListener listener : listeners) {
-                    listener.methodAchieved(DependencyChecker.this, graph);
+                if (!missingMethods.containsKey(key) && !missingClasses.containsKey(key.getClassName())) {
+                    for (DependencyListener listener : listeners) {
+                        listener.methodAchieved(DependencyChecker.this, graph);
+                    }
+                    activateDependencyPlugin(graph);
                 }
-                activateDependencyPlugin(graph);
             }
         });
         fieldCache.addKeyListener(new KeyListener<FieldReference>() {
             @Override public void keyAdded(FieldReference key) {
                 DependencyNode node = fieldCache.getKnown(key);
-                for (DependencyListener listener : listeners) {
-                    listener.fieldAchieved(DependencyChecker.this, key, node);
+                if (!missingFields.containsKey(key)) {
+                    for (DependencyListener listener : listeners) {
+                        listener.fieldAchieved(DependencyChecker.this, key, node);
+                    }
                 }
             }
         });

@@ -51,7 +51,8 @@ public class JavaScriptBodyGenerator implements Generator {
         }
         writer.append(")").ws().append("{").indent().softNewLine();
         writer.append(body).softNewLine();
-        writer.outdent().append("}).call(").append(context.getParameterName(0));
+        writer.outdent().append("}).call(").append(!method.hasModifier(ElementModifier.STATIC) ?
+                context.getParameterName(0) : "null");
         for (int i = 0; i < args.size(); ++i) {
             writer.append(",").ws();
             wrapParameter(writer, context.getParameterName(i + 1));
