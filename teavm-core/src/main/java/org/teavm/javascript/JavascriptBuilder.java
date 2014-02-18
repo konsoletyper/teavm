@@ -121,6 +121,7 @@ public class JavascriptBuilder implements JavascriptBuilderHost {
         dependencyChecker.attachMethodGraph(new MethodReference("java.lang.String", new MethodDescriptor("<init>",
                 ValueType.arrayOf(ValueType.CHARACTER), ValueType.VOID)));
         executor.complete();
+        dependencyChecker.checkForMissingItems();
         ListableClassHolderSource classSet = dependencyChecker.cutUnachievableClasses();
         Decompiler decompiler = new Decompiler(classSet, classLoader, executor);
         devirtualize(classSet, dependencyChecker);

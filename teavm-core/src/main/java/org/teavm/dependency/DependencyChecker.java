@@ -15,10 +15,7 @@
  */
 package org.teavm.dependency;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.teavm.common.*;
@@ -41,6 +38,9 @@ public class DependencyChecker implements DependencyInformation {
     private ConcurrentMap<String, Object> achievableClasses = new ConcurrentHashMap<>();
     private ConcurrentMap<String, Object> initializedClasses = new ConcurrentHashMap<>();
     private List<DependencyListener> listeners = new ArrayList<>();
+    Set<MethodReference> missingMethods = new HashSet<>();
+    Set<String> missingClasses = new HashSet<>();
+    Set<FieldReference> missingFields = new HashSet<>();
 
     public DependencyChecker(ClassHolderSource classSource, ClassLoader classLoader) {
         this(classSource, classLoader, new SimpleFiniteExecutor());
@@ -144,7 +144,8 @@ public class DependencyChecker implements DependencyInformation {
             achieveInterfaces(className);
             ClassHolder cls = classSource.get(className);
             if (cls == null) {
-                throw new RuntimeException("Class not found: " + className);
+                missingClasses.add(className);
+                return;
             }
             if (cls.getMethod(clinitDesc) != null) {
                 attachMethodGraph(new MethodReference(className, clinitDesc));
@@ -156,7 +157,8 @@ public class DependencyChecker implements DependencyInformation {
     private void achieveInterfaces(String className) {
         ClassHolder cls = classSource.get(className);
         if (cls == null) {
-            throw new RuntimeException("Class not found: " + className);
+            missingClasses.add(className);
+            return;
         }
         for (String iface : cls.getInterfaces()) {
             if (achieveClass(iface)) {
@@ -168,44 +170,52 @@ public class DependencyChecker implements DependencyInformation {
     private MethodGraph createMethodGraph(final MethodReference methodRef) {
         initClass(methodRef.getClassName());
         ClassHolder cls = classSource.get(methodRef.getClassName());
-        MethodHolder method = cls.getMethod(methodRef.getDescriptor());
-        if (method == null) {
-            while (cls != null) {
-                method = cls.getMethod(methodRef.getDescriptor());
-                if (method != null) {
-                    return methodCache.map(new MethodReference(cls.getName(), methodRef.getDescriptor()));
+        MethodHolder method;
+        if (cls == null) {
+            missingClasses.add(methodRef.getClassName());
+            method = null;
+        } else {
+            method = cls.getMethod(methodRef.getDescriptor());
+            if (method == null) {
+                while (cls != null) {
+                    method = cls.getMethod(methodRef.getDescriptor());
+                    if (method != null) {
+                        return methodCache.map(new MethodReference(cls.getName(), methodRef.getDescriptor()));
+                    }
+                    cls = cls.getParent() != null ? classSource.get(cls.getParent()) : null;
                 }
-                cls = cls.getParent() != null ? classSource.get(cls.getParent()) : null;
+                missingMethods.add(methodRef);
             }
-            throw new RuntimeException("Method not found: " + methodRef);
         }
-        ValueType[] arguments = method.getParameterTypes();
+        ValueType[] arguments = methodRef.getParameterTypes();
         int paramCount = arguments.length + 1;
-        int varCount = Math.max(paramCount, method.getProgram().variableCount());
+        int varCount = Math.max(paramCount, method != null ? method.getProgram().variableCount() : 0);
         DependencyNode[] parameterNodes = new DependencyNode[varCount];
         for (int i = 0; i < varCount; ++i) {
             parameterNodes[i] = new DependencyNode(this);
             if (shouldLog) {
-                parameterNodes[i].setTag(method.getOwnerName() + "#" + method.getDescriptor() + ":" + i);
+                parameterNodes[i].setTag(methodRef + ":" + i);
             }
         }
         DependencyNode resultNode;
-        if (method.getResultType() == ValueType.VOID) {
+        if (methodRef.getDescriptor().getResultType() == ValueType.VOID) {
             resultNode = null;
         } else {
             resultNode = new DependencyNode(this);
             if (shouldLog) {
-                resultNode.setTag(method.getOwnerName() + "#" + method.getDescriptor() + ":RESULT");
+                resultNode.setTag(methodRef + ":RESULT");
             }
         }
         final MethodGraph graph = new MethodGraph(parameterNodes, paramCount, resultNode);
-        final MethodHolder currentMethod = method;
-        executor.execute(new Runnable() {
-            @Override public void run() {
-                DependencyGraphBuilder graphBuilder = new DependencyGraphBuilder(DependencyChecker.this);
-                graphBuilder.buildGraph(currentMethod, graph);
-            }
-        });
+        if (method != null) {
+            final MethodHolder currentMethod = method;
+            executor.execute(new Runnable() {
+                @Override public void run() {
+                    DependencyGraphBuilder graphBuilder = new DependencyGraphBuilder(DependencyChecker.this);
+                    graphBuilder.buildGraph(currentMethod, graph);
+                }
+            });
+        }
         return graph;
     }
 
@@ -241,18 +251,19 @@ public class DependencyChecker implements DependencyInformation {
         initClass(fieldRef.getClassName());
         ClassHolder cls = classSource.get(fieldRef.getClassName());
         if (cls == null) {
-            throw new RuntimeException("Class not found: " + fieldRef.getClassName());
-        }
-        FieldHolder field = cls.getField(fieldRef.getFieldName());
-        if (field == null) {
-            while (cls != null) {
-                field = cls.getField(fieldRef.getFieldName());
-                if (field != null) {
-                    return fieldCache.map(new FieldReference(cls.getName(), fieldRef.getFieldName()));
+            missingClasses.add(fieldRef.getClassName());
+        } else {
+            FieldHolder field = cls.getField(fieldRef.getFieldName());
+            if (field == null) {
+                while (cls != null) {
+                    field = cls.getField(fieldRef.getFieldName());
+                    if (field != null) {
+                        return fieldCache.map(new FieldReference(cls.getName(), fieldRef.getFieldName()));
+                    }
+                    cls = cls.getParent() != null ? classSource.get(cls.getParent()) : null;
                 }
-                cls = cls.getParent() != null ? classSource.get(cls.getParent()) : null;
+                missingFields.add(fieldRef);
             }
-            throw new RuntimeException("Field not found: " + fieldRef);
         }
         DependencyNode node = new DependencyNode(this);
         if (shouldLog) {
@@ -263,6 +274,9 @@ public class DependencyChecker implements DependencyInformation {
 
     private void activateDependencyPlugin(MethodReference methodRef) {
         ClassHolder cls = classSource.get(methodRef.getClassName());
+        if (cls == null) {
+            return;
+        }
         MethodHolder method = cls.getMethod(methodRef.getDescriptor());
         if (method == null) {
             return;
@@ -335,5 +349,31 @@ public class DependencyChecker implements DependencyInformation {
     @Override
     public DependencyMethodInformation getMethod(MethodReference methodRef) {
         return methodCache.getKnown(methodRef);
+    }
+
+    public void checkForMissingItems() {
+        if (missingClasses.isEmpty() && missingMethods.isEmpty() && missingFields.isEmpty()) {
+            return;
+        }
+        StringBuilder sb = new StringBuilder();
+        if (!missingClasses.isEmpty()) {
+            sb.append("Missing classes:\n");
+            for (String cls : missingClasses) {
+                sb.append("  ").append(cls).append("\n");
+            }
+        }
+        if (!missingMethods.isEmpty()) {
+            sb.append("Missing methods:\n");
+            for (MethodReference method : missingMethods) {
+                sb.append("  ").append(method).append("\n");
+            }
+        }
+        if (!missingMethods.isEmpty()) {
+            sb.append("Missing fields:\n");
+            for (FieldReference field : missingFields) {
+                sb.append("  ").append(field).append("\n");
+            }
+        }
+        throw new IllegalStateException(sb.toString());
     }
 }
