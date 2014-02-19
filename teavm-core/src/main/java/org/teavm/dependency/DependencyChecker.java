@@ -245,7 +245,8 @@ public class DependencyChecker implements DependencyInfo {
         }
         ValueType[] arguments = methodRef.getParameterTypes();
         int paramCount = arguments.length + 1;
-        int varCount = Math.max(paramCount, method != null ? method.getProgram().variableCount() : 0);
+        int varCount = Math.max(paramCount, method != null && method.getProgram() != null ?
+                method.getProgram().variableCount() : 0);
         DependencyNode[] parameterNodes = new DependencyNode[varCount];
         for (int i = 0; i < varCount; ++i) {
             parameterNodes[i] = new DependencyNode(this);

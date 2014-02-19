@@ -32,6 +32,8 @@ public class JavaScriptBodyTransformer implements ClassHolderTransformer {
                 genAnnot.getValues().put("value", new AnnotationValue(ValueType.object(
                         JavaScriptBodyGenerator.class.getName())));
                 method.getAnnotations().add(genAnnot);
+                method.setProgram(null);
+                method.getModifiers().add(ElementModifier.NATIVE);
             }
         }
     }

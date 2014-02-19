@@ -40,6 +40,12 @@
       <version>0.8-SNAPSHOT</version>
     </dependency>
     <dependency>
+      <groupId>org.netbeans.html</groupId>
+      <artifactId>net.java.html.json.tck</artifactId>
+      <version>0.8-SNAPSHOT</version>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>4.11</version>
@@ -57,12 +63,30 @@
           <execution>
             <id>generate-javascript-tests</id>
             <goals>
-              <goal>build-junit</goal>
+              <goal>build-test-javascript</goal>
             </goals>
             <phase>process-test-classes</phase>
             <configuration>
               <minifying>false</minifying>
               <numThreads>1</numThreads>
+              <outputDir>${project.build.directory}/javascript-test</outputDir>
+            </configuration>
+          </execution>
+          <execution>
+            <id>generate-javascript-tck</id>
+            <goals>
+              <goal>build-test-javascript</goal>
+            </goals>
+            <phase>process-test-classes</phase>
+            <configuration>
+              <minifying>false</minifying>
+              <numThreads>1</numThreads>
+              <scanDependencies>true</scanDependencies>
+              <outputDir>${project.build.directory}/javascript-tck</outputDir>
+              <adapterClass>org.teavm.html4j.testing.KOTestAdapter</adapterClass>
+              <wildcards>
+                <param>net.java.html.js.tests.*Test</param>
+              </wildcards>
             </configuration>
           </execution>
         </executions>
@@ -70,6 +94,14 @@
     </plugins>
     <pluginManagement>
       <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>2.16</version>
+          <configuration>
+            <skip>true</skip>
+          </configuration>
+        </plugin>
         <!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
         <plugin>
           <groupId>org.eclipse.m2e</groupId>
@@ -84,7 +116,7 @@
                     <artifactId>teavm-maven-plugin</artifactId>
                     <versionRange>[0.0.1-SNAPSHOT,)</versionRange>
                     <goals>
-                      <goal>build-junit</goal>
+                      <goal>build-test-javascript</goal>
                     </goals>
                   </pluginExecutionFilter>
                   <action>

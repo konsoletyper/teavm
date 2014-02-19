@@ -23,7 +23,7 @@ import org.junit.Test;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class JavaScriptBodyConversionTests {
+public class JavaScriptBodyConversionTest {
     @Test
     public void convertsInteger() {
         assertEquals(23, returnAsInt(23));

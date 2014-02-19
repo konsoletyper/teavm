@@ -48,7 +48,7 @@
           <execution>
             <id>generate-javascript-tests</id>
             <goals>
-              <goal>build-junit</goal>
+              <goal>build-test-javascript</goal>
             </goals>
             <phase>process-test-classes</phase>
             <configuration>
@@ -76,7 +76,7 @@
                     <artifactId>teavm-maven-plugin</artifactId>
                     <versionRange>[0.0.1-SNAPSHOT,)</versionRange>
                     <goals>
-                      <goal>build-junit</goal>
+                      <goal>build-test-javascript</goal>
                     </goals>
                   </pluginExecutionFilter>
                   <action>

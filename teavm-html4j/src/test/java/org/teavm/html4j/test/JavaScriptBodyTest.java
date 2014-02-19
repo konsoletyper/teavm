@@ -23,7 +23,7 @@ import org.junit.Test;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class JavaScriptBodyTests {
+public class JavaScriptBodyTest {
     @Test
     public void javaScriptBodyHandled() {
         assertEquals(23, simpleNativeMethod());
@@ -92,7 +92,7 @@ public class JavaScriptBodyTests {
     }
 
     @JavaScriptBody(args = { "a" }, body = "return " +
-            "@org.teavm.html4j.test.JavaScriptBodyTests::staticCallback(" +
+            "@org.teavm.html4j.test.JavaScriptBodyTest::staticCallback(" +
             "Lorg/teavm/html4j/test/A;)(a)", javacall = true)
     private native int invokeStaticCallback(A a);
 }

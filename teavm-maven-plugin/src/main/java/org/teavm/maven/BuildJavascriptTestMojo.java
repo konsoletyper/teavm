@@ -22,6 +22,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.AbstractMojo;
@@ -48,7 +51,7 @@ import org.teavm.testing.TestAdapter;
  *
  * @author Alexey Andreev
  */
-@Mojo(name = "build-junit", requiresDependencyResolution = ResolutionScope.TEST,
+@Mojo(name = "build-test-javascript", requiresDependencyResolution = ResolutionScope.TEST,
         requiresDependencyCollection = ResolutionScope.TEST)
 public class BuildJavascriptTestMojo extends AbstractMojo {
     private static Set<String> testScopes = new HashSet<>(Arrays.asList(
@@ -63,7 +66,7 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
     @Component
     private MavenProject project;
 
-    @Parameter(defaultValue = "${project.build.directory}/javascript-junit")
+    @Parameter(defaultValue = "${project.build.directory}/javascript-test")
     private File outputDir;
 
     @Parameter(defaultValue = "${project.build.outputDirectory}")
@@ -73,16 +76,19 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
     private File testFiles;
 
     @Parameter
-    private String[] testFilePatterns = { "*Test", "*UnitTest" };
+    private String[] wildcards = { "**.*Test", "**.*UnitTest" };
 
     @Parameter
     private boolean minifying = true;
 
     @Parameter
+    private boolean scanDependencies;
+
+    @Parameter
     private int numThreads = 1;
 
     @Parameter
-    private Class<? extends TestAdapter> adapterClass = JUnitTestAdapter.class;
+    private String adapterClass = JUnitTestAdapter.class.getName();
 
     public void setProject(MavenProject project) {
         this.project = project;
@@ -108,18 +114,25 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
         this.numThreads = numThreads;
     }
 
-    public void setAdapterClass(Class<? extends TestAdapter> adapterClass) {
+    public void setAdapterClass(String adapterClass) {
         this.adapterClass = adapterClass;
+    }
+
+    public void setWildcards(String[] wildcards) {
+        this.wildcards = wildcards;
     }
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         Runnable finalizer = null;
-        createAdapter();
         try {
             final ClassLoader classLoader = prepareClassLoader();
+            createAdapter(classLoader);
             getLog().info("Searching for tests in the directory `" + testFiles.getAbsolutePath() + "'");
             findTestClasses(classLoader, testFiles, "");
+            if (scanDependencies) {
+                findTestsInDependencies(classLoader);
+            }
             final Log log = getLog();
             new File(outputDir, "tests").mkdirs();
             resourceToFile("org/teavm/javascript/runtime.js", "runtime.js");
@@ -210,13 +223,23 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
         }
     }
 
-    private void createAdapter() throws MojoExecutionException {
+    private void createAdapter(ClassLoader classLoader) throws MojoExecutionException {
+        Class<?> adapterClsRaw;
+        try {
+            adapterClsRaw = Class.forName(adapterClass, true, classLoader);
+        } catch (ClassNotFoundException e) {
+            throw new MojoExecutionException("Adapter not found: " + adapterClass, e);
+        }
+        if (!TestAdapter.class.isAssignableFrom(adapterClsRaw)) {
+            throw new MojoExecutionException("Adapter " + adapterClass + " does not implement " +
+                    TestAdapter.class.getName());
+        }
+        Class<? extends TestAdapter> adapterCls = adapterClsRaw.asSubclass(TestAdapter.class);
         Constructor<? extends TestAdapter> cons;
         try {
-            cons = adapterClass.getConstructor();
+            cons = adapterCls.getConstructor();
         } catch (NoSuchMethodException e) {
-            throw new MojoExecutionException("No default constructor found for test adapter " +
-                    adapterClass.getName(), e);
+            throw new MojoExecutionException("No default constructor found for test adapter " + adapterClass, e);
         }
         try {
             adapter = cons.newInstance();
@@ -230,7 +253,7 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
     private ClassLoader prepareClassLoader() throws MojoExecutionException {
         try {
             Log log = getLog();
-            log.info("Preparing classpath for JavaScript JUnit generation");
+            log.info("Preparing classpath for JavaScript test generation");
             List<URL> urls = new ArrayList<>();
             StringBuilder classpath = new StringBuilder();
             for (Artifact artifact : project.getArtifacts()) {
@@ -251,7 +274,7 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
             urls.add(testFiles.toURI().toURL());
             classpath.append(':').append(classFiles.getPath());
             urls.add(classFiles.toURI().toURL());
-            log.info("Using the following classpath for JavaScript JUnit generation: " + classpath);
+            log.info("Using the following classpath for JavaScript test generation: " + classpath);
             return new URLClassLoader(urls.toArray(new URL[urls.size()]),
                     BuildJavascriptTestMojo.class.getClassLoader());
         } catch (MalformedURLException e) {
@@ -335,6 +358,28 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
         writer.append('\"');
     }
 
+    private void findTestsInDependencies(ClassLoader classLoader) throws MojoExecutionException {
+        try {
+            Log log = getLog();
+            log.info("Scanning dependencies for tests");
+            for (Artifact artifact : project.getArtifacts()) {
+                if (!testScopes.contains(artifact.getScope())) {
+                    continue;
+                }
+                File file = artifact.getFile();
+                if (file.isDirectory()) {
+                    findTestClasses(classLoader, file, "");
+                } else if (file.getName().endsWith(".jar")) {
+                    findTestClassesInJar(classLoader, new JarFile(file));
+                }
+            }
+        } catch (MalformedURLException e) {
+            throw new MojoExecutionException("Error gathering classpath information", e);
+        } catch (IOException e) {
+            throw new MojoExecutionException("Error scanning dependencies for tests", e);
+        }
+    }
+
     private void findTestClasses(ClassLoader classLoader, File folder, String prefix) {
         for (File file : folder.listFiles()) {
             if (file.isDirectory()) {
@@ -345,16 +390,44 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
                 if (!prefix.isEmpty()) {
                     className = prefix + "." + className;
                 }
-                try {
-                    Class<?> candidate = Class.forName(className, true, classLoader);
-                    if (adapter.acceptClass(candidate)) {
-                        testClasses.add(candidate.getName());
-                        getLog().info("Test class detected: " + candidate.getName());
-                    }
-                } catch (ClassNotFoundException e) {
-                    getLog().info("Could not load class `" + className + "' to search for tests");
-                }
+                addCandidate(classLoader, className);
             }
+        }
+    }
+
+    private void findTestClassesInJar(ClassLoader classLoader, JarFile jarFile) {
+        Enumeration<JarEntry> entries = jarFile.entries();
+        while (entries.hasMoreElements()) {
+            JarEntry entry = entries.nextElement();
+            if (entry.isDirectory() || !entry.getName().endsWith(".class")) {
+                continue;
+            }
+            String className = entry.getName().substring(0, entry.getName().length() - ".class".length())
+                    .replace('/', '.');
+            addCandidate(classLoader, className);
+        }
+    }
+
+    private void addCandidate(ClassLoader classLoader, String className) {
+        boolean matches = false;
+        String simpleName = className.replace('.', '/');
+        for (String wildcard : wildcards) {
+            if (FilenameUtils.wildcardMatch(simpleName, wildcard.replace('.', '/'))) {
+                matches = true;
+                break;
+            }
+        }
+        if (!matches) {
+            return;
+        }
+        try {
+            Class<?> candidate = Class.forName(className, true, classLoader);
+            if (adapter.acceptClass(candidate)) {
+                testClasses.add(candidate.getName());
+                getLog().info("Test class detected: " + candidate.getName());
+            }
+        } catch (ClassNotFoundException e) {
+            getLog().info("Could not load class `" + className + "' to search for tests");
         }
     }
 
