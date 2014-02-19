@@ -59,7 +59,7 @@ public class TObject {
     @Override
     @GeneratedBy(ObjectNativeGenerator.class)
     @PluggableDependency(ObjectNativeGenerator.class)
-    protected native TObject clone();
+    protected native TObject clone() throws TCloneNotSupportedException;
 
     @Rename("notify")
     public final void notify0() {

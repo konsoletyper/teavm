@@ -189,6 +189,10 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                 writer.appendClass(iface);
             }
             writer.append("]");
+            if (cls.getParentName() != null) {
+                writer.append(",").ws();
+                writer.append("superclass").ws().append(":").ws().appendClass(cls.getParentName());
+            }
             writer.ws().append("};").softNewLine();
             if (!cls.getModifiers().contains(NodeModifier.INTERFACE)) {
                 writer.appendClass(cls.getName()).append("_$clinit").ws().append("=").ws().append("function()").ws()

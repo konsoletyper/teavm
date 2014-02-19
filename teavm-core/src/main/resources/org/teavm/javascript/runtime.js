@@ -108,7 +108,7 @@ $rt_arraycls = function(cls) {
         };
         arraycls.prototype = new ($rt_objcls())();
         arraycls.prototype.constructor = arraycls;
-        arraycls.$meta = { item : cls, supertypes : [$rt_objcls()], primitive : false };
+        arraycls.$meta = { item : cls, supertypes : [$rt_objcls()], primitive : false, superclass : $rt_objcls() };
         cls.$array = arraycls;
     }
     return cls.$array;

@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
+import org.teavm.dependency.PluggableDependency;
 import org.teavm.javascript.ni.GeneratedBy;
 import org.teavm.javascript.ni.InjectedBy;
 
@@ -22,7 +23,7 @@ import org.teavm.javascript.ni.InjectedBy;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class TClass<T> extends TObject {
+public class TClass<T extends TObject> extends TObject {
     TString name;
     boolean primitive;
     boolean array;
@@ -60,15 +61,26 @@ public class TClass<T> extends TObject {
     }
 
     @GeneratedBy(ClassNativeGenerator.class)
+    @PluggableDependency(ClassNativeGenerator.class)
     private native TClass<?> getComponentType0();
 
     @InjectedBy(ClassNativeGenerator.class)
+    @PluggableDependency(ClassNativeGenerator.class)
     static native TClass<TBoolean> booleanClass();
 
     @InjectedBy(ClassNativeGenerator.class)
+    @PluggableDependency(ClassNativeGenerator.class)
     static native TClass<TInteger> intClass();
+
+    @InjectedBy(ClassNativeGenerator.class)
+    @PluggableDependency(ClassNativeGenerator.class)
+    public static native <S extends TObject> TClass<S> wrap(Class<S> cls);
 
     public boolean desiredAssertionStatus() {
         return true;
     }
+
+    @GeneratedBy(ClassNativeGenerator.class)
+    @PluggableDependency(ClassNativeGenerator.class)
+    public native TClass<? super T> getSuperclass();
 }

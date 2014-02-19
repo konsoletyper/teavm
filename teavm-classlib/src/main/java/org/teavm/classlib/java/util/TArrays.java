@@ -17,6 +17,8 @@ package org.teavm.classlib.java.util;
 
 import org.teavm.classlib.java.lang.TMath;
 import org.teavm.classlib.java.lang.TObject;
+import org.teavm.classlib.java.lang.TString;
+import org.teavm.classlib.java.lang.TStringBuilder;
 
 /**
  *
@@ -39,5 +41,122 @@ public class TArrays extends TObject {
             result[i] = array[i];
         }
         return result;
+    }
+
+    public static TString toString(TObject[] a) {
+        TStringBuilder sb = new TStringBuilder();
+        sb.append(TString.wrap("["));
+        for (int i = 0; i < a.length; ++i) {
+            if (i > 0) {
+                sb.append(TString.wrap(", "));
+            }
+            sb.append(a[i]);
+        }
+        sb.append(TString.wrap("]"));
+        return TString.wrap(sb.toString());
+    }
+
+    public static TString toString(boolean[] a) {
+        TStringBuilder sb = new TStringBuilder();
+        sb.append(TString.wrap("["));
+        for (int i = 0; i < a.length; ++i) {
+            if (i > 0) {
+                sb.append(TString.wrap(", "));
+            }
+            sb.append(a[i]);
+        }
+        sb.append(TString.wrap("]"));
+        return TString.wrap(sb.toString());
+    }
+
+    public static TString toString(byte[] a) {
+        TStringBuilder sb = new TStringBuilder();
+        sb.append(TString.wrap("["));
+        for (int i = 0; i < a.length; ++i) {
+            if (i > 0) {
+                sb.append(TString.wrap(", "));
+            }
+            sb.append(a[i]);
+        }
+        sb.append(TString.wrap("]"));
+        return TString.wrap(sb.toString());
+    }
+
+    public static TString toString(short[] a) {
+        TStringBuilder sb = new TStringBuilder();
+        sb.append(TString.wrap("["));
+        for (int i = 0; i < a.length; ++i) {
+            if (i > 0) {
+                sb.append(TString.wrap(", "));
+            }
+            sb.append(a[i]);
+        }
+        sb.append(TString.wrap("]"));
+        return TString.wrap(sb.toString());
+    }
+
+    public static TString toString(char[] a) {
+        TStringBuilder sb = new TStringBuilder();
+        sb.append(TString.wrap("["));
+        for (int i = 0; i < a.length; ++i) {
+            if (i > 0) {
+                sb.append(TString.wrap(", "));
+            }
+            sb.append(a[i]);
+        }
+        sb.append(TString.wrap("]"));
+        return TString.wrap(sb.toString());
+    }
+
+    public static TString toString(int[] a) {
+        TStringBuilder sb = new TStringBuilder();
+        sb.append(TString.wrap("["));
+        for (int i = 0; i < a.length; ++i) {
+            if (i > 0) {
+                sb.append(TString.wrap(", "));
+            }
+            sb.append(a[i]);
+        }
+        sb.append(TString.wrap("]"));
+        return TString.wrap(sb.toString());
+    }
+
+    public static TString toString(long[] a) {
+        TStringBuilder sb = new TStringBuilder();
+        sb.append(TString.wrap("["));
+        for (int i = 0; i < a.length; ++i) {
+            if (i > 0) {
+                sb.append(TString.wrap(", "));
+            }
+            sb.append(a[i]);
+        }
+        sb.append(TString.wrap("]"));
+        return TString.wrap(sb.toString());
+    }
+
+    public static TString toString(float[] a) {
+        TStringBuilder sb = new TStringBuilder();
+        sb.append(TString.wrap("["));
+        for (int i = 0; i < a.length; ++i) {
+            if (i > 0) {
+                sb.append(TString.wrap(", "));
+            }
+            sb.append(a[i]);
+        }
+        sb.append(TString.wrap("]"));
+        return TString.wrap(sb.toString());
+    }
+
+    public static TString toString(double[] a) {
+        TStringBuilder sb = new TStringBuilder();
+        sb.append(TString.wrap("["));
+        for (int i = 0; i < a.length; ++i) {
+            if (i > 0) {
+                sb.append(TString.wrap(", "));
+            }
+            sb.append(a[i]);
+        }
+        sb.append(TString.wrap("]"));
+        return TString.wrap(sb.toString());
     }
 }

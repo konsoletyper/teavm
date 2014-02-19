@@ -17,6 +17,9 @@ package org.teavm.classlib.java.lang;
 
 import java.io.IOException;
 import org.teavm.codegen.SourceWriter;
+import org.teavm.dependency.DependencyChecker;
+import org.teavm.dependency.DependencyPlugin;
+import org.teavm.dependency.MethodDependency;
 import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.GeneratorContext;
 import org.teavm.javascript.ni.Injector;
@@ -27,13 +30,16 @@ import org.teavm.model.MethodReference;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class ClassNativeGenerator implements Generator, Injector {
+public class ClassNativeGenerator implements Generator, Injector, DependencyPlugin {
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef)
             throws IOException {
         switch (methodRef.getName()) {
             case "getComponentType0":
                 generateGetComponentType(context, writer);
+                break;
+            case "getSuperclass":
+                generateGetSuperclass(context, writer);
                 break;
         }
     }
@@ -42,6 +48,12 @@ public class ClassNativeGenerator implements Generator, Injector {
         String thisArg = context.getParameterName(0);
         writer.append("var item = " + thisArg + ".$data.$meta.item;").softNewLine();
         writer.append("return item != null ? $rt_cls(item) : null;").softNewLine();
+    }
+
+    private void generateGetSuperclass(GeneratorContext context, SourceWriter writer) throws IOException {
+        String thisArg = context.getParameterName(0);
+        writer.append("var superclass = " + thisArg + ".$data.$meta.superclass;").softNewLine();
+        writer.append("return superclass ? $rt_cls(superclass) : null;").softNewLine();
     }
 
     @Override
@@ -58,6 +70,9 @@ public class ClassNativeGenerator implements Generator, Injector {
                 break;
             case "intClass":
                 generateIntClass(context);
+                break;
+            case "wrap":
+                context.writeExpr(context.getArgument(0));
                 break;
         }
     }
@@ -86,5 +101,18 @@ public class ClassNativeGenerator implements Generator, Injector {
 
     private void generateIntClass(InjectorContext context) throws IOException {
         context.getWriter().append("$rt_cls($rt_intcls())");
+    }
+
+    @Override
+    public void methodAchieved(DependencyChecker checker, MethodDependency graph) {
+        switch (graph.getReference().getName()) {
+            case "booleanClass":
+            case "intClass":
+            case "wrap":
+            case "getSuperclass":
+            case "getComponentType0":
+                graph.getResult().propagate("java.lang.Class");
+                break;
+        }
     }
 }

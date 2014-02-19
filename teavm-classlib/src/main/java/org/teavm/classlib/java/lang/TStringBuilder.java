@@ -53,7 +53,7 @@ public class TStringBuilder extends TAbstractStringBuilder implements TAppendabl
     }
 
     @Override
-    protected TStringBuilder append(double value) {
+    public TStringBuilder append(double value) {
         super.append(value);
         return this;
     }

@@ -34,6 +34,26 @@ public class ClassTest {
     }
 
     @Test
+    public void superClassFound() {
+        assertEquals(Number.class, Integer.class.getSuperclass());
+    }
+
+    @Test
+    public void superClassOfObjectIsNull() {
+        assertNull(Object.class.getSuperclass());
+    }
+
+    @Test
+    public void superClassOfArrayIsObject() {
+        assertEquals(Object.class, Runnable[].class.getSuperclass());
+    }
+
+    @Test
+    public void superClassOfPrimitiveIsNull() {
+        assertNull(int.class.getSuperclass());
+    }
+
+    @Test
     public void objectClassConsideredNotArray() {
         assertFalse(Object.class.isArray());
     }
