@@ -91,6 +91,9 @@ public class JavaScriptBodyDependency implements DependencyListener {
     private static MethodReader findMethod(ClassReaderSource classSource, String clsName, MethodDescriptor desc) {
         while (clsName != null) {
             ClassReader cls = classSource.get(clsName);
+            if (cls == null) {
+                return null;
+            }
             for (MethodReader method : cls.getMethods()) {
                 if (method.getName().equals(desc.getName()) && sameParams(method.getDescriptor(), desc)) {
                     return method;
@@ -121,7 +124,7 @@ public class JavaScriptBodyDependency implements DependencyListener {
         }
         @Override protected CharSequence callMethod(String ident, String fqn, String method, String params) {
             MethodDescriptor desc = MethodDescriptor.parse(method + params + "V");
-            MethodReader reader = findMethod(dependencyChecker.getClassSource(), params, desc);
+            MethodReader reader = findMethod(dependencyChecker.getClassSource(), fqn, desc);
             MethodReference ref = reader != null ? reader.getReference() : new MethodReference(fqn, desc);
             MethodDependency methodDep = dependencyChecker.linkMethod(ref, caller.getStack());
             if (!methodDep.isMissing()) {
@@ -170,7 +173,7 @@ public class JavaScriptBodyDependency implements DependencyListener {
             if (subtype == null) {
                 return false;
             }
-            if (isAssignableFrom(supertype, subtype.getParent())) {
+            if (subtype.getParent() != null && isAssignableFrom(supertype, subtype.getParent())) {
                 return true;
             }
             for (String iface : subtype.getInterfaces()) {

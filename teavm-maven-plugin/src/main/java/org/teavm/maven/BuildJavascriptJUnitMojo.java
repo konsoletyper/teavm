@@ -245,10 +245,62 @@ public class BuildJavascriptJUnitMojo extends AbstractMojo {
             builder.entryPoint("runTest", methodRef).withValue(0, cons.getClassName());
             builder.exportType("TestClass", cons.getClassName());
             builder.build(innerWriter, new DirectoryBuildTarget(outputDir));
-            innerWriter.append("\n");
-            innerWriter.append("\nJUnitClient.run();");
-            innerWriter.close();
+            if (!builder.hasMissingItems()) {
+                innerWriter.append("\n");
+                innerWriter.append("\nJUnitClient.run();");
+                innerWriter.close();
+            } else {
+                innerWriter.append("JUnitClient.reportError(\n");
+                StringBuilder sb = new StringBuilder();
+                builder.showMissingItems(sb);
+                escapeStringLiteral(sb.toString(), innerWriter);
+                innerWriter.append(");");
+                getLog().warn("Error building test " + methodRef);
+                getLog().warn(sb);
+            }
         }
+    }
+
+    private void escapeStringLiteral(String text, Writer writer) throws IOException {
+        int index = 0;
+        while (true) {
+            int next = text.indexOf('\n', index);
+            if (next < 0) {
+                break;
+            }
+            escapeString(text.substring(index, next + 1), writer);
+            writer.append(" +\n");
+            index = next + 1;
+        }
+        escapeString(text.substring(index), writer);
+    }
+
+    private void escapeString(String string, Writer writer) throws IOException {
+        writer.append('\"');
+        for (int i = 0; i < string.length(); ++i) {
+            char c = string.charAt(i);
+            switch (c) {
+                case '"':
+                    writer.append("\\\"");
+                    break;
+                case '\\':
+                    writer.append("\\\\");
+                    break;
+                case '\n':
+                    writer.append("\\n");
+                    break;
+                case '\r':
+                    writer.append("\\r");
+                    break;
+                case '\t':
+                    writer.append("\\t");
+                    break;
+                default:
+                    writer.append(c);
+                    break;
+            }
+        }
+        writer.append('\"');
     }
 
     private void findTestClasses(ClassLoader classLoader, File folder, String prefix) {

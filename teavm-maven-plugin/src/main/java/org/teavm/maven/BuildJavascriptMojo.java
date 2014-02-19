@@ -140,6 +140,7 @@ public class BuildJavascriptMojo extends AbstractMojo {
                     .withValue(1, "java.lang.String");
             targetDirectory.mkdirs();
             builder.build(targetDirectory, targetFileName);
+            builder.checkForMissingItems();
             log.info("JavaScript file successfully built");
             if (!runtimeSuppressed) {
                 resourceToFile("org/teavm/javascript/runtime.js", "runtime.js");

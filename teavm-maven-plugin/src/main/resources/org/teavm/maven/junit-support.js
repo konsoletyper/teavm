@@ -216,3 +216,10 @@ JUnitClient.run = function() {
         window.parent.postMessage(JSON.stringify(message), "*");
     });
 }
+JUnitClient.reportError = function(error) {
+    var handler = window.addEventListener("message", function() {
+        window.removeEventListener("message", handler);
+        var message = { status : "exception", stack : error };
+        window.parent.postMessage(JSON.stringify(message), "*");
+    });
+}

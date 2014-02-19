@@ -112,6 +112,18 @@ public class JavascriptBuilder implements JavascriptBuilderHost {
         dependencyChecker.startListeners();
     }
 
+    public boolean hasMissingItems() {
+        return dependencyChecker.hasMissingItems();
+    }
+
+    public void showMissingItems(Appendable target) throws IOException {
+        dependencyChecker.showMissingItems(target);
+    }
+
+    public void checkForMissingItems() {
+        dependencyChecker.checkForMissingItems();
+    }
+
     public void build(Appendable writer, JavascriptBuildTarget target) throws RenderingException {
         AliasProvider aliasProvider = minifying ? new MinifyingAliasProvider() : new DefaultAliasProvider();
         DefaultNamingStrategy naming = new DefaultNamingStrategy(aliasProvider, classSource);
@@ -124,7 +136,9 @@ public class JavascriptBuilder implements JavascriptBuilderHost {
         dependencyChecker.linkMethod(new MethodReference("java.lang.String", new MethodDescriptor("<init>",
                 ValueType.arrayOf(ValueType.CHARACTER), ValueType.VOID)), DependencyStack.ROOT).use();
         executor.complete();
-        dependencyChecker.checkForMissingItems();
+        if (hasMissingItems()) {
+            return;
+        }
         ListableClassHolderSource classSet = dependencyChecker.cutUnachievableClasses(classSource);
         Decompiler decompiler = new Decompiler(classSet, classLoader, executor);
         devirtualize(classSet, dependencyChecker);

@@ -15,6 +15,7 @@
  */
 package org.teavm.dependency;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -375,9 +376,23 @@ public class DependencyChecker implements DependencyInfo {
     }
 
     public void checkForMissingItems() {
-        if (missingClasses.isEmpty() && missingMethods.isEmpty() && missingFields.isEmpty()) {
+        if (!hasMissingItems()) {
             return;
         }
+        StringBuilder sb = new StringBuilder();
+        try {
+            showMissingItems(sb);
+        } catch (IOException e) {
+            throw new AssertionError("StringBuilder should not throw IOException");
+        }
+        throw new IllegalStateException(sb.toString());
+    }
+
+    public boolean hasMissingItems() {
+        return !missingClasses.isEmpty() || !missingMethods.isEmpty() || !missingFields.isEmpty();
+    }
+
+    public void showMissingItems(Appendable sb) throws IOException {
         List<String> items = new ArrayList<>();
         Map<String, DependencyStack> stackMap = new HashMap<>();
         for (String cls : missingClasses.keySet()) {
@@ -393,7 +408,6 @@ public class DependencyChecker implements DependencyInfo {
             items.add(field.toString());
         }
         Collections.sort(items);
-        StringBuilder sb = new StringBuilder();
         sb.append("Can't compile due to the following items missing:\n");
         for (String item : items) {
             sb.append("  ").append(item).append("\n");
@@ -407,6 +421,5 @@ public class DependencyChecker implements DependencyInfo {
             }
             sb.append('\n');
         }
-        throw new IllegalStateException(sb.toString());
     }
 }
