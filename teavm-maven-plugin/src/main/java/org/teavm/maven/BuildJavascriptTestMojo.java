@@ -16,8 +16,8 @@
 package org.teavm.maven;
 
 import java.io.*;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -33,7 +33,6 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
-import org.junit.Test;
 import org.teavm.common.FiniteExecutor;
 import org.teavm.common.SimpleFiniteExecutor;
 import org.teavm.common.ThreadPoolFiniteExecutor;
@@ -42,6 +41,8 @@ import org.teavm.javascript.JavascriptBuilder;
 import org.teavm.javascript.JavascriptBuilderFactory;
 import org.teavm.model.*;
 import org.teavm.parsing.ClasspathClassHolderSource;
+import org.teavm.testing.JUnitTestAdapter;
+import org.teavm.testing.TestAdapter;
 
 /**
  *
@@ -49,7 +50,7 @@ import org.teavm.parsing.ClasspathClassHolderSource;
  */
 @Mojo(name = "build-junit", requiresDependencyResolution = ResolutionScope.TEST,
         requiresDependencyCollection = ResolutionScope.TEST)
-public class BuildJavascriptJUnitMojo extends AbstractMojo {
+public class BuildJavascriptTestMojo extends AbstractMojo {
     private static Set<String> testScopes = new HashSet<>(Arrays.asList(
             Artifact.SCOPE_COMPILE, Artifact.SCOPE_TEST, Artifact.SCOPE_SYSTEM, Artifact.SCOPE_RUNTIME,
             Artifact.SCOPE_PROVIDED));
@@ -57,6 +58,7 @@ public class BuildJavascriptJUnitMojo extends AbstractMojo {
     private Map<MethodReference, String> fileNames = new HashMap<>();
     private List<MethodReference> testMethods = new ArrayList<>();
     private List<String> testClasses = new ArrayList<>();
+    private TestAdapter adapter;
 
     @Component
     private MavenProject project;
@@ -71,10 +73,16 @@ public class BuildJavascriptJUnitMojo extends AbstractMojo {
     private File testFiles;
 
     @Parameter
+    private String[] testFilePatterns = { "*Test", "*UnitTest" };
+
+    @Parameter
     private boolean minifying = true;
 
     @Parameter
     private int numThreads = 1;
+
+    @Parameter
+    private Class<? extends TestAdapter> adapterClass = JUnitTestAdapter.class;
 
     public void setProject(MavenProject project) {
         this.project = project;
@@ -100,9 +108,14 @@ public class BuildJavascriptJUnitMojo extends AbstractMojo {
         this.numThreads = numThreads;
     }
 
+    public void setAdapterClass(Class<? extends TestAdapter> adapterClass) {
+        this.adapterClass = adapterClass;
+    }
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         Runnable finalizer = null;
+        createAdapter();
         try {
             final ClassLoader classLoader = prepareClassLoader();
             getLog().info("Searching for tests in the directory `" + testFiles.getAbsolutePath() + "'");
@@ -145,11 +158,13 @@ public class BuildJavascriptJUnitMojo extends AbstractMojo {
                                 scriptName + "\", expected : [");
                         MethodHolder methodHolder = classSource.get(testClass).getMethod(
                                 methodRef.getDescriptor());
-                        AnnotationHolder annot = methodHolder.getAnnotations().get("org.junit.Test");
-                        AnnotationValue expectedAnnot = annot.getValues().get("expected");
-                        if (expectedAnnot != null) {
-                            String className = ((ValueType.Object)expectedAnnot.getJavaClass()).getClassName();
-                            allTestsWriter.append("\"" + className + "\"");
+                        boolean firstException = true;
+                        for (String exception : adapter.getExpectedExceptions(methodHolder)) {
+                            if (!firstException) {
+                                allTestsWriter.append(", ");
+                            }
+                            firstException = false;
+                            allTestsWriter.append("\"" + exception + "\"");
                         }
                         allTestsWriter.append("] }");
                     }
@@ -195,6 +210,23 @@ public class BuildJavascriptJUnitMojo extends AbstractMojo {
         }
     }
 
+    private void createAdapter() throws MojoExecutionException {
+        Constructor<? extends TestAdapter> cons;
+        try {
+            cons = adapterClass.getConstructor();
+        } catch (NoSuchMethodException e) {
+            throw new MojoExecutionException("No default constructor found for test adapter " +
+                    adapterClass.getName(), e);
+        }
+        try {
+            adapter = cons.newInstance();
+        } catch (IllegalAccessException | InstantiationException e) {
+            throw new MojoExecutionException("Error creating test adapter", e);
+        } catch (InvocationTargetException e) {
+            throw new MojoExecutionException("Error creating test adapter", e.getTargetException());
+        }
+    }
+
     private ClassLoader prepareClassLoader() throws MojoExecutionException {
         try {
             Log log = getLog();
@@ -221,7 +253,7 @@ public class BuildJavascriptJUnitMojo extends AbstractMojo {
             urls.add(classFiles.toURI().toURL());
             log.info("Using the following classpath for JavaScript JUnit generation: " + classpath);
             return new URLClassLoader(urls.toArray(new URL[urls.size()]),
-                    BuildJavascriptJUnitMojo.class.getClassLoader());
+                    BuildJavascriptTestMojo.class.getClassLoader());
         } catch (MalformedURLException e) {
             throw new MojoExecutionException("Error gathering classpath information", e);
         }
@@ -304,12 +336,6 @@ public class BuildJavascriptJUnitMojo extends AbstractMojo {
     }
 
     private void findTestClasses(ClassLoader classLoader, File folder, String prefix) {
-        Class<? extends Annotation> testAnnot;
-        try {
-            testAnnot = Class.forName(Test.class.getName(), true, classLoader).asSubclass(Annotation.class);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Could not load `" + Test.class.getName() + "` annotation");
-        }
         for (File file : folder.listFiles()) {
             if (file.isDirectory()) {
                 String newPrefix = prefix.isEmpty() ? file.getName() : prefix + "." + file.getName();
@@ -321,14 +347,7 @@ public class BuildJavascriptJUnitMojo extends AbstractMojo {
                 }
                 try {
                     Class<?> candidate = Class.forName(className, true, classLoader);
-                    boolean hasTests = false;
-                    for (Method method : candidate.getDeclaredMethods()) {
-                        if (method.isAnnotationPresent(testAnnot)) {
-                            hasTests = true;
-                            break;
-                        }
-                    }
-                    if (hasTests) {
+                    if (adapter.acceptClass(candidate)) {
                         testClasses.add(candidate.getName());
                         getLog().info("Test class detected: " + candidate.getName());
                     }
@@ -341,7 +360,7 @@ public class BuildJavascriptJUnitMojo extends AbstractMojo {
 
     private void findTests(ClassHolder cls) {
         for (MethodHolder method : cls.getMethods()) {
-            if (method.getAnnotations().get("org.junit.Test") != null) {
+            if (adapter.acceptMethod(method)) {
                 MethodReference ref = new MethodReference(cls.getName(), method.getDescriptor());
                 testMethods.add(ref);
                 List<MethodReference> group = groupedMethods.get(cls.getName());
@@ -355,7 +374,7 @@ public class BuildJavascriptJUnitMojo extends AbstractMojo {
     }
 
     private void resourceToFile(String resource, String fileName) throws IOException {
-        try (InputStream input = BuildJavascriptJUnitMojo.class.getClassLoader().getResourceAsStream(resource)) {
+        try (InputStream input = BuildJavascriptTestMojo.class.getClassLoader().getResourceAsStream(resource)) {
             try (OutputStream output = new FileOutputStream(new File(outputDir, fileName))) {
                 IOUtils.copy(input, output);
             }
