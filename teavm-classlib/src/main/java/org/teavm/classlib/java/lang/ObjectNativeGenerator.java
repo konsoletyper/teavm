@@ -62,16 +62,16 @@ public class ObjectNativeGenerator implements Generator, Injector, DependencyPlu
     }
 
     @Override
-    public void methodAchieved(DependencyChecker checker, MethodDependency graph) {
-        switch (graph.getReference().getName()) {
+    public void methodAchieved(DependencyChecker checker, MethodDependency method) {
+        switch (method.getReference().getName()) {
             case "clone":
-                achieveClone(graph);
+                achieveClone(method);
                 break;
             case "getClass":
-                achieveGetClass(checker, graph);
+                achieveGetClass(checker, method);
                 break;
             case "wrap":
-                achieveWrap(graph);
+                achieveWrap(method);
                 break;
         }
     }
@@ -87,12 +87,12 @@ public class ObjectNativeGenerator implements Generator, Injector, DependencyPlu
         writer.append(".constructor)");
     }
 
-    private void achieveGetClass(DependencyChecker checker, MethodDependency graph) {
+    private void achieveGetClass(DependencyChecker checker, MethodDependency method) {
         String classClass = "java.lang.Class";
         MethodReference initMethod = new MethodReference(classClass, new MethodDescriptor("createNew",
                 ValueType.object(classClass)));
         checker.addEntryPoint(initMethod);
-        graph.getResult().propagate("java.lang.Class");
+        method.getResult().propagate("java.lang.Class");
     }
 
     private void generateHashCode(GeneratorContext context, SourceWriter writer) throws IOException {
@@ -108,8 +108,8 @@ public class ObjectNativeGenerator implements Generator, Injector, DependencyPlu
         writer.append("return copy;").softNewLine();
     }
 
-    private void achieveClone(MethodDependency graph) {
-        graph.getVariable(0).connect(graph.getResult());
+    private void achieveClone(MethodDependency method) {
+        method.getVariable(0).connect(method.getResult());
     }
 
     private void generateWrap(InjectorContext context) throws IOException {

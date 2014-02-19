@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * @author Alexey Andreev
  */
-public class DependencyNode implements DependencyValueInformation {
+public class DependencyNode implements ValueDependencyInfo {
     private DependencyChecker dependencyChecker;
     private static final Object mapValue = new Object();
     private ConcurrentMap<DependencyConsumer, Object> followers = new ConcurrentHashMap<>();

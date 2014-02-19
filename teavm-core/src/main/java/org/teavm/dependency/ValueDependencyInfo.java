@@ -17,14 +17,14 @@ package org.teavm.dependency;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface DependencyListener {
-    void started(DependencyChecker dependencyChecker);
+public interface ValueDependencyInfo {
+    String[] getTypes();
 
-    void classAchieved(DependencyChecker dependencyChecker, String className);
+    boolean hasType(String type);
 
-    void methodAchieved(DependencyChecker dependencyChecker, MethodDependency method);
+    boolean hasArrayType();
 
-    void fieldAchieved(DependencyChecker dependencyChecker, FieldDependency field);
+    DependencyNode getArrayItem();
 }

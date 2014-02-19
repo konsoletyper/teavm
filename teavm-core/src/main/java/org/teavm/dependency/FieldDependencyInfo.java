@@ -17,14 +17,8 @@ package org.teavm.dependency;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-public interface DependencyValueInformation {
-    String[] getTypes();
-
-    boolean hasType(String type);
-
-    boolean hasArrayType();
-
-    DependencyNode getArrayItem();
+public interface FieldDependencyInfo {
+    ValueDependencyInfo getValue();
 }

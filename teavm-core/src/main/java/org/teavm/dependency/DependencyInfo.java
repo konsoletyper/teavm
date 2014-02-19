@@ -23,14 +23,14 @@ import org.teavm.model.MethodReference;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface DependencyInformation {
+public interface DependencyInfo {
     Collection<MethodReference> getAchievableMethods();
 
     Collection<FieldReference> getAchievableFields();
 
     Collection<String> getAchievableClasses();
 
-    DependencyValueInformation getField(FieldReference fieldRef);
+    FieldDependencyInfo getField(FieldReference fieldRef);
 
-    DependencyMethodInformation getMethod(MethodReference methodRef);
+    MethodDependencyInfo getMethod(MethodReference methodRef);
 }

@@ -49,10 +49,10 @@ public class CharacterNativeGenerator implements Generator, DependencyPlugin {
     }
 
     @Override
-    public void methodAchieved(DependencyChecker checker, MethodDependency graph) {
-        switch (graph.getReference().getName()) {
+    public void methodAchieved(DependencyChecker checker, MethodDependency method) {
+        switch (method.getReference().getName()) {
             case "obtainDigitMapping":
-                achieveObtainDigitMapping(graph);
+                achieveObtainDigitMapping(method);
                 break;
         }
     }
@@ -72,7 +72,7 @@ public class CharacterNativeGenerator implements Generator, DependencyPlugin {
                 .append("\");").softNewLine();
     }
 
-    private void achieveObtainDigitMapping(MethodDependency graph) {
-        graph.getResult().propagate("java.lang.String");
+    private void achieveObtainDigitMapping(MethodDependency method) {
+        method.getResult().propagate("java.lang.String");
     }
 }

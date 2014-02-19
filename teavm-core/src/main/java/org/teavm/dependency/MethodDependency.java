@@ -16,6 +16,7 @@
 package org.teavm.dependency;
 
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 
@@ -23,13 +24,15 @@ import org.teavm.model.MethodReference;
  *
  * @author Alexey Andreev
  */
-public class MethodDependency implements DependencyMethodInformation {
+public class MethodDependency implements MethodDependencyInfo {
     private DependencyNode[] variableNodes;
     private int parameterCount;
     private DependencyNode resultNode;
     private DependencyStack stack;
     private MethodReader method;
     private MethodReference reference;
+    private AtomicBoolean used = new AtomicBoolean();
+    private volatile Runnable useRunner;
 
     MethodDependency(DependencyNode[] variableNodes, int parameterCount, DependencyNode resultNode,
             DependencyStack stack, MethodReader method, MethodReference reference) {
@@ -80,5 +83,30 @@ public class MethodDependency implements DependencyMethodInformation {
 
     public boolean isMissing() {
         return method == null;
+    }
+
+    @Override
+    public boolean isUsed() {
+        return used.get();
+    }
+
+    public void use() {
+        if (used.compareAndSet(false, true)) {
+            if (useRunner != null) {
+                useRunner.run();
+                useRunner = null;
+            }
+        }
+    }
+
+    void setUseRunner(Runnable runner) {
+        if (isUsed()) {
+            runner.run();
+        } else {
+            useRunner = runner;
+            if (isUsed()) {
+                runner.run();
+            }
+        }
     }
 }

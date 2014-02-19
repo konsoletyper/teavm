@@ -48,44 +48,44 @@ public class JavaScriptBodyDependency implements DependencyListener {
     }
 
     @Override
-    public void methodAchieved(DependencyChecker dependencyChecker, MethodDependency graph) {
-        if (graph.isMissing()) {
+    public void methodAchieved(DependencyChecker dependencyChecker, MethodDependency method) {
+        if (method.isMissing()) {
             return;
         }
-        AnnotationReader annot = graph.getMethod().getAnnotations().get(JavaScriptBody.class.getName());
+        AnnotationReader annot = method.getMethod().getAnnotations().get(JavaScriptBody.class.getName());
         if (annot != null) {
             includeDefaultDependencies(dependencyChecker);
             AnnotationValue javacall = annot.getValue("javacall");
-            if (graph.getResult() != null) {
-                allClassesNode.connect(graph.getResult());
-                allClassesNode.addConsumer(new OneDirectionalConnection(graph.getResult().getArrayItem()));
-                allClassesNode.addConsumer(new OneDirectionalConnection(graph.getResult().getArrayItem()
+            if (method.getResult() != null) {
+                allClassesNode.connect(method.getResult());
+                allClassesNode.addConsumer(new OneDirectionalConnection(method.getResult().getArrayItem()));
+                allClassesNode.addConsumer(new OneDirectionalConnection(method.getResult().getArrayItem()
                         .getArrayItem()));
             }
-            for (int i = 0; i < graph.getParameterCount(); ++i) {
-                graph.getVariable(i).connect(allClassesNode);
-                allClassesNode.addConsumer(new OneDirectionalConnection(graph.getVariable(i).getArrayItem()));
-                allClassesNode.addConsumer(new OneDirectionalConnection(graph.getVariable(i).getArrayItem()
+            for (int i = 0; i < method.getParameterCount(); ++i) {
+                method.getVariable(i).connect(allClassesNode);
+                allClassesNode.addConsumer(new OneDirectionalConnection(method.getVariable(i).getArrayItem()));
+                allClassesNode.addConsumer(new OneDirectionalConnection(method.getVariable(i).getArrayItem()
                         .getArrayItem()));
             }
             if (javacall != null && javacall.getBoolean()) {
                 String body = annot.getValue("body").getString();
-                new GeneratorJsCallback(dependencyChecker.getClassSource(), dependencyChecker, graph).parse(body);
+                new GeneratorJsCallback(dependencyChecker, method).parse(body);
             }
         }
     }
 
     private void includeDefaultDependencies(DependencyChecker dependencyChecker) {
-        dependencyChecker.linkMethod(JavaScriptConvGenerator.fromJsMethod, DependencyStack.ROOT);
-        dependencyChecker.linkMethod(JavaScriptConvGenerator.toJsMethod, DependencyStack.ROOT);
-        dependencyChecker.linkMethod(JavaScriptConvGenerator.intValueMethod, DependencyStack.ROOT);
-        dependencyChecker.linkMethod(JavaScriptConvGenerator.valueOfIntMethod, DependencyStack.ROOT);
-        dependencyChecker.linkMethod(JavaScriptConvGenerator.booleanValueMethod, DependencyStack.ROOT);
-        dependencyChecker.linkMethod(JavaScriptConvGenerator.valueOfBooleanMethod, DependencyStack.ROOT);
+        dependencyChecker.linkMethod(JavaScriptConvGenerator.fromJsMethod, DependencyStack.ROOT).use();
+        dependencyChecker.linkMethod(JavaScriptConvGenerator.toJsMethod, DependencyStack.ROOT).use();
+        dependencyChecker.linkMethod(JavaScriptConvGenerator.intValueMethod, DependencyStack.ROOT).use();
+        dependencyChecker.linkMethod(JavaScriptConvGenerator.valueOfIntMethod, DependencyStack.ROOT).use();
+        dependencyChecker.linkMethod(JavaScriptConvGenerator.booleanValueMethod, DependencyStack.ROOT).use();
+        dependencyChecker.linkMethod(JavaScriptConvGenerator.valueOfBooleanMethod, DependencyStack.ROOT).use();
     }
 
     @Override
-    public void fieldAchieved(DependencyChecker dependencyChecker, FieldReference field, DependencyNode node) {
+    public void fieldAchieved(DependencyChecker dependencyChecker, FieldDependency fieldDep) {
     }
 
     private static MethodReader findMethod(ClassReaderSource classSource, String clsName, MethodDescriptor desc) {
@@ -113,27 +113,25 @@ public class JavaScriptBodyDependency implements DependencyListener {
     }
 
     private class GeneratorJsCallback extends JsCallback {
-        private ClassReaderSource classSource;
         private DependencyChecker dependencyChecker;
         private MethodDependency caller;
-        public GeneratorJsCallback(ClassReaderSource classSource, DependencyChecker dependencyChecker,
-                MethodDependency caller) {
-            this.classSource = classSource;
+        public GeneratorJsCallback(DependencyChecker dependencyChecker, MethodDependency caller) {
             this.dependencyChecker = dependencyChecker;
             this.caller = caller;
         }
         @Override protected CharSequence callMethod(String ident, String fqn, String method, String params) {
             MethodDescriptor desc = MethodDescriptor.parse(method + params + "V");
-            MethodReader reader = findMethod(classSource, fqn, desc);
-            if (reader != null) {
+            MethodReader reader = findMethod(dependencyChecker.getClassSource(), params, desc);
+            MethodReference ref = reader != null ? reader.getReference() : new MethodReference(fqn, desc);
+            MethodDependency methodDep = dependencyChecker.linkMethod(ref, caller.getStack());
+            if (!methodDep.isMissing()) {
                 if (reader.hasModifier(ElementModifier.STATIC) || reader.hasModifier(ElementModifier.FINAL)) {
-                    MethodDependency graph = dependencyChecker.linkMethod(reader.getReference(), caller.getStack());
-                    for (int i = 0; i <= graph.getParameterCount(); ++i) {
-                        allClassesNode.connect(graph.getVariable(i));
+                    methodDep.use();
+                    for (int i = 0; i <= methodDep.getParameterCount(); ++i) {
+                        allClassesNode.connect(methodDep.getVariable(i));
                     }
                 } else {
-                    allClassesNode.addConsumer(new VirtualCallbackConsumer(dependencyChecker,
-                            reader.getReference(), caller));
+                    allClassesNode.addConsumer(new VirtualCallbackConsumer(dependencyChecker, reader, caller));
                 }
             }
             return "";
@@ -141,22 +139,46 @@ public class JavaScriptBodyDependency implements DependencyListener {
     }
 
     private class VirtualCallbackConsumer implements DependencyConsumer {
-        private String superClass;
         private DependencyChecker dependencyChecker;
-        private MethodReference superMethod;
+        private MethodReader superMethod;
+        private ClassReader superClass;
         private MethodDependency caller;
-        public VirtualCallbackConsumer(DependencyChecker dependencyChecker, MethodReference superMethod,
+        public VirtualCallbackConsumer(DependencyChecker dependencyChecker, MethodReader superMethod,
                 MethodDependency caller) {
             this.dependencyChecker = dependencyChecker;
             this.superMethod = superMethod;
             this.caller = caller;
+            this.superClass = dependencyChecker.getClassSource().get(superMethod.getOwnerName());
         }
         @Override public void consume(String type) {
-            MethodReference method = new MethodReference(type, superMethod.getDescriptor());
-            MethodDependency graph = dependencyChecker.linkMethod(method, caller.getStack());
-            for (int i = 0; i < graph.getParameterCount(); ++i) {
-                allClassesNode.connect(graph.getVariable(i));
+            if (!isAssignableFrom(superClass, type)) {
+                return;
             }
+            MethodReference methodRef = new MethodReference(type, superMethod.getDescriptor());
+            MethodDependency method = dependencyChecker.linkMethod(methodRef, caller.getStack());
+            method.use();
+            for (int i = 0; i < method.getParameterCount(); ++i) {
+                allClassesNode.connect(method.getVariable(i));
+            }
+        }
+        private boolean isAssignableFrom(ClassReader supertype, String subtypeName) {
+            ClassReaderSource classSource = dependencyChecker.getClassSource();
+            if (supertype.getName().equals(subtypeName)) {
+                return true;
+            }
+            ClassReader subtype = classSource.get(subtypeName);
+            if (subtype == null) {
+                return false;
+            }
+            if (isAssignableFrom(supertype, subtype.getParent())) {
+                return true;
+            }
+            for (String iface : subtype.getInterfaces()) {
+                if (isAssignableFrom(supertype, iface)) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }

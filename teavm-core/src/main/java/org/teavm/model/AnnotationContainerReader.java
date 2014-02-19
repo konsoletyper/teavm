@@ -20,7 +20,7 @@ package org.teavm.model;
  * @author Alexey Andreev
  */
 public interface AnnotationContainerReader {
-    AnnotationHolder get(String type);
+    AnnotationReader get(String type);
 
     Iterable<? extends AnnotationReader> all();
 }

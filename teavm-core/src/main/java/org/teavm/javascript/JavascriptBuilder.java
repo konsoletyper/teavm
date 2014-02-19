@@ -20,7 +20,7 @@ import java.util.*;
 import org.teavm.codegen.*;
 import org.teavm.common.FiniteExecutor;
 import org.teavm.dependency.DependencyChecker;
-import org.teavm.dependency.DependencyInformation;
+import org.teavm.dependency.DependencyInfo;
 import org.teavm.dependency.DependencyListener;
 import org.teavm.dependency.DependencyStack;
 import org.teavm.javascript.ast.ClassNode;
@@ -120,9 +120,9 @@ public class JavascriptBuilder implements JavascriptBuilderHost {
         builder.setMinified(minifying);
         SourceWriter sourceWriter = builder.build(writer);
         dependencyChecker.linkMethod(new MethodReference("java.lang.Class", new MethodDescriptor("createNew",
-                ValueType.object("java.lang.Class"))), DependencyStack.ROOT);
+                ValueType.object("java.lang.Class"))), DependencyStack.ROOT).use();
         dependencyChecker.linkMethod(new MethodReference("java.lang.String", new MethodDescriptor("<init>",
-                ValueType.arrayOf(ValueType.CHARACTER), ValueType.VOID)), DependencyStack.ROOT);
+                ValueType.arrayOf(ValueType.CHARACTER), ValueType.VOID)), DependencyStack.ROOT).use();
         executor.complete();
         dependencyChecker.checkForMissingItems();
         ListableClassHolderSource classSet = dependencyChecker.cutUnachievableClasses(classSource);
@@ -164,16 +164,18 @@ public class JavascriptBuilder implements JavascriptBuilderHost {
         }
     }
 
-    private void devirtualize(ListableClassHolderSource classes, DependencyInformation dependency) {
+    private void devirtualize(ListableClassHolderSource classes, DependencyInfo dependency) {
         final Devirtualization devirtualization = new Devirtualization(dependency, classes);
         for (String className : classes.getClassNames()) {
             ClassHolder cls = classes.get(className);
             for (final MethodHolder method : cls.getMethods()) {
-                executor.execute(new Runnable() {
-                    @Override public void run() {
-                        devirtualization.apply(method);
-                    }
-                });
+                if (method.getProgram() != null) {
+                    executor.execute(new Runnable() {
+                        @Override public void run() {
+                            devirtualization.apply(method);
+                        }
+                    });
+                }
             }
         }
     }

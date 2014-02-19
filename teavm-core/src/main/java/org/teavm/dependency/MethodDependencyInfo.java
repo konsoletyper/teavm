@@ -19,14 +19,16 @@ package org.teavm.dependency;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface DependencyMethodInformation {
-    DependencyValueInformation[] getVariables();
+public interface MethodDependencyInfo {
+    ValueDependencyInfo[] getVariables();
 
     int getVariableCount();
 
-    DependencyValueInformation getVariable(int index);
+    ValueDependencyInfo getVariable(int index);
 
     int getParameterCount();
 
     DependencyNode getResult();
+
+    boolean isUsed();
 }

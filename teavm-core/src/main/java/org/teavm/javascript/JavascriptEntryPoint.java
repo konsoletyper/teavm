@@ -25,12 +25,13 @@ import org.teavm.model.MethodReference;
 public class JavascriptEntryPoint {
     private String publicName;
     MethodReference reference;
-    private MethodDependency graph;
+    private MethodDependency method;
 
-    JavascriptEntryPoint(String publicName, MethodReference reference, MethodDependency graph) {
+    JavascriptEntryPoint(String publicName, MethodReference reference, MethodDependency method) {
         this.publicName = publicName;
         this.reference = reference;
-        this.graph = graph;
+        this.method = method;
+        method.use();
     }
 
     String getPublicName() {
@@ -41,7 +42,7 @@ public class JavascriptEntryPoint {
         if (argument > reference.parameterCount()) {
             throw new IllegalArgumentException("Illegal argument #" + argument + " of " + reference.parameterCount());
         }
-        graph.getVariable(argument).propagate(type);
+        method.getVariable(argument).propagate(type);
         return this;
     }
 }

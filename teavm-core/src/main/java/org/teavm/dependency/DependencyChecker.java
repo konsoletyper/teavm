@@ -26,7 +26,7 @@ import org.teavm.model.*;
  *
  * @author Alexey Andreev
  */
-public class DependencyChecker implements DependencyInformation {
+public class DependencyChecker implements DependencyInfo {
     private static Object dummyValue = new Object();
     static final boolean shouldLog = System.getProperty("org.teavm.logDependencies", "false").equals("true");
     private ClassReaderSource classSource;
@@ -34,12 +34,11 @@ public class DependencyChecker implements DependencyInformation {
     private FiniteExecutor executor;
     private Mapper<MethodReference, MethodReader> methodReaderCache;
     private Mapper<FieldReference, FieldReader> fieldReaderCache;
-    private ConcurrentMap<MethodReference, Object> abstractMethods = new ConcurrentHashMap<>();
     private ConcurrentMap<MethodReference, DependencyStack> stacks = new ConcurrentHashMap<>();
     private ConcurrentMap<FieldReference, DependencyStack> fieldStacks = new ConcurrentHashMap<>();
     private ConcurrentMap<String, DependencyStack> classStacks = new ConcurrentHashMap<>();
     private ConcurrentCachedMapper<MethodReference, MethodDependency> methodCache;
-    private ConcurrentCachedMapper<FieldReference, DependencyNode> fieldCache;
+    private ConcurrentCachedMapper<FieldReference, FieldDependency> fieldCache;
     private ConcurrentMap<String, Object> achievableClasses = new ConcurrentHashMap<>();
     private ConcurrentMap<String, Object> initializedClasses = new ConcurrentHashMap<>();
     private List<DependencyListener> listeners = new ArrayList<>();
@@ -75,8 +74,8 @@ public class DependencyChecker implements DependencyInformation {
                 return createMethodDep(preimage, method, stacks.get(preimage));
             }
         });
-        fieldCache = new ConcurrentCachedMapper<>(new Mapper<FieldReference, DependencyNode>() {
-            @Override public DependencyNode map(FieldReference preimage) {
+        fieldCache = new ConcurrentCachedMapper<>(new Mapper<FieldReference, FieldDependency>() {
+            @Override public FieldDependency map(FieldReference preimage) {
                 FieldReader field = fieldReaderCache.map(preimage);
                 if (field != null && !field.getReference().equals(preimage)) {
                     fieldStacks.put(field.getReference(), fieldStacks.get(preimage));
@@ -98,10 +97,10 @@ public class DependencyChecker implements DependencyInformation {
         });
         fieldCache.addKeyListener(new KeyListener<FieldReference>() {
             @Override public void keyAdded(FieldReference key) {
-                DependencyNode node = fieldCache.getKnown(key);
-                if (!missingFields.containsKey(key)) {
+                FieldDependency fieldDep = fieldCache.getKnown(key);
+                if (!fieldDep.isMissing()) {
                     for (DependencyListener listener : listeners) {
-                        listener.fieldAchieved(DependencyChecker.this, key, node);
+                        listener.fieldAchieved(DependencyChecker.this, fieldDep);
                     }
                 }
             }
@@ -131,8 +130,9 @@ public class DependencyChecker implements DependencyInformation {
         if (parameters.length != argumentTypes.length) {
             throw new IllegalArgumentException("argumentTypes length does not match the number of method's arguments");
         }
-        MethodDependency graph = linkMethod(methodRef, DependencyStack.ROOT);
-        DependencyNode[] varNodes = graph.getVariables();
+        MethodDependency method = linkMethod(methodRef, DependencyStack.ROOT);
+        method.use();
+        DependencyNode[] varNodes = method.getVariables();
         varNodes[0].propagate(methodRef.getClassName());
         for (int i = 0; i < argumentTypes.length; ++i) {
             varNodes[i + 1].propagate(argumentTypes[i]);
@@ -183,7 +183,7 @@ public class DependencyChecker implements DependencyInformation {
             }
             if (cls.getMethod(clinitDesc) != null) {
                 MethodReference methodRef = new MethodReference(className, clinitDesc);
-                linkMethod(methodRef, new DependencyStack(methodRef, stack));
+                linkMethod(methodRef, new DependencyStack(methodRef, stack)).use();
             }
             className = cls.getParent();
         }
@@ -264,11 +264,10 @@ public class DependencyChecker implements DependencyInformation {
         final MethodDependency dep = new MethodDependency(parameterNodes, paramCount, resultNode, stack, method,
                 methodRef);
         if (method != null) {
-            final MethodReader currentMethod = method;
             executor.execute(new Runnable() {
                 @Override public void run() {
                     DependencyGraphBuilder graphBuilder = new DependencyGraphBuilder(DependencyChecker.this);
-                    graphBuilder.buildGraph(currentMethod, dep);
+                    graphBuilder.buildGraph(dep);
                 }
             });
         } else {
@@ -282,10 +281,6 @@ public class DependencyChecker implements DependencyInformation {
 
     public boolean isMethodAchievable(MethodReference methodRef) {
         return methodCache.caches(methodRef);
-    }
-
-    public boolean isAbstractMethodAchievable(MethodReference methodRef) {
-        return abstractMethods.containsKey(methodRef);
     }
 
     @Override
@@ -303,17 +298,17 @@ public class DependencyChecker implements DependencyInformation {
         return new HashSet<>(achievableClasses.keySet());
     }
 
-    public DependencyNode linkField(FieldReference fieldRef, DependencyStack stack) {
+    public FieldDependency linkField(FieldReference fieldRef, DependencyStack stack) {
         fieldStacks.putIfAbsent(fieldRef, stack);
         return fieldCache.map(fieldRef);
     }
 
     @Override
-    public DependencyNode getField(FieldReference fieldRef) {
+    public FieldDependency getField(FieldReference fieldRef) {
         return fieldCache.getKnown(fieldRef);
     }
 
-    private DependencyNode createFieldNode(FieldReference fieldRef, FieldReader field, DependencyStack stack) {
+    private FieldDependency createFieldNode(FieldReference fieldRef, FieldReader field, DependencyStack stack) {
         DependencyNode node = new DependencyNode(this);
         if (field == null) {
             missingFields.putIfAbsent(fieldRef, stack);
@@ -324,24 +319,15 @@ public class DependencyChecker implements DependencyInformation {
         if (field != null) {
             initClass(fieldRef.getClassName(), stack);
         }
-        return node;
+        return new FieldDependency(node, stack, field, fieldRef);
     }
 
-    private void activateDependencyPlugin(MethodDependency graph) {
-        MethodReference methodRef = graph.getReference();
-        ClassReader cls = classSource.get(methodRef.getClassName());
-        if (cls == null) {
-            return;
-        }
-        MethodReader method = cls.getMethod(methodRef.getDescriptor());
-        if (method == null) {
-            return;
-        }
-        AnnotationHolder depAnnot = method.getAnnotations().get(PluggableDependency.class.getName());
+    private void activateDependencyPlugin(MethodDependency methodDep) {
+        AnnotationReader depAnnot = methodDep.getMethod().getAnnotations().get(PluggableDependency.class.getName());
         if (depAnnot == null) {
             return;
         }
-        ValueType depType = depAnnot.getValues().get("value").getJavaClass();
+        ValueType depType = depAnnot.getValue("value").getJavaClass();
         String depClassName = ((ValueType.Object)depType).getClassName();
         Class<?> depClass;
         try {
@@ -355,26 +341,7 @@ public class DependencyChecker implements DependencyInformation {
         } catch (IllegalAccessException | InstantiationException e) {
             throw new RuntimeException("Can't instantiate dependency plugin " + depClassName, e);
         }
-        plugin.methodAchieved(this, graph);
-    }
-
-    public void addAbstractMethod(MethodReference methodRef, DependencyStack stack) {
-        stacks.putIfAbsent(methodRef, stack);
-        if (abstractMethods.putIfAbsent(methodRef, methodRef) == null) {
-            String className = methodRef.getClassName();
-            while (className != null) {
-                ClassReader cls = classSource.get(className);
-                if (cls == null) {
-                    return;
-                }
-                MethodReader method = cls.getMethod(methodRef.getDescriptor());
-                if (method != null) {
-                    abstractMethods.put(methodRef, methodRef);
-                    return;
-                }
-                className = cls.getParent();
-            }
-        }
+        plugin.methodAchieved(this, methodDep);
     }
 
     public ListableClassHolderSource cutUnachievableClasses(ClassHolderSource classSource) {
@@ -384,13 +351,12 @@ public class DependencyChecker implements DependencyInformation {
             cutClasses.putClassHolder(classHolder);
             for (MethodHolder method : classHolder.getMethods().toArray(new MethodHolder[0])) {
                 MethodReference methodRef = new MethodReference(className, method.getDescriptor());
-                if (!methodCache.getCachedPreimages().contains(methodRef)) {
-                    if (abstractMethods.containsKey(methodRef)) {
-                        method.getModifiers().add(ElementModifier.ABSTRACT);
-                        method.setProgram(null);
-                    } else {
-                        classHolder.removeMethod(method);
-                    }
+                MethodDependency methodDep = getMethod(methodRef);
+                if (methodDep == null) {
+                    classHolder.removeMethod(method);
+                } else if (!methodDep.isUsed()) {
+                    method.getModifiers().add(ElementModifier.ABSTRACT);
+                    method.setProgram(null);
                 }
             }
             for (FieldHolder field : classHolder.getFields().toArray(new FieldHolder[0])) {
@@ -404,7 +370,7 @@ public class DependencyChecker implements DependencyInformation {
     }
 
     @Override
-    public DependencyMethodInformation getMethod(MethodReference methodRef) {
+    public MethodDependency getMethod(MethodReference methodRef) {
         return methodCache.getKnown(methodRef);
     }
 

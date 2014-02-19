@@ -15,6 +15,7 @@
  */
 package org.teavm.dependency;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -32,23 +33,25 @@ class DependencyGraphBuilder {
     private DependencyNode resultNode;
     private ProgramReader program;
     private DependencyStack callerStack;
+    private List<Runnable> useRunners = new ArrayList<>();
 
     public DependencyGraphBuilder(DependencyChecker dependencyChecker) {
         this.dependencyChecker = dependencyChecker;
     }
 
-    public void buildGraph(MethodReader method, MethodDependency graph) {
+    public void buildGraph(MethodDependency dep) {
+        MethodReader method = dep.getMethod();
         if (method.getProgram() == null || method.getProgram().basicBlockCount() == 0) {
             return;
         }
-        callerStack = graph.getStack();
+        callerStack = dep.getStack();
         program = method.getProgram();
         if (DependencyChecker.shouldLog) {
             System.out.println("Method achieved: " + method.getReference());
             System.out.println(new ListingBuilder().buildListing(program, "    "));
         }
-        resultNode = graph.getResult();
-        nodes = graph.getVariables();
+        resultNode = dep.getResult();
+        nodes = dep.getVariables();
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlockReader block = program.basicBlockAt(i);
             block.readAllInstructions(reader);
@@ -58,6 +61,7 @@ class DependencyGraphBuilder {
                 }
             }
         }
+        dep.setUseRunner(new MultipleRunner(useRunners));
     }
 
     private static class VirtualCallPropagationListener implements DependencyConsumer {
@@ -92,6 +96,7 @@ class DependencyGraphBuilder {
             MethodReference methodRef = new MethodReference(className, methodDesc);
             MethodDependency methodDep = checker.linkMethod(methodRef, stack);
             if (!methodDep.isMissing() && knownMethods.putIfAbsent(methodRef, methodRef) == null) {
+                methodDep.use();
                 DependencyNode[] targetParams = methodDep.getVariables();
                 for (int i = 0; i < parameters.length; ++i) {
                     parameters[i].connect(targetParams[i]);
@@ -103,6 +108,30 @@ class DependencyGraphBuilder {
         }
     }
 
+    private static class MultipleRunner implements Runnable {
+        private List<Runnable> parts;
+        public MultipleRunner(List<Runnable> parts) {
+            this.parts = parts;
+        }
+        @Override public void run() {
+            for (Runnable part : parts) {
+                part.run();
+            }
+        }
+    }
+
+    private static class TypePropagationRunner implements Runnable {
+        private DependencyNode node;
+        private String type;
+        public TypePropagationRunner(DependencyNode node, String type) {
+            this.node = node;
+            this.type = type;
+        }
+        @Override public void run() {
+            node.propagate(type);
+        }
+    }
+
     private InstructionReader reader = new InstructionReader() {
         @Override
         public void nop() {
@@ -110,7 +139,7 @@ class DependencyGraphBuilder {
 
         @Override
         public void classConstant(VariableReader receiver, ValueType cst) {
-            nodes[receiver.getIndex()].propagate("java.lang.Class");
+            useRunners.add(new TypePropagationRunner(nodes[receiver.getIndex()], "java.lang.Class"));
             while (cst instanceof ValueType.Array) {
                 cst = ((ValueType.Array)cst).getItemType();
             }
@@ -141,9 +170,11 @@ class DependencyGraphBuilder {
 
         @Override
         public void stringConstant(VariableReader receiver, String cst) {
-            nodes[receiver.getIndex()].propagate("java.lang.String");
-            dependencyChecker.linkMethod(new MethodReference("java.lang.String", new MethodDescriptor(
-                    "<init>", ValueType.arrayOf(ValueType.CHARACTER), ValueType.VOID)), callerStack);
+            useRunners.add(new TypePropagationRunner(nodes[receiver.getIndex()], "java.lang.String"));
+            MethodDependency method = dependencyChecker.linkMethod(new MethodReference("java.lang.String",
+                    new MethodDescriptor("<init>", ValueType.arrayOf(ValueType.CHARACTER), ValueType.VOID)),
+                    callerStack);
+            method.use();
         }
 
         @Override
@@ -211,7 +242,7 @@ class DependencyGraphBuilder {
 
         @Override
         public void createArray(VariableReader receiver, ValueType itemType, VariableReader size) {
-            nodes[receiver.getIndex()].propagate("[" + itemType);
+            useRunners.add(new TypePropagationRunner(nodes[receiver.getIndex()], "[" + itemType));
         }
 
         @Override
@@ -222,27 +253,27 @@ class DependencyGraphBuilder {
                 sb.append('[');
             }
             sb.append(itemType);
-            nodes[receiver.getIndex()].propagate(sb.toString());
+            useRunners.add(new TypePropagationRunner(nodes[receiver.getIndex()], sb.toString()));
         }
 
         @Override
         public void create(VariableReader receiver, String type) {
-            nodes[receiver.getIndex()].propagate(type);
+            useRunners.add(new TypePropagationRunner(nodes[receiver.getIndex()], type));
         }
 
         @Override
         public void getField(VariableReader receiver, VariableReader instance, FieldReference field,
                 ValueType fieldType) {
-            DependencyNode fieldNode = dependencyChecker.linkField(field, callerStack);
+            FieldDependency fieldDep = dependencyChecker.linkField(field, callerStack);
             DependencyNode receiverNode = nodes[receiver.getIndex()];
-            fieldNode.connect(receiverNode);
+            fieldDep.getValue().connect(receiverNode);
         }
 
         @Override
         public void putField(VariableReader instance, FieldReference field, VariableReader value) {
-            DependencyNode fieldNode = dependencyChecker.linkField(field, callerStack);
+            FieldDependency fieldDep = dependencyChecker.linkField(field, callerStack);
             DependencyNode valueNode = nodes[value.getIndex()];
-            valueNode.connect(fieldNode);
+            valueNode.connect(fieldDep.getValue());
         }
 
         @Override
@@ -305,6 +336,7 @@ class DependencyGraphBuilder {
             if (methodDep.isMissing()) {
                 return;
             }
+            methodDep.use();
             DependencyNode[] targetParams = methodDep.getVariables();
             for (int i = 0; i < arguments.size(); ++i) {
                 nodes[arguments.get(i).getIndex()].connect(targetParams[i + 1]);

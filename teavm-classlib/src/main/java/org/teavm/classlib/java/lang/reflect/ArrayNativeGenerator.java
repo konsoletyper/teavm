@@ -33,9 +33,9 @@ import org.teavm.model.ValueType;
  */
 public class ArrayNativeGenerator implements Generator, DependencyPlugin {
     @Override
-    public void methodAchieved(DependencyChecker checker, MethodDependency graph) {
-        if (graph.getReference().getName().equals("getLength")) {
-            achieveGetLength(checker, graph);
+    public void methodAchieved(DependencyChecker checker, MethodDependency method) {
+        if (method.getReference().getName().equals("getLength")) {
+            achieveGetLength(checker, method);
         }
     }
 
@@ -59,8 +59,8 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
         writer.append("return " + array + ".data.length;").softNewLine();
     }
 
-    private void achieveGetLength(final DependencyChecker checker, final MethodDependency graph) {
-        graph.getVariable(1).addConsumer(new DependencyConsumer() {
+    private void achieveGetLength(final DependencyChecker checker, final MethodDependency method) {
+        method.getVariable(1).addConsumer(new DependencyConsumer() {
             @Override public void consume(String type) {
                 if (!type.startsWith("[")) {
                     MethodReference cons = new MethodReference("java.lang.IllegalArgumentException",

@@ -17,9 +17,9 @@ package org.teavm.optimization;
 
 import java.util.HashSet;
 import java.util.Set;
-import org.teavm.dependency.DependencyInformation;
-import org.teavm.dependency.DependencyMethodInformation;
-import org.teavm.dependency.DependencyValueInformation;
+import org.teavm.dependency.DependencyInfo;
+import org.teavm.dependency.MethodDependencyInfo;
+import org.teavm.dependency.ValueDependencyInfo;
 import org.teavm.model.*;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
@@ -29,16 +29,16 @@ import org.teavm.model.instructions.InvokeInstruction;
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public class Devirtualization {
-    private DependencyInformation dependency;
+    private DependencyInfo dependency;
     private ClassReaderSource classSource;
 
-    public Devirtualization(DependencyInformation dependency, ClassReaderSource classSource) {
+    public Devirtualization(DependencyInfo dependency, ClassReaderSource classSource) {
         this.dependency = dependency;
         this.classSource = classSource;
     }
 
     public void apply(MethodHolder method) {
-        DependencyMethodInformation methodDep = dependency.getMethod(method.getReference());
+        MethodDependencyInfo methodDep = dependency.getMethod(method.getReference());
         if (methodDep == null) {
             return;
         }
@@ -53,7 +53,7 @@ public class Devirtualization {
                 if (invoke.getType() != InvocationType.VIRTUAL) {
                     continue;
                 }
-                DependencyValueInformation var = methodDep.getVariable(invoke.getInstance().getIndex());
+                ValueDependencyInfo var = methodDep.getVariable(invoke.getInstance().getIndex());
                 Set<MethodReference> implementations = getImplementations(var.getTypes(),
                         invoke.getMethod().getDescriptor());
                 if (implementations.size() == 1) {
