@@ -497,8 +497,11 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
     }
 
     protected TAbstractStringBuilder append(TObject obj) {
-        append(TString.wrap(obj != null ? obj.toString() : "null"));
-        return this;
+        return append(TString.wrap(obj != null ? obj.toString() : "null"));
+    }
+
+    protected TAbstractStringBuilder append(boolean b) {
+        return append(b ? TString.wrap("true") : TString.wrap("false"));
     }
 
     private void ensureCapacity(int capacity) {

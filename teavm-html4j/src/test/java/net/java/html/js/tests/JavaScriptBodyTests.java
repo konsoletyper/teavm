@@ -93,14 +93,14 @@ public class JavaScriptBodyTests {
         assertEquals(1, run.cnt);
     }
 
-    /*@Test public void typeOfCharacter() {
+    @Test public void typeOfCharacter() {
         String charType = Bodies.typeof('a', false);
         assertEquals("number", charType);
-    }*/
+    }
 
     @Test public void typeOfBoolean() {
         String booleanType = Bodies.typeof(true, false);
-        assertEquals("boolean", equals(booleanType));
+        assertEquals("boolean", booleanType);
     }
 
     @Test public void typeOfPrimitiveBoolean() {
@@ -110,7 +110,7 @@ public class JavaScriptBodyTests {
 
     @Test public void typeOfInteger() {
         String intType = Bodies.typeof(1, false);
-        assertEquals("number", equals(intType));
+        assertEquals("number", intType);
     }
 
     @Test public void typeOfString() {
@@ -118,10 +118,10 @@ public class JavaScriptBodyTests {
         assertEquals("string", strType);
     }
 
-    /*@Test public void typeOfDouble() {
+    @Test public void typeOfDouble() {
         String doubleType = Bodies.typeof(0.33, false);
         assertEquals("number", doubleType);
-    }*/
+    }
 
     @Test public void typeOfBooleanValueOf() {
         String booleanType = Bodies.typeof(true, true);
@@ -138,10 +138,10 @@ public class JavaScriptBodyTests {
         assertEquals("string", strType);
     }
 
-    /*@Test public void typeOfDoubleValueOf() {
+    @Test public void typeOfDoubleValueOf() {
         String doubleType = Bodies.typeof(0.33, true);
         assertEquals("number", doubleType);
-    }*/
+    }
 
     @Test public void computeInARunnable() {
         final int[] sum = new int[2];
@@ -156,7 +156,7 @@ public class JavaScriptBodyTests {
         assertEquals(42, sum[1]);
     }
 
-    /*@Test public void doubleCallbackToRunnable() {
+    @Test public void doubleCallbackToRunnable() {
         final R run = new R();
         final R r2 = new R();
         class First implements Runnable {
@@ -313,7 +313,7 @@ public class JavaScriptBodyTests {
             Thread.sleep(50);
         }
         assert l.call == 42 : "Method was called: " + l.call;
-    }*/
+    }
 
     private static class R implements Runnable {
         int cnt;

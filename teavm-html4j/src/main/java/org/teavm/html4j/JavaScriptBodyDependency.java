@@ -86,6 +86,10 @@ public class JavaScriptBodyDependency implements DependencyListener {
         dependencyChecker.linkMethod(JavaScriptConvGenerator.valueOfIntMethod, DependencyStack.ROOT).use();
         dependencyChecker.linkMethod(JavaScriptConvGenerator.booleanValueMethod, DependencyStack.ROOT).use();
         dependencyChecker.linkMethod(JavaScriptConvGenerator.valueOfBooleanMethod, DependencyStack.ROOT).use();
+        dependencyChecker.linkMethod(JavaScriptConvGenerator.doubleValueMethod, DependencyStack.ROOT).use();
+        dependencyChecker.linkMethod(JavaScriptConvGenerator.valueOfDoubleMethod, DependencyStack.ROOT).use();
+        dependencyChecker.linkMethod(JavaScriptConvGenerator.charValueMethod, DependencyStack.ROOT).use();
+        dependencyChecker.linkMethod(JavaScriptConvGenerator.valueOfCharMethod, DependencyStack.ROOT).use();
     }
 
     @Override

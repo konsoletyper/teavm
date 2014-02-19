@@ -21,7 +21,37 @@ import org.teavm.javascript.ni.GeneratedBy;
  *
  * @author Alexey Andreev
  */
-public class TDouble {
+public class TDouble extends TNumber {
+    private double value;
+
+    public TDouble(double value) {
+        this.value = value;
+    }
+
+    @Override
+    public double doubleValue() {
+        return value;
+    }
+
+    @Override
+    public int intValue() {
+        return (int)value;
+    }
+
+    @Override
+    public long longValue() {
+        return (long)value;
+    }
+
+    @Override
+    public float floatValue() {
+        return (float)value;
+    }
+
+    public static TDouble valueOf(double d) {
+        return new TDouble(d);
+    }
+
     @GeneratedBy(DoubleNativeGenerator.class)
     public static native boolean isNaN(double v);
 

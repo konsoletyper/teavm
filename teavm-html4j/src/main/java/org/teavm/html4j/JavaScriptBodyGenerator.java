@@ -84,8 +84,29 @@ public class JavaScriptBodyGenerator implements Generator {
         @Override protected CharSequence callMethod(String ident, String fqn, String method, String params) {
             MethodDescriptor desc = MethodDescriptor.parse(method + params + "V");
             MethodReader reader = findMethod(fqn, desc);
-            return ident == null ? naming.getFullNameFor(reader.getReference()) + "(" :
-                    ident + "." + naming.getNameFor(reader.getReference()) + "(";
+            StringBuilder sb = new StringBuilder();
+            sb.append("(function($this");
+            for (int i = 0; i < reader.parameterCount(); ++i) {
+                sb.append(", ").append("p").append(i);
+            }
+            sb.append(") { return ").append(naming.getFullNameFor(JavaScriptConvGenerator.toJsMethod)).append("(");
+            if (ident == null) {
+                sb.append(naming.getFullNameFor(reader.getReference()));
+            } else {
+                sb.append("$this.").append(naming.getNameFor(reader.getReference()));
+            }
+            sb.append("(");
+            for (int i = 0; i < reader.parameterCount(); ++i) {
+                if (i > 0) {
+                    sb.append(", ");
+                }
+                sb.append(naming.getFullNameFor(JavaScriptConvGenerator.fromJsMethod)).append("(p").append(i)
+                        .append(", ")
+                        .append(Renderer.typeToClsString(naming, reader.parameterType(i))).append(")");
+            }
+            sb.append(")); })(");
+            sb.append(ident == null ? "null, " : ident);
+            return sb.toString();
         }
         private MethodReader findMethod(String clsName, MethodDescriptor desc) {
             while (clsName != null) {

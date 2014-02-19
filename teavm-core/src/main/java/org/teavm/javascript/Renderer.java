@@ -834,6 +834,8 @@ public class Renderer implements ExprVisitor, StatementVisitor {
             } else {
                 return "new Long(" + (value & 0xFFFFFFFFL) + ", " + (value >>> 32) + ")";
             }
+        } else if (cst instanceof Character) {
+            return Integer.toString((Character)cst);
         } else {
             return cst.toString();
         }

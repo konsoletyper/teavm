@@ -67,4 +67,8 @@ public class TClass<T> extends TObject {
 
     @InjectedBy(ClassNativeGenerator.class)
     static native TClass<TInteger> intClass();
+
+    public boolean desiredAssertionStatus() {
+        return true;
+    }
 }

@@ -93,4 +93,10 @@ public class TStringBuilder extends TAbstractStringBuilder implements TAppendabl
         super.append(obj);
         return this;
     }
+
+    @Override
+    public TStringBuilder append(boolean b) {
+        super.append(b);
+        return this;
+    }
 }

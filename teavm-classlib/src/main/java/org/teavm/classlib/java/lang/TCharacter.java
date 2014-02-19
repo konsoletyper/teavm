@@ -23,10 +23,23 @@ import org.teavm.javascript.ni.GeneratedBy;
  *
  * @author Alexey Andreev
  */
-public class TCharacter {
+public class TCharacter extends TObject {
     public static final int MIN_RADIX = 2;
     public static final int MAX_RADIX = 36;
     private static int[] digitMapping;
+    private char value;
+
+    public TCharacter(char value) {
+        this.value = value;
+    }
+
+    public char charValue() {
+        return value;
+    }
+
+    public static TCharacter valueOf(char value) {
+        return new TCharacter(value);
+    }
 
     @GeneratedBy(CharacterNativeGenerator.class)
     public static native char toLowerCase(char ch);
