@@ -44,7 +44,11 @@ public class JavaScriptBodyDependency implements DependencyListener {
 
     @Override
     public void classAchieved(DependencyChecker dependencyChecker, String className) {
-        allClassesNode.propagate(className);
+        ClassReader cls = dependencyChecker.getClassSource().get(className);
+        if (cls != null && !cls.hasModifier(ElementModifier.ABSTRACT) &&
+                !cls.hasModifier(ElementModifier.INTERFACE)) {
+            allClassesNode.propagate(className);
+        }
     }
 
     @Override

@@ -66,6 +66,7 @@ class DependencyGraphBuilder {
 
     private static class VirtualCallPropagationListener implements DependencyConsumer {
         private final DependencyNode node;
+        private final ClassReader filterClass;
         private final MethodDescriptor methodDesc;
         private final DependencyChecker checker;
         private final DependencyNode[] parameters;
@@ -73,10 +74,11 @@ class DependencyGraphBuilder {
         private final DependencyStack stack;
         private final ConcurrentMap<MethodReference, MethodReference> knownMethods = new ConcurrentHashMap<>();
 
-        public VirtualCallPropagationListener(DependencyNode node, MethodDescriptor methodDesc,
-                DependencyChecker checker, DependencyNode[] parameters, DependencyNode result,
-                DependencyStack stack) {
+        public VirtualCallPropagationListener(DependencyNode node, ClassReader filterClass,
+                MethodDescriptor methodDesc, DependencyChecker checker, DependencyNode[] parameters,
+                DependencyNode result, DependencyStack stack) {
             this.node = node;
+            this.filterClass = filterClass;
             this.methodDesc = methodDesc;
             this.checker = checker;
             this.parameters = parameters;
@@ -92,6 +94,9 @@ class DependencyGraphBuilder {
             }
             if (className.startsWith("[")) {
                 className = "java.lang.Object";
+            }
+            if (!isAssignableFrom(checker.getClassSource(), filterClass, className)) {
+                return;
             }
             MethodReference methodRef = new MethodReference(className, methodDesc);
             MethodDependency methodDep = checker.linkMethod(methodRef, stack);
@@ -118,6 +123,26 @@ class DependencyGraphBuilder {
                 part.run();
             }
         }
+    }
+
+    private static boolean isAssignableFrom(ClassReaderSource classSource, ClassReader supertype,
+            String subtypeName) {
+        if (supertype.getName().equals(subtypeName)) {
+            return true;
+        }
+        ClassReader subtype = classSource.get(subtypeName);
+        if (subtype == null) {
+            return false;
+        }
+        if (subtype.getParent() != null && isAssignableFrom(classSource, supertype, subtype.getParent())) {
+            return true;
+        }
+        for (String iface : subtype.getInterfaces()) {
+            if (isAssignableFrom(classSource, supertype, iface)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static class TypePropagationRunner implements Runnable {
@@ -197,6 +222,18 @@ class DependencyGraphBuilder {
         public void cast(VariableReader receiver, VariableReader value, ValueType targetType) {
             DependencyNode valueNode = nodes[value.getIndex()];
             DependencyNode receiverNode = nodes[receiver.getIndex()];
+            if (targetType instanceof ValueType.Object) {
+                String targetClsName = ((ValueType.Object)targetType).getClassName();
+                final ClassReader targetClass = dependencyChecker.getClassSource().get(targetClsName);
+                if (targetClass != null) {
+                    valueNode.connect(receiverNode, new DependencyTypeFilter() {
+                        @Override public boolean match(String type) {
+                            return isAssignableFrom(dependencyChecker.getClassSource(), targetClass, type);
+                        }
+                    });
+                    return;
+                }
+            }
             valueNode.connect(receiverNode);
         }
 
@@ -351,7 +388,8 @@ class DependencyGraphBuilder {
 
         private void invokeVirtual(VariableReader receiver, VariableReader instance, MethodReference method,
                 List<? extends VariableReader> arguments) {
-            if (dependencyChecker.linkMethod(method, callerStack).isMissing()) {
+            MethodDependency methodDep = dependencyChecker.linkMethod(method, callerStack);
+            if (methodDep.isMissing()) {
                 return;
             }
             DependencyNode[] actualArgs = new DependencyNode[arguments.size() + 1];
@@ -360,6 +398,7 @@ class DependencyGraphBuilder {
             }
             actualArgs[0] = nodes[instance.getIndex()];
             DependencyConsumer listener = new VirtualCallPropagationListener(nodes[instance.getIndex()],
+                    dependencyChecker.getClassSource().get(methodDep.getMethod().getOwnerName()),
                     method.getDescriptor(), dependencyChecker, actualArgs,
                     receiver != null ? nodes[receiver.getIndex()] : null, callerStack);
             nodes[instance.getIndex()].addConsumer(listener);

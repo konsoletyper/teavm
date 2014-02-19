@@ -141,6 +141,7 @@ public class DependencyChecker implements DependencyInfo {
     }
 
     public void schedulePropagation(final DependencyConsumer consumer, final String type) {
+        System.out.print("");
         executor.executeFast(new Runnable() {
             @Override public void run() {
                 consumer.consume(type);
