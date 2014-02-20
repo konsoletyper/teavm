@@ -13,14 +13,44 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.java.lang;
+package org.teavm.classlib.java.util;
 
-import org.teavm.classlib.java.util.TIterator;
+import org.teavm.classlib.java.lang.TObject;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface TIterable<T> {
-    TIterator<T> iterator();
+public interface TMap<K, V> {
+    public static interface Entry<K1, V1> {
+        K1 getKey();
+
+        V1 getValue();
+
+        V1 setValue(V1 value);
+    }
+
+    int size();
+
+    boolean isEmpty();
+
+    boolean containsKey(TObject key);
+
+    boolean containsValue(TObject value);
+
+    V get(TObject key);
+
+    V put(K key, V value);
+
+    V remove(TObject key);
+
+    void putAll(TMap<? extends K,? extends V> m);
+
+    void clear();
+
+    TSet<K> keySet();
+
+    TCollection<V> values();
+
+    TSet<Entry<K, V>> entrySet();
 }

@@ -13,14 +13,24 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.java.lang;
+package org.teavm.classlib.java.util;
 
-import org.teavm.classlib.java.util.TIterator;
+import org.teavm.classlib.java.lang.TObject;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface TIterable<T> {
-    TIterator<T> iterator();
+public interface TSortedSet<E extends TObject> extends TSet<E> {
+    TComparator<? super E> comparator();
+
+    TSortedSet<E> subSet(E fromElement, E toElement);
+
+    TSortedSet<E> headSet(E toElement);
+
+    TSortedSet<E> tailSet(E fromElement);
+
+    E first();
+
+    E last();
 }

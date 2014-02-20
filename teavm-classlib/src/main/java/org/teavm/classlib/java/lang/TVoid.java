@@ -15,12 +15,10 @@
  */
 package org.teavm.classlib.java.lang;
 
-import org.teavm.classlib.java.util.TIterator;
-
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface TIterable<T> {
-    TIterator<T> iterator();
+public final class TVoid extends TObject {
+    public static final TClass<TVoid> TYPE = TClass.voidClass();
 }

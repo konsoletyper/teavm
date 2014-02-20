@@ -57,6 +57,9 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
     }
 
     protected TAbstractStringBuilder append(TString string) {
+        if (string == null) {
+            string = TString.wrap("null");
+        }
         ensureCapacity(length + string.length());
         int j = length;
         for (int i = 0; i < string.length(); ++i) {

@@ -13,14 +13,28 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.java.lang;
+package org.teavm.classlib.java.lang.reflect;
 
-import org.teavm.classlib.java.util.TIterator;
+import static org.junit.Assert.*;
+import java.lang.reflect.Array;
+import org.junit.Test;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface TIterable<T> {
-    TIterator<T> iterator();
+public class ArrayTest {
+    @Test
+    public void createsNewInstance() {
+        Object instance = Array.newInstance(Object.class, 10);
+        assertEquals(Object[].class, instance.getClass());
+        assertEquals(10, Array.getLength(instance));
+    }
+
+    @Test
+    public void createsNewPrimitiveInstance() {
+        Object instance = Array.newInstance(int.class, 15);
+        assertEquals(int[].class, instance.getClass());
+        assertEquals(15, Array.getLength(instance));
+    }
 }

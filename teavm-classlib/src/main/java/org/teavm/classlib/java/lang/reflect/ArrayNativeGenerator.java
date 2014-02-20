@@ -32,10 +32,18 @@ import org.teavm.model.ValueType;
  * @author Alexey Andreev
  */
 public class ArrayNativeGenerator implements Generator, DependencyPlugin {
+    private static final String[] primitives = { "Byte", "Short", "Char", "Int", "Long", "Float", "Double",
+            "Boolean" };
+
     @Override
     public void methodAchieved(DependencyChecker checker, MethodDependency method) {
-        if (method.getReference().getName().equals("getLength")) {
-            achieveGetLength(checker, method);
+        switch (method.getReference().getName()) {
+            case "getLength":
+                achieveGetLength(checker, method);
+                break;
+            case "newInstanceImpl":
+                method.getResult().propagate("[java.lang.Object");
+                break;
         }
     }
 
@@ -44,6 +52,9 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
         switch (methodRef.getName()) {
             case "getLength":
                 generateGetLength(context, writer);
+                break;
+            case "newInstanceImpl":
+                generateNewInstance(context, writer);
                 break;
         }
     }
@@ -69,5 +80,20 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
                 }
             }
         });
+    }
+
+    private void generateNewInstance(GeneratorContext context, SourceWriter writer) throws IOException {
+        String type = context.getParameterName(1);
+        String length = context.getParameterName(2);
+        writer.append("var cls = " + type + ".$data;").softNewLine();
+        writer.append("if (cls.primitive) {").softNewLine().indent();
+        for (String primitive : primitives) {
+            writer.append("if (cls == $rt_" + primitive.toLowerCase() + "cls()) {").indent().softNewLine();
+            writer.append("return $rt_create" + primitive + "Array(" + length + ");").softNewLine();
+            writer.outdent().append("}").softNewLine();
+        }
+        writer.outdent().append("} else {").indent().softNewLine();
+        writer.append("return $rt_createArray(cls, " + length + ")").softNewLine();
+        writer.outdent().append("}").softNewLine();
     }
 }

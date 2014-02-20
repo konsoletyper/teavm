@@ -15,14 +15,30 @@
  */
 package org.teavm.classlib.java.util;
 
+import org.teavm.classlib.java.lang.TRuntimeException;
+import org.teavm.classlib.java.lang.TString;
+import org.teavm.classlib.java.lang.TThrowable;
+
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface TIterator<E> {
-    boolean hasNext();
+public class TConcurrentModificationException extends TRuntimeException {
+    private static final long serialVersionUID = -2871226388713811335L;
 
-    E next();
+    public TConcurrentModificationException() {
+        super();
+    }
 
-    void remove();
+    public TConcurrentModificationException(TString message, TThrowable cause) {
+        super(message, cause);
+    }
+
+    public TConcurrentModificationException(TString message) {
+        super(message);
+    }
+
+    public TConcurrentModificationException(TThrowable cause) {
+        super(cause);
+    }
 }

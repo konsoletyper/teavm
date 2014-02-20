@@ -13,14 +13,36 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.java.lang;
+package org.teavm.classlib.java.util;
 
-import org.teavm.classlib.java.util.TIterator;
+import org.teavm.classlib.java.lang.TIterable;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface TIterable<T> {
-    TIterator<T> iterator();
+public interface TCollection<E> extends TIterable<E> {
+    int size();
+
+    boolean isEmpty();
+
+    boolean contains(Object o);
+
+    Object[] toArray();
+
+    <T> T[] toArray(T[] a);
+
+    boolean add(E e);
+
+    boolean remove(Object o);
+
+    boolean containsAll(TCollection<?> c);
+
+    boolean addAll(TCollection<? extends E> c);
+
+    boolean removeAll(TCollection<?> c);
+
+    boolean retainAll(TCollection<?> c);
+
+    void clear();
 }

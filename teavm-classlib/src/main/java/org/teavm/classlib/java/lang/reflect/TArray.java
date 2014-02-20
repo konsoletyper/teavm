@@ -15,8 +15,7 @@
  */
 package org.teavm.classlib.java.lang.reflect;
 
-import org.teavm.classlib.java.lang.TIllegalArgumentException;
-import org.teavm.classlib.java.lang.TObject;
+import org.teavm.classlib.java.lang.*;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.javascript.ni.GeneratedBy;
 
@@ -28,4 +27,21 @@ public final class TArray extends TObject {
     @GeneratedBy(ArrayNativeGenerator.class)
     @PluggableDependency(ArrayNativeGenerator.class)
     public static native int getLength(TObject array) throws TIllegalArgumentException;
+
+    public static TObject newInstance(TClass<?> componentType, int length) throws TNegativeArraySizeException {
+        if (componentType == null) {
+            throw new TNullPointerException();
+        }
+        if (componentType == TClass.wrap(void.class)) {
+            throw new TIllegalArgumentException();
+        }
+        if (length < 0) {
+            throw new TNegativeArraySizeException();
+        }
+        return newInstanceImpl(componentType, length);
+    }
+
+    @GeneratedBy(ArrayNativeGenerator.class)
+    @PluggableDependency(ArrayNativeGenerator.class)
+    private static native TObject newInstanceImpl(TClass<?> componentType, int length);
 }

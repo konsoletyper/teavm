@@ -66,10 +66,13 @@ public class ClassNativeGenerator implements Generator, Injector, DependencyPlug
                 generateIsAssignableFrom(context);
                 break;
             case "booleanClass":
-                generateBooleanClass(context);
+                context.getWriter().append("$rt_cls($rt_booleancls())");
                 break;
             case "intClass":
-                generateIntClass(context);
+                context.getWriter().append("$rt_cls($rt_intcls())");
+                break;
+            case "voidClass":
+                context.getWriter().append("$rt_cls($rt_voidcls())");
                 break;
             case "wrap":
                 context.writeExpr(context.getArgument(0));
@@ -97,14 +100,6 @@ public class ClassNativeGenerator implements Generator, Injector, DependencyPlug
         writer.append(",").ws();
         context.writeExpr(context.getArgument(0));
         writer.append(".$data)");
-    }
-
-    private void generateBooleanClass(InjectorContext context) throws IOException {
-        context.getWriter().append("$rt_cls($rt_booleancls())");
-    }
-
-    private void generateIntClass(InjectorContext context) throws IOException {
-        context.getWriter().append("$rt_cls($rt_intcls())");
     }
 
     @Override

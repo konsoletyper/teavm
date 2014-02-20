@@ -84,9 +84,9 @@
               <scanDependencies>true</scanDependencies>
               <outputDir>${project.build.directory}/javascript-tck</outputDir>
               <adapterClass>org.teavm.html4j.testing.KOTestAdapter</adapterClass>
-              <wildcards>
+              <!-- <wildcards>
                 <param>net.java.html.js.tests.*Test</param>
-              </wildcards>
+              </wildcards>  -->
             </configuration>
           </execution>
         </executions>

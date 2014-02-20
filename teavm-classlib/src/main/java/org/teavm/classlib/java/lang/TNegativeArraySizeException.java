@@ -15,12 +15,18 @@
  */
 package org.teavm.classlib.java.lang;
 
-import org.teavm.classlib.java.util.TIterator;
-
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface TIterable<T> {
-    TIterator<T> iterator();
+public class TNegativeArraySizeException extends TRuntimeException {
+    private static final long serialVersionUID = 4838944281468611671L;
+
+    public TNegativeArraySizeException() {
+        super();
+    }
+
+    public TNegativeArraySizeException(TString message) {
+        super(message);
+    }
 }

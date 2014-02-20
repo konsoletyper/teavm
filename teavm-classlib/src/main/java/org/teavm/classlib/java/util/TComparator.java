@@ -13,14 +13,16 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.java.lang;
+package org.teavm.classlib.java.util;
 
-import org.teavm.classlib.java.util.TIterator;
+import org.teavm.classlib.java.lang.TObject;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface TIterable<T> {
-    TIterator<T> iterator();
+public interface TComparator<T extends TObject> {
+    int compare(T o1, T o2);
+
+    boolean equals(TObject obj);
 }

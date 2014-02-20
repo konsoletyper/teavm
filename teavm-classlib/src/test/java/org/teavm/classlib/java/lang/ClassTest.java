@@ -77,4 +77,16 @@ public class ClassTest {
     public void nonArrayComponentTypeIsNull() {
         assertNull(Object.class.getComponentType());
     }
+
+    @Test
+    public void castingAppropriateObject() {
+        Object obj = 23;
+        assertEquals(Integer.valueOf(23), Integer.class.cast(obj));
+    }
+
+    @Test(expected = ClassCastException.class)
+    public void inappropriateObjectCastingFails() {
+        Object obj = 23;
+        Float.class.cast(obj);
+    }
 }

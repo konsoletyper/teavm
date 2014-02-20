@@ -13,14 +13,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.java.lang;
-
-import org.teavm.classlib.java.util.TIterator;
+package org.teavm.classlib.java.util;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface TIterable<T> {
-    TIterator<T> iterator();
+public interface TQueue<E> extends TCollection<E> {
+    boolean offer(E e);
+
+    E remove();
+
+    E poll();
+
+    E element();
+
+    E peek();
 }

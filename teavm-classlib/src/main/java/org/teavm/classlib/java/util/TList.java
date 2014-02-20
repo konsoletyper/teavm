@@ -13,14 +13,32 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.java.lang;
+package org.teavm.classlib.java.util;
 
-import org.teavm.classlib.java.util.TIterator;
+import org.teavm.classlib.java.lang.TObject;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface TIterable<T> {
-    TIterator<T> iterator();
+public interface TList<E extends TObject> extends TCollection<E> {
+    boolean addAll(int index, TCollection<? extends E> c);
+
+    E get(int index);
+
+    E set(int index, E element);
+
+    void add(int index, E element);
+
+    E remove(int index);
+
+    int indexOf(Object o);
+
+    int lastIndexOf(Object o);
+
+    TListIterator<E> listIterator();
+
+    TListIterator<E> listIterator(int index);
+
+    TList<E> subList(int fromIndex, int toIndex);
 }

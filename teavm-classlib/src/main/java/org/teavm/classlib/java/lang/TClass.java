@@ -42,7 +42,7 @@ public class TClass<T extends TObject> extends TObject {
     public native boolean isAssignableFrom(TClass<?> obj);
 
     public TString getName() {
-        return name;
+        return new TString(name);
     }
 
     public boolean isPrimitive() {
@@ -79,6 +79,10 @@ public class TClass<T extends TObject> extends TObject {
 
     @InjectedBy(ClassNativeGenerator.class)
     @PluggableDependency(ClassNativeGenerator.class)
+    static native TClass<TVoid> voidClass();
+
+    @InjectedBy(ClassNativeGenerator.class)
+    @PluggableDependency(ClassNativeGenerator.class)
     public static native <S extends TObject> TClass<S> wrap(Class<S> cls);
 
     public boolean desiredAssertionStatus() {
@@ -95,4 +99,14 @@ public class TClass<T extends TObject> extends TObject {
 
     @InjectedBy(ClassNativeGenerator.class)
     public native T[] getEnumConstantsImpl();
+
+    @SuppressWarnings("unchecked")
+    public T cast(TObject obj) {
+        if (obj != null && !isAssignableFrom(TClass.wrap(obj.getClass()))) {
+            throw new TClassCastException(TString.wrap(new TStringBuilder()
+                    .append(TClass.wrap(obj.getClass()).getName())
+                    .append(TString.wrap(" is not subtype of ")).append(name).toString()));
+        }
+        return (T)obj;
+    }
 }
