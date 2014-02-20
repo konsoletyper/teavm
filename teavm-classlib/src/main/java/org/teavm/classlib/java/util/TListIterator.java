@@ -15,13 +15,11 @@
  */
 package org.teavm.classlib.java.util;
 
-import org.teavm.classlib.java.lang.TObject;
-
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface TListIterator<E extends TObject> extends TIterator<E> {
+public interface TListIterator<E> extends TIterator<E> {
     boolean hasPrevious();
 
     E previous();

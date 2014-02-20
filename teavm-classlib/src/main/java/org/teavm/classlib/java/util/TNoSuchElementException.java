@@ -15,28 +15,21 @@
  */
 package org.teavm.classlib.java.util;
 
+import org.teavm.classlib.java.lang.TRuntimeException;
+import org.teavm.classlib.java.lang.TString;
+
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface TList<E> extends TCollection<E> {
-    boolean addAll(int index, TCollection<? extends E> c);
+public class TNoSuchElementException extends TRuntimeException {
+    private static final long serialVersionUID = -4890604137042866919L;
 
-    E get(int index);
+    public TNoSuchElementException() {
+        super();
+    }
 
-    E set(int index, E element);
-
-    void add(int index, E element);
-
-    E remove(int index);
-
-    int indexOf(Object o);
-
-    int lastIndexOf(Object o);
-
-    TListIterator<E> listIterator();
-
-    TListIterator<E> listIterator(int index);
-
-    TList<E> subList(int fromIndex, int toIndex);
+    public TNoSuchElementException(TString message) {
+        super(message);
+    }
 }

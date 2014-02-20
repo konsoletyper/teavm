@@ -15,10 +15,7 @@
  */
 package org.teavm.classlib.java.util;
 
-import org.teavm.classlib.java.lang.TMath;
-import org.teavm.classlib.java.lang.TObject;
-import org.teavm.classlib.java.lang.TString;
-import org.teavm.classlib.java.lang.TStringBuilder;
+import org.teavm.classlib.java.lang.*;
 
 /**
  *
@@ -39,6 +36,16 @@ public class TArrays extends TObject {
         int sz = TMath.min(length, array.length);
         for (int i = 0; i < sz; ++i) {
             result[i] = array[i];
+        }
+        return result;
+    }
+
+    public static <T> T[] copyOf(T[] original, int newLength) {
+        @SuppressWarnings("unchecked")
+        T[] result = (T[])new Object[newLength];
+        int sz = TMath.min(newLength, original.length);
+        for (int i = 0; i < sz; ++i) {
+            result[i] = original[i];
         }
         return result;
     }
@@ -158,5 +165,21 @@ public class TArrays extends TObject {
         }
         sb.append(TString.wrap("]"));
         return TString.wrap(sb.toString());
+    }
+
+    public static void fill(TObject[] a, int fromIndex, int toIndex, TObject val) {
+        if (fromIndex > toIndex) {
+            throw new TIllegalArgumentException();
+        }
+        if (fromIndex < 0 || toIndex > a.length) {
+            throw new TIndexOutOfBoundsException();
+        }
+        while (fromIndex < toIndex) {
+            a[fromIndex++] = val;
+        }
+    }
+
+    public static void fill(TObject[] a, TObject val) {
+        fill(a, 0, a.length, val);
     }
 }
