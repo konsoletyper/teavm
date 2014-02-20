@@ -74,6 +74,10 @@ public class ClassNativeGenerator implements Generator, Injector, DependencyPlug
             case "wrap":
                 context.writeExpr(context.getArgument(0));
                 break;
+            case "getEnumConstantsImpl":
+                context.writeExpr(context.getArgument(0));
+                context.getWriter().append(".$data.values()");
+                break;
         }
     }
 

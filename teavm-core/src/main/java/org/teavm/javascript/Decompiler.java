@@ -231,8 +231,12 @@ public class Decompiler {
         Set<NodeModifier> result = EnumSet.noneOf(NodeModifier.class);
         if (modifiers.contains(ElementModifier.STATIC)) {
             result.add(NodeModifier.STATIC);
-        } else if (modifiers.contains(ElementModifier.INTERFACE)) {
+        }
+        if (modifiers.contains(ElementModifier.INTERFACE)) {
             result.add(NodeModifier.INTERFACE);
+        }
+        if (modifiers.contains(ElementModifier.ENUM)) {
+            result.add(NodeModifier.ENUM);
         }
         return result;
     }

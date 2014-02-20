@@ -135,6 +135,11 @@ public class JavascriptBuilder implements JavascriptBuilderHost {
                 ValueType.object("java.lang.Class"))), DependencyStack.ROOT).use();
         dependencyChecker.linkMethod(new MethodReference("java.lang.String", new MethodDescriptor("<init>",
                 ValueType.arrayOf(ValueType.CHARACTER), ValueType.VOID)), DependencyStack.ROOT).use();
+        dependencyChecker.linkMethod(new MethodReference("java.lang.String", new MethodDescriptor("getChars",
+                ValueType.INTEGER, ValueType.INTEGER, ValueType.arrayOf(ValueType.CHARACTER), ValueType.INTEGER,
+                ValueType.VOID)), DependencyStack.ROOT).use();
+        dependencyChecker.linkMethod(new MethodReference("java.lang.Object", new MethodDescriptor("clone",
+                ValueType.object("java.lang.Object"))), DependencyStack.ROOT).use();
         executor.complete();
         if (hasMissingItems()) {
             return;

@@ -18,6 +18,7 @@ package org.teavm.classlib.java.lang;
 import org.teavm.classlib.impl.unicode.UnicodeHelper;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.javascript.ni.GeneratedBy;
+import org.teavm.javascript.ni.Rename;
 
 /**
  *
@@ -39,6 +40,20 @@ public class TCharacter extends TObject {
 
     public static TCharacter valueOf(char value) {
         return new TCharacter(value);
+    }
+
+    @Override
+    @Rename("toString")
+    public TString toString0() {
+        return new TString(new char[] { value });
+    }
+
+    @Override
+    public boolean equals(TObject other) {
+        if (this == other) {
+            return true;
+        }
+        return other instanceof TCharacter && ((TCharacter)other).value == value;
     }
 
     @GeneratedBy(CharacterNativeGenerator.class)

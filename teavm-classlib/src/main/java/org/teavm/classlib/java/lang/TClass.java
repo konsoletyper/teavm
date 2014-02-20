@@ -27,6 +27,7 @@ public class TClass<T extends TObject> extends TObject {
     TString name;
     boolean primitive;
     boolean array;
+    boolean isEnum;
     private TClass<?> componentType;
     private boolean componentTypeDirty = true;
 
@@ -50,6 +51,10 @@ public class TClass<T extends TObject> extends TObject {
 
     public boolean isArray() {
         return array;
+    }
+
+    public boolean isEnum() {
+        return isEnum;
     }
 
     public TClass<?> getComponentType() {
@@ -83,4 +88,11 @@ public class TClass<T extends TObject> extends TObject {
     @GeneratedBy(ClassNativeGenerator.class)
     @PluggableDependency(ClassNativeGenerator.class)
     public native TClass<? super T> getSuperclass();
+
+    public T[] getEnumConstants() {
+        return isEnum ? getEnumConstantsImpl() : null;
+    }
+
+    @InjectedBy(ClassNativeGenerator.class)
+    public native T[] getEnumConstantsImpl();
 }

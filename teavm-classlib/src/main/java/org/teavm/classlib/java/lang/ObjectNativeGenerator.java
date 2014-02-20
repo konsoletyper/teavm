@@ -100,11 +100,12 @@ public class ObjectNativeGenerator implements Generator, Injector, DependencyPlu
     }
 
     private void generateClone(GeneratorContext context, SourceWriter writer) throws IOException {
-        writer.append("var copy = new ").append(context.getParameterName(0)).append(".constructor();").softNewLine();
-        writer.append("for (var field in obj) {").softNewLine().indent();
-        writer.append("if (!obj.hasOwnProperty(field)) {").softNewLine().indent();
+        String obj = context.getParameterName(0);
+        writer.append("var copy = new ").append(obj).append(".constructor();").softNewLine();
+        writer.append("for (var field in " + obj + ") {").softNewLine().indent();
+        writer.append("if (!" + obj + ".hasOwnProperty(field)) {").softNewLine().indent();
         writer.append("continue;").softNewLine().outdent().append("}").softNewLine();
-        writer.append("copy[field] = obj[field];").softNewLine().outdent().append("}").softNewLine();
+        writer.append("copy[field] = " + obj + "[field];").softNewLine().outdent().append("}").softNewLine();
         writer.append("return copy;").softNewLine();
     }
 

@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.lang;
 
 import org.teavm.javascript.ni.GeneratedBy;
+import org.teavm.javascript.ni.Rename;
 
 /**
  *
@@ -50,6 +51,20 @@ public class TDouble extends TNumber {
 
     public static TDouble valueOf(double d) {
         return new TDouble(d);
+    }
+
+    @Override
+    @Rename("toString")
+    public TString toString0() {
+        return TString.wrap(new TStringBuilder().append(value).toString());
+    }
+
+    @Override
+    public boolean equals(TObject other) {
+        if (this == other) {
+            return true;
+        }
+        return other instanceof TDouble && ((TDouble)other).value == value;
     }
 
     @GeneratedBy(DoubleNativeGenerator.class)

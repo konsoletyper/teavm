@@ -15,6 +15,8 @@
  */
 package org.teavm.classlib.java.lang;
 
+import org.teavm.javascript.ni.Rename;
+
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
@@ -48,5 +50,19 @@ public class TLong extends TNumber {
     @Override
     public double doubleValue() {
         return value;
+    }
+
+    @Override
+    @Rename("toString")
+    public TString toString0() {
+        return TString.wrap(new TStringBuilder().append(value).toString());
+    }
+
+    @Override
+    public boolean equals(TObject other) {
+        if (this == other) {
+            return true;
+        }
+        return other instanceof TLong && ((TLong)other).value == value;
     }
 }

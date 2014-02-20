@@ -1,5 +1,5 @@
 /*
- *  Copyright 2013 Alexey Andreev.
+ *  Copyright 2014 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,14 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript.ast;
+package org.teavm.classlib.impl;
+
+import org.teavm.javascript.JavascriptBuilderHost;
+import org.teavm.javascript.JavascriptBuilderPlugin;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-public enum NodeModifier {
-    STATIC,
-    INTERFACE,
-    ENUM
+public class JCLPlugin implements JavascriptBuilderPlugin {
+    @Override
+    public void install(JavascriptBuilderHost host) {
+        host.add(new EnumDependencySupport());
+        host.add(new EnumTransformer());
+    }
 }

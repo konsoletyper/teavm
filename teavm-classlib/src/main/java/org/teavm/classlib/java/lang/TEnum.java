@@ -62,9 +62,7 @@ public abstract class TEnum<E extends TEnum<E>> extends TObject implements TComp
 
     @SuppressWarnings("unchecked")
     public final TClass<E> getDeclaringClass() {
-        TClass<?> thisClass = TClass.wrap(getClass());
-        TClass<?> superClass = thisClass.getSuperclass();
-        return (TClass<E>)(superClass == TClass.wrap(TEnum.class) ? thisClass : superClass);
+        return (TClass<E>)TClass.wrap(getClass());
     }
 
     @Override
@@ -75,5 +73,20 @@ public abstract class TEnum<E extends TEnum<E>> extends TObject implements TComp
                     o.getDeclaringClass().getName().toString()));
         }
         return TInteger.compare(ordinal, o.ordinal());
+    }
+
+    public static <T extends TEnum<T>> T valueOf(TClass<T> enumType, TString name) {
+        // TODO: speed-up this method, use caching
+        T[] constants = enumType.getEnumConstants();
+        if (constants == null) {
+            throw new TIllegalArgumentException(TString.wrap("Class does not represent enum: " + enumType.getName()));
+        }
+        for (T constant : constants) {
+            if (constant.name().equals(name)) {
+                return constant;
+            }
+        }
+        throw new TIllegalArgumentException(TString.wrap("Enum " + enumType.getName() + " does not have the " + name +
+                "constant"));
     }
 }
