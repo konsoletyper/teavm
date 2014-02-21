@@ -33,12 +33,21 @@ public class DependencyNode implements ValueDependencyInfo {
     private volatile String tag;
     private final AtomicReference<DependencyNode> arrayItemNode = new AtomicReference<>();
     private volatile CountDownLatch arrayItemNodeLatch = new CountDownLatch(1);
+    private int degree;
 
     DependencyNode(DependencyChecker dependencyChecker) {
+        this(dependencyChecker, 0);
+    }
+
+    DependencyNode(DependencyChecker dependencyChecker, int degree) {
         this.dependencyChecker = dependencyChecker;
+        this.degree = degree;
     }
 
     public void propagate(String type) {
+        if (degree > 2) {
+            return;
+        }
         if (types.putIfAbsent(type, mapValue) == null) {
             if (DependencyChecker.shouldLog) {
                 System.out.println(tag + " -> " + type);
@@ -75,7 +84,7 @@ public class DependencyNode implements ValueDependencyInfo {
     public DependencyNode getArrayItem() {
         DependencyNode result = arrayItemNode.get();
         if (result == null) {
-            result = new DependencyNode(dependencyChecker);
+            result = new DependencyNode(dependencyChecker, degree + 1);
             if (arrayItemNode.compareAndSet(null, result)) {
                 if (DependencyChecker.shouldLog) {
                     arrayItemNode.get().tag = tag + "[";

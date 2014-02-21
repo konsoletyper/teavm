@@ -28,6 +28,10 @@ public class TStringBuilder extends TAbstractStringBuilder implements TAppendabl
         super();
     }
 
+    public TStringBuilder(TString value) {
+        super(value);
+    }
+
     @Override
     public TStringBuilder append(TString string) {
         super.append(string);
