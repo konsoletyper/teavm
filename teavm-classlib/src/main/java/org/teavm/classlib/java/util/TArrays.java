@@ -182,4 +182,99 @@ public class TArrays extends TObject {
     public static void fill(TObject[] a, TObject val) {
         fill(a, 0, a.length, val);
     }
+
+
+    public static void sort(Object[] a) {
+        sort(a, new NaturalOrder());
+    }
+
+    public static void sort(Object[] a, int fromIndex, int toIndex) {
+        sort(a, fromIndex, toIndex, new NaturalOrder());
+    }
+
+    private static class NaturalOrder implements TComparator<Object> {
+        @SuppressWarnings({ "rawtypes", "unchecked" })
+        @Override public int compare(Object o1, Object o2) {
+            if (o1 != null) {
+                return ((TComparable)o1).compareTo((TComparable)o2);
+            } else if (o2 != null) {
+                return ((TComparable)o2).compareTo((TComparable)o1);
+            } else {
+                return 0;
+            }
+        }
+    }
+
+    public static <T> void sort(T[] a, int fromIndex, int toIndex, TComparator<? super T> c) {
+        @SuppressWarnings("unchecked")
+        T[] subarray = (T[])new Object[toIndex - fromIndex];
+        for (int i = fromIndex; i < toIndex; ++i) {
+            subarray[i - fromIndex] = a[i];
+        }
+        sort(subarray, c);
+        for (int i = fromIndex; i < toIndex; ++i) {
+            a[i] = subarray[i - fromIndex];
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> void sort(T[] a, TComparator<? super T> c) {
+        Object[] first = a;
+        Object[] second = new Object[a.length];
+        int chunkSize = 1;
+        while (chunkSize < a.length) {
+            for (int i = 0; i < first.length; i += chunkSize * 2) {
+                merge(first, second, i, Math.min(first.length, i + chunkSize),
+                        Math.min(first.length, i + 2 * chunkSize), (TComparator<Object>)c);
+            }
+            Object[] tmp = first;
+            first = second;
+            second = tmp;
+            chunkSize *= 2;
+        }
+        if (first != a) {
+            for (int i = 0; i < first.length; ++i) {
+                second[i] = first[i];
+            }
+        }
+    }
+
+    private static void merge(Object[] a, Object[] b, int from, int split, int to, TComparator<Object> comp) {
+        int index = from;
+        int from2 = split;
+        while (true) {
+            if (from == split) {
+                while (from2 < to) {
+                    b[index++] = a[from2++];
+                }
+                break;
+            } else if (from2 == to) {
+                while (from < split) {
+                    b[index++] = a[from++];
+                }
+                break;
+            }
+            Object p = a[from];
+            Object q = a[from2];
+            if (comp.compare(p, q) <= 0) {
+                b[index++] = p;
+                ++from;
+            } else {
+                b[index++] = q;
+                ++from2;
+            }
+        }
+    }
+
+    @SafeVarargs
+    public static <T> TList<T> asList(final T... a) {
+        return new TAbstractList<T>() {
+            @Override public T get(int index) {
+                return a[index];
+            }
+            @Override public int size() {
+                return a.length;
+            }
+        };
+    }
 }

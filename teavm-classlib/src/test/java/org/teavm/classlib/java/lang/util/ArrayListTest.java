@@ -78,6 +78,35 @@ public class ArrayListTest {
         }
     }
 
+    @Test
+    public void manyElementsAdded() {
+        List<Integer> list = fillFromZeroToNine();
+        list.addAll(3, fillFromZeroToNine());
+        assertEquals(20, list.size());
+        assertEquals(Integer.valueOf(2), list.get(2));
+        assertEquals(Integer.valueOf(0), list.get(3));
+        assertEquals(Integer.valueOf(9), list.get(12));
+        assertEquals(Integer.valueOf(3), list.get(13));
+        assertEquals(Integer.valueOf(9), list.get(19));
+    }
+
+    @Test
+    public void manyElementsRemoved() {
+        List<Integer> list = fillFromZeroToNine();
+        list.subList(2, 4).clear();
+        assertEquals(8, list.size());
+        assertEquals(Integer.valueOf(1), list.get(1));
+        assertEquals(Integer.valueOf(4), list.get(2));
+        assertEquals(Integer.valueOf(9), list.get(7));
+    }
+
+    @Test
+    public void elementIndexFound() {
+        List<Integer> list = fillFromZeroToNine();
+        assertEquals(3, list.indexOf(3));
+        assertEquals(-1, list.indexOf(100));
+    }
+
     private List<Integer> fillFromZeroToNine() {
         List<Integer> list = new ArrayList<>();
         for (int i = 0; i < 10; ++i) {

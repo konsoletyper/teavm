@@ -150,11 +150,15 @@ public class RegisterAllocator {
                 copy.incoming.setValue(program.variableAt(copy.original));
                 for (MutableGraphEdge edge : interferenceGraph.get(varClass).getEdges()
                         .toArray(new MutableGraphEdge[0])) {
-                    edge.setFirst(interferenceGraph.get(newClass));
+                    if (edge.getFirst() != null) {
+                        edge.setFirst(interferenceGraph.get(newClass));
+                    }
                 }
                 for (MutableGraphEdge edge : interferenceGraph.get(origClass).getEdges()
                         .toArray(new MutableGraphEdge[0])) {
-                    edge.setFirst(interferenceGraph.get(newClass));
+                    if (edge.getFirst() != null) {
+                        edge.setFirst(interferenceGraph.get(newClass));
+                    }
                 }
             }
         }

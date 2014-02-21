@@ -43,8 +43,8 @@ public class GraphBuilder {
     }
 
     public void addEdge(int from, int to) {
-        if (to < 0) {
-            throw new IllegalArgumentException("To is negative: " + to);
+        if (to < 0 || from < 0) {
+            throw new IllegalArgumentException();
         }
         sz = Math.max(sz, Math.max(from, to) + 1);
         builtGraph = null;

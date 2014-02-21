@@ -128,10 +128,10 @@ public class TArrayList<E> extends TAbstractList<E> implements TCloneable, TSeri
         }
         ensureCapacity(size + c.size());
         int gap = c.size();
-        size += gap;
-        for (int i = gap - 1; i > index; --i) {
-            array[i] = array[i - gap];
+        for (int i = size - 1; i >= index; --i) {
+            array[i + gap] = array[i];
         }
+        size += gap;
         TIterator<? extends E> iter = c.iterator();
         for (int i = 0; i < gap; ++i) {
             array[index++] = iter.next();

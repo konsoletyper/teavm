@@ -15,14 +15,10 @@
  */
 package org.teavm.classlib.java.util;
 
-import org.teavm.classlib.java.lang.TObject;
-
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface TComparator<T extends TObject> {
+public interface TComparator<T> {
     int compare(T o1, T o2);
-
-    boolean equals(TObject obj);
 }

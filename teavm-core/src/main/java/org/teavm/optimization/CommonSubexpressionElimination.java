@@ -15,7 +15,9 @@
  */
 package org.teavm.optimization;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.teavm.common.DominatorTree;
 import org.teavm.common.Graph;
@@ -52,6 +54,7 @@ public class CommonSubexpressionElimination implements MethodOptimization {
         for (int i = 0; i < map.length; ++i) {
             map[i] = i;
         }
+        List<List<Incoming>> outgoings = findOutgoings(program);
 
         int[] stack = new int[cfg.size() * 2];
         int top = 0;
@@ -64,7 +67,7 @@ public class CommonSubexpressionElimination implements MethodOptimization {
             int v = stack[--top];
             currentBlockIndex = v;
             BasicBlock block = program.basicBlockAt(v);
-            for (int i = 0; i < block.getPhis().size(); ++i) {
+            /*for (int i = 0; i < block.getPhis().size(); ++i) {
                 Phi phi = block.getPhis().get(i);
                 int sharedValue = -2;
                 for (Incoming incoming : phi.getIncomings()) {
@@ -77,30 +80,29 @@ public class CommonSubexpressionElimination implements MethodOptimization {
                     }
                 }
                 if (sharedValue != -1) {
-                    map[phi.getReceiver().getIndex()] = sharedValue;
+                    if (sharedValue != -2) {
+                        AssignInstruction assignInsn = new AssignInstruction();
+                        assignInsn.setReceiver(phi.getReceiver());
+                        assignInsn.setAssignee(program.variableAt(sharedValue));
+                        block.getInstructions().add(0, assignInsn);
+                    }
                     block.getPhis().remove(i--);
                 }
-            }
+            }*/
             for (int i = 0; i < block.getInstructions().size(); ++i) {
                 Instruction currentInsn = block.getInstructions().get(i);
                 currentInsn.acceptVisitor(optimizer);
                 if (eliminate) {
-                    block.getInstructions().remove(i--);
+                    block.getInstructions().set(i, new EmptyInstruction());
                     eliminate = false;
                 }
             }
+            for (Incoming incoming : outgoings.get(v)) {
+                int value = map[incoming.getValue().getIndex()];
+                incoming.setValue(program.variableAt(value));
+            }
             for (int succ : dom.outgoingEdges(v)) {
                 stack[top++] = succ;
-            }
-        }
-        for (int v = 0; v < program.basicBlockCount(); ++v) {
-            BasicBlock block = program.basicBlockAt(v);
-            for (int i = 0; i < block.getPhis().size(); ++i) {
-                Phi phi = block.getPhis().get(i);
-                for (Incoming incoming : phi.getIncomings()) {
-                    int value = map[incoming.getValue().getIndex()];
-                    incoming.setValue(program.variableAt(value));
-                }
             }
         }
 
@@ -112,6 +114,21 @@ public class CommonSubexpressionElimination implements MethodOptimization {
 
         program.pack();
         program = null;
+    }
+
+    private List<List<Incoming>> findOutgoings(Program program) {
+        List<List<Incoming>> outgoings = new ArrayList<>();
+        for (int i = 0; i < program.basicBlockCount(); ++i) {
+            outgoings.add(new ArrayList<Incoming>());
+        }
+        for (int i = 0; i < program.basicBlockCount(); ++i) {
+            for (Phi phi : program.basicBlockAt(i).getPhis()) {
+                for (Incoming incoming : phi.getIncomings()) {
+                    outgoings.get(incoming.getSource().getIndex()).add(incoming);
+                }
+            }
+        }
+        return outgoings;
     }
 
     private void bind(int var, String value) {
@@ -166,16 +183,19 @@ public class CommonSubexpressionElimination implements MethodOptimization {
             int b = map[insn.getSecondOperand().getIndex()];
             insn.setFirstOperand(program.variableAt(a));
             insn.setSecondOperand(program.variableAt(b));
+            boolean commutative = false;
             String value;
             switch (insn.getOperation()) {
                 case ADD:
                     value = "+";
+                    commutative = true;
                     break;
                 case SUBTRACT:
                     value = "-";
                     break;
                 case MULTIPLY:
                     value = "*";
+                    commutative = true;
                     break;
                 case DIVIDE:
                     value = "/";
@@ -188,12 +208,15 @@ public class CommonSubexpressionElimination implements MethodOptimization {
                     break;
                 case AND:
                     value = "&";
+                    commutative = true;
                     break;
                 case OR:
                     value = "|";
+                    commutative = true;
                     break;
                 case XOR:
                     value = "^";
+                    commutative = true;
                     break;
                 case SHIFT_LEFT:
                     value = "<<";
@@ -207,8 +230,10 @@ public class CommonSubexpressionElimination implements MethodOptimization {
                 default:
                     return;
             }
-            value = "@" + a + value + "@" + b;
-            bind(insn.getReceiver().getIndex(), value);
+            bind(insn.getReceiver().getIndex(), "@" + a + value + "@" + b);
+            if (commutative) {
+                bind(insn.getReceiver().getIndex(), "@" + b + value + "@" + a);
+            }
         }
 
         @Override

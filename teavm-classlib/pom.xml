@@ -54,6 +54,9 @@
             <configuration>
               <minifying>false</minifying>
               <numThreads>1</numThreads>
+              <wildcards>
+                <param>**.ArraysTest</param>
+              </wildcards>
             </configuration>
           </execution>
         </executions>
