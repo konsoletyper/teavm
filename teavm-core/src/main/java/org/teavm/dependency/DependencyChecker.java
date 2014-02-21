@@ -208,16 +208,25 @@ public class DependencyChecker implements DependencyInfo {
     private MethodReader findMethodReader(MethodReference methodRef) {
         String clsName = methodRef.getClassName();
         MethodDescriptor desc = methodRef.getDescriptor();
-        while (clsName != null) {
-            ClassReader cls = classSource.get(clsName);
-            if (cls == null) {
-                return null;
+        ClassReader cls = classSource.get(clsName);
+        if (cls == null) {
+            return null;
+        }
+        MethodReader reader = cls.getMethod(desc);
+        if (reader != null) {
+            return reader;
+        }
+        if (cls.getParent() != null) {
+            reader = methodReaderCache.map(new MethodReference(cls.getParent(), desc));
+            if (reader != null) {
+                return reader;
             }
-            MethodReader method = cls.getMethod(desc);
-            if (method != null) {
-                return method;
+        }
+        for (String ifaceName : cls.getInterfaces()) {
+            reader = methodReaderCache.map(new MethodReference(ifaceName, desc));
+            if (reader != null) {
+                return reader;
             }
-            clsName = cls.getParent();
         }
         return null;
     }
@@ -345,31 +354,6 @@ public class DependencyChecker implements DependencyInfo {
             throw new RuntimeException("Can't instantiate dependency plugin " + depClassName, e);
         }
         plugin.methodAchieved(this, methodDep);
-    }
-
-    public ListableClassHolderSource cutUnachievableClasses(ClassHolderSource classSource) {
-        MutableClassHolderSource cutClasses = new MutableClassHolderSource();
-        for (String className : achievableClasses.keySet()) {
-            ClassHolder classHolder = classSource.get(className);
-            cutClasses.putClassHolder(classHolder);
-            for (MethodHolder method : classHolder.getMethods().toArray(new MethodHolder[0])) {
-                MethodReference methodRef = new MethodReference(className, method.getDescriptor());
-                MethodDependency methodDep = getMethod(methodRef);
-                if (methodDep == null) {
-                    classHolder.removeMethod(method);
-                } else if (!methodDep.isUsed()) {
-                    method.getModifiers().add(ElementModifier.ABSTRACT);
-                    method.setProgram(null);
-                }
-            }
-            for (FieldHolder field : classHolder.getFields().toArray(new FieldHolder[0])) {
-                FieldReference fieldRef = new FieldReference(className, field.getName());
-                if (!fieldCache.getCachedPreimages().contains(fieldRef)) {
-                    classHolder.removeField(field);
-                }
-            }
-        }
-        return cutClasses;
     }
 
     @Override

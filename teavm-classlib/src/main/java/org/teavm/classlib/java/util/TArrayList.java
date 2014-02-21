@@ -86,6 +86,7 @@ public class TArrayList<E> extends TAbstractList<E> implements TCloneable, TSeri
             array[i] = array[i - 1];
         }
         array[index] = element;
+        ++size;
         ++modCount;
     }
 

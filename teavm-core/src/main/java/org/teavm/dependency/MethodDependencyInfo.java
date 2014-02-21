@@ -15,6 +15,8 @@
  */
 package org.teavm.dependency;
 
+import org.teavm.model.MethodReference;
+
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
@@ -29,6 +31,8 @@ public interface MethodDependencyInfo {
     int getParameterCount();
 
     DependencyNode getResult();
+
+    MethodReference getReference();
 
     boolean isUsed();
 }

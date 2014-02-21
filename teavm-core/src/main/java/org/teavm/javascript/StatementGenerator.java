@@ -517,10 +517,6 @@ class StatementGenerator implements InstructionVisitor {
 
     @Override
     public void visit(InvokeInstruction insn) {
-        MethodReference method = findDeclaringClass(insn.getMethod());
-        if (method == null) {
-            throw new IllegalArgumentException("Method not found: " + insn.getMethod());
-        }
         Expr[] exprArgs = new Expr[insn.getMethod().getParameterTypes().length];
         for (int i = 0; i < insn.getArguments().size(); ++i) {
             exprArgs[i] = Expr.var(insn.getArguments().get(i).getIndex());
@@ -530,24 +526,17 @@ class StatementGenerator implements InstructionVisitor {
             if (insn.getType() == InvocationType.VIRTUAL) {
                 invocationExpr = Expr.invoke(insn.getMethod(), Expr.var(insn.getInstance().getIndex()), exprArgs);
             } else {
-                invocationExpr = Expr.invokeSpecial(method, Expr.var(insn.getInstance().getIndex()), exprArgs);
+                invocationExpr = Expr.invokeSpecial(insn.getMethod(),
+                        Expr.var(insn.getInstance().getIndex()), exprArgs);
             }
         } else {
-            invocationExpr = Expr.invokeStatic(method, exprArgs);
+            invocationExpr = Expr.invokeStatic(insn.getMethod(), exprArgs);
         }
         if (insn.getReceiver() != null) {
             assign(invocationExpr, insn.getReceiver().getIndex());
         } else {
             statements.add(Statement.assign(null, invocationExpr));
         }
-    }
-
-    public MethodReference findDeclaringClass(MethodReference method) {
-        ClassHolder cls = classSource.get(method.getClassName());
-        while (cls != null && cls.getMethod(method.getDescriptor()) == null) {
-            cls = cls.getParent() != null ? classSource.get(cls.getParent()) : null;
-        }
-        return cls != null ? new MethodReference(cls.getName(), method.getDescriptor()) : null;
     }
 
     @Override

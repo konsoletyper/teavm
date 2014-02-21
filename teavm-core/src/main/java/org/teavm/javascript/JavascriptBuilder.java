@@ -19,10 +19,7 @@ import java.io.*;
 import java.util.*;
 import org.teavm.codegen.*;
 import org.teavm.common.FiniteExecutor;
-import org.teavm.dependency.DependencyChecker;
-import org.teavm.dependency.DependencyInfo;
-import org.teavm.dependency.DependencyListener;
-import org.teavm.dependency.DependencyStack;
+import org.teavm.dependency.*;
 import org.teavm.javascript.ast.ClassNode;
 import org.teavm.model.*;
 import org.teavm.model.util.ListingBuilder;
@@ -144,7 +141,8 @@ public class JavascriptBuilder implements JavascriptBuilderHost {
         if (hasMissingItems()) {
             return;
         }
-        ListableClassHolderSource classSet = dependencyChecker.cutUnachievableClasses(classSource);
+        Linker linker = new Linker(dependencyChecker);
+        ListableClassHolderSource classSet = linker.link(classSource);
         Decompiler decompiler = new Decompiler(classSet, classLoader, executor);
         devirtualize(classSet, dependencyChecker);
         executor.complete();

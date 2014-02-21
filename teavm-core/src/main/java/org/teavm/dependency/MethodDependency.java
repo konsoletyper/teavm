@@ -73,6 +73,7 @@ public class MethodDependency implements MethodDependencyInfo {
         return stack;
     }
 
+    @Override
     public MethodReference getReference() {
         return reference;
     }

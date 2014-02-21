@@ -48,6 +48,7 @@ public class FieldDependency implements FieldDependencyInfo {
         return field;
     }
 
+    @Override
     public FieldReference getReference() {
         return reference;
     }
