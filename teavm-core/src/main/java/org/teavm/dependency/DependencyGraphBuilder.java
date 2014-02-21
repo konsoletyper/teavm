@@ -228,6 +228,9 @@ class DependencyGraphBuilder {
                 if (targetClass != null) {
                     valueNode.connect(receiverNode, new DependencyTypeFilter() {
                         @Override public boolean match(String type) {
+                            if (targetClass.getName().equals("java.lang.Object")) {
+                                return true;
+                            }
                             return isAssignableFrom(dependencyChecker.getClassSource(), targetClass, type);
                         }
                     });
