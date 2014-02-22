@@ -57,4 +57,9 @@ class MutableGraphEdge {
     public MutableGraphEdge getBack() {
         return back;
     }
+
+    @Override
+    public String toString() {
+        return String.valueOf(second.getTag());
+    }
 }

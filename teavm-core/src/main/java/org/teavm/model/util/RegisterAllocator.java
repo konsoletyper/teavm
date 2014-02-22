@@ -18,6 +18,7 @@ package org.teavm.model.util;
 import java.util.*;
 import org.teavm.common.DisjointSet;
 import org.teavm.common.Graph;
+import org.teavm.common.GraphBuilder;
 import org.teavm.model.*;
 import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.EmptyInstruction;
@@ -29,33 +30,26 @@ import org.teavm.model.instructions.JumpInstruction;
  */
 public class RegisterAllocator {
     public void allocateRegisters(MethodReader method, Program program) {
-        List<PhiArgumentCopy> phiArgsCopies = insertPhiArgumentsCopies(program);
+        insertPhiArgumentsCopies(program);
         InterferenceGraphBuilder interferenceBuilder = new InterferenceGraphBuilder();
         LivenessAnalyzer liveness = new LivenessAnalyzer();
         liveness.analyze(program);
         Graph interferenceGraph = interferenceBuilder.build(program, method.parameterCount(), liveness);
         DisjointSet congruenceClasses = buildPhiCongruenceClasses(program);
         List<MutableGraphNode> classInterferenceGraph = makeMutableGraph(interferenceGraph, congruenceClasses);
-        removeRedundantCopies(program, phiArgsCopies, classInterferenceGraph, congruenceClasses);
+        removeRedundantCopies(program, classInterferenceGraph, congruenceClasses);
         int[] classArray = congruenceClasses.pack(program.variableCount());
+        renameVariables(program, classArray);
         int[] colors = new int[program.variableCount()];
         Arrays.fill(colors, -1);
         for (int i = 0; i <= method.parameterCount(); ++i) {
             colors[i] = i;
         }
         GraphColorer colorer = new GraphColorer();
-        colorer.colorize(interferenceGraph, classArray, colors);
+        colorer.colorize(renameInterferenceGraph(interferenceGraph, classArray), colors);
         for (int i = 0; i < colors.length; ++i) {
             program.variableAt(i).setRegister(colors[i]);
         }
-    }
-
-    private static class PhiArgumentCopy {
-        Incoming incoming;
-        int original;
-        int index;
-        BasicBlock block;
-        int var;
     }
 
     private static List<MutableGraphNode> makeMutableGraph(Graph graph, DisjointSet classes) {
@@ -77,91 +71,133 @@ public class RegisterAllocator {
         return mutableGraph;
     }
 
-    private List<PhiArgumentCopy> insertPhiArgumentsCopies(Program program) {
-        List<PhiArgumentCopy> copies = new ArrayList<>();
+    private void insertPhiArgumentsCopies(Program program) {
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             Map<BasicBlock, BasicBlock> blockMap = new HashMap<>();
-            for (final Phi phi : program.basicBlockAt(i).getPhis()) {
+            for (Phi phi : program.basicBlockAt(i).getPhis()) {
                 for (Incoming incoming : phi.getIncomings()) {
-                    PhiArgumentCopy copy = new PhiArgumentCopy();
-                    copy.incoming = incoming;
-                    copy.original = incoming.getValue().getIndex();
-                    AssignInstruction copyInstruction = new AssignInstruction();
-                    copyInstruction.setReceiver(program.createVariable());
-                    copyInstruction.setAssignee(incoming.getValue());
-                    copy.var = copyInstruction.getReceiver().getIndex();
-                    BasicBlock source = blockMap.get(incoming.getSource());
-                    if (source == null) {
-                        source = incoming.getSource();
-                    } else {
-                        incoming.setSource(source);
-                    }
-                    if (incoming.getSource().getLastInstruction() instanceof JumpInstruction) {
-                        copy.index = incoming.getSource().getInstructions().size() - 1;
-                        copy.block = incoming.getSource();
-                        copy.block.getInstructions().add(copy.index, copyInstruction);
-                    } else {
-                        final BasicBlock copyBlock = program.createBasicBlock();
-                        copyBlock.getInstructions().add(copyInstruction);
-                        JumpInstruction jumpInstruction = new JumpInstruction();
-                        jumpInstruction.setTarget(phi.getBasicBlock());
-                        copyBlock.getInstructions().add(jumpInstruction);
-                        incoming.getSource().getLastInstruction().acceptVisitor(new BasicBlockMapper() {
-                            @Override protected BasicBlock map(BasicBlock block) {
-                                if (block == phi.getBasicBlock()) {
-                                    return copyBlock;
-                                } else {
-                                    return block;
-                                }
-                            }
-                        });
-                        blockMap.put(source, copyBlock);
-                        incoming.setSource(copyBlock);
-                        copy.index = 0;
-                        copy.block = incoming.getSource();
-                    }
-                    incoming.setValue(copyInstruction.getReceiver());
-                    copies.add(copy);
+                    insertCopy(incoming, blockMap);
+                }
+            }
+            for (Phi phi : program.basicBlockAt(i).getPhis()) {
+                for (Incoming incoming : phi.getIncomings()) {
+                    insertCopy(incoming, blockMap);
                 }
             }
         }
-        return copies;
     }
 
-    private void removeRedundantCopies(Program program, List<PhiArgumentCopy> copies,
-            List<MutableGraphNode> interferenceGraph, DisjointSet congruenceClasses) {
-        for (PhiArgumentCopy copy : copies) {
-            boolean interfere = false;
-            int varClass = congruenceClasses.find(copy.var);
-            int origClass = congruenceClasses.find(copy.original);
-            for (MutableGraphEdge edge : interferenceGraph.get(copy.original).getEdges()) {
-                if (edge.getFirst() == edge.getSecond()) {
-                    continue;
-                }
-                int neighbour = congruenceClasses.find(edge.getSecond().getTag());
-                if (neighbour == varClass || neighbour == origClass) {
-                    interfere = true;
-                    break;
-                }
-            }
-            if (!interfere) {
-                int newClass = congruenceClasses.union(varClass, origClass);
-                copy.block.getInstructions().set(copy.index, new EmptyInstruction());
-                copy.incoming.setValue(program.variableAt(copy.original));
-                for (MutableGraphEdge edge : interferenceGraph.get(varClass).getEdges()
-                        .toArray(new MutableGraphEdge[0])) {
-                    if (edge.getFirst() != null) {
-                        edge.setFirst(interferenceGraph.get(newClass));
+    private void insertCopy(Incoming incoming, Map<BasicBlock, BasicBlock> blockMap) {
+        final Phi phi = incoming.getPhi();
+        Program program = phi.getBasicBlock().getProgram();
+        AssignInstruction copyInstruction = new AssignInstruction();
+        Variable firstCopy = program.createVariable();
+        copyInstruction.setReceiver(firstCopy);
+        copyInstruction.setAssignee(incoming.getValue());
+        BasicBlock source = blockMap.get(incoming.getSource());
+        if (source == null) {
+            source = incoming.getSource();
+        } else {
+            incoming.setSource(source);
+        }
+        if (!(incoming.getSource().getLastInstruction() instanceof JumpInstruction)) {
+            final BasicBlock copyBlock = program.createBasicBlock();
+            JumpInstruction jumpInstruction = new JumpInstruction();
+            jumpInstruction.setTarget(phi.getBasicBlock());
+            copyBlock.getInstructions().add(jumpInstruction);
+            incoming.getSource().getLastInstruction().acceptVisitor(new BasicBlockMapper() {
+                @Override protected BasicBlock map(BasicBlock block) {
+                    if (block == phi.getBasicBlock()) {
+                        return copyBlock;
+                    } else {
+                        return block;
                     }
                 }
-                for (MutableGraphEdge edge : interferenceGraph.get(origClass).getEdges()
-                        .toArray(new MutableGraphEdge[0])) {
-                    if (edge.getFirst() != null) {
-                        edge.setFirst(interferenceGraph.get(newClass));
+            });
+            blockMap.put(source, copyBlock);
+            incoming.setSource(copyBlock);
+            source = copyBlock;
+        }
+        source.getInstructions().add(source.getInstructions().size() - 1, copyInstruction);
+        incoming.setValue(copyInstruction.getReceiver());
+    }
+
+    private void removeRedundantCopies(Program program, List<MutableGraphNode> interferenceGraph,
+            DisjointSet congruenceClasses) {
+        for (int i = 0; i < program.basicBlockCount(); ++i) {
+            BasicBlock block = program.basicBlockAt(i);
+            for (int j = 0; j < block.getInstructions().size(); ++j) {
+                Instruction insn = block.getInstructions().get(j);
+                if (!(insn instanceof AssignInstruction)) {
+                    continue;
+                }
+                AssignInstruction assignment = (AssignInstruction)insn;
+                boolean interfere = false;
+                int copyClass = congruenceClasses.find(assignment.getReceiver().getIndex());
+                int origClass = congruenceClasses.find(assignment.getAssignee().getIndex());
+                for (MutableGraphEdge edge : interferenceGraph.get(origClass).getEdges()) {
+                    if (edge.getFirst() == edge.getSecond()) {
+                        continue;
+                    }
+                    int neighbour = congruenceClasses.find(edge.getSecond().getTag());
+                    if (neighbour == copyClass || neighbour == origClass) {
+                        interfere = true;
+                        break;
+                    }
+                }
+                if (!interfere) {
+                    int newClass = congruenceClasses.union(copyClass, origClass);
+                    block.getInstructions().set(j, new EmptyInstruction());
+                    MutableGraphNode newNode = interferenceGraph.get(origClass);
+                    if (newClass == interferenceGraph.size()) {
+                        newNode = new MutableGraphNode(interferenceGraph.size());
+                        interferenceGraph.add(newNode);
+                    }
+                    for (MutableGraphEdge edge : interferenceGraph.get(origClass).getEdges()
+                            .toArray(new MutableGraphEdge[0])) {
+                        if (edge.getFirst() != null) {
+                            edge.setFirst(interferenceGraph.get(newClass));
+                        }
+                    }
+                    for (MutableGraphEdge edge : interferenceGraph.get(copyClass).getEdges()
+                            .toArray(new MutableGraphEdge[0])) {
+                        if (edge.getFirst() != null) {
+                            edge.setFirst(interferenceGraph.get(newClass));
+                        }
                     }
                 }
             }
         }
+    }
+
+    private void renameVariables(final Program program, final int[] varMap) {
+        InstructionVariableMapper mapper = new InstructionVariableMapper() {
+            @Override protected Variable map(Variable var) {
+                return program.variableAt(varMap[var.getIndex()]);
+            }
+        };
+        for (int i = 0; i < program.basicBlockCount(); ++i) {
+            BasicBlock block = program.basicBlockAt(i);
+            for (Instruction insn : block.getInstructions()) {
+                insn.acceptVisitor(mapper);
+            }
+            for (Phi phi : block.getPhis()) {
+                phi.setReceiver(program.variableAt(varMap[phi.getReceiver().getIndex()]));
+                for (Incoming incoming : phi.getIncomings()) {
+                    incoming.setValue(program.variableAt(varMap[incoming.getValue().getIndex()]));
+                }
+            }
+        }
+    }
+
+    private Graph renameInterferenceGraph(Graph graph, final int[] varMap) {
+        GraphBuilder renamedGraph = new GraphBuilder();
+        for (int i = 0; i < graph.size(); ++i) {
+            for (int j : graph.outgoingEdges(i)) {
+                renamedGraph.addEdge(varMap[i], varMap[j]);
+            }
+        }
+        return renamedGraph.build();
     }
 
     private DisjointSet buildPhiCongruenceClasses(Program program) {
