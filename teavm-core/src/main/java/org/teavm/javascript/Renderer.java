@@ -37,7 +37,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
     private static final String variableNames = "abcdefghijkmnopqrstuvwxyz";
     private NamingStrategy naming;
     private SourceWriter writer;
-    private ClassHolderSource classSource;
+    private ListableClassHolderSource classSource;
     private ClassLoader classLoader;
     private boolean minifying;
     private Map<MethodReference, InjectorHolder> injectorMap = new HashMap<>();
@@ -50,7 +50,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         }
     }
 
-    public Renderer(SourceWriter writer, ClassHolderSource classSource, ClassLoader classLoader) {
+    public Renderer(SourceWriter writer, ListableClassHolderSource classSource, ClassLoader classLoader) {
         this.naming = writer.getNaming();
         this.writer = writer;
         this.classSource = classSource;
@@ -442,7 +442,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         }
 
         @Override
-        public ClassReaderSource getClassSource() {
+        public ListableClassReaderSource getClassSource() {
             return classSource;
         }
     }

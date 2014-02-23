@@ -29,8 +29,8 @@ public class LoggerNativeGenerator implements Generator {
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
         writer.append("if (console) {").indent().softNewLine();
-        writer.append("console.").append(methodRef.getName()).append("(").append(context.getParameterName(1))
-                .append(");").softNewLine();
+        writer.append("console.").append(methodRef.getName()).append("($rt_ustr(").append(context.getParameterName(1))
+                .append("));").softNewLine();
         writer.outdent().append("}").softNewLine();
     }
 }

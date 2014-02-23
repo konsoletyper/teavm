@@ -109,4 +109,29 @@ public class TClass<T extends TObject> extends TObject {
         }
         return (T)obj;
     }
+
+    public TClassLoader getClassLoader() {
+        return TClassLoader.getSystemClassLoader();
+    }
+
+    @GeneratedBy(ClassNativeGenerator.class)
+    @PluggableDependency(ClassNativeGenerator.class)
+    private static native TClass<?> forNameImpl(TString name);
+
+    public static TClass<?> forName(TString name) throws TClassNotFoundException {
+        TClass<?> result = forNameImpl(name);
+        if (result == null) {
+            throw new TClassNotFoundException();
+        }
+        return result;
+    }
+
+    @SuppressWarnings("unused")
+    public static TClass<?> forName(TString name, boolean initialize, TClassLoader loader)
+                     throws TClassNotFoundException {
+        return forName(name);
+    }
+
+    @GeneratedBy(ClassNativeGenerator.class)
+    public native T newInstance() throws TInstantiationException, TIllegalAccessException;
 }

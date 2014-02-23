@@ -13,20 +13,24 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.impl;
-
-import org.teavm.javascript.JavascriptBuilderHost;
-import org.teavm.javascript.JavascriptBuilderPlugin;
+package org.teavm.classlib.java.lang;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class JCLPlugin implements JavascriptBuilderPlugin {
+public class TestObject extends Object implements Runnable {
+    private int counter;
+
+    public TestObject() {
+    }
+
     @Override
-    public void install(JavascriptBuilderHost host) {
-        host.add(new EnumDependencySupport());
-        host.add(new EnumTransformer());
-        host.add(new NewInstanceDependencySupport());
+    public void run() {
+        ++counter;
+    }
+
+    public int getCounter() {
+        return counter;
     }
 }

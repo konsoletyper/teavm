@@ -13,20 +13,24 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.impl;
-
-import org.teavm.javascript.JavascriptBuilderHost;
-import org.teavm.javascript.JavascriptBuilderPlugin;
+package org.teavm.classlib.java.lang;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class JCLPlugin implements JavascriptBuilderPlugin {
-    @Override
-    public void install(JavascriptBuilderHost host) {
-        host.add(new EnumDependencySupport());
-        host.add(new EnumTransformer());
-        host.add(new NewInstanceDependencySupport());
+public class TClassNotFoundException extends TReflectiveOperationException {
+    private static final long serialVersionUID = -1162632869775788325L;
+
+    public TClassNotFoundException() {
+        super();
+    }
+
+    public TClassNotFoundException(TString message, TThrowable cause) {
+        super(message, cause);
+    }
+
+    public TClassNotFoundException(TString message) {
+        super(message);
     }
 }

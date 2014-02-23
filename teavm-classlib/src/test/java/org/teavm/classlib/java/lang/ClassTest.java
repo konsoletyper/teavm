@@ -89,4 +89,12 @@ public class ClassTest {
         Object obj = 23;
         Float.class.cast(obj);
     }
+
+    @Test
+    public void instanceCreatedThroughReflection() throws Exception {
+        Runnable instance = (Runnable)Class.forName(TestObject.class.getName()).newInstance();
+        instance.run();
+        assertEquals(TestObject.class, instance.getClass());
+        assertEquals(1, ((TestObject)instance).getCounter());
+    }
 }

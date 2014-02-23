@@ -13,20 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.impl;
+package org.teavm.model;
 
-import org.teavm.javascript.JavascriptBuilderHost;
-import org.teavm.javascript.JavascriptBuilderPlugin;
+import java.util.Set;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class JCLPlugin implements JavascriptBuilderPlugin {
-    @Override
-    public void install(JavascriptBuilderHost host) {
-        host.add(new EnumDependencySupport());
-        host.add(new EnumTransformer());
-        host.add(new NewInstanceDependencySupport());
-    }
+public interface ListableClassReaderSource extends ClassReaderSource {
+    Set<String> getClassNames();
 }

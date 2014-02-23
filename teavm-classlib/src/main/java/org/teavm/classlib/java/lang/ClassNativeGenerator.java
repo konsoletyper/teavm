@@ -24,7 +24,7 @@ import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.GeneratorContext;
 import org.teavm.javascript.ni.Injector;
 import org.teavm.javascript.ni.InjectorContext;
-import org.teavm.model.MethodReference;
+import org.teavm.model.*;
 
 /**
  *
@@ -40,6 +40,12 @@ public class ClassNativeGenerator implements Generator, Injector, DependencyPlug
                 break;
             case "getSuperclass":
                 generateGetSuperclass(context, writer);
+                break;
+            case "forNameImpl":
+                generateForName(context, writer);
+                break;
+            case "newInstance":
+                generateNewInstance(context, writer);
                 break;
         }
     }
@@ -102,6 +108,43 @@ public class ClassNativeGenerator implements Generator, Injector, DependencyPlug
         writer.append(".$data)");
     }
 
+    private void generateForName(GeneratorContext context, SourceWriter writer) throws IOException {
+        String param = context.getParameterName(1);
+        writer.append("switch ($rt_ustr(" + param + ")) {").softNewLine().indent();
+        for (String name : context.getClassSource().getClassNames()) {
+            writer.append("case \"" + name + "\": ").appendClass(name).append(".$clinit(); ")
+                    .append("return $rt_cls(").appendClass(name).append(");").softNewLine();
+        }
+        writer.append("default: return null;").softNewLine();
+        writer.outdent().append("}").softNewLine();
+    }
+
+    private void generateNewInstance(GeneratorContext context, SourceWriter writer) throws IOException {
+        String self = context.getParameterName(0);
+        writer.append("if (!").appendClass("java.lang.Class").append(".$$constructors$$) {").indent().softNewLine();
+        writer.appendClass("java.lang.Class").append(".$$constructors$$ = true;").softNewLine();
+        for (String clsName : context.getClassSource().getClassNames()) {
+            ClassReader cls = context.getClassSource().get(clsName);
+            MethodReader method = cls.getMethod(new MethodDescriptor("<init>", ValueType.VOID));
+            if (method != null) {
+                writer.appendClass(clsName).append(".$$constructor$$ = ").appendMethodBody(method.getReference())
+                        .append(";").softNewLine();
+            }
+        }
+        writer.outdent().append("}").softNewLine();
+        writer.append("var cls = " + self + ".$data;").softNewLine();
+        writer.append("var ctor = cls.$$constructor$$;").softNewLine();
+        writer.append("if (ctor === null) {").indent().softNewLine();
+        writer.append("var ex = new ").appendClass(InstantiationException.class.getName()).append("();");
+        writer.appendMethodBody(new MethodReference(InstantiationException.class.getName(), new MethodDescriptor(
+                "<init>", ValueType.VOID))).append("(ex);").softNewLine();
+        writer.append("$rt_throw(ex);").softNewLine();
+        writer.outdent().append("}").softNewLine();
+        writer.append("var instance = new cls();").softNewLine();
+        writer.append("ctor(instance)");
+        writer.append("return instance");
+    }
+
     @Override
     public void methodAchieved(DependencyChecker checker, MethodDependency graph) {
         switch (graph.getReference().getName()) {
@@ -110,6 +153,7 @@ public class ClassNativeGenerator implements Generator, Injector, DependencyPlug
             case "wrap":
             case "getSuperclass":
             case "getComponentType0":
+            case "forNameImpl":
                 graph.getResult().propagate("java.lang.Class");
                 break;
         }
