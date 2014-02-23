@@ -15,8 +15,6 @@
  */
 package org.teavm.classlib.java.util;
 
-import org.teavm.classlib.java.lang.TObject;
-
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
@@ -34,15 +32,15 @@ public interface TMap<K, V> {
 
     boolean isEmpty();
 
-    boolean containsKey(TObject key);
+    boolean containsKey(Object key);
 
-    boolean containsValue(TObject value);
+    boolean containsValue(Object value);
 
-    V get(TObject key);
+    V get(Object key);
 
     V put(K key, V value);
 
-    V remove(TObject key);
+    V remove(Object key);
 
     void putAll(TMap<? extends K,? extends V> m);
 
