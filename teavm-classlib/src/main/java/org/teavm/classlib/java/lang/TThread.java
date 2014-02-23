@@ -73,4 +73,8 @@ public class TThread extends TObject implements TRunnable {
     public static int activeCount() {
         return 1;
     }
+
+    public long getId() {
+        return 1;
+    }
 }
