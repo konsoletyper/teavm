@@ -128,8 +128,8 @@ public abstract class TAbstractMap<K, V> extends TObject implements TMap<K, V> {
         }
     }
 
-    private KeySet cachedKeySet;
-    private Values cachedValues;
+    TSet<K> cachedKeySet;
+    TCollection<V> cachedValues;
 
     protected TAbstractMap() {
     }

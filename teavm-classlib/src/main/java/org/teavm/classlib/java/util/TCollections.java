@@ -93,6 +93,46 @@ public class TCollections extends TObject {
         };
     }
 
+    public static <T> TSet<T> singleton(final T o) {
+        return new TAbstractSet<T>() {
+            @Override public int size() {
+                return 1;
+            }
+            @Override public TIterator<T> iterator() {
+                return new TIterator<T>() {
+                    private boolean read;
+                    @Override public boolean hasNext() {
+                        return !read;
+                    }
+                    @Override public T next() {
+                        if (read) {
+                            throw new TNoSuchElementException();
+                        }
+                        read = true;
+                        return o;
+                    }
+                    @Override public void remove() {
+                        throw new TUnsupportedOperationException();
+                    }
+                };
+            }
+            @Override public boolean contains(Object o2) {
+                return TObjects.equals(o, o2);
+            }
+        };
+    }
+
+    public static <T> TList<T> unmodifiableList(final TList<? extends T> list) {
+        return new TAbstractList<T>() {
+            @Override public T get(int index) {
+                return list.get(index);
+            }
+            @Override public int size() {
+                return list.size();
+            }
+        };
+    }
+
     public static <T> TList<T> nCopies(final int n, final T o) {
         return new TAbstractList<T>() {
             @Override public T get(int index) {
