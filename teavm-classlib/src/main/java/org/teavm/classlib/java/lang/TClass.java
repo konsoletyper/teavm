@@ -23,7 +23,7 @@ import org.teavm.javascript.ni.InjectedBy;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class TClass<T extends TObject> extends TObject {
+public class TClass<T> extends TObject {
     TString name;
     boolean primitive;
     boolean array;

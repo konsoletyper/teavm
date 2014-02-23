@@ -13,25 +13,22 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript;
+package org.teavm.classlib.java.lang.util;
 
-import org.teavm.dependency.DependencyListener;
-import org.teavm.javascript.ni.Generator;
-import org.teavm.model.ClassHolderTransformer;
-import org.teavm.model.MethodReference;
+import static org.junit.Assert.*;
+import java.util.ServiceLoader;
+import org.junit.Test;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface JavascriptBuilderHost {
-    void add(DependencyListener dependencyListener);
-
-    void add(ClassHolderTransformer classTransformer);
-
-    void add(JavascriptResourceRenderer resourceRenderer);
-
-    void add(MethodReference methodRef, Generator generator);
-
-    ClassLoader getClassLoader();
+public class ServiceLoaderTest {
+    @Test
+    public void loadsService() {
+        TestService instance = ServiceLoader.load(TestService.class).iterator().next();
+        instance.foo();
+        assertEquals(TestServiceImpl.class, instance.getClass());
+        assertEquals(1, ((TestServiceImpl)instance).getCounter());
+    }
 }

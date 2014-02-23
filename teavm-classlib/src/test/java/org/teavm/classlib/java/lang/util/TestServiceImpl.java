@@ -13,25 +13,21 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript;
-
-import org.teavm.dependency.DependencyListener;
-import org.teavm.javascript.ni.Generator;
-import org.teavm.model.ClassHolderTransformer;
-import org.teavm.model.MethodReference;
+package org.teavm.classlib.java.lang.util;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface JavascriptBuilderHost {
-    void add(DependencyListener dependencyListener);
+public class TestServiceImpl implements TestService {
+    private int counter;
 
-    void add(ClassHolderTransformer classTransformer);
+    @Override
+    public void foo() {
+        ++counter;
+    }
 
-    void add(JavascriptResourceRenderer resourceRenderer);
-
-    void add(MethodReference methodRef, Generator generator);
-
-    ClassLoader getClassLoader();
+    public int getCounter() {
+        return counter;
+    }
 }

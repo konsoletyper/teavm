@@ -43,6 +43,7 @@ public class Decompiler {
     private RangeTree.Node currentNode;
     private RangeTree.Node parentNode;
     private FiniteExecutor executor;
+    private Map<MethodReference, Generator> generators = new HashMap<>();
 
     public Decompiler(ClassHolderSource classSource, ClassLoader classLoader, FiniteExecutor executor) {
         this.classSource = classSource;
@@ -82,12 +83,17 @@ public class Decompiler {
             executor.execute(new Runnable() {
                 @Override public void run() {
                     Decompiler copy = new Decompiler(classSource, classLoader, executor);
+                    copy.generators = generators;
                     result.set(index, copy.decompile(classSource.get(className)));
                 }
             });
         }
         executor.complete();
         return result;
+    }
+
+    public void addGenerator(MethodReference method, Generator generator) {
+        generators.put(method, generator);
     }
 
     private void orderClasses(String className, Set<String> visited, List<String> order) {
@@ -139,20 +145,22 @@ public class Decompiler {
     }
 
     public NativeMethodNode decompileNative(MethodHolder method) {
-        AnnotationHolder annotHolder = method.getAnnotations().get(GeneratedBy.class.getName());
-        if (annotHolder == null) {
-            throw new DecompilationException("Method " + method.getOwnerName() + "." + method.getDescriptor() +
-                    " is native, but no " + GeneratedBy.class.getName() + " annotation found");
-        }
-        ValueType annotValue = annotHolder.getValues().get("value").getJavaClass();
-        String generatorClassName = ((ValueType.Object)annotValue).getClassName();
-        Generator generator;
-        try {
-            Class<?> generatorClass = Class.forName(generatorClassName, true, classLoader);
-            generator = (Generator)generatorClass.newInstance();
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-            throw new DecompilationException("Error instantiating generator " + generatorClassName +
-                    " for native method " + method.getOwnerName() + "." + method.getDescriptor());
+        Generator generator = generators.get(method.getReference());
+        if (generator == null) {
+            AnnotationHolder annotHolder = method.getAnnotations().get(GeneratedBy.class.getName());
+            if (annotHolder == null) {
+                throw new DecompilationException("Method " + method.getOwnerName() + "." + method.getDescriptor() +
+                        " is native, but no " + GeneratedBy.class.getName() + " annotation found");
+            }
+            ValueType annotValue = annotHolder.getValues().get("value").getJavaClass();
+            String generatorClassName = ((ValueType.Object)annotValue).getClassName();
+            try {
+                Class<?> generatorClass = Class.forName(generatorClassName, true, classLoader);
+                generator = (Generator)generatorClass.newInstance();
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+                throw new DecompilationException("Error instantiating generator " + generatorClassName +
+                        " for native method " + method.getOwnerName() + "." + method.getDescriptor());
+            }
         }
         NativeMethodNode methodNode = new NativeMethodNode(new MethodReference(method.getOwnerName(),
                 method.getDescriptor()));

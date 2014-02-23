@@ -17,6 +17,9 @@ package org.teavm.classlib.impl;
 
 import org.teavm.javascript.JavascriptBuilderHost;
 import org.teavm.javascript.JavascriptBuilderPlugin;
+import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 
 /**
  *
@@ -28,5 +31,11 @@ public class JCLPlugin implements JavascriptBuilderPlugin {
         host.add(new EnumDependencySupport());
         host.add(new EnumTransformer());
         host.add(new NewInstanceDependencySupport());
+        ServiceLoaderSupport serviceLoaderSupp = new ServiceLoaderSupport(host.getClassLoader());
+        host.add(serviceLoaderSupp);
+        MethodReference loadServicesMethod = new MethodReference("java.util.ServiceLoader", new MethodDescriptor(
+                "loadServices", ValueType.object("java.lang.Class"),
+                ValueType.arrayOf(ValueType.object("java.lang.Object"))));
+        host.add(loadServicesMethod, serviceLoaderSupp);
     }
 }

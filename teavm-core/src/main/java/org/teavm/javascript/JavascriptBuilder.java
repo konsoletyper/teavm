@@ -21,6 +21,7 @@ import org.teavm.codegen.*;
 import org.teavm.common.FiniteExecutor;
 import org.teavm.dependency.*;
 import org.teavm.javascript.ast.ClassNode;
+import org.teavm.javascript.ni.Generator;
 import org.teavm.model.*;
 import org.teavm.model.util.ListingBuilder;
 import org.teavm.model.util.ProgramUtils;
@@ -43,6 +44,7 @@ public class JavascriptBuilder implements JavascriptBuilderHost {
     private Map<String, JavascriptEntryPoint> entryPoints = new HashMap<>();
     private Map<String, String> exportedClasses = new HashMap<>();
     private List<JavascriptResourceRenderer> ressourceRenderers = new ArrayList<>();
+    private Map<MethodReference, Generator> methodGenerators = new HashMap<>();
 
     JavascriptBuilder(ClassHolderSource classSource, ClassLoader classLoader, FiniteExecutor executor) {
         this.classSource = new JavascriptProcessedClassSource(classSource);
@@ -64,6 +66,16 @@ public class JavascriptBuilder implements JavascriptBuilderHost {
     @Override
     public void add(JavascriptResourceRenderer resourceRenderer) {
         ressourceRenderers.add(resourceRenderer);
+    }
+
+    @Override
+    public void add(MethodReference methodRef, Generator generator) {
+        methodGenerators.put(methodRef, generator);
+    }
+
+    @Override
+    public ClassLoader getClassLoader() {
+        return classLoader;
     }
 
     public boolean isMinifying() {
@@ -160,6 +172,9 @@ public class JavascriptBuilder implements JavascriptBuilderHost {
         }
         Renderer renderer = new Renderer(sourceWriter, classSet, classLoader);
         renderer.renderRuntime();
+        for (Map.Entry<MethodReference, Generator> entry : methodGenerators.entrySet()) {
+            decompiler.addGenerator(entry.getKey(), entry.getValue());
+        }
         List<ClassNode> clsNodes = decompiler.decompile(classSet.getClassNames());
         for (ClassNode clsNode : clsNodes) {
             renderer.render(clsNode);
