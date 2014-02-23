@@ -26,6 +26,7 @@ public class ClassHolder extends ElementHolder implements ClassReader {
     private Set<String> interfaces = new HashSet<>();
     private Map<MethodDescriptor, MethodHolder> methods = new HashMap<>();
     private Map<String, FieldHolder> fields = new HashMap<>();
+    private String ownerName;
 
     public ClassHolder(String name) {
         super(name);
@@ -105,5 +106,14 @@ public class ClassHolder extends ElementHolder implements ClassReader {
         }
         fields.remove(field.getName());
         field.setOwner(null);
+    }
+
+    @Override
+    public String getOwnerName() {
+        return ownerName;
+    }
+
+    public void setOwnerName(String ownerName) {
+        this.ownerName = ownerName;
     }
 }

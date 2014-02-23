@@ -97,4 +97,12 @@ public class ClassTest {
         assertEquals(TestObject.class, instance.getClass());
         assertEquals(1, ((TestObject)instance).getCounter());
     }
+
+    @Test
+    public void declaringClassFound() {
+        assertEquals(ClassTest.class, new A().getClass().getDeclaringClass());
+    }
+
+    private static class A {
+    }
 }

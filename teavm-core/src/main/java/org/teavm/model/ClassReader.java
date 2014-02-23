@@ -34,4 +34,6 @@ public interface ClassReader extends ElementReader {
     FieldReader getField(String name);
 
     Collection<? extends FieldReader> getFields();
+
+    String getOwnerName();
 }

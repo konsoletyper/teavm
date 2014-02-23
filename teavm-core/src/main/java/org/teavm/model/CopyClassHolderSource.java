@@ -59,6 +59,7 @@ public class CopyClassHolderSource implements ClassHolderSource {
         for (FieldHolder field : original.getFields()) {
             copy.addField(copyField(field));
         }
+        copy.setOwnerName(original.getOwnerName());
         copyAnnotations(original.getAnnotations(), copy.getAnnotations());
         return copy;
     }

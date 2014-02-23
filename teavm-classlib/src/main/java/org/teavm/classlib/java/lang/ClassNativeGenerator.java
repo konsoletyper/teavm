@@ -47,6 +47,9 @@ public class ClassNativeGenerator implements Generator, Injector, DependencyPlug
             case "newInstance":
                 generateNewInstance(context, writer);
                 break;
+            case "getDeclaringClass":
+                generateGetDeclaringClass(context, writer);
+                break;
         }
     }
 
@@ -141,8 +144,27 @@ public class ClassNativeGenerator implements Generator, Injector, DependencyPlug
         writer.append("$rt_throw(ex);").softNewLine();
         writer.outdent().append("}").softNewLine();
         writer.append("var instance = new cls();").softNewLine();
-        writer.append("ctor(instance)");
-        writer.append("return instance");
+        writer.append("ctor(instance);").softNewLine();
+        writer.append("return instance;").softNewLine();
+    }
+
+    private void generateGetDeclaringClass(GeneratorContext context, SourceWriter writer) throws IOException {
+        String self = context.getParameterName(0);
+        writer.append("if (!").appendClass("java.lang.Class").append(".$$owners$$) {").indent().softNewLine();
+        writer.appendClass("java.lang.Class").append(".$$owners$$ = true;").softNewLine();
+        for (String clsName : context.getClassSource().getClassNames()) {
+            ClassReader cls = context.getClassSource().get(clsName);
+            writer.appendClass(clsName).append(".$$owner$$ = ");
+            if (cls.getOwnerName() != null) {
+                writer.appendClass(cls.getOwnerName());
+            } else {
+                writer.append("null");
+            }
+            writer.append(";").softNewLine();
+        }
+        writer.outdent().append("}").softNewLine();
+        writer.append("var cls = " + self + ".$data;").softNewLine();
+        writer.append("return cls.$$owner$$ != null ? $rt_cls(cls.$$owner$$) : null;").softNewLine();
     }
 
     @Override
@@ -154,6 +176,7 @@ public class ClassNativeGenerator implements Generator, Injector, DependencyPlug
             case "getSuperclass":
             case "getComponentType0":
             case "forNameImpl":
+            case "getDeclaringClass":
                 graph.getResult().propagate("java.lang.Class");
                 break;
         }

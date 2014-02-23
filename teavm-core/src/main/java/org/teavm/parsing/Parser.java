@@ -64,6 +64,14 @@ public class Parser {
             MethodNode methodNode = (MethodNode)obj;
             cls.addMethod(parseMethod(methodNode, node.name));
         }
+        if (node.outerClass != null) {
+            cls.setOwnerName(node.outerClass.replace('/', '.'));
+        } else {
+            int lastIndex = node.name.lastIndexOf('$');
+            if (lastIndex != -1) {
+                cls.setOwnerName(node.name.substring(0, lastIndex).replace('/', '.'));
+            }
+        }
         parseAnnotations(cls.getAnnotations(), node);
         return cls;
     }

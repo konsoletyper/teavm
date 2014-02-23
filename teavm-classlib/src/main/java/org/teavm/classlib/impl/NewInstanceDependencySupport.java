@@ -24,6 +24,7 @@ import org.teavm.model.*;
  */
 public class NewInstanceDependencySupport implements DependencyListener {
     private DependencyNode allClassesNode;
+    private DependencyStack newInstanceStack;
 
     @Override
     public void started(DependencyChecker dependencyChecker) {
@@ -36,17 +37,29 @@ public class NewInstanceDependencySupport implements DependencyListener {
         if (cls.hasModifier(ElementModifier.ABSTRACT) || cls.hasModifier(ElementModifier.INTERFACE)) {
             return;
         }
-        if (cls.getMethod(new MethodDescriptor("<init>", ValueType.VOID)) != null) {
+        MethodReader method = cls.getMethod(new MethodDescriptor("<init>", ValueType.VOID));
+        if (method != null) {
             allClassesNode.propagate(className);
         }
     }
 
     @Override
-    public void methodAchieved(DependencyChecker dependencyChecker, MethodDependency method) {
+    public void methodAchieved(final DependencyChecker dependencyChecker, MethodDependency method) {
         MethodReader reader = method.getMethod();
         if (reader.getOwnerName().equals("java.lang.Class") && reader.getName().equals("newInstance")) {
+            newInstanceStack = method.getStack();
             allClassesNode.connect(method.getResult());
+            method.getResult().addConsumer(new DependencyConsumer() {
+                @Override public void consume(String type) {
+                    attachConstructor(dependencyChecker, type);
+                }
+            });
         }
+    }
+
+    private void attachConstructor(DependencyChecker checker, String type) {
+        MethodReference ref = new MethodReference(type, new MethodDescriptor("<init>", ValueType.VOID));
+        checker.linkMethod(ref, newInstanceStack).use();
     }
 
     @Override

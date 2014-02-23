@@ -57,6 +57,9 @@ class ClassRefsRenamer implements InstructionVisitor {
             cls.removeField(field);
             renamedCls.addField(field);
         }
+        if (cls.getOwnerName() != null) {
+            renamedCls.setOwnerName(classNameMapper.map(cls.getOwnerName()));
+        }
         rename(cls.getAnnotations(), renamedCls.getAnnotations());
         for (String iface : cls.getInterfaces()) {
             renamedCls.getInterfaces().add(classNameMapper.map(iface));
