@@ -38,8 +38,9 @@ public class EnumDependencySupport implements DependencyListener {
     public void classAchieved(DependencyChecker dependencyChecker, String className) {
         ClassReader cls = dependencyChecker.getClassSource().get(className);
         if (cls == null || cls.getParent() == null || !cls.getParent().equals("java.lang.Enum")) {
-            allEnums.propagate(className);
+            return;
         }
+        allEnums.propagate(className);
         if (enumConstantsStack != null) {
             MethodReader method = cls.getMethod(new MethodDescriptor("values",
                     ValueType.arrayOf(ValueType.object(cls.getName()))));

@@ -19,6 +19,7 @@ import org.teavm.classlib.impl.charset.*;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.io.TUnsupportedEncodingException;
 import org.teavm.classlib.java.util.TArrays;
+import org.teavm.dependency.PluggableDependency;
 import org.teavm.javascript.ni.InjectedBy;
 import org.teavm.javascript.ni.Rename;
 
@@ -549,6 +550,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     @InjectedBy(StringNativeGenerator.class)
+    @PluggableDependency(StringNativeGenerator.class)
     public static native TString wrap(String str);
 
     public TString toLowerCase() {

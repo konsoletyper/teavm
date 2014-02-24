@@ -34,6 +34,9 @@ public class NewInstanceDependencySupport implements DependencyListener {
     @Override
     public void classAchieved(DependencyChecker dependencyChecker, String className) {
         ClassReader cls = dependencyChecker.getClassSource().get(className);
+        if (cls == null) {
+            return;
+        }
         if (cls.hasModifier(ElementModifier.ABSTRACT) || cls.hasModifier(ElementModifier.INTERFACE)) {
             return;
         }

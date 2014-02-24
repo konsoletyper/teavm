@@ -16,6 +16,9 @@
 package org.teavm.classlib.java.lang;
 
 import java.io.IOException;
+import org.teavm.dependency.DependencyChecker;
+import org.teavm.dependency.DependencyPlugin;
+import org.teavm.dependency.MethodDependency;
 import org.teavm.javascript.ni.Injector;
 import org.teavm.javascript.ni.InjectorContext;
 import org.teavm.model.MethodReference;
@@ -24,17 +27,22 @@ import org.teavm.model.MethodReference;
  *
  * @author Alexey Andreev
  */
-public class StringNativeGenerator implements Injector {
+public class StringNativeGenerator implements Injector, DependencyPlugin {
     @Override
-    public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
-        switch (methodRef.getName()) {
+    public void methodAchieved(DependencyChecker checker, MethodDependency method) {
+        switch (method.getReference().getName()) {
             case "wrap":
-                generateWrap(context);
+                method.getVariable(0).connect(method.getResult());
                 break;
         }
     }
 
-    private void generateWrap(InjectorContext context) throws IOException {
-        context.writeExpr(context.getArgument(0));
+    @Override
+    public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
+        switch (methodRef.getName()) {
+            case "wrap":
+                context.writeExpr(context.getArgument(0));
+                break;
+        }
     }
 }

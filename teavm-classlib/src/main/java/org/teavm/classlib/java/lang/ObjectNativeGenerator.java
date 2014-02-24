@@ -65,13 +65,13 @@ public class ObjectNativeGenerator implements Generator, Injector, DependencyPlu
     public void methodAchieved(DependencyChecker checker, MethodDependency method) {
         switch (method.getReference().getName()) {
             case "clone":
-                achieveClone(method);
+                method.getVariable(0).connect(method.getResult());
                 break;
             case "getClass":
                 achieveGetClass(checker, method);
                 break;
             case "wrap":
-                achieveWrap(method);
+                method.getVariable(1).connect(method.getResult());
                 break;
         }
     }
@@ -109,15 +109,7 @@ public class ObjectNativeGenerator implements Generator, Injector, DependencyPlu
         writer.append("return copy;").softNewLine();
     }
 
-    private void achieveClone(MethodDependency method) {
-        method.getVariable(0).connect(method.getResult());
-    }
-
     private void generateWrap(InjectorContext context) throws IOException {
         context.writeExpr(context.getArgument(0));
-    }
-
-    private void achieveWrap(MethodDependency graph) {
-        graph.getVariable(1).connect(graph.getResult());
     }
 }

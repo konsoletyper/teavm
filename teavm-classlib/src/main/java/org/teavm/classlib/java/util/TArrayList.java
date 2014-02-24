@@ -42,6 +42,7 @@ public class TArrayList<E> extends TAbstractList<E> implements TCloneable, TSeri
         for (int i = 0; i < array.length; ++i) {
             array[i] = iter.next();
         }
+        size = array.length;
     }
 
     public void trimToSize() {

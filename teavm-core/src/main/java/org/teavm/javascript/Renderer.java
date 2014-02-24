@@ -1225,7 +1225,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
             if (expr.getType() instanceof ValueType.Object) {
                 String clsName = ((ValueType.Object)expr.getType()).getClassName();
                 ClassHolder cls = classSource.get(clsName);
-                if (!cls.getModifiers().contains(ElementModifier.INTERFACE)) {
+                if (cls != null && !cls.getModifiers().contains(ElementModifier.INTERFACE)) {
                     writer.append("(");
                     expr.getExpr().acceptVisitor(this);
                     writer.append(" instanceof ").appendClass(clsName).append(")");

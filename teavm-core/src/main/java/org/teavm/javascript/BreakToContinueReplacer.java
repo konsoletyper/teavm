@@ -90,6 +90,9 @@ class BreakToContinueReplacer implements StatementVisitor {
 
     @Override
     public void visit(ContinueStatement statement) {
+        if (statement.getTarget() == replacedBreak) {
+            statement.setTarget(replacement);
+        }
     }
 
     @Override

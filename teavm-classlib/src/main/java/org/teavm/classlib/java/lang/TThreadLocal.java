@@ -1,5 +1,5 @@
 /*
- *  Copyright 2013 Alexey Andreev.
+ *  Copyright 2014 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,12 +13,38 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.dependency;
+package org.teavm.classlib.java.lang;
 
 /**
  *
  * @author Alexey Andreev
  */
-public interface DependencyPlugin {
-    void methodAchieved(DependencyChecker checker, MethodDependency method);
+public class TThreadLocal<T> extends TObject {
+    private boolean initialized;
+    private T value;
+
+    public TThreadLocal() {
+        super();
+    }
+
+    protected T initialValue() {
+        return null;
+    }
+
+    public T get() {
+        if (!initialized) {
+            value = initialValue();
+            initialized = true;
+        }
+        return value;
+    }
+
+    public void set(T value) {
+        this.value = value;
+    }
+
+    public void remove() {
+        initialized = false;
+        value = null;
+    }
 }
