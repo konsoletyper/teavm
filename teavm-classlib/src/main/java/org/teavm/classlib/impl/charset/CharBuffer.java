@@ -62,6 +62,10 @@ public class CharBuffer {
         return pos;
     }
 
+    public void skip(int count) {
+        pos += count;
+    }
+
     public void put(CharBuffer buffer) {
         while (buffer.pos < buffer.end) {
             data[pos++] = buffer.data[buffer.pos++];

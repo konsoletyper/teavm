@@ -54,7 +54,9 @@ import net.java.html.BrwsrCtx;
 import net.java.html.js.JavaScriptBody;
 import org.apidesign.html.boot.spi.Fn;
 import org.apidesign.html.context.spi.Contexts;
+import org.apidesign.html.json.spi.Transfer;
 import org.apidesign.html.json.tck.KnockoutTCK;
+import org.netbeans.html.ko4j.KO4J;
 import org.testng.Assert;
 
 /**
@@ -93,8 +95,10 @@ public final class KnockoutFXTest extends KnockoutTCK {
 
     @Override
     public BrwsrCtx createContext() {
-        Contexts.Builder cb = Contexts.newBuilder();
-        return cb.build();
+        KO4J ko4j = new KO4J();
+        return Contexts.newBuilder()
+                .register(Transfer.class, ko4j.transfer(), 1)
+                .build();
     }
 
     @Override
