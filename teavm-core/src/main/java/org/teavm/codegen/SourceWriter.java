@@ -17,7 +17,9 @@ package org.teavm.codegen;
 
 import java.io.IOException;
 import org.teavm.model.FieldReference;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 
 /**
  *
@@ -86,8 +88,18 @@ public class SourceWriter implements Appendable {
         return append(naming.getNameFor(method));
     }
 
+    public SourceWriter appendMethod(String className, String name, ValueType... params)
+            throws NamingException, IOException {
+        return append(naming.getNameFor(new MethodReference(className, new MethodDescriptor(name, params))));
+    }
+
     public SourceWriter appendMethodBody(MethodReference method) throws NamingException, IOException {
         return append(naming.getFullNameFor(method));
+    }
+
+    public SourceWriter appendMethodBody(String className, String name, ValueType... params)
+            throws NamingException, IOException {
+        return append(naming.getFullNameFor(new MethodReference(className, new MethodDescriptor(name, params))));
     }
 
     private void appendIndent() throws IOException {

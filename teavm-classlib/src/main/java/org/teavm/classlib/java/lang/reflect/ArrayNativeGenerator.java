@@ -32,6 +32,10 @@ import org.teavm.model.ValueType;
  * @author Alexey Andreev
  */
 public class ArrayNativeGenerator implements Generator, DependencyPlugin {
+    private static final MethodReference valueOfIntMethod = new MethodReference("java.lang.Integer",
+            "valueOf", ValueType.INTEGER, ValueType.object("java.lang.Integer"));
+    private static final MethodReference valueOfCharMethod = new MethodReference("java.lang.Character",
+            "valueOf", ValueType.CHARACTER, ValueType.object("java.lang.Character"));
     private static final String[] primitives = { "Byte", "Short", "Char", "Int", "Long", "Float", "Double",
             "Boolean" };
 
@@ -44,6 +48,9 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
             case "newInstanceImpl":
                 method.getResult().propagate("[java.lang.Object");
                 break;
+            case "getImpl":
+                achieveGet(checker, method);
+                break;
         }
     }
 
@@ -55,6 +62,9 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
                 break;
             case "newInstanceImpl":
                 generateNewInstance(context, writer);
+                break;
+            case "getImpl":
+                generateGet(context, writer);
                 break;
         }
     }
@@ -95,5 +105,30 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
         writer.outdent().append("} else {").indent().softNewLine();
         writer.append("return $rt_createArray(cls, " + length + ")").softNewLine();
         writer.outdent().append("}").softNewLine();
+    }
+
+    private void generateGet(GeneratorContext context, SourceWriter writer) throws IOException {
+        String array = context.getParameterName(1);
+        writer.append("var item = " + array + ".data[" + context.getParameterName(2) + "];").softNewLine();
+        writer.append("var type = " + array + ".constructor.$meta.item;").softNewLine();
+        writer.append("if (type === $rt_intcls()) {").indent().softNewLine();
+        writer.append("item = ").appendMethodBody(valueOfIntMethod).append("(item);").softNewLine();
+        writer.outdent().append("} else if (type === $rt_charcls()) {").indent().softNewLine();
+        writer.append("item = ").appendMethodBody(valueOfCharMethod).append("(item);").softNewLine();
+        writer.outdent().append("}").softNewLine();
+        writer.append("return item;").softNewLine();
+    }
+
+    private void achieveGet(final DependencyChecker checker, final MethodDependency method) {
+        method.getVariable(1).getArrayItem().connect(method.getResult());
+        method.getVariable(1).addConsumer(new DependencyConsumer() {
+            @Override public void consume(String type) {
+                if (type.equals("[I")) {
+                    checker.linkMethod(valueOfIntMethod, method.getStack()).use();
+                } else if (type.equals("[C")) {
+                    checker.linkMethod(valueOfCharMethod, method.getStack()).use();
+                }
+            }
+        });
     }
 }

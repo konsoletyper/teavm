@@ -28,6 +28,10 @@ public class MethodReference {
         this.descriptor = descriptor;
     }
 
+    public MethodReference(String className, String name, ValueType... signature) {
+        this(className, new MethodDescriptor(name, signature));
+    }
+
     public String getClassName() {
         return className;
     }

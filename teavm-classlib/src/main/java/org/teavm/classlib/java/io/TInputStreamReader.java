@@ -89,18 +89,20 @@ public class TInputStreamReader extends TReader {
         if (eof) {
             return false;
         }
-        int i = 0;
-        while (!outBuffer.end()) {
-            outData[i++] = outBuffer.get();
-        }
-        outBuffer.rewind(i);
-        while (outBuffer.available() > 4) {
-            if (inBuffer.available() < 8 && !fillReadBuffer()) {
+        CharBuffer newBuffer = new CharBuffer(outData);
+        newBuffer.put(outBuffer);
+        while (true) {
+            if (inBuffer.end() && !fillReadBuffer()) {
                 eof = true;
                 break;
             }
-            charset.decode(inBuffer, outBuffer);
+            int oldAvail = newBuffer.available();
+            charset.decode(inBuffer, newBuffer);
+            if (oldAvail == newBuffer.available()) {
+                break;
+            }
         }
+        outBuffer = new CharBuffer(outData, 0, newBuffer.position());
         return true;
     }
 
@@ -121,8 +123,12 @@ public class TInputStreamReader extends TReader {
                 break;
             } else {
                 off += bytesRead;
+                if (bytesRead == 0) {
+                    break;
+                }
             }
         }
+        inBuffer = new ByteBuffer(inData, 0, off);
         return true;
     }
 

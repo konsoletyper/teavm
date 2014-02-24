@@ -44,4 +44,16 @@ public final class TArray extends TObject {
     @GeneratedBy(ArrayNativeGenerator.class)
     @PluggableDependency(ArrayNativeGenerator.class)
     private static native TObject newInstanceImpl(TClass<?> componentType, int length);
+
+    public static TObject get(TObject array, int index) throws TIllegalArgumentException,
+                            TArrayIndexOutOfBoundsException {
+        if (index < 0 || index >= getLength(array)) {
+            throw new TArrayIndexOutOfBoundsException();
+        }
+        return getImpl(array, index);
+    }
+
+    @GeneratedBy(ArrayNativeGenerator.class)
+    @PluggableDependency(ArrayNativeGenerator.class)
+    private static native TObject getImpl(TObject array, int index);
 }
