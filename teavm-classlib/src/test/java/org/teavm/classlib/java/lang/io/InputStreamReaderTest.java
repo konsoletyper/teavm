@@ -44,6 +44,21 @@ public class InputStreamReaderTest {
     }
 
     @Test
+    public void readsCharsOneByOne() throws IOException {
+        String str = "foo bar baz";
+        byte[] bytes = new byte[str.length()];
+        for (int i = 0; i < str.length(); ++i) {
+            bytes[i] = (byte)str.charAt(i);
+        }
+        ByteArrayInputStream stream = new ByteArrayInputStream(bytes);
+        InputStreamReader reader = new InputStreamReader(stream, "UTF-8");
+        assertEquals('f', reader.read());
+        assertEquals('o', reader.read());
+        assertEquals('o', reader.read());
+        assertEquals(' ', reader.read());
+    }
+
+    @Test
     public void readsManyChars() throws IOException {
         StringBuilder sb = new StringBuilder();
         String str = "foo bar baz";

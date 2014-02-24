@@ -64,7 +64,7 @@ public class TInputStreamReader extends TReader {
 
     @Override
     public int read() throws TIOException {
-        if (eof) {
+        if (eof && outBuffer.end()) {
             return -1;
         }
         if (!outBuffer.end()) {
