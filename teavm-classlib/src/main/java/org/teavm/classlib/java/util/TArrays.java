@@ -196,9 +196,9 @@ public class TArrays extends TObject {
         @SuppressWarnings({ "rawtypes", "unchecked" })
         @Override public int compare(Object o1, Object o2) {
             if (o1 != null) {
-                return ((TComparable)o1).compareTo((TComparable)o2);
+                return ((TComparable)o1).compareTo(o2);
             } else if (o2 != null) {
-                return ((TComparable)o2).compareTo((TComparable)o1);
+                return ((TComparable)o2).compareTo(o1);
             } else {
                 return 0;
             }
