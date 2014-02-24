@@ -53,10 +53,14 @@ public class TDouble extends TNumber {
         return new TDouble(d);
     }
 
+    public static TString toString(double d) {
+        return TString.wrap(new TStringBuilder().append(d).toString());
+    }
+
     @Override
     @Rename("toString")
     public TString toString0() {
-        return TString.wrap(new TStringBuilder().append(value).toString());
+        return toString(value);
     }
 
     @Override

@@ -168,7 +168,7 @@ public class DependencyChecker implements DependencyInfo {
         return methodCache.map(methodRef);
     }
 
-    public void initClass(String className, DependencyStack stack) {
+    public void initClass(String className, final DependencyStack stack) {
         classStacks.putIfAbsent(className, stack);
         MethodDescriptor clinitDesc = new MethodDescriptor("<clinit>", ValueType.VOID);
         while (className != null) {
@@ -183,8 +183,12 @@ public class DependencyChecker implements DependencyInfo {
                 return;
             }
             if (cls.getMethod(clinitDesc) != null) {
-                MethodReference methodRef = new MethodReference(className, clinitDesc);
-                linkMethod(methodRef, new DependencyStack(methodRef, stack)).use();
+                final MethodReference methodRef = new MethodReference(className, clinitDesc);
+                executor.executeFast(new Runnable() {
+                    @Override public void run() {
+                        linkMethod(methodRef, new DependencyStack(methodRef, stack)).use();
+                    }
+                });
             }
             className = cls.getParent();
         }

@@ -52,10 +52,14 @@ public class TLong extends TNumber {
         return value;
     }
 
+    public TString toString(long value) {
+        return TString.wrap(new TStringBuilder().append(value).toString());
+    }
+
     @Override
     @Rename("toString")
     public TString toString0() {
-        return TString.wrap(new TStringBuilder().append(value).toString());
+        return toString(value);
     }
 
     @Override

@@ -30,6 +30,7 @@ public class JCLPlugin implements JavascriptBuilderPlugin {
     public void install(JavascriptBuilderHost host) {
         host.add(new EnumDependencySupport());
         host.add(new EnumTransformer());
+        host.add(new ClassLookupDependencySupport());
         host.add(new NewInstanceDependencySupport());
         ServiceLoaderSupport serviceLoaderSupp = new ServiceLoaderSupport(host.getClassLoader());
         host.add(serviceLoaderSupp);

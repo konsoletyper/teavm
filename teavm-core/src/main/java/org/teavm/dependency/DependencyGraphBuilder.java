@@ -307,6 +307,7 @@ class DependencyGraphBuilder {
             FieldDependency fieldDep = dependencyChecker.linkField(field, callerStack);
             DependencyNode receiverNode = nodes[receiver.getIndex()];
             fieldDep.getValue().connect(receiverNode);
+            initClass(field.getClassName());
         }
 
         @Override
@@ -314,6 +315,7 @@ class DependencyGraphBuilder {
             FieldDependency fieldDep = dependencyChecker.linkField(field, callerStack);
             DependencyNode valueNode = nodes[value.getIndex()];
             valueNode.connect(fieldDep.getValue());
+            initClass(field.getClassName());
         }
 
         @Override
@@ -387,6 +389,7 @@ class DependencyGraphBuilder {
             if (methodDep.getResult() != null && receiver != null) {
                 methodDep.getResult().connect(nodes[receiver.getIndex()]);
             }
+            initClass(method.getClassName());
         }
 
         private void invokeVirtual(VariableReader receiver, VariableReader instance, MethodReference method,
@@ -412,8 +415,12 @@ class DependencyGraphBuilder {
         }
 
         @Override
-        public void initClass(String className) {
-            dependencyChecker.initClass(className, callerStack);
+        public void initClass(final String className) {
+            useRunners.add(new Runnable() {
+                @Override public void run() {
+                    dependencyChecker.initClass(className, callerStack);
+                }
+            });
         }
     };
 }

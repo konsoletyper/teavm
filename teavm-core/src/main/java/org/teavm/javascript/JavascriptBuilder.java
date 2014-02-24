@@ -101,6 +101,7 @@ public class JavascriptBuilder implements JavascriptBuilderHost {
         }
         JavascriptEntryPoint entryPoint = new JavascriptEntryPoint(name, ref,
                 dependencyChecker.linkMethod(ref, DependencyStack.ROOT));
+        dependencyChecker.initClass(ref.getClassName(), DependencyStack.ROOT);
         entryPoints.put(name, entryPoint);
         return entryPoint;
     }
@@ -110,6 +111,7 @@ public class JavascriptBuilder implements JavascriptBuilderHost {
             throw new IllegalArgumentException("Class with public name `" + name + "' already defined for class " +
                     className);
         }
+        dependencyChecker.initClass(className, DependencyStack.ROOT);
         exportedClasses.put(name, className);
     }
 

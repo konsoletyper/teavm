@@ -16,12 +16,61 @@
 package org.teavm.classlib.java.lang;
 
 import org.teavm.javascript.ni.GeneratedBy;
+import org.teavm.javascript.ni.Rename;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class TFloat {
+public class TFloat extends TNumber {
+    private float value;
+
+    public TFloat(float value) {
+        this.value = value;
+    }
+
+    @Override
+    public int intValue() {
+        return (int)value;
+    }
+
+    @Override
+    public long longValue() {
+        return (long)value;
+    }
+
+    @Override
+    public float floatValue() {
+        return value;
+    }
+
+    @Override
+    public double doubleValue() {
+        return value;
+    }
+
+    public static TFloat valueOf(float d) {
+        return new TFloat(d);
+    }
+
+    public static TString toString(float d) {
+        return TString.wrap(new TStringBuilder().append(d).toString());
+    }
+
+    @Override
+    @Rename("toString")
+    public TString toString0() {
+        return toString(value);
+    }
+
+    @Override
+    public boolean equals(TObject other) {
+        if (this == other) {
+            return true;
+        }
+        return other instanceof TFloat && ((TFloat)other).value == value;
+    }
+
     @GeneratedBy(FloatNativeGenerator.class)
     public static native boolean isNaN(float v);
 
