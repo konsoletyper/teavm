@@ -27,6 +27,7 @@ public class BasicBlock implements BasicBlockReader {
     private int index;
     private List<Phi> phis = new ArrayList<>();
     private List<Instruction> instructions = new ArrayList<>();
+    List<TryCatchBlock> tryCatchBlocks = new ArrayList<>();
 
     BasicBlock(Program program, int index) {
         this.program = program;
@@ -180,5 +181,55 @@ public class BasicBlock implements BasicBlockReader {
         for (Instruction insn : instructions) {
             insn.acceptVisitor(visitor);
         }
+    }
+
+    private List<TryCatchBlock> immutableTryCatchBlocks = Collections.unmodifiableList(tryCatchBlocks);
+
+    @Override
+    public List<TryCatchBlock> readTryCatchBlocks() {
+        return immutableTryCatchBlocks;
+    }
+
+    private List<TryCatchBlock> safeTryCatchBlocks = new AbstractList<TryCatchBlock>() {
+        @Override public TryCatchBlock get(int index) {
+            return tryCatchBlocks.get(index);
+        }
+        @Override public int size() {
+            return tryCatchBlocks.size();
+        }
+        @Override public void add(int index, TryCatchBlock element) {
+            if (!element.protectedBlocks.add(BasicBlock.this)) {
+                throw new IllegalStateException("This try/catch block is already added to basic block");
+            }
+            tryCatchBlocks.add(index, element);
+        }
+        @Override public TryCatchBlock remove(int index) {
+            TryCatchBlock tryCatch = tryCatchBlocks.remove(index);
+            tryCatch.protectedBlocks.remove(BasicBlock.this);
+            return tryCatch;
+        };
+        @Override public TryCatchBlock set(int index, TryCatchBlock element) {
+            TryCatchBlock oldTryCatch = tryCatchBlocks.get(index);
+            if (oldTryCatch == element) {
+                return oldTryCatch;
+            }
+            if (element.protectedBlocks.contains(BasicBlock.this)) {
+                throw new IllegalStateException("This try/catch block is already added to basic block");
+            }
+            oldTryCatch.protectedBlocks.remove(BasicBlock.this);
+            element.protectedBlocks.add(BasicBlock.this);
+            tryCatchBlocks.set(index, element);
+            return oldTryCatch;
+        };
+        @Override public void clear() {
+            for (TryCatchBlock tryCatch : tryCatchBlocks) {
+                tryCatch.protectedBlocks.remove(BasicBlock.this);
+            }
+            tryCatchBlocks.clear();
+        };
+    };
+
+    public List<TryCatchBlock> getTryCatchBlocks() {
+        return safeTryCatchBlocks;
     }
 }

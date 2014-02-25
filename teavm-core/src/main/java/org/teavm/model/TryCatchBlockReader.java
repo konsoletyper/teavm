@@ -15,25 +15,18 @@
  */
 package org.teavm.model;
 
-import java.util.List;
-import org.teavm.model.instructions.InstructionReader;
+import java.util.Set;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface BasicBlockReader {
-    ProgramReader getProgram();
+public interface TryCatchBlockReader {
+    Set<? extends BasicBlockReader> readProtectedBlocks();
 
-    int getIndex();
+    BasicBlockReader getHandler();
 
-    List<? extends PhiReader> readPhis();
+    String getExceptionType();
 
-    int instructionCount();
-
-    void readInstruction(int index, InstructionReader reader);
-
-    void readAllInstructions(InstructionReader reader);
-
-    List<? extends TryCatchBlockReader> readTryCatchBlocks();
+    VariableReader getExceptionVariable();
 }
