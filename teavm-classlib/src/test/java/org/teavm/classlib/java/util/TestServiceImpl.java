@@ -13,12 +13,21 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.java.lang.util;
+package org.teavm.classlib.java.util;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface TestService {
-    void foo();
+public class TestServiceImpl implements TestService {
+    private int counter;
+
+    @Override
+    public void foo() {
+        ++counter;
+    }
+
+    public int getCounter() {
+        return counter;
+    }
 }

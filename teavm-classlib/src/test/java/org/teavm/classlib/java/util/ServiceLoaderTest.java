@@ -13,21 +13,22 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.java.lang.util;
+package org.teavm.classlib.java.util;
+
+import static org.junit.Assert.*;
+import java.util.ServiceLoader;
+import org.junit.Test;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class TestServiceImpl implements TestService {
-    private int counter;
-
-    @Override
-    public void foo() {
-        ++counter;
-    }
-
-    public int getCounter() {
-        return counter;
+public class ServiceLoaderTest {
+    @Test
+    public void loadsService() {
+        TestService instance = ServiceLoader.load(TestService.class).iterator().next();
+        instance.foo();
+        assertEquals(TestServiceImpl.class, instance.getClass());
+        assertEquals(1, ((TestServiceImpl)instance).getCounter());
     }
 }

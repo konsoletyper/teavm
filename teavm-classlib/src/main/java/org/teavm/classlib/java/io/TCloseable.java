@@ -23,5 +23,5 @@ import org.teavm.classlib.java.lang.TAutoCloseable;
  */
 public interface TCloseable extends TAutoCloseable {
     @Override
-    void close() throws TIOException;
+    public void close() throws TIOException;
 }

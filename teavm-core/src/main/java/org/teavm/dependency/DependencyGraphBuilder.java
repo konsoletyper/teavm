@@ -411,7 +411,15 @@ class DependencyGraphBuilder {
         }
 
         @Override
-        public void isInstance(VariableReader receiver, VariableReader value, ValueType type) {
+        public void isInstance(VariableReader receiver, VariableReader value, final ValueType type) {
+            if (type instanceof ValueType.Object) {
+                final String className = ((ValueType.Object)type).getClassName();
+                useRunners.add(new Runnable() {
+                    @Override public void run() {
+                        dependencyChecker.initClass(className, callerStack);
+                    }
+                });
+            }
         }
 
         @Override

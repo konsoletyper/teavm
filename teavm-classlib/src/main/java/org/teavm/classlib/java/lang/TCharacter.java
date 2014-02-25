@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
+import org.teavm.classlib.impl.charset.UTF16Helper;
 import org.teavm.classlib.impl.unicode.UnicodeHelper;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.javascript.ni.GeneratedBy;
@@ -109,4 +110,23 @@ public class TCharacter extends TObject {
     @GeneratedBy(CharacterNativeGenerator.class)
     @PluggableDependency(CharacterNativeGenerator.class)
     private static native String obtainDigitMapping();
+
+    public static int toChars(int codePoint, char[] dst, int dstIndex) {
+        if (codePoint >= UTF16Helper.SUPPLEMENTARY_PLANE) {
+            dst[dstIndex] = UTF16Helper.highSurrogate(codePoint);
+            dst[dstIndex + 1] = UTF16Helper.lowSurrogate(codePoint);
+            return 2;
+        } else {
+            dst[dstIndex] = (char)codePoint;
+            return 1;
+        }
+    }
+
+    public static char[] toChars(int codePoint) {
+        if (codePoint >= UTF16Helper.SUPPLEMENTARY_PLANE) {
+            return new char[] { UTF16Helper.highSurrogate(codePoint), UTF16Helper.lowSurrogate(codePoint) };
+        } else {
+            return new char[] { (char)codePoint };
+        }
+    }
 }

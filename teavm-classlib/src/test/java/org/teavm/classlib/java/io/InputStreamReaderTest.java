@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.java.lang.io;
+package org.teavm.classlib.java.io;
 
 import static org.junit.Assert.*;
 import java.io.ByteArrayInputStream;
