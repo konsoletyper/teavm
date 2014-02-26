@@ -221,19 +221,19 @@ public class Decompiler {
                 for (Instruction insn : generator.currentBlock.getInstructions()) {
                     insn.acceptVisitor(generator);
                 }
-                block.body.addAll(generator.statements);
                 for (TryCatchBlock tryCatch : generator.currentBlock.getTryCatchBlocks()) {
                     TryCatchStatement tryCatchStmt = new TryCatchStatement();
                     tryCatchStmt.setExceptionType(tryCatch.getExceptionType());
                     tryCatchStmt.setExceptionVariable(tryCatch.getExceptionVariable().getIndex());
-                    tryCatchStmt.getProtectedBody().addAll(block.body);
-                    block.body.clear();
-                    block.body.add(tryCatchStmt);
+                    tryCatchStmt.getProtectedBody().addAll(generator.statements);
+                    generator.statements.clear();
+                    generator.statements.add(tryCatchStmt);
                     Statement handlerStmt = generator.generateJumpStatement(tryCatch.getHandler());
                     if (handlerStmt != null) {
                         tryCatchStmt.getHandler().add(handlerStmt);
                     }
                 }
+                block.body.addAll(generator.statements);
             }
         }
         SequentialStatement result = new SequentialStatement();

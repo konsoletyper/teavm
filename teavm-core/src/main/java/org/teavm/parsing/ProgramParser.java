@@ -178,6 +178,9 @@ public class ProgramParser {
         Deque<Step> workStack = new ArrayDeque<>();
         for (Object obj : method.tryCatchBlocks) {
             TryCatchBlockNode tryCatchNode = (TryCatchBlockNode)obj;
+            if (tryCatchNode.start == tryCatchNode.handler) {
+                continue;
+            }
             workStack.push(new Step(-2, labelIndexes.get(tryCatchNode.handler.getLabel())));
         }
         workStack.push(new Step(-1, 0));
@@ -213,6 +216,9 @@ public class ProgramParser {
         }
         for (Object obj : method.tryCatchBlocks) {
             TryCatchBlockNode tryCatchNode = (TryCatchBlockNode)obj;
+            if (tryCatchNode.start == tryCatchNode.handler) {
+                continue;
+            }
             int start = labelIndexes.get(tryCatchNode.start.getLabel());
             int end = labelIndexes.get(tryCatchNode.end.getLabel());
             getBasicBlock(start);

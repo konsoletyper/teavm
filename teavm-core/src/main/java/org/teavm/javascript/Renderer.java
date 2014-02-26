@@ -1280,7 +1280,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                                 .append("$e;").softNewLine();
                     }
                 }
-                for (Statement part : statement.getHandler()) {
+                for (Statement part : catchClause.getHandler()) {
                     part.acceptVisitor(this);
                 }
                 writer.outdent().append("}").ws().append("else ");
