@@ -551,8 +551,12 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(TryCatchStatement statement) {
-        processSequence(statement.getProtectedBody());
-        processSequence(statement.getHandler());
+        List<Statement> statements = processSequence(statement.getProtectedBody());
+        statement.getProtectedBody().clear();
+        statement.getProtectedBody().addAll(statements);
+        statements = processSequence(statement.getHandler());
+        statement.getHandler().clear();
+        statement.getHandler().addAll(statements);
         resultStmt = statement;
     }
 }
