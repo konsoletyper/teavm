@@ -32,7 +32,6 @@ public class SSATransformer {
     private Program program;
     private Graph cfg;
     private DominatorTree domTree;
-    private Graph domGraph;
     private int[][] domFrontiers;
     private Variable[] variableMap;
     private BasicBlock currentBlock;
@@ -46,7 +45,7 @@ public class SSATransformer {
         }
         this.program = program;
         this.arguments = arguments;
-        cfg = ProgramUtils.buildControlFlowGraph(program);
+        cfg = ProgramUtils.buildControlFlowGraphWithoutTryCatch(program);
         domTree = GraphUtils.buildDominatorTree(cfg);
         domFrontiers = new int[cfg.size()][];
         variableMap = new Variable[program.variableCount()];
@@ -103,11 +102,12 @@ public class SSATransformer {
     }
 
     private void renameVariables() {
-        domGraph = GraphUtils.buildDominatorGraph(domTree, program.basicBlockCount());
+        DominatorTree domTree = GraphUtils.buildDominatorTree(ProgramUtils.buildControlFlowGraph(program));
+        Graph domGraph = GraphUtils.buildDominatorGraph(domTree, program.basicBlockCount());
         Task[] stack = new Task[cfg.size() * 2];
         int head = 0;
         for (int i = 0; i < program.basicBlockCount(); ++i) {
-            if (domTree.immediateDominatorOf(i) < 0) {
+            if (domGraph.incomingEdgesCount(i) == 0) {
                 Task task = new Task();
                 task.block = program.basicBlockAt(i);
                 task.variables = Arrays.copyOf(variableMap, variableMap.length);

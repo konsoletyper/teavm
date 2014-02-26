@@ -1268,8 +1268,12 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                     .ws().append("{").indent().softNewLine();
             writer.append("$je").ws().append("=").ws().append("$e.$javaException;").softNewLine();
             for (TryCatchStatement catchClause : sequence) {
-                writer.append("if").ws().append("($je && $je instanceof ").appendClass(catchClause.getExceptionType())
-                        .append(")").ws().append("{").indent().softNewLine();
+                writer.append("if").ws().append("($je");
+                if (catchClause.getExceptionType() != null) {
+                    writer.ws().append("&&").ws().append("$je instanceof ")
+                            .appendClass(catchClause.getExceptionType());
+                }
+                writer.append(")").ws().append("{").indent().softNewLine();
                 if (statement.getExceptionVariable() != catchClause.getExceptionVariable()) {
                     if (catchClause.getExceptionVariable() != null) {
                         writer.append(variableName(catchClause.getExceptionVariable())).ws().append("=").ws()

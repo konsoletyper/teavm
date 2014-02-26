@@ -60,6 +60,16 @@ class DependencyGraphBuilder {
                     nodes[incoming.getValue().getIndex()].connect(nodes[phi.getReceiver().getIndex()]);
                 }
             }
+            for (final TryCatchBlockReader tryCatch : block.readTryCatchBlocks()) {
+                useRunners.add(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (tryCatch.getExceptionType() != null) {
+                            dependencyChecker.initClass(tryCatch.getExceptionType(), callerStack);
+                        }
+                    }
+                });
+            }
         }
         dep.setUseRunner(new MultipleRunner(useRunners));
     }

@@ -213,6 +213,9 @@ public class Decompiler {
             if (node >= 0) {
                 generator.currentBlock = program.basicBlockAt(node);
                 int tmp = indexer.nodeAt(next);
+                if (tmp < 0) {
+                    throw new IllegalArgumentException();
+                }
                 generator.nextBlock = next < indexer.size() ? program.basicBlockAt(tmp) : null;
                 generator.statements.clear();
                 for (Instruction insn : generator.currentBlock.getInstructions()) {
