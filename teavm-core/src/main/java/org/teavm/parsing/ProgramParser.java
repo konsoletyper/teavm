@@ -213,10 +213,6 @@ public class ProgramParser {
         }
         for (Object obj : method.tryCatchBlocks) {
             TryCatchBlockNode tryCatchNode = (TryCatchBlockNode)obj;
-            TryCatchBlock tryCatch = new TryCatchBlock();
-            tryCatch.setExceptionType(tryCatchNode.type.replace('/', '.'));
-            tryCatch.setHandler(getBasicBlock(labelIndexes.get(tryCatchNode.handler.getLabel())));
-            tryCatch.setExceptionVariable(getVariable(minLocal + method.maxLocals));
             int start = labelIndexes.get(tryCatchNode.start.getLabel());
             int end = labelIndexes.get(tryCatchNode.end.getLabel());
             getBasicBlock(start);
@@ -224,6 +220,12 @@ public class ProgramParser {
             for (int i = start; i < end; ++i) {
                 BasicBlock block = basicBlocks.get(i);
                 if (block != null) {
+                    TryCatchBlock tryCatch = new TryCatchBlock();
+                    if (tryCatchNode.type != null) {
+                        tryCatch.setExceptionType(tryCatchNode.type.replace('/', '.'));
+                    }
+                    tryCatch.setHandler(getBasicBlock(labelIndexes.get(tryCatchNode.handler.getLabel())));
+                    tryCatch.setExceptionVariable(getVariable(minLocal + method.maxLocals));
                     block.getTryCatchBlocks().add(tryCatch);
                 }
             }

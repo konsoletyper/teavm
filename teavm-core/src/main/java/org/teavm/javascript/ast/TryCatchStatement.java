@@ -13,28 +13,29 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.model;
+package org.teavm.javascript.ast;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-public class TryCatchBlock implements TryCatchBlockReader {
-    BasicBlock protectedBlock;
-    private BasicBlock handler;
+public class TryCatchStatement extends Statement {
+    private List<Statement> protectedBody = new ArrayList<>();
+    private List<Statement> handler = new ArrayList<>();
     private String exceptionType;
-    private Variable exceptionVariable;
+    private int exceptionVariable;
 
-    @Override
-    public BasicBlock getHandler() {
+    public List<Statement> getProtectedBody() {
+        return protectedBody;
+    }
+
+    public List<Statement> getHandler() {
         return handler;
     }
 
-    public void setHandler(BasicBlock handler) {
-        this.handler = handler;
-    }
-
-    @Override
     public String getExceptionType() {
         return exceptionType;
     }
@@ -43,17 +44,16 @@ public class TryCatchBlock implements TryCatchBlockReader {
         this.exceptionType = exceptionType;
     }
 
-    @Override
-    public Variable getExceptionVariable() {
+    public int getExceptionVariable() {
         return exceptionVariable;
     }
 
-    public void setExceptionVariable(Variable exceptionVariable) {
+    public void setExceptionVariable(int exceptionVariable) {
         this.exceptionVariable = exceptionVariable;
     }
 
     @Override
-    public BasicBlock getProtectedBlock() {
-        return protectedBlock;
+    public void acceptVisitor(StatementVisitor visitor) {
+        visitor.visit(this);
     }
 }

@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
+import org.teavm.classlib.java.io.TPrintStream;
 import org.teavm.javascript.ni.Remove;
 import org.teavm.javascript.ni.Rename;
 import org.teavm.javascript.ni.Superclass;
@@ -106,5 +107,14 @@ public class TThrowable extends RuntimeException {
         }
         this.cause = cause;
         return this;
+    }
+
+    @Override
+    public void printStackTrace() {
+        printStackTrace(TSystem.err);
+    }
+
+    public void printStackTrace(TPrintStream stream) {
+        stream.println(TString.wrap(getClass().getName() + ": " + getMessage()));
     }
 }

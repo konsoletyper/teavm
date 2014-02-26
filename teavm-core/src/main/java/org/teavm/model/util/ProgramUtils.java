@@ -15,8 +15,6 @@
  */
 package org.teavm.model.util;
 
-import java.util.HashMap;
-import java.util.Map;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphBuilder;
 import org.teavm.model.*;
@@ -58,7 +56,6 @@ public class ProgramUtils {
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             copy.createBasicBlock();
         }
-        Map<TryCatchBlock, TryCatchBlock> tryCatchCopies = new HashMap<>();
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
             BasicBlock blockCopy = copy.basicBlockAt(i);
@@ -78,13 +75,10 @@ public class ProgramUtils {
                 blockCopy.getPhis().add(phiCopy);
             }
             for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                TryCatchBlock tryCatchCopy = tryCatchCopies.get(tryCatch);
-                if (tryCatchCopy == null) {
-                    tryCatchCopy = new TryCatchBlock();
-                    tryCatchCopy.setExceptionType(tryCatchCopy.getExceptionType());
-                    tryCatchCopy.setHandler(copy.basicBlockAt(tryCatch.getHandler().getIndex()));
-                    tryCatchCopies.put(tryCatch, tryCatchCopy);
-                }
+                TryCatchBlock tryCatchCopy = new TryCatchBlock();
+                tryCatchCopy.setExceptionType(tryCatch.getExceptionType());
+                tryCatchCopy.setExceptionVariable(copy.variableAt(tryCatch.getExceptionVariable().getIndex()));
+                tryCatchCopy.setHandler(copy.basicBlockAt(tryCatch.getHandler().getIndex()));
                 blockCopy.getTryCatchBlocks().add(tryCatchCopy);
             }
         }

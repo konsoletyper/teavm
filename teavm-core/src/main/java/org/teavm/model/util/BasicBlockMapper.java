@@ -15,10 +15,7 @@
  */
 package org.teavm.model.util;
 
-import org.teavm.model.BasicBlock;
-import org.teavm.model.Incoming;
-import org.teavm.model.Phi;
-import org.teavm.model.Program;
+import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 
 /**
@@ -36,6 +33,9 @@ public abstract class BasicBlockMapper implements InstructionVisitor {
                 for (Incoming incoming : phi.getIncomings()) {
                     incoming.setSource(map(incoming.getSource()));
                 }
+            }
+            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                tryCatch.setHandler(map(tryCatch.getHandler()));
             }
         }
     }

@@ -15,14 +15,12 @@
  */
 package org.teavm.model;
 
-import java.util.Set;
-
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public interface TryCatchBlockReader {
-    Set<? extends BasicBlockReader> readProtectedBlocks();
+    BasicBlockReader getProtectedBlock();
 
     BasicBlockReader getHandler();
 

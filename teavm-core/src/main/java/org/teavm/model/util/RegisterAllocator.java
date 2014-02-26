@@ -76,12 +76,16 @@ public class RegisterAllocator {
             Map<BasicBlock, BasicBlock> blockMap = new HashMap<>();
             for (Phi phi : program.basicBlockAt(i).getPhis()) {
                 for (Incoming incoming : phi.getIncomings()) {
-                    insertCopy(incoming, blockMap);
+                    if (!isExceptionHandler(incoming)) {
+                        insertCopy(incoming, blockMap);
+                    }
                 }
             }
             for (Phi phi : program.basicBlockAt(i).getPhis()) {
                 for (Incoming incoming : phi.getIncomings()) {
-                    insertCopy(incoming, blockMap);
+                    if (!isExceptionHandler(incoming)) {
+                        insertCopy(incoming, blockMap);
+                    }
                 }
             }
         }
@@ -120,6 +124,15 @@ public class RegisterAllocator {
         }
         source.getInstructions().add(source.getInstructions().size() - 1, copyInstruction);
         incoming.setValue(copyInstruction.getReceiver());
+    }
+
+    private boolean isExceptionHandler(Incoming incoming) {
+        for (TryCatchBlock tryCatch : incoming.getSource().getTryCatchBlocks()) {
+            if (tryCatch.getExceptionVariable() == incoming.getValue()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void removeRedundantCopies(Program program, List<MutableGraphNode> interferenceGraph,
@@ -186,6 +199,10 @@ public class RegisterAllocator {
                 for (Incoming incoming : phi.getIncomings()) {
                     incoming.setValue(program.variableAt(varMap[incoming.getValue().getIndex()]));
                 }
+            }
+            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                tryCatch.setExceptionVariable(program.variableAt(
+                        varMap[tryCatch.getExceptionVariable().getIndex()]));
             }
         }
     }

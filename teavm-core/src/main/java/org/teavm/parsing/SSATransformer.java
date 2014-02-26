@@ -15,9 +15,10 @@
  */
 package org.teavm.parsing;
 
-import java.util.Arrays;
-import java.util.List;
-import org.teavm.common.*;
+import java.util.*;
+import org.teavm.common.DominatorTree;
+import org.teavm.common.Graph;
+import org.teavm.common.GraphUtils;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 import org.teavm.model.util.DefinitionExtractor;
@@ -114,6 +115,17 @@ public class SSATransformer {
             }
         }
 
+        List<List<TryCatchBlock>> caughtBlocks = new ArrayList<>();
+        List<List<Phi>> specialPhis = new ArrayList<>();
+        for (int i = 0; i < program.basicBlockCount(); ++i) {
+            caughtBlocks.add(new ArrayList<TryCatchBlock>());
+            specialPhis.add(new ArrayList<Phi>());
+        }
+        for (int i = 0; i < program.basicBlockCount(); ++i) {
+            for (TryCatchBlock tryCatch : program.basicBlockAt(i).getTryCatchBlocks()) {
+                caughtBlocks.get(tryCatch.getHandler().getIndex()).add(tryCatch);
+            }
+        }
         boolean[] processed = new boolean[program.basicBlockCount()];
         while (head > 0) {
             Task task = stack[--head];
@@ -128,11 +140,21 @@ public class SSATransformer {
                 variableMap[phi.getReceiver().getIndex()] = var;
                 phi.setReceiver(var);
             }
+            if (!caughtBlocks.get(currentBlock.getIndex()).isEmpty()) {
+                Phi phi = new Phi();
+                phi.setReceiver(program.createVariable());
+                for (TryCatchBlock tryCatch : caughtBlocks.get(currentBlock.getIndex())) {
+                    variableMap[tryCatch.getExceptionVariable().getIndex()] = phi.getReceiver();
+                    tryCatch.setExceptionVariable(program.createVariable());
+                    Incoming incoming = new Incoming();
+                    incoming.setSource(tryCatch.getProtectedBlock());
+                    incoming.setValue(tryCatch.getExceptionVariable());
+                    phi.getIncomings().add(incoming);
+                }
+                specialPhis.get(currentBlock.getIndex()).add(phi);
+            }
             for (Instruction insn : currentBlock.getInstructions()) {
                 insn.acceptVisitor(consumer);
-            }
-            for (TryCatchBlock tryCatch : currentBlock.getTryCatchBlocks()) {
-                define(tryCatch.getExceptionVariable());
             }
             int[] successors = domGraph.outgoingEdges(currentBlock.getIndex());
             for (int i = 0; i < successors.length; ++i) {
@@ -156,6 +178,9 @@ public class SSATransformer {
                     }
                 }
             }
+        }
+        for (int i = 0; i < specialPhis.size(); ++i) {
+            program.basicBlockAt(i).getPhis().addAll(specialPhis.get(i));
         }
     }
 

@@ -45,4 +45,6 @@ public interface StatementVisitor {
     void visit(IncrementStatement statement);
 
     void visit(InitClassStatement statement);
+
+    void visit(TryCatchStatement statement);
 }

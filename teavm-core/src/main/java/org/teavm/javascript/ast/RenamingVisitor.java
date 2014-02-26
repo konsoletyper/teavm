@@ -189,4 +189,15 @@ public class RenamingVisitor implements StatementVisitor, ExprVisitor {
     @Override
     public void visit(InitClassStatement statement) {
     }
+
+    @Override
+    public void visit(TryCatchStatement statement) {
+        for (Statement part : statement.getProtectedBody()) {
+            part.acceptVisitor(this);
+        }
+        for (Statement part : statement.getHandler()) {
+            part.acceptVisitor(this);
+        }
+        statement.setExceptionVariable(varNames[statement.getExceptionVariable()]);
+    }
 }

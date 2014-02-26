@@ -573,7 +573,7 @@ class StatementGenerator implements InstructionVisitor {
         assign(castToInteger(Expr.binary(op, Expr.var(first), Expr.var(second))), result);
     }
 
-    private Statement generateJumpStatement(BasicBlock target) {
+    Statement generateJumpStatement(BasicBlock target) {
         if (nextBlock == target) {
             return null;
         }

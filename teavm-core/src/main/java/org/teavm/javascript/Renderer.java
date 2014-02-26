@@ -1249,6 +1249,46 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         }
     }
 
+    @Override
+    public void visit(TryCatchStatement statement) {
+        try {
+            writer.append("try").ws().append("{").softNewLine().indent();
+            List<TryCatchStatement> sequence = new ArrayList<>();
+            sequence.add(statement);
+            List<Statement> protectedBody = statement.getProtectedBody();
+            while (protectedBody.size() == 1 && protectedBody.get(0) instanceof TryCatchStatement) {
+                TryCatchStatement nextStatement = (TryCatchStatement)protectedBody.get(0);
+                sequence.add(nextStatement);
+                protectedBody = nextStatement.getProtectedBody();
+            }
+            for (Statement part : protectedBody) {
+                part.acceptVisitor(this);
+            }
+            String var = variableName(statement.getExceptionVariable());
+            writer.outdent().append("}").ws().append("catch").ws().append("(").append(var).append(")")
+                    .ws().append("{").indent().softNewLine();
+            for (TryCatchStatement catchClause : sequence) {
+                writer.append("if").ws().append("(").append(var).append(" instanceof ")
+                        .appendClass(catchClause.getExceptionType()).append(")").ws().append("{")
+                        .indent().softNewLine();
+                if (statement.getExceptionVariable() != catchClause.getExceptionVariable()) {
+                    writer.append(variableName(catchClause.getExceptionVariable())).ws().append("=").ws()
+                            .append(var).append(";").softNewLine();
+                }
+                for (Statement part : statement.getHandler()) {
+                    part.acceptVisitor(this);
+                }
+                writer.outdent().append("}").ws().append("else ");
+            }
+            writer.append("{").indent().softNewLine();
+            writer.append("throw ").append(var).append(";").softNewLine();
+            writer.outdent().append("}").softNewLine();
+            writer.outdent().append("}").softNewLine();
+        } catch (IOException e) {
+            throw new RenderingException("IO error occured", e);
+        }
+    }
+
     private Injector getInjector(MethodReference ref) {
         InjectorHolder holder = injectorMap.get(ref);
         if (holder == null) {

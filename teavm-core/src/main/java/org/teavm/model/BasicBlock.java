@@ -198,14 +198,15 @@ public class BasicBlock implements BasicBlockReader {
             return tryCatchBlocks.size();
         }
         @Override public void add(int index, TryCatchBlock element) {
-            if (!element.protectedBlocks.add(BasicBlock.this)) {
+            if (element.protectedBlock == BasicBlock.this) {
                 throw new IllegalStateException("This try/catch block is already added to basic block");
             }
+            element.protectedBlock = BasicBlock.this;
             tryCatchBlocks.add(index, element);
         }
         @Override public TryCatchBlock remove(int index) {
             TryCatchBlock tryCatch = tryCatchBlocks.remove(index);
-            tryCatch.protectedBlocks.remove(BasicBlock.this);
+            tryCatch.protectedBlock = null;
             return tryCatch;
         }
         @Override public TryCatchBlock set(int index, TryCatchBlock element) {
@@ -213,17 +214,17 @@ public class BasicBlock implements BasicBlockReader {
             if (oldTryCatch == element) {
                 return oldTryCatch;
             }
-            if (element.protectedBlocks.contains(BasicBlock.this)) {
+            if (element.protectedBlock == BasicBlock.this) {
                 throw new IllegalStateException("This try/catch block is already added to basic block");
             }
-            oldTryCatch.protectedBlocks.remove(BasicBlock.this);
-            element.protectedBlocks.add(BasicBlock.this);
+            oldTryCatch.protectedBlock = null;
+            element.protectedBlock = BasicBlock.this;
             tryCatchBlocks.set(index, element);
             return oldTryCatch;
         }
         @Override public void clear() {
             for (TryCatchBlock tryCatch : tryCatchBlocks) {
-                tryCatch.protectedBlocks.remove(BasicBlock.this);
+                tryCatch.protectedBlock = null;
             }
             tryCatchBlocks.clear();
         }

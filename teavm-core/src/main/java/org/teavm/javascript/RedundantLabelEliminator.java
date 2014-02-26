@@ -119,4 +119,10 @@ class RedundantLabelEliminator implements StatementVisitor {
     @Override
     public void visit(InitClassStatement statement) {
     }
+
+    @Override
+    public void visit(TryCatchStatement statement) {
+        visitSequence(statement.getProtectedBody());
+        visitSequence(statement.getHandler());
+    }
 }

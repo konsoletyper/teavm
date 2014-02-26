@@ -171,7 +171,8 @@ public class Decompiler {
 
     public RegularMethodNode decompileRegular(MethodHolder method) {
         lastBlockId = 1;
-        indexer = new GraphIndexer(ProgramUtils.buildControlFlowGraph(method.getProgram()));
+        graph = ProgramUtils.buildControlFlowGraph(method.getProgram());
+        indexer = new GraphIndexer(graph);
         graph = indexer.getGraph();
         loopGraph = new LoopGraph(this.graph);
         unflatCode();
@@ -218,6 +219,18 @@ public class Decompiler {
                     insn.acceptVisitor(generator);
                 }
                 block.body.addAll(generator.statements);
+                for (TryCatchBlock tryCatch : generator.currentBlock.getTryCatchBlocks()) {
+                    TryCatchStatement tryCatchStmt = new TryCatchStatement();
+                    tryCatchStmt.setExceptionType(tryCatch.getExceptionType());
+                    tryCatchStmt.setExceptionVariable(tryCatch.getExceptionVariable().getIndex());
+                    tryCatchStmt.getProtectedBody().addAll(block.body);
+                    block.body.clear();
+                    block.body.add(tryCatchStmt);
+                    Statement handlerStmt = generator.generateJumpStatement(tryCatch.getHandler());
+                    if (handlerStmt != null) {
+                        tryCatchStmt.getHandler().add(handlerStmt);
+                    }
+                }
             }
         }
         SequentialStatement result = new SequentialStatement();

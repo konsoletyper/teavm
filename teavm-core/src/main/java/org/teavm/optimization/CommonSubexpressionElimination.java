@@ -101,6 +101,10 @@ public class CommonSubexpressionElimination implements MethodOptimization {
                 int value = map[incoming.getValue().getIndex()];
                 incoming.setValue(program.variableAt(value));
             }
+            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                int var = map[tryCatch.getExceptionVariable().getIndex()];
+                tryCatch.setExceptionVariable(program.variableAt(var));
+            }
             for (int succ : dom.outgoingEdges(v)) {
                 stack[top++] = succ;
             }
