@@ -53,6 +53,10 @@ class ReadWriteStatsBuilder {
                     reads[incoming.getValue().getIndex()]++;
                 }
             }
+            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                writes[tryCatch.getExceptionVariable().getIndex()]++;
+                reads[tryCatch.getExceptionVariable().getIndex()]++;
+            }
         }
     }
 }

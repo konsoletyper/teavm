@@ -1264,16 +1264,17 @@ public class Renderer implements ExprVisitor, StatementVisitor {
             for (Statement part : protectedBody) {
                 part.acceptVisitor(this);
             }
-            String var = variableName(statement.getExceptionVariable());
-            writer.outdent().append("}").ws().append("catch").ws().append("(").append(var).append(")")
+            writer.outdent().append("}").ws().append("catch").ws().append("($e)")
                     .ws().append("{").indent().softNewLine();
+            writer.append("$je").ws().append("=").ws().append("$e.$javaException;").softNewLine();
             for (TryCatchStatement catchClause : sequence) {
-                writer.append("if").ws().append("(").append(var).append(" instanceof ")
-                        .appendClass(catchClause.getExceptionType()).append(")").ws().append("{")
-                        .indent().softNewLine();
+                writer.append("if").ws().append("($je && $je instanceof ").appendClass(catchClause.getExceptionType())
+                        .append(")").ws().append("{").indent().softNewLine();
                 if (statement.getExceptionVariable() != catchClause.getExceptionVariable()) {
-                    writer.append(variableName(catchClause.getExceptionVariable())).ws().append("=").ws()
-                            .append(var).append(";").softNewLine();
+                    if (catchClause.getExceptionVariable() != null) {
+                        writer.append(variableName(catchClause.getExceptionVariable())).ws().append("=").ws()
+                                .append("$e;").softNewLine();
+                    }
                 }
                 for (Statement part : statement.getHandler()) {
                     part.acceptVisitor(this);
@@ -1281,7 +1282,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                 writer.outdent().append("}").ws().append("else ");
             }
             writer.append("{").indent().softNewLine();
-            writer.append("throw ").append(var).append(";").softNewLine();
+            writer.append("throw $e;").softNewLine();
             writer.outdent().append("}").softNewLine();
             writer.outdent().append("}").softNewLine();
         } catch (IOException e) {

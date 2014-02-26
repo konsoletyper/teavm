@@ -26,7 +26,7 @@ public class TryCatchStatement extends Statement {
     private List<Statement> protectedBody = new ArrayList<>();
     private List<Statement> handler = new ArrayList<>();
     private String exceptionType;
-    private int exceptionVariable;
+    private Integer exceptionVariable;
 
     public List<Statement> getProtectedBody() {
         return protectedBody;
@@ -44,11 +44,11 @@ public class TryCatchStatement extends Statement {
         this.exceptionType = exceptionType;
     }
 
-    public int getExceptionVariable() {
+    public Integer getExceptionVariable() {
         return exceptionVariable;
     }
 
-    public void setExceptionVariable(int exceptionVariable) {
+    public void setExceptionVariable(Integer exceptionVariable) {
         this.exceptionVariable = exceptionVariable;
     }
 

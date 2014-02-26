@@ -224,5 +224,12 @@ class UnusedVariableEliminator implements ExprVisitor, StatementVisitor {
         for (Statement part : statement.getHandler()) {
             part.acceptVisitor(this);
         }
+        if (statement.getExceptionVariable() != null) {
+            if (variables[statement.getExceptionVariable()] < 0) {
+                statement.setExceptionVariable(null);
+            } else {
+                statement.setExceptionVariable(renumber(statement.getExceptionVariable()));
+            }
+        }
     }
 }

@@ -58,4 +58,13 @@ public class VMTest {
         long b = 1836311903;
         assertEquals(2971215073L, a + b);
     }
+
+    @Test
+    public void catchesException() {
+        try {
+            throw new IllegalArgumentException();
+        } catch (IllegalArgumentException e) {
+            // do nothing
+        }
+    }
 }
