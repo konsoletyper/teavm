@@ -207,7 +207,7 @@ public class BasicBlock implements BasicBlockReader {
             TryCatchBlock tryCatch = tryCatchBlocks.remove(index);
             tryCatch.protectedBlocks.remove(BasicBlock.this);
             return tryCatch;
-        };
+        }
         @Override public TryCatchBlock set(int index, TryCatchBlock element) {
             TryCatchBlock oldTryCatch = tryCatchBlocks.get(index);
             if (oldTryCatch == element) {
@@ -220,13 +220,13 @@ public class BasicBlock implements BasicBlockReader {
             element.protectedBlocks.add(BasicBlock.this);
             tryCatchBlocks.set(index, element);
             return oldTryCatch;
-        };
+        }
         @Override public void clear() {
             for (TryCatchBlock tryCatch : tryCatchBlocks) {
                 tryCatch.protectedBlocks.remove(BasicBlock.this);
             }
             tryCatchBlocks.clear();
-        };
+        }
     };
 
     public List<TryCatchBlock> getTryCatchBlocks() {

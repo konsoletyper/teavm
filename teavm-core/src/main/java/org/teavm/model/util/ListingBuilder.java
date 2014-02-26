@@ -48,6 +48,11 @@ public class ListingBuilder {
                 block.readInstruction(j, stringifier);
                 sb.append("\n");
             }
+            for (TryCatchBlockReader tryCatch : block.readTryCatchBlocks()) {
+                sb.append(prefix).append("    catch ").append(tryCatch.getExceptionType()).append(" @")
+                        .append(tryCatch.getExceptionVariable().getIndex())
+                        .append(" -> $").append(tryCatch.getHandler().getIndex()).append("\n");
+            }
         }
         return sb.toString();
     }

@@ -17,10 +17,7 @@ package org.teavm.parsing;
 
 import java.util.*;
 import org.objectweb.asm.*;
-import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.InsnList;
-import org.objectweb.asm.tree.LabelNode;
-import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.*;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 import org.teavm.model.util.InstructionTransitionExtractor;
@@ -170,8 +167,7 @@ public class ProgramParser {
             }
         }
         targetInstructions = new ArrayList<>(instructions.size());
-        targetInstructions.addAll(Collections.<List<Instruction>>nCopies(
-                instructions.size(), null));
+        targetInstructions.addAll(Collections.<List<Instruction>>nCopies(instructions.size(), null));
         basicBlocks.addAll(Collections.<BasicBlock>nCopies(instructions.size(), null));
         stackBefore = new StackFrame[instructions.size()];
         stackAfter = new StackFrame[instructions.size()];
@@ -180,6 +176,10 @@ public class ProgramParser {
     private void doAnalyze(MethodNode method) {
         InsnList instructions = method.instructions;
         Deque<Step> workStack = new ArrayDeque<>();
+        for (Object obj : method.tryCatchBlocks) {
+            TryCatchBlockNode tryCatchNode = (TryCatchBlockNode)obj;
+            workStack.push(new Step(-2, labelIndexes.get(tryCatchNode.handler.getLabel())));
+        }
         workStack.push(new Step(-1, 0));
         while (!workStack.isEmpty()) {
             Step step = workStack.pop();
@@ -187,7 +187,18 @@ public class ProgramParser {
             if (stackBefore[index] != null) {
                 continue;
             }
-            stack = step.source != -1 ? stackAfter[step.source] : new StackFrame(minLocal + method.maxLocals - 1);
+            switch (step.source) {
+                case -1:
+                    stack = new StackFrame(minLocal + method.maxLocals - 1);
+                    break;
+                case -2:
+                    stack = new StackFrame(minLocal + method.maxLocals - 1);
+                    pushSingle();
+                    break;
+                default:
+                    stack = stackAfter[step.source];
+                    break;
+            }
             stackBefore[index] = stack;
             nextIndexes = new int[] { index + 1 };
             instructions.get(index).accept(methodVisitor);
@@ -198,6 +209,23 @@ public class ProgramParser {
             }
             for (int next : nextIndexes) {
                 workStack.push(new Step(index, next));
+            }
+        }
+        for (Object obj : method.tryCatchBlocks) {
+            TryCatchBlockNode tryCatchNode = (TryCatchBlockNode)obj;
+            TryCatchBlock tryCatch = new TryCatchBlock();
+            tryCatch.setExceptionType(tryCatchNode.type.replace('/', '.'));
+            tryCatch.setHandler(getBasicBlock(labelIndexes.get(tryCatchNode.handler.getLabel())));
+            tryCatch.setExceptionVariable(getVariable(minLocal + method.maxLocals));
+            int start = labelIndexes.get(tryCatchNode.start.getLabel());
+            int end = labelIndexes.get(tryCatchNode.end.getLabel());
+            getBasicBlock(start);
+            getBasicBlock(end);
+            for (int i = start; i < end; ++i) {
+                BasicBlock block = basicBlocks.get(i);
+                if (block != null) {
+                    block.getTryCatchBlocks().add(tryCatch);
+                }
             }
         }
     }

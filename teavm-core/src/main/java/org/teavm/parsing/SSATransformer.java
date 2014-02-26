@@ -131,6 +131,9 @@ public class SSATransformer {
             for (Instruction insn : currentBlock.getInstructions()) {
                 insn.acceptVisitor(consumer);
             }
+            for (TryCatchBlock tryCatch : currentBlock.getTryCatchBlocks()) {
+                define(tryCatch.getExceptionVariable());
+            }
             int[] successors = domGraph.outgoingEdges(currentBlock.getIndex());
             for (int i = 0; i < successors.length; ++i) {
                 Task next = new Task();

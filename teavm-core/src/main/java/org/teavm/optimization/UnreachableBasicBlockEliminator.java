@@ -17,6 +17,7 @@ package org.teavm.optimization;
 
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Program;
+import org.teavm.model.TryCatchBlock;
 import org.teavm.model.util.InstructionTransitionExtractor;
 
 /**
@@ -43,6 +44,9 @@ public class UnreachableBasicBlockEliminator {
             block.getLastInstruction().acceptVisitor(transitionExtractor);
             for (BasicBlock successor : transitionExtractor.getTargets()) {
                 stack[top++] = successor.getIndex();
+            }
+            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                stack[top++] = tryCatch.getHandler().getIndex();
             }
         }
         for (int i = 0; i < reachable.length; ++i) {
