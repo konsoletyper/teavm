@@ -16,6 +16,8 @@
 package org.teavm.maven;
 
 import java.io.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -33,6 +35,7 @@ import org.apache.maven.project.MavenProject;
 import org.teavm.common.ThreadPoolFiniteExecutor;
 import org.teavm.javascript.JavascriptBuilder;
 import org.teavm.javascript.JavascriptBuilderFactory;
+import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -77,6 +80,9 @@ public class BuildJavascriptMojo extends AbstractMojo {
     @Parameter(required = false)
     private int numThreads = 1;
 
+    @Parameter
+    private String[] transformers;
+
     public void setProject(MavenProject project) {
         this.project = project;
     }
@@ -109,6 +115,14 @@ public class BuildJavascriptMojo extends AbstractMojo {
         this.numThreads = numThreads;
     }
 
+    public String[] getTransformers() {
+        return transformers;
+    }
+
+    public void setTransformers(String[] transformers) {
+        this.transformers = transformers;
+    }
+
     @Override
     public void execute() throws MojoExecutionException {
         Log log = getLog();
@@ -133,6 +147,9 @@ public class BuildJavascriptMojo extends AbstractMojo {
             builder.setMinifying(minifying);
             builder.setBytecodeLogging(bytecodeLogging);
             builder.installPlugins();
+            for (ClassHolderTransformer transformer : instantiateTransformers(classLoader)) {
+                builder.add(transformer);
+            }
             builder.prepare();
             MethodDescriptor mainMethodDesc = new MethodDescriptor("main", ValueType.arrayOf(
                     ValueType.object("java.lang.String")), ValueType.VOID);
@@ -165,6 +182,41 @@ public class BuildJavascriptMojo extends AbstractMojo {
                 finalizer.run();
             }
         }
+    }
+
+    private List<ClassHolderTransformer> instantiateTransformers(ClassLoader classLoader)
+            throws MojoExecutionException {
+        List<ClassHolderTransformer> transformerInstances = new ArrayList<>();
+        if (transformers == null) {
+            return transformerInstances;
+        }
+        for (String transformerName : transformers) {
+            Class<?> transformerRawType;
+            try {
+                transformerRawType = Class.forName(transformerName, true, classLoader);
+            } catch (ClassNotFoundException e) {
+                throw new MojoExecutionException("Transformer not found: " + transformerName, e);
+            }
+            if (!ClassHolderTransformer.class.isAssignableFrom(transformerRawType)) {
+                throw new MojoExecutionException("Transformer " + transformerName + " is not subtype of " +
+                        ClassHolderTransformer.class.getName());
+            }
+            Class<? extends ClassHolderTransformer> transformerType = transformerRawType.asSubclass(
+                    ClassHolderTransformer.class);
+            Constructor<? extends ClassHolderTransformer> ctor;
+            try {
+                ctor = transformerType.getConstructor();
+            } catch (NoSuchMethodException e) {
+                throw new MojoExecutionException("Transformer " + transformerName + " has no default constructor");
+            }
+            try {
+                ClassHolderTransformer transformer = ctor.newInstance();
+                transformerInstances.add(transformer);
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+                throw new MojoExecutionException("Error instantiating transformer " + transformerName, e);
+            }
+        }
+        return transformerInstances;
     }
 
     private ClassLoader prepareClassLoader() throws MojoExecutionException {

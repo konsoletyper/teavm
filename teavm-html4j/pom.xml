@@ -90,9 +90,9 @@
               <scanDependencies>true</scanDependencies>
               <outputDir>${project.build.directory}/javascript-tck</outputDir>
               <adapterClass>org.teavm.html4j.testing.KOTestAdapter</adapterClass>
-              <!-- <wildcards>
-                <param>net.java.html.js.tests.*Test</param>
-              </wildcards>  -->
+              <transformers>
+                <param>org.teavm.javascript.NullPointerExceptionTransformer</param>
+              </transformers>
             </configuration>
           </execution>
         </executions>

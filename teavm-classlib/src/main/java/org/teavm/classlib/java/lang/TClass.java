@@ -133,6 +133,7 @@ public class TClass<T> extends TObject {
     }
 
     @GeneratedBy(ClassNativeGenerator.class)
+    @PluggableDependency(ClassNativeGenerator.class)
     public native T newInstance() throws TInstantiationException, TIllegalAccessException;
 
     @GeneratedBy(ClassNativeGenerator.class)

@@ -138,11 +138,10 @@ public class ClassNativeGenerator implements Generator, Injector, DependencyPlug
         writer.append("var cls = " + self + ".$data;").softNewLine();
         writer.append("var ctor = cls.$$constructor$$;").softNewLine();
         writer.append("if (!ctor) {").indent().softNewLine();
-        /*writer.append("var ex = new ").appendClass(InstantiationException.class.getName()).append("();").softNewLine();
+        writer.append("var ex = new ").appendClass(InstantiationException.class.getName()).append("();").softNewLine();
         writer.appendMethodBody(new MethodReference(InstantiationException.class.getName(), new MethodDescriptor(
-                "<init>", ValueType.VOID))).append("(ex);").softNewLine();*/
-        //writer.append("$rt_throw(ex);").softNewLine();
-        writer.append("return null;").softNewLine();
+                "<init>", ValueType.VOID))).append("(ex);").softNewLine();
+        writer.append("$rt_throw(ex);").softNewLine();
         writer.outdent().append("}").softNewLine();
         writer.append("var instance = new cls();").softNewLine();
         writer.append("ctor(instance);").softNewLine();
@@ -179,6 +178,10 @@ public class ClassNativeGenerator implements Generator, Injector, DependencyPlug
             case "forNameImpl":
             case "getDeclaringClass":
                 graph.getResult().propagate("java.lang.Class");
+                break;
+            case "newInstance":
+                checker.linkMethod(new MethodReference(InstantiationException.class.getName(), "<init>",
+                        ValueType.VOID), graph.getStack()).use();
                 break;
         }
     }

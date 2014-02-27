@@ -90,6 +90,11 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
     @Parameter
     private String adapterClass = JUnitTestAdapter.class.getName();
 
+    @Parameter
+    private String[] transformers;
+
+    private List<ClassHolderTransformer> transformerInstances;
+
     public void setProject(MavenProject project) {
         this.project = project;
     }
@@ -122,6 +127,14 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
         this.wildcards = wildcards;
     }
 
+    public String[] getTransformers() {
+        return transformers;
+    }
+
+    public void setTransformers(String[] transformers) {
+        this.transformers = transformers;
+    }
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         Runnable finalizer = null;
@@ -148,6 +161,7 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
                 findTests(classHolder);
             }
 
+            transformerInstances = instantiateTransformers(classLoader);
             File allTestsFile = new File(outputDir, "tests/all.js");
             try (Writer allTestsWriter = new OutputStreamWriter(new FileOutputStream(allTestsFile), "UTF-8")) {
                 allTestsWriter.write("doRunTests = function() {\n");
@@ -291,6 +305,9 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
         JavascriptBuilder builder = builderFactory.create();
         builder.setMinifying(minifying);
         builder.installPlugins();
+        for (ClassHolderTransformer transformer : transformerInstances) {
+            builder.add(transformer);
+        }
         builder.prepare();
         File file = new File(outputDir, targetName);
         try (Writer innerWriter = new OutputStreamWriter(new FileOutputStream(file), "UTF-8")) {
@@ -452,5 +469,40 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
                 IOUtils.copy(input, output);
             }
         }
+    }
+
+    private List<ClassHolderTransformer> instantiateTransformers(ClassLoader classLoader)
+            throws MojoExecutionException {
+        List<ClassHolderTransformer> transformerInstances = new ArrayList<>();
+        if (transformers == null) {
+            return transformerInstances;
+        }
+        for (String transformerName : transformers) {
+            Class<?> transformerRawType;
+            try {
+                transformerRawType = Class.forName(transformerName, true, classLoader);
+            } catch (ClassNotFoundException e) {
+                throw new MojoExecutionException("Transformer not found: " + transformerName, e);
+            }
+            if (!ClassHolderTransformer.class.isAssignableFrom(transformerRawType)) {
+                throw new MojoExecutionException("Transformer " + transformerName + " is not subtype of " +
+                        ClassHolderTransformer.class.getName());
+            }
+            Class<? extends ClassHolderTransformer> transformerType = transformerRawType.asSubclass(
+                    ClassHolderTransformer.class);
+            Constructor<? extends ClassHolderTransformer> ctor;
+            try {
+                ctor = transformerType.getConstructor();
+            } catch (NoSuchMethodException e) {
+                throw new MojoExecutionException("Transformer " + transformerName + " has no default constructor");
+            }
+            try {
+                ClassHolderTransformer transformer = ctor.newInstance();
+                transformerInstances.add(transformer);
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+                throw new MojoExecutionException("Error instantiating transformer " + transformerName, e);
+            }
+        }
+        return transformerInstances;
     }
 }
