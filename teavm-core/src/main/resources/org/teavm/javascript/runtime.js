@@ -228,8 +228,12 @@ $rt_init = function(cls, constructor, args) {
     return obj;
 }
 $rt_throw = function(ex) {
-    var err = new Error("Java exception thrown");
-    err.$javaException = ex;
+    var err = ex.$jsException;
+    if (!err) {
+        var err = new Error("Java exception thrown");
+        err.$javaException = ex;
+        ex.$jsException = err;
+    }
     throw err;
 }
 $rt_byteToInt = function(value) {

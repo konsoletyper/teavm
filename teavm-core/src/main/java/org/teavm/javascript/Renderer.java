@@ -1274,11 +1274,9 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                             .appendClass(catchClause.getExceptionType());
                 }
                 writer.append(")").ws().append("{").indent().softNewLine();
-                if (statement.getExceptionVariable() != catchClause.getExceptionVariable()) {
-                    if (catchClause.getExceptionVariable() != null) {
-                        writer.append(variableName(catchClause.getExceptionVariable())).ws().append("=").ws()
-                                .append("$e;").softNewLine();
-                    }
+                if (catchClause.getExceptionVariable() != null) {
+                    writer.append(variableName(catchClause.getExceptionVariable())).ws().append("=").ws()
+                            .append("$je;").softNewLine();
                 }
                 for (Statement part : catchClause.getHandler()) {
                     part.acceptVisitor(this);

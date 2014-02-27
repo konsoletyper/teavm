@@ -89,6 +89,15 @@ public class ProgramParser {
         program.basicBlockAt(0).getInstructions().add(insn);
         doAnalyze(method);
         assemble();
+        for (int i = 0; i < program.basicBlockCount(); ++i) {
+            BasicBlock block = program.basicBlockAt(i);
+            for (int j = 0; j < block.getTryCatchBlocks().size(); ++j) {
+                TryCatchBlock tryCatch = block.getTryCatchBlocks().get(j);
+                if (tryCatch.getHandler() == block) {
+                    block.getTryCatchBlocks().remove(j--);
+                }
+            }
+        }
         return program;
     }
 

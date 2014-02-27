@@ -38,4 +38,24 @@ public final class TMath extends TObject {
     public static long max(long a, long b) {
         return a > b ? a : b;
     }
+
+    public static double min(double a, double b) {
+        return a < b ? a : b;
+    }
+
+    public static double max(double a, double b) {
+        return a > b ? a : b;
+    }
+
+    public static int abs(int n) {
+        return n > 0 ? n : -n;
+    }
+
+    public static long abs(long n) {
+        return n > 0 ? n : -n;
+    }
+
+    public static double abs(double n) {
+        return n > 0 ? n : -n;
+    }
 }

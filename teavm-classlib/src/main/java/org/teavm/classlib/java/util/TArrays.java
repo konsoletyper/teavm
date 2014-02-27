@@ -219,6 +219,9 @@ public class TArrays extends TObject {
 
     @SuppressWarnings("unchecked")
     public static <T> void sort(T[] a, TComparator<? super T> c) {
+        if (a.length == 0) {
+            return;
+        }
         Object[] first = a;
         Object[] second = new Object[a.length];
         int chunkSize = 1;
