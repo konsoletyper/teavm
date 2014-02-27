@@ -95,6 +95,11 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
 
     private List<ClassHolderTransformer> transformerInstances;
 
+    @Parameter
+    private String[] additionalScripts;
+
+    private List<String> additionalScriptLocalPaths = new ArrayList<>();
+
     public void setProject(MavenProject project) {
         this.project = project;
     }
@@ -162,6 +167,7 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
             }
 
             transformerInstances = instantiateTransformers(classLoader);
+            includeAdditionalScripts(classLoader);
             File allTestsFile = new File(outputDir, "tests/all.js");
             try (Writer allTestsWriter = new OutputStreamWriter(new FileOutputStream(allTestsFile), "UTF-8")) {
                 allTestsWriter.write("doRunTests = function() {\n");
@@ -192,6 +198,13 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
                             }
                             firstException = false;
                             allTestsWriter.append("\"" + exception + "\"");
+                        }
+                        allTestsWriter.append("], additionalScripts : [");
+                        for (int i = 0; i < additionalScriptLocalPaths.size(); ++i) {
+                            if (i > 0) {
+                                allTestsWriter.append(", ");
+                            }
+                            escapeString(additionalScriptLocalPaths.get(i), allTestsWriter);
                         }
                         allTestsWriter.append("] }");
                     }
@@ -504,5 +517,29 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
             }
         }
         return transformerInstances;
+    }
+
+    private void includeAdditionalScripts(ClassLoader classLoader) throws MojoExecutionException {
+        if (additionalScripts == null) {
+            return;
+        }
+        for (String script : additionalScripts) {
+            String simpleName = script.substring(script.lastIndexOf('/') + 1);
+            additionalScriptLocalPaths.add("tests/" + simpleName);
+            if (classLoader.getResource(script) == null) {
+                throw new MojoExecutionException("Additional script " + script + " was not found");
+            }
+            File file = new File(outputDir, "tests/" + simpleName);
+            try (InputStream in = classLoader.getResourceAsStream(script)) {
+                if (!file.exists()) {
+                    file.createNewFile();
+                }
+                try(OutputStream out = new FileOutputStream(file)) {
+                    IOUtils.copy(in, out);
+                }
+            } catch (IOException e) {
+                throw new MojoExecutionException("Error copying additional script " + script, e);
+            }
+        }
     }
 }

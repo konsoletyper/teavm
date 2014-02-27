@@ -66,12 +66,12 @@ JUnitServer.prototype.isExpectedException = function(ex) {
     }
     return false;
 }
-JUnitServer.prototype.runTestCase = function(methodName, path, expectedExceptions, callback) {
+JUnitServer.prototype.runTestCase = function(methodName, path, expectedExceptions, additionalScripts, callback) {
     this.createRow(methodName);
     this.startTime = new Date().getTime();
     this.expectedExceptions = expectedExceptions;
     var self = this;
-    this.loadCode(path, function() {
+    this.loadCode(path, additionalScripts, function() {
         messageHandler = function(event) {
             window.removeEventListener("message", messageHandler);
             self.handleEvent(JSON.parse(event.data), callback);
@@ -93,16 +93,27 @@ JUnitServer.prototype.createRow = function(methodName) {
     this.timeCell = document.createElement("td");
     row.appendChild(this.timeCell);
 }
-JUnitServer.prototype.loadCode = function(path, callback) {
+JUnitServer.prototype.loadCode = function(path, additionalScripts, callback) {
     this.frame = document.createElement("iframe");
     document.body.appendChild(this.frame);
     var frameDoc = this.frame.contentWindow.document;
     var self = this;
-    this.loadScript("junit-support.js", function() {
-        self.loadScript("runtime.js", function() {
-            self.loadScript(path, callback);
-        });
-    });
+    var sequence = ["junit-support.js", "runtime.js"];
+    if (additionalScripts) {
+        for (var i = 0; i < additionalScripts.length; ++i) {
+            sequence.push(additionalScripts[i]);
+        }
+    }
+    sequence.push(path);
+    self.loadScripts(sequence, 0, callback);
+}
+JUnitServer.prototype.loadScripts = function(scripts, index, callback) {
+    var self = this;
+    if (index == scripts.length) {
+        callback();
+    } else {
+        this.loadScript(scripts[index], function() { self.loadScripts(scripts, index + 1, callback) });
+    }
 }
 JUnitServer.prototype.loadScript = function(name, callback) {
     var doc = this.frame.contentWindow.document;
@@ -141,7 +152,7 @@ JUnitServer.prototype.runMethodFromList = function(methods, index, callback) {
     if (index < methods.length) {
         var method = methods[index];
         var self = this;
-        this.runTestCase(method.name, method.script, method.expected, function() {
+        this.runTestCase(method.name, method.script, method.expected, method.additionalScripts, function() {
             self.runMethodFromList(methods, index + 1, callback);
         });
     } else {
