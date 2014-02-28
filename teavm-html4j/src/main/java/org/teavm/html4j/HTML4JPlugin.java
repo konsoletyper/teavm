@@ -27,5 +27,6 @@ public class HTML4JPlugin implements JavascriptBuilderPlugin {
     public void install(JavascriptBuilderHost host) {
         host.add(new JavaScriptBodyDependency());
         host.add(new JavaScriptBodyTransformer());
+        host.add(new JCLHacks());
     }
 }

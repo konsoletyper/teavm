@@ -164,6 +164,9 @@ public class DependencyChecker implements DependencyInfo {
     }
 
     public MethodDependency linkMethod(MethodReference methodRef, DependencyStack stack) {
+        if (methodRef == null) {
+            throw new IllegalArgumentException();
+        }
         stacks.putIfAbsent(methodRef, stack);
         return methodCache.map(methodRef);
     }

@@ -64,11 +64,26 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
     }
 
     protected TAbstractStringBuilder append(TString string) {
+        return insert(length, string);
+    }
+
+    protected TAbstractStringBuilder insert(int index, TString string) {
+        if (index < 0 || index > length) {
+            throw new TStringIndexOutOfBoundsException();
+        }
         if (string == null) {
             string = TString.wrap("null");
+        } else if (string.isEmpty()) {
+            return this;
         }
         ensureCapacity(length + string.length());
-        int j = length;
+        if (index < length) {
+            for (int i = length - 1; i >= index; --i) {
+                buffer[i + string.length()] = buffer[i];
+            }
+            length += string.length();
+        }
+        int j = index;
         for (int i = 0; i < string.length(); ++i) {
             buffer[j++] = string.charAt(i);
         }
@@ -587,5 +602,17 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
 
     public void setLength(int newLength) {
         length = newLength;
+    }
+
+    public TAbstractStringBuilder deleteCharAt(int index) {
+        if (index < 0 || index >= length) {
+            throw new TStringIndexOutOfBoundsException();
+        }
+        length--;
+        for (int i = index; i < length; ++i) {
+            buffer[i] = buffer[i + 1];
+        }
+        --length;
+        return this;
     }
 }

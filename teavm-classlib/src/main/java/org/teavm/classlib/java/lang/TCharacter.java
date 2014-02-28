@@ -100,6 +100,14 @@ public class TCharacter extends TObject {
         return digit < 10 ? (char)('0' + digit) : (char)('a' + digit - 10);
     }
 
+    public static boolean isDigit(char ch) {
+        return isDigit((int)ch);
+    }
+
+    public static boolean isDigit(int codePoint) {
+        return digit(codePoint) >= 0;
+    }
+
     private static int[] getDigitMapping() {
         if (digitMapping == null) {
             digitMapping = UnicodeHelper.decodeIntByte(obtainDigitMapping());
@@ -128,5 +136,13 @@ public class TCharacter extends TObject {
         } else {
             return new char[] { (char)codePoint };
         }
+    }
+
+    public static boolean isISOControl(char ch) {
+        return isISOControl((int)ch);
+    }
+
+    public static boolean isISOControl(int codePoint) {
+        return codePoint >= 0 && codePoint <= 0x1F || codePoint >= 0x7F && codePoint <= 0x9F;
     }
 }

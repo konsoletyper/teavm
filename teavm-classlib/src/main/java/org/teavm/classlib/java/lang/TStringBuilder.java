@@ -103,4 +103,16 @@ public class TStringBuilder extends TAbstractStringBuilder implements TAppendabl
         super.append(b);
         return this;
     }
+
+    @Override
+    public TStringBuilder deleteCharAt(int index) {
+        deleteCharAt(index);
+        return this;
+    }
+
+    @Override
+    public TStringBuilder insert(int index, TString string) {
+        super.insert(index, string);
+        return this;
+    }
 }

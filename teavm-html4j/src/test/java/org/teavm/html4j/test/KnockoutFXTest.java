@@ -42,18 +42,17 @@
  */
 package org.teavm.html4j.test;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLConnection;
+import java.util.HashMap;
 import java.util.Map;
 import net.java.html.BrwsrCtx;
 import net.java.html.js.JavaScriptBody;
 import org.apidesign.html.boot.spi.Fn;
 import org.apidesign.html.context.spi.Contexts;
+import org.apidesign.html.json.spi.JSONCall;
 import org.apidesign.html.json.spi.Technology;
 import org.apidesign.html.json.spi.Transfer;
 import org.apidesign.html.json.tck.KnockoutTCK;
@@ -64,9 +63,11 @@ import org.testng.Assert;
  *
  * @author Jaroslav Tulach <jtulach@netbeans.org>
  */
-public final class KnockoutFXTest extends KnockoutTCK {
+public final class KnockoutFXTest extends KnockoutTCK implements Transfer {
     private static Class<?> browserClass;
     private static Fn.Presenter browserContext;
+    private KO4J ko4j = new KO4J();
+    private Map<String, String> urlMap = new HashMap<>();
 
     public KnockoutFXTest() {
     }
@@ -98,8 +99,8 @@ public final class KnockoutFXTest extends KnockoutTCK {
     public BrwsrCtx createContext() {
         KO4J ko4j = new KO4J();
         return Contexts.newBuilder()
-                .register(Transfer.class, ko4j.transfer(), 1)
-                .register(Technology.class, new KO4J().knockout(), 1)
+                .register(Transfer.class, this, 1)
+                .register(Technology.class, ko4j.knockout(), 1)
                 .build();
     }
 
@@ -137,23 +138,9 @@ public final class KnockoutFXTest extends KnockoutTCK {
     @Override
     public URI prepareURL(String content, String mimeType, String[] parameters) {
         try {
-            final URL baseURL = new URL(findBaseURL());
-            StringBuilder sb = new StringBuilder();
-            sb.append("/dynamic?mimeType=").append(mimeType);
-            for (int i = 0; i < parameters.length; i++) {
-                sb.append("&param" + i).append("=").append(parameters[i]);
-            }
-            String mangle = content.replace("\n", "%0a")
-                .replace("\"", "\\\"").replace(" ", "%20");
-            sb.append("&content=").append(mangle);
-
-            URL query = new URL(baseURL, sb.toString());
-            URLConnection c = query.openConnection();
-            BufferedReader br = new BufferedReader(new InputStreamReader(c.getInputStream()));
-            URI connectTo = new URI(br.readLine());
-            return connectTo;
-        } catch (IOException ex) {
-            throw new IllegalStateException(ex);
+            String url = "http://localhost/dynamic/" + urlMap.size();
+            urlMap.put(url, content);
+            return new URI(url);
         } catch (URISyntaxException ex) {
             throw new IllegalStateException(ex);
         }
@@ -161,12 +148,27 @@ public final class KnockoutFXTest extends KnockoutTCK {
 
     @Override
     public boolean canFailWebSocketTest() {
-        try {
-            Class.forName("java.util.function.Function");
-            return false;
-        } catch (ClassNotFoundException ex) {
-            // running on JDK7, FX WebView WebSocket impl does not work
-            return true;
+        return true;
+    }
+
+    @Override
+    public void extract(Object obj, String[] props, Object[] values) {
+        ko4j.transfer().extract(obj, props, values);
+    }
+
+    @Override
+    public Object toJSON(InputStream is) throws IOException {
+        return ko4j.transfer().toJSON(is);
+    }
+
+    @Override
+    public void loadJSON(JSONCall call) {
+        String url = call.composeURL(null);
+        String data = urlMap.get(url);
+        if (data != null) {
+            call.notifySuccess(data);
+        } else {
+            call.notifyError(new IllegalStateException());
         }
     }
 }
