@@ -30,7 +30,7 @@ import org.teavm.common.IntegerArray;
  */
 public class UnicodeSupport {
     private static AtomicBoolean filled = new AtomicBoolean();
-    private static volatile CountDownLatch latch = new CountDownLatch(0);
+    private static volatile CountDownLatch latch = new CountDownLatch(1);
     private static int[] digitValues;
 
     private static void parseUnicodeData() {
@@ -130,6 +130,7 @@ public class UnicodeSupport {
     private static void ensureUnicodeData() {
         if (filled.compareAndSet(false, true)) {
             parseUnicodeData();
+            latch.countDown();
             latch = null;
         } else {
             CountDownLatch latchCopy = latch;
