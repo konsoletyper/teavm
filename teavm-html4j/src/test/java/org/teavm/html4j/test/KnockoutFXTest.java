@@ -42,6 +42,7 @@
  */
 package org.teavm.html4j.test;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -166,7 +167,12 @@ public final class KnockoutFXTest extends KnockoutTCK implements Transfer {
         String url = call.composeURL(null);
         String data = urlMap.get(url);
         if (data != null) {
-            call.notifySuccess(data);
+            data = "[" + data + "]";
+            try {
+                call.notifySuccess(toJSON(new ByteArrayInputStream(data.getBytes())));
+            } catch (IOException e) {
+                call.notifyError(e);
+            }
         } else {
             call.notifyError(new IllegalStateException());
         }
