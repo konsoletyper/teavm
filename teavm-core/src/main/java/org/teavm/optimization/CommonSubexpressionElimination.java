@@ -406,5 +406,12 @@ public class CommonSubexpressionElimination implements MethodOptimization {
         @Override
         public void visit(InitClassInstruction insn) {
         }
+
+        @Override
+        public void visit(NullCheckInstruction insn) {
+            int val = map[insn.getValue().getIndex()];
+            insn.setValue(program.variableAt(val));
+            bind(insn.getReceiver().getIndex(), "nullCheck @" + val);
+        }
     };
 }

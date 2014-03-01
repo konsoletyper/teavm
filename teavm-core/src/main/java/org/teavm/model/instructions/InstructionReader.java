@@ -96,4 +96,6 @@ public interface InstructionReader {
     void isInstance(VariableReader receiver, VariableReader value, ValueType type);
 
     void initClass(String className);
+
+    void nullCheck(VariableReader receiver, VariableReader value);
 }

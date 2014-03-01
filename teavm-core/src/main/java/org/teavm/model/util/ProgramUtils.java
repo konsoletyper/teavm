@@ -396,5 +396,13 @@ public class ProgramUtils {
             insnCopy.setClassName(insn.getClassName());
             copy = insnCopy;
         }
+
+        @Override
+        public void visit(NullCheckInstruction insn) {
+            NullCheckInstruction insnCopy = new NullCheckInstruction();
+            insnCopy.setReceiver(copyVar(insn.getReceiver()));
+            insnCopy.setValue(copyVar(insn.getValue()));
+            copy = insnCopy;
+        }
     }
 }

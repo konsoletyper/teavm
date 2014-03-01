@@ -18,6 +18,7 @@ package org.teavm.javascript;
 import org.teavm.model.*;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.instructions.NullCheckInstruction;
 
 /**
  *
@@ -46,12 +47,12 @@ public class NullPointerExceptionTransformer implements ClassHolderTransformer {
                 if (invoke.getType() != InvocationType.VIRTUAL) {
                     continue;
                 }
-                InvokeInstruction checkInvoke = new InvokeInstruction();
-                checkInvoke.setMethod(new MethodReference(RuntimeSupport.class.getName(), "requireNonNull",
-                        ValueType.object("java.lang.Object"), ValueType.VOID));
-                checkInvoke.setType(InvocationType.SPECIAL);
-                checkInvoke.getArguments().add(invoke.getInstance());
-                block.getInstructions().add(i++, checkInvoke);
+                NullCheckInstruction nullCheck = new NullCheckInstruction();
+                nullCheck.setValue(invoke.getInstance());
+                Variable var = block.getProgram().createVariable();
+                nullCheck.setReceiver(var);
+                invoke.setInstance(var);
+                block.getInstructions().add(i++, nullCheck);
             }
         }
     }

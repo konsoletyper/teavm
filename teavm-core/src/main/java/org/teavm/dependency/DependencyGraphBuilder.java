@@ -440,5 +440,18 @@ class DependencyGraphBuilder {
                 }
             });
         }
+
+        @Override
+        public void nullCheck(VariableReader receiver, VariableReader value) {
+            DependencyNode valueNode = nodes[value.getIndex()];
+            DependencyNode receiverNode = nodes[receiver.getIndex()];
+            valueNode.connect(receiverNode);
+            useRunners.add(new Runnable() {
+                @Override public void run() {
+                    dependencyChecker.linkMethod(new MethodReference("java.lang.NullPointerException",
+                            "<init>", ValueType.VOID), callerStack);
+                }
+            });
+        }
     };
 }

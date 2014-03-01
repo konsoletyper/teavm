@@ -202,5 +202,10 @@ public class VariableUsageGraphBuilder {
         @Override
         public void visit(InitClassInstruction insn) {
         }
+
+        @Override
+        public void visit(NullCheckInstruction insn) {
+            use(insn.getReceiver(), insn.getValue());
+        }
     }
 }

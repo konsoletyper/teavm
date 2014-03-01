@@ -180,4 +180,8 @@ public abstract class BasicBlockMapper implements InstructionVisitor {
     @Override
     public void visit(InitClassInstruction insn) {
     }
+
+    @Override
+    public void visit(NullCheckInstruction insn) {
+    }
 }

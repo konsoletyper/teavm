@@ -79,6 +79,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
             renderRuntimeString();
             renderRuntimeUnwrapString();
             renderRuntimeObjcls();
+            renderRuntimeNullCheck();
         } catch (NamingException e) {
             throw new RenderingException("Error rendering runtime methods. See a cause for details", e);
         } catch (IOException e) {
@@ -93,8 +94,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         writer.append("var cls").ws().append("=").ws().append("clsProto.classObject;").softNewLine();
         writer.append("if").ws().append("(cls").ws().append("===").ws().append("undefined)").ws()
                 .append("{").softNewLine().indent();
-        MethodReference createMethodRef = new MethodReference(classClass, new MethodDescriptor("createNew",
-                ValueType.object(classClass)));
+        MethodReference createMethodRef = new MethodReference(classClass, "createNew", ValueType.object(classClass));
         writer.append("cls").ws().append("=").ws().appendMethodBody(createMethodRef).append("();").softNewLine();
         writer.append("cls.$data = clsProto;").softNewLine();
         if (classSource.get(classClass).getField("name") != null) {
@@ -124,8 +124,8 @@ public class Renderer implements ExprVisitor, StatementVisitor {
 
     private void renderRuntimeString() throws IOException {
         String stringClass = "java.lang.String";
-        MethodReference stringCons = new MethodReference(stringClass, new MethodDescriptor("<init>",
-                ValueType.arrayOf(ValueType.CHARACTER), ValueType.VOID));
+        MethodReference stringCons = new MethodReference(stringClass, "<init>",
+                ValueType.arrayOf(ValueType.CHARACTER), ValueType.VOID);
         writer.append("$rt_str = function(str) {").indent().softNewLine();
         writer.append("var characters = $rt_createCharArray(str.length);").softNewLine();
         writer.append("var charsBuffer = characters.data;").softNewLine();
@@ -139,20 +139,29 @@ public class Renderer implements ExprVisitor, StatementVisitor {
 
     private void renderRuntimeUnwrapString() throws IOException {
         String stringClass = "java.lang.String";
-        MethodReference stringLen = new MethodReference(stringClass, new MethodDescriptor(
-                "length", ValueType.INTEGER));
-        MethodReference getChars = new MethodReference(stringClass, new MethodDescriptor(
-                "getChars", ValueType.INTEGER, ValueType.INTEGER, ValueType.arrayOf(ValueType.CHARACTER),
-                ValueType.INTEGER, ValueType.VOID));
+        MethodReference stringLen = new MethodReference(stringClass, "length", ValueType.INTEGER);
+        MethodReference getChars = new MethodReference(stringClass, "getChars", ValueType.INTEGER, ValueType.INTEGER,
+                ValueType.arrayOf(ValueType.CHARACTER), ValueType.INTEGER, ValueType.VOID);
         writer.append("$rt_ustr = function(str) {").indent().softNewLine();
         writer.append("var result = \"\";").softNewLine();
         writer.append("var sz = ").appendMethodBody(stringLen).append("(str);").softNewLine();
-        writer.append("var array = $rt_createCharArray(sz);");
-        writer.appendMethodBody(getChars).append("(str, 0, sz, array, 0);");
+        writer.append("var array = $rt_createCharArray(sz);").softNewLine();
+        writer.appendMethodBody(getChars).append("(str, 0, sz, array, 0);").softNewLine();
         writer.append("for (var i = 0; i < sz; i = (i + 1) | 0) {").indent().softNewLine();
         writer.append("result += String.fromCharCode(array.data[i]);").softNewLine();
         writer.outdent().append("}").softNewLine();
         writer.append("return result;").softNewLine();
+        writer.outdent().append("}").newLine();
+    }
+
+    private void renderRuntimeNullCheck() throws IOException {
+        String npe = "java.lang.NullPointerException";
+        writer.append("$rt_nullCheck = function(val) {").indent().softNewLine();
+        writer.append("if (val === null) {").indent().softNewLine();
+        writer.append("$rt_throw(").appendClass(npe).append('.').appendMethod(npe, "<init>", ValueType.VOID)
+                .append("());").softNewLine();
+        writer.outdent().append("}").softNewLine();
+        writer.append("return val;").softNewLine();
         writer.outdent().append("}").newLine();
     }
 
@@ -217,7 +226,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                         .append("function()").ws().append("{").ws()
                         .appendClass(cls.getName()).append("_$clinit();").ws().append("}");
             }
-            writer.ws().append("});").softNewLine().outdent();
+            writer.ws().append("});").newLine().outdent();
             List<MethodNode> nonInitMethods = new ArrayList<>();
             if (!cls.getModifiers().contains(NodeModifier.INTERFACE)) {
                 writer.append("function ").appendClass(cls.getName()).append("_$clinit()").ws()
@@ -857,6 +866,11 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                     break;
                 case SHORT_TO_INT:
                     writer.append("$rt_shortToInt(");
+                    expr.getOperand().acceptVisitor(this);
+                    writer.append(')');
+                    break;
+                case NULL_CHECK:
+                    writer.append("$rt_nullCheck(");
                     expr.getOperand().acceptVisitor(this);
                     writer.append(')');
                     break;

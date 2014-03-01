@@ -197,4 +197,9 @@ public class DefinitionExtractor implements InstructionVisitor {
     public void visit(InitClassInstruction insn) {
         definedVariables = new Variable[0];
     }
+
+    @Override
+    public void visit(NullCheckInstruction insn) {
+        definedVariables = new Variable[] { insn.getReceiver() };
+    }
 }

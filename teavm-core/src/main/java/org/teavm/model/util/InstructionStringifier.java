@@ -337,4 +337,9 @@ public class InstructionStringifier implements InstructionReader {
     public void initClass(String className) {
         sb.append("initclass ").append(className);
     }
+
+    @Override
+    public void nullCheck(VariableReader receiver, VariableReader value) {
+        sb.append("@").append(receiver.getIndex()).append(" := nullCheck @").append(value.getIndex());
+    }
 }

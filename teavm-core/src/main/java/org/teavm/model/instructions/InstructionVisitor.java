@@ -85,4 +85,6 @@ public interface InstructionVisitor {
     void visit(IsInstanceInstruction insn);
 
     void visit(InitClassInstruction insn);
+
+    void visit(NullCheckInstruction insn);
 }

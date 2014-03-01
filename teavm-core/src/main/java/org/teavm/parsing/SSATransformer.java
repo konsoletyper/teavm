@@ -424,5 +424,11 @@ public class SSATransformer {
         @Override
         public void visit(InitClassInstruction insn) {
         }
+
+        @Override
+        public void visit(NullCheckInstruction insn) {
+            insn.setValue(use(insn.getValue()));
+            insn.setReceiver(define(insn.getReceiver()));
+        }
     };
 }

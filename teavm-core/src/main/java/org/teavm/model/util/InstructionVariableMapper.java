@@ -223,4 +223,9 @@ public abstract class InstructionVariableMapper implements InstructionVisitor {
     public void visit(InitClassInstruction insn) {
     }
 
+    @Override
+    public void visit(NullCheckInstruction insn) {
+        insn.setReceiver(map(insn.getReceiver()));
+        insn.setValue(map(insn.getValue()));
+    }
 }
