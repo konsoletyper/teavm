@@ -17,12 +17,10 @@ package org.teavm.classlib.java.lang;
 
 import java.io.IOException;
 import org.teavm.codegen.SourceWriter;
-import org.teavm.dependency.DependencyChecker;
-import org.teavm.dependency.DependencyNode;
-import org.teavm.dependency.DependencyPlugin;
-import org.teavm.dependency.MethodDependency;
+import org.teavm.dependency.*;
 import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.GeneratorContext;
+import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 
 /**
@@ -39,6 +37,11 @@ public class SystemNativeGenerator implements Generator, DependencyPlugin {
             case "currentTimeMillis":
                 generateCurrentTimeMillis(writer);
                 break;
+            case "setErr":
+                writer.appendClass("java.lang.System").append('.')
+                        .appendField(new FieldReference("java.lang.System", "err"))
+                        .ws().append('=').ws().append(context.getParameterName(1)).append(";").softNewLine();
+                break;
         }
     }
 
@@ -47,6 +50,9 @@ public class SystemNativeGenerator implements Generator, DependencyPlugin {
         switch (method.getReference().getName()) {
             case "doArrayCopy":
                 achieveArrayCopy(method);
+                break;
+            case "setErr":
+                achieveSetErr(checker, method);
                 break;
         }
     }
@@ -70,5 +76,10 @@ public class SystemNativeGenerator implements Generator, DependencyPlugin {
         DependencyNode src = method.getVariable(1);
         DependencyNode dest = method.getVariable(3);
         src.getArrayItem().connect(dest.getArrayItem());
+    }
+
+    private void achieveSetErr(DependencyChecker checker, MethodDependency method) {
+        FieldDependency fieldDep = checker.linkField(new FieldReference("java.lang.System", "err"), method.getStack());
+        method.getVariable(1).connect(fieldDep.getValue());
     }
 }

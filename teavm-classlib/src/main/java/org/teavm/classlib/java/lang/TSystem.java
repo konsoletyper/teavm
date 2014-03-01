@@ -17,6 +17,7 @@ package org.teavm.classlib.java.lang;
 
 import org.teavm.classlib.java.io.TPrintStream;
 import org.teavm.classlib.java.lang.reflect.TArray;
+import org.teavm.dependency.PluggableDependency;
 import org.teavm.javascript.ni.GeneratedBy;
 
 /**
@@ -60,4 +61,8 @@ public final class TSystem extends TObject {
         // TODO: make implementation
         return null;
     }
+
+    @GeneratedBy(SystemNativeGenerator.class)
+    @PluggableDependency(SystemNativeGenerator.class)
+    public static native void setErr(TPrintStream err);
 }
