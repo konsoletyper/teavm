@@ -158,8 +158,8 @@ public class JavascriptBuilder implements JavascriptBuilderHost {
         Linker linker = new Linker(dependencyChecker);
         ListableClassHolderSource classSet = linker.link(classSource);
         Decompiler decompiler = new Decompiler(classSet, classLoader, executor);
-        /*devirtualize(classSet, dependencyChecker);
-        executor.complete();*/
+        devirtualize(classSet, dependencyChecker);
+        executor.complete();
         ClassSetOptimizer optimizer = new ClassSetOptimizer(executor);
         optimizer.optimizeAll(classSet);
         executor.complete();
@@ -199,7 +199,6 @@ public class JavascriptBuilder implements JavascriptBuilderHost {
     }
 
     // TODO: repair devirtualization
-    @SuppressWarnings("unused")
     private void devirtualize(ListableClassHolderSource classes, DependencyInfo dependency) {
         final Devirtualization devirtualization = new Devirtualization(dependency, classes);
         for (String className : classes.getClassNames()) {

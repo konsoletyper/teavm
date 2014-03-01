@@ -85,7 +85,7 @@
             </goals>
             <phase>process-test-classes</phase>
             <configuration>
-              <minifying>true</minifying>
+              <minifying>false</minifying>
               <numThreads>1</numThreads>
               <scanDependencies>true</scanDependencies>
               <outputDir>${project.build.directory}/javascript-tck</outputDir>

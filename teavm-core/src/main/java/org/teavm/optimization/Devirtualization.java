@@ -55,7 +55,7 @@ public class Devirtualization {
                 }
                 ValueDependencyInfo var = methodDep.getVariable(invoke.getInstance().getIndex());
                 Set<MethodReference> implementations = getImplementations(var.getTypes(),
-                        invoke.getMethod().getDescriptor());
+                        invoke.getMethod());
                 if (implementations.size() == 1) {
                     invoke.setType(InvocationType.SPECIAL);
                     invoke.setMethod(implementations.iterator().next());
@@ -64,14 +64,37 @@ public class Devirtualization {
         }
     }
 
-    private Set<MethodReference> getImplementations(String[] classNames, MethodDescriptor desc) {
+    private Set<MethodReference> getImplementations(String[] classNames, MethodReference ref) {
         Set<MethodReference> methods = new HashSet<>();
         for (String className : classNames) {
             ClassReader cls = classSource.get(className);
-            if (cls != null && cls.getMethod(desc) != null) {
-                methods.add(new MethodReference(className, desc));
+            if (cls == null || !isAssignable(ref.getClassName(), cls)) {
+                break;
+            }
+            MethodDependencyInfo methodDep = dependency.getMethod(new MethodReference(className, ref.getDescriptor()));
+            if (methodDep != null) {
+                methods.add(methodDep.getReference());
             }
         }
         return methods;
+    }
+
+    private boolean isAssignable(String target, ClassReader cls) {
+        if (cls.getName().equals(target)) {
+            return true;
+        }
+        if (cls.getParent() != null) {
+            ClassReader parent = classSource.get(cls.getParent());
+            if (parent != null && isAssignable(target, parent)) {
+                return true;
+            }
+        }
+        for (String ifaceName : cls.getInterfaces()) {
+            ClassReader iface = classSource.get(ifaceName);
+            if (iface != null && isAssignable(target, iface)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
