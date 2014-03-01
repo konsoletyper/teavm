@@ -121,6 +121,11 @@ class ClassRefsRenamer implements InstructionVisitor {
             for (Instruction insn : basicBlock.getInstructions()) {
                 insn.acceptVisitor(this);
             }
+            for (TryCatchBlock tryCatch : basicBlock.getTryCatchBlocks()) {
+                if (tryCatch.getExceptionType() != null) {
+                    tryCatch.setExceptionType(classNameMapper.map(tryCatch.getExceptionType()));
+                }
+            }
         }
     }
 

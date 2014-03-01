@@ -371,6 +371,22 @@ $rt_putStderr = function(ch) {
         $rt_stderrBuffer += String.fromCharCode(ch);
     }
 }
+function $rt_declClass(cls, data) {
+    cls.name = data.name;
+    cls.$meta = {};
+    cls.$meta.superclass = data.superclass;
+    cls.$meta.supertypes = data.interfaces ? data.interfaces.slice() : [];
+    if (data.superclass) {
+        cls.$meta.supertypes.push(data.superclass);
+        cls.prototype = new data.superclass();
+    } else {
+        cls.prototype = new Object();
+    }
+    cls.$meta.name = data.name;
+    cls.$meta.enum = data.enum;
+    cls.prototype.constructor = cls;
+    cls.$clinit = data.clinit;
+}
 
 Long = function(lo, hi) {
     this.lo = lo | 0;

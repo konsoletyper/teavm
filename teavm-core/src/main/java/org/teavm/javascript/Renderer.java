@@ -190,49 +190,49 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                         .append(constantToString(value)).append(";").softNewLine();
             }
 
-            if (!cls.getModifiers().contains(NodeModifier.INTERFACE)) {
-                writer.appendClass(cls.getName()).append(".prototype").ws().append("=").ws().append("new ")
-                        .append(cls.getParentName() != null ? naming.getNameFor(cls.getParentName()) :
-                        "Object").append("();").softNewLine();
-                writer.appendClass(cls.getName()).append(".prototype.constructor").ws().append("=").ws()
-                        .appendClass(cls.getName()).append(';').softNewLine();
-            }
-            writer.appendClass(cls.getName()).append(".$meta").ws().append("=").ws().append("{").ws();
-            writer.append("name").ws().append(":").ws().append("\"").append(cls.getName()).append("\",").ws();
+            writer.append("$rt_declClass(").appendClass(cls.getName()).append(",").ws().append("{")
+                    .indent().softNewLine();
+            writer.append("name").ws().append(":").ws().append("\"").append(escapeString(cls.getName()))
+                    .append("\"");
             if (cls.getModifiers().contains(NodeModifier.ENUM)) {
-                writer.append("enum").ws().append(":").ws().append("true,").ws();
+                writer.append(",").softNewLine().append("enum").ws().append(":").ws().append("true");
             }
-            writer.append("supertypes").ws().append(":").ws().append("[");
-            boolean first = true;
-            if (cls.getParentName() != null) {
-                writer.appendClass(cls.getParentName());
-                first = false;
-            }
-            for (String iface : cls.getInterfaces()) {
-                if (!first) {
-                    writer.append(",").ws();
+            if (!cls.getInterfaces().isEmpty()) {
+                writer.append(",").softNewLine().append("interfaces").ws().append(":").ws().append("[");
+                for (int i = 0; i < cls.getInterfaces().size(); ++i) {
+                    String iface = cls.getInterfaces().get(i);
+                    if (i > 0) {
+                        writer.append(",").ws();
+                    }
+                    writer.appendClass(iface);
                 }
-                first = false;
-                writer.appendClass(iface);
+                writer.append("]");
             }
-            writer.append("]");
             if (cls.getParentName() != null) {
-                writer.append(",").ws();
+                writer.append(",").softNewLine();
                 writer.append("superclass").ws().append(":").ws().appendClass(cls.getParentName());
             }
-            writer.ws().append("};").softNewLine();
             if (!cls.getModifiers().contains(NodeModifier.INTERFACE)) {
-                writer.appendClass(cls.getName()).append(".$clinit").ws().append("=").ws()
+                writer.append(",").softNewLine().append("clinit").ws().append(":").ws()
                         .append("function()").ws().append("{").ws()
-                        .appendClass(cls.getName()).append("_$clinit();").ws().append("}").newLine();
+                        .appendClass(cls.getName()).append("_$clinit();").ws().append("}");
+            }
+            writer.ws().append("});").softNewLine().outdent();
+            List<MethodNode> nonInitMethods = new ArrayList<>();
+            if (!cls.getModifiers().contains(NodeModifier.INTERFACE)) {
                 writer.append("function ").appendClass(cls.getName()).append("_$clinit()").ws()
                         .append("{").softNewLine().indent();
                 writer.appendClass(cls.getName()).append("_$clinit").ws().append("=").ws()
                         .append("function(){};").newLine();
                 List<String> stubNames = new ArrayList<>();
                 for (MethodNode method : cls.getMethods()) {
-                    renderBody(method);
-                    stubNames.add(naming.getFullNameFor(method.getReference()));
+                    if (!method.getModifiers().contains(NodeModifier.STATIC) &&
+                            !method.getReference().getName().equals("<init>")) {
+                        nonInitMethods.add(method);
+                    } else {
+                        renderBody(method, true);
+                        stubNames.add(naming.getFullNameFor(method.getReference()));
+                    }
                 }
                 MethodHolder methodHolder = classSource.get(cls.getName()).getMethod(
                         new MethodDescriptor("<clinit>", ValueType.VOID));
@@ -258,6 +258,9 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                     }
                     writer.append("]);").newLine();
                 }
+            }
+            for (MethodNode method : nonInitMethods) {
+                renderBody(method, false);
             }
         } catch (NamingException e) {
             throw new RenderingException("Error rendering class " + cls.getName() + ". See a cause for details", e);
@@ -381,9 +384,13 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         }
     }
 
-    public void renderBody(MethodNode method) throws IOException {
+    public void renderBody(MethodNode method, boolean inner) throws IOException {
         MethodReference ref = method.getReference();
-        writer.appendMethodBody(ref).ws().append("=").ws().append("function(");
+        if (inner) {
+            writer.appendMethodBody(ref).ws().append("=").ws().append("function(");
+        } else {
+            writer.append("function ").appendMethodBody(ref).append("(");
+        }
         int startParam = 0;
         if (method.getModifiers().contains(NodeModifier.STATIC)) {
             startParam = 1;
