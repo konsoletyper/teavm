@@ -278,9 +278,13 @@ public class DependencyChecker implements DependencyInfo {
                 resultNode.setTag(methodRef + ":RESULT");
             }
         }
+        DependencyNode thrown = createNode();
+        if (shouldLog) {
+            thrown.setTag(methodRef + ":THROWN");
+        }
         stack = new DependencyStack(methodRef, stack);
-        final MethodDependency dep = new MethodDependency(parameterNodes, paramCount, resultNode, stack, method,
-                methodRef);
+        final MethodDependency dep = new MethodDependency(parameterNodes, paramCount, resultNode, thrown,
+                stack, method, methodRef);
         if (method != null) {
             executor.execute(new Runnable() {
                 @Override public void run() {

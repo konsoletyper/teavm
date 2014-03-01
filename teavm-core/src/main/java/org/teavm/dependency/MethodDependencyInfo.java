@@ -32,6 +32,8 @@ public interface MethodDependencyInfo {
 
     DependencyNode getResult();
 
+    DependencyNode getThrown();
+
     MethodReference getReference();
 
     boolean isUsed();

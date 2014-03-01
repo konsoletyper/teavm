@@ -34,6 +34,7 @@ class DependencyGraphBuilder {
     private ProgramReader program;
     private DependencyStack callerStack;
     private List<Runnable> useRunners = new ArrayList<>();
+    private ExceptionConsumer currentExceptionConsumer;
 
     public DependencyGraphBuilder(DependencyChecker dependencyChecker) {
         this.dependencyChecker = dependencyChecker;
@@ -54,6 +55,7 @@ class DependencyGraphBuilder {
         nodes = dep.getVariables();
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlockReader block = program.basicBlockAt(i);
+            currentExceptionConsumer = createExceptionConsumer(dep, block);
             block.readAllInstructions(reader);
             for (PhiReader phi : block.readPhis()) {
                 for (IncomingReader incoming : phi.readIncomings()) {
@@ -62,8 +64,7 @@ class DependencyGraphBuilder {
             }
             for (final TryCatchBlockReader tryCatch : block.readTryCatchBlocks()) {
                 useRunners.add(new Runnable() {
-                    @Override
-                    public void run() {
+                    @Override public void run() {
                         if (tryCatch.getExceptionType() != null) {
                             dependencyChecker.initClass(tryCatch.getExceptionType(), callerStack);
                         }
@@ -74,7 +75,47 @@ class DependencyGraphBuilder {
         dep.setUseRunner(new MultipleRunner(useRunners));
     }
 
-    private static class VirtualCallPropagationListener implements DependencyConsumer {
+    private ExceptionConsumer createExceptionConsumer(MethodDependency methodDep, BasicBlockReader block) {
+        List<? extends TryCatchBlockReader> tryCatchBlocks = block.readTryCatchBlocks();
+        ClassReader[] exceptions = new ClassReader[tryCatchBlocks.size()];
+        DependencyNode[] vars = new DependencyNode[tryCatchBlocks.size()];
+        for (int i = 0; i < tryCatchBlocks.size(); ++i) {
+            TryCatchBlockReader tryCatch = tryCatchBlocks.get(i);
+            if (tryCatch.getExceptionType() != null) {
+                exceptions[i] = dependencyChecker.getClassSource().get(tryCatch.getExceptionType());
+            }
+            vars[i] = methodDep.getVariable(i);
+        }
+        return new ExceptionConsumer(dependencyChecker, exceptions, vars, methodDep);
+    }
+
+    private static class ExceptionConsumer implements DependencyConsumer {
+        private DependencyChecker checker;
+        private ClassReader[] exceptions;
+        private DependencyNode[] vars;
+        private MethodDependency method;
+
+        public ExceptionConsumer(DependencyChecker checker, ClassReader[] exceptions, DependencyNode[] vars,
+                MethodDependency method) {
+            this.checker = checker;
+            this.exceptions = exceptions;
+            this.vars = vars;
+            this.method = method;
+        }
+
+        @Override
+        public void consume(String type) {
+            for (int i = 0; i < exceptions.length; ++i) {
+                if (exceptions[i] == null || isAssignableFrom(checker.getClassSource(), exceptions[i], type)) {
+                    vars[i].propagate(type);
+                    return;
+                }
+            }
+            method.getThrown().propagate(type);
+        }
+    }
+
+    private static class VirtualCallConsumer implements DependencyConsumer {
         private final DependencyNode node;
         private final ClassReader filterClass;
         private final MethodDescriptor methodDesc;
@@ -83,10 +124,11 @@ class DependencyGraphBuilder {
         private final DependencyNode result;
         private final DependencyStack stack;
         private final ConcurrentMap<MethodReference, MethodReference> knownMethods = new ConcurrentHashMap<>();
+        private ExceptionConsumer exceptionConsumer;
 
-        public VirtualCallPropagationListener(DependencyNode node, ClassReader filterClass,
+        public VirtualCallConsumer(DependencyNode node, ClassReader filterClass,
                 MethodDescriptor methodDesc, DependencyChecker checker, DependencyNode[] parameters,
-                DependencyNode result, DependencyStack stack) {
+                DependencyNode result, DependencyStack stack, ExceptionConsumer exceptionConsumer) {
             this.node = node;
             this.filterClass = filterClass;
             this.methodDesc = methodDesc;
@@ -94,6 +136,7 @@ class DependencyGraphBuilder {
             this.parameters = parameters;
             this.result = result;
             this.stack = stack;
+            this.exceptionConsumer = exceptionConsumer;
         }
 
         @Override
@@ -119,6 +162,7 @@ class DependencyGraphBuilder {
                 if (methodDep.getResult() != null) {
                     methodDep.getResult().connect(result);
                 }
+                methodDep.getThrown().addConsumer(exceptionConsumer);
             }
         }
     }
@@ -288,6 +332,7 @@ class DependencyGraphBuilder {
 
         @Override
         public void raise(VariableReader exception) {
+            nodes[exception.getIndex()].addConsumer(currentExceptionConsumer);
         }
 
         @Override
@@ -399,6 +444,7 @@ class DependencyGraphBuilder {
             if (methodDep.getResult() != null && receiver != null) {
                 methodDep.getResult().connect(nodes[receiver.getIndex()]);
             }
+            methodDep.getThrown().addConsumer(currentExceptionConsumer);
             initClass(method.getClassName());
         }
 
@@ -413,10 +459,11 @@ class DependencyGraphBuilder {
                 actualArgs[i + 1] = nodes[arguments.get(i).getIndex()];
             }
             actualArgs[0] = nodes[instance.getIndex()];
-            DependencyConsumer listener = new VirtualCallPropagationListener(nodes[instance.getIndex()],
+            DependencyConsumer listener = new VirtualCallConsumer(nodes[instance.getIndex()],
                     dependencyChecker.getClassSource().get(methodDep.getMethod().getOwnerName()),
                     method.getDescriptor(), dependencyChecker, actualArgs,
-                    receiver != null ? nodes[receiver.getIndex()] : null, callerStack);
+                    receiver != null ? nodes[receiver.getIndex()] : null, callerStack,
+                    currentExceptionConsumer);
             nodes[instance.getIndex()].addConsumer(listener);
         }
 
@@ -452,6 +499,7 @@ class DependencyGraphBuilder {
                             "<init>", ValueType.VOID), callerStack);
                 }
             });
+            currentExceptionConsumer.consume("java.lang.NullPointerException");
         }
     };
 }

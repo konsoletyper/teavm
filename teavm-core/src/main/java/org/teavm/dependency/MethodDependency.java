@@ -28,6 +28,7 @@ public class MethodDependency implements MethodDependencyInfo {
     private DependencyNode[] variableNodes;
     private int parameterCount;
     private DependencyNode resultNode;
+    private DependencyNode thrown;
     private DependencyStack stack;
     private MethodReader method;
     private MethodReference reference;
@@ -35,9 +36,10 @@ public class MethodDependency implements MethodDependencyInfo {
     private volatile Runnable useRunner;
 
     MethodDependency(DependencyNode[] variableNodes, int parameterCount, DependencyNode resultNode,
-            DependencyStack stack, MethodReader method, MethodReference reference) {
+            DependencyNode thrown, DependencyStack stack, MethodReader method, MethodReference reference) {
         this.variableNodes = Arrays.copyOf(variableNodes, variableNodes.length);
         this.parameterCount = parameterCount;
+        this.thrown = thrown;
         this.resultNode = resultNode;
         this.stack = stack;
         this.method = method;
@@ -67,6 +69,11 @@ public class MethodDependency implements MethodDependencyInfo {
     @Override
     public DependencyNode getResult() {
         return resultNode;
+    }
+
+    @Override
+    public DependencyNode getThrown() {
+        return thrown;
     }
 
     public DependencyStack getStack() {
