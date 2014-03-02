@@ -15,6 +15,8 @@
  */
 package org.teavm.classlib.impl.unicode;
 
+import java.util.Arrays;
+
 /**
  *
  * @author Alexey Andreev
@@ -55,5 +57,62 @@ public class UnicodeHelper {
             data[i++] = text.charAt(j++) - 'z';
         }
         return data;
+    }
+
+    public static char encodeByte(byte b) {
+        if (b < '\"' - ' ') {
+            return (char)(b + ' ');
+        } else if (b < '\\' - ' ') {
+            return (char)(b + ' ' + 1);
+        } else {
+            return (char)(b + ' ' + 2);
+        }
+    }
+
+    public static byte decodeByte(char c) {
+        if (c > '\\') {
+            return (byte)(c - ' ' - 2);
+        } else if (c > '"') {
+            return (byte)(c - ' ' - 1);
+        } else {
+            return (byte)(c - ' ');
+        }
+    }
+
+    public static String compressRle(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < bytes.length; ++i) {
+            byte b = bytes[i];
+            if (i < bytes.length - 1 && b == bytes[i + 1]) {
+                int count = 0;
+                while (bytes[i++] == b && count < 80) {
+                    ++count;
+                }
+                sb.append(UnicodeHelper.encodeByte((byte)(b + 32)));
+                sb.append(UnicodeHelper.encodeByte((byte)count));
+                --i;
+            } else {
+                sb.append(UnicodeHelper.encodeByte(bytes[i]));
+            }
+        }
+        return sb.toString();
+    }
+
+    public static byte[] extractRle(String encoded) {
+        byte[] data = new byte[65536 * 4];
+        int index = 0;
+        for (int i = 0; i < encoded.length(); ++i) {
+            byte b = decodeByte(encoded.charAt(i));
+            if (b > 32) {
+                b -= 32;
+                byte count = decodeByte(encoded.charAt(++i));
+                while (count-- > 0) {
+                    data[index++] = b;
+                }
+            } else {
+                data[index++] = b;
+            }
+        }
+        return Arrays.copyOf(data, index);
     }
 }

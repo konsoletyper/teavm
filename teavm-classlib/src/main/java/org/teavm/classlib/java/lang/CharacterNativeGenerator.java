@@ -45,6 +45,9 @@ public class CharacterNativeGenerator implements Generator, DependencyPlugin {
             case "obtainDigitMapping":
                 generateObtainDigitMapping(writer);
                 break;
+            case "obtainClasses":
+                generateObtainClasses(writer);
+                break;
         }
     }
 
@@ -52,7 +55,8 @@ public class CharacterNativeGenerator implements Generator, DependencyPlugin {
     public void methodAchieved(DependencyChecker checker, MethodDependency method) {
         switch (method.getReference().getName()) {
             case "obtainDigitMapping":
-                achieveObtainDigitMapping(method);
+            case "obtainClasses":
+                method.getResult().propagate("java.lang.String");
                 break;
         }
     }
@@ -68,11 +72,26 @@ public class CharacterNativeGenerator implements Generator, DependencyPlugin {
     }
 
     private void generateObtainDigitMapping(SourceWriter writer) throws IOException {
-        writer.append("return $rt_str(\"").append(UnicodeHelper.encodeIntByte(UnicodeSupport.getDigitValues()))
-                .append("\");").softNewLine();
+        String str = UnicodeHelper.encodeIntByte(UnicodeSupport.getDigitValues());
+        writer.append("return $rt_str(");
+        splitString(writer, str);
+        writer.append(");").softNewLine();
     }
 
-    private void achieveObtainDigitMapping(MethodDependency method) {
-        method.getResult().propagate("java.lang.String");
+    private void generateObtainClasses(SourceWriter writer) throws IOException {
+        String str = UnicodeHelper.compressRle(UnicodeSupport.getClasses());
+        writer.append("return $rt_str(");
+        splitString(writer, str);
+        writer.append(");").softNewLine();
+    }
+
+    private void splitString(SourceWriter writer, String str) throws IOException {
+        for (int i = 0; i < str.length(); i += 512) {
+            if (i > 0) {
+                writer.ws().append("+").newLine();
+            }
+            int j = Math.min(i + 512, str.length());
+            writer.append("\"").append(str.substring(i, j)).append("\"");
+        }
     }
 }

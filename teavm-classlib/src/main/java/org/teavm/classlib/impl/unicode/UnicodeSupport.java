@@ -19,7 +19,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.teavm.common.IntegerArray;
@@ -32,9 +34,45 @@ public class UnicodeSupport {
     private static AtomicBoolean filled = new AtomicBoolean();
     private static volatile CountDownLatch latch = new CountDownLatch(1);
     private static int[] digitValues;
+    private static byte[] classes;
+    private static Map<String, Byte> classMap = new HashMap<>();
+
+    static {
+        classMap.put("Cn", Character.UNASSIGNED);
+        classMap.put("Lu", Character.UPPERCASE_LETTER);
+        classMap.put("Ll", Character.LOWERCASE_LETTER);
+        classMap.put("Lt", Character.TITLECASE_LETTER);
+        classMap.put("Lm", Character.MODIFIER_LETTER);
+        classMap.put("Lo", Character.OTHER_LETTER);
+        classMap.put("Mn", Character.NON_SPACING_MARK);
+        classMap.put("Me", Character.ENCLOSING_MARK);
+        classMap.put("Mc", Character.COMBINING_SPACING_MARK);
+        classMap.put("Nd", Character.DECIMAL_DIGIT_NUMBER);
+        classMap.put("Nl", Character.LETTER_NUMBER);
+        classMap.put("No", Character.OTHER_NUMBER);
+        classMap.put("Zs", Character.SPACE_SEPARATOR);
+        classMap.put("Zl", Character.LINE_SEPARATOR);
+        classMap.put("Zp", Character.PARAGRAPH_SEPARATOR);
+        classMap.put("Cc", Character.CONTROL);
+        classMap.put("Cf", Character.FORMAT);
+        classMap.put("Co", Character.PRIVATE_USE);
+        classMap.put("Cs", Character.SURROGATE);
+        classMap.put("Pd", Character.DASH_PUNCTUATION);
+        classMap.put("Ps", Character.START_PUNCTUATION);
+        classMap.put("Pe", Character.END_PUNCTUATION);
+        classMap.put("Pc", Character.CONNECTOR_PUNCTUATION);
+        classMap.put("Po", Character.OTHER_PUNCTUATION);
+        classMap.put("Sm", Character.MATH_SYMBOL);
+        classMap.put("Sc", Character.CURRENCY_SYMBOL);
+        classMap.put("Sk", Character.MODIFIER_SYMBOL);
+        classMap.put("So", Character.OTHER_SYMBOL);
+        classMap.put("Pi", Character.INITIAL_QUOTE_PUNCTUATION);
+        classMap.put("Pf", Character.FINAL_QUOTE_PUNCTUATION);
+    }
 
     private static void parseUnicodeData() {
         IntegerArray digitValues = new IntegerArray(4096);
+        IntegerArray classes = new IntegerArray(65536);
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(UnicodeHelper.class
                 .getResourceAsStream("UnicodeData.txt")))) {
             while (true) {
@@ -47,11 +85,16 @@ public class UnicodeSupport {
                 }
                 String[] fields = splitLine(line);
                 int charCode = parseHex(fields[0]);
+                while (classes.size() < charCode) {
+                    classes.add(0);
+                }
                 if (!fields[6].isEmpty()) {
                     int digit = Integer.parseInt(fields[6]);
                     digitValues.add(charCode);
                     digitValues.add(digit);
                 }
+                Byte charClass = classMap.get(fields[2]);
+                classes.add(charClass != null ? charClass.intValue() : 0);
             }
         } catch (IOException e) {
             throw new RuntimeException("Error reading unicode data", e);
@@ -74,6 +117,10 @@ public class UnicodeSupport {
             letterDigitValues.add(i - '\uFF41' + 10);
         }
         UnicodeSupport.digitValues = mergePairs(digitValues.getAll(), letterDigitValues.getAll());
+        UnicodeSupport.classes = new byte[classes.size()];
+        for (int i = 0; i < classes.size(); ++i) {
+            UnicodeSupport.classes[i] = (byte)classes.get(i);
+        }
     }
 
     private static String[] splitLine(String line) {
@@ -150,4 +197,8 @@ public class UnicodeSupport {
         return digitValues;
     }
 
+    public static byte[] getClasses() {
+        ensureUnicodeData();
+        return classes;
+    }
 }

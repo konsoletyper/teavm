@@ -93,6 +93,7 @@ public class TCharacter extends TObject {
     public static final int SIZE = 16;
     static final int ERROR = 0xFFFFFFFF;
     private static int[] digitMapping;
+    private static byte[] classMapping;
     private char value;
     private static TCharacter[] characterCache = new TCharacter[128];
 
@@ -197,11 +198,11 @@ public class TCharacter extends TObject {
     }
 
     public static int codePointBefore(TCharSequence seq, int index) {
-        if (index == 0 || !isLowSurrogate(seq.charAt(index)) || !isHighSurrogate(seq.charAt(index - 1))) {
-            return seq.charAt(index);
-        } else {
-            return toCodePoint(seq.charAt(index - 1), seq.charAt(index));
+        if (index == 1 || !UTF16Helper.isLowSurrogate(seq.charAt(index - 2)) ||
+                !UTF16Helper.isHighSurrogate(seq.charAt(index - 2))) {
+            return seq.charAt(index - 1);
         }
+        return UTF16Helper.buildCodePoint(seq.charAt(index - 2), seq.charAt(index - 1));
     }
 
     public static int codePointBefore(char[] a, int index) {
@@ -209,10 +210,10 @@ public class TCharacter extends TObject {
     }
 
     public static int codePointBefore(char[] a, int index, int start) {
-        if (index <= start || !isLowSurrogate(a[index]) || !isHighSurrogate(a[index - 1])) {
+        if (index <= start + 1 || !isLowSurrogate(a[index - 1]) || !isHighSurrogate(a[index - 2])) {
             return a[index];
         } else {
-            return toCodePoint(a[index - 1], a[index]);
+            return toCodePoint(a[index - 2], a[index - 1]);
         }
     }
 
@@ -285,6 +286,17 @@ public class TCharacter extends TObject {
     @GeneratedBy(CharacterNativeGenerator.class)
     @PluggableDependency(CharacterNativeGenerator.class)
     private static native String obtainDigitMapping();
+
+    private static byte[] getClasses() {
+        if (classMapping == null) {
+            classMapping = UnicodeHelper.extractRle(obtainClasses());
+        }
+        return classMapping;
+    }
+
+    @GeneratedBy(CharacterNativeGenerator.class)
+    @PluggableDependency(CharacterNativeGenerator.class)
+    private static native String obtainClasses();
 
     public static int toChars(int codePoint, char[] dst, int dstIndex) {
         if (codePoint >= UTF16Helper.SUPPLEMENTARY_PLANE) {
@@ -359,5 +371,13 @@ public class TCharacter extends TObject {
 
     public static boolean isISOControl(int codePoint) {
         return codePoint >= 0 && codePoint <= 0x1F || codePoint >= 0x7F && codePoint <= 0x9F;
+    }
+
+    public static int getType(char c) {
+        return getType((int)c);
+    }
+
+    public static int getType(int codePoint) {
+        return getClasses()[codePoint];
     }
 }

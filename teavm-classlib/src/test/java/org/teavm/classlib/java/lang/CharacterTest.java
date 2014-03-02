@@ -30,4 +30,14 @@ public class CharacterTest {
         assertEquals(6, Character.digit('\u096C', 10));
         assertEquals(15, Character.digit('F', 16));
     }
+
+    @Test
+    public void classesRecognized() {
+        assertEquals(Character.DECIMAL_DIGIT_NUMBER, Character.getType('2'));
+        assertEquals(Character.UPPERCASE_LETTER, Character.getType('Q'));
+        assertEquals(Character.LOWERCASE_LETTER, Character.getType('w'));
+        assertEquals(Character.MATH_SYMBOL, Character.getType(0x21F7));
+        assertEquals(Character.NON_SPACING_MARK, Character.getType(0xFE25));
+        assertEquals(Character.DECIMAL_DIGIT_NUMBER, Character.getType(0x1D7D9));
+    }
 }
