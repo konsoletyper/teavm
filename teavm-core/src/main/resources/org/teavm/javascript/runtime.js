@@ -387,6 +387,19 @@ function $rt_declClass(cls, data) {
     cls.prototype.constructor = cls;
     cls.$clinit = data.clinit;
 }
+function $rt_virtualMethods(cls) {
+    for (var i = 1; i < arguments.length; i += 2) {
+        var name = arguments[i];
+        var func = arguments[i + 1];
+        if (typeof name == 'string') {
+            cls.prototype[name] = func;
+        } else {
+            for (var j = 0; j < name.length; ++j) {
+                cls.prototype[name[j]] = func;
+            }
+        }
+    }
+}
 
 Long = function(lo, hi) {
     this.lo = lo | 0;

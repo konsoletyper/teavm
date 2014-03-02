@@ -228,6 +228,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
             }
             writer.ws().append("});").newLine().outdent();
             List<MethodNode> nonInitMethods = new ArrayList<>();
+            List<MethodNode> virtualMethods = new ArrayList<>();
             if (!cls.getModifiers().contains(NodeModifier.INTERFACE)) {
                 writer.append("function ").appendClass(cls.getName()).append("_$clinit()").ws()
                         .append("{").softNewLine().indent();
@@ -252,8 +253,10 @@ public class Renderer implements ExprVisitor, StatementVisitor {
                 writer.outdent().append("}").newLine();
                 for (MethodNode method : cls.getMethods()) {
                     cls.getMethods();
-                    if (!method.getModifiers().contains(NodeModifier.STATIC) || method.isOriginalNamePreserved()) {
-                        renderDeclaration(method);
+                    if (!method.getModifiers().contains(NodeModifier.STATIC)) {
+                        virtualMethods.add(method);
+                    } else if (method.isOriginalNamePreserved()) {
+                        renderStaticDeclaration(method);
                     }
                 }
                 if (stubNames.size() > 0) {
@@ -271,6 +274,7 @@ public class Renderer implements ExprVisitor, StatementVisitor {
             for (MethodNode method : nonInitMethods) {
                 renderBody(method, false);
             }
+            renderVirtualDeclarations(cls.getName(), virtualMethods);
         } catch (NamingException e) {
             throw new RenderingException("Error rendering class " + cls.getName() + ". See a cause for details", e);
         } catch (IOException e) {
@@ -327,45 +331,46 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         writer.outdent().append("}").newLine();
     }
 
-    public void renderDeclaration(MethodNode method) throws RenderingException, IOException {
-        try {
-            if (method.getModifiers().contains(NodeModifier.STATIC)) {
-                renderStaticDeclaration(method);
+    private void renderVirtualDeclarations(String className, List<MethodNode> methods)
+            throws NamingException, IOException {
+        for (MethodNode method : methods) {
+            MethodReference ref = method.getReference();
+            if (ref.getDescriptor().getName().equals("<init>")) {
+                renderInitializer(method);
+            }
+        }
+        if (methods.isEmpty()) {
+            return;
+        }
+        writer.append("$rt_virtualMethods(").appendClass(className).indent();
+        for (MethodNode method : methods) {
+            MethodReference ref = method.getReference();
+            writer.append(",").newLine();
+            if (method.isOriginalNamePreserved()) {
+                writer.append("[\"").appendMethod(ref).append("\",").ws().append("\"").append(ref.getName())
+                        .append("\"]");
             } else {
-                renderVirtualDeclaration(method);
+                writer.append("\"").appendMethod(ref).append("\"");
             }
-        } catch (NamingException e) {
-            throw new RenderingException("Error rendering method " + method.getReference() + ". " +
-                    "See cause for details", e);
-        }
-    }
-
-    private void renderVirtualDeclaration(MethodNode method) throws NamingException, IOException {
-        MethodReference ref = method.getReference();
-        if (ref.getDescriptor().getName().equals("<init>")) {
-            renderInitializer(method);
-        }
-        writer.appendClass(ref.getClassName()).append(".prototype.").appendMethod(ref)
-                .ws().append("=").ws().append("function(");
-        for (int i = 1; i <= ref.parameterCount(); ++i) {
-            if (i > 1) {
-                writer.append(", ");
+            writer.append(",").ws().append("function(");
+            for (int i = 1; i <= ref.parameterCount(); ++i) {
+                if (i > 1) {
+                    writer.append(",").ws();
+                }
+                writer.append(variableName(i));
             }
-            writer.append(variableName(i));
+            writer.append(")").ws().append("{").ws();
+            if (ref.getDescriptor().getResultType() != ValueType.VOID) {
+                writer.append("return ");
+            }
+            writer.appendMethodBody(ref).append("(");
+            writer.append("this");
+            for (int i = 1; i <= ref.parameterCount(); ++i) {
+                writer.append(",").ws().append(variableName(i));
+            }
+            writer.append(");").ws().append("}");
         }
-        writer.append(")").ws().append("{").softNewLine().indent();
-        writer.append("return ").appendMethodBody(ref).append("(");
-        writer.append("this");
-        for (int i = 1; i <= ref.parameterCount(); ++i) {
-            writer.append(",").ws().append(variableName(i));
-        }
-        writer.append(");").softNewLine();
-        writer.outdent().append("}").newLine();
-        if (method.isOriginalNamePreserved()) {
-            writer.appendClass(ref.getClassName()).append(".prototype.").append(ref.getName()).ws().append("=")
-                    .ws().appendClass(ref.getClassName()).append(".prototype.").appendMethod(ref)
-                    .append(';').newLine();
-        }
+        writer.append(");").newLine().outdent();
     }
 
     private void renderStaticDeclaration(MethodNode method) throws NamingException, IOException {
