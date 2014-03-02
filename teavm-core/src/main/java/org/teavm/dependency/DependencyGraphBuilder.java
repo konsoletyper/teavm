@@ -84,7 +84,7 @@ class DependencyGraphBuilder {
             if (tryCatch.getExceptionType() != null) {
                 exceptions[i] = dependencyChecker.getClassSource().get(tryCatch.getExceptionType());
             }
-            vars[i] = methodDep.getVariable(i);
+            vars[i] = methodDep.getVariable(tryCatch.getExceptionVariable().getIndex());
         }
         return new ExceptionConsumer(dependencyChecker, exceptions, vars, methodDep);
     }
