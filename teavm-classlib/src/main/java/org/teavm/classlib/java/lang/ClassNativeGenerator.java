@@ -83,6 +83,9 @@ public class ClassNativeGenerator implements Generator, Injector, DependencyPlug
             case "voidClass":
                 context.getWriter().append("$rt_cls($rt_voidcls())");
                 break;
+            case "charClass":
+                context.getWriter().append("$rt_cls($rt_charcls())");
+                break;
             case "wrap":
                 context.writeExpr(context.getArgument(0));
                 break;
@@ -172,6 +175,7 @@ public class ClassNativeGenerator implements Generator, Injector, DependencyPlug
         switch (graph.getReference().getName()) {
             case "booleanClass":
             case "intClass":
+            case "charClass":
             case "wrap":
             case "getSuperclass":
             case "getComponentType0":

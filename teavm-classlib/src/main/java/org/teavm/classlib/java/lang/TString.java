@@ -118,42 +118,19 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public int codePointAt(int index) {
-        if (index == characters.length - 1 || !UTF16Helper.isHighSurrogate(characters[index]) ||
-                !UTF16Helper.isLowSurrogate(characters[index + 1])) {
-            return characters[index];
-        }
-        return UTF16Helper.buildCodePoint(characters[index], characters[index + 1]);
+        return TCharacter.codePointAt(this, index);
     }
 
     public int codePointBefore(int index) {
-        if (index == 1 || !UTF16Helper.isHighSurrogate(characters[index]) ||
-                UTF16Helper.isLowSurrogate(characters[index - 1])) {
-            return characters[index - 1];
-        }
-        return UTF16Helper.buildCodePoint(characters[index - 1], characters[index]);
+        return TCharacter.codePointBefore(this, index);
     }
 
     public int codePointCount(int beginIndex, int endIndex) {
-        int count = endIndex;
-        --endIndex;
-        for (int i = beginIndex; i < endIndex; ++i) {
-            if (UTF16Helper.isHighSurrogate(characters[i]) && UTF16Helper.isLowSurrogate(characters[i + 1])) {
-                --count;
-            }
-        }
-        return count;
+        return TCharacter.codePointCount(this, beginIndex, endIndex);
     }
 
     public int offsetByCodePoints(int index, int codePointOffset) {
-        for (int i = 0; i < codePointOffset; ++i) {
-            if (index < characters.length - 1 && UTF16Helper.isHighSurrogate(characters[index]) &&
-                    UTF16Helper.isLowSurrogate(characters[index + 1])) {
-                index += 2;
-            } else {
-                index++;
-            }
-        }
-        return index;
+        return TCharacter.offsetByCodePoints(this, index, codePointOffset);
     }
 
     @Override

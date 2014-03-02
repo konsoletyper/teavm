@@ -75,6 +75,10 @@ public class TClass<T> extends TObject {
 
     @InjectedBy(ClassNativeGenerator.class)
     @PluggableDependency(ClassNativeGenerator.class)
+    static native TClass<TCharacter> charClass();
+
+    @InjectedBy(ClassNativeGenerator.class)
+    @PluggableDependency(ClassNativeGenerator.class)
     static native TClass<TInteger> intClass();
 
     @InjectedBy(ClassNativeGenerator.class)
