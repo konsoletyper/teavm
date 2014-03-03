@@ -86,7 +86,6 @@ public class LoopGraph implements Graph {
         LoopFrame rootFrame = new LoopFrame();
         stack[stackSize++] = rootFrame;
         int walkIndex = 0;
-        int[] targetEdges = new int[sz];
         int lastSortIndex = sz - 1;
         int loopSetSize = 0;
         while (stackSize > 0) {
@@ -95,8 +94,8 @@ public class LoopGraph implements Graph {
                 frames[frame.index] = frame;
                 frame.walkIndex = walkIndex++;
                 stack[stackSize++] = frame;
-                int targetEdgesCount = graph.copyOutgoingEdges(frame.index, targetEdges);
-                for (int i = 0; i < targetEdgesCount; ++i) {
+                int[] targetEdges = graph.outgoingEdges(frame.index);
+                for (int i = 0; i < targetEdges.length; ++i) {
                     int next = targetEdges[i];
                     LoopFrame nextFrame = frames[next];
                     if (nextFrame == null) {
@@ -109,8 +108,8 @@ public class LoopGraph implements Graph {
                 frame.sortIndex = lastSortIndex--;
                 frame.done = true;
                 LoopImpl bestLoop = null;
-                int targetEdgesCount = graph.copyOutgoingEdges(frame.index, targetEdges);
-                for (int i = 0; i < targetEdgesCount; ++i) {
+                int[] targetEdges = graph.outgoingEdges(frame.index);
+                for (int i = 0; i < targetEdges.length; ++i) {
                     int next = targetEdges[i];
                     LoopFrame nextFrame = frames[next];
                     LoopImpl loop = nextFrame.loop;
