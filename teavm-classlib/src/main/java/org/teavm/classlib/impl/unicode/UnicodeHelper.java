@@ -62,7 +62,7 @@ public class UnicodeHelper {
     public static char encodeByte(byte b) {
         if (b < '\"' - ' ') {
             return (char)(b + ' ');
-        } else if (b < '\\' - ' ') {
+        } else if (b < '\\' - ' ' - 1) {
             return (char)(b + ' ' + 1);
         } else {
             return (char)(b + ' ' + 2);
@@ -85,11 +85,20 @@ public class UnicodeHelper {
             byte b = bytes[i];
             if (i < bytes.length - 1 && b == bytes[i + 1]) {
                 int count = 0;
-                while (bytes[i++] == b && count < 80) {
+                while (i < bytes.length && bytes[i++] == b) {
                     ++count;
                 }
-                sb.append(UnicodeHelper.encodeByte((byte)(b + 32)));
-                sb.append(UnicodeHelper.encodeByte((byte)count));
+                if (count < 80) {
+                    sb.append(UnicodeHelper.encodeByte((byte)(b + 32)));
+                    sb.append(UnicodeHelper.encodeByte((byte)count));
+                } else {
+                    sb.append(UnicodeHelper.encodeByte((byte)64));
+                    sb.append(UnicodeHelper.encodeByte(b));
+                    for (int j = 0; j < 3; ++j) {
+                        sb.append(UnicodeHelper.encodeByte((byte)(count & 0x3F)));
+                        count /= 0x40;
+                    }
+                }
                 --i;
             } else {
                 sb.append(UnicodeHelper.encodeByte(bytes[i]));
@@ -103,7 +112,19 @@ public class UnicodeHelper {
         int index = 0;
         for (int i = 0; i < encoded.length(); ++i) {
             byte b = decodeByte(encoded.charAt(i));
-            if (b > 32) {
+            if (b == 64) {
+                b = decodeByte(encoded.charAt(++i));
+                int count = 0;
+                int pos = 1;
+                for (int j = 0; j < 3; ++j) {
+                    byte digit = decodeByte(encoded.charAt(++i));
+                    count |= pos * digit;
+                    pos *= 0x40;
+                }
+                while (count-- > 0) {
+                    data[index++] = b;
+                }
+            } else if (b > 32) {
                 b -= 32;
                 byte count = decodeByte(encoded.charAt(++i));
                 while (count-- > 0) {
