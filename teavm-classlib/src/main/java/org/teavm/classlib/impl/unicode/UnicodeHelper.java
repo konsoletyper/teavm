@@ -30,6 +30,18 @@ public class UnicodeHelper {
         return digit <= '9' ? digit - '0' : digit - 'A' + 10;
     }
 
+    public static class Range {
+        public final int start;
+        public final int end;
+        public final byte[] data;
+
+        public Range(int start, int end, byte[] data) {
+            this.start = start;
+            this.end = end;
+            this.data = data;
+        }
+    }
+
     public static String encodeIntByte(int[] data) {
         char[] chars = new char[data.length / 2 * 5];
         int j = 0;
@@ -107,33 +119,44 @@ public class UnicodeHelper {
         return sb.toString();
     }
 
-    public static byte[] extractRle(String encoded) {
-        byte[] data = new byte[65536 * 4];
+    public static Range[] extractRle(String encoded) {
+        Range[] ranges = new Range[16384];
+        byte[] buffer = new byte[16384];
         int index = 0;
+        int rangeIndex = 0;
+        int codePoint = 0;
         for (int i = 0; i < encoded.length(); ++i) {
             byte b = decodeByte(encoded.charAt(i));
+            int count = 1;
             if (b == 64) {
                 b = decodeByte(encoded.charAt(++i));
-                int count = 0;
+                count = 0;
                 int pos = 1;
                 for (int j = 0; j < 3; ++j) {
                     byte digit = decodeByte(encoded.charAt(++i));
                     count |= pos * digit;
                     pos *= 0x40;
                 }
-                while (count-- > 0) {
-                    data[index++] = b;
-                }
             } else if (b > 32) {
                 b -= 32;
-                byte count = decodeByte(encoded.charAt(++i));
+                count = decodeByte(encoded.charAt(++i));
+            } else {
+                buffer[index++] = b;
+            }
+            if (count == 1) {
+                buffer[index++] = b;
+            } else if (b != 0) {
                 while (count-- > 0) {
-                    data[index++] = b;
+                    buffer[index++] = b;
                 }
             } else {
-                data[index++] = b;
+                if (index > 0) {
+                    ranges[rangeIndex++] = new Range(codePoint, codePoint + index, Arrays.copyOf(buffer, index));
+                }
+                codePoint += index + count;
+                index = 0;
             }
         }
-        return Arrays.copyOf(data, index);
+        return Arrays.copyOf(ranges, rangeIndex);
     }
 }

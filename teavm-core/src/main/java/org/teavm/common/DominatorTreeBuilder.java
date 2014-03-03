@@ -123,18 +123,16 @@ class DominatorTreeBuilder {
     private void dfs() {
         Arrays.fill(semidominators, -1);
         Arrays.fill(vertices, -1);
-        int[] stack = new int[graph.size() + 1];
-        int size = 0;
+        IntegerStack stack = new IntegerStack(graph.size());
         for (int i = graph.size() - 1; i >= 0; --i) {
             if (graph.incomingEdgesCount(i) == 0) {
-                stack[size++] = i;
+                stack.push(i);
                 parents[i] = -1;
             }
         }
-        stack[size++] = 0;
         int i = 0;
-        while (size > 0) {
-            int v = stack[--size];
+        while (!stack.isEmpty()) {
+            int v = stack.pop();
             if (semidominators[v] >= 0) {
                 continue;
             }
@@ -144,7 +142,7 @@ class DominatorTreeBuilder {
             for (int w : graph.outgoingEdges(v)) {
                 if (semidominators[w] < 0) {
                     parents[w] = v;
-                    stack[size++] = w;
+                    stack.push(w);
                 }
             }
         }

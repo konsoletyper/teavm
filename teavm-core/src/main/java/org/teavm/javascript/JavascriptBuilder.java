@@ -142,13 +142,15 @@ public class JavascriptBuilder implements JavascriptBuilderHost {
         SourceWriterBuilder builder = new SourceWriterBuilder(naming);
         builder.setMinified(minifying);
         SourceWriter sourceWriter = builder.build(writer);
-        dependencyChecker.linkMethod(new MethodReference("java.lang.Class", new MethodDescriptor("createNew",
-                ValueType.object("java.lang.Class"))), DependencyStack.ROOT).use();
-        dependencyChecker.linkMethod(new MethodReference("java.lang.String", new MethodDescriptor("<init>",
-                ValueType.arrayOf(ValueType.CHARACTER), ValueType.VOID)), DependencyStack.ROOT).use();
-        dependencyChecker.linkMethod(new MethodReference("java.lang.String", new MethodDescriptor("getChars",
+        dependencyChecker.linkMethod(new MethodReference("java.lang.Class", "createNew",
+                ValueType.object("java.lang.Class")), DependencyStack.ROOT).use();
+        dependencyChecker.linkMethod(new MethodReference("java.lang.String", "<init>",
+                ValueType.arrayOf(ValueType.CHARACTER), ValueType.VOID), DependencyStack.ROOT).use();
+        dependencyChecker.linkMethod(new MethodReference("java.lang.String", "getChars",
                 ValueType.INTEGER, ValueType.INTEGER, ValueType.arrayOf(ValueType.CHARACTER), ValueType.INTEGER,
-                ValueType.VOID)), DependencyStack.ROOT).use();
+                ValueType.VOID), DependencyStack.ROOT).use();
+        dependencyChecker.linkMethod(new MethodReference("java.lang.String", "length", ValueType.INTEGER),
+                DependencyStack.ROOT).use();
         dependencyChecker.linkMethod(new MethodReference("java.lang.Object", new MethodDescriptor("clone",
                 ValueType.object("java.lang.Object"))), DependencyStack.ROOT).use();
         executor.complete();

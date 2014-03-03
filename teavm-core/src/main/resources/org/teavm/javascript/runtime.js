@@ -58,7 +58,7 @@ $rt_createLongArray = function(sz) {
     }
     return arr;
 }
-if (false) {
+if (ArrayBuffer) {
     $rt_createNumericArray = function(cls, nativeArray) {
         return new ($rt_arraycls(cls))(nativeArray);
     }

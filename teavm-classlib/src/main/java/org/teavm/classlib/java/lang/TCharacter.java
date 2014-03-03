@@ -25,7 +25,7 @@ import org.teavm.javascript.ni.Rename;
  *
  * @author Alexey Andreev
  */
-public class TCharacter extends TObject {
+public class TCharacter extends TObject implements TComparable<TCharacter> {
     public static final int MIN_RADIX = 2;
     public static final int MAX_RADIX = 36;
     public static final char MIN_VALUE = '\0';
@@ -93,7 +93,7 @@ public class TCharacter extends TObject {
     public static final int SIZE = 16;
     static final int ERROR = 0xFFFFFFFF;
     private static int[] digitMapping;
-    private static byte[] classMapping;
+    private static UnicodeHelper.Range[] classMapping;
     private char value;
     private static TCharacter[] characterCache = new TCharacter[128];
 
@@ -225,11 +225,18 @@ public class TCharacter extends TObject {
         return UTF16Helper.lowSurrogate(codePoint);
     }
 
+    // TODO: implement toLowerCase/toUpperCase/toTitleCase using UnicodeData.txt instead of built-in JS
     @GeneratedBy(CharacterNativeGenerator.class)
     public static native char toLowerCase(char ch);
 
     @GeneratedBy(CharacterNativeGenerator.class)
     public static native int toLowerCase(int ch);
+
+    @GeneratedBy(CharacterNativeGenerator.class)
+    public static native char toUpperCase(char ch);
+
+    @GeneratedBy(CharacterNativeGenerator.class)
+    public static native int toUpperCase(int codePoint);
 
     public static int digit(char ch, int radix) {
         return digit((int)ch, radix);
@@ -239,11 +246,15 @@ public class TCharacter extends TObject {
         if (radix < MIN_RADIX || radix > MAX_RADIX) {
             return -1;
         }
-        int d = digit(codePoint);
+        int d = getNumericValue(codePoint);
         return d <= radix ? d : -1;
     }
 
-    static int digit(int codePoint) {
+    public static int getNumericValue(char ch) {
+        return getNumericValue((int)ch);
+    }
+
+    public static int getNumericValue(int codePoint) {
         int[] digitMapping = getDigitMapping();
         int l = 0;
         int u = (digitMapping.length / 2) - 1;
@@ -273,7 +284,7 @@ public class TCharacter extends TObject {
     }
 
     public static boolean isDigit(int codePoint) {
-        return digit(codePoint) >= 0;
+        return getNumericValue(codePoint) >= 0;
     }
 
     private static int[] getDigitMapping() {
@@ -287,7 +298,7 @@ public class TCharacter extends TObject {
     @PluggableDependency(CharacterNativeGenerator.class)
     private static native String obtainDigitMapping();
 
-    private static byte[] getClasses() {
+    private static UnicodeHelper.Range[] getClasses() {
         if (classMapping == null) {
             classMapping = UnicodeHelper.extractRle(obtainClasses());
         }
@@ -378,6 +389,268 @@ public class TCharacter extends TObject {
     }
 
     public static int getType(int codePoint) {
-        return getClasses()[codePoint];
+        UnicodeHelper.Range[] classes = getClasses();
+        int l = 0;
+        int u = classes.length - 1;
+        while (l <= u) {
+            int i = (l + u) / 2;
+            UnicodeHelper.Range range = classes[i];
+            if (codePoint >= range.end) {
+                l = i + 1;
+            } else if (codePoint < range.start) {
+                u = i - 1;
+            } else {
+                return range.data[codePoint - range.start];
+            }
+        }
+        return 0;
+    }
+
+    public static boolean isLowerCase(char ch) {
+        return isLowerCase((int)ch);
+    }
+
+    public static boolean isLowerCase(int codePoint) {
+        return getType(codePoint) == LOWERCASE_LETTER;
+    }
+
+    public static boolean isUpperCase(char ch) {
+        return isUpperCase((int)ch);
+    }
+
+    public static boolean isUpperCase(int codePoint) {
+        return getType(codePoint) == UPPERCASE_LETTER;
+    }
+
+    public static boolean isTitleCase(char ch) {
+        return isTitleCase((int)ch);
+    }
+
+    public static boolean isTitleCase(int codePoint) {
+        return getType(codePoint) == TITLECASE_LETTER;
+    }
+
+    public static boolean isDefined(char ch) {
+        return isDefined((int)ch);
+    }
+
+    public static boolean isDefined(int codePoint) {
+        return getType(codePoint) != UNASSIGNED;
+    }
+
+    public static boolean isLetter(char ch) {
+        return isLetter((int)ch);
+    }
+
+    public static boolean isLetter(int codePoint) {
+        switch (getType(codePoint)) {
+            case UPPERCASE_LETTER:
+            case LOWERCASE_LETTER:
+            case TITLECASE_LETTER:
+            case MODIFIER_LETTER:
+            case OTHER_LETTER:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    public static boolean isLetterOrDigit(char ch) {
+        return isLetterOrDigit((int)ch);
+    }
+
+    public static boolean isLetterOrDigit(int codePoint) {
+        switch (getType(codePoint)) {
+            case UPPERCASE_LETTER:
+            case LOWERCASE_LETTER:
+            case TITLECASE_LETTER:
+            case MODIFIER_LETTER:
+            case OTHER_LETTER:
+            case DECIMAL_DIGIT_NUMBER:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    @Deprecated
+    public static boolean isJavaLetter(char ch) {
+        return isJavaIdentifierStart(ch);
+    }
+
+    public static boolean isJavaIdentifierStart(char ch) {
+        return isJavaIdentifierStart((int)ch);
+    }
+
+    public static boolean isJavaIdentifierStart(int codePoint) {
+        switch (getType(codePoint)) {
+            case UPPERCASE_LETTER:
+            case LOWERCASE_LETTER:
+            case TITLECASE_LETTER:
+            case MODIFIER_LETTER:
+            case OTHER_LETTER:
+            case LETTER_NUMBER:
+            case CONNECTOR_PUNCTUATION:
+            case CURRENCY_SYMBOL:
+                return true;
+            default:
+                return isIdentifierIgnorable(codePoint);
+        }
+    }
+
+    @Deprecated
+    public static boolean isJavaLetterOrDigit(char ch) {
+        return isJavaIdentifierPart(ch);
+    }
+
+    public static boolean isJavaIdentifierPart(char ch) {
+        return isJavaIdentifierPart((int)ch);
+    }
+
+    public static boolean isJavaIdentifierPart(int codePoint) {
+        switch (getType(codePoint)) {
+            case UPPERCASE_LETTER:
+            case LOWERCASE_LETTER:
+            case TITLECASE_LETTER:
+            case MODIFIER_LETTER:
+            case OTHER_LETTER:
+            case LETTER_NUMBER:
+            case DECIMAL_DIGIT_NUMBER:
+            case COMBINING_SPACING_MARK:
+            case NON_SPACING_MARK:
+            case CONNECTOR_PUNCTUATION:
+            case CURRENCY_SYMBOL:
+                return true;
+            default:
+                return isIdentifierIgnorable(codePoint);
+        }
+    }
+
+    public static boolean isAlphabetic(int codePoint) {
+        switch (getType(codePoint)) {
+            case UPPERCASE_LETTER:
+            case LOWERCASE_LETTER:
+            case TITLECASE_LETTER:
+            case MODIFIER_LETTER:
+            case OTHER_LETTER:
+            case LETTER_NUMBER:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    public static boolean isUnicodeIdentifierStart(char ch) {
+        return isUnicodeIdentifierStart((int)ch);
+    }
+
+    public static boolean isUnicodeIdentifierStart(int codePoint) {
+        switch (getType(codePoint)) {
+            case UPPERCASE_LETTER:
+            case LOWERCASE_LETTER:
+            case TITLECASE_LETTER:
+            case MODIFIER_LETTER:
+            case OTHER_LETTER:
+            case LETTER_NUMBER:
+                return true;
+            default:
+                return isIdentifierIgnorable(codePoint);
+        }
+    }
+
+    public static boolean isUnicodeIdentifierPart(int codePoint) {
+        switch (getType(codePoint)) {
+            case UPPERCASE_LETTER:
+            case LOWERCASE_LETTER:
+            case TITLECASE_LETTER:
+            case MODIFIER_LETTER:
+            case OTHER_LETTER:
+            case LETTER_NUMBER:
+            case CONNECTOR_PUNCTUATION:
+            case DECIMAL_DIGIT_NUMBER:
+            case COMBINING_SPACING_MARK:
+            case NON_SPACING_MARK:
+                return true;
+            default:
+                return isIdentifierIgnorable(codePoint);
+        }
+    }
+
+    public static boolean isIdentifierIgnorable(char ch) {
+        return isIdentifierIgnorable((int)ch);
+    }
+
+    public static boolean isIdentifierIgnorable(int codePoint) {
+        if (codePoint >= 0x00 && codePoint <= 0x08 || codePoint >= 0x0E && codePoint <= 0x1B ||
+                codePoint >= 0x7F && codePoint <= 0x9F) {
+            return true;
+        }
+        return getType(codePoint) == FORMAT;
+    }
+
+    @Deprecated
+    public static boolean isSpace(char ch) {
+        switch (ch) {
+            case '\t':
+            case '\n':
+            case '\f':
+            case '\r':
+            case ' ':
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    public static boolean isSpaceChar(char ch) {
+        return isSpaceChar((int)ch);
+    }
+
+    public static boolean isSpaceChar(int codePoint) {
+        switch (getType(codePoint)) {
+            case SPACE_SEPARATOR:
+            case LINE_SEPARATOR:
+            case PARAGRAPH_SEPARATOR:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    public static boolean isWhitespace(char ch) {
+        return isWhitespace((int)ch);
+    }
+
+    public static boolean isWhitespace(int codePoint) {
+        switch (codePoint) {
+            case '\t':
+            case '\n':
+            case 0xB:
+            case '\f':
+            case '\r':
+            case 0x1C:
+            case 0x1D:
+            case 0x1E:
+            case 0x1F:
+                return true;
+            default:
+                return isWhitespace(codePoint);
+        }
+    }
+
+    // TODO: public static byte getDirectionality(char ch)
+    // TODO: public static boolean isMirrored(char ch)
+
+    @Override
+    public int compareTo(TCharacter anotherCharacter) {
+        return compare(value, anotherCharacter.value);
+    }
+
+    public static int compare(char x, char y) {
+        return x - y;
+    }
+
+    public static char reverseBytes(char ch) {
+        return (char)((ch >> 8) | (ch << 8));
     }
 }

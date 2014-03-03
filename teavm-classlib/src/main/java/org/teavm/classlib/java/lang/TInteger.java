@@ -80,7 +80,7 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
         }
         int value = 0;
         while (index < s.length()) {
-            int digit = TCharacter.digit(s.charAt(index++));
+            int digit = TCharacter.getNumericValue(s.charAt(index++));
             if (digit < 0) {
                 throw new TNumberFormatException(TString.wrap("String contains invalid digits: " + s));
             }

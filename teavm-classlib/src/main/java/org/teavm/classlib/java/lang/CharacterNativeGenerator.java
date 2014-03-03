@@ -25,7 +25,6 @@ import org.teavm.dependency.MethodDependency;
 import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.GeneratorContext;
 import org.teavm.model.MethodReference;
-import org.teavm.model.ValueType;
 
 /**
  *
@@ -36,11 +35,12 @@ public class CharacterNativeGenerator implements Generator, DependencyPlugin {
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
         switch (methodRef.getName()) {
             case "toLowerCase":
-                if (methodRef.getDescriptor().parameterType(0) == ValueType.CHARACTER) {
-                    generateToLowerCase(context, writer);
-                } else {
-                    generateToLowerCaseInt(context, writer);
-                }
+                writer.append("return String.fromCharCode(").append(context.getParameterName(1))
+                        .append(").toLowerCase().charCodeAt(0)|0;").softNewLine();
+                break;
+            case "toUpperCase":
+                writer.append("return String.fromCharCode(").append(context.getParameterName(1))
+                    .append(").toUpperCase().charCodeAt(0)|0;").softNewLine();
                 break;
             case "obtainDigitMapping":
                 generateObtainDigitMapping(writer);
@@ -59,16 +59,6 @@ public class CharacterNativeGenerator implements Generator, DependencyPlugin {
                 method.getResult().propagate("java.lang.String");
                 break;
         }
-    }
-
-    private void generateToLowerCase(GeneratorContext context, SourceWriter writer) throws IOException{
-        writer.append("return String.fromCharCode(").append(context.getParameterName(1))
-                .append(").toLowerCase().charCodeAt(0)|0;").softNewLine();
-    }
-
-    private void generateToLowerCaseInt(GeneratorContext context, SourceWriter writer) throws IOException{
-        writer.append("return String.fromCharCode(").append(context.getParameterName(1))
-                .append(").toLowerCase().charCodeAt(0);").softNewLine();
     }
 
     private void generateObtainDigitMapping(SourceWriter writer) throws IOException {

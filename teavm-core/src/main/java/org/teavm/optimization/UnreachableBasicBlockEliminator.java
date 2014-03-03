@@ -15,6 +15,7 @@
  */
 package org.teavm.optimization;
 
+import org.teavm.common.IntegerStack;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Program;
 import org.teavm.model.TryCatchBlock;
@@ -31,11 +32,10 @@ public class UnreachableBasicBlockEliminator {
         }
         InstructionTransitionExtractor transitionExtractor = new InstructionTransitionExtractor();
         boolean[] reachable = new boolean[program.basicBlockCount()];
-        int[] stack = new int[program.basicBlockCount()];
-        int top = 0;
-        stack[top++] = 0;
-        while (top > 0) {
-            int i = stack[--top];
+        IntegerStack stack = new IntegerStack(program.basicBlockCount());
+        stack.push(0);
+        while (!stack.isEmpty()) {
+            int i = stack.pop();
             if (reachable[i]) {
                 continue;
             }
@@ -43,10 +43,12 @@ public class UnreachableBasicBlockEliminator {
             BasicBlock block = program.basicBlockAt(i);
             block.getLastInstruction().acceptVisitor(transitionExtractor);
             for (BasicBlock successor : transitionExtractor.getTargets()) {
-                stack[top++] = successor.getIndex();
+                if (!reachable[successor.getIndex()]) {
+                    stack.push(successor.getIndex());
+                }
             }
             for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                stack[top++] = tryCatch.getHandler().getIndex();
+                stack.push(tryCatch.getHandler().getIndex());
             }
         }
         for (int i = 0; i < reachable.length; ++i) {
