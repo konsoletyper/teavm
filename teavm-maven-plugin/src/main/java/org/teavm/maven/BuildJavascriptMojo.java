@@ -33,6 +33,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.teavm.common.ThreadPoolFiniteExecutor;
+import org.teavm.javascript.DirectoryBuildTarget;
 import org.teavm.javascript.JavascriptBuilder;
 import org.teavm.javascript.JavascriptBuilderFactory;
 import org.teavm.model.ClassHolderTransformer;
@@ -69,7 +70,7 @@ public class BuildJavascriptMojo extends AbstractMojo {
     private String mainClass;
 
     @Parameter
-    private boolean runtimeSuppressed;
+    private RuntimeCopyOperation runtime = RuntimeCopyOperation.SEPARATE;
 
     @Parameter
     private boolean mainPageIncluded;
@@ -103,8 +104,8 @@ public class BuildJavascriptMojo extends AbstractMojo {
         this.bytecodeLogging = bytecodeLogging;
     }
 
-    public void setRuntimeSuppressed(boolean runtimeSuppressed) {
-        this.runtimeSuppressed = runtimeSuppressed;
+    public void setRuntimeCopy(RuntimeCopyOperation runtimeCopy) {
+        this.runtime = runtimeCopy;
     }
 
     public void setMainPageIncluded(boolean mainPageIncluded) {
@@ -156,10 +157,16 @@ public class BuildJavascriptMojo extends AbstractMojo {
             builder.entryPoint("main", new MethodReference(mainClass, mainMethodDesc))
                     .withValue(1, "java.lang.String");
             targetDirectory.mkdirs();
-            builder.build(targetDirectory, targetFileName);
-            builder.checkForMissingItems();
-            log.info("JavaScript file successfully built");
-            if (!runtimeSuppressed) {
+            try (FileWriter writer = new FileWriter(new File(targetDirectory, targetFileName))) {
+                if (runtime == RuntimeCopyOperation.MERGED) {
+                    resourceToWriter("org/teavm/javascript/runtime.js", writer);
+                    writer.append("\n");
+                }
+                builder.build(writer, new DirectoryBuildTarget(targetDirectory));
+                builder.checkForMissingItems();
+                log.info("JavaScript file successfully built");
+            }
+            if (runtime == RuntimeCopyOperation.SEPARATE) {
                 resourceToFile("org/teavm/javascript/runtime.js", "runtime.js");
             }
             if (mainPageIncluded) {
@@ -253,6 +260,12 @@ public class BuildJavascriptMojo extends AbstractMojo {
             try (OutputStream output = new FileOutputStream(new File(targetDirectory, fileName))) {
                 IOUtils.copy(input, output);
             }
+        }
+    }
+
+    private void resourceToWriter(String resource, Writer writer) throws IOException {
+        try (InputStream input = BuildJavascriptMojo.class.getClassLoader().getResourceAsStream(resource)) {
+            IOUtils.copy(input, writer, "UTF-8");
         }
     }
 }
