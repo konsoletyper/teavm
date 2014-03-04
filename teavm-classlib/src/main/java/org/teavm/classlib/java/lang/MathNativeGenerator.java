@@ -1,0 +1,59 @@
+/*
+ *  Copyright 2014 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+package org.teavm.classlib.java.lang;
+
+import java.io.IOException;
+import org.teavm.codegen.SourceWriter;
+import org.teavm.javascript.ni.Generator;
+import org.teavm.javascript.ni.GeneratorContext;
+import org.teavm.model.MethodReference;
+
+/**
+ *
+ * @author Alexey Andreev
+ */
+public class MathNativeGenerator implements Generator {
+    @Override
+    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
+        switch (methodRef.getName()) {
+            case "sin":
+            case "cos":
+            case "tan":
+            case "asin":
+            case "acos":
+            case "atan":
+            case "exp":
+            case "log":
+            case "sqrt":
+            case "floor":
+            case "ceil":
+                function(context, writer, "Math." + methodRef.getName(), methodRef.parameterCount());
+                break;
+        }
+    }
+
+    private void function(GeneratorContext context, SourceWriter writer, String name, int paramCount)
+            throws IOException {
+        writer.append("return ").append(name).append("(");
+        for (int i = 0; i < paramCount; ++i) {
+            if (i > 0) {
+                writer.append(",").ws();
+            }
+            writer.append(context.getParameterName(i + 1));
+        }
+        writer.append(");").softNewLine();
+    }
+}
