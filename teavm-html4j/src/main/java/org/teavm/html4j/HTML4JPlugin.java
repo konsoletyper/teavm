@@ -15,18 +15,25 @@
  */
 package org.teavm.html4j;
 
-import org.teavm.javascript.JavascriptBuilderHost;
-import org.teavm.javascript.JavascriptBuilderPlugin;
+import org.teavm.dependency.DependencyListener;
+import org.teavm.vm.spi.RendererListener;
+import org.teavm.vm.spi.TeaVMHost;
+import org.teavm.vm.spi.TeaVMPlugin;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class HTML4JPlugin implements JavascriptBuilderPlugin {
+public class HTML4JPlugin implements TeaVMPlugin {
     @Override
-    public void install(JavascriptBuilderHost host) {
+    public void install(TeaVMHost host) {
         host.add(new JavaScriptBodyDependency());
         host.add(new JavaScriptBodyTransformer());
         host.add(new JCLHacks());
+        host.add(new JavaScriptResourceInterceptor());
+        EntryPointGenerator entryPointGen = new EntryPointGenerator(host.getProperties()
+                .getProperty("html4j.entryPoints", ""));
+        host.add((DependencyListener)entryPointGen);
+        host.add((RendererListener)entryPointGen);
     }
 }

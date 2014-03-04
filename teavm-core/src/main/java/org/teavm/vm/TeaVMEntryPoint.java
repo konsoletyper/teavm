@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript;
+package org.teavm.vm;
 
 import org.teavm.dependency.MethodDependency;
 import org.teavm.model.MethodReference;
@@ -22,12 +22,12 @@ import org.teavm.model.MethodReference;
  *
  * @author Alexey Andreev
  */
-public class JavascriptEntryPoint {
+public class TeaVMEntryPoint {
     private String publicName;
     MethodReference reference;
     private MethodDependency method;
 
-    JavascriptEntryPoint(String publicName, MethodReference reference, MethodDependency method) {
+    TeaVMEntryPoint(String publicName, MethodReference reference, MethodDependency method) {
         this.publicName = publicName;
         this.reference = reference;
         this.method = method;
@@ -38,7 +38,7 @@ public class JavascriptEntryPoint {
         return publicName;
     }
 
-    public JavascriptEntryPoint withValue(int argument, String type) {
+    public TeaVMEntryPoint withValue(int argument, String type) {
         if (argument > reference.parameterCount()) {
             throw new IllegalArgumentException("Illegal argument #" + argument + " of " + reference.parameterCount());
         }

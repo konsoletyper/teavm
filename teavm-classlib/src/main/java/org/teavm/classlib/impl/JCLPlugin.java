@@ -15,19 +15,19 @@
  */
 package org.teavm.classlib.impl;
 
-import org.teavm.javascript.JavascriptBuilderHost;
-import org.teavm.javascript.JavascriptBuilderPlugin;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
+import org.teavm.vm.spi.TeaVMHost;
+import org.teavm.vm.spi.TeaVMPlugin;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class JCLPlugin implements JavascriptBuilderPlugin {
+public class JCLPlugin implements TeaVMPlugin {
     @Override
-    public void install(JavascriptBuilderHost host) {
+    public void install(TeaVMHost host) {
         host.add(new EnumDependencySupport());
         host.add(new EnumTransformer());
         host.add(new ClassLookupDependencySupport());

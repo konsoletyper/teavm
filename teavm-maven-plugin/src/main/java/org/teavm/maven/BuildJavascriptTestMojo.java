@@ -39,13 +39,13 @@ import org.apache.maven.project.MavenProject;
 import org.teavm.common.FiniteExecutor;
 import org.teavm.common.SimpleFiniteExecutor;
 import org.teavm.common.ThreadPoolFiniteExecutor;
-import org.teavm.javascript.DirectoryBuildTarget;
-import org.teavm.javascript.JavascriptBuilder;
-import org.teavm.javascript.JavascriptBuilderFactory;
 import org.teavm.model.*;
 import org.teavm.parsing.ClasspathClassHolderSource;
 import org.teavm.testing.JUnitTestAdapter;
 import org.teavm.testing.TestAdapter;
+import org.teavm.vm.DirectoryBuildTarget;
+import org.teavm.vm.TeaVM;
+import org.teavm.vm.TeaVMBuilder;
 
 /**
  *
@@ -311,33 +311,33 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
 
     private void decompileClassesForTest(ClassLoader classLoader, ClassHolderSource classSource,
             MethodReference methodRef, String targetName, FiniteExecutor executor) throws IOException {
-        JavascriptBuilderFactory builderFactory = new JavascriptBuilderFactory();
-        builderFactory.setClassLoader(classLoader);
-        builderFactory.setClassSource(classSource);
-        builderFactory.setExecutor(executor);
-        JavascriptBuilder builder = builderFactory.create();
-        builder.setMinifying(minifying);
-        builder.installPlugins();
+        TeaVM vm = new TeaVMBuilder()
+                .setClassLoader(classLoader)
+                .setClassSource(classSource)
+                .setExecutor(executor)
+                .build();
+        vm.setMinifying(minifying);
+        vm.installPlugins();
         for (ClassHolderTransformer transformer : transformerInstances) {
-            builder.add(transformer);
+            vm.add(transformer);
         }
-        builder.prepare();
+        vm.prepare();
         File file = new File(outputDir, targetName);
         try (Writer innerWriter = new OutputStreamWriter(new FileOutputStream(file), "UTF-8")) {
             MethodReference cons = new MethodReference(methodRef.getClassName(),
                     new MethodDescriptor("<init>", ValueType.VOID));
-            builder.entryPoint("initInstance", cons);
-            builder.entryPoint("runTest", methodRef).withValue(0, cons.getClassName());
-            builder.exportType("TestClass", cons.getClassName());
-            builder.build(innerWriter, new DirectoryBuildTarget(outputDir));
-            if (!builder.hasMissingItems()) {
+            vm.entryPoint("initInstance", cons);
+            vm.entryPoint("runTest", methodRef).withValue(0, cons.getClassName());
+            vm.exportType("TestClass", cons.getClassName());
+            vm.build(innerWriter, new DirectoryBuildTarget(outputDir));
+            if (!vm.hasMissingItems()) {
                 innerWriter.append("\n");
                 innerWriter.append("\nJUnitClient.run();");
                 innerWriter.close();
             } else {
                 innerWriter.append("JUnitClient.reportError(\n");
                 StringBuilder sb = new StringBuilder();
-                builder.showMissingItems(sb);
+                vm.showMissingItems(sb);
                 escapeStringLiteral(sb.toString(), innerWriter);
                 innerWriter.append(");");
                 getLog().warn("Error building test " + methodRef);

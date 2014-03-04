@@ -13,12 +13,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript;
+package org.teavm.vm.spi;
 
 /**
  *
  * @author Alexey Andreev
  */
-public interface JavascriptBuilderPlugin {
-    void install(JavascriptBuilderHost host);
+public interface TeaVMPlugin {
+    void install(TeaVMHost host);
 }

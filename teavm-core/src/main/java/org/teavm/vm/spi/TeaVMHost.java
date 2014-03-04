@@ -13,15 +13,28 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript;
+package org.teavm.vm.spi;
 
-import java.io.IOException;
-import java.io.OutputStream;
+import java.util.Properties;
+import org.teavm.dependency.DependencyListener;
+import org.teavm.javascript.ni.Generator;
+import org.teavm.model.ClassHolderTransformer;
+import org.teavm.model.MethodReference;
 
 /**
  *
  * @author Alexey Andreev
  */
-public interface JavascriptBuildTarget {
-    OutputStream createResource(String fileName) throws IOException;
+public interface TeaVMHost {
+    void add(DependencyListener dependencyListener);
+
+    void add(ClassHolderTransformer classTransformer);
+
+    void add(MethodReference methodRef, Generator generator);
+
+    void add(RendererListener listener);
+
+    ClassLoader getClassLoader();
+
+    Properties getProperties();
 }

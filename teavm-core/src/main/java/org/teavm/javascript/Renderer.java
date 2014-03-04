@@ -33,7 +33,7 @@ import org.teavm.model.*;
  *
  * @author Alexey Andreev
  */
-public class Renderer implements ExprVisitor, StatementVisitor {
+public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext {
     private static final String variableNames = "abcdefghijkmnopqrstuvwxyz";
     private NamingStrategy naming;
     private SourceWriter writer;
@@ -57,20 +57,33 @@ public class Renderer implements ExprVisitor, StatementVisitor {
         this.classLoader = classLoader;
     }
 
+    @Override
     public SourceWriter getWriter() {
         return writer;
     }
 
+    @Override
     public NamingStrategy getNaming() {
         return naming;
     }
 
+    @Override
     public boolean isMinifying() {
         return minifying;
     }
 
     public void setMinifying(boolean minifying) {
         this.minifying = minifying;
+    }
+
+    @Override
+    public ListableClassHolderSource getClassSource() {
+        return classSource;
+    }
+
+    @Override
+    public ClassLoader getClassLoader() {
+        return classLoader;
     }
 
     public void renderRuntime() throws RenderingException {

@@ -13,18 +13,23 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript.ni.plugin;
+package org.teavm.vm.spi;
 
-import org.teavm.vm.spi.TeaVMHost;
-import org.teavm.vm.spi.TeaVMPlugin;
+import java.io.IOException;
+import org.teavm.javascript.RenderingContext;
+import org.teavm.model.ClassReader;
+import org.teavm.vm.BuildTarget;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class JSObjectBuilderPlugin implements TeaVMPlugin {
-    @Override
-    public void install(TeaVMHost host) {
-        host.add(new JSObjectClassTransformer());
-    }
+public interface RendererListener {
+    void begin(RenderingContext context, BuildTarget buildTarget) throws IOException;
+
+    void beforeClass(ClassReader cls) throws IOException;
+
+    void afterClass(ClassReader cls) throws IOException;
+
+    void complete() throws IOException;
 }

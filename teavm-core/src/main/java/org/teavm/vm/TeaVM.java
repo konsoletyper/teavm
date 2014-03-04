@@ -13,13 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript;
+package org.teavm.vm;
 
 import java.io.*;
 import java.util.*;
 import org.teavm.codegen.*;
 import org.teavm.common.FiniteExecutor;
 import org.teavm.dependency.*;
+import org.teavm.javascript.*;
 import org.teavm.javascript.ast.ClassNode;
 import org.teavm.javascript.ni.Generator;
 import org.teavm.model.*;
@@ -28,12 +29,15 @@ import org.teavm.model.util.ProgramUtils;
 import org.teavm.model.util.RegisterAllocator;
 import org.teavm.optimization.ClassSetOptimizer;
 import org.teavm.optimization.Devirtualization;
+import org.teavm.vm.spi.RendererListener;
+import org.teavm.vm.spi.TeaVMHost;
+import org.teavm.vm.spi.TeaVMPlugin;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class JavascriptBuilder implements JavascriptBuilderHost {
+public class TeaVM implements TeaVMHost {
     private JavascriptProcessedClassSource classSource;
     private DependencyChecker dependencyChecker;
     private FiniteExecutor executor;
@@ -41,12 +45,13 @@ public class JavascriptBuilder implements JavascriptBuilderHost {
     private boolean minifying = true;
     private boolean bytecodeLogging;
     private OutputStream logStream = System.out;
-    private Map<String, JavascriptEntryPoint> entryPoints = new HashMap<>();
+    private Map<String, TeaVMEntryPoint> entryPoints = new HashMap<>();
     private Map<String, String> exportedClasses = new HashMap<>();
-    private List<JavascriptResourceRenderer> ressourceRenderers = new ArrayList<>();
     private Map<MethodReference, Generator> methodGenerators = new HashMap<>();
+    private List<RendererListener> rendererListeners = new ArrayList<>();
+    private Properties properties = new Properties();
 
-    JavascriptBuilder(ClassHolderSource classSource, ClassLoader classLoader, FiniteExecutor executor) {
+    TeaVM(ClassHolderSource classSource, ClassLoader classLoader, FiniteExecutor executor) {
         this.classSource = new JavascriptProcessedClassSource(classSource);
         this.classLoader = classLoader;
         dependencyChecker = new DependencyChecker(this.classSource, classLoader, executor);
@@ -63,14 +68,15 @@ public class JavascriptBuilder implements JavascriptBuilderHost {
         classSource.addTransformer(transformer);
     }
 
-    @Override
-    public void add(JavascriptResourceRenderer resourceRenderer) {
-        ressourceRenderers.add(resourceRenderer);
-    }
 
     @Override
     public void add(MethodReference methodRef, Generator generator) {
         methodGenerators.put(methodRef, generator);
+    }
+
+    @Override
+    public void add(RendererListener listener) {
+        rendererListeners.add(listener);
     }
 
     @Override
@@ -94,15 +100,34 @@ public class JavascriptBuilder implements JavascriptBuilderHost {
         this.bytecodeLogging = bytecodeLogging;
     }
 
-    public JavascriptEntryPoint entryPoint(String name, MethodReference ref) {
+    public void setProperties(Properties properties) {
+        this.properties.clear();
+        if (properties != null) {
+            this.properties.putAll(properties);
+        }
+    }
+
+    @Override
+    public Properties getProperties() {
+        return new Properties(properties);
+    }
+
+    public TeaVMEntryPoint entryPoint(String name, MethodReference ref) {
         if (entryPoints.containsKey(name)) {
             throw new IllegalArgumentException("Entry point with public name `" + name + "' already defined " +
                     "for method " + ref);
         }
-        JavascriptEntryPoint entryPoint = new JavascriptEntryPoint(name, ref,
+        TeaVMEntryPoint entryPoint = new TeaVMEntryPoint(name, ref,
                 dependencyChecker.linkMethod(ref, DependencyStack.ROOT));
         dependencyChecker.initClass(ref.getClassName(), DependencyStack.ROOT);
         entryPoints.put(name, entryPoint);
+        return entryPoint;
+    }
+
+    public TeaVMEntryPoint linkMethod(MethodReference ref) {
+        TeaVMEntryPoint entryPoint = new TeaVMEntryPoint("", ref,
+                dependencyChecker.linkMethod(ref, DependencyStack.ROOT));
+        dependencyChecker.initClass(ref.getClassName(), DependencyStack.ROOT);
         return entryPoint;
     }
 
@@ -113,6 +138,10 @@ public class JavascriptBuilder implements JavascriptBuilderHost {
         }
         dependencyChecker.initClass(className, DependencyStack.ROOT);
         exportedClasses.put(name, className);
+    }
+
+    public void linkType(String className) {
+        dependencyChecker.initClass(className, DependencyStack.ROOT);
     }
 
     public ClassHolderSource getClassSource() {
@@ -135,7 +164,7 @@ public class JavascriptBuilder implements JavascriptBuilderHost {
         dependencyChecker.checkForMissingItems();
     }
 
-    public void build(Appendable writer, JavascriptBuildTarget target) throws RenderingException {
+    public void build(Appendable writer, BuildTarget target) throws RenderingException {
         AliasProvider aliasProvider = minifying ? new MinifyingAliasProvider() : new DefaultAliasProvider();
         DefaultNamingStrategy naming = new DefaultNamingStrategy(aliasProvider, classSource);
         naming.setMinifying(minifying);
@@ -174,17 +203,27 @@ public class JavascriptBuilder implements JavascriptBuilderHost {
                 // Just don't do anything
             }
         }
-        Renderer renderer = new Renderer(sourceWriter, classSet, classLoader);
-        renderer.renderRuntime();
         for (Map.Entry<MethodReference, Generator> entry : methodGenerators.entrySet()) {
             decompiler.addGenerator(entry.getKey(), entry.getValue());
         }
         List<ClassNode> clsNodes = decompiler.decompile(classSet.getClassNames());
-        for (ClassNode clsNode : clsNodes) {
-            renderer.render(clsNode);
-        }
+        Renderer renderer = new Renderer(sourceWriter, classSet, classLoader);
         try {
-            for (Map.Entry<String, JavascriptEntryPoint> entry : entryPoints.entrySet()) {
+            for (RendererListener listener : rendererListeners) {
+                listener.begin(renderer, target);
+            }
+            renderer.renderRuntime();
+            for (ClassNode clsNode : clsNodes) {
+                ClassReader cls = classSet.get(clsNode.getName());
+                for (RendererListener listener : rendererListeners) {
+                    listener.beforeClass(cls);
+                }
+                renderer.render(clsNode);
+                for (RendererListener listener : rendererListeners) {
+                    listener.afterClass(cls);
+                }
+            }
+            for (Map.Entry<String, TeaVMEntryPoint> entry : entryPoints.entrySet()) {
                 sourceWriter.append(entry.getKey()).ws().append("=").ws().appendMethodBody(entry.getValue().reference)
                         .append(";").softNewLine();
             }
@@ -192,8 +231,8 @@ public class JavascriptBuilder implements JavascriptBuilderHost {
                 sourceWriter.append(entry.getKey()).ws().append("=").ws().appendClass(entry.getValue()).append(";")
                         .softNewLine();
             }
-            for (JavascriptResourceRenderer resourceRenderer : ressourceRenderers) {
-                resourceRenderer.render(target);
+            for (RendererListener listener : rendererListeners) {
+                listener.complete();
             }
         } catch (IOException e) {
             throw new RenderingException("IO Error occured", e);
@@ -350,7 +389,7 @@ public class JavascriptBuilder implements JavascriptBuilderHost {
     }
 
     public void installPlugins() {
-        for (JavascriptBuilderPlugin plugin : ServiceLoader.load(JavascriptBuilderPlugin.class, classLoader)) {
+        for (TeaVMPlugin plugin : ServiceLoader.load(TeaVMPlugin.class, classLoader)) {
             plugin.install(this);
         }
     }

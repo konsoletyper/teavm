@@ -13,26 +13,31 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript;
+package org.teavm.vm.spi;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
+import org.teavm.javascript.RenderingContext;
+import org.teavm.model.ClassReader;
+import org.teavm.vm.BuildTarget;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class DirectoryBuildTarget implements JavascriptBuildTarget {
-    private File directory;
-
-    public DirectoryBuildTarget(File directory) {
-        this.directory = directory;
+public abstract class AbstractRendererListener implements RendererListener {
+    @Override
+    public void begin(RenderingContext context, BuildTarget buildTarget) throws IOException {
     }
 
     @Override
-    public OutputStream createResource(String fileName) throws IOException {
-        return new FileOutputStream(new File(directory, fileName));
+    public void beforeClass(ClassReader cls) throws IOException {
+    }
+
+    @Override
+    public void afterClass(ClassReader cls) throws IOException {
+    }
+
+    @Override
+    public void complete() throws IOException {
     }
 }

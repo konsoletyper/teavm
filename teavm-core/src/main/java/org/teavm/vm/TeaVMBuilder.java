@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript;
+package org.teavm.vm;
 
 import org.teavm.common.FiniteExecutor;
 import org.teavm.common.SimpleFiniteExecutor;
@@ -23,7 +23,7 @@ import org.teavm.model.ClassHolderSource;
  *
  * @author Alexey Andreev
  */
-public class JavascriptBuilderFactory {
+public class TeaVMBuilder {
     ClassHolderSource classSource;
     ClassLoader classLoader;
     FiniteExecutor executor = new SimpleFiniteExecutor();
@@ -32,27 +32,30 @@ public class JavascriptBuilderFactory {
         return classSource;
     }
 
-    public void setClassSource(ClassHolderSource classSource) {
+    public TeaVMBuilder setClassSource(ClassHolderSource classSource) {
         this.classSource = classSource;
+        return this;
     }
 
     public ClassLoader getClassLoader() {
         return classLoader;
     }
 
-    public void setClassLoader(ClassLoader classLoader) {
+    public TeaVMBuilder setClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
+        return this;
     }
 
     public FiniteExecutor getExecutor() {
         return executor;
     }
 
-    public void setExecutor(FiniteExecutor executor) {
+    public TeaVMBuilder setExecutor(FiniteExecutor executor) {
         this.executor = executor;
+        return this;
     }
 
-    public JavascriptBuilder create() {
-        return new JavascriptBuilder(classSource, classLoader, executor);
+    public TeaVM build() {
+        return new TeaVM(classSource, classLoader, executor);
     }
 }

@@ -15,12 +15,22 @@
  */
 package org.teavm.javascript;
 
-import java.io.IOException;
+import org.teavm.codegen.NamingStrategy;
+import org.teavm.codegen.SourceWriter;
+import org.teavm.model.ListableClassReaderSource;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface JavascriptResourceRenderer {
-    void render(JavascriptBuildTarget buildTarget) throws IOException;
+public interface RenderingContext {
+    NamingStrategy getNaming();
+
+    SourceWriter getWriter();
+
+    boolean isMinifying();
+
+    ListableClassReaderSource getClassSource();
+
+    ClassLoader getClassLoader();
 }

@@ -13,18 +13,26 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript.ni.plugin;
+package org.teavm.vm;
 
-import org.teavm.vm.spi.TeaVMHost;
-import org.teavm.vm.spi.TeaVMPlugin;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class JSObjectBuilderPlugin implements TeaVMPlugin {
+public class DirectoryBuildTarget implements BuildTarget {
+    private File directory;
+
+    public DirectoryBuildTarget(File directory) {
+        this.directory = directory;
+    }
+
     @Override
-    public void install(TeaVMHost host) {
-        host.add(new JSObjectClassTransformer());
+    public OutputStream createResource(String fileName) throws IOException {
+        return new FileOutputStream(new File(directory, fileName));
     }
 }

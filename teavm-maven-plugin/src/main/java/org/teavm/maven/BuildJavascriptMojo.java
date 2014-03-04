@@ -33,14 +33,17 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.teavm.common.ThreadPoolFiniteExecutor;
-import org.teavm.javascript.DirectoryBuildTarget;
-import org.teavm.javascript.JavascriptBuilder;
-import org.teavm.javascript.JavascriptBuilderFactory;
+import org.teavm.javascript.RenderingContext;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.parsing.ClasspathClassHolderSource;
+import org.teavm.vm.BuildTarget;
+import org.teavm.vm.DirectoryBuildTarget;
+import org.teavm.vm.TeaVM;
+import org.teavm.vm.TeaVMBuilder;
+import org.teavm.vm.spi.AbstractRendererListener;
 
 /**
  *
@@ -61,6 +64,7 @@ public class BuildJavascriptMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project.build.outputDirectory}")
     private File classFiles;
 
+    @Parameter
     private String targetFileName = "classes.js";
 
     @Parameter
@@ -71,6 +75,9 @@ public class BuildJavascriptMojo extends AbstractMojo {
 
     @Parameter
     private RuntimeCopyOperation runtime = RuntimeCopyOperation.SEPARATE;
+
+    @Parameter
+    private Properties properties;
 
     @Parameter
     private boolean mainPageIncluded;
@@ -90,6 +97,10 @@ public class BuildJavascriptMojo extends AbstractMojo {
 
     public void setTargetDirectory(File targetDirectory) {
         this.targetDirectory = targetDirectory;
+    }
+
+    public void setTargetFileName(String targetFileName) {
+        this.targetFileName = targetFileName;
     }
 
     public void setClassFiles(File classFiles) {
@@ -124,6 +135,10 @@ public class BuildJavascriptMojo extends AbstractMojo {
         this.transformers = transformers;
     }
 
+    public void setProperties(Properties properties) {
+        this.properties = properties;
+    }
+
     @Override
     public void execute() throws MojoExecutionException {
         Log log = getLog();
@@ -131,9 +146,8 @@ public class BuildJavascriptMojo extends AbstractMojo {
         try {
             ClassLoader classLoader = prepareClassLoader();
             log.info("Building JavaScript file");
-            JavascriptBuilderFactory builderFactory = new JavascriptBuilderFactory();
-            builderFactory.setClassLoader(classLoader);
-            builderFactory.setClassSource(new ClasspathClassHolderSource(classLoader));
+            TeaVMBuilder vmBuilder = new TeaVMBuilder();
+            vmBuilder.setClassLoader(classLoader).setClassSource(new ClasspathClassHolderSource(classLoader));
             if (numThreads != 1) {
                 int threads = numThreads != 0 ? numThreads : Runtime.getRuntime().availableProcessors();
                 final ThreadPoolFiniteExecutor executor = new ThreadPoolFiniteExecutor(threads);
@@ -142,28 +156,30 @@ public class BuildJavascriptMojo extends AbstractMojo {
                         executor.stop();
                     }
                 };
-                builderFactory.setExecutor(executor);
+                vmBuilder.setExecutor(executor);
             }
-            JavascriptBuilder builder = builderFactory.create();
-            builder.setMinifying(minifying);
-            builder.setBytecodeLogging(bytecodeLogging);
-            builder.installPlugins();
+            TeaVM vm = vmBuilder.build();
+            vm.setMinifying(minifying);
+            vm.setBytecodeLogging(bytecodeLogging);
+            vm.setProperties(properties);
+            vm.installPlugins();
             for (ClassHolderTransformer transformer : instantiateTransformers(classLoader)) {
-                builder.add(transformer);
+                vm.add(transformer);
             }
-            builder.prepare();
-            MethodDescriptor mainMethodDesc = new MethodDescriptor("main", ValueType.arrayOf(
-                    ValueType.object("java.lang.String")), ValueType.VOID);
-            builder.entryPoint("main", new MethodReference(mainClass, mainMethodDesc))
-                    .withValue(1, "java.lang.String");
+            vm.prepare();
+            if (mainClass != null) {
+                MethodDescriptor mainMethodDesc = new MethodDescriptor("main", ValueType.arrayOf(
+                        ValueType.object("java.lang.String")), ValueType.VOID);
+                vm.entryPoint("main", new MethodReference(mainClass, mainMethodDesc))
+                        .withValue(1, "java.lang.String");
+            }
             targetDirectory.mkdirs();
             try (FileWriter writer = new FileWriter(new File(targetDirectory, targetFileName))) {
                 if (runtime == RuntimeCopyOperation.MERGED) {
-                    resourceToWriter("org/teavm/javascript/runtime.js", writer);
-                    writer.append("\n");
+                    vm.add(runtimeInjector);
                 }
-                builder.build(writer, new DirectoryBuildTarget(targetDirectory));
-                builder.checkForMissingItems();
+                vm.build(writer, new DirectoryBuildTarget(targetDirectory));
+                vm.checkForMissingItems();
                 log.info("JavaScript file successfully built");
             }
             if (runtime == RuntimeCopyOperation.SEPARATE) {
@@ -190,6 +206,17 @@ public class BuildJavascriptMojo extends AbstractMojo {
             }
         }
     }
+
+    private AbstractRendererListener runtimeInjector = new AbstractRendererListener() {
+        @Override
+        public void begin(RenderingContext context, BuildTarget buildTarget) throws IOException {
+            @SuppressWarnings("resource")
+            StringWriter writer = new StringWriter();
+            resourceToWriter("org/teavm/javascript/runtime.js", writer);
+            writer.close();
+            context.getWriter().append(writer.toString()).newLine();
+        }
+    };
 
     private List<ClassHolderTransformer> instantiateTransformers(ClassLoader classLoader)
             throws MojoExecutionException {

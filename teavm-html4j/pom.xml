@@ -99,9 +99,6 @@
               <transformers>
                 <param>org.teavm.javascript.NullPointerExceptionTransformer</param>
               </transformers>
-              <additionalScripts>
-                <param>org/netbeans/html/ko4j/knockout-2.2.1.js</param>
-              </additionalScripts>
             </configuration>
           </execution>
         </executions>
