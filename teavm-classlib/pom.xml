@@ -58,6 +58,34 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+      <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.2.1</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <phase>process-test-classes</phase>
+          </execution>
+        </executions>
+        <configuration>
+          <mainClass>org.teavm.classlib.impl.JCLComparisonBuilder</mainClass>
+          <arguments>
+            <argument>java.lang</argument>
+            <argument>java.lang.annotation</argument>
+            <argument>java.lang.reflect</argument>
+            <argument>java.io</argument>
+            <argument>java.net</argument>
+            <argument>java.util</argument>
+            <argument>java.util.logging</argument>
+            <argument>java.util.concurrent</argument>
+            <argument>-output</argument>
+            <argument>${project.build.directory}/jcl-report/jcl-comparision.json</argument>
+          </arguments>
+        </configuration>
+      </plugin>
     </plugins>
     <pluginManagement>
       <plugins>

@@ -93,7 +93,7 @@ public class ClasspathResourceMapper implements Mapper<String, ClassHolder> {
             if (name.startsWith(transformation.packageName)) {
                 int index = name.lastIndexOf('.');
                 String className = name.substring(index + 1);
-                String packageName = name.substring(0, index);
+                String packageName = index > 0 ? name.substring(0, index) : "";
                 ClassHolder classHolder = innerMapper.map(transformation.packagePrefix + packageName +
                         "." + transformation.classPrefix + className);
                 if (classHolder != null) {
