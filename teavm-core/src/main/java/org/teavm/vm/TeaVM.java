@@ -199,7 +199,7 @@ public class TeaVM implements TeaVMHost {
         if (bytecodeLogging) {
             try {
                 logBytecode(new PrintWriter(new OutputStreamWriter(logStream, "UTF-8")), classSet);
-            } catch (IOException e) {
+            } catch (UnsupportedEncodingException e) {
                 // Just don't do anything
             }
         }

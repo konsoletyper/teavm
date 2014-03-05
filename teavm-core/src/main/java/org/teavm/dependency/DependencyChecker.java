@@ -410,10 +410,11 @@ public class DependencyChecker implements DependencyInfo {
             DependencyStack stack = stackMap.get(item);
             if (stack == null) {
                 sb.append("    at unknown location\n");
-            }
-            while (stack.getMethod() != null) {
-                sb.append("    at " + stack.getMethod() + "\n");
-                stack = stack.getCause();
+            } else {
+                while (stack.getMethod() != null) {
+                    sb.append("    at " + stack.getMethod() + "\n");
+                    stack = stack.getCause();
+                }
             }
             sb.append('\n');
         }

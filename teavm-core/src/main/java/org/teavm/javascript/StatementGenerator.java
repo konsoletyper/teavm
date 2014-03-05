@@ -396,7 +396,7 @@ class StatementGenerator implements InstructionVisitor {
         Map<Integer, List<Integer>> switchMap = new HashMap<>();
         for (int i = 0; i < insn.getEntries().size(); ++i) {
             SwitchTableEntry entry = insn.getEntries().get(i);
-            List<Integer> conditions = switchMap.get(entry.getTarget());
+            List<Integer> conditions = switchMap.get(entry.getTarget().getIndex());
             if (conditions == null) {
                 conditions = new ArrayList<>();
                 switchMap.put(entry.getTarget().getIndex(), conditions);

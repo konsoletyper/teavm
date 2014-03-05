@@ -26,7 +26,7 @@ public class DisjointSet {
     private int[] rank = new int[16];
     private int[] setSize = new int[16];
     private int maxRank;
-    private int size = 0;
+    private int size;
 
     public int find(int node) {
         int initial = node;

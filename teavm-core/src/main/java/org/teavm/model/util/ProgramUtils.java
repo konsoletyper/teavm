@@ -24,7 +24,10 @@ import org.teavm.model.instructions.*;
  *
  * @author Alexey Andreev
  */
-public class ProgramUtils {
+public final class ProgramUtils {
+    private ProgramUtils() {
+    }
+
     public static Graph buildControlFlowGraphWithoutTryCatch(Program program) {
         GraphBuilder graphBuilder = new GraphBuilder(program.basicBlockCount());
         InstructionTransitionExtractor transitionExtractor = new InstructionTransitionExtractor();

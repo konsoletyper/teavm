@@ -73,7 +73,7 @@ public class UnusedVariableElimination implements MethodOptimization {
         }
     }
 
-    private class InstructionOptimizer implements InstructionVisitor {
+    private static class InstructionOptimizer implements InstructionVisitor {
         private boolean[] used;
         boolean eliminate;
 

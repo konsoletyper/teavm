@@ -37,7 +37,7 @@ public class RangeTree {
         }
     }
 
-    public static interface Node {
+    public interface Node {
         Node getParent();
 
         int getStart();

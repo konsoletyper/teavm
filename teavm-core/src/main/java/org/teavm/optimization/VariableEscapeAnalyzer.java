@@ -25,7 +25,10 @@ import org.teavm.model.instructions.*;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class VariableEscapeAnalyzer {
+public final class VariableEscapeAnalyzer {
+    private VariableEscapeAnalyzer() {
+    }
+
     public static boolean[] findEscapingVariables(Program program) {
         boolean[] escaping = new boolean[program.variableCount()];
         InstructionAnalyzer analyzer = new InstructionAnalyzer(escaping);

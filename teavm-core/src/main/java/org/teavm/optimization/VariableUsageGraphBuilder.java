@@ -24,7 +24,10 @@ import org.teavm.model.instructions.*;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class VariableUsageGraphBuilder {
+public final class VariableUsageGraphBuilder {
+    private VariableUsageGraphBuilder() {
+    }
+
     public static Graph build(Program program) {
         GraphBuilder builder = new GraphBuilder(program.variableCount());
         InstructionAnalyzer analyzer = new InstructionAnalyzer(builder);

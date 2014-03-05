@@ -414,7 +414,7 @@ class DependencyGraphBuilder {
         public void invoke(VariableReader receiver, VariableReader instance, MethodReference method,
                 List<? extends VariableReader> arguments, InvocationType type) {
             if (instance == null) {
-                invokeSpecial(receiver, instance, method, arguments);
+                invokeSpecial(receiver, null, method, arguments);
             } else {
                 switch (type) {
                     case SPECIAL:

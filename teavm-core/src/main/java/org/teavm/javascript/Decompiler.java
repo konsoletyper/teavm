@@ -55,7 +55,7 @@ public class Decompiler {
         return this.graph.size();
     }
 
-    class Block {
+    static class Block {
         public final IdentifiedStatement statement;
         public final List<Statement> body;
         public final int end;

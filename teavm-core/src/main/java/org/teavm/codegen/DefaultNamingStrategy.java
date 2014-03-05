@@ -87,12 +87,13 @@ public class DefaultNamingStrategy implements NamingStrategy {
 
     @Override
     public String getFullNameFor(MethodReference method) throws NamingException {
+        MethodReference originalMethod = method;
         if (!minifying) {
             return getNameFor(method.getClassName()) + "_" + getNameFor(method);
         }
         method = getRealMethod(method);
         if (method == null) {
-            throw new NamingException("Can't provide name for method as it was not found: " + method);
+            throw new NamingException("Can't provide name for method as it was not found: " + originalMethod);
         }
         String key = method.toString();
         String alias = privateAliases.get(key);

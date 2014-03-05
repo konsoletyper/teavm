@@ -27,7 +27,7 @@ import org.teavm.model.ValueType;
  */
 public class SourceWriter implements Appendable {
     private Appendable innerWriter;
-    private int indentSize = 0;
+    private int indentSize;
     private NamingStrategy naming;
     private boolean lineStart;
     private boolean minified;

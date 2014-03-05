@@ -22,7 +22,14 @@ import java.util.Arrays;
  *
  * @author Alexey Andreev
  */
-public class GraphUtils {
+public final class GraphUtils {
+    static final byte NONE = 0;
+    static final byte VISITING = 1;
+    static final byte VISITED = 2;
+
+    private GraphUtils() {
+    }
+
     public static Graph invert(Graph graph) {
         int sz = graph.size();
         GraphBuilder result = new GraphBuilder();
@@ -52,9 +59,6 @@ public class GraphUtils {
     }
 
     public static Graph removeLoops(Graph graph) {
-        final byte NONE = 0;
-        final byte VISITING = 1;
-        final byte VISITED = 2;
         int sz = graph.size();
         GraphBuilder result = new GraphBuilder();
         int[] stack = new int[sz * 2];

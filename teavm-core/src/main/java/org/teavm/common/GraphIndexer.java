@@ -23,6 +23,9 @@ import java.util.Comparator;
  * @author Alexey Andreev
  */
 public class GraphIndexer {
+    static final byte NONE = 0;
+    static final byte VISITING = 1;
+    static final byte VISITED = 2;
     private int[] indexToNode;
     private int[] nodeToIndex;
     private Graph graph;
@@ -37,9 +40,6 @@ public class GraphIndexer {
     }
 
     private int sort(Graph graph) {
-        final byte NONE = 0;
-        final byte VISITING = 1;
-        final byte VISITED = 2;
         LoopGraph loopGraph = new LoopGraph(graph);
         int sz = graph.size();
         int[] indexToNode = new int[sz + 1];
@@ -88,6 +88,8 @@ public class GraphIndexer {
                         switch (state[next]) {
                             case NONE:
                                 stack[stackSize++] = next;
+                                break;
+                            default:
                                 break;
                         }
                     }

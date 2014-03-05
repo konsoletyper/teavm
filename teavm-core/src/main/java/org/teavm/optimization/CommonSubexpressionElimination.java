@@ -117,7 +117,7 @@ public class CommonSubexpressionElimination implements MethodOptimization {
         }
 
         program.pack();
-        program = null;
+        this.program = null;
     }
 
     private List<List<Incoming>> findOutgoings(Program program) {

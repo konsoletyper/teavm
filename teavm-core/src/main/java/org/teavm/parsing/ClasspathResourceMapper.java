@@ -28,8 +28,8 @@ import org.teavm.model.ClassHolder;
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public class ClasspathResourceMapper implements Mapper<String, ClassHolder> {
-    private static String PACKAGE_PREFIX = "packagePrefix.";
-    private static String CLASS_PREFIX = "classPrefix.";
+    private static final String PACKAGE_PREFIX = "packagePrefix.";
+    private static final String CLASS_PREFIX = "classPrefix.";
     private Mapper<String, ClassHolder> innerMapper;
     private List<Transformation> transformations = new ArrayList<>();
     private ClassRefsRenamer renamer;

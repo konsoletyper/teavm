@@ -21,7 +21,10 @@ import org.teavm.javascript.ast.*;
  *
  * @author Alexey Andreev
  */
-class ExprOptimizer {
+final class ExprOptimizer {
+    private ExprOptimizer() {
+    }
+
     public static Expr invert(Expr expr) {
         if (expr instanceof UnaryExpr) {
             UnaryExpr unary = (UnaryExpr)expr;

@@ -27,7 +27,10 @@ import org.teavm.optimization.UnreachableBasicBlockEliminator;
  *
  * @author Alexey Andreev
  */
-public class Parser {
+public final class Parser {
+    private Parser() {
+    }
+
     public static MethodHolder parseMethod(MethodNode node, String className) {
         ValueType[] signature = MethodDescriptor.parseSignature(node.desc);
         MethodHolder method = new MethodHolder(node.name, signature);

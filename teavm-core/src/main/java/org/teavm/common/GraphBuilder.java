@@ -27,7 +27,7 @@ import java.util.List;
 public class GraphBuilder {
     private GraphImpl builtGraph;
     private List<IntegerArray> addedEdges = new ArrayList<>();
-    private int sz = 0;
+    private int sz;
 
     public GraphBuilder() {
     }

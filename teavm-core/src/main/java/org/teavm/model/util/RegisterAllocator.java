@@ -161,9 +161,8 @@ public class RegisterAllocator {
                 if (!interfere) {
                     int newClass = congruenceClasses.union(copyClass, origClass);
                     block.getInstructions().set(j, new EmptyInstruction());
-                    MutableGraphNode newNode = interferenceGraph.get(origClass);
                     if (newClass == interferenceGraph.size()) {
-                        newNode = new MutableGraphNode(interferenceGraph.size());
+                        MutableGraphNode newNode = new MutableGraphNode(interferenceGraph.size());
                         interferenceGraph.add(newNode);
                     }
                     for (MutableGraphEdge edge : interferenceGraph.get(origClass).getEdges()
