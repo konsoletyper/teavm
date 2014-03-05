@@ -1,0 +1,74 @@
+* {
+    font-family: sans-serif;
+    font-size: 14pt;
+    line-height: 125%;
+}
+
+table {
+    border-collapse: collapse;
+    margin: 1em;
+    border-color: rgb(160,160,160);
+    border-style: solid;
+    border-width: 1px;
+}
+th {
+    padding-left: 1em;
+    padding-right: 1em;
+    padding-top: 0.25em;
+    padding-bottom: 0.25em;
+    border-width: 1px;
+    border-color: rgb(160,160,160);
+    border-top-style: solid;
+    border-bottom-style: solid;
+    background-color: rgb(220,220,220);
+}
+
+.full {
+    background-color: rgb(200,255,200);
+}
+.missing {
+    background-color: rgb(255,200,200);
+}
+.partial {
+    background-color: rgb(255,255,200);
+}
+.percent {
+    text-align: right;
+}
+
+.package, .class, .protected-class, .field, .protected-field, .method, .protected-method {
+    background-repeat: no-repeat;
+    padding-right: 6px;
+}
+
+.package {
+    padding-left: 35px;
+    background-position: 16px 50%;
+}
+.class {
+    padding-left: 51px;
+    background-position: 32px 50%;
+}
+.field, .protected-field, .method, .protected-method {
+    padding-left: 67px;
+    background-position: 48px 50%;
+}
+
+.package {
+    background-image: url(package_obj.png);
+}
+.class {
+    background-image: url(class_obj.png);
+}
+.field {
+    background-image: url(field_public_obj.png);
+}
+.protected-field {
+    background-image: url(field_protected_obj.png);
+}
+.method {
+    background-image: url(methpub_obj.png);
+}
+.protected-method {
+    background-image: url(methpro_obj.png);
+}

@@ -15,7 +15,7 @@
  */
 package org.teavm.classlib.impl;
 
-import java.io.PrintStream;
+import java.util.Map;
 import org.objectweb.asm.*;
 import org.teavm.model.*;
 import org.teavm.model.ClassReader;
@@ -25,84 +25,103 @@ import org.teavm.model.ClassReader;
  * @author Alexey Andreev
  */
 class JCLComparisonVisitor implements ClassVisitor {
-    private PrintStream out;
+    private Map<String, JCLPackage> packageMap;
     private ClassReaderSource classSource;
-    private boolean first = true;
-    private boolean firstItem;
-    private boolean pass;
-    private boolean ended;
     private ClassReader classReader;
+    private JCLPackage jclPackage;
+    private JCLClass jclClass;
 
-    public JCLComparisonVisitor(ClassReaderSource classSource, PrintStream out) {
+    public JCLComparisonVisitor(ClassReaderSource classSource, Map<String, JCLPackage> packageMap) {
         this.classSource = classSource;
-        this.out = out;
+        this.packageMap = packageMap;
     }
 
     @Override
     public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
-        if ((access & Opcodes.ACC_PUBLIC) == 0) {
+        if ((access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) == 0) {
+            jclClass = null;
+            classReader = null;
             return;
         }
         String javaName = name.replace('/', '.');
-        if (!first) {
-            out.println(",");
+        int dotIndex = javaName.lastIndexOf('.');
+        String packageName = javaName.substring(0, dotIndex);
+        String simpleName = javaName.substring(dotIndex + 1);
+        jclPackage = packageMap.get(packageName);
+        if (jclPackage == null) {
+            jclPackage = new JCLPackage(packageName);
+            jclPackage.status = JCLStatus.FOUND;
+            packageMap.put(packageName, jclPackage);
         }
-        first = false;
-        out.println("    \"" + javaName + "\" : {");
         classReader = classSource.get(javaName);
-        if (classReader == null) {
-            out.println("        \"implemented\" : false");
-            pass = true;
-        } else {
-            out.println("        \"implemented\" : true,");
-            out.println("        \"items\" : [");
-            pass = false;
-        }
-        ended = false;
-        firstItem = true;
+        jclClass = new JCLClass(simpleName);
+        jclClass.status = classReader != null ? JCLStatus.FOUND : JCLStatus.MISSING;
+        jclPackage.classes.add(jclClass);
     }
 
     @Override
     public FieldVisitor visitField(int access, String name, String desc, String signature, Object value) {
-        if (pass) {
+        if (classReader == null || (access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) == 0) {
             return null;
         }
-        if ((access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) == 0) {
-            return null;
-        }
-        if (!firstItem) {
-            out.println(",");
-        }
-        firstItem = false;
-        out.println("            {");
-        out.println("                 \"type\" : \"field\",");
-        out.println("                 \"name\" : \"" + name + "\",");
-        out.println("                 \"descriptor\" : \"" + desc + "\",");
+        JCLItem item = new JCLItem(JCLItemType.FIELD, name + " : " + desc);
         FieldReader field = classReader.getField(name);
-        out.println("                 \"implemented\" : \"" + (field != null ? "true" : "false") + "\",");
-        out.print("            }");
+        item.status = field != null ? JCLStatus.FOUND : JCLStatus.MISSING;
+        jclClass.items.add(item);
+        if (item.status == JCLStatus.MISSING) {
+            jclClass.status = JCLStatus.PARTIAL;
+        }
         return null;
     }
 
     @Override
     public MethodVisitor visitMethod(int access, String name, String desc, String signature, String[] exceptions) {
-        if (pass) {
+        if (classReader == null || (access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) == 0) {
             return null;
         }
-        if ((access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) == 0) {
-            return null;
+
+        JCLItem item = new JCLItem(JCLItemType.METHOD, name + desc);
+        MethodReader method = findMethod(classReader, MethodDescriptor.parse(name + desc));
+        if (method == null) {
+            item.status = JCLStatus.MISSING;
+        } else {
+            if ((access & Opcodes.ACC_ABSTRACT) == 0 && method.hasModifier(ElementModifier.ABSTRACT)) {
+                item.status = JCLStatus.MISSING;
+            } else {
+                item.status = method.getOwnerName().equals(classReader.getName()) ?
+                        JCLStatus.FOUND : JCLStatus.PARTIAL;
+            }
         }
-        if (!firstItem) {
-            out.println(",");
+        jclClass.items.add(item);
+        if (item.status == JCLStatus.MISSING) {
+            jclClass.status = JCLStatus.PARTIAL;
         }
-        firstItem = false;
-        out.println("            {");
-        out.println("                 \"type\" : \"method\",");
-        out.println("                 \"name\" : \"" + name + "\",");
-        out.println("                 \"descriptor\" : \"" + desc + "\",");
-        MethodReader method = classReader.getMethod(MethodDescriptor.parse(name + desc));
-        out.println("                 \"implemented\" : \"" + (method != null ? "true" : "false") + "\",");
-        out.print("            }");
+        return null;
+    }
+
+    private MethodReader findMethod(ClassReader cls, MethodDescriptor desc) {
+        MethodReader method = cls.getMethod(desc);
+        if (method != null) {
+            return method;
+        }
+        if (cls.getParent() != null) {
+            ClassReader parent = classSource.get(cls.getParent());
+            if (parent != null) {
+                method = findMethod(parent, desc);
+                if (method != null) {
+                    return method;
+                }
+            }
+        }
+        for (String ifaceName : cls.getInterfaces()) {
+            ClassReader iface = classSource.get(ifaceName);
+            if (iface != null) {
+                method = findMethod(iface, desc);
+                if (method != null) {
+                    return method;
+                }
+            }
+        }
         return null;
     }
 
@@ -129,15 +148,8 @@ class JCLComparisonVisitor implements ClassVisitor {
 
     @Override
     public void visitEnd() {
-        if (!ended) {
-            if (!pass) {
-                if (!firstItem) {
-                    out.println();
-                }
-                out.println("        ]");
-            }
-            out.print("    }");
-            ended = true;
+        if (jclClass == null || jclClass.status != JCLStatus.FOUND) {
+            jclPackage.status = JCLStatus.PARTIAL;
         }
     }
 }
