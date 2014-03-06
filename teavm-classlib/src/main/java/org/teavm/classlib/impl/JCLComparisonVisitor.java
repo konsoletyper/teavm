@@ -57,10 +57,10 @@ class JCLComparisonVisitor implements ClassVisitor {
         jclClass = new JCLClass(simpleName);
         jclClass.status = classReader != null ? JCLStatus.FOUND : JCLStatus.MISSING;
         jclClass.visibility = (access & Opcodes.ACC_PROTECTED) != 0 ? JCLVisibility.PROTECTED : JCLVisibility.PUBLIC;
-        if ((access & Opcodes.ACC_INTERFACE) != 0) {
-            jclClass.type = JCLClassType.INTERFACE;
-        } else if ((access & Opcodes.ACC_ANNOTATION) != 0) {
+        if ((access & Opcodes.ACC_ANNOTATION) != 0) {
             jclClass.type = JCLClassType.ANNOTATION;
+        } else if ((access & Opcodes.ACC_INTERFACE) != 0) {
+            jclClass.type = JCLClassType.INTERFACE;
         } else if ((access & Opcodes.ACC_ENUM) != 0) {
             jclClass.type = JCLClassType.ENUM;
         } else {

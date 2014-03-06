@@ -33,4 +33,8 @@ public class TClassNotFoundException extends TReflectiveOperationException {
     public TClassNotFoundException(TString message) {
         super(message);
     }
+
+    public TThrowable getException() {
+        return getCause();
+    }
 }

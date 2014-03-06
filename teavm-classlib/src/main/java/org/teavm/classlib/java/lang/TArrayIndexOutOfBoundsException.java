@@ -29,4 +29,8 @@ public class TArrayIndexOutOfBoundsException extends TIndexOutOfBoundsException 
     public TArrayIndexOutOfBoundsException(TString message) {
         super(message);
     }
+
+    public TArrayIndexOutOfBoundsException(int index) {
+        super(TInteger.toString(index));
+    }
 }

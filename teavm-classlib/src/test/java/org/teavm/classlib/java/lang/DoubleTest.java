@@ -48,4 +48,37 @@ public class DoubleTest {
         assertEquals(0, Double.parseDouble("00000"), 1E-12);
         assertEquals(0, Double.parseDouble("00000.0000"), 1E-12);
     }
+
+    @Test
+    public void longBitsExtracted() {
+        assertEquals(0x41E23456789ABCDEL, Double.doubleToLongBits(0x1.23456789ABCDEP+31));
+    }
+
+    @Test
+    public void subNormalLongBitsExtracted() {
+        assertEquals(0x00000056789ABCDEL, Double.doubleToLongBits(0x0.00056789ABCDEP-1022));
+    }
+
+    @Test
+    public void longBitsPacked() {
+        assertEquals(0x1.23456789ABCDEP+31, Double.longBitsToDouble(0x41E23456789ABCDEL), 0x1.0P-19);
+    }
+
+    @Test
+    public void subNormalLongBitsPacked() {
+        assertEquals(0x0.00056789ABCDEP-1022, Double.longBitsToDouble(0x00000056789ABCDEL), 0x1.0P-19);
+    }
+
+    @Test
+    public void hexStringBuilt() {
+        assertEquals("0x1.23456789abcdep31", Double.toHexString(0x1.23456789ABCDEP+31));
+        assertEquals("0x1.0p0", Double.toHexString(1));
+        assertEquals("-0x1.0p0", Double.toHexString(-1));
+        assertEquals("0x1.0p1", Double.toHexString(2));
+        assertEquals("0x1.8p1", Double.toHexString(3));
+        assertEquals("0x1.0p-1", Double.toHexString(0.5));
+        assertEquals("0x1.0p-2", Double.toHexString(0.25));
+        assertEquals("0x1.0p-1022", Double.toHexString(Double.MIN_NORMAL));
+        assertEquals("0x0.0000000000001p-1022", Double.toHexString(Double.MIN_VALUE));
+    }
 }

@@ -87,6 +87,14 @@ public class TClass<T> extends TObject {
 
     @InjectedBy(ClassNativeGenerator.class)
     @PluggableDependency(ClassNativeGenerator.class)
+    static native TClass<TByte> byteClass();
+
+    @InjectedBy(ClassNativeGenerator.class)
+    @PluggableDependency(ClassNativeGenerator.class)
+    static native TClass<TDouble> doubleClass();
+
+    @InjectedBy(ClassNativeGenerator.class)
+    @PluggableDependency(ClassNativeGenerator.class)
     public static native <S extends TObject> TClass<S> wrap(Class<S> cls);
 
     public boolean desiredAssertionStatus() {

@@ -22,10 +22,18 @@ import org.teavm.javascript.ni.Rename;
  * @author Alexey Andreev
  */
 public class TByte extends TNumber implements TComparable<TByte> {
+    public static final byte MIN_VALUE = -128;
+    public static final byte MAX_VALUE = 127;
+    public static final TClass<TByte> TYPE = TClass.byteClass();
+    public static final int SIZE = 8;
     private byte value;
 
     public TByte(byte value) {
         this.value = value;
+    }
+
+    public TByte(TString value) {
+        this.value = parseByte(value, 10);
     }
 
     @Override
@@ -54,6 +62,7 @@ public class TByte extends TNumber implements TComparable<TByte> {
     }
 
     public static TByte valueOf(byte value) {
+        // TODO: add caching
         return new TByte(value);
     }
 
@@ -84,5 +93,33 @@ public class TByte extends TNumber implements TComparable<TByte> {
     @Override
     public int compareTo(TByte other) {
         return compare(value, other.value);
+    }
+
+    public static byte parseByte(TString s) throws TNumberFormatException {
+        return parseByte(s, 10);
+    }
+
+    public static byte parseByte(TString s, int radix) throws TNumberFormatException {
+        int value = TInteger.parseInt(s, radix);
+        if (value < MIN_VALUE || value >= MAX_VALUE) {
+            throw new TNumberFormatException();
+        }
+        return (byte)value;
+    }
+
+    public static TByte valueOf(TString s, int radix) throws TNumberFormatException {
+        return valueOf(parseByte(s, radix));
+    }
+
+    public static TByte valueOf(TString s) throws TNumberFormatException {
+        return valueOf(parseByte(s));
+    }
+
+    public static TByte decode(TString nm) throws TNumberFormatException {
+        TInteger value = TInteger.decode(nm);
+        if (value.intValue() < MIN_VALUE || value.intValue() >= MAX_VALUE) {
+            throw new TNumberFormatException();
+        }
+        return TByte.valueOf((byte)value.intValue());
     }
 }

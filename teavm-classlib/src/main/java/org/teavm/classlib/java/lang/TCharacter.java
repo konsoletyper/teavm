@@ -558,6 +558,10 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
         }
     }
 
+    public static boolean isUnicodeIdentifierPart(char ch) {
+        return isUnicodeIdentifierPart((int)ch);
+    }
+
     public static boolean isUnicodeIdentifierPart(int codePoint) {
         switch (getType(codePoint)) {
             case UPPERCASE_LETTER:

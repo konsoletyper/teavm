@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.lang;
 
 import org.teavm.javascript.ni.GeneratedBy;
+import org.teavm.javascript.ni.InjectedBy;
 import org.teavm.javascript.ni.Rename;
 
 /**
@@ -23,12 +24,24 @@ import org.teavm.javascript.ni.Rename;
  * @author Alexey Andreev
  */
 public class TDouble extends TNumber implements TComparable<TDouble> {
-    public static double POSITIVE_INFINITY = 1 / 0.0;
-    public static double NEGATIVE_INFINITY = -POSITIVE_INFINITY;
+    public static final double POSITIVE_INFINITY = 1 / 0.0;
+    public static final double NEGATIVE_INFINITY = -POSITIVE_INFINITY;
+    public static final double NaN = getNaN();
+    public static final double MAX_VALUE = 0x1.FFFFFFFFFFFFFP+1023;
+    public static final double MIN_NORMAL = -0x1.0P+1022;
+    public static final double MIN_VALUE = 0x0.0000000000001P-1022;
+    public static final int MAX_EXPONENT = 1023;
+    public static final int MIN_EXPONENT = -1022;
+    public static final int SIZE = 64;
+    public static final TClass<TDouble> TYPE = TClass.doubleClass();
     private double value;
 
     public TDouble(double value) {
         this.value = value;
+    }
+
+    public TDouble(TString value) throws TNumberFormatException {
+        this.value = parseDouble(value);
     }
 
     @Override
@@ -199,9 +212,151 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
         return compare(value, other.value);
     }
 
+    public boolean isNaN() {
+        return isNaN(value);
+    }
+
+    public boolean isInfinite() {
+        return isInfinite(value);
+    }
+
     @GeneratedBy(DoubleNativeGenerator.class)
     public static native boolean isNaN(double v);
 
+    @InjectedBy(DoubleNativeGenerator.class)
+    private static native double getNaN();
+
     @GeneratedBy(DoubleNativeGenerator.class)
     public static native boolean isInfinite(double v);
+
+    public static long doubleToRawLongBits(double value) {
+        return doubleToLongBits(value);
+    }
+
+    public static long doubleToLongBits(double value) {
+        if (value == POSITIVE_INFINITY) {
+            return 0x7FF0000000000000L;
+        } else if (value == NEGATIVE_INFINITY) {
+            return 0xFFF0000000000000L;
+        } else if (isNaN(value)) {
+            return 0x7FF8000000000000L;
+        }
+        double abs = TMath.abs(value);
+        int exp = TMath.getExponent(abs);
+        if (exp < -1022) {
+            exp = -1023;
+        }
+        long mantissa = (long)(abs * binaryExponent(exp + 52)) & 0xFFFFFFFFFFFFFL;
+        return mantissa | ((exp + 1023L) << 52) | (value < 0 ? (1L << 63) : 0);
+    }
+
+    public static double longBitsToDouble(long bits) {
+        if ((bits & 0x7FF0000000000000L) == 0x7FF0000000000000L) {
+            if (bits == 0x7FF0000000000000L) {
+                return POSITIVE_INFINITY;
+            } else if (bits == 0xFFF0000000000000L) {
+                return NEGATIVE_INFINITY;
+            } else {
+                return NaN;
+            }
+        }
+        boolean negative = (bits & (1 << 63)) != 0;
+        int rawExp = (int)((bits >> 52) & 0x7FFL) - 1023;
+        long mantissa = bits & 0xFFFFFFFFFFFFFL;
+        if (rawExp == 0) {
+            mantissa <<= 1;
+        } else {
+            mantissa |= (1L << 52);
+        }
+        double value = mantissa * binaryExponent(rawExp - 1023 - 52);
+        return !negative ? value : -value;
+    }
+
+    public static TString toHexString(double d) {
+        if (isNaN(d)) {
+            return TString.wrap("NaN");
+        } else if (isInfinite(d)) {
+            return d > 0 ? TString.wrap("Infinity") : TString.wrap("-Infinity");
+        }
+        char[] buffer = new char[30];
+        int sz = 0;
+        long bits = doubleToLongBits(d);
+        long mantissa = bits & 0xFFFFFFFFFFFFFL;
+        for (int i = 0; i < 13; ++i) {
+            int digit = (int)(mantissa & 0xF);
+            if (digit > 0 || sz > 0) {
+                buffer[sz++] = TCharacter.forDigit(digit, 16);
+            }
+            mantissa >>>= 4;
+        }
+        if (sz == 0) {
+            buffer[sz++] = '0';
+        }
+        buffer[sz++] = '.';
+        int exp = (int)((bits >>> 52) & 0x7FF);
+        if (exp == -1023) {
+            buffer[sz++] = '0';
+            ++exp;
+        } else {
+            buffer[sz++] = '1';
+        }
+        buffer[sz++] = 'x';
+        buffer[sz++] = '0';
+        if ((bits & (1L << 63)) == 0) {
+            buffer[sz++] = '-';
+        }
+        int half = sz / 2;
+        for (int i = 0; i < half; ++i) {
+            char tmp = buffer[i];
+            buffer[i] = buffer[sz - i - 1];
+            buffer[sz - i - 1] = tmp;
+        }
+
+        buffer[sz++] = 'p';
+        if (exp < 0) {
+            exp = -exp;
+            buffer[sz++] = '-';
+        }
+        int pos = 1000;
+        boolean first = true;
+        for (int i = 0; i < 4; ++i) {
+            int digit = exp / pos;
+            if (digit > 0 || !first) {
+                buffer[sz++] = TCharacter.forDigit(digit, 10);
+                first = false;
+            }
+            digit *= 10;
+            pos /= 10;
+        }
+        if (first) {
+            buffer[sz++] = '0';
+        }
+
+        return new TString(buffer, 0, sz);
+    }
+
+    public static double binaryExponent(int n) {
+        double result = 1;
+        if (n >= 0) {
+            double d = 2;
+            while (n != 0) {
+                if (n % 2 != 0) {
+                    result *= d;
+                }
+                n /= 2;
+                d *= d;
+            }
+        } else {
+            n = -n;
+            double d = 0.5;
+            while (n != 0) {
+                if (n % 2 != 0) {
+                    result *= d;
+                }
+                n /= 2;
+                d *= d;
+            }
+        }
+        return result;
+    }
 }

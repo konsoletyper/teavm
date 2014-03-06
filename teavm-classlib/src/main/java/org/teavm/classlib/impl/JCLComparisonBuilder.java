@@ -89,6 +89,7 @@ public class JCLComparisonBuilder {
         copyResource("html/package_obj.png");
         copyResource("html/int_obj.png");
         copyResource("html/enum_obj.png");
+        copyResource("html/annotation_obj.png");
         try (Writer out = new OutputStreamWriter(new FileOutputStream(new File(
                 outputDirectory, "jcl.html")), "UTF-8")) {
             generateHtml(out, packages);

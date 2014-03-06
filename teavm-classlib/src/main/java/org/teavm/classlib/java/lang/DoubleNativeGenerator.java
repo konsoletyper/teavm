@@ -19,13 +19,15 @@ import java.io.IOException;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.GeneratorContext;
+import org.teavm.javascript.ni.Injector;
+import org.teavm.javascript.ni.InjectorContext;
 import org.teavm.model.MethodReference;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class DoubleNativeGenerator implements Generator {
+public class DoubleNativeGenerator implements Generator, Injector {
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
         switch (methodRef.getName()) {
@@ -34,6 +36,15 @@ public class DoubleNativeGenerator implements Generator {
                 break;
             case "isInfinite":
                 generateIsInfinite(context, writer);
+                break;
+        }
+    }
+
+    @Override
+    public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
+        switch (methodRef.getName()) {
+            case "getNaN":
+                context.getWriter().append("NaN");
                 break;
         }
     }

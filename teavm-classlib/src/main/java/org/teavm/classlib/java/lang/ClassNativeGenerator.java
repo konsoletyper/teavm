@@ -86,6 +86,12 @@ public class ClassNativeGenerator implements Generator, Injector, DependencyPlug
             case "charClass":
                 context.getWriter().append("$rt_cls($rt_charcls())");
                 break;
+            case "byteClass":
+                context.getWriter().append("$rt_cls($rt_bytecls())");
+                break;
+            case "doubleClass":
+                context.getWriter().append("$rt_cls($rt_doublecls())");
+                break;
             case "wrap":
                 context.writeExpr(context.getArgument(0));
                 break;
@@ -176,6 +182,9 @@ public class ClassNativeGenerator implements Generator, Injector, DependencyPlug
             case "booleanClass":
             case "intClass":
             case "charClass":
+            case "byteClass":
+            case "voidClass":
+            case "doubleClass":
             case "wrap":
             case "getSuperclass":
             case "getComponentType0":

@@ -817,19 +817,19 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 visitBinary(expr, "<<");
                 break;
             case LEFT_SHIFT_LONG:
-                visitBinaryFunction(expr, "Long_lsh");
+                visitBinaryFunction(expr, "Long_shr");
                 break;
             case RIGHT_SHIFT:
                 visitBinary(expr, ">>");
                 break;
             case RIGHT_SHIFT_LONG:
-                visitBinaryFunction(expr, "Long_rsh");
+                visitBinaryFunction(expr, "Long_shr");
                 break;
             case UNSIGNED_RIGHT_SHIFT:
                 visitBinary(expr, ">>>");
                 break;
             case UNSIGNED_RIGHT_SHIFT_LONG:
-                visitBinaryFunction(expr, "Long_rshu");
+                visitBinaryFunction(expr, "Long_shru");
                 break;
         }
     }
