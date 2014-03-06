@@ -56,6 +56,16 @@ class JCLComparisonVisitor implements ClassVisitor {
         classReader = classSource.get(javaName);
         jclClass = new JCLClass(simpleName);
         jclClass.status = classReader != null ? JCLStatus.FOUND : JCLStatus.MISSING;
+        jclClass.visibility = (access & Opcodes.ACC_PROTECTED) != 0 ? JCLVisibility.PROTECTED : JCLVisibility.PUBLIC;
+        if ((access & Opcodes.ACC_INTERFACE) != 0) {
+            jclClass.type = JCLClassType.INTERFACE;
+        } else if ((access & Opcodes.ACC_ANNOTATION) != 0) {
+            jclClass.type = JCLClassType.ANNOTATION;
+        } else if ((access & Opcodes.ACC_ENUM) != 0) {
+            jclClass.type = JCLClassType.ENUM;
+        } else {
+            jclClass.type = JCLClassType.CLASS;
+        }
         jclPackage.classes.add(jclClass);
     }
 
@@ -67,6 +77,7 @@ class JCLComparisonVisitor implements ClassVisitor {
         JCLItem item = new JCLItem(JCLItemType.FIELD, name + " : " + desc);
         FieldReader field = classReader.getField(name);
         item.status = field != null ? JCLStatus.FOUND : JCLStatus.MISSING;
+        item.visibility = (access & Opcodes.ACC_PROTECTED) != 0 ? JCLVisibility.PROTECTED : JCLVisibility.PUBLIC;
         jclClass.items.add(item);
         if (item.status == JCLStatus.MISSING) {
             jclClass.status = JCLStatus.PARTIAL;
@@ -92,6 +103,7 @@ class JCLComparisonVisitor implements ClassVisitor {
                         JCLStatus.FOUND : JCLStatus.PARTIAL;
             }
         }
+        item.visibility = (access & Opcodes.ACC_PROTECTED) != 0 ? JCLVisibility.PROTECTED : JCLVisibility.PUBLIC;
         jclClass.items.add(item);
         if (item.status == JCLStatus.MISSING) {
             jclClass.status = JCLStatus.PARTIAL;

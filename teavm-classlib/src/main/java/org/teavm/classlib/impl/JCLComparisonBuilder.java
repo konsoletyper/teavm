@@ -87,9 +87,29 @@ public class JCLComparisonBuilder {
         copyResource("html/methpro_obj.png");
         copyResource("html/methpub_obj.png");
         copyResource("html/package_obj.png");
+        copyResource("html/int_obj.png");
+        copyResource("html/enum_obj.png");
         try (Writer out = new OutputStreamWriter(new FileOutputStream(new File(
                 outputDirectory, "jcl.html")), "UTF-8")) {
             generateHtml(out, packages);
+        }
+        File packagesDirectory = new File(outputDirectory, "packages");
+        packagesDirectory.mkdirs();
+        for (JCLPackage pkg : packages) {
+            File file = new File(packagesDirectory, pkg.name + ".html");
+            try (Writer out = new OutputStreamWriter(new FileOutputStream(file))) {
+                generatePackageHtml(out, pkg);
+            }
+        }
+        File classesDirectory = new File(outputDirectory, "classes");
+        classesDirectory.mkdirs();
+        for (JCLPackage pkg : packages) {
+            for (JCLClass cls : pkg.classes) {
+                File file = new File(classesDirectory, pkg.name + "." + cls.name + ".html");
+                try (Writer out = new OutputStreamWriter(new FileOutputStream(file))) {
+                    generateClassHtml(out, pkg, cls);
+                }
+            }
         }
     }
 
@@ -185,39 +205,108 @@ public class JCLComparisonBuilder {
                         break;
                 }
             }
-            writeRow(out, "package", pkg.status, pkg.name,
+            writeRow(out, "package", "packages/" + pkg.name + ".html", pkg.status, pkg.name,
                     totalClasses > 0 ? fullClasses * 100 / totalClasses : null,
                     totalClasses > 0 ? partialClasses * 100 / totalClasses : null);
-            for (JCLClass cls : pkg.classes) {
-                int implemented = 0;
-                for (JCLItem item : cls.items) {
-                    if (item.status != JCLStatus.MISSING) {
-                        ++implemented;
-                    }
-                }
-                writeRow(out, "class", cls.status, cls.name,
-                        !cls.items.isEmpty() ? implemented * 100 / cls.items.size() : null, null);
-                for (JCLItem item : cls.items) {
-                    String type;
-                    switch (item.type) {
-                        case FIELD:
-                            type = "field";
-                            break;
-                        case METHOD:
-                            type = "method";
-                            break;
-                        default:
-                            type = "";
-                            break;
-                    }
-                    writeRow(out, type, item.status, item.name, null, null);
-                }
-            }
         }
         out.write(footer);
     }
 
-    private void writeRow(Writer out, String type, JCLStatus status, String name, Integer percent,
+    private void generatePackageHtml(Writer out, JCLPackage pkg) throws IOException {
+        String template;
+        try (Reader reader = new InputStreamReader(classLoader.getResourceAsStream("html/jcl-class.html"), "UTF-8")) {
+            template = IOUtils.toString(reader);
+        }
+        template = template.replace("${CLASSNAME}", pkg.name);
+        int placeholderIndex = template.indexOf(TEMPLATE_PLACEHOLDER);
+        String header = template.substring(0, placeholderIndex);
+        String footer = template.substring(placeholderIndex + TEMPLATE_PLACEHOLDER.length());
+        out.write(header);
+        int totalClasses = pkg.classes.size();
+        int fullClasses = 0;
+        int partialClasses = 0;
+        for (JCLClass cls : pkg.classes) {
+            switch (cls.status) {
+                case FOUND:
+                    fullClasses++;
+                    partialClasses++;
+                    break;
+                case PARTIAL:
+                    partialClasses++;
+                    break;
+                default:
+                    break;
+            }
+        }
+        writeRow(out, "package", null, pkg.status, pkg.name,
+                totalClasses > 0 ? fullClasses * 100 / totalClasses : null,
+                totalClasses > 0 ? partialClasses * 100 / totalClasses : null);
+        for (JCLClass cls : pkg.classes) {
+            writeClassRow(out, pkg, cls);
+        }
+        out.write(footer);
+    }
+
+    private void generateClassHtml(Writer out, JCLPackage pkg, JCLClass cls) throws IOException {
+        String template;
+        try (Reader reader = new InputStreamReader(classLoader.getResourceAsStream("html/jcl-class.html"), "UTF-8")) {
+            template = IOUtils.toString(reader);
+        }
+        template = template.replace("${CLASSNAME}", pkg.name + "." + cls.name);
+        int placeholderIndex = template.indexOf(TEMPLATE_PLACEHOLDER);
+        String header = template.substring(0, placeholderIndex);
+        String footer = template.substring(placeholderIndex + TEMPLATE_PLACEHOLDER.length());
+        out.write(header);
+        writeRow(out, "package", null, pkg.status, pkg.name, null, null);
+        writeClassRow(out, pkg, cls);
+        for (JCLItem item : cls.items) {
+            String type;
+            switch (item.type) {
+                case FIELD:
+                    type = "field";
+                    break;
+                case METHOD:
+                    type = "method";
+                    break;
+                default:
+                    type = "";
+                    break;
+            }
+            if (item.visibility == JCLVisibility.PROTECTED) {
+                type = "protected " + type;
+            }
+            writeRow(out, type, null, item.status, item.name, null, null);
+        }
+        out.write(footer);
+    }
+
+    private void writeClassRow(Writer out, JCLPackage pkg, JCLClass cls) throws IOException {
+        int implemented = 0;
+        for (JCLItem item : cls.items) {
+            if (item.status != JCLStatus.MISSING) {
+                ++implemented;
+            }
+        }
+        String type;
+        switch (cls.type) {
+            case INTERFACE:
+                type = "interface";
+                break;
+            case ANNOTATION:
+                type = "annotation";
+                break;
+            case ENUM:
+                type = "enum";
+                break;
+            default:
+                type = "class";
+                break;
+        }
+        writeRow(out, type + " type", "../classes/" + pkg.name + "." + cls.name + ".html", cls.status, cls.name,
+                !cls.items.isEmpty() ? implemented * 100 / cls.items.size() : null, null);
+    }
+
+    private void writeRow(Writer out, String type, String link, JCLStatus status, String name, Integer percent,
             Integer partialPercent) throws IOException {
         out.write("<tr class=\"");
         switch (status) {
@@ -235,7 +324,13 @@ public class JCLComparisonBuilder {
         out.write("<td><div class=\"");
         out.write(type);
         out.write("\">");
+        if (link != null) {
+            out.write("<a href=\"" + link + "\">");
+        }
         out.write(escape(name));
+        if (link != null) {
+            out.write("</a>");
+        }
         out.write("</div></td>\n");
         out.write("<td class=\"percent\">" + (partialPercent != null ? partialPercent.toString() : "") + "</td>");
         out.write("<td class=\"percent\">" + (percent != null ? percent.toString() : "") + "</td>");

@@ -36,7 +36,7 @@ th {
     text-align: right;
 }
 
-.package, .class, .protected-class, .field, .protected-field, .method, .protected-method {
+.package, .type, .field, .method {
     background-repeat: no-repeat;
     padding-right: 6px;
 }
@@ -45,11 +45,11 @@ th {
     padding-left: 35px;
     background-position: 16px 50%;
 }
-.class {
+.type {
     padding-left: 51px;
     background-position: 32px 50%;
 }
-.field, .protected-field, .method, .protected-method {
+.field, .method {
     padding-left: 67px;
     background-position: 48px 50%;
 }
@@ -60,15 +60,24 @@ th {
 .class {
     background-image: url(class_obj.png);
 }
+.annotation {
+    background-image: url(annotation_obj.png);
+}
+.interface {
+    background-image: url(int_obj.png);
+}
+.enum {
+    background-image: url(enum_obj.png);
+}
 .field {
     background-image: url(field_public_obj.png);
 }
-.protected-field {
+.protected.field {
     background-image: url(field_protected_obj.png);
 }
 .method {
     background-image: url(methpub_obj.png);
 }
-.protected-method {
+.protected.method {
     background-image: url(methpro_obj.png);
 }

@@ -15,21 +15,13 @@
  */
 package org.teavm.classlib.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-class JCLClass {
-    public final String name;
-    public JCLStatus status;
-    public JCLVisibility visibility = JCLVisibility.PUBLIC;
-    public JCLClassType type;
-    public final List<JCLItem> items = new ArrayList<>();
-
-    public JCLClass(String name) {
-        this.name = name;
-    }
+enum JCLClassType {
+    CLASS,
+    INTERFACE,
+    ENUM,
+    ANNOTATION
 }

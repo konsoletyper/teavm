@@ -22,6 +22,7 @@ package org.teavm.classlib.impl;
 class JCLItem {
     public final JCLItemType type;
     public final String name;
+    public JCLVisibility visibility = JCLVisibility.PUBLIC;
     public JCLStatus status;
 
     public JCLItem(JCLItemType type, String name) {
