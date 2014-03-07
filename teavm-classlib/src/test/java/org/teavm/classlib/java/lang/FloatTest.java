@@ -48,4 +48,37 @@ public class FloatTest {
         assertEquals(0, Double.parseDouble("00000"), 1E-12);
         assertEquals(0, Double.parseDouble("00000.0000"), 1E-12);
     }
+
+    @Test
+    public void floatBitsExtracted() {
+        assertEquals(0x4591A2B4, Float.floatToIntBits(0x1.234567p+12f));
+    }
+
+    @Test
+    public void subNormalFloatBitsExtracted() {
+        assertEquals(0x000092, Float.floatToIntBits(0x0.000123p-126f));
+    }
+
+    @Test
+    public void floatBitsPacked() {
+        assertEquals(0x1.234567p+12f, Float.intBitsToFloat(0x4591A2B4), 1e7);
+    }
+
+    @Test
+    public void subNormalFloatBitsPacked() {
+        assertEquals(0x0.000123p-126f, Float.intBitsToFloat(0x000092), 0x000008p-126);
+    }
+
+    @Test
+    public void hexStringBuilt() {
+        assertEquals("0x1.23456p17", Float.toHexString(0x1.23456p17f));
+        assertEquals("0x1.0p0", Float.toHexString(1));
+        assertEquals("-0x1.0p0", Float.toHexString(-1));
+        assertEquals("0x1.0p1", Float.toHexString(2));
+        assertEquals("0x1.8p1", Float.toHexString(3));
+        assertEquals("0x1.0p-1", Float.toHexString(0.5f));
+        assertEquals("0x1.0p-2", Float.toHexString(0.25f));
+        assertEquals("0x1.0p-126", Float.toHexString(0x1.0p-126f));
+        assertEquals("0x0.001p-126", Float.toHexString(0x0.001p-126f));
+    }
 }

@@ -242,7 +242,36 @@ public final class TMath extends TObject {
     }
 
     public static int getExponent(float f) {
-        return getExponent(f);
+        f = abs(f);
+        int exp = 0;
+        float[] exponents = FloatExponents.exponents;
+        float[] negativeExponents = FloatExponents.negativeExponents;
+        if (f > 1) {
+            int expBit = 1 << (exponents.length - 1);
+            for (int i = exponents.length - 1; i >= 0; --i) {
+                if (f >= exponents[i]) {
+                    f *= negativeExponents[i];
+                    exp |= expBit;
+                }
+                expBit >>>= 1;
+            }
+        } else if (f < 1) {
+            int expBit = 1 << (negativeExponents.length - 1);
+            int offset = 0;
+            if (f <= 0x1p-127) {
+                f *= 0x1p23f;
+                offset = 23;
+            }
+            for (int i = negativeExponents.length - 1; i >= 0; --i) {
+                if (f <= negativeExponents[i]) {
+                    f *= exponents[i];
+                    exp |= expBit;
+                }
+                expBit >>>= 1;
+            }
+            exp = -(exp + offset);
+        }
+        return exp;
     }
 
     public static double nextAfter(double start, double direction) {
@@ -272,5 +301,11 @@ public final class TMath extends TObject {
                 0x1p256, 0x1p512 };
         public static double[] negativeExponents = { 0x1p-1, 0x1p-2, 0x1p-4, 0x1p-8, 0x1p-16, 0x1p-32,
                 0x1p-64, 0x1p-128, 0x1p-256, 0x1p-512 };
+    }
+
+    private static class FloatExponents {
+        public static float[] exponents = { 0x1p1f, 0x1p2f, 0x1p4f, 0x1p8f, 0x1p16f, 0x1p32f, 0x1p64f };
+        public static float[] negativeExponents = { 0x1p-1f, 0x1p-2f, 0x1p-4f, 0x1p-8f, 0x1p-16f, 0x1p-32f,
+            0x1p-64f };
     }
 }

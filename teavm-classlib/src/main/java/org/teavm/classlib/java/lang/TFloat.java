@@ -89,6 +89,11 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
         return other instanceof TFloat && ((TFloat)other).value == value;
     }
 
+    @Override
+    public int hashCode() {
+        return floatToIntBits(value);
+    }
+
     @GeneratedBy(FloatNativeGenerator.class)
     public static native boolean isNaN(float v);
 
@@ -230,5 +235,145 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
     @Override
     public int compareTo(TFloat other) {
         return compare(value, other.value);
+    }
+
+    public static int floatToRawIntBits(float value) {
+        return floatToIntBits(value);
+    }
+
+    public static int floatToIntBits(float value) {
+        if (value == POSITIVE_INFINITY) {
+            return 0x7F800000;
+        } else if (value == NEGATIVE_INFINITY) {
+            return 0xFF800000;
+        } else if (isNaN(value)) {
+            return 0x7FC00000;
+        }
+        float abs = TMath.abs(value);
+        int exp = TMath.getExponent(abs);
+        int negExp = -exp + 23;
+        if (exp < -126) {
+            exp = -127;
+            negExp = 126 + 23;
+        }
+        float doubleMantissa;
+        if (negExp <= 126) {
+            doubleMantissa = abs * binaryExponent(negExp);
+        } else {
+            doubleMantissa = abs * 0x1p126f * binaryExponent(negExp - 126);
+        }
+        int mantissa = (int)(doubleMantissa + 0.5f) & 0x7FFFFF;
+        return mantissa | ((exp + 127) << 23) | (value < 0 ? (1 << 31) : 0);
+    }
+
+    public static float intBitsToFloat(int bits) {
+        if ((bits & 0x7F800000) == 0x7F800000) {
+            if (bits == 0x7F800000) {
+                return POSITIVE_INFINITY;
+            } else if (bits == 0xFF800000) {
+                return NEGATIVE_INFINITY;
+            } else {
+                return NaN;
+            }
+        }
+        boolean negative = (bits & (1 << 31)) != 0;
+        int rawExp = ((bits >> 23) & 0x7F8) - 127;
+        int mantissa = bits & 0x7FFFFF;
+        if (rawExp == 0) {
+            mantissa <<= 1;
+        } else {
+            mantissa |= (1L << 23);
+        }
+        float value = mantissa * binaryExponent(rawExp - 127 - 23);
+        return !negative ? value : -value;
+    }
+
+    private static float binaryExponent(int n) {
+        float result = 1;
+        if (n >= 0) {
+            float d = 2;
+            while (n != 0) {
+                if (n % 2 != 0) {
+                    result *= d;
+                }
+                n /= 2;
+                d *= d;
+            }
+        } else {
+            n = -n;
+            float d = 0.5f;
+            while (n != 0) {
+                if (n % 2 != 0) {
+                    result *= d;
+                }
+                n /= 2;
+                d *= d;
+            }
+        }
+        return result;
+    }
+
+    public static TString toHexString(float f) {
+        if (isNaN(f)) {
+            return TString.wrap("NaN");
+        } else if (isInfinite(f)) {
+            return f > 0 ? TString.wrap("Infinity") : TString.wrap("-Infinity");
+        }
+        char[] buffer = new char[18];
+        int sz = 0;
+        int bits = floatToIntBits(f);
+        boolean subNormal = false;
+        int exp = ((bits >>> 23) & 0xFF) - 127;
+        int mantissa = (bits & 0x7FFFFF) << 1;
+        if (exp == -127) {
+            ++exp;
+            subNormal = true;
+        }
+        for (int i = 0; i < 6; ++i) {
+            int digit = mantissa & 0xF;
+            if (digit > 0 || sz > 0) {
+                buffer[sz++] = TCharacter.forDigit(digit, 16);
+            }
+            mantissa >>>= 4;
+        }
+        if (sz == 0) {
+            buffer[sz++] = '0';
+        }
+        buffer[sz++] = '.';
+
+        buffer[sz++] = subNormal ? '0' : '1';
+        buffer[sz++] = 'x';
+        buffer[sz++] = '0';
+        if ((bits & (1L << 31)) != 0) {
+            buffer[sz++] = '-';
+        }
+        int half = sz / 2;
+        for (int i = 0; i < half; ++i) {
+            char tmp = buffer[i];
+            buffer[i] = buffer[sz - i - 1];
+            buffer[sz - i - 1] = tmp;
+        }
+
+        buffer[sz++] = 'p';
+        if (exp < 0) {
+            exp = -exp;
+            buffer[sz++] = '-';
+        }
+        int pos = 100;
+        boolean first = true;
+        for (int i = 0; i < 3; ++i) {
+            int digit = exp / pos;
+            if (digit > 0 || !first) {
+                buffer[sz++] = TCharacter.forDigit(digit, 10);
+                first = false;
+            }
+            exp %= pos;
+            pos /= 10;
+        }
+        if (first) {
+            buffer[sz++] = '0';
+        }
+
+        return new TString(buffer, 0, sz);
     }
 }

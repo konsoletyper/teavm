@@ -260,7 +260,7 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
         } else {
             doubleMantissa = abs * 0x1p1022 * binaryExponent(negExp - 1022);
         }
-        long mantissa = (long)(doubleMantissa) & 0xFFFFFFFFFFFFFL;
+        long mantissa = (long)(doubleMantissa + 0.5) & 0xFFFFFFFFFFFFFL;
         return mantissa | ((exp + 1023L) << 52) | (value < 0 ? (1L << 63) : 0);
     }
 
@@ -275,7 +275,7 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
             }
         }
         boolean negative = (bits & (1 << 63)) != 0;
-        int rawExp = (int)((bits >> 52) & 0x7FFL) - 1023;
+        int rawExp = (int)((bits >> 52) & 0x7FFL);
         long mantissa = bits & 0xFFFFFFFFFFFFFL;
         if (rawExp == 0) {
             mantissa <<= 1;
@@ -350,7 +350,7 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
         return new TString(buffer, 0, sz);
     }
 
-    public static double binaryExponent(int n) {
+    private static double binaryExponent(int n) {
         double result = 1;
         if (n >= 0) {
             double d = 2;
