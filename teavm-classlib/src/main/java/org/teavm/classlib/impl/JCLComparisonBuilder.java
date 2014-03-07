@@ -22,6 +22,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import org.apache.commons.io.IOUtils;
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.Type;
 import org.teavm.parsing.ClasspathClassHolderSource;
 
 /**
@@ -206,7 +207,7 @@ public class JCLComparisonBuilder {
                         break;
                 }
             }
-            writeRow(out, "package", "packages/" + pkg.name + ".html", pkg.status, pkg.name,
+            writeRow(out, "package", "packages/" + pkg.name + ".html", pkg.status, escape(pkg.name),
                     totalClasses > 0 ? fullClasses * 100 / totalClasses : null,
                     totalClasses > 0 ? partialClasses * 100 / totalClasses : null);
         }
@@ -239,7 +240,7 @@ public class JCLComparisonBuilder {
                     break;
             }
         }
-        writeRow(out, "package", null, pkg.status, pkg.name,
+        writeRow(out, "package", null, pkg.status, escape(pkg.name),
                 totalClasses > 0 ? fullClasses * 100 / totalClasses : null,
                 totalClasses > 0 ? partialClasses * 100 / totalClasses : null);
         for (JCLClass cls : pkg.classes) {
@@ -258,17 +259,41 @@ public class JCLComparisonBuilder {
         String header = template.substring(0, placeholderIndex);
         String footer = template.substring(placeholderIndex + TEMPLATE_PLACEHOLDER.length());
         out.write(header);
-        writeRow(out, "package", null, pkg.status, pkg.name, null, null);
+        writeRow(out, "package", null, pkg.status, escape(pkg.name), null, null);
         writeClassRow(out, pkg, cls);
         for (JCLItem item : cls.items) {
             String type;
+            String name = item.name;
             switch (item.type) {
-                case FIELD:
+                case FIELD: {
                     type = "field";
+                    int index = name.indexOf(':');
+                    String desc = name.substring(index + 1);
+                    name = name.substring(0, index) + " : " + printType(Type.getType(desc));
                     break;
-                case METHOD:
+                }
+                case METHOD: {
                     type = "method";
+                    int index = name.indexOf('(');
+                    String desc = name.substring(index);
+                    Type[] args = Type.getArgumentTypes(desc);
+                    Type result = Type.getReturnType(desc);
+                    StringBuilder sb = new StringBuilder();
+                    name = name.substring(0, index);
+                    if (name.equals("<init>")) {
+                        name = cls.name;
+                    }
+                    sb.append(name).append("(");
+                    for (int i = 0; i < args.length; ++i) {
+                        if (i > 0) {
+                            sb.append(", ");
+                        }
+                        sb.append(printType(args[i]));
+                    }
+                    sb.append(") : ").append(printType(result));
+                    name = sb.toString();
                     break;
+                }
                 default:
                     type = "";
                     break;
@@ -276,9 +301,46 @@ public class JCLComparisonBuilder {
             if (item.visibility == JCLVisibility.PROTECTED) {
                 type = "protected " + type;
             }
-            writeRow(out, type, null, item.status, item.name, null, null);
+            writeRow(out, type, null, item.status, name, null, null);
         }
         out.write(footer);
+    }
+
+    private String printType(Type type) {
+        switch (type.getSort()) {
+            case Type.VOID:
+                return "void";
+            case Type.BOOLEAN:
+                return "boolean";
+            case Type.BYTE:
+                return "byte";
+            case Type.SHORT:
+                return "short";
+            case Type.INT:
+                return "int";
+            case Type.LONG:
+                return "long";
+            case Type.FLOAT:
+                return "float";
+            case Type.DOUBLE:
+                return "double";
+            case Type.CHAR:
+                return "char";
+            case Type.ARRAY: {
+                StringBuilder sb = new StringBuilder(printType(type.getElementType()));
+                for (int i = 0; i < type.getDimensions(); ++i) {
+                    sb.append("[]");
+                }
+                return sb.toString();
+            }
+            case Type.OBJECT: {
+                String simpleName = type.getClassName();
+                simpleName = simpleName.substring(simpleName.lastIndexOf('.') + 1);
+                return "<a href=\"" + type.getClassName() + ".html\">" + simpleName + "</a>";
+            }
+            default:
+                return "";
+        }
     }
 
     private void writeClassRow(Writer out, JCLPackage pkg, JCLClass cls) throws IOException {
@@ -303,8 +365,8 @@ public class JCLComparisonBuilder {
                 type = "class";
                 break;
         }
-        writeRow(out, type + " type", "../classes/" + pkg.name + "." + cls.name + ".html", cls.status, cls.name,
-                !cls.items.isEmpty() ? implemented * 100 / cls.items.size() : null, null);
+        writeRow(out, type + " type", "../classes/" + pkg.name + "." + cls.name + ".html", cls.status,
+                escape(cls.name), !cls.items.isEmpty() ? implemented * 100 / cls.items.size() : null, null);
     }
 
     private void writeRow(Writer out, String type, String link, JCLStatus status, String name, Integer percent,
@@ -328,7 +390,7 @@ public class JCLComparisonBuilder {
         if (link != null) {
             out.write("<a href=\"" + link + "\">");
         }
-        out.write(escape(name));
+        out.write(name);
         if (link != null) {
             out.write("</a>");
         }

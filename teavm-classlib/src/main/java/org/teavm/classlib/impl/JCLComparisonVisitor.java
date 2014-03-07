@@ -74,7 +74,7 @@ class JCLComparisonVisitor implements ClassVisitor {
         if (classReader == null || (access & (Opcodes.ACC_PUBLIC | Opcodes.ACC_PROTECTED)) == 0) {
             return null;
         }
-        JCLItem item = new JCLItem(JCLItemType.FIELD, name + " : " + desc);
+        JCLItem item = new JCLItem(JCLItemType.FIELD, name + ":" + desc);
         FieldReader field = classReader.getField(name);
         item.status = field != null ? JCLStatus.FOUND : JCLStatus.MISSING;
         item.visibility = (access & Opcodes.ACC_PROTECTED) != 0 ? JCLVisibility.PROTECTED : JCLVisibility.PUBLIC;
