@@ -92,6 +92,9 @@ public class ClassNativeGenerator implements Generator, Injector, DependencyPlug
             case "doubleClass":
                 context.getWriter().append("$rt_cls($rt_doublecls())");
                 break;
+            case "floatClass":
+                context.getWriter().append("$rt_cls($rt_floatcls())");
+                break;
             case "wrap":
                 context.writeExpr(context.getArgument(0));
                 break;
@@ -179,11 +182,12 @@ public class ClassNativeGenerator implements Generator, Injector, DependencyPlug
     @Override
     public void methodAchieved(DependencyChecker checker, MethodDependency graph) {
         switch (graph.getReference().getName()) {
-            case "booleanClass":
-            case "intClass":
-            case "charClass":
-            case "byteClass":
             case "voidClass":
+            case "booleanClass":
+            case "byteClass":
+            case "charClass":
+            case "intClass":
+            case "floatClass":
             case "doubleClass":
             case "wrap":
             case "getSuperclass":

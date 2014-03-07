@@ -203,6 +203,12 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
         return other instanceof TDouble && ((TDouble)other).value == value;
     }
 
+    @Override
+    public int hashCode() {
+        long h = doubleToLongBits(value);
+        return (int)(h >>> 32) ^ ((int)h | 0);
+    }
+
     public static int compare(double a, double b) {
         return a > b ? 1 : a < b ? -1 : 0;
     }
