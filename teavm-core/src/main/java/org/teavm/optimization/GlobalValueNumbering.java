@@ -30,7 +30,7 @@ import org.teavm.model.util.ProgramUtils;
  *
  * @author Alexey Andreev
  */
-public class CommonSubexpressionElimination implements MethodOptimization {
+public class GlobalValueNumbering implements MethodOptimization {
     private Map<String, KnownValue> knownValues = new HashMap<>();
     private boolean eliminate;
     private int[] map;
@@ -137,7 +137,7 @@ public class CommonSubexpressionElimination implements MethodOptimization {
 
     private void bind(int var, String value) {
         KnownValue known = knownValues.get(value);
-        if (known != null && domTree.dominates(known.location, currentBlockIndex)) {
+        if (known != null && domTree.dominates(known.location, currentBlockIndex) && known.value != var) {
             eliminate = true;
             map[var] = known.value;
         } else {
