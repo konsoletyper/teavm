@@ -78,7 +78,8 @@ public class DoubleTest {
         assertEquals("0x1.8p1", Double.toHexString(3));
         assertEquals("0x1.0p-1", Double.toHexString(0.5));
         assertEquals("0x1.0p-2", Double.toHexString(0.25));
-        assertEquals("0x1.0p-1022", Double.toHexString(Double.MIN_NORMAL));
-        assertEquals("0x0.0000000000001p-1022", Double.toHexString(Double.MIN_VALUE));
+        assertEquals("0x1.0p-1022", Double.toHexString(0x1.0p-1022));
+        assertEquals("0x0.8p-1022", Double.toHexString(0x0.8p-1022));
+        assertEquals("0x0.001p-1022", Double.toHexString(0x0.001p-1022));
     }
 }

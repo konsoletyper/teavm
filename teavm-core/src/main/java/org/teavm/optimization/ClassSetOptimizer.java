@@ -36,8 +36,8 @@ public class ClassSetOptimizer {
     }
 
     private List<MethodOptimization> getOptimizations() {
-        return Arrays.<MethodOptimization>asList(new CommonSubexpressionElimination(),
-                new UnusedVariableElimination());
+        // TODO: repair CommonSubexpressionElimination and get it back here
+        return Arrays.<MethodOptimization>asList(new UnusedVariableElimination());
     }
 
     public void optimizeAll(ListableClassHolderSource classSource) {

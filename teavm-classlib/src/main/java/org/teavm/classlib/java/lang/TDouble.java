@@ -243,10 +243,18 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
         }
         double abs = TMath.abs(value);
         int exp = TMath.getExponent(abs);
+        int negExp = -exp + 52;
         if (exp < -1022) {
             exp = -1023;
+            negExp = 1022 + 52;
         }
-        long mantissa = (long)(abs * binaryExponent(exp + 52)) & 0xFFFFFFFFFFFFFL;
+        double doubleMantissa;
+        if (negExp <= 1022) {
+            doubleMantissa = abs * binaryExponent(negExp);
+        } else {
+            doubleMantissa = abs * 0x1p1022 * binaryExponent(negExp - 1022);
+        }
+        long mantissa = (long)(doubleMantissa) & 0xFFFFFFFFFFFFFL;
         return mantissa | ((exp + 1023L) << 52) | (value < 0 ? (1L << 63) : 0);
     }
 
@@ -281,7 +289,13 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
         char[] buffer = new char[30];
         int sz = 0;
         long bits = doubleToLongBits(d);
+        boolean subNormal = false;
+        int exp = (int)((bits >>> 52) & 0x7FF) - 1023;
         long mantissa = bits & 0xFFFFFFFFFFFFFL;
+        if (exp == -1023) {
+            ++exp;
+            subNormal = true;
+        }
         for (int i = 0; i < 13; ++i) {
             int digit = (int)(mantissa & 0xF);
             if (digit > 0 || sz > 0) {
@@ -293,16 +307,11 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
             buffer[sz++] = '0';
         }
         buffer[sz++] = '.';
-        int exp = (int)((bits >>> 52) & 0x7FF);
-        if (exp == -1023) {
-            buffer[sz++] = '0';
-            ++exp;
-        } else {
-            buffer[sz++] = '1';
-        }
+
+        buffer[sz++] = subNormal ? '0' : '1';
         buffer[sz++] = 'x';
         buffer[sz++] = '0';
-        if ((bits & (1L << 63)) == 0) {
+        if ((bits & (1L << 63)) != 0) {
             buffer[sz++] = '-';
         }
         int half = sz / 2;
@@ -325,7 +334,7 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
                 buffer[sz++] = TCharacter.forDigit(digit, 10);
                 first = false;
             }
-            digit *= 10;
+            exp %= pos;
             pos /= 10;
         }
         if (first) {

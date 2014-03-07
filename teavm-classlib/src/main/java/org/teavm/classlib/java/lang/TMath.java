@@ -216,7 +216,7 @@ public final class TMath extends TObject {
         if (d > 1) {
             int expBit = 1 << (exponents.length - 1);
             for (int i = exponents.length - 1; i >= 0; --i) {
-                if (d > exponents[i]) {
+                if (d >= exponents[i]) {
                     d *= negativeExponents[i];
                     exp |= expBit;
                 }
@@ -225,12 +225,12 @@ public final class TMath extends TObject {
         } else if (d < 1) {
             int expBit = 1 << (negativeExponents.length - 1);
             int offset = 0;
-            if (d < 0x1P-1024) {
-                d *= 0x1P52;
+            if (d <= 0x1p-1023) {
+                d *= 0x1p52;
                 offset = 52;
             }
             for (int i = negativeExponents.length - 1; i >= 0; --i) {
-                if (d < negativeExponents[i]) {
+                if (d <= negativeExponents[i]) {
                     d *= exponents[i];
                     exp |= expBit;
                 }
@@ -268,9 +268,9 @@ public final class TMath extends TObject {
     }
 
     private static class ExponentConstants {
-        public static double[] exponents =  { 0x1P1, 0x1P2, 0x1P4, 0x1P8, 0x1P16, 0x1P32, 0x1P64, 0x1P128, 0x1P256,
-                0x1P256, 0x1P512 };
-        public static double[] negativeExponents = { 0x1P-1, 0x1P-2, 0x1P-4, 0x1P-8, 0x1P-16, 0x1P-32, 0x1P-64,
-            0x1P-128, 0x1P-256, 0x1P-256, 0x1P-512 };
+        public static double[] exponents = { 0x1p1, 0x1p2, 0x1p4, 0x1p8, 0x1p16, 0x1p32, 0x1p64, 0x1p128,
+                0x1p256, 0x1p512 };
+        public static double[] negativeExponents = { 0x1p-1, 0x1p-2, 0x1p-4, 0x1p-8, 0x1p-16, 0x1p-32,
+                0x1p-64, 0x1p-128, 0x1p-256, 0x1p-512 };
     }
 }
