@@ -74,14 +74,11 @@ public class ClassNativeGenerator implements Generator, Injector, DependencyPlug
             case "isAssignableFrom":
                 generateIsAssignableFrom(context);
                 break;
-            case "booleanClass":
-                context.getWriter().append("$rt_cls($rt_booleancls())");
-                break;
-            case "intClass":
-                context.getWriter().append("$rt_cls($rt_intcls())");
-                break;
             case "voidClass":
                 context.getWriter().append("$rt_cls($rt_voidcls())");
+                break;
+            case "booleanClass":
+                context.getWriter().append("$rt_cls($rt_booleancls())");
                 break;
             case "charClass":
                 context.getWriter().append("$rt_cls($rt_charcls())");
@@ -89,11 +86,17 @@ public class ClassNativeGenerator implements Generator, Injector, DependencyPlug
             case "byteClass":
                 context.getWriter().append("$rt_cls($rt_bytecls())");
                 break;
-            case "doubleClass":
-                context.getWriter().append("$rt_cls($rt_doublecls())");
+            case "shortClass":
+                context.getWriter().append("$rt_cls($rt_shortcls())");
+                break;
+            case "intClass":
+                context.getWriter().append("$rt_cls($rt_intcls())");
                 break;
             case "floatClass":
                 context.getWriter().append("$rt_cls($rt_floatcls())");
+                break;
+            case "doubleClass":
+                context.getWriter().append("$rt_cls($rt_doublecls())");
                 break;
             case "wrap":
                 context.writeExpr(context.getArgument(0));
@@ -185,6 +188,7 @@ public class ClassNativeGenerator implements Generator, Injector, DependencyPlug
             case "voidClass":
             case "booleanClass":
             case "byteClass":
+            case "shortClass":
             case "charClass":
             case "intClass":
             case "floatClass":

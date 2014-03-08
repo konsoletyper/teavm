@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.lang;
 
 import org.teavm.classlib.java.io.TPrintStream;
+import org.teavm.classlib.java.util.TArrays;
 import org.teavm.javascript.ni.Remove;
 import org.teavm.javascript.ni.Rename;
 import org.teavm.javascript.ni.Superclass;
@@ -29,6 +30,25 @@ public class TThrowable extends RuntimeException {
     private static final long serialVersionUID = 2026791432677149320L;
     private TString message;
     private TThrowable cause;
+    private boolean suppressionEnabled;
+    private boolean writableStackTrace;
+    private TThrowable[] suppressed = new TThrowable[0];
+
+    @SuppressWarnings("unused")
+    @Rename("fakeInit")
+    protected TThrowable(TString message, TThrowable cause, boolean enableSuppression, boolean writableStackTrace) {
+    }
+
+    @Rename("<init>")
+    public void init(TString message, TThrowable cause, boolean enableSuppression, boolean writableStackTrace) {
+        if (writableStackTrace) {
+            fillInStackTrace();
+        }
+        this.suppressionEnabled = enableSuppression;
+        this.writableStackTrace = writableStackTrace;
+        this.message = message;
+        this.cause = cause;
+    }
 
     @Rename("fakeInit")
     public TThrowable() {
@@ -36,6 +56,8 @@ public class TThrowable extends RuntimeException {
 
     @Rename("<init>")
     private void init() {
+        this.suppressionEnabled = true;
+        this.writableStackTrace = true;
         fillInStackTrace();
     }
 
@@ -45,6 +67,8 @@ public class TThrowable extends RuntimeException {
 
     @Rename("<init>")
     private void init(TString message) {
+        this.suppressionEnabled = true;
+        this.writableStackTrace = true;
         fillInStackTrace();
         this.message = message;
     }
@@ -56,6 +80,8 @@ public class TThrowable extends RuntimeException {
 
     @Rename("<init>")
     private void init(TString message, TThrowable cause) {
+        this.suppressionEnabled = true;
+        this.writableStackTrace = true;
         fillInStackTrace();
         this.message = message;
         this.cause = cause;
@@ -68,6 +94,8 @@ public class TThrowable extends RuntimeException {
 
     @Rename("<init>")
     private void init(TThrowable cause) {
+        this.suppressionEnabled = true;
+        this.writableStackTrace = true;
         fillInStackTrace();
         this.cause = cause;
     }
@@ -116,5 +144,18 @@ public class TThrowable extends RuntimeException {
 
     public void printStackTrace(TPrintStream stream) {
         stream.println(TString.wrap(getClass().getName() + ": " + getMessage()));
+    }
+
+    @Rename("getSuppressed")
+    public final TThrowable[] getSuppressed0() {
+        return TArrays.copyOf(suppressed, suppressed.length);
+    }
+
+    public final void addSuppressed(TThrowable exception) {
+        if (!suppressionEnabled) {
+            return;
+        }
+        suppressed = TArrays.copyOf(suppressed, suppressed.length + 1);
+        suppressed[suppressed.length - 1] = exception;
     }
 }

@@ -37,10 +37,18 @@ public class SystemNativeGenerator implements Generator, DependencyPlugin {
             case "currentTimeMillis":
                 generateCurrentTimeMillis(writer);
                 break;
+            case "setOut":
+                writer.appendClass("java.lang.System").append('.')
+                        .appendField(new FieldReference("java.lang.System", "out"))
+                        .ws().append('=').ws().append(context.getParameterName(1)).append(";").softNewLine();
+                break;
             case "setErr":
                 writer.appendClass("java.lang.System").append('.')
                         .appendField(new FieldReference("java.lang.System", "err"))
                         .ws().append('=').ws().append(context.getParameterName(1)).append(";").softNewLine();
+                break;
+            case "identityHashCode":
+                writer.append("return ").append(context.getParameterName(1)).append(".$id;").softNewLine();
                 break;
         }
     }
@@ -50,6 +58,9 @@ public class SystemNativeGenerator implements Generator, DependencyPlugin {
         switch (method.getReference().getName()) {
             case "doArrayCopy":
                 achieveArrayCopy(method);
+                break;
+            case "setOut":
+                achieveSetOut(checker, method);
                 break;
             case "setErr":
                 achieveSetErr(checker, method);
@@ -80,6 +91,11 @@ public class SystemNativeGenerator implements Generator, DependencyPlugin {
 
     private void achieveSetErr(DependencyChecker checker, MethodDependency method) {
         FieldDependency fieldDep = checker.linkField(new FieldReference("java.lang.System", "err"), method.getStack());
+        method.getVariable(1).connect(fieldDep.getValue());
+    }
+
+    private void achieveSetOut(DependencyChecker checker, MethodDependency method) {
+        FieldDependency fieldDep = checker.linkField(new FieldReference("java.lang.System", "out"), method.getStack());
         method.getVariable(1).connect(fieldDep.getValue());
     }
 }

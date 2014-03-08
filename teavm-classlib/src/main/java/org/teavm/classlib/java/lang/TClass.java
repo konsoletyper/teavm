@@ -71,6 +71,10 @@ public class TClass<T> extends TObject {
 
     @InjectedBy(ClassNativeGenerator.class)
     @PluggableDependency(ClassNativeGenerator.class)
+    static native TClass<TVoid> voidClass();
+
+    @InjectedBy(ClassNativeGenerator.class)
+    @PluggableDependency(ClassNativeGenerator.class)
     static native TClass<TBoolean> booleanClass();
 
     @InjectedBy(ClassNativeGenerator.class)
@@ -79,15 +83,15 @@ public class TClass<T> extends TObject {
 
     @InjectedBy(ClassNativeGenerator.class)
     @PluggableDependency(ClassNativeGenerator.class)
-    static native TClass<TInteger> intClass();
-
-    @InjectedBy(ClassNativeGenerator.class)
-    @PluggableDependency(ClassNativeGenerator.class)
-    static native TClass<TVoid> voidClass();
-
-    @InjectedBy(ClassNativeGenerator.class)
-    @PluggableDependency(ClassNativeGenerator.class)
     static native TClass<TByte> byteClass();
+
+    @InjectedBy(ClassNativeGenerator.class)
+    @PluggableDependency(ClassNativeGenerator.class)
+    static native TClass<TShort> shortClass();
+
+    @InjectedBy(ClassNativeGenerator.class)
+    @PluggableDependency(ClassNativeGenerator.class)
+    static native TClass<TInteger> intClass();
 
     @InjectedBy(ClassNativeGenerator.class)
     @PluggableDependency(ClassNativeGenerator.class)

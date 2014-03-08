@@ -65,4 +65,28 @@ public final class TSystem extends TObject {
     @GeneratedBy(SystemNativeGenerator.class)
     @PluggableDependency(SystemNativeGenerator.class)
     public static native void setErr(TPrintStream err);
+
+    @GeneratedBy(SystemNativeGenerator.class)
+    @PluggableDependency(SystemNativeGenerator.class)
+    public static native void setOut(TPrintStream err);
+
+    public static void gc() {
+        // Do nothing
+    }
+
+    public static void runFinalization() {
+        // Do nothing
+    }
+
+    public static long nanoTime() {
+        return currentTimeMillis() * 10000000;
+    }
+
+    @GeneratedBy(SystemNativeGenerator.class)
+    @PluggableDependency(SystemNativeGenerator.class)
+    public static native int identityHashCode(Object x);
+
+    public static TString lineSeparator() {
+        return TString.wrap("\n");
+    }
 }

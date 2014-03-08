@@ -22,10 +22,18 @@ import org.teavm.javascript.ni.Rename;
  * @author Alexey Andreev
  */
 public class TShort extends TNumber implements TComparable<TShort> {
+    public static final short MIN_VALUE = -32768;
+    public static final short MAX_VALUE = 32767;
+    public static final TClass<TShort> TYPE = TClass.shortClass();
+    public static final int SIZE = 16;
     private short value;
 
     public TShort(short value) {
         this.value = value;
+    }
+
+    public TShort(TString s) throws TNumberFormatException {
+        this(parseShort(s));
     }
 
     @Override
@@ -84,5 +92,37 @@ public class TShort extends TNumber implements TComparable<TShort> {
     @Override
     public int compareTo(TShort other) {
         return compare(value, other.value);
+    }
+
+    public static short parseShort(TString s, int radix) throws TNumberFormatException {
+        int value = TInteger.parseInt(s, radix);
+        if (value < MIN_VALUE || value > MAX_VALUE) {
+            throw new TNumberFormatException();
+        }
+        return (short)value;
+    }
+
+    public static short parseShort(TString s) throws TNumberFormatException {
+        return parseShort(s, 10);
+    }
+
+    public static TShort valueOf(TString s, int radix) throws TNumberFormatException {
+        return valueOf(parseShort(s, radix));
+    }
+
+    public static TShort valueOf(TString s) throws TNumberFormatException {
+        return valueOf(parseShort(s));
+    }
+
+    public static TShort decode(TString s) throws TNumberFormatException {
+        int value = TInteger.decode(s).intValue();
+        if (value < MIN_VALUE || value > MAX_VALUE) {
+            throw new TNumberFormatException();
+        }
+        return valueOf((short)value);
+    }
+
+    public static short reverseBytes(short i) {
+        return (short)((i << 8) | (i >>> 8));
     }
 }
