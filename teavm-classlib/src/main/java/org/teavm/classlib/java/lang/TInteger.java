@@ -251,4 +251,106 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
     public static int compare(int x, int y) {
         return x > y ? 1 : x < y ? -1 : 0;
     }
+
+    public static int numberOfLeadingZeros(int i) {
+        if (i == 0) {
+            return SIZE;
+        }
+        int n = 0;
+        if (i >>> 16 != 0) {
+            i >>>= 16;
+            n |= 16;
+        }
+        if (i >>> 8 != 0) {
+            i >>>= 8;
+            n |= 8;
+        }
+        if (i >>> 4 != 0) {
+            i >>>= 4;
+            n |= 4;
+        }
+        if (i >>> 2 != 0) {
+            i >>>= 2;
+            n |= 2;
+        }
+        if (i >>> 1 != 0) {
+            i >>>= 1;
+            n |= 1;
+        }
+        return SIZE - n - 1;
+    }
+
+    public static int numberOfTrailingZeros(int i) {
+        if (i == 0) {
+            return SIZE;
+        }
+        int n = 0;
+        if (i << 16 != 0) {
+            i <<= 16;
+            n |= 16;
+        }
+        if (i << 8 != 0) {
+            i <<= 8;
+            n |= 8;
+        }
+        if (i << 4 != 0) {
+            i <<= 4;
+            n |= 4;
+        }
+        if (i << 2 != 0) {
+            i <<= 2;
+            n |= 2;
+        }
+        if (i << 1 != 0) {
+            i <<= 1;
+            n |= 1;
+        }
+        return SIZE - n - 1;
+    }
+
+    public static int highestOneBit(int i) {
+        return 0x80000000 >>> numberOfLeadingZeros(i);
+    }
+
+    public static int lowestOneBit(int i) {
+        return 1 << numberOfTrailingZeros(i);
+    }
+
+    public static int bitCount(int i) {
+        i = (i & 0xAAAAAAAA) >> 1  + i & 0x55555555;
+        i = (i & 0xCCCCCCCC) >> 2  + i & 0x33333333;
+        i = (i & 0x30303030) >> 4  + i & 0x03030303;
+        i = (i & 0x07000700) >> 8  + i & 0x00070007;
+        i = (i & 0x000F0000) >> 16 + i & 0x0000000F;
+        return i;
+    }
+
+    public static int rotateLeft(int i, int distance) {
+        distance &= 0x1F;
+        return (i << distance) | (i >>> (32 - distance));
+    }
+
+    public static int rotateRight(int i, int distance) {
+        distance &= 0x1F;
+        return (i >>> distance) | (i << (32 - distance));
+    }
+
+    public static int reverse(int i) {
+        i = (i & 0xAAAAAAAA) >> 1  + (i & 0x55555555) << 1;
+        i = (i & 0xCCCCCCCC) >> 2  + (i & 0x33333333) << 2;
+        i = (i & 0xF0F0F0F0) >> 4  + (i & 0x0F0F0F0F) << 4;
+        i = (i & 0xFF00FF00) >> 8  + (i & 0x00FF00FF) << 8;
+        i = (i & 0xFFFF0000) >> 16 + (i & 0x0000FFFF) << 16;
+        return i;
+    }
+
+    public static int reverseBytes(int i) {
+        i = (i & 0xFF00FF00) >> 8  + (i & 0x00FF00FF) << 8;
+        i = i >> 16 + i << 16;
+        return i;
+    }
+
+    public static int signum(int i) {
+        return (i >> 31) | (-i >>> 31);
+    }
 }
