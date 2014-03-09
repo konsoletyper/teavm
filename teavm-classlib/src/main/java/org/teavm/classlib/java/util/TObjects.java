@@ -55,4 +55,52 @@ public final class TObjects extends TObject {
         }
         return obj;
     }
+
+    public static boolean deepEquals(Object a, Object b) {
+        if (a == b) {
+            return true;
+        }
+        if (a == null) {
+            return b == null;
+        }
+        if (a instanceof boolean[]) {
+            return b instanceof boolean[] && TArrays.equals((boolean[])a, (boolean[])b);
+        } else if (b instanceof boolean[]) {
+            return false;
+        } else if (a instanceof byte[]) {
+            return b instanceof byte[] && TArrays.equals((byte[])a, (byte[])b);
+        } else if (b instanceof byte[]) {
+            return false;
+        } else if (a instanceof short[]) {
+            return b instanceof short[] && TArrays.equals((short[])a, (short[])b);
+        } else if (b instanceof short[]) {
+            return false;
+        } else if (a instanceof int[]) {
+            return b instanceof int[] && TArrays.equals((int[])a, (int[])b);
+        } else if (b instanceof int[]) {
+            return false;
+        } else if (a instanceof char[]) {
+            return b instanceof char[] && TArrays.equals((char[])a, (char[])b);
+        } else if (b instanceof char[]) {
+            return false;
+        } else if (a instanceof float[]) {
+            return b instanceof float[] && TArrays.equals((float[])a, (float[])b);
+        } else if (b instanceof float[]) {
+            return false;
+        } else if (a instanceof double[]) {
+            return b instanceof double[] && TArrays.equals((double[])a, (double[])b);
+        } else if (b instanceof double[]) {
+            return false;
+        } else if (a instanceof Object[]) {
+            return b instanceof Object[] && TArrays.deepEquals((Object[])a, (Object[])b);
+        } else if (b instanceof Object[]) {
+            return false;
+        } else {
+            return a.equals(b);
+        }
+    }
+
+    public static int hash(Object... values) {
+        return TArrays.hashCode(values);
+    }
 }

@@ -62,7 +62,7 @@ public abstract class TEnum<E extends TEnum<E>> extends TObject implements TComp
 
     @SuppressWarnings("unchecked")
     public final TClass<E> getDeclaringClass() {
-        return (TClass<E>)TClass.wrap(getClass());
+        return (TClass<E>)TClass.wrapClass(getClass());
     }
 
     @Override

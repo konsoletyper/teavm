@@ -98,7 +98,7 @@ public class ClassNativeGenerator implements Generator, Injector, DependencyPlug
             case "doubleClass":
                 context.getWriter().append("$rt_cls($rt_doublecls())");
                 break;
-            case "wrap":
+            case "wrapClass":
                 context.writeExpr(context.getArgument(0));
                 break;
             case "getEnumConstantsImpl":
@@ -193,7 +193,7 @@ public class ClassNativeGenerator implements Generator, Injector, DependencyPlug
             case "intClass":
             case "floatClass":
             case "doubleClass":
-            case "wrap":
+            case "wrapClass":
             case "getSuperclass":
             case "getComponentType0":
             case "forNameImpl":

@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
+import org.teavm.javascript.ni.GeneratedBy;
 import org.teavm.javascript.ni.Rename;
 
 /**
@@ -69,4 +70,7 @@ public class TLong extends TNumber {
         }
         return other instanceof TLong && ((TLong)other).value == value;
     }
+
+    @GeneratedBy(LongNativeGenerator.class)
+    public static native int compare(long a, long b);
 }

@@ -60,4 +60,8 @@ public final class TServiceLoader<S> extends TObject implements TIterable<S> {
     }
 
     private static native <T> T[] loadServices(TClass<T> serviceType);
+
+    public void reload() {
+        // Do nothing, services are bound at build time
+    }
 }

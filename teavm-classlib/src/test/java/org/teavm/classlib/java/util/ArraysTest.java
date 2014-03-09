@@ -38,10 +38,30 @@ public class ArraysTest {
     }
 
     @Test
+    public void binarySearchWorks() {
+        Integer[] array = { 2, 4, 6, 8, 10, 12, 14, 16 };
+        assertEquals(3, Arrays.binarySearch(array, 8));
+        assertEquals(7, Arrays.binarySearch(array, 16));
+        assertEquals(0, Arrays.binarySearch(array, 2));
+        assertEquals(-1, Arrays.binarySearch(array, 1));
+        assertEquals(-2, Arrays.binarySearch(array, 3));
+        assertEquals(-3, Arrays.binarySearch(array, 5));
+        assertEquals(-8, Arrays.binarySearch(array, 15));
+        assertEquals(-9, Arrays.binarySearch(array, 17));
+    }
+
+    @Test
     public void arrayExposedAsList() {
         Integer[] array = { 2, 3, 4 };
         List<Integer> list = Arrays.asList(array);
         assertEquals(3, list.size());
         assertEquals(Integer.valueOf(4), list.get(2));
+    }
+
+    @Test
+    public void arrayExposedAsString() {
+        Object[] array = { 1, 2, null, null, "foo" };
+        array[3] = array;
+        assertEquals("[1, 2, null, [...], foo]", Arrays.deepToString(array));
     }
 }

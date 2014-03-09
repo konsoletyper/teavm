@@ -103,7 +103,7 @@ public class TClass<T> extends TObject {
 
     @InjectedBy(ClassNativeGenerator.class)
     @PluggableDependency(ClassNativeGenerator.class)
-    public static native <S extends TObject> TClass<S> wrap(Class<S> cls);
+    public static native <S extends TObject> TClass<S> wrapClass(Class<S> cls);
 
     public boolean desiredAssertionStatus() {
         return true;
@@ -122,9 +122,9 @@ public class TClass<T> extends TObject {
 
     @SuppressWarnings("unchecked")
     public T cast(TObject obj) {
-        if (obj != null && !isAssignableFrom(TClass.wrap(obj.getClass()))) {
+        if (obj != null && !isAssignableFrom(TClass.wrapClass(obj.getClass()))) {
             throw new TClassCastException(TString.wrap(new TStringBuilder()
-                    .append(TClass.wrap(obj.getClass()).getName())
+                    .append(TClass.wrapClass(obj.getClass()).getName())
                     .append(TString.wrap(" is not subtype of ")).append(name).toString()));
         }
         return (T)obj;
