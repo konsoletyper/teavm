@@ -318,6 +318,7 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
                 .build();
         vm.setMinifying(minifying);
         vm.installPlugins();
+        new TestExceptionPlugin().install(vm);
         for (ClassHolderTransformer transformer : transformerInstances) {
             vm.add(transformer);
         }
@@ -326,8 +327,11 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
         try (Writer innerWriter = new OutputStreamWriter(new FileOutputStream(file), "UTF-8")) {
             MethodReference cons = new MethodReference(methodRef.getClassName(),
                     new MethodDescriptor("<init>", ValueType.VOID));
+            MethodReference exceptionMsg = new MethodReference("java.lang.Throwable", "getMessage",
+                    ValueType.object("java.lang.String"));
             vm.entryPoint("initInstance", cons);
             vm.entryPoint("runTest", methodRef).withValue(0, cons.getClassName());
+            vm.entryPoint("extractException", exceptionMsg);
             vm.exportType("TestClass", cons.getClassName());
             vm.build(innerWriter, new DirectoryBuildTarget(outputDir));
             if (!vm.hasMissingItems()) {

@@ -67,9 +67,12 @@ public class Devirtualization {
     private Set<MethodReference> getImplementations(String[] classNames, MethodReference ref) {
         Set<MethodReference> methods = new HashSet<>();
         for (String className : classNames) {
+            if (className.startsWith("[")) {
+                className = "java.lang.Object";
+            }
             ClassReader cls = classSource.get(className);
             if (cls == null || !isAssignable(ref.getClassName(), cls)) {
-                break;
+                continue;
             }
             MethodDependencyInfo methodDep = dependency.getMethod(new MethodReference(className, ref.getDescriptor()));
             if (methodDep != null) {

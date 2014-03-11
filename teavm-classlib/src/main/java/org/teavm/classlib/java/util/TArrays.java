@@ -1514,7 +1514,7 @@ public class TArrays extends TObject {
                 deepToString(a[0], out, visited);
                 for (int i = 1; i < a.length; ++i) {
                     out.append(TString.wrap(", "));
-                    deepToString(a[0], out, visited);
+                    deepToString(a[i], out, visited);
                 }
             }
             visited.remove(visited.size() - 1);

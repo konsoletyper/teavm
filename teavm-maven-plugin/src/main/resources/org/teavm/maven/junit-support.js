@@ -221,8 +221,13 @@ JUnitClient.run = function() {
             message.status = "exception";
             if (e.$javaException && e.$javaException.constructor.$meta) {
                 message.exception = e.$javaException.constructor.$meta.name;
+                message.stack = e.$javaException.constructor.$meta.name + ": ";
+                var exceptionMessage = extractException(e.$javaException);
+                message.stack += exceptionMessage ? $rt_ustr(exceptionMessage) : "";
+                message.stack += "\n" + e.stack;
+            } else {
+                message.stack = e.stack;
             }
-            message.stack = e.stack;
         }
         window.parent.postMessage(JSON.stringify(message), "*");
     });
