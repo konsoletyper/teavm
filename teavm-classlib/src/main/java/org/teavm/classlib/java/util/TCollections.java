@@ -172,4 +172,15 @@ public class TCollections extends TObject {
             }
         });
     }
+
+    public static void reverse(TList<?> list) {
+        @SuppressWarnings("unchecked")
+        TList<Object> safeList = (TList<Object>)list;
+        int half = safeList.size() / 2;
+        for (int i = 0; i < half; ++i) {
+            Object tmp = safeList.get(i);
+            safeList.set(i, safeList.get(safeList.size() - i - 1));
+            safeList.set(safeList.size() - i - 1, tmp);
+        }
+    }
 }

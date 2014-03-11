@@ -98,7 +98,19 @@ public class ProgramParser {
                 }
             }
         }
+        int signatureVars = countSignatureVariables(method.desc);
+        while (program.variableCount() <= signatureVars) {
+            program.createVariable();
+        }
         return program;
+    }
+
+    private int countSignatureVariables(String desc) {
+        int count = 1;
+        for (Type paramType : Type.getArgumentTypes(desc)) {
+            count += paramType.getSize();
+        }
+        return count;
     }
 
     private int pushSingle() {

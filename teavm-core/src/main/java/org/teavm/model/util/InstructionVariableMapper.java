@@ -118,7 +118,7 @@ public abstract class InstructionVariableMapper implements InstructionVisitor {
 
     @Override
     public void visit(SwitchInstruction insn) {
-        insn.setCondition(insn.getCondition());
+        insn.setCondition(map(insn.getCondition()));
     }
 
     @Override
