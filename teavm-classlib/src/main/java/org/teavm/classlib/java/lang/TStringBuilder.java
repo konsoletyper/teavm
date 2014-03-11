@@ -115,6 +115,72 @@ public class TStringBuilder extends TAbstractStringBuilder implements TAppendabl
     }
 
     @Override
+    public TStringBuilder insert(int target, long value) {
+        super.insert(target, value);
+        return this;
+    }
+
+    @Override
+    public TStringBuilder insert(int target, float value) {
+        super.insert(target, value);
+        return this;
+    }
+
+    @Override
+    public TStringBuilder insert(int target, double value) {
+        super.insert(target, value);
+        return this;
+    }
+
+    @Override
+    public TStringBuilder insert(int index, TCharSequence s, int start, int end) {
+        super.insert(index, s, start, end);
+        return this;
+    }
+
+    @Override
+    public TStringBuilder insert(int index, TCharSequence s) {
+        super.insert(index, s);
+        return this;
+    }
+
+    @Override
+    public TStringBuilder insert(int index, int value) {
+        super.insert(index, value);
+        return this;
+    }
+
+    @Override
+    public TStringBuilder insert(int index, char[] chars, int offset, int len) {
+        super.insert(index, chars, offset, len);
+        return this;
+    }
+
+    @Override
+    public TStringBuilder insert(int index, TObject obj) {
+        super.insert(index, obj);
+        return this;
+    }
+
+    @Override
+    public TStringBuilder insert(int index, char[] chars) {
+        super.insert(index, chars);
+        return this;
+    }
+
+    @Override
+    public TStringBuilder insert(int index, boolean b) {
+        super.insert(index, b);
+        return this;
+    }
+
+    @Override
+    public TStringBuilder insert(int index, char c) {
+        super.insert(index, c);
+        return this;
+    }
+
+    @Override
     public TStringBuilder delete(int start, int end) {
         super.delete(start, end);
         return this;
@@ -135,6 +201,12 @@ public class TStringBuilder extends TAbstractStringBuilder implements TAppendabl
     @Override
     public TStringBuilder insert(int index, TString string) {
         super.insert(index, string);
+        return this;
+    }
+
+    @Override
+    public TStringBuilder reverse() {
+        super.reverse();
         return this;
     }
 }

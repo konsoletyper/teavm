@@ -31,6 +31,13 @@ public class StringBuilderTest {
     }
 
     @Test
+    public void integerInserted() {
+        StringBuilder sb = new StringBuilder("[]");
+        sb.insert(1, 23);
+        assertEquals("[23]", sb.toString());
+    }
+
+    @Test
     public void largeIntegerAppended() {
         StringBuilder sb = new StringBuilder();
         sb.append(123456);
@@ -341,5 +348,15 @@ public class StringBuilderTest {
         assertEquals('c', sb.charAt(6));
         assertEquals('6', sb.charAt(7));
         assertEquals('9', sb.charAt(10));
+    }
+
+    @Test
+    public void searchedBackward() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i <= 9; ++i) {
+            sb.append((char)('0' + i));
+        }
+        assertEquals(3, sb.lastIndexOf("345"));
+        assertEquals(-1, sb.lastIndexOf("35"));
     }
 }
