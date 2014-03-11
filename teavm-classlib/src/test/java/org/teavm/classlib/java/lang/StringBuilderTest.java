@@ -282,4 +282,64 @@ public class StringBuilderTest {
         assertEquals(56178, sb.charAt(0));
         assertEquals(56972, sb.charAt(1));
     }
+
+    @Test
+    public void deletesRange() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i <= 9; ++i) {
+            sb.append((char)('0' + i));
+        }
+        sb.delete(4, 6);
+        assertEquals(8, sb.length());
+        assertEquals('0', sb.charAt(0));
+        assertEquals('3', sb.charAt(3));
+        assertEquals('6', sb.charAt(4));
+        assertEquals('9', sb.charAt(7));
+    }
+
+    @Test
+    public void replacesRangeWithSequenceOfSameLength() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i <= 9; ++i) {
+            sb.append((char)('0' + i));
+        }
+        sb.replace(4, 6, "ab");
+        assertEquals(10, sb.length());
+        assertEquals('0', sb.charAt(0));
+        assertEquals('3', sb.charAt(3));
+        assertEquals('a', sb.charAt(4));
+        assertEquals('6', sb.charAt(6));
+        assertEquals('9', sb.charAt(9));
+    }
+
+    @Test
+    public void replacesRangeWithShorterSequence() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i <= 9; ++i) {
+            sb.append((char)('0' + i));
+        }
+        sb.replace(4, 6, "a");
+        assertEquals(9, sb.length());
+        assertEquals('0', sb.charAt(0));
+        assertEquals('3', sb.charAt(3));
+        assertEquals('a', sb.charAt(4));
+        assertEquals('6', sb.charAt(5));
+        assertEquals('9', sb.charAt(8));
+    }
+
+    @Test
+    public void replacesRangeWithLongerSequence() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i <= 9; ++i) {
+            sb.append((char)('0' + i));
+        }
+        sb.replace(4, 6, "abc");
+        assertEquals(11, sb.length());
+        assertEquals('0', sb.charAt(0));
+        assertEquals('3', sb.charAt(3));
+        assertEquals('a', sb.charAt(4));
+        assertEquals('c', sb.charAt(6));
+        assertEquals('6', sb.charAt(7));
+        assertEquals('9', sb.charAt(10));
+    }
 }

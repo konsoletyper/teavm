@@ -57,6 +57,10 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
     }
 
     public TAbstractStringBuilder(TString value) {
+        this((TCharSequence)value);
+    }
+
+    public TAbstractStringBuilder(TCharSequence value) {
         buffer = new char[value.length()];
         for (int i = 0; i < buffer.length; ++i) {
             buffer[i] = value.charAt(i);
@@ -585,6 +589,10 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
         return this;
     }
 
+    protected TAbstractStringBuilder append(char[] chars) {
+        return append(chars, 0, chars.length);
+    }
+
     @Override
     public TCharSequence subSequence(int start, int end) {
         // TODO: implement
@@ -614,5 +622,42 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
         }
         --length;
         return this;
+    }
+
+    public TAbstractStringBuilder delete(int start, int end) {
+        if (start > end || start >= length) {
+            throw new TStringIndexOutOfBoundsException();
+        }
+        if (start == end) {
+            return this;
+        }
+        int sz = length - end;
+        length -= end - start;
+        for (int i = 0; i < sz; ++i) {
+            buffer[start++] = buffer[end++];
+        }
+        return this;
+    }
+
+    public TAbstractStringBuilder replace(int start, int end, TString str) {
+        int oldSize = end - start;
+        if (str.length() > oldSize) {
+            insertSpace(end, start + str.length());
+        } else if (str.length() < oldSize) {
+            delete(start + str.length(), end);
+        }
+        for (int i = 0; i < str.length(); ++i) {
+            buffer[start++] = str.charAt(i);
+        }
+        return this;
+    }
+
+    private void insertSpace(int start, int end) {
+        int sz = length - end;
+        ensureCapacity(buffer.length + sz);
+        for (int i = sz - 1; i >= 0; --i) {
+            buffer[end + i] = buffer[start + i];
+        }
+        length += end - start;
     }
 }

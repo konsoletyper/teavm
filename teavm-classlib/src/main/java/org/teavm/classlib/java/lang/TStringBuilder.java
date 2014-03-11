@@ -32,6 +32,10 @@ public class TStringBuilder extends TAbstractStringBuilder implements TAppendabl
         super(value);
     }
 
+    public TStringBuilder(TCharSequence value) {
+        super(value);
+    }
+
     @Override
     public TStringBuilder append(TString string) {
         super.append(string);
@@ -75,6 +79,12 @@ public class TStringBuilder extends TAbstractStringBuilder implements TAppendabl
     }
 
     @Override
+    public TStringBuilder append(char[] chars) {
+        super.append(chars);
+        return this;
+    }
+
+    @Override
     public TStringBuilder appendCodePoint(int codePoint) {
         super.appendCodePoint(codePoint);
         return this;
@@ -101,6 +111,18 @@ public class TStringBuilder extends TAbstractStringBuilder implements TAppendabl
     @Override
     public TStringBuilder append(boolean b) {
         super.append(b);
+        return this;
+    }
+
+    @Override
+    public TStringBuilder delete(int start, int end) {
+        super.delete(start, end);
+        return this;
+    }
+
+    @Override
+    public TStringBuilder replace(int start, int end, TString str) {
+        super.replace(start, end, str);
         return this;
     }
 
