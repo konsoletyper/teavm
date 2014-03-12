@@ -95,6 +95,10 @@ public class TClass<T> extends TObject {
 
     @InjectedBy(ClassNativeGenerator.class)
     @PluggableDependency(ClassNativeGenerator.class)
+    static native TClass<TLong> longClass();
+
+    @InjectedBy(ClassNativeGenerator.class)
+    @PluggableDependency(ClassNativeGenerator.class)
     static native TClass<TFloat> floatClass();
 
     @InjectedBy(ClassNativeGenerator.class)

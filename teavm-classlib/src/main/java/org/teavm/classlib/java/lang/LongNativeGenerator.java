@@ -33,6 +33,10 @@ public class LongNativeGenerator implements Generator {
                 writer.append("Long_compare(").append(context.getParameterName(1)).append(", ")
                         .append(context.getParameterName(2)).append(");").softNewLine();
                 break;
+            case "hashCode":
+                writer.append("return ").append(context.getParameterName(1)).append(".hi ^ ")
+                        .append(context.getParameterName(1)).append(".lo;").softNewLine();
+                break;
         }
     }
 }

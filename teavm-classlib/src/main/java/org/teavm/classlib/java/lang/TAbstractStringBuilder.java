@@ -152,43 +152,30 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
     }
 
     protected TAbstractStringBuilder insert(int target, long value) {
+        return insert(target, value, 10);
+    }
+
+    protected TAbstractStringBuilder insert(int target, long value, int radix) {
         boolean positive = true;
         if (value < 0) {
             positive = false;
             value = -value;
         }
-        if (value < 10) {
+        if (value < radix) {
             if (!positive) {
                 insertSpace(target, target + 2);
                 buffer[target++] = '-';
             } else {
                 insertSpace(target, target + 1);
             }
-            buffer[target++] = (char)('0' + value);
+            buffer[target++] = Character.forDigit((int)value, radix);
         } else {
-            int sz = 0;
+            int sz = 1;
             long pos = 1;
-            if (pos * 10000000000000000L <= value) {
-                pos *= 10000000000000000L;
-                sz |= 16;
+            while (pos * radix > pos && pos * radix <= value) {
+                pos *= radix;
+                ++sz;
             }
-            if ((sz | 8) <= 18 && pos * 100000000L <= value) {
-                pos *= 100000000L;
-                sz |= 8;
-            }
-            if ((sz | 4) <= 18 && pos * 10000L <= value) {
-                pos *= 10000L;
-                sz |= 4;
-            }
-            if ((sz | 2) <= 18 && pos * 100L <= value) {
-                pos *= 100L;
-                sz |= 2;
-            }
-            if ((sz | 1) <= 18 && pos * 10L <= value) {
-                pos *= 10L;
-                sz |= 1;
-            }
-            ++sz;
             if (!positive) {
                 ++sz;
             }
@@ -197,9 +184,9 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
                 buffer[target++] = '-';
             }
             while (pos > 0) {
-                buffer[target++] = (char)('0' + value / pos);
+                buffer[target++] = TCharacter.forDigit((int)(value / pos), radix);
                 value %= pos;
-                pos /= 10;
+                pos /= radix;
             }
         }
         return this;
