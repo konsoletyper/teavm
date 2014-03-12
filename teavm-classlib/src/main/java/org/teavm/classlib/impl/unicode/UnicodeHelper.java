@@ -93,13 +93,14 @@ public class UnicodeHelper {
 
     public static String compressRle(byte[] bytes) {
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < bytes.length; ++i) {
+        for (int i = 0; i < bytes.length;) {
             byte b = bytes[i];
             if (i < bytes.length - 1 && b == bytes[i + 1]) {
                 int count = 0;
-                while (i < bytes.length && bytes[i++] == b) {
+                while (i < bytes.length && bytes[i + count] == b) {
                     ++count;
                 }
+                i += count;
                 if (count < 80) {
                     sb.append(UnicodeHelper.encodeByte((byte)(b + 32)));
                     sb.append(UnicodeHelper.encodeByte((byte)count));
@@ -111,9 +112,8 @@ public class UnicodeHelper {
                         count /= 0x40;
                     }
                 }
-                --i;
             } else {
-                sb.append(UnicodeHelper.encodeByte(bytes[i]));
+                sb.append(UnicodeHelper.encodeByte(bytes[i++]));
             }
         }
         return sb.toString();
@@ -127,7 +127,7 @@ public class UnicodeHelper {
         int codePoint = 0;
         for (int i = 0; i < encoded.length(); ++i) {
             byte b = decodeByte(encoded.charAt(i));
-            int count = 1;
+            int count;
             if (b == 64) {
                 b = decodeByte(encoded.charAt(++i));
                 count = 0;
@@ -141,7 +141,7 @@ public class UnicodeHelper {
                 b -= 32;
                 count = decodeByte(encoded.charAt(++i));
             } else {
-                buffer[index++] = b;
+                count = 1;
             }
             if (count == 1) {
                 buffer[index++] = b;
