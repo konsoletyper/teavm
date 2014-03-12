@@ -40,7 +40,6 @@ public class ProgramParser {
     private List<List<Instruction>> targetInstructions;
     private List<Instruction> builder = new ArrayList<>();
     private List<BasicBlock> basicBlocks = new ArrayList<>();
-    private int[] localsMap;
     private int minLocal;
     private Program program;
     private String currentClassName;
@@ -81,7 +80,6 @@ public class ProgramParser {
             return program;
         }
         prepare(method);
-        prepareParameters(method);
         program.createBasicBlock();
         getBasicBlock(0);
         JumpInstruction insn = new JumpInstruction();
@@ -144,34 +142,6 @@ public class ProgramParser {
         int depth = stack.depth;
         stack = stack.next;
         return depth;
-    }
-
-    private void prepareParameters(MethodNode method) {
-        int var = 0;
-        int offset = 0;
-        if ((method.access & Opcodes.ACC_STATIC) == 0) {
-            getVariable(var++);
-            ++offset;
-        }
-        ValueType[] desc = MethodDescriptor.parse(method.desc).getParameterTypes();
-        localsMap = new int[desc.length * 2 + 1];
-        for (int i = 0; i < desc.length; ++i) {
-            ValueType paramType = desc[i];
-            localsMap[var] = i + offset;
-            getVariable(var++);
-            if (paramType instanceof ValueType.Primitive) {
-                switch (((ValueType.Primitive)paramType).getKind()) {
-                    case LONG:
-                    case DOUBLE:
-                        localsMap[var] = i + offset;
-                        getVariable(var++);
-                        break;
-                    default:
-                        break;
-                }
-            }
-        }
-        localsMap = Arrays.copyOf(localsMap, var);
     }
 
     private void prepare(MethodNode method) {
@@ -323,9 +293,6 @@ public class ProgramParser {
     }
 
     private int mapLocal(int local) {
-        if (local < localsMap.length) {
-            local = localsMap[local];
-        }
         return local;
     }
 
@@ -1528,8 +1495,7 @@ public class ProgramParser {
 
         @Override
         public void visitIincInsn(int var, int increment) {
-            var = mapLocal(var);
-            var += minLocal;
+            var = minLocal + mapLocal(var);
             int tmp = pushSingle();
             popSingle();
             IntegerConstantInstruction intInsn = new IntegerConstantInstruction();

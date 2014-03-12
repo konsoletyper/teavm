@@ -317,11 +317,11 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
     }
 
     public static int bitCount(int i) {
-        i = (i & 0xAAAAAAAA) >> 1  + i & 0x55555555;
-        i = (i & 0xCCCCCCCC) >> 2  + i & 0x33333333;
-        i = (i & 0x30303030) >> 4  + i & 0x03030303;
-        i = (i & 0x07000700) >> 8  + i & 0x00070007;
-        i = (i & 0x000F0000) >> 16 + i & 0x0000000F;
+        i = ((i & 0xAAAAAAAA) >>> 1)  + (i & 0x55555555);
+        i = ((i & 0xCCCCCCCC) >>> 2)  + (i & 0x33333333);
+        i = ((i & 0x70707070) >>> 4)  + (i & 0x07070707);
+        i = ((i & 0x0F000F00) >>> 8)  + (i & 0x000F000F);
+        i = ((i & 0x001F0000) >>> 16) + (i & 0x0000001F);
         return i;
     }
 
@@ -336,17 +336,17 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
     }
 
     public static int reverse(int i) {
-        i = (i & 0xAAAAAAAA) >> 1  | (i & 0x55555555) << 1;
-        i = (i & 0xCCCCCCCC) >> 2  | (i & 0x33333333) << 2;
-        i = (i & 0xF0F0F0F0) >> 4  | (i & 0x0F0F0F0F) << 4;
-        i = (i & 0xFF00FF00) >> 8  | (i & 0x00FF00FF) << 8;
-        i = (i & 0xFFFF0000) >> 16 | (i & 0x0000FFFF) << 16;
+        i = ((i & 0xAAAAAAAA) >>> 1)  | ((i & 0x55555555) << 1);
+        i = ((i & 0xCCCCCCCC) >>> 2)  | ((i & 0x33333333) << 2);
+        i = ((i & 0xF0F0F0F0) >>> 4)  | ((i & 0x0F0F0F0F) << 4);
+        i = ((i & 0xFF00FF00) >>> 8)  | ((i & 0x00FF00FF) << 8);
+        i = ((i & 0xFFFF0000) >>> 16) | ((i & 0x0000FFFF) << 16);
         return i;
     }
 
     public static int reverseBytes(int i) {
-        i = (i & 0xFF00FF00) >> 8  | (i & 0x00FF00FF) << 8;
-        i = i >> 16 + i << 16;
+        i = ((i & 0xFF00FF00) >>> 8) | ((i & 0x00FF00FF) << 8);
+        i = (i >>> 16) + (i << 16);
         return i;
     }
 

@@ -32,7 +32,7 @@ public class StringNativeGenerator implements Injector, DependencyPlugin {
     public void methodAchieved(DependencyChecker checker, MethodDependency method) {
         switch (method.getReference().getName()) {
             case "wrap":
-                method.getVariable(0).connect(method.getResult());
+                method.getVariable(1).connect(method.getResult());
                 break;
         }
     }

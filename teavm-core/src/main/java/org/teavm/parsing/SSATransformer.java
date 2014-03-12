@@ -69,7 +69,7 @@ public class SSATransformer {
         variableMap[index] = program.variableAt(index);
         ++index;
         for (int i = 0; i < arguments.length; ++i) {
-            variableMap[index] = program.variableAt(index);
+            variableMap[index] = program.variableAt(i + 1);
             ++index;
             ValueType arg = arguments[i];
             if (arg instanceof ValueType.Primitive) {
