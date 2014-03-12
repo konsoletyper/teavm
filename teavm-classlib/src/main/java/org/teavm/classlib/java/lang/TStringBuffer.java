@@ -1,5 +1,5 @@
 /*
- *  Copyright 2013 Alexey Andreev.
+ *  Copyright 2014 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,199 +19,199 @@ package org.teavm.classlib.java.lang;
  *
  * @author Alexey Andreev
  */
-public class TStringBuilder extends TAbstractStringBuilder implements TAppendable {
-    public TStringBuilder(int capacity) {
+public class TStringBuffer extends TAbstractStringBuilder implements TAppendable {
+    public TStringBuffer(int capacity) {
         super(capacity);
     }
 
-    public TStringBuilder() {
+    public TStringBuffer() {
         super();
     }
 
-    public TStringBuilder(TString value) {
+    public TStringBuffer(TString value) {
         super(value);
     }
 
-    public TStringBuilder(TCharSequence value) {
+    public TStringBuffer(TCharSequence value) {
         super(value);
     }
 
     @Override
-    public TStringBuilder append(TString string) {
+    public TStringBuffer append(TString string) {
         super.append(string);
         return this;
     }
 
     @Override
-    public TStringBuilder append(int value) {
+    public TStringBuffer append(int value) {
         super.append(value);
         return this;
     }
 
     @Override
-    public TStringBuilder append(long value) {
+    public TStringBuffer append(long value) {
         super.append(value);
         return this;
     }
 
     @Override
-    public TStringBuilder append(float value) {
+    public TStringBuffer append(float value) {
         super.append(value);
         return this;
     }
 
     @Override
-    public TStringBuilder append(double value) {
+    public TStringBuffer append(double value) {
         super.append(value);
         return this;
     }
 
     @Override
-    public TStringBuilder append(char c) {
+    public TStringBuffer append(char c) {
         super.append(c);
         return this;
     }
 
     @Override
-    public TStringBuilder append(char[] chars, int offset, int len) {
+    public TStringBuffer append(char[] chars, int offset, int len) {
         super.append(chars, offset, len);
         return this;
     }
 
     @Override
-    public TStringBuilder append(char[] chars) {
+    public TStringBuffer append(char[] chars) {
         super.append(chars);
         return this;
     }
 
     @Override
-    public TStringBuilder appendCodePoint(int codePoint) {
+    public TStringBuffer appendCodePoint(int codePoint) {
         super.appendCodePoint(codePoint);
         return this;
     }
 
     @Override
-    public TStringBuilder append(TCharSequence s, int start, int end) {
+    public TStringBuffer append(TCharSequence s, int start, int end) {
         super.append(s, start, end);
         return this;
     }
 
     @Override
-    public TStringBuilder append(TCharSequence s) {
+    public TStringBuffer append(TCharSequence s) {
         super.append(s);
         return this;
     }
 
     @Override
-    public TStringBuilder append(TStringBuffer s) {
+    public TStringBuffer append(TStringBuffer s) {
         super.append(s);
         return this;
     }
 
     @Override
-    public TStringBuilder append(TObject obj) {
+    public TStringBuffer append(TObject obj) {
         super.append(obj);
         return this;
     }
 
     @Override
-    public TStringBuilder append(boolean b) {
+    public TStringBuffer append(boolean b) {
         super.append(b);
         return this;
     }
 
     @Override
-    public TStringBuilder insert(int target, long value) {
+    public TStringBuffer insert(int target, long value) {
         super.insert(target, value);
         return this;
     }
 
     @Override
-    public TStringBuilder insert(int target, float value) {
+    public TStringBuffer insert(int target, float value) {
         super.insert(target, value);
         return this;
     }
 
     @Override
-    public TStringBuilder insert(int target, double value) {
+    public TStringBuffer insert(int target, double value) {
         super.insert(target, value);
         return this;
     }
 
     @Override
-    public TStringBuilder insert(int index, TCharSequence s, int start, int end) {
+    public TStringBuffer insert(int index, TCharSequence s, int start, int end) {
         super.insert(index, s, start, end);
         return this;
     }
 
     @Override
-    public TStringBuilder insert(int index, TCharSequence s) {
+    public TStringBuffer insert(int index, TCharSequence s) {
         super.insert(index, s);
         return this;
     }
 
     @Override
-    public TStringBuilder insert(int index, int value) {
+    public TStringBuffer insert(int index, int value) {
         super.insert(index, value);
         return this;
     }
 
     @Override
-    public TStringBuilder insert(int index, char[] chars, int offset, int len) {
+    public TStringBuffer insert(int index, char[] chars, int offset, int len) {
         super.insert(index, chars, offset, len);
         return this;
     }
 
     @Override
-    public TStringBuilder insert(int index, TObject obj) {
+    public TStringBuffer insert(int index, TObject obj) {
         super.insert(index, obj);
         return this;
     }
 
     @Override
-    public TStringBuilder insert(int index, char[] chars) {
+    public TStringBuffer insert(int index, char[] chars) {
         super.insert(index, chars);
         return this;
     }
 
     @Override
-    public TStringBuilder insert(int index, boolean b) {
+    public TStringBuffer insert(int index, boolean b) {
         super.insert(index, b);
         return this;
     }
 
     @Override
-    public TStringBuilder insert(int index, char c) {
+    public TStringBuffer insert(int index, char c) {
         super.insert(index, c);
         return this;
     }
 
     @Override
-    public TStringBuilder delete(int start, int end) {
+    public TStringBuffer delete(int start, int end) {
         super.delete(start, end);
         return this;
     }
 
     @Override
-    public TStringBuilder replace(int start, int end, TString str) {
+    public TStringBuffer replace(int start, int end, TString str) {
         super.replace(start, end, str);
         return this;
     }
 
     @Override
-    public TStringBuilder deleteCharAt(int index) {
+    public TStringBuffer deleteCharAt(int index) {
         deleteCharAt(index);
         return this;
     }
 
     @Override
-    public TStringBuilder insert(int index, TString string) {
+    public TStringBuffer insert(int index, TString string) {
         super.insert(index, string);
         return this;
     }
 
     @Override
-    public TStringBuilder reverse() {
+    public TStringBuffer reverse() {
         super.reverse();
         return this;
     }

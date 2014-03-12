@@ -648,6 +648,10 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
         return append(s, 0, s.length());
     }
 
+    protected TAbstractStringBuilder append(TStringBuffer s) {
+        return append((TCharSequence)s);
+    }
+
     protected TAbstractStringBuilder insert(int index, TCharSequence s) {
         return insert(index, s, 0, s.length());
     }
@@ -675,8 +679,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
 
     @Override
     public TCharSequence subSequence(int start, int end) {
-        // TODO: implement
-        throw new TUnsupportedOperationException();
+        return substring(start, end);
     }
 
     public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
@@ -782,5 +785,39 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
             buffer[length - i - 1] = tmp;
         }
         return this;
+    }
+
+    public TString substring(int from, int to) {
+        if (from > to || from < 0 || to >= length) {
+            throw new TIndexOutOfBoundsException();
+        }
+        return new TString(buffer, from, to - from);
+    }
+
+    public TString substring(int from) {
+        return substring(from, length);
+    }
+
+    public void setCharAt(int index, char ch) {
+        if (index > length) {
+            throw new TIndexOutOfBoundsException();
+        }
+        buffer[index] = ch;
+    }
+
+    public int offsetByCodePoints(int index, int codePointOffset) {
+        return TCharacter.offsetByCodePoints(this, index, codePointOffset);
+    }
+
+    public int codePointCount(int beginIndex, int endIndex) {
+        return TCharacter.codePointCount(this, beginIndex, endIndex);
+    }
+
+    public int codePointAt(int index) {
+        return TCharacter.codePointAt(this, index);
+    }
+
+    public int codePointBefore(int index) {
+        return TCharacter.codePointBefore(this, index);
     }
 }

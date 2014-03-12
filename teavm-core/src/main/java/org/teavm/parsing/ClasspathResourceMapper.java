@@ -67,7 +67,7 @@ public class ClasspathResourceMapper implements Mapper<String, ClassHolder> {
                 String packageName = propertyName.substring(PACKAGE_PREFIX.length());
                 Transformation transformation = getTransformation(cache, packageName);
                 transformation.packagePrefix = properties.getProperty(propertyName) + ".";
-                transformation.fullPrefix = transformation.packagePrefix + transformation.packageName + ".";
+                transformation.fullPrefix = transformation.packagePrefix + transformation.packageName;
             } else if (propertyName.startsWith(CLASS_PREFIX)) {
                 String packageName = propertyName.substring(CLASS_PREFIX.length());
                 Transformation transformation = getTransformation(cache, packageName);
@@ -80,7 +80,7 @@ public class ClasspathResourceMapper implements Mapper<String, ClassHolder> {
         Transformation transformation = cache.get(packageName);
         if (transformation == null) {
             transformation = new Transformation();
-            transformation.packageName = packageName;
+            transformation.packageName = packageName + ".";
             transformation.fullPrefix = packageName + ".";
             cache.put(packageName, transformation);
         }

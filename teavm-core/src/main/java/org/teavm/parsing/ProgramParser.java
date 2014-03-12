@@ -1102,7 +1102,7 @@ public class ProgramParser {
                     int b = popSingle();
                     int a = popSingle();
                     int tmp = pushSingle();
-                    popSingle();
+                    pushSingle();
                     emitAssignInsn(a, tmp);
                     emitAssignInsn(b, a);
                     emitAssignInsn(tmp, b);
