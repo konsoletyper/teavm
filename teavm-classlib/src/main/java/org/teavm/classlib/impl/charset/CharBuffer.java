@@ -67,7 +67,8 @@ public class CharBuffer {
     }
 
     public void put(CharBuffer buffer) {
-        while (buffer.pos < buffer.end) {
+        int sz = Math.min(buffer.end - buffer.pos, end - pos);
+        for (int i = 0; i < sz; ++i) {
             data[pos++] = buffer.data[buffer.pos++];
         }
     }

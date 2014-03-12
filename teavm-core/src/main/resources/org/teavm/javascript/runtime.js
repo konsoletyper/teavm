@@ -413,7 +413,7 @@ Long_fromNumber = function(val) {
     return new Long(val | 0, (val / 0x100000000) | 0);
 }
 Long_toNumber = function(val) {
-    return val.lo + 0x100000000 * val.hi;
+    return val.hi >= 0 ? val.lo + 0x100000000 * val.hi : -0x100000000 * (val.hi ^ 0xFFFFFFFF) + val.lo;
 }
 Long_add = function(a, b) {
     var a_lolo = a.lo & 0xFFFF;

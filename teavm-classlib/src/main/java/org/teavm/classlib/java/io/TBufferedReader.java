@@ -38,7 +38,7 @@ public class TBufferedReader extends TReader {
             throw new TIllegalArgumentException();
         }
         this.innerReader = innerReader;
-        this.buffer = new char[TMath.min(64, size)];
+        this.buffer = new char[TMath.max(64, size)];
     }
 
     public TBufferedReader(TReader innerReader) {
@@ -160,8 +160,8 @@ public class TBufferedReader extends TReader {
         if (eof) {
             return false;
         }
-        while (true) {
-            int charsRead = innerReader.read(buffer, offset, buffer.length - 1);
+        while (offset < buffer.length) {
+            int charsRead = innerReader.read(buffer, offset, buffer.length - offset);
             if (charsRead == -1) {
                 eof = true;
                 break;

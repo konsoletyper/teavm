@@ -307,12 +307,12 @@ public class TLong extends TNumber implements TComparable<TLong> {
     }
 
     public static int bitCount(long i) {
-        i = (i & 0xAAAAAAAAAAAAAAAAL) >> 1  + i & 0x5555555555555555L;
-        i = (i & 0xCCCCCCCCCCCCCCCCL) >> 2  + i & 0x3333333333333333L;
-        i = (i & 0x3030303030303030L) >> 4  + i & 0x0303030303030303L;
-        i = (i & 0x0700070007000700L) >> 8  + i & 0x0007000700070007L;
-        i = (i & 0x000F0000000F0000L) >> 16 + i & 0x0000000F0000000FL;
-        i = (i & 0x0000001F00000000L) >> 32 + i & 0x000000000000001FL;
+        i = ((i & 0xAAAAAAAAAAAAAAAAL) >> 1)  + (i & 0x5555555555555555L);
+        i = ((i & 0xCCCCCCCCCCCCCCCCL) >> 2)  + (i & 0x3333333333333333L);
+        i = ((i & 0x3030303030303030L) >> 4)  + (i & 0x0303030303030303L);
+        i = ((i & 0x0700070007000700L) >> 8)  + (i & 0x0007000700070007L);
+        i = ((i & 0x000F0000000F0000L) >> 16) + (i & 0x0000000F0000000FL);
+        i = ((i & 0x0000001F00000000L) >> 32) + (i & 0x000000000000001FL);
         return (int)i;
     }
 
@@ -327,19 +327,19 @@ public class TLong extends TNumber implements TComparable<TLong> {
     }
 
     public static long reverse(long i) {
-        i = (i & 0xAAAAAAAAAAAAAAAAL) >> 1  | (i & 0x5555555555555555L) << 1;
-        i = (i & 0xCCCCCCCCCCCCCCCCL) >> 2  | (i & 0x3333333333333333L) << 2;
-        i = (i & 0xF0F0F0F0F0F0F0F0L) >> 4  | (i & 0x0F0F0F0F0F0F0F0FL) << 4;
-        i = (i & 0xFF00FF00FF00FF00L) >> 8  | (i & 0x00FF00FF00FF00FFL) << 8;
-        i = (i & 0xFFFF0000FFFF0000L) >> 16 | (i & 0x0000FFFF0000FFFFL) << 16;
-        i = (i & 0xFFFF0000FFFF0000L) >> 32 | (i & 0x0000FFFF0000FFFFL) << 32;
+        i = ((i & 0xAAAAAAAAAAAAAAAAL) >> 1)  | ((i & 0x5555555555555555L) << 1);
+        i = ((i & 0xCCCCCCCCCCCCCCCCL) >> 2)  | ((i & 0x3333333333333333L) << 2);
+        i = ((i & 0xF0F0F0F0F0F0F0F0L) >> 4)  | ((i & 0x0F0F0F0F0F0F0F0FL) << 4);
+        i = ((i & 0xFF00FF00FF00FF00L) >> 8)  | ((i & 0x00FF00FF00FF00FFL) << 8);
+        i = ((i & 0xFFFF0000FFFF0000L) >> 16) | ((i & 0x0000FFFF0000FFFFL) << 16);
+        i = ((i & 0xFFFF0000FFFF0000L) >> 32) | ((i & 0x0000FFFF0000FFFFL) << 32);
         return i;
     }
 
     public static long reverseBytes(long i) {
-        i = (i & 0xFF00FF00FF00FF00L) >> 8  | (i & 0x00FF00FF00FF00FFL) << 8;
-        i = (i & 0xFFFF0000FFFF0000L) >> 16 | (i & 0x0000FFFF0000FFFFL) << 16;
-        i = i >> 32 | i << 32;
+        i = ((i & 0xFF00FF00FF00FF00L) >> 8)  | ((i & 0x00FF00FF00FF00FFL) << 8);
+        i = ((i & 0xFFFF0000FFFF0000L) >> 16) | ((i & 0x0000FFFF0000FFFFL) << 16);
+        i = (i >> 32) | (i << 32);
         return i;
     }
 

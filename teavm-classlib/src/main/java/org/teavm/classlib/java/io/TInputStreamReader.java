@@ -82,7 +82,7 @@ public class TInputStreamReader extends TReader {
                 break;
             }
         }
-        return outBuffer.position() - off;
+        return wrapBuffer.position() - off;
     }
 
     private boolean fillBuffer() throws TIOException {

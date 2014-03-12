@@ -169,12 +169,12 @@ public final class TMath extends TObject {
 
     public static double sinh(double x) {
         double e = exp(x);
-        return e - 1 / e;
+        return (e - 1 / e) / 2;
     }
 
     public static double cosh(double x) {
         double e = exp(x);
-        return e + 1 / e;
+        return (e + 1 / e) / 2;
     }
 
     public static double tanh(double x) {

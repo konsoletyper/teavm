@@ -274,7 +274,7 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
                 return NaN;
             }
         }
-        boolean negative = (bits & (1 << 63)) != 0;
+        boolean negative = (bits & (1L << 63)) != 0;
         int rawExp = (int)((bits >> 52) & 0x7FFL);
         long mantissa = bits & 0xFFFFFFFFFFFFFL;
         if (rawExp == 0) {
