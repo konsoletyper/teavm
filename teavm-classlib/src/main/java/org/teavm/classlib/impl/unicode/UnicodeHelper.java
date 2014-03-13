@@ -97,7 +97,7 @@ public class UnicodeHelper {
             byte b = bytes[i];
             if (i < bytes.length - 1 && b == bytes[i + 1]) {
                 int count = 0;
-                while (i < bytes.length && bytes[i + count] == b) {
+                while (count < 16384 && i < bytes.length && bytes[i + count] == b) {
                     ++count;
                 }
                 i += count;
@@ -137,15 +137,18 @@ public class UnicodeHelper {
                     count |= pos * digit;
                     pos *= 0x40;
                 }
-            } else if (b > 32) {
+            } else if (b >= 32) {
                 b -= 32;
                 count = decodeByte(encoded.charAt(++i));
             } else {
                 count = 1;
             }
-            if (count == 1) {
-                buffer[index++] = b;
-            } else if (b != 0) {
+            if (b != 0 || count < 128) {
+                if (index + count >= buffer.length) {
+                    ranges[rangeIndex++] = new Range(codePoint, codePoint + index, Arrays.copyOf(buffer, index));
+                    codePoint += index + count;
+                    index = 0;
+                }
                 while (count-- > 0) {
                     buffer[index++] = b;
                 }
