@@ -35,7 +35,7 @@ public class UTF8Charset extends Charset {
                 dest.put((byte)(0x80 | (ch & 0x3F)));
             } else if (UTF16Helper.isHighSurrogate(ch)) {
                 char low = source.get();
-                if (!UTF16Helper.isLowSurrogate(ch)) {
+                if (!UTF16Helper.isLowSurrogate(low)) {
                     source.back(1);
                     dest.put((byte)'?');
                 } else {

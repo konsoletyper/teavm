@@ -95,7 +95,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         this.characters = new char[sb.length()];
         ByteBuffer source = new ByteBuffer(bytes, offset, offset + length);
         char[] destChars = new char[TMath.max(8, TMath.min(length * 2, 1024))];
-        CharBuffer dest = new CharBuffer(destChars, 0, length * 2);
+        CharBuffer dest = new CharBuffer(destChars, 0, destChars.length);
         while (!source.end()) {
             charset.decode(source, dest);
             sb.append(destChars, 0, dest.position());
@@ -269,7 +269,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
             char lo = UTF16Helper.lowSurrogate(ch);
             for (int i = fromIndex; i >= 1; --i) {
                 if (characters[i] == lo && characters[i - 1] == hi) {
-                    return i;
+                    return i - 1;
                 }
             }
             return -1;

@@ -198,11 +198,10 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static int codePointBefore(TCharSequence seq, int index) {
-        if (index == 1 || !UTF16Helper.isLowSurrogate(seq.charAt(index - 2)) ||
-                !UTF16Helper.isHighSurrogate(seq.charAt(index - 2))) {
+        if (index == 1 || !isLowSurrogate(seq.charAt(index - 1)) || !isHighSurrogate(seq.charAt(index - 2))) {
             return seq.charAt(index - 1);
         }
-        return UTF16Helper.buildCodePoint(seq.charAt(index - 2), seq.charAt(index - 1));
+        return toCodePoint(seq.charAt(index - 2), seq.charAt(index - 1));
     }
 
     public static int codePointBefore(char[] a, int index) {
@@ -329,7 +328,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static int codePointCount(TCharSequence seq, int beginIndex, int endIndex) {
-        int count = endIndex;
+        int count = endIndex - beginIndex;
         --endIndex;
         for (int i = beginIndex; i < endIndex; ++i) {
             if (UTF16Helper.isHighSurrogate(seq.charAt(i)) && UTF16Helper.isLowSurrogate(seq.charAt(i + 1))) {

@@ -51,8 +51,8 @@ public class UTF16Helper {
     }
 
     public static int buildCodePoint(char a, char b) {
-        return ((a & SURROGATE_BIT_INV_MASK) << MEANINGFUL_SURROGATE_BITS) |
-                (b & SURROGATE_BIT_INV_MASK) + SUPPLEMENTARY_PLANE;
+        return (((a & SURROGATE_BIT_INV_MASK) << MEANINGFUL_SURROGATE_BITS) | (b & SURROGATE_BIT_INV_MASK)) +
+                SUPPLEMENTARY_PLANE;
     }
 
     public static boolean isSurrogate(char c) {
