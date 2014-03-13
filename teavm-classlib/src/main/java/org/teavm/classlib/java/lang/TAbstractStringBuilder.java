@@ -552,7 +552,6 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
             return append((char)codePoint);
         }
         ensureCapacity(length + 2);
-        codePoint -= UTF16Helper.SUPPLEMENTARY_PLANE;
         buffer[length++] = UTF16Helper.highSurrogate(codePoint);
         buffer[length++] = UTF16Helper.lowSurrogate(codePoint);
         return this;

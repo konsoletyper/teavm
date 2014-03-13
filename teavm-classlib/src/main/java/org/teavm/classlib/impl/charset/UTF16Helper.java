@@ -30,6 +30,7 @@ public class UTF16Helper {
     public static final int SUPPLEMENTARY_PLANE = 0x10000;
 
     public static char highSurrogate(int codePoint) {
+        codePoint -= SUPPLEMENTARY_PLANE;
         return (char)(HIGH_SURROGATE_BITS | (codePoint >> MEANINGFUL_SURROGATE_BITS) & SURROGATE_BIT_INV_MASK);
     }
 
