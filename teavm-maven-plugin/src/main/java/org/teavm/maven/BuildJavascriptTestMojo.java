@@ -331,7 +331,6 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
         for (ClassHolderTransformer transformer : transformerInstances) {
             vm.add(transformer);
         }
-        vm.prepare();
         File file = new File(outputDir, targetName);
         try (Writer innerWriter = new OutputStreamWriter(new FileOutputStream(file), "UTF-8")) {
             MethodReference cons = new MethodReference(methodRef.getClassName(),

@@ -148,10 +148,6 @@ public class TeaVM implements TeaVMHost {
         return classSource;
     }
 
-    public void prepare() {
-        dependencyChecker.startListeners();
-    }
-
     public boolean hasMissingItems() {
         return dependencyChecker.hasMissingItems();
     }

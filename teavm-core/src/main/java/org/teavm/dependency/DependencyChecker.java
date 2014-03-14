@@ -118,12 +118,7 @@ public class DependencyChecker implements DependencyInfo {
 
     public void addDependencyListener(DependencyListener listener) {
         listeners.add(listener);
-    }
-
-    public void startListeners() {
-        for (DependencyListener listener : listeners) {
-            listener.started(this);
-        }
+        listener.started(this);
     }
 
     public void addEntryPoint(MethodReference methodRef, String... argumentTypes) {

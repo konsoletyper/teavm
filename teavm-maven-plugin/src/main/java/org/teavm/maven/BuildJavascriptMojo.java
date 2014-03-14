@@ -166,7 +166,6 @@ public class BuildJavascriptMojo extends AbstractMojo {
             for (ClassHolderTransformer transformer : instantiateTransformers(classLoader)) {
                 vm.add(transformer);
             }
-            vm.prepare();
             if (mainClass != null) {
                 MethodDescriptor mainMethodDesc = new MethodDescriptor("main", ValueType.arrayOf(
                         ValueType.object("java.lang.String")), ValueType.VOID);
