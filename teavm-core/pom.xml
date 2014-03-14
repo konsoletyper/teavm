@@ -37,9 +37,9 @@
       <version>2.4</version>
     </dependency>
     <dependency>
-      <groupId>asm</groupId>
+      <groupId>org.ow2.asm</groupId>
       <artifactId>asm-debug-all</artifactId>
-      <version>3.3.1</version>
+      <version>4.2</version>
     </dependency>
   </dependencies>
 

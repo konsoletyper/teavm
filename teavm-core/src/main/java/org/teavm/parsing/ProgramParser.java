@@ -296,7 +296,8 @@ public class ProgramParser {
         return local;
     }
 
-    private MethodVisitor methodVisitor = new MethodVisitor() {
+    // TODO: invokedynamic support (a great task, involving not only parser, but every layer of TeaVM)
+    private MethodVisitor methodVisitor = new MethodVisitor(Opcodes.ASM4) {
         @Override
         public void visitVarInsn(int opcode, int local) {
             switch (opcode) {
@@ -373,7 +374,7 @@ public class ProgramParser {
         }
 
         @Override
-        public void visitTableSwitchInsn(int min, int max, Label dflt, Label[] labels) {
+        public void visitTableSwitchInsn(int min, int max, Label dflt, Label... labels) {
             SwitchTableEntry[] table = new SwitchTableEntry[labels.length];
             nextIndexes = new int[labels.length + 1];
             for (int i = 0; i < labels.length; ++i) {

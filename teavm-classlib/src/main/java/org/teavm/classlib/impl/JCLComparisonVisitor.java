@@ -24,7 +24,7 @@ import org.teavm.model.ClassReader;
  *
  * @author Alexey Andreev
  */
-class JCLComparisonVisitor implements ClassVisitor {
+class JCLComparisonVisitor extends ClassVisitor {
     private Map<String, JCLPackage> packageMap;
     private ClassReaderSource classSource;
     private ClassReader classReader;
@@ -32,6 +32,7 @@ class JCLComparisonVisitor implements ClassVisitor {
     private JCLClass jclClass;
 
     public JCLComparisonVisitor(ClassReaderSource classSource, Map<String, JCLPackage> packageMap) {
+        super(Opcodes.ASM4);
         this.classSource = classSource;
         this.packageMap = packageMap;
     }

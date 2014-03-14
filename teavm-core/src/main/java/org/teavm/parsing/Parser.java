@@ -41,7 +41,7 @@ public final class Parser {
         SSATransformer ssaProducer = new SSATransformer();
         ssaProducer.transformToSSA(program, method.getParameterTypes());
         method.setProgram(program);
-        parseAnnotations(method.getAnnotations(), node);
+        parseAnnotations(method.getAnnotations(), node.visibleAnnotations, node.invisibleAnnotations);
         while (program.variableCount() <= method.parameterCount()) {
             program.createVariable();
         }
@@ -75,7 +75,7 @@ public final class Parser {
                 cls.setOwnerName(node.name.substring(0, lastIndex).replace('/', '.'));
             }
         }
-        parseAnnotations(cls.getAnnotations(), node);
+        parseAnnotations(cls.getAnnotations(), node.visibleAnnotations, node.invisibleAnnotations);
         return cls;
     }
 
@@ -84,7 +84,7 @@ public final class Parser {
         field.setType(ValueType.parse(node.desc));
         field.setInitialValue(node.value);
         parseModifiers(node.access, field);
-        parseAnnotations(field.getAnnotations(), node);
+        parseAnnotations(field.getAnnotations(), node.visibleAnnotations, node.invisibleAnnotations);
         return field;
     }
 
@@ -147,14 +147,14 @@ public final class Parser {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private static void parseAnnotations(AnnotationContainer annotations, MemberNode node) {
+    private static void parseAnnotations(AnnotationContainer annotations, List<AnnotationNode> visibleAnnotations,
+            List<AnnotationNode> invisibleAnnotations) {
         List<Object> annotNodes = new ArrayList<>();
-        if (node.visibleAnnotations != null) {
-            annotNodes.addAll(node.visibleAnnotations);
+        if (visibleAnnotations != null) {
+            annotNodes.addAll(visibleAnnotations);
         }
-        if (node.invisibleAnnotations != null) {
-            annotNodes.addAll(node.invisibleAnnotations);
+        if (invisibleAnnotations != null) {
+            annotNodes.addAll(invisibleAnnotations);
         }
         for (Object obj : annotNodes) {
             AnnotationNode annotNode = (AnnotationNode)obj;
@@ -180,7 +180,6 @@ public final class Parser {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private static AnnotationValue parseAnnotationValue(Object value) {
         if (value instanceof String[]) {
             String[] enumInfo = (String[])value;
