@@ -486,6 +486,13 @@ Long_isNegative = function(a) {
     return (a.hi & 0x80000000) !== 0;
 }
 Long_mul = function(a, b) {
+    var positive = Long_isNegative(a) === Long_isNegative(b);
+    if (Long_isNegative(a)) {
+        a = Long_neg(a);
+    }
+    if (Long_isNegative(b)) {
+        b = Long_neg(b);
+    }
     var a_lolo = a.lo & 0xFFFF;
     var a_lohi = a.lo >>> 16;
     var a_hilo = a.hi & 0xFFFF;
@@ -499,7 +506,8 @@ Long_mul = function(a, b) {
     var lohi = (a_lohi * b_lolo + a_lolo * b_lohi + (lolo >> 16)) | 0;
     var hilo = (a_hilo * b_lolo + a_lohi * b_lohi + a_lolo * b_hilo + (lohi >> 16)) | 0;
     var hihi = (a_hihi * b_lolo + a_hilo * b_lohi + a_lohi * b_hilo + a_lolo * b_hihi + (hilo >> 16)) | 0;
-    return new Long((lolo & 0xFFFF) | ((lohi & 0xFFFF) << 16), (hilo & 0xFFFF) | ((hihi & 0xFFFF) << 16));
+    var result = new Long((lolo & 0xFFFF) | ((lohi & 0xFFFF) << 16), (hilo & 0xFFFF) | ((hihi & 0xFFFF) << 16));
+    return positive ? result : Long_neg(result);
 }
 Long_div = function(a, b) {
     return Long_divRem(a, b)[0];

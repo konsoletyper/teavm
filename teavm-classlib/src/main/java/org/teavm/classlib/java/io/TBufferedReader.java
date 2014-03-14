@@ -120,13 +120,17 @@ public class TBufferedReader extends TReader {
         requireOpened();
         if (n < count - index) {
             index += n;
+            return n;
         } else {
             n -= (count - index);
-            if (innerReader.skip(n) == n) {
+            long skipped = innerReader.skip(n);
+            if (skipped == n) {
                 fillBuffer(0);
+            } else {
+                eof = true;
             }
+            return skipped;
         }
-        return super.skip(n);
     }
 
     @Override
