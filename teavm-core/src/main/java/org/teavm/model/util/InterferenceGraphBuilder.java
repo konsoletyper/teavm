@@ -96,15 +96,14 @@ class InterferenceGraphBuilder {
                     backEdges.get(edgeSet.keys[j]).add(i);
                 }
             }
-        }
-        for (int i = 0; i < edges.size(); ++i) {
-            IntOpenHashSet edgeSet = edges.get(i);
             for (int j = 0; j < edgeSet.allocated.length; ++j) {
                 if (edgeSet.allocated[j]) {
-                    builder.addEdge(i, edgeSet.keys[j]);
+                    backEdges.get(i).add(edgeSet.keys[j]);
                 }
             }
-            edgeSet = backEdges.get(i);
+        }
+        for (int i = 0; i < edges.size(); ++i) {
+            IntOpenHashSet edgeSet = backEdges.get(i);
             for (int j = 0; j < edgeSet.allocated.length; ++j) {
                 if (edgeSet.allocated[j]) {
                     builder.addEdge(edgeSet.keys[j], i);

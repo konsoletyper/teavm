@@ -210,9 +210,6 @@ public class RegisterAllocator {
         GraphBuilder renamedGraph = new GraphBuilder();
         for (int i = 0; i < graph.size(); ++i) {
             for (int j : graph.outgoingEdges(i)) {
-                if (i >= varMap.length || j >= varMap.length) {
-                    throw new RuntimeException();
-                }
                 renamedGraph.addEdge(varMap[i], varMap[j]);
             }
         }
