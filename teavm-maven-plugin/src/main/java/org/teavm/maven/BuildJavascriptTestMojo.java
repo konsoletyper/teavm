@@ -153,9 +153,18 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
             }
             final Log log = getLog();
             new File(outputDir, "tests").mkdirs();
-            resourceToFile("org/teavm/javascript/runtime.js", "runtime.js");
-            resourceToFile("org/teavm/maven/junit-support.js", "junit-support.js");
-            resourceToFile("org/teavm/maven/junit.css", "junit.css");
+            new File(outputDir, "res").mkdirs();
+            resourceToFile("org/teavm/javascript/runtime.js", "res/runtime.js");
+            resourceToFile("org/teavm/maven/res/junit-support.js", "res/junit-support.js");
+            resourceToFile("org/teavm/maven/res/junit.css", "res/junit.css");
+            resourceToFile("org/teavm/maven/res/class_obj.png", "res/class_obj.png");
+            resourceToFile("org/teavm/maven/res/control-000-small.png", "res/control-000-small.png");
+            resourceToFile("org/teavm/maven/res/methpub_obj.png", "res/methpub_obj.png");
+            resourceToFile("org/teavm/maven/res/package_obj.png", "res/package_obj.png");
+            resourceToFile("org/teavm/maven/res/tick-small-red.png", "res/tick-small-red.png");
+            resourceToFile("org/teavm/maven/res/tick-small.png", "res/tick-small.png");
+            resourceToFile("org/teavm/maven/res/toggle-small-expand.png", "res/toggle-small-expand.png");
+            resourceToFile("org/teavm/maven/res/toggle-small.png", "res/toggle-small.png");
             resourceToFile("org/teavm/maven/junit.html", "junit.html");
             final ClassHolderSource classSource = new ClasspathClassHolderSource(classLoader);
             for (String testClass : testClasses) {
@@ -170,8 +179,8 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
             includeAdditionalScripts(classLoader);
             File allTestsFile = new File(outputDir, "tests/all.js");
             try (Writer allTestsWriter = new OutputStreamWriter(new FileOutputStream(allTestsFile), "UTF-8")) {
-                allTestsWriter.write("doRunTests = function() {\n");
-                allTestsWriter.write("    new JUnitServer(document.body).runAllTests([");
+                allTestsWriter.write("prepare = function() {\n");
+                allTestsWriter.write("    return new JUnitServer(document.body).readTests([");
                 boolean first = true;
                 for (String testClass : testClasses) {
                     if (!first) {
@@ -547,3 +556,4 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
         }
     }
 }
+

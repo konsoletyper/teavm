@@ -19,17 +19,35 @@
     <title>TeaVM JUnit tests</title>
     <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
     <title>TeaVM JUnit tests</title>
-    <link rel="stylesheet" href="junit.css" type="text/css"/>
-    <script type="text/javascript" src="junit-support.js"></script>
+    <link rel="stylesheet" href="res/junit.css" type="text/css"/>
+    <script type="text/javascript" src="res/junit-support.js"></script>
     <script type="text/javascript" src="tests/all.js"></script>
   </head>
   <body>
     <script type="text/javascript">
         function runTests() {
-            document.getElementById("start-button").style.display = "none";
-            doRunTests();
+            document.getElementById("start-button").disabled = true;
+            server.runAllTests(function() {
+                document.getElementById("start-button").disabled = false;
+            });
         }
     </script>
-    <button id="start-button" onclick="runTests()">Run tests</button>
+    <div class="test-header">
+      <div class="test-count">Total tests:
+        <span id="test-count"></span><span id="total-time" class="time-indicator"></span>
+      </div>
+      <div class="failed-test-count">Failed: <span id="failed-test-count"></span></div>
+      <div class="progress-bar">
+        <div id="progress-bar-content"></div>
+      </div>
+      <button id="start-button" onclick="runTests()">Run</button>
+    </div>
+    <div id="test-tree">
+    </div>
+    <div id="test-trace">
+    </div>
+    <script>
+        server = prepare();
+    </script>
   </body>
 </html>
