@@ -82,8 +82,7 @@ public class UTF8Charset extends Charset {
                 byte b2 = source.get();
                 byte b3 = source.get();
                 byte b4 = source.get();
-                int code = (((b & 0x07) << 18) | ((b2 & 0x3f) << 12) | ((b3 & 0x3F) << 6) | (b4 & 0x3F)) -
-                        UTF16Helper.SUPPLEMENTARY_PLANE;
+                int code = ((b & 0x07) << 18) | ((b2 & 0x3f) << 12) | ((b3 & 0x3F) << 6) | (b4 & 0x3F);
                 dest.put(UTF16Helper.highSurrogate(code));
                 dest.put(UTF16Helper.lowSurrogate(code));
             }
