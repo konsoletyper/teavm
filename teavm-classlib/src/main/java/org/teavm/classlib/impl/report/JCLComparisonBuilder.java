@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.impl;
+package org.teavm.classlib.impl.report;
 
 import java.io.*;
 import java.net.URL;

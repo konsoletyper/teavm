@@ -13,23 +13,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.impl;
-
-import java.util.ArrayList;
-import java.util.List;
+package org.teavm.classlib.impl.report;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-class JCLClass {
+class JCLItem {
+    public final JCLItemType type;
     public final String name;
-    public JCLStatus status;
     public JCLVisibility visibility = JCLVisibility.PUBLIC;
-    public JCLClassType type;
-    public final List<JCLItem> items = new ArrayList<>();
+    public JCLStatus status;
 
-    public JCLClass(String name) {
+    public JCLItem(JCLItemType type, String name) {
+        this.type = type;
         this.name = name;
     }
 }

@@ -38,5 +38,7 @@ public class JCLPlugin implements TeaVMPlugin {
                 "loadServices", ValueType.object("java.lang.Class"),
                 ValueType.arrayOf(ValueType.object("java.lang.Object"))));
         host.add(loadServicesMethod, serviceLoaderSupp);
+        JavacSupport javacSupport = new JavacSupport();
+        host.add(javacSupport);
     }
 }

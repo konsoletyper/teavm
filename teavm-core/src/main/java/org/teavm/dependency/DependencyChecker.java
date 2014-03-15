@@ -291,7 +291,13 @@ public class DependencyChecker implements DependencyInfo {
             missingMethods.putIfAbsent(methodRef, stack);
         }
         if (method != null) {
-            initClass(methodRef.getClassName(), stack);
+            final DependencyStack callerStack = stack;
+            executor.execute(new Runnable() {
+                @Override public void run() {
+                    initClass(dep.getReference().getClassName(), callerStack);
+                }
+            });
+
         }
         return dep;
     }

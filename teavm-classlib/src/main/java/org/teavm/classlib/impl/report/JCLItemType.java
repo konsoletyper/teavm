@@ -13,15 +13,13 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.impl;
+package org.teavm.classlib.impl.report;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-enum JCLClassType {
-    CLASS,
-    INTERFACE,
-    ENUM,
-    ANNOTATION
+enum JCLItemType {
+    FIELD,
+    METHOD
 }
