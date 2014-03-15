@@ -17,9 +17,9 @@ package org.teavm.dom.browser;
 
 import org.teavm.dom.core.Document;
 import org.teavm.dom.core.Element;
-import org.teavm.javascript.ni.JSGlobal;
-import org.teavm.javascript.ni.JSObject;
-import org.teavm.javascript.ni.JSProperty;
+import org.teavm.jso.JSGlobal;
+import org.teavm.jso.JSObject;
+import org.teavm.jso.JSProperty;
 
 /**
  *

@@ -15,8 +15,8 @@
  */
 package org.teavm.dom.browser;
 
-import org.teavm.javascript.ni.JSFunctor;
-import org.teavm.javascript.ni.JSObject;
+import org.teavm.jso.JSFunctor;
+import org.teavm.jso.JSObject;
 
 /**
  *

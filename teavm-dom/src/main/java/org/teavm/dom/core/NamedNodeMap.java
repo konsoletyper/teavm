@@ -15,9 +15,9 @@
  */
 package org.teavm.dom.core;
 
-import org.teavm.javascript.ni.JSArray;
-import org.teavm.javascript.ni.JSObject;
-import org.teavm.javascript.ni.JSProperty;
+import org.teavm.jso.JSArray;
+import org.teavm.jso.JSObject;
+import org.teavm.jso.JSProperty;
 
 /**
  *

@@ -15,7 +15,7 @@
  */
 package org.teavm.dom.core;
 
-import org.teavm.javascript.ni.JSProperty;
+import org.teavm.jso.JSProperty;
 
 /**
  *

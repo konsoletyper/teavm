@@ -13,10 +13,11 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript.ni.plugin;
+package org.teavm.jso.plugin;
 
 import java.util.*;
-import org.teavm.javascript.ni.*;
+import org.teavm.javascript.ni.PreserveOriginalName;
+import org.teavm.jso.*;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 

@@ -15,8 +15,8 @@
  */
 package org.teavm.dom.events;
 
-import org.teavm.javascript.ni.JSObject;
-import org.teavm.javascript.ni.JSProperty;
+import org.teavm.jso.JSObject;
+import org.teavm.jso.JSProperty;
 
 /**
  *

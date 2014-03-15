@@ -13,19 +13,17 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript.ni;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+package org.teavm.jso;
 
 /**
  *
  * @author Alexey Andreev
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface JSProperty {
-    String value() default "";
+public enum JSType {
+    UNDEFINED,
+    BOOLEAN,
+    NUMBER,
+    STRING,
+    FUNCTION,
+    OBJECT
 }

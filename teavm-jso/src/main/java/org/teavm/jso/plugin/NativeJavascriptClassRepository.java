@@ -13,11 +13,11 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript.ni.plugin;
+package org.teavm.jso.plugin;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.teavm.javascript.ni.JSObject;
+import org.teavm.jso.JSObject;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;

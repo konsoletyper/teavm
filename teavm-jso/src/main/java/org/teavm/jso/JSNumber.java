@@ -13,18 +13,11 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript.ni.plugin;
-
-import org.teavm.vm.spi.TeaVMHost;
-import org.teavm.vm.spi.TeaVMPlugin;
+package org.teavm.jso;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class JSObjectBuilderPlugin implements TeaVMPlugin {
-    @Override
-    public void install(TeaVMHost host) {
-        host.add(new JSObjectClassTransformer());
-    }
+public interface JSNumber extends JSObject {
 }

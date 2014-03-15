@@ -21,7 +21,7 @@ import org.teavm.dom.core.Element;
 import org.teavm.dom.events.Event;
 import org.teavm.dom.events.EventListener;
 import org.teavm.dom.events.EventTarget;
-import org.teavm.javascript.ni.JS;
+import org.teavm.jso.JS;
 
 
 /**

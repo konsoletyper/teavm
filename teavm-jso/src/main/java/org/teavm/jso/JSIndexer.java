@@ -13,19 +13,18 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript.ni;
+package org.teavm.jso;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  *
  * @author Alexey Andreev
  */
-public interface JSArray<T extends JSObject> extends JSObject {
-    @JSProperty
-    int getLength();
-
-    @JSIndexer
-    T get(int index);
-
-    @JSIndexer
-    void set(int index, T value);
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface JSIndexer {
 }

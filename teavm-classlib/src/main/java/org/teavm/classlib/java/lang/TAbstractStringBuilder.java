@@ -623,7 +623,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
         if (start > end || end > s.length() || start < 0) {
             throw new TIndexOutOfBoundsException();
         }
-        insertSpace(index, index + end - start + length);
+        insertSpace(index, index + end - start);
         for (int i = start; i < end; ++i) {
             buffer[index++] = s.charAt(i);
         }
