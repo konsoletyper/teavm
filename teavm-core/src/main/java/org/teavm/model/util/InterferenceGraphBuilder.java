@@ -15,10 +15,8 @@
  */
 package org.teavm.model.util;
 
-import com.carrotsearch.hppc.IntOpenHashSet;
 import java.util.*;
-import org.teavm.common.Graph;
-import org.teavm.common.GraphBuilder;
+import org.teavm.common.MutableGraphNode;
 import org.teavm.model.*;
 
 /**
@@ -26,15 +24,16 @@ import org.teavm.model.*;
  * @author Alexey Andreev
  */
 class InterferenceGraphBuilder {
-    public Graph build(Program program, int paramCount, LivenessAnalyzer liveness) {
-        List<IntOpenHashSet> edges = new ArrayList<>();
+    public List<MutableGraphNode> build(Program program, int paramCount, LivenessAnalyzer liveness) {
+        List<MutableGraphNode> nodes = new ArrayList<>();
         for (int i = 0; i < program.variableCount(); ++i) {
-            edges.add(new IntOpenHashSet());
+            nodes.add(new MutableGraphNode(i));
         }
         UsageExtractor useExtractor = new UsageExtractor();
         DefinitionExtractor defExtractor = new DefinitionExtractor();
         InstructionTransitionExtractor succExtractor = new InstructionTransitionExtractor();
         List<List<Incoming>> outgoings = getOutgoings(program);
+        Set<MutableGraphNode> live = new HashSet<>(128);
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
             block.getLastInstruction().acceptVisitor(succExtractor);
@@ -42,75 +41,49 @@ class InterferenceGraphBuilder {
             for (BasicBlock succ : succExtractor.getTargets()) {
                 liveOut.or(liveness.liveIn(succ.getIndex()));
             }
-            IntOpenHashSet live = new IntOpenHashSet(8);
+            live.clear();
             for (int j = 0; j < liveOut.length(); ++j) {
                 if (liveOut.get(j)) {
-                    live.add(j);
+                    live.add(nodes.get(j));
                 }
             }
             for (Incoming outgoing : outgoings.get(i)) {
-                live.add(outgoing.getValue().getIndex());
+                live.add(nodes.get(outgoing.getValue().getIndex()));
             }
             for (int j = block.getInstructions().size() - 1; j >= 0; --j) {
                 Instruction insn = block.getInstructions().get(j);
                 insn.acceptVisitor(useExtractor);
                 insn.acceptVisitor(defExtractor);
                 for (Variable var : defExtractor.getDefinedVariables()) {
-                    edges.get(var.getIndex()).addAll(live);
+                    nodes.get(var.getIndex()).connectAll(live);
                 }
                 for (Variable var : defExtractor.getDefinedVariables()) {
-                    live.remove(var.getIndex());
+                    live.remove(nodes.get(var.getIndex()));
                 }
                 for (Variable var : useExtractor.getUsedVariables()) {
-                    live.add(var.getIndex());
+                    live.add(nodes.get(var.getIndex()));
                 }
             }
             if (block.getIndex() == 0) {
                 for (int j = 0; j <= paramCount; ++j) {
-                    edges.get(j).addAll(live);
+                    nodes.get(j).connectAll(live);
                 }
             }
             BitSet liveIn = liveness.liveIn(i);
-            live = new IntOpenHashSet();
+            live.clear();
             for (int j = 0; j < liveOut.length(); ++j) {
                 if (liveIn.get(j)) {
-                    live.add(j);
+                    live.add(nodes.get(j));
                 }
             }
             for (Phi phi : block.getPhis()) {
-                live.add(phi.getReceiver().getIndex());
+                live.add(nodes.get(phi.getReceiver().getIndex()));
             }
             for (Phi phi : block.getPhis()) {
-                edges.get(phi.getReceiver().getIndex()).addAll(live);
+                nodes.get(phi.getReceiver().getIndex()).connectAll(live);
             }
         }
-        GraphBuilder builder = new GraphBuilder(edges.size());
-        List<IntOpenHashSet> backEdges = new ArrayList<>(edges.size());
-        for (int i = 0; i < edges.size(); ++i) {
-            backEdges.add(new IntOpenHashSet(8));
-        }
-        for (int i = 0; i < edges.size(); ++i) {
-            IntOpenHashSet edgeSet = edges.get(i);
-            for (int j = 0; j < edgeSet.allocated.length; ++j) {
-                if (edgeSet.allocated[j]) {
-                    backEdges.get(edgeSet.keys[j]).add(i);
-                }
-            }
-            for (int j = 0; j < edgeSet.allocated.length; ++j) {
-                if (edgeSet.allocated[j]) {
-                    backEdges.get(i).add(edgeSet.keys[j]);
-                }
-            }
-        }
-        for (int i = 0; i < edges.size(); ++i) {
-            IntOpenHashSet edgeSet = backEdges.get(i);
-            for (int j = 0; j < edgeSet.allocated.length; ++j) {
-                if (edgeSet.allocated[j]) {
-                    builder.addEdge(edgeSet.keys[j], i);
-                }
-            }
-        }
-        return builder.build();
+        return nodes;
     }
 
     private List<List<Incoming>> getOutgoings(Program program) {

@@ -13,17 +13,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.model.util;
+package org.teavm.common;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  *
  * @author Alexey Andreev
  */
-class MutableGraphNode {
+public class MutableGraphNode {
     int tag;
     Map<MutableGraphNode, MutableGraphEdge> edges = new HashMap<>();
 
@@ -48,11 +46,35 @@ class MutableGraphNode {
         return edge;
     }
 
+    public void connectAll(Collection<MutableGraphNode> nodes) {
+        for (MutableGraphNode node : nodes) {
+            connect(node);
+        }
+    }
+
     public Collection<MutableGraphEdge> getEdges() {
         return edges.values();
     }
 
     public int getTag() {
         return tag;
+    }
+
+    public void setTag(int tag) {
+        this.tag = tag;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(tag).append(":");
+        Iterator<MutableGraphEdge> edges = this.edges.values().iterator();
+        if (edges.hasNext()) {
+            sb.append(edges.next().getSecond().getTag());
+        }
+        while (edges.hasNext()) {
+            sb.append(',').append(edges.next().getSecond().getTag());
+        }
+        return sb.toString();
     }
 }

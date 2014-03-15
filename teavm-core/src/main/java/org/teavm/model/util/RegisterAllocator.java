@@ -16,9 +16,7 @@
 package org.teavm.model.util;
 
 import java.util.*;
-import org.teavm.common.DisjointSet;
-import org.teavm.common.Graph;
-import org.teavm.common.GraphBuilder;
+import org.teavm.common.*;
 import org.teavm.model.*;
 import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.EmptyInstruction;
@@ -34,10 +32,11 @@ public class RegisterAllocator {
         InterferenceGraphBuilder interferenceBuilder = new InterferenceGraphBuilder();
         LivenessAnalyzer liveness = new LivenessAnalyzer();
         liveness.analyze(program);
-        Graph interferenceGraph = interferenceBuilder.build(program, method.parameterCount(), liveness);
+        List<MutableGraphNode> interferenceGraph = interferenceBuilder.build(
+                program, method.parameterCount(), liveness);
         DisjointSet congruenceClasses = buildPhiCongruenceClasses(program);
-        List<MutableGraphNode> classInterferenceGraph = makeMutableGraph(interferenceGraph, congruenceClasses);
-        removeRedundantCopies(program, classInterferenceGraph, congruenceClasses);
+        joinClassNodes(interferenceGraph, congruenceClasses);
+        removeRedundantCopies(program, interferenceGraph, congruenceClasses);
         int[] classArray = congruenceClasses.pack(program.variableCount());
         renameVariables(program, classArray);
         int[] colors = new int[program.variableCount()];
@@ -45,30 +44,33 @@ public class RegisterAllocator {
         for (int i = 0; i <= method.parameterCount(); ++i) {
             colors[i] = i;
         }
+        renameInterferenceGraph(interferenceGraph, congruenceClasses, classArray);
         GraphColorer colorer = new GraphColorer();
-        colorer.colorize(renameInterferenceGraph(interferenceGraph, classArray), colors);
+        colorer.colorize(interferenceGraph, colors);
         for (int i = 0; i < colors.length; ++i) {
             program.variableAt(i).setRegister(colors[i]);
         }
     }
 
-    private static List<MutableGraphNode> makeMutableGraph(Graph graph, DisjointSet classes) {
-        List<MutableGraphNode> mutableGraph = new ArrayList<>();
-        for (int i = 0; i < graph.size(); ++i) {
+    private static void joinClassNodes(List<MutableGraphNode> graph, DisjointSet classes) {
+        int sz = graph.size();
+        for (int i = 0; i < sz; ++i) {
             int cls = classes.find(i);
-            while (cls >= mutableGraph.size()) {
-                mutableGraph.add(new MutableGraphNode(mutableGraph.size()));
+            while (cls >= graph.size()) {
+                graph.add(new MutableGraphNode(graph.size()));
             }
-            MutableGraphNode node = mutableGraph.get(cls);
-            for (int j : graph.outgoingEdges(i)) {
-                int otherCls = classes.find(j);
-                while (otherCls >= mutableGraph.size()) {
-                    mutableGraph.add(new MutableGraphNode(mutableGraph.size()));
+            if (cls != i) {
+                for (MutableGraphEdge edge : graph.get(i).getEdges().toArray(new MutableGraphEdge[0])) {
+                    if (edge.getFirst() == graph.get(i)) {
+                        edge.setFirst(graph.get(cls));
+                    }
+                    if (edge.getSecond() == graph.get(i)) {
+                        edge.setSecond(graph.get(cls));
+                    }
                 }
-                node.connect(mutableGraph.get(otherCls));
+                graph.set(i, graph.get(cls));
             }
         }
-        return mutableGraph;
     }
 
     private void insertPhiArgumentsCopies(Program program) {
@@ -167,16 +169,24 @@ public class RegisterAllocator {
                     }
                     for (MutableGraphEdge edge : interferenceGraph.get(origClass).getEdges()
                             .toArray(new MutableGraphEdge[0])) {
-                        if (edge.getFirst() != null) {
+                        if (edge.getFirst() == interferenceGraph.get(origClass)) {
                             edge.setFirst(interferenceGraph.get(newClass));
+                        }
+                        if (edge.getSecond() == interferenceGraph.get(origClass)) {
+                            edge.setSecond(interferenceGraph.get(newClass));
                         }
                     }
                     for (MutableGraphEdge edge : interferenceGraph.get(copyClass).getEdges()
                             .toArray(new MutableGraphEdge[0])) {
-                        if (edge.getFirst() != null) {
+                        if (edge.getFirst() == interferenceGraph.get(copyClass)) {
                             edge.setFirst(interferenceGraph.get(newClass));
                         }
+                        if (edge.getSecond() == interferenceGraph.get(copyClass)) {
+                            edge.setSecond(interferenceGraph.get(newClass));
+                        }
                     }
+                    interferenceGraph.set(copyClass, interferenceGraph.get(newClass));
+                    interferenceGraph.set(origClass, interferenceGraph.get(newClass));
                 }
             }
         }
@@ -206,14 +216,21 @@ public class RegisterAllocator {
         }
     }
 
-    private Graph renameInterferenceGraph(Graph graph, final int[] varMap) {
-        GraphBuilder renamedGraph = new GraphBuilder();
+    private void renameInterferenceGraph(List<MutableGraphNode> graph, DisjointSet classes, final int[] varMap) {
+        List<MutableGraphNode> newGraph = new ArrayList<>();
         for (int i = 0; i < graph.size(); ++i) {
-            for (int j : graph.outgoingEdges(i)) {
-                renamedGraph.addEdge(varMap[i], varMap[j]);
+            int mapped = varMap[i];
+            while (newGraph.size() <= mapped) {
+                newGraph.add(null);
+            }
+            if (newGraph.get(mapped) == null) {
+                int cls = classes.find(i);
+                newGraph.set(mapped, graph.get(cls));
+                graph.get(cls).setTag(mapped);
             }
         }
-        return renamedGraph.build();
+        graph.clear();
+        graph.addAll(newGraph);
     }
 
     private DisjointSet buildPhiCongruenceClasses(Program program) {

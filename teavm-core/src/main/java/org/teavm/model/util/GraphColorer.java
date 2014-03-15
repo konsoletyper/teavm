@@ -16,14 +16,16 @@
 package org.teavm.model.util;
 
 import java.util.BitSet;
-import org.teavm.common.Graph;
+import java.util.List;
+import org.teavm.common.MutableGraphEdge;
+import org.teavm.common.MutableGraphNode;
 
 /**
  *
  * @author Alexey Andreev
  */
 class GraphColorer {
-    public void colorize(Graph graph, int[] colors) {
+    public void colorize(List<MutableGraphNode> graph, int[] colors) {
         BitSet usedColors = new BitSet();
         for (int v : getOrdering(graph)) {
             if (colors[v] >= 0) {
@@ -31,7 +33,8 @@ class GraphColorer {
             }
             usedColors.clear();
             usedColors.set(0);
-            for (int succ : graph.outgoingEdges(v)) {
+            for (MutableGraphEdge edge : graph.get(v).getEdges()) {
+                int succ = edge.getSecond().getTag();
                 if (colors[succ] >= 0) {
                     usedColors.set(colors[succ]);
                 }
@@ -40,7 +43,7 @@ class GraphColorer {
         }
     }
 
-    private int[] getOrdering(Graph graph) {
+    private int[] getOrdering(List<MutableGraphNode> graph) {
         boolean[] visited = new boolean[graph.size()];
         int[] ordering = new int[graph.size()];
         int index = 0;
@@ -62,7 +65,8 @@ class GraphColorer {
                 }
                 visited[v] = true;
                 ordering[index++] = v;
-                for (int succ : graph.outgoingEdges(v)) {
+                for (MutableGraphEdge edge : graph.get(v).getEdges()) {
+                    int succ = edge.getSecond().getTag();
                     if (visited[succ]) {
                         continue;
                     }

@@ -13,13 +13,13 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.model.util;
+package org.teavm.common;
 
 /**
  *
  * @author Alexey Andreev
  */
-class MutableGraphEdge {
+public class MutableGraphEdge {
     MutableGraphEdge back;
     MutableGraphNode first;
     MutableGraphNode second;
@@ -44,6 +44,7 @@ class MutableGraphEdge {
         first.edges.remove(this.second);
         if (!second.edges.containsKey(first)) {
             this.second = second;
+            back.first = second;
             second.edges.put(first, back);
             first.edges.put(second, this);
         } else {
