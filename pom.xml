@@ -44,5 +44,11 @@
         <module>teavm-html4j</module>
       </modules>
     </profile>
+    <profile>
+      <id>enable-scala</id>
+      <modules>
+        <module>teavm-scala-samples</module>
+      </modules>
+    </profile>
   </profiles>
 </project>
