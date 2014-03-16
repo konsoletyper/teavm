@@ -19,6 +19,9 @@ import org.teavm.classlib.impl.charset.*;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.io.TUnsupportedEncodingException;
 import org.teavm.classlib.java.util.TArrays;
+import org.teavm.classlib.java.util.TComparator;
+import org.teavm.classlib.java.util.THashMap;
+import org.teavm.classlib.java.util.TMap;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.javascript.ni.InjectedBy;
 import org.teavm.javascript.ni.Rename;
@@ -28,8 +31,14 @@ import org.teavm.javascript.ni.Rename;
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public class TString extends TObject implements TSerializable, TComparable<TString>, TCharSequence {
+    public static final TComparator<TString> CASE_INSENSITIVE_ORDER = new TComparator<TString>() {
+        @Override public int compare(TString o1, TString o2) {
+            return o1.compareToIgnoreCase(o2);
+        }
+    };
     private char[] characters;
     private transient int hashCode;
+    private static TMap<TString, TString> pool = new THashMap<>();
 
     public TString() {
         this.characters = new char[0];
@@ -176,6 +185,21 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         for (int i = 0; i < l; ++i) {
             char a = charAt(i);
             char b = anotherString.charAt(i);
+            if (a - b != 0) {
+                return a - b;
+            }
+        }
+        return length() - anotherString.length();
+    }
+
+    public int compareToIgnoreCase(TString anotherString) {
+        if (this == anotherString) {
+            return 0;
+        }
+        int l = TMath.min(length(), anotherString.length());
+        for (int i = 0; i < l; ++i) {
+            char a = TCharacter.toLowerCase(charAt(i));
+            char b = TCharacter.toLowerCase(anotherString.charAt(i));
             if (a - b != 0) {
                 return a - b;
             }
@@ -547,5 +571,33 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
             }
         }
         return new TString(codePoints, 0, codePointCount);
+    }
+
+    public TString toUpperCase() {
+        if (isEmpty()) {
+            return this;
+        }
+        int[] codePoints = new int[characters.length];
+        int codePointCount = 0;
+        for (int i = 0; i < characters.length; ++i) {
+            if (i == characters.length - 1 || !UTF16Helper.isHighSurrogate(characters[i]) ||
+                    !UTF16Helper.isLowSurrogate(characters[i + 1])) {
+                codePoints[codePointCount++] = TCharacter.toUpperCase(characters[i]);
+            } else {
+                codePoints[codePointCount++] = TCharacter.toUpperCase(UTF16Helper.buildCodePoint(
+                        characters[i], characters[i + 1]));
+                ++i;
+            }
+        }
+        return new TString(codePoints, 0, codePointCount);
+    }
+
+    public TString intern() {
+        TString interned = pool.get(this);
+        if (interned == null) {
+            interned = this;
+            pool.put(interned, interned);
+        }
+        return interned;
     }
 }

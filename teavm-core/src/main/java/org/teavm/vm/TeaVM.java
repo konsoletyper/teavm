@@ -174,6 +174,10 @@ public class TeaVM implements TeaVMHost {
         dependencyChecker.linkMethod(new MethodReference("java.lang.String", "getChars",
                 ValueType.INTEGER, ValueType.INTEGER, ValueType.arrayOf(ValueType.CHARACTER), ValueType.INTEGER,
                 ValueType.VOID), DependencyStack.ROOT).use();
+        MethodDependency internDep = dependencyChecker.linkMethod(new MethodReference("java.lang.String", "intern",
+                ValueType.object("java.lang.String")), DependencyStack.ROOT);
+        internDep.getVariable(0).propagate("java.lang.String");
+        internDep.use();
         dependencyChecker.linkMethod(new MethodReference("java.lang.String", "length", ValueType.INTEGER),
                 DependencyStack.ROOT).use();
         dependencyChecker.linkMethod(new MethodReference("java.lang.Object", new MethodDescriptor("clone",

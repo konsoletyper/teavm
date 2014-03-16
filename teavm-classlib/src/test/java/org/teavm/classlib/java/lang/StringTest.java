@@ -290,4 +290,14 @@ public class StringTest {
     public void makesLowerCase() {
         assertEquals("foo bar", "FoO bAr".toLowerCase());
     }
+
+    @Test
+    public void interns() {
+        assertSame(("ab" + "c").intern(), ("a" + "bc").intern());
+    }
+
+    @Test
+    public void internsConstants() {
+        assertSame("abc", ("a" + "bc").intern());
+    }
 }

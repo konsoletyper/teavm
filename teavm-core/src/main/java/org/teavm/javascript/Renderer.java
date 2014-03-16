@@ -34,6 +34,8 @@ import org.teavm.model.*;
  * @author Alexey Andreev
  */
 public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext {
+    private static final MethodReference internRef = new MethodReference("java.lang.String", "intern",
+            ValueType.object("java.lang.String"));
     private static final String variableNames = "abcdefghijkmnopqrstuvwxyz";
     private NamingStrategy naming;
     private SourceWriter writer;
@@ -930,7 +932,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             ValueType type = (ValueType)cst;
             return "$rt_cls(" + typeToClsString(naming, type) + ")";
         } else if (cst instanceof String) {
-            return "$rt_str(\"" + escapeString((String)cst) + "\")";
+            return naming.getFullNameFor(internRef) + "($rt_str(\"" + escapeString((String)cst) + "\"))";
         } else if (cst instanceof Long) {
             long value = (Long)cst;
             if (value == 0) {
