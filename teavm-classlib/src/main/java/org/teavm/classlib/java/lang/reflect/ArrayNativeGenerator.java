@@ -23,6 +23,7 @@ import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.GeneratorContext;
+import org.teavm.model.ClassReader;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -32,12 +33,12 @@ import org.teavm.model.ValueType;
  * @author Alexey Andreev
  */
 public class ArrayNativeGenerator implements Generator, DependencyPlugin {
-    private static final MethodReference valueOfIntMethod = new MethodReference("java.lang.Integer",
-            "valueOf", ValueType.INTEGER, ValueType.object("java.lang.Integer"));
-    private static final MethodReference valueOfCharMethod = new MethodReference("java.lang.Character",
-            "valueOf", ValueType.CHARACTER, ValueType.object("java.lang.Character"));
     private static final String[] primitives = { "Byte", "Short", "Char", "Int", "Long", "Float", "Double",
             "Boolean" };
+    private static final String[] primitiveWrappers = { "Byte", "Short", "Character", "Integer", "Long",
+            "Float", "Double", "Boolean" };
+    private static final ValueType[] primitiveTypes = { ValueType.BYTE, ValueType.SHORT, ValueType.CHARACTER,
+            ValueType.INTEGER, ValueType.LONG, ValueType.FLOAT, ValueType.DOUBLE, ValueType.BOOLEAN };
 
     @Override
     public void methodAchieved(DependencyChecker checker, MethodDependency method) {
@@ -111,22 +112,38 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
         String array = context.getParameterName(1);
         writer.append("var item = " + array + ".data[" + context.getParameterName(2) + "];").softNewLine();
         writer.append("var type = " + array + ".constructor.$meta.item;").softNewLine();
-        writer.append("if (type === $rt_intcls()) {").indent().softNewLine();
-        writer.append("item = ").appendMethodBody(valueOfIntMethod).append("(item);").softNewLine();
-        writer.outdent().append("} else if (type === $rt_charcls()) {").indent().softNewLine();
-        writer.append("item = ").appendMethodBody(valueOfCharMethod).append("(item);").softNewLine();
-        writer.outdent().append("}").softNewLine();
+        for (int i = 0; i < primitives.length; ++i) {
+            String wrapper = "java.lang." + primitiveWrappers[i];
+            MethodReference methodRef = new MethodReference(wrapper, "valueOf",
+                    primitiveTypes[i], ValueType.object(wrapper));
+            ClassReader cls = context.getClassSource().get(methodRef.getClassName());
+            if (cls == null || cls.getMethod(methodRef.getDescriptor()) == null) {
+                continue;
+            }
+            writer.append("if (type === $rt_" + primitives[i].toLowerCase() + "cls()) {").indent().softNewLine();
+            writer.append("return ").appendMethodBody(methodRef).append("(item);").softNewLine();
+            writer.outdent().append("} else ");
+        }
+        writer.append("{").softNewLine();
         writer.append("return item;").softNewLine();
+        writer.outdent().append("}").softNewLine();
     }
 
     private void achieveGet(final DependencyChecker checker, final MethodDependency method) {
         method.getVariable(1).getArrayItem().connect(method.getResult());
         method.getVariable(1).addConsumer(new DependencyConsumer() {
             @Override public void consume(String type) {
-                if (type.equals("[I")) {
-                    checker.linkMethod(valueOfIntMethod, method.getStack()).use();
-                } else if (type.equals("[C")) {
-                    checker.linkMethod(valueOfCharMethod, method.getStack()).use();
+                if (type.startsWith("[")) {
+                    type = type.substring(1);
+                    for (int i = 0; i < primitiveTypes.length; ++i) {
+                        if (primitiveTypes[i].toString().equals(type)) {
+                            String wrapper = "java.lang." + primitiveWrappers[i];
+                            MethodReference methodRef = new MethodReference(wrapper, "valueOf",
+                                    primitiveTypes[i], ValueType.object(wrapper));
+                            checker.linkMethod(methodRef, method.getStack()).use();
+                            method.getResult().propagate("java.lang." + primitiveWrappers[i]);
+                        }
+                    }
                 }
             }
         });

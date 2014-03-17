@@ -62,9 +62,7 @@ public class StringTest {
     public void stringCharactersRead() {
         char[] buffer = new char[4];
         "123".getChars(0, 3, buffer, 0);
-        assertEquals('1', buffer[0]);
-        assertEquals('2', buffer[1]);
-        assertEquals('3', buffer[2]);
+        assertArrayEquals(new char[] { '1', '2', '3', '\0' }, buffer);
     }
 
     @Test
@@ -202,9 +200,7 @@ public class StringTest {
     public void convertedToCharArray() {
         char[] array = "123".toCharArray();
         assertEquals(3, array.length);
-        assertEquals('1', array[0]);
-        assertEquals('2', array[1]);
-        assertEquals('3', array[2]);
+        assertArrayEquals(new char[] { '1', '2', '3' }, array);
     }
 
     @Test
@@ -236,25 +232,14 @@ public class StringTest {
     @Test
     public void getByteArray() throws UnsupportedEncodingException {
         byte[] bytes = "123".getBytes("UTF-8");
-        assertEquals(49, bytes[0]);
-        assertEquals(50, bytes[1]);
-        assertEquals(51, bytes[2]);
+        assertArrayEquals(new byte[] { 49, 50, 51 }, bytes);
         assertEquals(3, bytes.length);
     }
 
     @Test
     public void getUTF8ByteArray() throws UnsupportedEncodingException {
         byte[] bytes = "A\u00BB\u0BBB\uD8BB\uDCBB".getBytes("UTF-8");
-        assertEquals(65, bytes[0]);
-        assertEquals(-62, bytes[1]);
-        assertEquals(-69, bytes[2]);
-        assertEquals(-32, bytes[3]);
-        assertEquals(-82, bytes[4]);
-        assertEquals(-69, bytes[5]);
-        assertEquals(-16, bytes[6]);
-        assertEquals(-66, bytes[7]);
-        assertEquals(-78, bytes[8]);
-        assertEquals(-69, bytes[9]);
+        assertArrayEquals(new byte[] { 65, -62, -69, -32, -82, -69, -16, -66, -78, -69 }, bytes);
     }
 
     @Test

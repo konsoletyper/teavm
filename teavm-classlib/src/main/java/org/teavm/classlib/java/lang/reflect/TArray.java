@@ -46,7 +46,7 @@ public final class TArray extends TObject {
     private static native TObject newInstanceImpl(TClass<?> componentType, int length);
 
     public static TObject get(TObject array, int index) throws TIllegalArgumentException,
-                            TArrayIndexOutOfBoundsException {
+            TArrayIndexOutOfBoundsException {
         if (index < 0 || index >= getLength(array)) {
             throw new TArrayIndexOutOfBoundsException();
         }
