@@ -17,7 +17,7 @@ package org.teavm.model;
 
 /**
  *
- * @author konsoletyper
+ * @author Alexey Andreev
  */
 public class FieldReference {
     private String className;

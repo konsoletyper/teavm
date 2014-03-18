@@ -20,9 +20,12 @@ import org.teavm.dependency.DependencyListener;
 import org.teavm.javascript.ni.Generator;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.MethodReference;
+import org.teavm.vm.TeaVM;
+import org.teavm.vm.TeaVMBuilder;
 
 /**
- *
+ * <p>A host of plugins for TeaVM. Plugins are provided with this interface
+ * in order to give them ability to extend TeaVM.</p>
  * @author Alexey Andreev
  */
 public interface TeaVMHost {
@@ -34,7 +37,15 @@ public interface TeaVMHost {
 
     void add(RendererListener listener);
 
+    /**
+     * Gets class loaded that is used by TeaVM. This class loader is usually specified by
+     * {@link TeaVMBuilder#setClassLoader(ClassLoader)}
+     */
     ClassLoader getClassLoader();
 
+    /**
+     * Gets configuration properties. These properties are usually specified by
+     * {@link TeaVM#setProperties(Properties)}
+     */
     Properties getProperties();
 }

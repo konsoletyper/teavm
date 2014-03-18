@@ -34,6 +34,31 @@ import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
 
 /**
+ * <p>TeaVM itself. This class builds a JavaScript VM that runs a certain code.
+ * Here you can specify entry points into your code (such like {@code main} method).
+ * TeaVM guarantees that all required classes and methods will be provided by
+ * built VM.</p>
+ *
+ * <p>Here is a typical code snippet:</p>
+ *
+ * <pre>{@code
+ *ClassLoader classLoader = ...; // obtain ClassLoader somewhere
+ *ClassHolderSource classSource = new ClasspathClassHolderSource(classLoader);
+ *TeaVM vm = new TeaVMBuilder()
+ *        .setClassLoader(classLoader)
+ *        .setClassSource(classSource)
+ *        .build();
+ *vm.setMinifying(false); // optionally disable obfuscation
+ *vm.installPlugins();    // install all default plugins
+ *                        // that are found in a classpath
+ *vm.addEntryPoint("main", new MethodReference(
+ *        "fully.qualified.ClassName",  "main",
+ *         ValueType.array(ValueType.object("java.lang.String")),
+ *         ValueType.VOID));
+ *StringBuilder sb = new StringBuilder();
+ *vm.build(sb, null);
+ *vm.checkForMissingItems();
+ *}</pre>
  *
  * @author Alexey Andreev
  */
@@ -84,10 +109,20 @@ public class TeaVM implements TeaVMHost {
         return classLoader;
     }
 
+    /**
+     * Reports whether this TeaVM instance uses obfuscation when generating the JavaScript code.
+     *
+     * @see #setMinifying(boolean)
+     */
     public boolean isMinifying() {
         return minifying;
     }
 
+    /**
+     * Specifies whether this TeaVM instance uses obfuscation when generating the JavaScript code.
+     *
+     * @see #isMinifying()
+     */
     public void setMinifying(boolean minifying) {
         this.minifying = minifying;
     }
@@ -100,6 +135,10 @@ public class TeaVM implements TeaVMHost {
         this.bytecodeLogging = bytecodeLogging;
     }
 
+    /**
+     * Specifies configuration properties for TeaVM and its plugins. You should call this method before
+     * installing any plugins or interceptors.
+     */
     public void setProperties(Properties properties) {
         this.properties.clear();
         if (properties != null) {
@@ -112,6 +151,19 @@ public class TeaVM implements TeaVMHost {
         return new Properties(properties);
     }
 
+    /**
+     * <p>Adds an entry point. TeaVM guarantees, that all methods that are required by the entry point
+     * will be available at run-time in browser. Also you need to specify for each parameter of entry point
+     * which actual types will be passed here by calling {@link TeaVMEntryPoint#withValue(int, String)}.
+     * It is highly recommended to read explanation on {@link TeaVMEntryPoint} class documentation.</p>
+     *
+     * <p>You should call this method after installing all plugins and interceptors, but before
+     * doing the actual build.</p>
+     *
+     * @param name the name under which this entry point will be available for JavaScript code.
+     * @param ref a full reference to the method which is an entry point.
+     * @return an entry point that you can additionally adjust.
+     */
     public TeaVMEntryPoint entryPoint(String name, MethodReference ref) {
         if (entryPoints.containsKey(name)) {
             throw new IllegalArgumentException("Entry point with public name `" + name + "' already defined " +
@@ -144,22 +196,53 @@ public class TeaVM implements TeaVMHost {
         dependencyChecker.initClass(className, DependencyStack.ROOT);
     }
 
+    /**
+     * Gets a {@link ClassHolderSource} which is used by this TeaVM instance. It is exactly what was
+     * passed to {@link TeaVMBuilder#setClassSource(ClassHolderSource)}.
+     */
     public ClassHolderSource getClassSource() {
         return classSource;
     }
 
+    /**
+     * <p>After building indicates whether build has failed due to some missing items (classes, methods and fields)
+     * in the classpath. This can happen when you forgot some items in class path or when your code uses unimplemented
+     * Java class library methods. The behavior of this method before building is not specified.</p>
+     */
     public boolean hasMissingItems() {
         return dependencyChecker.hasMissingItems();
     }
 
+    /**
+     * <p>After building allows to build report on all items (classes, methods, fields) that are missing.
+     * This can happen when you forgot some items in class path or when your code uses unimplemented
+     * Java class library methods. The behavior of this method before building is not specified.</p>
+     */
     public void showMissingItems(Appendable target) throws IOException {
         dependencyChecker.showMissingItems(target);
     }
 
+    /**
+     * <p>After building checks whether the build has failed due to some missing items (classes, methods and fields).
+     * If it has failed, throws exception, containing report on all missing items.
+     * This can happen when you forgot some items in class path or when your code uses unimplemented
+     * Java class library methods. The behavior of this method before building is not specified.</p>
+     */
     public void checkForMissingItems() {
         dependencyChecker.checkForMissingItems();
     }
 
+    /**
+     * <p>Does actual build. Call this method after TeaVM is fully configured and all entry points
+     * are specified. This method may fail if there are items (classes, methods and fields)
+     * that are required by entry points, but weren't found in classpath. In this case no
+     * actual generation happens and no exceptions thrown, but you can further call
+     * {@link #checkForMissingItems()} or {@link #hasMissingItems()} to learn the build state.</p>
+     *
+     * @param writer where to generate JavaScript. Should not be null.
+     * @param target where to generate additional resources. Can be null, but if there are
+     * plugins or inteceptors that generate additional resources, the build process will fail.
+     */
     public void build(Appendable writer, BuildTarget target) throws RenderingException {
         AliasProvider aliasProvider = minifying ? new MinifyingAliasProvider() : new DefaultAliasProvider();
         DefaultNamingStrategy naming = new DefaultNamingStrategy(aliasProvider, classSource);
@@ -388,6 +471,12 @@ public class TeaVM implements TeaVMHost {
         }
     }
 
+    /**
+     * <p>Finds and install all plugins in the current class path. The standard {@link ServiceLoader}
+     * approach is used to find plugins. So this method scans all
+     * <code>META-INF/services/org.teavm.vm.spi.TeaVMPlugin</code> resources and
+     * obtains all implementation classes that are enumerated there.</p>
+     */
     public void installPlugins() {
         for (TeaVMPlugin plugin : ServiceLoader.load(TeaVMPlugin.class, classLoader)) {
             plugin.install(this);

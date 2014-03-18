@@ -16,8 +16,15 @@
 package org.teavm.model;
 
 /**
+ * <p>Specifies a fully qualified name of a method, including its name, class name, parameter types
+ * and return value type. This class overloads <code>equals</code> and <code>hashCode</code>
+ * so that any two references to one method are considered equal.</p>
  *
- * @author konsoletyper
+ * <p>Though in Java language it is enough to have only parameter types to uniquely identify
+ * a method, JVM uses return value as well. Java generates <b>bridge</b> methods to make
+ * adjust the JVM's behavior.</p>
+ *
+ * @author Alexey Andreev
  */
 public class MethodReference {
     private String className;
@@ -28,6 +35,22 @@ public class MethodReference {
         this.descriptor = descriptor;
     }
 
+    /**
+     * <p>Creates a new reference to a method.</p>
+     *
+     * <p>For example, here is how you should call this constructor to create a reference to
+     * the <code>Integer.valueOf(int)</code> method:
+     *
+     * <pre>
+     * new MethodReference("java.lang.Integer", "valueOf",
+     *         ValueType.INT, ValueType.object("java.lang.Integer"))
+     * </pre>
+     *
+     * @param className the name of the class that owns the method.
+     * @param name the name of the method.
+     * @param signature descriptor of a method, as described in VM spec. The last element is
+     * a type of a returning value, and all the remaining elements are types of arguments.
+     */
     public MethodReference(String className, String name, ValueType... signature) {
         this(className, new MethodDescriptor(name, signature));
     }

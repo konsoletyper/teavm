@@ -15,10 +15,56 @@
  */
 package org.teavm.vm;
 
+import java.util.HashMap;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.model.MethodReference;
 
 /**
+ * <p>An entry point to a generated VM that is used to enter the VM from a JavaScript code.
+ * The entry point is added by {@link TeaVM#entryPoint(String, MethodReference)}.
+ * Use {@link #withValue(int, String)} to specify actual types that are passed to the entry point.</p>
+ *
+ * <p>In the simple case of static method without arguments you won't deal with this class. But
+ * sometimes you have to. Consider the following example:</p>
+ *
+ * <pre>{@code
+ *static void entryPoint(Map<Object, Object> map) {
+ *    for (Map.Entry<Object, Object> entry : map.entrySet()) {
+ *        System.out.println(entry.getKey() + " => " + entry.getValue());
+ *    }
+ *}}</pre>
+ *
+ * <p>Now you want to call this method from JavaScript, and you pass a {@link HashMap} to this method.
+ * Let's see how you achieve it:</p>
+ *
+ * <pre>{@code
+ *vm.exportType("JavaHashMap", "java.util.HashMap");
+ *vm.entryPoint("initJavaHashMap", new MethodReference("java.util.HashMap",
+ *        "<init>", ValueType.VOID));
+ *vm.entryPoint("putValueIntoJavaMap", new MethodReference(
+ *        "java.util.Map", "put",
+ *        ValueType.object("java.lang.Object"), ValueType.object("java.lang.Object"),
+ *        ValueType.object("java.lang.Object")))
+ *        .withValue(0, "java.util.HashMap")
+ *        .withValue(1, "java.lang.String")
+ *        .withValue(2, "java.lang.String");
+ *vm.entryPoint("entryPoint", new MethodReference(
+ *        "fully.qualified.ClassName", "entryPoint",
+ *        ValueType.object("java.util.Map"), ValueType.VOID))
+ *        .withValue(1, "java.util.HashMap")
+ *}</pre>
+ *
+ * <p>And in JavaScript you would do the following:</p>
+ *
+ * <pre>{@code
+ *var map = new JavaHashMap();
+ *initJavaHashMap(map);
+ *putValueIntoJavaMap(map, $rt_str("foo"), $rt_str("bar"));
+ *entryPoint(map);
+ *}</pre>
+ *
+ * <p>If you didn't call <code>.withValue(1, "java.util.HashMap")</code>, TeaVM could not know,
+ * what implementation of <code>#entrySet</code> method to include.</p>
  *
  * @author Alexey Andreev
  */
