@@ -28,13 +28,13 @@
     <dependency>
       <groupId>org.teavm</groupId>
       <artifactId>teavm-core</artifactId>
-      <version>0.0.1-SNAPSHOT</version>
+      <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.teavm</groupId>
       <artifactId>teavm-jso</artifactId>
-      <version>0.0.1-SNAPSHOT</version>
+      <version>${project.version}</version>
     </dependency>
   </dependencies>
 </project>
