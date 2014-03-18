@@ -15,10 +15,19 @@
  */
 package org.teavm.dom.core;
 
+import org.teavm.jso.JSProperty;
+
 /**
  *
  * @author Alexey Andreev
  */
 public interface ProcessingInstruction extends Node {
+    @JSProperty
+    String getData();
 
+    @JSProperty
+    void setData(String data);
+
+    @JSProperty
+    String getTarget();
 }

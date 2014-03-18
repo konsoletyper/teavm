@@ -15,10 +15,28 @@
  */
 package org.teavm.dom.core;
 
+import org.teavm.jso.JSProperty;
+
 /**
  *
  * @author Alexey Andreev
  */
 public interface DocumentType extends Node {
+    @JSProperty
+    String getName();
 
+    @JSProperty
+    NamedNodeMap<Entity> getEntities();
+
+    @JSProperty
+    NamedNodeMap<Notation> getNotations();
+
+    @JSProperty
+    String getPublicId();
+
+    @JSProperty
+    String getSystemId();
+
+    @JSProperty
+    String getInternalSubset();
 }

@@ -15,16 +15,16 @@
  */
 package org.teavm.dom.core;
 
-import org.teavm.jso.JSObject;
+import org.teavm.jso.JSProperty;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface DOMImplementation extends JSObject {
-    boolean hasFeature(String feature, String version);
+public interface Notation extends Node {
+    @JSProperty
+    String getPublicId();
 
-    DocumentType createDocumentType(String qualifiedName, String publicId, String systemId);
-
-    Document createDocument(String namespaceURI, String qualifiedName, DocumentType doctype);
+    @JSProperty
+    String getSystemId();
 }

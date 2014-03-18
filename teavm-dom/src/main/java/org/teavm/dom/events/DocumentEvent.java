@@ -13,18 +13,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.dom.core;
-
-import org.teavm.jso.JSObject;
+package org.teavm.dom.events;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface DOMImplementation extends JSObject {
-    boolean hasFeature(String feature, String version);
-
-    DocumentType createDocumentType(String qualifiedName, String publicId, String systemId);
-
-    Document createDocument(String namespaceURI, String qualifiedName, DocumentType doctype);
+public interface DocumentEvent {
+    Event createEvent(String eventType);
 }
