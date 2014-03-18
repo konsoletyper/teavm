@@ -10,6 +10,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <html4j.version>0.7.5</html4j.version>
   </properties>
 
   <modules>
@@ -19,7 +20,64 @@
     <module>teavm-samples</module>
     <module>teavm-dom</module>
     <module>teavm-jso</module>
+    <module>teavm-html4j</module>
   </modules>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>4.11</version>
+      </dependency>
+      <dependency>
+        <groupId>org.netbeans.html</groupId>
+        <artifactId>net.java.html.boot</artifactId>
+        <version>${html4j.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>org.ow2.asm</groupId>
+            <artifactId>asm</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>org.netbeans.html</groupId>
+        <artifactId>net.java.html.json.tck</artifactId>
+        <version>${html4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.netbeans.html</groupId>
+        <artifactId>ko4j</artifactId>
+        <version>${html4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+        <version>2.4</version>
+      </dependency>
+      <dependency>
+        <groupId>org.ow2.asm</groupId>
+        <artifactId>asm-debug-all</artifactId>
+        <version>4.2</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-plugin-api</artifactId>
+        <version>3.0</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven.plugin-tools</groupId>
+        <artifactId>maven-plugin-annotations</artifactId>
+        <version>3.0</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-core</artifactId>
+        <version>3.0</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <build>
     <pluginManagement>
@@ -38,12 +96,6 @@
   </build>
 
   <profiles>
-    <profile>
-      <id>enable-html4j-support</id>
-      <modules>
-        <module>teavm-html4j</module>
-      </modules>
-    </profile>
     <profile>
       <id>enable-scala</id>
       <modules>

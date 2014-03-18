@@ -27,12 +27,12 @@
     <dependency>
       <groupId>org.teavm</groupId>
       <artifactId>teavm-core</artifactId>
-      <version>0.0.1-SNAPSHOT</version>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.teavm</groupId>
       <artifactId>teavm-dom</artifactId>
-      <version>0.0.1-SNAPSHOT</version>
+      <version>${project.version}</version>
     </dependency>
   </dependencies>
 
@@ -46,7 +46,7 @@
           <dependency>
             <groupId>org.teavm</groupId>
             <artifactId>teavm-classlib</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>${project.version}</version>
           </dependency>
         </dependencies>
         <executions>

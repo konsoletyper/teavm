@@ -27,17 +27,16 @@
     <dependency>
       <groupId>org.teavm</groupId>
       <artifactId>teavm-core</artifactId>
-      <version>0.0.1-SNAPSHOT</version>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.teavm</groupId>
       <artifactId>teavm-classlib</artifactId>
-      <version>0.0.1-SNAPSHOT</version>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.netbeans.html</groupId>
       <artifactId>net.java.html.boot</artifactId>
-      <version>0.8-SNAPSHOT</version>
       <exclusions>
         <exclusion>
           <groupId>org.ow2.asm</groupId>
@@ -48,19 +47,16 @@
     <dependency>
       <groupId>org.netbeans.html</groupId>
       <artifactId>net.java.html.json.tck</artifactId>
-      <version>0.8-SNAPSHOT</version>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.netbeans.html</groupId>
       <artifactId>ko4j</artifactId>
-      <version>0.8-SNAPSHOT</version>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.11</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -70,7 +66,7 @@
       <plugin>
         <groupId>org.teavm</groupId>
         <artifactId>teavm-maven-plugin</artifactId>
-        <version>0.0.1-SNAPSHOT</version>
+        <version>${project.version}</version>
         <executions>
           <execution>
             <id>generate-javascript-tests</id>
