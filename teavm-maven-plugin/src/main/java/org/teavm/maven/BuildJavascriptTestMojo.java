@@ -142,6 +142,11 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
+        if (System.getProperty("maven.test.skip", "false").equals("true") ||
+                System.getProperty("skipTests") != null) {
+            getLog().info("Tests build skipped as specified by system property");
+            return;
+        }
         Runnable finalizer = null;
         try {
             final ClassLoader classLoader = prepareClassLoader();
