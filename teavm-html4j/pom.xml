@@ -23,6 +23,9 @@
   </parent>
   <artifactId>teavm-html4j</artifactId>
 
+  <name>TeaVM html4j support</name>
+  <description>A set of interceptors and hacks for TeaVM to support html4j</description>
+
   <dependencies>
     <dependency>
       <groupId>org.teavm</groupId>
@@ -98,6 +101,14 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
       </plugin>
     </plugins>
     <pluginManagement>

@@ -24,6 +24,9 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
   </parent>
   <artifactId>teavm-jso</artifactId>
 
+  <name>TeaVM JavaScript objects</name>
+  <description>A library that adds convenient interface for interaction between TeaVM and JavaScript code</description>
+
   <dependencies>
     <dependency>
       <groupId>org.teavm</groupId>
@@ -32,4 +35,17 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
       <optional>true</optional>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
 </project>

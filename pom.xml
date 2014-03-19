@@ -1,3 +1,18 @@
+<!--
+    Copyright 2014 Alexey Andreev.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+         http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
@@ -8,16 +23,56 @@
   <version>0.2-SNAPSHOT</version>
   <packaging>pom</packaging>
 
+  <name>TeaVM</name>
+  <description>TeaVM aggregate project</description>
+  <url>http://teavm.org</url>
+
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+      <comments>A business-friendly OSS license</comments>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <id>konsoletyper</id>
+      <name>Alexey Andreev</name>
+      <email>konsoletyper@gmail.com</email>
+      <timezone>+4</timezone>
+    </developer>
+  </developers>
+
+  <scm>
+    <url>https://github.com/konsoletyper/teavm</url>
+    <connection>scm:git:git@github.com:konsoletyper/teavm.git</connection>
+  </scm>
+
+  <distributionManagement>
+    <snapshotRepository>
+      <id>sonatype-nexus-snapshots</id>
+      <name>Sonatype Nexus Snapshots</name>
+      <url>${sonatypeOssDistMgmtSnapshotsUrl}</url>
+    </snapshotRepository>
+    <repository>
+      <id>sonatype-nexus-staging</id>
+      <name>Nexus Release Repository</name>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
+  </distributionManagement>
+
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <html4j.version>0.7.5</html4j.version>
+    <sonatypeOssDistMgmtSnapshotsUrl>https://oss.sonatype.org/content/repositories/snapshots/</sonatypeOssDistMgmtSnapshotsUrl>
   </properties>
 
   <modules>
     <module>teavm-core</module>
     <module>teavm-classlib</module>
     <module>teavm-maven-plugin</module>
-    <module>teavm-samples</module>
     <module>teavm-dom</module>
     <module>teavm-jso</module>
     <module>teavm-html4j</module>
@@ -91,15 +146,73 @@
             <target>1.7</target>
           </configuration>
         </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>2.9.1</version>
+          <executions>
+            <execution>
+              <id>build-javadoc</id>
+              <goals>
+                <goal>jar</goal>
+              </goals>
+              <phase>post-integration-test</phase>
+            </execution>
+          </executions>
+          <configuration>
+            <show>protected</show>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-source-plugin</artifactId>
+          <version>2.2.1</version>
+          <executions>
+            <execution>
+              <id>attach-sources</id>
+              <phase>post-integration-test</phase>
+              <goals>
+                <goal>jar-no-fork</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
       </plugins>
     </pluginManagement>
   </build>
 
   <profiles>
     <profile>
+      <id>sign-artifacts</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.4</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
       <id>enable-scala</id>
       <modules>
         <module>teavm-scala-samples</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>enable-samples</id>
+      <modules>
+        <module>teavm-samples</module>
       </modules>
     </profile>
   </profiles>

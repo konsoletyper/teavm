@@ -40,6 +40,9 @@
     </dependency>
   </dependencies>
 
+  <name>TeaVM core</name>
+  <description>TeaVM compiler and SPI</description>
+
   <build>
     <plugins>
       <plugin>
@@ -66,34 +69,11 @@
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-javadoc-plugin</artifactId>
-        <version>2.9.1</version>
-        <executions>
-          <execution>
-            <id>build-javadoc</id>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-            <phase>verify</phase>
-          </execution>
-        </executions>
-        <configuration>
-          <show>protected</show>
-        </configuration>
+        <artifactId>maven-source-plugin</artifactId>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-source-plugin</artifactId>
-        <version>2.2.1</version>
-        <executions>
-          <execution>
-            <id>attach-sources</id>
-            <phase>verify</phase>
-            <goals>
-              <goal>jar-no-fork</goal>
-            </goals>
-          </execution>
-        </executions>
+        <artifactId>maven-javadoc-plugin</artifactId>
       </plugin>
     </plugins>
   </build>

@@ -24,6 +24,9 @@
   </parent>
   <artifactId>teavm-dom</artifactId>
 
+  <name>TeaVM DOM</name>
+  <description>TeaVM browser interface declaration</description>
+
   <dependencies>
     <dependency>
       <groupId>org.teavm</groupId>
@@ -37,4 +40,17 @@
       <version>${project.version}</version>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
 </project>

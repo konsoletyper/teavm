@@ -25,6 +25,9 @@
   <artifactId>teavm-maven-plugin</artifactId>
   <packaging>maven-plugin</packaging>
 
+  <name>TeaVM maven plugin</name>
+  <description>A set of mojos that allow to include TeaVM compiler into maven build process</description>
+
   <dependencies>
     <dependency>
       <groupId>org.apache.maven</groupId>
@@ -72,6 +75,14 @@
             </goals>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
       </plugin>
     </plugins>
   </build>
