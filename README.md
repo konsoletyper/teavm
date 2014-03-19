@@ -40,12 +40,12 @@ Second, you include the following plugin in your `pom.xml` build section:
     <plugin>
       <groupId>org.teavm</groupId>
       <artifactId>teavm-maven-plugin</artifactId>
-      <version>0.0.1-SNAPSHOT</version>
+      <version>0.1</version>
       <dependencies>
         <dependency>
           <groupId>org.teavm</groupId>
           <artifactId>teavm-classlib</artifactId>
-          <version>0.0.1-SNAPSHOT</version>
+          <version>0.1</version>
         </dependency>
       </dependencies>
       <executions>
