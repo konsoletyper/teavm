@@ -579,4 +579,53 @@ public class TCollections extends TObject {
         }
         return list;
     }
+
+    public static <E> TCollection<E> checkedCollection(TCollection<E> c, TClass<E> type) {
+        return new TCheckedCollection<>(c, type);
+    }
+
+    public static <E> TSet<E> checkedSet(TSet<E> s, TClass<E> type) {
+        return new TCheckedSet<>(s, type);
+    }
+
+    public static <E> TList<E> checkedList(TList<E> list, TClass<E> type) {
+        return new TCheckedList<>(list, type);
+    }
+
+    public static <K, V> TMap<K, V> checkedMap(TMap<K, V> m, TClass<K> keyType, TClass<V> valueType) {
+        return new TCheckedMap<>(m, keyType, valueType);
+    }
+
+    public static int frequency(TCollection<?> c, Object o) {
+        int freq = 0;
+        for (TIterator<?> iter = c.iterator(); iter.hasNext();) {
+            if (TObjects.equals(iter.next(), o)) {
+                ++freq;
+            }
+        }
+        return freq;
+    }
+
+    public static boolean disjoint(TCollection<?> c1, TCollection<?> c2) {
+        if (c1.size() > c2.size()) {
+            TCollection<?> tmp = c1;
+            c1 = c2;
+            c2 = tmp;
+        }
+        for (TIterator<?> iter = c1.iterator(); iter.hasNext();) {
+            if (c2.contains(iter.next())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @SafeVarargs
+    public static <T> boolean addAll(TCollection<? super T> c, T... elements) {
+        return c.addAll(TArrays.asList(elements));
+    }
+
+    public static <E> TSet<E> newSetFromMap(TMap<E, TBoolean> map) {
+        return new TSetFromMap<>(map);
+    }
 }
