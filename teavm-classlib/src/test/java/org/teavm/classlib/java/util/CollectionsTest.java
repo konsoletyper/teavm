@@ -94,4 +94,27 @@ public class CollectionsTest {
         Collections.rotate(list, 2);
         assertArrayEquals(new Integer[] { 5, 6, 2, 5, 7, 3 }, list.toArray(new Integer[0]));
     }
+
+    @Test
+    public void replaces() {
+        List<Integer> list = new ArrayList<>(Arrays.asList(2, 5, 7, 3, 5, 6));
+        assertTrue(Collections.replaceAll(list, 5, 9));
+        assertArrayEquals(new Integer[] { 2, 9, 7, 3, 9, 6 }, list.toArray(new Integer[0]));
+    }
+
+    @Test
+    public void findIndex() {
+        List<Integer> list = new ArrayList<>(Arrays.asList(2, 5, 6, 3, 5, 6));
+        assertEquals(1, Collections.indexOfSubList(list, Arrays.asList(5, 6)));
+        assertEquals(-1, Collections.indexOfSubList(list, Arrays.asList(5, 1)));
+        assertEquals(0, Collections.indexOfSubList(list, list));
+    }
+
+    @Test
+    public void findsLastIndex() {
+        List<Integer> list = new ArrayList<>(Arrays.asList(2, 5, 6, 3, 5, 6));
+        assertEquals(4, Collections.lastIndexOfSubList(list, Arrays.asList(5, 6)));
+        assertEquals(-1, Collections.lastIndexOfSubList(list, Arrays.asList(5, 1)));
+        assertEquals(0, Collections.lastIndexOfSubList(list, list));
+    }
 }

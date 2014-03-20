@@ -17,12 +17,22 @@ package org.teavm.classlib.java.util;
 
 import java.util.RandomAccess;
 import org.teavm.classlib.java.lang.*;
+import org.teavm.classlib.java.util.TMap.Entry;
 
 /**
  *
  * @author Alexey Andreev
  */
 public class TCollections extends TObject {
+    @SuppressWarnings("rawtypes")
+    public static final TSet EMPTY_SET = emptySet();
+
+    @SuppressWarnings("rawtypes")
+    public static final TMap EMPTY_MAP = emptyMap();
+
+    @SuppressWarnings("rawtypes")
+    public static final TList EMPTY_LIST = emptyList();
+
     public static <T> TIterator<T> emptyIterator() {
         return new TIterator<T>() {
             @Override public boolean hasNext() {
@@ -80,6 +90,36 @@ public class TCollections extends TObject {
         };
     }
 
+    public static <T> TEnumeration<T> emptyEnumeration() {
+        return new TEnumeration<T>() {
+            @Override public boolean hasMoreElements() {
+                return false;
+            }
+            @Override public T nextElement() {
+                throw new TNoSuchElementException();
+            }
+        };
+    }
+
+    public static final <T> TSet<T> emptySet() {
+        return new TAbstractSet<T>() {
+            @Override public int size() {
+                return 0;
+            }
+            @Override public TIterator<T> iterator() {
+                return emptyIterator();
+            }
+        };
+    }
+
+    public static final <K, V> TMap<K, V> emptyMap() {
+        return new TAbstractMap<K, V>() {
+            @Override public TSet<Entry<K, V>> entrySet() {
+                return emptySet();
+            }
+        };
+    }
+
     public static <T> TList<T> singletonList(final T o) {
         return new TAbstractList<T>() {
             @Override public T get(int index) {
@@ -119,6 +159,15 @@ public class TCollections extends TObject {
             }
             @Override public boolean contains(Object o2) {
                 return TObjects.equals(o, o2);
+            }
+        };
+    }
+
+    public static <K, V> TMap<K, V> singletonMap(final K key, final V value) {
+        final TSet<Entry<K, V>> entries = singleton((Entry<K, V>)new TAbstractMap.SimpleImmutableEntry<>(key, value));
+        return new TAbstractMap<K, V>() {
+            @Override public TSet<Entry<K, V>> entrySet() {
+                return entries;
             }
         };
     }
@@ -173,8 +222,16 @@ public class TCollections extends TObject {
         sort(list, naturalOrder);
     }
 
+    @SuppressWarnings("unchecked")
     public static void reverse(TList<?> list) {
-        reverse(list, 0, list.size());
+        if (list instanceof RandomAccess) {
+            reverse(list, 0, list.size());
+        } else {
+            TList<Object> randomAccess = new TArrayList<>(list);
+            reverse(list, 0, list.size());
+            list.clear();
+            ((TList<Object>)list).addAll(randomAccess);
+        }
     }
 
     public static <T> int binarySearch(TList<? extends TComparable<? super T>> list, T key) {
@@ -308,7 +365,19 @@ public class TCollections extends TObject {
         return max;
     }
 
+    @SuppressWarnings("unchecked")
     public static void rotate(TList<?> list, int distance) {
+        if (list instanceof TRandomAccess) {
+            rotateRandomAccess(list, distance);
+        } else {
+            TList<Object> randomAccess = new TArrayList<>(list);
+            rotateRandomAccess(randomAccess, distance);
+            list.clear();
+            ((TList<Object>)list).addAll(randomAccess);
+        }
+    }
+
+    private static void rotateRandomAccess(TList<?> list, int distance) {
         distance %= list.size();
         if (distance < 0) {
             distance += list.size();
@@ -331,5 +400,183 @@ public class TCollections extends TObject {
             safeList.set(i, safeList.get(j));
             safeList.set(j, tmp);
         }
+    }
+
+    public static <T> boolean replaceAll(TList<T> list, T oldVal, T newVal) {
+        TListIterator<T> iter = list.listIterator();
+        boolean hasValue = false;
+        while (iter.hasNext()) {
+            if (TObjects.equals(iter.next(), oldVal)) {
+                iter.set(newVal);
+                hasValue = true;
+            }
+        }
+        return hasValue;
+    }
+
+    public static int indexOfSubList(TList<?> source, TList<?> target) {
+        int sz = source.size() - target.size();
+        if (sz < 0) {
+            return -1;
+        }
+        if (source instanceof RandomAccess) {
+            source = new TArrayList<>(source);
+        }
+        outer: for (int i = 0; i <= sz; ++i) {
+            int j = i;
+            for (TIterator<?> iter = target.iterator(); iter.hasNext();) {
+                if (!iter.next().equals(source.get(j++))) {
+                    continue outer;
+                }
+            }
+            return i;
+        }
+        return -1;
+    }
+
+    public static int lastIndexOfSubList(TList<?> source, TList<?> target) {
+        int start = source.size() - target.size();
+        if (start < 0) {
+            return -1;
+        }
+        if (source instanceof RandomAccess) {
+            source = new TArrayList<>(source);
+        }
+        outer: for (int i = start; i >= 0; --i) {
+            int j = i;
+            for (TIterator<?> iter = target.iterator(); iter.hasNext();) {
+                if (!iter.next().equals(source.get(j++))) {
+                    continue outer;
+                }
+            }
+            return i;
+        }
+        return -1;
+    }
+
+    public static <T> TCollection<T> unmodifiableCollection(final TCollection<? extends T> c) {
+        return new TAbstractCollection<T>() {
+            @Override public TIterator<T> iterator() {
+                return unmodifiableIterator(c.iterator());
+            }
+            @Override public int size() {
+                return c.size();
+            }
+        };
+    }
+
+    private static <T> TIterator<T> unmodifiableIterator(final TIterator<? extends T> c) {
+        return new TIterator<T>() {
+            @Override public boolean hasNext() {
+                return c.hasNext();
+            }
+            @Override public T next() {
+                return c.next();
+            }
+            @Override public void remove() {
+                throw new TUnsupportedOperationException();
+            }
+        };
+    }
+
+    public static <T> TSet<T> unmodifiableSet(final TSet<? extends T> s) {
+        return new TAbstractSet<T>() {
+            @Override public TIterator<T> iterator() {
+                return unmodifiableIterator(s.iterator());
+            }
+            @Override public int size() {
+                return s.size();
+            }
+        };
+    }
+
+    public static <K, V> TMap<K, V> unmodifiableMap(final TMap<? extends K, ? extends V> m) {
+        return new TAbstractMap<K, V>() {
+            @Override public TSet<Entry<K, V>> entrySet() {
+                return unmodifiableMapEntrySet(m.entrySet());
+            }
+        };
+    }
+
+    private static <K, V> TSet<Entry<K, V>> unmodifiableMapEntrySet(
+            final TSet<? extends Entry<? extends K, ? extends V>> c) {
+        return new TAbstractSet<Entry<K, V>>() {
+            @Override public int size() {
+                return c.size();
+            }
+            @Override public TIterator<Entry<K, V>> iterator() {
+                return unmodifiableMapEntryIterator(c.iterator());
+            }
+        };
+    }
+
+    private static <K, V> TIterator<Entry<K, V>> unmodifiableMapEntryIterator(
+            final TIterator<? extends Entry<? extends K, ? extends V>> c) {
+        return new TIterator<Entry<K, V>>() {
+            @Override public boolean hasNext() {
+                return c.hasNext();
+            }
+            @Override public Entry<K, V> next() {
+                return new TAbstractMap.SimpleImmutableEntry<>(c.next());
+            }
+            @Override public void remove() {
+                throw new TUnsupportedOperationException();
+            }
+        };
+    }
+
+    public static <T> TCollection<T> synchronizedCollection(TCollection<T> c) {
+        return c;
+    }
+
+    public static <T> TSet<T> synchronizedSet(TSet<T> s) {
+        return s;
+    }
+
+    public static <T> TList<T> synchronizedList(TList<T> list) {
+        return list;
+    }
+
+    public static <K, V> TMap<K, V> synchronizedMap(TMap<K, V> m) {
+        return m;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> TComparator<T> reverseOrder() {
+        return (TComparator<T>)reverseOrder;
+    }
+
+    private static TComparator<Object> reverseOrder = new TComparator<Object>() {
+        @SuppressWarnings("unchecked") @Override public int compare(Object o1, Object o2) {
+            return o1 != null ? -((TComparable<Object>)o1).compareTo(o2) : ((TComparable<Object>)o2).compareTo(o1);
+        }
+    };
+
+    public static <T> TComparator<T> reverseOrder(final TComparator<T> cmp) {
+        return new TComparator<T>() {
+            @Override public int compare(T o1, T o2) {
+                return -cmp.compare(o1, o2);
+            }
+        };
+    }
+
+    public static <T> TEnumeration<T> enumeration(TCollection<T> c) {
+        final TIterator<T> iter = c.iterator();
+        return new TEnumeration<T>() {
+            @Override public boolean hasMoreElements() {
+                return iter.hasNext();
+            }
+            @Override public T nextElement() {
+                return iter.next();
+            }
+        };
+    }
+
+    public static <T> TArrayList<T> list(TEnumeration<T> e) {
+        TArrayList<T> list = new TArrayList<>();
+        while (e.hasMoreElements()) {
+            list.add(e.nextElement());
+        }
+        return list;
     }
 }

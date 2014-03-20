@@ -15,13 +15,11 @@
  */
 package org.teavm.classlib.java.util;
 
-import org.teavm.classlib.java.lang.TObject;
-
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface TEnumeration<E extends TObject> {
+public interface TEnumeration<E> {
     boolean hasMoreElements();
 
     E nextElement();
