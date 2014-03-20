@@ -15,7 +15,7 @@
  */
 package org.teavm.classlib.java.util;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -27,18 +27,71 @@ import org.junit.Test;
  * @author Alexey Andreev
  */
 public class CollectionsTest {
-    private List<Integer> array;
+    @Test
+    public void listSorted() {
+        List<Integer> list = new ArrayList<>();
+        list.addAll(Arrays.asList(2, 5, 7, 3, 5, 6));
+        Collections.sort(list);
+        assertEquals(Integer.valueOf(2), list.get(0));
+        assertEquals(Integer.valueOf(3), list.get(1));
+        assertEquals(Integer.valueOf(5), list.get(2));
+        assertEquals(Integer.valueOf(5), list.get(3));
+        assertEquals(Integer.valueOf(6), list.get(4));
+        assertEquals(Integer.valueOf(7), list.get(5));
+    }
 
     @Test
-    public void arraySorted() {
-        array = new ArrayList<>();
-        array.addAll(Arrays.asList(2, 5, 7, 3, 5, 6));
-        Collections.sort(array);
-        assertEquals(Integer.valueOf(2), array.get(0));
-        assertEquals(Integer.valueOf(3), array.get(1));
-        assertEquals(Integer.valueOf(5), array.get(2));
-        assertEquals(Integer.valueOf(5), array.get(3));
-        assertEquals(Integer.valueOf(6), array.get(4));
-        assertEquals(Integer.valueOf(7), array.get(5));
+    public void binarySearchWorks() {
+        List<Integer> list = new ArrayList<>(Arrays.asList(2, 4, 6, 8, 10, 12, 14, 16));
+        assertEquals(3, Collections.binarySearch(list, 8));
+        assertEquals(7, Collections.binarySearch(list, 16));
+        assertEquals(0, Collections.binarySearch(list, 2));
+        assertEquals(-1, Collections.binarySearch(list, 1));
+        assertEquals(-2, Collections.binarySearch(list, 3));
+        assertEquals(-3, Collections.binarySearch(list, 5));
+        assertEquals(-8, Collections.binarySearch(list, 15));
+        assertEquals(-9, Collections.binarySearch(list, 17));
+    }
+
+    @Test
+    public void findsMinimum() {
+        List<Integer> list = Arrays.asList(6, 5, 7, 3, 5, 6);
+        assertEquals((Integer)3, Collections.min(list));
+    }
+
+    @Test
+    public void findsMaximum() {
+        List<Integer> list = Arrays.asList(6, 5, 7, 3, 5, 6);
+        assertEquals((Integer)7, Collections.max(list));
+    }
+
+    @Test
+    public void fills() {
+        List<Integer> list = new ArrayList<>(Arrays.asList(6, 5, 7, 3, 5, 6));
+        Collections.fill(list, 9);
+        assertEquals(6, list.size());
+        assertEquals((Integer)9, list.get(0));
+        assertEquals((Integer)9, list.get(5));
+        assertEquals((Integer)9, list.get(2));
+    }
+
+    @Test
+    public void copies() {
+        List<Integer> list = new ArrayList<>(Arrays.asList(6, 5, 7, 3, 5, 6));
+        List<Integer> dest = new ArrayList<>(Arrays.asList(1, 2, 3, 4, 5, 6, 7));
+        Collections.copy(dest, list);
+        assertEquals(7, dest.size());
+        assertEquals((Integer)6, dest.get(0));
+        assertEquals((Integer)5, dest.get(1));
+        assertEquals((Integer)5, dest.get(4));
+        assertEquals((Integer)6, dest.get(5));
+        assertEquals((Integer)7, dest.get(6));
+    }
+
+    @Test
+    public void rotates() {
+        List<Integer> list = new ArrayList<>(Arrays.asList(2, 5, 7, 3, 5, 6));
+        Collections.rotate(list, 2);
+        assertArrayEquals(new Integer[] { 5, 6, 2, 5, 7, 3 }, list.toArray(new Integer[0]));
     }
 }

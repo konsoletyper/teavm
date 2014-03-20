@@ -124,7 +124,7 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
             writer.append("return ").appendMethodBody(methodRef).append("(item);").softNewLine();
             writer.outdent().append("} else ");
         }
-        writer.append("{").softNewLine();
+        writer.append("{").indent().softNewLine();
         writer.append("return item;").softNewLine();
         writer.outdent().append("}").softNewLine();
     }
