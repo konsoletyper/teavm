@@ -35,33 +35,27 @@ import static org.junit.Assert.*;
 import java.io.Serializable;
 import java.text.CollationKey;
 import java.text.Collator;
-import java.util.AbstractMap;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.*;
 import org.junit.Test;
 
 public class TreeMapTest {
 
-    public static class ReversedComparator implements Comparator {
+    public static class ReversedComparator implements Comparator<Object> {
+        @SuppressWarnings("unchecked")
+        @Override
         public int compare(Object o1, Object o2) {
-            return -(((Comparable) o1).compareTo(o2));
+            return -(((Comparable<Object>) o1).compareTo(o2));
         }
 
+        @SuppressWarnings("unchecked")
         public boolean equals(Object o1, Object o2) {
-            return (((Comparable) o1).compareTo(o2)) == 0;
+            return (((Comparable<Object>) o1).compareTo(o2)) == 0;
         }
     }
 
     // Regression for Harmony-1026
-    public static class MockComparator<T extends Comparable<T>> implements
-            Comparator<T>, Serializable {
-
+    public static class MockComparator<T extends Comparable<T>> implements Comparator<T> {
+        @Override
         public int compare(T o1, T o2) {
             if (o1 == o2) {
                 return 0;
@@ -77,7 +71,7 @@ public class TreeMapTest {
 
     // Regression for Harmony-1161
     class MockComparatorNullTolerable implements Comparator<String> {
-
+        @Override
         public int compare(String o1, String o2) {
             if (o1 == o2) {
                 return 0;
@@ -92,12 +86,12 @@ public class TreeMapTest {
         }
     }
 
-    TreeMap tm;
+    TreeMap<Object, Object> tm;
 
     Object objArray[] = new Object[1000];
 
     public TreeMapTest() {
-        tm = new TreeMap();
+        tm = new TreeMap<>();
         for (int i = 0; i < objArray.length; i++) {
             Object x = objArray[i] = new Integer(i);
             tm.put(x.toString(), x);
@@ -108,8 +102,8 @@ public class TreeMapTest {
     @Test
     public void test_ConstructorLjava_util_Comparator() {
         // Test for method java.util.TreeMap(java.util.Comparator)
-        Comparator comp = new ReversedComparator();
-        TreeMap reversedTreeMap = new TreeMap(comp);
+        Comparator<Object> comp = new ReversedComparator();
+        TreeMap<Object, Object> reversedTreeMap = new TreeMap<>(comp);
         assertTrue("TreeMap answered incorrect comparator", reversedTreeMap
                 .comparator() == comp);
         reversedTreeMap.put(new Integer(1).toString(), new Integer(1));
@@ -124,22 +118,21 @@ public class TreeMapTest {
     @Test
     public void test_ConstructorLjava_util_Map() {
         // Test for method java.util.TreeMap(java.util.Map)
-        TreeMap myTreeMap = new TreeMap(new HashMap(tm));
+        TreeMap<Object, Object> myTreeMap = new TreeMap<>(new HashMap<>(tm));
         assertTrue("Map is incorrect size", myTreeMap.size() == objArray.length);
         for (Object element : objArray) {
-            assertTrue("Map has incorrect mappings", myTreeMap.get(
-                    element.toString()).equals(element));
+            assertTrue("Map has incorrect mappings", myTreeMap.get(element.toString()).equals(element));
         }
     }
 
     @Test
     public void test_ConstructorLjava_util_SortedMap() {
         // Test for method java.util.TreeMap(java.util.SortedMap)
-        Comparator comp = new ReversedComparator();
-        TreeMap reversedTreeMap = new TreeMap(comp);
+        Comparator<Object> comp = new ReversedComparator();
+        TreeMap<Object, Object> reversedTreeMap = new TreeMap<>(comp);
         reversedTreeMap.put(new Integer(1).toString(), new Integer(1));
         reversedTreeMap.put(new Integer(2).toString(), new Integer(2));
-        TreeMap anotherTreeMap = new TreeMap(reversedTreeMap);
+        TreeMap<Object, Object> anotherTreeMap = new TreeMap<>(reversedTreeMap);
         assertTrue("New tree map does not answer correct comparator",
                 anotherTreeMap.comparator() == comp);
         assertTrue("TreeMap does not use comparator (firstKey was incorrect)",
@@ -159,34 +152,34 @@ public class TreeMapTest {
     @Test
     public void test_clone() {
         // Test for method java.lang.Object java.util.TreeMap.clone()
-        TreeMap clonedMap = (TreeMap) tm.clone();
-        assertTrue("Cloned map does not equal the original map", clonedMap
-                .equals(tm));
-        assertTrue("Cloned map is the same reference as the original map",
-                clonedMap != tm);
+        @SuppressWarnings("unchecked")
+        TreeMap<Object, Object> clonedMap = (TreeMap<Object, Object>) tm.clone();
+        assertTrue("Cloned map does not equal the original map", clonedMap.equals(tm));
+        assertTrue("Cloned map is the same reference as the original map", clonedMap != tm);
         for (Object element : objArray) {
             assertTrue("Cloned map contains incorrect elements", clonedMap
                     .get(element.toString()) == tm.get(element.toString()));
         }
 
-        TreeMap map = new TreeMap();
+        TreeMap<Object, Object> map = new TreeMap<>();
         map.put("key", "value");
         // get the keySet() and values() on the original Map
-        Set keys = map.keySet();
-        Collection values = map.values();
+        Set<Object> keys = map.keySet();
+        Collection<Object> values = map.values();
         assertEquals("values() does not work", "value", values.iterator()
                 .next());
         assertEquals("keySet() does not work", "key", keys.iterator().next());
-        AbstractMap map2 = (AbstractMap) map.clone();
+        @SuppressWarnings("unchecked")
+        Map<Object, Object> map2 = (Map<Object, Object>) map.clone();
         map2.put("key", "value2");
-        Collection values2 = map2.values();
+        Collection<Object> values2 = map2.values();
         assertTrue("values() is identical", values2 != values);
         // values() and keySet() on the cloned() map should be different
         assertEquals("values() was not cloned", "value2", values2.iterator()
                 .next());
         map2.clear();
         map2.put("key2", "value3");
-        Set key2 = map2.keySet();
+        Set<Object> key2 = map2.keySet();
         assertTrue("keySet() is identical", key2 != keys);
         assertEquals("keySet() was not cloned", "key2", key2.iterator().next());
     }
@@ -194,10 +187,9 @@ public class TreeMapTest {
     @Test
     public void test_comparator() {
         // Test for method java.util.Comparator java.util.TreeMap.comparator()\
-        Comparator comp = new ReversedComparator();
-        TreeMap reversedTreeMap = new TreeMap(comp);
-        assertTrue("TreeMap answered incorrect comparator", reversedTreeMap
-                .comparator() == comp);
+        Comparator<Object> comp = new ReversedComparator();
+        TreeMap<Object, Object> reversedTreeMap = new TreeMap<>(comp);
+        assertTrue("TreeMap answered incorrect comparator", reversedTreeMap.comparator() == comp);
         reversedTreeMap.put(new Integer(1).toString(), new Integer(1));
         reversedTreeMap.put(new Integer(2).toString(), new Integer(2));
         assertTrue("TreeMap does not use comparator (firstKey was incorrect)",
@@ -227,15 +219,13 @@ public class TreeMapTest {
     @Test
     public void test_entrySet() {
         // Test for method java.util.Set java.util.TreeMap.entrySet()
-        Set anEntrySet = tm.entrySet();
-        Iterator entrySetIterator = anEntrySet.iterator();
-        assertTrue("EntrySet is incorrect size",
-                anEntrySet.size() == objArray.length);
-        Map.Entry entry;
+        Set<Map.Entry<Object, Object>> anEntrySet = tm.entrySet();
+        Iterator<Map.Entry<Object, Object>> entrySetIterator = anEntrySet.iterator();
+        assertTrue("EntrySet is incorrect size", anEntrySet.size() == objArray.length);
+        Map.Entry<Object, Object> entry;
         while (entrySetIterator.hasNext()) {
-            entry = (Map.Entry) entrySetIterator.next();
-            assertTrue("EntrySet does not contain correct mappings", tm
-                    .get(entry.getKey()) == entry.getValue());
+            entry = entrySetIterator.next();
+            assertTrue("EntrySet does not contain correct mappings", tm.get(entry.getKey()) == entry.getValue());
         }
     }
 
@@ -259,15 +249,14 @@ public class TreeMapTest {
     public void test_headMapLjava_lang_Object() {
         // Test for method java.util.SortedMap
         // java.util.TreeMap.headMap(java.lang.Object)
-        Map head = tm.headMap("100");
+        Map<Object, Object> head = tm.headMap("100");
         assertEquals("Returned map of incorrect size", 3, head.size());
         assertTrue("Returned incorrect elements", head.containsKey("0")
                 && head.containsValue(new Integer("1"))
                 && head.containsKey("10"));
 
         // Regression for Harmony-1026
-        TreeMap<Integer, Double> map = new TreeMap<Integer, Double>(
-                new MockComparator());
+        TreeMap<Integer, Double> map = new TreeMap<>(new MockComparator<Integer>());
         map.put(1, 2.1);
         map.put(2, 3.1);
         map.put(3, 4.5);
@@ -310,16 +299,16 @@ public class TreeMapTest {
             }
         };
 
-        TreeMap<String, String> treemap = new TreeMap<String, String>(c);
+        TreeMap<String, String> treemap = new TreeMap<>(c);
         assertEquals(0, treemap.headMap(null).size());
 
-        treemap = new TreeMap();
-		SortedMap<String, String> headMap =  treemap.headMap("100");
-		headMap.headMap("100");
+        treemap = new TreeMap<>();
+        SortedMap<String, String> headMap = treemap.headMap("100");
+        headMap.headMap("100");
 
-	SortedMap<Integer,Integer> intMap,sub;
+        SortedMap<Integer,Integer> intMap,sub;
         int size = 16;
-        intMap = new TreeMap<Integer,Integer>();
+        intMap = new TreeMap<>();
         for(int i=0; i<size; i++) {
             intMap.put(i,i);
         }
@@ -339,7 +328,7 @@ public class TreeMapTest {
         }
 
         size = 256;
-        intMap = new TreeMap<Integer,Integer>();
+        intMap = new TreeMap<>();
         for(int i=0; i<size; i++) {
             intMap.put(i,i);
         }
@@ -363,20 +352,17 @@ public class TreeMapTest {
     @Test
     public void test_keySet() {
         // Test for method java.util.Set java.util.TreeMap.keySet()
-        Set ks = tm.keySet();
-        assertTrue("Returned set of incorrect size",
-                ks.size() == objArray.length);
+        Set<Object> ks = tm.keySet();
+        assertTrue("Returned set of incorrect size",ks.size() == objArray.length);
         for (int i = 0; i < tm.size(); i++) {
-            assertTrue("Returned set is missing keys", ks.contains(new Integer(
-                    i).toString()));
+            assertTrue("Returned set is missing keys", ks.contains(new Integer(i).toString()));
         }
     }
 
     @Test
     public void test_lastKey() {
         // Test for method java.lang.Object java.util.TreeMap.lastKey()
-        assertTrue("Returned incorrect last key", tm.lastKey().equals(
-                objArray[objArray.length - 1].toString()));
+        assertTrue("Returned incorrect last key", tm.lastKey().equals(objArray[objArray.length - 1].toString()));
     }
 
     @Test
@@ -394,19 +380,18 @@ public class TreeMapTest {
             // expected
         }
 
-        tm = new TreeMap();
+        tm = new TreeMap<>();
         assertNull(tm.put(new Integer(1), new Object()));
     }
 
     @Test
     public void test_putAllLjava_util_Map() {
         // Test for method void java.util.TreeMap.putAll(java.util.Map)
-        TreeMap x = new TreeMap();
+        TreeMap<Object, Object> x = new TreeMap<>();
         x.putAll(tm);
         assertTrue("Map incorrect size after put", x.size() == tm.size());
         for (Object element : objArray) {
-            assertTrue("Failed to put all elements", x.get(element.toString())
-                    .equals(element));
+            assertTrue("Failed to put all elements", x.get(element.toString()).equals(element));
         }
     }
 
@@ -429,8 +414,7 @@ public class TreeMapTest {
     public void test_subMapLjava_lang_ObjectLjava_lang_Object() {
         // Test for method java.util.SortedMap
         // java.util.TreeMap.subMap(java.lang.Object, java.lang.Object)
-        SortedMap subMap = tm.subMap(objArray[100].toString(), objArray[109]
-                .toString());
+        SortedMap<Object, Object> subMap = tm.subMap(objArray[100].toString(), objArray[109].toString());
         assertEquals("subMap is of incorrect size", 9, subMap.size());
         for (int counter = 100; counter < 109; counter++) {
             assertTrue("SubMap contains incorrect elements", subMap.get(
@@ -445,8 +429,7 @@ public class TreeMapTest {
         }
 
         // Regression for Harmony-1161
-        TreeMap<String, String> treeMapWithNull = new TreeMap<String, String>(
-                new MockComparatorNullTolerable());
+        TreeMap<String, String> treeMapWithNull = new TreeMap<>(new MockComparatorNullTolerable());
         treeMapWithNull.put("key1", "value1"); //$NON-NLS-1$ //$NON-NLS-2$
         treeMapWithNull.put(null, "value2"); //$NON-NLS-1$
         SortedMap<String, String> subMapWithNull = treeMapWithNull.subMap(null,
@@ -454,7 +437,7 @@ public class TreeMapTest {
         assertEquals("Size of subMap should be 1:", 1, subMapWithNull.size()); //$NON-NLS-1$
 
         // Regression test for typo in lastKey method
-        SortedMap<String, String> map = new TreeMap<String, String>();
+        SortedMap<String, String> map = new TreeMap<>();
         map.put("1", "one"); //$NON-NLS-1$ //$NON-NLS-2$
         map.put("2", "two"); //$NON-NLS-1$ //$NON-NLS-2$
         map.put("3", "three"); //$NON-NLS-1$ //$NON-NLS-2$
@@ -466,7 +449,7 @@ public class TreeMapTest {
 
     @Test
     public void test_subMap_Iterator() {
-        TreeMap<String, String> map = new TreeMap<String, String>();
+        TreeMap<String, String> map = new TreeMap<>();
 
         String[] keys = { "1", "2", "3" };
         String[] values = { "one", "two", "three" };
@@ -476,15 +459,14 @@ public class TreeMapTest {
 
         assertEquals(3, map.size());
 
-        Map subMap = map.subMap("", "test");
+        Map<String, String> subMap = map.subMap("", "test");
         assertEquals(3, subMap.size());
 
-        Set entrySet = subMap.entrySet();
-        Iterator iter = entrySet.iterator();
+        Set<Map.Entry<String, String>> entrySet = subMap.entrySet();
+        Iterator<Map.Entry<String, String>> iter = entrySet.iterator();
         int size = 0;
         while (iter.hasNext()) {
-            Map.Entry<String, String> entry = (Map.Entry<String, String>) iter
-                    .next();
+            Map.Entry<String, String> entry = iter.next();
             assertTrue(map.containsKey(entry.getKey()));
             assertTrue(map.containsValue(entry.getValue()));
             size++;
@@ -492,10 +474,10 @@ public class TreeMapTest {
         assertEquals(map.size(), size);
 
         Set<String> keySet = subMap.keySet();
-        iter = keySet.iterator();
+        Iterator<String> keyIter = keySet.iterator();
         size = 0;
-        while (iter.hasNext()) {
-            String key = (String) iter.next();
+        while (keyIter.hasNext()) {
+            String key = keyIter.next();
             assertTrue(map.containsKey(key));
             size++;
         }
@@ -507,12 +489,10 @@ public class TreeMapTest {
     public void test_tailMapLjava_lang_Object() {
         // Test for method java.util.SortedMap
         // java.util.TreeMap.tailMap(java.lang.Object)
-        Map tail = tm.tailMap(objArray[900].toString());
-        assertTrue("Returned map of incorrect size : " + tail.size(), tail
-                .size() == (objArray.length - 900) + 9);
+        Map<Object, Object> tail = tm.tailMap(objArray[900].toString());
+        assertTrue("Returned map of incorrect size : " + tail.size(), tail.size() == (objArray.length - 900) + 9);
         for (int i = 900; i < objArray.length; i++) {
-            assertTrue("Map contains incorrect entries", tail
-                    .containsValue(objArray[i]));
+            assertTrue("Map contains incorrect entries", tail.containsValue(objArray[i]));
         }
 
         // Regression for Harmony-1066
@@ -520,7 +500,7 @@ public class TreeMapTest {
 
 	SortedMap<Integer,Integer> intMap,sub;
         int size = 16;
-        intMap = new TreeMap<Integer,Integer>();
+        intMap = new TreeMap<>();
         for(int i=0; i<size; i++) {
             intMap.put(i,i);
         }
@@ -540,7 +520,7 @@ public class TreeMapTest {
         }
 
         size = 256;
-        intMap = new TreeMap<Integer,Integer>();
+        intMap = new TreeMap<>();
         for(int i=0; i<size; i++) {
             intMap.put(i,i);
         }
@@ -564,31 +544,29 @@ public class TreeMapTest {
     @Test
     public void test_values() {
         // Test for method java.util.Collection java.util.TreeMap.values()
-        Collection vals = tm.values();
+        Collection<Object> vals = tm.values();
         vals.iterator();
         assertTrue("Returned collection of incorrect size",
                 vals.size() == objArray.length);
         for (Object element : objArray) {
-            assertTrue("Collection contains incorrect elements", vals
-                    .contains(element));
+            assertTrue("Collection contains incorrect elements", vals.contains(element));
         }
 
-        TreeMap myTreeMap = new TreeMap();
+        TreeMap<Object, Object> myTreeMap = new TreeMap<>();
         for (int i = 0; i < 100; i++) {
             myTreeMap.put(objArray[i], objArray[i]);
         }
-        Collection values = myTreeMap.values();
+        Collection<Object> values = myTreeMap.values();
         values.remove(new Integer(0));
-        assertTrue(
-                "Removing from the values collection should remove from the original map",
+        assertTrue("Removing from the values collection should remove from the original map",
                 !myTreeMap.containsValue(new Integer(0)));
     }
 
     @Test
     public void test_equals() throws Exception {
         // comparing TreeMaps with different object types
-        Map m1 = new TreeMap();
-        Map m2 = new TreeMap();
+        Map<Object, Object> m1 = new TreeMap<>();
+        Map<Object, Object> m2 = new TreeMap<>();
         m1.put("key1", "val1");
         m1.put("key2", "val2");
         m2.put(new Integer(1), "val1");
@@ -597,8 +575,8 @@ public class TreeMapTest {
         assertFalse("Maps should not be equal 2", m2.equals(m1));
 
         // comparing TreeMap with HashMap
-        m1 = new TreeMap();
-        m2 = new HashMap();
+        m1 = new TreeMap<>();
+        m2 = new HashMap<>();
         m1.put("key", "val");
         m2.put(new Object(), "val");
         assertFalse("Maps should not be equal 3", m1.equals(m2));
@@ -612,8 +590,8 @@ public class TreeMapTest {
      */
     @Test
     public void test_entrySet_contains() throws Exception {
-        TreeMap master = new TreeMap<String, String>();
-        TreeMap test_map = new TreeMap<String, String>();
+        TreeMap<String, String> master = new TreeMap<>();
+        TreeMap<String, String> test_map = new TreeMap<>();
 
         master.put("null", null);
         Object[] entry = master.entrySet().toArray();
@@ -630,7 +608,7 @@ public class TreeMapTest {
                    test_map.entrySet().containsAll(master.entrySet()));
 
         master.clear();
-        master.put("null", '0');
+        master.put("null", "0");
         entry = master.entrySet().toArray();
         assertFalse("Null-valued entry should not equal non-null-valued entry",
                     test_map.entrySet().contains(entry[0]));

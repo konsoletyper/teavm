@@ -75,7 +75,7 @@ public class SystemNativeGenerator implements Generator, DependencyPlugin {
         String destPos = context.getParameterName(4);
         String length = context.getParameterName(5);
         writer.append("for (var i = 0; i < " + length + "; i = (i + 1) | 0) {").indent().softNewLine();
-        writer.append(dest + ".data[" + srcPos + "++] = " + src + ".data[" + destPos + "++];").softNewLine();
+        writer.append(dest + ".data[" + destPos + "++] = " + src + ".data[" + srcPos + "++];").softNewLine();
         writer.outdent().append("}").softNewLine();
     }
 

@@ -34,15 +34,6 @@ package org.teavm.classlib.java.util;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.*;
 
-
-/**
- * TreeMap is an implementation of SortedMap. All optional operations (adding
- * and removing) are supported. The values can be any objects. The keys can be
- * any objects which are comparable to each other either using their natural
- * order or a specified Comparator.
- *
- * @since 1.2
- */
 public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TSortedMap<K, V>, TCloneable, TSerializable {
     transient int size;
     private TComparator<? super K> comparator;
@@ -79,8 +70,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TSortedMap<K, 
                 Entry<?, ?> entry = (Entry<?, ?>) object;
                 V value = getValue();
                 return (key == null ? entry.getKey() == null : key.equals(entry.getKey()))
-                        && (value == null ? entry.getValue() == null : value
-                                .equals(entry.getValue()));
+                        && (value == null ? entry.getValue() == null : value.equals(entry.getValue()));
             }
             return false;
         }
@@ -513,8 +503,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TSortedMap<K, 
             if (firstKeyModCount == backingMap.modCount) {
                 return;
             }
-            TComparable<K> object = backingMap.comparator == null ?
-                                   toComparable(startKey) : null;
+            TComparable<K> object = backingMap.comparator == null ? toComparable(startKey) : null;
             K key = startKey;
             Node<K, V> node = backingMap.root;
             Node<K, V> foundNode = null;
@@ -972,45 +961,17 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TSortedMap<K, 
         }
     }
 
-    /**
-     * Constructs a new empty {@code TreeMap} instance.
-     */
     public TTreeMap() {
     }
 
-    /**
-     * Constructs a new empty {@code TreeMap} instance with the specified
-     * comparator.
-     *
-     * @param comparator
-     *            the comparator to compare keys with.
-     */
     public TTreeMap(TComparator<? super K> comparator) {
         this.comparator = comparator;
     }
 
-    /**
-     * Constructs a new {@code TreeMap} instance containing the mappings from
-     * the specified map and using natural ordering.
-     *
-     * @param map
-     *            the mappings to add.
-     * @throws ClassCastException
-     *             if a key in the specified map does not implement the
-     *             Comparable interface, or if the keys in the map cannot be
-     *             compared.
-     */
     public TTreeMap(TMap<? extends K, ? extends V> map) {
         putAll(map);
     }
 
-    /**
-     * Constructs a new {@code TreeMap} instance containing the mappings from
-     * the specified SortedMap and using the same comparator.
-     *
-     * @param map
-     *            the mappings to add.
-     */
     public TTreeMap(TSortedMap<K, ? extends V> map) {
         this(map.comparator());
         Node<K, V> lastNode = null;
@@ -1038,12 +999,6 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TSortedMap<K, 
         return last;
     }
 
-    /**
-     * Removes all mappings from this TreeMap, leaving it empty.
-     *
-     * @see Map#isEmpty()
-     * @see #size()
-     */
     @Override
     public void clear() {
         root = null;
@@ -1051,13 +1006,6 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TSortedMap<K, 
         modCount++;
     }
 
-    /**
-     * Returns a new {@code TreeMap} with the same mappings, size and comparator
-     * as this instance.
-     *
-     * @return a shallow copy of this instance.
-     * @see java.lang.Cloneable
-     */
     @SuppressWarnings("unchecked")
     @Override
     public TObject clone() {
@@ -1095,30 +1043,11 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TSortedMap<K, 
         return y;
     }
 
-    /**
-     * Returns the comparator used to compare elements in this map.
-     *
-     * @return the comparator or {@code null} if the natural ordering is used.
-     */
     @Override
     public TComparator<? super K> comparator() {
         return comparator;
     }
 
-    /**
-     * Returns whether this map contains the specified key.
-     *
-     * @param key
-     *            the key to search for.
-     * @return {@code true} if this map contains the specified key,
-     *         {@code false} otherwise.
-     * @throws ClassCastException
-     *             if the specified key cannot be compared with the keys in this
-     *             map.
-     * @throws NullPointerException
-     *             if the specified key is {@code null} and the comparator
-     *             cannot handle {@code null} keys.
-     */
     @Override
     public boolean containsKey(Object key) {
         @SuppressWarnings("unchecked")
@@ -1163,14 +1092,6 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TSortedMap<K, 
         return false;
     }
 
-    /**
-     * Returns whether this map contains the specified value.
-     *
-     * @param value
-     *            the value to search for.
-     * @return {@code true} if this map contains the specified value,
-     *         {@code false} otherwise.
-     */
     @Override
     public boolean containsValue(Object value) {
         if (root == null) {
@@ -1203,14 +1124,6 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TSortedMap<K, 
         return false;
     }
 
-    /**
-     * Returns a set containing all of the mappings in this map. Each mapping is
-     * an instance of {@link Map.Entry}. As the set is backed by this map,
-     * changes in one will be reflected in the other. It does not support adding
-     * operations.
-     *
-     * @return a set of the mappings.
-     */
     @Override
     public TSet<Entry<K, V>> entrySet() {
         if (entrySet == null) {
@@ -1258,13 +1171,6 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TSortedMap<K, 
         return entrySet;
     }
 
-    /**
-     * Returns the first key in this map.
-     *
-     * @return the first key in this map.
-     * @throws NoSuchElementException
-     *                if this map is empty.
-     */
     @Override
     public K firstKey() {
         if (root != null) {
@@ -1275,18 +1181,6 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TSortedMap<K, 
     }
 
 
-    /**
-     * Returns the value of the mapping with the specified key.
-     *
-     * @param key
-     *            the key.
-     * @return the value of the mapping with the specified key.
-     * @throws ClassCastException
-     *             if the key cannot be compared with the keys in this map.
-     * @throws NullPointerException
-     *             if the key is {@code null} and the comparator cannot handle
-     *             {@code null}.
-     */
     @Override
     public V get(Object key) {
         @SuppressWarnings("unchecked")
@@ -1332,31 +1226,9 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TSortedMap<K, 
     }
 
     private int cmp(TComparable<K> object, K key1, K key2) {
-        return object != null ?
-               object.compareTo(key2) : comparator.compare(key1, key2);
+        return object != null ? object.compareTo(key2) : comparator.compare(key1, key2);
     }
 
-    /**
-     * Returns a sorted map over a range of this sorted map with all keys that
-     * are less than the specified {@code endKey}. Changes to the returned
-     * sorted map are reflected in this sorted map and vice versa.
-     * <p>
-     * Note: The returned map will not allow an insertion of a key outside the
-     * specified range.
-     *
-     * @param endKey
-     *            the high boundary of the range specified.
-     * @return a sorted map where the keys are less than {@code endKey}.
-     * @throws ClassCastException
-     *             if the specified key cannot be compared with the keys in this
-     *             map.
-     * @throws NullPointerException
-     *             if the specified key is {@code null} and the comparator
-     *             cannot handle {@code null} keys.
-     * @throws IllegalArgumentException
-     *             if this map is itself a sorted map over a range of another
-     *             map and the specified key is outside of its range.
-     */
     @Override
     public TSortedMap<K, V> headMap(K endKey) {
         // Check for errors
@@ -1368,13 +1240,6 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TSortedMap<K, 
         return new SubMap<>(this, endKey);
     }
 
-    /**
-     * Returns a set of the keys contained in this map. The set is backed by
-     * this map so changes to one are reflected by the other. The set does not
-     * support adding.
-     *
-     * @return a set of the keys.
-     */
     @Override
     public TSet<K> keySet() {
         if (cachedKeySet == null) {
@@ -1412,13 +1277,6 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TSortedMap<K, 
         return cachedKeySet;
     }
 
-    /**
-     * Returns the last key in this map.
-     *
-     * @return the last key in this map.
-     * @throws NoSuchElementException
-     *             if this map is empty.
-     */
     @Override
     public K lastKey() {
         if (root != null) {
@@ -1448,22 +1306,6 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TSortedMap<K, 
         return x;
     }
 
-    /**
-     * Maps the specified key to the specified value.
-     *
-     * @param key
-     *            the key.
-     * @param value
-     *            the value.
-     * @return the value of any previous mapping with the specified key or
-     *         {@code null} if there was no mapping.
-     * @throws ClassCastException
-     *             if the specified key cannot be compared with the keys in this
-     *             map.
-     * @throws NullPointerException
-     *             if the specified key is {@code null} and the comparator
-     *             cannot handle {@code null} keys.
-     */
     @Override
     public V put(K key, V value) {
         if (root == null) {
@@ -1827,40 +1669,11 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TSortedMap<K, 
         x.parent = y;
     }
 
-
-    /**
-     * Copies all the mappings in the given map to this map. These mappings will
-     * replace all mappings that this map had for any of the keys currently in
-     * the given map.
-     *
-     * @param map
-     *            the map to copy mappings from.
-     * @throws ClassCastException
-     *             if a key in the specified map cannot be compared with the
-     *             keys in this map.
-     * @throws NullPointerException
-     *             if a key in the specified map is {@code null} and the
-     *             comparator cannot handle {@code null} keys.
-     */
     @Override
     public void putAll(TMap<? extends K, ? extends V> map) {
         super.putAll(map);
     }
 
-    /**
-     * Removes the mapping with the specified key from this map.
-     *
-     * @param key
-     *            the key of the mapping to remove.
-     * @return the value of the removed mapping or {@code null} if no mapping
-     *         for the specified key was found.
-     * @throws ClassCastException
-     *             if the specified key cannot be compared with the keys in this
-     *             map.
-     * @throws NullPointerException
-     *             if the specified key is {@code null} and the comparator
-     *             cannot handle {@code null} keys.
-     */
     @Override
     public V remove(Object key) {
         if (size == 0) {
@@ -2275,42 +2088,11 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TSortedMap<K, 
         x.color = false;
     }
 
-
-    /**
-     * Returns the number of mappings in this map.
-     *
-     * @return the number of mappings in this map.
-     */
     @Override
     public int size() {
         return size;
     }
 
-    /**
-     * Returns a sorted map over a range of this sorted map with all keys
-     * greater than or equal to the specified {@code startKey} and less than the
-     * specified {@code endKey}. Changes to the returned sorted map are
-     * reflected in this sorted map and vice versa.
-     * <p>
-     * Note: The returned map will not allow an insertion of a key outside the
-     * specified range.
-     *
-     * @param startKey
-     *            the low boundary of the range (inclusive).
-     * @param endKey
-     *            the high boundary of the range (exclusive),
-     * @return a sorted map with the key from the specified range.
-     * @throws ClassCastException
-     *             if the start or end key cannot be compared with the keys in
-     *             this map.
-     * @throws NullPointerException
-     *             if the start or end key is {@code null} and the comparator
-     *             cannot handle {@code null} keys.
-     * @throws IllegalArgumentException
-     *             if the start key is greater than the end key, or if this map
-     *             is itself a sorted map over a range of another sorted map and
-     *             the specified range is outside of its range.
-     */
     @Override
     public TSortedMap<K, V> subMap(K startKey, K endKey) {
         if (comparator == null) {
@@ -2325,28 +2107,6 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TSortedMap<K, 
         throw new TIllegalArgumentException();
     }
 
-    /**
-     * Returns a sorted map over a range of this sorted map with all keys that
-     * are greater than or equal to the specified {@code startKey}. Changes to
-     * the returned sorted map are reflected in this sorted map and vice versa.
-     * <p>
-     * Note: The returned map will not allow an insertion of a key outside the
-     * specified range.
-     *
-     * @param startKey
-     *            the low boundary of the range specified.
-     * @return a sorted map where the keys are greater or equal to
-     *         {@code startKey}.
-     * @throws ClassCastException
-     *             if the specified key cannot be compared with the keys in this
-     *             map.
-     * @throws NullPointerException
-     *             if the specified key is {@code null} and the comparator
-     *             cannot handle {@code null} keys.
-     * @throws IllegalArgumentException
-     *             if this map itself a sorted map over a range of another map
-     *             and the specified key is outside of its range.
-     */
     @Override
     public TSortedMap<K, V> tailMap(K startKey) {
         // Check for errors
@@ -2358,25 +2118,6 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TSortedMap<K, 
         return new SubMap<>(startKey, this);
     }
 
-    /**
-     * Returns a collection of the values contained in this map. The collection
-     * is backed by this map so changes to one are reflected by the other. The
-     * collection supports remove, removeAll, retainAll and clear operations,
-     * and it does not support add or addAll operations.
-     * <p>
-     * This method returns a collection which is the subclass of
-     * AbstractCollection. The iterator method of this subclass returns a
-     * "wrapper object" over the iterator of map's entrySet(). The {@code size}
-     * method wraps the map's size method and the {@code contains} method wraps
-     * the map's containsValue method.
-     * <p>
-     * The collection is created when this method is called for the first time
-     * and returned in response to all subsequent calls. This method may return
-     * different collections when multiple concurrent calls occur, since no
-     * synchronization is performed.
-     *
-     * @return a collection of the values contained in this map.
-     */
     @Override
     public TCollection<V> values() {
         if (cachedValues == null) {
@@ -2405,4 +2146,3 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TSortedMap<K, 
         return cachedValues;
     }
 }
-
