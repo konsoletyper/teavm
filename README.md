@@ -72,6 +72,23 @@ see what happen.
 There is [teavm-samples](teavm-samples) module,
 containing a complete buildable and runnable example.
 
+DukeScript
+----------
+
+[DukeScript](http://wiki.apidesign.org/wiki/DukeScript) is a set of APIs that allows Java applications
+easily talk to JavaScript environment to (usually) animate an HTML page. While DukeScript has its own
+implementation of JVM, called [Bck2Brwsr](http://wiki.apidesign.org/wiki/Bck2Brwsr), TeaVM also provides
+support for running DukeScript applications, using [teavm-html4j](teavm-html4j) plugin.
+
+Live example
+------------
+
+Thanks to [Jaroslav Tulach](http://wiki.apidesign.org/wiki/User:JaroslavTulach), author of DukeScript, we have several
+DukeScript example applications. One is the minesweeper game.
+You can try its TeaVM-compiled version [here](http://xelfi.cz/minesweeper/teavm/), and then take a look at
+[source code](http://source.apidesign.org/hg/html~demo/file/4dce5ea7e13a/minesweeper/src/main/java/org/apidesign/demo/minesweeper/MinesModel.java)
+and [HTML page](http://source.apidesign.org/hg/html~demo/file/4dce5ea7e13a/minesweeper/src/main/webapp/pages/index.html).
+
 Advantages over GWT
 -------------------
 
