@@ -1146,4 +1146,56 @@ public class BitSetTest {
         bs.set(0, 500);
         assertEquals("cardinality() returned wrong value", 500, bs.cardinality());
     }
+
+    @Test
+    public void previousSetBitFound() {
+        BitSet bs = new BitSet();
+        bs.set(2, 10);
+        bs.set(16, 19);
+        bs.set(31, 64);
+        bs.set(96, 98);
+        assertEquals(97, bs.previousSetBit(100));
+        assertEquals(97, bs.previousSetBit(97));
+        assertEquals(96, bs.previousSetBit(96));
+        assertEquals(63, bs.previousSetBit(95));
+        assertEquals(63, bs.previousSetBit(63));
+        assertEquals(62, bs.previousSetBit(62));
+        assertEquals(32, bs.previousSetBit(32));
+        assertEquals(31, bs.previousSetBit(31));
+        assertEquals(18, bs.previousSetBit(30));
+        assertEquals(18, bs.previousSetBit(18));
+        assertEquals(17, bs.previousSetBit(17));
+        assertEquals(16, bs.previousSetBit(16));
+        assertEquals(9, bs.previousSetBit(15));
+        assertEquals(9, bs.previousSetBit(9));
+        assertEquals(2, bs.previousSetBit(2));
+        assertEquals(-1, bs.previousSetBit(1));
+        assertEquals(-1, bs.previousSetBit(0));
+    }
+
+    @Test
+    public void previousClearBitFound() {
+        BitSet bs = new BitSet();
+        bs.set(0, 10);
+        bs.set(16, 19);
+        bs.set(31, 64);
+        bs.set(96, 98);
+        assertEquals(100, bs.previousClearBit(100));
+        assertEquals(98, bs.previousClearBit(98));
+        assertEquals(95, bs.previousClearBit(97));
+        assertEquals(95, bs.previousClearBit(95));
+        assertEquals(64, bs.previousClearBit(64));
+        assertEquals(30, bs.previousClearBit(63));
+        assertEquals(30, bs.previousClearBit(32));
+        assertEquals(30, bs.previousClearBit(31));
+        assertEquals(30, bs.previousClearBit(30));
+        assertEquals(29, bs.previousClearBit(29));
+        assertEquals(20, bs.previousClearBit(20));
+        assertEquals(19, bs.previousClearBit(19));
+        assertEquals(15, bs.previousClearBit(17));
+        assertEquals(15, bs.previousClearBit(15));
+        assertEquals(-1, bs.previousClearBit(9));
+        assertEquals(-1, bs.previousClearBit(1));
+        assertEquals(-1, bs.previousClearBit(0));
+    }
 }

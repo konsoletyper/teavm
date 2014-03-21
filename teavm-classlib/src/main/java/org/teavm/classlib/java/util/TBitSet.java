@@ -316,6 +316,48 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
         return length;
     }
 
+    public int previousSetBit(int fromIndex) {
+        if (fromIndex == -1) {
+            return -1;
+        }
+        if (fromIndex >= length) {
+            fromIndex = length;
+        }
+        int index = fromIndex / 32;
+        int val = data[index];
+        val <<= 31 - (fromIndex % 32);
+        if (val != 0) {
+            return fromIndex - TInteger.numberOfLeadingZeros(val);
+        }
+        for (int i = index - 1; i >= 0; ++i) {
+            if (data[i] != 0) {
+                return (i + 1) * 32 - TInteger.numberOfLeadingZeros(data[i]) - 1;
+            }
+        }
+        return -1;
+    }
+
+    public int previousClearBit(int fromIndex) {
+        if (fromIndex == -1) {
+            return -1;
+        }
+        if (fromIndex >= length) {
+            return fromIndex;
+        }
+        int index = fromIndex / 32;
+        int val = ~data[index];
+        val <<= 31 - (fromIndex % 32);
+        if (val != 0) {
+            return fromIndex - TInteger.numberOfLeadingZeros(val);
+        }
+        for (int i = index - 1; i >= 0; ++i) {
+            if (data[i] != 0xFFFFFFFF) {
+                return (i + 1) * 32 - TInteger.numberOfLeadingZeros(~data[i]) - 1;
+            }
+        }
+        return -1;
+    }
+
     private void ensureCapacity(int capacity) {
         if (data.length >= capacity) {
             return;
