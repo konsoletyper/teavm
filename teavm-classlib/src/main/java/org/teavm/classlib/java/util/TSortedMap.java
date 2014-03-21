@@ -17,18 +17,18 @@ package org.teavm.classlib.java.util;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-public interface TSortedSet<E> extends TSet<E> {
-    TComparator<? super E> comparator();
+public interface TSortedMap<K, V> extends TMap<K, V> {
+    TComparator<? super K> comparator();
 
-    TSortedSet<E> subSet(E fromElement, E toElement);
+    TSortedMap<K, V> subMap(K fromKey, K toKey);
 
-    TSortedSet<E> headSet(E toElement);
+    TSortedMap<K, V> headMap(K toKey);
 
-    TSortedSet<E> tailSet(E fromElement);
+    TSortedMap<K, V> tailMap(K fromKey);
 
-    E first();
+    K firstKey();
 
-    E last();
+    K lastKey();
 }

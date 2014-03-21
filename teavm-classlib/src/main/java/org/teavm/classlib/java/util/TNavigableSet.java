@@ -17,18 +17,28 @@ package org.teavm.classlib.java.util;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-public interface TSortedSet<E> extends TSet<E> {
-    TComparator<? super E> comparator();
+public interface TNavigableSet<E> extends TSortedSet<E> {
+    E lower(E e);
 
-    TSortedSet<E> subSet(E fromElement, E toElement);
+    E floor(E e);
 
-    TSortedSet<E> headSet(E toElement);
+    E ceiling(E e);
 
-    TSortedSet<E> tailSet(E fromElement);
+    E higher(E e);
 
-    E first();
+    E pollFirst();
 
-    E last();
+    E pollLast();
+
+    TNavigableSet<E> descendingSet();
+
+    TIterator<E> descendingIterator();
+
+    TNavigableSet<E> subSet(E fromElement, boolean fromInclusive, E toElement, boolean toInclusive);
+
+    TNavigableSet<E> headSet(E toElement, boolean inclusive);
+
+    TNavigableSet<E> tailSet(E fromElement, boolean inclusive);
 }
