@@ -54,7 +54,7 @@ $rt_createLongArray = function(sz) {
     var data = new Array(sz);
     var arr = new ($rt_arraycls($rt_longcls()))(data);
     for (var i = 0; i < sz; i = (i + 1) | 0) {
-        data[i] = Long.ZERO;
+        data[i] = Long_ZERO;
     }
     return arr;
 }

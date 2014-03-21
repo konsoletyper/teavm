@@ -35,6 +35,12 @@ public class StringBuilderTest {
         StringBuilder sb = new StringBuilder("[]");
         sb.insert(1, 23);
         assertEquals("[23]", sb.toString());
+        sb = new StringBuilder("[]");
+        sb.insert(1, 10);
+        assertEquals("[10]", sb.toString());
+        sb = new StringBuilder("[]");
+        sb.insert(1, 100);
+        assertEquals("[100]", sb.toString());
     }
 
     @Test

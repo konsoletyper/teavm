@@ -125,11 +125,13 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
         } else {
             int pos = 1;
             int sz = 1;
-            int valueCopy = value;
-            while (valueCopy > radix) {
+            int posLimit = TInteger.MAX_VALUE / radix;
+            while (pos * radix <= value) {
                 pos *= radix;
-                valueCopy /= radix;
                 ++sz;
+                if (pos > posLimit) {
+                    break;
+                }
             }
             if (!positive) {
                 ++sz;
