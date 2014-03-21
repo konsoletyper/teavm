@@ -107,7 +107,7 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
         for (; i < fullLongs; ++i) {
             longs[i] = data[i * 2] | (data[i * 2 + 1] << 32);
         }
-        if ((length / 32) % 2 == 1) {
+        if (((31 + length) / 32) % 2 == 1) {
             longs[i] = data[i * 2];
         }
         return longs;
