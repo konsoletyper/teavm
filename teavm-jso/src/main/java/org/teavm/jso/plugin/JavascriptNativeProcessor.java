@@ -88,7 +88,7 @@ class JavascriptNativeProcessor {
                             copyVar(result, invoke.getReceiver());
                         }
                     } else if (isProperSetter(method.getDescriptor())) {
-                        Variable wrapped = wrap(invoke.getArguments().get(3), method.parameterType(2));
+                        Variable wrapped = wrap(invoke.getArguments().get(0), method.parameterType(0));
                         addPropertySet(cutPrefix(method.getName(), 3), invoke.getArguments().get(0), wrapped);
                     } else {
                         throw new RuntimeException("Method " + invoke.getMethod() + " is not " +
@@ -126,8 +126,7 @@ class JavascriptNativeProcessor {
                     InvokeInstruction newInvoke = new InvokeInstruction();
                     ValueType[] signature = new ValueType[method.parameterCount() + 3];
                     Arrays.fill(signature, ValueType.object(JSObject.class.getName()));
-                    newInvoke.setMethod(new MethodReference(JS.class.getName(), new MethodDescriptor("invoke",
-                            signature)));
+                    newInvoke.setMethod(new MethodReference(JS.class.getName(), "invoke", signature));
                     newInvoke.setType(InvocationType.SPECIAL);
                     newInvoke.setReceiver(result);
                     newInvoke.getArguments().add(invoke.getInstance());
@@ -152,9 +151,8 @@ class JavascriptNativeProcessor {
     private void addPropertyGet(String propertyName, Variable instance, Variable receiver) {
         Variable nameVar = addStringWrap(addString(propertyName));
         InvokeInstruction insn = new InvokeInstruction();
-        insn.setMethod(new MethodReference(JS.class.getName(), new MethodDescriptor("get",
-                ValueType.object(JSObject.class.getName()), ValueType.object(JSObject.class.getName()),
-                ValueType.object(JSObject.class.getName()))));
+        insn.setMethod(new MethodReference(JS.class.getName(), "get", ValueType.object(JSObject.class.getName()),
+                ValueType.object(JSObject.class.getName()), ValueType.object(JSObject.class.getName())));
         insn.setReceiver(receiver);
         insn.getArguments().add(instance);
         insn.getArguments().add(nameVar);
@@ -164,9 +162,9 @@ class JavascriptNativeProcessor {
     private void addPropertySet(String propertyName, Variable instance, Variable value) {
         Variable nameVar = addStringWrap(addString(propertyName));
         InvokeInstruction insn = new InvokeInstruction();
-        insn.setMethod(new MethodReference(JS.class.getName(), new MethodDescriptor("set",
+        insn.setMethod(new MethodReference(JS.class.getName(), "set",
                 ValueType.object(JSObject.class.getName()), ValueType.object(JSObject.class.getName()),
-                ValueType.VOID)));
+                ValueType.object(JSObject.class.getName()), ValueType.VOID));
         insn.getArguments().add(instance);
         insn.getArguments().add(nameVar);
         insn.getArguments().add(value);
@@ -175,9 +173,8 @@ class JavascriptNativeProcessor {
 
     private void addIndexerGet(Variable array, Variable index, Variable receiver) {
         InvokeInstruction insn = new InvokeInstruction();
-        insn.setMethod(new MethodReference(JS.class.getName(), new MethodDescriptor("get",
-                ValueType.object(JSObject.class.getName()), ValueType.object(JSObject.class.getName()),
-                ValueType.object(JSObject.class.getName()))));
+        insn.setMethod(new MethodReference(JS.class.getName(), "get", ValueType.object(JSObject.class.getName()),
+                ValueType.object(JSObject.class.getName()), ValueType.object(JSObject.class.getName())));
         insn.setReceiver(receiver);
         insn.getArguments().add(array);
         insn.getArguments().add(index);
@@ -186,9 +183,9 @@ class JavascriptNativeProcessor {
 
     private void addIndexerSet(Variable array, Variable index, Variable value) {
         InvokeInstruction insn = new InvokeInstruction();
-        insn.setMethod(new MethodReference(JS.class.getName(), new MethodDescriptor("set",
+        insn.setMethod(new MethodReference(JS.class.getName(), "set",
                 ValueType.object(JSObject.class.getName()), ValueType.object(JSObject.class.getName()),
-                ValueType.object(JSObject.class.getName()), ValueType.VOID)));
+                ValueType.object(JSObject.class.getName()), ValueType.VOID));
         insn.getArguments().add(array);
         insn.getArguments().add(index);
         insn.getArguments().add(value);
@@ -225,7 +222,7 @@ class JavascriptNativeProcessor {
                 case SHORT:
                     return unwrap(var, "unwrapShort", ValueType.SHORT);
                 case INTEGER:
-                    return unwrap(var, "unwrapShort", ValueType.INTEGER);
+                    return unwrap(var, "unwrapInt", ValueType.INTEGER);
                 case CHARACTER:
                     return unwrap(var, "unwrapCharacter", ValueType.CHARACTER);
                 case DOUBLE:
@@ -257,8 +254,8 @@ class JavascriptNativeProcessor {
     private Variable unwrap(Variable var, String methodName, ValueType resultType) {
         Variable result = program.createVariable();
         InvokeInstruction insn = new InvokeInstruction();
-        insn.setMethod(new MethodReference(JS.class.getName(), new MethodDescriptor(methodName,
-                resultType)));
+        insn.setMethod(new MethodReference(JS.class.getName(), methodName, ValueType.object(JSObject.class.getName()),
+                resultType));
         insn.getArguments().add(var);
         insn.setReceiver(result);
         insn.setType(InvocationType.SPECIAL);
@@ -285,9 +282,9 @@ class JavascriptNativeProcessor {
         Variable functor = program.createVariable();
         Variable nameVar = addStringWrap(addString(name));
         InvokeInstruction insn = new InvokeInstruction();
-        insn.setMethod(new MethodReference(JS.class.getName(), new MethodDescriptor("function",
+        insn.setMethod(new MethodReference(JS.class.getName(), "function",
                 ValueType.object(JSObject.class.getName()), ValueType.object(JSObject.class.getName()),
-                ValueType.object(JSObject.class.getName()))));
+                ValueType.object(JSObject.class.getName())));
         insn.setReceiver(functor);
         insn.getArguments().add(var);
         insn.getArguments().add(nameVar);
@@ -304,8 +301,8 @@ class JavascriptNativeProcessor {
         }
         Variable result = program.createVariable();
         InvokeInstruction insn = new InvokeInstruction();
-        insn.setMethod(new MethodReference(JS.class.getName(), new MethodDescriptor("wrap", type,
-                ValueType.object(JSObject.class.getName()))));
+        insn.setMethod(new MethodReference(JS.class.getName(), "wrap", type,
+                ValueType.object(JSObject.class.getName())));
         insn.getArguments().add(var);
         insn.setReceiver(result);
         insn.setType(InvocationType.SPECIAL);

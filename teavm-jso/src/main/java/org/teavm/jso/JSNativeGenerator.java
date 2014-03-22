@@ -88,11 +88,15 @@ public class JSNativeGenerator implements Generator, Injector, DependencyPlugin 
                 writer.append(')');
                 break;
             case "wrap":
-            case "unwrap":
                 context.writeExpr(context.getArgument(0));
                 break;
             case "function":
                 generateFunction(context);
+                break;
+            default:
+                if (methodRef.getName().startsWith("unwrap")) {
+                    context.writeExpr(context.getArgument(0));
+                }
                 break;
         }
     }
