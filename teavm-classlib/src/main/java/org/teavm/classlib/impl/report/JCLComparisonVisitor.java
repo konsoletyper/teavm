@@ -161,7 +161,7 @@ class JCLComparisonVisitor extends ClassVisitor {
 
     @Override
     public void visitEnd() {
-        if (jclClass == null || jclClass.status != JCLStatus.FOUND) {
+        if (jclPackage != null && (jclClass == null || jclClass.status != JCLStatus.FOUND)) {
             jclPackage.status = JCLStatus.PARTIAL;
         }
     }
