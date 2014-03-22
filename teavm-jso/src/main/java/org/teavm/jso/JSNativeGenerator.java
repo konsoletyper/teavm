@@ -137,14 +137,14 @@ public class JSNativeGenerator implements Generator, Injector, DependencyPlugin 
 
     private void generateFunction(InjectorContext context) throws IOException {
         SourceWriter writer = context.getWriter();
-        writer.append("(function()").ws().append("{").indent().softNewLine();
-        writer.append("return ");
+        writer.append("(function($instance, $property) { return function()").ws().append("{").indent().softNewLine();
+        writer.append("return $property.apply($instance, arguments);").softNewLine();
+        writer.outdent().append("};})(");
+        context.writeExpr(context.getArgument(0));
+        writer.append(", ");
         context.writeExpr(context.getArgument(0));
         renderProperty(context.getArgument(1), context);
-        writer.append(".apply(");
-        context.writeExpr(context.getArgument(0));
-        writer.append(",").ws().append("arguments);").softNewLine();
-        writer.outdent().append("})");
+        writer.append(")");
     }
 
     private void renderProperty(Expr property, InjectorContext context) throws IOException {
