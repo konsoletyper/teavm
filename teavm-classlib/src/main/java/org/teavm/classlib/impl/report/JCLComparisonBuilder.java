@@ -17,6 +17,7 @@ package org.teavm.classlib.impl.report;
 
 import java.io.*;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
@@ -128,6 +129,7 @@ public class JCLComparisonBuilder {
         if (!outDir.exists()) {
             outDir.mkdirs();
         }
+        path = URLDecoder.decode(path, "UTF-8");
         try (JarInputStream jar = new JarInputStream(new FileInputStream(path))) {
             visitor = new JCLComparisonVisitor(classSource, packageMap);
             while (true) {
