@@ -417,6 +417,5 @@ public final class ProgramUtils {
             insnCopy.setValue(copyVar(value));
             copy = insnCopy;
         }
-
     }
 }

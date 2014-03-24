@@ -1,8 +1,22 @@
+/*
+ *  Copyright 2014 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 package org.teavm.model.util;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import org.teavm.model.*;
 
 /**
@@ -13,16 +27,16 @@ public final class ModelUtils {
     private ModelUtils() {
     }
 
-    public static ClassHolder copyClass(ClassHolder original) {
+    public static ClassHolder copyClass(ClassReader original) {
         ClassHolder copy = new ClassHolder(original.getName());
         copy.setLevel(original.getLevel());
-        copy.getModifiers().addAll(original.getModifiers());
+        copy.getModifiers().addAll(original.readModifiers());
         copy.setParent(original.getParent());
         copy.getInterfaces().addAll(original.getInterfaces());
-        for (MethodHolder method : original.getMethods()) {
+        for (MethodReader method : original.getMethods()) {
             copy.addMethod(copyMethod(method));
         }
-        for (FieldHolder field : original.getFields()) {
+        for (FieldReader field : original.getFields()) {
             copy.addField(copyField(field));
         }
         copy.setOwnerName(original.getOwnerName());
@@ -30,35 +44,37 @@ public final class ModelUtils {
         return copy;
     }
 
-    public static MethodHolder copyMethod(MethodHolder method) {
+    public static MethodHolder copyMethod(MethodReader method) {
         MethodHolder copy = new MethodHolder(method.getDescriptor());
         copy.setLevel(method.getLevel());
-        copy.getModifiers().addAll(method.getModifiers());
-        copy.setProgram(ProgramUtils.copy(method.getProgram()));
+        copy.getModifiers().addAll(method.readModifiers());
+        if (method.getProgram() != null) {
+            copy.setProgram(ProgramUtils.copy(method.getProgram()));
+        }
         copyAnnotations(method.getAnnotations(), copy.getAnnotations());
         return copy;
     }
 
-    public static FieldHolder copyField(FieldHolder field) {
+    public static FieldHolder copyField(FieldReader field) {
         FieldHolder copy = new FieldHolder(field.getName());
         copy.setLevel(field.getLevel());
-        copy.getModifiers().addAll(field.getModifiers());
+        copy.getModifiers().addAll(field.readModifiers());
         copy.setType(field.getType());
         copy.setInitialValue(field.getInitialValue());
         copyAnnotations(field.getAnnotations(), copy.getAnnotations());
         return copy;
     }
 
-    private static void copyAnnotations(AnnotationContainer src, AnnotationContainer dst) {
-        for (AnnotationHolder annot : src.all()) {
+    private static void copyAnnotations(AnnotationContainerReader src, AnnotationContainer dst) {
+        for (AnnotationReader annot : src.all()) {
             dst.add(copyAnnotation(annot));
         }
     }
 
-    private static AnnotationHolder copyAnnotation(AnnotationHolder annot) {
+    private static AnnotationHolder copyAnnotation(AnnotationReader annot) {
         AnnotationHolder copy = new AnnotationHolder(annot.getType());
-        for (Map.Entry<String, AnnotationValue> entry : annot.getValues().entrySet()) {
-            copy.getValues().put(entry.getKey(), copyAnnotationValue(entry.getValue()));
+        for (String fieldName : annot.getAvailableFields()) {
+            copy.getValues().put(fieldName, copyAnnotationValue(annot.getValue(fieldName)));
         }
         return copy;
     }

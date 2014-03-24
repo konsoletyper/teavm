@@ -25,14 +25,14 @@ import org.teavm.model.*;
  */
 public class DefaultNamingStrategy implements NamingStrategy {
     private AliasProvider aliasProvider;
-    private ClassHolderSource classSource;
+    private ClassReaderSource classSource;
     private Map<String, String> aliases = new HashMap<>();
     private Map<String, String> privateAliases = new HashMap<>();
     private Map<String, String> classAliases = new HashMap<>();
     private Map<String, String> fieldAliases = new HashMap<>();
     private boolean minifying;
 
-    public DefaultNamingStrategy(AliasProvider aliasProvider, ClassHolderSource classSource) {
+    public DefaultNamingStrategy(AliasProvider aliasProvider, ClassReaderSource classSource) {
         this.aliasProvider = aliasProvider;
         this.classSource = classSource;
     }
@@ -62,9 +62,9 @@ public class DefaultNamingStrategy implements NamingStrategy {
         if (method == null) {
             throw new NamingException("Can't provide name for method as it was not found: " + origMethod);
         }
-        ClassHolder clsHolder = classSource.get(method.getClassName());
-        MethodHolder methodHolder = clsHolder.getMethod(method.getDescriptor());
-        if (methodHolder.getModifiers().contains(ElementModifier.STATIC) ||
+        ClassReader clsHolder = classSource.get(method.getClassName());
+        MethodReader methodHolder = clsHolder.getMethod(method.getDescriptor());
+        if (methodHolder.hasModifier(ElementModifier.STATIC) ||
                 method.getDescriptor().getName().equals("<init>") ||
                 methodHolder.getLevel() == AccessLevel.PRIVATE) {
             String key = method.toString();
@@ -125,11 +125,11 @@ public class DefaultNamingStrategy implements NamingStrategy {
     private MethodReference getRealMethod(MethodReference methodRef) {
         String className = methodRef.getClassName();
         while (className != null) {
-            ClassHolder cls = classSource.get(className);
+            ClassReader cls = classSource.get(className);
             if (cls == null) {
                 return null;
             }
-            MethodHolder method = cls.getMethod(methodRef.getDescriptor());
+            MethodReader method = cls.getMethod(methodRef.getDescriptor());
             if (method != null) {
                 if (method.getLevel() == AccessLevel.PRIVATE && !className.equals(methodRef.getClassName())) {
                     return null;
@@ -144,7 +144,7 @@ public class DefaultNamingStrategy implements NamingStrategy {
     private String getRealFieldOwner(String cls, String field) {
         String initialCls = cls;
         while (!fieldExists(cls, field)) {
-            ClassHolder clsHolder = classSource.get(cls);
+            ClassReader clsHolder = classSource.get(cls);
             cls = clsHolder.getParent();
             if (cls == null) {
                 throw new NamingException("Can't provide name for field as the field not found: " +
@@ -155,7 +155,7 @@ public class DefaultNamingStrategy implements NamingStrategy {
     }
 
     private boolean fieldExists(String cls, String field) {
-        ClassHolder classHolder = classSource.get(cls);
+        ClassReader classHolder = classSource.get(cls);
         return classHolder.getField(field) != null;
     }
 }

@@ -63,7 +63,7 @@ import org.teavm.vm.spi.TeaVMPlugin;
  * @author Alexey Andreev
  */
 public class TeaVM implements TeaVMHost {
-    private JavascriptProcessedClassSource classSource;
+    private ClassReaderSource classSource;
     private DependencyChecker dependencyChecker;
     private FiniteExecutor executor;
     private ClassLoader classLoader;
@@ -76,8 +76,8 @@ public class TeaVM implements TeaVMHost {
     private List<RendererListener> rendererListeners = new ArrayList<>();
     private Properties properties = new Properties();
 
-    TeaVM(ClassHolderSource classSource, ClassLoader classLoader, FiniteExecutor executor) {
-        this.classSource = new JavascriptProcessedClassSource(classSource);
+    TeaVM(ClassReaderSource classSource, ClassLoader classLoader, FiniteExecutor executor) {
+        this.classSource = classSource;
         this.classLoader = classLoader;
         dependencyChecker = new DependencyChecker(this.classSource, classLoader, executor);
         this.executor = executor;
@@ -90,7 +90,7 @@ public class TeaVM implements TeaVMHost {
 
     @Override
     public void add(ClassHolderTransformer transformer) {
-        classSource.addTransformer(transformer);
+        dependencyChecker.addClassTransformer(transformer);
     }
 
     @Override
@@ -137,6 +137,9 @@ public class TeaVM implements TeaVMHost {
     /**
      * Specifies configuration properties for TeaVM and its plugins. You should call this method before
      * installing any plugins or interceptors.
+     *
+     * @param properties configuration properties to set. These properties will be copied into this VM instance,
+     * so VM won't see any further changes in this object.
      */
     public void setProperties(Properties properties) {
         this.properties.clear();
@@ -196,10 +199,10 @@ public class TeaVM implements TeaVMHost {
     }
 
     /**
-     * Gets a {@link ClassHolderSource} which is used by this TeaVM instance. It is exactly what was
+     * Gets a {@link ClassReaderSource} which is used by this TeaVM instance. It is exactly what was
      * passed to {@link TeaVMBuilder#setClassSource(ClassHolderSource)}.
      */
-    public ClassHolderSource getClassSource() {
+    public ClassReaderSource getClassSource() {
         return classSource;
     }
 
@@ -216,6 +219,8 @@ public class TeaVM implements TeaVMHost {
      * <p>After building allows to build report on all items (classes, methods, fields) that are missing.
      * This can happen when you forgot some items in class path or when your code uses unimplemented
      * Java class library methods. The behavior of this method before building is not specified.</p>
+     *
+     * @param target where to append all dependency diagnostics errors.
      */
     public void showMissingItems(Appendable target) throws IOException {
         dependencyChecker.showMissingItems(target);
@@ -243,12 +248,8 @@ public class TeaVM implements TeaVMHost {
      * plugins or inteceptors that generate additional resources, the build process will fail.
      */
     public void build(Appendable writer, BuildTarget target) throws RenderingException {
+        // Check dependencies
         AliasProvider aliasProvider = minifying ? new MinifyingAliasProvider() : new DefaultAliasProvider();
-        DefaultNamingStrategy naming = new DefaultNamingStrategy(aliasProvider, classSource);
-        naming.setMinifying(minifying);
-        SourceWriterBuilder builder = new SourceWriterBuilder(naming);
-        builder.setMinified(minifying);
-        SourceWriter sourceWriter = builder.build(writer);
         dependencyChecker.linkMethod(new MethodReference("java.lang.Class", "createNew",
                 ValueType.object("java.lang.Class")), DependencyStack.ROOT).use();
         dependencyChecker.linkMethod(new MethodReference("java.lang.String", "<init>",
@@ -268,9 +269,12 @@ public class TeaVM implements TeaVMHost {
         if (hasMissingItems()) {
             return;
         }
-        Linker linker = new Linker(dependencyChecker);
-        ListableClassHolderSource classSet = linker.link(classSource);
-        Decompiler decompiler = new Decompiler(classSet, classLoader, executor);
+
+        // Link
+        Linker linker = new Linker();
+        ListableClassHolderSource classSet = linker.link(dependencyChecker);
+
+        // Optimize and allocate registers
         devirtualize(classSet, dependencyChecker);
         executor.complete();
         ClassSetOptimizer optimizer = new ClassSetOptimizer(executor);
@@ -285,10 +289,20 @@ public class TeaVM implements TeaVMHost {
                 // Just don't do anything
             }
         }
+
+        // Decompile
+        Decompiler decompiler = new Decompiler(classSet, classLoader, executor);
         for (Map.Entry<MethodReference, Generator> entry : methodGenerators.entrySet()) {
             decompiler.addGenerator(entry.getKey(), entry.getValue());
         }
         List<ClassNode> clsNodes = decompiler.decompile(classSet.getClassNames());
+
+        // Render
+        DefaultNamingStrategy naming = new DefaultNamingStrategy(aliasProvider, dependencyChecker.getClassSource());
+        naming.setMinifying(minifying);
+        SourceWriterBuilder builder = new SourceWriterBuilder(naming);
+        builder.setMinified(minifying);
+        SourceWriter sourceWriter = builder.build(writer);
         Renderer renderer = new Renderer(sourceWriter, classSet, classLoader);
         try {
             for (RendererListener listener : rendererListeners) {
@@ -321,7 +335,6 @@ public class TeaVM implements TeaVMHost {
         }
     }
 
-    // TODO: repair devirtualization
     private void devirtualize(ListableClassHolderSource classes, DependencyInfo dependency) {
         final Devirtualization devirtualization = new Devirtualization(dependency, classes);
         for (String className : classes.getClassNames()) {

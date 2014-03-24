@@ -26,6 +26,7 @@ import org.teavm.vm.TeaVMBuilder;
 /**
  * <p>A host of plugins for TeaVM. Plugins are provided with this interface
  * in order to give them ability to extend TeaVM.</p>
+ *
  * @author Alexey Andreev
  */
 public interface TeaVMHost {
@@ -45,7 +46,10 @@ public interface TeaVMHost {
 
     /**
      * Gets configuration properties. These properties are usually specified by
-     * {@link TeaVM#setProperties(Properties)}
+     * {@link TeaVM#setProperties(Properties)}.
+     *
+     * @return a copy of all of the VM properties. Any further changes to returned objects will not be
+     * visible to VM.
      */
     Properties getProperties();
 }

@@ -49,11 +49,11 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     ConcurrentMap<String, DependencyStack> missingClasses = new ConcurrentHashMap<>();
     ConcurrentMap<FieldReference, DependencyStack> missingFields = new ConcurrentHashMap<>();
 
-    public DependencyChecker(ClassHolderSource classSource, ClassLoader classLoader) {
+    public DependencyChecker(ClassReaderSource classSource, ClassLoader classLoader) {
         this(classSource, classLoader, new SimpleFiniteExecutor());
     }
 
-    public DependencyChecker(ClassHolderSource classSource, ClassLoader classLoader, FiniteExecutor executor) {
+    public DependencyChecker(ClassReaderSource classSource, ClassLoader classLoader, FiniteExecutor executor) {
         this.classSource = new DependencyClassSource(classSource);
         this.classLoader = classLoader;
         this.executor = executor;
@@ -133,6 +133,10 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     public void addDependencyListener(DependencyListener listener) {
         listeners.add(listener);
         listener.started(this);
+    }
+
+    public void addClassTransformer(ClassHolderTransformer transformer) {
+        classSource.addTransformer(transformer);
     }
 
     public void addEntryPoint(MethodReference methodRef, String... argumentTypes) {
@@ -437,15 +441,5 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
             }
             sb.append('\n');
         }
-    }
-
-    @Override
-    public Collection<ClassHolder> getGeneratedClasses() {
-        Collection<ClassHolder> classes = classSource.getGeneratedClasses();
-        List<ClassHolder> copies = new ArrayList<>(classes.size());
-        for (ClassHolder cls : classes) {
-            copies.add(ModelUtils.copyClass(cls));
-        }
-        return classes;
     }
 }

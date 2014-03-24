@@ -24,14 +24,14 @@ import org.teavm.resource.MapperClassHolderSource;
  * @author Alexey Andreev
  */
 public class CopyClassHolderSource implements ClassHolderSource {
-    private ClassHolderSource innerSource;
+    private ClassReaderSource innerSource;
     private MapperClassHolderSource mapperSource = new MapperClassHolderSource(new Mapper<String, ClassHolder>() {
         @Override public ClassHolder map(String preimage) {
             return copyClass(preimage);
         }
     });
 
-    public CopyClassHolderSource(ClassHolderSource innerSource) {
+    public CopyClassHolderSource(ClassReaderSource innerSource) {
         this.innerSource = innerSource;
     }
 
@@ -41,7 +41,7 @@ public class CopyClassHolderSource implements ClassHolderSource {
     }
 
     private ClassHolder copyClass(String className) {
-        ClassHolder original = innerSource.get(className);
+        ClassReader original = innerSource.get(className);
         if (original == null) {
             return null;
         }

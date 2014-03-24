@@ -19,6 +19,7 @@ import org.teavm.classlib.impl.charset.ByteBuffer;
 import org.teavm.classlib.impl.charset.CharBuffer;
 import org.teavm.classlib.impl.charset.Charset;
 import org.teavm.classlib.java.lang.TMath;
+import org.teavm.classlib.java.lang.TObject;
 import org.teavm.classlib.java.lang.TString;
 import org.teavm.classlib.java.lang.TStringBuilder;
 
@@ -171,6 +172,11 @@ public class TPrintStream extends TFilterOutputStream {
     }
 
     public void println(TString s) {
+        sb.append(s).append('\n');
+        printSB();
+    }
+
+    public void println(TObject s) {
         sb.append(s).append('\n');
         printSB();
     }

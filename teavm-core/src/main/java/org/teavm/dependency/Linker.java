@@ -19,33 +19,24 @@ import org.teavm.model.*;
 import org.teavm.model.instructions.GetFieldInstruction;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.PutFieldInstruction;
+import org.teavm.model.util.ModelUtils;
 
 /**
  *
  * @author Alexey Andreev
  */
 public class Linker {
-    private DependencyInfo dependency;
-
-    public Linker(DependencyInfo dependency) {
-        this.dependency = dependency;
-    }
-
-    public ListableClassHolderSource link(ClassHolderSource classes) {
+    public ListableClassHolderSource link(DependencyInfo dependency) {
         MutableClassHolderSource cutClasses = new MutableClassHolderSource();
         for (String className : dependency.getAchievableClasses()) {
-            ClassHolder classHolder = classes.get(className);
-            cutClasses.putClassHolder(classHolder);
-            link(classHolder);
-        }
-        for (ClassHolder generatedClass : dependency.getGeneratedClasses()) {
-            cutClasses.putClassHolder(generatedClass);
-            link(generatedClass);
+            ClassHolder cls = ModelUtils.copyClass(dependency.getClassSource().get(className));
+            cutClasses.putClassHolder(cls);
+            link(dependency, cls);
         }
         return cutClasses;
     }
 
-    public void link(ClassHolder cls) {
+    private void link(DependencyInfo dependency, ClassHolder cls) {
         for (MethodHolder method : cls.getMethods().toArray(new MethodHolder[0])) {
             MethodReference methodRef = new MethodReference(cls.getName(), method.getDescriptor());
             MethodDependencyInfo methodDep = dependency.getMethod(methodRef);
@@ -55,7 +46,7 @@ public class Linker {
                 method.getModifiers().add(ElementModifier.ABSTRACT);
                 method.setProgram(null);
             } else if (method.getProgram() != null) {
-                link(method);
+                link(dependency, method);
             }
         }
         for (FieldHolder field : cls.getFields().toArray(new FieldHolder[0])) {
@@ -66,7 +57,7 @@ public class Linker {
         }
     }
 
-    public void link(MethodHolder method) {
+    private void link(DependencyInfo dependency, MethodHolder method) {
         Program program = method.getProgram();
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);

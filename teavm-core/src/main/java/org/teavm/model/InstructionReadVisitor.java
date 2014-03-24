@@ -97,7 +97,7 @@ class InstructionReadVisitor implements InstructionVisitor {
 
     @Override
     public void visit(CastIntegerInstruction insn) {
-        reader.cast(insn.getReceiver(), insn.getReceiver(), insn.getTargetType(), insn.getDirection());
+        reader.cast(insn.getReceiver(), insn.getValue(), insn.getTargetType(), insn.getDirection());
     }
 
     @Override
