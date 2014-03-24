@@ -22,15 +22,17 @@ import java.util.concurrent.ConcurrentMap;
 import org.teavm.common.*;
 import org.teavm.common.ConcurrentCachedMapper.KeyListener;
 import org.teavm.model.*;
+import org.teavm.model.util.ModelUtils;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class DependencyChecker implements DependencyInfo {
+public class DependencyChecker implements DependencyInfo, DependencyAgent {
     private static Object dummyValue = new Object();
     static final boolean shouldLog = System.getProperty("org.teavm.logDependencies", "false").equals("true");
-    private ClassReaderSource classSource;
+    private int classNameSuffix;
+    private DependencyClassSource classSource;
     private ClassLoader classLoader;
     private FiniteExecutor executor;
     private Mapper<MethodReference, MethodReader> methodReaderCache;
@@ -47,12 +49,12 @@ public class DependencyChecker implements DependencyInfo {
     ConcurrentMap<String, DependencyStack> missingClasses = new ConcurrentHashMap<>();
     ConcurrentMap<FieldReference, DependencyStack> missingFields = new ConcurrentHashMap<>();
 
-    public DependencyChecker(ClassReaderSource classSource, ClassLoader classLoader) {
+    public DependencyChecker(ClassHolderSource classSource, ClassLoader classLoader) {
         this(classSource, classLoader, new SimpleFiniteExecutor());
     }
 
-    public DependencyChecker(ClassReaderSource classSource, ClassLoader classLoader, FiniteExecutor executor) {
-        this.classSource = classSource;
+    public DependencyChecker(ClassHolderSource classSource, ClassLoader classLoader, FiniteExecutor executor) {
+        this.classSource = new DependencyClassSource(classSource);
         this.classLoader = classLoader;
         this.executor = executor;
         methodReaderCache = new ConcurrentCachedMapper<>(new Mapper<MethodReference, MethodReader>() {
@@ -108,12 +110,24 @@ public class DependencyChecker implements DependencyInfo {
         });
     }
 
+    @Override
     public DependencyNode createNode() {
         return new DependencyNode(this);
     }
 
+    @Override
     public ClassReaderSource getClassSource() {
         return classSource;
+    }
+
+    @Override
+    public String generateClassName() {
+        return "$$tmp$$.TempClass" + classNameSuffix++;
+    }
+
+    @Override
+    public void submitClass(ClassHolder cls) {
+        classSource.submit(ModelUtils.copyClass(cls));
     }
 
     public void addDependencyListener(DependencyListener listener) {
@@ -135,7 +149,7 @@ public class DependencyChecker implements DependencyInfo {
         }
     }
 
-    public void schedulePropagation(final DependencyConsumer consumer, final String type) {
+    void schedulePropagation(final DependencyConsumer consumer, final String type) {
         executor.executeFast(new Runnable() {
             @Override public void run() {
                 consumer.consume(type);
@@ -158,6 +172,7 @@ public class DependencyChecker implements DependencyInfo {
         return result;
     }
 
+    @Override
     public MethodDependency linkMethod(MethodReference methodRef, DependencyStack stack) {
         if (methodRef == null) {
             throw new IllegalArgumentException();
@@ -166,6 +181,7 @@ public class DependencyChecker implements DependencyInfo {
         return methodCache.map(methodRef);
     }
 
+    @Override
     public void initClass(String className, final DependencyStack stack) {
         classStacks.putIfAbsent(className, stack);
         MethodDescriptor clinitDesc = new MethodDescriptor("<clinit>", ValueType.VOID);
@@ -302,6 +318,7 @@ public class DependencyChecker implements DependencyInfo {
         return dep;
     }
 
+    @Override
     public boolean isMethodAchievable(MethodReference methodRef) {
         return methodCache.caches(methodRef);
     }
@@ -321,6 +338,7 @@ public class DependencyChecker implements DependencyInfo {
         return new HashSet<>(achievableClasses.keySet());
     }
 
+    @Override
     public FieldDependency linkField(FieldReference fieldRef, DependencyStack stack) {
         fieldStacks.putIfAbsent(fieldRef, stack);
         return fieldCache.map(fieldRef);
@@ -419,5 +437,15 @@ public class DependencyChecker implements DependencyInfo {
             }
             sb.append('\n');
         }
+    }
+
+    @Override
+    public Collection<ClassHolder> getGeneratedClasses() {
+        Collection<ClassHolder> classes = classSource.getGeneratedClasses();
+        List<ClassHolder> copies = new ArrayList<>(classes.size());
+        for (ClassHolder cls : classes) {
+            copies.add(ModelUtils.copyClass(cls));
+        }
+        return classes;
     }
 }

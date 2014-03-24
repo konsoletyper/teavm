@@ -15,7 +15,6 @@
  */
 package org.teavm.model;
 
-
 /**
  *
  * @author Alexey Andreev

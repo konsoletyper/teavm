@@ -67,21 +67,21 @@ public class EntryPointGenerator extends AbstractRendererListener implements Dep
     }
 
     @Override
-    public void started(DependencyChecker dependencyChecker) {
+    public void started(DependencyAgent agent) {
         for (String className : classesToLoad) {
-            dependencyChecker.initClass(className, DependencyStack.ROOT);
+            agent.initClass(className, DependencyStack.ROOT);
         }
     }
 
     @Override
-    public void classAchieved(DependencyChecker dependencyChecker, String className) {
+    public void classAchieved(DependencyAgent agent, String className) {
     }
 
     @Override
-    public void methodAchieved(DependencyChecker dependencyChecker, MethodDependency method) {
+    public void methodAchieved(DependencyAgent agent, MethodDependency method) {
     }
 
     @Override
-    public void fieldAchieved(DependencyChecker dependencyChecker, FieldDependency field) {
+    public void fieldAchieved(DependencyAgent agent, FieldDependency field) {
     }
 }

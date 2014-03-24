@@ -20,11 +20,11 @@ package org.teavm.dependency;
  * @author Alexey Andreev
  */
 public interface DependencyListener {
-    void started(DependencyChecker dependencyChecker);
+    void started(DependencyAgent agent);
 
-    void classAchieved(DependencyChecker dependencyChecker, String className);
+    void classAchieved(DependencyAgent agent, String className);
 
-    void methodAchieved(DependencyChecker dependencyChecker, MethodDependency method);
+    void methodAchieved(DependencyAgent agent, MethodDependency method);
 
-    void fieldAchieved(DependencyChecker dependencyChecker, FieldDependency field);
+    void fieldAchieved(DependencyAgent agent, FieldDependency field);
 }

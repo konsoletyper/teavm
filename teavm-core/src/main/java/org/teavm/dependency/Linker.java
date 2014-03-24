@@ -36,30 +36,38 @@ public class Linker {
         for (String className : dependency.getAchievableClasses()) {
             ClassHolder classHolder = classes.get(className);
             cutClasses.putClassHolder(classHolder);
-            for (MethodHolder method : classHolder.getMethods().toArray(new MethodHolder[0])) {
-                MethodReference methodRef = new MethodReference(className, method.getDescriptor());
-                MethodDependencyInfo methodDep = dependency.getMethod(methodRef);
-                if (methodDep == null) {
-                    classHolder.removeMethod(method);
-                } else if (!methodDep.isUsed()) {
-                    method.getModifiers().add(ElementModifier.ABSTRACT);
-                    method.setProgram(null);
-                } else if (method.getProgram() != null) {
-                    link(method);
-                }
-            }
-            for (FieldHolder field : classHolder.getFields().toArray(new FieldHolder[0])) {
-                FieldReference fieldRef = new FieldReference(className, field.getName());
-                if (dependency.getField(fieldRef) == null) {
-                    classHolder.removeField(field);
-                }
-            }
+            link(classHolder);
+        }
+        for (ClassHolder generatedClass : dependency.getGeneratedClasses()) {
+            cutClasses.putClassHolder(generatedClass);
+            link(generatedClass);
         }
         return cutClasses;
     }
 
-    public void link(MethodHolder cls) {
-        Program program = cls.getProgram();
+    public void link(ClassHolder cls) {
+        for (MethodHolder method : cls.getMethods().toArray(new MethodHolder[0])) {
+            MethodReference methodRef = new MethodReference(cls.getName(), method.getDescriptor());
+            MethodDependencyInfo methodDep = dependency.getMethod(methodRef);
+            if (methodDep == null) {
+                cls.removeMethod(method);
+            } else if (!methodDep.isUsed()) {
+                method.getModifiers().add(ElementModifier.ABSTRACT);
+                method.setProgram(null);
+            } else if (method.getProgram() != null) {
+                link(method);
+            }
+        }
+        for (FieldHolder field : cls.getFields().toArray(new FieldHolder[0])) {
+            FieldReference fieldRef = new FieldReference(cls.getName(), field.getName());
+            if (dependency.getField(fieldRef) == null) {
+                cls.removeField(field);
+            }
+        }
+    }
+
+    public void link(MethodHolder method) {
+        Program program = method.getProgram();
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
             for (Instruction insn : block.getInstructions()) {

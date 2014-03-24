@@ -26,29 +26,29 @@ public class ClassLookupDependencySupport implements DependencyListener {
     private DependencyNode allClasses;
 
     @Override
-    public void started(DependencyChecker dependencyChecker) {
-        allClasses = dependencyChecker.createNode();
+    public void started(DependencyAgent agent) {
+        allClasses = agent.createNode();
     }
 
     @Override
-    public void classAchieved(DependencyChecker dependencyChecker, String className) {
+    public void classAchieved(DependencyAgent agent, String className) {
         allClasses.propagate(className);
     }
 
     @Override
-    public void methodAchieved(final DependencyChecker dependencyChecker, MethodDependency method) {
+    public void methodAchieved(final DependencyAgent agent, MethodDependency method) {
         MethodReference ref = method.getReference();
         if (ref.getClassName().equals("java.lang.Class") && ref.getName().equals("forNameImpl")) {
             final DependencyStack stack = method.getStack();
             allClasses.addConsumer(new DependencyConsumer() {
                 @Override public void consume(String type) {
-                    ClassReader cls = dependencyChecker.getClassSource().get(type);
+                    ClassReader cls = agent.getClassSource().get(type);
                     if (cls == null) {
                         return;
                     }
                     MethodReader initMethod = cls.getMethod(new MethodDescriptor("<clinit>", ValueType.VOID));
                     if (initMethod != null) {
-                        dependencyChecker.linkMethod(initMethod.getReference(), stack).use();
+                        agent.linkMethod(initMethod.getReference(), stack).use();
                     }
                 }
             });
@@ -56,6 +56,6 @@ public class ClassLookupDependencySupport implements DependencyListener {
     }
 
     @Override
-    public void fieldAchieved(DependencyChecker dependencyChecker, FieldDependency field) {
+    public void fieldAchieved(DependencyAgent dependencyChecker, FieldDependency field) {
     }
 }

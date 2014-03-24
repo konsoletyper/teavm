@@ -17,6 +17,7 @@ package org.teavm.vm;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import org.teavm.common.ConcurrentCachedMapper;
 import org.teavm.common.Mapper;
 import org.teavm.model.ClassHolder;

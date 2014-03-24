@@ -30,13 +30,13 @@ public class EnumDependencySupport implements DependencyListener {
     private volatile DependencyStack enumConstantsStack;
 
     @Override
-    public void started(DependencyChecker dependencyChecker) {
-        allEnums = dependencyChecker.createNode();
+    public void started(DependencyAgent agent) {
+        allEnums = agent.createNode();
     }
 
     @Override
-    public void classAchieved(DependencyChecker dependencyChecker, String className) {
-        ClassReader cls = dependencyChecker.getClassSource().get(className);
+    public void classAchieved(DependencyAgent agent, String className) {
+        ClassReader cls = agent.getClassSource().get(className);
         if (cls == null || cls.getParent() == null || !cls.getParent().equals("java.lang.Enum")) {
             return;
         }
@@ -45,25 +45,25 @@ public class EnumDependencySupport implements DependencyListener {
             MethodReader method = cls.getMethod(new MethodDescriptor("values",
                     ValueType.arrayOf(ValueType.object(cls.getName()))));
             if (method != null) {
-                dependencyChecker.linkMethod(method.getReference(), enumConstantsStack).use();
+                agent.linkMethod(method.getReference(), enumConstantsStack).use();
             }
         }
     }
 
     @Override
-    public void methodAchieved(DependencyChecker dependencyChecker, MethodDependency method) {
+    public void methodAchieved(DependencyAgent agent, MethodDependency method) {
         if (method.getReference().getClassName().equals("java.lang.Class") &&
                 method.getReference().getName().equals("getEnumConstantsImpl")) {
             allEnums.connect(method.getResult().getArrayItem());
             method.getResult().propagate("[java.lang.Enum");
             enumConstantsStack = method.getStack();
-            for (String cls : dependencyChecker.getAchievableClasses()) {
-                classAchieved(dependencyChecker, cls);
+            for (String cls : agent.getAchievableClasses()) {
+                classAchieved(agent, cls);
             }
         }
     }
 
     @Override
-    public void fieldAchieved(DependencyChecker dependencyChecker, FieldDependency field) {
+    public void fieldAchieved(DependencyAgent agent, FieldDependency field) {
     }
 }

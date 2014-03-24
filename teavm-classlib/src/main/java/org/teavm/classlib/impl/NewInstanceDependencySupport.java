@@ -27,13 +27,13 @@ public class NewInstanceDependencySupport implements DependencyListener {
     private DependencyStack newInstanceStack;
 
     @Override
-    public void started(DependencyChecker dependencyChecker) {
-        allClassesNode = dependencyChecker.createNode();
+    public void started(DependencyAgent agent) {
+        allClassesNode = agent.createNode();
     }
 
     @Override
-    public void classAchieved(DependencyChecker dependencyChecker, String className) {
-        ClassReader cls = dependencyChecker.getClassSource().get(className);
+    public void classAchieved(DependencyAgent agent, String className) {
+        ClassReader cls = agent.getClassSource().get(className);
         if (cls == null) {
             return;
         }
@@ -47,25 +47,25 @@ public class NewInstanceDependencySupport implements DependencyListener {
     }
 
     @Override
-    public void methodAchieved(final DependencyChecker dependencyChecker, MethodDependency method) {
+    public void methodAchieved(final DependencyAgent agent, MethodDependency method) {
         MethodReader reader = method.getMethod();
         if (reader.getOwnerName().equals("java.lang.Class") && reader.getName().equals("newInstance")) {
             newInstanceStack = method.getStack();
             allClassesNode.connect(method.getResult());
             method.getResult().addConsumer(new DependencyConsumer() {
                 @Override public void consume(String type) {
-                    attachConstructor(dependencyChecker, type);
+                    attachConstructor(agent, type);
                 }
             });
         }
     }
 
-    private void attachConstructor(DependencyChecker checker, String type) {
+    private void attachConstructor(DependencyAgent checker, String type) {
         MethodReference ref = new MethodReference(type, new MethodDescriptor("<init>", ValueType.VOID));
         checker.linkMethod(ref, newInstanceStack).use();
     }
 
     @Override
-    public void fieldAchieved(DependencyChecker dependencyChecker, FieldDependency field) {
+    public void fieldAchieved(DependencyAgent dependencyAgent, FieldDependency field) {
     }
 }

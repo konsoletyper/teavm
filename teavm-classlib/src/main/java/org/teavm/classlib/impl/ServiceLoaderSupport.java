@@ -78,12 +78,12 @@ public class ServiceLoaderSupport implements Generator, DependencyListener {
     }
 
     @Override
-    public void started(DependencyChecker dependencyChecker) {
-        allClassesNode = dependencyChecker.createNode();
+    public void started(DependencyAgent agent) {
+        allClassesNode = agent.createNode();
     }
 
     @Override
-    public void classAchieved(DependencyChecker dependencyChecker, String className) {
+    public void classAchieved(DependencyAgent agent, String className) {
         try {
             Enumeration<URL> resources = classLoader.getResources("META-INF/services/" + className);
             while (resources.hasMoreElements()) {
@@ -119,7 +119,7 @@ public class ServiceLoaderSupport implements Generator, DependencyListener {
     }
 
     @Override
-    public void methodAchieved(final DependencyChecker dependencyChecker, MethodDependency method) {
+    public void methodAchieved(final DependencyAgent agent, MethodDependency method) {
         MethodReference ref = method.getReference();
         if (ref.getClassName().equals("java.util.ServiceLoader") && ref.getName().equals("loadServices")) {
             method.getResult().propagate("[java.lang.Object");
@@ -127,18 +127,18 @@ public class ServiceLoaderSupport implements Generator, DependencyListener {
             allClassesNode.connect(method.getResult().getArrayItem());
             method.getResult().getArrayItem().addConsumer(new DependencyConsumer() {
                 @Override public void consume(String type) {
-                    initConstructor(dependencyChecker, type);
+                    initConstructor(agent, type);
                 }
             });
         }
     }
 
-    private void initConstructor(DependencyChecker dependencyChecker, String type) {
+    private void initConstructor(DependencyAgent agent, String type) {
         MethodReference ctor = new MethodReference(type, new MethodDescriptor("<init>", ValueType.VOID));
-        dependencyChecker.linkMethod(ctor, stack).use();
+        agent.linkMethod(ctor, stack).use();
     }
 
     @Override
-    public void fieldAchieved(DependencyChecker dependencyChecker, FieldDependency field) {
+    public void fieldAchieved(DependencyAgent agent, FieldDependency field) {
     }
 }

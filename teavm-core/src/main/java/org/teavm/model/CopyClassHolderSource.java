@@ -15,11 +15,8 @@
  */
 package org.teavm.model;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import org.teavm.common.Mapper;
-import org.teavm.model.util.ProgramUtils;
+import org.teavm.model.util.ModelUtils;
 import org.teavm.resource.MapperClassHolderSource;
 
 /**
@@ -48,68 +45,6 @@ public class CopyClassHolderSource implements ClassHolderSource {
         if (original == null) {
             return null;
         }
-        ClassHolder copy = new ClassHolder(className);
-        copy.setLevel(original.getLevel());
-        copy.getModifiers().addAll(original.getModifiers());
-        copy.setParent(original.getParent());
-        copy.getInterfaces().addAll(original.getInterfaces());
-        for (MethodHolder method : original.getMethods()) {
-            copy.addMethod(copyMethod(method));
-        }
-        for (FieldHolder field : original.getFields()) {
-            copy.addField(copyField(field));
-        }
-        copy.setOwnerName(original.getOwnerName());
-        copyAnnotations(original.getAnnotations(), copy.getAnnotations());
-        return copy;
-    }
-
-    private MethodHolder copyMethod(MethodHolder method) {
-        MethodHolder copy = new MethodHolder(method.getDescriptor());
-        copy.setLevel(method.getLevel());
-        copy.getModifiers().addAll(method.getModifiers());
-        copy.setProgram(ProgramUtils.copy(method.getProgram()));
-        copyAnnotations(method.getAnnotations(), copy.getAnnotations());
-        return copy;
-    }
-
-    private FieldHolder copyField(FieldHolder field) {
-        FieldHolder copy = new FieldHolder(field.getName());
-        copy.setLevel(field.getLevel());
-        copy.getModifiers().addAll(field.getModifiers());
-        copy.setType(field.getType());
-        copy.setInitialValue(field.getInitialValue());
-        copyAnnotations(field.getAnnotations(), copy.getAnnotations());
-        return copy;
-    }
-
-    private void copyAnnotations(AnnotationContainer src, AnnotationContainer dst) {
-        for (AnnotationHolder annot : src.all()) {
-            dst.add(copyAnnotation(annot));
-        }
-    }
-
-    private AnnotationHolder copyAnnotation(AnnotationHolder annot) {
-        AnnotationHolder copy = new AnnotationHolder(annot.getType());
-        for (Map.Entry<String, AnnotationValue> entry : annot.getValues().entrySet()) {
-            copy.getValues().put(entry.getKey(), copyAnnotationValue(entry.getValue()));
-        }
-        return copy;
-    }
-
-    private AnnotationValue copyAnnotationValue(AnnotationValue value) {
-        switch (value.getType()) {
-            case AnnotationValue.LIST: {
-                List<AnnotationValue> listCopy = new ArrayList<>();
-                for (AnnotationValue item : value.getList()) {
-                    listCopy.add(copyAnnotationValue(item));
-                }
-                return new AnnotationValue(listCopy);
-            }
-            case AnnotationValue.ANNOTATION:
-                return new AnnotationValue(copyAnnotation(value.getAnnotation()));
-            default:
-                return value;
-        }
+        return ModelUtils.copyClass(original);
     }
 }

@@ -15,6 +15,7 @@
  */
 package org.teavm.model.util;
 
+import java.util.List;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphBuilder;
 import org.teavm.model.*;
@@ -67,9 +68,9 @@ public final class ProgramUtils {
         return graphBuilder.build();
     }
 
-    public static Program copy(Program program) {
+    public static Program copy(ProgramReader program) {
         Program copy = new Program();
-        CopyVisitor insnCopier = new CopyVisitor();
+        InstructionCopyReader insnCopier = new InstructionCopyReader();
         insnCopier.programCopy = copy;
         for (int i = 0; i < program.variableCount(); ++i) {
             copy.createVariable();
@@ -78,16 +79,16 @@ public final class ProgramUtils {
             copy.createBasicBlock();
         }
         for (int i = 0; i < program.basicBlockCount(); ++i) {
-            BasicBlock block = program.basicBlockAt(i);
+            BasicBlockReader block = program.basicBlockAt(i);
             BasicBlock blockCopy = copy.basicBlockAt(i);
-            for (Instruction insn : block.getInstructions()) {
-                insn.acceptVisitor(insnCopier);
+            for (int j = 0; j < block.instructionCount(); ++j) {
+                block.readInstruction(j, insnCopier);
                 blockCopy.getInstructions().add(insnCopier.copy);
             }
-            for (Phi phi : block.getPhis()) {
+            for (PhiReader phi : block.readPhis()) {
                 Phi phiCopy = new Phi();
                 phiCopy.setReceiver(copy.variableAt(phi.getReceiver().getIndex()));
-                for (Incoming incoming : phi.getIncomings()) {
+                for (IncomingReader incoming : phi.readIncomings()) {
                     Incoming incomingCopy = new Incoming();
                     incomingCopy.setSource(copy.basicBlockAt(incoming.getSource().getIndex()));
                     incomingCopy.setValue(copy.variableAt(incoming.getValue().getIndex()));
@@ -95,7 +96,7 @@ public final class ProgramUtils {
                 }
                 blockCopy.getPhis().add(phiCopy);
             }
-            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+            for (TryCatchBlockReader tryCatch : block.readTryCatchBlocks()) {
                 TryCatchBlock tryCatchCopy = new TryCatchBlock();
                 tryCatchCopy.setExceptionType(tryCatch.getExceptionType());
                 tryCatchCopy.setExceptionVariable(copy.variableAt(tryCatch.getExceptionVariable().getIndex()));
@@ -106,160 +107,166 @@ public final class ProgramUtils {
         return copy;
     }
 
-    private static class CopyVisitor implements InstructionVisitor {
+    private static class InstructionCopyReader implements InstructionReader {
         Instruction copy;
         Program programCopy;
 
-        @Override
-        public void visit(EmptyInstruction insn) {
-            copy = new EmptyInstruction();
-        }
-
-        private Variable copyVar(Variable var) {
+        private Variable copyVar(VariableReader var) {
             return programCopy.variableAt(var.getIndex());
         }
 
-        private BasicBlock copyBlock(BasicBlock block) {
+        private BasicBlock copyBlock(BasicBlockReader block) {
             return programCopy.basicBlockAt(block.getIndex());
         }
 
         @Override
-        public void visit(ClassConstantInstruction insn) {
+        public void nop() {
+            copy = new EmptyInstruction();
+        }
+
+        @Override
+        public void classConstant(VariableReader receiver, ValueType cst) {
             ClassConstantInstruction insnCopy = new ClassConstantInstruction();
-            insnCopy.setConstant(insn.getConstant());
-            insnCopy.setReceiver(copyVar(insn.getReceiver()));
+            insnCopy.setConstant(cst);
+            insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
         }
 
         @Override
-        public void visit(NullConstantInstruction insn) {
+        public void nullConstant(VariableReader receiver) {
             NullConstantInstruction insnCopy = new NullConstantInstruction();
-            insnCopy.setReceiver(copyVar(insn.getReceiver()));
+            insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
         }
 
         @Override
-        public void visit(IntegerConstantInstruction insn) {
+        public void integerConstant(VariableReader receiver, int cst) {
             IntegerConstantInstruction insnCopy = new IntegerConstantInstruction();
-            insnCopy.setConstant(insn.getConstant());
-            insnCopy.setReceiver(copyVar(insn.getReceiver()));
+            insnCopy.setConstant(cst);
+            insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
         }
 
         @Override
-        public void visit(LongConstantInstruction insn) {
+        public void longConstant(VariableReader receiver, long cst) {
             LongConstantInstruction insnCopy = new LongConstantInstruction();
-            insnCopy.setConstant(insn.getConstant());
-            insnCopy.setReceiver(copyVar(insn.getReceiver()));
+            insnCopy.setConstant(cst);
+            insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
         }
 
         @Override
-        public void visit(FloatConstantInstruction insn) {
+        public void floatConstant(VariableReader receiver, float cst) {
             FloatConstantInstruction insnCopy = new FloatConstantInstruction();
-            insnCopy.setConstant(insn.getConstant());
-            insnCopy.setReceiver(copyVar(insn.getReceiver()));
+            insnCopy.setConstant(cst);
+            insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
         }
 
         @Override
-        public void visit(DoubleConstantInstruction insn) {
+        public void doubleConstant(VariableReader receiver, double cst) {
             DoubleConstantInstruction insnCopy = new DoubleConstantInstruction();
-            insnCopy.setConstant(insn.getConstant());
-            insnCopy.setReceiver(copyVar(insn.getReceiver()));
+            insnCopy.setConstant(cst);
+            insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
         }
 
         @Override
-        public void visit(StringConstantInstruction insn) {
+        public void stringConstant(VariableReader receiver, String cst) {
             StringConstantInstruction insnCopy = new StringConstantInstruction();
-            insnCopy.setConstant(insn.getConstant());
-            insnCopy.setReceiver(copyVar(insn.getReceiver()));
+            insnCopy.setConstant(cst);
+            insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
         }
 
         @Override
-        public void visit(BinaryInstruction insn) {
-            BinaryInstruction insnCopy = new BinaryInstruction(insn.getOperation(), insn.getOperandType());
-            insnCopy.setFirstOperand(copyVar(insn.getFirstOperand()));
-            insnCopy.setSecondOperand(copyVar(insn.getSecondOperand()));
-            insnCopy.setReceiver(copyVar(insn.getReceiver()));
+        public void binary(BinaryOperation op, VariableReader receiver, VariableReader first, VariableReader second,
+                NumericOperandType type) {
+            BinaryInstruction insnCopy = new BinaryInstruction(op, type);
+            insnCopy.setFirstOperand(copyVar(first));
+            insnCopy.setSecondOperand(copyVar(second));
+            insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
         }
 
         @Override
-        public void visit(NegateInstruction insn) {
-            NegateInstruction insnCopy = new NegateInstruction(insn.getOperandType());
-            insnCopy.setOperand(copyVar(insn.getOperand()));
-            insnCopy.setReceiver(copyVar(insn.getReceiver()));
+        public void negate(VariableReader receiver, VariableReader operand, NumericOperandType type) {
+            NegateInstruction insnCopy = new NegateInstruction(type);
+            insnCopy.setOperand(copyVar(operand));
+            insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
         }
 
         @Override
-        public void visit(AssignInstruction insn) {
+        public void assign(VariableReader receiver, VariableReader assignee) {
             AssignInstruction insnCopy = new AssignInstruction();
-            insnCopy.setAssignee(copyVar(insn.getAssignee()));
-            insnCopy.setReceiver(copyVar(insn.getReceiver()));
+            insnCopy.setAssignee(copyVar(assignee));
+            insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
         }
 
         @Override
-        public void visit(CastInstruction insn) {
+        public void cast(VariableReader receiver, VariableReader value, ValueType targetType) {
             CastInstruction insnCopy = new CastInstruction();
-            insnCopy.setValue(copyVar(insn.getValue()));
-            insnCopy.setReceiver(copyVar(insn.getReceiver()));
-            insnCopy.setTargetType(insn.getTargetType());
+            insnCopy.setValue(copyVar(value));
+            insnCopy.setReceiver(copyVar(receiver));
+            insnCopy.setTargetType(targetType);
             copy = insnCopy;
         }
 
         @Override
-        public void visit(CastNumberInstruction insn) {
-            CastNumberInstruction insnCopy = new CastNumberInstruction(insn.getSourceType(), insn.getTargetType());
-            insnCopy.setValue(copyVar(insn.getValue()));
-            insnCopy.setReceiver(copyVar(insn.getReceiver()));
+        public void cast(VariableReader receiver, VariableReader value, NumericOperandType sourceType,
+                NumericOperandType targetType) {
+            CastNumberInstruction insnCopy = new CastNumberInstruction(sourceType, targetType);
+            insnCopy.setValue(copyVar(value));
+            insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
         }
 
         @Override
-        public void visit(CastIntegerInstruction insn) {
-            CastIntegerInstruction insnCopy = new CastIntegerInstruction(insn.getTargetType(), insn.getDirection());
-            insnCopy.setValue(copyVar(insn.getValue()));
-            insnCopy.setReceiver(copyVar(insn.getReceiver()));
+        public void cast(VariableReader receiver, VariableReader value, IntegerSubtype type,
+                CastIntegerDirection dir) {
+            CastIntegerInstruction insnCopy = new CastIntegerInstruction(type, dir);
+            insnCopy.setValue(copyVar(value));
+            insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
         }
 
         @Override
-        public void visit(BranchingInstruction insn) {
-            BranchingInstruction insnCopy = new BranchingInstruction(insn.getCondition());
-            insnCopy.setOperand(copyVar(insn.getOperand()));
-            insnCopy.setConsequent(copyBlock(insn.getConsequent()));
-            insnCopy.setAlternative(copyBlock(insn.getAlternative()));
+        public void jumpIf(BranchingCondition cond, VariableReader operand, BasicBlockReader consequent,
+                BasicBlockReader alternative) {
+            BranchingInstruction insnCopy = new BranchingInstruction(cond);
+            insnCopy.setOperand(copyVar(operand));
+            insnCopy.setConsequent(copyBlock(consequent));
+            insnCopy.setAlternative(copyBlock(alternative));
             copy = insnCopy;
         }
 
         @Override
-        public void visit(BinaryBranchingInstruction insn) {
-            BinaryBranchingInstruction insnCopy = new BinaryBranchingInstruction(insn.getCondition());
-            insnCopy.setFirstOperand(copyVar(insn.getFirstOperand()));
-            insnCopy.setSecondOperand(copyVar(insn.getSecondOperand()));
-            insnCopy.setConsequent(copyBlock(insn.getConsequent()));
-            insnCopy.setAlternative(copyBlock(insn.getAlternative()));
+        public void jumpIf(BinaryBranchingCondition cond, VariableReader first, VariableReader second,
+                BasicBlockReader consequent, BasicBlockReader alternative) {
+            BinaryBranchingInstruction insnCopy = new BinaryBranchingInstruction(cond);
+            insnCopy.setFirstOperand(copyVar(first));
+            insnCopy.setSecondOperand(copyVar(second));
+            insnCopy.setConsequent(copyBlock(consequent));
+            insnCopy.setAlternative(copyBlock(alternative));
             copy = insnCopy;
         }
 
         @Override
-        public void visit(JumpInstruction insn) {
+        public void jump(BasicBlockReader target) {
             JumpInstruction insnCopy = new JumpInstruction();
-            insnCopy.setTarget(copyBlock(insn.getTarget()));
+            insnCopy.setTarget(copyBlock(target));
             copy = insnCopy;
         }
 
         @Override
-        public void visit(SwitchInstruction insn) {
+        public void choose(VariableReader condition, List<? extends SwitchTableEntryReader> table,
+                BasicBlockReader defaultTarget) {
             SwitchInstruction insnCopy = new SwitchInstruction();
-            insnCopy.setCondition(copyVar(insn.getCondition()));
-            insnCopy.setDefaultTarget(copyBlock(insn.getDefaultTarget()));
-            for (SwitchTableEntry entry : insn.getEntries()) {
+            insnCopy.setCondition(copyVar(condition));
+            insnCopy.setDefaultTarget(copyBlock(defaultTarget));
+            for (SwitchTableEntryReader entry : table) {
                 SwitchTableEntry entryCopy = new SwitchTableEntry();
                 entryCopy.setCondition(entry.getCondition());
                 entryCopy.setTarget(copyBlock(entry.getTarget()));
@@ -269,143 +276,147 @@ public final class ProgramUtils {
         }
 
         @Override
-        public void visit(ExitInstruction insn) {
+        public void exit(VariableReader valueToReturn) {
             ExitInstruction insnCopy = new ExitInstruction();
-            insnCopy.setValueToReturn(insn.getValueToReturn() != null ? copyVar(insn.getValueToReturn()) : null);
+            insnCopy.setValueToReturn(valueToReturn != null ? copyVar(valueToReturn) : null);
             copy = insnCopy;
         }
 
         @Override
-        public void visit(RaiseInstruction insn) {
+        public void raise(VariableReader exception) {
             RaiseInstruction insnCopy = new RaiseInstruction();
-            insnCopy.setException(copyVar(insn.getException()));
+            insnCopy.setException(copyVar(exception));
             copy = insnCopy;
         }
 
         @Override
-        public void visit(ConstructArrayInstruction insn) {
+        public void createArray(VariableReader receiver, ValueType itemType, VariableReader size) {
             ConstructArrayInstruction insnCopy = new ConstructArrayInstruction();
-            insnCopy.setItemType(insn.getItemType());
-            insnCopy.setSize(copyVar(insn.getSize()));
-            insnCopy.setReceiver(copyVar(insn.getReceiver()));
+            insnCopy.setItemType(itemType);
+            insnCopy.setSize(copyVar(size));
+            insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
         }
 
         @Override
-        public void visit(ConstructInstruction insn) {
-            ConstructInstruction insnCopy = new ConstructInstruction();
-            insnCopy.setType(insn.getType());
-            insnCopy.setReceiver(copyVar(insn.getReceiver()));
-            copy = insnCopy;
-        }
-
-        @Override
-        public void visit(ConstructMultiArrayInstruction insn) {
+        public void createArray(VariableReader receiver, ValueType itemType,
+                List<? extends VariableReader> dimensions) {
             ConstructMultiArrayInstruction insnCopy = new ConstructMultiArrayInstruction();
-            insnCopy.setItemType(insn.getItemType());
-            insnCopy.setReceiver(copyVar(insn.getReceiver()));
-            for (Variable dim : insn.getDimensions()) {
+            insnCopy.setItemType(itemType);
+            insnCopy.setReceiver(copyVar(receiver));
+            for (VariableReader dim : dimensions) {
                 insnCopy.getDimensions().add(copyVar(dim));
             }
             copy = insnCopy;
         }
 
         @Override
-        public void visit(GetFieldInstruction insn) {
+        public void create(VariableReader receiver, String type) {
+            ConstructInstruction insnCopy = new ConstructInstruction();
+            insnCopy.setType(type);
+            insnCopy.setReceiver(copyVar(receiver));
+            copy = insnCopy;
+        }
+
+        @Override
+        public void getField(VariableReader receiver, VariableReader instance, FieldReference field,
+                ValueType fieldType) {
             GetFieldInstruction insnCopy = new GetFieldInstruction();
-            insnCopy.setField(insn.getField());
-            insnCopy.setFieldType(insn.getFieldType());
-            insnCopy.setInstance(insn.getInstance() != null ? copyVar(insn.getInstance()) : null);
-            insnCopy.setReceiver(copyVar(insn.getReceiver()));
+            insnCopy.setField(field);
+            insnCopy.setFieldType(fieldType);
+            insnCopy.setInstance(instance != null ? copyVar(instance) : null);
+            insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
         }
 
         @Override
-        public void visit(PutFieldInstruction insn) {
+        public void putField(VariableReader instance, FieldReference field, VariableReader value) {
             PutFieldInstruction insnCopy = new PutFieldInstruction();
-            insnCopy.setField(insn.getField());
-            insnCopy.setInstance(insn.getInstance() != null ? copyVar(insn.getInstance()) : null);
-            insnCopy.setValue(copyVar(insn.getValue()));
+            insnCopy.setField(field);
+            insnCopy.setInstance(instance != null ? copyVar(instance) : null);
+            insnCopy.setValue(copyVar(value));
             copy = insnCopy;
         }
 
         @Override
-        public void visit(ArrayLengthInstruction insn) {
+        public void arrayLength(VariableReader receiver, VariableReader array) {
             ArrayLengthInstruction insnCopy = new ArrayLengthInstruction();
-            insnCopy.setArray(copyVar(insn.getArray()));
-            insnCopy.setReceiver(copyVar(insn.getReceiver()));
+            insnCopy.setArray(copyVar(array));
+            insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
         }
 
         @Override
-        public void visit(CloneArrayInstruction insn) {
+        public void cloneArray(VariableReader receiver, VariableReader array) {
             CloneArrayInstruction insnCopy = new CloneArrayInstruction();
-            insnCopy.setArray(copyVar(insn.getArray()));
-            insnCopy.setReceiver(copyVar(insn.getReceiver()));
+            insnCopy.setArray(copyVar(array));
+            insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
         }
 
         @Override
-        public void visit(UnwrapArrayInstruction insn) {
-            UnwrapArrayInstruction insnCopy = new UnwrapArrayInstruction(insn.getElementType());
-            insnCopy.setArray(copyVar(insn.getArray()));
-            insnCopy.setReceiver(copyVar(insn.getReceiver()));
+        public void unwrapArray(VariableReader receiver, VariableReader array, ArrayElementType elementType) {
+            UnwrapArrayInstruction insnCopy = new UnwrapArrayInstruction(elementType);
+            insnCopy.setArray(copyVar(array));
+            insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
         }
 
         @Override
-        public void visit(GetElementInstruction insn) {
+        public void getElement(VariableReader receiver, VariableReader array, VariableReader index) {
             GetElementInstruction insnCopy = new GetElementInstruction();
-            insnCopy.setArray(copyVar(insn.getArray()));
-            insnCopy.setReceiver(copyVar(insn.getReceiver()));
-            insnCopy.setIndex(copyVar(insn.getIndex()));
+            insnCopy.setArray(copyVar(array));
+            insnCopy.setReceiver(copyVar(receiver));
+            insnCopy.setIndex(copyVar(index));
             copy = insnCopy;
         }
 
         @Override
-        public void visit(PutElementInstruction insn) {
+        public void putElement(VariableReader array, VariableReader index, VariableReader value) {
             PutElementInstruction insnCopy = new PutElementInstruction();
-            insnCopy.setArray(copyVar(insn.getArray()));
-            insnCopy.setValue(copyVar(insn.getValue()));
-            insnCopy.setIndex(copyVar(insn.getIndex()));
+            insnCopy.setArray(copyVar(array));
+            insnCopy.setValue(copyVar(value));
+            insnCopy.setIndex(copyVar(index));
             copy = insnCopy;
         }
 
         @Override
-        public void visit(InvokeInstruction insn) {
+        public void invoke(VariableReader receiver, VariableReader instance, MethodReference method,
+                List<? extends VariableReader> arguments, InvocationType type) {
             InvokeInstruction insnCopy = new InvokeInstruction();
-            insnCopy.setMethod(insn.getMethod());
-            insnCopy.setType(insn.getType());
-            insnCopy.setInstance(insn.getInstance() != null ? copyVar(insn.getInstance()) : null);
-            insnCopy.setReceiver(insn.getReceiver() != null ? copyVar(insn.getReceiver()) : null);
-            for (Variable arg : insn.getArguments()) {
+            insnCopy.setMethod(method);
+            insnCopy.setType(type);
+            insnCopy.setInstance(instance != null ? copyVar(instance) : null);
+            insnCopy.setReceiver(receiver != null ? copyVar(receiver) : null);
+            for (VariableReader arg : arguments) {
                 insnCopy.getArguments().add(copyVar(arg));
             }
             copy = insnCopy;
         }
 
         @Override
-        public void visit(IsInstanceInstruction insn) {
+        public void isInstance(VariableReader receiver, VariableReader value, ValueType type) {
             IsInstanceInstruction insnCopy = new IsInstanceInstruction();
-            insnCopy.setValue(copyVar(insn.getValue()));
-            insnCopy.setReceiver(copyVar(insn.getReceiver()));
-            insnCopy.setType(insn.getType());
+            insnCopy.setValue(copyVar(value));
+            insnCopy.setReceiver(copyVar(receiver));
+            insnCopy.setType(type);
             copy = insnCopy;
         }
 
         @Override
-        public void visit(InitClassInstruction insn) {
+        public void initClass(String className) {
             InitClassInstruction insnCopy = new InitClassInstruction();
-            insnCopy.setClassName(insn.getClassName());
+            insnCopy.setClassName(className);
             copy = insnCopy;
         }
 
         @Override
-        public void visit(NullCheckInstruction insn) {
+        public void nullCheck(VariableReader receiver, VariableReader value) {
             NullCheckInstruction insnCopy = new NullCheckInstruction();
-            insnCopy.setReceiver(copyVar(insn.getReceiver()));
-            insnCopy.setValue(copyVar(insn.getValue()));
+            insnCopy.setReceiver(copyVar(receiver));
+            insnCopy.setValue(copyVar(value));
             copy = insnCopy;
         }
+
     }
 }

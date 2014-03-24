@@ -27,8 +27,8 @@ public class JavaScriptBodyDependency implements DependencyListener {
     private DependencyNode allClassesNode;
 
     @Override
-    public void started(DependencyChecker dependencyChecker) {
-        allClassesNode = dependencyChecker.createNode();
+    public void started(DependencyAgent agent) {
+        allClassesNode = agent.createNode();
         allClassesNode.setTag("JavaScriptBody:global");
     }
 
@@ -43,8 +43,8 @@ public class JavaScriptBodyDependency implements DependencyListener {
     }
 
     @Override
-    public void classAchieved(DependencyChecker dependencyChecker, String className) {
-        ClassReader cls = dependencyChecker.getClassSource().get(className);
+    public void classAchieved(DependencyAgent agent, String className) {
+        ClassReader cls = agent.getClassSource().get(className);
         if (cls != null && !cls.hasModifier(ElementModifier.ABSTRACT) &&
                 !cls.hasModifier(ElementModifier.INTERFACE)) {
             allClassesNode.propagate(className);
@@ -52,13 +52,13 @@ public class JavaScriptBodyDependency implements DependencyListener {
     }
 
     @Override
-    public void methodAchieved(DependencyChecker dependencyChecker, MethodDependency method) {
+    public void methodAchieved(DependencyAgent agent, MethodDependency method) {
         if (method.isMissing()) {
             return;
         }
         AnnotationReader annot = method.getMethod().getAnnotations().get(JavaScriptBody.class.getName());
         if (annot != null) {
-            includeDefaultDependencies(dependencyChecker);
+            includeDefaultDependencies(agent);
             AnnotationValue javacall = annot.getValue("javacall");
             if (method.getResult() != null) {
                 allClassesNode.connect(method.getResult());
@@ -74,26 +74,26 @@ public class JavaScriptBodyDependency implements DependencyListener {
             }
             if (javacall != null && javacall.getBoolean()) {
                 String body = annot.getValue("body").getString();
-                new GeneratorJsCallback(dependencyChecker, method).parse(body);
+                new GeneratorJsCallback(agent, method).parse(body);
             }
         }
     }
 
-    private void includeDefaultDependencies(DependencyChecker dependencyChecker) {
-        dependencyChecker.linkMethod(JavaScriptConvGenerator.fromJsMethod, DependencyStack.ROOT).use();
-        dependencyChecker.linkMethod(JavaScriptConvGenerator.toJsMethod, DependencyStack.ROOT).use();
-        dependencyChecker.linkMethod(JavaScriptConvGenerator.intValueMethod, DependencyStack.ROOT).use();
-        dependencyChecker.linkMethod(JavaScriptConvGenerator.valueOfIntMethod, DependencyStack.ROOT).use();
-        dependencyChecker.linkMethod(JavaScriptConvGenerator.booleanValueMethod, DependencyStack.ROOT).use();
-        dependencyChecker.linkMethod(JavaScriptConvGenerator.valueOfBooleanMethod, DependencyStack.ROOT).use();
-        dependencyChecker.linkMethod(JavaScriptConvGenerator.doubleValueMethod, DependencyStack.ROOT).use();
-        dependencyChecker.linkMethod(JavaScriptConvGenerator.valueOfDoubleMethod, DependencyStack.ROOT).use();
-        dependencyChecker.linkMethod(JavaScriptConvGenerator.charValueMethod, DependencyStack.ROOT).use();
-        dependencyChecker.linkMethod(JavaScriptConvGenerator.valueOfCharMethod, DependencyStack.ROOT).use();
+    private void includeDefaultDependencies(DependencyAgent agent) {
+        agent.linkMethod(JavaScriptConvGenerator.fromJsMethod, DependencyStack.ROOT).use();
+        agent.linkMethod(JavaScriptConvGenerator.toJsMethod, DependencyStack.ROOT).use();
+        agent.linkMethod(JavaScriptConvGenerator.intValueMethod, DependencyStack.ROOT).use();
+        agent.linkMethod(JavaScriptConvGenerator.valueOfIntMethod, DependencyStack.ROOT).use();
+        agent.linkMethod(JavaScriptConvGenerator.booleanValueMethod, DependencyStack.ROOT).use();
+        agent.linkMethod(JavaScriptConvGenerator.valueOfBooleanMethod, DependencyStack.ROOT).use();
+        agent.linkMethod(JavaScriptConvGenerator.doubleValueMethod, DependencyStack.ROOT).use();
+        agent.linkMethod(JavaScriptConvGenerator.valueOfDoubleMethod, DependencyStack.ROOT).use();
+        agent.linkMethod(JavaScriptConvGenerator.charValueMethod, DependencyStack.ROOT).use();
+        agent.linkMethod(JavaScriptConvGenerator.valueOfCharMethod, DependencyStack.ROOT).use();
     }
 
     @Override
-    public void fieldAchieved(DependencyChecker dependencyChecker, FieldDependency fieldDep) {
+    public void fieldAchieved(DependencyAgent agent, FieldDependency fieldDep) {
     }
 
     private static MethodReader findMethod(ClassReaderSource classSource, String clsName, MethodDescriptor desc) {
@@ -124,17 +124,17 @@ public class JavaScriptBodyDependency implements DependencyListener {
     }
 
     private class GeneratorJsCallback extends JsCallback {
-        private DependencyChecker dependencyChecker;
+        private DependencyAgent agent;
         private MethodDependency caller;
-        public GeneratorJsCallback(DependencyChecker dependencyChecker, MethodDependency caller) {
-            this.dependencyChecker = dependencyChecker;
+        public GeneratorJsCallback(DependencyAgent agent, MethodDependency caller) {
+            this.agent = agent;
             this.caller = caller;
         }
         @Override protected CharSequence callMethod(String ident, String fqn, String method, String params) {
             MethodDescriptor desc = MethodDescriptor.parse(method + params + "V");
-            MethodReader reader = findMethod(dependencyChecker.getClassSource(), fqn, desc);
+            MethodReader reader = findMethod(agent.getClassSource(), fqn, desc);
             MethodReference ref = reader != null ? reader.getReference() : new MethodReference(fqn, desc);
-            MethodDependency methodDep = dependencyChecker.linkMethod(ref, caller.getStack());
+            MethodDependency methodDep = agent.linkMethod(ref, caller.getStack());
             if (!methodDep.isMissing()) {
                 if (reader.hasModifier(ElementModifier.STATIC) || reader.hasModifier(ElementModifier.FINAL)) {
                     methodDep.use();
@@ -142,7 +142,7 @@ public class JavaScriptBodyDependency implements DependencyListener {
                         allClassesNode.connect(methodDep.getVariable(i));
                     }
                 } else {
-                    allClassesNode.addConsumer(new VirtualCallbackConsumer(dependencyChecker, reader, caller));
+                    allClassesNode.addConsumer(new VirtualCallbackConsumer(agent, reader, caller));
                 }
             }
             return "";
@@ -150,30 +150,30 @@ public class JavaScriptBodyDependency implements DependencyListener {
     }
 
     private class VirtualCallbackConsumer implements DependencyConsumer {
-        private DependencyChecker dependencyChecker;
+        private DependencyAgent agent;
         private MethodReader superMethod;
         private ClassReader superClass;
         private MethodDependency caller;
-        public VirtualCallbackConsumer(DependencyChecker dependencyChecker, MethodReader superMethod,
+        public VirtualCallbackConsumer(DependencyAgent agent, MethodReader superMethod,
                 MethodDependency caller) {
-            this.dependencyChecker = dependencyChecker;
+            this.agent = agent;
             this.superMethod = superMethod;
             this.caller = caller;
-            this.superClass = dependencyChecker.getClassSource().get(superMethod.getOwnerName());
+            this.superClass = agent.getClassSource().get(superMethod.getOwnerName());
         }
         @Override public void consume(String type) {
             if (!isAssignableFrom(superClass, type)) {
                 return;
             }
             MethodReference methodRef = new MethodReference(type, superMethod.getDescriptor());
-            MethodDependency method = dependencyChecker.linkMethod(methodRef, caller.getStack());
+            MethodDependency method = agent.linkMethod(methodRef, caller.getStack());
             method.use();
             for (int i = 0; i < method.getParameterCount(); ++i) {
                 allClassesNode.connect(method.getVariable(i));
             }
         }
         private boolean isAssignableFrom(ClassReader supertype, String subtypeName) {
-            ClassReaderSource classSource = dependencyChecker.getClassSource();
+            ClassReaderSource classSource = agent.getClassSource();
             if (supertype.getName().equals(subtypeName)) {
                 return true;
             }

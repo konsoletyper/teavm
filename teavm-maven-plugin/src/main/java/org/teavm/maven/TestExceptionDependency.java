@@ -31,13 +31,13 @@ class TestExceptionDependency implements DependencyListener {
     private DependencyNode allClasses;
 
     @Override
-    public void started(DependencyChecker dependencyChecker) {
-        allClasses = dependencyChecker.createNode();
+    public void started(DependencyAgent agent) {
+        allClasses = agent.createNode();
     }
 
     @Override
-    public void classAchieved(DependencyChecker dependencyChecker, String className) {
-        if (isException(dependencyChecker.getClassSource(), className)) {
+    public void classAchieved(DependencyAgent agent, String className) {
+        if (isException(agent.getClassSource(), className)) {
             allClasses.propagate(className);
         }
     }
@@ -57,13 +57,13 @@ class TestExceptionDependency implements DependencyListener {
     }
 
     @Override
-    public void methodAchieved(DependencyChecker dependencyChecker, MethodDependency method) {
+    public void methodAchieved(DependencyAgent agent, MethodDependency method) {
         if (method.getReference().equals(getMessageRef)) {
             allClasses.connect(method.getVariable(0));
         }
     }
 
     @Override
-    public void fieldAchieved(DependencyChecker dependencyChecker, FieldDependency field) {
+    public void fieldAchieved(DependencyAgent agent, FieldDependency field) {
     }
 }

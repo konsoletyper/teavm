@@ -93,7 +93,6 @@ public class TeaVM implements TeaVMHost {
         classSource.addTransformer(transformer);
     }
 
-
     @Override
     public void add(MethodReference methodRef, Generator generator) {
         methodGenerators.put(methodRef, generator);

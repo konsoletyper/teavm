@@ -16,6 +16,7 @@
 package org.teavm.dependency;
 
 import java.util.Collection;
+import org.teavm.model.ClassHolder;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 
@@ -24,6 +25,8 @@ import org.teavm.model.MethodReference;
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public interface DependencyInfo {
+    boolean isMethodAchievable(MethodReference methodRef);
+
     Collection<MethodReference> getAchievableMethods();
 
     Collection<FieldReference> getAchievableFields();
@@ -33,4 +36,6 @@ public interface DependencyInfo {
     FieldDependencyInfo getField(FieldReference fieldRef);
 
     MethodDependencyInfo getMethod(MethodReference methodRef);
+
+    Collection<ClassHolder> getGeneratedClasses();
 }
