@@ -87,6 +87,19 @@ public class JSNativeGenerator implements Generator, Injector, DependencyPlugin 
                 }
                 writer.append(')');
                 break;
+            case "instantiate":
+                writer.append("(new ");
+                context.writeExpr(context.getArgument(0));
+                renderProperty(context.getArgument(1), context);
+                writer.append('(');
+                for (int i = 2; i < context.argumentCount(); ++i) {
+                    if (i > 2) {
+                        writer.append(',').ws();
+                    }
+                    context.writeExpr(context.getArgument(i));
+                }
+                writer.append("))");
+                break;
             case "wrap":
                 context.writeExpr(context.getArgument(0));
                 break;

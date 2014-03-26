@@ -338,6 +338,21 @@ class DependencyGraphBuilder {
         @Override
         public void createArray(VariableReader receiver, ValueType itemType, VariableReader size) {
             useRunners.add(new TypePropagationRunner(nodes[receiver.getIndex()], "[" + itemType));
+            final String className = extractClassName(itemType);
+            if (className != null) {
+                useRunners.add(new Runnable() {
+                    @Override public void run() {
+                        dependencyChecker.initClass(className, callerStack);
+                    }
+                });
+            }
+        }
+
+        private String extractClassName(ValueType itemType) {
+            while (itemType instanceof ValueType.Array) {
+                itemType = ((ValueType.Array)itemType).getItemType();
+            }
+            return itemType instanceof ValueType.Object ? ((ValueType.Object)itemType).getClassName() : null;
         }
 
         @Override

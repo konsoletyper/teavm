@@ -121,6 +121,11 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     }
 
     @Override
+    public ClassLoader getClassLoader() {
+        return classLoader;
+    }
+
+    @Override
     public String generateClassName() {
         return "$$tmp$$.TempClass" + classNameSuffix++;
     }

@@ -20,9 +20,12 @@ package org.teavm.jso;
  * @author Alexey Andreev
  */
 public interface JSGlobal extends JSObject {
-    @JSProperty
-    JSConstructor<JSArray<JSObject>> getArray();
+    @JSConstructor
+    JSObject newObject();
 
-    @JSProperty
-    JSConstructor<JSObject> getObject();
+    @JSConstructor
+    <T extends JSObject> JSArray<T> newArray();
+
+    @JSConstructor
+    <T extends JSObject> JSArray<T> newArray(int sz);
 }

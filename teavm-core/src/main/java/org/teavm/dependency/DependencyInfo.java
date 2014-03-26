@@ -27,6 +27,8 @@ import org.teavm.model.MethodReference;
 public interface DependencyInfo {
     ClassReaderSource getClassSource();
 
+    ClassLoader getClassLoader();
+
     boolean isMethodAchievable(MethodReference methodRef);
 
     Collection<MethodReference> getAchievableMethods();

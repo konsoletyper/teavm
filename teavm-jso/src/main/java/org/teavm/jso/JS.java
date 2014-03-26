@@ -166,6 +166,48 @@ public final class JS {
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e, JSObject f, JSObject g, JSObject h);
 
+    @InjectedBy(JSNativeGenerator.class)
+    @PluggableDependency(JSNativeGenerator.class)
+    public static native JSObject instantiate(JSObject instance, JSObject constructor);
+
+    @InjectedBy(JSNativeGenerator.class)
+    @PluggableDependency(JSNativeGenerator.class)
+    public static native JSObject instantiate(JSObject instance, JSObject constructor, JSObject a);
+
+    @InjectedBy(JSNativeGenerator.class)
+    @PluggableDependency(JSNativeGenerator.class)
+    public static native JSObject instantiate(JSObject instance, JSObject constructor, JSObject a, JSObject b);
+
+    @InjectedBy(JSNativeGenerator.class)
+    @PluggableDependency(JSNativeGenerator.class)
+    public static native JSObject instantiate(JSObject instance, JSObject constructor, JSObject a, JSObject b,
+            JSObject c);
+
+    @InjectedBy(JSNativeGenerator.class)
+    @PluggableDependency(JSNativeGenerator.class)
+    public static native JSObject instantiate(JSObject instance, JSObject constructor, JSObject a, JSObject b,
+            JSObject c, JSObject d);
+
+    @InjectedBy(JSNativeGenerator.class)
+    @PluggableDependency(JSNativeGenerator.class)
+    public static native JSObject instantiate(JSObject instance, JSObject constructor, JSObject a, JSObject b,
+            JSObject c, JSObject d, JSObject e);
+
+    @InjectedBy(JSNativeGenerator.class)
+    @PluggableDependency(JSNativeGenerator.class)
+    public static native JSObject instantiate(JSObject instance, JSObject constructor, JSObject a, JSObject b,
+            JSObject c, JSObject d, JSObject e, JSObject f);
+
+    @InjectedBy(JSNativeGenerator.class)
+    @PluggableDependency(JSNativeGenerator.class)
+    public static native JSObject instantiate(JSObject instance, JSObject constructor, JSObject a, JSObject b,
+            JSObject c, JSObject d, JSObject e, JSObject f, JSObject g);
+
+    @InjectedBy(JSNativeGenerator.class)
+    @PluggableDependency(JSNativeGenerator.class)
+    public static native JSObject instantiate(JSObject instance, JSObject constructor, JSObject a, JSObject b,
+            JSObject c, JSObject d, JSObject e, JSObject f, JSObject g, JSObject h);
+
     public static <T extends JSObject> Iterable<T> iterate(final JSArray<T> array) {
         return new Iterable<T>() {
             @Override public Iterator<T> iterator() {

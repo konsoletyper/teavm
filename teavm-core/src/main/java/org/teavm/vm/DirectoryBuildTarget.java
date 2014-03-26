@@ -33,6 +33,13 @@ public class DirectoryBuildTarget implements BuildTarget {
 
     @Override
     public OutputStream createResource(String fileName) throws IOException {
+        int index = fileName.lastIndexOf('/');
+        if (index >= 0) {
+            File dir = new File(directory, fileName.substring(0, index));
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+        }
         return new FileOutputStream(new File(directory, fileName));
     }
 }

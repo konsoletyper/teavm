@@ -89,7 +89,7 @@ class JavascriptNativeProcessor {
                         }
                     } else if (isProperSetter(method.getDescriptor())) {
                         Variable wrapped = wrap(invoke.getArguments().get(0), method.parameterType(0));
-                        addPropertySet(cutPrefix(method.getName(), 3), invoke.getArguments().get(0), wrapped);
+                        addPropertySet(cutPrefix(method.getName(), 3), invoke.getInstance(), wrapped);
                     } else {
                         throw new RuntimeException("Method " + invoke.getMethod() + " is not " +
                                 "a proper native JavaScript property declaration");
@@ -112,25 +112,47 @@ class JavascriptNativeProcessor {
                                 "a proper native JavaScript indexer declaration");
                     }
                 } else {
-                    if (method.getResultType() != ValueType.VOID && !isSupportedType(method.getResultType())) {
-                        throw new RuntimeException("Method " + invoke.getMethod() + " is not " +
-                                "a proper native JavaScript method declaration");
+                    String name = method.getName();
+                    AnnotationReader constructorAnnot = method.getAnnotations().get(JSConstructor.class.getName());
+                    boolean isConstructor = false;
+                    if (constructorAnnot != null) {
+                        if (!isSupportedType(method.getResultType())) {
+                            throw new RuntimeException("Method " + invoke.getMethod() + " is not " +
+                                    "a proper native JavaScript constructor declaration");
+                        }
+                        AnnotationValue nameVal = constructorAnnot.getValue("value");
+                        name = nameVal != null ? constructorAnnot.getValue("value").getString() : "";
+                        if (name.isEmpty()) {
+                            if (!method.getName().startsWith("new") || method.getName().length() == 3) {
+                                throw new RuntimeException("Method " + invoke.getMethod() + " is not " +
+                                        "declared as a native JavaScript constructor, but its name does " +
+                                        "not satisfy conventions");
+                            }
+                            name = method.getName().substring(3);
+                        }
+                        isConstructor = true;
+                    } else {
+                        if (method.getResultType() != ValueType.VOID && !isSupportedType(method.getResultType())) {
+                            throw new RuntimeException("Method " + invoke.getMethod() + " is not " +
+                                    "a proper native JavaScript method declaration");
+                        }
                     }
                     for (ValueType arg : method.getParameterTypes()) {
                         if (!isSupportedType(arg)) {
                             throw new RuntimeException("Method " + invoke.getMethod() + " is not " +
-                                    "a proper native JavaScript method declaration");
+                                    "a proper native JavaScript method or constructor declaration");
                         }
                     }
                     Variable result = invoke.getReceiver() != null ? program.createVariable() : null;
                     InvokeInstruction newInvoke = new InvokeInstruction();
                     ValueType[] signature = new ValueType[method.parameterCount() + 3];
                     Arrays.fill(signature, ValueType.object(JSObject.class.getName()));
-                    newInvoke.setMethod(new MethodReference(JS.class.getName(), "invoke", signature));
+                    newInvoke.setMethod(new MethodReference(JS.class.getName(),
+                            isConstructor ? "instantiate" : "invoke", signature));
                     newInvoke.setType(InvocationType.SPECIAL);
                     newInvoke.setReceiver(result);
                     newInvoke.getArguments().add(invoke.getInstance());
-                    newInvoke.getArguments().add(addStringWrap(addString(method.getName())));
+                    newInvoke.getArguments().add(addStringWrap(addString(name)));
                     for (int k = 0; k < invoke.getArguments().size(); ++k) {
                         Variable arg = wrapArgument(invoke.getArguments().get(k), method.parameterType(k));
                         newInvoke.getArguments().add(arg);
