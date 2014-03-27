@@ -20,6 +20,7 @@ import java.util.List;
 import org.teavm.common.*;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
+import org.teavm.model.util.BasicBlockMapper;
 import org.teavm.model.util.DefinitionExtractor;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.model.util.UsageExtractor;
@@ -88,10 +89,13 @@ public class LoopInvariantMotion implements MethodOptimization {
                         commonUseLoop = useLoop;
                     }
                 }
-                block.getInstructions().set(i, new EmptyInstruction());
                 while (defLoop.getParent() != commonUseLoop) {
                     defLoop = defLoop.getParent();
+                    if (defLoop == null) {
+                        continue insnLoop;
+                    }
                 }
+                block.getInstructions().set(i, new EmptyInstruction());
                 int preheader = getPreheader(defLoop.getHead());
                 List<Instruction> preheaderInstructions = program.basicBlockAt(preheader).getInstructions();
                 preheaderInstructions.add(preheaderInstructions.size() - 1, insn);
@@ -108,7 +112,7 @@ public class LoopInvariantMotion implements MethodOptimization {
         if (preheader < 0) {
             int[] entries = getLoopEntries(header);
             if (entries.length == 1) {
-                preheader = graph.incomingEdges(header)[0];
+                preheader = entries[0];
             } else {
                 preheader = insertPreheader(header);
             }
@@ -130,9 +134,9 @@ public class LoopInvariantMotion implements MethodOptimization {
     }
 
     private int insertPreheader(int headerIndex) {
-        BasicBlock preheader = program.createBasicBlock();
+        final BasicBlock preheader = program.createBasicBlock();
         JumpInstruction escapeInsn = new JumpInstruction();
-        BasicBlock header = program.basicBlockAt(headerIndex);
+        final BasicBlock header = program.basicBlockAt(headerIndex);
         escapeInsn.setTarget(header);
         preheader.getInstructions().add(escapeInsn);
         for (int i = 0; i < header.getPhis().size(); ++i) {
@@ -153,8 +157,21 @@ public class LoopInvariantMotion implements MethodOptimization {
             if (preheaderPhi != null) {
                 Incoming incoming = new Incoming();
                 incoming.setSource(preheader);
-                incoming.setValue(phi.getReceiver());
+                incoming.setValue(preheaderPhi.getReceiver());
                 phi.getIncomings().add(incoming);
+            }
+        }
+        for (int predIndex : graph.incomingEdges(headerIndex)) {
+            if (!dom.dominates(headerIndex, predIndex)) {
+                BasicBlock pred = program.basicBlockAt(predIndex);
+                pred.getLastInstruction().acceptVisitor(new BasicBlockMapper() {
+                    @Override protected BasicBlock map(BasicBlock block) {
+                        if (block == header) {
+                            block = preheader;
+                        }
+                        return block;
+                    }
+                });
             }
         }
         return preheader.getIndex();
