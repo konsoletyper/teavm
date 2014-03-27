@@ -15,15 +15,13 @@
  */
 package org.teavm.optimization;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.teavm.common.*;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
-import org.teavm.model.util.BasicBlockMapper;
-import org.teavm.model.util.DefinitionExtractor;
-import org.teavm.model.util.ProgramUtils;
-import org.teavm.model.util.UsageExtractor;
+import org.teavm.model.util.*;
 
 /**
  *
@@ -31,6 +29,7 @@ import org.teavm.model.util.UsageExtractor;
  */
 public class LoopInvariantMotion implements MethodOptimization {
     private int[] preheaders;
+    private Instruction[] constantInstructions;
     private LoopGraph graph;
     private DominatorTree dom;
     private Program program;
@@ -46,6 +45,7 @@ public class LoopInvariantMotion implements MethodOptimization {
         IntegerStack stack = new IntegerStack(graph.size());
         int[] defLocation = new int[program.variableCount()];
         Arrays.fill(defLocation, -1);
+        constantInstructions = new Instruction[program.variableCount()];
         for (int i = 0; i <= method.parameterCount(); ++i) {
             defLocation[i] = 0;
         }
@@ -58,6 +58,7 @@ public class LoopInvariantMotion implements MethodOptimization {
         DefinitionExtractor defExtractor = new DefinitionExtractor();
         UsageExtractor useExtractor = new UsageExtractor();
         InstructionAnalyzer analyzer = new InstructionAnalyzer();
+        CopyConstantVisitor constantCopier = new CopyConstantVisitor();
         while (!stack.isEmpty()) {
             int v = stack.pop();
             BasicBlock block = program.basicBlockAt(v);
@@ -69,7 +70,11 @@ public class LoopInvariantMotion implements MethodOptimization {
                     defLocation[def.getIndex()] = v;
                 }
                 analyzer.canMove = false;
+                analyzer.constant = false;
                 insn.acceptVisitor(analyzer);
+                if (analyzer.constant) {
+                    constantInstructions[defs[0].getIndex()] = insn;
+                }
                 if (!analyzer.canMove) {
                     continue;
                 }
@@ -80,6 +85,9 @@ public class LoopInvariantMotion implements MethodOptimization {
                 insn.acceptVisitor(useExtractor);
                 Loop commonUseLoop = null;
                 for (Variable use : useExtractor.getUsedVariables()) {
+                    if (constantInstructions[use.getIndex()] != null) {
+                        continue;
+                    }
                     int useLoc = defLocation[use.getIndex()];
                     if (useLoc == -1) {
                         continue insnLoop;
@@ -101,7 +109,27 @@ public class LoopInvariantMotion implements MethodOptimization {
                 block.getInstructions().set(i, new EmptyInstruction());
                 int preheader = getPreheader(defLoop.getHead());
                 List<Instruction> preheaderInstructions = program.basicBlockAt(preheader).getInstructions();
-                preheaderInstructions.add(preheaderInstructions.size() - 1, insn);
+                List<Instruction> newInstructions = new ArrayList<>();
+                Variable[] variableMap = null;
+                for (Variable use : useExtractor.getUsedVariables()) {
+                    Instruction constInsn = constantInstructions[use.getIndex()];
+                    if (constInsn != null) {
+                        constInsn.acceptVisitor(constantCopier);
+                        newInstructions.add(constantCopier.copy);
+                        if (variableMap == null) {
+                            variableMap = new Variable[program.variableCount()];
+                            for (int j = 0; j < variableMap.length; ++j) {
+                                variableMap[j] = program.variableAt(j);
+                            }
+                        }
+                        variableMap[use.getIndex()] = constantCopier.var;
+                    }
+                }
+                if (variableMap != null) {
+                    insn.acceptVisitor(new VariableMapperImpl(variableMap));
+                }
+                newInstructions.add(insn);
+                preheaderInstructions.addAll(preheaderInstructions.size() - 1, newInstructions);
                 defLocation[defs[0].getIndex()] = commonUseLoop != null ? commonUseLoop.getHead() : 0;
             }
             for (int succ : domGraph.outgoingEdges(v)) {
@@ -180,8 +208,22 @@ public class LoopInvariantMotion implements MethodOptimization {
         return preheader.getIndex();
     }
 
+    private static class VariableMapperImpl extends InstructionVariableMapper {
+        private Variable[] map;
+
+        public VariableMapperImpl(Variable[] map) {
+            this.map = map;
+        }
+
+        @Override
+        protected Variable map(Variable var) {
+            return map[var.getIndex()];
+        }
+    }
+
     private static class InstructionAnalyzer implements InstructionVisitor {
         public boolean canMove;
+        public boolean constant;
 
         @Override
         public void visit(EmptyInstruction insn) {
@@ -189,37 +231,37 @@ public class LoopInvariantMotion implements MethodOptimization {
 
         @Override
         public void visit(ClassConstantInstruction insn) {
-            canMove = true;
+            constant = true;
         }
 
         @Override
         public void visit(NullConstantInstruction insn) {
-            canMove = true;
+            constant = true;
         }
 
         @Override
         public void visit(IntegerConstantInstruction insn) {
-            canMove = true;
+            constant = true;
         }
 
         @Override
         public void visit(LongConstantInstruction insn) {
-            canMove = true;
+            constant = true;
         }
 
         @Override
         public void visit(FloatConstantInstruction insn) {
-            canMove = true;
+            constant = true;
         }
 
         @Override
         public void visit(DoubleConstantInstruction insn) {
-            canMove = true;
+            constant = true;
         }
 
         @Override
         public void visit(StringConstantInstruction insn) {
-            canMove = true;
+            constant = true;
         }
 
         @Override
@@ -334,6 +376,181 @@ public class LoopInvariantMotion implements MethodOptimization {
         @Override
         public void visit(NullCheckInstruction insn) {
             canMove = true;
+        }
+    }
+
+    private class CopyConstantVisitor implements InstructionVisitor {
+        Instruction copy;
+        Variable var;
+
+        @Override
+        public void visit(EmptyInstruction insn) {
+        }
+
+        @Override
+        public void visit(ClassConstantInstruction insn) {
+            var = program.createVariable();
+            ClassConstantInstruction copy = new ClassConstantInstruction();
+            copy.setConstant(insn.getConstant());
+            copy.setReceiver(var);
+            this.copy = copy;
+        }
+
+        @Override
+        public void visit(NullConstantInstruction insn) {
+            var = program.createVariable();
+            NullConstantInstruction copy = new NullConstantInstruction();
+            copy.setReceiver(var);
+            this.copy = copy;
+        }
+
+        @Override
+        public void visit(IntegerConstantInstruction insn) {
+            var = program.createVariable();
+            IntegerConstantInstruction copy = new IntegerConstantInstruction();
+            copy.setConstant(insn.getConstant());
+            copy.setReceiver(var);
+            this.copy = copy;
+        }
+
+        @Override
+        public void visit(LongConstantInstruction insn) {
+            var = program.createVariable();
+            LongConstantInstruction copy = new LongConstantInstruction();
+            copy.setConstant(insn.getConstant());
+            copy.setReceiver(var);
+            this.copy = copy;
+        }
+
+        @Override
+        public void visit(FloatConstantInstruction insn) {
+            var = program.createVariable();
+            FloatConstantInstruction copy = new FloatConstantInstruction();
+            copy.setConstant(insn.getConstant());
+            copy.setReceiver(var);
+            this.copy = copy;
+        }
+
+        @Override
+        public void visit(DoubleConstantInstruction insn) {
+            var = program.createVariable();
+            DoubleConstantInstruction copy = new DoubleConstantInstruction();
+            copy.setConstant(insn.getConstant());
+            copy.setReceiver(var);
+            this.copy = copy;
+        }
+
+        @Override
+        public void visit(StringConstantInstruction insn) {
+            var = program.createVariable();
+            StringConstantInstruction copy = new StringConstantInstruction();
+            copy.setConstant(insn.getConstant());
+            copy.setReceiver(var);
+            this.copy = copy;
+        }
+
+        @Override
+        public void visit(BinaryInstruction insn) {
+        }
+
+        @Override
+        public void visit(NegateInstruction insn) {
+        }
+
+        @Override
+        public void visit(AssignInstruction insn) {
+        }
+
+        @Override
+        public void visit(CastInstruction insn) {
+        }
+
+        @Override
+        public void visit(CastNumberInstruction insn) {
+        }
+
+        @Override
+        public void visit(CastIntegerInstruction insn) {
+        }
+
+        @Override
+        public void visit(BranchingInstruction insn) {
+        }
+
+        @Override
+        public void visit(BinaryBranchingInstruction insn) {
+        }
+
+        @Override
+        public void visit(JumpInstruction insn) {
+        }
+
+        @Override
+        public void visit(SwitchInstruction insn) {
+        }
+
+        @Override
+        public void visit(ExitInstruction insn) {
+        }
+
+        @Override
+        public void visit(RaiseInstruction insn) {
+        }
+
+        @Override
+        public void visit(ConstructArrayInstruction insn) {
+        }
+
+        @Override
+        public void visit(ConstructInstruction insn) {
+        }
+
+        @Override
+        public void visit(ConstructMultiArrayInstruction insn) {
+        }
+
+        @Override
+        public void visit(GetFieldInstruction insn) {
+        }
+
+        @Override
+        public void visit(PutFieldInstruction insn) {
+        }
+
+        @Override
+        public void visit(ArrayLengthInstruction insn) {
+        }
+
+        @Override
+        public void visit(CloneArrayInstruction insn) {
+        }
+
+        @Override
+        public void visit(UnwrapArrayInstruction insn) {
+        }
+
+        @Override
+        public void visit(GetElementInstruction insn) {
+        }
+
+        @Override
+        public void visit(PutElementInstruction insn) {
+        }
+
+        @Override
+        public void visit(InvokeInstruction insn) {
+        }
+
+        @Override
+        public void visit(IsInstanceInstruction insn) {
+        }
+
+        @Override
+        public void visit(InitClassInstruction insn) {
+        }
+
+        @Override
+        public void visit(NullCheckInstruction insn) {
         }
     }
 }
