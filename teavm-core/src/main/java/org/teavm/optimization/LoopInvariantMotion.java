@@ -46,6 +46,9 @@ public class LoopInvariantMotion implements MethodOptimization {
         IntegerStack stack = new IntegerStack(graph.size());
         int[] defLocation = new int[program.variableCount()];
         Arrays.fill(defLocation, -1);
+        for (int i = 0; i <= method.parameterCount(); ++i) {
+            defLocation[i] = 0;
+        }
         for (int i = 0; i < domGraph.size(); ++i) {
             if (dom.immediateDominatorOf(i) < 0) {
                 stack.push(i);
