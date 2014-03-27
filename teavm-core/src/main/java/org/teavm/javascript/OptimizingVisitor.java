@@ -45,6 +45,14 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(BinaryExpr expr) {
+        switch (expr.getOperation()) {
+            case AND:
+            case OR:
+                resultExpr = expr;
+                return;
+            default:
+                break;
+        }
         expr.getSecondOperand().acceptVisitor(this);
         Expr b = resultExpr;
         expr.getFirstOperand().acceptVisitor(this);

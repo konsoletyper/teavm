@@ -1149,9 +1149,6 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     public void visit(NewArrayExpr expr) {
         try {
             ValueType type = expr.getType();
-            while (type instanceof ValueType.Array) {
-                type = ((ValueType.Array)type).getItemType();
-            }
             if (type instanceof ValueType.Primitive) {
                 switch (((ValueType.Primitive)type).getKind()) {
                     case BOOLEAN:
