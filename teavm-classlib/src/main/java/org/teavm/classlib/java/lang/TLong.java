@@ -205,7 +205,7 @@ public class TLong extends TNumber implements TComparable<TLong> {
     public native int hashCode();
 
     @Override
-    public boolean equals(TObject other) {
+    public boolean equals(Object other) {
         if (this == other) {
             return true;
         }

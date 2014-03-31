@@ -160,7 +160,7 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
     }
 
     @Override
-    public boolean equals(TObject other) {
+    public boolean equals(Object other) {
         if (this == other) {
             return true;
         }

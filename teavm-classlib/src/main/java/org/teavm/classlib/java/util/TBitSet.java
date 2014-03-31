@@ -449,7 +449,7 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
     }
 
     @Override
-    public boolean equals(TObject other) {
+    public boolean equals(Object other) {
         if (this == other) {
             return true;
         }
@@ -508,8 +508,8 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
         return TString.wrap(sb.toString());
     }
 
-    @Override
-    public TObject clone() {
+    @Rename("clone")
+    public TObject clone0() {
         return new TBitSet(TArrays.copyOf(data, data.length));
     }
 }

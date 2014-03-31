@@ -485,7 +485,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     @Override
-    public boolean equals(TObject other) {
+    public boolean equals(Object other) {
         if (this == other) {
             return true;
         }

@@ -124,7 +124,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     @Override
-    public boolean equals(TObject other) {
+    public boolean equals(Object other) {
         if (this == other) {
             return true;
         }

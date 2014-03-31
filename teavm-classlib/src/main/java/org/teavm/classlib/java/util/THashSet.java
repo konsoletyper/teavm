@@ -15,10 +15,12 @@
  */
 package org.teavm.classlib.java.util;
 
+import java.util.Iterator;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.TCloneNotSupportedException;
 import org.teavm.classlib.java.lang.TCloneable;
 import org.teavm.classlib.java.lang.TObject;
+import org.teavm.javascript.ni.Rename;
 
 /**
  *
@@ -106,12 +108,12 @@ public class THashSet<E> extends TAbstractSet<E> implements TCloneable, TSeriali
      * @return a shallow copy of this {@code HashSet}.
      * @see java.lang.Cloneable
      */
-    @Override
+    @Rename("clone")
     @SuppressWarnings("unchecked")
-    public TObject clone() {
+    public TObject clone0() {
         try {
             THashSet<E> clone = (THashSet<E>) super.clone();
-            clone.backingMap = (THashMap<E, THashSet<E>>)backingMap.clone();
+            clone.backingMap = (THashMap<E, THashSet<E>>)backingMap.clone0();
             return clone;
         } catch (TCloneNotSupportedException e) {
             return null;

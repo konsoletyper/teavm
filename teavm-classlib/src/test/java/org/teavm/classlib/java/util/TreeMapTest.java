@@ -33,8 +33,6 @@ package org.teavm.classlib.java.util;
 
 import static org.junit.Assert.*;
 import java.io.Serializable;
-import java.text.CollationKey;
-import java.text.Collator;
 import java.util.*;
 import org.junit.Test;
 
@@ -154,11 +152,11 @@ public class TreeMapTest {
         // Test for method java.lang.Object java.util.TreeMap.clone()
         @SuppressWarnings("unchecked")
         TreeMap<Object, Object> clonedMap = (TreeMap<Object, Object>) tm.clone();
-        assertTrue("Cloned map does not equal the original map", clonedMap.equals(tm));
-        assertTrue("Cloned map is the same reference as the original map", clonedMap != tm);
+        assertEquals("Cloned map does not equal the original map", clonedMap, tm);
+        assertNotSame("Cloned map is the same reference as the original map", clonedMap, tm);
         for (Object element : objArray) {
-            assertTrue("Cloned map contains incorrect elements", clonedMap
-                    .get(element.toString()) == tm.get(element.toString()));
+            assertSame("Cloned map contains incorrect elements", clonedMap.get(element.toString()),
+                    tm.get(element.toString()));
         }
 
         TreeMap<Object, Object> map = new TreeMap<>();
@@ -166,17 +164,15 @@ public class TreeMapTest {
         // get the keySet() and values() on the original Map
         Set<Object> keys = map.keySet();
         Collection<Object> values = map.values();
-        assertEquals("values() does not work", "value", values.iterator()
-                .next());
+        assertEquals("values() does not work", "value", values.iterator().next());
         assertEquals("keySet() does not work", "key", keys.iterator().next());
         @SuppressWarnings("unchecked")
         Map<Object, Object> map2 = (Map<Object, Object>) map.clone();
         map2.put("key", "value2");
         Collection<Object> values2 = map2.values();
-        assertTrue("values() is identical", values2 != values);
+        assertNotSame("values() is identical", values, values2);
         // values() and keySet() on the cloned() map should be different
-        assertEquals("values() was not cloned", "value2", values2.iterator()
-                .next());
+        assertEquals("values() was not cloned", "value2", values2.iterator().next());
         map2.clear();
         map2.put("key2", "value3");
         Set<Object> key2 = map2.keySet();
@@ -279,23 +275,13 @@ public class TreeMapTest {
         assertTrue(head instanceof Serializable);
 
         // Regression for ill-behaved collator
-        Collator c = new Collator() {
+        Comparator<String> c = new Comparator<String>() {
             @Override
             public int compare(String o1, String o2) {
                 if (o1 == null) {
                     return 0;
                 }
                 return o1.compareTo(o2);
-            }
-
-            @Override
-            public CollationKey getCollationKey(String string) {
-                return null;
-            }
-
-            @Override
-            public int hashCode() {
-                return 0;
             }
         };
 
@@ -372,13 +358,6 @@ public class TreeMapTest {
         Object o = new Object();
         tm.put("Hello", o);
         assertTrue("Failed to put mapping", tm.get("Hello") == o);
-
-        try {
-            tm.put(new Integer(1), new Object());
-            fail("should throw ClassCastException");
-        } catch (ClassCastException e) {
-            // expected
-        }
 
         tm = new TreeMap<>();
         assertNull(tm.put(new Integer(1), new Object()));
@@ -560,27 +539,6 @@ public class TreeMapTest {
         values.remove(new Integer(0));
         assertTrue("Removing from the values collection should remove from the original map",
                 !myTreeMap.containsValue(new Integer(0)));
-    }
-
-    @Test
-    public void test_equals() throws Exception {
-        // comparing TreeMaps with different object types
-        Map<Object, Object> m1 = new TreeMap<>();
-        Map<Object, Object> m2 = new TreeMap<>();
-        m1.put("key1", "val1");
-        m1.put("key2", "val2");
-        m2.put(new Integer(1), "val1");
-        m2.put(new Integer(2), "val2");
-        assertFalse("Maps should not be equal 1", m1.equals(m2));
-        assertFalse("Maps should not be equal 2", m2.equals(m1));
-
-        // comparing TreeMap with HashMap
-        m1 = new TreeMap<>();
-        m2 = new HashMap<>();
-        m1.put("key", "val");
-        m2.put(new Object(), "val");
-        assertFalse("Maps should not be equal 3", m1.equals(m2));
-        assertFalse("Maps should not be equal 4", m2.equals(m1));
     }
 
     /**

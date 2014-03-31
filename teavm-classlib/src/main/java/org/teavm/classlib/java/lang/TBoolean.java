@@ -88,7 +88,7 @@ public class TBoolean extends TObject implements TSerializable, TComparable<TBoo
     }
 
     @Override
-    public boolean equals(TObject obj) {
+    public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }

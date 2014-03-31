@@ -44,7 +44,8 @@ public class TObject {
     @GeneratedBy(ObjectNativeGenerator.class)
     public native int hashCode();
 
-    public boolean equals(TObject other) {
+    @Rename("equals")
+    public boolean equals0(TObject other) {
         return this == other;
     }
 
@@ -56,10 +57,10 @@ public class TObject {
     @GeneratedBy(ObjectNativeGenerator.class)
     native int identity();
 
-    @Override
     @GeneratedBy(ObjectNativeGenerator.class)
     @PluggableDependency(ObjectNativeGenerator.class)
-    protected native TObject clone() throws TCloneNotSupportedException;
+    @Override
+    protected native Object clone() throws TCloneNotSupportedException;
 
     @Rename("notify")
     public final void notify0() {

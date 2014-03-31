@@ -16,8 +16,11 @@
 package org.teavm.classlib.java.util;
 
 import org.teavm.classlib.java.io.TSerializable;
+import org.teavm.classlib.java.lang.ObjectNativeGenerator;
+import org.teavm.classlib.java.lang.TCloneNotSupportedException;
 import org.teavm.classlib.java.lang.TObject;
 import org.teavm.classlib.java.lang.TUnsupportedOperationException;
+import org.teavm.dependency.PluggableDependency;
 
 /**
  *
@@ -225,6 +228,50 @@ public abstract class TAbstractMap<K, V> extends TObject implements TMap<K, V> {
             cachedValues = new Values();
         }
         return cachedValues;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof TMap)) {
+            return false;
+        }
+        @SuppressWarnings("unchecked")
+        TMap<Object, Object> other = (TMap<Object, Object>)obj;
+        if (size() != other.size()) {
+            return false;
+        }
+        for (TIterator<? extends TMap.Entry<K, V>> iter = entrySet().iterator(); iter.hasNext();) {
+            TMap.Entry<K, V> entry = iter.next();
+            if (!other.containsKey(entry.getKey())) {
+                return false;
+            }
+            if (!TObjects.equals(entry.getValue(), other.get(entry.getKey()))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = 0;
+        for (TIterator<? extends TMap.Entry<K, V>> iter = entrySet().iterator(); iter.hasNext();) {
+            TMap.Entry<K, V> entry = iter.next();
+            result ^= entry.hashCode();
+        }
+        return result;
+    }
+
+    @Override
+    @PluggableDependency(ObjectNativeGenerator.class)
+    protected Object clone() throws TCloneNotSupportedException {
+        TAbstractMap<?, ?> copy = (TAbstractMap<?, ?>)super.clone();
+        copy.cachedKeySet = null;
+        copy.cachedValues = null;
+        return copy;
     }
 
     private class KeySet extends TAbstractSet<K> {

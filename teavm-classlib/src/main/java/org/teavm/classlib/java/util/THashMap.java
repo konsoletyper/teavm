@@ -17,12 +17,14 @@
 
 package org.teavm.classlib.java.util;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.ConcurrentModificationException;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.TCloneNotSupportedException;
 import org.teavm.classlib.java.lang.TIllegalArgumentException;
 import org.teavm.classlib.java.lang.TIllegalStateException;
 import org.teavm.classlib.java.lang.TObject;
+import org.teavm.javascript.ni.Rename;
 
 public class THashMap<K, V> extends TAbstractMap<K, V> implements TSerializable {
     transient int elementCount;
@@ -292,9 +294,9 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TSerializable 
         }
     }
 
-    @Override
+    @Rename("clone")
     @SuppressWarnings("unchecked")
-    public TObject clone() {
+    public TObject clone0() {
         try {
             THashMap<K, V> map = (THashMap<K, V>) super.clone();
             map.elementCount = 0;

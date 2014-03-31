@@ -33,6 +33,7 @@ package org.teavm.classlib.java.util;
 
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.*;
+import org.teavm.javascript.ni.Rename;
 
 public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TSortedMap<K, V>, TCloneable, TSerializable {
     transient int size;
@@ -53,7 +54,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TSortedMap<K, 
         }
 
         @Override
-        public TObject clone() {
+        public Object clone() {
             try {
                 return super.clone();
             } catch (TCloneNotSupportedException e) {
@@ -1007,8 +1008,8 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TSortedMap<K, 
     }
 
     @SuppressWarnings("unchecked")
-    @Override
-    public TObject clone() {
+    @Rename("clone")
+    public TObject clone0() {
         try {
             TTreeMap<K, V> clone = (TTreeMap<K, V>) super.clone();
             if (root != null) {

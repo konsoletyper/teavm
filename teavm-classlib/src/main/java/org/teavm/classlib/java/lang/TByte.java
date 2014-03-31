@@ -77,7 +77,7 @@ public class TByte extends TNumber implements TComparable<TByte> {
     }
 
     @Override
-    public boolean equals(TObject other) {
+    public boolean equals(Object other) {
         return other instanceof TByte && ((TByte)other).value == value;
     }
 

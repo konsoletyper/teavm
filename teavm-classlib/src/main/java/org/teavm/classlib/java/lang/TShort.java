@@ -76,7 +76,7 @@ public class TShort extends TNumber implements TComparable<TShort> {
     }
 
     @Override
-    public boolean equals(TObject other) {
+    public boolean equals(Object other) {
         return other instanceof TShort && ((TShort)other).value == value;
     }
 

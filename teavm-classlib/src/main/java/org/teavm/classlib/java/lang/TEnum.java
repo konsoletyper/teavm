@@ -46,7 +46,7 @@ public abstract class TEnum<E extends TEnum<E>> extends TObject implements TComp
     }
 
     @Override
-    public final boolean equals(TObject other) {
+    public final boolean equals(Object other) {
         return this == other;
     }
 
@@ -55,8 +55,8 @@ public abstract class TEnum<E extends TEnum<E>> extends TObject implements TComp
         return super.hashCode();
     }
 
-    @Override
-    protected final TObject clone() throws TCloneNotSupportedException {
+    @Rename("clone")
+    protected final TObject clone0() throws TCloneNotSupportedException {
         throw new TCloneNotSupportedException();
     }
 

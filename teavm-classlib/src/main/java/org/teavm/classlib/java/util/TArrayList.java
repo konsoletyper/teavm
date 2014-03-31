@@ -18,6 +18,7 @@ package org.teavm.classlib.java.util;
 import java.util.Arrays;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.*;
+import org.teavm.javascript.ni.Rename;
 
 /**
  *
@@ -66,8 +67,8 @@ public class TArrayList<E> extends TAbstractList<E> implements TCloneable, TSeri
         return size;
     }
 
-    @Override
-    public TObject clone() {
+    @Rename("clone")
+    public TObject clone0() {
         return new TArrayList<>(this);
     }
 
