@@ -66,6 +66,11 @@ public class LivenessAnalyzer {
                     definitions[var.getIndex()] = i;
                 }
             }
+            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                if (tryCatch.getExceptionVariable() != null) {
+                    definitions[tryCatch.getExceptionVariable().getIndex()] = i;
+                }
+            }
             for (Phi phi : block.getPhis()) {
                 definitions[phi.getReceiver().getIndex()] = i;
                 for (Incoming incoming : phi.getIncomings()) {

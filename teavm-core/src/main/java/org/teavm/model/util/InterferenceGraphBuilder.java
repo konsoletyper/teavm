@@ -50,6 +50,16 @@ class InterferenceGraphBuilder {
             for (Incoming outgoing : outgoings.get(i)) {
                 live.add(nodes.get(outgoing.getValue().getIndex()));
             }
+            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                if (tryCatch.getExceptionVariable() != null) {
+                    nodes.get(tryCatch.getExceptionVariable().getIndex()).connectAll(live);
+                }
+            }
+            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                if (tryCatch.getExceptionVariable() != null) {
+                    live.remove(tryCatch.getExceptionVariable());
+                }
+            }
             for (int j = block.getInstructions().size() - 1; j >= 0; --j) {
                 Instruction insn = block.getInstructions().get(j);
                 insn.acceptVisitor(useExtractor);
