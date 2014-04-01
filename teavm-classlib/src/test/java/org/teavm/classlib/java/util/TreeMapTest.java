@@ -441,22 +441,16 @@ public class TreeMapTest {
         Map<String, String> subMap = map.subMap("", "test");
         assertEquals(3, subMap.size());
 
-        Set<Map.Entry<String, String>> entrySet = subMap.entrySet();
-        Iterator<Map.Entry<String, String>> iter = entrySet.iterator();
         int size = 0;
-        while (iter.hasNext()) {
-            Map.Entry<String, String> entry = iter.next();
+        for (Map.Entry<String, String> entry : subMap.entrySet()) {
             assertTrue(map.containsKey(entry.getKey()));
             assertTrue(map.containsValue(entry.getValue()));
             size++;
         }
         assertEquals(map.size(), size);
 
-        Set<String> keySet = subMap.keySet();
-        Iterator<String> keyIter = keySet.iterator();
         size = 0;
-        while (keyIter.hasNext()) {
-            String key = keyIter.next();
+        for (String key : subMap.keySet()) {
             assertTrue(map.containsKey(key));
             size++;
         }

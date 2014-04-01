@@ -16,11 +16,9 @@
 package org.teavm.classlib.java.util;
 
 import org.teavm.classlib.java.io.TSerializable;
-import org.teavm.classlib.java.lang.ObjectNativeGenerator;
 import org.teavm.classlib.java.lang.TCloneNotSupportedException;
 import org.teavm.classlib.java.lang.TObject;
 import org.teavm.classlib.java.lang.TUnsupportedOperationException;
-import org.teavm.dependency.PluggableDependency;
 
 /**
  *
@@ -266,7 +264,6 @@ public abstract class TAbstractMap<K, V> extends TObject implements TMap<K, V> {
     }
 
     @Override
-    @PluggableDependency(ObjectNativeGenerator.class)
     protected Object clone() throws TCloneNotSupportedException {
         TAbstractMap<?, ?> copy = (TAbstractMap<?, ?>)super.clone();
         copy.cachedKeySet = null;
