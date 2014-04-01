@@ -471,7 +471,7 @@ public class TreeMapTest {
         // Regression for Harmony-1066
         assertTrue(tail instanceof Serializable);
 
-	SortedMap<Integer,Integer> intMap,sub;
+        SortedMap<Integer,Integer> intMap,sub;
         int size = 16;
         intMap = new TreeMap<>();
         for(int i=0; i<size; i++) {

@@ -246,9 +246,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         while (node != null) {
             @SuppressWarnings("unchecked")
             int cmp = comparator.compare((K)key, node.getKey());
-            if (cmp == 0) {
-                break;
-            } else if (cmp < 0) {
+            if (cmp < 0) {
                 lastLeftTurn = node;
                 node = node.left;
             } else {
@@ -266,9 +264,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         while (node != null) {
             @SuppressWarnings("unchecked")
             int cmp = comparator.compare((K)key, node.getKey());
-            if (cmp == 0) {
-                break;
-            } else if (cmp < 0) {
+            if (cmp < 0) {
                 path[depth++] = node;
                 node = node.left;
             } else {
@@ -296,6 +292,27 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         return lastRightTurn;
     }
 
+    TreeNode<K, V>[] pathToExactOrPrev(Object key) {
+        @SuppressWarnings("unchecked")
+        TreeNode<K, V>[] path = (TreeNode<K, V>[])new TreeNode<?, ?>[height()];
+        int depth = 0;
+        TreeNode<K, V> node = root;
+        while (node != null) {
+            @SuppressWarnings("unchecked")
+            int cmp = comparator.compare((K)key, node.getKey());
+            if (cmp == 0) {
+                path[depth++] = node;
+                break;
+            } else if (cmp > 0) {
+                path[depth++] = node;
+                node = node.right;
+            } else {
+                node = node.left;
+            }
+        }
+        return TArrays.copyOf(path, depth);
+    }
+
     TreeNode<K, V>[] pathToFirst() {
         @SuppressWarnings("unchecked")
         TreeNode<K, V>[] path = (TreeNode<K, V>[])new TreeNode<?, ?>[height()];
@@ -314,9 +331,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         while (node != null) {
             @SuppressWarnings("unchecked")
             int cmp = comparator.compare((K)key, node.getKey());
-            if (cmp == 0) {
-                return node;
-            } else if (cmp > 0) {
+            if (cmp > 0) {
                 lastRightTurn = node;
                 node = node.right;
             } else {
@@ -324,6 +339,24 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
             }
         }
         return lastRightTurn;
+    }
+
+    TreeNode<K, V>[] pathToPrev(Object key) {
+        @SuppressWarnings("unchecked")
+        TreeNode<K, V>[] path = (TreeNode<K, V>[])new TreeNode<?, ?>[height()];
+        int depth = 0;
+        TreeNode<K, V> node = root;
+        while (node != null) {
+            @SuppressWarnings("unchecked")
+            int cmp = comparator.compare((K)key, node.getKey());
+            if (cmp > 0) {
+                path[depth++] = node;
+                node = node.right;
+            } else {
+                node = node.left;
+            }
+        }
+        return TArrays.copyOf(path, depth);
     }
 
     private TreeNode<K, V> getOrCreateNode(TreeNode<K, V> root, K key) {
@@ -407,7 +440,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
     @Override
     public TSortedMap<K, V> tailMap(K fromKey) {
-        return new SubMap<>(this, fromKey, false, true, null, false, false);
+        return new SubMap<>(this, fromKey, true, true, null, false, false);
     }
 
     @Override
@@ -465,6 +498,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
     }
 
     private static class EntrySet<K, V> extends TAbstractSet<Entry<K, V>> {
+        private int modCount = -1;
         private TTreeMap<K, V> owner;
         private K from;
         private boolean fromIncluded;
@@ -472,6 +506,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         private K to;
         private boolean toIncluded;
         private boolean toChecked;
+        private int cachedSize;
 
         public EntrySet(TTreeMap<K, V> owner, K from, boolean fromIncluded, boolean fromChecked,
                 K to, boolean toIncluded, boolean toChecked) {
@@ -486,18 +521,29 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
         @Override
         public int size() {
-            int size = owner.size();
-            if (fromChecked) {
-                TreeNode<K, V> node = fromIncluded ? owner.findPrev(from) : owner.findExactOrPrev(from);
-                if (node != null) {
-                    size -= node.size;
+            int size = cachedSize;
+            if (modCount != owner.modCount) {
+                modCount = owner.modCount;
+                size = owner.size();
+                if (fromChecked) {
+                    TreeNode<K, V>[] path = fromIncluded ? owner.pathToPrev(from) : owner.pathToExactOrPrev(from);
+                    for (TreeNode<K, V> node : path) {
+                        if (node.left != null) {
+                            size -= node.left.size;
+                        }
+                    }
+                    size -= path.length;
                 }
-            }
-            if (toChecked) {
-                TreeNode<K, V> node = toIncluded ? owner.findNext(to) : owner.findExactOrNext(to);
-                if (node != null) {
-                    size -= node.size;
+                if (toChecked) {
+                    TreeNode<K, V> path[] = toIncluded ? owner.pathToNext(to) : owner.pathToExactOrNext(to);
+                    for (TreeNode<K, V> node : path) {
+                        if (node.right != null) {
+                            size -= node.right.size;
+                        }
+                    }
+                    size -= path.length;
                 }
+                cachedSize = size;
             }
             return size;
         }
@@ -546,7 +592,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
         @Override
         public boolean isEmpty() {
-            return from == to;
+            return size() == 0;
         }
     }
 
@@ -608,7 +654,9 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         }
     }
 
-    private static class SubMap<K, V> extends TAbstractMap<K, V> implements TSortedMap<K, V> {
+    private static class SubMap<K, V> extends TAbstractMap<K, V> implements TSortedMap<K, V>, TSerializable {
+        private int modCount = -1;
+        private int cachedSize;
         private TTreeMap<K, V> owner;
         private K from;
         private boolean fromIncluded;
@@ -679,18 +727,29 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
         @Override
         public int size() {
-            int size = owner.size();
-            if (fromChecked) {
-                TreeNode<K, V> node = fromIncluded ? owner.findPrev(from) : owner.findExactOrPrev(from);
-                if (node != null) {
-                    size -= node.size;
+            int size = cachedSize;
+            if (modCount != owner.modCount) {
+                modCount = owner.modCount;
+                size = owner.size();
+                if (fromChecked) {
+                    TreeNode<K, V>[] path = fromIncluded ? owner.pathToPrev(from) : owner.pathToExactOrPrev(from);
+                    for (TreeNode<K, V> node : path) {
+                        if (node.left != null) {
+                            size -= node.left.size;
+                        }
+                    }
+                    size -= path.length;
                 }
-            }
-            if (toChecked) {
-                TreeNode<K, V> node = toIncluded ? owner.findNext(to) : owner.findExactOrNext(to);
-                if (node != null) {
-                    size -= node.size;
+                if (toChecked) {
+                    TreeNode<K, V> path[] = toIncluded ? owner.pathToNext(to) : owner.pathToExactOrNext(to);
+                    for (TreeNode<K, V> node : path) {
+                        if (node.right != null) {
+                            size -= node.right.size;
+                        }
+                    }
+                    size -= path.length;
                 }
+                cachedSize = size;
             }
             return size;
         }
