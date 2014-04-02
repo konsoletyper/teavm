@@ -563,7 +563,80 @@ public class TreeMapTest {
         master.put("null", "0");
         entry = master.entrySet().toArray();
         assertFalse("Null-valued entry should not equal non-null-valued entry",
-                    test_map.entrySet().contains(entry[0]));
+                test_map.entrySet().contains(entry[0]));
     }
 
+    @Test
+    public void mapReversed() {
+        NavigableMap<Integer, String> map = createMapOfEvenNumbers();
+        NavigableMap<Integer, String> reversedMap = map.descendingMap();
+        assertEquals("The first key of reverse map is wrong", Integer.valueOf(998), reversedMap.firstKey());
+        assertEquals("The last key of reverse map is wrong", Integer.valueOf(0), reversedMap.lastKey());
+        assertTrue("Reversed map does not contain element from original map", reversedMap.containsKey(256));
+        assertEquals("Reversed map is of a wrong size", 500, reversedMap.size());
+        assertNull(reversedMap.get(1000));
+        Iterator<Integer> keys = reversedMap.keySet().iterator();
+        assertEquals("Wrong first element got from iterator", Integer.valueOf(998), keys.next());
+        assertEquals("Wrong second element got from iterator", Integer.valueOf(996), keys.next());
+        assertEquals("Wrong third element got from iterator", Integer.valueOf(994), keys.next());
+    }
+
+    @Test
+    public void submapReversed() {
+        NavigableMap<Integer, String> map = createMapOfEvenNumbers();
+        NavigableMap<Integer, String> reversedMap = map.subMap(100, true, 201, true).descendingMap();
+        assertEquals("The first key of  map is wrong", Integer.valueOf(200), reversedMap.firstKey());
+        assertEquals("The last key of map is wrong", Integer.valueOf(100), reversedMap.lastKey());
+        assertTrue("Reversed map does not contain element from original map", reversedMap.containsKey(104));
+        assertEquals("Reversed map is of a wrong size", 51, reversedMap.size());
+        assertNull(reversedMap.get(103));
+        assertNull(reversedMap.get(256));
+        Iterator<Integer> keys = reversedMap.keySet().iterator();
+        assertEquals("Wrong first element got from iterator", Integer.valueOf(200), keys.next());
+        assertEquals("Wrong second element got from iterator", Integer.valueOf(198), keys.next());
+        assertEquals("Wrong third element got from iterator", Integer.valueOf(196), keys.next());
+    }
+
+    @Test
+    public void submapOfReverseSubmapObtained() {
+        NavigableMap<Integer, String> map = createMapOfEvenNumbers();
+        NavigableMap<Integer, String> reversedMap = map.subMap(100, true, 901, true).descendingMap()
+                .subMap(800, false, 201, false);
+        assertEquals("The first key of map is wrong", Integer.valueOf(798), reversedMap.firstKey());
+        assertEquals("The last key of map is wrong", Integer.valueOf(202), reversedMap.lastKey());
+        assertTrue("Reversed map does not contain element from original map", reversedMap.containsKey(244));
+        assertEquals("Reversed map is of a wrong size", 299, reversedMap.size());
+        assertNull(reversedMap.get(225));
+        assertNull(reversedMap.get(100));
+        Iterator<Integer> keys = reversedMap.keySet().iterator();
+        assertEquals("Wrong first element got from iterator", Integer.valueOf(798), keys.next());
+        assertEquals("Wrong second element got from iterator", Integer.valueOf(796), keys.next());
+        assertEquals("Wrong third element got from iterator", Integer.valueOf(794), keys.next());
+    }
+
+    @Test
+    public void tailOfReverseSubmapObtained() {
+        NavigableMap<Integer, String> map = createMapOfEvenNumbers();
+        NavigableMap<Integer, String> reversedMap = map.subMap(100, true, 901, true).descendingMap()
+                .tailMap(800, false);
+        assertEquals("The first key of map is wrong", Integer.valueOf(798), reversedMap.firstKey());
+        assertEquals("The last key of map is wrong", Integer.valueOf(100), reversedMap.lastKey());
+        assertTrue("Reversed map does not contain element from original map", reversedMap.containsKey(144));
+        assertEquals("Reversed map is of a wrong size", 350, reversedMap.size());
+        assertNull(reversedMap.get(225));
+        assertNull(reversedMap.get(94));
+        assertNull(reversedMap.get(908));
+        Iterator<Integer> keys = reversedMap.keySet().iterator();
+        assertEquals("Wrong first element got from iterator", Integer.valueOf(798), keys.next());
+        assertEquals("Wrong second element got from iterator", Integer.valueOf(796), keys.next());
+        assertEquals("Wrong third element got from iterator", Integer.valueOf(794), keys.next());
+    }
+
+    private TreeMap<Integer, String> createMapOfEvenNumbers() {
+        TreeMap<Integer, String> treeMap = new TreeMap<>();
+        for (int i = 0; i < 1000; i += 2) {
+            treeMap.put(i, String.valueOf(i));
+        }
+        return treeMap;
+    }
 }
