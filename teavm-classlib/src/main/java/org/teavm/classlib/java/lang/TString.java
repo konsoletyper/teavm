@@ -504,6 +504,21 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         return true;
     }
 
+    public boolean equalsIgnoreCase(TString other) {
+        if (this == other) {
+            return true;
+        }
+        if (length() != other.length()) {
+            return false;
+        }
+        for (int i = 0; i < length(); ++i) {
+            if (TCharacter.toLowerCase(charAt(i)) != TCharacter.toLowerCase(other.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public byte[] getBytes(TString charsetName) throws TUnsupportedEncodingException {
         Charset charset = Charset.get(charsetName.toString());
         if (charset == null) {
