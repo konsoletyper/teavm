@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2014 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  *  Licensed to the Apache Software Foundation (ASF) under one or more
  *  contributor license agreements.  See the NOTICE file distributed with
  *  this work for additional information regarding copyright ownership.
@@ -28,23 +43,23 @@ import org.teavm.javascript.ni.Rename;
 
 public class THashMap<K, V> extends TAbstractMap<K, V> implements TSerializable {
     transient int elementCount;
-    transient Entry<K, V>[] elementData;
+    transient HashEntry<K, V>[] elementData;
     transient int modCount = 0;
     private static final int DEFAULT_SIZE = 16;
     final float loadFactor;
     int threshold;
 
-    static class Entry<K, V> extends TMapEntry<K, V> {
+    static class HashEntry<K, V> extends TMapEntry<K, V> {
         final int origKeyHash;
 
-        Entry<K, V> next;
+        HashEntry<K, V> next;
 
-        Entry(K theKey, int hash) {
+        HashEntry(K theKey, int hash) {
             super(theKey, null);
             this.origKeyHash = hash;
         }
 
-        Entry(K theKey, V theValue) {
+        HashEntry(K theKey, V theValue) {
             super(theKey, theValue);
             origKeyHash = (theKey == null ? 0 : computeHashCode(theKey));
         }
@@ -52,9 +67,9 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TSerializable 
         @Override
         @SuppressWarnings("unchecked")
         public Object clone() {
-            Entry<K, V> entry = (Entry<K, V>) super.clone();
+            HashEntry<K, V> entry = (HashEntry<K, V>) super.clone();
             if (next != null) {
-                entry.next = (Entry<K, V>) next.clone();
+                entry.next = (HashEntry<K, V>) next.clone();
             }
             return entry;
         }
@@ -63,9 +78,9 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TSerializable 
     private static class AbstractMapIterator<K, V>  {
         private int position = 0;
         int expectedModCount;
-        Entry<K, V> futureEntry;
-        Entry<K, V> currentEntry;
-        Entry<K, V> prevEntry;
+        HashEntry<K, V> futureEntry;
+        HashEntry<K, V> currentEntry;
+        HashEntry<K, V> prevEntry;
 
         final THashMap<K, V> associatedMap;
 
@@ -228,8 +243,8 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TSerializable 
     }
 
     @SuppressWarnings("unchecked")
-    Entry<K, V>[] newElementArray(int s) {
-        return new Entry[s];
+    HashEntry<K, V>[] newElementArray(int s) {
+        return new HashEntry[s];
     }
 
     public THashMap() {
@@ -315,7 +330,7 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TSerializable 
 
     @Override
     public boolean containsKey(Object key) {
-        Entry<K, V> m = getEntry(key);
+        HashEntry<K, V> m = getEntry(key);
         return m != null;
     }
 
@@ -323,7 +338,7 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TSerializable 
     public boolean containsValue(Object value) {
         if (value != null) {
             for (int i = 0; i < elementData.length; i++) {
-                Entry<K, V> entry = elementData[i];
+                HashEntry<K, V> entry = elementData[i];
                 while (entry != null) {
                     if (areEqualValues(value, entry.value)) {
                         return true;
@@ -333,7 +348,7 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TSerializable 
             }
         } else {
             for (int i = 0; i < elementData.length; i++) {
-                Entry<K, V> entry = elementData[i];
+                HashEntry<K, V> entry = elementData[i];
                 while (entry != null) {
                     if (entry.value == null) {
                         return true;
@@ -352,15 +367,15 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TSerializable 
 
     @Override
     public V get(Object key) {
-        Entry<K, V> m = getEntry(key);
+        HashEntry<K, V> m = getEntry(key);
         if (m != null) {
             return m.value;
         }
         return null;
     }
 
-    final Entry<K, V> getEntry(Object key) {
-        Entry<K, V> m;
+    final HashEntry<K, V> getEntry(Object key) {
+        HashEntry<K, V> m;
         if (key == null) {
             m = findNullKeyEntry();
         } else {
@@ -371,8 +386,8 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TSerializable 
         return m;
     }
 
-    final Entry<K,V> findNonNullKeyEntry(Object key, int index, int keyHash) {
-        Entry<K,V> m = elementData[index];
+    final HashEntry<K,V> findNonNullKeyEntry(Object key, int index, int keyHash) {
+        HashEntry<K,V> m = elementData[index];
         while (m != null
                 && (m.origKeyHash != keyHash || !areEqualKeys(key, m.key))) {
             m = m.next;
@@ -380,8 +395,8 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TSerializable 
         return m;
     }
 
-    final Entry<K,V> findNullKeyEntry() {
-        Entry<K,V> m = elementData[0];
+    final HashEntry<K,V> findNullKeyEntry() {
+        HashEntry<K,V> m = elementData[0];
         while (m != null && m.key != null)
             m = m.next;
         return m;
@@ -406,7 +421,7 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TSerializable 
                     THashMap.this.clear();
                 }
                 @Override public boolean remove(Object key) {
-                    Entry<K, V> entry = THashMap.this.removeEntry(key);
+                    HashEntry<K, V> entry = THashMap.this.removeEntry(key);
                     return entry != null;
                 }
                 @Override public TIterator<K> iterator() {
@@ -423,7 +438,7 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TSerializable 
     }
 
     V putImpl(K key, V value) {
-        Entry<K,V> entry;
+        HashEntry<K,V> entry;
         if(key == null) {
             entry = findNullKeyEntry();
             if (entry == null) {
@@ -451,15 +466,15 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TSerializable 
         return result;
     }
 
-    Entry<K, V> createEntry(K key, int index, V value) {
-        Entry<K, V> entry = new Entry<>(key, value);
+    HashEntry<K, V> createEntry(K key, int index, V value) {
+        HashEntry<K, V> entry = new HashEntry<>(key, value);
         entry.next = elementData[index];
         elementData[index] = entry;
         return entry;
     }
 
-    Entry<K,V> createHashedEntry(K key, int index, int hash) {
-        Entry<K,V> entry = new Entry<>(key,hash);
+    HashEntry<K,V> createHashedEntry(K key, int index, int hash) {
+        HashEntry<K,V> entry = new HashEntry<>(key,hash);
         entry.next = elementData[index];
         elementData[index] = entry;
         return entry;
@@ -487,13 +502,13 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TSerializable 
     void rehash(int capacity) {
         int length = calculateCapacity((capacity == 0 ? 1 : capacity << 1));
 
-        Entry<K, V>[] newData = newElementArray(length);
+        HashEntry<K, V>[] newData = newElementArray(length);
         for (int i = 0; i < elementData.length; i++) {
-            Entry<K, V> entry = elementData[i];
+            HashEntry<K, V> entry = elementData[i];
             elementData[i] = null;
             while (entry != null) {
                 int index = entry.origKeyHash & (length - 1);
-                Entry<K, V> next = entry.next;
+                HashEntry<K, V> next = entry.next;
                 entry.next = newData[index];
                 newData[index] = entry;
                 entry = next;
@@ -509,16 +524,16 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TSerializable 
 
     @Override
     public V remove(Object key) {
-        Entry<K, V> entry = removeEntry(key);
+        HashEntry<K, V> entry = removeEntry(key);
         if (entry != null) {
             return entry.value;
         }
         return null;
     }
 
-    final void removeEntry(Entry<K, V> entry) {
+    final void removeEntry(HashEntry<K, V> entry) {
         int index = entry.origKeyHash & (elementData.length - 1);
-        Entry<K, V> m = elementData[index];
+        HashEntry<K, V> m = elementData[index];
         if (m == entry) {
             elementData[index] = entry.next;
         } else {
@@ -532,10 +547,10 @@ public class THashMap<K, V> extends TAbstractMap<K, V> implements TSerializable 
         elementCount--;
     }
 
-    final Entry<K, V> removeEntry(Object key) {
+    final HashEntry<K, V> removeEntry(Object key) {
         int index = 0;
-        Entry<K, V> entry;
-        Entry<K, V> last = null;
+        HashEntry<K, V> entry;
+        HashEntry<K, V> last = null;
         if (key != null) {
             int hash = computeHashCode(key);
             index = hash & (elementData.length - 1);
