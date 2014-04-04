@@ -381,14 +381,16 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                             cond.getConsequent().addAll(innerCond.getConsequent());
                             cond.setCondition(Expr.binary(BinaryOperation.AND, cond.getCondition(),
                                     innerCond.getCondition()));
-                        } else {
+                            --i;
+                        } else if (cond.getAlternative().size() != 1 ||
+                                !(cond.getAlternative().get(0) instanceof ConditionalStatement)) {
                             cond.setCondition(ExprOptimizer.invert(cond.getCondition()));
                             cond.getConsequent().clear();
                             cond.getConsequent().addAll(cond.getAlternative());
                             cond.getAlternative().clear();
                             cond.getAlternative().add(innerCond);
+                            --i;
                         }
-                        --i;
                     }
                 }
             } else if (stmt instanceof BlockStatement) {
