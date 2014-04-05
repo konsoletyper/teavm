@@ -85,7 +85,7 @@ public class TBufferedReader extends TReader {
 
     public TString readLine() throws TIOException {
         requireOpened();
-        if (eof && index == count) {
+        if (eof && index >= count) {
             return null;
         }
         TStringBuilder line = new TStringBuilder();

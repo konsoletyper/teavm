@@ -28,21 +28,7 @@ import org.teavm.model.MethodReference;
 public class MathNativeGenerator implements Generator {
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
-        switch (methodRef.getName()) {
-            case "sin":
-            case "cos":
-            case "tan":
-            case "asin":
-            case "acos":
-            case "atan":
-            case "exp":
-            case "log":
-            case "sqrt":
-            case "floor":
-            case "ceil":
-                function(context, writer, "Math." + methodRef.getName(), methodRef.parameterCount());
-                break;
-        }
+        function(context, writer, "Math." + methodRef.getName(), methodRef.parameterCount());
     }
 
     private void function(GeneratorContext context, SourceWriter writer, String name, int paramCount)

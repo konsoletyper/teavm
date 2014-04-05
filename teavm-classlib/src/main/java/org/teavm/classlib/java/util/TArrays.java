@@ -1492,6 +1492,11 @@ public class TArrays extends TObject {
             @Override public T get(int index) {
                 return a[index];
             }
+            @Override public T set(int index, T element) {
+                T old = a[index];
+                a[index] = element;
+                return old;
+            }
             @Override public int size() {
                 return a.length;
             }
