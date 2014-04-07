@@ -508,6 +508,9 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         if (this == other) {
             return true;
         }
+        if (other == null) {
+            return false;
+        }
         if (length() != other.length()) {
             return false;
         }

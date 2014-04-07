@@ -56,10 +56,9 @@ public final class TSystem extends TObject {
         return null;
     }
 
-    public static TString getProperty(@SuppressWarnings("unused") TString key,
-            @SuppressWarnings("unused") TString def) {
-        // TODO: make implementation
-        return null;
+    public static TString getProperty(TString key, TString def) {
+        TString value = getProperty(key);
+        return value != null ? value : def;
     }
 
     @GeneratedBy(SystemNativeGenerator.class)
