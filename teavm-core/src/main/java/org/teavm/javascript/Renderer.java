@@ -882,14 +882,14 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     writer.append(')');
                     break;
                 case BYTE_TO_INT:
-                    writer.append("$rt_byteToInt(");
+                    writer.append("((");
                     expr.getOperand().acceptVisitor(this);
-                    writer.append(')');
+                    writer.ws().append("<<").ws().append("24)").ws().append(">>").ws().append("24)");
                     break;
                 case SHORT_TO_INT:
-                    writer.append("$rt_shortToInt(");
+                    writer.append("((");
                     expr.getOperand().acceptVisitor(this);
-                    writer.append(')');
+                    writer.ws().append("<<").ws().append("16)").ws().append(">>").ws().append("16)");
                     break;
                 case NULL_CHECK:
                     writer.append("$rt_nullCheck(");
