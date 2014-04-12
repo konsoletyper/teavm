@@ -223,7 +223,12 @@ class DependencyGraphBuilder {
                 cst = ((ValueType.Array)cst).getItemType();
             }
             if (cst instanceof ValueType.Object) {
-                dependencyChecker.achieveClass(((ValueType.Object)cst).getClassName(), callerStack);
+                final String className = ((ValueType.Object)cst).getClassName();
+                useRunners.add(new Runnable() {
+                    @Override public void run() {
+                        dependencyChecker.initClass(className, callerStack);
+                    }
+                });
             }
         }
 
