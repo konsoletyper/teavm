@@ -244,28 +244,29 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             writer.ws().append("});").newLine().outdent();
             List<MethodNode> nonInitMethods = new ArrayList<>();
             List<MethodNode> virtualMethods = new ArrayList<>();
+
+            writer.append("function ").appendClass(cls.getName()).append("_$clinit()").ws()
+                    .append("{").softNewLine().indent();
+            writer.appendClass(cls.getName()).append("_$clinit").ws().append("=").ws()
+                    .append("function(){};").newLine();
+            List<String> stubNames = new ArrayList<>();
+            for (MethodNode method : cls.getMethods()) {
+                if (!method.getModifiers().contains(NodeModifier.STATIC) &&
+                        !method.getReference().getName().equals("<init>")) {
+                    nonInitMethods.add(method);
+                } else {
+                    renderBody(method, true);
+                    stubNames.add(naming.getFullNameFor(method.getReference()));
+                }
+            }
+            MethodHolder methodHolder = classSource.get(cls.getName()).getMethod(
+                    new MethodDescriptor("<clinit>", ValueType.VOID));
+            if (methodHolder != null) {
+                writer.appendMethodBody(new MethodReference(cls.getName(), methodHolder.getDescriptor()))
+                        .append("();").softNewLine();
+            }
+            writer.outdent().append("}").newLine();
             if (!cls.getModifiers().contains(NodeModifier.INTERFACE)) {
-                writer.append("function ").appendClass(cls.getName()).append("_$clinit()").ws()
-                        .append("{").softNewLine().indent();
-                writer.appendClass(cls.getName()).append("_$clinit").ws().append("=").ws()
-                        .append("function(){};").newLine();
-                List<String> stubNames = new ArrayList<>();
-                for (MethodNode method : cls.getMethods()) {
-                    if (!method.getModifiers().contains(NodeModifier.STATIC) &&
-                            !method.getReference().getName().equals("<init>")) {
-                        nonInitMethods.add(method);
-                    } else {
-                        renderBody(method, true);
-                        stubNames.add(naming.getFullNameFor(method.getReference()));
-                    }
-                }
-                MethodHolder methodHolder = classSource.get(cls.getName()).getMethod(
-                        new MethodDescriptor("<clinit>", ValueType.VOID));
-                if (methodHolder != null) {
-                    writer.appendMethodBody(new MethodReference(cls.getName(), methodHolder.getDescriptor()))
-                            .append("();").softNewLine();
-                }
-                writer.outdent().append("}").newLine();
                 for (MethodNode method : cls.getMethods()) {
                     cls.getMethods();
                     if (!method.getModifiers().contains(NodeModifier.STATIC)) {
@@ -286,6 +287,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     writer.append("]);").newLine();
                 }
             }
+
             for (MethodNode method : nonInitMethods) {
                 renderBody(method, false);
             }
@@ -880,14 +882,14 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     writer.append(')');
                     break;
                 case BYTE_TO_INT:
-                    writer.append("$rt_byteToInt(");
+                    writer.append("((");
                     expr.getOperand().acceptVisitor(this);
-                    writer.append(')');
+                    writer.ws().append("<<").ws().append("24)").ws().append(">>").ws().append("24)");
                     break;
                 case SHORT_TO_INT:
-                    writer.append("$rt_shortToInt(");
+                    writer.append("((");
                     expr.getOperand().acceptVisitor(this);
-                    writer.append(')');
+                    writer.ws().append("<<").ws().append("16)").ws().append(">>").ws().append("16)");
                     break;
                 case NULL_CHECK:
                     writer.append("$rt_nullCheck(");

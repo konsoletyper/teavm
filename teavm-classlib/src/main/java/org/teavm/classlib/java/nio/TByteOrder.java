@@ -21,7 +21,7 @@ package org.teavm.classlib.java.nio;
  */
 public final class TByteOrder {
     public static final TByteOrder BIG_ENDIAN = new TByteOrder("BIG_ENDIAN");
-    public static final TByteOrder LITTLE_ENDIAN = new TByteOrder("BIG_ENDIAN");
+    public static final TByteOrder LITTLE_ENDIAN = new TByteOrder("LITTLE_ENDIAN");
     private String name;
 
     private TByteOrder(String name) {

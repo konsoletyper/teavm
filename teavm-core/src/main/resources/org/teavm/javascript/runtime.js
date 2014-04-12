@@ -201,19 +201,6 @@ $rt_voidcls = function() {
     }
     return $rt_voidclsCache;
 }
-$rt_equals = function(a, b) {
-    if (a === b) {
-        return true;
-    }
-    if (a === null || b === null) {
-        return false;
-    }
-    if (typeof(a) == 'object') {
-        return a.equals(b);
-    } else {
-        return false;
-    }
-}
 $rt_clinit = function(cls) {
     if (cls.$clinit) {
         var f = cls.$clinit;
@@ -235,12 +222,6 @@ $rt_throw = function(ex) {
         ex.$jsException = err;
     }
     throw err;
-}
-$rt_byteToInt = function(value) {
-    return value > 0xFF ? value | 0xFFFFFF00 : value;
-}
-$rt_shortToInt = function(value) {
-    return value > 0xFFFF ? value | 0xFFFF0000 : value;
 }
 $rt_createMultiArray = function(cls, dimensions) {
     var arrays = new Array($rt_primitiveArrayCount(dimensions));
@@ -546,6 +527,7 @@ Long_xor = function(a, b) {
     return new Long(a.lo ^ b.lo, a.hi ^ b.hi);
 }
 Long_shl = function(a, b) {
+    b &= 63;
     if (b < 32) {
         return new Long(a.lo << b, (a.lo >>> (32 - b)) | (a.hi << b));
     } else {
@@ -553,10 +535,11 @@ Long_shl = function(a, b) {
     }
 }
 Long_shr = function(a, b) {
+    b &= 63;
     if (b < 32) {
         return new Long((a.lo >>> b) | (a.hi << (32 - b)), a.hi >> b);
     } else {
-        return new Long((a.hi >> (b - 32)), -1);
+        return new Long((a.hi >> (b - 32)), a.hi >> 31);
     }
 }
 Long_shru = function(a, b) {
