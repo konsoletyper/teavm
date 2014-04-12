@@ -969,7 +969,7 @@ public class TArrays extends TObject {
             int e = a[i];
             if (e == key) {
                 return i;
-            } else if (e < key) {
+            } else if (key < e) {
                 u = i - 1;
                 if (u < l) {
                     return -i - 1;
@@ -998,7 +998,7 @@ public class TArrays extends TObject {
             long e = a[i];
             if (e == key) {
                 return i;
-            } else if (e < key) {
+            } else if (e > key) {
                 u = i - 1;
                 if (u < l) {
                     return -i - 1;
@@ -1027,7 +1027,7 @@ public class TArrays extends TObject {
             short e = a[i];
             if (e == key) {
                 return i;
-            } else if (e < key) {
+            } else if (e > key) {
                 u = i - 1;
                 if (u < l) {
                     return -i - 1;
@@ -1056,7 +1056,7 @@ public class TArrays extends TObject {
             char e = a[i];
             if (e == key) {
                 return i;
-            } else if (e < key) {
+            } else if (e > key) {
                 u = i - 1;
                 if (u < l) {
                     return -i - 1;
@@ -1085,7 +1085,7 @@ public class TArrays extends TObject {
             byte e = a[i];
             if (e == key) {
                 return i;
-            } else if (e < key) {
+            } else if (e > key) {
                 u = i - 1;
                 if (u < l) {
                     return -i - 1;
@@ -1114,7 +1114,7 @@ public class TArrays extends TObject {
             double e = a[i];
             if (e == key) {
                 return i;
-            } else if (e < key) {
+            } else if (e > key) {
                 u = i - 1;
                 if (u < l) {
                     return -i - 1;
@@ -1143,7 +1143,7 @@ public class TArrays extends TObject {
             float e = a[i];
             if (e == key) {
                 return i;
-            } else if (e < key) {
+            } else if (e > key) {
                 u = i - 1;
                 if (u < l) {
                     return -i - 1;
