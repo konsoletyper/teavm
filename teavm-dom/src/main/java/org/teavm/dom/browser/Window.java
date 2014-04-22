@@ -16,7 +16,6 @@
 package org.teavm.dom.browser;
 
 import org.teavm.dom.core.Document;
-import org.teavm.dom.core.Element;
 import org.teavm.jso.JSGlobal;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
@@ -28,9 +27,6 @@ import org.teavm.jso.JSProperty;
 public interface Window extends JSGlobal {
     @JSProperty
     Document getDocument();
-
-    @JSProperty
-    Element getBody();
 
     void alert(JSObject message);
 

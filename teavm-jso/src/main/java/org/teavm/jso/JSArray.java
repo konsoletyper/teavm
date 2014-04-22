@@ -28,4 +28,6 @@ public interface JSArray<T extends JSObject> extends JSObject {
 
     @JSIndexer
     void set(int index, T value);
+    
+    void push(T value);
 }

@@ -47,7 +47,7 @@ public interface Document extends Node {
 
     EntityReference createEntityReference(String name);
 
-    NodeList<Element> getElementsByTagName();
+    NodeList<Element> getElementsByTagName(String name);
 
     <T extends Node> T importNode(T importedNode, boolean deep);
 

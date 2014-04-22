@@ -22,7 +22,7 @@ import org.teavm.jso.JSProperty;
  *
  * @author Alexey Andreev
  */
-public interface NodeList<T extends Node> extends JSArray<Node> {
+public interface NodeList<T extends Node> extends JSArray<T> {
     T item(int index);
 
     @Override
