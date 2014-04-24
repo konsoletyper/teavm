@@ -143,7 +143,7 @@ public class LinkedHashMapTest {
 	}
 
 	@Test
-	public void test_entrySet() {;
+	public void test_entrySet() {
 		assertEquals("Returned set of incorrect size", hm.size(), hm.entrySet().size());
 		for (Entry<Object, Object> m : hm.entrySet()) {
 			assertTrue("Returned incorrect entry set", hm.containsKey(m.getKey()) && hm.containsValue(m.getValue()));
