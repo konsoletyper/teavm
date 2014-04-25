@@ -307,7 +307,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     public int indexOf(TString str, int fromIndex) {
         int toIndex = length() - str.length();
         outer:
-        for (int i = fromIndex; i < toIndex; ++i) {
+        for (int i = fromIndex; i <= toIndex; ++i) {
             for (int j = 0; j < str.length(); ++j) {
                 if (charAt(i + j) != str.charAt(j)) {
                     continue outer;

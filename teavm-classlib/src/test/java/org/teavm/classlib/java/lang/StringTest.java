@@ -160,6 +160,7 @@ public class StringTest {
     @Test
     public void findsString() {
         assertEquals(1, "abcdbcd".indexOf("bc"));
+        assertEquals(3, "abcdbcd".indexOf("dbcd"));
         assertEquals(-1, "abcdbcd".indexOf("bb"));
     }
 
