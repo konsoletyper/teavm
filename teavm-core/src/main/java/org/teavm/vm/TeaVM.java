@@ -167,15 +167,35 @@ public class TeaVM implements TeaVMHost {
      * @return an entry point that you can additionally adjust.
      */
     public TeaVMEntryPoint entryPoint(String name, MethodReference ref) {
-        if (entryPoints.containsKey(name)) {
-            throw new IllegalArgumentException("Entry point with public name `" + name + "' already defined " +
-                    "for method " + ref);
+        if (name != null) {
+            if (entryPoints.containsKey(name)) {
+                throw new IllegalArgumentException("Entry point with public name `" + name + "' already defined " +
+                        "for method " + ref);
+            }
         }
         TeaVMEntryPoint entryPoint = new TeaVMEntryPoint(name, ref,
                 dependencyChecker.linkMethod(ref, DependencyStack.ROOT));
         dependencyChecker.initClass(ref.getClassName(), DependencyStack.ROOT);
-        entryPoints.put(name, entryPoint);
+        if (name != null) {
+            entryPoints.put(name, entryPoint);
+        }
         return entryPoint;
+    }
+
+    /**
+     * <p>Adds an entry point. TeaVM guarantees, that all methods that are required by the entry point
+     * will be available at run-time in browser. Also you need to specify for each parameter of entry point
+     * which actual types will be passed here by calling {@link TeaVMEntryPoint#withValue(int, String)}.
+     * It is highly recommended to read explanation on {@link TeaVMEntryPoint} class documentation.</p>
+     *
+     * <p>You should call this method after installing all plugins and interceptors, but before
+     * doing the actual build.</p>
+     *
+     * @param ref a full reference to the method which is an entry point.
+     * @return an entry point that you can additionally adjust.
+     */
+    public TeaVMEntryPoint entryPoint(MethodReference ref) {
+        return entryPoint(null, ref);
     }
 
     public TeaVMEntryPoint linkMethod(MethodReference ref) {

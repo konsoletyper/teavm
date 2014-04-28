@@ -39,10 +39,7 @@ import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.parsing.ClasspathClassHolderSource;
-import org.teavm.vm.BuildTarget;
-import org.teavm.vm.DirectoryBuildTarget;
-import org.teavm.vm.TeaVM;
-import org.teavm.vm.TeaVMBuilder;
+import org.teavm.vm.*;
 import org.teavm.vm.spi.AbstractRendererListener;
 
 /**
@@ -90,6 +87,12 @@ public class BuildJavascriptMojo extends AbstractMojo {
 
     @Parameter
     private String[] transformers;
+
+    @Parameter
+    private ClassAlias[] classAliases;
+
+    @Parameter
+    private MethodAlias[] methodAliases;
 
     public void setProject(MavenProject project) {
         this.project = project;
@@ -139,6 +142,14 @@ public class BuildJavascriptMojo extends AbstractMojo {
         this.properties = properties;
     }
 
+    public void setClassAliases(ClassAlias[] classAliases) {
+        this.classAliases = classAliases;
+    }
+
+    public void setMethodAliases(MethodAlias[] methodAliases) {
+        this.methodAliases = methodAliases;
+    }
+
     @Override
     public void execute() throws MojoExecutionException {
         Log log = getLog();
@@ -171,6 +182,28 @@ public class BuildJavascriptMojo extends AbstractMojo {
                         ValueType.object("java.lang.String")), ValueType.VOID);
                 vm.entryPoint("main", new MethodReference(mainClass, mainMethodDesc))
                         .withValue(1, "java.lang.String");
+            }
+            if (classAliases != null) {
+                for (ClassAlias alias : classAliases) {
+                    vm.exportType(alias.getAlias(), alias.getClassName());
+                }
+            }
+            if (methodAliases != null) {
+                for (MethodAlias methodAlias : methodAliases) {
+                    MethodReference ref = new MethodReference(methodAlias.getClassName(), methodAlias.getMethodName(),
+                            MethodDescriptor.parseSignature(methodAlias.getDescriptor()));
+                    TeaVMEntryPoint entryPoint = vm.entryPoint(methodAlias.getAlias(), ref);
+                    if (methodAlias.getTypes() != null) {
+                        for (int i = 0; i < methodAlias.getTypes().length; ++i) {
+                            String types = methodAlias.getTypes()[i];
+                            if (types != null) {
+                                for (String type : types.split(" ")) {
+                                    entryPoint.withValue(i, type);
+                                }
+                            }
+                        }
+                    }
+                }
             }
             targetDirectory.mkdirs();
             try (FileWriter writer = new FileWriter(new File(targetDirectory, targetFileName))) {
