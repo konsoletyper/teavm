@@ -80,14 +80,19 @@ easily talk to JavaScript environment to (usually) animate an HTML page. While D
 implementation of JVM, called [Bck2Brwsr](http://wiki.apidesign.org/wiki/Bck2Brwsr), TeaVM also provides
 support for running DukeScript applications, using [teavm-html4j](teavm-html4j) plugin.
 
-Live example
-------------
+Live examples
+-------------
 
 Thanks to [Jaroslav Tulach](http://wiki.apidesign.org/wiki/User:JaroslavTulach), author of DukeScript, we have several
 DukeScript example applications. One is the minesweeper game.
 You can try its TeaVM-compiled version [here](http://xelfi.cz/minesweeper/teavm/), and then take a look at
 [source code](http://source.apidesign.org/hg/html~demo/file/4dce5ea7e13a/minesweeper/src/main/java/org/apidesign/demo/minesweeper/MinesModel.java)
 and [HTML page](http://source.apidesign.org/hg/html~demo/file/4dce5ea7e13a/minesweeper/src/main/webapp/pages/index.html).
+
+Another example is avaialble [here](http://graphhopper.com/teavm/).
+It uses [GraphHopper](https://github.com/graphhopper/graphhopper/) to build route in browser.
+Unlike original GraphHopper example it works completely in browser instead of querying server.
+Thanks to [Peter Karich](https://github.com/karussell).
 
 Advantages over GWT
 -------------------
