@@ -197,8 +197,11 @@ public class BuildJavascriptMojo extends AbstractMojo {
                         for (int i = 0; i < methodAlias.getTypes().length; ++i) {
                             String types = methodAlias.getTypes()[i];
                             if (types != null) {
-                                for (String type : types.split(" ")) {
-                                    entryPoint.withValue(i, type);
+                                for (String type : types.split(" +")) {
+                                    type = type.trim();
+                                    if (!type.isEmpty()) {
+                                        entryPoint.withValue(i, type);
+                                    }
                                 }
                             }
                         }
