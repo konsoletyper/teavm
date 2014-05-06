@@ -13,30 +13,23 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.dom.browser;
+package org.teavm.dom.html;
 
-import org.teavm.dom.html.HTMLDocument;
-import org.teavm.jso.JSGlobal;
-import org.teavm.jso.JSObject;
+import org.teavm.dom.core.Document;
 import org.teavm.jso.JSProperty;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface Window extends JSGlobal {
+public interface HTMLDocument extends Document {
     @JSProperty
-    HTMLDocument getDocument();
+    @Override
+    HTMLElement getDocumentElement();
 
-    void alert(JSObject message);
+    @Override
+    HTMLElement createElement(String tagName);
 
-    void alert(String message);
-
-    int setTimeout(TimerHandler handler, int delay);
-
-    void clearTimeout(int timeoutId);
-
-    int setInterval(TimerHandler handler, int delay);
-
-    void clearInterval(int timeoutId);
+    @Override
+    HTMLElement getElementById(String elementId);
 }

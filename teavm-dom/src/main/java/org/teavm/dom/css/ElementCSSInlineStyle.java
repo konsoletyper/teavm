@@ -13,30 +13,16 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.dom.browser;
+package org.teavm.dom.css;
 
-import org.teavm.dom.html.HTMLDocument;
-import org.teavm.jso.JSGlobal;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface Window extends JSGlobal {
+public interface ElementCSSInlineStyle extends JSObject {
     @JSProperty
-    HTMLDocument getDocument();
-
-    void alert(JSObject message);
-
-    void alert(String message);
-
-    int setTimeout(TimerHandler handler, int delay);
-
-    void clearTimeout(int timeoutId);
-
-    int setInterval(TimerHandler handler, int delay);
-
-    void clearInterval(int timeoutId);
+    CSSStyleDeclaration getStyle();
 }
