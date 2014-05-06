@@ -42,15 +42,23 @@ public abstract class TAbstractList<E> extends TAbstractCollection<E> implements
             private int index;
             private int modCount = TAbstractList.this.modCount;
             private int size = size();
+            private int removeIndex = -1;
             @Override public boolean hasNext() {
                 return index < size;
             }
             @Override public E next() {
                 checkConcurrentModification();
+                removeIndex = index;
                 return get(index++);
             }
             @Override public void remove() {
+                if (removeIndex < 0) {
+                    throw new TIllegalStateException();
+                }
                 TAbstractList.this.remove(index - 1);
+                modCount = TAbstractList.this.modCount;
+                --index;
+                removeIndex = -1;
             }
             private void checkConcurrentModification() {
                 if (modCount < TAbstractList.this.modCount) {
