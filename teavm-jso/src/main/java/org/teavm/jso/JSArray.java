@@ -19,15 +19,59 @@ package org.teavm.jso;
  *
  * @author Alexey Andreev
  */
-public interface JSArray<T extends JSObject> extends JSObject {
-    @JSProperty
-    int getLength();
-
-    @JSIndexer
-    T get(int index);
-
+public interface JSArray<T extends JSObject> extends JSArrayReader<T> {
     @JSIndexer
     void set(int index, T value);
-    
-    void push(T value);
+
+    int push(T a);
+
+    int push(T a, T b);
+
+    int push(T a, T b, T c);
+
+    int push(T a, T b, T c, T d);
+
+    T shift();
+
+    String join(String separator);
+
+    String join();
+
+    JSArray<T> concat(JSArray<T> a);
+
+    JSArray<T> concat(JSArray<T> a, JSArray<T> b);
+
+    JSArray<T> concat(JSArray<T> a, JSArray<T> b, JSArray<T> c);
+
+    JSArray<T> concat(JSArray<T> a, JSArray<T> b, JSArray<T> c, JSArray<T> d);
+
+    T pop();
+
+    int unshift(T a);
+
+    int unshift(T a, T b);
+
+    int unshift(T a, T b, T c);
+
+    int unshift(T a, T b, T c, T d);
+
+    JSArray<T> slice(int start);
+
+    JSArray<T> slice(int start, int end);
+
+    JSArray<T> reverse();
+
+    JSArray<T> sort(JSSortFunction<T> function);
+
+    JSArray<T> sort();
+
+    JSArray<T> splice(int start, int count);
+
+    JSArray<T> splice(int start, int count, T a);
+
+    JSArray<T> splice(int start, int count, T a, T b);
+
+    JSArray<T> splice(int start, int count, T a, T b, T c);
+
+    JSArray<T> splice(int start, int count, T a, T b, T c, T d);
 }

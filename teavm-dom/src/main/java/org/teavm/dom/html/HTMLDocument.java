@@ -25,7 +25,7 @@ import org.teavm.jso.JSProperty;
 public interface HTMLDocument extends Document {
     @JSProperty
     @Override
-    HTMLElement getDocumentElement();
+    HTMLHtmlElement getDocumentElement();
 
     @Override
     HTMLElement createElement(String tagName);
