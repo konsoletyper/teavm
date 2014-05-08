@@ -55,9 +55,11 @@ public abstract class TAbstractList<E> extends TAbstractCollection<E> implements
                 if (removeIndex < 0) {
                     throw new TIllegalStateException();
                 }
+                checkConcurrentModification();
                 TAbstractList.this.remove(index - 1);
                 modCount = TAbstractList.this.modCount;
                 --index;
+                --size;
                 removeIndex = -1;
             }
             private void checkConcurrentModification() {

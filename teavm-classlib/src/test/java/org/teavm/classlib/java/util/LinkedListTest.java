@@ -129,4 +129,89 @@ public class LinkedListTest {
         assertEquals("a", iter.next());
         assertArrayEquals(new String[] { "1", "2", "*", "a", "b" }, list.toArray(new String[0]));
     }
+
+    @Test
+    public void listIteratorRemovesPreviousItem() {
+        LinkedList<String> list = new LinkedList<>();
+        list.addAll(Arrays.asList("1", "2", "3", "a", "b"));
+        ListIterator<String> iter = list.listIterator(2);
+        iter.previous();
+        iter.remove();
+        assertEquals(1, iter.nextIndex());
+        assertEquals("3", iter.next());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void freshListIteratorWithOffsetDoesNotAllowRemoval() {
+        LinkedList<String> list = new LinkedList<>();
+        list.addAll(Arrays.asList("1", "2", "3", "a", "b"));
+        ListIterator<String> iter = list.listIterator(2);
+        iter.remove();
+    }
+
+    @Test
+    public void addsToTail() {
+        LinkedList<String> list = new LinkedList<>();
+        list.addAll(Arrays.asList("1", "2", "3", "a", "b"));
+        list.addLast("*");
+        assertArrayEquals(new String[] { "1", "2", "3", "a", "b", "*" }, list.toArray(new String[0]));
+    }
+
+    @Test
+    public void addsToHead() {
+        LinkedList<String> list = new LinkedList<>();
+        list.addAll(Arrays.asList("1", "2", "3", "a", "b"));
+        list.addFirst("*");
+        assertArrayEquals(new String[] { "*", "1", "2", "3", "a", "b" }, list.toArray(new String[0]));
+    }
+
+    @Test
+    public void removesFromTail() {
+        LinkedList<String> list = new LinkedList<>();
+        list.addAll(Arrays.asList("1", "2", "3", "a", "b"));
+        assertEquals("b", list.removeLast());
+        assertEquals(4, list.size());
+        assertEquals("a", list.getLast());
+        Iterator<String> iter = list.iterator();
+        assertEquals("1", iter.next());
+        iter.next();
+        iter.next();
+        assertEquals("a", iter.next());
+        assertFalse(iter.hasNext());
+    }
+
+    @Test
+    public void removesFromHead() {
+        LinkedList<String> list = new LinkedList<>();
+        list.addAll(Arrays.asList("1", "2", "3", "a", "b"));
+        assertEquals("1", list.removeFirst());
+        assertEquals(4, list.size());
+        assertEquals("2", list.getFirst());
+        Iterator<String> iter = list.descendingIterator();
+        assertEquals("b", iter.next());
+        iter.next();
+        iter.next();
+        assertEquals("2", iter.next());
+        assertFalse(iter.hasNext());
+    }
+
+    @Test
+    public void removesFirstOccurence() {
+        LinkedList<String> list = new LinkedList<>();
+        list.addAll(Arrays.asList("1", "2", "3", "1", "2"));
+        assertFalse(list.removeFirstOccurrence("*"));
+        assertTrue(list.removeFirstOccurrence("2"));
+        assertEquals(4, list.size());
+        assertArrayEquals(new String[] { "1", "3", "1", "2" }, list.toArray(new String[0]));
+    }
+
+    @Test
+    public void removesLastOccurence() {
+        LinkedList<String> list = new LinkedList<>();
+        list.addAll(Arrays.asList("1", "2", "3", "1", "2"));
+        assertFalse(list.removeLastOccurrence("*"));
+        assertTrue(list.removeLastOccurrence("2"));
+        assertEquals(4, list.size());
+        assertArrayEquals(new String[] { "1", "2", "3", "1" }, list.toArray(new String[0]));
+    }
 }

@@ -182,8 +182,6 @@ public class VectorTest {
             v.addAll(3, Arrays.asList(new String[] { "two", "three" }));
         } catch (ArrayIndexOutOfBoundsException e) {
             r = 1;
-        } catch (IndexOutOfBoundsException e) {
-            r = 2;
         }
         assertTrue("Invalid add: " + r, r == 1);
         l = new LinkedList<>();
@@ -194,13 +192,6 @@ public class VectorTest {
         assertNull("Wrong element at position 50--wanted null", tVector.get(50));
         assertEquals("Wrong element at position 51--wanted 'gah'", "gah", tVector.get(51));
         assertNull("Wrong element at position 52--wanted null", tVector.get(52));
-
-        try {
-            v.addAll(0, null);
-            fail("Should throw NullPointerException");
-        } catch (NullPointerException e) {
-            // Excepted
-        }
 
         try {
             v.addAll(-1, null);
@@ -233,13 +224,6 @@ public class VectorTest {
         assertNull("Wrong element at 3rd last position--wanted null", tVector.get(vSize));
         assertEquals("Wrong element at 2nd last position--wanted 'gah'", "gah", tVector.get(vSize + 1));
         assertNull("Wrong element at last position--wanted null", tVector.get(vSize + 2));
-
-        try {
-            v.addAll(null);
-            fail("Should throw NullPointerException");
-        } catch (NullPointerException e) {
-            // Excepted
-        }
     }
 
     @Test

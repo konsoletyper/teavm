@@ -15,14 +15,12 @@
  */
 package org.teavm.classlib.java.util;
 
-import java.util.ConcurrentModificationException;
-import java.util.NoSuchElementException;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class TLinkedList<E> extends TAbstractSequentialList<E> {
+public class TLinkedList<E> extends TAbstractSequentialList<E> implements TDeque<E> {
     static class Entry<E> {
         E item;
         Entry<E> next;
@@ -31,6 +29,27 @@ public class TLinkedList<E> extends TAbstractSequentialList<E> {
     private Entry<E> firstEntry;
     private Entry<E> lastEntry;
     private int size;
+
+    public TLinkedList() {
+    }
+
+    public TLinkedList(TCollection<E> coll) {
+        TIterator<E> iter = coll.iterator();
+        Entry<E> prevEntry = null;
+        while (iter.hasNext()) {
+            Entry<E> entry = new Entry<>();
+            entry.item = iter.next();
+            entry.previous = prevEntry;
+            if (prevEntry == null) {
+                firstEntry = entry;
+            } else {
+                prevEntry.next = entry;
+            }
+            prevEntry = entry;
+            ++size;
+        }
+        lastEntry = prevEntry;
+    }
 
     @Override
     public int size() {
@@ -47,42 +66,251 @@ public class TLinkedList<E> extends TAbstractSequentialList<E> {
 
     @Override
     public TListIterator<E> listIterator() {
-        return new SequentialListIterator(firstEntry, null);
+        return new SequentialListIterator(firstEntry, null, 0);
     }
 
     @Override
     public TListIterator<E> listIterator(int index) {
+        if (index < 0) {
+            throw new IndexOutOfBoundsException();
+        }
         if (index <= size / 2) {
-            TListIterator<E> iter = listIterator();
-            while (index-- > 0) {
-                if (!iter.hasNext()) {
-                    throw new IndexOutOfBoundsException();
-                }
-                iter.next();
+            Entry<E> next = firstEntry;
+            for (int i = 0; i < index; ++i) {
+                next = next.next;
             }
-            return iter;
+            return new SequentialListIterator(next, next != null ? next.previous : null, index);
         } else {
-            TListIterator<E> iter = new SequentialListIterator(null, lastEntry);
-            while (index++ < size) {
-                if (!iter.hasPrevious()) {
-                    throw new IndexOutOfBoundsException();
-                }
-                iter.previous();
+            if (index > size) {
+                throw new IndexOutOfBoundsException();
             }
-            return iter;
+            Entry<E> prev = lastEntry;
+            for (int i = index; i < size; ++i) {
+                prev = prev.previous;
+            }
+            return new SequentialListIterator(prev != null ? prev.next : null, prev, index);
         }
     }
 
+    @Override
+    public boolean offer(E e) {
+        if (e == null) {
+            throw new IllegalArgumentException("Element can't be null");
+        }
+        Entry<E> entry = new Entry<>();
+        entry.item = e;
+        entry.next = firstEntry;
+        if (firstEntry != null) {
+            firstEntry.previous = entry;
+        } else {
+            lastEntry = entry;
+        }
+        firstEntry = entry;
+        ++modCount;
+        ++size;
+        return true;
+    }
+
+    @Override
+    public E remove() {
+        E elem = poll();
+        if (elem == null) {
+            throw new TNoSuchElementException();
+        }
+        return elem;
+    }
+
+    @Override
+    public E poll() {
+        if (firstEntry == null) {
+            return null;
+        }
+        Entry<E> entry = firstEntry;
+        firstEntry = firstEntry.next;
+        if (firstEntry == null) {
+            lastEntry = null;
+        } else {
+            firstEntry.previous = null;
+        }
+        --size;
+        ++modCount;
+        return entry.item;
+    }
+
+    @Override
+    public E element() {
+        return null;
+    }
+
+    @Override
+    public E peek() {
+        return firstEntry != null ? firstEntry.item : null;
+    }
+
+    @Override
+    public void addFirst(E e) {
+        offer(e);
+    }
+
+    @Override
+    public void addLast(E e) {
+        if (e == null) {
+            throw new IllegalArgumentException("Element can't be null");
+        }
+        Entry<E> entry = new Entry<>();
+        entry.item = e;
+        entry.previous = lastEntry;
+        if (lastEntry != null) {
+            lastEntry.next = entry;
+        } else {
+            firstEntry = entry;
+        }
+        lastEntry = entry;
+        ++modCount;
+        ++size;
+    }
+
+    @Override
+    public boolean offerFirst(E e) {
+        addFirst(e);
+        return true;
+    }
+
+    @Override
+    public boolean offerLast(E e) {
+        addLast(e);
+        return true;
+    }
+
+    @Override
+    public E removeFirst() {
+        return remove();
+    }
+
+    @Override
+    public E removeLast() {
+        E elem = pollLast();
+        if (elem == null) {
+            throw new TNoSuchElementException();
+        }
+        return elem;
+    }
+
+    @Override
+    public E pollFirst() {
+        return poll();
+    }
+
+    @Override
+    public E pollLast() {
+        if (lastEntry == null) {
+            return null;
+        }
+        Entry<E> entry = lastEntry;
+        lastEntry = lastEntry.previous;
+        if (lastEntry == null) {
+            firstEntry = null;
+        } else {
+            lastEntry.next = null;
+        }
+        --size;
+        ++modCount;
+        return entry.item;
+    }
+
+    @Override
+    public E getFirst() {
+        if (firstEntry == null) {
+            throw new TNoSuchElementException();
+        }
+        return firstEntry.item;
+    }
+
+    @Override
+    public E getLast() {
+        if (lastEntry == null) {
+            throw new TNoSuchElementException();
+        }
+        return lastEntry.item;
+    }
+
+    @Override
+    public E peekFirst() {
+        return firstEntry != null ? firstEntry.item : null;
+    }
+
+    @Override
+    public E peekLast() {
+        return lastEntry != null ? lastEntry.item : null;
+    }
+
+    @Override
+    public boolean removeFirstOccurrence(Object o) {
+        Entry<E> entry = firstEntry;
+        while (entry != null) {
+            if (TObjects.equals(o, entry.item)) {
+                removeEntry(entry);
+                return true;
+            }
+            entry = entry.next;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean removeLastOccurrence(Object o) {
+        Entry<E> entry = lastEntry;
+        while (entry != null) {
+            if (TObjects.equals(o, entry.item)) {
+                removeEntry(entry);
+                return true;
+            }
+            entry = entry.previous;
+        }
+        return false;
+    }
+
+    @Override
+    public void push(E e) {
+        add(e);
+    }
+
+    @Override
+    public E pop() {
+        return removeLast();
+    }
+
+    @Override
+    public TIterator<E> descendingIterator() {
+        return new DescendingIterator();
+    }
+
+    private void removeEntry(Entry<E> entry) {
+        if (entry.previous != null) {
+            entry.previous.next = entry.next;
+        } else {
+            firstEntry = entry.next;
+        }
+        if (entry.next != null) {
+            entry.next.previous = entry.previous;
+        } else {
+            lastEntry = entry.previous;
+        }
+        --size;
+        ++modCount;
+    }
+
     private class SequentialListIterator implements TListIterator<E> {
-        private Entry<E> nextEntry = firstEntry;
-        private Entry<E> prevEntry = null;
+        private Entry<E> nextEntry;
+        private Entry<E> prevEntry;
         private Entry<E> currentEntry;
         private int index;
         private int version = modCount;
 
-        public SequentialListIterator(Entry<E> nextEntry, Entry<E> prevEntry) {
+        public SequentialListIterator(Entry<E> nextEntry, Entry<E> prevEntry, int index) {
             this.nextEntry = nextEntry;
             this.prevEntry = prevEntry;
+            this.index = index;
         }
 
         @Override
@@ -94,7 +322,7 @@ public class TLinkedList<E> extends TAbstractSequentialList<E> {
         public E next() {
             checkConcurrentModification();
             if (nextEntry == null) {
-                throw new NoSuchElementException();
+                throw new TNoSuchElementException();
             }
             E result = nextEntry.item;
             currentEntry = nextEntry;
@@ -109,21 +337,14 @@ public class TLinkedList<E> extends TAbstractSequentialList<E> {
             if (currentEntry == null) {
                 throw new IllegalStateException();
             }
-            currentEntry.next.previous = currentEntry.next;
-            currentEntry.previous.next = currentEntry.next;
-            if (currentEntry == firstEntry) {
-                firstEntry = firstEntry.next;
-            } else if (currentEntry == lastEntry) {
-                lastEntry = lastEntry.previous;
-            }
+            removeEntry(currentEntry);
             if (currentEntry == prevEntry) {
                 prevEntry = nextEntry.previous;
+                --index;
             } else if (currentEntry == nextEntry) {
                 nextEntry = prevEntry.next;
             }
-            --index;
             --size;
-            ++modCount;
             version = modCount;
             currentEntry = null;
         }
@@ -137,7 +358,7 @@ public class TLinkedList<E> extends TAbstractSequentialList<E> {
         public E previous() {
             checkConcurrentModification();
             if (prevEntry == null) {
-                throw new NoSuchElementException();
+                throw new TNoSuchElementException();
             }
             currentEntry = prevEntry;
             E result = prevEntry.item;
@@ -193,8 +414,42 @@ public class TLinkedList<E> extends TAbstractSequentialList<E> {
 
         private void checkConcurrentModification() {
             if (version < modCount) {
-                throw new ConcurrentModificationException();
+                throw new TConcurrentModificationException();
             }
+        }
+    }
+
+    private class DescendingIterator implements TIterator<E> {
+        private Entry<E> prevEntry = lastEntry;
+        private Entry<E> currentEntry;
+        private int version = modCount;
+
+        @Override
+        public boolean hasNext() {
+            return prevEntry != null;
+        }
+
+        @Override
+        public E next() {
+            if (version < modCount) {
+                throw new TConcurrentModificationException();
+            }
+            if (prevEntry == null) {
+                throw new TNoSuchElementException();
+            }
+            currentEntry = prevEntry;
+            prevEntry = prevEntry.previous;
+            return currentEntry.item;
+        }
+
+        @Override
+        public void remove() {
+            if (currentEntry == null) {
+                throw new TNoSuchElementException();
+            }
+            removeEntry(currentEntry);
+            version = modCount;
+            currentEntry = null;
         }
     }
 }
