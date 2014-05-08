@@ -51,11 +51,10 @@ public class GraphIndexer {
         byte[] state = new byte[sz];
         int lastIndex = 0;
         int lastVisitIndex = 0;
-        int[] stack = new int[sz * 2];
-        int stackSize = 0;
-        stack[stackSize++] = loopGraph.loopAt(0) != null ? loopGraph.loopAt(0).getHead() : 0;
-        while (stackSize > 0) {
-            int node = stack[--stackSize];
+        IntegerStack stack = new IntegerStack(sz * 2);
+        stack.push(loopGraph.loopAt(0) != null ? loopGraph.loopAt(0).getHead() : 0);
+        while (!stack.isEmpty()) {
+            int node = stack.pop();
             switch (state[node]) {
                 case VISITING: {
                     state[node] = VISITED;
@@ -65,7 +64,7 @@ public class GraphIndexer {
                 case NONE: {
                     visitIndex[node] = lastVisitIndex++;
                     state[node] = VISITING;
-                    stack[stackSize++] = node;
+                    stack.push(node);
                     int[] successors = graph.outgoingEdges(node);
                     LoopEntrance[] edges = new LoopEntrance[successors.length];
                     for (int i = 0; i < edges.length; ++i) {
@@ -87,7 +86,7 @@ public class GraphIndexer {
                         int next = edge.follower;
                         switch (state[next]) {
                             case NONE:
-                                stack[stackSize++] = next;
+                                stack.push(next);
                                 break;
                             default:
                                 break;

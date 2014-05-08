@@ -15,10 +15,7 @@
  */
 package org.teavm.common;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  *
@@ -81,19 +78,18 @@ public class LoopGraph implements Graph {
         walkIndexes = new int[sz];
         LoopImpl[] createdLoops = new LoopImpl[sz];
         LoopFrame[] frames = new LoopFrame[sz];
-        LoopFrame[] stack = new LoopFrame[sz * 4];
-        int stackSize = 0;
+        Deque<LoopFrame> stack = new ArrayDeque<>(sz * 4);
         LoopFrame rootFrame = new LoopFrame();
-        stack[stackSize++] = rootFrame;
+        stack.push(rootFrame);
         int walkIndex = 0;
         int lastSortIndex = sz - 1;
         int loopSetSize = 0;
-        while (stackSize > 0) {
-            LoopFrame frame = stack[--stackSize];
+        while (!stack.isEmpty()) {
+            LoopFrame frame = stack.pop();
             if (frames[frame.index] == null) {
                 frames[frame.index] = frame;
                 frame.walkIndex = walkIndex++;
-                stack[stackSize++] = frame;
+                stack.push(frame);
                 int[] targetEdges = graph.outgoingEdges(frame.index);
                 for (int i = 0; i < targetEdges.length; ++i) {
                     int next = targetEdges[i];
@@ -101,7 +97,7 @@ public class LoopGraph implements Graph {
                     if (nextFrame == null) {
                         nextFrame = new LoopFrame();
                         nextFrame.index = next;
-                        stack[stackSize++] = nextFrame;
+                        stack.push(nextFrame);
                     }
                 }
             } else {
