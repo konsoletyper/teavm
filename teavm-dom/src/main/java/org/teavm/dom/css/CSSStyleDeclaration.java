@@ -13,32 +13,40 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.dom.core;
+package org.teavm.dom.css;
 
-import org.teavm.jso.JSArrayReader;
+import org.teavm.jso.JSIndexer;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface NamedNodeMap<T extends Node> extends JSObject, JSArrayReader<T> {
-    T getNamedItem(String name);
+public interface CSSStyleDeclaration extends JSObject {
+    @JSProperty
+    String getCssText();
 
-    T setNamedItem(T arg);
+    @JSProperty
+    void setCssText(String cssText);
 
-    T removeNamedItem(String name);
-
-    T item(int index);
-
-    @Override
     @JSProperty
     int getLength();
 
-    T getNamedItemNS(String namespaceURI, String localName);
+    @JSIndexer
+    String item(int index);
 
-    T setNamedItemNS(T arg);
+    String getPropertyValue(String property);
 
-    T removeNamedItemNS(String namespaceURI, String localName);
+    String getPropertyPriority(String property);
+
+    void setProperty(String property, String value);
+
+    void setProperty(String property, String value, String priority);
+
+    void setPropertyValue(String property, String value);
+
+    void setPropertyPriority(String property, String priority);
+
+    String removeProperty(String property);
 }

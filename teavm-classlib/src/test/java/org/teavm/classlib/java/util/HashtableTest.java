@@ -157,7 +157,9 @@ public class HashtableTest {
 
         String okey, ckey;
         while (org.hasMoreElements()) {
-            assertTrue("Key comparison failed", (okey = org.nextElement()).equals(ckey = cpy.nextElement()));
+            okey = org.nextElement();
+            ckey = cpy.nextElement();
+            assertTrue("Key comparison failed", okey.equals(ckey));
             assertTrue("Value comparison failed", (htfull.get(okey)).equals(h.get(ckey)));
         }
         assertTrue("Copy has more keys than original", !cpy.hasMoreElements());

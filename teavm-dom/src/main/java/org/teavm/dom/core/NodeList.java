@@ -15,14 +15,14 @@
  */
 package org.teavm.dom.core;
 
-import org.teavm.jso.JSArray;
+import org.teavm.jso.JSArrayReader;
 import org.teavm.jso.JSProperty;
 
 /**
  *
  * @author Alexey Andreev
  */
-public interface NodeList<T extends Node> extends JSArray<T> {
+public interface NodeList<T extends Node> extends JSArrayReader<T> {
     T item(int index);
 
     @Override

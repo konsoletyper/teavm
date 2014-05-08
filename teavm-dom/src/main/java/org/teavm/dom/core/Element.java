@@ -34,7 +34,7 @@ public interface Element extends Node {
 
     Attr removeAttributeNode(Attr oldAttr);
 
-    NodeList<Element> getElementsByTagName(String name);
+    NodeList<? extends Element> getElementsByTagName(String name);
 
     String getAttributeNS(String namespaceURI, String localName);
 
@@ -46,7 +46,7 @@ public interface Element extends Node {
 
     Attr setAttributeNodeNS(Attr newAttr);
 
-    NodeList<Element> getElementsByTagNameNS(String namespaceURI, String localName);
+    NodeList<? extends Element> getElementsByTagNameNS(String namespaceURI, String localName);
 
     boolean hasAttribute(String name);
 

@@ -13,32 +13,23 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.dom.core;
+package org.teavm.dom.html;
 
-import org.teavm.jso.JSArrayReader;
-import org.teavm.jso.JSObject;
+import org.teavm.dom.core.Document;
 import org.teavm.jso.JSProperty;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface NamedNodeMap<T extends Node> extends JSObject, JSArrayReader<T> {
-    T getNamedItem(String name);
-
-    T setNamedItem(T arg);
-
-    T removeNamedItem(String name);
-
-    T item(int index);
+public interface HTMLDocument extends Document {
+    @JSProperty
+    @Override
+    HTMLHtmlElement getDocumentElement();
 
     @Override
-    @JSProperty
-    int getLength();
+    HTMLElement createElement(String tagName);
 
-    T getNamedItemNS(String namespaceURI, String localName);
-
-    T setNamedItemNS(T arg);
-
-    T removeNamedItemNS(String namespaceURI, String localName);
+    @Override
+    HTMLElement getElementById(String elementId);
 }
