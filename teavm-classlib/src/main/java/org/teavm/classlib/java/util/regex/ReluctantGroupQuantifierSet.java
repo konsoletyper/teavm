@@ -26,15 +26,12 @@ package org.teavm.classlib.java.util.regex;
  * @author Nikolay A. Kuznetsov
  */
 class ReluctantGroupQuantifierSet extends GroupQuantifierSet {
-
-    public ReluctantGroupQuantifierSet(AbstractSet innerSet, AbstractSet next,
-            int type) {
+    public ReluctantGroupQuantifierSet(AbstractSet innerSet, AbstractSet next, int type) {
         super(innerSet, next, type);
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
-
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         if (!innerSet.hasConsumed(matchResult))
             return next.matches(stringIndex, testString, matchResult);
 

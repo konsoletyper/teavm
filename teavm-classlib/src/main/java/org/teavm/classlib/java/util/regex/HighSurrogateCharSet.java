@@ -85,12 +85,12 @@ package org.teavm.classlib.java.util.regex;
 /**
  * This class represents high surrogate character.
  */
-class HighSurrogateCharSet extends JointSet{
+class HighSurrogateCharSet extends JointSet {
 
     /*
-     * Note that we can use high and low surrogate characters
-     * that don't combine into supplementary code point.
-     * See http://www.unicode.org/reports/tr18/#Supplementary_Characters
+     * Note that we can use high and low surrogate characters that don't combine
+     * into supplementary code point. See
+     * http://www.unicode.org/reports/tr18/#Supplementary_Characters
      */
 
     private char high;
@@ -102,21 +102,24 @@ class HighSurrogateCharSet extends JointSet{
     /**
      * Returns the next.
      */
+    @Override
     public AbstractSet getNext() {
         return this.next;
     }
 
     /**
      * Sets next abstract set.
+     *
      * @param next
      *            The next to set.
      */
+    @Override
     public void setNext(AbstractSet next) {
         this.next = next;
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         int strLength = matchResult.getRightBound();
 
         if (stringIndex + 1 > strLength) {
@@ -130,8 +133,8 @@ class HighSurrogateCharSet extends JointSet{
             char low = testString.charAt(stringIndex + 1);
 
             /*
-             * we consider high surrogate followed by
-             * low surrogate as a codepoint
+             * we consider high surrogate followed by low surrogate as a
+             * codepoint
              */
             if (Character.isLowSurrogate(low)) {
                 return -1;
@@ -139,17 +142,16 @@ class HighSurrogateCharSet extends JointSet{
         }
 
         if (this.high == high) {
-            return next.matches(stringIndex + 1, testString,
-                    matchResult);
+            return next.matches(stringIndex + 1, testString, matchResult);
         }
 
         return -1;
     }
 
-    public int find(int strIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int find(int strIndex, CharSequence testString, MatchResultImpl matchResult) {
         if (testString instanceof String) {
-            String testStr = (String) testString;
+            String testStr = (String)testString;
             int strLength = matchResult.getRightBound();
 
             while (strIndex < strLength) {
@@ -158,11 +160,11 @@ class HighSurrogateCharSet extends JointSet{
                 if (strIndex < 0)
                     return -1;
 
-                if (strIndex + 1 < strLength ) {
+                if (strIndex + 1 < strLength) {
 
                     /*
-                     * we consider high surrogate followed by
-                     * low surrogate as a codepoint
+                     * we consider high surrogate followed by low surrogate as a
+                     * codepoint
                      */
                     if (Character.isLowSurrogate(testStr.charAt(strIndex + 1))) {
                         strIndex += 2;
@@ -182,10 +184,10 @@ class HighSurrogateCharSet extends JointSet{
         return super.find(strIndex, testString, matchResult);
     }
 
-    public int findBack(int strIndex, int lastIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int findBack(int strIndex, int lastIndex, CharSequence testString, MatchResultImpl matchResult) {
         if (testString instanceof String) {
-            String testStr = (String) testString;
+            String testStr = (String)testString;
             int strLength = matchResult.getRightBound();
 
             while (lastIndex >= strIndex) {
@@ -197,8 +199,8 @@ class HighSurrogateCharSet extends JointSet{
                 if (lastIndex + 1 < strLength) {
 
                     /*
-                     * we consider high surrogate followed by
-                     * low surrogate as a codepoint
+                     * we consider high surrogate followed by low surrogate as a
+                     * codepoint
                      */
                     if (Character.isLowSurrogate(testStr.charAt(lastIndex + 1))) {
                         lastIndex--;
@@ -219,6 +221,7 @@ class HighSurrogateCharSet extends JointSet{
         return super.findBack(strIndex, lastIndex, testString, matchResult);
     }
 
+    @Override
     protected String getName() {
         return "" + high;
     }
@@ -227,6 +230,7 @@ class HighSurrogateCharSet extends JointSet{
         return high;
     }
 
+    @Override
     public boolean first(AbstractSet set) {
         if (set instanceof CharSet) {
             return false;
@@ -239,12 +243,13 @@ class HighSurrogateCharSet extends JointSet{
         } else if (set instanceof LowSurrogateCharSet) {
             return false;
         } else if (set instanceof HighSurrogateCharSet) {
-            return ((HighSurrogateCharSet) set).high == this.high;
+            return ((HighSurrogateCharSet)set).high == this.high;
         }
 
         return true;
     }
 
+    @Override
     public boolean hasConsumed(MatchResultImpl matchResult) {
         return true;
     }

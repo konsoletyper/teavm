@@ -33,11 +33,10 @@ class UMultiLineEOLSet extends AbstractSet {
         this.consCounter = counter;
     }
 
-    public int matches(int strIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
-        int strDif = matchResult.hasAnchoringBounds() ? matchResult
-                .getRightBound()
-                - strIndex : testString.length() - strIndex;
+    @Override
+    public int matches(int strIndex, CharSequence testString, MatchResultImpl matchResult) {
+        int strDif = matchResult.hasAnchoringBounds() ? matchResult.getRightBound() - strIndex : testString.length() -
+                strIndex;
         if (strDif <= 0) {
             matchResult.setConsumed(consCounter, 0);
             return next.matches(strIndex, testString, matchResult);
@@ -48,6 +47,7 @@ class UMultiLineEOLSet extends AbstractSet {
         return -1;
     }
 
+    @Override
     public boolean hasConsumed(MatchResultImpl matchResult) {
         int cons;
         boolean res = ((cons = matchResult.getConsumed(consCounter)) < 0 || cons > 0);
@@ -55,7 +55,8 @@ class UMultiLineEOLSet extends AbstractSet {
         return res;
     }
 
+    @Override
     protected String getName() {
-        return "<Unix MultiLine $>"; //$NON-NLS-1$
+        return "<Unix MultiLine $>";
     }
 }

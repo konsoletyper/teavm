@@ -26,20 +26,16 @@ package org.teavm.classlib.java.util.regex;
  * @author Nikolay A. Kuznetsov
  */
 class PossessiveGroupQuantifierSet extends GroupQuantifierSet {
-
-    public PossessiveGroupQuantifierSet(AbstractSet innerSet, AbstractSet next,
-            int type) {
+    public PossessiveGroupQuantifierSet(AbstractSet innerSet, AbstractSet next, int type) {
         super(innerSet, next, type);
         innerSet.setNext(FSet.posFSet);
 
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
-
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         int nextIndex;
-        while ((nextIndex = innerSet.matches(stringIndex, testString,
-                matchResult)) > 0) {
+        while ((nextIndex = innerSet.matches(stringIndex, testString, matchResult)) > 0) {
             stringIndex = nextIndex;
         }
 

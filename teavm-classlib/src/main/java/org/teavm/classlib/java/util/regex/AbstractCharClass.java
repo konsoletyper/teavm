@@ -36,14 +36,12 @@
 package org.teavm.classlib.java.util.regex;
 
 import java.util.BitSet;
-import java.util.ListResourceBundle;
 
 /**
- * This class represents character classes, i.e.
- * sets of character either predefined or user defined.
+ * This class represents character classes, i.e. sets of character either
+ * predefined or user defined.
  *
- * Note, this class represent token, not node, so being
- * constructed by lexer.
+ * Note, this class represent token, not node, so being constructed by lexer.
  *
  * @author Nikolay A. Kuznetsov
  */
@@ -52,7 +50,7 @@ abstract class AbstractCharClass extends SpecialToken {
 
     protected boolean altSurrogates;
 
-    //Character.MAX_SURROGATE - Character.MIN_SURROGATE + 1
+    // Character.MAX_SURROGATE - Character.MIN_SURROGATE + 1
     static int SURROGATE_CARDINALITY = 2048;
 
     BitSet lowHighSurrogates = new BitSet(SURROGATE_CARDINALITY);
@@ -64,8 +62,8 @@ abstract class AbstractCharClass extends SpecialToken {
     static PredefinedCharacterClasses charClasses = new PredefinedCharacterClasses();
 
     /*
-     * Indicates if this class may contain supplementary Unicode codepoints.
-     * If this flag is specified it doesn't mean that this class contains
+     * Indicates if this class may contain supplementary Unicode codepoints. If
+     * this flag is specified it doesn't mean that this class contains
      * supplementary characters but may contain.
      */
     protected boolean mayContainSupplCodepoints = false;
@@ -79,8 +77,8 @@ abstract class AbstractCharClass extends SpecialToken {
     abstract public boolean contains(int ch);
 
     /**
-     * Returns BitSet representing this character class or <code>null</code>
-     * if this character class does not have character representation;
+     * Returns BitSet representing this character class or <code>null</code> if
+     * this character class does not have character representation;
      *
      * @return bitset
      */
@@ -93,15 +91,15 @@ abstract class AbstractCharClass extends SpecialToken {
     }
 
     public boolean hasLowHighSurrogates() {
-        return altSurrogates
-               ? lowHighSurrogates.nextClearBit(0) < SURROGATE_CARDINALITY
-               : lowHighSurrogates.nextSetBit(0) < SURROGATE_CARDINALITY;
+        return altSurrogates ? lowHighSurrogates.nextClearBit(0) < SURROGATE_CARDINALITY : lowHighSurrogates
+                .nextSetBit(0) < SURROGATE_CARDINALITY;
     }
 
     public boolean mayContainSupplCodepoints() {
         return mayContainSupplCodepoints;
     }
 
+    @Override
     public int getType() {
         return SpecialToken.TOK_CHARCLASS;
     }
@@ -116,13 +114,12 @@ abstract class AbstractCharClass extends SpecialToken {
             final BitSet lHS = getLowHighSurrogates();
 
             charClassWithSurrogates = new AbstractCharClass() {
+                @Override
                 public boolean contains(int ch) {
                     int index = ch - Character.MIN_SURROGATE;
 
-                    return ((index >= 0)
-                            && (index < AbstractCharClass.SURROGATE_CARDINALITY))
-                           ? this.altSurrogates ^ lHS.get(index)
-                           : false;
+                    return ((index >= 0) && (index < AbstractCharClass.SURROGATE_CARDINALITY)) ? this.altSurrogates ^
+                            lHS.get(index) : false;
                 }
             };
             charClassWithSurrogates.setNegative(this.altSurrogates);
@@ -137,22 +134,19 @@ abstract class AbstractCharClass extends SpecialToken {
             final AbstractCharClass thisClass = this;
 
             charClassWithoutSurrogates = new AbstractCharClass() {
+                @Override
                 public boolean contains(int ch) {
                     int index = ch - Character.MIN_SURROGATE;
 
-                    boolean containslHS = ((index >= 0)
-                            && (index < AbstractCharClass.SURROGATE_CARDINALITY))
-                           ? this.altSurrogates ^ lHS.get(index)
-                           : false;
+                    boolean containslHS = ((index >= 0) && (index < AbstractCharClass.SURROGATE_CARDINALITY)) ? this.altSurrogates ^
+                            lHS.get(index)
+                            : false;
 
-
-                    return thisClass.contains(ch)
-                           && !containslHS;
+                    return thisClass.contains(ch) && !containslHS;
                 }
             };
             charClassWithoutSurrogates.setNegative(isNegative());
-            charClassWithoutSurrogates.mayContainSupplCodepoints
-                = mayContainSupplCodepoints;
+            charClassWithoutSurrogates.mayContainSupplCodepoints = mayContainSupplCodepoints;
         }
 
         return charClassWithoutSurrogates;
@@ -201,16 +195,14 @@ abstract class AbstractCharClass extends SpecialToken {
         return cc.contains(ch);
     }
 
-    public static boolean intersects(AbstractCharClass cc1,
-            AbstractCharClass cc2) {
+    public static boolean intersects(AbstractCharClass cc1, AbstractCharClass cc2) {
         if (cc1.getBits() == null || cc2.getBits() == null)
             return true;
         return cc1.getBits().intersects(cc2.getBits());
     }
 
-    public static AbstractCharClass getPredefinedClass(String name,
-            boolean negative) {
-        return ((LazyCharClass) charClasses.getObject(name)).getValue(negative);
+    public static AbstractCharClass getPredefinedClass(String name, boolean negative) {
+        return ((LazyCharClass)charClasses.getObject(name)).getValue(negative);
     }
 
     abstract static class LazyCharClass {
@@ -233,12 +225,14 @@ abstract class AbstractCharClass extends SpecialToken {
     }
 
     static class LazyDigit extends LazyCharClass {
+        @Override
         protected AbstractCharClass computeValue() {
             return new CharClass().add('0', '9');
         }
     }
 
     static class LazyNonDigit extends LazyDigit {
+        @Override
         protected AbstractCharClass computeValue() {
             AbstractCharClass chCl = super.computeValue().setNegative(true);
 
@@ -248,6 +242,7 @@ abstract class AbstractCharClass extends SpecialToken {
     }
 
     static class LazySpace extends LazyCharClass {
+        @Override
         protected AbstractCharClass computeValue() {
             /* 9-13 - \t\n\x0B\f\r; 32 - ' ' */
             return new CharClass().add(9, 13).add(32);
@@ -255,6 +250,7 @@ abstract class AbstractCharClass extends SpecialToken {
     }
 
     static class LazyNonSpace extends LazySpace {
+        @Override
         protected AbstractCharClass computeValue() {
             AbstractCharClass chCl = super.computeValue().setNegative(true);
 
@@ -264,13 +260,14 @@ abstract class AbstractCharClass extends SpecialToken {
     }
 
     static class LazyWord extends LazyCharClass {
+        @Override
         protected AbstractCharClass computeValue() {
-            return new CharClass().add('a', 'z').add('A', 'Z').add('0', '9')
-                    .add('_');
+            return new CharClass().add('a', 'z').add('A', 'Z').add('0', '9').add('_');
         }
     }
 
     static class LazyNonWord extends LazyWord {
+        @Override
         protected AbstractCharClass computeValue() {
             AbstractCharClass chCl = super.computeValue().setNegative(true);
 
@@ -280,70 +277,79 @@ abstract class AbstractCharClass extends SpecialToken {
     }
 
     static class LazyLower extends LazyCharClass {
+        @Override
         protected AbstractCharClass computeValue() {
             return new CharClass().add('a', 'z');
         }
     }
 
     static class LazyUpper extends LazyCharClass {
+        @Override
         protected AbstractCharClass computeValue() {
             return new CharClass().add('A', 'Z');
         }
     }
 
     static class LazyASCII extends LazyCharClass {
+        @Override
         protected AbstractCharClass computeValue() {
             return new CharClass().add(0x00, 0x7F);
         }
     }
 
     static class LazyAlpha extends LazyCharClass {
+        @Override
         protected AbstractCharClass computeValue() {
             return new CharClass().add('a', 'z').add('A', 'Z');
         }
     }
 
     static class LazyAlnum extends LazyAlpha {
+        @Override
         protected AbstractCharClass computeValue() {
-            return ((CharClass) super.computeValue()).add('0', '9');
+            return ((CharClass)super.computeValue()).add('0', '9');
         }
     }
 
     static class LazyPunct extends LazyCharClass {
+        @Override
         protected AbstractCharClass computeValue() {
             /* Punctuation !"#$%&'()*+,-./:;<=>?@ [\]^_` {|}~ */
-            return new CharClass().add(0x21, 0x40).add(0x5B, 0x60).add(0x7B,
-                    0x7E);
+            return new CharClass().add(0x21, 0x40).add(0x5B, 0x60).add(0x7B, 0x7E);
         }
     }
 
     static class LazyGraph extends LazyAlnum {
+        @Override
         protected AbstractCharClass computeValue() {
             /* plus punctuation */
-            return ((CharClass) super.computeValue()).add(0x21, 0x40).add(0x5B,
-                    0x60).add(0x7B, 0x7E);
+            return ((CharClass)super.computeValue()).add(0x21, 0x40).add(0x5B, 0x60).add(0x7B, 0x7E);
         }
     }
 
     static class LazyPrint extends LazyGraph {
+        @Override
         protected AbstractCharClass computeValue() {
-            return ((CharClass) super.computeValue()).add(0x20);
+            return ((CharClass)super.computeValue()).add(0x20);
         }
     }
 
     static class LazyBlank extends LazyCharClass {
+        @Override
         protected AbstractCharClass computeValue() {
             return new CharClass().add(' ').add('\t');
         }
     }
 
     static class LazyCntrl extends LazyCharClass {
+        @Override
         protected AbstractCharClass computeValue() {
             return new CharClass().add(0x00, 0x1F).add(0x7F);
         }
     }
 
     static class LazyXDigit extends LazyCharClass {
+        @Override
         protected AbstractCharClass computeValue() {
             return new CharClass().add('0', '9').add('a', 'f').add('A', 'F');
         }
@@ -357,6 +363,7 @@ abstract class AbstractCharClass extends SpecialToken {
             this.end = end;
         }
 
+        @Override
         public AbstractCharClass computeValue() {
             AbstractCharClass chCl = new CharClass().add(start, end);
             return chCl;
@@ -364,6 +371,7 @@ abstract class AbstractCharClass extends SpecialToken {
     }
 
     static class LazySpecialsBlock extends LazyCharClass {
+        @Override
         public AbstractCharClass computeValue() {
             return new CharClass().add(0xFEFF, 0xFEFF).add(0xFFF0, 0xFFFD);
         }
@@ -381,13 +389,13 @@ abstract class AbstractCharClass extends SpecialToken {
             this.category = cat;
         }
 
-        public LazyCategoryScope(int cat, boolean mayContainSupplCodepoints,
-                boolean containsAllSurrogates) {
+        public LazyCategoryScope(int cat, boolean mayContainSupplCodepoints, boolean containsAllSurrogates) {
             this.containsAllSurrogates = containsAllSurrogates;
             this.mayContainSupplCodepoints = mayContainSupplCodepoints;
             this.category = cat;
         }
 
+        @Override
         protected AbstractCharClass computeValue() {
             AbstractCharClass chCl = new UnicodeCategoryScope(category);
             if (containsAllSurrogates) {
@@ -410,26 +418,30 @@ abstract class AbstractCharClass extends SpecialToken {
             this.mayContainSupplCodepoints = mayContainSupplCodepoints;
             this.category = cat;
         }
-        public LazyCategory(int cat, boolean mayContainSupplCodepoints,
-                boolean containsAllSurrogates) {
+
+        public LazyCategory(int cat, boolean mayContainSupplCodepoints, boolean containsAllSurrogates) {
             this.containsAllSurrogates = containsAllSurrogates;
             this.mayContainSupplCodepoints = mayContainSupplCodepoints;
             this.category = cat;
         }
 
+        @Override
         protected AbstractCharClass computeValue() {
             AbstractCharClass chCl = new UnicodeCategory(category);
             if (containsAllSurrogates) {
                 chCl.lowHighSurrogates.set(0, SURROGATE_CARDINALITY);
             }
-            chCl.mayContainSupplCodepoints = mayContainSupplCodepoints;;
+            chCl.mayContainSupplCodepoints = mayContainSupplCodepoints;
+            ;
             return chCl;
         }
     }
 
     static class LazyJavaLowerCase extends LazyCharClass {
+        @Override
         protected AbstractCharClass computeValue() {
             AbstractCharClass chCl = new AbstractCharClass() {
+                @Override
                 public boolean contains(int ch) {
                     return Character.isLowerCase(ch);
                 }
@@ -441,8 +453,10 @@ abstract class AbstractCharClass extends SpecialToken {
     }
 
     static class LazyJavaUpperCase extends LazyCharClass {
+        @Override
         protected AbstractCharClass computeValue() {
             AbstractCharClass chCl = new AbstractCharClass() {
+                @Override
                 public boolean contains(int ch) {
                     return Character.isUpperCase(ch);
                 }
@@ -454,8 +468,10 @@ abstract class AbstractCharClass extends SpecialToken {
     }
 
     static class LazyJavaWhitespace extends LazyCharClass {
+        @Override
         protected AbstractCharClass computeValue() {
             return new AbstractCharClass() {
+                @Override
                 public boolean contains(int ch) {
                     return Character.isWhitespace(ch);
                 }
@@ -464,11 +480,13 @@ abstract class AbstractCharClass extends SpecialToken {
     }
 
     static class LazyJavaMirrored extends LazyCharClass {
+        @Override
         protected AbstractCharClass computeValue() {
             return new AbstractCharClass() {
+                @Override
                 public boolean contains(int ch) {
                     // TODO implement this method and uncomment
-                    //return Character.isMirrored(ch);
+                    // return Character.isMirrored(ch);
                     return false;
                 }
             };
@@ -476,8 +494,10 @@ abstract class AbstractCharClass extends SpecialToken {
     }
 
     static class LazyJavaDefined extends LazyCharClass {
+        @Override
         protected AbstractCharClass computeValue() {
             AbstractCharClass chCl = new AbstractCharClass() {
+                @Override
                 public boolean contains(int ch) {
                     return Character.isDefined(ch);
                 }
@@ -490,8 +510,10 @@ abstract class AbstractCharClass extends SpecialToken {
     }
 
     static class LazyJavaDigit extends LazyCharClass {
+        @Override
         protected AbstractCharClass computeValue() {
             AbstractCharClass chCl = new AbstractCharClass() {
+                @Override
                 public boolean contains(int ch) {
                     return Character.isDigit(ch);
                 }
@@ -503,8 +525,10 @@ abstract class AbstractCharClass extends SpecialToken {
     }
 
     static class LazyJavaIdentifierIgnorable extends LazyCharClass {
+        @Override
         protected AbstractCharClass computeValue() {
             AbstractCharClass chCl = new AbstractCharClass() {
+                @Override
                 public boolean contains(int ch) {
                     return Character.isIdentifierIgnorable(ch);
                 }
@@ -516,8 +540,10 @@ abstract class AbstractCharClass extends SpecialToken {
     }
 
     static class LazyJavaISOControl extends LazyCharClass {
+        @Override
         protected AbstractCharClass computeValue() {
             return new AbstractCharClass() {
+                @Override
                 public boolean contains(int ch) {
                     return Character.isISOControl(ch);
                 }
@@ -526,8 +552,10 @@ abstract class AbstractCharClass extends SpecialToken {
     }
 
     static class LazyJavaJavaIdentifierPart extends LazyCharClass {
+        @Override
         protected AbstractCharClass computeValue() {
             AbstractCharClass chCl = new AbstractCharClass() {
+                @Override
                 public boolean contains(int ch) {
                     return Character.isJavaIdentifierPart(ch);
                 }
@@ -539,8 +567,10 @@ abstract class AbstractCharClass extends SpecialToken {
     }
 
     static class LazyJavaJavaIdentifierStart extends LazyCharClass {
+        @Override
         protected AbstractCharClass computeValue() {
             AbstractCharClass chCl = new AbstractCharClass() {
+                @Override
                 public boolean contains(int ch) {
                     return Character.isJavaIdentifierStart(ch);
                 }
@@ -552,8 +582,10 @@ abstract class AbstractCharClass extends SpecialToken {
     }
 
     static class LazyJavaLetter extends LazyCharClass {
+        @Override
         protected AbstractCharClass computeValue() {
             AbstractCharClass chCl = new AbstractCharClass() {
+                @Override
                 public boolean contains(int ch) {
                     return Character.isLetter(ch);
                 }
@@ -565,8 +597,10 @@ abstract class AbstractCharClass extends SpecialToken {
     }
 
     static class LazyJavaLetterOrDigit extends LazyCharClass {
+        @Override
         protected AbstractCharClass computeValue() {
             AbstractCharClass chCl = new AbstractCharClass() {
+                @Override
                 public boolean contains(int ch) {
                     return Character.isLetterOrDigit(ch);
                 }
@@ -578,8 +612,10 @@ abstract class AbstractCharClass extends SpecialToken {
     }
 
     static class LazyJavaSpaceChar extends LazyCharClass {
+        @Override
         protected AbstractCharClass computeValue() {
             return new AbstractCharClass() {
+                @Override
                 public boolean contains(int ch) {
                     return Character.isSpaceChar(ch);
                 }
@@ -588,8 +624,10 @@ abstract class AbstractCharClass extends SpecialToken {
     }
 
     static class LazyJavaTitleCase extends LazyCharClass {
+        @Override
         protected AbstractCharClass computeValue() {
             return new AbstractCharClass() {
+                @Override
                 public boolean contains(int ch) {
                     return Character.isTitleCase(ch);
                 }
@@ -598,8 +636,10 @@ abstract class AbstractCharClass extends SpecialToken {
     }
 
     static class LazyJavaUnicodeIdentifierPart extends LazyCharClass {
+        @Override
         protected AbstractCharClass computeValue() {
             AbstractCharClass chCl = new AbstractCharClass() {
+                @Override
                 public boolean contains(int ch) {
                     return Character.isUnicodeIdentifierPart(ch);
                 }
@@ -611,8 +651,10 @@ abstract class AbstractCharClass extends SpecialToken {
     }
 
     static class LazyJavaUnicodeIdentifierStart extends LazyCharClass {
+        @Override
         protected AbstractCharClass computeValue() {
             AbstractCharClass chCl = new AbstractCharClass() {
+                @Override
                 public boolean contains(int ch) {
                     return Character.isUnicodeIdentifierStart(ch);
                 }
@@ -624,11 +666,10 @@ abstract class AbstractCharClass extends SpecialToken {
     }
 
     /**
-     * character classes generated from
-     * http://www.unicode.org/reports/tr18/
+     * character classes generated from http://www.unicode.org/reports/tr18/
      * http://www.unicode.org/Public/4.1.0/ucd/Blocks.txt
      */
-    static final class PredefinedCharacterClasses  {
+    static final class PredefinedCharacterClasses {
         static LazyCharClass space = new LazySpace();
 
         static LazyCharClass digit = new LazyDigit();
@@ -823,13 +864,12 @@ abstract class AbstractCharClass extends SpecialToken {
                 { "Cf", new LazyCategory(Character.FORMAT, true) },
                 { "Co", new LazyCategory(Character.PRIVATE_USE, true) },
                 { "Cs", new LazyCategory(Character.SURROGATE, false, true) },
-                {"IsP", new LazyCategoryScope((1 << Character.DASH_PUNCTUATION) |
-                        (1 << Character.START_PUNCTUATION) |
-                        (1 << Character.END_PUNCTUATION) |
-                        (1 << Character.CONNECTOR_PUNCTUATION) |
-                        (1 << Character.OTHER_PUNCTUATION) |
-                        (1 << Character.INITIAL_QUOTE_PUNCTUATION) |
-                        (1 << Character.FINAL_QUOTE_PUNCTUATION), true)},
+                {
+                        "IsP",
+                        new LazyCategoryScope((1 << Character.DASH_PUNCTUATION) | (1 << Character.START_PUNCTUATION) |
+                                (1 << Character.END_PUNCTUATION) | (1 << Character.CONNECTOR_PUNCTUATION) |
+                                (1 << Character.OTHER_PUNCTUATION) | (1 << Character.INITIAL_QUOTE_PUNCTUATION) |
+                                (1 << Character.FINAL_QUOTE_PUNCTUATION), true) },
                 { "Pd", new LazyCategory(Character.DASH_PUNCTUATION, false) },
                 { "Ps", new LazyCategory(Character.START_PUNCTUATION, false) },
                 { "Pe", new LazyCategory(Character.END_PUNCTUATION, false) },
@@ -842,6 +882,7 @@ abstract class AbstractCharClass extends SpecialToken {
                 { "So", new LazyCategory(Character.OTHER_SYMBOL, true) },
                 { "Pi", new LazyCategory(Character.INITIAL_QUOTE_PUNCTUATION, false) },
                 { "Pf", new LazyCategory(Character.FINAL_QUOTE_PUNCTUATION, false) } };
+
         public Object getObject(String name) {
             for (int i = 0; i < contents.length; ++i) {
                 Object[] row = contents[i];

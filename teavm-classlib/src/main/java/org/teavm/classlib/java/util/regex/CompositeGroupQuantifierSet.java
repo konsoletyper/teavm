@@ -48,19 +48,23 @@ class CompositeGroupQuantifierSet extends GroupQuantifierSet {
 
     /**
      * Constructs CompositeGroupQuantifierSet
-     * @param quant    - given composite quantifier
-     * @param innerSet - given group
-     * @param next     - next set after the quantifier
+     *
+     * @param quant
+     *            - given composite quantifier
+     * @param innerSet
+     *            - given group
+     * @param next
+     *            - next set after the quantifier
      */
-    public CompositeGroupQuantifierSet(Quantifier quant, AbstractSet innerSet,
-            AbstractSet next, int type, int setCounter) {
+    public CompositeGroupQuantifierSet(Quantifier quant, AbstractSet innerSet, AbstractSet next, int type,
+            int setCounter) {
         super(innerSet, next, type);
         this.quantifier = quant;
         this.setCounter = setCounter;
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         int enterCounter = matchResult.getEnterCounter(setCounter);
 
         if (!innerSet.hasConsumed(matchResult))
@@ -93,6 +97,7 @@ class CompositeGroupQuantifierSet extends GroupQuantifierSet {
         quantifier.resetCounter();
     }
 
+    @Override
     protected String getName() {
         return quantifier.toString();
     }

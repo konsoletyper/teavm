@@ -21,20 +21,19 @@
 package org.teavm.classlib.java.util.regex;
 
 /**
- * Reluctant version of composite (i.e. {n,m}) quantifier node over
- * group.
+ * Reluctant version of composite (i.e. {n,m}) quantifier node over group.
  *
  * @author Nikolay A. Kuznetsov
  */
 class RelCompositeGroupQuantifierSet extends CompositeGroupQuantifierSet {
 
-    public RelCompositeGroupQuantifierSet(Quantifier quant,
-            AbstractSet innerSet, AbstractSet next, int type, int setCounter) {
+    public RelCompositeGroupQuantifierSet(Quantifier quant, AbstractSet innerSet, AbstractSet next, int type,
+            int setCounter) {
         super(quant, innerSet, next, type, setCounter);
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         int enterCounter = matchResult.getEnterCounter(setCounter);
 
         if (!innerSet.hasConsumed(matchResult))
@@ -52,8 +51,7 @@ class RelCompositeGroupQuantifierSet extends CompositeGroupQuantifierSet {
             nextIndex = next.matches(stringIndex, testString, matchResult);
             if (nextIndex < 0) {
                 matchResult.setEnterCounter(setCounter, ++enterCounter);
-                nextIndex = innerSet.matches(stringIndex, testString,
-                        matchResult);
+                nextIndex = innerSet.matches(stringIndex, testString, matchResult);
             } else {
                 matchResult.setEnterCounter(setCounter, 0);
                 return nextIndex;

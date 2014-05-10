@@ -27,23 +27,19 @@ package org.teavm.classlib.java.util.regex;
  */
 class PosPlusGroupQuantifierSet extends GroupQuantifierSet {
 
-    public PosPlusGroupQuantifierSet(AbstractSet innerSet, AbstractSet next,
-            int type) {
+    public PosPlusGroupQuantifierSet(AbstractSet innerSet, AbstractSet next, int type) {
         super(innerSet, next, type);
-        ((JointSet) innerSet).setNext(FSet.posFSet);
-
+        ((JointSet)innerSet).setNext(FSet.posFSet);
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
-
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         int nextIndex;
         if ((nextIndex = innerSet.matches(stringIndex, testString, matchResult)) < 0) {
             return -1;
         } else if (nextIndex > stringIndex) {
             stringIndex = nextIndex;
-            while ((nextIndex = innerSet.matches(stringIndex, testString,
-                    matchResult)) > stringIndex) {
+            while ((nextIndex = innerSet.matches(stringIndex, testString, matchResult)) > stringIndex) {
                 stringIndex = nextIndex;
             }
         }

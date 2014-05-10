@@ -41,47 +41,41 @@ package org.teavm.classlib.java.util.regex;
  * @author Nikolay A. Kuznetsov
  */
 class CIBackReferenceSet extends JointSet {
-
     protected int referencedGroup;
-
     protected int consCounter;
 
-    /**
-     * @param substring
-     */
     public CIBackReferenceSet(int groupIndex, int consCounter) {
         this.referencedGroup = groupIndex;
         this.consCounter = consCounter;
     }
 
     public int accepts(int strIndex, CharSequence testString) {
-        throw new TPatternSyntaxException("", "", 0);
+        throw new TPatternSyntaxException(strIndex + ", " + testString, "", 0);
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         String group = getString(matchResult);
 
-        if (group == null
-                || (stringIndex + group.length()) > matchResult.getRightBound())
+        if (group == null || (stringIndex + group.length()) > matchResult.getRightBound())
             return -1;
 
         for (int i = 0; i < group.length(); i++) {
-            if (group.charAt(i) != testString.charAt(stringIndex + i)
-                    && TPattern.getSupplement(group.charAt(i)) != testString
-                            .charAt(stringIndex + i)) {
+            if (group.charAt(i) != testString.charAt(stringIndex + i) &&
+                    TPattern.getSupplement(group.charAt(i)) != testString.charAt(stringIndex + i)) {
                 return -1;
             }
         }
         matchResult.setConsumed(consCounter, group.length());
-        return next.matches(stringIndex + group.length(), testString,
-                matchResult);
+        return next.matches(stringIndex + group.length(), testString, matchResult);
     }
 
+    @Override
     public AbstractSet getNext() {
         return this.next;
     }
 
+    @Override
     public void setNext(AbstractSet next) {
         this.next = next;
     }
@@ -89,13 +83,14 @@ class CIBackReferenceSet extends JointSet {
     protected String getString(MatchResultImpl matchResult) {
         String res = matchResult.getGroupNoCheck(referencedGroup);
         return res;
-        // return (res != null) ? res : "";
     }
 
+    @Override
     public String getName() {
-        return "CI back reference: " + this.groupIndex; //$NON-NLS-1$
+        return "CI back reference: " + this.groupIndex;
     }
 
+    @Override
     public boolean hasConsumed(MatchResultImpl matchResult) {
         int cons;
         boolean res = ((cons = matchResult.getConsumed(consCounter)) < 0 || cons > 0);

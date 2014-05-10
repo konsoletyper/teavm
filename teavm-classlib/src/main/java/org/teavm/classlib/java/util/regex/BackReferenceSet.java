@@ -46,15 +46,12 @@ class BackReferenceSet extends CIBackReferenceSet {
         super(groupIndex, consCounter);
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         String group = getString(matchResult);
-        if (group == null
-                || (stringIndex + group.length()) > matchResult.getRightBound())
+        if (group == null || (stringIndex + group.length()) > matchResult.getRightBound())
             return -1;
-        int shift = testString.toString().startsWith(group, stringIndex) ? group
-                .length()
-                : -1;
+        int shift = testString.toString().startsWith(group, stringIndex) ? group.length() : -1;
 
         if (shift < 0) {
             return -1;
@@ -63,8 +60,8 @@ class BackReferenceSet extends CIBackReferenceSet {
         return next.matches(stringIndex + shift, testString, matchResult);
     }
 
-    public int find(int strIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int find(int strIndex, CharSequence testString, MatchResultImpl matchResult) {
         String group = getString(matchResult);
         int strLength = matchResult.getLeftBound();
 
@@ -78,8 +75,7 @@ class BackReferenceSet extends CIBackReferenceSet {
 
             if (strIndex < 0)
                 return -1;
-            if (next
-                    .matches(strIndex + group.length(), testString, matchResult) >= 0) {
+            if (next.matches(strIndex + group.length(), testString, matchResult) >= 0) {
                 return strIndex;
             }
 
@@ -89,8 +85,8 @@ class BackReferenceSet extends CIBackReferenceSet {
         return -1;
     }
 
-    public int findBack(int strIndex, int lastIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int findBack(int strIndex, int lastIndex, CharSequence testString, MatchResultImpl matchResult) {
         String group = getString(matchResult);
 
         if (group == null)
@@ -103,8 +99,7 @@ class BackReferenceSet extends CIBackReferenceSet {
 
             if (lastIndex < 0 || lastIndex < strIndex)
                 return -1;
-            if (next.matches(lastIndex + group.length(), testString,
-                    matchResult) >= 0) {
+            if (next.matches(lastIndex + group.length(), testString, matchResult) >= 0) {
                 return lastIndex;
             }
 
@@ -113,10 +108,12 @@ class BackReferenceSet extends CIBackReferenceSet {
         return -1;
     }
 
+    @Override
     public boolean first(AbstractSet set) {
         return true;
     }
 
+    @Override
     public String getName() {
         return "back reference: " + this.groupIndex; //$NON-NLS-1$
     }

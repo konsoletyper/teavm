@@ -20,7 +20,6 @@
  */
 package org.teavm.classlib.java.util.regex;
 
-
 /**
  * @author Nikolay A. Kuznetsov
  */
@@ -33,13 +32,13 @@ class LeafQuantifierSet extends QuantifierSet {
         this.leaf = innerSet;
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         int i = 0;
         int shift = 0;
 
-        while (stringIndex + leaf.charCount() <= matchResult.getRightBound()
-                && (shift = leaf.accepts(stringIndex, testString)) > 0) {
+        while (stringIndex + leaf.charCount() <= matchResult.getRightBound() &&
+                (shift = leaf.accepts(stringIndex, testString)) > 0) {
             stringIndex += shift;
             i++;
         }
@@ -55,19 +54,22 @@ class LeafQuantifierSet extends QuantifierSet {
         return -1;
     }
 
+    @Override
     protected String getName() {
-        return "<Quant>"; //$NON-NLS-1$
+        return "<Quant>";
     }
 
     /**
      * Sets an inner set.
+     *
      * @param innerSet
      *            The innerSet to set.
      */
+    @Override
     public void setInnerSet(AbstractSet innerSet) {
         if (!(innerSet instanceof LeafSet))
             throw new RuntimeException("");
         super.setInnerSet(innerSet);
-        this.leaf = (LeafSet) innerSet;
+        this.leaf = (LeafSet)innerSet;
     }
 }

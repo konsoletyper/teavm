@@ -26,14 +26,12 @@ package org.teavm.classlib.java.util.regex;
  * @author Nikolay A. Kuznetsov
  */
 class PossessiveCompositeQuantifierSet extends CompositeQuantifierSet {
-
-    public PossessiveCompositeQuantifierSet(Quantifier quant, LeafSet innerSet,
-            AbstractSet next, int type) {
+    public PossessiveCompositeQuantifierSet(Quantifier quant, LeafSet innerSet, AbstractSet next, int type) {
         super(quant, innerSet, next, type);
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         int min = quantifier.min();
         int max = quantifier.max();
         int i = 0;
@@ -52,8 +50,8 @@ class PossessiveCompositeQuantifierSet extends CompositeQuantifierSet {
 
         for (; i < max; i++) {
             int shift;
-            if (stringIndex + leaf.charCount() > matchResult.getRightBound()
-                    || (shift = leaf.accepts(stringIndex, testString)) < 1) {
+            if (stringIndex + leaf.charCount() > matchResult.getRightBound() ||
+                    (shift = leaf.accepts(stringIndex, testString)) < 1) {
                 break;
             }
             stringIndex += shift;

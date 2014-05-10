@@ -33,6 +33,7 @@ class UnicodeCategory extends AbstractCharClass {
         this.category = category;
     }
 
+    @Override
     public boolean contains(int ch) {
         return alt ^ (category == Character.getType((char) ch));
     }

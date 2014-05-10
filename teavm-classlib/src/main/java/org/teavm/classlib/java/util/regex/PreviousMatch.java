@@ -26,11 +26,7 @@ package org.teavm.classlib.java.util.regex;
  * @author Nikolay A. Kuznetsov
  */
 class PreviousMatch extends AbstractSet {
-
-    /**
-     * @see java.util.regex.AbstractSet#matches(int, java.lang.CharSequence,
-     *      java.util.regex.MatchResultImpl)
-     */
+    @Override
     public int matches(int stringIndex, CharSequence testString,
             MatchResultImpl matchResult) {
         if (stringIndex == matchResult.getPreviousMatchEnd()) {
@@ -39,11 +35,13 @@ class PreviousMatch extends AbstractSet {
         return -1;
     }
 
+    @Override
     public boolean hasConsumed(MatchResultImpl matchResult) {
         return false;
     }
 
+    @Override
     protected String getName() {
-        return "PreviousMatch"; //$NON-NLS-1$
+        return "PreviousMatch";
     }
 }

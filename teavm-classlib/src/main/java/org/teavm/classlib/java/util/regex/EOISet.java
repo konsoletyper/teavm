@@ -27,10 +27,9 @@ package org.teavm.classlib.java.util.regex;
  */
 class EOISet extends AbstractSet {
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
-        int rightBound = matchResult.hasTransparentBounds() ? testString
-                .length() : matchResult.getRightBound();
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
+        int rightBound = matchResult.hasTransparentBounds() ? testString.length() : matchResult.getRightBound();
         if (stringIndex < rightBound)
             return -1;
 
@@ -43,11 +42,13 @@ class EOISet extends AbstractSet {
     /**
      * Returns false, enough for quantifiers
      */
+    @Override
     public boolean hasConsumed(MatchResultImpl matchResult) {
         return false;
     }
 
+    @Override
     protected String getName() {
-        return "EOI"; //$NON-NLS-1$
+        return "EOI";
     }
 }

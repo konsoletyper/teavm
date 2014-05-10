@@ -22,6 +22,7 @@ package org.teavm.classlib.java.util.regex;
 
 /**
  * The node which marks end of the particular group.
+ *
  * @author Nikolay A. Kuznetsov
  */
 class FSet extends AbstractSet {
@@ -36,8 +37,8 @@ class FSet extends AbstractSet {
         this.groupIndex = groupIndex;
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         int end = matchResult.getEnd(groupIndex);
         matchResult.setEnd(groupIndex, stringIndex);
         int shift = next.matches(stringIndex, testString, matchResult);
@@ -54,10 +55,12 @@ class FSet extends AbstractSet {
         return groupIndex;
     }
 
+    @Override
     protected String getName() {
         return "fSet"; //$NON-NLS-1$
     }
 
+    @Override
     public boolean hasConsumed(MatchResultImpl mr) {
         return false;
     }
@@ -69,15 +72,17 @@ class FSet extends AbstractSet {
      */
     static class PossessiveFSet extends AbstractSet {
 
-        public int matches(int stringIndex, CharSequence testString,
-                MatchResultImpl matchResult) {
+        @Override
+        public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
             return stringIndex;
         }
 
+        @Override
         protected String getName() {
             return "posFSet"; //$NON-NLS-1$
         }
 
+        @Override
         public boolean hasConsumed(MatchResultImpl mr) {
             return false;
         }

@@ -54,10 +54,12 @@ abstract class AbstractLineTerminator {
             if (unixLT != null)
                 return unixLT;
             unixLT = new AbstractLineTerminator() {
+                @Override
                 public boolean isLineTerminator(int ch) {
                     return ch == '\n';
                 }
 
+                @Override
                 public boolean isAfterLineTerminator(int ch, int ch2) {
                     return ch == '\n';
                 }
@@ -67,13 +69,14 @@ abstract class AbstractLineTerminator {
             if (unicodeLT != null)
                 return unicodeLT;
             unicodeLT = new AbstractLineTerminator() {
+                @Override
                 public boolean isLineTerminator(int ch) {
                     return (ch == '\n' || ch == '\r' || ch == '\u0085' || (ch | 1) == '\u2029');
                 }
 
+                @Override
                 public boolean isAfterLineTerminator(int ch, int ch2) {
-                    return (ch == '\n' || ch == '\u0085' || (ch | 1) == '\u2029')
-                            || (ch == '\r' && ch2 != '\n');
+                    return (ch == '\n' || ch == '\u0085' || (ch | 1) == '\u2029') || (ch == '\r' && ch2 != '\n');
                 }
             };
             return unicodeLT;

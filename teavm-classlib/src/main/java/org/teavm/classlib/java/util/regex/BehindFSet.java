@@ -43,19 +43,19 @@ package org.teavm.classlib.java.util.regex;
  * @author Nikolay A. Kuznetsov
  */
 class BehindFSet extends FSet {
-
     public BehindFSet(int groupIndex) {
         super(groupIndex);
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
 
         int gr = getGroupIndex();
         int rightBound = matchResult.getConsumed(gr);
         return (rightBound == stringIndex) ? stringIndex : -1;
     }
 
+    @Override
     protected String getName() {
         return "BehindFSet"; //$NON-NLS-1$
     }

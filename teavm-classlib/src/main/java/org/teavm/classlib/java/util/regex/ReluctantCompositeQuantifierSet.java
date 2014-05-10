@@ -22,17 +22,16 @@ package org.teavm.classlib.java.util.regex;
 
 /**
  * Reluctant version of composite(i.e. {n,m}) quantifier set over leaf nodes.
+ *
  * @author Nikolay A. Kuznetsov
  */
 class ReluctantCompositeQuantifierSet extends CompositeQuantifierSet {
-
-    public ReluctantCompositeQuantifierSet(Quantifier quant, LeafSet innerSet,
-            AbstractSet next, int type) {
+    public ReluctantCompositeQuantifierSet(Quantifier quant, LeafSet innerSet, AbstractSet next, int type) {
         super(quant, innerSet, next, type);
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         int min = quantifier.min();
         int max = quantifier.max();
         int i = 0;

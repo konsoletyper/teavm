@@ -98,10 +98,12 @@ class UCISupplRangeSet extends SupplRangeSet{
         super(cc);
     }
 
+    @Override
     public boolean contains(int ch) {
         return chars.contains(Character.toLowerCase(Character.toUpperCase(ch)));
     }
 
+    @Override
     protected String getName() {
         return "UCI range:" + (alt ? "^ " : " ") + chars.toString();
     }

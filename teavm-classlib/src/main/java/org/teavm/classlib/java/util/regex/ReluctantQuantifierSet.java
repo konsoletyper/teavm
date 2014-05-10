@@ -32,8 +32,8 @@ class ReluctantQuantifierSet extends LeafQuantifierSet {
         super(innerSet, next, type);
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         int shift = 0;
 
         do {

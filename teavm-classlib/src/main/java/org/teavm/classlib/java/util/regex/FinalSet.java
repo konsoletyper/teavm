@@ -31,10 +31,9 @@ class FinalSet extends FSet {
         super(0);
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
-        if (matchResult.mode() == TMatcher.MODE_FIND
-                || stringIndex == matchResult.getRightBound()) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
+        if (matchResult.mode() == TMatcher.MODE_FIND || stringIndex == matchResult.getRightBound()) {
             matchResult.setValid();
             matchResult.setEnd(0, stringIndex);
             return stringIndex;
@@ -42,6 +41,7 @@ class FinalSet extends FSet {
         return -1;
     }
 
+    @Override
     protected String getName() {
         return "FinalSet"; //$NON-NLS-1$
     }

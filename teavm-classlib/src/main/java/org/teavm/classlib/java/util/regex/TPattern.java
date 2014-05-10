@@ -21,9 +21,7 @@
 package org.teavm.classlib.java.util.regex;
 
 import java.io.Serializable;
-
 import java.util.ArrayList;
-
 
 /**
  * Represents a pattern used for matching, searching, or replacing strings.
@@ -33,23 +31,24 @@ import java.util.ArrayList;
  * <p/>
  * A typical use case looks like this:
  * <p/>
- * <pre>
- * Pattern p = Pattern.compile("Hello, A[a-z]*!");
  *
- * Matcher m = p.matcher("Hello, Android!");
+ * <pre>
+ * Pattern p = Pattern.compile(&quot;Hello, A[a-z]*!&quot;);
+ *
+ * Matcher m = p.matcher(&quot;Hello, Android!&quot;);
  * boolean b1 = m.matches(); // true
  *
- * m.setInput("Hello, Robot!");
+ * m.setInput(&quot;Hello, Robot!&quot;);
  * boolean b2 = m.matches(); // false
  * </pre>
  * <p/>
  * The above code could also be written in a more compact fashion, though this
  * variant is less efficient, since {@code Pattern} and {@code Matcher} objects
- * are created on the fly instead of being reused.
- * fashion:
+ * are created on the fly instead of being reused. fashion:
+ *
  * <pre>
- *     boolean b1 = Pattern.matches("Hello, A[a-z]*!", "Hello, Android!"); // true
- *     boolean b2 = Pattern.matches("Hello, A[a-z]*!", "Hello, Robot!");   // false
+ * boolean b1 = Pattern.matches(&quot;Hello, A[a-z]*!&quot;, &quot;Hello, Android!&quot;); // true
+ * boolean b2 = Pattern.matches(&quot;Hello, A[a-z]*!&quot;, &quot;Hello, Robot!&quot;); // false
  * </pre>
  *
  * @see TMatcher
@@ -119,14 +118,8 @@ public final class TPattern implements Serializable {
     /**
      * Bit mask that includes all defined match flags
      */
-    static final int flagsBitMask = TPattern.UNIX_LINES |
-                                    TPattern.CASE_INSENSITIVE |
-                                    TPattern.COMMENTS |
-                                    TPattern.MULTILINE |
-                                    TPattern.LITERAL |
-                                    TPattern.DOTALL |
-                                    TPattern.UNICODE_CASE |
-                                    TPattern.CANON_EQ;
+    static final int flagsBitMask = TPattern.UNIX_LINES | TPattern.CASE_INSENSITIVE | TPattern.COMMENTS |
+            TPattern.MULTILINE | TPattern.LITERAL | TPattern.DOTALL | TPattern.UNICODE_CASE | TPattern.CANON_EQ;
 
     /**
      * Current <code>pattern</code> to be compiled;
@@ -143,7 +136,7 @@ public final class TPattern implements Serializable {
     /*
      * All backreferences that may be used in pattern.
      */
-    transient private FSet backRefs [] = new FSet [BACK_REF_NUMBER];
+    transient private FSet backRefs[] = new FSet[BACK_REF_NUMBER];
 
     /*
      * Is true if backreferenced sets replacement is needed
@@ -174,8 +167,8 @@ public final class TPattern implements Serializable {
     }
 
     /**
-     * Splits the given input sequence around occurrences of the {@code Pattern}.
-     * The function first determines all occurrences of the {@code Pattern}
+     * Splits the given input sequence around occurrences of the {@code Pattern}
+     * . The function first determines all occurrences of the {@code Pattern}
      * inside the input sequence. It then builds an array of the
      * &quot;remaining&quot; strings before, in-between, and after these
      * occurrences. An additional parameter determines the maximal number of
@@ -190,9 +183,9 @@ public final class TPattern implements Serializable {
      *            <ul>
      *            <li>For n &gt; 0, it is guaranteed that the resulting array
      *            contains at most n entries.
-     *            <li>For n &lt; 0, the length of the resulting array is
-     *            exactly the number of occurrences of the {@code Pattern} +1.
-     *            All entries are included.
+     *            <li>For n &lt; 0, the length of the resulting array is exactly
+     *            the number of occurrences of the {@code Pattern} +1. All
+     *            entries are included.
      *            <li>For n == 0, the length of the resulting array is at most
      *            the number of occurrences of the {@code Pattern} +1. Empty
      *            strings at the end of the array are not included.
@@ -201,18 +194,18 @@ public final class TPattern implements Serializable {
      * @return the resulting array.
      */
     public String[] split(CharSequence inputSeq, int limit) {
-        ArrayList res = new ArrayList();
+        ArrayList<String> res = new ArrayList<>();
         TMatcher mat = matcher(inputSeq);
         int index = 0;
         int curPos = 0;
 
         if (inputSeq.length() == 0) {
-            return new String [] {""}; //$NON-NLS-1$
+            return new String[] { "" }; //$NON-NLS-1$
         } else {
             while (mat.find() && (index + 1 < limit || limit <= 0)) {
-                  res.add(inputSeq.subSequence(curPos, mat.start()).toString());
-                  curPos = mat.end();
-                  index++;
+                res.add(inputSeq.subSequence(curPos, mat.start()).toString());
+                curPos = mat.end();
+                index++;
             }
 
             res.add(inputSeq.subSequence(curPos, inputSeq.length()).toString());
@@ -223,11 +216,11 @@ public final class TPattern implements Serializable {
              */
             if (limit == 0) {
                 while (--index >= 0 && res.get(index).toString().length() == 0) {
-                       res.remove(index);
+                    res.remove(index);
                 }
             }
         }
-        return (String[]) res.toArray(new String[index >= 0 ? index : 0]);
+        return res.toArray(new String[index >= 0 ? index : 0]);
     }
 
     /**
@@ -303,14 +296,12 @@ public final class TPattern implements Serializable {
      * @see #UNICODE_CASE
      * @see #UNIX_LINES
      */
-    public static TPattern compile(String pattern, int flags)
-            throws TPatternSyntaxException {
+    public static TPattern compile(String pattern, int flags) throws TPatternSyntaxException {
 
-    	if ((flags != 0) &&
-    	   	((flags | flagsBitMask) != flagsBitMask)) {
+        if ((flags != 0) && ((flags | flagsBitMask) != flagsBitMask)) {
 
-    	    throw new IllegalArgumentException("");
-    	}
+            throw new IllegalArgumentException("");
+        }
 
         AbstractSet.counter = 1;
 
@@ -319,16 +310,15 @@ public final class TPattern implements Serializable {
 
     /**
      *
-     * @param pattern -
-     *            Regular expression to be compiled
-     * @param flags -
-     *            The bit mask including CASE_INSENSITIVE, MULTILINE, DOTALL,
+     * @param pattern
+     *            - Regular expression to be compiled
+     * @param flags
+     *            - The bit mask including CASE_INSENSITIVE, MULTILINE, DOTALL,
      *            UNICODE_CASE, and CANON_EQ
      *
      * @return Compiled pattern
      */
-    private TPattern compileImpl(String pattern, int flags)
-            throws TPatternSyntaxException {
+    private TPattern compileImpl(String pattern, int flags) throws TPatternSyntaxException {
         this.lexemes = new Lexer(pattern, flags);
         this.flags = flags;
         this.pattern = pattern;
@@ -345,13 +335,10 @@ public final class TPattern implements Serializable {
      * A->(a|)+
      */
     private AbstractSet processAlternations(AbstractSet last) {
-        CharClass auxRange = new CharClass(hasFlag(TPattern.CASE_INSENSITIVE),
-                hasFlag(TPattern.UNICODE_CASE));
-        while (!lexemes.isEmpty()
-                && lexemes.isLetter()
-                && (lexemes.lookAhead() == 0
-                        || lexemes.lookAhead() == Lexer.CHAR_VERTICAL_BAR || lexemes
-                        .lookAhead() == Lexer.CHAR_RIGHT_PARENTHESIS)) {
+        CharClass auxRange = new CharClass(hasFlag(TPattern.CASE_INSENSITIVE), hasFlag(TPattern.UNICODE_CASE));
+        while (!lexemes.isEmpty() &&
+                lexemes.isLetter() &&
+                (lexemes.lookAhead() == 0 || lexemes.lookAhead() == Lexer.CHAR_VERTICAL_BAR || lexemes.lookAhead() == Lexer.CHAR_RIGHT_PARENTHESIS)) {
             auxRange.add(lexemes.next());
             if (lexemes.peek() == Lexer.CHAR_VERTICAL_BAR)
                 lexemes.next();
@@ -365,9 +352,8 @@ public final class TPattern implements Serializable {
     /**
      * E->AE; E->S|E; E->S; A->(a|)+ E->S(|S)*
      */
-    private AbstractSet processExpression(int ch, int newFlags,
-            AbstractSet last) {
-        ArrayList children = new ArrayList();
+    private AbstractSet processExpression(int ch, int newFlags, AbstractSet last) {
+        ArrayList<AbstractSet> children = new ArrayList<>();
         AbstractSet child;
         int saveFlags = flags;
         FSet fSet;
@@ -378,51 +364,50 @@ public final class TPattern implements Serializable {
         }
 
         switch (ch) {
-        case Lexer.CHAR_NONCAP_GROUP:
-            fSet = new NonCapFSet(++consCount);
-            break;
+            case Lexer.CHAR_NONCAP_GROUP:
+                fSet = new NonCapFSet(++consCount);
+                break;
 
-        case Lexer.CHAR_POS_LOOKAHEAD:
-        	/* falls through */
+            case Lexer.CHAR_POS_LOOKAHEAD:
+                /* falls through */
 
-        case Lexer.CHAR_NEG_LOOKAHEAD:
-            fSet = new AheadFSet();
-            break;
+            case Lexer.CHAR_NEG_LOOKAHEAD:
+                fSet = new AheadFSet();
+                break;
 
-        case Lexer.CHAR_POS_LOOKBEHIND:
-        	/* falls through */
+            case Lexer.CHAR_POS_LOOKBEHIND:
+                /* falls through */
 
-        case Lexer.CHAR_NEG_LOOKBEHIND:
-            fSet = new BehindFSet(++consCount);
-            break;
+            case Lexer.CHAR_NEG_LOOKBEHIND:
+                fSet = new BehindFSet(++consCount);
+                break;
 
-        case Lexer.CHAR_ATOMIC_GROUP:
-            fSet = new AtomicFSet(++consCount);
-            break;
+            case Lexer.CHAR_ATOMIC_GROUP:
+                fSet = new AtomicFSet(++consCount);
+                break;
 
-        default:
-            globalGroupIndex++;
-            if (last == null) {
+            default:
+                globalGroupIndex++;
+                if (last == null) {
 
-            	// expr = new StartSet();
-            	fSet = new FinalSet();
-            	saveChangedFlags = true;
-            } else {
+                    // expr = new StartSet();
+                    fSet = new FinalSet();
+                    saveChangedFlags = true;
+                } else {
 
-            	// expr = new JointSet(globalGroupIndex);
-            	fSet = new FSet(globalGroupIndex);
-            }
-            if (globalGroupIndex > -1 && globalGroupIndex < 10) {
-            	backRefs[globalGroupIndex] = fSet;
-            }
-            break;
+                    // expr = new JointSet(globalGroupIndex);
+                    fSet = new FSet(globalGroupIndex);
+                }
+                if (globalGroupIndex > -1 && globalGroupIndex < 10) {
+                    backRefs[globalGroupIndex] = fSet;
+                }
+                break;
         }
 
         do {
-            if (lexemes.isLetter()
-                    && lexemes.lookAhead() == Lexer.CHAR_VERTICAL_BAR) {
+            if (lexemes.isLetter() && lexemes.lookAhead() == Lexer.CHAR_VERTICAL_BAR) {
                 child = processAlternations(fSet);
-            } else if (lexemes.peek() == Lexer.CHAR_VERTICAL_BAR){
+            } else if (lexemes.peek() == Lexer.CHAR_VERTICAL_BAR) {
                 child = new EmptySet(fSet);
                 lexemes.next();
             } else {
@@ -433,14 +418,13 @@ public final class TPattern implements Serializable {
             }
             if (child != null) {
 
-                //expr.addChild(child);
-            	children.add(child);
+                // expr.addChild(child);
+                children.add(child);
             }
-        } while (!(lexemes.isEmpty()
-        		   || (lexemes.peek() == Lexer.CHAR_RIGHT_PARENTHESIS)));
+        } while (!(lexemes.isEmpty() || (lexemes.peek() == Lexer.CHAR_RIGHT_PARENTHESIS)));
 
         if (lexemes.back() == Lexer.CHAR_VERTICAL_BAR) {
-        	children.add(new EmptySet(fSet));
+            children.add(new EmptySet(fSet));
         }
 
         if (flags != saveFlags && !saveChangedFlags) {
@@ -449,64 +433,62 @@ public final class TPattern implements Serializable {
         }
 
         switch (ch) {
-        case Lexer.CHAR_NONCAP_GROUP:
-            return new NonCapJointSet(children, fSet);
+            case Lexer.CHAR_NONCAP_GROUP:
+                return new NonCapJointSet(children, fSet);
 
-        case Lexer.CHAR_POS_LOOKAHEAD:
-            return new PositiveLookAhead(children, fSet);
+            case Lexer.CHAR_POS_LOOKAHEAD:
+                return new PositiveLookAhead(children, fSet);
 
-        case Lexer.CHAR_NEG_LOOKAHEAD:
-            return new NegativeLookAhead(children, fSet);
+            case Lexer.CHAR_NEG_LOOKAHEAD:
+                return new NegativeLookAhead(children, fSet);
 
-        case Lexer.CHAR_POS_LOOKBEHIND:
-            return new PositiveLookBehind(children, fSet);
+            case Lexer.CHAR_POS_LOOKBEHIND:
+                return new PositiveLookBehind(children, fSet);
 
-        case Lexer.CHAR_NEG_LOOKBEHIND:
-            return new NegativeLookBehind(children, fSet);
+            case Lexer.CHAR_NEG_LOOKBEHIND:
+                return new NegativeLookBehind(children, fSet);
 
-        case Lexer.CHAR_ATOMIC_GROUP:
-            return new AtomicJointSet(children, fSet);
-
-        default:
-            switch (children.size()) {
-            case 0:
-                return new EmptySet(fSet);
-
-            case 1:
-                return new SingleSet((AbstractSet) children.get(0), fSet);
+            case Lexer.CHAR_ATOMIC_GROUP:
+                return new AtomicJointSet(children, fSet);
 
             default:
-                return new JointSet(children, fSet);
-            }
+                switch (children.size()) {
+                    case 0:
+                        return new EmptySet(fSet);
+
+                    case 1:
+                        return new SingleSet(children.get(0), fSet);
+
+                    default:
+                        return new JointSet(children, fSet);
+                }
         }
     }
-
 
     /**
      * T->a+
      */
-    private AbstractSet processSequence(AbstractSet last) {
+    private AbstractSet processSequence() {
         StringBuffer substring = new StringBuffer();
 
-        while (!lexemes.isEmpty()
-                && lexemes.isLetter()
-                && !lexemes.isHighSurrogate()
-                && !lexemes.isLowSurrogate()
-                && ((!lexemes.isNextSpecial() && lexemes.lookAhead() == 0) // end
+        while (!lexemes.isEmpty() &&
+                lexemes.isLetter() &&
+                !lexemes.isHighSurrogate() &&
+                !lexemes.isLowSurrogate() &&
+                ((!lexemes.isNextSpecial() && lexemes.lookAhead() == 0) // end
                         // of
                         // pattern
-                        || (!lexemes.isNextSpecial() && Lexer.isLetter(lexemes
-                                .lookAhead()))
-                        || lexemes.lookAhead() == Lexer.CHAR_RIGHT_PARENTHESIS
-                        || (lexemes.lookAhead() & 0x8000ffff) == Lexer.CHAR_LEFT_PARENTHESIS
-                        || lexemes.lookAhead() == Lexer.CHAR_VERTICAL_BAR || lexemes
-                        .lookAhead() == Lexer.CHAR_DOLLAR)) {
+                        ||
+                        (!lexemes.isNextSpecial() && Lexer.isLetter(lexemes.lookAhead())) ||
+                        lexemes.lookAhead() == Lexer.CHAR_RIGHT_PARENTHESIS ||
+                        (lexemes.lookAhead() & 0x8000ffff) == Lexer.CHAR_LEFT_PARENTHESIS ||
+                        lexemes.lookAhead() == Lexer.CHAR_VERTICAL_BAR || lexemes.lookAhead() == Lexer.CHAR_DOLLAR)) {
             int ch = lexemes.next();
 
             if (Character.isSupplementaryCodePoint(ch)) {
                 substring.append(Character.toChars(ch));
             } else {
-                substring.append((char) ch);
+                substring.append((char)ch);
             }
         }
         if (!hasFlag(TPattern.CASE_INSENSITIVE)) {
@@ -521,16 +503,16 @@ public final class TPattern implements Serializable {
     /**
      * D->a
      */
-    private AbstractSet processDecomposedChar(AbstractSet last) {
-        int [] codePoints = new int [Lexer.MAX_DECOMPOSITION_LENGTH];
-        char [] codePointsHangul;
+    private AbstractSet processDecomposedChar() {
+        int[] codePoints = new int[Lexer.MAX_DECOMPOSITION_LENGTH];
+        char[] codePointsHangul;
         int readCodePoints = 0;
         int curSymb = -1;
         int curSymbIndex = -1;
 
         if (!lexemes.isEmpty() && lexemes.isLetter()) {
             curSymb = lexemes.next();
-            codePoints [readCodePoints] = curSymb;
+            codePoints[readCodePoints] = curSymb;
             curSymbIndex = curSymb - Lexer.LBase;
         }
 
@@ -540,59 +522,55 @@ public final class TPattern implements Serializable {
          * "3.12 Conjoining Jamo Behavior"
          */
         if ((curSymbIndex >= 0) && (curSymbIndex < Lexer.LCount)) {
-            codePointsHangul = new char [Lexer
-                                         .MAX_HANGUL_DECOMPOSITION_LENGTH];
-            codePointsHangul[readCodePoints++] = (char) curSymb;
+            codePointsHangul = new char[Lexer.MAX_HANGUL_DECOMPOSITION_LENGTH];
+            codePointsHangul[readCodePoints++] = (char)curSymb;
 
             curSymb = lexemes.peek();
             curSymbIndex = curSymb - Lexer.VBase;
             if ((curSymbIndex >= 0) && (curSymbIndex < Lexer.VCount)) {
-                codePointsHangul [readCodePoints++] = (char) curSymb;
+                codePointsHangul[readCodePoints++] = (char)curSymb;
                 lexemes.next();
                 curSymb = lexemes.peek();
                 curSymbIndex = curSymb - Lexer.TBase;
                 if ((curSymbIndex >= 0) && (curSymbIndex < Lexer.TCount)) {
-                    codePointsHangul [readCodePoints++] = (char) curSymb;
+                    codePointsHangul[readCodePoints++] = (char)curSymb;
                     lexemes.next();
 
-                    //LVT syllable
+                    // LVT syllable
                     return new HangulDecomposedCharSet(codePointsHangul, 3);
                 } else {
 
-                    //LV syllable
+                    // LV syllable
                     return new HangulDecomposedCharSet(codePointsHangul, 2);
                 }
             } else {
 
-                   //L jamo
-                   if (!hasFlag(TPattern.CASE_INSENSITIVE)) {
-                       return new CharSet(codePointsHangul[0]);
-                   } else if (!hasFlag(TPattern.UNICODE_CASE)) {
-                       return new CICharSet(codePointsHangul[0]);
-                   } else {
-                       return new UCICharSet(codePointsHangul[0]);
-                   }
+                // L jamo
+                if (!hasFlag(TPattern.CASE_INSENSITIVE)) {
+                    return new CharSet(codePointsHangul[0]);
+                } else if (!hasFlag(TPattern.UNICODE_CASE)) {
+                    return new CICharSet(codePointsHangul[0]);
+                } else {
+                    return new UCICharSet(codePointsHangul[0]);
+                }
             }
 
-        /*
-         * We process single codepoint or decomposed codepoint.
-         * We collect decomposed codepoint and obtain
-         * one DecomposedCharSet.
-         */
+            /*
+             * We process single codepoint or decomposed codepoint. We collect
+             * decomposed codepoint and obtain one DecomposedCharSet.
+             */
         } else {
             readCodePoints++;
 
-            while((readCodePoints < Lexer.MAX_DECOMPOSITION_LENGTH)
-                    && !lexemes.isEmpty() && lexemes.isLetter()
-                    && !Lexer.isDecomposedCharBoundary(lexemes.peek())) {
-                  codePoints [readCodePoints++] = lexemes.next();
+            while ((readCodePoints < Lexer.MAX_DECOMPOSITION_LENGTH) && !lexemes.isEmpty() && lexemes.isLetter() &&
+                    !Lexer.isDecomposedCharBoundary(lexemes.peek())) {
+                codePoints[readCodePoints++] = lexemes.next();
             }
 
             /*
              * We have read an ordinary symbol.
              */
-            if (readCodePoints == 1
-                && !Lexer.hasSingleCodepointDecomposition(codePoints[0])) {
+            if (readCodePoints == 1 && !Lexer.hasSingleCodepointDecomposition(codePoints[0])) {
                 return processCharSet(codePoints[0]);
             } else {
                 if (!hasFlag(TPattern.CASE_INSENSITIVE)) {
@@ -611,31 +589,28 @@ public final class TPattern implements Serializable {
      */
     private AbstractSet processSubExpression(AbstractSet last) {
         AbstractSet cur;
-        if (lexemes.isLetter() && !lexemes.isNextSpecial()
-                && Lexer.isLetter(lexemes.lookAhead())) {
+        if (lexemes.isLetter() && !lexemes.isNextSpecial() && Lexer.isLetter(lexemes.lookAhead())) {
             if (hasFlag(TPattern.CANON_EQ)) {
-                cur = processDecomposedChar(last);
+                cur = processDecomposedChar();
                 if (!lexemes.isEmpty()
 
-                        /* && !pattern.isQuantifier() */
-                        && (lexemes.peek() != Lexer.CHAR_RIGHT_PARENTHESIS
-                                || last instanceof FinalSet)
-                        && lexemes.peek() != Lexer.CHAR_VERTICAL_BAR
-                        && !lexemes.isLetter()) {
+                /* && !pattern.isQuantifier() */
+                && (lexemes.peek() != Lexer.CHAR_RIGHT_PARENTHESIS || last instanceof FinalSet) &&
+                        lexemes.peek() != Lexer.CHAR_VERTICAL_BAR && !lexemes.isLetter()) {
                     cur = processQuantifier(last, cur);
                 }
             } else if (lexemes.isHighSurrogate() || lexemes.isLowSurrogate()) {
                 AbstractSet term = processTerminal(last);
                 cur = processQuantifier(last, term);
             } else {
-                cur = processSequence(last);
+                cur = processSequence();
             }
         } else if (lexemes.peek() == Lexer.CHAR_RIGHT_PARENTHESIS) {
-        	if (last instanceof FinalSet) {
-        	    throw new TPatternSyntaxException("", lexemes.toString(), lexemes.getIndex());
-        	} else {
-        	      cur = new EmptySet(last);
-        	}
+            if (last instanceof FinalSet) {
+                throw new TPatternSyntaxException("", lexemes.toString(), lexemes.getIndex());
+            } else {
+                cur = new EmptySet(last);
+            }
         } else {
             AbstractSet term = processTerminal(last);
             cur = processQuantifier(last, term);
@@ -643,23 +618,23 @@ public final class TPattern implements Serializable {
 
         if (!lexemes.isEmpty()
         // && !pattern.isQuantifier()
-                && (lexemes.peek() != Lexer.CHAR_RIGHT_PARENTHESIS
-                		|| last instanceof FinalSet)
-                && lexemes.peek() != Lexer.CHAR_VERTICAL_BAR) {
+        &&
+                (lexemes.peek() != Lexer.CHAR_RIGHT_PARENTHESIS || last instanceof FinalSet) &&
+                lexemes.peek() != Lexer.CHAR_VERTICAL_BAR) {
             AbstractSet next = processSubExpression(last);
             if (cur instanceof LeafQuantifierSet
             // TODO create personal UnifiedQuantifierSet for composite
-                    // quantifiers
-                    // to take into account Quantifier counters
-                    // ////
-                    && !(cur instanceof CompositeQuantifierSet)
-                    && !(cur instanceof GroupQuantifierSet)
-                    && !(cur instanceof AltQuantifierSet)
-                    && !next.first(((LeafQuantifierSet) cur).getInnerSet())) {
-                cur = new UnifiedQuantifierSet((LeafQuantifierSet) cur);
+            // quantifiers
+            // to take into account Quantifier counters
+            // ////
+                    &&
+                    !(cur instanceof CompositeQuantifierSet) &&
+                    !(cur instanceof GroupQuantifierSet) &&
+                    !(cur instanceof AltQuantifierSet) && !next.first(((LeafQuantifierSet)cur).getInnerSet())) {
+                cur = new UnifiedQuantifierSet((LeafQuantifierSet)cur);
             }
-            if (((char) next.getType()) == '+') {
-                cur.setNext(((LeafQuantifierSet) next).getInnerSet());
+            if (((char)next.getType()) == '+') {
+                cur.setNext(((LeafQuantifierSet)next).getInnerSet());
             } else {
                 cur.setNext(next);
             }
@@ -669,8 +644,8 @@ public final class TPattern implements Serializable {
             return null;
         }
 
-        if (((char) cur.getType()) == '+') {
-            return ((QuantifierSet) cur).getInnerSet();
+        if (((char)cur.getType()) == '+') {
+            return ((QuantifierSet)cur).getInnerSet();
         } else {
             return cur;
         }
@@ -685,161 +660,146 @@ public final class TPattern implements Serializable {
 
         if (term != null && !(term instanceof LeafSet)) {
             switch (quant) {
-            case Lexer.QUANT_STAR:
-            case Lexer.QUANT_PLUS: {
-                QuantifierSet q;
+                case Lexer.QUANT_STAR:
+                case Lexer.QUANT_PLUS: {
+                    QuantifierSet q;
 
-                lexemes.next();
-                if (term.getType() == AbstractSet.TYPE_DOTSET) {
-                    if (!hasFlag(TPattern.DOTALL)) {
-                        q = new DotQuantifierSet(term, last, quant,
-                                AbstractLineTerminator.getInstance(flags));
+                    lexemes.next();
+                    if (term.getType() == AbstractSet.TYPE_DOTSET) {
+                        if (!hasFlag(TPattern.DOTALL)) {
+                            q = new DotQuantifierSet(term, last, quant, AbstractLineTerminator.getInstance(flags));
+                        } else {
+                            q = new DotAllQuantifierSet(term, last, quant);
+                        }
                     } else {
-                        q = new DotAllQuantifierSet(term, last, quant);
+                        q = new GroupQuantifierSet(term, last, quant);
                     }
-                } else {
-                    q = new GroupQuantifierSet(term, last, quant);
+                    term.setNext(q);
+                    return q;
                 }
-                term.setNext(q);
-                return q;
-            }
 
-            case Lexer.QUANT_STAR_R:
-            case Lexer.QUANT_PLUS_R: {
-                lexemes.next();
-                GroupQuantifierSet q = new ReluctantGroupQuantifierSet(term,
-                        last, quant);
-                term.setNext(q);
-                return q;
-            }
+                case Lexer.QUANT_STAR_R:
+                case Lexer.QUANT_PLUS_R: {
+                    lexemes.next();
+                    GroupQuantifierSet q = new ReluctantGroupQuantifierSet(term, last, quant);
+                    term.setNext(q);
+                    return q;
+                }
 
-            case Lexer.QUANT_PLUS_P: {
-                lexemes.next();
-                // possessive plus will be handled by unique class
-                // and should not be postprocessed to point previous set
-                // to the inner one.
-                // //
-                return new PosPlusGroupQuantifierSet(term, last,
-                        Lexer.QUANT_STAR_P);
-            }
+                case Lexer.QUANT_PLUS_P: {
+                    lexemes.next();
+                    // possessive plus will be handled by unique class
+                    // and should not be postprocessed to point previous set
+                    // to the inner one.
+                    // //
+                    return new PosPlusGroupQuantifierSet(term, last, Lexer.QUANT_STAR_P);
+                }
 
-            case Lexer.QUANT_STAR_P: {
-                lexemes.next();
-                return new PossessiveGroupQuantifierSet(term, last, quant);
-            }
+                case Lexer.QUANT_STAR_P: {
+                    lexemes.next();
+                    return new PossessiveGroupQuantifierSet(term, last, quant);
+                }
 
-            case Lexer.QUANT_ALT: {
-                lexemes.next();
-                AltGroupQuantifierSet q = new AltGroupQuantifierSet(term, last,
-                        Lexer.QUANT_ALT);
-                term.setNext(last);
-                return q;
-            }
+                case Lexer.QUANT_ALT: {
+                    lexemes.next();
+                    AltGroupQuantifierSet q = new AltGroupQuantifierSet(term, last, Lexer.QUANT_ALT);
+                    term.setNext(last);
+                    return q;
+                }
 
-            case Lexer.QUANT_ALT_P: {
-                lexemes.next();
-                return new PosAltGroupQuantifierSet(term, last, Lexer.QUANT_ALT);
-            }
+                case Lexer.QUANT_ALT_P: {
+                    lexemes.next();
+                    return new PosAltGroupQuantifierSet(term, last, Lexer.QUANT_ALT);
+                }
 
-            case Lexer.QUANT_ALT_R: {
-                lexemes.next();
-                RelAltGroupQuantifierSet q = new RelAltGroupQuantifierSet(term,
-                        last, Lexer.QUANT_ALT);
-                term.setNext(last);
-                return q;
-            }
+                case Lexer.QUANT_ALT_R: {
+                    lexemes.next();
+                    RelAltGroupQuantifierSet q = new RelAltGroupQuantifierSet(term, last, Lexer.QUANT_ALT);
+                    term.setNext(last);
+                    return q;
+                }
 
-            case Lexer.QUANT_COMP: {
-                CompositeGroupQuantifierSet q = new CompositeGroupQuantifierSet(
-                        (Quantifier) lexemes.nextSpecial(), term, last,
-                        Lexer.QUANT_ALT, ++compCount);
-                term.setNext(q);
-                return q;
-            }
+                case Lexer.QUANT_COMP: {
+                    CompositeGroupQuantifierSet q = new CompositeGroupQuantifierSet((Quantifier)lexemes.nextSpecial(),
+                            term, last, Lexer.QUANT_ALT, ++compCount);
+                    term.setNext(q);
+                    return q;
+                }
 
-            case Lexer.QUANT_COMP_P: {
-                return new PosCompositeGroupQuantifierSet((Quantifier) lexemes
-                        .nextSpecial(), term, last, Lexer.QUANT_ALT,
-                        ++compCount);
-            }
+                case Lexer.QUANT_COMP_P: {
+                    return new PosCompositeGroupQuantifierSet((Quantifier)lexemes.nextSpecial(), term, last,
+                            Lexer.QUANT_ALT, ++compCount);
+                }
 
-            case Lexer.QUANT_COMP_R: {
-                RelCompositeGroupQuantifierSet q = new RelCompositeGroupQuantifierSet(
-                        (Quantifier) lexemes.nextSpecial(), term, last,
-                        Lexer.QUANT_ALT, ++compCount);
-                term.setNext(q);
-                return q;
-            }
+                case Lexer.QUANT_COMP_R: {
+                    RelCompositeGroupQuantifierSet q = new RelCompositeGroupQuantifierSet(
+                            (Quantifier)lexemes.nextSpecial(), term, last, Lexer.QUANT_ALT, ++compCount);
+                    term.setNext(q);
+                    return q;
+                }
 
-            default:
-                return term;
+                default:
+                    return term;
             }
         } else {
             LeafSet leaf = null;
             if (term != null)
-                leaf = (LeafSet) term;
+                leaf = (LeafSet)term;
             switch (quant) {
-            case Lexer.QUANT_STAR:
-            case Lexer.QUANT_PLUS: {
-                lexemes.next();
-                LeafQuantifierSet q = new LeafQuantifierSet(leaf,
-                        last, quant);
-                leaf.setNext(q);
-                return q;
-            }
+                case Lexer.QUANT_STAR:
+                case Lexer.QUANT_PLUS: {
+                    lexemes.next();
+                    LeafQuantifierSet q = new LeafQuantifierSet(leaf, last, quant);
+                    leaf.setNext(q);
+                    return q;
+                }
 
-            case Lexer.QUANT_STAR_R:
-            case Lexer.QUANT_PLUS_R: {
-                lexemes.next();
-                ReluctantQuantifierSet q = new ReluctantQuantifierSet(leaf,
-                        last, quant);
-                leaf.setNext(q);
-                return q;
-            }
+                case Lexer.QUANT_STAR_R:
+                case Lexer.QUANT_PLUS_R: {
+                    lexemes.next();
+                    ReluctantQuantifierSet q = new ReluctantQuantifierSet(leaf, last, quant);
+                    leaf.setNext(q);
+                    return q;
+                }
 
-            case Lexer.QUANT_PLUS_P:
-            case Lexer.QUANT_STAR_P: {
-                lexemes.next();
-                PossessiveQuantifierSet q = new PossessiveQuantifierSet(leaf,
-                        last, quant);
-                leaf.setNext(q);
-                return q;
-            }
+                case Lexer.QUANT_PLUS_P:
+                case Lexer.QUANT_STAR_P: {
+                    lexemes.next();
+                    PossessiveQuantifierSet q = new PossessiveQuantifierSet(leaf, last, quant);
+                    leaf.setNext(q);
+                    return q;
+                }
 
-            case Lexer.QUANT_ALT: {
-                lexemes.next();
-                return new AltQuantifierSet(leaf, last, Lexer.QUANT_ALT);
-            }
+                case Lexer.QUANT_ALT: {
+                    lexemes.next();
+                    return new AltQuantifierSet(leaf, last, Lexer.QUANT_ALT);
+                }
 
-            case Lexer.QUANT_ALT_P: {
-                lexemes.next();
-                return new PossessiveAltQuantifierSet(leaf, last,
-                        Lexer.QUANT_ALT_P);
-            }
+                case Lexer.QUANT_ALT_P: {
+                    lexemes.next();
+                    return new PossessiveAltQuantifierSet(leaf, last, Lexer.QUANT_ALT_P);
+                }
 
-            case Lexer.QUANT_ALT_R: {
-                lexemes.next();
-                return new ReluctantAltQuantifierSet(leaf, last,
-                        Lexer.QUANT_ALT_R);
-            }
+                case Lexer.QUANT_ALT_R: {
+                    lexemes.next();
+                    return new ReluctantAltQuantifierSet(leaf, last, Lexer.QUANT_ALT_R);
+                }
 
-            case Lexer.QUANT_COMP: {
-                return new CompositeQuantifierSet((Quantifier) lexemes
-                        .nextSpecial(), leaf, last, Lexer.QUANT_COMP);
-            }
+                case Lexer.QUANT_COMP: {
+                    return new CompositeQuantifierSet((Quantifier)lexemes.nextSpecial(), leaf, last, Lexer.QUANT_COMP);
+                }
 
-            case Lexer.QUANT_COMP_P: {
-                return new PossessiveCompositeQuantifierSet(
-                        (Quantifier) lexemes.nextSpecial(), leaf, last,
-                        Lexer.QUANT_COMP_P);
-            }
-            case Lexer.QUANT_COMP_R: {
-                return new ReluctantCompositeQuantifierSet((Quantifier) lexemes
-                        .nextSpecial(), leaf, last, Lexer.QUANT_COMP_R);
-            }
+                case Lexer.QUANT_COMP_P: {
+                    return new PossessiveCompositeQuantifierSet((Quantifier)lexemes.nextSpecial(), leaf, last,
+                            Lexer.QUANT_COMP_P);
+                }
+                case Lexer.QUANT_COMP_R: {
+                    return new ReluctantCompositeQuantifierSet((Quantifier)lexemes.nextSpecial(), leaf, last,
+                            Lexer.QUANT_COMP_R);
+                }
 
-            default:
-                return term;
+                default:
+                    return term;
             }
         }
     }
@@ -853,186 +813,179 @@ public final class TPattern implements Serializable {
         do {
             ch = lexemes.peek();
             if ((ch & 0x8000ffff) == Lexer.CHAR_LEFT_PARENTHESIS) {
-            	 int newFlags;
-             	 lexemes.next();
-                 newFlags = (ch & 0x00ff0000) >> 16;
-                 ch = ch & 0xff00ffff;
-                 if (ch == Lexer.CHAR_FLAGS) {
-                     flags = newFlags;
-                 } else {
-                     newFlags = (ch == Lexer.CHAR_NONCAP_GROUP)
-                                 ? newFlags
-                                 : flags;
-                     term = processExpression(ch, newFlags, last);
-                     if (lexemes.peek() != Lexer.CHAR_RIGHT_PARENTHESIS) {
-                         throw new TPatternSyntaxException("", lexemes.toString(), lexemes.getIndex());
-                     }
-                     lexemes.next();
-                 }
+                int newFlags;
+                lexemes.next();
+                newFlags = (ch & 0x00ff0000) >> 16;
+                ch = ch & 0xff00ffff;
+                if (ch == Lexer.CHAR_FLAGS) {
+                    flags = newFlags;
+                } else {
+                    newFlags = (ch == Lexer.CHAR_NONCAP_GROUP) ? newFlags : flags;
+                    term = processExpression(ch, newFlags, last);
+                    if (lexemes.peek() != Lexer.CHAR_RIGHT_PARENTHESIS) {
+                        throw new TPatternSyntaxException("", lexemes.toString(), lexemes.getIndex());
+                    }
+                    lexemes.next();
+                }
             } else
                 switch (ch) {
-                case Lexer.CHAR_LEFT_SQUARE_BRACKET: {
-                    lexemes.next();
-                    boolean negative = false;
-                    if (lexemes.peek() == Lexer.CHAR_CARET) {
-                        negative = true;
+                    case Lexer.CHAR_LEFT_SQUARE_BRACKET: {
                         lexemes.next();
-                    }
-
-                    term = processRange(negative, last);
-                    if (lexemes.peek() != Lexer.CHAR_RIGHT_SQUARE_BRACKET)
-                        throw new TPatternSyntaxException("", lexemes.toString(), lexemes.getIndex());
-                    lexemes.setMode(Lexer.MODE_PATTERN);
-                    lexemes.next();
-                    break;
-                }
-
-                case Lexer.CHAR_DOT: {
-                    lexemes.next();
-
-                    if (!hasFlag(TPattern.DOTALL)) {
-                        term = new DotSet(AbstractLineTerminator
-                                .getInstance(flags));
-                    } else {
-                        term = new DotAllSet();
-                    }
-
-                    break;
-                }
-
-                case Lexer.CHAR_CARET: {
-                    lexemes.next();
-                    consCount++;
-                    if (!hasFlag(TPattern.MULTILINE)) {
-                        term = new SOLSet();
-                    } else {
-                        term = new MultiLineSOLSet(AbstractLineTerminator
-                                .getInstance(flags));
-                    }
-
-                    break;
-                }
-
-                case Lexer.CHAR_DOLLAR: {
-                    lexemes.next();
-                    consCount++;
-                    if (!hasFlag(TPattern.MULTILINE)) {
-                        if (!hasFlag(TPattern.UNIX_LINES)) {
-                            term = new EOLSet(consCount);
-                        } else {
-                            term = new UEOLSet(consCount);
+                        boolean negative = false;
+                        if (lexemes.peek() == Lexer.CHAR_CARET) {
+                            negative = true;
+                            lexemes.next();
                         }
-                    } else {
-                        if (!hasFlag(TPattern.UNIX_LINES)) {
-                            term = new MultiLineEOLSet(consCount);
-                        } else {
-                            term = new UMultiLineEOLSet(consCount);
-                        }
+
+                        term = processRange(negative, last);
+                        if (lexemes.peek() != Lexer.CHAR_RIGHT_SQUARE_BRACKET)
+                            throw new TPatternSyntaxException("", lexemes.toString(), lexemes.getIndex());
+                        lexemes.setMode(Lexer.MODE_PATTERN);
+                        lexemes.next();
+                        break;
                     }
 
-                    break;
-                }
+                    case Lexer.CHAR_DOT: {
+                        lexemes.next();
 
-                case Lexer.CHAR_WORD_BOUND: {
-                    lexemes.next();
-                    term = new WordBoundary(true);
-                    break;
-                }
+                        if (!hasFlag(TPattern.DOTALL)) {
+                            term = new DotSet(AbstractLineTerminator.getInstance(flags));
+                        } else {
+                            term = new DotAllSet();
+                        }
 
-                case Lexer.CHAR_NONWORD_BOUND: {
-                    lexemes.next();
-                    term = new WordBoundary(false);
-                    break;
-                }
+                        break;
+                    }
 
-                case Lexer.CHAR_END_OF_INPUT: {
-                    lexemes.next();
-                    term = new EOISet();
-                    break;
-                }
-
-                case Lexer.CHAR_END_OF_LINE: {
-                    lexemes.next();
-                    term = new EOLSet(++consCount);
-                    break;
-                }
-
-                case Lexer.CHAR_START_OF_INPUT: {
-                    lexemes.next();
-                    term = new SOLSet();
-                    break;
-                }
-
-                case Lexer.CHAR_PREVIOUS_MATCH: {
-                    lexemes.next();
-                    term = new PreviousMatch();
-                    break;
-                }
-
-                case 0x80000000 | '1':
-                case 0x80000000 | '2':
-                case 0x80000000 | '3':
-                case 0x80000000 | '4':
-                case 0x80000000 | '5':
-                case 0x80000000 | '6':
-                case 0x80000000 | '7':
-                case 0x80000000 | '8':
-                case 0x80000000 | '9': {
-                    int number = (ch & 0x7FFFFFFF) - '0';
-                    if (globalGroupIndex >= number) {
+                    case Lexer.CHAR_CARET: {
                         lexemes.next();
                         consCount++;
-                        if (!hasFlag(TPattern.CASE_INSENSITIVE)) {
-                            term = new BackReferenceSet(number, consCount);
-                        } else if (!hasFlag(TPattern.UNICODE_CASE)) {
-                            term = new CIBackReferenceSet(number, consCount);
+                        if (!hasFlag(TPattern.MULTILINE)) {
+                            term = new SOLSet();
                         } else {
-                            term = new UCIBackReferenceSet(number, consCount);
+                            term = new MultiLineSOLSet(AbstractLineTerminator.getInstance(flags));
                         }
-                        (backRefs [number]).isBackReferenced = true;
-                        needsBackRefReplacement = true;
-                        break;
-                    } else {
-                        throw new TPatternSyntaxException("", lexemes.toString(), lexemes.getIndex());
-                    }
-                }
 
-                case 0: {
-                    AbstractCharClass cc = null;
-                    if ((cc = (AbstractCharClass) lexemes.peekSpecial()) != null) {
-                        term = processRangeSet(cc);
-                    } else if (!lexemes.isEmpty()) {
-
-                        //ch == 0
-                        term = new CharSet((char) ch);
-                    } else {
-                    	term = new EmptySet(last);
                         break;
                     }
-                    lexemes.next();
-                    break;
-                }
 
-                default: {
-                    if (ch >= 0 && !lexemes.isSpecial()) {
-                        term = processCharSet(ch);
+                    case Lexer.CHAR_DOLLAR: {
                         lexemes.next();
-                    } else if (ch == Lexer.CHAR_VERTICAL_BAR) {
-                    	term = new EmptySet(last);
-                    } else if (ch == Lexer.CHAR_RIGHT_PARENTHESIS) {
-                        if (last instanceof FinalSet) {
-                        	throw new TPatternSyntaxException("", lexemes.toString(), lexemes.getIndex());
+                        consCount++;
+                        if (!hasFlag(TPattern.MULTILINE)) {
+                            if (!hasFlag(TPattern.UNIX_LINES)) {
+                                term = new EOLSet(consCount);
+                            } else {
+                                term = new UEOLSet(consCount);
+                            }
                         } else {
-                    	    term = new EmptySet(last);
+                            if (!hasFlag(TPattern.UNIX_LINES)) {
+                                term = new MultiLineEOLSet(consCount);
+                            } else {
+                                term = new UMultiLineEOLSet(consCount);
+                            }
                         }
-                    } else {
-                        throw new TPatternSyntaxException(
-                                 (lexemes.isSpecial() ? lexemes.peekSpecial()
-                                        .toString() : Character
-                                        .toString((char) ch)), lexemes
-                                .toString(), lexemes.getIndex());
+
+                        break;
                     }
-                }
+
+                    case Lexer.CHAR_WORD_BOUND: {
+                        lexemes.next();
+                        term = new WordBoundary(true);
+                        break;
+                    }
+
+                    case Lexer.CHAR_NONWORD_BOUND: {
+                        lexemes.next();
+                        term = new WordBoundary(false);
+                        break;
+                    }
+
+                    case Lexer.CHAR_END_OF_INPUT: {
+                        lexemes.next();
+                        term = new EOISet();
+                        break;
+                    }
+
+                    case Lexer.CHAR_END_OF_LINE: {
+                        lexemes.next();
+                        term = new EOLSet(++consCount);
+                        break;
+                    }
+
+                    case Lexer.CHAR_START_OF_INPUT: {
+                        lexemes.next();
+                        term = new SOLSet();
+                        break;
+                    }
+
+                    case Lexer.CHAR_PREVIOUS_MATCH: {
+                        lexemes.next();
+                        term = new PreviousMatch();
+                        break;
+                    }
+
+                    case 0x80000000 | '1':
+                    case 0x80000000 | '2':
+                    case 0x80000000 | '3':
+                    case 0x80000000 | '4':
+                    case 0x80000000 | '5':
+                    case 0x80000000 | '6':
+                    case 0x80000000 | '7':
+                    case 0x80000000 | '8':
+                    case 0x80000000 | '9': {
+                        int number = (ch & 0x7FFFFFFF) - '0';
+                        if (globalGroupIndex >= number) {
+                            lexemes.next();
+                            consCount++;
+                            if (!hasFlag(TPattern.CASE_INSENSITIVE)) {
+                                term = new BackReferenceSet(number, consCount);
+                            } else if (!hasFlag(TPattern.UNICODE_CASE)) {
+                                term = new CIBackReferenceSet(number, consCount);
+                            } else {
+                                term = new UCIBackReferenceSet(number, consCount);
+                            }
+                            (backRefs[number]).isBackReferenced = true;
+                            needsBackRefReplacement = true;
+                            break;
+                        } else {
+                            throw new TPatternSyntaxException("", lexemes.toString(), lexemes.getIndex());
+                        }
+                    }
+
+                    case 0: {
+                        AbstractCharClass cc = null;
+                        if ((cc = (AbstractCharClass)lexemes.peekSpecial()) != null) {
+                            term = processRangeSet(cc);
+                        } else if (!lexemes.isEmpty()) {
+
+                            // ch == 0
+                            term = new CharSet((char)ch);
+                        } else {
+                            term = new EmptySet(last);
+                            break;
+                        }
+                        lexemes.next();
+                        break;
+                    }
+
+                    default: {
+                        if (ch >= 0 && !lexemes.isSpecial()) {
+                            term = processCharSet(ch);
+                            lexemes.next();
+                        } else if (ch == Lexer.CHAR_VERTICAL_BAR) {
+                            term = new EmptySet(last);
+                        } else if (ch == Lexer.CHAR_RIGHT_PARENTHESIS) {
+                            if (last instanceof FinalSet) {
+                                throw new TPatternSyntaxException("", lexemes.toString(), lexemes.getIndex());
+                            } else {
+                                term = new EmptySet(last);
+                            }
+                        } else {
+                            throw new TPatternSyntaxException((lexemes.isSpecial() ? lexemes.peekSpecial().toString()
+                                    : Character.toString((char)ch)), lexemes.toString(), lexemes.getIndex());
+                        }
+                    }
                 }
         } while (ch == Lexer.CHAR_FLAGS);
         return term;
@@ -1050,154 +1003,146 @@ public final class TPattern implements Serializable {
      * process [...] ranges
      */
     private CharClass processRangeExpression(boolean alt) {
-        CharClass res = new CharClass(alt, hasFlag(TPattern.CASE_INSENSITIVE),
-                hasFlag(TPattern.UNICODE_CASE));
+        CharClass res = new CharClass(alt, hasFlag(TPattern.CASE_INSENSITIVE), hasFlag(TPattern.UNICODE_CASE));
         int buffer = -1;
         boolean intersection = false;
         boolean notClosed = false;
         boolean firstInClass = true;
 
-        while (!lexemes.isEmpty()
-                && (notClosed = (lexemes.peek()) != Lexer.CHAR_RIGHT_SQUARE_BRACKET
-                        || firstInClass)) {
+        while (!lexemes.isEmpty() && (notClosed = (lexemes.peek()) != Lexer.CHAR_RIGHT_SQUARE_BRACKET || firstInClass)) {
             switch (lexemes.peek()) {
 
-            case Lexer.CHAR_RIGHT_SQUARE_BRACKET: {
-                if (buffer >= 0)
-                    res.add(buffer);
-                buffer = ']';
-                lexemes.next();
-                break;
-            }
-            case Lexer.CHAR_LEFT_SQUARE_BRACKET: {
-                if (buffer >= 0) {
-                    res.add(buffer);
-                    buffer = -1;
-                }
-                lexemes.next();
-                boolean negative = false;
-                if (lexemes.peek() == Lexer.CHAR_CARET) {
-                    lexemes.next();
-                    negative = true;
-                }
-
-                if (intersection)
-                    res.intersection(processRangeExpression(negative));
-                else
-                    res.union(processRangeExpression(negative));
-                intersection = false;
-                lexemes.next();
-                break;
-            }
-
-            case Lexer.CHAR_AMPERSAND: {
-                if (buffer >= 0)
-                    res.add(buffer);
-                buffer = lexemes.next();
-
-                /*
-                 * if there is a start for subrange we will do an intersection
-                 * otherwise treat '&' as a normal character
-                 */
-                if (lexemes.peek() == Lexer.CHAR_AMPERSAND) {
-                    if (lexemes.lookAhead()
-                            == Lexer.CHAR_LEFT_SQUARE_BRACKET) {
-                        lexemes.next();
-                        intersection = true;
-                        buffer = -1;
-                    } else {
-                        lexemes.next();
-                        if (firstInClass) {
-
-                            //skip "&&" at "[&&...]" or "[^&&...]"
-                            res = processRangeExpression(false);
-                        } else {
-
-                            //ignore "&&" at "[X&&]" ending where X != empty string
-                            if (!(lexemes.peek()
-                                    == Lexer.CHAR_RIGHT_SQUARE_BRACKET)) {
-                                res.intersection(processRangeExpression(false));
-                            }
-                        }
-
-                    }
-                } else {
-
-                    //treat '&' as a normal character
-                    buffer = '&';
-                }
-
-                break;
-            }
-
-            case Lexer.CHAR_HYPHEN: {
-                if (firstInClass
-                        || lexemes.lookAhead() == Lexer.CHAR_RIGHT_SQUARE_BRACKET
-                        || lexemes.lookAhead() == Lexer.CHAR_LEFT_SQUARE_BRACKET
-                        || buffer < 0) {
-                    // treat hypen as normal character
+                case Lexer.CHAR_RIGHT_SQUARE_BRACKET: {
                     if (buffer >= 0)
                         res.add(buffer);
-                    buffer = '-';
+                    buffer = ']';
                     lexemes.next();
-                    // range
-                } else {
+                    break;
+                }
+                case Lexer.CHAR_LEFT_SQUARE_BRACKET: {
+                    if (buffer >= 0) {
+                        res.add(buffer);
+                        buffer = -1;
+                    }
                     lexemes.next();
-                    int cur = lexemes.peek();
+                    boolean negative = false;
+                    if (lexemes.peek() == Lexer.CHAR_CARET) {
+                        lexemes.next();
+                        negative = true;
+                    }
 
-                    if (!lexemes.isSpecial()
-                            && (cur >= 0
-                                    || lexemes.lookAhead() == Lexer.CHAR_RIGHT_SQUARE_BRACKET
-                                    || lexemes.lookAhead() == Lexer.CHAR_LEFT_SQUARE_BRACKET || buffer < 0)) {
+                    if (intersection)
+                        res.intersection(processRangeExpression(negative));
+                    else
+                        res.union(processRangeExpression(negative));
+                    intersection = false;
+                    lexemes.next();
+                    break;
+                }
 
-                        try {
-                            if (!Lexer.isLetter(cur)) {
-                                cur = cur & 0xFFFF;
+                case Lexer.CHAR_AMPERSAND: {
+                    if (buffer >= 0)
+                        res.add(buffer);
+                    buffer = lexemes.next();
+
+                    /*
+                     * if there is a start for subrange we will do an
+                     * intersection otherwise treat '&' as a normal character
+                     */
+                    if (lexemes.peek() == Lexer.CHAR_AMPERSAND) {
+                        if (lexemes.lookAhead() == Lexer.CHAR_LEFT_SQUARE_BRACKET) {
+                            lexemes.next();
+                            intersection = true;
+                            buffer = -1;
+                        } else {
+                            lexemes.next();
+                            if (firstInClass) {
+
+                                // skip "&&" at "[&&...]" or "[^&&...]"
+                                res = processRangeExpression(false);
+                            } else {
+
+                                // ignore "&&" at "[X&&]" ending where X !=
+                                // empty string
+                                if (!(lexemes.peek() == Lexer.CHAR_RIGHT_SQUARE_BRACKET)) {
+                                    res.intersection(processRangeExpression(false));
+                                }
                             }
-                            res.add(buffer, cur);
-                        } catch (Exception e) {
+
+                        }
+                    } else {
+
+                        // treat '&' as a normal character
+                        buffer = '&';
+                    }
+
+                    break;
+                }
+
+                case Lexer.CHAR_HYPHEN: {
+                    if (firstInClass || lexemes.lookAhead() == Lexer.CHAR_RIGHT_SQUARE_BRACKET ||
+                            lexemes.lookAhead() == Lexer.CHAR_LEFT_SQUARE_BRACKET || buffer < 0) {
+                        // treat hypen as normal character
+                        if (buffer >= 0)
+                            res.add(buffer);
+                        buffer = '-';
+                        lexemes.next();
+                        // range
+                    } else {
+                        lexemes.next();
+                        int cur = lexemes.peek();
+
+                        if (!lexemes.isSpecial() &&
+                                (cur >= 0 || lexemes.lookAhead() == Lexer.CHAR_RIGHT_SQUARE_BRACKET ||
+                                        lexemes.lookAhead() == Lexer.CHAR_LEFT_SQUARE_BRACKET || buffer < 0)) {
+
+                            try {
+                                if (!Lexer.isLetter(cur)) {
+                                    cur = cur & 0xFFFF;
+                                }
+                                res.add(buffer, cur);
+                            } catch (Exception e) {
+                                throw new TPatternSyntaxException("", pattern(), lexemes.getIndex());
+                            }
+                            lexemes.next();
+                            buffer = -1;
+                        } else {
                             throw new TPatternSyntaxException("", pattern(), lexemes.getIndex());
                         }
-                        lexemes.next();
+                    }
+
+                    break;
+                }
+
+                case Lexer.CHAR_CARET: {
+                    if (buffer >= 0)
+                        res.add(buffer);
+                    buffer = '^';
+                    lexemes.next();
+                    break;
+                }
+
+                case 0: {
+                    if (buffer >= 0)
+                        res.add(buffer);
+                    AbstractCharClass cs = (AbstractCharClass)lexemes.peekSpecial();
+                    if (cs != null) {
+                        res.add(cs);
                         buffer = -1;
                     } else {
-                        throw new TPatternSyntaxException("", pattern(), lexemes.getIndex());
+                        buffer = 0;
                     }
+
+                    lexemes.next();
+                    break;
                 }
 
-                break;
-            }
-
-            case Lexer.CHAR_CARET: {
-                if (buffer >= 0)
-                    res.add(buffer);
-                buffer = '^';
-                lexemes.next();
-                break;
-            }
-
-            case 0: {
-                if (buffer >= 0)
-                    res.add(buffer);
-                AbstractCharClass cs = (AbstractCharClass) lexemes
-                        .peekSpecial();
-                if (cs != null) {
-                    res.add(cs);
-                    buffer = -1;
-                } else {
-                    buffer = 0;
+                default: {
+                    if (buffer >= 0)
+                        res.add(buffer);
+                    buffer = lexemes.next();
+                    break;
                 }
-
-                lexemes.next();
-                break;
-            }
-
-            default: {
-                if (buffer >= 0)
-                    res.add(buffer);
-                buffer = lexemes.next();
-                break;
-            }
             }
 
             firstInClass = false;
@@ -1211,28 +1156,25 @@ public final class TPattern implements Serializable {
     }
 
     private AbstractSet processCharSet(int ch) {
-        boolean isSupplCodePoint = Character
-                .isSupplementaryCodePoint(ch);
+        boolean isSupplCodePoint = Character.isSupplementaryCodePoint(ch);
 
         if (hasFlag(TPattern.CASE_INSENSITIVE)) {
 
-            if ((ch >= 'a' && ch <= 'z')
-                    || (ch >= 'A' && ch <= 'Z')) {
-                return new CICharSet((char) ch);
-            } else if (hasFlag(TPattern.UNICODE_CASE)
-                    && ch > 128) {
+            if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')) {
+                return new CICharSet((char)ch);
+            } else if (hasFlag(TPattern.UNICODE_CASE) && ch > 128) {
                 if (isSupplCodePoint) {
                     return new UCISupplCharSet(ch);
                 } else if (Lexer.isLowSurrogate(ch)) {
 
-                    //we need no UCILowSurrogateCharSet
-                    return new LowSurrogateCharSet((char) ch);
+                    // we need no UCILowSurrogateCharSet
+                    return new LowSurrogateCharSet((char)ch);
                 } else if (Lexer.isHighSurrogate(ch)) {
 
-                    //we need no UCIHighSurrogateCharSet
-                    return new HighSurrogateCharSet((char) ch);
+                    // we need no UCIHighSurrogateCharSet
+                    return new HighSurrogateCharSet((char)ch);
                 } else {
-                    return new UCICharSet((char) ch);
+                    return new UCICharSet((char)ch);
                 }
             }
         }
@@ -1240,40 +1182,33 @@ public final class TPattern implements Serializable {
         if (isSupplCodePoint) {
             return new SupplCharSet(ch);
         } else if (Lexer.isLowSurrogate(ch)) {
-            return new LowSurrogateCharSet((char) ch);
+            return new LowSurrogateCharSet((char)ch);
         } else if (Lexer.isHighSurrogate(ch)) {
-            return new HighSurrogateCharSet((char) ch);
+            return new HighSurrogateCharSet((char)ch);
         } else {
-            return new CharSet((char) ch);
+            return new CharSet((char)ch);
         }
     }
 
     private AbstractSet processRangeSet(AbstractCharClass charClass) {
         if (charClass.hasLowHighSurrogates()) {
             AbstractCharClass surrogates = charClass.getSurrogates();
-            LowHighSurrogateRangeSet lowHighSurrRangeSet
-                    = new LowHighSurrogateRangeSet(surrogates);
+            LowHighSurrogateRangeSet lowHighSurrRangeSet = new LowHighSurrogateRangeSet(surrogates);
 
             if (charClass.mayContainSupplCodepoints()) {
                 if (!charClass.hasUCI()) {
-                    return new CompositeRangeSet(
-                            new SupplRangeSet(charClass.getWithoutSurrogates()),
+                    return new CompositeRangeSet(new SupplRangeSet(charClass.getWithoutSurrogates()),
                             lowHighSurrRangeSet);
                 } else {
-                    return new CompositeRangeSet(
-                            new UCISupplRangeSet(charClass.getWithoutSurrogates()),
+                    return new CompositeRangeSet(new UCISupplRangeSet(charClass.getWithoutSurrogates()),
                             lowHighSurrRangeSet);
                 }
             }
 
             if (!charClass.hasUCI()) {
-                return new CompositeRangeSet(
-                        new RangeSet(charClass.getWithoutSurrogates()),
-                        lowHighSurrRangeSet);
+                return new CompositeRangeSet(new RangeSet(charClass.getWithoutSurrogates()), lowHighSurrRangeSet);
             } else {
-                return new CompositeRangeSet(
-                        new UCIRangeSet(charClass.getWithoutSurrogates()),
-                        lowHighSurrRangeSet);
+                return new CompositeRangeSet(new UCIRangeSet(charClass.getWithoutSurrogates()), lowHighSurrRangeSet);
             }
         }
 
@@ -1294,8 +1229,8 @@ public final class TPattern implements Serializable {
 
     /**
      * Compiles a regular expression, creating a new Pattern instance in the
-     * process. This is actually a convenience method that calls {@link
-     * #compile(String, int)} with a {@code flags} value of zero.
+     * process. This is actually a convenience method that calls
+     * {@link #compile(String, int)} with a {@code flags} value of zero.
      *
      * @param pattern
      *            the regular expression.
@@ -1310,17 +1245,16 @@ public final class TPattern implements Serializable {
     }
 
     /*
-     * This method do traverses of
-     * automata to finish compilation.
+     * This method do traverses of automata to finish compilation.
      */
     private void finalizeCompile() {
 
-    	/*
-    	 * Processing second pass
-    	 */
-    	if (needsBackRefReplacement) { //|| needsReason1 || needsReason2) {
-    		start.processSecondPass();
-    	}
+        /*
+         * Processing second pass
+         */
+        if (needsBackRefReplacement) { // || needsReason1 || needsReason2) {
+            start.processSecondPass();
+        }
 
     }
 
@@ -1414,14 +1348,13 @@ public final class TPattern implements Serializable {
     /**
      * Serialization support
      */
-    private void readObject(java.io.ObjectInputStream s)
-            throws java.io.IOException, ClassNotFoundException {
+    private void readObject(java.io.ObjectInputStream s) throws java.io.IOException, ClassNotFoundException {
         s.defaultReadObject();
         AbstractSet.counter = 1;
         globalGroupIndex = -1;
         compCount = -1;
         consCount = -1;
-        backRefs = new FSet [BACK_REF_NUMBER];
+        backRefs = new FSet[BACK_REF_NUMBER];
 
         compileImpl(pattern, flags);
 

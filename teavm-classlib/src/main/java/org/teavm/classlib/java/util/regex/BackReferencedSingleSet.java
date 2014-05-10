@@ -37,22 +37,19 @@
 package org.teavm.classlib.java.util.regex;
 
 /**
- * Group node over subexpression w/o alternations.
- * This node is used if current group is referenced
- * via backreference.
+ * Group node over subexpression w/o alternations. This node is used if current
+ * group is referenced via backreference.
  */
 
 class BackReferencedSingleSet extends SingleSet {
 
     /*
-     * This class is needed only for overwriting find()
-     * and findBack() methods of SingleSet class, which is being
-     * back referenced. The following example explains the need
-     * for such substitution:
-     * Let's consider the pattern ".*(.)\\1".
-     * Leading .* works as follows: finds line terminator and runs findBack
-     * from that point. findBack method in its turn (in contrast to matches)
-     * sets group boundaries on the back trace. Thus at the point we
+     * This class is needed only for overwriting find() and findBack() methods
+     * of SingleSet class, which is being back referenced. The following example
+     * explains the need for such substitution: Let's consider the pattern
+     * ".*(.)\\1". Leading .* works as follows: finds line terminator and runs
+     * findBack from that point. findBack method in its turn (in contrast to
+     * matches) sets group boundaries on the back trace. Thus at the point we
      * try to match back reference(\\1) groups are not yet set.
      *
      * To fix this problem we replace backreferenced groups with instances of
@@ -60,51 +57,51 @@ class BackReferencedSingleSet extends SingleSet {
      * performance, but ensure correctness of the match.
      */
 
-	public BackReferencedSingleSet(AbstractSet child, FSet fSet) {
+    public BackReferencedSingleSet(AbstractSet child, FSet fSet) {
         super(child, fSet);
     }
 
-	public BackReferencedSingleSet(SingleSet node) {
-		super(node.kid, ((FSet) node.fSet));
-	}
+    public BackReferencedSingleSet(SingleSet node) {
+        super(node.kid, ((FSet)node.fSet));
+    }
 
-	public int find(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int find(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         int res = 0;
         int lastIndex = matchResult.getRightBound();
         int startSearch = stringIndex;
 
         for (; startSearch <= lastIndex; startSearch++) {
-             int saveStart = matchResult.getStart(groupIndex);
+            int saveStart = matchResult.getStart(groupIndex);
 
-             matchResult.setStart(groupIndex, startSearch);
-             res = kid.matches(startSearch, testString, matchResult);
-             if (res >= 0) {
-             	 res = startSearch;
-             	 break;
-             } else {
-          		 matchResult.setStart(groupIndex, saveStart);
-           	 }
+            matchResult.setStart(groupIndex, startSearch);
+            res = kid.matches(startSearch, testString, matchResult);
+            if (res >= 0) {
+                res = startSearch;
+                break;
+            } else {
+                matchResult.setStart(groupIndex, saveStart);
+            }
         }
 
         return res;
     }
 
-    public int findBack(int stringIndex, int lastIndex,
-            CharSequence testString, MatchResultImpl matchResult) {
+    @Override
+    public int findBack(int stringIndex, int lastIndex, CharSequence testString, MatchResultImpl matchResult) {
         int res = 0;
         int startSearch = lastIndex;
 
         for (; startSearch >= stringIndex; startSearch--) {
-        	int saveStart = matchResult.getStart(groupIndex);
+            int saveStart = matchResult.getStart(groupIndex);
 
             matchResult.setStart(groupIndex, startSearch);
             res = kid.matches(startSearch, testString, matchResult);
             if (res >= 0) {
-            	res = startSearch;
-            	break;
+                res = startSearch;
+                break;
             } else {
-            	matchResult.setStart(groupIndex, saveStart);
+                matchResult.setStart(groupIndex, saveStart);
             }
         }
 
@@ -112,11 +109,12 @@ class BackReferencedSingleSet extends SingleSet {
     }
 
     /**
-     * This method is used for replacement backreferenced
-     * sets.
+     * This method is used for replacement backreferenced sets.
      *
-     * @param prev - node who references to this node
+     * @param prev
+     *            - node who references to this node
      */
+    @Override
     public JointSet processBackRefReplacement() {
         return null;
     }

@@ -22,26 +22,24 @@ package org.teavm.classlib.java.util.regex;
 
 /**
  * Possessive composite (i.e. {n,m}) quantifier node over groups.
+ *
  * @author Nikolay A. Kuznetsov
  */
 class PosCompositeGroupQuantifierSet extends CompositeGroupQuantifierSet {
 
-    public PosCompositeGroupQuantifierSet(Quantifier quant,
-            AbstractSet innerSet, AbstractSet next, int type, int setCounter) {
+    public PosCompositeGroupQuantifierSet(Quantifier quant, AbstractSet innerSet, AbstractSet next, int type,
+            int setCounter) {
         super(quant, innerSet, next, type, setCounter);
         innerSet.setNext(FSet.posFSet);
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
-
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         int nextIndex;
         int counter = 0;
         int max = quantifier.max();
 
-        while ((nextIndex = innerSet.matches(stringIndex, testString,
-                matchResult)) > stringIndex
-                && counter < max) {
+        while ((nextIndex = innerSet.matches(stringIndex, testString, matchResult)) > stringIndex && counter < max) {
             counter++;
             stringIndex = nextIndex;
         }

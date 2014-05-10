@@ -21,8 +21,8 @@
 package org.teavm.classlib.java.util.regex;
 
 /**
- * Special node for ".*" construction for any character
- * including line terminators.
+ * Special node for ".*" construction for any character including line
+ * terminators.
  *
  * @author Nikolay A. Kuznetsov
  */
@@ -32,8 +32,8 @@ class DotAllQuantifierSet extends QuantifierSet {
         super(innerSet, next, type);
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
 
         int strLength = matchResult.getRightBound();
 
@@ -43,8 +43,8 @@ class DotAllQuantifierSet extends QuantifierSet {
         return next.findBack(stringIndex, strLength, testString, matchResult);
     }
 
-    public int find(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int find(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         int strLength = matchResult.getRightBound();
         if (next.findBack(stringIndex, strLength, testString, matchResult) >= 0) {
             return stringIndex;
@@ -53,6 +53,7 @@ class DotAllQuantifierSet extends QuantifierSet {
         }
     }
 
+    @Override
     protected String getName() {
         return "<DotAllQuant>";
     }

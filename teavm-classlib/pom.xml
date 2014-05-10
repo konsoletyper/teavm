@@ -83,6 +83,7 @@
             <argument>java.util</argument>
             <argument>java.util.logging</argument>
             <argument>java.util.concurrent</argument>
+            <argument>java.util.regex</argument>
             <argument>-output</argument>
             <argument>${project.build.directory}/jcl-report</argument>
           </arguments>

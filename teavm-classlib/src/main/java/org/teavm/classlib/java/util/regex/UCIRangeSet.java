@@ -44,12 +44,14 @@ class UCIRangeSet extends LeafSet {
         this.alt = cc.alt;
     }
 
+    @Override
     public int accepts(int strIndex, CharSequence testString) {
         return (chars.contains(Character.toLowerCase(Character
                 .toUpperCase(testString.charAt(strIndex))))) ? 1 : -1;
     }
 
+    @Override
     protected String getName() {
-        return "UCI range:" + (alt ? "^ " : " ") + chars.toString(); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+        return "UCI range:" + (alt ? "^ " : " ") + chars.toString();
     }
 }

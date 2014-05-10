@@ -22,10 +22,9 @@ package org.teavm.classlib.java.util.regex;
 
 import java.util.Arrays;
 
-
 /**
- * Match result implementation
- * Note: probably it might make sense to combine this class with Matcher.
+ * Match result implementation Note: probably it might make sense to combine
+ * this class with Matcher.
  *
  * @author Nikolay A. Kuznetsov
  */
@@ -61,8 +60,8 @@ class MatchResultImpl implements TMatchResult {
 
     private int mode;
 
-    MatchResultImpl(CharSequence string, int leftBound, int rightBound,
-            int groupCount, int compQuantCount, int consumersCount) {
+    MatchResultImpl(CharSequence string, int leftBound, int rightBound, int groupCount, int compQuantCount,
+            int consumersCount) {
         this.groupCount = ++groupCount;
         this.groupBounds = new int[groupCount * 2];
 
@@ -76,13 +75,12 @@ class MatchResultImpl implements TMatchResult {
     }
 
     TMatchResult cloneImpl() {
-        MatchResultImpl res = new MatchResultImpl(this.string, this.leftBound,
-                this.rightBound, this.groupCount - 1, 0, 0);
+        MatchResultImpl res = new MatchResultImpl(this.string, this.leftBound, this.rightBound, this.groupCount - 1, 0,
+                0);
 
         res.valid = valid;
         if (valid) {
-            System.arraycopy(groupBounds, 0, res.groupBounds, 0,
-                    this.groupBounds.length);
+            System.arraycopy(groupBounds, 0, res.groupBounds, 0, this.groupBounds.length);
         }
         return res;
     }
@@ -95,10 +93,12 @@ class MatchResultImpl implements TMatchResult {
         return this.consumers[counter];
     }
 
+    @Override
     public int end() {
         return end(0);
     }
 
+    @Override
     public int end(int group) {
         checkGroup(group);
         return groupBounds[group * 2 + 1];
@@ -120,10 +120,12 @@ class MatchResultImpl implements TMatchResult {
         return groupBounds[group * 2 + 1];
     }
 
+    @Override
     public String group() {
         return group(0);
     }
 
+    @Override
     public String group(int group) {
         if (start(group) < 0)
             return null;
@@ -139,14 +141,17 @@ class MatchResultImpl implements TMatchResult {
         return string.subSequence(st, end).toString();
     }
 
+    @Override
     public int groupCount() {
         return groupCount - 1;
     }
 
+    @Override
     public int start() {
         return start(0);
     }
 
+    @Override
     public int start(int group) {
         checkGroup(group);
         return groupBounds[group * 2];

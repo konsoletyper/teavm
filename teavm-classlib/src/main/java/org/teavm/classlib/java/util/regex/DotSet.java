@@ -34,8 +34,8 @@ final class DotSet extends JointSet {
         this.lt = lt;
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-        MatchResultImpl matchResult) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         int strLength = matchResult.getRightBound();
 
         if (stringIndex + 1 > strLength) {
@@ -48,32 +48,35 @@ final class DotSet extends JointSet {
             char low = testString.charAt(stringIndex + 1);
 
             if (Character.isSurrogatePair(high, low)) {
-                return lt.isLineTerminator(Character.toCodePoint(high, low))? -1
-                : next.matches(stringIndex + 2, testString, matchResult);
+                return lt.isLineTerminator(Character.toCodePoint(high, low)) ? -1 : next.matches(stringIndex + 2,
+                        testString, matchResult);
             }
         }
 
-        return lt.isLineTerminator(high)? -1
-               : next.matches(stringIndex + 1, testString, matchResult);
+        return lt.isLineTerminator(high) ? -1 : next.matches(stringIndex + 1, testString, matchResult);
     }
 
+    @Override
     protected String getName() {
         return "."; //$NON-NLS-1$
     }
 
-
+    @Override
     public AbstractSet getNext() {
         return this.next;
     }
 
+    @Override
     public void setNext(AbstractSet next) {
         this.next = next;
     }
 
+    @Override
     public int getType() {
         return AbstractSet.TYPE_DOTSET;
     }
 
+    @Override
     public boolean hasConsumed(MatchResultImpl matchResult) {
         return true;
     }

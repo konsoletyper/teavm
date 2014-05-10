@@ -22,17 +22,17 @@ package org.teavm.classlib.java.util.regex;
 
 /**
  * Reluctant version of "?" quantifier set over group.
+ *
  * @author Nikolay A. Kuznetsov
  */
 class RelAltGroupQuantifierSet extends AltGroupQuantifierSet {
 
-    public RelAltGroupQuantifierSet(AbstractSet innerSet, AbstractSet next,
-            int type) {
+    public RelAltGroupQuantifierSet(AbstractSet innerSet, AbstractSet next, int type) {
         super(innerSet, next, type);
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
 
         if (!innerSet.hasConsumed(matchResult))
             return next.matches(stringIndex, testString, matchResult);

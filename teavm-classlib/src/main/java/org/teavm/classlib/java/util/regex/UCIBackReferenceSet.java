@@ -33,26 +33,24 @@ class UCIBackReferenceSet extends CIBackReferenceSet {
         super(groupIndex, consCounter);
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         String group = getString(matchResult);
 
-        if (group == null
-                || (stringIndex + group.length()) > matchResult.getRightBound())
+        if (group == null || (stringIndex + group.length()) > matchResult.getRightBound())
             return -1;
 
         for (int i = 0; i < group.length(); i++) {
-            if (Character.toLowerCase(Character.toUpperCase(group.charAt(i))) != Character
-                    .toLowerCase(Character.toUpperCase(testString
-                            .charAt(stringIndex + i)))) {
+            if (Character.toLowerCase(Character.toUpperCase(group.charAt(i))) != Character.toLowerCase(Character
+                    .toUpperCase(testString.charAt(stringIndex + i)))) {
                 return -1;
             }
         }
         matchResult.setConsumed(consCounter, group.length());
-        return next.matches(stringIndex + group.length(), testString,
-                matchResult);
+        return next.matches(stringIndex + group.length(), testString, matchResult);
     }
 
+    @Override
     public String getName() {
         return "UCI back reference: " + this.groupIndex; //$NON-NLS-1$
     }

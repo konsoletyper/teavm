@@ -91,15 +91,15 @@ public class TPatternSyntaxException extends IllegalArgumentException {
      *
      * @return the error message.
      */
+    @Override
     public String getMessage() {
-        String filler = ""; //$NON-NLS-1$
+        String filler = "";
         if (index >= 1) {
             char[] temp = new char[index];
             Arrays.fill(temp, ' ');
             filler = new String(temp);
         }
-        return desc
-                + ((pattern != null && pattern.length() != 0) ? index + ", " + pattern + ", " + filler : "");
+        return desc + ((pattern != null && pattern.length() != 0) ? index + ", " + pattern + ", " + filler : "");
     }
 
     /**

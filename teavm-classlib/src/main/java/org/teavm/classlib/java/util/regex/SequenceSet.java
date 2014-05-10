@@ -55,10 +55,12 @@ class SequenceSet extends LeafSet {
         }
     }
 
+    @Override
     public int accepts(int strIndex, CharSequence testString) {
         return startsWith(testString, strIndex) ? charCount : -1;
     }
 
+    @Override
     public int find(int strIndex, CharSequence testString,
             MatchResultImpl matchResult) {
 
@@ -78,6 +80,7 @@ class SequenceSet extends LeafSet {
         return -1;
     }
 
+    @Override
     public int findBack(int strIndex, int lastIndex, CharSequence testString,
             MatchResultImpl matchResult) {
 
@@ -95,10 +98,12 @@ class SequenceSet extends LeafSet {
         return -1;
     }
 
+    @Override
     public String getName() {
         return "sequence: " + string; //$NON-NLS-1$
     }
 
+    @Override
     public boolean first(AbstractSet set) {
         if (set instanceof CharSet) {
             return ((CharSet) set).getChar() == string.charAt(0);

@@ -31,13 +31,14 @@ class NonCapJointSet extends JointSet {
     protected NonCapJointSet() {
     }
 
-    public NonCapJointSet(ArrayList children, FSet fSet) {
+    public NonCapJointSet(ArrayList<AbstractSet> children, FSet fSet) {
         super(children, fSet);
     }
 
     /**
      * Returns stringIndex+shift, the next position to match
      */
+    @Override
     public int matches(int stringIndex, CharSequence testString,
             MatchResultImpl matchResult) {
         int start = matchResult.getConsumed(groupIndex);
@@ -45,7 +46,7 @@ class NonCapJointSet extends JointSet {
 
         int size = children.size();
         for (int i = 0; i < size; i++) {
-            AbstractSet e = (AbstractSet) children.get(i);
+            AbstractSet e = children.get(i);
             int shift = e.matches(stringIndex, testString, matchResult);
             if (shift >= 0) {
                 return shift;
@@ -55,10 +56,12 @@ class NonCapJointSet extends JointSet {
         return -1;
     }
 
+    @Override
     protected String getName() {
         return "NonCapJointSet"; //$NON-NLS-1$
     }
 
+    @Override
     public boolean hasConsumed(MatchResultImpl matchResult) {
         int cons = matchResult.getConsumed(groupIndex);
         return cons != 0;

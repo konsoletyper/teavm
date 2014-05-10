@@ -33,10 +33,9 @@ final class UEOLSet extends AbstractSet {
         this.consCounter = counter;
     }
 
-    public int matches(int strIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
-        int rightBound = matchResult.hasAnchoringBounds() ? matchResult
-                .getRightBound() : testString.length();
+    @Override
+    public int matches(int strIndex, CharSequence testString, MatchResultImpl matchResult) {
+        int rightBound = matchResult.hasAnchoringBounds() ? matchResult.getRightBound() : testString.length();
 
         if (strIndex >= rightBound) {
             matchResult.setConsumed(consCounter, 0);
@@ -52,6 +51,7 @@ final class UEOLSet extends AbstractSet {
         return -1;
     }
 
+    @Override
     public boolean hasConsumed(MatchResultImpl matchResult) {
         int cons;
         boolean res = ((cons = matchResult.getConsumed(consCounter)) < 0 || cons > 0);
@@ -59,6 +59,7 @@ final class UEOLSet extends AbstractSet {
         return res;
     }
 
+    @Override
     protected String getName() {
         return "<EOL>"; //$NON-NLS-1$
     }

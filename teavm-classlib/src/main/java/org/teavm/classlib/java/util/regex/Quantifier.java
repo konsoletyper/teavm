@@ -64,18 +64,17 @@ class Quantifier extends SpecialToken implements Cloneable {
         return max;
     }
 
+    @Override
     public String toString() {
-        return "{" //$NON-NLS-1$
-                + min
-                + "," //$NON-NLS-1$
-                + ((max == Integer.MAX_VALUE) ? "" : new Integer(max) //$NON-NLS-1$
-                        .toString()) + "}"; //$NON-NLS-1$
+        return "{" + min + "," + ((max == Integer.MAX_VALUE) ? "" : new Integer(max).toString()) + "}";
     }
 
+    @Override
     public int getType() {
         return SpecialToken.TOK_QUANTIFIER;
     }
 
+    @Override
     public Object clone() {
         return new Quantifier(min, max);
     }

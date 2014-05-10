@@ -26,24 +26,24 @@ package org.teavm.classlib.java.util.regex;
  * @author Nikolay A. Kuznetsov
  */
 class NonCapFSet extends FSet {
-
     public NonCapFSet(int groupIndex) {
         super(groupIndex);
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
-
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         int gr = getGroupIndex();
         matchResult.setConsumed(gr, stringIndex - matchResult.getConsumed(gr));
 
         return next.matches(stringIndex, testString, matchResult);
     }
 
+    @Override
     protected String getName() {
-        return "NonCapFSet"; //$NON-NLS-1$
+        return "NonCapFSet";
     }
 
+    @Override
     public boolean hasConsumed(MatchResultImpl mr) {
         return false;
     }

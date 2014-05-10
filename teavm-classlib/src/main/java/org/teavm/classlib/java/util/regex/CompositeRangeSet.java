@@ -98,29 +98,26 @@
 package org.teavm.classlib.java.util.regex;
 
 /**
- * This class is used to split the range that contains surrogate
- * characters into two ranges: the first consisting of these surrogate
- * characters and the second consisting of all others characters
- * from the parent range.
- * This class represents the parent range split in such a manner.
+ * This class is used to split the range that contains surrogate characters into
+ * two ranges: the first consisting of these surrogate characters and the second
+ * consisting of all others characters from the parent range. This class
+ * represents the parent range split in such a manner.
  */
 class CompositeRangeSet extends JointSet {
 
-    //range without surrogates
+    // range without surrogates
     AbstractSet withoutSurrogates;
 
-    //range containing surrogates only
+    // range containing surrogates only
     AbstractSet withSurrogates;
 
-    public CompositeRangeSet(AbstractSet withoutSurrogates,
-            AbstractSet withSurrogates, AbstractSet next) {
+    public CompositeRangeSet(AbstractSet withoutSurrogates, AbstractSet withSurrogates, AbstractSet next) {
         this.withoutSurrogates = withoutSurrogates;
         this.withSurrogates = withSurrogates;
         setNext(next);
     }
 
-    public CompositeRangeSet(AbstractSet withoutSurrogates,
-            AbstractSet withSurrogates) {
+    public CompositeRangeSet(AbstractSet withoutSurrogates, AbstractSet withSurrogates) {
         this.withoutSurrogates = withoutSurrogates;
         this.withSurrogates = withSurrogates;
     }
@@ -128,12 +125,13 @@ class CompositeRangeSet extends JointSet {
     /**
      * Returns the next.
      */
+    @Override
     public AbstractSet getNext() {
         return this.next;
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         int shift = withoutSurrogates.matches(stringIndex, testString, matchResult);
 
         if (shift < 0) {
@@ -148,9 +146,11 @@ class CompositeRangeSet extends JointSet {
 
     /**
      * Sets next abstract set.
+     *
      * @param next
      *            The next to set.
      */
+    @Override
     public void setNext(AbstractSet next) {
         this.next = next;
         withSurrogates.setNext(next);
@@ -165,16 +165,17 @@ class CompositeRangeSet extends JointSet {
         return withoutSurrogates;
     }
 
+    @Override
     protected String getName() {
-        return "CompositeRangeSet: " + " <nonsurrogate> "
-                + withoutSurrogates + " <surrogate> "
-                + withSurrogates;
+        return "CompositeRangeSet: " + " <nonsurrogate> " + withoutSurrogates + " <surrogate> " + withSurrogates;
     }
 
+    @Override
     public boolean hasConsumed(MatchResultImpl matchResult) {
         return true;
     }
 
+    @Override
     public boolean first(AbstractSet set) {
         return true;
     }

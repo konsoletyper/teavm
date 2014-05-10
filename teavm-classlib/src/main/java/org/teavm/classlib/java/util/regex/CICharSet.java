@@ -36,8 +36,7 @@
 package org.teavm.classlib.java.util.regex;
 
 /**
- * Represents node accepting single character in
- * case insensitive manner.
+ * Represents node accepting single character in case insensitive manner.
  *
  * @author Nikolay A. Kuznetsov
  */
@@ -52,13 +51,14 @@ class CICharSet extends LeafSet {
         this.supplement = TPattern.getSupplement(ch);
     }
 
+    @Override
     public int accepts(int strIndex, CharSequence testString) {
-        return (this.ch == testString.charAt(strIndex)
-        		|| this.supplement == testString.charAt(strIndex)) ? 1 : -1;
+        return (this.ch == testString.charAt(strIndex) || this.supplement == testString.charAt(strIndex)) ? 1 : -1;
     }
 
+    @Override
     protected String getName() {
-        return "CI " + ch; //$NON-NLS-1$
+        return "CI " + ch;
     }
 
     protected char getChar() {

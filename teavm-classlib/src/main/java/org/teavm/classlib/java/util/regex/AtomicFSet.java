@@ -46,8 +46,8 @@ class AtomicFSet extends FSet {
         super(groupIndex);
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
 
         int gr = getGroupIndex();
         matchResult.setConsumed(gr, stringIndex - matchResult.getConsumed(gr));
@@ -60,10 +60,12 @@ class AtomicFSet extends FSet {
         return index;
     }
 
+    @Override
     protected String getName() {
-        return "AtomicFSet"; //$NON-NLS-1$
+        return "AtomicFSet";
     }
 
+    @Override
     public boolean hasConsumed(MatchResultImpl mr) {
         return false;
     }

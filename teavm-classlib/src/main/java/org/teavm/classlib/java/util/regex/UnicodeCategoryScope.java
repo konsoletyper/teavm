@@ -30,6 +30,7 @@ class UnicodeCategoryScope extends UnicodeCategory {
         super(category);
     }
 
+    @Override
     public boolean contains(int ch) {
         return alt ^ ((category >> Character.getType((char) ch)) & 1) != 0;
     }

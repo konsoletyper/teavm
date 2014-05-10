@@ -48,8 +48,8 @@ abstract class LeafSet extends AbstractSet {
      * Checks if we can enter this state and pass the control to the next one.
      * Return positive value if match succeeds, negative otherwise.
      */
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
 
         if (stringIndex + charCount() > matchResult.getRightBound()) {
             matchResult.hitEnd = true;
@@ -66,12 +66,14 @@ abstract class LeafSet extends AbstractSet {
 
     /**
      * Returns number of characters this node consumes.
+     *
      * @return number of characters this node consumes.
      */
     public int charCount() {
         return charCount;
     }
 
+    @Override
     public boolean hasConsumed(MatchResultImpl mr) {
         return true;
     }

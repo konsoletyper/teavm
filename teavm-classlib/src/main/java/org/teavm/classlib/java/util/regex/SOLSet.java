@@ -27,6 +27,7 @@ package org.teavm.classlib.java.util.regex;
  */
 final class SOLSet extends AbstractSet {
 
+    @Override
     public int matches(int strIndex, CharSequence testString,
             MatchResultImpl matchResult) {
         if (strIndex == 0
@@ -37,11 +38,13 @@ final class SOLSet extends AbstractSet {
         return -1;
     }
 
+    @Override
     public boolean hasConsumed(MatchResultImpl matchResult) {
         return false;
     }
 
+    @Override
     protected String getName() {
-        return "<SOL>"; //$NON-NLS-1$
+        return "<SOL>";
     }
 }

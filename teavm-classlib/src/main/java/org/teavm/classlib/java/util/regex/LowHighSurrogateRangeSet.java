@@ -105,15 +105,18 @@ class LowHighSurrogateRangeSet extends JointSet {
     /**
      * Returns the next.
      */
+    @Override
     public AbstractSet getNext() {
         return this.next;
     }
 
     /**
      * Sets next abstract set.
+     *
      * @param next
      *            The next to set.
      */
+    @Override
     public void setNext(AbstractSet next) {
         this.next = next;
     }
@@ -121,8 +124,8 @@ class LowHighSurrogateRangeSet extends JointSet {
     /**
      * Returns stringIndex+shift, the next position to match
      */
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         int startStr = matchResult.getLeftBound();
         int strLength = matchResult.getRightBound();
 
@@ -160,10 +163,12 @@ class LowHighSurrogateRangeSet extends JointSet {
         return next.matches(stringIndex + 1, testString, matchResult);
     }
 
+    @Override
     protected String getName() {
         return "range:" + (alt ? "^ " : " ") + surrChars.toString();
     }
 
+    @Override
     public boolean first(AbstractSet set) {
         if (set instanceof CharSet) {
             return false;
@@ -182,6 +187,7 @@ class LowHighSurrogateRangeSet extends JointSet {
         return surrChars;
     }
 
+    @Override
     public boolean hasConsumed(MatchResultImpl matchResult) {
         return true;
     }

@@ -37,19 +37,16 @@ package org.teavm.classlib.java.util.regex;
 
 /**
  * Represents "?" quantifier over composite sets.
+ *
  * @author Nikolay A. Kuznetsov
  */
 class AltGroupQuantifierSet extends GroupQuantifierSet {
-
-    public AltGroupQuantifierSet(AbstractSet innerSet, AbstractSet next,
-            int type) {
+    public AltGroupQuantifierSet(AbstractSet innerSet, AbstractSet next, int type) {
         super(innerSet, next, type);
-
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
-
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         if (!innerSet.hasConsumed(matchResult))
             return next.matches(stringIndex, testString, matchResult);
 
@@ -62,6 +59,7 @@ class AltGroupQuantifierSet extends GroupQuantifierSet {
         }
     }
 
+    @Override
     public void setNext(AbstractSet next) {
         super.setNext(next);
         innerSet.setNext(next);

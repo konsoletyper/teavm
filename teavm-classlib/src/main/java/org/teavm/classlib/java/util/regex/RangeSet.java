@@ -43,24 +43,24 @@ class RangeSet extends LeafSet {
         this.alt = cc.alt;
     }
 
+    @Override
     public int accepts(int strIndex, CharSequence testString) {
         return chars.contains(testString.charAt(strIndex)) ? 1 : -1;
     }
 
+    @Override
     protected String getName() {
-        return "range:" + (alt ? "^ " : " ") + chars.toString(); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+        return "range:" + (alt ? "^ " : " ") + chars.toString();
     }
 
+    @Override
     public boolean first(AbstractSet set) {
         if (set instanceof CharSet) {
-            return AbstractCharClass.intersects(chars, ((CharSet) set)
-                    .getChar());
+            return AbstractCharClass.intersects(chars, ((CharSet)set).getChar());
         } else if (set instanceof RangeSet) {
-            return AbstractCharClass.intersects(chars, ((RangeSet) set)
-                    .chars);
+            return AbstractCharClass.intersects(chars, ((RangeSet)set).chars);
         } else if (set instanceof SupplRangeSet) {
-            return AbstractCharClass.intersects(chars, ((SupplRangeSet) set)
-                    .getChars());
+            return AbstractCharClass.intersects(chars, ((SupplRangeSet)set).getChars());
         } else if (set instanceof SupplCharSet) {
             return false;
         }

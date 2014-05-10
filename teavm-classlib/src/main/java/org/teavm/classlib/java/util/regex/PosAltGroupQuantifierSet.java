@@ -21,29 +21,28 @@
 package org.teavm.classlib.java.util.regex;
 
 /**
- * Possessive quantifier over group, see java.util.regex.GroupQuantifierSet
- * for more details.
+ * Possessive quantifier over group, see java.util.regex.GroupQuantifierSet for
+ * more details.
  *
  * @author Nikolay A. Kuznetsov
  */
 class PosAltGroupQuantifierSet extends AltGroupQuantifierSet {
 
-    public PosAltGroupQuantifierSet(AbstractSet innerSet, AbstractSet next,
-            int type) {
+    public PosAltGroupQuantifierSet(AbstractSet innerSet, AbstractSet next, int type) {
         super(innerSet, next, type);
-        ((JointSet) innerSet).setNext(FSet.posFSet);
+        ((JointSet)innerSet).setNext(FSet.posFSet);
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
-
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         int nextIndex = innerSet.matches(stringIndex, testString, matchResult);
-        if (nextIndex > 0)
+        if (nextIndex > 0) {
             stringIndex = nextIndex;
-
+        }
         return next.matches(stringIndex, testString, matchResult);
     }
 
+    @Override
     public void setNext(AbstractSet next) {
         this.next = next;
     }

@@ -28,19 +28,18 @@ import java.util.ArrayList;
  * @author Nikolay A. Kuznetsov
  */
 class PositiveLookAhead extends AtomicJointSet {
-
-    public PositiveLookAhead(ArrayList children, FSet fSet) {
+    public PositiveLookAhead(ArrayList<AbstractSet> children, FSet fSet) {
         super(children, fSet);
     }
 
     /**
      * Returns stringIndex+shift, the next position to match
      */
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         int size = children.size();
         for (int i = 0; i < size; i++) {
-            AbstractSet e = (AbstractSet) children.get(i);
+            AbstractSet e = children.get(i);
             int shift = e.matches(stringIndex, testString, matchResult);
             if (shift >= 0) {
                 // PosLookaheadFset always returns true, position remains the
@@ -53,11 +52,13 @@ class PositiveLookAhead extends AtomicJointSet {
         return -1;
     }
 
+    @Override
     public boolean hasConsumed(MatchResultImpl matchResult) {
         return false;
     }
 
+    @Override
     protected String getName() {
-        return "PosLookaheadJointSet"; //$NON-NLS-1$
+        return "PosLookaheadJointSet";
     }
 }

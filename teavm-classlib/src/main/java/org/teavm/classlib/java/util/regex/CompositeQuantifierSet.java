@@ -44,14 +44,13 @@ class CompositeQuantifierSet extends LeafQuantifierSet {
 
     protected Quantifier quantifier = null;
 
-    public CompositeQuantifierSet(Quantifier quant, LeafSet innerSet,
-            AbstractSet next, int type) {
+    public CompositeQuantifierSet(Quantifier quant, LeafSet innerSet, AbstractSet next, int type) {
         super(innerSet, next, type);
         this.quantifier = quant;
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         int min = quantifier.min();
         int max = quantifier.max();
         int i = 0;
@@ -72,8 +71,8 @@ class CompositeQuantifierSet extends LeafQuantifierSet {
 
         for (; i < max; i++) {
             int shift;
-            if (stringIndex + leaf.charCount() > matchResult.getRightBound()
-                    || (shift = leaf.accepts(stringIndex, testString)) < 1) {
+            if (stringIndex + leaf.charCount() > matchResult.getRightBound() ||
+                    (shift = leaf.accepts(stringIndex, testString)) < 1) {
                 break;
             }
             stringIndex += shift;
@@ -94,6 +93,7 @@ class CompositeQuantifierSet extends LeafQuantifierSet {
         quantifier.resetCounter();
     }
 
+    @Override
     protected String getName() {
         return quantifier.toString();
     }

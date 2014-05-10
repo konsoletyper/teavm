@@ -31,11 +31,11 @@ class PossessiveQuantifierSet extends LeafQuantifierSet {
         super(innerSet, next, type);
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         int shift = 0;
-        while (stringIndex + leaf.charCount() <= matchResult.getRightBound()
-                && (shift = leaf.accepts(stringIndex, testString)) >= 1) {
+        while (stringIndex + leaf.charCount() <= matchResult.getRightBound() &&
+                (shift = leaf.accepts(stringIndex, testString)) >= 1) {
             stringIndex += shift;
         }
 

@@ -29,13 +29,14 @@ import java.util.ArrayList;
  */
 class NegativeLookBehind extends AtomicJointSet {
 
-    public NegativeLookBehind(ArrayList children, FSet fSet) {
+    public NegativeLookBehind(ArrayList<AbstractSet> children, FSet fSet) {
         super(children, fSet);
     }
 
     /**
      * Returns stringIndex+shift, the next position to match
      */
+    @Override
     public int matches(int stringIndex, CharSequence testString,
             MatchResultImpl matchResult) {
 
@@ -47,7 +48,7 @@ class NegativeLookBehind extends AtomicJointSet {
         matchResult.setConsumed(groupIndex, stringIndex);
 
         for (int i = 0; i < size; i++) {
-            AbstractSet e = (AbstractSet) children.get(i);
+            AbstractSet e = children.get(i);
             // find limits could be calculated though e.getCharCount()
             // fSet will return true only if string index at fSet equal
             // to stringIndex
@@ -60,11 +61,13 @@ class NegativeLookBehind extends AtomicJointSet {
         return next.matches(stringIndex, testString, matchResult);
     }
 
+    @Override
     public boolean hasConsumed(MatchResultImpl matchResult) {
         return false;
     }
 
+    @Override
     protected String getName() {
-        return "NegBehindJointSet"; //$NON-NLS-1$
+        return "NegBehindJointSet";
     }
 }

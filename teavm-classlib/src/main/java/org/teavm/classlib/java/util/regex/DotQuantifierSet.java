@@ -21,9 +21,8 @@
 package org.teavm.classlib.java.util.regex;
 
 /**
- * Special node for ".*" construction.
- * The main idea here is to find line terminator and try to find the rest of
- * the construction from this point.
+ * Special node for ".*" construction. The main idea here is to find line
+ * terminator and try to find the rest of the construction from this point.
  *
  * @author Nikolay A. Kuznetsov
  */
@@ -31,14 +30,13 @@ class DotQuantifierSet extends QuantifierSet {
 
     AbstractLineTerminator lt;
 
-    public DotQuantifierSet(AbstractSet innerSet, AbstractSet next, int type,
-            AbstractLineTerminator lt) {
+    public DotQuantifierSet(AbstractSet innerSet, AbstractSet next, int type, AbstractLineTerminator lt) {
         super(innerSet, next, type);
         this.lt = lt;
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
 
         int strLength = matchResult.getRightBound();
 
@@ -55,8 +53,8 @@ class DotQuantifierSet extends QuantifierSet {
         return next.findBack(stringIndex, startSearch, testString, matchResult);
     }
 
-    public int find(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int find(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         // String testStr = testString.toString();
         int strLength = matchResult.getRightBound();
         // 1. skip line terminators ???
@@ -77,8 +75,7 @@ class DotQuantifierSet extends QuantifierSet {
             if (nextSearch < 0) {
                 nextSearch = strLength;
             }
-            nextSearch = next
-                    .findBack(res, nextSearch, testString, matchResult);
+            nextSearch = next.findBack(res, nextSearch, testString, matchResult);
             res = (res < nextSearch) ? nextSearch : res;
         } else {
             return -1;
@@ -86,11 +83,20 @@ class DotQuantifierSet extends QuantifierSet {
 
         // 4. find left boundary of this search
         // //
-        int leftBound = (res > 0) ? findBackLineTerminator(stringIndex,
-                res - 1, testString)/* testStr.lastIndexOf('\n', res - 1) */
-                : (res == 0) ? 0 : -1;
-        res = (leftBound >= stringIndex) ? ((leftBound < res) ? leftBound + 1
-                : leftBound) : stringIndex;
+        int leftBound = (res > 0) ? findBackLineTerminator(stringIndex, res - 1, testString)/*
+                                                                                             * testStr
+                                                                                             * .
+                                                                                             * lastIndexOf
+                                                                                             * (
+                                                                                             * '\n'
+                                                                                             * ,
+                                                                                             * res
+                                                                                             * -
+                                                                                             * 1
+                                                                                             * )
+                                                                                             */
+        : (res == 0) ? 0 : -1;
+        res = (leftBound >= stringIndex) ? ((leftBound < res) ? leftBound + 1 : leftBound) : stringIndex;
 
         return res;
     }
@@ -116,6 +122,7 @@ class DotQuantifierSet extends QuantifierSet {
         return -1;
     }
 
+    @Override
     protected String getName() {
         return "<DotQuant>";
     }

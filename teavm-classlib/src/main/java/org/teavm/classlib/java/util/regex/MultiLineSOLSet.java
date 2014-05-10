@@ -22,6 +22,7 @@ package org.teavm.classlib.java.util.regex;
 
 /**
  * Multiline version of the ^ sign.
+ *
  * @author Nikolay A. Kuznetsov
  */
 class MultiLineSOLSet extends AbstractSet {
@@ -32,25 +33,23 @@ class MultiLineSOLSet extends AbstractSet {
         this.lt = lt;
     }
 
-    public int matches(int strIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
-        if (strIndex != matchResult.getRightBound()
-                && ((strIndex == 0 || (matchResult.hasAnchoringBounds() && strIndex == matchResult
-                        .getLeftBound())) || lt.isAfterLineTerminator(
-                        testString.charAt(strIndex - 1), testString
-                                .charAt(strIndex)))) {
+    @Override
+    public int matches(int strIndex, CharSequence testString, MatchResultImpl matchResult) {
+        if (strIndex != matchResult.getRightBound() &&
+                ((strIndex == 0 || (matchResult.hasAnchoringBounds() && strIndex == matchResult.getLeftBound())) || lt
+                        .isAfterLineTerminator(testString.charAt(strIndex - 1), testString.charAt(strIndex)))) {
             return next.matches(strIndex, testString, matchResult);
         }
-
         return -1;
-
     }
 
+    @Override
     public boolean hasConsumed(MatchResultImpl matchResult) {
         return false;
     }
 
+    @Override
     protected String getName() {
-        return "^"; //$NON-NLS-1$
+        return "^";
     }
 }

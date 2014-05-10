@@ -111,19 +111,19 @@ class Lexer {
 
     public static final int MODE_ESCAPE = 1 << 2;
 
-    //maximum length of decomposition
+    // maximum length of decomposition
     static final int MAX_DECOMPOSITION_LENGTH = 4;
 
     /*
-     * maximum length of Hangul decomposition
-     * note that MAX_HANGUL_DECOMPOSITION_LENGTH <= MAX_DECOMPOSITION_LENGTH
+     * maximum length of Hangul decomposition note that
+     * MAX_HANGUL_DECOMPOSITION_LENGTH <= MAX_DECOMPOSITION_LENGTH
      */
     static final int MAX_HANGUL_DECOMPOSITION_LENGTH = 3;
 
     /*
-     * Following constants are needed for Hangul canonical decomposition.
-     * Hangul decomposition algorithm and constants are taken according
-     * to description at http://www.unicode.org/versions/Unicode4.0.0/ch03.pdf
+     * Following constants are needed for Hangul canonical decomposition. Hangul
+     * decomposition algorithm and constants are taken according to description
+     * at http://www.unicode.org/versions/Unicode4.0.0/ch03.pdf
      * "3.12 Conjoining Jamo Behavior"
      */
     static final int SBase = 0xAC00;
@@ -144,17 +144,17 @@ class Lexer {
 
     static final int NCount = 588;
 
-    //table that contains canonical decomposition mappings
+    // table that contains canonical decomposition mappings
     private static IntArrHash decompTable = null;
 
-    //table that contains canonical combining classes
+    // table that contains canonical combining classes
     private static IntHash canonClassesTable = null;
 
     private static int canonClassesTableSize;
 
     /*
-     * Table that contains information about Unicode codepoints with
-     * single codepoint decomposition
+     * Table that contains information about Unicode codepoints with single
+     * codepoint decomposition
      */
     private static IntHash singleDecompTable = null;
 
@@ -172,13 +172,13 @@ class Lexer {
     // previous char read
     private int lookBack;
 
-    //current character read
+    // current character read
     private int ch;
 
-    //next character
+    // next character
     private int lookAhead;
 
-    //index of last char in pattern plus one
+    // index of last char in pattern plus one
     private int patternFullLength = 0;
 
     // cur special token
@@ -187,19 +187,19 @@ class Lexer {
     // next special token
     private SpecialToken lookAheadST = null;
 
-    //  cur char being processed
+    // cur char being processed
     private int index = 0;
 
-    //  previous non-whitespace character index;
+    // previous non-whitespace character index;
     private int prevNW = 0;
 
-    //  cur token start index
+    // cur token start index
     private int curToc = 0;
 
-    //  look ahead token index
+    // look ahead token index
     private int lookAheadToc = 0;
 
-    //  original string representing pattern
+    // original string representing pattern
     private String orig = null;
 
     public Lexer(String pattern, int flags) {
@@ -211,8 +211,7 @@ class Lexer {
         }
 
         this.pattern = new char[pattern.length() + 2];
-        System.arraycopy(pattern.toCharArray(), 0, this.pattern, 0,
- 		       pattern.length());
+        System.arraycopy(pattern.toCharArray(), 0, this.pattern, 0, pattern.length());
         this.pattern[this.pattern.length - 1] = 0;
         this.pattern[this.pattern.length - 2] = 0;
         patternFullLength = this.pattern.length;
@@ -257,13 +256,13 @@ class Lexer {
      */
     public void restoreFlags(int flags) {
         this.flags = flags;
-    	lookAhead = ch;
-    	lookAheadST = curST;
+        lookAhead = ch;
+        lookAheadST = curST;
 
-    	//curToc is an index of closing bracket )
-    	index = curToc + 1;
+        // curToc is an index of closing bracket )
+        index = curToc + 1;
         lookAheadToc = curToc;
-    	movePointer();
+        movePointer();
     }
 
     public SpecialToken peekSpecial() {
@@ -323,128 +322,31 @@ class Lexer {
     /**
      * Normalize given expression.
      *
-     * @param input - expression to normalize
+     * @param input
+     *            - expression to normalize
      * @return normalized expression.
      */
     static String normalize(String input) {
-        char [] inputChars = input.toCharArray();
-        int inputLength = inputChars.length;
-        int resCodePointsIndex = 0;
-        int inputCodePointsIndex = 0;
-        int decompHangulIndex = 0;
-
-        //codePoints of input
-        int [] inputCodePoints = new int [inputLength];
-
-        //result of canonical decomposition of input
-        int [] resCodePoints = new int [inputLength * MAX_DECOMPOSITION_LENGTH];
-
-        //current symbol's codepoint
-        int ch;
-
-        //current symbol's decomposition
-        int [] decomp;
-
-        //result of canonical and Hangul decomposition of input
-        int [] decompHangul;
-
-        //result of canonical decomposition of input in UTF-16 encoding
-        StringBuilder result = new StringBuilder();
-
-        decompTable = HashDecompositions.getHashDecompositions();
-        canonClassesTable = CanClasses.getHashCanClasses();
-        canonClassesTableSize = canonClassesTable.size;
-        singleDecompTable = SingleDecompositions.getHashSingleDecompositions();
-        singleDecompTableSize = singleDecompTable.size;
-
-        for (int i = 0; i < inputLength; i += Character.charCount(ch)) {
-            ch = Character.codePointAt(inputChars, i);
-            inputCodePoints[inputCodePointsIndex++] = ch;
-        }
-
-        /*
-         * Canonical decomposition based on mappings in decompTable
-         */
-        for (int i = 0; i < inputCodePointsIndex; i++) {
-            ch = inputCodePoints[i];
-
-            decomp = Lexer.getDecomposition(ch);
-            if (decomp == null) {
-                resCodePoints[resCodePointsIndex++] = ch;
-            } else {
-                int curSymbDecompLength = decomp.length;
-
-                for (int j = 0; j < curSymbDecompLength; j++) {
-                    resCodePoints[resCodePointsIndex++] = decomp[j];
-                }
-            }
-        }
-
-        /*
-         * Canonical ordering.
-         * See http://www.unicode.org/reports/tr15/#Decomposition for
-         * details
-         */
-        resCodePoints = Lexer.getCanonicalOrder(resCodePoints,
-                resCodePointsIndex);
-
-        /*
-         * Decomposition for Hangul syllables.
-         * See http://www.unicode.org/reports/tr15/#Hangul for
-         * details
-         */
-        decompHangul = new int [resCodePoints.length];
-
-        for (int i = 0; i < resCodePointsIndex; i++) {
-            int curSymb = resCodePoints[i];
-
-            decomp = getHangulDecomposition(curSymb);
-            if (decomp == null) {
-                decompHangul[decompHangulIndex++] = curSymb;
-            } else{
-
-                /*
-                 * Note that Hangul decompositions have length that is
-                 * equal 2 or 3.
-                 */
-                decompHangul[decompHangulIndex++] = decomp[0];
-                decompHangul[decompHangulIndex++] = decomp[1];
-                if (decomp.length == 3) {
-                    decompHangul[decompHangulIndex++] = decomp[2];
-                }
-            }
-        }
-
-        /*
-         * Translating into UTF-16 encoding
-         */
-        for (int i = 0; i < decompHangulIndex; i++) {
-            result.append(Character.toChars(decompHangul[i]));
-        }
-
-        return result.toString();
+        return input;
     }
 
     /**
-     * Rearrange codepoints according
-     * to canonical order.
+     * Rearrange codepoints according to canonical order.
      *
-     * @param inputInts - array that contains Unicode codepoints
-     * @param length - index of last Unicode codepoint plus 1
+     * @param inputInts
+     *            - array that contains Unicode codepoints
+     * @param length
+     *            - index of last Unicode codepoint plus 1
      *
      * @return array that contains rearranged codepoints.
      */
-    static int [] getCanonicalOrder(int [] inputInts, int length) {
-        int inputLength = (length < inputInts.length)
-                          ? length
-                          : inputInts.length;
+    static int[] getCanonicalOrder(int[] inputInts, int length) {
+        int inputLength = (length < inputInts.length) ? length : inputInts.length;
 
         /*
-         * Simple bubble-sort algorithm.
-         * Note that many codepoints have 0
-         * canonical class, so this algorithm works
-         * almost lineary in overwhelming majority
-         * of cases. This is due to specific of Unicode
+         * Simple bubble-sort algorithm. Note that many codepoints have 0
+         * canonical class, so this algorithm works almost lineary in
+         * overwhelming majority of cases. This is due to specific of Unicode
          * combining classes and codepoints.
          */
         for (int i = 1; i < inputLength; i++) {
@@ -464,9 +366,9 @@ class Lexer {
                 }
             }
 
-            ch = inputInts [i];
+            ch = inputInts[i];
             for (int k = i; k > j + 1; k--) {
-                inputInts[k] = inputInts [k - 1];
+                inputInts[k] = inputInts[k - 1];
             }
             inputInts[j + 1] = ch;
         }
@@ -510,25 +412,22 @@ class Lexer {
             if (mode == Lexer.MODE_ESCAPE) {
                 if (lookAhead == '\\') {
 
-                    //need not care about supplementary codepoints here
-                    lookAhead = (index < pattern.length) ? pattern[nextIndex()]
-                            : 0;
+                    // need not care about supplementary codepoints here
+                    lookAhead = (index < pattern.length) ? pattern[nextIndex()] : 0;
 
                     switch (lookAhead) {
-                    case 'E': {
-                    	mode = saved_mode;
+                        case 'E': {
+                            mode = saved_mode;
 
-                        lookAhead = (index <= pattern.length - 2)
-                                    ? nextCodePoint()
-                                    : 0;
-                        break;
-                    }
+                            lookAhead = (index <= pattern.length - 2) ? nextCodePoint() : 0;
+                            break;
+                        }
 
-                    default: {
-                        lookAhead = '\\';
-                        index = prevNW;
-                        return;
-                    }
+                        default: {
+                            lookAhead = '\\';
+                            index = prevNW;
+                            return;
+                        }
                     }
                 } else {
                     return;
@@ -537,302 +436,298 @@ class Lexer {
 
             if (lookAhead == '\\') {
 
-                lookAhead = (index < pattern.length - 2) ? nextCodePoint()
-                        : -1;
+                lookAhead = (index < pattern.length - 2) ? nextCodePoint() : -1;
                 switch (lookAhead) {
-                case -1:
-                    throw new TPatternSyntaxException("", this.toString(), index);
-                case 'P':
-                case 'p': {
-                    String cs = parseCharClassName();
-                    boolean negative = false;
-
-                    if (lookAhead == 'P')
-                        negative = true;
-                    try {
-                        lookAheadST = AbstractCharClass.getPredefinedClass(cs,
-                                negative);
-                    } catch (MissingResourceException mre) {
+                    case -1:
                         throw new TPatternSyntaxException("", this.toString(), index);
-                    }
-                    lookAhead = 0;
-                    break;
-                }
+                    case 'P':
+                    case 'p': {
+                        String cs = parseCharClassName();
+                        boolean negative = false;
 
-                case 'w':
-                case 's':
-                case 'd':
-                case 'W':
-                case 'S':
-                case 'D': {
-                    lookAheadST = CharClass.getPredefinedClass(new String(
-                            pattern, prevNW, 1), false);
-                    lookAhead = 0;
-                    break;
-                }
-
-                case 'Q': {
-                    saved_mode = mode;
-                    mode = Lexer.MODE_ESCAPE;
-                    reread = true;
-                    break;
-                }
-
-                case 't':
-                    lookAhead = '\t';
-                    break;
-                case 'n':
-                    lookAhead = '\n';
-                    break;
-                case 'r':
-                    lookAhead = '\r';
-                    break;
-                case 'f':
-                    lookAhead = '\f';
-                    break;
-                case 'a':
-                    lookAhead = '\u0007';
-                    break;
-                case 'e':
-                    lookAhead = '\u001B';
-                    break;
-
-                case '1':
-                case '2':
-                case '3':
-                case '4':
-                case '5':
-                case '6':
-                case '7':
-                case '8':
-                case '9': {
-                    if (mode == Lexer.MODE_PATTERN) {
-                        lookAhead = 0x80000000 | lookAhead;
-                    }
-                    break;
-                }
-
-                case '0':
-                    lookAhead = readOctals();
-                    break;
-                case 'x':
-                    lookAhead = readHex("hexadecimal", 2); //$NON-NLS-1$
-                    break;
-                case 'u':
-                    lookAhead = readHex("Unicode", 4); //$NON-NLS-1$
-                    break;
-
-                case 'b':
-                    lookAhead = CHAR_WORD_BOUND;
-                    break;
-                case 'B':
-                    lookAhead = CHAR_NONWORD_BOUND;
-                    break;
-                case 'A':
-                    lookAhead = CHAR_START_OF_INPUT;
-                    break;
-                case 'G':
-                    lookAhead = CHAR_PREVIOUS_MATCH;
-                    break;
-                case 'Z':
-                    lookAhead = CHAR_END_OF_LINE;
-                    break;
-                case 'z':
-                    lookAhead = CHAR_END_OF_INPUT;
-                    break;
-                case 'c': {
-                    if (index < pattern.length - 2) {
-
-                        //need not care about supplementary codepoints here
-                        lookAhead = (pattern[nextIndex()] & 0x1f);
+                        if (lookAhead == 'P')
+                            negative = true;
+                        try {
+                            lookAheadST = AbstractCharClass.getPredefinedClass(cs, negative);
+                        } catch (MissingResourceException mre) {
+                            throw new TPatternSyntaxException("", this.toString(), index);
+                        }
+                        lookAhead = 0;
                         break;
-                    } else {
-                        throw new TPatternSyntaxException("", this.toString(), index);
                     }
-                }
-                case 'C':
-                case 'E':
-                case 'F':
-                case 'H':
-                case 'I':
-                case 'J':
-                case 'K':
-                case 'L':
-                case 'M':
-                case 'N':
-                case 'O':
-                case 'R':
-                case 'T':
-                case 'U':
-                case 'V':
-                case 'X':
-                case 'Y':
-                case 'g':
-                case 'h':
-                case 'i':
-                case 'j':
-                case 'k':
-                case 'l':
-                case 'm':
-                case 'o':
-                case 'q':
-                case 'y':
-                    throw new TPatternSyntaxException("", this.toString(), index);
 
-                default:
-                    break;
+                    case 'w':
+                    case 's':
+                    case 'd':
+                    case 'W':
+                    case 'S':
+                    case 'D': {
+                        lookAheadST = CharClass.getPredefinedClass(new String(pattern, prevNW, 1), false);
+                        lookAhead = 0;
+                        break;
+                    }
+
+                    case 'Q': {
+                        saved_mode = mode;
+                        mode = Lexer.MODE_ESCAPE;
+                        reread = true;
+                        break;
+                    }
+
+                    case 't':
+                        lookAhead = '\t';
+                        break;
+                    case 'n':
+                        lookAhead = '\n';
+                        break;
+                    case 'r':
+                        lookAhead = '\r';
+                        break;
+                    case 'f':
+                        lookAhead = '\f';
+                        break;
+                    case 'a':
+                        lookAhead = '\u0007';
+                        break;
+                    case 'e':
+                        lookAhead = '\u001B';
+                        break;
+
+                    case '1':
+                    case '2':
+                    case '3':
+                    case '4':
+                    case '5':
+                    case '6':
+                    case '7':
+                    case '8':
+                    case '9': {
+                        if (mode == Lexer.MODE_PATTERN) {
+                            lookAhead = 0x80000000 | lookAhead;
+                        }
+                        break;
+                    }
+
+                    case '0':
+                        lookAhead = readOctals();
+                        break;
+                    case 'x':
+                        lookAhead = readHex(2);
+                        break;
+                    case 'u':
+                        lookAhead = readHex(4);
+                        break;
+
+                    case 'b':
+                        lookAhead = CHAR_WORD_BOUND;
+                        break;
+                    case 'B':
+                        lookAhead = CHAR_NONWORD_BOUND;
+                        break;
+                    case 'A':
+                        lookAhead = CHAR_START_OF_INPUT;
+                        break;
+                    case 'G':
+                        lookAhead = CHAR_PREVIOUS_MATCH;
+                        break;
+                    case 'Z':
+                        lookAhead = CHAR_END_OF_LINE;
+                        break;
+                    case 'z':
+                        lookAhead = CHAR_END_OF_INPUT;
+                        break;
+                    case 'c': {
+                        if (index < pattern.length - 2) {
+
+                            // need not care about supplementary codepoints here
+                            lookAhead = (pattern[nextIndex()] & 0x1f);
+                            break;
+                        } else {
+                            throw new TPatternSyntaxException("", this.toString(), index);
+                        }
+                    }
+                    case 'C':
+                    case 'E':
+                    case 'F':
+                    case 'H':
+                    case 'I':
+                    case 'J':
+                    case 'K':
+                    case 'L':
+                    case 'M':
+                    case 'N':
+                    case 'O':
+                    case 'R':
+                    case 'T':
+                    case 'U':
+                    case 'V':
+                    case 'X':
+                    case 'Y':
+                    case 'g':
+                    case 'h':
+                    case 'i':
+                    case 'j':
+                    case 'k':
+                    case 'l':
+                    case 'm':
+                    case 'o':
+                    case 'q':
+                    case 'y':
+                        throw new TPatternSyntaxException("", this.toString(), index);
+
+                    default:
+                        break;
                 }
             } else if (mode == Lexer.MODE_PATTERN) {
                 switch (lookAhead) {
-                case '+':
-                case '*':
-                case '?': {
-                    char mod = (index < pattern.length) ? pattern[index] : '*';
-                    switch (mod) {
-                    case '+': {
-                        lookAhead = lookAhead | Lexer.QMOD_POSSESSIVE;
-                        nextIndex();
-                        break;
-                    }
+                    case '+':
+                    case '*':
                     case '?': {
-                        lookAhead = lookAhead | Lexer.QMOD_RELUCTANT;
-                        nextIndex();
-                        break;
-                    }
-                    default: {
-                        lookAhead = lookAhead | Lexer.QMOD_GREEDY;
-                        break;
-                    }
-                    }
-
-                    break;
-                }
-
-                case '{': {
-                    lookAheadST = processQuantifier(lookAhead);
-                    break;
-                }
-
-                case '$':
-                    lookAhead = CHAR_DOLLAR;
-                    break;
-                case '(': {
-                    if (pattern[index] == '?') {
-                        nextIndex();
-                        char nonCap = pattern[index];
-                        boolean behind = false;
-                        do {
-                            if (!behind) {
-                                switch (nonCap) {
-                                case '!':
-                                    lookAhead = CHAR_NEG_LOOKAHEAD;
-                                    nextIndex();
-                                    break;
-                                case '=':
-                                    lookAhead = CHAR_POS_LOOKAHEAD;
-                                    nextIndex();
-                                    break;
-                                case '>':
-                                    lookAhead = CHAR_ATOMIC_GROUP;
-                                    nextIndex();
-                                    break;
-                                case '<': {
-                                    nextIndex();
-                                    nonCap = pattern[index];
-                                    behind = true;
-                                    break;
-                                }
-                                default: {
-                                    lookAhead = readFlags();
-
-                                    /*
-                                     * We return res = res | 1 << 8
-                                     * from readFlags() if we read
-                                     * (?idmsux-idmsux)
-                                     */
-                                    if (lookAhead >= 256) {
-
-                                    	//Erase auxiliary bit
-                                    	lookAhead = (lookAhead & 0xff);
-                                    	flags = lookAhead;
-                                    	lookAhead = lookAhead << 16;
-                                        lookAhead = CHAR_FLAGS | lookAhead;
-                                    } else {
-                                    	flags = lookAhead;
-                                        lookAhead = lookAhead << 16;
-                                        lookAhead = CHAR_NONCAP_GROUP
-                                                    | lookAhead;
-                                    }
-                                    break;
-                                }
-                                }
-                            } else {
-                                behind = false;
-                                switch (nonCap) {
-                                case '!':
-                                    lookAhead = CHAR_NEG_LOOKBEHIND;
-                                    nextIndex();
-                                    break;
-                                case '=':
-                                    lookAhead = CHAR_POS_LOOKBEHIND;
-                                    nextIndex();
-                                    break;
-                                default:
-                                    throw new TPatternSyntaxException("", this.toString(), index);
-                                }
+                        char mod = (index < pattern.length) ? pattern[index] : '*';
+                        switch (mod) {
+                            case '+': {
+                                lookAhead = lookAhead | Lexer.QMOD_POSSESSIVE;
+                                nextIndex();
+                                break;
                             }
-                        } while (behind);
-                    } else {
-                        lookAhead = CHAR_LEFT_PARENTHESIS;
-                    }
-                    break;
-                }
+                            case '?': {
+                                lookAhead = lookAhead | Lexer.QMOD_RELUCTANT;
+                                nextIndex();
+                                break;
+                            }
+                            default: {
+                                lookAhead = lookAhead | Lexer.QMOD_GREEDY;
+                                break;
+                            }
+                        }
 
-                case ')':
-                    lookAhead = CHAR_RIGHT_PARENTHESIS;
-                    break;
-                case '[': {
-                    lookAhead = CHAR_LEFT_SQUARE_BRACKET;
-                    setMode(Lexer.MODE_RANGE);
-                    break;
-                }
-                case ']': {
-                    if (mode == Lexer.MODE_RANGE) {
-                        lookAhead = CHAR_RIGHT_SQUARE_BRACKET;
+                        break;
                     }
-                    break;
-                }
-                case '^':
-                    lookAhead = CHAR_CARET;
-                    break;
-                case '|':
-                    lookAhead = CHAR_VERTICAL_BAR;
-                    break;
-                case '.':
-                    lookAhead = CHAR_DOT;
-                    break;
-                default:
-                    break;
+
+                    case '{': {
+                        lookAheadST = processQuantifier(lookAhead);
+                        break;
+                    }
+
+                    case '$':
+                        lookAhead = CHAR_DOLLAR;
+                        break;
+                    case '(': {
+                        if (pattern[index] == '?') {
+                            nextIndex();
+                            char nonCap = pattern[index];
+                            boolean behind = false;
+                            do {
+                                if (!behind) {
+                                    switch (nonCap) {
+                                        case '!':
+                                            lookAhead = CHAR_NEG_LOOKAHEAD;
+                                            nextIndex();
+                                            break;
+                                        case '=':
+                                            lookAhead = CHAR_POS_LOOKAHEAD;
+                                            nextIndex();
+                                            break;
+                                        case '>':
+                                            lookAhead = CHAR_ATOMIC_GROUP;
+                                            nextIndex();
+                                            break;
+                                        case '<': {
+                                            nextIndex();
+                                            nonCap = pattern[index];
+                                            behind = true;
+                                            break;
+                                        }
+                                        default: {
+                                            lookAhead = readFlags();
+
+                                            /*
+                                             * We return res = res | 1 << 8 from
+                                             * readFlags() if we read
+                                             * (?idmsux-idmsux)
+                                             */
+                                            if (lookAhead >= 256) {
+
+                                                // Erase auxiliary bit
+                                                lookAhead = (lookAhead & 0xff);
+                                                flags = lookAhead;
+                                                lookAhead = lookAhead << 16;
+                                                lookAhead = CHAR_FLAGS | lookAhead;
+                                            } else {
+                                                flags = lookAhead;
+                                                lookAhead = lookAhead << 16;
+                                                lookAhead = CHAR_NONCAP_GROUP | lookAhead;
+                                            }
+                                            break;
+                                        }
+                                    }
+                                } else {
+                                    behind = false;
+                                    switch (nonCap) {
+                                        case '!':
+                                            lookAhead = CHAR_NEG_LOOKBEHIND;
+                                            nextIndex();
+                                            break;
+                                        case '=':
+                                            lookAhead = CHAR_POS_LOOKBEHIND;
+                                            nextIndex();
+                                            break;
+                                        default:
+                                            throw new TPatternSyntaxException("", this.toString(), index);
+                                    }
+                                }
+                            } while (behind);
+                        } else {
+                            lookAhead = CHAR_LEFT_PARENTHESIS;
+                        }
+                        break;
+                    }
+
+                    case ')':
+                        lookAhead = CHAR_RIGHT_PARENTHESIS;
+                        break;
+                    case '[': {
+                        lookAhead = CHAR_LEFT_SQUARE_BRACKET;
+                        setMode(Lexer.MODE_RANGE);
+                        break;
+                    }
+                    case ']': {
+                        if (mode == Lexer.MODE_RANGE) {
+                            lookAhead = CHAR_RIGHT_SQUARE_BRACKET;
+                        }
+                        break;
+                    }
+                    case '^':
+                        lookAhead = CHAR_CARET;
+                        break;
+                    case '|':
+                        lookAhead = CHAR_VERTICAL_BAR;
+                        break;
+                    case '.':
+                        lookAhead = CHAR_DOT;
+                        break;
+                    default:
+                        break;
                 }
             } else if (mode == Lexer.MODE_RANGE) {
                 switch (lookAhead) {
-                case '[':
-                    lookAhead = CHAR_LEFT_SQUARE_BRACKET;
-                    break;
-                case ']':
-                    lookAhead = CHAR_RIGHT_SQUARE_BRACKET;
-                    break;
-                case '^':
-                    lookAhead = CHAR_CARET;
-                    break;
-                case '&':
-                    lookAhead = CHAR_AMPERSAND;
-                    break;
-                case '-':
-                    lookAhead = CHAR_HYPHEN;
-                    break;
-                default:
-                    break;
+                    case '[':
+                        lookAhead = CHAR_LEFT_SQUARE_BRACKET;
+                        break;
+                    case ']':
+                        lookAhead = CHAR_RIGHT_SQUARE_BRACKET;
+                        break;
+                    case '^':
+                        lookAhead = CHAR_CARET;
+                        break;
+                    case '&':
+                        lookAhead = CHAR_AMPERSAND;
+                        break;
+                    case '-':
+                        lookAhead = CHAR_HYPHEN;
+                        break;
+                    default:
+                        break;
                 }
             }
         } while (reread);
@@ -851,8 +746,7 @@ class Lexer {
 
             nextIndex();
             char ch = 0;
-            while (index < pattern.length - 2
-                    && (ch = pattern[nextIndex()]) != '}') {
+            while (index < pattern.length - 2 && (ch = pattern[nextIndex()]) != '}') {
                 sb.append(ch);
             }
             if (ch != '}')
@@ -860,7 +754,7 @@ class Lexer {
         }
 
         if (sb.length() == 0)
-            throw new TPatternSyntaxException("", this.toString(),  index);
+            throw new TPatternSyntaxException("", this.toString(), index);
 
         String res = sb.toString();
         if (res.length() == 1)
@@ -884,7 +778,7 @@ class Lexer {
                     throw new TPatternSyntaxException("", this.toString(), index);
                 }
             } else {
-                sb.append((char) ch);
+                sb.append((char)ch);
             }
         }
         if (ch != '}') {
@@ -908,21 +802,22 @@ class Lexer {
         char mod = (index < pattern.length) ? pattern[index] : '*';
 
         switch (mod) {
-        case '+':
-            lookAhead = Lexer.QUANT_COMP_P;
-            nextIndex();
-            break;
-        case '?':
-            lookAhead = Lexer.QUANT_COMP_R;
-            nextIndex();
-            break;
-        default:
-            lookAhead = Lexer.QUANT_COMP;
-            break;
+            case '+':
+                lookAhead = Lexer.QUANT_COMP_P;
+                nextIndex();
+                break;
+            case '?':
+                lookAhead = Lexer.QUANT_COMP_R;
+                nextIndex();
+                break;
+            default:
+                lookAhead = Lexer.QUANT_COMP;
+                break;
         }
         return new Quantifier(min, max);
     }
 
+    @Override
     public String toString() {
         return orig;
     }
@@ -933,7 +828,7 @@ class Lexer {
      * @return true if there are no more characters in the pattern.
      */
     public boolean isEmpty() {
-    	return ch == 0 && lookAhead == 0 && index == patternFullLength && !isSpecial();
+        return ch == 0 && lookAhead == 0 && index == patternFullLength && !isSpecial();
     }
 
     /**
@@ -941,7 +836,7 @@ class Lexer {
      */
     public static boolean isLetter(int ch) {
 
-        //all supplementary codepoints have integer value that is >= 0;
+        // all supplementary codepoints have integer value that is >= 0;
         return ch >= 0;
     }
 
@@ -956,10 +851,9 @@ class Lexer {
     }
 
     /*
-     * Note that Character class methods
-     * isHighSurrogate(), isLowSurrogate()
-     * take char parameter while we need an int
-     * parameter without truncation to char value
+     * Note that Character class methods isHighSurrogate(), isLowSurrogate()
+     * take char parameter while we need an int parameter without truncation to
+     * char value
      */
     public boolean isHighSurrogate() {
         return (ch <= 0xDBFF) && (ch >= 0xD800);
@@ -980,7 +874,7 @@ class Lexer {
     /**
      * Process hexadecimal integer.
      */
-    private int readHex(String radixName, int max) {
+    private int readHex(int max) {
         StringBuilder st = new StringBuilder(max);
         int length = pattern.length - 2;
         int i;
@@ -1008,18 +902,17 @@ class Lexer {
         int length = pattern.length - 2;
 
         switch (first = Character.digit(pattern[index], 8)) {
-        case -1:
-            throw new TPatternSyntaxException("", this.toString(), index);
-        default: {
-            if (first > 3)
-                max--;
-            nextIndex();
-            res = first;
-        }
+            case -1:
+                throw new TPatternSyntaxException("", this.toString(), index);
+            default: {
+                if (first > 3)
+                    max--;
+                nextIndex();
+                res = first;
+            }
         }
 
-        while (i < max && index < length
-                && (first = Character.digit(pattern[index], 8)) >= 0) {
+        while (i < max && index < length && (first = Character.digit(pattern[index], 8)) >= 0) {
             res = res * 8 + first;
             nextIndex();
             i++;
@@ -1039,65 +932,52 @@ class Lexer {
         while (index < pattern.length) {
             ch = pattern[index];
             switch (ch) {
-            case '-':
-                if (!pos) {
-                    throw new TPatternSyntaxException("", this.toString(), index);
-                }
-                pos = false;
-                break;
+                case '-':
+                    if (!pos) {
+                        throw new TPatternSyntaxException("", this.toString(), index);
+                    }
+                    pos = false;
+                    break;
 
-            case 'i':
-                res = pos
-                      ? res | TPattern.CASE_INSENSITIVE
-                      : (res ^ TPattern.CASE_INSENSITIVE) & res;
-                break;
+                case 'i':
+                    res = pos ? res | TPattern.CASE_INSENSITIVE : (res ^ TPattern.CASE_INSENSITIVE) & res;
+                    break;
 
-            case 'd':
-                res = pos
-                      ? res | TPattern.UNIX_LINES
-                	  : (res ^ TPattern.UNIX_LINES) & res;
-                break;
+                case 'd':
+                    res = pos ? res | TPattern.UNIX_LINES : (res ^ TPattern.UNIX_LINES) & res;
+                    break;
 
-            case 'm':
-                res = pos
-                      ? res | TPattern.MULTILINE
-                      : (res ^ TPattern.MULTILINE) & res;
-                break;
+                case 'm':
+                    res = pos ? res | TPattern.MULTILINE : (res ^ TPattern.MULTILINE) & res;
+                    break;
 
-            case 's':
-                res = pos
-                      ? res | TPattern.DOTALL
-                      : (res ^ TPattern.DOTALL) & res;
-                break;
+                case 's':
+                    res = pos ? res | TPattern.DOTALL : (res ^ TPattern.DOTALL) & res;
+                    break;
 
-            case 'u':
-                res = pos
-                      ? res | TPattern.UNICODE_CASE
-                      : (res ^ TPattern.UNICODE_CASE) & res;
-                break;
+                case 'u':
+                    res = pos ? res | TPattern.UNICODE_CASE : (res ^ TPattern.UNICODE_CASE) & res;
+                    break;
 
-            case 'x':
-                res = pos
-                      ? res | TPattern.COMMENTS
-                      : (res ^ TPattern.COMMENTS) & res;
-                break;
+                case 'x':
+                    res = pos ? res | TPattern.COMMENTS : (res ^ TPattern.COMMENTS) & res;
+                    break;
 
-            case ':':
-                nextIndex();
-                return res;
+                case ':':
+                    nextIndex();
+                    return res;
 
-            case ')':
-                nextIndex();
-                return res | (1 << 8);
+                case ')':
+                    nextIndex();
+                    return res | (1 << 8);
 
-            default:
-                // ignore invalid flags (HARMONY-2127)
+                default:
+                    // ignore invalid flags (HARMONY-2127)
             }
             nextIndex();
         }
         throw new TPatternSyntaxException("", this.toString(), index);
     }
-
 
     /**
      * Returns next character index to read and moves pointer to the next one.
@@ -1141,27 +1021,27 @@ class Lexer {
     }
 
     /**
-     * Gets decomposition for given codepoint from
-     * decomposition mappings table.
+     * Gets decomposition for given codepoint from decomposition mappings table.
      *
-     * @param ch - Unicode codepoint
-     * @return array of codepoints that is a canonical
-     *         decomposition of ch.
+     * @param ch
+     *            - Unicode codepoint
+     * @return array of codepoints that is a canonical decomposition of ch.
      */
-    static int [] getDecomposition(int ch) {
+    static int[] getDecomposition(int ch) {
         return decompTable.get(ch);
     }
 
     /**
-     * Gets decomposition for given Hangul syllable.
-     * This is an implementation of Hangul decomposition algorithm
-     * according to http://www.unicode.org/versions/Unicode4.0.0/ch03.pdf
+     * Gets decomposition for given Hangul syllable. This is an implementation
+     * of Hangul decomposition algorithm according to
+     * http://www.unicode.org/versions/Unicode4.0.0/ch03.pdf
      * "3.12 Conjoining Jamo Behavior".
      *
-     * @param ch - given Hangul syllable
+     * @param ch
+     *            - given Hangul syllable
      * @return canonical decomposition of ch.
      */
-    static int [] getHangulDecomposition(int ch) {
+    static int[] getHangulDecomposition(int ch) {
         int SIndex = ch - SBase;
 
         if (SIndex < 0 || SIndex >= SCount) {
@@ -1170,58 +1050,56 @@ class Lexer {
             int L = LBase + SIndex / NCount;
             int V = VBase + (SIndex % NCount) / TCount;
             int T = SIndex % TCount;
-            int decomp [];
+            int decomp[];
 
             if (T == 0) {
-                decomp = new int [] {L, V};
+                decomp = new int[] { L, V };
             } else {
                 T = TBase + T;
-                decomp = new int [] {L, V, T};
+                decomp = new int[] { L, V, T };
             }
             return decomp;
         }
     }
 
     /**
-     * Gets canonical class for given codepoint from
-     * decomposition mappings table.
+     * Gets canonical class for given codepoint from decomposition mappings
+     * table.
      *
      * @param - ch Unicode codepoint
-     * @return canonical class for given Unicode codepoint
-     *         that is represented by ch.
+     * @return canonical class for given Unicode codepoint that is represented
+     *         by ch.
      */
     static int getCanonicalClass(int ch) {
         int canClass = canonClassesTable.get(ch);
 
-        return (canClass == canonClassesTableSize)
-               ? 0
-               : canClass;
+        return (canClass == canonClassesTableSize) ? 0 : canClass;
     }
 
     /**
      * Tests if given codepoint is a canonical decomposition of another
      * codepoint.
      *
-     * @param ch - codepoint to test
+     * @param ch
+     *            - codepoint to test
      * @return true if ch is a decomposition.
      */
     static boolean hasSingleCodepointDecomposition(int ch) {
         int hasSingleDecomp = singleDecompTable.get(ch);
 
         /*
-         * singleDecompTable doesn't contain ch
-         * == (hasSingleDecomp == singleDecompTableSize)
+         * singleDecompTable doesn't contain ch == (hasSingleDecomp ==
+         * singleDecompTableSize)
          */
-        return (hasSingleDecomp == singleDecompTableSize)
-               ? false
-               : true;
+        return (hasSingleDecomp == singleDecompTableSize) ? false : true;
     }
 
     /**
-     * Tests if given codepoint has canonical decomposition
-     * and given codepoint's canonical class is not 0.
+     * Tests if given codepoint has canonical decomposition and given
+     * codepoint's canonical class is not 0.
      *
-     * @param ch - codepoint to test
+     * @param ch
+     *            - codepoint to test
      * @return true if canonical class is not 0 and ch has a decomposition.
      */
     static boolean hasDecompositionNonNullCanClass(int ch) {
@@ -1233,7 +1111,7 @@ class Lexer {
 
         if (Character.isHighSurrogate(high)) {
 
-            //low and high char may be delimited by spaces
+            // low and high char may be delimited by spaces
             int lowExpectedIndex = prevNW + 1;
 
             if (lowExpectedIndex < pattern.length) {
@@ -1245,23 +1123,24 @@ class Lexer {
             }
         }
 
-        return (int) high;
+        return high;
     }
 
     /**
-     * Tests Unicode codepoint if it is a boundary
-     * of decomposed Unicode codepoint.
+     * Tests Unicode codepoint if it is a boundary of decomposed Unicode
+     * codepoint.
      *
-     * @param ch - Unicode codepoint to test
+     * @param ch
+     *            - Unicode codepoint to test
      * @return true if given codepoint is a boundary.
      */
-     static boolean isDecomposedCharBoundary(int ch) {
-         int canClass = canonClassesTable.get(ch);
+    static boolean isDecomposedCharBoundary(int ch) {
+        int canClass = canonClassesTable.get(ch);
 
-         //Lexer.getCanonicalClass(ch) == 0
-         boolean isBoundary = (canClass == canonClassesTableSize);
+        // Lexer.getCanonicalClass(ch) == 0
+        boolean isBoundary = (canClass == canonClassesTableSize);
 
-         return isBoundary;
+        return isBoundary;
     }
 
     /**

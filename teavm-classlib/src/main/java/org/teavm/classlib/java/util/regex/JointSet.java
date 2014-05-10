@@ -24,13 +24,13 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 /**
- * Represents group, which is alternation of other subexpression.
- * One should think about "group" in this model as JointSet opening
- * group and corresponding FSet closing group.
+ * Represents group, which is alternation of other subexpression. One should
+ * think about "group" in this model as JointSet opening group and corresponding
+ * FSet closing group.
  */
 class JointSet extends AbstractSet {
 
-    protected ArrayList children;
+    protected ArrayList<AbstractSet> children;
 
     protected AbstractSet fSet;
 
@@ -39,7 +39,7 @@ class JointSet extends AbstractSet {
     protected JointSet() {
     }
 
-    public JointSet(ArrayList children, FSet fSet) {
+    public JointSet(ArrayList<AbstractSet> children, FSet fSet) {
         this.children = children;
         this.fSet = fSet;
         this.groupIndex = fSet.getGroupIndex();
@@ -48,8 +48,8 @@ class JointSet extends AbstractSet {
     /**
      * Returns stringIndex+shift, the next position to match
      */
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         if (children == null) {
             return -1;
         }
@@ -57,7 +57,7 @@ class JointSet extends AbstractSet {
         matchResult.setStart(groupIndex, stringIndex);
         int size = children.size();
         for (int i = 0; i < size; i++) {
-            AbstractSet e = (AbstractSet) children.get(i);
+            AbstractSet e = children.get(i);
             int shift = e.matches(stringIndex, testString, matchResult);
             if (shift >= 0) {
                 return shift;
@@ -67,14 +67,17 @@ class JointSet extends AbstractSet {
         return -1;
     }
 
+    @Override
     public void setNext(AbstractSet next) {
         fSet.setNext(next);
     }
 
+    @Override
     public AbstractSet getNext() {
         return fSet.getNext();
     }
 
+    @Override
     protected String getName() {
         return "JointSet"; //$NON-NLS-1$
     }
@@ -83,10 +86,11 @@ class JointSet extends AbstractSet {
         return groupIndex;
     }
 
+    @Override
     public boolean first(AbstractSet set) {
         if (children != null) {
-            for (Iterator i = children.iterator(); i.hasNext();) {
-                if (((AbstractSet) i.next()).first(set)) {
+            for (Iterator<AbstractSet> i = children.iterator(); i.hasNext();) {
+                if ((i.next()).first(set)) {
                     return true;
                 }
             }
@@ -95,60 +99,46 @@ class JointSet extends AbstractSet {
         return false;
     }
 
+    @Override
     public boolean hasConsumed(MatchResultImpl matchResult) {
-        return !(matchResult.getEnd(groupIndex) >= 0 && matchResult
-                .getStart(groupIndex) == matchResult.getEnd(groupIndex));
+        return !(matchResult.getEnd(groupIndex) >= 0 && matchResult.getStart(groupIndex) == matchResult
+                .getEnd(groupIndex));
     }
 
     /**
-     * This method is used for traversing nodes after the
-     * first stage of compilation.
+     * This method is used for traversing nodes after the first stage of
+     * compilation.
      */
+    @Override
     public void processSecondPass() {
-    	this.isSecondPassVisited = true;
+        this.isSecondPassVisited = true;
 
-    	if (fSet != null && !fSet.isSecondPassVisited) {
+        if (fSet != null && !fSet.isSecondPassVisited) {
+            fSet.processSecondPass();
+        }
 
-    		/*
-    	     * Add here code to do during the pass
-             */
+        if (children != null) {
+            int childrenSize = children.size();
 
-   	        /*
-    	     * End code to do during the pass
-             */
-    		fSet.processSecondPass();
-    	}
+            for (int i = 0; i < childrenSize; i++) {
+                AbstractSet child = children.get(i);
+                JointSet set = child.processBackRefReplacement();
 
-    	if (children != null) {
-    		int childrenSize = children.size();
+                if (set != null) {
+                    child.isSecondPassVisited = true;
+                    children.remove(i);
+                    children.add(i, set);
+                    child = set;
+                }
 
-    		for (int i = 0; i < childrenSize; i++) {
-    			AbstractSet child = (AbstractSet) children.get(i);
+                if (!child.isSecondPassVisited) {
+                    child.processSecondPass();
+                }
+            }
+        }
 
-    			/*
-        	     * Add here code to do during the pass
-                 */
-
-    			JointSet set = child.processBackRefReplacement();
-
-    			if (set != null) {
-    				child.isSecondPassVisited = true;
-    				children.remove(i);
-    				children.add(i, set);
-    			    child = (AbstractSet) set;
-    			}
-
-    			/*
-        	     * End code to do during the pass
-                 */
-    			if (!child.isSecondPassVisited) {
-    				child.processSecondPass();
-    			}
-    		}
-    	}
-
-    	if (next != null) {
-    		super.processSecondPass();
-    	}
+        if (next != null) {
+            super.processSecondPass();
+        }
     }
 }

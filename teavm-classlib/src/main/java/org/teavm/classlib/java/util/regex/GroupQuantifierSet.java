@@ -21,9 +21,8 @@
 package org.teavm.classlib.java.util.regex;
 
 /**
- * Default quantifier over groups, in fact this type of quantifier is
- * generally used for constructions we cant identify number of characters they
- * consume.
+ * Default quantifier over groups, in fact this type of quantifier is generally
+ * used for constructions we cant identify number of characters they consume.
  *
  * @author Nikolay A. Kuznetsov
  */
@@ -33,12 +32,12 @@ class GroupQuantifierSet extends QuantifierSet {
         super(innerSet, next, type);
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
 
         if (!innerSet.hasConsumed(matchResult))
             return next.matches(stringIndex, testString, matchResult);// return
-                                                                        // -1;
+                                                                      // -1;
 
         int nextIndex = innerSet.matches(stringIndex, testString, matchResult);
 
@@ -49,6 +48,7 @@ class GroupQuantifierSet extends QuantifierSet {
         }
     }
 
+    @Override
     protected String getName() {
         return "<GroupQuant>"; //$NON-NLS-1$
     }

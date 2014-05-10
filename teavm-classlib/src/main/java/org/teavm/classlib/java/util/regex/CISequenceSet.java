@@ -41,31 +41,28 @@ package org.teavm.classlib.java.util.regex;
  * @author Nikolay A. Kuznetsov
  */
 class CISequenceSet extends LeafSet {
-
     private String string = null;
 
-	/**
-	 * Constructs this sequence set
-	 */
-	CISequenceSet(StringBuffer substring) {
-		this.string = substring.toString();
-		this.charCount = substring.length();
-	}
+    CISequenceSet(StringBuffer substring) {
+        this.string = substring.toString();
+        this.charCount = substring.length();
+    }
 
-	public int accepts(int strIndex, CharSequence testString) {
-		for (int i = 0; i < string.length(); i++) {
-			if (string.charAt(i) != testString.charAt(strIndex + i)
-					&& TPattern.getSupplement(string.charAt(i)) != testString
-							.charAt(strIndex + i)) {
-				return -1;
-			}
-		}
+    @Override
+    public int accepts(int strIndex, CharSequence testString) {
+        for (int i = 0; i < string.length(); i++) {
+            if (string.charAt(i) != testString.charAt(strIndex + i) &&
+                    TPattern.getSupplement(string.charAt(i)) != testString.charAt(strIndex + i)) {
+                return -1;
+            }
+        }
 
-		return string.length();
+        return string.length();
 
-	}
+    }
 
-	public String getName() {
-		return "CI sequence: " + string; //$NON-NLS-1$
-	}
+    @Override
+    public String getName() {
+        return "CI sequence: " + string;
+    }
 }

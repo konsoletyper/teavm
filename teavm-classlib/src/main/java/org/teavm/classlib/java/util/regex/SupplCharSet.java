@@ -94,33 +94,34 @@ class SupplCharSet extends LeafSet {
 
     private char low = 0;
 
-    //int value of this supplementary codepoint
+    // int value of this supplementary codepoint
     private int ch;
 
     public SupplCharSet(int ch) {
         charCount = 2;
         this.ch = ch;
-        char [] chUTF16 = Character.toChars(ch);
+        char[] chUTF16 = Character.toChars(ch);
         high = chUTF16[0];
 
         /*
-         * we suppose that SupplCharSet is
-         * build over supplementary codepoints only
+         * we suppose that SupplCharSet is build over supplementary codepoints
+         * only
          */
         low = chUTF16[1];
     }
 
+    @Override
     public int accepts(int strIndex, CharSequence testString) {
         char high = testString.charAt(strIndex++);
         char low = testString.charAt(strIndex);
         return ((this.high == high) && (this.low == low)) ? 2 : -1;
     }
 
-    public int find(int strIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int find(int strIndex, CharSequence testString, MatchResultImpl matchResult) {
 
         if (testString instanceof String) {
-            String testStr = (String) testString;
+            String testStr = (String)testString;
             int strLength = matchResult.getRightBound();
 
             while (strIndex < strLength) {
@@ -132,9 +133,7 @@ class SupplCharSet extends LeafSet {
                 if (strIndex < strLength) {
                     char ch = testStr.charAt(strIndex);
 
-                    if ((low == ch)
-                            && (next.matches(strIndex + 1,
-                                    testString, matchResult) >= 0)) {
+                    if ((low == ch) && (next.matches(strIndex + 1, testString, matchResult) >= 0)) {
                         return --strIndex;
                     }
                     strIndex++;
@@ -146,11 +145,11 @@ class SupplCharSet extends LeafSet {
         return super.find(strIndex, testString, matchResult);
     }
 
-    public int findBack(int strIndex, int lastIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int findBack(int strIndex, int lastIndex, CharSequence testString, MatchResultImpl matchResult) {
 
         if (testString instanceof String) {
-            String testStr = (String) testString;
+            String testStr = (String)testString;
 
             while (lastIndex >= strIndex) {
                 lastIndex = testStr.lastIndexOf(low, lastIndex);
@@ -159,9 +158,7 @@ class SupplCharSet extends LeafSet {
                     return -1;
                 }
 
-                if ((high == testStr.charAt(lastIndex))
-                        && next.matches(lastIndex + 2,
-                                testString, matchResult) >= 0) {
+                if ((high == testStr.charAt(lastIndex)) && next.matches(lastIndex + 2, testString, matchResult) >= 0) {
                     return lastIndex;
                 }
 
@@ -173,6 +170,7 @@ class SupplCharSet extends LeafSet {
         return super.findBack(strIndex, lastIndex, testString, matchResult);
     }
 
+    @Override
     protected String getName() {
         return "" + high + low;
     }
@@ -181,12 +179,12 @@ class SupplCharSet extends LeafSet {
         return ch;
     }
 
+    @Override
     public boolean first(AbstractSet set) {
         if (set instanceof SupplCharSet) {
-            return ((SupplCharSet) set).getCodePoint() == ch;
+            return ((SupplCharSet)set).getCodePoint() == ch;
         } else if (set instanceof SupplRangeSet) {
-            return ((SupplRangeSet) set)
-                    .contains(ch);
+            return ((SupplRangeSet)set).contains(ch);
         } else if (set instanceof CharSet) {
             return false;
         } else if (set instanceof RangeSet) {

@@ -44,6 +44,7 @@ abstract class QuantifierSet extends AbstractSet {
 
     /**
      * Sets an inner set.
+     *
      * @param innerSet
      *            The innerSet to set.
      */
@@ -51,82 +52,83 @@ abstract class QuantifierSet extends AbstractSet {
         this.innerSet = innerSet;
     }
 
+    @Override
     public boolean first(AbstractSet set) {
         return innerSet.first(set) || next.first(set);
     }
 
+    @Override
     public boolean hasConsumed(MatchResultImpl mr) {
         return true;
     }
 
     /**
-     * This method is used for traversing nodes after the
-     * first stage of compilation.
+     * This method is used for traversing nodes after the first stage of
+     * compilation.
      */
+    @Override
     public void processSecondPass() {
-    	this.isSecondPassVisited = true;
+        this.isSecondPassVisited = true;
 
-    	if (next != null) {
+        if (next != null) {
 
-    		if (!next.isSecondPassVisited) {
+            if (!next.isSecondPassVisited) {
 
-    			/*
-    	         * Add here code to do during the pass
-    	         */
-    	        JointSet set = next.processBackRefReplacement();
+                /*
+                 * Add here code to do during the pass
+                 */
+                JointSet set = next.processBackRefReplacement();
 
-    	        if (set != null) {
-    	            next.isSecondPassVisited = true;
-    	            next =(AbstractSet) set;
-    	        }
+                if (set != null) {
+                    next.isSecondPassVisited = true;
+                    next = set;
+                }
 
-    	        /*
-    	         * End code to do during the pass
-    	         */
-    		    next.processSecondPass();
-    	    }
-    	}
+                /*
+                 * End code to do during the pass
+                 */
+                next.processSecondPass();
+            }
+        }
 
-    	if (innerSet != null) {
+        if (innerSet != null) {
 
-    		if (!innerSet.isSecondPassVisited) {
+            if (!innerSet.isSecondPassVisited) {
 
-    			/*
-    	         * Add here code to do during the pass
-    	         */
-    	        JointSet set = innerSet.processBackRefReplacement();
+                /*
+                 * Add here code to do during the pass
+                 */
+                JointSet set = innerSet.processBackRefReplacement();
 
-    	        if (set != null) {
-    	        	innerSet.isSecondPassVisited = true;
-    	        	innerSet =(AbstractSet) set;
-    	        }
+                if (set != null) {
+                    innerSet.isSecondPassVisited = true;
+                    innerSet = set;
+                }
 
-    	        /*
-    	         * End code to do during the pass
-    	         */
-    	        innerSet.processSecondPass();
-    		} else {
+                /*
+                 * End code to do during the pass
+                 */
+                innerSet.processSecondPass();
+            } else {
 
-    			/*
-    	    	 * We reach node through innerSet but it is already traversed.
-    	    	 * You can see this situation for GroupQuantifierSet.innerset
-    	    	 * if we compile smth like "(a)+ when
-    	    	 * GroupQuantifierSet == GroupQuantifierSet.innerset.fSet.next
-    	    	 */
+                /*
+                 * We reach node through innerSet but it is already traversed.
+                 * You can see this situation for GroupQuantifierSet.innerset if
+                 * we compile smth like "(a)+ when GroupQuantifierSet ==
+                 * GroupQuantifierSet.innerset.fSet.next
+                 */
 
-    			/*
-    	         * Add here code to do during the pass
-    	         */
-    			if (innerSet instanceof SingleSet
-    					&& ((FSet) ((JointSet) innerSet).fSet)
-    					    .isBackReferenced) {
-    	    		innerSet = innerSet.next;
-    			}
+                /*
+                 * Add here code to do during the pass
+                 */
+                if (innerSet instanceof SingleSet && ((FSet)((JointSet)innerSet).fSet).isBackReferenced) {
+                    innerSet = innerSet.next;
+                }
 
-    			/*
-    	         * End code to do during the pass
-    	         */
-    		}
-    	}
+                /*
+                 * End code to do during the pass
+                 */
+            }
+        }
     }
 }

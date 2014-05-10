@@ -26,17 +26,15 @@ package org.teavm.classlib.java.util.regex;
  * @author Nikolay A. Kuznetsov
  */
 final class EOLSet extends AbstractSet {
-
     private int consCounter;
 
     public EOLSet(int counter) {
         this.consCounter = counter;
     }
 
-    public int matches(int strIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
-        int rightBound = matchResult.hasAnchoringBounds() ? matchResult
-                .getRightBound() : testString.length();
+    @Override
+    public int matches(int strIndex, CharSequence testString, MatchResultImpl matchResult) {
+        int rightBound = matchResult.hasAnchoringBounds() ? matchResult.getRightBound() : testString.length();
 
         if (strIndex >= rightBound) {
             matchResult.setConsumed(consCounter, 0);
@@ -44,16 +42,15 @@ final class EOLSet extends AbstractSet {
         }
 
         // check final line terminator;
-        if ((rightBound - strIndex) == 2 && testString.charAt(strIndex) == '\r'
-                && testString.charAt(strIndex + 1) == '\n') {
+        if ((rightBound - strIndex) == 2 && testString.charAt(strIndex) == '\r' &&
+                testString.charAt(strIndex + 1) == '\n') {
             matchResult.setConsumed(consCounter, 0);
             return next.matches(strIndex, testString, matchResult);
         }
         char ch;
 
-        if ((rightBound - strIndex) == 1
-                && (((ch = testString.charAt(strIndex)) == '\n' || ch == '\r'
-                        || ch == '\u0085' || (ch | 1) == '\u2029'))) {
+        if ((rightBound - strIndex) == 1 &&
+                (((ch = testString.charAt(strIndex)) == '\n' || ch == '\r' || ch == '\u0085' || (ch | 1) == '\u2029'))) {
             matchResult.setConsumed(consCounter, 0);
             return next.matches(strIndex, testString, matchResult);
         }
@@ -61,6 +58,7 @@ final class EOLSet extends AbstractSet {
         return -1;
     }
 
+    @Override
     public boolean hasConsumed(MatchResultImpl matchResult) {
         int cons;
         boolean res = ((cons = matchResult.getConsumed(consCounter)) < 0 || cons > 0);
@@ -68,7 +66,8 @@ final class EOLSet extends AbstractSet {
         return res;
     }
 
+    @Override
     protected String getName() {
-        return "<EOL>"; //$NON-NLS-1$
+        return "<EOL>";
     }
 }

@@ -29,19 +29,19 @@ import java.util.ArrayList;
  */
 class NegativeLookAhead extends AtomicJointSet {
 
-    public NegativeLookAhead(ArrayList children, FSet fSet) {
+    public NegativeLookAhead(ArrayList<AbstractSet> children, FSet fSet) {
         super(children, fSet);
     }
 
     /**
      * Returns stringIndex+shift, the next position to match
      */
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         int size = children.size();
 
         for (int i = 0; i < size; i++) {
-            AbstractSet e = (AbstractSet) children.get(i);
+            AbstractSet e = children.get(i);
             if (e.matches(stringIndex, testString, matchResult) >= 0)
                 return -1;
         }
@@ -49,11 +49,13 @@ class NegativeLookAhead extends AtomicJointSet {
         return next.matches(stringIndex, testString, matchResult);
     }
 
+    @Override
     public boolean hasConsumed(MatchResultImpl matchResult) {
         return false;
     }
 
+    @Override
     protected String getName() {
-        return "NegLookaheadJointSet"; //$NON-NLS-1$
+        return "NegLookaheadJointSet";
     }
 }

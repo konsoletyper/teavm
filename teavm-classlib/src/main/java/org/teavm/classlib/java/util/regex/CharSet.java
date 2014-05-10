@@ -48,18 +48,20 @@ class CharSet extends LeafSet {
         this.ch = ch;
     }
 
+    @Override
     public int charCount() {
         return 1;
     }
 
+    @Override
     public int accepts(int strIndex, CharSequence testString) {
         return (this.ch == testString.charAt(strIndex)) ? 1 : -1;
     }
 
-    public int find(int strIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int find(int strIndex, CharSequence testString, MatchResultImpl matchResult) {
         if (testString instanceof String) {
-            String testStr = (String) testString;
+            String testStr = (String)testString;
             int strLength = matchResult.getRightBound();
 
             while (strIndex < strLength) {
@@ -78,10 +80,10 @@ class CharSet extends LeafSet {
         return super.find(strIndex, testString, matchResult);
     }
 
-    public int findBack(int strIndex, int lastIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int findBack(int strIndex, int lastIndex, CharSequence testString, MatchResultImpl matchResult) {
         if (testString instanceof String) {
-            String testStr = (String) testString;
+            String testStr = (String)testString;
 
             while (lastIndex >= strIndex) {
                 lastIndex = testStr.lastIndexOf(ch, lastIndex);
@@ -102,6 +104,7 @@ class CharSet extends LeafSet {
         return super.findBack(strIndex, lastIndex, testString, matchResult);
     }
 
+    @Override
     protected String getName() {
         return "" + ch; //$NON-NLS-1$
     }
@@ -110,13 +113,14 @@ class CharSet extends LeafSet {
         return ch;
     }
 
+    @Override
     public boolean first(AbstractSet set) {
         if (set instanceof CharSet) {
-            return ((CharSet) set).getChar() == ch;
+            return ((CharSet)set).getChar() == ch;
         } else if (set instanceof RangeSet) {
-            return ((RangeSet) set).accepts(0, Character.toString(ch)) > 0;
+            return ((RangeSet)set).accepts(0, Character.toString(ch)) > 0;
         } else if (set instanceof SupplRangeSet) {
-            return ((SupplRangeSet) set).contains(ch);
+            return ((SupplRangeSet)set).contains(ch);
         } else if (set instanceof SupplCharSet) {
             return false;
         }

@@ -21,8 +21,8 @@
 package org.teavm.classlib.java.util.regex;
 
 /**
- * Greedy quantifier node for the case where there is no intersection with
- * next node and normal quantifiers could be treated as greedy and possessive.
+ * Greedy quantifier node for the case where there is no intersection with next
+ * node and normal quantifiers could be treated as greedy and possessive.
  *
  * @author Nikolay A. Kuznetsov
  */
@@ -33,28 +33,27 @@ class UnifiedQuantifierSet extends LeafQuantifierSet {
     }
 
     public UnifiedQuantifierSet(LeafQuantifierSet quant) {
-        super((LeafSet) quant.getInnerSet(), quant.getNext(), quant.getType());
+        super((LeafSet)quant.getInnerSet(), quant.getNext(), quant.getType());
         innerSet.setNext(this);
 
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
-        while (stringIndex + leaf.charCount() <= matchResult.getRightBound()
-                && leaf.accepts(stringIndex, testString) > 0)
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
+        while (stringIndex + leaf.charCount() <= matchResult.getRightBound() &&
+                leaf.accepts(stringIndex, testString) > 0)
             stringIndex += leaf.charCount();
 
         return next.matches(stringIndex, testString, matchResult);
     }
 
-    public int find(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int find(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         int startSearch = next.find(stringIndex, testString, matchResult);
         if (startSearch < 0)
             return -1;
         int newSearch = startSearch - leaf.charCount();
-        while (newSearch >= stringIndex
-                && leaf.accepts(newSearch, testString) > 0) {
+        while (newSearch >= stringIndex && leaf.accepts(newSearch, testString) > 0) {
             startSearch = newSearch;
             newSearch -= leaf.charCount();
         }

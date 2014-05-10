@@ -22,6 +22,7 @@ package org.teavm.classlib.java.util.regex;
 
 /**
  * Group node over subexpression w/o alternations.
+ *
  * @author Nikolay A. Kuznetsov
  */
 class SingleSet extends JointSet {
@@ -34,8 +35,8 @@ class SingleSet extends JointSet {
         this.groupIndex = fSet.getGroupIndex();
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         int start = matchResult.getStart(groupIndex);
         matchResult.setStart(groupIndex, stringIndex);
         int shift = kid.matches(stringIndex, testString, matchResult);
@@ -46,81 +47,82 @@ class SingleSet extends JointSet {
         return -1;
     }
 
-    public int find(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int find(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         int res = kid.find(stringIndex, testString, matchResult);
         if (res >= 0)
             matchResult.setStart(groupIndex, res);
         return res;
     }
 
-    public int findBack(int stringIndex, int lastIndex,
-            CharSequence testString, MatchResultImpl matchResult) {
+    @Override
+    public int findBack(int stringIndex, int lastIndex, CharSequence testString, MatchResultImpl matchResult) {
         int res = kid.findBack(stringIndex, lastIndex, testString, matchResult);
         if (res >= 0)
             matchResult.setStart(groupIndex, res);
         return res;
     }
 
+    @Override
     public boolean first(AbstractSet set) {
         return kid.first(set);
     }
 
     /**
-     * This method is used for replacement backreferenced
-     * sets.
+     * This method is used for replacement backreferenced sets.
      */
+    @Override
     public JointSet processBackRefReplacement() {
         BackReferencedSingleSet set = new BackReferencedSingleSet(this);
 
         /*
-         * We will store a reference to created BackReferencedSingleSet
-         * in next field. This is needed toprocess replacement
-         * of sets correctly since sometimes we cannot renew all references to
-         * detachable set in the current point of traverse. See
-         * QuantifierSet and AbstractSet processSecondPass() methods for
-         * more details.
+         * We will store a reference to created BackReferencedSingleSet in next
+         * field. This is needed toprocess replacement of sets correctly since
+         * sometimes we cannot renew all references to detachable set in the
+         * current point of traverse. See QuantifierSet and AbstractSet
+         * processSecondPass() methods for more details.
          */
         next = set;
         return set;
     }
 
     /**
-     * This method is used for traversing nodes after the
-     * first stage of compilation.
+     * This method is used for traversing nodes after the first stage of
+     * compilation.
      */
+    @Override
     public void processSecondPass() {
-    	this.isSecondPassVisited = true;
+        this.isSecondPassVisited = true;
 
         if (fSet != null && !fSet.isSecondPassVisited) {
 
-  		   /*
-   	        * Add here code to do during the pass
-            */
+            /*
+             * Add here code to do during the pass
+             */
 
-    	   /*
-    	    * End code to do during the pass
-    	    */
-    	   fSet.processSecondPass();
-    	}
+            /*
+             * End code to do during the pass
+             */
+            fSet.processSecondPass();
+        }
 
         if (kid != null && !kid.isSecondPassVisited) {
 
-           /*
-    	    * Add here code to do during the pass
-            */
-           JointSet set = kid.processBackRefReplacement();
+            /*
+             * Add here code to do during the pass
+             */
+            JointSet set = kid.processBackRefReplacement();
 
-           if (set != null) {
-        	   kid.isSecondPassVisited = true;
-        	   kid = (AbstractSet) set;
-           }
+            if (set != null) {
+                kid.isSecondPassVisited = true;
+                kid = set;
+            }
 
-           /*
-     	    * End code to do during the pass
-     	    */
+            /*
+             * End code to do during the pass
+             */
 
-           kid.processSecondPass();
+            kid.processSecondPass();
         }
     }
 }

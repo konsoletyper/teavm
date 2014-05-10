@@ -83,12 +83,12 @@
 package org.teavm.classlib.java.util.regex;
 
 /**
- * Represents node accepting single supplementary
- * codepoint in Unicode case insensitive manner.
+ * Represents node accepting single supplementary codepoint in Unicode case
+ * insensitive manner.
  */
 class UCISupplCharSet extends LeafSet {
 
-    //int value of this supplementary codepoint
+    // int value of this supplementary codepoint
     private int ch;
 
     public UCISupplCharSet(int ch) {
@@ -96,14 +96,14 @@ class UCISupplCharSet extends LeafSet {
         this.ch = Character.toLowerCase(Character.toUpperCase(ch));
     }
 
+    @Override
     public int accepts(int strIndex, CharSequence testString) {
         char high = testString.charAt(strIndex++);
         char low = testString.charAt(strIndex);
-        return (this.ch == Character.toLowerCase(Character
-                .toUpperCase(Character
-                        .toCodePoint(high, low)))) ? 2 : -1;
+        return (this.ch == Character.toLowerCase(Character.toUpperCase(Character.toCodePoint(high, low)))) ? 2 : -1;
     }
 
+    @Override
     protected String getName() {
         return "UCI " + new String(Character.toChars(ch));
     }

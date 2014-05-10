@@ -19,23 +19,22 @@ package org.teavm.classlib.java.util.regex;
 
 import java.util.ArrayList;
 
-
 /**
  * Provides a means of matching regular expressions against a given input,
  * finding occurrences of regular expressions in a given input, or replacing
- * parts of a given input. A {@code Matcher} instance has an associated {@link
- * TPattern} instance and an input text. A typical use case is to
- * iteratively find all occurrences of the {@code Pattern}, until the end of
- * the input is reached, as the following example illustrates:
+ * parts of a given input. A {@code Matcher} instance has an associated
+ * {@link TPattern} instance and an input text. A typical use case is to
+ * iteratively find all occurrences of the {@code Pattern}, until the end of the
+ * input is reached, as the following example illustrates:
  *
  * <p/>
  *
  * <pre>
- * Pattern p = Pattern.compile("[A-Za-z]+");
+ * Pattern p = Pattern.compile(&quot;[A-Za-z]+&quot;);
  *
- * Matcher m = p.matcher("Hello, Android!");
+ * Matcher m = p.matcher(&quot;Hello, Android!&quot;);
  * while (m.find()) {
- *     System.out.println(m.group()); // prints "Hello" and "Android"
+ *     System.out.println(m.group()); // prints &quot;Hello&quot; and &quot;Android&quot;
  * }
  * </pre>
  *
@@ -73,7 +72,7 @@ public final class TMatcher implements TMatchResult {
 
     private String processedRepl = null;
 
-    private ArrayList replacementParts = null;
+    private ArrayList<Object> replacementParts = null;
 
     /**
      * Appends a literal part of the input plus a replacement for the current
@@ -103,8 +102,7 @@ public final class TMatcher implements TMatchResult {
      * Parses replacement string and creates pattern
      */
     private String processReplacement(String replacement) {
-        if (this.replacement != null
-                && this.replacement.equals(replacement)) {
+        if (this.replacement != null && this.replacement.equals(replacement)) {
             if (replacementParts == null) {
                 return processedRepl;
             } else {
@@ -138,21 +136,20 @@ public final class TMatcher implements TMatchResult {
                 } else {
                     if (repl[index] == '$') {
                         if (replacementParts == null) {
-                            replacementParts = new ArrayList();
+                            replacementParts = new ArrayList<>();
                         }
                         try {
-                            final int gr = Integer.parseInt(new String(
-                                    repl, ++index, 1));
+                            final int gr = Integer.parseInt(new String(repl, ++index, 1));
 
                             if (replacementPos != res.length()) {
-                                replacementParts.add(res.subSequence(
-                                        replacementPos, res.length()));
+                                replacementParts.add(res.subSequence(replacementPos, res.length()));
                                 replacementPos = res.length();
                             }
 
-                            replacementParts.add(new Object() {  //$NON-LOCK-1$
+                            replacementParts.add(new Object() {
                                 private final int grN = gr;
 
+                                @Override
                                 public String toString() {
                                     return group(grN);
                                 }
@@ -164,7 +161,7 @@ public final class TMatcher implements TMatchResult {
                         } catch (IndexOutOfBoundsException iob) {
                             throw iob;
                         } catch (Exception e) {
-                            throw new IllegalArgumentException(""); //$NON-NLS-1$
+                            throw new IllegalArgumentException("");
                         }
                     } else {
                         res.append(repl[index]);
@@ -175,8 +172,7 @@ public final class TMatcher implements TMatchResult {
             }
 
             if (replacementParts != null && replacementPos != res.length()) {
-                replacementParts.add(res.subSequence(replacementPos, res
-                        .length()));
+                replacementParts.add(res.subSequence(replacementPos, res.length()));
             }
             return res.toString();
         }
@@ -204,8 +200,8 @@ public final class TMatcher implements TMatchResult {
     /**
      * Resets the {@code Matcher}. This results in the region being set to the
      * whole input. Results of a previous find get lost. The next attempt to
-     * find an occurrence of the {@link TPattern} in the string will start at the
-     * beginning of the input.
+     * find an occurrence of the {@link TPattern} in the string will start at
+     * the beginning of the input.
      *
      * @return the {@code Matcher} itself.
      */
@@ -231,9 +227,8 @@ public final class TMatcher implements TMatchResult {
      */
     public TMatcher region(int start, int end) {
 
-        if (start > end || start < 0 || end < 0
-                || start > string.length() || end > string.length()) {
-            throw new IndexOutOfBoundsException(start  + ", " + end);
+        if (start > end || start < 0 || end < 0 || start > string.length() || end > string.length()) {
+            throw new IndexOutOfBoundsException(start + ", " + end);
         }
 
         this.leftBound = start;
@@ -319,6 +314,7 @@ public final class TMatcher implements TMatchResult {
      * @throws IllegalStateException
      *             if no successful match has been made.
      */
+    @Override
     public String group(int group) {
         return matchResult.group(group);
     }
@@ -330,6 +326,7 @@ public final class TMatcher implements TMatchResult {
      * @throws IllegalStateException
      *             if no successful match has been made.
      */
+    @Override
     public String group() {
         return group(0);
     }
@@ -383,15 +380,13 @@ public final class TMatcher implements TMatchResult {
         int length = string.length();
         if (!hasTransparentBounds())
             length = rightBound;
-        if (matchResult.startIndex >= 0
-                && matchResult.mode() == TMatcher.MODE_FIND) {
+        if (matchResult.startIndex >= 0 && matchResult.mode() == TMatcher.MODE_FIND) {
             matchResult.startIndex = matchResult.end();
             if (matchResult.end() == matchResult.start()) {
                 matchResult.startIndex++;
             }
 
-            return matchResult.startIndex <= length ? find(matchResult.startIndex)
-                    : false;
+            return matchResult.startIndex <= length ? find(matchResult.startIndex) : false;
         } else {
             return find(leftBound);
         }
@@ -408,6 +403,7 @@ public final class TMatcher implements TMatchResult {
      * @throws IllegalStateException
      *             if no successful match has been made.
      */
+    @Override
     public int start(int group) {
         return matchResult.start(group);
     }
@@ -423,6 +419,7 @@ public final class TMatcher implements TMatchResult {
      * @throws IllegalStateException
      *             if no successful match has been made.
      */
+    @Override
     public int end(int group) {
         return matchResult.end(group);
     }
@@ -458,16 +455,16 @@ public final class TMatcher implements TMatchResult {
         for (int i = 0; i < len; i++) {
 
             switch (ch = s.charAt(i)) {
-            case '$':
-                res.append('\\');
-                res.append('$');
-                break;
-            case '\\':
-                res.append('\\');
-                res.append('\\');
-                break;
-            default:
-                res.append(ch);
+                case '$':
+                    res.append('\\');
+                    res.append('$');
+                    break;
+                case '\\':
+                    res.append('\\');
+                    res.append('\\');
+                    break;
+                default:
+                    res.append(ch);
             }
         }
 
@@ -479,8 +476,7 @@ public final class TMatcher implements TMatchResult {
      * sequence starting at <code>index</code> specified; Result of the match
      * will be stored into matchResult instance;
      */
-    private boolean runMatch(AbstractSet set, int index,
-            MatchResultImpl matchResult) {
+    private boolean runMatch(AbstractSet set, int index, MatchResultImpl matchResult) {
 
         if (set.matches(index, string, matchResult) >= 0) {
             matchResult.finalizeMatch();
@@ -516,16 +512,18 @@ public final class TMatcher implements TMatchResult {
      * @throws IllegalStateException
      *             if no successful match has been made.
      */
+    @Override
     public int start() {
         return start(0);
     }
 
     /**
-     * Returns the number of groups in the results, which is always equal to
-     * the number of groups in the original regular expression.
+     * Returns the number of groups in the results, which is always equal to the
+     * number of groups in the original regular expression.
      *
      * @return the number of groups.
      */
+    @Override
     public int groupCount() {
         return matchResult.groupCount();
     }
@@ -538,6 +536,7 @@ public final class TMatcher implements TMatchResult {
      * @throws IllegalStateException
      *             if no successful match has been made.
      */
+    @Override
     public int end() {
         return end(0);
     }
@@ -660,15 +659,15 @@ public final class TMatcher implements TMatchResult {
      * @return the {@code Matcher} itself.
      */
     public TMatcher usePattern(TPattern pattern) {
-    	if (pattern == null) {
-    		throw new IllegalArgumentException("");
-    	}
+        if (pattern == null) {
+            throw new IllegalArgumentException("");
+        }
         int startIndex = matchResult.getPreviousMatchEnd();
         int mode = matchResult.mode();
         this.pat = pattern;
         this.start = pattern.start;
-        matchResult = new MatchResultImpl(this.string, leftBound, rightBound,
-                pattern.groupCount(), pattern.compCount(), pattern.consCount());
+        matchResult = new MatchResultImpl(this.string, leftBound, rightBound, pattern.groupCount(),
+                pattern.compCount(), pattern.consCount());
         matchResult.setStartIndex(startIndex);
         matchResult.setMode(mode);
         return this;
@@ -680,8 +679,7 @@ public final class TMatcher implements TMatchResult {
         this.string = cs;
         this.leftBound = 0;
         this.rightBound = string.length();
-        matchResult = new MatchResultImpl(cs, leftBound, rightBound, pat
-                .groupCount(), pat.compCount(), pat.consCount());
+        matchResult = new MatchResultImpl(cs, leftBound, rightBound, pat.groupCount(), pat.compCount(), pat.consCount());
     }
 
     @Override
@@ -691,8 +689,7 @@ public final class TMatcher implements TMatchResult {
             lastMatch = Integer.toString(start());
         } catch (IllegalStateException e) {
         }
-        return getClass().getCanonicalName() + "[pattern=" + pat + " region="
-                + matchResult.getLeftBound() + ","
-                + matchResult.getRightBound() + " lastmatch=" + lastMatch + "]";
+        return "Regex[pattern=" + pat + " region=" + matchResult.getLeftBound() + "," + matchResult.getRightBound() +
+                " lastmatch=" + lastMatch + "]";
     }
 }

@@ -34,12 +34,14 @@ class UCICharSet extends LeafSet {
         this.ch = Character.toLowerCase(Character.toUpperCase(ch));
     }
 
+    @Override
     public int accepts(int strIndex, CharSequence testString) {
         return (this.ch == Character.toLowerCase(Character
                 .toUpperCase(testString.charAt(strIndex)))) ? 1 : -1;
     }
 
+    @Override
     protected String getName() {
-        return "UCI " + ch; //$NON-NLS-1$
+        return "UCI " + ch;
     }
 }

@@ -38,34 +38,32 @@ package org.teavm.classlib.java.util.regex;
 import java.util.ArrayList;
 
 /**
- * This class represent atomic group (?>X), once X matches,
- * this match become unchangeable till the end of the match.
+ * This class represent atomic group (?>X), once X matches, this match become
+ * unchangeable till the end of the match.
  *
  * @author Nikolay A. Kuznetsov
  */
 class AtomicJointSet extends NonCapJointSet {
-
-    public AtomicJointSet(ArrayList children, FSet fSet) {
+    public AtomicJointSet(ArrayList<AbstractSet> children, FSet fSet) {
         super(children, fSet);
     }
 
     /**
      * Returns stringIndex+shift, the next position to match
      */
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         int start = matchResult.getConsumed(groupIndex);
         matchResult.setConsumed(groupIndex, stringIndex);
 
         int size = children.size();
         for (int i = 0; i < size; i++) {
-            AbstractSet e = (AbstractSet) children.get(i);
+            AbstractSet e = children.get(i);
             int shift = e.matches(stringIndex, testString, matchResult);
             if (shift >= 0) {
                 // AtomicFset always returns true, but saves the index to run
                 // this next.match() from;
-                return next.matches(((AtomicFSet) fSet).getIndex(), testString,
-                        matchResult);
+                return next.matches(((AtomicFSet)fSet).getIndex(), testString, matchResult);
             }
         }
 
@@ -73,14 +71,17 @@ class AtomicJointSet extends NonCapJointSet {
         return -1;
     }
 
+    @Override
     public void setNext(AbstractSet next) {
         this.next = next;
     }
 
+    @Override
     public AbstractSet getNext() {
         return next;
     }
 
+    @Override
     protected String getName() {
         return "NonCapJointSet"; //$NON-NLS-1$
     }

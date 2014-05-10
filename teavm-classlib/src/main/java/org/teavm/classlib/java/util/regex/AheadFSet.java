@@ -41,17 +41,17 @@ package org.teavm.classlib.java.util.regex;
  * @author Nikolay A. Kuznetsov
  */
 class AheadFSet extends FSet {
-
     public AheadFSet() {
         super(-1);
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         return stringIndex;
     }
 
+    @Override
     protected String getName() {
-        return "AheadFSet"; //$NON-NLS-1$
+        return "AheadFSet";
     }
 }

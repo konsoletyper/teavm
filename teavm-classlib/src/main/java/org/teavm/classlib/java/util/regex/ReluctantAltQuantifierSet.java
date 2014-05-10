@@ -26,14 +26,12 @@ package org.teavm.classlib.java.util.regex;
  * @author Nikolay A. Kuznetsov
  */
 class ReluctantAltQuantifierSet extends AltQuantifierSet {
-
-    public ReluctantAltQuantifierSet(LeafSet innerSet, AbstractSet next,
-            int type) {
+    public ReluctantAltQuantifierSet(LeafSet innerSet, AbstractSet next, int type) {
         super(innerSet, next, type);
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         int shift;
 
         if ((shift = next.matches(stringIndex, testString, matchResult)) >= 0) {

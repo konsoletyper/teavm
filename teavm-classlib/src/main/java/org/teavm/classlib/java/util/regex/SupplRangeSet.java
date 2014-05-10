@@ -83,9 +83,9 @@
 package org.teavm.classlib.java.util.regex;
 
 /**
- * Represents node accepting single character from the given char class.
- * This character can be supplementary (2 chars needed to represent) or from
- * basic multilingual pane (1 needed char to represent it).
+ * Represents node accepting single character from the given char class. This
+ * character can be supplementary (2 chars needed to represent) or from basic
+ * multilingual pane (1 needed char to represent it).
  */
 class SupplRangeSet extends JointSet {
 
@@ -104,24 +104,22 @@ class SupplRangeSet extends JointSet {
         this.alt = cc.alt;
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         int strLength = matchResult.getRightBound();
         int offset = -1;
 
         if (stringIndex < strLength) {
             char high = testString.charAt(stringIndex++);
 
-            if (contains(high) &&
-                    (offset = next.matches(stringIndex, testString, matchResult)) > 0) {
+            if (contains(high) && (offset = next.matches(stringIndex, testString, matchResult)) > 0) {
                 return offset;
             }
 
             if (stringIndex < strLength) {
                 char low = testString.charAt(stringIndex++);
 
-                if (Character.isSurrogatePair(high, low)
-                        && contains(Character.toCodePoint(high, low))) {
+                if (Character.isSurrogatePair(high, low) && contains(Character.toCodePoint(high, low))) {
                     return next.matches(stringIndex, testString, matchResult);
                 }
             }
@@ -130,6 +128,7 @@ class SupplRangeSet extends JointSet {
         return -1;
     }
 
+    @Override
     protected String getName() {
         return "range:" + (alt ? "^ " : " ") + chars.toString();
     }
@@ -138,19 +137,16 @@ class SupplRangeSet extends JointSet {
         return chars.contains(ch);
     }
 
+    @Override
     public boolean first(AbstractSet set) {
         if (set instanceof SupplCharSet) {
-            return AbstractCharClass.intersects(chars, ((SupplCharSet) set)
-                    .getCodePoint());
+            return AbstractCharClass.intersects(chars, ((SupplCharSet)set).getCodePoint());
         } else if (set instanceof CharSet) {
-            return AbstractCharClass.intersects(chars, ((CharSet) set)
-                    .getChar());
+            return AbstractCharClass.intersects(chars, ((CharSet)set).getChar());
         } else if (set instanceof SupplRangeSet) {
-            return AbstractCharClass.intersects(chars, ((SupplRangeSet) set)
-                    .chars);
+            return AbstractCharClass.intersects(chars, ((SupplRangeSet)set).chars);
         } else if (set instanceof RangeSet) {
-            return AbstractCharClass.intersects(chars, ((RangeSet) set)
-                    .getChars());
+            return AbstractCharClass.intersects(chars, ((RangeSet)set).getChars());
         }
 
         return true;
@@ -160,14 +156,17 @@ class SupplRangeSet extends JointSet {
         return chars;
     }
 
+    @Override
     public AbstractSet getNext() {
         return next;
     }
 
+    @Override
     public void setNext(AbstractSet next) {
         this.next = next;
     }
 
+    @Override
     public boolean hasConsumed(MatchResultImpl mr) {
         return true;
     }

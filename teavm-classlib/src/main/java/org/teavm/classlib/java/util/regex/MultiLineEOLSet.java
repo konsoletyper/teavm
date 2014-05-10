@@ -33,11 +33,10 @@ class MultiLineEOLSet extends AbstractSet {
         this.consCounter = counter;
     }
 
-    public int matches(int strIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
-        int strDif = matchResult.hasAnchoringBounds() ? matchResult
-                .getLeftBound()
-                - strIndex : testString.length() - strIndex;
+    @Override
+    public int matches(int strIndex, CharSequence testString, MatchResultImpl matchResult) {
+        int strDif = matchResult.hasAnchoringBounds() ? matchResult.getLeftBound() - strIndex : testString.length() -
+                strIndex;
         char ch1;
         char ch2;
         if (strDif == 0) {
@@ -52,28 +51,29 @@ class MultiLineEOLSet extends AbstractSet {
         }
 
         switch (ch1) {
-        case '\r': {
-            if (ch2 == '\n') {
+            case '\r': {
+                if (ch2 == '\n') {
+                    matchResult.setConsumed(consCounter, 0);
+                    return next.matches(strIndex, testString, matchResult);
+                }
                 matchResult.setConsumed(consCounter, 0);
                 return next.matches(strIndex, testString, matchResult);
             }
-            matchResult.setConsumed(consCounter, 0);
-            return next.matches(strIndex, testString, matchResult);
-        }
 
-        case '\n':
-        case '\u0085':
-        case '\u2028':
-        case '\u2029': {
-            matchResult.setConsumed(consCounter, 0);
-            return next.matches(strIndex, testString, matchResult);
-        }
+            case '\n':
+            case '\u0085':
+            case '\u2028':
+            case '\u2029': {
+                matchResult.setConsumed(consCounter, 0);
+                return next.matches(strIndex, testString, matchResult);
+            }
 
-        default:
-            return -1;
+            default:
+                return -1;
         }
     }
 
+    @Override
     public boolean hasConsumed(MatchResultImpl matchResult) {
         int cons;
         boolean res = ((cons = matchResult.getConsumed(consCounter)) < 0 || cons > 0);
@@ -81,6 +81,7 @@ class MultiLineEOLSet extends AbstractSet {
         return res;
     }
 
+    @Override
     protected String getName() {
         return "<MultiLine $>"; //$NON-NLS-1$
     }

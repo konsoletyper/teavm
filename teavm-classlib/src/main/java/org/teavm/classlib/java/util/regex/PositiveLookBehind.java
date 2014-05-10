@@ -29,31 +29,30 @@ import java.util.ArrayList;
  */
 class PositiveLookBehind extends AtomicJointSet {
 
-    public PositiveLookBehind(ArrayList children, FSet fSet) {
+    public PositiveLookBehind(ArrayList<AbstractSet> children, FSet fSet) {
         super(children, fSet);
     }
 
     /**
      * Returns stringIndex+shift, the next position to match
      */
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
 
         int size = children.size();
-        int leftBound = matchResult.hasTransparentBounds()?
-                0 : matchResult.getLeftBound();
+        int leftBound = matchResult.hasTransparentBounds() ? 0 : matchResult.getLeftBound();
 
         int shift = next.matches(stringIndex, testString, matchResult);
         if (shift >= 0) {
-            //fSet will take this index to check if we at the right bound
+            // fSet will take this index to check if we at the right bound
             // and return true if the current index equal to this one
             matchResult.setConsumed(groupIndex, stringIndex);
             for (int i = 0; i < size; i++) {
-                AbstractSet e = (AbstractSet) children.get(i);
+                AbstractSet e = children.get(i);
                 // find limits could be calculated though e.getCharCount()
                 // fSet will return true only if string index at fSet equal
                 // to stringIndex
-                if (e.findBack(leftBound, stringIndex, testString, matchResult) >=0) {
+                if (e.findBack(leftBound, stringIndex, testString, matchResult) >= 0) {
                     matchResult.setConsumed(groupIndex, -1);
                     return shift;
                 }
@@ -63,11 +62,13 @@ class PositiveLookBehind extends AtomicJointSet {
         return -1;
     }
 
+    @Override
     public boolean hasConsumed(MatchResultImpl matchResult) {
         return false;
     }
 
+    @Override
     protected String getName() {
-        return "PosBehindJointSet"; //$NON-NLS-1$
+        return "PosBehindJointSet";
     }
 }

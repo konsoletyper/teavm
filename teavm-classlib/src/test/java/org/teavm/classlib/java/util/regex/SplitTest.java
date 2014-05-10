@@ -17,17 +17,18 @@
 
 package org.teavm.classlib.java.util.regex;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-
-import junit.framework.TestCase;
+import org.junit.Test;
 
 /**
  * TODO Type description
  */
-@SuppressWarnings("nls")
-public class SplitTest extends TestCase {
+public class SplitTest {
 
+    @Test
     public void testSimple() {
         Pattern p = Pattern.compile("/");
         String[] results = p.split("have/you/done/it/right");
@@ -38,6 +39,7 @@ public class SplitTest extends TestCase {
         }
     }
 
+    @Test
     public void testSplit1() throws PatternSyntaxException {
         Pattern p = Pattern.compile(" ");
 
@@ -129,6 +131,7 @@ public class SplitTest extends TestCase {
         assertEquals("dle z", tokens[2]);
     }
 
+    @Test
     public void testSplit2() {
         Pattern p = Pattern.compile("");
         String s[];
@@ -152,6 +155,7 @@ public class SplitTest extends TestCase {
         assertEquals("", s[5]);
     }
 
+    @Test
     public void testSplitSupplementaryWithEmptyString() {
 
         /*
@@ -161,12 +165,12 @@ public class SplitTest extends TestCase {
         Pattern p = Pattern.compile("");
         String s[];
         s = p.split("a\ud869\uded6b", -1);
-        // TODO investigate, why this fails and uncomment
-        /*assertEquals(5, s.length);
+        assertEquals(6, s.length);
         assertEquals("", s[0]);
         assertEquals("a", s[1]);
-        assertEquals("\ud869\uded6", s[2]);
-        assertEquals("b", s[3]);
-        assertEquals("", s[4]);*/
+        assertEquals("\ud869", s[2]);
+        assertEquals("\uded6", s[3]);
+        assertEquals("b", s[4]);
+        assertEquals("", s[5]);
     }
 }

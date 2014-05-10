@@ -27,45 +27,48 @@ package org.teavm.classlib.java.util.regex;
  */
 class DotAllSet extends JointSet {
 
-	public int matches(int stringIndex, CharSequence testString,
-	    MatchResultImpl matchResult) {
-	    int strLength = matchResult.getRightBound();
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
+        int strLength = matchResult.getRightBound();
 
-	    if (stringIndex + 1 > strLength) {
-	        matchResult.hitEnd = true;
-	        return -1;
-	    }
+        if (stringIndex + 1 > strLength) {
+            matchResult.hitEnd = true;
+            return -1;
+        }
 
-	    char high = testString.charAt(stringIndex);
+        char high = testString.charAt(stringIndex);
 
-	    if (Character.isHighSurrogate(high) && (stringIndex + 2 <= strLength)) {
-	        char low = testString.charAt(stringIndex + 1);
+        if (Character.isHighSurrogate(high) && (stringIndex + 2 <= strLength)) {
+            char low = testString.charAt(stringIndex + 1);
 
-	        if (Character.isSurrogatePair(high, low)) {
-	            return next.matches(stringIndex + 2, testString, matchResult);
-	        }
-	    }
-	    return next.matches(stringIndex + 1, testString, matchResult);
-	}
-
-    protected String getName() {
-        return "DotAll"; //$NON-NLS-1$
+            if (Character.isSurrogatePair(high, low)) {
+                return next.matches(stringIndex + 2, testString, matchResult);
+            }
+        }
+        return next.matches(stringIndex + 1, testString, matchResult);
     }
 
+    @Override
+    protected String getName() {
+        return "DotAll";
+    }
 
+    @Override
     public AbstractSet getNext() {
         return this.next;
     }
 
+    @Override
     public void setNext(AbstractSet next) {
         this.next = next;
     }
 
+    @Override
     public int getType() {
         return AbstractSet.TYPE_DOTSET;
     }
 
-
+    @Override
     public boolean hasConsumed(MatchResultImpl matchResult) {
         return true;
     }

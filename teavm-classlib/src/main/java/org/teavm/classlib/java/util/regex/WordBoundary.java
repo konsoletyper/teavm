@@ -34,39 +34,36 @@ class WordBoundary extends AbstractSet {
         this.positive = positive;
     }
 
-    public int matches(int stringIndex, CharSequence testString,
-            MatchResultImpl matchResult) {
+    @Override
+    public int matches(int stringIndex, CharSequence testString, MatchResultImpl matchResult) {
         boolean left;
         boolean right;
 
-        char ch1 = stringIndex >= matchResult.getRightBound() ? ' ' : testString
-                .charAt(stringIndex);
+        char ch1 = stringIndex >= matchResult.getRightBound() ? ' ' : testString.charAt(stringIndex);
         char ch2 = stringIndex == 0 ? ' ' : testString.charAt(stringIndex - 1);
 
-        int leftBound = matchResult.hasTransparentBounds() ? 0 : matchResult
-                .getLeftBound();
+        int leftBound = matchResult.hasTransparentBounds() ? 0 : matchResult.getLeftBound();
         left = (ch1 == ' ') || isSpace(ch1, stringIndex, leftBound, testString);
-        right = (ch2 == ' ')
-                || isSpace(ch2, stringIndex - 1, leftBound, testString);
-        return ((left ^ right) ^ positive) ? -1 : next.matches(stringIndex,
-                testString, matchResult);
+        right = (ch2 == ' ') || isSpace(ch2, stringIndex - 1, leftBound, testString);
+        return ((left ^ right) ^ positive) ? -1 : next.matches(stringIndex, testString, matchResult);
     }
 
     /**
      * Returns false, because word boundary does not consumes any characters and
      * do not move string index.
      */
+    @Override
     public boolean hasConsumed(MatchResultImpl matchResult) {
         // only checks boundary, do not consumes characters
         return false;
     }
 
+    @Override
     protected String getName() {
         return "WordBoundary"; //$NON-NLS-1$
     }
 
-    private boolean isSpace(char ch, int index, int leftBound,
-            CharSequence testString) {
+    private boolean isSpace(char ch, int index, int leftBound, CharSequence testString) {
         if (Character.isLetterOrDigit(ch) || ch == '_')
             return false;
         if (Character.getType(ch) == Character.NON_SPACING_MARK) {

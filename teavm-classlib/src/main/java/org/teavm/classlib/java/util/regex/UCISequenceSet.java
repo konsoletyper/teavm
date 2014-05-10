@@ -32,17 +32,16 @@ class UCISequenceSet extends LeafSet {
     UCISequenceSet(StringBuffer substring) {
         StringBuilder res = new StringBuilder();
         for (int i = 0; i < substring.length(); i++) {
-            res.append(Character.toLowerCase(Character.toUpperCase(substring
-                    .charAt(i))));
+            res.append(Character.toLowerCase(Character.toUpperCase(substring.charAt(i))));
         }
         this.string = res.toString();
         this.charCount = res.length();
     }
 
+    @Override
     public int accepts(int strIndex, CharSequence testString) {
         for (int i = 0; i < string.length(); i++) {
-            if (string.charAt(i) != Character.toLowerCase(Character
-                    .toUpperCase(testString.charAt(strIndex + i)))) {
+            if (string.charAt(i) != Character.toLowerCase(Character.toUpperCase(testString.charAt(strIndex + i)))) {
                 return -1;
             }
         }
@@ -51,6 +50,7 @@ class UCISequenceSet extends LeafSet {
 
     }
 
+    @Override
     public String getName() {
         return "UCI sequence: " + string; //$NON-NLS-1$
     }

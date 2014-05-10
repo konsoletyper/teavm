@@ -18,17 +18,15 @@
 package org.teavm.classlib.java.util.regex;
 
 /**
- * Represents canonical decomposition of
- * Hangul syllable. Is used when
- * CANON_EQ flag of Pattern class
- * is specified.
+ * Represents canonical decomposition of Hangul syllable. Is used when CANON_EQ
+ * flag of Pattern class is specified.
  */
 class HangulDecomposedCharSet extends JointSet {
 
     /**
      * Decomposed Hangul syllable.
      */
-    private char [] decomposedChar;
+    private char[] decomposedChar;
 
     /**
      * String representing syllable
@@ -36,12 +34,12 @@ class HangulDecomposedCharSet extends JointSet {
     private String decomposedCharUTF16 = null;
 
     /**
-     * Length of useful part of decomposedChar
-     * decomposedCharLength <= decomposedChar.length
+     * Length of useful part of decomposedChar decomposedCharLength <=
+     * decomposedChar.length
      */
     private int decomposedCharLength;
 
-    public HangulDecomposedCharSet(char [] decomposedChar, int decomposedCharLength) {
+    public HangulDecomposedCharSet(char[] decomposedChar, int decomposedCharLength) {
         this.decomposedChar = decomposedChar;
         this.decomposedCharLength = decomposedCharLength;
     }
@@ -49,15 +47,18 @@ class HangulDecomposedCharSet extends JointSet {
     /**
      * Returns the next.
      */
+    @Override
     public AbstractSet getNext() {
         return this.next;
     }
 
     /**
      * Sets next abstract set.
+     *
      * @param next
      *            The next to set.
      */
+    @Override
     public void setNext(AbstractSet next) {
         this.next = next;
     }
@@ -68,26 +69,25 @@ class HangulDecomposedCharSet extends JointSet {
      * @return - string representation.
      */
     private String getDecomposedChar() {
-        return (decomposedCharUTF16 == null)
-               ? (decomposedCharUTF16 = new String(decomposedChar))
-               : decomposedCharUTF16;
+        return (decomposedCharUTF16 == null) ? (decomposedCharUTF16 = new String(decomposedChar)) : decomposedCharUTF16;
     }
 
+    @Override
     protected String getName() {
         return "decomposed Hangul syllable:" + getDecomposedChar(); //$NON-NLS-1$
     }
 
+    @Override
     public int matches(int strIndex, CharSequence testString, MatchResultImpl matchResult) {
 
         /*
-         * All decompositions for Hangul syllables have length that
-         * is less or equal Lexer.MAX_DECOMPOSITION_LENGTH
+         * All decompositions for Hangul syllables have length that is less or
+         * equal Lexer.MAX_DECOMPOSITION_LENGTH
          */
         int rightBound = matchResult.getRightBound();
         int SyllIndex = 0;
-        int [] decompSyllable = new int [Lexer
-                                         .MAX_HANGUL_DECOMPOSITION_LENGTH];
-        int [] decompCurSymb;
+        int[] decompSyllable = new int[Lexer.MAX_HANGUL_DECOMPOSITION_LENGTH];
+        int[] decompCurSymb;
         char curSymb;
 
         /*
@@ -108,8 +108,8 @@ class HangulDecomposedCharSet extends JointSet {
         if (decompCurSymb == null) {
 
             /*
-             * We deal with ordinary letter or sequence of jamos
-             * at strIndex at testString.
+             * We deal with ordinary letter or sequence of jamos at strIndex at
+             * testString.
              */
             decompSyllable[SyllIndex++] = curSymb;
             LIndex = curSymb - Lexer.LBase;
@@ -124,14 +124,14 @@ class HangulDecomposedCharSet extends JointSet {
 
             if (strIndex < rightBound) {
                 curSymb = testString.charAt(strIndex);
-                VIndex = curSymb  - Lexer.VBase;
+                VIndex = curSymb - Lexer.VBase;
             }
 
             if ((VIndex < 0) || (VIndex >= Lexer.VCount)) {
 
                 /*
-                 * Single L jamo doesn't compose Hangul syllable,
-                 * so doesn't match
+                 * Single L jamo doesn't compose Hangul syllable, so doesn't
+                 * match
                  */
                 return -1;
             }
@@ -140,39 +140,31 @@ class HangulDecomposedCharSet extends JointSet {
 
             if (strIndex < rightBound) {
                 curSymb = testString.charAt(strIndex);
-                TIndex = curSymb  - Lexer.TBase;
+                TIndex = curSymb - Lexer.TBase;
             }
 
             if ((TIndex < 0) || (TIndex >= Lexer.TCount)) {
 
                 /*
-                 * We deal with LV syllable at testString, so
-                 * compare it to this
+                 * We deal with LV syllable at testString, so compare it to this
                  */
-                return ((decomposedCharLength == 2)
-                        && (decompSyllable[0] == decomposedChar[0])
-                        && (decompSyllable[1] == decomposedChar[1]))
-                       ? next.matches(strIndex, testString, matchResult)
-                       : -1;
+                return ((decomposedCharLength == 2) && (decompSyllable[0] == decomposedChar[0]) && (decompSyllable[1] == decomposedChar[1])) ? next
+                        .matches(strIndex, testString, matchResult) : -1;
             }
             strIndex++;
             decompSyllable[SyllIndex++] = curSymb;
 
             /*
-             * We deal with LVT syllable at testString, so
-             * compare it to this
+             * We deal with LVT syllable at testString, so compare it to this
              */
-            return ((decomposedCharLength == 3)
-                    && (decompSyllable[0] == decomposedChar[0])
-                    && (decompSyllable[1] == decomposedChar[1])
-                    && (decompSyllable[2] == decomposedChar[2]))
-                   ? next.matches(strIndex, testString, matchResult)
-                   : -1;
+            return ((decomposedCharLength == 3) && (decompSyllable[0] == decomposedChar[0]) &&
+                    (decompSyllable[1] == decomposedChar[1]) && (decompSyllable[2] == decomposedChar[2])) ? next
+                    .matches(strIndex, testString, matchResult) : -1;
         } else {
 
             /*
-             * We deal with Hangul syllable at strIndex at testString.
-             * So we decomposed it to compare with this.
+             * We deal with Hangul syllable at strIndex at testString. So we
+             * decomposed it to compare with this.
              */
             int i = 0;
 
@@ -189,15 +181,14 @@ class HangulDecomposedCharSet extends JointSet {
         }
     }
 
+    @Override
     public boolean first(AbstractSet set) {
-        return (set instanceof HangulDecomposedCharSet)
-               ? ((HangulDecomposedCharSet) set).getDecomposedChar()
-                       .equals(getDecomposedChar())
-               : true;
+        return (set instanceof HangulDecomposedCharSet) ? ((HangulDecomposedCharSet)set).getDecomposedChar().equals(
+                getDecomposedChar()) : true;
     }
 
+    @Override
     public boolean hasConsumed(MatchResultImpl matchResult) {
         return true;
     }
 }
-
