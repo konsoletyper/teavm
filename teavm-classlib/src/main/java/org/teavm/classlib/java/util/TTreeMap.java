@@ -1103,12 +1103,12 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
         @Override
         public TSortedSet<K> headSet(K toElement) {
-            return map.headMap(toElement, true).navigableKeySet();
+            return map.headMap(toElement, false).navigableKeySet();
         }
 
         @Override
         public TSortedSet<K> tailSet(K fromElement) {
-            return map.headMap(fromElement, false).navigableKeySet();
+            return map.headMap(fromElement, true).navigableKeySet();
         }
 
         @Override
