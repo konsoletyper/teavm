@@ -152,11 +152,11 @@ public final class TMath extends TObject {
     }
 
     public static double ulp(double d) {
-        return pow(1, -getExponent(d) - 52);
+        return pow(2, getExponent(d) - 52);
     }
 
     public static float ulp(float d) {
-        return (float)pow(1, -getExponent(d) - 23);
+        return (float)pow(2, getExponent(d) - 23);
     }
 
     public static double signum(double d) {
