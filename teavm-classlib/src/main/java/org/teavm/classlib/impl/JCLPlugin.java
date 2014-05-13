@@ -15,6 +15,8 @@
  */
 package org.teavm.classlib.impl;
 
+import org.teavm.classlib.java.util.LocaleSettingsNativeGenerator;
+import org.teavm.javascript.ni.Generator;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -40,5 +42,10 @@ public class JCLPlugin implements TeaVMPlugin {
         host.add(loadServicesMethod, serviceLoaderSupp);
         JavacSupport javacSupport = new JavacSupport();
         host.add(javacSupport);
+
+        Generator localeGen = new LocaleSettingsNativeGenerator(host.getClassLoader(), host.getProperties());
+        host.add(new MethodReference("java.util.Locale", "readCLDR", ValueType.VOID), localeGen);
+        host.add(new MethodReference("java.util.Locale", "getDefaultLocale", ValueType.object("java.lang.String")),
+                localeGen);
     }
 }
