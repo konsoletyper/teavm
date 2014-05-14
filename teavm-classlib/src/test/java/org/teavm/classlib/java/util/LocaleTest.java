@@ -30,12 +30,30 @@ public class LocaleTest {
     }
 
     @Test
-    public void localeNamesProvided() {
-        Locale english = new Locale("en", "US");
+    public void languageNamesProvided() {
+        Locale english = new Locale("en", "");
+        Locale usEnglish = new Locale("en", "US");
         Locale russian = new Locale("ru", "RU");
         assertEquals("English", english.getDisplayLanguage(english));
+        assertEquals("English", english.getDisplayLanguage(usEnglish));
         assertEquals("Russian", russian.getDisplayLanguage(english));
+        assertEquals("English", english.getDisplayLanguage(usEnglish));
+        assertEquals("Russian", russian.getDisplayLanguage(usEnglish));
         assertEquals("английский", english.getDisplayLanguage(russian));
         assertEquals("русский", russian.getDisplayLanguage(russian));
+    }
+
+    @Test
+    public void countryNamesProvided() {
+        Locale usEnglish = new Locale("en", "US");
+        Locale gbEnglish = new Locale("en", "GB");
+        Locale russian = new Locale("ru", "RU");
+        assertEquals("United Kingdom", gbEnglish.getDisplayCountry(usEnglish));
+        assertEquals("United States", usEnglish.getDisplayCountry(usEnglish));
+        assertEquals("Russia", russian.getDisplayCountry(usEnglish));
+        // JVM gives here name that differs to the name provided by CLDR
+        //assertEquals("Соединенное Королевство", gbEnglish.getDisplayCountry(russian));
+        assertEquals("Соединенные Штаты", usEnglish.getDisplayCountry(russian));
+        assertEquals("Россия", russian.getDisplayCountry(russian));
     }
 }

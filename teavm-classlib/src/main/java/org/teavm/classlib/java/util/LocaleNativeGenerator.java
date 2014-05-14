@@ -34,8 +34,9 @@ public class LocaleNativeGenerator implements Generator, DependencyPlugin {
         switch (methodRef.getName()) {
             case "getDisplayCountry":
                 writer.append("var result = ").appendClass("java.util.Locale").append(".$CLDR[$rt_ustr(")
-                        .append(context.getParameterName(1)).append(")].territories[$rt_ustr(")
-                        .append(context.getParameterName(2)).append(")];").softNewLine();
+                        .append(context.getParameterName(1)).append(")];").softNewLine();
+                writer.append("result = result ? result.territories[$rt_ustr(")
+                        .append(context.getParameterName(2)).append(")] : undefined;").softNewLine();
                 writer.append("return result ? $rt_str(result) : null").softNewLine();
                 break;
             case "getDisplayLanguage":
