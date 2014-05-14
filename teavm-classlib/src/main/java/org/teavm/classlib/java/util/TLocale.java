@@ -35,6 +35,7 @@ package org.teavm.classlib.java.util;
 import java.util.Arrays;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.TCloneable;
+import org.teavm.dependency.PluggableDependency;
 import org.teavm.javascript.ni.GeneratedBy;
 
 public final class TLocale implements TCloneable, TSerializable {
@@ -75,6 +76,7 @@ public final class TLocale implements TCloneable, TSerializable {
     private transient String variantCode;
 
     // Redefined by JCLPlugin
+    @PluggableDependency(LocaleNativeGenerator.class)
     private static native String getDefaultLocale();
 
     // Redefined by JCLPlugin
@@ -127,12 +129,24 @@ public final class TLocale implements TCloneable, TSerializable {
 
     public static TLocale[] getAvailableLocales() {
         if (availableLocales == null) {
-            availableLocales = getAvailableLocales();
+            String[] strings = getAvailableLocaleStrings();
+            availableLocales = new TLocale[strings.length];
+            for (int i = 0; i < strings.length; ++i) {
+                String string = strings[i];
+                int countryIndex = string.indexOf('-');
+                if (countryIndex > 0) {
+                    availableLocales[i] = new TLocale(string.substring(0, countryIndex),
+                            string.substring(countryIndex));
+                } else {
+                    availableLocales[i] = new TLocale(string);
+                }
+            }
         }
         return Arrays.copyOf(availableLocales, availableLocales.length);
     }
 
     @GeneratedBy(LocaleNativeGenerator.class)
+    @PluggableDependency(LocaleNativeGenerator.class)
     private static native String[] getAvailableLocaleStrings();
 
     public String getCountry() {
@@ -156,6 +170,7 @@ public final class TLocale implements TCloneable, TSerializable {
     }
 
     @GeneratedBy(LocaleNativeGenerator.class)
+    @PluggableDependency(LocaleNativeGenerator.class)
     private static native String getDisplayCountry(String localeName, String country);
 
     public final String getDisplayLanguage() {
@@ -163,14 +178,15 @@ public final class TLocale implements TCloneable, TSerializable {
     }
 
     public String getDisplayLanguage(TLocale locale) {
-        String result = getDisplayLanguage(locale.getLanguage() + "_" + locale.getCountry(), countryCode);
+        String result = getDisplayLanguage(locale.getLanguage() + "-" + locale.getCountry(), languageCode);
         if (result == null) {
-            result = getDisplayLanguage(locale.getLanguage(), countryCode);
+            result = getDisplayLanguage(locale.getLanguage(), languageCode);
         }
-        return result != null ? result : countryCode;
+        return result != null ? result : languageCode;
     }
 
     @GeneratedBy(LocaleNativeGenerator.class)
+    @PluggableDependency(LocaleNativeGenerator.class)
     private static native String getDisplayLanguage(String localeName, String country);
 
     public final String getDisplayName() {

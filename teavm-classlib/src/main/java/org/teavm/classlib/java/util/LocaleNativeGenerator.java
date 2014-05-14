@@ -17,6 +17,9 @@ package org.teavm.classlib.java.util;
 
 import java.io.IOException;
 import org.teavm.codegen.SourceWriter;
+import org.teavm.dependency.DependencyChecker;
+import org.teavm.dependency.DependencyPlugin;
+import org.teavm.dependency.MethodDependency;
 import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.GeneratorContext;
 import org.teavm.model.MethodReference;
@@ -25,7 +28,7 @@ import org.teavm.model.MethodReference;
  *
  * @author Alexey Andreev
  */
-public class LocaleNativeGenerator implements Generator {
+public class LocaleNativeGenerator implements Generator, DependencyPlugin {
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
         switch (methodRef.getName()) {
@@ -37,11 +40,12 @@ public class LocaleNativeGenerator implements Generator {
                 break;
             case "getDisplayLanguage":
                 writer.append("var result = ").appendClass("java.util.Locale").append(".$CLDR[$rt_ustr(")
-                .append(context.getParameterName(1)).append(")].languages[$rt_ustr(")
-                .append(context.getParameterName(2)).append(")];").softNewLine();
+                        .append(context.getParameterName(1)).append(")];").softNewLine();
+                writer.append("result = result ? result.languages[$rt_ustr(")
+                        .append(context.getParameterName(2)).append(")] : undefined;").softNewLine();
                 writer.append("return result ? $rt_str(result) : null;").softNewLine();
                 break;
-            case "getAvailableLocales":
+            case "getAvailableLocaleStrings":
                 generateAvailableLocales(writer);
                 break;
         }
@@ -52,6 +56,23 @@ public class LocaleNativeGenerator implements Generator {
         writer.append("var array = $rt_createArray(").appendClass("java.lang.String").append(", locales);")
                 .softNewLine();
         writer.append("for (var i = 0; i < locales.length; ++i) {").indent().softNewLine();
-        writer.append("array.data[i] = locales[i];");
+        writer.append("array.data[i] = $rt_str(locales[i]);").softNewLine();
+        writer.outdent().append("}").softNewLine();
+        writer.append("return array;").softNewLine();
+    }
+
+    @Override
+    public void methodAchieved(DependencyChecker checker, MethodDependency method) {
+        switch (method.getMethod().getName()) {
+            case "getDefaultLocale":
+            case "getDisplayCountry":
+            case "getDisplayLanguage":
+                method.getResult().propagate("java.lang.String");
+                break;
+            case "getAvailableLocaleStrings":
+                method.getResult().propagate("[java.lang.String");
+                method.getResult().getArrayItem().propagate("java.lang.String");
+                break;
+        }
     }
 }

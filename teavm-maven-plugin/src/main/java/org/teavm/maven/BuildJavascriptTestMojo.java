@@ -100,6 +100,9 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
 
     private List<String> additionalScriptLocalPaths = new ArrayList<>();
 
+    @Parameter
+    private Properties properties;
+
     public void setProject(MavenProject project) {
         this.project = project;
     }
@@ -138,6 +141,10 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
 
     public void setTransformers(String[] transformers) {
         this.transformers = transformers;
+    }
+
+    public void setProperties(Properties properties) {
+        this.properties = properties;
     }
 
     @Override
@@ -330,6 +337,7 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
                 .setClassSource(classSource)
                 .setExecutor(executor)
                 .build();
+        vm.setProperties(properties);
         vm.setMinifying(minifying);
         vm.installPlugins();
         new TestExceptionPlugin().install(vm);

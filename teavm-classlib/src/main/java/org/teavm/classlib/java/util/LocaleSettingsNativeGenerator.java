@@ -39,12 +39,19 @@ public class LocaleSettingsNativeGenerator implements Generator {
     private Set<String> availableLocales = new LinkedHashSet<>();
     private Set<String> availableLanguages = new LinkedHashSet<>();
     private Set<String> availableCountries = new LinkedHashSet<>();
+    private boolean initialized;
 
     public LocaleSettingsNativeGenerator(ClassLoader classLoader, Properties properties) {
         this.classLoader = classLoader;
         this.properties = properties;
-        findAvailableLocales();
-        readCLDR();
+    }
+
+    private synchronized void init() {
+        if (!initialized) {
+            initialized = true;
+            findAvailableLocales();
+            readCLDR();
+        }
     }
 
     private void findAvailableLocales() {
@@ -67,7 +74,7 @@ public class LocaleSettingsNativeGenerator implements Generator {
 
     private void readCLDR() {
         try (ZipInputStream input = new ZipInputStream(classLoader.getResourceAsStream(
-                "/org/teavm/classlib/impl/unicode/cldr-json.zip"))) {
+                "org/teavm/classlib/impl/unicode/cldr-json.zip"))) {
             while (true) {
                 ZipEntry entry = input.getNextEntry();
                 if (entry == null) {
@@ -81,6 +88,9 @@ public class LocaleSettingsNativeGenerator implements Generator {
                 String localeName = entry.getName().substring(0, objectIndex);
                 if (localeName.startsWith("/")) {
                     localeName = localeName.substring(1);
+                }
+                if (!availableLocales.contains(localeName)) {
+                    continue;
                 }
                 LocaleInfo localeInfo = knownLocales.get(localeName);
                 if (localeInfo == null) {
@@ -127,6 +137,7 @@ public class LocaleSettingsNativeGenerator implements Generator {
 
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
+        init();
         switch (methodRef.getName()) {
             case "readCLDR":
                 generateReadCLDR(writer);
@@ -138,7 +149,43 @@ public class LocaleSettingsNativeGenerator implements Generator {
     }
 
     private void generateReadCLDR(SourceWriter writer) throws IOException {
-        writer.appendClass("java.util.Locale").append(".$CLDR = {");
+        writer.appendClass("java.util.Locale").append(".$CLDR = {").indent().softNewLine();
+        boolean firstLocale = true;
+        for (Map.Entry<String, LocaleInfo> entry : knownLocales.entrySet()) {
+            if (!firstLocale) {
+                writer.append(",").softNewLine();
+            }
+            firstLocale = false;
+            writer.append('"').append(Renderer.escapeString(entry.getKey())).append('"').ws().append(":").ws()
+                    .append('{').indent().softNewLine();
+
+            writer.append("\"languages\"").ws().append(':').ws().append('{').indent().softNewLine();
+            boolean first = true;
+            for (Map.Entry<String, String> langEntry : entry.getValue().languages.entrySet()) {
+                if (!first) {
+                    writer.append(',').softNewLine();
+                }
+                first = false;
+                writer.append('"').append(Renderer.escapeString(langEntry.getKey())).append('"').ws().append(':')
+                        .ws().append('"').append(Renderer.escapeString(langEntry.getValue())).append('"');
+            }
+            writer.outdent().append("},").softNewLine();
+
+            writer.append("\"territories\"").ws().append(':').ws().append('{').indent().softNewLine();
+            first = true;
+            for (Map.Entry<String, String> langEntry : entry.getValue().territories.entrySet()) {
+                if (!first) {
+                    writer.append(',').softNewLine();
+                }
+                first = false;
+                writer.append('"').append(Renderer.escapeString(langEntry.getKey())).append('"').ws().append(':')
+                        .ws().append('"').append(Renderer.escapeString(langEntry.getValue())).append('"');
+            }
+            writer.outdent().append('}');
+
+            writer.outdent().append('}');
+        }
+        writer.outdent().append("}").softNewLine();
     }
 
     private void generateGetDefaultLocale(SourceWriter writer) throws IOException {
