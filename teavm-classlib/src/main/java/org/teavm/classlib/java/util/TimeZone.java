@@ -32,26 +32,14 @@
 
 package org.teavm.classlib.java.util;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.TCloneable;
 
 public abstract class TimeZone implements TSerializable, TCloneable {
     private static final long serialVersionUID = 3581463369166924961L;
 
-    /**
-     * The SHORT display name style.
-     */
     public static final int SHORT = 0;
 
-    /**
-     * The LONG display name style.
-     */
     public static final int LONG = 1;
 
     private static THashMap<String, TimeZone> AvailableZones;
@@ -89,29 +77,16 @@ public abstract class TimeZone implements TSerializable, TCloneable {
     }
 
     public static synchronized String[] getAvailableIDs(int offset) {
-        List<String> result = new ArrayList<>();
-        for (TIterator<TimeZone> iter = AvailableZones.values().iterator(); iter.hasNext()) {
-            if ()
-        }
-        return Arrays.copyOf(result, j);
-        int count = 0;
-        int length = availableIDs.length;
-        String[] all = new String[length];
-        for (int i = 0; i < length; i++) {
+        TList<String> result = new TArrayList<>();
+        for (TIterator<TimeZone> iter = AvailableZones.values().iterator(); iter.hasNext();) {
+            TimeZone tz = iter.next();
             if (tz.getRawOffset() == offset) {
-                all[count++] = tz.getID();
+                result.add(tz.getID());
             }
         }
-        String[] answer = new String[count];
-        System.arraycopy(all, 0, answer, 0, count);
-        return answer;
+        return result.toArray(new String[0]);
     }
 
-    /**
-     * Gets the default time zone.
-     *
-     * @return the default time zone.
-     */
     public static synchronized TimeZone getDefault() {
         if (Default == null) {
             setDefault(null);
@@ -119,90 +94,29 @@ public abstract class TimeZone implements TSerializable, TCloneable {
         return (TimeZone) Default.clone();
     }
 
-    /**
-     * Gets the LONG name for this {@code TimeZone} for the default {@code Locale} in standard
-     * time. If the name is not available, the result is in the format
-     * {@code GMT[+-]hh:mm}.
-     *
-     * @return the {@code TimeZone} name.
-     */
     public final String getDisplayName() {
-        return getDisplayName(false, LONG, Locale.getDefault());
+        return getDisplayName(false, LONG, TLocale.getDefault());
     }
 
-    /**
-     * Gets the LONG name for this {@code TimeZone} for the specified {@code Locale} in standard
-     * time. If the name is not available, the result is in the format
-     * {@code GMT[+-]hh:mm}.
-     *
-     * @param locale
-     *            the {@code Locale}.
-     * @return the {@code TimeZone} name.
-     */
-    public final String getDisplayName(Locale locale) {
+    public final String getDisplayName(TLocale locale) {
         return getDisplayName(false, LONG, locale);
     }
 
-    /**
-     * Gets the specified style of name ({@code LONG} or {@code SHORT}) for this {@code TimeZone} for
-     * the default {@code Locale} in either standard or daylight time as specified. If
-     * the name is not available, the result is in the format {@code GMT[+-]hh:mm}.
-     *
-     * @param daylightTime
-     *            {@code true} for daylight time, {@code false} for standard
-     *            time.
-     * @param style
-     *            either {@code LONG} or {@code SHORT}.
-     * @return the {@code TimeZone} name.
-     */
     public final String getDisplayName(boolean daylightTime, int style) {
-        return getDisplayName(daylightTime, style, Locale.getDefault());
+        return getDisplayName(daylightTime, style, TLocale.getDefault());
     }
 
-    /**
-     * Gets the specified style of name ({@code LONG} or {@code SHORT}) for this {@code TimeZone} for
-     * the specified {@code Locale} in either standard or daylight time as specified. If
-     * the name is not available, the result is in the format {@code GMT[+-]hh:mm}.
-     *
-     * @param daylightTime
-     *            {@code true} for daylight time, {@code false} for standard
-     *            time.
-     * @param style
-     *            either LONG or SHORT.
-     * @param locale
-     *            either {@code LONG} or {@code SHORT}.
-     * @return the {@code TimeZone} name.
-     */
-    public String getDisplayName(boolean daylightTime, int style, Locale locale) {
-        if(icuTimeZone == null || !ID.equals(icuTimeZone.getID())){
+    public String getDisplayName(boolean daylightTime, int style, TLocale locale) {
+        if (icuTimeZone == null || !ID.equals(icuTimeZone.getID())) {
             icuTimeZone = com.ibm.icu.util.TimeZone.getTimeZone(ID);
         }
-        return icuTimeZone.getDisplayName(
-                daylightTime, style, locale);
+        return icuTimeZone.getDisplayName(daylightTime, style, locale);
     }
 
-    /**
-     * Gets the ID of this {@code TimeZone}.
-     *
-     * @return the time zone ID string.
-     */
     public String getID() {
         return ID;
     }
 
-    /**
-     * Gets the daylight savings offset in milliseconds for this {@code TimeZone}.
-     * <p>
-     * This implementation returns 3600000 (1 hour), or 0 if the time zone does
-     * not observe daylight savings.
-     * <p>
-     * Subclasses may override to return daylight savings values other than 1
-     * hour.
-     * <p>
-     *
-     * @return the daylight savings offset in milliseconds if this {@code TimeZone}
-     *         observes daylight savings, zero otherwise.
-     */
     public int getDSTSavings() {
         if (useDaylightTime()) {
             return 3600000;
@@ -210,15 +124,6 @@ public abstract class TimeZone implements TSerializable, TCloneable {
         return 0;
     }
 
-    /**
-     * Gets the offset from GMT of this {@code TimeZone} for the specified date. The
-     * offset includes daylight savings time if the specified date is within the
-     * daylight savings time period.
-     *
-     * @param time
-     *            the date in milliseconds since January 1, 1970 00:00:00 GMT
-     * @return the offset from GMT in milliseconds.
-     */
     public int getOffset(long time) {
         if (inDaylightTime(new Date(time))) {
             return getRawOffset() + getDSTSavings();
@@ -226,54 +131,16 @@ public abstract class TimeZone implements TSerializable, TCloneable {
         return getRawOffset();
     }
 
-    /**
-     * Gets the offset from GMT of this {@code TimeZone} for the specified date and
-     * time. The offset includes daylight savings time if the specified date and
-     * time are within the daylight savings time period.
-     *
-     * @param era
-     *            the {@code GregorianCalendar} era, either {@code GregorianCalendar.BC} or
-     *            {@code GregorianCalendar.AD}.
-     * @param year
-     *            the year.
-     * @param month
-     *            the {@code Calendar} month.
-     * @param day
-     *            the day of the month.
-     * @param dayOfWeek
-     *            the {@code Calendar} day of the week.
-     * @param time
-     *            the time of day in milliseconds.
-     * @return the offset from GMT in milliseconds.
-     */
-    abstract public int getOffset(int era, int year, int month, int day,
-            int dayOfWeek, int time);
+    abstract public int getOffset(int era, int year, int month, int day, int dayOfWeek, int time);
 
-    /**
-     * Gets the offset for standard time from GMT for this {@code TimeZone}.
-     *
-     * @return the offset from GMT in milliseconds.
-     */
     abstract public int getRawOffset();
 
-    /**
-     * Gets the {@code TimeZone} with the specified ID.
-     *
-     * @param name
-     *            a time zone string ID.
-     * @return the {@code TimeZone} with the specified ID or null if no {@code TimeZone} with
-     *         the specified ID exists.
-     */
     public static synchronized TimeZone getTimeZone(String name) {
         if (AvailableZones == null) {
             initializeAvailable();
         }
 
         TimeZone zone = AvailableZones.get(name);
-        if(zone == null && isAvailableIDInICU(name)){
-            appendAvailableZones(name);
-            zone = AvailableZones.get(name);
-        }
         if (zone == null) {
             if (name.startsWith("GMT") && name.length() > 3) {
                 char sign = name.charAt(3);
@@ -287,10 +154,8 @@ public abstract class TimeZone implements TSerializable, TCloneable {
                     int index = position[0];
                     if (index != -1) {
                         int raw = hour * 3600000;
-                        if (index < formattedName.length()
-                                && formattedName.charAt(index) == ':') {
-                            int minute = parseNumber(formattedName, index + 1,
-                                    position);
+                        if (index < formattedName.length() && formattedName.charAt(index) == ':') {
+                            int minute = parseNumber(formattedName, index + 1, position);
                             if (position[0] == -1 || minute < 0 || minute > 59) {
                                 return (TimeZone) GMT.clone();
                             }
@@ -339,15 +204,6 @@ public abstract class TimeZone implements TSerializable, TCloneable {
         return buf.toString();
     }
 
-    /**
-     * Returns whether the specified {@code TimeZone} has the same raw offset as this
-     * {@code TimeZone}.
-     *
-     * @param zone
-     *            a {@code TimeZone}.
-     * @return {@code true} when the {@code TimeZone} have the same raw offset, {@code false}
-     *         otherwise.
-     */
     public boolean hasSameRules(TimeZone zone) {
         if (zone == null) {
             return false;
@@ -355,21 +211,11 @@ public abstract class TimeZone implements TSerializable, TCloneable {
         return getRawOffset() == zone.getRawOffset();
     }
 
-    /**
-     * Returns whether the specified {@code Date} is in the daylight savings time period for
-     * this {@code TimeZone}.
-     *
-     * @param time
-     *            a {@code Date}.
-     * @return {@code true} when the {@code Date} is in the daylight savings time period, {@code false}
-     *         otherwise.
-     */
     abstract public boolean inDaylightTime(Date time);
 
     private static int parseNumber(String string, int offset, int[] position) {
         int index = offset, length = string.length(), digit, result = 0;
-        while (index < length
-                && (digit = Character.digit(string.charAt(index), 10)) != -1) {
+        while (index < length && (digit = Character.digit(string.charAt(index), 10)) != -1) {
             index++;
             result = result * 10 + digit;
         }
@@ -377,15 +223,6 @@ public abstract class TimeZone implements TSerializable, TCloneable {
         return result;
     }
 
-    /**
-     * Sets the default time zone. If passed {@code null}, then the next
-     * time {@link #getDefault} is called, the default time zone will be
-     * determined. This behavior is slightly different than the canonical
-     * description of this method, but it follows the spirit of it.
-     *
-     * @param timezone
-     *            a {@code TimeZone} object.
-     */
     public static synchronized void setDefault(TimeZone timezone) {
         if (timezone != null) {
             setICUDefaultTimeZone(timezone);
@@ -393,8 +230,7 @@ public abstract class TimeZone implements TSerializable, TCloneable {
             return;
         }
 
-        String zone = AccessController.doPrivileged(new PriviAction<String>(
-                "user.timezone"));
+        String zone = AccessController.doPrivileged(new PriviAction<String>("user.timezone"));
 
         // sometimes DRLVM incorrectly adds "\n" to the end of timezone ID
         if (zone != null && zone.contains("\n")) {
@@ -413,15 +249,14 @@ public abstract class TimeZone implements TSerializable, TCloneable {
             if (isCustomTimeZone[0]) {
                 // build a new SimpleTimeZone
                 switch (tzinfo[1]) {
-                case 0:
-                    // does not observe DST
-                    Default = new SimpleTimeZone(tzinfo[0], zoneId);
-                    break;
-                default:
-                    // observes DST
-                    Default = new SimpleTimeZone(tzinfo[0], zoneId, tzinfo[5],
-                            tzinfo[4], tzinfo[3], tzinfo[2], tzinfo[9],
-                            tzinfo[8], tzinfo[7], tzinfo[6], tzinfo[1]);
+                    case 0:
+                        // does not observe DST
+                        Default = new SimpleTimeZone(tzinfo[0], zoneId);
+                        break;
+                    default:
+                        // observes DST
+                        Default = new SimpleTimeZone(tzinfo[0], zoneId, tzinfo[5], tzinfo[4], tzinfo[3], tzinfo[2],
+                                tzinfo[9], tzinfo[8], tzinfo[7], tzinfo[6], tzinfo[1]);
                 }
             } else {
                 // get TimeZone
@@ -435,32 +270,23 @@ public abstract class TimeZone implements TSerializable, TCloneable {
     }
 
     private static void setICUDefaultTimeZone(TimeZone timezone) {
-        final com.ibm.icu.util.TimeZone icuTZ = com.ibm.icu.util.TimeZone
-                .getTimeZone(timezone.getID());
+        final com.ibm.icu.util.TimeZone icuTZ = com.ibm.icu.util.TimeZone.getTimeZone(timezone.getID());
 
-        AccessController
-                .doPrivileged(new PrivilegedAction<java.lang.reflect.Field>() {
-                    public java.lang.reflect.Field run() {
-                        java.lang.reflect.Field field = null;
-                        try {
-                            field = com.ibm.icu.util.TimeZone.class
-                                    .getDeclaredField("defaultZone");
-                            field.setAccessible(true);
-                            field.set("defaultZone", icuTZ);
-                        } catch (Exception e) {
-                            return null;
-                        }
-                        return field;
-                    }
-                });
+        AccessController.doPrivileged(new PrivilegedAction<java.lang.reflect.Field>() {
+            public java.lang.reflect.Field run() {
+                java.lang.reflect.Field field = null;
+                try {
+                    field = com.ibm.icu.util.TimeZone.class.getDeclaredField("defaultZone");
+                    field.setAccessible(true);
+                    field.set("defaultZone", icuTZ);
+                } catch (Exception e) {
+                    return null;
+                }
+                return field;
+            }
+        });
     }
 
-    /**
-     * Sets the ID of this {@code TimeZone}.
-     *
-     * @param name
-     *            a string which is the time zone ID.
-     */
     public void setID(String name) {
         if (name == null) {
             throw new NullPointerException();
@@ -468,42 +294,9 @@ public abstract class TimeZone implements TSerializable, TCloneable {
         ID = name;
     }
 
-    /**
-     * Sets the offset for standard time from GMT for this {@code TimeZone}.
-     *
-     * @param offset
-     *            the offset from GMT in milliseconds.
-     */
     abstract public void setRawOffset(int offset);
 
-    /**
-     * Returns whether this {@code TimeZone} has a daylight savings time period.
-     *
-     * @return {@code true} if this {@code TimeZone} has a daylight savings time period, {@code false}
-     *         otherwise.
-     */
     abstract public boolean useDaylightTime();
 
-    /**
-     * Gets the name and the details of the user-selected TimeZone on the
-     * device.
-     *
-     * @param tzinfo
-     *            int array of 10 elements to be filled with the TimeZone
-     *            information. Once filled, the contents of the array are
-     *            formatted as follows: tzinfo[0] -> the timezone offset;
-     *            tzinfo[1] -> the dst adjustment; tzinfo[2] -> the dst start
-     *            hour; tzinfo[3] -> the dst start day of week; tzinfo[4] -> the
-     *            dst start week of month; tzinfo[5] -> the dst start month;
-     *            tzinfo[6] -> the dst end hour; tzinfo[7] -> the dst end day of
-     *            week; tzinfo[8] -> the dst end week of month; tzinfo[9] -> the
-     *            dst end month;
-     * @param isCustomTimeZone
-     *            boolean array of size 1 that indicates if a timezone match is
-     *            found
-     * @return the name of the TimeZone or null if error occurs in native
-     *         method.
-     */
-    private static native String getCustomTimeZone(int[] tzinfo,
-            boolean[] isCustomTimeZone);
+    private static native String getCustomTimeZone(int[] tzinfo, boolean[] isCustomTimeZone);
 }

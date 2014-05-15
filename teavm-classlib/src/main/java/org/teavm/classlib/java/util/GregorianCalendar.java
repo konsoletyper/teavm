@@ -17,174 +17,7 @@
 
 package org.teavm.classlib.java.util;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-
-/**
- * {@code GregorianCalendar} is a concrete subclass of {@link Calendar}
- * and provides the standard calendar used by most of the world.
- *
- * <p>
- * The standard (Gregorian) calendar has 2 eras, BC and AD.
- *
- * <p>
- * This implementation handles a single discontinuity, which corresponds by
- * default to the date the Gregorian calendar was instituted (October 15, 1582
- * in some countries, later in others). The cutover date may be changed by the
- * caller by calling {@code setGregorianChange()}.
- *
- * <p>
- * Historically, in those countries which adopted the Gregorian calendar first,
- * October 4, 1582 was thus followed by October 15, 1582. This calendar models
- * this correctly. Before the Gregorian cutover, {@code GregorianCalendar}
- * implements the Julian calendar. The only difference between the Gregorian and
- * the Julian calendar is the leap year rule. The Julian calendar specifies leap
- * years every four years, whereas the Gregorian calendar omits century years
- * which are not divisible by 400.
- *
- * <p>
- * {@code GregorianCalendar} implements <em>proleptic</em> Gregorian
- * and Julian calendars. That is, dates are computed by extrapolating the
- * current rules indefinitely far backward and forward in time. As a result,
- * {@code GregorianCalendar} may be used for all years to generate
- * meaningful and consistent results. However, dates obtained using
- * {@code GregorianCalendar} are historically accurate only from March 1,
- * 4 AD onward, when modern Julian calendar rules were adopted. Before this
- * date, leap year rules were applied irregularly, and before 45 BC the Julian
- * calendar did not even exist.
- *
- * <p>
- * Prior to the institution of the Gregorian calendar, New Year's Day was March
- * 25. To avoid confusion, this calendar always uses January 1. A manual
- * adjustment may be made if desired for dates that are prior to the Gregorian
- * changeover and which fall between January 1 and March 24.
- *
- * <p>
- * Values calculated for the {@code WEEK_OF_YEAR} field range from 1 to
- * 53. Week 1 for a year is the earliest seven day period starting on
- * {@code getFirstDayOfWeek()} that contains at least
- * {@code getMinimalDaysInFirstWeek()} days from that year. It thus
- * depends on the values of {@code getMinimalDaysInFirstWeek()},
- * {@code getFirstDayOfWeek()}, and the day of the week of January 1.
- * Weeks between week 1 of one year and week 1 of the following year are
- * numbered sequentially from 2 to 52 or 53 (as needed).
- *
- * <p>
- * For example, January 1, 1998 was a Thursday. If
- * {@code getFirstDayOfWeek()} is {@code MONDAY} and
- * {@code getMinimalDaysInFirstWeek()} is 4 (these are the values
- * reflecting ISO 8601 and many national standards), then week 1 of 1998 starts
- * on December 29, 1997, and ends on January 4, 1998. If, however,
- * {@code getFirstDayOfWeek()} is {@code SUNDAY}, then week 1 of
- * 1998 starts on January 4, 1998, and ends on January 10, 1998; the first three
- * days of 1998 then are part of week 53 of 1997.
- *
- * <p>
- * Values calculated for the {@code WEEK_OF_MONTH} field range from 0 or
- * 1 to 4 or 5. Week 1 of a month (the days with <code>WEEK_OF_MONTH =
- * 1</code>)
- * is the earliest set of at least {@code getMinimalDaysInFirstWeek()}
- * contiguous days in that month, ending on the day before
- * {@code getFirstDayOfWeek()}. Unlike week 1 of a year, week 1 of a
- * month may be shorter than 7 days, need not start on
- * {@code getFirstDayOfWeek()}, and will not include days of the
- * previous month. Days of a month before week 1 have a
- * {@code WEEK_OF_MONTH} of 0.
- *
- * <p>
- * For example, if {@code getFirstDayOfWeek()} is {@code SUNDAY}
- * and {@code getMinimalDaysInFirstWeek()} is 4, then the first week of
- * January 1998 is Sunday, January 4 through Saturday, January 10. These days
- * have a {@code WEEK_OF_MONTH} of 1. Thursday, January 1 through
- * Saturday, January 3 have a {@code WEEK_OF_MONTH} of 0. If
- * {@code getMinimalDaysInFirstWeek()} is changed to 3, then January 1
- * through January 3 have a {@code WEEK_OF_MONTH} of 1.
- *
- * <p>
- * <strong>Example:</strong> <blockquote>
- *
- * <pre>
- * // get the supported ids for GMT-08:00 (Pacific Standard Time)
- * String[] ids = TimeZone.getAvailableIDs(-8 * 60 * 60 * 1000);
- * // if no ids were returned, something is wrong. get out.
- * if (ids.length == 0)
- *     System.exit(0);
- *
- *  // begin output
- * System.out.println("Current Time");
- *
- * // create a Pacific Standard Time time zone
- * SimpleTimeZone pdt = new SimpleTimeZone(-8 * 60 * 60 * 1000, ids[0]);
- *
- * // set up rules for daylight savings time
- * pdt.setStartRule(Calendar.APRIL, 1, Calendar.SUNDAY, 2 * 60 * 60 * 1000);
- * pdt.setEndRule(Calendar.OCTOBER, -1, Calendar.SUNDAY, 2 * 60 * 60 * 1000);
- *
- * // create a GregorianCalendar with the Pacific Daylight time zone
- * // and the current date and time
- * Calendar calendar = new GregorianCalendar(pdt);
- * Date trialTime = new Date();
- * calendar.setTime(trialTime);
- *
- * // print out a bunch of interesting things
- * System.out.println("ERA: " + calendar.get(Calendar.ERA));
- * System.out.println("YEAR: " + calendar.get(Calendar.YEAR));
- * System.out.println("MONTH: " + calendar.get(Calendar.MONTH));
- * System.out.println("WEEK_OF_YEAR: " + calendar.get(Calendar.WEEK_OF_YEAR));
- * System.out.println("WEEK_OF_MONTH: " + calendar.get(Calendar.WEEK_OF_MONTH));
- * System.out.println("DATE: " + calendar.get(Calendar.DATE));
- * System.out.println("DAY_OF_MONTH: " + calendar.get(Calendar.DAY_OF_MONTH));
- * System.out.println("DAY_OF_YEAR: " + calendar.get(Calendar.DAY_OF_YEAR));
- * System.out.println("DAY_OF_WEEK: " + calendar.get(Calendar.DAY_OF_WEEK));
- * System.out.println("DAY_OF_WEEK_IN_MONTH: "
- *                    + calendar.get(Calendar.DAY_OF_WEEK_IN_MONTH));
- * System.out.println("AM_PM: " + calendar.get(Calendar.AM_PM));
- * System.out.println("HOUR: " + calendar.get(Calendar.HOUR));
- * System.out.println("HOUR_OF_DAY: " + calendar.get(Calendar.HOUR_OF_DAY));
- * System.out.println("MINUTE: " + calendar.get(Calendar.MINUTE));
- * System.out.println("SECOND: " + calendar.get(Calendar.SECOND));
- * System.out.println("MILLISECOND: " + calendar.get(Calendar.MILLISECOND));
- * System.out.println("ZONE_OFFSET: "
- *                    + (calendar.get(Calendar.ZONE_OFFSET)/(60*60*1000)));
- * System.out.println("DST_OFFSET: "
- *                    + (calendar.get(Calendar.DST_OFFSET)/(60*60*1000)));
-
- * System.out.println("Current Time, with hour reset to 3");
- * calendar.clear(Calendar.HOUR_OF_DAY); // so doesn't override
- * calendar.set(Calendar.HOUR, 3);
- * System.out.println("ERA: " + calendar.get(Calendar.ERA));
- * System.out.println("YEAR: " + calendar.get(Calendar.YEAR));
- * System.out.println("MONTH: " + calendar.get(Calendar.MONTH));
- * System.out.println("WEEK_OF_YEAR: " + calendar.get(Calendar.WEEK_OF_YEAR));
- * System.out.println("WEEK_OF_MONTH: " + calendar.get(Calendar.WEEK_OF_MONTH));
- * System.out.println("DATE: " + calendar.get(Calendar.DATE));
- * System.out.println("DAY_OF_MONTH: " + calendar.get(Calendar.DAY_OF_MONTH));
- * System.out.println("DAY_OF_YEAR: " + calendar.get(Calendar.DAY_OF_YEAR));
- * System.out.println("DAY_OF_WEEK: " + calendar.get(Calendar.DAY_OF_WEEK));
- * System.out.println("DAY_OF_WEEK_IN_MONTH: "
- *                    + calendar.get(Calendar.DAY_OF_WEEK_IN_MONTH));
- * System.out.println("AM_PM: " + calendar.get(Calendar.AM_PM));
- * System.out.println("HOUR: " + calendar.get(Calendar.HOUR));
- * System.out.println("HOUR_OF_DAY: " + calendar.get(Calendar.HOUR_OF_DAY));
- * System.out.println("MINUTE: " + calendar.get(Calendar.MINUTE));
- * System.out.println("SECOND: " + calendar.get(Calendar.SECOND));
- * System.out.println("MILLISECOND: " + calendar.get(Calendar.MILLISECOND));
- * System.out.println("ZONE_OFFSET: "
- *        + (calendar.get(Calendar.ZONE_OFFSET)/(60*60*1000))); // in hours
- * System.out.println("DST_OFFSET: "
- *        + (calendar.get(Calendar.DST_OFFSET)/(60*60*1000))); // in hours
- * </pre>
- *
- * </blockquote>
- *
- * @see Calendar
- * @see TimeZone
- */
 public class GregorianCalendar extends Calendar {
-
-    private static final long serialVersionUID = -8125100834729963327L;
-
     /**
      * Value for the BC era.
      */
@@ -236,7 +69,7 @@ public class GregorianCalendar extends Calendar {
      * time with the default {@code Locale} and {@code TimeZone}.
      */
     public GregorianCalendar() {
-        this(TimeZone.getDefault(), Locale.getDefault());
+        this(TimeZone.getDefault(), TLocale.getDefault());
     }
 
     /**
@@ -251,7 +84,7 @@ public class GregorianCalendar extends Calendar {
      *            the day of the month.
      */
     public GregorianCalendar(int year, int month, int day) {
-        super(TimeZone.getDefault(), Locale.getDefault());
+        super(TimeZone.getDefault(), TLocale.getDefault());
         set(year, month, day);
     }
 
@@ -271,7 +104,7 @@ public class GregorianCalendar extends Calendar {
      *            the minute.
      */
     public GregorianCalendar(int year, int month, int day, int hour, int minute) {
-        super(TimeZone.getDefault(), Locale.getDefault());
+        super(TimeZone.getDefault(), TLocale.getDefault());
         set(year, month, day, hour, minute);
     }
 
@@ -294,7 +127,7 @@ public class GregorianCalendar extends Calendar {
      */
     public GregorianCalendar(int year, int month, int day, int hour,
             int minute, int second) {
-        super(TimeZone.getDefault(), Locale.getDefault());
+        super(TimeZone.getDefault(), TLocale.getDefault());
         set(year, month, day, hour, minute, second);
     }
 
@@ -310,7 +143,7 @@ public class GregorianCalendar extends Calendar {
      * @param locale
      *            the {@code Locale}.
      */
-    public GregorianCalendar(Locale locale) {
+    public GregorianCalendar(TLocale locale) {
         this(TimeZone.getDefault(), locale);
     }
 
@@ -322,7 +155,7 @@ public class GregorianCalendar extends Calendar {
      *            the {@code TimeZone}.
      */
     public GregorianCalendar(TimeZone timezone) {
-        this(timezone, Locale.getDefault());
+        this(timezone, TLocale.getDefault());
     }
 
     /**
@@ -334,12 +167,12 @@ public class GregorianCalendar extends Calendar {
      * @param locale
      *            the {@code Locale}.
      */
-    public GregorianCalendar(TimeZone timezone, Locale locale) {
+    public GregorianCalendar(TimeZone timezone, TLocale locale) {
         super(timezone, locale);
         setTimeInMillis(System.currentTimeMillis());
     }
 
-    GregorianCalendar(boolean ignored) {
+    GregorianCalendar(@SuppressWarnings("unused") boolean ignored) {
         super(TimeZone.getDefault());
         setFirstDayOfWeek(SUNDAY);
         setMinimalDaysInFirstWeek(1);
@@ -1410,18 +1243,6 @@ public class GregorianCalendar extends Calendar {
             lastYearSkew = 0;
             currentYearSkew = julianSkew;
         }
-        isCached = false;
-    }
-
-    private void writeObject(ObjectOutputStream stream) throws IOException {
-        stream.defaultWriteObject();
-    }
-
-    private void readObject(ObjectInputStream stream) throws IOException,
-            ClassNotFoundException {
-
-        stream.defaultReadObject();
-        setGregorianChange(new Date(gregorianCutover));
         isCached = false;
     }
 
