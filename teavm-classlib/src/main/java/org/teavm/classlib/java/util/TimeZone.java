@@ -271,20 +271,6 @@ public abstract class TimeZone implements TSerializable, TCloneable {
 
     private static void setICUDefaultTimeZone(TimeZone timezone) {
         final com.ibm.icu.util.TimeZone icuTZ = com.ibm.icu.util.TimeZone.getTimeZone(timezone.getID());
-
-        AccessController.doPrivileged(new PrivilegedAction<java.lang.reflect.Field>() {
-            public java.lang.reflect.Field run() {
-                java.lang.reflect.Field field = null;
-                try {
-                    field = com.ibm.icu.util.TimeZone.class.getDeclaredField("defaultZone");
-                    field.setAccessible(true);
-                    field.set("defaultZone", icuTZ);
-                } catch (Exception e) {
-                    return null;
-                }
-                return field;
-            }
-        });
     }
 
     public void setID(String name) {

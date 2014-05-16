@@ -32,12 +32,12 @@
 
 package org.teavm.classlib.java.util;
 
-import java.text.DateFormat;
-import java.text.DateFormatSymbols;
-import java.text.SimpleDateFormat;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.TCloneable;
 import org.teavm.classlib.java.lang.TComparable;
+import org.teavm.classlib.java.text.DateFormat;
+import org.teavm.classlib.java.text.DateFormatSymbols;
+import org.teavm.classlib.java.text.SimpleDateFormat;
 
 public class Date implements TSerializable, TCloneable, TComparable<Date> {
 
@@ -104,6 +104,7 @@ public class Date implements TSerializable, TCloneable, TComparable<Date> {
         }
     }
 
+    @Override
     public int compareTo(Date date) {
         if (milliseconds < date.milliseconds) {
             return -1;
