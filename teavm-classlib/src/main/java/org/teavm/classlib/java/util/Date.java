@@ -37,7 +37,6 @@ import org.teavm.classlib.java.lang.TCloneable;
 import org.teavm.classlib.java.lang.TComparable;
 import org.teavm.classlib.java.text.DateFormat;
 import org.teavm.classlib.java.text.DateFormatSymbols;
-import org.teavm.classlib.java.text.SimpleDateFormat;
 
 public class Date implements TSerializable, TCloneable, TComparable<Date> {
 
@@ -405,15 +404,11 @@ public class Date implements TSerializable, TCloneable, TComparable<Date> {
 
     @Deprecated
     public String toGMTString() {
-        SimpleDateFormat format1 = new SimpleDateFormat("d MMM ", TLocale.US);
-        SimpleDateFormat format2 = new SimpleDateFormat(" HH:mm:ss 'GMT'", TLocale.US);
-        TimeZone gmtZone = TimeZone.getTimeZone("GMT");
-        format1.setTimeZone(gmtZone);
-        format2.setTimeZone(gmtZone);
-        GregorianCalendar gc = new GregorianCalendar(gmtZone);
-        gc.setTimeInMillis(milliseconds);
-        return format1.format(this) + gc.get(Calendar.YEAR) + format2.format(this);
+        return toGTMString((int)(milliseconds >> 32), (int)milliseconds);
     }
+
+    // TODO: implement using native JavaScript method
+    private static native String toGTMString(int hidate, int lodate);
 
     @Deprecated
     public String toLocaleString() {
@@ -422,29 +417,11 @@ public class Date implements TSerializable, TCloneable, TComparable<Date> {
 
     @Override
     public String toString() {
-        Calendar cal = new GregorianCalendar(milliseconds);
-        TimeZone zone = cal.getTimeZone();
-        String zoneName = zone.getDisplayName(zone.inDaylightTime(this), TimeZone.SHORT, TLocale.getDefault());
-
-        StringBuilder sb = new StringBuilder(34);
-        sb.append(dayOfWeekNames[cal.get(Calendar.DAY_OF_WEEK) - 1]);
-        sb.append(' ');
-        sb.append(monthNames[cal.get(Calendar.MONTH)]);
-        sb.append(' ');
-        sb.append(toTwoDigits(cal.get(Calendar.DAY_OF_MONTH)));
-        sb.append(' ');
-        sb.append(toTwoDigits(cal.get(Calendar.HOUR_OF_DAY)));
-        sb.append(':');
-        sb.append(toTwoDigits(cal.get(Calendar.MINUTE)));
-        sb.append(':');
-        sb.append(toTwoDigits(cal.get(Calendar.SECOND)));
-        sb.append(' ');
-        sb.append(zoneName);
-        sb.append(' ');
-        sb.append(cal.get(Calendar.YEAR));
-
-        return sb.toString();
+        return toString((int)(milliseconds >> 32), (int)milliseconds);
     }
+
+    // TODO: implement using native JavaScript method
+    private static native String toString(int hidate, int lodate);
 
     private String toTwoDigits(int digit) {
         if (digit >= 10) {
@@ -456,10 +433,8 @@ public class Date implements TSerializable, TCloneable, TComparable<Date> {
 
     @Deprecated
     public static long UTC(int year, int month, int day, int hour, int minute, int second) {
-        GregorianCalendar cal = new GregorianCalendar(false);
-        cal.setTimeZone(TimeZone.getTimeZone("GMT"));
-        cal.set(1900 + year, month, day, hour, minute, second);
-        return cal.getTimeInMillis();
+        Date date = new Date(year, month, day, hour, minute, second);
+        return date.milliseconds - date.getTimezoneOffset();
     }
 
     private static int zone(String text) {

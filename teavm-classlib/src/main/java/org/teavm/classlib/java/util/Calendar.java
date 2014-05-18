@@ -32,6 +32,7 @@
 
 package org.teavm.classlib.java.util;
 
+import org.teavm.classlib.impl.unicode.CLDRHelper;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.TCloneable;
 import org.teavm.classlib.java.lang.TComparable;
@@ -56,8 +57,6 @@ public abstract class Calendar implements TSerializable, TCloneable, TComparable
     private int firstDayOfWeek;
 
     private int minimalDaysInFirstWeek;
-
-    private TimeZone zone;
 
     public static final int JANUARY = 0;
 
@@ -147,24 +146,24 @@ public abstract class Calendar implements TSerializable, TCloneable, TComparable
             "MINUTE=", "SECOND=", "MILLISECOND=", "ZONE_OFFSET=", "DST_OFFSET=" };
 
     protected Calendar() {
-        this(TimeZone.getDefault(), TLocale.getDefault());
+        this(TLocale.getDefault());
     }
 
-    Calendar(TimeZone timezone) {
+    protected Calendar(TLocale locale) {
         fields = new int[FIELD_COUNT];
         isSet = new boolean[FIELD_COUNT];
         areFieldsSet = isTimeSet = false;
         setLenient(true);
-        setTimeZone(timezone);
+        String localeCode = CLDRHelper.getCode(locale.getLanguage(), locale.getCountry());
+        setFirstDayOfWeek(getFirstDayOfWeek(localeCode));
+        setMinimalDaysInFirstWeek(getMinimalDaysInFirstWeek(localeCode));
     }
 
-    protected Calendar(TimeZone timezone, TLocale locale) {
-        this(timezone);
-        com.ibm.icu.util.Calendar icuCalendar = com.ibm.icu.util.Calendar.getInstance(
-                com.ibm.icu.util.SimpleTimeZone.getTimeZone(timezone.getID()), locale);
-        setFirstDayOfWeek(icuCalendar.getFirstDayOfWeek());
-        setMinimalDaysInFirstWeek(icuCalendar.getMinimalDaysInFirstWeek());
-    }
+    // TODO: implement using CLDR
+    private static native int getFirstDayOfWeek(String localeCode);
+
+    // TODO: implement using CLDR
+    private static native int getMinimalDaysInFirstWeek(String localeCode);
 
     abstract public void add(int field, int value);
 
@@ -202,7 +201,6 @@ public abstract class Calendar implements TSerializable, TCloneable, TComparable
             Calendar clone = (Calendar) super.clone();
             clone.fields = fields.clone();
             clone.isSet = isSet.clone();
-            clone.zone = (TimeZone) zone.clone();
             return clone;
         } catch (CloneNotSupportedException e) {
             return null;
@@ -235,8 +233,7 @@ public abstract class Calendar implements TSerializable, TCloneable, TComparable
         Calendar cal = (Calendar) object;
         return getTimeInMillis() == cal.getTimeInMillis() && isLenient() == cal.isLenient() &&
                 getFirstDayOfWeek() == cal.getFirstDayOfWeek() &&
-                getMinimalDaysInFirstWeek() == cal.getMinimalDaysInFirstWeek() &&
-                getTimeZone().equals(cal.getTimeZone());
+                getMinimalDaysInFirstWeek() == cal.getMinimalDaysInFirstWeek();
     }
 
     public int get(int field) {
@@ -298,14 +295,6 @@ public abstract class Calendar implements TSerializable, TCloneable, TComparable
         return new GregorianCalendar(locale);
     }
 
-    public static synchronized Calendar getInstance(TimeZone timezone) {
-        return new GregorianCalendar(timezone);
-    }
-
-    public static synchronized Calendar getInstance(TimeZone timezone, TLocale locale) {
-        return new GregorianCalendar(timezone, locale);
-    }
-
     abstract public int getLeastMaximum(int field);
 
     abstract public int getMaximum(int field);
@@ -328,14 +317,9 @@ public abstract class Calendar implements TSerializable, TCloneable, TComparable
         return time;
     }
 
-    public TimeZone getTimeZone() {
-        return zone;
-    }
-
     @Override
     public int hashCode() {
-        return (isLenient() ? 1237 : 1231) + getFirstDayOfWeek() + getMinimalDaysInFirstWeek() +
-                getTimeZone().hashCode();
+        return (isLenient() ? 1237 : 1231) + getFirstDayOfWeek() + getMinimalDaysInFirstWeek();
     }
 
     protected final int internalGet(int field) {
@@ -417,17 +401,11 @@ public abstract class Calendar implements TSerializable, TCloneable, TComparable
         }
     }
 
-    public void setTimeZone(TimeZone timezone) {
-        zone = timezone;
-        areFieldsSet = false;
-    }
-
     @Override
-    @SuppressWarnings("nls")
     public String toString() {
         StringBuilder result = new StringBuilder(getClass().getName() + "[time=" +
                 (isTimeSet ? String.valueOf(time) : "?") + ",areFieldsSet=" + areFieldsSet + ",lenient=" + lenient +
-                ",zone=" + zone + ",firstDayOfWeek=" + firstDayOfWeek + ",minimalDaysInFirstWeek=" +
+                ",firstDayOfWeek=" + firstDayOfWeek + ",minimalDaysInFirstWeek=" +
                 minimalDaysInFirstWeek);
         for (int i = 0; i < FIELD_COUNT; i++) {
             result.append(',');
