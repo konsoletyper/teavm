@@ -15,14 +15,16 @@
  */
 package org.teavm.classlib.java.util;
 
+import org.teavm.classlib.java.lang.TComparable;
 import org.teavm.classlib.java.lang.TSystem;
+import org.teavm.dependency.PluggableDependency;
 import org.teavm.javascript.ni.GeneratedBy;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class TDate {
+public class TDate implements TComparable<TDate> {
     private long value;
 
     @GeneratedBy(DateNativeGenerator.class)
@@ -155,6 +157,45 @@ public class TDate {
         return value > when.value;
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof TDate)) {
+            return false;
+        }
+        TDate other = (TDate)obj;
+        return value == other.value;
+    }
+
+    @Override
+    public int compareTo(TDate other) {
+        return Long.compare(value, other.value);
+    }
+
+    @Override
+    public int hashCode() {
+        return (int)value ^ (int)(value >>> 32);
+    }
+
+    @Override
+    public String toString() {
+        return toString(value);
+    }
+
+    @Deprecated
+    public String toLocaleString() {
+        return toLocaleFormat(value, "%c");
+    }
+
+    @Deprecated
+    public String toGMTString() {
+        return toGMTString(value);
+    }
+
+    @Deprecated
+    public int getTimezoneOffset() {
+        return getTimezoneOffset(value);
+    }
+
     @GeneratedBy(DateNativeGenerator.class)
     private static native int getFullYear(double date);
 
@@ -175,7 +216,6 @@ public class TDate {
 
     @GeneratedBy(DateNativeGenerator.class)
     private static native int getDay(double date);
-
 
     @GeneratedBy(DateNativeGenerator.class)
     private static native int getHours(double date);
@@ -203,4 +243,20 @@ public class TDate {
 
     @GeneratedBy(DateNativeGenerator.class)
     private static native double buildNumericUTC(int year, int month, int date, int hrs, int min, int sec);
+
+    @GeneratedBy(DateNativeGenerator.class)
+    @PluggableDependency(DateNativeGenerator.class)
+    private static native String toString(double value);
+
+    @GeneratedBy(DateNativeGenerator.class)
+    @PluggableDependency(DateNativeGenerator.class)
+    private static native String toLocaleFormat(double value, String format);
+
+    @GeneratedBy(DateNativeGenerator.class)
+    @PluggableDependency(DateNativeGenerator.class)
+    private static native String toGMTString(double value);
+
+    @GeneratedBy(DateNativeGenerator.class)
+    @PluggableDependency(DateNativeGenerator.class)
+    static native int getTimezoneOffset(double value);
 }

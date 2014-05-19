@@ -26,7 +26,9 @@ import org.teavm.javascript.Renderer;
 import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.GeneratorContext;
 import org.teavm.model.MethodReference;
-import com.google.gson.*;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 /**
  *
@@ -36,6 +38,8 @@ public class LocaleSettingsNativeGenerator implements Generator {
     private ClassLoader classLoader;
     private Properties properties;
     private Map<String, LocaleInfo> knownLocales = new LinkedHashMap<>();
+    private Map<String, Integer> minDaysMap = new LinkedHashMap<>();
+    private Map<String, Integer> firstDayMap = new LinkedHashMap<>();
     private Set<String> availableLocales = new LinkedHashSet<>();
     private Set<String> availableLanguages = new LinkedHashSet<>();
     private Set<String> availableCountries = new LinkedHashSet<>();
@@ -83,6 +87,10 @@ public class LocaleSettingsNativeGenerator implements Generator {
                 if (!entry.getName().endsWith(".json")) {
                     continue;
                 }
+                if (entry.getName().equals("supplemental/weekData.json")) {
+                    readWeekData(input);
+                    continue;
+                }
                 int objectIndex = entry.getName().lastIndexOf('/');
                 String objectName = entry.getName().substring(objectIndex + 1);
                 String localeName = entry.getName().substring(0, objectIndex);
@@ -125,13 +133,47 @@ public class LocaleSettingsNativeGenerator implements Generator {
 
     private void readCountries(String localeCode, LocaleInfo locale, InputStream input) {
         JsonObject root = (JsonObject)new JsonParser().parse(new InputStreamReader(input));
-        JsonObject languagesJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
+        JsonObject countriesJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
                 .get("localeDisplayNames").getAsJsonObject().get("territories").getAsJsonObject();
-        for (Map.Entry<String, JsonElement> property : languagesJson.entrySet()) {
-            String language = property.getKey();
-            if (availableCountries.contains(language)) {
-                locale.territories.put(language, property.getValue().getAsString());
+        for (Map.Entry<String, JsonElement> property : countriesJson.entrySet()) {
+            String country = property.getKey();
+            if (availableCountries.contains(country)) {
+                locale.territories.put(country, property.getValue().getAsString());
             }
+        }
+    }
+
+    private void readWeekData(InputStream input) {
+        JsonObject root = (JsonObject)new JsonParser().parse(new InputStreamReader(input));
+        JsonObject weekJson = root.get("supplemental").getAsJsonObject().get("weekData").getAsJsonObject();
+        JsonObject minDaysJson = weekJson.get("minDays").getAsJsonObject();
+        for (Map.Entry<String, JsonElement> property : minDaysJson.entrySet()) {
+            minDaysMap.put(property.getKey(), property.getValue().getAsInt());
+        }
+        JsonObject firstDayJson = weekJson.get("firstDay").getAsJsonObject();
+        for (Map.Entry<String, JsonElement> property : firstDayJson.entrySet()) {
+            firstDayMap.put(property.getKey(), getNumericDay(property.getValue().getAsString()));
+        }
+    }
+
+    private int getNumericDay(String day) {
+        switch (day) {
+            case "sun":
+                return 1;
+            case "mon":
+                return 2;
+            case "tue":
+                return 3;
+            case "wed":
+                return 4;
+            case "thu":
+                return 5;
+            case "fri":
+                return 6;
+            case "sat":
+                return 7;
+            default:
+                throw new IllegalArgumentException("Can't recognize day name: " + day);
         }
     }
 
@@ -149,6 +191,9 @@ public class LocaleSettingsNativeGenerator implements Generator {
     }
 
     private void generateReadCLDR(SourceWriter writer) throws IOException {
+        writer.append("if (").appendClass("java.util.Locale").append("$CLDR").append("{").indent().softNewLine();
+        writer.append("return;").softNewLine();
+        writer.outdent().append("}").softNewLine();
         writer.appendClass("java.util.Locale").append(".$CLDR = {").indent().softNewLine();
         boolean firstLocale = true;
         for (Map.Entry<String, LocaleInfo> entry : knownLocales.entrySet()) {

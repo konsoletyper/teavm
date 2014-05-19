@@ -17,6 +17,9 @@ package org.teavm.classlib.java.util;
 
 import java.io.IOException;
 import org.teavm.codegen.SourceWriter;
+import org.teavm.dependency.DependencyChecker;
+import org.teavm.dependency.DependencyPlugin;
+import org.teavm.dependency.MethodDependency;
 import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.GeneratorContext;
 import org.teavm.model.MethodReference;
@@ -25,7 +28,7 @@ import org.teavm.model.MethodReference;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class DateNativeGenerator implements Generator {
+public class DateNativeGenerator implements Generator, DependencyPlugin {
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
         switch (methodRef.getName()) {
@@ -54,6 +57,24 @@ public class DateNativeGenerator implements Generator {
             case "setMinutes":
             case "setSeconds":
                 generateSetMethod(context, writer, methodRef.getName());
+                break;
+            case "toString":
+            case "toGMTString":
+                generateToString(context, writer, methodRef.getName());
+                break;
+            case "toLocaleFormat":
+                generateToLocaleFormat(context, writer);
+                break;
+        }
+    }
+
+    @Override
+    public void methodAchieved(DependencyChecker checker, MethodDependency method) {
+        switch (method.getMethod().getName()) {
+            case "toString":
+            case "toLocaleFormat":
+            case "toGMTString":
+                method.getResult().propagate("java.lang.String");
                 break;
         }
     }
@@ -88,6 +109,17 @@ public class DateNativeGenerator implements Generator {
             throws IOException {
         writer.append("var date = new Date(").append(context.getParameterName(1)).append(");").softNewLine();
         writer.append("return date.").append(methodName).append("(").append(context.getParameterName(2)).append(");")
+                .softNewLine();
+    }
+
+    private void generateToString(GeneratorContext context, SourceWriter writer, String method) throws IOException {
+        writer.append("return $rt_str(new Date(").append(context.getParameterName(1)).append(").").append(method)
+                .append("());").softNewLine();
+    }
+
+    private void generateToLocaleFormat(GeneratorContext context, SourceWriter writer) throws IOException {
+        writer.append("return $rt_str(new Date(").append(context.getParameterName(1))
+                .append(").toLocaleFormat($rt_ustr(").append(context.getParameterName(2)).append(")));")
                 .softNewLine();
     }
 }
