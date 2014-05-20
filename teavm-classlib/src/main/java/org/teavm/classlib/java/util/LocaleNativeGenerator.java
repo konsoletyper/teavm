@@ -32,17 +32,20 @@ public class LocaleNativeGenerator implements Generator, DependencyPlugin {
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
         switch (methodRef.getName()) {
+            case "prepareCLDR":
+                writer.appendClass("java.util.Locale").append(".$CLDR = {};").softNewLine();
+                break;
             case "getDisplayCountry":
-                writer.append("var result = ").appendClass("java.util.Locale").append(".$CLDR[$rt_ustr(")
+                writer.append("var result = ").appendClass("java.util.Locale").append(".$CLDR.territories[$rt_ustr(")
                         .append(context.getParameterName(1)).append(")];").softNewLine();
-                writer.append("result = result ? result.territories[$rt_ustr(")
+                writer.append("result = result ? result[$rt_ustr(")
                         .append(context.getParameterName(2)).append(")] : undefined;").softNewLine();
                 writer.append("return result ? $rt_str(result) : null").softNewLine();
                 break;
             case "getDisplayLanguage":
-                writer.append("var result = ").appendClass("java.util.Locale").append(".$CLDR[$rt_ustr(")
+                writer.append("var result = ").appendClass("java.util.Locale").append(".$CLDR.languages[$rt_ustr(")
                         .append(context.getParameterName(1)).append(")];").softNewLine();
-                writer.append("result = result ? result.languages[$rt_ustr(")
+                writer.append("result = result ? result[$rt_ustr(")
                         .append(context.getParameterName(2)).append(")] : undefined;").softNewLine();
                 writer.append("return result ? $rt_str(result) : null;").softNewLine();
                 break;

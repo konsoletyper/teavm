@@ -181,8 +181,14 @@ public class LocaleSettingsNativeGenerator implements Generator {
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
         init();
         switch (methodRef.getName()) {
-            case "readCLDR":
-                generateReadCLDR(writer);
+            case "readLanguagesFromCLDR":
+                generateReadLanguagesFromCLDR(writer);
+                break;
+            case "readCountriesFromCLDR":
+                generateReadCountriesFromCLDR(writer);
+                break;
+            case "readWeeksFromCLDR":
+                generateReadWeeksFromCDLR(writer);
                 break;
             case "getDefaultLocale":
                 generateGetDefaultLocale(writer);
@@ -190,11 +196,16 @@ public class LocaleSettingsNativeGenerator implements Generator {
         }
     }
 
-    private void generateReadCLDR(SourceWriter writer) throws IOException {
-        writer.append("if (").appendClass("java.util.Locale").append("$CLDR").append("{").indent().softNewLine();
+    private void generateDefender(SourceWriter writer, String property) throws IOException {
+        writer.append("if (").appendClass("java.util.Locale").append(".$CLDR.").append(property)
+            .append(")").ws().append("{").indent().softNewLine();
         writer.append("return;").softNewLine();
         writer.outdent().append("}").softNewLine();
-        writer.appendClass("java.util.Locale").append(".$CLDR = {").indent().softNewLine();
+    }
+
+    private void generateReadLanguagesFromCLDR(SourceWriter writer) throws IOException {
+        generateDefender(writer, "languages");
+        writer.appendClass("java.util.Locale").append(".$CLDR.languages = {").indent().softNewLine();
         boolean firstLocale = true;
         for (Map.Entry<String, LocaleInfo> entry : knownLocales.entrySet()) {
             if (!firstLocale) {
@@ -204,7 +215,6 @@ public class LocaleSettingsNativeGenerator implements Generator {
             writer.append('"').append(Renderer.escapeString(entry.getKey())).append('"').ws().append(":").ws()
                     .append('{').indent().softNewLine();
 
-            writer.append("\"languages\"").ws().append(':').ws().append('{').indent().softNewLine();
             boolean first = true;
             for (Map.Entry<String, String> langEntry : entry.getValue().languages.entrySet()) {
                 if (!first) {
@@ -214,10 +224,24 @@ public class LocaleSettingsNativeGenerator implements Generator {
                 writer.append('"').append(Renderer.escapeString(langEntry.getKey())).append('"').ws().append(':')
                         .ws().append('"').append(Renderer.escapeString(langEntry.getValue())).append('"');
             }
-            writer.outdent().append("},").softNewLine();
+            writer.outdent().append('}');
+        }
+        writer.outdent().append("}").softNewLine();
+    }
 
-            writer.append("\"territories\"").ws().append(':').ws().append('{').indent().softNewLine();
-            first = true;
+    private void generateReadCountriesFromCLDR(SourceWriter writer) throws IOException {
+        generateDefender(writer, "territories");
+        writer.appendClass("java.util.Locale").append(".$CLDR.territories = {").indent().softNewLine();
+        boolean firstLocale = true;
+        for (Map.Entry<String, LocaleInfo> entry : knownLocales.entrySet()) {
+            if (!firstLocale) {
+                writer.append(",").softNewLine();
+            }
+            firstLocale = false;
+            writer.append('"').append(Renderer.escapeString(entry.getKey())).append('"').ws().append(":").ws()
+                    .append('{').indent().softNewLine();
+
+            boolean first = true;
             for (Map.Entry<String, String> langEntry : entry.getValue().territories.entrySet()) {
                 if (!first) {
                     writer.append(',').softNewLine();
@@ -226,9 +250,35 @@ public class LocaleSettingsNativeGenerator implements Generator {
                 writer.append('"').append(Renderer.escapeString(langEntry.getKey())).append('"').ws().append(':')
                         .ws().append('"').append(Renderer.escapeString(langEntry.getValue())).append('"');
             }
-            writer.outdent().append('}');
 
             writer.outdent().append('}');
+        }
+        writer.outdent().append("}").softNewLine();
+    }
+
+    private void generateReadWeeksFromCDLR(SourceWriter writer) throws IOException {
+        generateDefender(writer, "minDays");
+        writer.appendClass("java.util.Locale").append(".$CLDR.minDays = {").indent().softNewLine();
+        boolean firstLocale = true;
+        for (Map.Entry<String, Integer> entry : minDaysMap.entrySet()) {
+            if (!firstLocale) {
+                writer.append(",").softNewLine();
+            }
+            firstLocale = false;
+            writer.append('"').append(Renderer.escapeString(entry.getKey())).append('"').ws().append(':')
+                    .ws().append('"').append(entry.getValue()).append('"');
+        }
+        writer.outdent().append("}").softNewLine();
+
+        writer.appendClass("java.util.Locale").append(".$CLDR.firstDay = {").indent().softNewLine();
+        firstLocale = true;
+        for (Map.Entry<String, Integer> entry : firstDayMap.entrySet()) {
+            if (!firstLocale) {
+                writer.append(",").softNewLine();
+            }
+            firstLocale = false;
+            writer.append('"').append(Renderer.escapeString(entry.getKey())).append('"').ws().append(':')
+                    .ws().append('"').append(entry.getValue()).append('"');
         }
         writer.outdent().append("}").softNewLine();
     }

@@ -28,6 +28,20 @@ import org.teavm.model.MethodReference;
 public class CalendarNativeGenerator implements Generator {
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
+        switch (methodRef.getName()) {
+            case "getFirstDayOfWeek":
+                generateWeekMethod(context, writer, "firstDay");
+                break;
+            case "getMinimalDaysInFirstWeek":
+                generateWeekMethod(context, writer, "minDays");
+                break;
+        }
+    }
 
+    private void generateWeekMethod(GeneratorContext context, SourceWriter writer, String property)
+            throws IOException {
+        writer.append("var result = ").appendClass("java.util.Locale").append(".$CLDR.").append(property)
+                .append("[$rt_ustr(").append(context.getParameterName(1)).append(")];").softNewLine();
+        writer.append("return result ? result : -1;").softNewLine();
     }
 }

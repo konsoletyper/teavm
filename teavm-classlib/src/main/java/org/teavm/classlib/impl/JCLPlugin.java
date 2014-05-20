@@ -44,7 +44,9 @@ public class JCLPlugin implements TeaVMPlugin {
         host.add(javacSupport);
 
         Generator localeGen = new LocaleSettingsNativeGenerator(host.getClassLoader(), host.getProperties());
-        host.add(new MethodReference("java.util.Locale", "readCLDR", ValueType.VOID), localeGen);
+        host.add(new MethodReference("java.util.Locale", "readLanguagesFromCLDR", ValueType.VOID), localeGen);
+        host.add(new MethodReference("java.util.Locale", "readCountriesFromCLDR", ValueType.VOID), localeGen);
+        host.add(new MethodReference("java.util.Calendar", "readWeeksFromCLDR", ValueType.VOID), localeGen);
         host.add(new MethodReference("java.util.Locale", "getDefaultLocale", ValueType.object("java.lang.String")),
                 localeGen);
     }

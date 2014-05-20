@@ -23,4 +23,16 @@ public class CLDRHelper {
     public static String getCode(String language, String country) {
         return !country.isEmpty() ? language + "-" + country : language;
     }
+
+    public static String getLikelySubtags(String localeCode) {
+        readLikelySubtagsFromCLDR();
+        String subtags = getLikelySubtagsImpl(localeCode);
+        return subtags != null ? subtags : localeCode;
+    }
+
+    // Defined by JCLPlugin
+    private static native void readLikelySubtagsFromCLDR();
+
+    // TODO: implement using CLDR
+    private static native String getLikelySubtagsImpl(String localeCode);
 }

@@ -68,7 +68,7 @@ public final class TLocale implements TCloneable, TSerializable {
         String localeName = getDefaultLocale();
         int countryIndex = localeName.indexOf('_');
         defaultLocale = new TLocale(localeName.substring(0, countryIndex), localeName.substring(countryIndex) + 1, "");
-        readCLDR();
+        prepareCLDR();
     }
 
     private transient String countryCode;
@@ -79,8 +79,14 @@ public final class TLocale implements TCloneable, TSerializable {
     @PluggableDependency(LocaleNativeGenerator.class)
     private static native String getDefaultLocale();
 
+    @GeneratedBy(LocaleNativeGenerator.class)
+    private static native void prepareCLDR();
+
     // Redefined by JCLPlugin
-    private static native void readCLDR();
+    private static native void readCountriesFromCLDR();
+
+    // Redefined by JCLPlugin
+    private static native void readLanguagesFromCLDR();
 
     public TLocale(String language) {
         this(language, "", "");
@@ -162,6 +168,7 @@ public final class TLocale implements TCloneable, TSerializable {
     }
 
     public String getDisplayCountry(TLocale locale) {
+        readCountriesFromCLDR();
         String result = getDisplayCountry(locale.getLanguage() + "-" + locale.getCountry(), countryCode);
         if (result == null) {
             result = getDisplayCountry(locale.getLanguage(), countryCode);
@@ -178,6 +185,7 @@ public final class TLocale implements TCloneable, TSerializable {
     }
 
     public String getDisplayLanguage(TLocale locale) {
+        readLanguagesFromCLDR();
         String result = getDisplayLanguage(locale.getLanguage() + "-" + locale.getCountry(), languageCode);
         if (result == null) {
             result = getDisplayLanguage(locale.getLanguage(), languageCode);
