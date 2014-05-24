@@ -16,6 +16,7 @@
 package org.teavm.samples;
 
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.Locale;
 import org.teavm.dom.browser.TimerHandler;
 import org.teavm.dom.browser.Window;
@@ -34,7 +35,10 @@ import org.teavm.jso.JS;
 public class DateTime {
     private static Window window = (Window)JS.getGlobal();
     private static HTMLDocument document = window.getDocument();
+    private static HTMLSelectElement localeElem = (HTMLSelectElement)document.getElementById("locale");
     private static Date currentDate;
+    private static Locale[] locales;
+    private static Locale currentLocale;
 
     public static void main(String[] args) {
         fillLocales();
@@ -44,11 +48,12 @@ public class DateTime {
                 updateCurrentTime();
             }
         }, 250);
+        updateCurrentLocale();
     }
 
     private static void fillLocales() {
-        final HTMLSelectElement localeElem = (HTMLSelectElement)document.getElementById("locale");
-        for (Locale locale : Locale.getAvailableLocales()) {
+        locales = Locale.getAvailableLocales();
+        for (Locale locale : locales) {
             HTMLOptionElement option = (HTMLOptionElement)document.createElement("option");
             option.setValue(locale.toString());
             option.setLabel(locale.getDisplayName(Locale.getDefault()));
@@ -56,9 +61,19 @@ public class DateTime {
         }
         localeElem.addEventListener("change", new EventListener() {
             @Override public void handleEvent(Event evt) {
-                // Don't do anything
+                updateCurrentLocale();
+                updateCurrentTimeText();
             }
         });
+    }
+
+    private static void updateCurrentLocale() {
+        currentLocale = locales[localeElem.getSelectedIndex()];
+        GregorianCalendar calendar = new GregorianCalendar(currentLocale);
+        HTMLInputElement weekStartElem = (HTMLInputElement)document.getElementById("week-start");
+        weekStartElem.setValue(String.valueOf(calendar.getFirstDayOfWeek()));
+        HTMLInputElement weekLengthElem = (HTMLInputElement)document.getElementById("week-length");
+        weekLengthElem.setValue(String.valueOf(calendar.getMinimalDaysInFirstWeek()));
     }
 
     private static void updateCurrentTime() {

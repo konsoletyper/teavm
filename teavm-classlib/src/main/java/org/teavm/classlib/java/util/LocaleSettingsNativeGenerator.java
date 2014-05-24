@@ -199,7 +199,7 @@ public class LocaleSettingsNativeGenerator implements Generator {
             case "readCountriesFromCLDR":
                 generateReadCountriesFromCLDR(writer);
                 break;
-            case "readWeeksFromCLDR":
+            case "readWeeksFromCDLR":
                 generateReadWeeksFromCDLR(writer);
                 break;
             case "readLikelySubtagsFromCLDR":
@@ -310,14 +310,14 @@ public class LocaleSettingsNativeGenerator implements Generator {
             }
             first = false;
             writer.append('"').append(Renderer.escapeString(entry.getKey())).append('"').ws().append(':')
-                    .ws().append('"').append(entry.getValue()).append('"');
+                    .ws().append(entry.getValue());
         }
         writer.outdent().append("};").softNewLine();
     }
 
     private void generateReadLikelySubtagsFromCLDR(SourceWriter writer) throws IOException {
         generateDefender(writer, "likelySubtags");
-        writer.append("java.util.Locale").append(".$CLDR.likelySubtags = {").indent().softNewLine();
+        writer.appendClass("java.util.Locale").append(".$CLDR.likelySubtags = {").indent().softNewLine();
         boolean first = true;
         for (Map.Entry<String, String> entry : likelySubtags.entrySet()) {
             if (!first) {

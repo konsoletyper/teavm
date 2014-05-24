@@ -181,7 +181,7 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
         return day;
     }
 
-    @GeneratedBy(LocaleSettingsNativeGenerator.class)
+    @GeneratedBy(CalendarNativeGenerator.class)
     private static native int getFirstDayOfWeek(String localeCode);
 
     private static int resolveMinimalDaysInFirstWeek(TLocale locale) {
@@ -193,7 +193,7 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
         return days;
     }
 
-    @GeneratedBy(LocaleSettingsNativeGenerator.class)
+    @GeneratedBy(CalendarNativeGenerator.class)
     private static native int getMinimalDaysInFirstWeek(String localeCode);
 
     abstract public void add(int field, int value);
