@@ -56,7 +56,8 @@ public class LocaleNativeGenerator implements Generator, DependencyPlugin {
     }
 
     private void generateAvailableLocales(SourceWriter writer) throws IOException {
-        writer.append("var locales = Object.keys(").appendClass("java.util.Locale").append(".$CLDR);").softNewLine();
+        writer.append("var locales = ").appendClass("java.util.Locale").append(".$CLDR.availableLocales;")
+                .softNewLine();
         writer.append("var array = $rt_createArray(").appendClass("java.lang.String").append(", locales);")
                 .softNewLine();
         writer.append("for (var i = 0; i < locales.length; ++i) {").indent().softNewLine();

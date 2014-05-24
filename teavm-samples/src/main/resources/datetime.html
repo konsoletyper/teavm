@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Localized date & time demo application</title>
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+    <script src="runtime.js" type="text/javascript"></script>
+    <script src="datetime.js" type="text/javascript"></script>
+  </head>
+  <body onload="main()">
+    <div>
+      <label for="locale">Pick a locale:</label>
+      <select id="locale" size="1"></select>
+    </div>
+    <div>
+      <label for="current-time">Current time is:</label>
+      <input type="text" id="current-time" readonly>
+    </div>
+    <div>
+      <label for="field">Pick a field:</label>
+      <select id="field" size="1">
+        <option value="era">Era</option>
+        <option value="year">Year</option>
+        <option value="month">Month</option>
+        <option value="week-of-year">Week of year</option>
+        <option value="week-of-month">Week of month</option>
+        <option value="date">Date</option>
+        <option value="day-of-year">Day of year</option>
+        <option value="day-of-week">Day of week</option>
+        <option value="am-pm">AM/PM</option>
+        <option value="hour">Hour</option>
+        <option value="hour-of-day">Hour of day</option>
+        <option value="minute">Minute</option>
+        <option value="second">Second</option>
+        <option value="zone-offset">Zone offset</option>
+      </select>
+    </div>
+    <div>
+      <label for="field-value">Field value is:</label>
+      <input type="text" id="field-value" readonly>
+    </div>
+  </body>
+</html>

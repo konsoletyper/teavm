@@ -76,6 +76,39 @@
               <targetDirectory>${project.build.directory}/javascript/matrix</targetDirectory>
             </configuration>
           </execution>
+          <execution>
+            <id>generate-datetime</id>
+            <goals>
+              <goal>build-javascript</goal>
+            </goals>
+            <phase>process-classes</phase>
+            <configuration>
+              <minifying>false</minifying>
+              <mainClass>org.teavm.samples.DateTime</mainClass>
+              <targetDirectory>${project.build.directory}/javascript/datetime</targetDirectory>
+              <properties>
+                <java.util.Locale.available>en_US,en_GB,ru_RU,ru_UA,nl_NL,nl_BE</java.util.Locale.available>
+              </properties>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>2.4</version>
+        <configuration>
+          <descriptors>
+            <descriptor>src/main/assembly/teavm-demos.xml</descriptor>
+          </descriptors>
+        </configuration>
+        <executions>
+          <execution>
+            <id>make-assembly</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
         </executions>
       </plugin>
     </plugins>

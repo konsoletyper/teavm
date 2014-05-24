@@ -88,6 +88,9 @@ public final class TLocale implements TCloneable, TSerializable {
     // Redefined by JCLPlugin
     private static native void readLanguagesFromCLDR();
 
+    // Redefined by JCLPlugin
+    private static native void readAvailableLocales();
+
     public TLocale(String language) {
         this(language, "", "");
     }
@@ -134,6 +137,7 @@ public final class TLocale implements TCloneable, TSerializable {
     }
 
     public static TLocale[] getAvailableLocales() {
+        readAvailableLocales();
         if (availableLocales == null) {
             String[] strings = getAvailableLocaleStrings();
             availableLocales = new TLocale[strings.length];
@@ -142,7 +146,7 @@ public final class TLocale implements TCloneable, TSerializable {
                 int countryIndex = string.indexOf('-');
                 if (countryIndex > 0) {
                     availableLocales[i] = new TLocale(string.substring(0, countryIndex),
-                            string.substring(countryIndex));
+                            string.substring(countryIndex + 1));
                 } else {
                     availableLocales[i] = new TLocale(string);
                 }

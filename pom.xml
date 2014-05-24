@@ -76,6 +76,7 @@
     <module>teavm-dom</module>
     <module>teavm-jso</module>
     <module>teavm-html4j</module>
+    <module>teavm-samples</module>
   </modules>
 
   <dependencyManagement>

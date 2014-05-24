@@ -15,6 +15,9 @@
  */
 package org.teavm.classlib.impl.unicode;
 
+import org.teavm.dependency.PluggableDependency;
+import org.teavm.javascript.ni.GeneratedBy;
+
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
@@ -33,6 +36,7 @@ public class CLDRHelper {
     // Defined by JCLPlugin
     private static native void readLikelySubtagsFromCLDR();
 
-    // TODO: implement using CLDR
+    @GeneratedBy(CLDRHelperNativeGenerator.class)
+    @PluggableDependency(CLDRHelperNativeGenerator.class)
     private static native String getLikelySubtagsImpl(String localeCode);
 }

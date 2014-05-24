@@ -13,22 +13,17 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.dom.events;
+package org.teavm.dom.html;
 
-import org.teavm.jso.JSObject;
+import org.teavm.dom.core.Element;
+import org.teavm.jso.JSArrayReader;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface EventTarget extends JSObject {
-    void addEventListener(String type, EventListener listener, boolean useCapture);
+public interface HTMLCollection extends JSArrayReader<Element> {
+    Element item(int index);
 
-    void addEventListener(String type, EventListener listener);
-
-    void removeEventListener(String type, EventListener listener, boolean useCapture);
-
-    void removeEventListener(String type, EventListener listener);
-
-    boolean dispatchEvent(Event evt);
+    Element namedItem(String name);
 }
