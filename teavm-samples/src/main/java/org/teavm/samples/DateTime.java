@@ -15,6 +15,7 @@
  */
 package org.teavm.samples;
 
+import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
@@ -36,12 +37,15 @@ public class DateTime {
     private static Window window = (Window)JS.getGlobal();
     private static HTMLDocument document = window.getDocument();
     private static HTMLSelectElement localeElem = (HTMLSelectElement)document.getElementById("locale");
-    private static Date currentDate;
+    private static HTMLSelectElement fieldElem = (HTMLSelectElement)document.getElementById("field");
+    private static Date currentDate = new Date();
     private static Locale[] locales;
     private static Locale currentLocale;
+    private static int currentField;
 
     public static void main(String[] args) {
         fillLocales();
+        bindFieldEvent();
         window.setInterval(new TimerHandler() {
             @Override
             public void onTimer() {
@@ -49,6 +53,7 @@ public class DateTime {
             }
         }, 250);
         updateCurrentLocale();
+        updateCurrentField();
     }
 
     private static void fillLocales() {
@@ -63,6 +68,14 @@ public class DateTime {
             @Override public void handleEvent(Event evt) {
                 updateCurrentLocale();
                 updateCurrentTimeText();
+            }
+        });
+    }
+
+    private static void bindFieldEvent() {
+        fieldElem.addEventListener("change", new EventListener() {
+            @Override public void handleEvent(Event evt) {
+                updateCurrentField();
             }
         });
     }
@@ -83,10 +96,66 @@ public class DateTime {
     private static void setCurrentTime(Date date) {
         currentDate = date;
         updateCurrentTimeText();
+        updateFieldText();
     }
 
     private static void updateCurrentTimeText() {
         HTMLInputElement timeElem = (HTMLInputElement)document.getElementById("current-time");
         timeElem.setValue(currentDate.toString());
+    }
+
+    private static void updateCurrentField() {
+        switch (fieldElem.getValue()) {
+            case "era":
+                currentField = Calendar.ERA;
+                break;
+            case "year":
+                currentField = Calendar.YEAR;
+                break;
+            case "month":
+                currentField = Calendar.MONTH;
+                break;
+            case "week-of-year":
+                currentField = Calendar.WEEK_OF_YEAR;
+                break;
+            case "week-of-month":
+                currentField = Calendar.WEEK_OF_MONTH;
+                break;
+            case "date":
+                currentField = Calendar.DATE;
+                break;
+            case "day-of-year":
+                currentField = Calendar.DAY_OF_YEAR;
+                break;
+            case "day-of-week":
+                currentField = Calendar.DAY_OF_WEEK;
+                break;
+            case "am-pm":
+                currentField = Calendar.AM_PM;
+                break;
+            case "hour":
+                currentField = Calendar.HOUR;
+                break;
+            case "hour-of-day":
+                currentField = Calendar.HOUR_OF_DAY;
+                break;
+            case "minute":
+                currentField = Calendar.MINUTE;
+                break;
+            case "second":
+                currentField = Calendar.SECOND;
+                break;
+            case "zone-offset":
+                currentField = Calendar.ZONE_OFFSET;
+                break;
+        }
+        updateFieldText();
+    }
+
+    private static void updateFieldText() {
+        HTMLInputElement fieldValueElem = (HTMLInputElement)document.getElementById("field-value");
+        Calendar calendar = new GregorianCalendar(currentLocale);
+        calendar.setTime(currentDate);
+        fieldValueElem.setValue(String.valueOf(calendar.get(currentField)));
     }
 }

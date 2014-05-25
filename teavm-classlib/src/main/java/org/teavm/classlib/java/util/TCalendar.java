@@ -166,8 +166,8 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
         String country = locale.getCountry();
         if (country.isEmpty()) {
             String subtags = CLDRHelper.getLikelySubtags(locale.getLanguage());
-            int index = subtags.lastIndexOf('-');
-            country = index > 0 ? subtags.substring(subtags.lastIndexOf('-') + 1) : "";
+            int index = subtags.lastIndexOf('_');
+            country = index > 0 ? subtags.substring(index + 1) : "";
         }
         return country;
     }

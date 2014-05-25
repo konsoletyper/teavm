@@ -556,13 +556,8 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     @Override
     public int hashCode() {
         if (hashCode == 0) {
-            hashCode ^= 734262231;
             for (char c : characters) {
-                hashCode = (hashCode << 4) | (hashCode >>> 28);
-                hashCode ^= 347236277 ^ c;
-                if (hashCode == 0) {
-                    ++hashCode;
-                }
+                hashCode = 31 * hashCode + c;
             }
         }
         return hashCode;

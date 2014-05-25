@@ -48,6 +48,7 @@ public class DateNativeGenerator implements Generator, DependencyPlugin {
             case "getHours":
             case "getMinutes":
             case "getSeconds":
+            case "getTimezoneOffset":
                 generateGetMethod(context, writer, methodRef.getName());
                 break;
             case "setFullYear":
