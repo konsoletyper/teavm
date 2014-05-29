@@ -181,4 +181,9 @@ public class THashSet<E> extends TAbstractSet<E> implements TCloneable, TSeriali
     THashMap<E, THashSet<E>> createBackingMap(int capacity, float loadFactor) {
         return new THashMap<>(capacity, loadFactor);
     }
+
+    @Override
+    public Object clone() {
+        return new THashSet<>(this);
+    }
 }

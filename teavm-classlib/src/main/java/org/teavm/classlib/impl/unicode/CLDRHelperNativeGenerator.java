@@ -35,6 +35,10 @@ public class CLDRHelperNativeGenerator implements Generator, DependencyPlugin {
             case "getLikelySubtagsImpl":
                 method.getResult().propagate("java.lang.String");
                 break;
+            case "getEras":
+                method.getResult().propagate("[java.lang.String;");
+                method.getResult().getArrayItem().propagate("java.lang.String");
+                break;
         }
     }
 
@@ -46,6 +50,23 @@ public class CLDRHelperNativeGenerator implements Generator, DependencyPlugin {
                         .append(context.getParameterName(1)).append(")];").softNewLine();
                 writer.append("return data ? $rt_str(data) : null;").softNewLine();
                 break;
+            case "getEras":
+                generateGetArray(context, writer, "eras");
+                break;
         }
+    }
+
+    private void generateGetArray(GeneratorContext context, SourceWriter writer, String name) throws IOException {
+        writer.append("var data = ").appendClass("java.util.Locale").append(".$CLDR.").append(name)
+                .append("[$rt_ustr(").append(context.getParameterName(1)).append(")];").softNewLine();
+        writer.append("if (!data) {").indent().softNewLine();
+        writer.append("return null;");
+        writer.outdent().append("}").softNewLine();
+        writer.append("var result = $rt_createArray(").appendClass("java.lang.String)")
+                .append(", data.length);").softNewLine();
+        writer.append("for (var i = 0; i < data.length; ++i) {").indent().softNewLine();
+        writer.append("result.data[i] = $rt_str(data[i])").softNewLine();
+        writer.outdent().append("}").softNewLine();
+        writer.append("return result;").softNewLine();
     }
 }

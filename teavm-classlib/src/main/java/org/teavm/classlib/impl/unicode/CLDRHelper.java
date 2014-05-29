@@ -39,4 +39,20 @@ public class CLDRHelper {
     @GeneratedBy(CLDRHelperNativeGenerator.class)
     @PluggableDependency(CLDRHelperNativeGenerator.class)
     private static native String getLikelySubtagsImpl(String localeCode);
+
+    public static String[] resolveEras(String localeCode) {
+        readErasFromCLDR();
+        String[] eras = getEras(localeCode);
+        if (eras == null) {
+            eras = getEras("root");
+        }
+        return eras;
+    }
+
+    // Defined by JCLPlugin
+    private static native void readErasFromCLDR();
+
+    @GeneratedBy(CLDRHelperNativeGenerator.class)
+    @PluggableDependency(CLDRHelperNativeGenerator.class)
+    private static native String[] getEras(String localeCode);
 }

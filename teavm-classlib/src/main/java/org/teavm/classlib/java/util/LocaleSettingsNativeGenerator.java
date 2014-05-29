@@ -100,7 +100,7 @@ public class LocaleSettingsNativeGenerator implements Generator {
                 if (localeName.startsWith("/")) {
                     localeName = localeName.substring(1);
                 }
-                if (!availableLocales.contains(localeName)) {
+                if (!localeName.equals("root") && !availableLocales.contains(localeName)) {
                     continue;
                 }
                 LocaleInfo localeInfo = knownLocales.get(localeName);
@@ -114,6 +114,9 @@ public class LocaleSettingsNativeGenerator implements Generator {
                         break;
                     case "territories.json":
                         readCountries(localeName, localeInfo, input);
+                        break;
+                    case "ca-gregorian.json":
+                        readEras(localeName, localeInfo, input);
                         break;
                 }
             }
@@ -144,6 +147,16 @@ public class LocaleSettingsNativeGenerator implements Generator {
                 locale.territories.put(country, property.getValue().getAsString());
             }
         }
+    }
+
+    private void readEras(String localeCode, LocaleInfo locale, InputStream input) {
+        JsonObject root = (JsonObject)new JsonParser().parse(new InputStreamReader(input));
+        JsonObject erasJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
+                .get("calendars").getAsJsonObject().get("gregorian").getAsJsonObject()
+                .get("eras").getAsJsonObject().get("eraNames").getAsJsonObject();
+        String am = erasJson.get("0").getAsString();
+        String pm = erasJson.get("1").getAsString();
+        locale.eras = new String[] { am, pm };
     }
 
     private void readWeekData(InputStream input) {
@@ -338,5 +351,6 @@ public class LocaleSettingsNativeGenerator implements Generator {
     static class LocaleInfo {
         Map<String, String> languages = new LinkedHashMap<>();
         Map<String, String> territories = new LinkedHashMap<>();
+        String[] eras;
     }
 }
