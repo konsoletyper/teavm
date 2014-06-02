@@ -15,15 +15,16 @@
  */
 package org.teavm.platform.plugin;
 
-import org.teavm.vm.spi.TeaVMHost;
-import org.teavm.vm.spi.TeaVMPlugin;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class PlatformPlugin implements TeaVMPlugin {
+class ResourceProxy implements InvocationHandler {
     @Override
-    public void install(TeaVMHost host) {
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        return null;
     }
 }
