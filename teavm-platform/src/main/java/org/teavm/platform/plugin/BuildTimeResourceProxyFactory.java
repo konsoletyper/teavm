@@ -15,16 +15,24 @@
  */
 package org.teavm.platform.plugin;
 
-import org.teavm.vm.spi.TeaVMHost;
-import org.teavm.vm.spi.TeaVMPlugin;
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-public class PlatformPlugin implements TeaVMPlugin {
-    @Override
-    public void install(TeaVMHost host) {
-        host.add(new MetadataProviderTransformer());
+class BuildTimeResourceProxyFactory {
+    private Map<Method, BuildTimeResourceMethod> methods = new HashMap<>();
+    private Object[] initialData;
+
+    public BuildTimeResourceProxyFactory(Map<Method, BuildTimeResourceMethod> methods, Object[] initialData) {
+        this.methods = methods;
+        this.initialData = initialData;
+    }
+
+    BuildTimeResourceProxy create() {
+        return new BuildTimeResourceProxy(methods, initialData);
     }
 }

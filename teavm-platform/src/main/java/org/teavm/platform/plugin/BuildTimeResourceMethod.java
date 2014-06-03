@@ -15,16 +15,10 @@
  */
 package org.teavm.platform.plugin;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-class ResourceProxy implements InvocationHandler {
-    @Override
-    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        return null;
-    }
+interface BuildTimeResourceMethod {
+    Object invoke(BuildTimeResourceProxy proxy, Object[] args) throws Throwable;
 }

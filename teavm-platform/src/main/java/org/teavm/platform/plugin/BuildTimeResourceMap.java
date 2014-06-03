@@ -15,16 +15,29 @@
  */
 package org.teavm.platform.plugin;
 
-import org.teavm.vm.spi.TeaVMHost;
-import org.teavm.vm.spi.TeaVMPlugin;
+import java.util.HashMap;
+import java.util.Map;
+import org.teavm.platform.metadata.ResourceMap;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-public class PlatformPlugin implements TeaVMPlugin {
+class BuildTimeResourceMap<T> implements ResourceMap<T> {
+    private Map<String, T> data = new HashMap<>();
+
     @Override
-    public void install(TeaVMHost host) {
-        host.add(new MetadataProviderTransformer());
+    public boolean has(String key) {
+        return data.containsKey(key);
+    }
+
+    @Override
+    public T get(String key) {
+        return data.get(key);
+    }
+
+    @Override
+    public void put(String key, T value) {
+        data.put(key, value);
     }
 }

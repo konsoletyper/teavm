@@ -23,7 +23,7 @@ import java.lang.annotation.Target;
 /**
  * <p>Marks a valid <b>resource interface</b>. Resource interface is an interface, that has get* and set* methods,
  * according the default convention for JavaBeans. Each property must have both getter and setter.
- * Also each property's must be either primitive value, except for <code>long</code> or valid resource.</p>
+ * Also each property's must be either primitive value (except for <code>long</code>) or a valid resource.</p>
  *
  * @see MetadataGenerator
  * @see ResourceArray

@@ -13,18 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.platform.plugin;
-
-import org.teavm.vm.spi.TeaVMHost;
-import org.teavm.vm.spi.TeaVMPlugin;
+package org.teavm.platform.metadata;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-public class PlatformPlugin implements TeaVMPlugin {
-    @Override
-    public void install(TeaVMHost host) {
-        host.add(new MetadataProviderTransformer());
-    }
+@Resource
+public interface TestResource {
+    int getInt();
+
+    void setInt(int value);
+
+    String getString();
+
+    void setString(String string);
 }

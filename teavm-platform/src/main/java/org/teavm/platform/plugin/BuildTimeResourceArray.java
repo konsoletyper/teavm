@@ -15,16 +15,29 @@
  */
 package org.teavm.platform.plugin;
 
-import org.teavm.vm.spi.TeaVMHost;
-import org.teavm.vm.spi.TeaVMPlugin;
+import java.util.ArrayList;
+import java.util.List;
+import org.teavm.platform.metadata.ResourceArray;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-public class PlatformPlugin implements TeaVMPlugin {
+class BuildTimeResourceArray<T> implements ResourceArray<T> {
+    private List<T> data = new ArrayList<>();
+
     @Override
-    public void install(TeaVMHost host) {
-        host.add(new MetadataProviderTransformer());
+    public int size() {
+        return data.size();
+    }
+
+    @Override
+    public T get(int i) {
+        return data.get(i);
+    }
+
+    @Override
+    public void add(T elem) {
+        data.add(elem);
     }
 }

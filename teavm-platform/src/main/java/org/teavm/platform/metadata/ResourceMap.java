@@ -20,6 +20,8 @@ package org.teavm.platform.metadata;
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public interface ResourceMap<T> {
+    boolean has(String key);
+
     T get(String key);
 
     void put(String key, T value);

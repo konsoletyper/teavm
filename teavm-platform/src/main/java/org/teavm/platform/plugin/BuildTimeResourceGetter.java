@@ -15,16 +15,19 @@
  */
 package org.teavm.platform.plugin;
 
-import org.teavm.vm.spi.TeaVMHost;
-import org.teavm.vm.spi.TeaVMPlugin;
-
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-public class PlatformPlugin implements TeaVMPlugin {
+class BuildTimeResourceGetter implements BuildTimeResourceMethod {
+    private int index;
+
+    public BuildTimeResourceGetter(int index) {
+        this.index = index;
+    }
+
     @Override
-    public void install(TeaVMHost host) {
-        host.add(new MetadataProviderTransformer());
+    public Object invoke(BuildTimeResourceProxy proxy, Object[] args) throws Throwable {
+        return proxy.data[index];
     }
 }

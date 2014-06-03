@@ -1,0 +1,203 @@
+/*
+ *  Copyright 2014 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+package org.teavm.platform.plugin;
+
+import java.lang.reflect.Method;
+import java.util.*;
+import org.teavm.platform.metadata.Resource;
+import org.teavm.platform.metadata.ResourceArray;
+import org.teavm.platform.metadata.ResourceMap;
+
+/**
+ *
+ * @author Alexey Andreev
+ */
+class BuildTimeResourceProxyBuilder {
+    private Map<Class<?>, BuildTimeResourceProxyFactory> factories = new HashMap<>();
+    private static Set<Class<?>> allowedPropertyTypes = new HashSet<>(Arrays.<Class<?>>asList(
+            boolean.class, Boolean.class, byte.class, Byte.class, short.class, Short.class,
+            int.class, Integer.class, float.class, Float.class, double.class, Double.class,
+            String.class, ResourceArray.class, ResourceMap.class));
+
+    public BuildTimeResourceProxy buildProxy(Class<?> iface) {
+        BuildTimeResourceProxyFactory factory = factories.get(iface);
+        if (factory == null) {
+            factory = createFactory(iface);
+            factories.put(iface, factory);
+        }
+        return factory.create();
+    }
+
+    private BuildTimeResourceProxyFactory createFactory(Class<?> iface) {
+        return new ProxyFactoryCreation(iface).create();
+    }
+
+    private static class ProxyFactoryCreation {
+        private Class<?> rootIface;
+        Map<String, Class<?>> getters = new HashMap<>();
+        Map<String, Class<?>> setters = new HashMap<>();
+        Map<Method, BuildTimeResourceMethod> methods = new HashMap<>();
+        private List<Object> initialData = new ArrayList<>();
+        private Map<String, Integer> propertyIndexes = new HashMap<>();
+
+        public ProxyFactoryCreation(Class<?> iface) {
+            this.rootIface = iface;
+        }
+
+        BuildTimeResourceProxyFactory create() {
+            if (!rootIface.isInterface()) {
+                throw new IllegalArgumentException("Error creating a new resource of type " + rootIface.getName() +
+                        " that is not an interface");
+            }
+            scanIface(rootIface);
+            return new BuildTimeResourceProxyFactory(methods, initialData.toArray(new Object[initialData.size()]));
+        }
+
+        private void scanIface(Class<?> iface) {
+            if (iface.isAnnotationPresent(Resource.class)) {
+                throw new IllegalArgumentException("Error creating a new resource of type " + iface.getName() +
+                        ". This type is not marked with the " + Resource.class.getName() + " annotation");
+            }
+
+            // Scan methods
+            getters.clear();
+            setters.clear();
+            for (Method method : iface.getDeclaredMethods()) {
+                if (method.getName().startsWith("get")) {
+                    scanGetter(method);
+                } else if (method.getName().startsWith("is")) {
+                    scanBooleanGetter(method);
+                } else if (method.getName().startsWith("set")) {
+                    scanSetter(method);
+                } else {
+                    throwInvalidMethod(method);
+                }
+            }
+
+            // Verify consistency of getters and setters
+            for (Map.Entry<String, Class<?>> property : getters.entrySet()) {
+                String propertyName = property.getKey();
+                Class<?> getterType = property.getValue();
+                Class<?> setterType = setters.get(propertyName);
+                if (setterType == null) {
+                    throw new IllegalArgumentException("Property " + iface.getName() + "." + propertyName +
+                            " has a getter, but does not have a setter");
+                }
+                if (!setterType.equals(getterType)) {
+                    throw new IllegalArgumentException("Property " + iface.getName() + "." + propertyName +
+                            " has a getter and a setter of different types");
+                }
+            }
+            for (String propertyName : setters.keySet()) {
+                if (!getters.containsKey(propertyName)) {
+                    throw new IllegalArgumentException("Property " + iface.getName() + "." + propertyName +
+                            " has a setter, but does not have a getter");
+                }
+            }
+
+            // Verify types of properties and fill default values
+            for (Map.Entry<String, Class<?>> property : getters.entrySet()) {
+                String propertyName = property.getKey();
+                Class<?> propertyType = property.getValue();
+                if (allowedPropertyTypes.contains(propertyType)) {
+                    continue;
+                }
+                if (!propertyType.isInterface() || !propertyType.isAnnotationPresent(Resource.class)) {
+                    throw new IllegalArgumentException("Property " + iface.getName() + "." + propertyName +
+                            " has an illegal type " + propertyType.getName());
+                }
+            }
+            // TODO: fill default values
+
+            // Scan superinterfaces
+            for (Class<?> superIface : iface.getInterfaces()) {
+                scanIface(superIface);
+            }
+        }
+
+        private void throwInvalidMethod(Method method) {
+            throw new IllegalArgumentException("Method " + method.getDeclaringClass().getName() + "." +
+                    method.getName() + " is not likely to be either getter or setter");
+        }
+
+        private void scanGetter(Method method) {
+            String propertyName = extractPropertyName(method.getName().substring(3));
+            if (propertyName == null || method.getReturnType().equals(void.class) ||
+                    method.getParameterTypes().length > 0) {
+                throwInvalidMethod(method);
+            }
+            if (getters.put(propertyName, method.getReturnType()) != null) {
+                throw new IllegalArgumentException("Method " + method.getDeclaringClass().getName() + "." +
+                        method.getName() + " is a duplicate getter for property " + propertyName);
+            }
+            methods.put(method, new BuildTimeResourceGetter(getPropertyIndex(propertyName)));
+        }
+
+        private void scanBooleanGetter(Method method) {
+            String propertyName = extractPropertyName(method.getName().substring(2));
+            if (propertyName == null || !method.getReturnType().equals(boolean.class) ||
+                    method.getParameterTypes().length > 0) {
+                throwInvalidMethod(method);
+            }
+            if (getters.put(propertyName, method.getReturnType()) != null) {
+                throw new IllegalArgumentException("Method " + method.getDeclaringClass().getName() + "." +
+                        method.getName() + " is a duplicate getter for property " + propertyName);
+            }
+            methods.put(method, new BuildTimeResourceGetter(getPropertyIndex(propertyName)));
+        }
+
+        private void scanSetter(Method method) {
+            String propertyName = extractPropertyName(method.getName().substring(2));
+            if (propertyName == null || !method.getReturnType().equals(void.class) ||
+                    method.getParameterTypes().length != 1) {
+                throwInvalidMethod(method);
+            }
+            if (setters.put(propertyName, method.getParameterTypes()[0]) != null) {
+                throw new IllegalArgumentException("Method " + method.getDeclaringClass().getName() + "." +
+                        method.getName() + " is a duplicate setter for property " + propertyName);
+            }
+            methods.put(method, new BuildTimeResourceSetter(getPropertyIndex(propertyName)));
+        }
+
+        private String extractPropertyName(String propertyName) {
+            if (propertyName.isEmpty()) {
+                return null;
+            }
+            char c = propertyName.charAt(0);
+            if (c != Character.toUpperCase(c)) {
+                return null;
+            }
+            if (propertyName.length() == 1) {
+                return propertyName.toLowerCase();
+            }
+            c = propertyName.charAt(1);
+            if (c == Character.toUpperCase(c)) {
+                return propertyName;
+            } else {
+                return Character.toLowerCase(propertyName.charAt(0)) + propertyName.substring(1);
+            }
+        }
+
+        private int getPropertyIndex(String propertyName) {
+            Integer index = propertyIndexes.get(propertyName);
+            if (index == null) {
+                index = propertyIndexes.size();
+                propertyIndexes.put(propertyName, index);
+            }
+            return index;
+        }
+    }
+}
