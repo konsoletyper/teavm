@@ -15,43 +15,32 @@
  */
 package org.teavm.platform.plugin;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import org.teavm.codegen.SourceWriter;
-import org.teavm.platform.metadata.ResourceArray;
 
 /**
  *
  * @author Alexey Andreev
  */
-class BuildTimeResourceArray<T> implements ResourceArray<T>, ResourceWriter {
-    private List<T> data = new ArrayList<>();
+class BuildTimeResourceWriterMethod implements BuildTimeResourceMethod {
+    private String[] propertyNames;
 
-    @Override
-    public int size() {
-        return data.size();
+    public BuildTimeResourceWriterMethod(String[] propertyNames) {
+        this.propertyNames = propertyNames;
     }
 
     @Override
-    public T get(int i) {
-        return data.get(i);
-    }
-
-    @Override
-    public void add(T elem) {
-        data.add(elem);
-    }
-
-    @Override
-    public void write(SourceWriter writer) throws IOException {
-        writer.append('[').tokenBoundary();
-        for (int i = 0; i < data.size(); ++i) {
+    public Object invoke(BuildTimeResourceProxy proxy, Object[] args) throws Throwable {
+        SourceWriter writer = (SourceWriter)args[0];
+        writer.append('{');
+        for (int i = 0; i < propertyNames.length; ++i) {
             if (i > 0) {
                 writer.append(',').ws();
             }
-            ResourceWriterHelper.write(writer, data.get(i));
+            ResourceWriterHelper.writeString(writer, propertyNames[i]);
+            writer.ws().append(':').ws();
+            ResourceWriterHelper.write(writer, proxy.data[i]);
         }
-        writer.append(']').tokenBoundary();
+        writer.append('}').tokenBoundary();
+        return null;
     }
 }

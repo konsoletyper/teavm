@@ -43,6 +43,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     private ClassLoader classLoader;
     private boolean minifying;
     private Map<MethodReference, InjectorHolder> injectorMap = new HashMap<>();
+    private Properties properties = new Properties();
 
     private static class InjectorHolder {
         public final Injector injector;
@@ -86,6 +87,16 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     @Override
     public ClassLoader getClassLoader() {
         return classLoader;
+    }
+
+    @Override
+    public Properties getProperties() {
+        return new Properties(properties);
+    }
+
+    public void setProperties(Properties properties) {
+        this.properties.clear();
+        this.properties.putAll(properties);
     }
 
     public void renderRuntime() throws RenderingException {
@@ -482,6 +493,16 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         @Override
         public ListableClassReaderSource getClassSource() {
             return classSource;
+        }
+
+        @Override
+        public ClassLoader getClassLoader() {
+            return classLoader;
+        }
+
+        @Override
+        public Properties getProperties() {
+            return null;
         }
     }
 

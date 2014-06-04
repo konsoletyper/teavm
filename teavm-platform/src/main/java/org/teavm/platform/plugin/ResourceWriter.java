@@ -13,27 +13,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript;
+package org.teavm.platform.plugin;
 
-import java.util.Properties;
-import org.teavm.codegen.NamingStrategy;
+import java.io.IOException;
 import org.teavm.codegen.SourceWriter;
-import org.teavm.model.ListableClassReaderSource;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-public interface RenderingContext {
-    NamingStrategy getNaming();
-
-    SourceWriter getWriter();
-
-    boolean isMinifying();
-
-    ListableClassReaderSource getClassSource();
-
-    ClassLoader getClassLoader();
-
-    Properties getProperties();
+interface ResourceWriter {
+    void write(SourceWriter writer) throws IOException;
 }

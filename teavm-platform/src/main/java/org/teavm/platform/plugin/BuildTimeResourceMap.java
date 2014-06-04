@@ -15,15 +15,17 @@
  */
 package org.teavm.platform.plugin;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import org.teavm.codegen.SourceWriter;
 import org.teavm.platform.metadata.ResourceMap;
 
 /**
  *
  * @author Alexey Andreev
  */
-class BuildTimeResourceMap<T> implements ResourceMap<T> {
+class BuildTimeResourceMap<T> implements ResourceMap<T>, ResourceWriter {
     private Map<String, T> data = new HashMap<>();
 
     @Override
@@ -39,5 +41,21 @@ class BuildTimeResourceMap<T> implements ResourceMap<T> {
     @Override
     public void put(String key, T value) {
         data.put(key, value);
+    }
+
+    @Override
+    public void write(SourceWriter writer) throws IOException {
+        writer.append('{');
+        boolean first = true;
+        for (Map.Entry<String, T> entry : data.entrySet()) {
+            if (!first) {
+                writer.append(",").ws();
+            }
+            first = false;
+            ResourceWriterHelper.writeString(writer, entry.getKey());
+            writer.ws().append(':').ws();
+            ResourceWriterHelper.write(writer, entry.getValue());
+        }
+        writer.append('}').tokenBoundary();
     }
 }

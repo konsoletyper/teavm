@@ -15,6 +15,7 @@
  */
 package org.teavm.javascript.ni;
 
+import java.util.Properties;
 import org.teavm.model.ListableClassReaderSource;
 
 /**
@@ -25,4 +26,8 @@ public interface GeneratorContext {
     String getParameterName(int index);
 
     ListableClassReaderSource getClassSource();
+
+    ClassLoader getClassLoader();
+
+    Properties getProperties();
 }

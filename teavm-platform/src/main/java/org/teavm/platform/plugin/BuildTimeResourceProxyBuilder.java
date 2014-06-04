@@ -31,6 +31,16 @@ class BuildTimeResourceProxyBuilder {
             boolean.class, Boolean.class, byte.class, Byte.class, short.class, Short.class,
             int.class, Integer.class, float.class, Float.class, double.class, Double.class,
             String.class, ResourceArray.class, ResourceMap.class));
+    private static Map<Class<?>, Object> defaultValues = new HashMap<>();
+
+    static {
+        defaultValues.put(boolean.class, false);
+        defaultValues.put(byte.class, (byte)0);
+        defaultValues.put(short.class, (short)0);
+        defaultValues.put(int.class, 0);
+        defaultValues.put(float.class, 0F);
+        defaultValues.put(double.class, 0.0);
+    }
 
     public BuildTimeResourceProxy buildProxy(Class<?> iface) {
         BuildTimeResourceProxyFactory factory = factories.get(iface);
@@ -50,8 +60,8 @@ class BuildTimeResourceProxyBuilder {
         Map<String, Class<?>> getters = new HashMap<>();
         Map<String, Class<?>> setters = new HashMap<>();
         Map<Method, BuildTimeResourceMethod> methods = new HashMap<>();
-        private List<Object> initialData = new ArrayList<>();
         private Map<String, Integer> propertyIndexes = new HashMap<>();
+        private Object[] initialData;
 
         public ProxyFactoryCreation(Class<?> iface) {
             this.rootIface = iface;
@@ -63,7 +73,7 @@ class BuildTimeResourceProxyBuilder {
                         " that is not an interface");
             }
             scanIface(rootIface);
-            return new BuildTimeResourceProxyFactory(methods, initialData.toArray(new Object[initialData.size()]));
+            return new BuildTimeResourceProxyFactory(methods, initialData);
         }
 
         private void scanIface(Class<?> iface) {
@@ -109,18 +119,18 @@ class BuildTimeResourceProxyBuilder {
             }
 
             // Verify types of properties and fill default values
+            initialData = new Object[propertyIndexes.size()];
             for (Map.Entry<String, Class<?>> property : getters.entrySet()) {
                 String propertyName = property.getKey();
                 Class<?> propertyType = property.getValue();
-                if (allowedPropertyTypes.contains(propertyType)) {
-                    continue;
+                if (!allowedPropertyTypes.contains(propertyType)) {
+                    if (!propertyType.isInterface() || !propertyType.isAnnotationPresent(Resource.class)) {
+                        throw new IllegalArgumentException("Property " + iface.getName() + "." + propertyName +
+                                " has an illegal type " + propertyType.getName());
+                    }
                 }
-                if (!propertyType.isInterface() || !propertyType.isAnnotationPresent(Resource.class)) {
-                    throw new IllegalArgumentException("Property " + iface.getName() + "." + propertyName +
-                            " has an illegal type " + propertyType.getName());
-                }
+                initialData[propertyIndexes.get(propertyName)] = defaultValues.get(propertyType);
             }
-            // TODO: fill default values
 
             // Scan superinterfaces
             for (Class<?> superIface : iface.getInterfaces()) {

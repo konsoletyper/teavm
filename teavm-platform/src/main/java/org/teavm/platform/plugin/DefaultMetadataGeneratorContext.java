@@ -32,7 +32,7 @@ class DefaultMetadataGeneratorContext implements MetadataGeneratorContext {
     private Properties properties;
     private BuildTimeResourceProxyBuilder proxyBuilder = new BuildTimeResourceProxyBuilder();
 
-    private DefaultMetadataGeneratorContext(ListableClassReaderSource classSource, ClassLoader classLoader,
+    public DefaultMetadataGeneratorContext(ListableClassReaderSource classSource, ClassLoader classLoader,
             Properties properties) {
         this.classSource = classSource;
         this.classLoader = classLoader;
@@ -56,7 +56,8 @@ class DefaultMetadataGeneratorContext implements MetadataGeneratorContext {
 
     @Override
     public <T> T createResource(Class<T> resourceType) {
-        return resourceType.cast(Proxy.newProxyInstance(classLoader, new Class<?>[] { resourceType },
+        return resourceType.cast(Proxy.newProxyInstance(classLoader,
+                new Class<?>[] { resourceType, ResourceWriter.class },
                 proxyBuilder.buildProxy(resourceType)));
     }
 
