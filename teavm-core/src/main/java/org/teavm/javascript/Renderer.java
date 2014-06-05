@@ -53,6 +53,10 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         }
     }
 
+    public void addInjector(MethodReference method, Injector injector) {
+        injectorMap.put(method, new InjectorHolder(injector));
+    }
+
     public Renderer(SourceWriter writer, ListableClassHolderSource classSource, ClassLoader classLoader) {
         this.naming = writer.getNaming();
         this.writer = writer;

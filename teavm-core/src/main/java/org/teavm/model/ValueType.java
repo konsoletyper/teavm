@@ -16,7 +16,9 @@
 package org.teavm.model;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -25,6 +27,7 @@ import java.util.List;
  */
 public abstract class ValueType {
     volatile String reprCache;
+    private static final Map<Class<?>, ValueType> primitiveMap = new HashMap<>();
 
     private ValueType() {
     }
@@ -166,6 +169,19 @@ public abstract class ValueType {
 
     public static final Null NULL = new Null();
 
+
+    static {
+        primitiveMap.put(boolean.class, BOOLEAN);
+        primitiveMap.put(char.class, CHARACTER);
+        primitiveMap.put(byte.class, BYTE);
+        primitiveMap.put(short.class, SHORT);
+        primitiveMap.put(int.class, INTEGER);
+        primitiveMap.put(long.class, LONG);
+        primitiveMap.put(float.class, FLOAT);
+        primitiveMap.put(double.class, DOUBLE);
+        primitiveMap.put(void.class, VOID);
+    }
+
     public static ValueType object(String cls) {
         return new Object(cls);
     }
@@ -264,6 +280,16 @@ public abstract class ValueType {
             return ((Array)this).getItemType().isSubtypeOf(((Array)supertype).getItemType());
         } else {
             return false;
+        }
+    }
+
+    public static ValueType parse(Class<?> cls) {
+        if (cls.isPrimitive()) {
+            return primitiveMap.get(cls);
+        } else if (cls.getComponentType() != null) {
+            return ValueType.arrayOf(ValueType.parse(cls.getComponentType()));
+        } else {
+            return ValueType.object(cls.getName());
         }
     }
 

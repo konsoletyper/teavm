@@ -20,9 +20,12 @@ import java.util.*;
 import org.teavm.codegen.*;
 import org.teavm.common.FiniteExecutor;
 import org.teavm.dependency.*;
-import org.teavm.javascript.*;
+import org.teavm.javascript.Decompiler;
+import org.teavm.javascript.Renderer;
+import org.teavm.javascript.RenderingException;
 import org.teavm.javascript.ast.ClassNode;
 import org.teavm.javascript.ni.Generator;
+import org.teavm.javascript.ni.Injector;
 import org.teavm.model.*;
 import org.teavm.model.util.ListingBuilder;
 import org.teavm.model.util.ProgramUtils;
@@ -73,6 +76,7 @@ public class TeaVM implements TeaVMHost {
     private Map<String, TeaVMEntryPoint> entryPoints = new HashMap<>();
     private Map<String, String> exportedClasses = new HashMap<>();
     private Map<MethodReference, Generator> methodGenerators = new HashMap<>();
+    private Map<MethodReference, Injector> methodInjectors = new HashMap<>();
     private List<RendererListener> rendererListeners = new ArrayList<>();
     private Properties properties = new Properties();
 
@@ -96,6 +100,11 @@ public class TeaVM implements TeaVMHost {
     @Override
     public void add(MethodReference methodRef, Generator generator) {
         methodGenerators.put(methodRef, generator);
+    }
+
+    @Override
+    public void add(MethodReference methodRef, Injector injector) {
+        methodInjectors.put(methodRef, injector);
     }
 
     @Override
@@ -315,6 +324,9 @@ public class TeaVM implements TeaVMHost {
         for (Map.Entry<MethodReference, Generator> entry : methodGenerators.entrySet()) {
             decompiler.addGenerator(entry.getKey(), entry.getValue());
         }
+        for (MethodReference injectedMethod : methodInjectors.keySet()) {
+            decompiler.addMethodToPass(injectedMethod);
+        }
         List<ClassNode> clsNodes = decompiler.decompile(classSet.getClassNames());
 
         // Render
@@ -324,6 +336,9 @@ public class TeaVM implements TeaVMHost {
         builder.setMinified(minifying);
         SourceWriter sourceWriter = builder.build(writer);
         Renderer renderer = new Renderer(sourceWriter, classSet, classLoader);
+        for (Map.Entry<MethodReference, Injector> entry : methodInjectors.entrySet()) {
+            renderer.addInjector(entry.getKey(), entry.getValue());
+        }
         try {
             for (RendererListener listener : rendererListeners) {
                 listener.begin(renderer, target);

@@ -55,6 +55,10 @@ public class MethodReference {
         this(className, new MethodDescriptor(name, signature));
     }
 
+    public MethodReference(Class<?> cls, String name, Class<?>... signature) {
+        this(cls.getName(), new MethodDescriptor(name, signature));
+    }
+
     public String getClassName() {
         return className;
     }
