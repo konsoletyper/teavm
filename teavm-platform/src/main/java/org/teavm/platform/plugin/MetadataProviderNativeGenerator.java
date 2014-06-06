@@ -74,7 +74,7 @@ public class MetadataProviderNativeGenerator implements Generator {
 
         // Generate resource loader
         Object resource = generator.generateMetadata(metadataContext, methodRef);
-        writer.append("if (!").appendMethodBody(methodRef).append("$$resource === undefined").append(") {")
+        writer.append("if (!window.hasOwnProperty(\"").appendMethodBody(methodRef).append("$$resource\")) {")
                 .indent().softNewLine();
         writer.appendMethodBody(methodRef).append("$$resource = ");
         ResourceWriterHelper.write(writer, resource);

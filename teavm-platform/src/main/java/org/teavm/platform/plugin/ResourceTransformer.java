@@ -211,7 +211,7 @@ class ResourceTransformer implements ClassHolderTransformer {
         String primitiveCapitalized = primitive.getName();
         primitiveCapitalized = Character.toUpperCase(primitiveCapitalized.charAt(0)) +
                 primitiveCapitalized.substring(1);
-        castInvoke.setMethod(new MethodReference(ResourceAccessor.class, "castTo" + primitiveCapitalized + "Primitive",
+        castInvoke.setMethod(new MethodReference(ResourceAccessor.class, "castTo" + primitiveCapitalized + "Wrapper",
                 Object.class, wrapper));
         castInvoke.getArguments().add(resultVar);
         castInvoke.setReceiver(insn.getReceiver());

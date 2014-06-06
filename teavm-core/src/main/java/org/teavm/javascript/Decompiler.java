@@ -85,6 +85,7 @@ public class Decompiler {
                 @Override public void run() {
                     Decompiler copy = new Decompiler(classSource, classLoader, executor);
                     copy.generators = generators;
+                    copy.methodsToPass = methodsToPass;
                     result.set(index, copy.decompile(classSource.get(className)));
                 }
             });

@@ -29,10 +29,11 @@ class MetadataProviderTransformer implements ClassHolderTransformer {
         for (MethodHolder method : cls.getMethods()) {
             AnnotationReader providerAnnot = method.getAnnotations().get(MetadataProvider.class.getName());
             if (providerAnnot == null) {
-                return;
+                continue;
             }
             AnnotationHolder genAnnot = new AnnotationHolder(GeneratedBy.class.getName());
-            genAnnot.getValues().put("value", new AnnotationValue(ValueType.object(null)));
+            genAnnot.getValues().put("value", new AnnotationValue(ValueType.object(
+                    MetadataProviderNativeGenerator.class.getName())));
             method.getAnnotations().add(genAnnot);
         }
     }

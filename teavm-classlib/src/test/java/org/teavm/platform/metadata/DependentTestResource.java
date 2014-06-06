@@ -19,6 +19,9 @@ package org.teavm.platform.metadata;
  *
  * @author Alexey Andreev
  */
-public class MetadataGeneratorTest {
+@Resource
+public interface DependentTestResource {
+    String getBar();
 
+    void setBar(String bar);
 }
