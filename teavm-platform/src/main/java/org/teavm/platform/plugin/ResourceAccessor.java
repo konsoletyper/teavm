@@ -26,11 +26,11 @@ final class ResourceAccessor {
 
     public static native Object get(Object obj, int index);
 
-    public static native Object add(Object obj, Object elem);
+    public static native void add(Object obj, Object elem);
 
     public static native boolean has(Object obj, String key);
 
-    public static native boolean size(Object obj);
+    public static native int size(Object obj);
 
     public static native int castToInt(Object obj);
 

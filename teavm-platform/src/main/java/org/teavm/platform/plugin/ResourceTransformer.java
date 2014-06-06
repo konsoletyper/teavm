@@ -16,14 +16,14 @@
 package org.teavm.platform.plugin;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.teavm.model.*;
-import org.teavm.model.instructions.EmptyInstruction;
-import org.teavm.model.instructions.InvocationType;
-import org.teavm.model.instructions.InvokeInstruction;
-import org.teavm.model.instructions.StringConstantInstruction;
+import org.teavm.model.instructions.*;
 import org.teavm.platform.metadata.Resource;
+import org.teavm.platform.metadata.ResourceArray;
+import org.teavm.platform.metadata.ResourceMap;
 
 /**
  *
@@ -67,21 +67,35 @@ class ResourceTransformer implements ClassHolderTransformer {
             return null;
         }
         MethodReference method = insn.getMethod();
+        if (method.getClassName().equals(ResourceArray.class.getName()) ||
+                method.getClassName().equals(ResourceMap.class.getName())) {
+            InvokeInstruction accessInsn = new InvokeInstruction();
+            accessInsn.setType(InvocationType.SPECIAL);
+            ValueType[] types = new ValueType[method.getDescriptor().parameterCount() + 2];
+            types[0] = ValueType.object("java.lang.Object");
+            System.arraycopy(method.getDescriptor().getSignature(), 0, types, 1,
+                    method.getDescriptor().parameterCount() + 1);
+            accessInsn.setMethod(new MethodReference(ResourceAccessor.class.getName(), method.getName(), types));
+            accessInsn.getArguments().add(insn.getInstance());
+            accessInsn.getArguments().addAll(insn.getArguments());
+            accessInsn.setReceiver(insn.getReceiver());
+            return Arrays.<Instruction>asList(accessInsn);
+        }
         ClassReader iface = innerSource.get(method.getClassName());
         if (iface.getAnnotations().get(Resource.class.getName()) == null) {
             return null;
         }
         if (method.getName().startsWith("get")) {
             if (method.getName().length() > 3) {
-                return transformGetterInvocation(insn, method.getName().substring(3));
+                return transformGetterInvocation(insn, getPropertyName(method.getName().substring(3)));
             }
         } else if (method.getName().startsWith("is")) {
             if (method.getName().length() > 2) {
-                return transformGetterInvocation(insn, method.getName().substring(2));
+                return transformGetterInvocation(insn, getPropertyName(method.getName().substring(2)));
             }
         } else if (method.getName().startsWith("set")) {
             if (method.getName().length() > 3) {
-                return transformSetterInvocation(insn, method.getName().substring(3));
+                return transformSetterInvocation(insn, getPropertyName(method.getName().substring(3)));
             }
         }
         return null;
@@ -92,37 +106,116 @@ class ResourceTransformer implements ClassHolderTransformer {
             return Collections.emptyList();
         }
         ValueType type = insn.getMethod().getDescriptor().getResultType();
-        Program program = insn.getProgram();
         List<Instruction> instructions = new ArrayList<>();
         if (type instanceof ValueType.Primitive) {
             switch (((ValueType.Primitive)type).getKind()) {
                 case BOOLEAN:
-                    Variable nameVar = program.createVariable();
-                    Variable resultVar = program.createVariable();
-                    StringConstantInstruction nameInsn = new StringConstantInstruction();
-                    nameInsn.setConstant(property);
-                    nameInsn.setReceiver(nameVar);
-                    instructions.add(nameInsn);
-                    InvokeInstruction accessorInvoke = new InvokeInstruction();
-                    accessorInvoke.setType(InvocationType.SPECIAL);
-                    accessorInvoke.setMethod(new MethodReference(ResourceAccessor.class, "get",
-                            Object.class, String.class, Object.class));
-                    accessorInvoke.getArguments().add(insn.getInstance());
-                    accessorInvoke.getArguments().add(nameVar);
-                    accessorInvoke.setReceiver(resultVar);
-                    instructions.add(accessorInvoke);
-                    InvokeInstruction castInvoke = new InvokeInstruction();
-                    castInvoke.setType(InvocationType.SPECIAL);
-                    castInvoke.setMethod(new MethodReference(ResourceAccessor.class, "castToBoolean", Object.class,
-                            boolean.class));
-                    castInvoke.getArguments().add(resultVar);
-                    castInvoke.setReceiver(insn.getReceiver());
+                    getAndCastProperty(insn, property, instructions, boolean.class);
                     return instructions;
+                case BYTE:
+                    getAndCastProperty(insn, property, instructions, byte.class);
+                    return instructions;
+                case SHORT:
+                    getAndCastProperty(insn, property, instructions, short.class);
+                    return instructions;
+                case INTEGER:
+                    getAndCastProperty(insn, property, instructions, int.class);
+                    return instructions;
+                case FLOAT:
+                    getAndCastProperty(insn, property, instructions, float.class);
+                    return instructions;
+                case DOUBLE:
+                    getAndCastProperty(insn, property, instructions, double.class);
+                    return instructions;
+                case CHARACTER:
+                case LONG:
+                    break;
             }
         } else if (type instanceof ValueType.Object) {
-
+            switch (((ValueType.Object)type).getClassName()) {
+                case "java.lang.Boolean":
+                    getAndCastPropertyToWrapper(insn, property, instructions, boolean.class, Boolean.class);
+                    return instructions;
+                case "java.lang.Byte":
+                    getAndCastPropertyToWrapper(insn, property, instructions, byte.class, Byte.class);
+                    return instructions;
+                case "java.lang.Short":
+                    getAndCastPropertyToWrapper(insn, property, instructions, short.class, Short.class);
+                    return instructions;
+                case "java.lang.Integer":
+                    getAndCastPropertyToWrapper(insn, property, instructions, int.class, Integer.class);
+                    return instructions;
+                case "java.lang.Float":
+                    getAndCastPropertyToWrapper(insn, property, instructions, float.class, Float.class);
+                    return instructions;
+                case "java.lang.Double":
+                    getAndCastPropertyToWrapper(insn, property, instructions, double.class, Double.class);
+                    return instructions;
+                default: {
+                    Variable resultVar = insn.getProgram().createVariable();
+                    getProperty(insn, property, instructions, resultVar);
+                    CastInstruction castInsn = new CastInstruction();
+                    castInsn.setReceiver(insn.getReceiver());
+                    castInsn.setTargetType(type);
+                    castInsn.setValue(resultVar);
+                    instructions.add(castInsn);
+                    return instructions;
+                }
+            }
         }
         return null;
+    }
+
+    private void getProperty(InvokeInstruction insn, String property, List<Instruction> instructions,
+            Variable resultVar) {
+        Program program = insn.getProgram();
+        Variable nameVar = program.createVariable();
+        StringConstantInstruction nameInsn = new StringConstantInstruction();
+        nameInsn.setConstant(property);
+        nameInsn.setReceiver(nameVar);
+        instructions.add(nameInsn);
+        InvokeInstruction accessorInvoke = new InvokeInstruction();
+        accessorInvoke.setType(InvocationType.SPECIAL);
+        accessorInvoke.setMethod(new MethodReference(ResourceAccessor.class, "get",
+                Object.class, String.class, Object.class));
+        accessorInvoke.getArguments().add(insn.getInstance());
+        accessorInvoke.getArguments().add(nameVar);
+        accessorInvoke.setReceiver(resultVar);
+        instructions.add(accessorInvoke);
+    }
+
+    private void getAndCastProperty(InvokeInstruction insn, String property, List<Instruction> instructions,
+            Class<?> primitive) {
+        Program program = insn.getProgram();
+        Variable resultVar = program.createVariable();
+        getProperty(insn, property, instructions, resultVar);
+        InvokeInstruction castInvoke = new InvokeInstruction();
+        castInvoke.setType(InvocationType.SPECIAL);
+        String primitiveCapitalized = primitive.getName();
+        primitiveCapitalized = Character.toUpperCase(primitiveCapitalized.charAt(0)) +
+                primitiveCapitalized.substring(1);
+        castInvoke.setMethod(new MethodReference(ResourceAccessor.class, "castTo" + primitiveCapitalized,
+                Object.class, primitive));
+        castInvoke.getArguments().add(resultVar);
+        castInvoke.setReceiver(insn.getReceiver());
+        instructions.add(castInvoke);
+    }
+
+    private void getAndCastPropertyToWrapper(InvokeInstruction insn, String property, List<Instruction> instructions,
+            Class<?> primitive, Class<?> wrapper) {
+        Program program = insn.getProgram();
+        Variable resultVar = program.createVariable();
+        getProperty(insn, property, instructions, resultVar);
+        InvokeInstruction castInvoke = new InvokeInstruction();
+        castInvoke.setType(InvocationType.SPECIAL);
+        String primitiveCapitalized = primitive.getName();
+        primitiveCapitalized = Character.toUpperCase(primitiveCapitalized.charAt(0)) +
+                primitiveCapitalized.substring(1);
+        castInvoke.setMethod(new MethodReference(ResourceAccessor.class, "castTo" + primitiveCapitalized + "Primitive",
+                Object.class, wrapper));
+        castInvoke.getArguments().add(resultVar);
+        castInvoke.setReceiver(insn.getReceiver());
+        instructions.add(castInvoke);
     }
 
     private List<Instruction> transformSetterInvocation(InvokeInstruction insn, String property) {
