@@ -32,7 +32,7 @@ public class MetadataGeneratorTest {
     }
 
     @MetadataProvider(TestResourceGenerator.class)
-    private native TestResource getInt();
+    private native int getInt();
 
     @Test
     public void intExposed() {

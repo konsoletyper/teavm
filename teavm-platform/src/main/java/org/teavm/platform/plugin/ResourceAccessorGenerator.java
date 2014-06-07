@@ -33,43 +33,43 @@ class ResourceAccessorGenerator implements Injector {
         switch (methodRef.getName()) {
             case "get":
                 if (methodRef.getDescriptor().parameterType(1) == ValueType.INTEGER) {
-                    context.writeExpr(context.getArgument(1));
+                    context.writeExpr(context.getArgument(0));
                     context.getWriter().append('[');
-                    context.writeExpr(context.getArgument(2));
+                    context.writeExpr(context.getArgument(1));
                     context.getWriter().append(']');
                 } else {
-                    context.writeExpr(context.getArgument(1));
-                    writePropertyAccessor(context, context.getArgument(2));
+                    context.writeExpr(context.getArgument(0));
+                    writePropertyAccessor(context, context.getArgument(1));
                 }
                 break;
             case "put":
                 context.getWriter().append('(');
                 if (methodRef.getDescriptor().parameterType(1) == ValueType.INTEGER) {
-                    context.writeExpr(context.getArgument(1));
+                    context.writeExpr(context.getArgument(0));
                     context.getWriter().append('[');
-                    context.writeExpr(context.getArgument(2));
-                } else {
                     context.writeExpr(context.getArgument(1));
-                    writePropertyAccessor(context, context.getArgument(2));
+                } else {
+                    context.writeExpr(context.getArgument(0));
+                    writePropertyAccessor(context, context.getArgument(1));
                 }
                 context.getWriter().append(']').ws().append('=').ws();
-                context.writeExpr(context.getArgument(3));
-                context.getWriter().append(')');
-                break;
-            case "add":
-                context.writeExpr(context.getArgument(1));
-                context.getWriter().append(".push(");
                 context.writeExpr(context.getArgument(2));
                 context.getWriter().append(')');
                 break;
-            case "has":
+            case "add":
+                context.writeExpr(context.getArgument(0));
+                context.getWriter().append(".push(");
                 context.writeExpr(context.getArgument(1));
+                context.getWriter().append(')');
+                break;
+            case "has":
+                context.writeExpr(context.getArgument(0));
                 context.getWriter().append(".hasOwnProperty(");
-                writeStringExpr(context, context.getArgument(2));
+                writeStringExpr(context, context.getArgument(1));
                 context.getWriter().append(')');
                 break;
             case "size":
-                context.writeExpr(context.getArgument(1));
+                context.writeExpr(context.getArgument(0));
                 context.getWriter().append(".length");
                 break;
             case "castToInt":
@@ -84,7 +84,7 @@ class ResourceAccessorGenerator implements Injector {
             case "castFromBoolean":
             case "castFromFloat":
             case "castFromDouble":
-                context.writeExpr(context.getArgument(1));
+                context.writeExpr(context.getArgument(0));
                 break;
             case "castToIntWrapper":
                 castToWrapper(context, Integer.class, int.class);
@@ -124,29 +124,37 @@ class ResourceAccessorGenerator implements Injector {
                 break;
             case "castToString":
                 context.getWriter().append("$rt_str(");
-                context.writeExpr(context.getArgument(1));
+                context.writeExpr(context.getArgument(0));
                 context.getWriter().append(")");
                 break;
             case "castFromString":
                 context.getWriter().append("$rt_ustr(");
-                context.writeExpr(context.getArgument(1));
+                context.writeExpr(context.getArgument(0));
                 context.getWriter().append(")");
                 break;
         }
     }
 
     private void castToWrapper(InjectorContext context, Class<?> wrapper, Class<?> primitive) throws IOException {
+        context.getWriter().append('(');
+        context.writeExpr(context.getArgument(0));
+        context.getWriter().ws().append("==").ws().append("null").ws().append('?').ws().append("null")
+                .ws().append(':').ws();
         context.getWriter().appendMethodBody(new MethodReference(wrapper, "valueOf", primitive, wrapper)).append('(');
-        context.writeExpr(context.getArgument(1));
-        context.getWriter().append(')');
+        context.writeExpr(context.getArgument(0));
+        context.getWriter().append("))");
     }
 
     private void castFromWrapper(InjectorContext context, Class<?> wrapper, Class<?> primitive) throws IOException {
+        context.getWriter().append('(');
+        context.writeExpr(context.getArgument(0));
+        context.getWriter().ws().append("==").ws().append("null").ws().append('?').ws().append("null")
+                .ws().append(':').ws();
         String primitiveName = primitive.getName();
         context.getWriter().appendMethodBody(new MethodReference(wrapper, primitiveName + "Value", primitive))
                 .append('(');
-        context.writeExpr(context.getArgument(1));
-        context.getWriter().append(')');
+        context.writeExpr(context.getArgument(0));
+        context.getWriter().append("))");
     }
 
     private void writePropertyAccessor(InjectorContext context, Expr property) throws IOException {

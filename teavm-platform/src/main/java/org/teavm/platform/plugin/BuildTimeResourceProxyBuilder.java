@@ -17,6 +17,7 @@ package org.teavm.platform.plugin;
 
 import java.lang.reflect.Method;
 import java.util.*;
+import org.teavm.codegen.SourceWriter;
 import org.teavm.platform.metadata.Resource;
 import org.teavm.platform.metadata.ResourceArray;
 import org.teavm.platform.metadata.ResourceMap;
@@ -73,11 +74,22 @@ class BuildTimeResourceProxyBuilder {
                         " that is not an interface");
             }
             scanIface(rootIface);
+            Method writeMethod;
+            try {
+                writeMethod = ResourceWriter.class.getMethod("write", SourceWriter.class);
+            } catch (NoSuchMethodException e) {
+                throw new AssertionError("Method must exist", e);
+            }
+            String[] properties = new String[propertyIndexes.size()];
+            for (Map.Entry<String, Integer> entry : propertyIndexes.entrySet()) {
+                properties[entry.getValue()] = entry.getKey();
+            }
+            methods.put(writeMethod, new BuildTimeResourceWriterMethod(properties));
             return new BuildTimeResourceProxyFactory(methods, initialData);
         }
 
         private void scanIface(Class<?> iface) {
-            if (iface.isAnnotationPresent(Resource.class)) {
+            if (!iface.isAnnotationPresent(Resource.class)) {
                 throw new IllegalArgumentException("Error creating a new resource of type " + iface.getName() +
                         ". This type is not marked with the " + Resource.class.getName() + " annotation");
             }
@@ -170,7 +182,7 @@ class BuildTimeResourceProxyBuilder {
         }
 
         private void scanSetter(Method method) {
-            String propertyName = extractPropertyName(method.getName().substring(2));
+            String propertyName = extractPropertyName(method.getName().substring(3));
             if (propertyName == null || !method.getReturnType().equals(void.class) ||
                     method.getParameterTypes().length != 1) {
                 throwInvalidMethod(method);

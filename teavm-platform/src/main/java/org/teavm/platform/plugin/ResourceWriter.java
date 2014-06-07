@@ -22,6 +22,6 @@ import org.teavm.codegen.SourceWriter;
  *
  * @author Alexey Andreev
  */
-interface ResourceWriter {
+public interface ResourceWriter {
     void write(SourceWriter writer) throws IOException;
 }

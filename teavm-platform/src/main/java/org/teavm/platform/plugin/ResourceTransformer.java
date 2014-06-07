@@ -224,7 +224,7 @@ class ResourceTransformer implements ClassHolderTransformer {
 
     private String getPropertyName(String name) {
         if (name.length() == 1) {
-            return name;
+            return name.toLowerCase();
         }
         if (Character.isUpperCase(name.charAt(1))) {
             return name;

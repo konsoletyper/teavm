@@ -132,7 +132,7 @@ public class Decompiler {
                 continue;
             }
             if (method.getAnnotations().get(InjectedBy.class.getName()) != null ||
-                    methodsToPass.contains(method)) {
+                    methodsToPass.contains(method.getReference())) {
                 continue;
             }
             MethodNode methodNode = decompile(method);
