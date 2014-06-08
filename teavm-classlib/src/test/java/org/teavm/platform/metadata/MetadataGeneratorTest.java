@@ -51,9 +51,22 @@ public class MetadataGeneratorTest {
         assertEquals(25, res.getE());
         assertEquals(3.14, res.getF(), 0.001);
         assertEquals(2.72, res.getG(), 0.001);
+
         assertEquals(Integer.valueOf(26), res.getH());
         assertNull(res.getI());
         assertEquals(Byte.valueOf((byte)27), res.getJ());
         assertEquals(Short.valueOf((short)28), res.getK());
+        assertEquals(100, res.getL().floatValue(), 0.1);
+        assertEquals(200, res.getM().doubleValue(), 0.1);
+
+        assertEquals("qwe", res.getFoo());
+
+        assertEquals(2, res.getArrayA().size());
+        assertEquals(Integer.valueOf(2), res.getArrayA().get(0));
+        assertEquals(Integer.valueOf(3), res.getArrayA().get(1));
+        assertEquals(1, res.getArrayB().size());
+        assertEquals("baz", res.getArrayB().get(0));
+        assertNull(res.getArrayC());
     }
 }
+

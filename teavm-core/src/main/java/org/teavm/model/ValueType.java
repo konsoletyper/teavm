@@ -191,7 +191,26 @@ public abstract class ValueType {
     }
 
     public static ValueType primitive(PrimitiveType type) {
-        return new Primitive(type);
+        switch (type) {
+            case BOOLEAN:
+                return BOOLEAN;
+            case BYTE:
+                return BYTE;
+            case CHARACTER:
+                return CHARACTER;
+            case SHORT:
+                return SHORT;
+            case INTEGER:
+                return INTEGER;
+            case LONG:
+                return LONG;
+            case FLOAT:
+                return FLOAT;
+            case DOUBLE:
+                return DOUBLE;
+            default:
+                throw new AssertionError("Unknown primitive type " + type);
+        }
     }
 
     public static ValueType[] parseMany(String text) {

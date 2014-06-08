@@ -50,6 +50,7 @@ public class TestResourceGenerator implements MetadataGenerator {
         resource.setK((short)28);
         resource.setL(100f);
         resource.setM(200.0);
+        resource.setFoo("qwe");
 
         ResourceArray<Integer> array = context.createResourceArray();
         array.add(2);
