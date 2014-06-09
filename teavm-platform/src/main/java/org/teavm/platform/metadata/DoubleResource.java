@@ -17,12 +17,10 @@ package org.teavm.platform.metadata;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-public interface ResourceArray<T extends Resource> extends Resource {
-    int size();
+public interface DoubleResource extends Resource {
+    double getValue();
 
-    T get(int i);
-
-    void add(T elem);
+    void setValue(double value);
 }

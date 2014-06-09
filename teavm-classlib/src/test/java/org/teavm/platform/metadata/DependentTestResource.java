@@ -19,8 +19,7 @@ package org.teavm.platform.metadata;
  *
  * @author Alexey Andreev
  */
-@Resource
-public interface DependentTestResource {
+public interface DependentTestResource extends Resource {
     String getBar();
 
     void setBar(String bar);

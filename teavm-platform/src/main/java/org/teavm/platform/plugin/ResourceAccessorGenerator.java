@@ -86,42 +86,6 @@ class ResourceAccessorGenerator implements Injector {
             case "castFromDouble":
                 context.writeExpr(context.getArgument(0));
                 break;
-            case "castToIntWrapper":
-                castToWrapper(context, Integer.class, int.class);
-                break;
-            case "castToShortWrapper":
-                castToWrapper(context, Short.class, short.class);
-                break;
-            case "castToByteWrapper":
-                castToWrapper(context, Byte.class, byte.class);
-                break;
-            case "castToBooleanWrapper":
-                castToWrapper(context, Boolean.class, boolean.class);
-                break;
-            case "castToFloatWrapper":
-                castToWrapper(context, Float.class, float.class);
-                break;
-            case "castToDoubleWrapper":
-                castToWrapper(context, Double.class, double.class);
-                break;
-            case "castFromIntWrapper":
-                castFromWrapper(context, Integer.class, int.class);
-                break;
-            case "castFromShortWrapper":
-                castFromWrapper(context, Short.class, short.class);
-                break;
-            case "castFromByteWrapper":
-                castFromWrapper(context, Byte.class, byte.class);
-                break;
-            case "castFromBooleanWrapper":
-                castFromWrapper(context, Boolean.class, boolean.class);
-                break;
-            case "castFromFloatWrapper":
-                castFromWrapper(context, Float.class, float.class);
-                break;
-            case "castFromDoubleWrapper":
-                castFromWrapper(context, Double.class, double.class);
-                break;
             case "castToString":
                 context.getWriter().append("$rt_str(");
                 context.writeExpr(context.getArgument(0));
@@ -133,28 +97,6 @@ class ResourceAccessorGenerator implements Injector {
                 context.getWriter().append(")");
                 break;
         }
-    }
-
-    private void castToWrapper(InjectorContext context, Class<?> wrapper, Class<?> primitive) throws IOException {
-        context.getWriter().append('(');
-        context.writeExpr(context.getArgument(0));
-        context.getWriter().ws().append("==").ws().append("null").ws().append('?').ws().append("null")
-                .ws().append(':').ws();
-        context.getWriter().appendMethodBody(new MethodReference(wrapper, "valueOf", primitive, wrapper)).append('(');
-        context.writeExpr(context.getArgument(0));
-        context.getWriter().append("))");
-    }
-
-    private void castFromWrapper(InjectorContext context, Class<?> wrapper, Class<?> primitive) throws IOException {
-        context.getWriter().append('(');
-        context.writeExpr(context.getArgument(0));
-        context.getWriter().ws().append("==").ws().append("null").ws().append('?').ws().append("null")
-                .ws().append(':').ws();
-        String primitiveName = primitive.getName();
-        context.getWriter().appendMethodBody(new MethodReference(wrapper, primitiveName + "Value", primitive))
-                .append('(');
-        context.writeExpr(context.getArgument(0));
-        context.getWriter().append("))");
     }
 
     private void writePropertyAccessor(InjectorContext context, Expr property) throws IOException {

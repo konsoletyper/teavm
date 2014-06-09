@@ -19,8 +19,7 @@ package org.teavm.platform.metadata;
  *
  * @author Alexey Andreev
  */
-@Resource
-public interface TestResource {
+public interface TestResource extends Resource {
     int getA();
 
     void setA(int a);
@@ -45,55 +44,31 @@ public interface TestResource {
 
     void setG(double g);
 
-    Integer getH();
-
-    void setH(Integer a);
-
-    Boolean getI();
-
-    void setI(Boolean i);
-
-    Byte getJ();
-
-    void setJ(Byte d);
-
-    Short getK();
-
-    void setK(Short k);
-
-    Float getL();
-
-    void setL(Float l);
-
-    Double getM();
-
-    void setM(Double g);
-
     String getFoo();
 
     void setFoo(String foo);
 
-    ResourceArray<Integer> getArrayA();
+    ResourceArray<IntResource> getArrayA();
 
-    void setArrayA(ResourceArray<Integer> arrayA);
+    void setArrayA(ResourceArray<IntResource> arrayA);
 
     ResourceArray<DependentTestResource> getArrayB();
 
     void setArrayB(ResourceArray<DependentTestResource> arrayB);
 
-    ResourceArray<ResourceArray<String>> getArrayC();
+    ResourceArray<ResourceArray<StringResource>> getArrayC();
 
-    void setArrayC(ResourceArray<ResourceArray<String>> arrayC);
+    void setArrayC(ResourceArray<ResourceArray<StringResource>> arrayC);
 
-    ResourceMap<Integer> getMapA();
+    ResourceMap<IntResource> getMapA();
 
-    void setMapA(ResourceMap<Integer> mapA);
+    void setMapA(ResourceMap<IntResource> mapA);
 
     ResourceMap<DependentTestResource> getMapB();
 
     void setMapB(ResourceMap<DependentTestResource> mapB);
 
-    ResourceMap<ResourceArray<String>> getMapC();
+    ResourceMap<ResourceArray<StringResource>> getMapC();
 
-    void setMapC(ResourceMap<ResourceArray<String>> mapC);
+    void setMapC(ResourceMap<ResourceArray<StringResource>> mapC);
 }

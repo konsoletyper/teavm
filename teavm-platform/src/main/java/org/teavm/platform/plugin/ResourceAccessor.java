@@ -15,6 +15,8 @@
  */
 package org.teavm.platform.plugin;
 
+import org.teavm.platform.metadata.Resource;
+
 /**
  *
  * @author Alexey Andreev
@@ -24,9 +26,9 @@ final class ResourceAccessor {
 
     public static native void put(Object obj, String propertyName, Object elem);
 
-    public static native Object get(Object obj, int index);
+    public static native Resource get(Object obj, int index);
 
-    public static native void add(Object obj, Object elem);
+    public static native void add(Object obj, Resource elem);
 
     public static native boolean has(Object obj, String key);
 
@@ -34,53 +36,29 @@ final class ResourceAccessor {
 
     public static native int castToInt(Object obj);
 
-    public static native Integer castToIntWrapper(Object obj);
-
     public static native short castToShort(Object obj);
-
-    public static native Short castToShortWrapper(Object obj);
 
     public static native byte castToByte(Object obj);
 
-    public static native Byte castToByteWrapper(Object obj);
-
     public static native boolean castToBoolean(Object obj);
-
-    public static native Boolean castToBooleanWrapper(Object obj);
 
     public static native float castToFloat(Object obj);
 
-    public static native Float castToFloatWrapper(Object obj);
-
     public static native double castToDouble(Object obj);
-
-    public static native Double castToDoubleWrapper(Object obj);
 
     public static native String castToString(Object obj);
 
     public static native Object castFromInt(int value);
 
-    public static native Object castFromIntWrapper(Integer value);
-
     public static native Object castFromShort(short value);
-
-    public static native Object castFromShortWrapper(Short value);
 
     public static native Object castFromByte(byte value);
 
-    public static native Object castFromByteWrapper(Byte value);
-
     public static native Object castFromBoolean(boolean value);
-
-    public static native Object castFromBooleanWrapper(Boolean value);
 
     public static native Object castFromFloat(float value);
 
-    public static native Object castFromFloatWrapper(Float value);
-
     public static native Object castFromDouble(double value);
-
-    public static native Object castFromDoubleWrapper(Double value);
 
     public static native Object castFromString(String value);
 }

@@ -41,12 +41,10 @@ import org.teavm.model.MethodReference;
  * <p>The valid resource types are the following:</p>
  *
  * <ul>
- *   <li>Valid interfaces, marked with the {@link Resource} annotation. Read the description of this annotation
+ *   <li>Valid interfaces, extending the {@link Resource} annotation. Read the description of this interface
  *       for detailed description about valid resources interfaces.</li>
  *   <li>{@link ResourceArray} of valid resources.</li>
  *   <li>{@link ResourceMap} of valid resources.</li>
- *   <li>{@link String}, {@link Integer}, {@link Byte}, {@link Short}, {@link Float}, {@link Double},
- *       {@link Boolean}.</li>
  *   <li>The <code>null</code> value.</li>
  * </ul>
  *
@@ -61,5 +59,5 @@ public interface MetadataGenerator {
      * @param context context that contains useful compile-time information.
      * @param method method which will be used to access the generated resources at run time.
      */
-    Object generateMetadata(MetadataGeneratorContext context, MethodReference method);
+    Resource generateMetadata(MetadataGeneratorContext context, MethodReference method);
 }

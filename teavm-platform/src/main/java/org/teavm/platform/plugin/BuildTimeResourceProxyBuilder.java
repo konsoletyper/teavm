@@ -29,8 +29,7 @@ import org.teavm.platform.metadata.ResourceMap;
 class BuildTimeResourceProxyBuilder {
     private Map<Class<?>, BuildTimeResourceProxyFactory> factories = new HashMap<>();
     private static Set<Class<?>> allowedPropertyTypes = new HashSet<>(Arrays.<Class<?>>asList(
-            boolean.class, Boolean.class, byte.class, Byte.class, short.class, Short.class,
-            int.class, Integer.class, float.class, Float.class, double.class, Double.class,
+            boolean.class, byte.class, short.class, int.class, float.class, double.class,
             String.class, ResourceArray.class, ResourceMap.class));
     private static Map<Class<?>, Object> defaultValues = new HashMap<>();
 
@@ -89,9 +88,9 @@ class BuildTimeResourceProxyBuilder {
         }
 
         private void scanIface(Class<?> iface) {
-            if (!iface.isAnnotationPresent(Resource.class)) {
+            if (!Resource.class.isAssignableFrom(iface)) {
                 throw new IllegalArgumentException("Error creating a new resource of type " + iface.getName() +
-                        ". This type is not marked with the " + Resource.class.getName() + " annotation");
+                        ". This type does not implement the " + Resource.class.getName() + " interface");
             }
 
             // Scan methods
@@ -136,7 +135,7 @@ class BuildTimeResourceProxyBuilder {
                 String propertyName = property.getKey();
                 Class<?> propertyType = property.getValue();
                 if (!allowedPropertyTypes.contains(propertyType)) {
-                    if (!propertyType.isInterface() || !propertyType.isAnnotationPresent(Resource.class)) {
+                    if (!propertyType.isInterface() || !Resource.class.isAssignableFrom(propertyType)) {
                         throw new IllegalArgumentException("Property " + iface.getName() + "." + propertyName +
                                 " has an illegal type " + propertyType.getName());
                     }

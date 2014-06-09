@@ -45,15 +45,15 @@ public interface MetadataGeneratorContext {
      * Creates a new resource of the given type. The description of valid resources
      * is available in documentation for {@link Resource}.
      */
-    <T> T createResource(Class<T> resourceType);
+    <T extends Resource> T createResource(Class<T> resourceType);
 
     /**
      * Creates a new resource array.
      */
-    <T> ResourceArray<T> createResourceArray();
+    <T extends Resource> ResourceArray<T> createResourceArray();
 
     /**
      * Creates a new resource map.
      */
-    <T> ResourceMap<T> createResourceMap();
+    <T extends Resource> ResourceMap<T> createResourceMap();
 }

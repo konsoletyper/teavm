@@ -15,8 +15,6 @@
  */
 package org.teavm.platform.metadata;
 
-import java.lang.annotation.*;
-
 /**
  * <p>Marks a valid <b>resource interface</b>. Resource interface is an interface, that has get* and set* methods,
  * according the default convention for JavaBeans. Each property must have both getter and setter.
@@ -28,9 +26,5 @@ import java.lang.annotation.*;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-@Inherited
-@Documented
-public @interface Resource {
+public interface Resource {
 }

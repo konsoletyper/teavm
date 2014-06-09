@@ -19,6 +19,7 @@ import java.lang.reflect.Proxy;
 import java.util.Properties;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.platform.metadata.MetadataGeneratorContext;
+import org.teavm.platform.metadata.Resource;
 import org.teavm.platform.metadata.ResourceArray;
 import org.teavm.platform.metadata.ResourceMap;
 
@@ -55,19 +56,19 @@ class DefaultMetadataGeneratorContext implements MetadataGeneratorContext {
     }
 
     @Override
-    public <T> T createResource(Class<T> resourceType) {
+    public <T extends Resource> T createResource(Class<T> resourceType) {
         return resourceType.cast(Proxy.newProxyInstance(classLoader,
                 new Class<?>[] { resourceType, ResourceWriter.class },
                 proxyBuilder.buildProxy(resourceType)));
     }
 
     @Override
-    public <T> ResourceArray<T> createResourceArray() {
+    public <T extends Resource> ResourceArray<T> createResourceArray() {
         return new BuildTimeResourceArray<>();
     }
 
     @Override
-    public <T> ResourceMap<T> createResourceMap() {
+    public <T extends Resource> ResourceMap<T> createResourceMap() {
         return new BuildTimeResourceMap<>();
     }
 }

@@ -19,13 +19,14 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import org.teavm.codegen.SourceWriter;
+import org.teavm.platform.metadata.Resource;
 import org.teavm.platform.metadata.ResourceMap;
 
 /**
  *
  * @author Alexey Andreev
  */
-class BuildTimeResourceMap<T> implements ResourceMap<T>, ResourceWriter {
+class BuildTimeResourceMap<T extends Resource> implements ResourceMap<T>, ResourceWriter {
     private Map<String, T> data = new HashMap<>();
 
     @Override

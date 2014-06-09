@@ -19,13 +19,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import org.teavm.codegen.SourceWriter;
+import org.teavm.platform.metadata.Resource;
 import org.teavm.platform.metadata.ResourceArray;
 
 /**
  *
  * @author Alexey Andreev
  */
-class BuildTimeResourceArray<T> implements ResourceArray<T>, ResourceWriter {
+class BuildTimeResourceArray<T extends Resource> implements ResourceArray<T>, ResourceWriter {
     private List<T> data = new ArrayList<>();
 
     @Override

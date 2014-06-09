@@ -23,12 +23,12 @@ import org.teavm.model.MethodReference;
  */
 public class TestResourceGenerator implements MetadataGenerator {
     @Override
-    public Object generateMetadata(MetadataGeneratorContext context, MethodReference method) {
+    public Resource generateMetadata(MetadataGeneratorContext context, MethodReference method) {
         switch (method.getName()) {
             case "getNull":
                 return null;
             case "getInt":
-                return 23;
+                return createInt(context, 23);
             case "getResource":
                 return getResource(context);
             default:
@@ -36,7 +36,7 @@ public class TestResourceGenerator implements MetadataGenerator {
         }
     }
 
-    private Object getResource(MetadataGeneratorContext context) {
+    private Resource getResource(MetadataGeneratorContext context) {
         TestResource resource = context.createResource(TestResource.class);
         resource.setA(23);
         resource.setB(false);
@@ -44,17 +44,11 @@ public class TestResourceGenerator implements MetadataGenerator {
         resource.setE((short)25);
         resource.setF(3.14f);
         resource.setG(2.72);
-        resource.setH(26);
-        resource.setI(null);
-        resource.setJ((byte)27);
-        resource.setK((short)28);
-        resource.setL(100f);
-        resource.setM(200.0);
         resource.setFoo("qwe");
 
-        ResourceArray<Integer> array = context.createResourceArray();
-        array.add(2);
-        array.add(3);
+        ResourceArray<IntResource> array = context.createResourceArray();
+        array.add(createInt(context, 2));
+        array.add(createInt(context, 3));
         resource.setArrayA(array);
         DependentTestResource dep = context.createResource(DependentTestResource.class);
         dep.setBar("baz");
@@ -62,5 +56,11 @@ public class TestResourceGenerator implements MetadataGenerator {
         resArray.add(dep);
         resource.setArrayB(resArray);
         return resource;
+    }
+
+    private IntResource createInt(MetadataGeneratorContext context, int value) {
+        IntResource res = context.createResource(IntResource.class);
+        res.setValue(value);
+        return res;
     }
 }

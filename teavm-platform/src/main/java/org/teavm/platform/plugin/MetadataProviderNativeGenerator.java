@@ -24,6 +24,7 @@ import org.teavm.javascript.ni.GeneratorContext;
 import org.teavm.model.*;
 import org.teavm.platform.metadata.MetadataGenerator;
 import org.teavm.platform.metadata.MetadataProvider;
+import org.teavm.platform.metadata.Resource;
 
 /**
  *
@@ -73,7 +74,7 @@ public class MetadataProviderNativeGenerator implements Generator {
                 context.getClassLoader(), context.getProperties());
 
         // Generate resource loader
-        Object resource = generator.generateMetadata(metadataContext, methodRef);
+        Resource resource = generator.generateMetadata(metadataContext, methodRef);
         writer.append("if (!window.hasOwnProperty(\"").appendMethodBody(methodRef).append("$$resource\")) {")
                 .indent().softNewLine();
         writer.appendMethodBody(methodRef).append("$$resource = ");
