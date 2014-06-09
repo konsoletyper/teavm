@@ -17,10 +17,7 @@ package org.teavm.classlib.java.lang.reflect;
 
 import java.io.IOException;
 import org.teavm.codegen.SourceWriter;
-import org.teavm.dependency.DependencyChecker;
-import org.teavm.dependency.DependencyConsumer;
-import org.teavm.dependency.DependencyPlugin;
-import org.teavm.dependency.MethodDependency;
+import org.teavm.dependency.*;
 import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.GeneratorContext;
 import org.teavm.model.ClassReader;
@@ -41,16 +38,16 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
             ValueType.INTEGER, ValueType.LONG, ValueType.FLOAT, ValueType.DOUBLE, ValueType.BOOLEAN };
 
     @Override
-    public void methodAchieved(DependencyChecker checker, MethodDependency method) {
+    public void methodAchieved(DependencyAgent agent, MethodDependency method) {
         switch (method.getReference().getName()) {
             case "getLength":
-                achieveGetLength(checker, method);
+                achieveGetLength(agent, method);
                 break;
             case "newInstanceImpl":
                 method.getResult().propagate("[java.lang.Object");
                 break;
             case "getImpl":
-                achieveGet(checker, method);
+                achieveGet(agent, method);
                 break;
         }
     }
@@ -81,13 +78,12 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
         writer.append("return " + array + ".data.length;").softNewLine();
     }
 
-    private void achieveGetLength(final DependencyChecker checker, final MethodDependency method) {
+    private void achieveGetLength(final DependencyAgent agent, final MethodDependency method) {
         method.getVariable(1).addConsumer(new DependencyConsumer() {
             @Override public void consume(String type) {
                 if (!type.startsWith("[")) {
-                    MethodReference cons = new MethodReference("java.lang.IllegalArgumentException",
-                            new MethodDescriptor("<init>", ValueType.VOID));
-                    checker.addEntryPoint(cons);
+                    MethodReference cons = new MethodReference(IllegalArgumentException.class, "<init>", void.class);
+                    agent.linkMethod(cons, method.getStack()).use();
                 }
             }
         });
@@ -129,7 +125,7 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
         writer.outdent().append("}").softNewLine();
     }
 
-    private void achieveGet(final DependencyChecker checker, final MethodDependency method) {
+    private void achieveGet(final DependencyAgent agent, final MethodDependency method) {
         method.getVariable(1).getArrayItem().connect(method.getResult());
         method.getVariable(1).addConsumer(new DependencyConsumer() {
             @Override public void consume(String type) {
@@ -140,7 +136,7 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
                             String wrapper = "java.lang." + primitiveWrappers[i];
                             MethodReference methodRef = new MethodReference(wrapper, "valueOf",
                                     primitiveTypes[i], ValueType.object(wrapper));
-                            checker.linkMethod(methodRef, method.getStack()).use();
+                            agent.linkMethod(methodRef, method.getStack()).use();
                             method.getResult().propagate("java.lang." + primitiveWrappers[i]);
                         }
                     }
