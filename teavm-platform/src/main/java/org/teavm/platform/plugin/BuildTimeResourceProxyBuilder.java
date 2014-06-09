@@ -62,6 +62,7 @@ class BuildTimeResourceProxyBuilder {
         Map<Method, BuildTimeResourceMethod> methods = new HashMap<>();
         private Map<String, Integer> propertyIndexes = new HashMap<>();
         private Object[] initialData;
+        private Map<String, Class<?>> propertyTypes = new HashMap<>();
 
         public ProxyFactoryCreation(Class<?> iface) {
             this.rootIface = iface;
@@ -73,12 +74,24 @@ class BuildTimeResourceProxyBuilder {
                         " that is not an interface");
             }
             scanIface(rootIface);
+
+            // Fill default values
+            initialData = new Object[propertyIndexes.size()];
+            for (Map.Entry<String, Class<?>> property : propertyTypes.entrySet()) {
+                String propertyName = property.getKey();
+                Class<?> propertyType = property.getValue();
+                initialData[propertyIndexes.get(propertyName)] = defaultValues.get(propertyType);
+            }
+
+            // Generate write method
             Method writeMethod;
             try {
                 writeMethod = ResourceWriter.class.getMethod("write", SourceWriter.class);
             } catch (NoSuchMethodException e) {
                 throw new AssertionError("Method must exist", e);
             }
+
+            // Create factory
             String[] properties = new String[propertyIndexes.size()];
             for (Map.Entry<String, Integer> entry : propertyIndexes.entrySet()) {
                 properties[entry.getValue()] = entry.getKey();
@@ -129,18 +142,19 @@ class BuildTimeResourceProxyBuilder {
                 }
             }
 
-            // Verify types of properties and fill default values
-            initialData = new Object[propertyIndexes.size()];
+            // Verify types of properties
             for (Map.Entry<String, Class<?>> property : getters.entrySet()) {
                 String propertyName = property.getKey();
                 Class<?> propertyType = property.getValue();
                 if (!allowedPropertyTypes.contains(propertyType)) {
                     if (!propertyType.isInterface() || !Resource.class.isAssignableFrom(propertyType)) {
-                        throw new IllegalArgumentException("Property " + iface.getName() + "." + propertyName +
+                        throw new IllegalArgumentException("Property " + rootIface.getName() + "." + propertyName +
                                 " has an illegal type " + propertyType.getName());
                     }
                 }
-                initialData[propertyIndexes.get(propertyName)] = defaultValues.get(propertyType);
+                if (!propertyTypes.containsKey(propertyName)) {
+                    propertyTypes.put(propertyName, propertyType);
+                }
             }
 
             // Scan superinterfaces

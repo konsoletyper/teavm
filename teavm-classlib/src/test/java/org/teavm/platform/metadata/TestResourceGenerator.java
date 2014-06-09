@@ -31,6 +31,8 @@ public class TestResourceGenerator implements MetadataGenerator {
                 return createInt(context, 23);
             case "getResource":
                 return getResource(context);
+            case "getEmptyResource":
+                return context.createResource(TestResource.class);
             default:
                 throw new RuntimeException("Unsupported method: " + method);
         }

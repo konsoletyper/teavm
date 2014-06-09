@@ -52,7 +52,7 @@ class ResourceAccessorGenerator implements Injector {
                     context.writeExpr(context.getArgument(0));
                     writePropertyAccessor(context, context.getArgument(1));
                 }
-                context.getWriter().append(']').ws().append('=').ws();
+                context.getWriter().ws().append('=').ws();
                 context.writeExpr(context.getArgument(2));
                 context.getWriter().append(')');
                 break;
@@ -87,14 +87,20 @@ class ResourceAccessorGenerator implements Injector {
                 context.writeExpr(context.getArgument(0));
                 break;
             case "castToString":
+                context.getWriter().append('(');
+                context.writeExpr(context.getArgument(0));
+                context.getWriter().ws().append("!==").ws().append("null").ws().append("?").ws();
                 context.getWriter().append("$rt_str(");
                 context.writeExpr(context.getArgument(0));
-                context.getWriter().append(")");
+                context.getWriter().append(")").ws().append(':').ws().append("null)");
                 break;
             case "castFromString":
+                context.getWriter().append('(');
+                context.writeExpr(context.getArgument(0));
+                context.getWriter().ws().append("!==").ws().append("null").ws().append("?").ws();
                 context.getWriter().append("$rt_ustr(");
                 context.writeExpr(context.getArgument(0));
-                context.getWriter().append(")");
+                context.getWriter().append(")").ws().append(':').ws().append("null)");
                 break;
         }
     }

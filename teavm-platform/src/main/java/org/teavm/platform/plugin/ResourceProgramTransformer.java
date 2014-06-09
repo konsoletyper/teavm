@@ -191,7 +191,86 @@ class ResourceProgramTransformer {
     }
 
     private List<Instruction> transformSetterInvocation(InvokeInstruction insn, String property) {
+        ValueType type = insn.getMethod().getDescriptor().parameterType(0);
+        List<Instruction> instructions = new ArrayList<>();
+        if (type instanceof ValueType.Primitive) {
+            switch (((ValueType.Primitive)type).getKind()) {
+                case BOOLEAN:
+                    castAndSetProperty(insn, property, instructions, boolean.class);
+                    return instructions;
+                case BYTE:
+                    castAndSetProperty(insn, property, instructions, byte.class);
+                    return instructions;
+                case SHORT:
+                    castAndSetProperty(insn, property, instructions, short.class);
+                    return instructions;
+                case INTEGER:
+                    castAndSetProperty(insn, property, instructions, int.class);
+                    return instructions;
+                case FLOAT:
+                    castAndSetProperty(insn, property, instructions, float.class);
+                    return instructions;
+                case DOUBLE:
+                    castAndSetProperty(insn, property, instructions, double.class);
+                    return instructions;
+                case CHARACTER:
+                case LONG:
+                    break;
+            }
+        } else if (type instanceof ValueType.Object) {
+            switch (((ValueType.Object)type).getClassName()) {
+                case "java.lang.String": {
+                    Variable castVar = insn.getProgram().createVariable();
+                    InvokeInstruction castInvoke = new InvokeInstruction();
+                    castInvoke.setType(InvocationType.SPECIAL);
+                    castInvoke.setMethod(new MethodReference(ResourceAccessor.class, "castFromString",
+                            String.class, Object.class));
+                    castInvoke.getArguments().add(insn.getArguments().get(0));
+                    castInvoke.setReceiver(castVar);
+                    instructions.add(castInvoke);
+                    setProperty(insn, property, instructions, castVar);
+                    return instructions;
+                }
+                default: {
+                    setProperty(insn, property, instructions, insn.getArguments().get(0));
+                    return instructions;
+                }
+            }
+        }
         return null;
+    }
+
+    private void setProperty(InvokeInstruction insn, String property, List<Instruction> instructions,
+            Variable valueVar) {
+        Variable nameVar = program.createVariable();
+        StringConstantInstruction nameInsn = new StringConstantInstruction();
+        nameInsn.setConstant(property);
+        nameInsn.setReceiver(nameVar);
+        instructions.add(nameInsn);
+        InvokeInstruction accessorInvoke = new InvokeInstruction();
+        accessorInvoke.setType(InvocationType.SPECIAL);
+        accessorInvoke.setMethod(new MethodReference(ResourceAccessor.class, "put",
+                Object.class, String.class, Object.class, void.class));
+        accessorInvoke.getArguments().add(insn.getInstance());
+        accessorInvoke.getArguments().add(nameVar);
+        accessorInvoke.getArguments().add(valueVar);
+        instructions.add(accessorInvoke);
+    }
+
+    private void castAndSetProperty(InvokeInstruction insn, String property, List<Instruction> instructions,
+            Class<?> primitive) {
+        Variable castVar = program.createVariable();
+        InvokeInstruction castInvoke = new InvokeInstruction();
+        castInvoke.setType(InvocationType.SPECIAL);
+        String primitiveCapitalized = primitive.getName();
+        primitiveCapitalized = Character.toUpperCase(primitiveCapitalized.charAt(0)) +
+                primitiveCapitalized.substring(1);
+        castInvoke.setMethod(new MethodReference(ResourceAccessor.class, "castFrom" + primitiveCapitalized,
+                primitive, Object.class));
+        castInvoke.getArguments().add(insn.getArguments().get(0));
+        castInvoke.setReceiver(castVar);
+        instructions.add(castInvoke);
+        setProperty(insn, property, instructions, castVar);
     }
 
     private String getPropertyName(String name) {

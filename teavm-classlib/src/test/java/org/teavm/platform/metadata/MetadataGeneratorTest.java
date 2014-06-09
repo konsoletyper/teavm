@@ -61,5 +61,44 @@ public class MetadataGeneratorTest {
         assertEquals("baz", res.getArrayB().get(0).getBar());
         assertNull(res.getArrayC());
     }
+
+    @MetadataProvider(TestResourceGenerator.class)
+    private native TestResource getEmptyResource();
+
+    @Test
+    public void resourceDefaultsSet() {
+        TestResource res = getEmptyResource();
+        assertEquals(0, res.getA());
+        assertFalse(res.getB());
+        assertEquals(0, res.getD());
+        assertEquals(0, res.getE());
+        assertEquals(0, res.getF(), 1E-10);
+        assertEquals(0, res.getG(), 1E-10);
+        assertNull(res.getFoo());
+        assertNull(res.getArrayA());
+        assertNull(res.getArrayB());
+        assertNull(res.getArrayC());
+        assertNull(res.getMapA());
+        assertNull(res.getMapB());
+        assertNull(res.getMapC());
+    }
+
+    @Test
+    public void resourceModifiedInRunTime() {
+        TestResource res = getEmptyResource();
+        res.setA(23);
+        res.setB(true);
+        res.setD((byte)24);
+        res.setE((short)25);
+        res.setF(3.14f);
+        res.setG(2.72);
+
+        assertEquals(23, res.getA());
+        assertTrue(res.getB());
+        assertEquals(24, res.getD());
+        assertEquals(25, res.getE());
+        assertEquals(3.14, res.getF(), 0.001);
+        assertEquals(2.72, res.getG(), 0.001);
+    }
 }
 
