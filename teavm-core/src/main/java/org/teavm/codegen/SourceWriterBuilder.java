@@ -22,6 +22,7 @@ package org.teavm.codegen;
 public class SourceWriterBuilder {
     private NamingStrategy naming;
     private boolean minified;
+    private int lineWidth = 512;
 
     public SourceWriterBuilder(NamingStrategy naming) {
         this.naming = naming;
@@ -35,8 +36,12 @@ public class SourceWriterBuilder {
         this.minified = minified;
     }
 
+    public void setLineWidth(int lineWidth) {
+        this.lineWidth = lineWidth;
+    }
+
     public SourceWriter build(Appendable innerWriter) {
-        SourceWriter writer = new SourceWriter(naming, innerWriter);
+        SourceWriter writer = new SourceWriter(naming, innerWriter, lineWidth);
         writer.setMinified(minified);
         return writer;
     }

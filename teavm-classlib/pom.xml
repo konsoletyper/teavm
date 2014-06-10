@@ -32,6 +32,12 @@
     </dependency>
     <dependency>
       <groupId>org.teavm</groupId>
+      <artifactId>teavm-platform</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.teavm</groupId>
       <artifactId>teavm-core</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -51,6 +57,13 @@
         <groupId>org.teavm</groupId>
         <artifactId>teavm-maven-plugin</artifactId>
         <version>${project.version}</version>
+        <dependencies>
+          <dependency>
+            <groupId>org.teavm</groupId>
+            <artifactId>teavm-platform</artifactId>
+            <version>${project.version}</version>
+          </dependency>
+        </dependencies>
         <executions>
           <execution>
             <id>generate-javascript-tests</id>
@@ -94,6 +107,15 @@
             <argument>-output</argument>
             <argument>${project.build.directory}/jcl-report</argument>
           </arguments>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>org/teavm/platform/metadata/*.java</exclude>
+          </excludes>
         </configuration>
       </plugin>
       <plugin>

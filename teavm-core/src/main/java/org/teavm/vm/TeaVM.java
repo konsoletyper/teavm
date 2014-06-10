@@ -19,10 +19,14 @@ import java.io.*;
 import java.util.*;
 import org.teavm.codegen.*;
 import org.teavm.common.FiniteExecutor;
+import org.teavm.common.ServiceRepository;
 import org.teavm.dependency.*;
-import org.teavm.javascript.*;
+import org.teavm.javascript.Decompiler;
+import org.teavm.javascript.Renderer;
+import org.teavm.javascript.RenderingException;
 import org.teavm.javascript.ast.ClassNode;
 import org.teavm.javascript.ni.Generator;
+import org.teavm.javascript.ni.Injector;
 import org.teavm.model.*;
 import org.teavm.model.util.ListingBuilder;
 import org.teavm.model.util.ProgramUtils;
@@ -62,7 +66,7 @@ import org.teavm.vm.spi.TeaVMPlugin;
  *
  * @author Alexey Andreev
  */
-public class TeaVM implements TeaVMHost {
+public class TeaVM implements TeaVMHost, ServiceRepository {
     private ClassReaderSource classSource;
     private DependencyChecker dependencyChecker;
     private FiniteExecutor executor;
@@ -73,13 +77,15 @@ public class TeaVM implements TeaVMHost {
     private Map<String, TeaVMEntryPoint> entryPoints = new HashMap<>();
     private Map<String, String> exportedClasses = new HashMap<>();
     private Map<MethodReference, Generator> methodGenerators = new HashMap<>();
+    private Map<MethodReference, Injector> methodInjectors = new HashMap<>();
     private List<RendererListener> rendererListeners = new ArrayList<>();
+    private Map<Class<?>, Object> services = new HashMap<>();
     private Properties properties = new Properties();
 
     TeaVM(ClassReaderSource classSource, ClassLoader classLoader, FiniteExecutor executor) {
         this.classSource = classSource;
         this.classLoader = classLoader;
-        dependencyChecker = new DependencyChecker(this.classSource, classLoader, executor);
+        dependencyChecker = new DependencyChecker(this.classSource, classLoader, this, executor);
         this.executor = executor;
     }
 
@@ -96,6 +102,11 @@ public class TeaVM implements TeaVMHost {
     @Override
     public void add(MethodReference methodRef, Generator generator) {
         methodGenerators.put(methodRef, generator);
+    }
+
+    @Override
+    public void add(MethodReference methodRef, Injector injector) {
+        methodInjectors.put(methodRef, injector);
     }
 
     @Override
@@ -315,6 +326,9 @@ public class TeaVM implements TeaVMHost {
         for (Map.Entry<MethodReference, Generator> entry : methodGenerators.entrySet()) {
             decompiler.addGenerator(entry.getKey(), entry.getValue());
         }
+        for (MethodReference injectedMethod : methodInjectors.keySet()) {
+            decompiler.addMethodToPass(injectedMethod);
+        }
         List<ClassNode> clsNodes = decompiler.decompile(classSet.getClassNames());
 
         // Render
@@ -323,7 +337,10 @@ public class TeaVM implements TeaVMHost {
         SourceWriterBuilder builder = new SourceWriterBuilder(naming);
         builder.setMinified(minifying);
         SourceWriter sourceWriter = builder.build(writer);
-        Renderer renderer = new Renderer(sourceWriter, classSet, classLoader);
+        Renderer renderer = new Renderer(sourceWriter, classSet, classLoader, this);
+        for (Map.Entry<MethodReference, Injector> entry : methodInjectors.entrySet()) {
+            renderer.addInjector(entry.getKey(), entry.getValue());
+        }
         try {
             for (RendererListener listener : rendererListeners) {
                 listener.begin(renderer, target);
@@ -513,5 +530,19 @@ public class TeaVM implements TeaVMHost {
         for (TeaVMPlugin plugin : ServiceLoader.load(TeaVMPlugin.class, classLoader)) {
             plugin.install(this);
         }
+    }
+
+    @Override
+    public <T> T getService(Class<T> type) {
+        Object service = services.get(type);
+        if (service == null) {
+            throw new IllegalArgumentException("Service not registered: " + type.getName());
+        }
+        return type.cast(service);
+    }
+
+    @Override
+    public <T> void registerService(Class<T> type, T instance) {
+        services.put(type, instance);
     }
 }

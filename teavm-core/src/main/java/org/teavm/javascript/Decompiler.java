@@ -44,6 +44,7 @@ public class Decompiler {
     private RangeTree.Node parentNode;
     private FiniteExecutor executor;
     private Map<MethodReference, Generator> generators = new HashMap<>();
+    private Set<MethodReference> methodsToPass = new HashSet<>();
 
     public Decompiler(ClassHolderSource classSource, ClassLoader classLoader, FiniteExecutor executor) {
         this.classSource = classSource;
@@ -84,6 +85,7 @@ public class Decompiler {
                 @Override public void run() {
                     Decompiler copy = new Decompiler(classSource, classLoader, executor);
                     copy.generators = generators;
+                    copy.methodsToPass = methodsToPass;
                     result.set(index, copy.decompile(classSource.get(className)));
                 }
             });
@@ -94,6 +96,10 @@ public class Decompiler {
 
     public void addGenerator(MethodReference method, Generator generator) {
         generators.put(method, generator);
+    }
+
+    public void addMethodToPass(MethodReference method) {
+        methodsToPass.add(method);
     }
 
     private void orderClasses(String className, Set<String> visited, List<String> order) {
@@ -125,7 +131,8 @@ public class Decompiler {
             if (method.getModifiers().contains(ElementModifier.ABSTRACT)) {
                 continue;
             }
-            if (method.getAnnotations().get(InjectedBy.class.getName()) != null) {
+            if (method.getAnnotations().get(InjectedBy.class.getName()) != null ||
+                    methodsToPass.contains(method.getReference())) {
                 continue;
             }
             MethodNode methodNode = decompile(method);
@@ -140,8 +147,8 @@ public class Decompiler {
     }
 
     public MethodNode decompile(MethodHolder method) {
-        return method.getModifiers().contains(ElementModifier.NATIVE) ?
-                decompileNative(method) : decompileRegular(method);
+        return method.getModifiers().contains(ElementModifier.NATIVE) ? decompileNative(method) :
+                decompileRegular(method);
     }
 
     public NativeMethodNode decompileNative(MethodHolder method) {

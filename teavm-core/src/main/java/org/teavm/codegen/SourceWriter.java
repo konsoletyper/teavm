@@ -31,10 +31,13 @@ public class SourceWriter implements Appendable {
     private NamingStrategy naming;
     private boolean lineStart;
     private boolean minified;
+    private int lineWidth;
+    private int pos;
 
-    SourceWriter(NamingStrategy naming, Appendable innerWriter) {
+    SourceWriter(NamingStrategy naming, Appendable innerWriter, int lineWidth) {
         this.naming = naming;
         this.innerWriter = innerWriter;
+        this.lineWidth = lineWidth;
     }
 
     void setMinified(boolean minified) {
@@ -42,8 +45,7 @@ public class SourceWriter implements Appendable {
     }
 
     public SourceWriter append(String value) throws IOException {
-        appendIndent();
-        innerWriter.append(value);
+        append((CharSequence)value);
         return this;
     }
 
@@ -59,21 +61,41 @@ public class SourceWriter implements Appendable {
     public SourceWriter append(char value) throws IOException {
         appendIndent();
         innerWriter.append(value);
+        if (value == '\n') {
+            newLine();
+        } else {
+            pos++;
+        }
         return this;
     }
 
     @Override
     public SourceWriter append(CharSequence csq) throws IOException {
-        appendIndent();
-        innerWriter.append(csq);
+        append(csq, 0, csq.length());
         return this;
     }
 
     @Override
     public SourceWriter append(CharSequence csq, int start, int end) throws IOException {
-        appendIndent();
-        innerWriter.append(csq, start, end);
+        int last = start;
+        for (int i = start; i < end; ++i) {
+            if (csq.charAt(i) == '\n') {
+                appendSingleLine(csq, last, i);
+                newLine();
+                last = i;
+            }
+        }
+        appendSingleLine(csq, last, end);
         return this;
+    }
+
+    private void appendSingleLine(CharSequence csq, int start, int end) throws IOException {
+        if (start == end) {
+            return;
+        }
+        appendIndent();
+        pos += end - start;
+        innerWriter.append(csq, start, end);
     }
 
     public SourceWriter appendClass(String cls) throws NamingException, IOException {
@@ -109,6 +131,7 @@ public class SourceWriter implements Appendable {
         if (lineStart) {
             for (int i = 0; i < indentSize; ++i) {
                 innerWriter.append("    ");
+                pos += 4;
             }
             lineStart = false;
         }
@@ -116,13 +139,26 @@ public class SourceWriter implements Appendable {
 
     public SourceWriter newLine() throws IOException{
         innerWriter.append('\n');
+        pos = 0;
         lineStart = true;
         return this;
     }
 
-    public SourceWriter ws() throws IOException{
-        if (!minified) {
-            innerWriter.append(' ');
+    public SourceWriter ws() throws IOException {
+        if (pos >= lineWidth) {
+            newLine();
+        } else {
+            if (!minified) {
+                innerWriter.append(' ');
+                pos++;
+            }
+        }
+        return this;
+    }
+
+    public SourceWriter tokenBoundary() throws IOException {
+        if (pos >= lineWidth) {
+            newLine();
         }
         return this;
     }
@@ -130,6 +166,7 @@ public class SourceWriter implements Appendable {
     public SourceWriter softNewLine() throws IOException{
         if (!minified) {
             innerWriter.append('\n');
+            pos = 0;
             lineStart = true;
         }
         return this;

@@ -17,7 +17,7 @@ package org.teavm.classlib.java.util;
 
 import java.io.IOException;
 import org.teavm.codegen.SourceWriter;
-import org.teavm.dependency.DependencyChecker;
+import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.javascript.ni.Generator;
@@ -70,7 +70,7 @@ public class DateNativeGenerator implements Generator, DependencyPlugin {
     }
 
     @Override
-    public void methodAchieved(DependencyChecker checker, MethodDependency method) {
+    public void methodAchieved(DependencyAgent agent, MethodDependency method) {
         switch (method.getMethod().getName()) {
             case "toString":
             case "toLocaleFormat":

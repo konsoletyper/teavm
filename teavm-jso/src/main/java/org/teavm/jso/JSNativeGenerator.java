@@ -17,10 +17,7 @@ package org.teavm.jso;
 
 import java.io.IOException;
 import org.teavm.codegen.SourceWriter;
-import org.teavm.dependency.DependencyChecker;
-import org.teavm.dependency.DependencyConsumer;
-import org.teavm.dependency.DependencyPlugin;
-import org.teavm.dependency.MethodDependency;
+import org.teavm.dependency.*;
 import org.teavm.javascript.ast.ConstantExpr;
 import org.teavm.javascript.ast.Expr;
 import org.teavm.javascript.ast.InvocationExpr;
@@ -28,7 +25,10 @@ import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.GeneratorContext;
 import org.teavm.javascript.ni.Injector;
 import org.teavm.javascript.ni.InjectorContext;
-import org.teavm.model.*;
+import org.teavm.model.ClassReader;
+import org.teavm.model.FieldReference;
+import org.teavm.model.MethodReader;
+import org.teavm.model.MethodReference;
 
 /**
  *
@@ -115,24 +115,24 @@ public class JSNativeGenerator implements Generator, Injector, DependencyPlugin 
     }
 
     @Override
-    public void methodAchieved(final DependencyChecker checker, final MethodDependency method) {
+    public void methodAchieved(final DependencyAgent agent, final MethodDependency method) {
         for (int i = 0; i < method.getReference().parameterCount(); ++i) {
             method.getVariable(i).addConsumer(new DependencyConsumer() {
                 @Override public void consume(String type) {
-                    achieveFunctorMethods(checker, type, method);
+                    achieveFunctorMethods(agent, type, method);
                 }
             });
         }
     }
 
-    private void achieveFunctorMethods(DependencyChecker checker, String type, MethodDependency caller) {
+    private void achieveFunctorMethods(DependencyAgent agent, String type, MethodDependency caller) {
         if (caller.isMissing()) {
             return;
         }
-        ClassReader cls = checker.getClassSource().get(type);
+        ClassReader cls = agent.getClassSource().get(type);
         if (cls != null) {
             for (MethodReader method : cls.getMethods()) {
-                checker.linkMethod(method.getReference(), caller.getStack()).use();
+                agent.linkMethod(method.getReference(), caller.getStack()).use();
             }
         }
     }

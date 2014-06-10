@@ -16,7 +16,7 @@
 package org.teavm.classlib.java.lang;
 
 import java.io.IOException;
-import org.teavm.dependency.DependencyChecker;
+import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.javascript.ni.Injector;
@@ -29,7 +29,7 @@ import org.teavm.model.MethodReference;
  */
 public class StringNativeGenerator implements Injector, DependencyPlugin {
     @Override
-    public void methodAchieved(DependencyChecker checker, MethodDependency method) {
+    public void methodAchieved(DependencyAgent agent, MethodDependency method) {
         switch (method.getReference().getName()) {
             case "wrap":
                 method.getVariable(1).connect(method.getResult());

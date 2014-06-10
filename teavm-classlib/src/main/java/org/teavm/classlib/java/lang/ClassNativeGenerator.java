@@ -17,7 +17,7 @@ package org.teavm.classlib.java.lang;
 
 import java.io.IOException;
 import org.teavm.codegen.SourceWriter;
-import org.teavm.dependency.DependencyChecker;
+import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.javascript.ni.Generator;
@@ -186,7 +186,7 @@ public class ClassNativeGenerator implements Generator, Injector, DependencyPlug
     }
 
     @Override
-    public void methodAchieved(DependencyChecker checker, MethodDependency graph) {
+    public void methodAchieved(DependencyAgent agent, MethodDependency graph) {
         switch (graph.getReference().getName()) {
             case "voidClass":
             case "booleanClass":
@@ -205,7 +205,7 @@ public class ClassNativeGenerator implements Generator, Injector, DependencyPlug
                 graph.getResult().propagate("java.lang.Class");
                 break;
             case "newInstance":
-                checker.linkMethod(new MethodReference(InstantiationException.class.getName(), "<init>",
+                agent.linkMethod(new MethodReference(InstantiationException.class.getName(), "<init>",
                         ValueType.VOID), graph.getStack()).use();
                 break;
         }

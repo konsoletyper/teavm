@@ -45,18 +45,21 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     private ConcurrentMap<String, Object> achievableClasses = new ConcurrentHashMap<>();
     private ConcurrentMap<String, Object> initializedClasses = new ConcurrentHashMap<>();
     private List<DependencyListener> listeners = new ArrayList<>();
+    private ServiceRepository services;
     ConcurrentMap<MethodReference, DependencyStack> missingMethods = new ConcurrentHashMap<>();
     ConcurrentMap<String, DependencyStack> missingClasses = new ConcurrentHashMap<>();
     ConcurrentMap<FieldReference, DependencyStack> missingFields = new ConcurrentHashMap<>();
 
-    public DependencyChecker(ClassReaderSource classSource, ClassLoader classLoader) {
-        this(classSource, classLoader, new SimpleFiniteExecutor());
+    public DependencyChecker(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services) {
+        this(classSource, classLoader, services, new SimpleFiniteExecutor());
     }
 
-    public DependencyChecker(ClassReaderSource classSource, ClassLoader classLoader, FiniteExecutor executor) {
+    public DependencyChecker(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services,
+            FiniteExecutor executor) {
         this.classSource = new DependencyClassSource(classSource);
         this.classLoader = classLoader;
         this.executor = executor;
+        this.services = services;
         methodReaderCache = new ConcurrentCachedMapper<>(new Mapper<MethodReference, MethodReader>() {
             @Override public MethodReader map(MethodReference preimage) {
                 return findMethodReader(preimage);
@@ -446,5 +449,10 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
             }
             sb.append('\n');
         }
+    }
+
+    @Override
+    public <T> T getService(Class<T> type) {
+        return services.getService(type);
     }
 }

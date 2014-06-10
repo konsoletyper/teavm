@@ -20,5 +20,5 @@ package org.teavm.dependency;
  * @author Alexey Andreev
  */
 public interface DependencyPlugin {
-    void methodAchieved(DependencyChecker checker, MethodDependency method);
+    void methodAchieved(DependencyAgent checker, MethodDependency method);
 }

@@ -15,15 +15,17 @@
  */
 package org.teavm.javascript;
 
+import java.util.Properties;
 import org.teavm.codegen.NamingStrategy;
 import org.teavm.codegen.SourceWriter;
+import org.teavm.common.ServiceRepository;
 import org.teavm.model.ListableClassReaderSource;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface RenderingContext {
+public interface RenderingContext extends ServiceRepository {
     NamingStrategy getNaming();
 
     SourceWriter getWriter();
@@ -33,4 +35,6 @@ public interface RenderingContext {
     ListableClassReaderSource getClassSource();
 
     ClassLoader getClassLoader();
+
+    Properties getProperties();
 }

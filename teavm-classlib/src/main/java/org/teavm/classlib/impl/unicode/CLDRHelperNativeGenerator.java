@@ -17,7 +17,7 @@ package org.teavm.classlib.impl.unicode;
 
 import java.io.IOException;
 import org.teavm.codegen.SourceWriter;
-import org.teavm.dependency.DependencyChecker;
+import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.javascript.ni.Generator;
@@ -30,7 +30,7 @@ import org.teavm.model.MethodReference;
  */
 public class CLDRHelperNativeGenerator implements Generator, DependencyPlugin {
     @Override
-    public void methodAchieved(DependencyChecker checker, MethodDependency method) {
+    public void methodAchieved(DependencyAgent agent, MethodDependency method) {
         switch (method.getMethod().getName()) {
             case "getLikelySubtagsImpl":
                 method.getResult().propagate("java.lang.String");

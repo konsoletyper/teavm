@@ -15,14 +15,20 @@
  */
 package org.teavm.javascript.ni;
 
+import java.util.Properties;
+import org.teavm.common.ServiceRepository;
 import org.teavm.model.ListableClassReaderSource;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface GeneratorContext {
+public interface GeneratorContext extends ServiceRepository {
     String getParameterName(int index);
 
     ListableClassReaderSource getClassSource();
+
+    ClassLoader getClassLoader();
+
+    Properties getProperties();
 }
