@@ -33,10 +33,13 @@
 package org.teavm.classlib.java.util;
 
 import java.util.Arrays;
+import org.teavm.classlib.impl.unicode.CLDRHelper;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.TCloneable;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.javascript.ni.GeneratedBy;
+import org.teavm.platform.metadata.ResourceMap;
+import org.teavm.platform.metadata.StringResource;
 
 public final class TLocale implements TCloneable, TSerializable {
     private static TLocale defaultLocale;
@@ -84,9 +87,6 @@ public final class TLocale implements TCloneable, TSerializable {
 
     // Redefined by JCLPlugin
     private static native void readCountriesFromCLDR();
-
-    // Redefined by JCLPlugin
-    private static native void readLanguagesFromCLDR();
 
     // Redefined by JCLPlugin
     private static native void readAvailableLocales();
@@ -189,7 +189,6 @@ public final class TLocale implements TCloneable, TSerializable {
     }
 
     public String getDisplayLanguage(TLocale locale) {
-        readLanguagesFromCLDR();
         String result = getDisplayLanguage(locale.getLanguage() + "-" + locale.getCountry(), languageCode);
         if (result == null) {
             result = getDisplayLanguage(locale.getLanguage(), languageCode);
@@ -197,9 +196,16 @@ public final class TLocale implements TCloneable, TSerializable {
         return result != null ? result : languageCode;
     }
 
-    @GeneratedBy(LocaleNativeGenerator.class)
-    @PluggableDependency(LocaleNativeGenerator.class)
-    private static native String getDisplayLanguage(String localeName, String country);
+    private static String getDisplayLanguage(String localeName, String language) {
+        if (!CLDRHelper.getLanguagesMap().has(localeName)) {
+            return null;
+        }
+        ResourceMap<StringResource> languages = CLDRHelper.getLanguagesMap().get(localeName);
+        if (!languages.has(language)) {
+            return null;
+        }
+        return languages.get(language).getValue();
+    }
 
     public final String getDisplayName() {
         return getDisplayName(getDefault());

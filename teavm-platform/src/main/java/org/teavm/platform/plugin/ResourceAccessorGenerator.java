@@ -32,6 +32,7 @@ class ResourceAccessorGenerator implements Injector {
     public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
         switch (methodRef.getName()) {
             case "get":
+            case "getProperty":
                 if (methodRef.getDescriptor().parameterType(1) == ValueType.INTEGER) {
                     context.writeExpr(context.getArgument(0));
                     context.getWriter().append('[');

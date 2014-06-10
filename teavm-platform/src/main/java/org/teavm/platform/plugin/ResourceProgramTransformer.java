@@ -166,7 +166,7 @@ class ResourceProgramTransformer {
         instructions.add(nameInsn);
         InvokeInstruction accessorInvoke = new InvokeInstruction();
         accessorInvoke.setType(InvocationType.SPECIAL);
-        accessorInvoke.setMethod(new MethodReference(ResourceAccessor.class, "get",
+        accessorInvoke.setMethod(new MethodReference(ResourceAccessor.class, "getProperty",
                 Object.class, String.class, Object.class));
         accessorInvoke.getArguments().add(insn.getInstance());
         accessorInvoke.getArguments().add(nameVar);

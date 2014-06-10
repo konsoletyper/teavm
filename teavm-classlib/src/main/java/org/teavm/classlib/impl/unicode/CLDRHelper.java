@@ -17,6 +17,9 @@ package org.teavm.classlib.impl.unicode;
 
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.javascript.ni.GeneratedBy;
+import org.teavm.platform.metadata.MetadataProvider;
+import org.teavm.platform.metadata.ResourceMap;
+import org.teavm.platform.metadata.StringResource;
 
 /**
  *
@@ -55,4 +58,7 @@ public class CLDRHelper {
     @GeneratedBy(CLDRHelperNativeGenerator.class)
     @PluggableDependency(CLDRHelperNativeGenerator.class)
     private static native String[] getEras(String localeCode);
+
+    @MetadataProvider(LanguageMetadataGenerator.class)
+    public static native ResourceMap<ResourceMap<StringResource>> getLanguagesMap();
 }

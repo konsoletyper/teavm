@@ -22,7 +22,9 @@ import org.teavm.platform.metadata.Resource;
  * @author Alexey Andreev
  */
 final class ResourceAccessor {
-    public static native Object get(Object obj, String propertyName);
+    public static native Object getProperty(Object obj, String propertyName);
+
+    public static native Resource get(Object obj, String propertyName);
 
     public static native void put(Object obj, String propertyName, Object elem);
 

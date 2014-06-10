@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.java.util;
+package org.teavm.classlib.impl.unicode;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,11 +21,6 @@ import java.io.InputStreamReader;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-import org.teavm.codegen.SourceWriter;
-import org.teavm.javascript.Renderer;
-import org.teavm.javascript.ni.Generator;
-import org.teavm.javascript.ni.GeneratorContext;
-import org.teavm.model.MethodReference;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -34,32 +29,21 @@ import com.google.gson.JsonParser;
  *
  * @author Alexey Andreev
  */
-public class LocaleSettingsNativeGenerator implements Generator {
-    private ClassLoader classLoader;
-    private Properties properties;
-    private Map<String, LocaleInfo> knownLocales = new LinkedHashMap<>();
+public class CLDRReader {
+    private Map<String, CLDRLocale> knownLocales = new LinkedHashMap<>();
     private Map<String, Integer> minDaysMap = new LinkedHashMap<>();
     private Map<String, Integer> firstDayMap = new LinkedHashMap<>();
     private Map<String, String> likelySubtags = new LinkedHashMap<>();
     private Set<String> availableLocales = new LinkedHashSet<>();
     private Set<String> availableLanguages = new LinkedHashSet<>();
     private Set<String> availableCountries = new LinkedHashSet<>();
-    private boolean initialized;
 
-    public LocaleSettingsNativeGenerator(ClassLoader classLoader, Properties properties) {
-        this.classLoader = classLoader;
-        this.properties = properties;
+    public CLDRReader(Properties properties, ClassLoader classLoader) {
+        findAvailableLocales(properties);
+        readCLDR(classLoader);
     }
 
-    private synchronized void init() {
-        if (!initialized) {
-            initialized = true;
-            findAvailableLocales();
-            readCLDR();
-        }
-    }
-
-    private void findAvailableLocales() {
+    private void findAvailableLocales(Properties properties) {
         String availableLocalesString = properties.getProperty("java.util.Locale.available", "en_EN").trim();
         for (String locale : Arrays.asList(availableLocalesString.split(" *, *"))) {
             int countryIndex = locale.indexOf('_');
@@ -77,7 +61,7 @@ public class LocaleSettingsNativeGenerator implements Generator {
         }
     }
 
-    private void readCLDR() {
+    private void readCLDR(ClassLoader classLoader) {
         try (ZipInputStream input = new ZipInputStream(classLoader.getResourceAsStream(
                 "org/teavm/classlib/impl/unicode/cldr-json.zip"))) {
             while (true) {
@@ -103,9 +87,9 @@ public class LocaleSettingsNativeGenerator implements Generator {
                 if (!localeName.equals("root") && !availableLocales.contains(localeName)) {
                     continue;
                 }
-                LocaleInfo localeInfo = knownLocales.get(localeName);
+                CLDRLocale localeInfo = knownLocales.get(localeName);
                 if (localeInfo == null) {
-                    localeInfo = new LocaleInfo();
+                    localeInfo = new CLDRLocale();
                     knownLocales.put(localeName, localeInfo);
                 }
                 switch (objectName) {
@@ -115,6 +99,9 @@ public class LocaleSettingsNativeGenerator implements Generator {
                     case "territories.json":
                         readCountries(localeName, localeInfo, input);
                         break;
+                    case "ca-gregorian.json":
+                        readEras(localeName, localeInfo, input);
+                        break;
                 }
             }
         } catch (IOException e) {
@@ -122,7 +109,7 @@ public class LocaleSettingsNativeGenerator implements Generator {
         }
     }
 
-    private void readLanguages(String localeCode, LocaleInfo locale, InputStream input) {
+    private void readLanguages(String localeCode, CLDRLocale locale, InputStream input) {
         JsonObject root = (JsonObject)new JsonParser().parse(new InputStreamReader(input));
         JsonObject languagesJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
                 .get("localeDisplayNames").getAsJsonObject().get("languages").getAsJsonObject();
@@ -134,7 +121,7 @@ public class LocaleSettingsNativeGenerator implements Generator {
         }
     }
 
-    private void readCountries(String localeCode, LocaleInfo locale, InputStream input) {
+    private void readCountries(String localeCode, CLDRLocale locale, InputStream input) {
         JsonObject root = (JsonObject)new JsonParser().parse(new InputStreamReader(input));
         JsonObject countriesJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
                 .get("localeDisplayNames").getAsJsonObject().get("territories").getAsJsonObject();
@@ -144,6 +131,16 @@ public class LocaleSettingsNativeGenerator implements Generator {
                 locale.territories.put(country, property.getValue().getAsString());
             }
         }
+    }
+
+    private void readEras(String localeCode, CLDRLocale locale, InputStream input) {
+        JsonObject root = (JsonObject)new JsonParser().parse(new InputStreamReader(input));
+        JsonObject erasJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
+                .get("dates").getAsJsonObject().get("calendars").getAsJsonObject()
+                .get("gregorian").getAsJsonObject().get("eras").getAsJsonObject().get("eraNames").getAsJsonObject();
+        String am = erasJson.get("0").getAsString();
+        String pm = erasJson.get("1").getAsString();
+        locale.eras = new String[] { am, pm };
     }
 
     private void readWeekData(InputStream input) {
@@ -189,126 +186,19 @@ public class LocaleSettingsNativeGenerator implements Generator {
         }
     }
 
-    @Override
-    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
-        init();
-        switch (methodRef.getName()) {
-            case "readCountriesFromCLDR":
-                generateReadCountriesFromCLDR(writer);
-                break;
-            case "readWeeksFromCDLR":
-                generateReadWeeksFromCDLR(writer);
-                break;
-            case "readLikelySubtagsFromCLDR":
-                generateReadLikelySubtagsFromCLDR(writer);
-                break;
-            case "readAvailableLocales":
-                generateReadAvailableLocales(writer);
-                break;
-            case "getDefaultLocale":
-                generateGetDefaultLocale(writer);
-                break;
-        }
+    public Map<String, CLDRLocale> getKnownLocales() {
+        return Collections.unmodifiableMap(knownLocales);
     }
 
-    private void generateDefender(SourceWriter writer, String property) throws IOException {
-        writer.append("if (").appendClass("java.util.Locale").append(".$CLDR.").append(property)
-            .append(")").ws().append("{").indent().softNewLine();
-        writer.append("return;").softNewLine();
-        writer.outdent().append("}").softNewLine();
+    public Set<String> getAvailableLocales() {
+        return Collections.unmodifiableSet(availableLocales);
     }
 
-    private void generateReadAvailableLocales(SourceWriter writer) throws IOException {
-        generateDefender(writer, "availableLocales");
-        writer.appendClass("java.util.Locale").append(".$CLDR.availableLocales = [");
-        boolean first = true;
-        for (String locale : availableLocales) {
-            if (!first) {
-                writer.append(',').ws();
-            }
-            first = false;
-            writer.append('"').append(Renderer.escapeString(locale)).append('"');
-        }
-        writer.append("];").softNewLine();
+    public Set<String> getAvailableLanguages() {
+        return Collections.unmodifiableSet(availableLanguages);
     }
 
-    private void generateReadCountriesFromCLDR(SourceWriter writer) throws IOException {
-        generateDefender(writer, "territories");
-        writer.appendClass("java.util.Locale").append(".$CLDR.territories = {").indent().softNewLine();
-        boolean firstLocale = true;
-        for (Map.Entry<String, LocaleInfo> entry : knownLocales.entrySet()) {
-            if (!firstLocale) {
-                writer.append(",").softNewLine();
-            }
-            firstLocale = false;
-            writer.append('"').append(Renderer.escapeString(entry.getKey())).append('"').ws().append(":").ws()
-                    .append('{').indent().softNewLine();
-
-            boolean first = true;
-            for (Map.Entry<String, String> langEntry : entry.getValue().territories.entrySet()) {
-                if (!first) {
-                    writer.append(',').softNewLine();
-                }
-                first = false;
-                writer.append('"').append(Renderer.escapeString(langEntry.getKey())).append('"').ws().append(':')
-                        .ws().append('"').append(Renderer.escapeString(langEntry.getValue())).append('"');
-            }
-
-            writer.outdent().append('}');
-        }
-        writer.outdent().append("};").softNewLine();
-    }
-
-    private void generateReadWeeksFromCDLR(SourceWriter writer) throws IOException {
-        generateDefender(writer, "minDays");
-        writer.appendClass("java.util.Locale").append(".$CLDR.minDays = {").indent().softNewLine();
-        boolean first = true;
-        for (Map.Entry<String, Integer> entry : minDaysMap.entrySet()) {
-            if (!first) {
-                writer.append(",").softNewLine();
-            }
-            first = false;
-            writer.append('"').append(Renderer.escapeString(entry.getKey())).append('"').ws().append(':')
-                    .ws().append(entry.getValue());
-        }
-        writer.outdent().append("};").softNewLine();
-
-        writer.appendClass("java.util.Locale").append(".$CLDR.firstDay = {").indent().softNewLine();
-        first = true;
-        for (Map.Entry<String, Integer> entry : firstDayMap.entrySet()) {
-            if (!first) {
-                writer.append(",").softNewLine();
-            }
-            first = false;
-            writer.append('"').append(Renderer.escapeString(entry.getKey())).append('"').ws().append(':')
-                    .ws().append(entry.getValue());
-        }
-        writer.outdent().append("};").softNewLine();
-    }
-
-    private void generateReadLikelySubtagsFromCLDR(SourceWriter writer) throws IOException {
-        generateDefender(writer, "likelySubtags");
-        writer.appendClass("java.util.Locale").append(".$CLDR.likelySubtags = {").indent().softNewLine();
-        boolean first = true;
-        for (Map.Entry<String, String> entry : likelySubtags.entrySet()) {
-            if (!first) {
-                writer.append(",").softNewLine();
-            }
-            first = false;
-            writer.append('"').append(Renderer.escapeString(entry.getKey())).append('"').ws().append(':')
-                    .ws().append('"').append(Renderer.escapeString(entry.getValue())).append('"');
-        }
-        writer.outdent().append("};").softNewLine();
-    }
-
-    private void generateGetDefaultLocale(SourceWriter writer) throws IOException {
-        String locale = properties.getProperty("java.util.Locale.default", "en_EN");
-        writer.append("return $rt_str(\"").append(Renderer.escapeString(locale)).append("\");").softNewLine();
-    }
-
-    static class LocaleInfo {
-        Map<String, String> languages = new LinkedHashMap<>();
-        Map<String, String> territories = new LinkedHashMap<>();
-        String[] eras;
+    public Set<String> getAvailableCountries() {
+        return Collections.unmodifiableSet(availableCountries);
     }
 }
