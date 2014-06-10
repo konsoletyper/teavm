@@ -13,28 +13,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript;
-
-import java.util.Properties;
-import org.teavm.codegen.NamingStrategy;
-import org.teavm.codegen.SourceWriter;
-import org.teavm.common.ServiceRepository;
-import org.teavm.model.ListableClassReaderSource;
+package org.teavm.common;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-public interface RenderingContext extends ServiceRepository {
-    NamingStrategy getNaming();
-
-    SourceWriter getWriter();
-
-    boolean isMinifying();
-
-    ListableClassReaderSource getClassSource();
-
-    ClassLoader getClassLoader();
-
-    Properties getProperties();
+public interface ServiceRepository {
+    <T> T getService(Class<T> type);
 }

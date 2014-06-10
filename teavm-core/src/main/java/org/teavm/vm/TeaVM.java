@@ -19,6 +19,7 @@ import java.io.*;
 import java.util.*;
 import org.teavm.codegen.*;
 import org.teavm.common.FiniteExecutor;
+import org.teavm.common.ServiceRepository;
 import org.teavm.dependency.*;
 import org.teavm.javascript.Decompiler;
 import org.teavm.javascript.Renderer;
@@ -65,7 +66,7 @@ import org.teavm.vm.spi.TeaVMPlugin;
  *
  * @author Alexey Andreev
  */
-public class TeaVM implements TeaVMHost {
+public class TeaVM implements TeaVMHost, ServiceRepository {
     private ClassReaderSource classSource;
     private DependencyChecker dependencyChecker;
     private FiniteExecutor executor;
@@ -78,12 +79,13 @@ public class TeaVM implements TeaVMHost {
     private Map<MethodReference, Generator> methodGenerators = new HashMap<>();
     private Map<MethodReference, Injector> methodInjectors = new HashMap<>();
     private List<RendererListener> rendererListeners = new ArrayList<>();
+    private Map<Class<?>, Object> services = new HashMap<>();
     private Properties properties = new Properties();
 
     TeaVM(ClassReaderSource classSource, ClassLoader classLoader, FiniteExecutor executor) {
         this.classSource = classSource;
         this.classLoader = classLoader;
-        dependencyChecker = new DependencyChecker(this.classSource, classLoader, executor);
+        dependencyChecker = new DependencyChecker(this.classSource, classLoader, this, executor);
         this.executor = executor;
     }
 
@@ -335,7 +337,7 @@ public class TeaVM implements TeaVMHost {
         SourceWriterBuilder builder = new SourceWriterBuilder(naming);
         builder.setMinified(minifying);
         SourceWriter sourceWriter = builder.build(writer);
-        Renderer renderer = new Renderer(sourceWriter, classSet, classLoader);
+        Renderer renderer = new Renderer(sourceWriter, classSet, classLoader, this);
         for (Map.Entry<MethodReference, Injector> entry : methodInjectors.entrySet()) {
             renderer.addInjector(entry.getKey(), entry.getValue());
         }
@@ -528,5 +530,19 @@ public class TeaVM implements TeaVMHost {
         for (TeaVMPlugin plugin : ServiceLoader.load(TeaVMPlugin.class, classLoader)) {
             plugin.install(this);
         }
+    }
+
+    @Override
+    public <T> T getService(Class<T> type) {
+        Object service = services.get(type);
+        if (service == null) {
+            throw new IllegalArgumentException("Service not registered: " + type.getName());
+        }
+        return type.cast(service);
+    }
+
+    @Override
+    public <T> void registerService(Class<T> type, T instance) {
+        services.put(type, instance);
     }
 }

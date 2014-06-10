@@ -16,7 +16,9 @@
 package org.teavm.javascript.ni;
 
 import java.io.IOException;
+import java.util.Properties;
 import org.teavm.codegen.SourceWriter;
+import org.teavm.common.ServiceRepository;
 import org.teavm.javascript.ast.Expr;
 import org.teavm.model.ValueType;
 
@@ -24,7 +26,7 @@ import org.teavm.model.ValueType;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface InjectorContext {
+public interface InjectorContext extends ServiceRepository {
     Expr getArgument(int index);
 
     int argumentCount();
@@ -32,6 +34,8 @@ public interface InjectorContext {
     boolean isMinifying();
 
     SourceWriter getWriter();
+
+    Properties getProperties();
 
     void writeEscaped(String str) throws IOException;
 

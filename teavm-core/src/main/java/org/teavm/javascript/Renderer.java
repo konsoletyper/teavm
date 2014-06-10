@@ -22,6 +22,7 @@ import java.util.*;
 import org.teavm.codegen.NamingException;
 import org.teavm.codegen.NamingStrategy;
 import org.teavm.codegen.SourceWriter;
+import org.teavm.common.ServiceRepository;
 import org.teavm.javascript.ast.*;
 import org.teavm.javascript.ni.GeneratorContext;
 import org.teavm.javascript.ni.InjectedBy;
@@ -44,6 +45,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     private boolean minifying;
     private Map<MethodReference, InjectorHolder> injectorMap = new HashMap<>();
     private Properties properties = new Properties();
+    private ServiceRepository services;
 
     private static class InjectorHolder {
         public final Injector injector;
@@ -57,11 +59,13 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         injectorMap.put(method, new InjectorHolder(injector));
     }
 
-    public Renderer(SourceWriter writer, ListableClassHolderSource classSource, ClassLoader classLoader) {
+    public Renderer(SourceWriter writer, ListableClassHolderSource classSource, ClassLoader classLoader,
+            ServiceRepository services) {
         this.naming = writer.getNaming();
         this.writer = writer;
         this.classSource = classSource;
         this.classLoader = classLoader;
+        this.services = services;
     }
 
     @Override
@@ -506,7 +510,12 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
 
         @Override
         public Properties getProperties() {
-            return null;
+            return new Properties(properties);
+        }
+
+        @Override
+        public <T> T getService(Class<T> type) {
+            return services.getService(type);
         }
     }
 
@@ -1429,5 +1438,20 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         public int argumentCount() {
             return arguments.size();
         }
+
+        @Override
+        public <T> T getService(Class<T> type) {
+            return services.getService(type);
+        }
+
+        @Override
+        public Properties getProperties() {
+            return new Properties(properties);
+        }
+    }
+
+    @Override
+    public <T> T getService(Class<T> type) {
+        return services.getService(type);
     }
 }

@@ -15,6 +15,7 @@
  */
 package org.teavm.dependency;
 
+import org.teavm.common.ServiceRepository;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
@@ -23,7 +24,7 @@ import org.teavm.model.MethodReference;
  *
  * @author Alexey Andreev
  */
-public interface DependencyAgent extends DependencyInfo {
+public interface DependencyAgent extends DependencyInfo, ServiceRepository {
     DependencyNode createNode();
 
     String generateClassName();
