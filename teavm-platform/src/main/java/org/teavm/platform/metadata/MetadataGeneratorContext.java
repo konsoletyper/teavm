@@ -16,6 +16,7 @@
 package org.teavm.platform.metadata;
 
 import java.util.Properties;
+import org.teavm.common.ServiceRepository;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.vm.TeaVM;
 
@@ -25,7 +26,7 @@ import org.teavm.vm.TeaVM;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface MetadataGeneratorContext {
+public interface MetadataGeneratorContext extends ServiceRepository {
     /**
      * Gets the collection of all classes that were achieved by the dependency checker.
      */

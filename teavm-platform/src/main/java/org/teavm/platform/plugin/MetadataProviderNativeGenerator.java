@@ -71,7 +71,7 @@ public class MetadataProviderNativeGenerator implements Generator {
                     e.getTargetException());
         }
         DefaultMetadataGeneratorContext metadataContext = new DefaultMetadataGeneratorContext(context.getClassSource(),
-                context.getClassLoader(), context.getProperties());
+                context.getClassLoader(), context.getProperties(), context);
 
         // Generate resource loader
         Resource resource = generator.generateMetadata(metadataContext, methodRef);

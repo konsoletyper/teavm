@@ -17,6 +17,7 @@ package org.teavm.platform.plugin;
 
 import java.lang.reflect.Proxy;
 import java.util.Properties;
+import org.teavm.common.ServiceRepository;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.platform.metadata.MetadataGeneratorContext;
 import org.teavm.platform.metadata.Resource;
@@ -32,12 +33,14 @@ class DefaultMetadataGeneratorContext implements MetadataGeneratorContext {
     private ClassLoader classLoader;
     private Properties properties;
     private BuildTimeResourceProxyBuilder proxyBuilder = new BuildTimeResourceProxyBuilder();
+    private ServiceRepository services;
 
     public DefaultMetadataGeneratorContext(ListableClassReaderSource classSource, ClassLoader classLoader,
-            Properties properties) {
+            Properties properties, ServiceRepository services) {
         this.classSource = classSource;
         this.classLoader = classLoader;
         this.properties = properties;
+        this.services = services;
     }
 
     @Override
@@ -70,5 +73,10 @@ class DefaultMetadataGeneratorContext implements MetadataGeneratorContext {
     @Override
     public <T extends Resource> ResourceMap<T> createResourceMap() {
         return new BuildTimeResourceMap<>();
+    }
+
+    @Override
+    public <T> T getService(Class<T> type) {
+        return services.getService(type);
     }
 }
