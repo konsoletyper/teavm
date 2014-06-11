@@ -68,25 +68,14 @@ public final class TLocale implements TCloneable, TSerializable {
     private static TLocale[] availableLocales;
 
     static {
-        String localeName = getDefaultLocale();
+        String localeName = CLDRHelper.getDefaultLocale().getValue();
         int countryIndex = localeName.indexOf('_');
         defaultLocale = new TLocale(localeName.substring(0, countryIndex), localeName.substring(countryIndex) + 1, "");
-        prepareCLDR();
     }
 
     private transient String countryCode;
     private transient String languageCode;
     private transient String variantCode;
-
-    // Redefined by JCLPlugin
-    @PluggableDependency(LocaleNativeGenerator.class)
-    private static native String getDefaultLocale();
-
-    @GeneratedBy(LocaleNativeGenerator.class)
-    private static native void prepareCLDR();
-
-    // Redefined by JCLPlugin
-    private static native void readCountriesFromCLDR();
 
     // Redefined by JCLPlugin
     private static native void readAvailableLocales();
@@ -172,7 +161,6 @@ public final class TLocale implements TCloneable, TSerializable {
     }
 
     public String getDisplayCountry(TLocale locale) {
-        readCountriesFromCLDR();
         String result = getDisplayCountry(locale.getLanguage() + "-" + locale.getCountry(), countryCode);
         if (result == null) {
             result = getDisplayCountry(locale.getLanguage(), countryCode);
@@ -180,9 +168,16 @@ public final class TLocale implements TCloneable, TSerializable {
         return result != null ? result : countryCode;
     }
 
-    @GeneratedBy(LocaleNativeGenerator.class)
-    @PluggableDependency(LocaleNativeGenerator.class)
-    private static native String getDisplayCountry(String localeName, String country);
+    private static String getDisplayCountry(String localeName, String country) {
+        if (!CLDRHelper.getCountriesMap().has(localeName)) {
+            return null;
+        }
+        ResourceMap<StringResource> countries = CLDRHelper.getCountriesMap().get(localeName);
+        if (!countries.has(country)) {
+            return null;
+        }
+        return countries.get(country).getValue();
+    }
 
     public final String getDisplayLanguage() {
         return getDisplayLanguage(getDefault());

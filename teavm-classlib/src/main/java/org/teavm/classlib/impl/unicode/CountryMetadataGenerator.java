@@ -21,9 +21,9 @@ import java.util.Map;
  *
  * @author Alexey Andreev
  */
-public class LanguageMetadataGenerator extends LocaleMetadataGenerator {
+public class CountryMetadataGenerator extends LocaleMetadataGenerator {
     @Override
     protected Map<String, String> getNameMap(CLDRLocale locale) {
-        return locale.getLanguages();
+        return locale.getTerritories();
     }
 }

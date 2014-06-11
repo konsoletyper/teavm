@@ -193,9 +193,6 @@ public class LocaleSettingsNativeGenerator implements Generator {
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
         init();
         switch (methodRef.getName()) {
-            case "readCountriesFromCLDR":
-                generateReadCountriesFromCLDR(writer);
-                break;
             case "readWeeksFromCDLR":
                 generateReadWeeksFromCDLR(writer);
                 break;
@@ -204,9 +201,6 @@ public class LocaleSettingsNativeGenerator implements Generator {
                 break;
             case "readAvailableLocales":
                 generateReadAvailableLocales(writer);
-                break;
-            case "getDefaultLocale":
-                generateGetDefaultLocale(writer);
                 break;
         }
     }
@@ -230,33 +224,6 @@ public class LocaleSettingsNativeGenerator implements Generator {
             writer.append('"').append(Renderer.escapeString(locale)).append('"');
         }
         writer.append("];").softNewLine();
-    }
-
-    private void generateReadCountriesFromCLDR(SourceWriter writer) throws IOException {
-        generateDefender(writer, "territories");
-        writer.appendClass("java.util.Locale").append(".$CLDR.territories = {").indent().softNewLine();
-        boolean firstLocale = true;
-        for (Map.Entry<String, LocaleInfo> entry : knownLocales.entrySet()) {
-            if (!firstLocale) {
-                writer.append(",").softNewLine();
-            }
-            firstLocale = false;
-            writer.append('"').append(Renderer.escapeString(entry.getKey())).append('"').ws().append(":").ws()
-                    .append('{').indent().softNewLine();
-
-            boolean first = true;
-            for (Map.Entry<String, String> langEntry : entry.getValue().territories.entrySet()) {
-                if (!first) {
-                    writer.append(',').softNewLine();
-                }
-                first = false;
-                writer.append('"').append(Renderer.escapeString(langEntry.getKey())).append('"').ws().append(':')
-                        .ws().append('"').append(Renderer.escapeString(langEntry.getValue())).append('"');
-            }
-
-            writer.outdent().append('}');
-        }
-        writer.outdent().append("};").softNewLine();
     }
 
     private void generateReadWeeksFromCDLR(SourceWriter writer) throws IOException {
@@ -299,11 +266,6 @@ public class LocaleSettingsNativeGenerator implements Generator {
                     .ws().append('"').append(Renderer.escapeString(entry.getValue())).append('"');
         }
         writer.outdent().append("};").softNewLine();
-    }
-
-    private void generateGetDefaultLocale(SourceWriter writer) throws IOException {
-        String locale = properties.getProperty("java.util.Locale.default", "en_EN");
-        writer.append("return $rt_str(\"").append(Renderer.escapeString(locale)).append("\");").softNewLine();
     }
 
     static class LocaleInfo {

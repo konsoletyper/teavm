@@ -61,4 +61,10 @@ public class CLDRHelper {
 
     @MetadataProvider(LanguageMetadataGenerator.class)
     public static native ResourceMap<ResourceMap<StringResource>> getLanguagesMap();
+
+    @MetadataProvider(CountryMetadataGenerator.class)
+    public static native ResourceMap<ResourceMap<StringResource>> getCountriesMap();
+
+    @MetadataProvider(DefaultLocaleMetadataGenerator.class)
+    public static native StringResource getDefaultLocale();
 }

@@ -15,15 +15,21 @@
  */
 package org.teavm.classlib.impl.unicode;
 
-import java.util.Map;
+import org.teavm.model.MethodReference;
+import org.teavm.platform.metadata.MetadataGenerator;
+import org.teavm.platform.metadata.MetadataGeneratorContext;
+import org.teavm.platform.metadata.Resource;
+import org.teavm.platform.metadata.StringResource;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class LanguageMetadataGenerator extends LocaleMetadataGenerator {
+public class DefaultLocaleMetadataGenerator implements MetadataGenerator {
     @Override
-    protected Map<String, String> getNameMap(CLDRLocale locale) {
-        return locale.getLanguages();
+    public Resource generateMetadata(MetadataGeneratorContext context, MethodReference method) {
+        StringResource result = context.createResource(StringResource.class);
+        result.setValue(context.getProperties().getProperty("java.util.Locale.default", "en_EN"));
+        return result;
     }
 }
