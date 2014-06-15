@@ -15,11 +15,9 @@
  */
 package org.teavm.classlib.impl.unicode;
 
-import org.teavm.dependency.PluggableDependency;
-import org.teavm.javascript.ni.GeneratedBy;
-import org.teavm.platform.metadata.MetadataProvider;
-import org.teavm.platform.metadata.ResourceMap;
-import org.teavm.platform.metadata.StringResource;
+import org.teavm.classlib.impl.FirstDayOfWeekMetadataGenerator;
+import org.teavm.classlib.impl.MinimalDaysInFirstWeekMetadataGenerator;
+import org.teavm.platform.metadata.*;
 
 /**
  *
@@ -31,33 +29,20 @@ public class CLDRHelper {
     }
 
     public static String getLikelySubtags(String localeCode) {
-        readLikelySubtagsFromCLDR();
-        String subtags = getLikelySubtagsImpl(localeCode);
-        return subtags != null ? subtags : localeCode;
+        ResourceMap<StringResource> map = getLikelySubtagsMap();
+        return map.has(localeCode) ? map.get(localeCode).getValue() : localeCode;
     }
 
-    // Defined by JCLPlugin
-    private static native void readLikelySubtagsFromCLDR();
-
-    @GeneratedBy(CLDRHelperNativeGenerator.class)
-    @PluggableDependency(CLDRHelperNativeGenerator.class)
-    private static native String getLikelySubtagsImpl(String localeCode);
+    @MetadataProvider(LikelySubtagsMetadataGenerator.class)
+    private static native ResourceMap<StringResource> getLikelySubtagsMap();
 
     public static String[] resolveEras(String localeCode) {
-        readErasFromCLDR();
-        String[] eras = getEras(localeCode);
-        if (eras == null) {
-            eras = getEras("root");
-        }
-        return eras;
+        ResourceMap<ResourceArray<StringResource>> map = getErasMap();
+        ResourceArray<StringResource> arrayRes = map.has(localeCode) ? map.get(localeCode) : map.get("root");
+        return new String[] { arrayRes.get(0).getValue(), arrayRes.get(1).getValue() };
     }
 
-    // Defined by JCLPlugin
-    private static native void readErasFromCLDR();
-
-    @GeneratedBy(CLDRHelperNativeGenerator.class)
-    @PluggableDependency(CLDRHelperNativeGenerator.class)
-    private static native String[] getEras(String localeCode);
+    private static native ResourceMap<ResourceArray<StringResource>> getErasMap();
 
     @MetadataProvider(LanguageMetadataGenerator.class)
     public static native ResourceMap<ResourceMap<StringResource>> getLanguagesMap();
@@ -67,4 +52,13 @@ public class CLDRHelper {
 
     @MetadataProvider(DefaultLocaleMetadataGenerator.class)
     public static native StringResource getDefaultLocale();
+
+    @MetadataProvider(AvailableLocalesMetadataGenerator.class)
+    public static native ResourceArray<StringResource> getAvailableLocales();
+
+    @MetadataProvider(MinimalDaysInFirstWeekMetadataGenerator.class)
+    public static native ResourceMap<IntResource> getMinimalDaysInFirstWeek();
+
+    @MetadataProvider(FirstDayOfWeekMetadataGenerator.class)
+    public static native ResourceMap<IntResource> getFirstDayOfWeek();
 }

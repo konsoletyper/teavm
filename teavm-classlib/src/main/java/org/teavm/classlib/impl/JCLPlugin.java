@@ -15,10 +15,7 @@
  */
 package org.teavm.classlib.impl;
 
-import org.teavm.classlib.impl.unicode.CLDRHelper;
 import org.teavm.classlib.impl.unicode.CLDRReader;
-import org.teavm.classlib.java.util.LocaleSettingsNativeGenerator;
-import org.teavm.javascript.ni.Generator;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -46,12 +43,5 @@ public class JCLPlugin implements TeaVMPlugin {
         host.add(javacSupport);
 
         host.registerService(CLDRReader.class, new CLDRReader(host.getProperties(), host.getClassLoader()));
-        Generator localeGen = new LocaleSettingsNativeGenerator(host.getClassLoader(), host.getProperties());
-        host.add(new MethodReference("java.util.Calendar", "readWeeksFromCDLR", ValueType.VOID), localeGen);
-        host.add(new MethodReference(CLDRHelper.class.getName(), "readLikelySubtagsFromCLDR", ValueType.VOID),
-                localeGen);
-        host.add(new MethodReference("java.util.Locale", "getDefaultLocale", ValueType.object("java.lang.String")),
-                localeGen);
-        host.add(new MethodReference("java.util.Locale", "readAvailableLocales", ValueType.VOID), localeGen);
     }
 }

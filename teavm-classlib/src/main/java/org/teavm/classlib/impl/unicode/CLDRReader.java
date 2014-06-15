@@ -201,4 +201,16 @@ public class CLDRReader {
     public Set<String> getAvailableCountries() {
         return Collections.unmodifiableSet(availableCountries);
     }
+
+    public Map<String, Integer> getMinDaysMap() {
+        return Collections.unmodifiableMap(minDaysMap);
+    }
+
+    public Map<String, Integer> getFirstDayMap() {
+        return Collections.unmodifiableMap(firstDayMap);
+    }
+
+    public Map<String, String> getLikelySubtags() {
+        return Collections.unmodifiableMap(likelySubtags);
+    }
 }

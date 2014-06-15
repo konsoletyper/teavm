@@ -36,8 +36,7 @@ import java.util.Arrays;
 import org.teavm.classlib.impl.unicode.CLDRHelper;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.TCloneable;
-import org.teavm.dependency.PluggableDependency;
-import org.teavm.javascript.ni.GeneratedBy;
+import org.teavm.platform.metadata.ResourceArray;
 import org.teavm.platform.metadata.ResourceMap;
 import org.teavm.platform.metadata.StringResource;
 
@@ -76,9 +75,6 @@ public final class TLocale implements TCloneable, TSerializable {
     private transient String countryCode;
     private transient String languageCode;
     private transient String variantCode;
-
-    // Redefined by JCLPlugin
-    private static native void readAvailableLocales();
 
     public TLocale(String language) {
         this(language, "", "");
@@ -126,12 +122,11 @@ public final class TLocale implements TCloneable, TSerializable {
     }
 
     public static TLocale[] getAvailableLocales() {
-        readAvailableLocales();
         if (availableLocales == null) {
-            String[] strings = getAvailableLocaleStrings();
-            availableLocales = new TLocale[strings.length];
-            for (int i = 0; i < strings.length; ++i) {
-                String string = strings[i];
+            ResourceArray<StringResource> strings = CLDRHelper.getAvailableLocales();
+            availableLocales = new TLocale[strings.size()];
+            for (int i = 0; i < strings.size(); ++i) {
+                String string = strings.get(i).getValue();
                 int countryIndex = string.indexOf('-');
                 if (countryIndex > 0) {
                     availableLocales[i] = new TLocale(string.substring(0, countryIndex),
@@ -143,10 +138,6 @@ public final class TLocale implements TCloneable, TSerializable {
         }
         return Arrays.copyOf(availableLocales, availableLocales.length);
     }
-
-    @GeneratedBy(LocaleNativeGenerator.class)
-    @PluggableDependency(LocaleNativeGenerator.class)
-    private static native String[] getAvailableLocaleStrings();
 
     public String getCountry() {
         return countryCode;
