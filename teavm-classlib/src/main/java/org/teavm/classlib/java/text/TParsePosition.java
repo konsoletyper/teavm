@@ -17,20 +17,20 @@
 
 package org.teavm.classlib.java.text;
 
-public class ParsePosition {
+public class TParsePosition {
 
     private int currentPosition, errorIndex = -1;
 
-    public ParsePosition(int index) {
+    public TParsePosition(int index) {
         currentPosition = index;
     }
 
     @Override
     public boolean equals(Object object) {
-        if (!(object instanceof ParsePosition)) {
+        if (!(object instanceof TParsePosition)) {
             return false;
         }
-        ParsePosition pos = (ParsePosition) object;
+        TParsePosition pos = (TParsePosition) object;
         return currentPosition == pos.currentPosition && errorIndex == pos.errorIndex;
     }
 

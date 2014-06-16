@@ -21,7 +21,7 @@ import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.util.TMap;
 import org.teavm.classlib.java.util.TSet;
 
-public interface AttributedCharacterIterator extends CharacterIterator {
+public interface TAttributedCharacterIterator extends TCharacterIterator {
 
     public static class Attribute implements TSerializable {
         public static final Attribute INPUT_METHOD_SEGMENT = new Attribute(

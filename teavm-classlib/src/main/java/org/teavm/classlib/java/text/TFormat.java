@@ -20,8 +20,8 @@ package org.teavm.classlib.java.text;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.TCloneable;
 
-public abstract class Format implements TSerializable, TCloneable {
-    public Format() {
+public abstract class TFormat implements TSerializable, TCloneable {
+    public TFormat() {
     }
 
     @Override
@@ -61,27 +61,27 @@ public abstract class Format implements TSerializable, TCloneable {
     }
 
     public final String format(Object object) {
-        return format(object, new StringBuffer(), new FieldPosition(0)).toString();
+        return format(object, new StringBuffer(), new TFieldPosition(0)).toString();
     }
 
-    public abstract StringBuffer format(Object object, StringBuffer buffer, FieldPosition field);
+    public abstract StringBuffer format(Object object, StringBuffer buffer, TFieldPosition field);
 
-    public AttributedCharacterIterator formatToCharacterIterator(Object object) {
-        return new AttributedString(format(object)).getIterator();
+    public TAttributedCharacterIterator formatToCharacterIterator(Object object) {
+        return new TAttributedString(format(object)).getIterator();
     }
 
-    public Object parseObject(String string) throws ParseException {
-        ParsePosition position = new ParsePosition(0);
+    public Object parseObject(String string) throws TParseException {
+        TParsePosition position = new TParsePosition(0);
         Object result = parseObject(string, position);
         if (position.getIndex() == 0) {
-            throw new ParseException("Format.parseObject(String) parse failure", position.getErrorIndex());
+            throw new TParseException("Format.parseObject(String) parse failure", position.getErrorIndex());
         }
         return result;
     }
 
-    public abstract Object parseObject(String string, ParsePosition position);
+    public abstract Object parseObject(String string, TParsePosition position);
 
-    static boolean upTo(String string, ParsePosition position, StringBuffer buffer, char stop) {
+    static boolean upTo(String string, TParsePosition position, StringBuffer buffer, char stop) {
         int index = position.getIndex(), length = string.length();
         boolean lastQuote = false, quote = false;
         while (index < length) {
@@ -104,7 +104,7 @@ public abstract class Format implements TSerializable, TCloneable {
         return false;
     }
 
-    static boolean upToWithQuotes(String string, ParsePosition position, StringBuffer buffer, char stop, char start) {
+    static boolean upToWithQuotes(String string, TParsePosition position, StringBuffer buffer, char stop, char start) {
         int index = position.getIndex(), length = string.length(), count = 1;
         boolean quote = false;
         while (index < length) {
@@ -129,7 +129,7 @@ public abstract class Format implements TSerializable, TCloneable {
         throw new IllegalArgumentException("Unmatched braces in the pattern");
     }
 
-    public static class Field extends AttributedCharacterIterator.Attribute {
+    public static class Field extends TAttributedCharacterIterator.Attribute {
         protected Field(String fieldName) {
             super(fieldName);
         }

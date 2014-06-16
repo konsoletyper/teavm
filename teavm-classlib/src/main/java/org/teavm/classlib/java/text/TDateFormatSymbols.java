@@ -23,24 +23,24 @@ import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.TCloneable;
 import org.teavm.classlib.java.util.TLocale;
 
-public class DateFormatSymbols implements TSerializable, TCloneable {
+public class TDateFormatSymbols implements TSerializable, TCloneable {
     private TLocale locale;
     private String localPatternChars;
     String[] ampms, eras, months, shortMonths, shortWeekdays, weekdays;
     String[][] zoneStrings;
 
 
-    public DateFormatSymbols() {
+    public TDateFormatSymbols() {
         this(TLocale.getDefault());
     }
 
-    public DateFormatSymbols(TLocale locale) {
+    public TDateFormatSymbols(TLocale locale) {
         this.locale = locale;
     }
 
     @Override
     public Object clone() {
-        DateFormatSymbols symbols = new DateFormatSymbols(locale);
+        TDateFormatSymbols symbols = new TDateFormatSymbols(locale);
         if (ampms != null) {
             symbols.ampms = Arrays.copyOf(ampms, ampms.length);
         }
@@ -73,11 +73,11 @@ public class DateFormatSymbols implements TSerializable, TCloneable {
         if (this == object) {
             return true;
         }
-        if (!(object instanceof DateFormatSymbols)) {
+        if (!(object instanceof TDateFormatSymbols)) {
             return false;
         }
 
-        DateFormatSymbols obj = (DateFormatSymbols) object;
+        TDateFormatSymbols obj = (TDateFormatSymbols) object;
         if (!locale.equals(obj.locale)) {
             return false;
         }
@@ -124,7 +124,7 @@ public class DateFormatSymbols implements TSerializable, TCloneable {
 
     public String[] getEras() {
         if (eras == null) {
-            eras = CLDRHelper.resolveEras(CLDRHelper.getCode(locale.getLanguage(), locale.getCountry()));
+            eras = CLDRHelper.resolveEras(locale.getLanguage(), locale.getCountry());
         }
         return eras.clone();
     }

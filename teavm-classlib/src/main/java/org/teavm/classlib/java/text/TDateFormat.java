@@ -19,7 +19,7 @@ package org.teavm.classlib.java.text;
 
 import org.teavm.classlib.java.util.*;
 
-public abstract class DateFormat extends Format {
+public abstract class TDateFormat extends TFormat {
     protected TCalendar calendar;
     //protected NumberFormat numberFormat;
     public final static int DEFAULT = 2;
@@ -46,12 +46,12 @@ public abstract class DateFormat extends Format {
     public final static int HOUR0_FIELD = 16;
     public final static int TIMEZONE_FIELD = 17;
 
-    protected DateFormat() {
+    protected TDateFormat() {
     }
 
     @Override
     public Object clone() {
-        DateFormat clone = (DateFormat) super.clone();
+        TDateFormat clone = (TDateFormat) super.clone();
         clone.calendar = (TCalendar) calendar.clone();
         // TODO: implement
         //clone.numberFormat = (NumberFormat) numberFormat.clone();
@@ -76,7 +76,7 @@ public abstract class DateFormat extends Format {
     }
 
     @Override
-    public final StringBuffer format(Object object, StringBuffer buffer, FieldPosition field) {
+    public final StringBuffer format(Object object, StringBuffer buffer, TFieldPosition field) {
         if (object instanceof TDate) {
             return format((TDate) object, buffer, field);
         }
@@ -87,10 +87,10 @@ public abstract class DateFormat extends Format {
     }
 
     public final String format(TDate date) {
-        return format(date, new StringBuffer(), new FieldPosition(0)).toString();
+        return format(date, new StringBuffer(), new TFieldPosition(0)).toString();
     }
 
-    public abstract StringBuffer format(TDate date, StringBuffer buffer, FieldPosition field);
+    public abstract StringBuffer format(TDate date, StringBuffer buffer, TFieldPosition field);
 
     public static TLocale[] getAvailableLocales() {
         return TLocale.getAvailableLocales();
@@ -100,16 +100,16 @@ public abstract class DateFormat extends Format {
         return calendar;
     }
 
-    public final static DateFormat getDateInstance() {
+    public final static TDateFormat getDateInstance() {
         return getDateInstance(DEFAULT);
     }
 
-    public final static DateFormat getDateInstance(int style) {
+    public final static TDateFormat getDateInstance(int style) {
         checkDateStyle(style);
         return getDateInstance(style, TLocale.getDefault());
     }
 
-    public final static DateFormat getDateInstance(int style, TLocale locale) {
+    public final static TDateFormat getDateInstance(int style, TLocale locale) {
         /*checkDateStyle(style);
         com.ibm.icu.text.DateFormat icuFormat = com.ibm.icu.text.DateFormat.getDateInstance(style, locale);
         return new SimpleDateFormat(locale, (com.ibm.icu.text.SimpleDateFormat) icuFormat);*/
@@ -117,17 +117,17 @@ public abstract class DateFormat extends Format {
         return null;
     }
 
-    public final static DateFormat getDateTimeInstance() {
+    public final static TDateFormat getDateTimeInstance() {
         return getDateTimeInstance(DEFAULT, DEFAULT);
     }
 
-    public final static DateFormat getDateTimeInstance(int dateStyle, int timeStyle) {
+    public final static TDateFormat getDateTimeInstance(int dateStyle, int timeStyle) {
         checkTimeStyle(timeStyle);
         checkDateStyle(dateStyle);
         return getDateTimeInstance(dateStyle, timeStyle, TLocale.getDefault());
     }
 
-    public final static DateFormat getDateTimeInstance(int dateStyle, int timeStyle, TLocale locale) {
+    public final static TDateFormat getDateTimeInstance(int dateStyle, int timeStyle, TLocale locale) {
         /*checkTimeStyle(timeStyle);
         checkDateStyle(dateStyle);
         com.ibm.icu.text.DateFormat icuFormat = com.ibm.icu.text.DateFormat.getDateTimeInstance(dateStyle, timeStyle,
@@ -137,7 +137,7 @@ public abstract class DateFormat extends Format {
         return null;
     }
 
-    public final static DateFormat getInstance() {
+    public final static TDateFormat getInstance() {
         return getDateTimeInstance(SHORT, SHORT);
     }
 
@@ -166,16 +166,16 @@ public abstract class DateFormat extends Format {
         return styleName;
     }
 
-    public final static DateFormat getTimeInstance() {
+    public final static TDateFormat getTimeInstance() {
         return getTimeInstance(DEFAULT);
     }
 
-    public final static DateFormat getTimeInstance(int style) {
+    public final static TDateFormat getTimeInstance(int style) {
         checkTimeStyle(style);
         return getTimeInstance(style, TLocale.getDefault());
     }
 
-    public final static DateFormat getTimeInstance(int style, TLocale locale) {
+    public final static TDateFormat getTimeInstance(int style, TLocale locale) {
         /*checkTimeStyle(style);
         com.ibm.icu.text.DateFormat icuFormat = com.ibm.icu.text.DateFormat.getTimeInstance(style, locale);
         return new SimpleDateFormat(locale, (com.ibm.icu.text.SimpleDateFormat) icuFormat);*/
@@ -196,19 +196,19 @@ public abstract class DateFormat extends Format {
         return calendar.isLenient();
     }
 
-    public TDate parse(String string) throws ParseException {
-        ParsePosition position = new ParsePosition(0);
+    public TDate parse(String string) throws TParseException {
+        TParsePosition position = new TParsePosition(0);
         TDate date = parse(string, position);
         if (position.getIndex() == 0) {
-            throw new ParseException("Unparseable date" + string, position.getErrorIndex());
+            throw new TParseException("Unparseable date" + string, position.getErrorIndex());
         }
         return date;
     }
 
-    public abstract TDate parse(String string, ParsePosition position);
+    public abstract TDate parse(String string, TParsePosition position);
 
     @Override
-    public Object parseObject(String string, ParsePosition position) {
+    public Object parseObject(String string, TParsePosition position) {
         return parse(string, position);
     }
 
@@ -224,7 +224,7 @@ public abstract class DateFormat extends Format {
         numberFormat = format;
     }*/
 
-    public static class Field extends Format.Field {
+    public static class Field extends TFormat.Field {
         private static THashMap<Integer, Field> table = new THashMap<>();
         public final static Field ERA = new Field("era", TCalendar.ERA);
         public final static Field YEAR = new Field("year", TCalendar.YEAR);

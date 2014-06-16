@@ -17,19 +17,26 @@
 
 package org.teavm.classlib.java.text;
 
-public class Annotation {
-    private Object value;
+public interface TCharacterIterator extends Cloneable {
+    public static final char DONE = '\uffff';
 
-    public Annotation(Object attribute) {
-        value = attribute;
-    }
+    public Object clone();
 
-    public Object getValue() {
-        return value;
-    }
+    public char current();
 
-    @Override
-    public String toString() {
-        return getClass().getName() + "[value=" + value + ']';
-    }
+    public char first();
+
+    public int getBeginIndex();
+
+    public int getEndIndex();
+
+    public int getIndex();
+
+    public char last();
+
+    public char next();
+
+    public char previous();
+
+    public char setIndex(int location);
 }

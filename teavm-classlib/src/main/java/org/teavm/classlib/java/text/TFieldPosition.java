@@ -17,20 +17,20 @@
 
 package org.teavm.classlib.java.text;
 
-public class FieldPosition {
+public class TFieldPosition {
     private int myField, beginIndex, endIndex;
-    private Format.Field myAttribute;
+    private TFormat.Field myAttribute;
 
-    public FieldPosition(int field) {
+    public TFieldPosition(int field) {
         myField = field;
     }
 
-    public FieldPosition(Format.Field attribute) {
+    public TFieldPosition(TFormat.Field attribute) {
         myAttribute = attribute;
         myField = -1;
     }
 
-    public FieldPosition(Format.Field attribute, int field) {
+    public TFieldPosition(TFormat.Field attribute, int field) {
         myAttribute = attribute;
         myField = field;
     }
@@ -41,10 +41,10 @@ public class FieldPosition {
 
     @Override
     public boolean equals(Object object) {
-        if (!(object instanceof FieldPosition)) {
+        if (!(object instanceof TFieldPosition)) {
             return false;
         }
-        FieldPosition pos = (FieldPosition) object;
+        TFieldPosition pos = (TFieldPosition) object;
         return myField == pos.myField && myAttribute == pos.myAttribute && beginIndex == pos.beginIndex &&
                 endIndex == pos.endIndex;
     }
@@ -61,7 +61,7 @@ public class FieldPosition {
         return myField;
     }
 
-    public Format.Field getFieldAttribute() {
+    public TFormat.Field getFieldAttribute() {
         return myAttribute;
     }
 

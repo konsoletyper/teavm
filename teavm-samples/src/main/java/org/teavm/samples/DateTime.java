@@ -15,6 +15,7 @@
  */
 package org.teavm.samples;
 
+import java.text.DateFormatSymbols;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -156,6 +157,20 @@ public class DateTime {
         HTMLInputElement fieldValueElem = (HTMLInputElement)document.getElementById("field-value");
         Calendar calendar = new GregorianCalendar(currentLocale);
         calendar.setTime(currentDate);
-        fieldValueElem.setValue(String.valueOf(calendar.get(currentField)));
+        int value = calendar.get(currentField);
+        fieldValueElem.setValue(String.valueOf(value));
+
+        DateFormatSymbols symbols = new DateFormatSymbols(currentLocale);
+        String text;
+        switch (currentField) {
+            case Calendar.ERA:
+                text = symbols.getEras()[value];
+                break;
+            default:
+                text = "";
+                break;
+        }
+        HTMLInputElement fieldTextElem = (HTMLInputElement)document.getElementById("field-value-text");
+        fieldTextElem.setValue(text);
     }
 }

@@ -17,14 +17,14 @@
 
 package org.teavm.classlib.java.text;
 
-import org.teavm.classlib.java.text.AttributedCharacterIterator.Attribute;
+import org.teavm.classlib.java.text.TAttributedCharacterIterator.Attribute;
 import org.teavm.classlib.java.util.*;
 
-public class AttributedString {
+public class TAttributedString {
 
     String text;
 
-    TMap<AttributedCharacterIterator.Attribute, TList<Range>> attributeMap;
+    TMap<TAttributedCharacterIterator.Attribute, TList<Range>> attributeMap;
 
     static class Range {
         int start;
@@ -40,22 +40,22 @@ public class AttributedString {
         }
     }
 
-    static class AttributedIterator implements AttributedCharacterIterator {
+    static class AttributedIterator implements TAttributedCharacterIterator {
 
         private int begin, end, offset;
 
-        private AttributedString attrString;
+        private TAttributedString attrString;
 
         private THashSet<Attribute> attributesAllowed;
 
-        AttributedIterator(AttributedString attrString) {
+        AttributedIterator(TAttributedString attrString) {
             this.attrString = attrString;
             begin = 0;
             end = attrString.text.length();
             offset = 0;
         }
 
-        AttributedIterator(AttributedString attrString, AttributedCharacterIterator.Attribute[] attributes, int begin,
+        AttributedIterator(TAttributedString attrString, TAttributedCharacterIterator.Attribute[] attributes, int begin,
                 int end) {
             if (begin < 0 || end > attrString.text.length() || begin > end) {
                 throw new IllegalArgumentException();
@@ -120,7 +120,7 @@ public class AttributedString {
         }
 
         private boolean inRange(Range range) {
-            if (!(range.value instanceof Annotation)) {
+            if (!(range.value instanceof TAnnotation)) {
                 return true;
             }
             return range.start >= begin && range.start < end && range.end > begin && range.end <= end;
@@ -131,9 +131,9 @@ public class AttributedString {
             while (it.hasNext()) {
                 Range range = it.next();
                 if (range.start >= begin && range.start < end) {
-                    return !(range.value instanceof Annotation) || (range.end > begin && range.end <= end);
+                    return !(range.value instanceof TAnnotation) || (range.end > begin && range.end <= end);
                 } else if (range.end > begin && range.end <= end) {
-                    return !(range.value instanceof Annotation) || (range.start >= begin && range.start < end);
+                    return !(range.value instanceof TAnnotation) || (range.start >= begin && range.start < end);
                 }
             }
             return false;
@@ -171,7 +171,7 @@ public class AttributedString {
         }
 
         @Override
-        public Object getAttribute(AttributedCharacterIterator.Attribute attribute) {
+        public Object getAttribute(TAttributedCharacterIterator.Attribute attribute) {
             if (attributesAllowed != null && !attributesAllowed.contains(attribute)) {
                 return null;
             }
@@ -222,7 +222,7 @@ public class AttributedString {
         }
 
         @Override
-        public int getRunLimit(AttributedCharacterIterator.Attribute attribute) {
+        public int getRunLimit(TAttributedCharacterIterator.Attribute attribute) {
             if (attributesAllowed != null && !attributesAllowed.contains(attribute)) {
                 return end;
             }
@@ -238,7 +238,7 @@ public class AttributedString {
             int limit = end;
             TIterator<? extends Attribute> it = attributes.iterator();
             while (it.hasNext()) {
-                AttributedCharacterIterator.Attribute attribute = it.next();
+                TAttributedCharacterIterator.Attribute attribute = it.next();
                 int newLimit = getRunLimit(attribute);
                 if (newLimit < limit) {
                     limit = newLimit;
@@ -271,7 +271,7 @@ public class AttributedString {
         }
 
         @Override
-        public int getRunStart(AttributedCharacterIterator.Attribute attribute) {
+        public int getRunStart(TAttributedCharacterIterator.Attribute attribute) {
             if (attributesAllowed != null && !attributesAllowed.contains(attribute)) {
                 return begin;
             }
@@ -287,7 +287,7 @@ public class AttributedString {
             int start = begin;
             TIterator<? extends Attribute> it = attributes.iterator();
             while (it.hasNext()) {
-                AttributedCharacterIterator.Attribute attribute = it.next();
+                TAttributedCharacterIterator.Attribute attribute = it.next();
                 int newStart = getRunStart(attribute);
                 if (newStart > start) {
                     start = newStart;
@@ -335,7 +335,7 @@ public class AttributedString {
         }
     }
 
-    public AttributedString(AttributedCharacterIterator iterator) {
+    public TAttributedString(TAttributedCharacterIterator iterator) {
         if (iterator.getBeginIndex() > iterator.getEndIndex()) {
             throw new IllegalArgumentException("Invalid substring range");
         }
@@ -345,7 +345,7 @@ public class AttributedString {
             iterator.next();
         }
         text = buffer.toString();
-        TSet<AttributedCharacterIterator.Attribute> attributes = iterator.getAllAttributeKeys();
+        TSet<TAttributedCharacterIterator.Attribute> attributes = iterator.getAllAttributeKeys();
         if (attributes == null) {
             return;
         }
@@ -353,9 +353,9 @@ public class AttributedString {
 
         TIterator<Attribute> it = attributes.iterator();
         while (it.hasNext()) {
-            AttributedCharacterIterator.Attribute attribute = it.next();
+            TAttributedCharacterIterator.Attribute attribute = it.next();
             iterator.setIndex(0);
-            while (iterator.current() != CharacterIterator.DONE) {
+            while (iterator.current() != TCharacterIterator.DONE) {
                 int start = iterator.getRunStart(attribute);
                 int limit = iterator.getRunLimit(attribute);
                 Object value = iterator.getAttribute(attribute);
@@ -367,7 +367,7 @@ public class AttributedString {
         }
     }
 
-    private AttributedString(AttributedCharacterIterator iterator, int start, int end, TSet<Attribute> attributes) {
+    private TAttributedString(TAttributedCharacterIterator iterator, int start, int end, TSet<Attribute> attributes) {
         if (start < iterator.getBeginIndex() || end > iterator.getEndIndex() || start > end) {
             throw new IllegalArgumentException();
         }
@@ -387,14 +387,14 @@ public class AttributedString {
 
         TIterator<Attribute> it = attributes.iterator();
         while (it.hasNext()) {
-            AttributedCharacterIterator.Attribute attribute = it.next();
+            TAttributedCharacterIterator.Attribute attribute = it.next();
             iterator.setIndex(start);
             while (iterator.getIndex() < end) {
                 Object value = iterator.getAttribute(attribute);
                 int runStart = iterator.getRunStart(attribute);
                 int limit = iterator.getRunLimit(attribute);
-                if ((value instanceof Annotation && runStart >= start && limit <= end) ||
-                        (value != null && !(value instanceof Annotation))) {
+                if ((value instanceof TAnnotation && runStart >= start && limit <= end) ||
+                        (value != null && !(value instanceof TAnnotation))) {
                     addAttribute(attribute, value, (runStart < start ? start : runStart) - start, (limit > end ? end
                             : limit) - start);
                 }
@@ -403,16 +403,16 @@ public class AttributedString {
         }
     }
 
-    public AttributedString(AttributedCharacterIterator iterator, int start, int end) {
+    public TAttributedString(TAttributedCharacterIterator iterator, int start, int end) {
         this(iterator, start, end, iterator.getAllAttributeKeys());
     }
 
-    public AttributedString(AttributedCharacterIterator iterator, int start, int end,
-            AttributedCharacterIterator.Attribute[] attributes) {
+    public TAttributedString(TAttributedCharacterIterator iterator, int start, int end,
+            TAttributedCharacterIterator.Attribute[] attributes) {
         this(iterator, start, end, new THashSet<>(TArrays.asList(attributes)));
     }
 
-    public AttributedString(String value) {
+    public TAttributedString(String value) {
         if (value == null) {
             throw new NullPointerException();
         }
@@ -420,7 +420,7 @@ public class AttributedString {
         attributeMap = new THashMap<>(11);
     }
 
-    public AttributedString(String value, TMap<? extends AttributedCharacterIterator.Attribute, ?> attributes) {
+    public TAttributedString(String value, TMap<? extends TAttributedCharacterIterator.Attribute, ?> attributes) {
         if (value == null) {
             throw new NullPointerException();
         }
@@ -434,7 +434,7 @@ public class AttributedString {
             TMap.Entry<?, ?> entry = (TMap.Entry<?, ?>) it.next();
             TArrayList<Range> ranges = new TArrayList<>(1);
             ranges.add(new Range(0, text.length(), entry.getValue()));
-            attributeMap.put((AttributedCharacterIterator.Attribute) entry.getKey(), ranges);
+            attributeMap.put((TAttributedCharacterIterator.Attribute) entry.getKey(), ranges);
         }
     }
 
@@ -451,7 +451,7 @@ public class AttributedString {
      * @throws NullPointerException
      *             if {@code attribute} is {@code null}.
      */
-    public void addAttribute(AttributedCharacterIterator.Attribute attribute, Object value) {
+    public void addAttribute(TAttributedCharacterIterator.Attribute attribute, Object value) {
         if (null == attribute) {
             throw new NullPointerException();
         }
@@ -487,7 +487,7 @@ public class AttributedString {
      * @throws NullPointerException
      *             if {@code attribute} is {@code null}.
      */
-    public void addAttribute(AttributedCharacterIterator.Attribute attribute, Object value, int start, int end) {
+    public void addAttribute(TAttributedCharacterIterator.Attribute attribute, Object value, int start, int end) {
         if (null == attribute) {
             throw new NullPointerException();
         }
@@ -575,11 +575,11 @@ public class AttributedString {
      *             if {@code start < 0}, {@code end} is greater than the length
      *             of this string, or if {@code start >= end}.
      */
-    public void addAttributes(TMap<? extends AttributedCharacterIterator.Attribute, ?> attributes, int start, int end) {
+    public void addAttributes(TMap<? extends TAttributedCharacterIterator.Attribute, ?> attributes, int start, int end) {
         TIterator<?> it = attributes.entrySet().iterator();
         while (it.hasNext()) {
             TMap.Entry<?, ?> entry = (TMap.Entry<?, ?>) it.next();
-            addAttribute((AttributedCharacterIterator.Attribute) entry.getKey(), entry.getValue(), start, end);
+            addAttribute((TAttributedCharacterIterator.Attribute) entry.getKey(), entry.getValue(), start, end);
         }
     }
 
@@ -589,7 +589,7 @@ public class AttributedString {
      *
      * @return the newly created {@code AttributedCharacterIterator}.
      */
-    public AttributedCharacterIterator getIterator() {
+    public TAttributedCharacterIterator getIterator() {
         return new AttributedIterator(this);
     }
 
@@ -604,7 +604,7 @@ public class AttributedString {
      *            iterator if they are defined for this text.
      * @return the newly created {@code AttributedCharacterIterator}.
      */
-    public AttributedCharacterIterator getIterator(AttributedCharacterIterator.Attribute[] attributes) {
+    public TAttributedCharacterIterator getIterator(TAttributedCharacterIterator.Attribute[] attributes) {
         return new AttributedIterator(this, attributes, 0, text.length());
     }
 
@@ -623,7 +623,7 @@ public class AttributedString {
      *            the end index of the iterator on the underlying text.
      * @return the newly created {@code AttributedCharacterIterator}.
      */
-    public AttributedCharacterIterator getIterator(AttributedCharacterIterator.Attribute[] attributes, int start,
+    public TAttributedCharacterIterator getIterator(TAttributedCharacterIterator.Attribute[] attributes, int start,
             int end) {
         return new AttributedIterator(this, attributes, start, end);
     }

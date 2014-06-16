@@ -36,12 +36,15 @@ public class CLDRHelper {
     @MetadataProvider(LikelySubtagsMetadataGenerator.class)
     private static native ResourceMap<StringResource> getLikelySubtagsMap();
 
-    public static String[] resolveEras(String localeCode) {
+    public static String[] resolveEras(String language, String country) {
         ResourceMap<ResourceArray<StringResource>> map = getErasMap();
-        ResourceArray<StringResource> arrayRes = map.has(localeCode) ? map.get(localeCode) : map.get("root");
+        String localeCode = getCode(language, country);
+        ResourceArray<StringResource> arrayRes = map.has(localeCode) ? map.get(localeCode) :
+                map.has(language) ? map.get(language) : map.get("root");
         return new String[] { arrayRes.get(0).getValue(), arrayRes.get(1).getValue() };
     }
 
+    @MetadataProvider(DateSymbolsMetadataGenerator.class)
     private static native ResourceMap<ResourceArray<StringResource>> getErasMap();
 
     @MetadataProvider(LanguageMetadataGenerator.class)

@@ -20,7 +20,7 @@ package org.teavm.classlib.java.text;
 /**
  * Thrown when the string being parsed is not in the correct form.
  */
-public class ParseException extends Exception {
+public class TParseException extends Exception {
 
     private static final long serialVersionUID = 2703218443322787634L;
 
@@ -35,7 +35,7 @@ public class ParseException extends Exception {
      * @param location
      *            the index at which the parse exception occurred.
      */
-    public ParseException(String detailMessage, int location) {
+    public TParseException(String detailMessage, int location) {
         super(detailMessage);
         errorOffset = location;
     }
