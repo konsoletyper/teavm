@@ -166,6 +166,12 @@ public class DateTime {
             case Calendar.ERA:
                 text = symbols.getEras()[value];
                 break;
+            case Calendar.AM_PM:
+                text = symbols.getAmPmStrings()[value];
+                break;
+            case Calendar.MONTH:
+                text = symbols.getMonths()[value];
+                break;
             default:
                 text = "";
                 break;

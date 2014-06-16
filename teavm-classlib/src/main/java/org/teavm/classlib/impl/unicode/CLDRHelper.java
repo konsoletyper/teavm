@@ -37,15 +37,37 @@ public class CLDRHelper {
     private static native ResourceMap<StringResource> getLikelySubtagsMap();
 
     public static String[] resolveEras(String language, String country) {
-        ResourceMap<ResourceArray<StringResource>> map = getErasMap();
-        String localeCode = getCode(language, country);
-        ResourceArray<StringResource> arrayRes = map.has(localeCode) ? map.get(localeCode) :
-                map.has(language) ? map.get(language) : map.get("root");
-        return new String[] { arrayRes.get(0).getValue(), arrayRes.get(1).getValue() };
+        return resolveDateFormatSymbols(getErasMap(), language, country);
     }
 
     @MetadataProvider(DateSymbolsMetadataGenerator.class)
     private static native ResourceMap<ResourceArray<StringResource>> getErasMap();
+
+    public static String[] resolveAmPm(String language, String country) {
+        return resolveDateFormatSymbols(getAmPmMap(), language, country);
+    }
+
+    @MetadataProvider(DateSymbolsMetadataGenerator.class)
+    private static native ResourceMap<ResourceArray<StringResource>> getAmPmMap();
+
+    public static String[] resolveMonths(String language, String country) {
+        return resolveDateFormatSymbols(getMonthMap(), language, country);
+    }
+
+    @MetadataProvider(DateSymbolsMetadataGenerator.class)
+    private static native ResourceMap<ResourceArray<StringResource>> getMonthMap();
+
+    private static String[] resolveDateFormatSymbols(ResourceMap<ResourceArray<StringResource>> map, String language,
+            String country) {
+        String localeCode = getCode(language, country);
+        ResourceArray<StringResource> arrayRes = map.has(localeCode) ? map.get(localeCode) :
+                map.has(language) ? map.get(language) : map.get("root");
+        String[] result = new String[arrayRes.size()];
+        for (int i = 0; i < result.length; ++i) {
+            result[i] = arrayRes.get(i).getValue();
+        }
+        return result;
+    }
 
     @MetadataProvider(LanguageMetadataGenerator.class)
     public static native ResourceMap<ResourceMap<StringResource>> getLanguagesMap();

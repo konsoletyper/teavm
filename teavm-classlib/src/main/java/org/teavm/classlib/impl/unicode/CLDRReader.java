@@ -99,9 +99,13 @@ public class CLDRReader {
                     case "territories.json":
                         readCountries(localeName, localeInfo, input);
                         break;
-                    case "ca-gregorian.json":
-                        readEras(localeName, localeInfo, input);
+                    case "ca-gregorian.json": {
+                        JsonObject root = (JsonObject)new JsonParser().parse(new InputStreamReader(input));
+                        readEras(localeName, localeInfo, root);
+                        readAmPms(localeName, localeInfo, root);
+                        readMonths(localeName, localeInfo, root);
                         break;
+                    }
                 }
             }
         } catch (IOException e) {
@@ -133,14 +137,34 @@ public class CLDRReader {
         }
     }
 
-    private void readEras(String localeCode, CLDRLocale locale, InputStream input) {
-        JsonObject root = (JsonObject)new JsonParser().parse(new InputStreamReader(input));
+    private void readEras(String localeCode, CLDRLocale locale, JsonObject root) {
         JsonObject erasJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
                 .get("dates").getAsJsonObject().get("calendars").getAsJsonObject()
                 .get("gregorian").getAsJsonObject().get("eras").getAsJsonObject().get("eraNames").getAsJsonObject();
-        String am = erasJson.get("0").getAsString();
-        String pm = erasJson.get("1").getAsString();
-        locale.eras = new String[] { am, pm };
+        String bc = erasJson.get("0").getAsString();
+        String ac = erasJson.get("1").getAsString();
+        locale.eras = new String[] { bc, ac };
+    }
+
+    private void readAmPms(String localeCode, CLDRLocale locale, JsonObject root) {
+        JsonObject ampmJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
+                .get("dates").getAsJsonObject().get("calendars").getAsJsonObject()
+                .get("gregorian").getAsJsonObject().get("dayPeriods").getAsJsonObject()
+                .get("format").getAsJsonObject().get("abbreviated").getAsJsonObject();
+        String am = ampmJson.get("am").getAsString();
+        String pm = ampmJson.get("pm").getAsString();
+        locale.dayPeriods = new String[] { am, pm };
+    }
+
+    private void readMonths(String localeCode, CLDRLocale locale, JsonObject root) {
+        JsonObject monthsJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
+                .get("dates").getAsJsonObject().get("calendars").getAsJsonObject()
+                .get("gregorian").getAsJsonObject().get("months").getAsJsonObject()
+                .get("stand-alone").getAsJsonObject().get("wide").getAsJsonObject();
+        locale.months = new String[12];
+        for (int i = 0; i < 12; ++i) {
+            locale.months[i] = monthsJson.get(String.valueOf(i + 1)).getAsString();
+        }
     }
 
     private void readWeekData(InputStream input) {

@@ -28,6 +28,8 @@ public class CLDRLocale {
     final Map<String, String> languages = new LinkedHashMap<>();
     final Map<String, String> territories = new LinkedHashMap<>();
     String[] eras;
+    String[] dayPeriods;
+    String[] months;
 
     public Map<String, String> getLanguages() {
         return Collections.unmodifiableMap(languages);
@@ -39,5 +41,13 @@ public class CLDRLocale {
 
     public String[] getEras() {
         return Arrays.copyOf(eras, eras.length);
+    }
+
+    public String[] getDayPeriods() {
+        return Arrays.copyOf(dayPeriods, dayPeriods.length);
+    }
+
+    public String[] getMonths() {
+        return Arrays.copyOf(months, months.length);
     }
 }

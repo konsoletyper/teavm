@@ -119,6 +119,9 @@ public class TDateFormatSymbols implements TSerializable, TCloneable {
     }
 
     public String[] getAmPmStrings() {
+        if (ampms == null) {
+            ampms = CLDRHelper.resolveAmPm(locale.getLanguage(), locale.getCountry());
+        }
         return ampms.clone();
     }
 
@@ -130,10 +133,16 @@ public class TDateFormatSymbols implements TSerializable, TCloneable {
     }
 
     public String getLocalPatternChars() {
+        if (localPatternChars == null) {
+            localPatternChars = "";
+        }
         return localPatternChars;
     }
 
     public String[] getMonths() {
+        if (months == null) {
+            months = CLDRHelper.resolveMonths(locale.getLanguage(), locale.getCountry());
+        }
         return months.clone();
     }
 

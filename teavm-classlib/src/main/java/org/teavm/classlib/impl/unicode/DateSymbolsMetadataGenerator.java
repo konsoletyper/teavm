@@ -28,24 +28,38 @@ public class DateSymbolsMetadataGenerator implements MetadataGenerator {
     public Resource generateMetadata(MetadataGeneratorContext context, MethodReference method) {
         switch (method.getName()) {
             case "getErasMap":
-                return generateEras(context);
+                return generateSymbols(context, new ResourceExtractor() {
+                    @Override public String[] extract(CLDRLocale locale) { return locale.getEras(); }
+                });
+            case "getAmPmMap":
+                return generateSymbols(context, new ResourceExtractor() {
+                    @Override public String[] extract(CLDRLocale locale) { return locale.getDayPeriods(); }
+                });
+            case "getMonthMap":
+                return generateSymbols(context, new ResourceExtractor() {
+                    @Override public String[] extract(CLDRLocale locale) { return locale.getMonths(); }
+                });
             default:
                 throw new AssertionError("Unsupported method: " + method);
         }
     }
 
-    private Resource generateEras(MetadataGeneratorContext context) {
+    private Resource generateSymbols(MetadataGeneratorContext context, ResourceExtractor extractor) {
         CLDRReader reader = context.getService(CLDRReader.class);
         ResourceMap<ResourceArray<StringResource>> result = context.createResourceMap();
         for (Map.Entry<String, CLDRLocale> localeEntry : reader.getKnownLocales().entrySet()) {
-            ResourceArray<StringResource> erasRes = context.createResourceArray();
-            result.put(localeEntry.getKey(), erasRes);
-            for (String era : localeEntry.getValue().getEras()) {
-                StringResource eraRes = context.createResource(StringResource.class);
-                eraRes.setValue(era);
-                erasRes.add(eraRes);
+            ResourceArray<StringResource> symbolsRes = context.createResourceArray();
+            result.put(localeEntry.getKey(), symbolsRes);
+            for (String symbol : extractor.extract(localeEntry.getValue())) {
+                StringResource symbolRes = context.createResource(StringResource.class);
+                symbolRes.setValue(symbol);
+                symbolsRes.add(symbolRes);
             }
         }
         return result;
+    }
+
+    private static interface ResourceExtractor {
+        String[] extract(CLDRLocale locale);
     }
 }
