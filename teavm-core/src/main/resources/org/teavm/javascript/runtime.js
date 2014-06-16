@@ -394,7 +394,12 @@ Long_fromNumber = function(val) {
     return new Long(val | 0, (val / 0x100000000) | 0);
 }
 Long_toNumber = function(val) {
-    return val.hi >= 0 ? val.lo + 0x100000000 * val.hi : -0x100000000 * (val.hi ^ 0xFFFFFFFF) + val.lo;
+    var lo = val.lo;
+    var hi = val.hi;
+    if (lo < 0) {
+        lo += 0x100000000;
+    }
+    return 0x100000000 * hi + lo;
 }
 Long_add = function(a, b) {
     var a_lolo = a.lo & 0xFFFF;
@@ -410,8 +415,7 @@ Long_add = function(a, b) {
     var lohi = (a_lohi + b_lohi + (lolo >> 16)) | 0;
     var hilo = (a_hilo + b_hilo + (lohi >> 16)) | 0;
     var hihi = (a_hihi + b_hihi + (hilo >> 16)) | 0;
-    return new Long((lolo & 0xFFFF) | ((lohi & 0xFFFF) << 16),
-            (hilo & 0xFFFF) | ((hihi & 0xFFFF) << 16));
+    return new Long((lolo & 0xFFFF) | ((lohi & 0xFFFF) << 16), (hilo & 0xFFFF) | ((hihi & 0xFFFF) << 16));
 }
 Long_inc = function(a) {
     var lo = (a.lo + 1) | 0;
@@ -446,8 +450,7 @@ Long_sub = function(a, b) {
     var lohi = (a_lohi - b_lohi + (lolo >> 16)) | 0;
     var hilo = (a_hilo - b_hilo + (lohi >> 16)) | 0;
     var hihi = (a_hihi - b_hihi + (hilo >> 16)) | 0;
-    return new Long((lolo & 0xFFFF) | ((lohi & 0xFFFF) << 16),
-            (hilo & 0xFFFF) | ((hihi & 0xFFFF) << 16));
+    return new Long((lolo & 0xFFFF) | ((lohi & 0xFFFF) << 16), (hilo & 0xFFFF) | ((hihi & 0xFFFF) << 16));
 }
 Long_compare = function(a, b) {
     var r = a.hi - b.hi;
