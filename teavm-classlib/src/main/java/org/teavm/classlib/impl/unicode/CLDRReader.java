@@ -30,6 +30,7 @@ import com.google.gson.JsonParser;
  * @author Alexey Andreev
  */
 public class CLDRReader {
+    private static String[] weekdayKeys = { "sun", "mon", "tue", "wed", "thu", "fri", "sat" };
     private Map<String, CLDRLocale> knownLocales = new LinkedHashMap<>();
     private Map<String, Integer> minDaysMap = new LinkedHashMap<>();
     private Map<String, Integer> firstDayMap = new LinkedHashMap<>();
@@ -104,6 +105,8 @@ public class CLDRReader {
                         readEras(localeName, localeInfo, root);
                         readAmPms(localeName, localeInfo, root);
                         readMonths(localeName, localeInfo, root);
+                        readShortMonths(localeName, localeInfo, root);
+                        readShortWeekdays(localeName, localeInfo, root);
                         break;
                     }
                 }
@@ -164,6 +167,28 @@ public class CLDRReader {
         locale.months = new String[12];
         for (int i = 0; i < 12; ++i) {
             locale.months[i] = monthsJson.get(String.valueOf(i + 1)).getAsString();
+        }
+    }
+
+    private void readShortMonths(String localeCode, CLDRLocale locale, JsonObject root) {
+        JsonObject monthsJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
+                .get("dates").getAsJsonObject().get("calendars").getAsJsonObject()
+                .get("gregorian").getAsJsonObject().get("months").getAsJsonObject()
+                .get("stand-alone").getAsJsonObject().get("abbreviated").getAsJsonObject();
+        locale.shortMonths = new String[12];
+        for (int i = 0; i < 12; ++i) {
+            locale.shortMonths[i] = monthsJson.get(String.valueOf(i + 1)).getAsString();
+        }
+    }
+
+    private void readShortWeekdays(String localeCode, CLDRLocale locale, JsonObject root) {
+        JsonObject monthsJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
+                .get("dates").getAsJsonObject().get("calendars").getAsJsonObject()
+                .get("gregorian").getAsJsonObject().get("days").getAsJsonObject()
+                .get("stand-alone").getAsJsonObject().get("short").getAsJsonObject();
+        locale.shortWeekdays = new String[7];
+        for (int i = 0; i < 7; ++i) {
+            locale.shortWeekdays[i] = monthsJson.get(weekdayKeys[i]).getAsString();
         }
     }
 

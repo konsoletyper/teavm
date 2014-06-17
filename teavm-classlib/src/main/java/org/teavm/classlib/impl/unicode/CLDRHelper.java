@@ -57,6 +57,20 @@ public class CLDRHelper {
     @MetadataProvider(DateSymbolsMetadataGenerator.class)
     private static native ResourceMap<ResourceArray<StringResource>> getMonthMap();
 
+    public static String[] resolveShortMonths(String language, String country) {
+        return resolveDateFormatSymbols(getShortMonthMap(), language, country);
+    }
+
+    @MetadataProvider(DateSymbolsMetadataGenerator.class)
+    private static native ResourceMap<ResourceArray<StringResource>> getShortMonthMap();
+
+    public static String[] resolveShortWeekdays(String language, String country) {
+        return resolveDateFormatSymbols(getShortWeekdayMap(), language, country);
+    }
+
+    @MetadataProvider(DateSymbolsMetadataGenerator.class)
+    private static native ResourceMap<ResourceArray<StringResource>> getShortWeekdayMap();
+
     private static String[] resolveDateFormatSymbols(ResourceMap<ResourceArray<StringResource>> map, String language,
             String country) {
         String localeCode = getCode(language, country);

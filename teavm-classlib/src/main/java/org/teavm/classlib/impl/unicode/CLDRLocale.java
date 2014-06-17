@@ -30,6 +30,8 @@ public class CLDRLocale {
     String[] eras;
     String[] dayPeriods;
     String[] months;
+    String[] shortMonths;
+    String[] shortWeekdays;
 
     public Map<String, String> getLanguages() {
         return Collections.unmodifiableMap(languages);
@@ -49,5 +51,13 @@ public class CLDRLocale {
 
     public String[] getMonths() {
         return Arrays.copyOf(months, months.length);
+    }
+
+    public String[] getShortMonths() {
+        return Arrays.copyOf(shortMonths, shortMonths.length);
+    }
+
+    public String[] getShortWeekdays() {
+        return Arrays.copyOf(shortWeekdays, shortWeekdays.length);
     }
 }

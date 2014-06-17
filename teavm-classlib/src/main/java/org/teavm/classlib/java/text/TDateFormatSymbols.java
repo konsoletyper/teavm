@@ -147,10 +147,16 @@ public class TDateFormatSymbols implements TSerializable, TCloneable {
     }
 
     public String[] getShortMonths() {
+        if (shortMonths == null) {
+            shortMonths = CLDRHelper.resolveShortMonths(locale.getLanguage(), locale.getCountry());
+        }
         return shortMonths.clone();
     }
 
     public String[] getShortWeekdays() {
+        if (shortWeekdays == null) {
+            shortWeekdays = CLDRHelper.resolveShortWeekdays(locale.getLanguage(), locale.getCountry());
+        }
         return shortWeekdays.clone();
     }
 

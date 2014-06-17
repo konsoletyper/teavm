@@ -170,7 +170,10 @@ public class DateTime {
                 text = symbols.getAmPmStrings()[value];
                 break;
             case Calendar.MONTH:
-                text = symbols.getMonths()[value];
+                text = symbols.getMonths()[value] + "/" + symbols.getShortMonths()[value];
+                break;
+            case Calendar.DAY_OF_WEEK:
+                text = symbols.getShortWeekdays()[value - 1];
                 break;
             default:
                 text = "";

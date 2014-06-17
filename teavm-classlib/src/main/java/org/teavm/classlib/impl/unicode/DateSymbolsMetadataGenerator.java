@@ -39,6 +39,14 @@ public class DateSymbolsMetadataGenerator implements MetadataGenerator {
                 return generateSymbols(context, new ResourceExtractor() {
                     @Override public String[] extract(CLDRLocale locale) { return locale.getMonths(); }
                 });
+            case "getShortMonthMap":
+                return generateSymbols(context, new ResourceExtractor() {
+                    @Override public String[] extract(CLDRLocale locale) { return locale.getShortMonths(); }
+                });
+            case "getShortWeekdayMap":
+                return generateSymbols(context, new ResourceExtractor() {
+                    @Override public String[] extract(CLDRLocale locale) { return locale.getShortWeekdays(); }
+                });
             default:
                 throw new AssertionError("Unsupported method: " + method);
         }
