@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.teavm.classlib.java.text;
 
 import java.util.Arrays;
@@ -161,10 +160,16 @@ public class TDateFormatSymbols implements TSerializable, TCloneable {
     }
 
     public String[] getWeekdays() {
+        if (weekdays == null) {
+            weekdays = CLDRHelper.resolveWeekdays(locale.getLanguage(), locale.getCountry());
+        }
         return weekdays.clone();
     }
 
     public String[][] getZoneStrings() {
+        if (zoneStrings == null) {
+            return new String[0][];
+        }
         String[][] clone = new String[zoneStrings.length][];
         for (int i = zoneStrings.length; --i >= 0;) {
             clone[i] = zoneStrings[i].clone();

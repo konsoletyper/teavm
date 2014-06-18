@@ -106,6 +106,7 @@ public class CLDRReader {
                         readAmPms(localeName, localeInfo, root);
                         readMonths(localeName, localeInfo, root);
                         readShortMonths(localeName, localeInfo, root);
+                        readWeekdays(localeName, localeInfo, root);
                         readShortWeekdays(localeName, localeInfo, root);
                         break;
                     }
@@ -163,7 +164,7 @@ public class CLDRReader {
         JsonObject monthsJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
                 .get("dates").getAsJsonObject().get("calendars").getAsJsonObject()
                 .get("gregorian").getAsJsonObject().get("months").getAsJsonObject()
-                .get("stand-alone").getAsJsonObject().get("wide").getAsJsonObject();
+                .get("format").getAsJsonObject().get("wide").getAsJsonObject();
         locale.months = new String[12];
         for (int i = 0; i < 12; ++i) {
             locale.months[i] = monthsJson.get(String.valueOf(i + 1)).getAsString();
@@ -174,10 +175,21 @@ public class CLDRReader {
         JsonObject monthsJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
                 .get("dates").getAsJsonObject().get("calendars").getAsJsonObject()
                 .get("gregorian").getAsJsonObject().get("months").getAsJsonObject()
-                .get("stand-alone").getAsJsonObject().get("abbreviated").getAsJsonObject();
+                .get("format").getAsJsonObject().get("abbreviated").getAsJsonObject();
         locale.shortMonths = new String[12];
         for (int i = 0; i < 12; ++i) {
             locale.shortMonths[i] = monthsJson.get(String.valueOf(i + 1)).getAsString();
+        }
+    }
+
+    private void readWeekdays(String localeCode, CLDRLocale locale, JsonObject root) {
+        JsonObject monthsJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
+                .get("dates").getAsJsonObject().get("calendars").getAsJsonObject()
+                .get("gregorian").getAsJsonObject().get("days").getAsJsonObject()
+                .get("format").getAsJsonObject().get("wide").getAsJsonObject();
+        locale.weekdays = new String[7];
+        for (int i = 0; i < 7; ++i) {
+            locale.weekdays[i] = monthsJson.get(weekdayKeys[i]).getAsString();
         }
     }
 
@@ -185,7 +197,7 @@ public class CLDRReader {
         JsonObject monthsJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
                 .get("dates").getAsJsonObject().get("calendars").getAsJsonObject()
                 .get("gregorian").getAsJsonObject().get("days").getAsJsonObject()
-                .get("stand-alone").getAsJsonObject().get("short").getAsJsonObject();
+                .get("format").getAsJsonObject().get("short").getAsJsonObject();
         locale.shortWeekdays = new String[7];
         for (int i = 0; i < 7; ++i) {
             locale.shortWeekdays[i] = monthsJson.get(weekdayKeys[i]).getAsString();

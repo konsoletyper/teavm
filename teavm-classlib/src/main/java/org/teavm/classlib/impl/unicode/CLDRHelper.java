@@ -64,6 +64,13 @@ public class CLDRHelper {
     @MetadataProvider(DateSymbolsMetadataGenerator.class)
     private static native ResourceMap<ResourceArray<StringResource>> getShortMonthMap();
 
+    public static String[] resolveWeekdays(String language, String country) {
+        return resolveDateFormatSymbols(getWeekdayMap(), language, country);
+    }
+
+    @MetadataProvider(DateSymbolsMetadataGenerator.class)
+    private static native ResourceMap<ResourceArray<StringResource>> getWeekdayMap();
+
     public static String[] resolveShortWeekdays(String language, String country) {
         return resolveDateFormatSymbols(getShortWeekdayMap(), language, country);
     }
@@ -100,4 +107,38 @@ public class CLDRHelper {
 
     @MetadataProvider(FirstDayOfWeekMetadataGenerator.class)
     public static native ResourceMap<IntResource> getFirstDayOfWeek();
+
+    public static String resolveNumberFormat(String language, String country) {
+        return resolveFormatSymbols(getNumberFormatMap(), language, country);
+    }
+
+    private static native ResourceMap<StringResource> getNumberFormatMap();
+
+    public static String resolveDecimalFormat(String language, String country) {
+        return resolveFormatSymbols(getDecimalFormatMap(), language, country);
+    }
+
+    private static native ResourceMap<StringResource> getDecimalFormatMap();
+
+    public static String resolvePercentFormat(String language, String country) {
+        return resolveFormatSymbols(getPercentFormatMap(), language, country);
+    }
+
+    private static native ResourceMap<StringResource> getPercentFormatMap();
+
+    private static String resolveFormatSymbols(ResourceMap<StringResource> map, String language, String country) {
+        String localeCode = getCode(language, country);
+        StringResource res = map.has(localeCode) ? map.get(localeCode) : map.has(language) ? map.get(language) :
+                map.get("root");
+        return res.getValue();
+    }
+
+    public static CLDRDecimalData resolveDecimalData(String language, String country) {
+        ResourceMap<CLDRDecimalData> map = getDecimalDataMap();
+        String localeCode = getCode(language, country);
+        return map.has(localeCode) ? map.get(localeCode) : map.has(language) ? map.get(language) :
+                map.get("root");
+    }
+
+    private static native ResourceMap<CLDRDecimalData> getDecimalDataMap();
 }

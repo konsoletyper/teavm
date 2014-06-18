@@ -31,6 +31,7 @@ public class CLDRLocale {
     String[] dayPeriods;
     String[] months;
     String[] shortMonths;
+    String[] weekdays;
     String[] shortWeekdays;
 
     public Map<String, String> getLanguages() {
@@ -55,6 +56,10 @@ public class CLDRLocale {
 
     public String[] getShortMonths() {
         return Arrays.copyOf(shortMonths, shortMonths.length);
+    }
+
+    public String[] getWeekdays() {
+        return Arrays.copyOf(weekdays, weekdays.length);
     }
 
     public String[] getShortWeekdays() {

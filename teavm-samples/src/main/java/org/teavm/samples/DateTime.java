@@ -173,7 +173,7 @@ public class DateTime {
                 text = symbols.getMonths()[value] + "/" + symbols.getShortMonths()[value];
                 break;
             case Calendar.DAY_OF_WEEK:
-                text = symbols.getShortWeekdays()[value - 1];
+                text = symbols.getWeekdays()[value - 1] + "/" + symbols.getShortWeekdays()[value - 1];
                 break;
             default:
                 text = "";

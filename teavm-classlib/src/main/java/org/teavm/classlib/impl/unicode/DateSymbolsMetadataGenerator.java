@@ -43,6 +43,10 @@ public class DateSymbolsMetadataGenerator implements MetadataGenerator {
                 return generateSymbols(context, new ResourceExtractor() {
                     @Override public String[] extract(CLDRLocale locale) { return locale.getShortMonths(); }
                 });
+            case "getWeekdayMap":
+                return generateSymbols(context, new ResourceExtractor() {
+                    @Override public String[] extract(CLDRLocale locale) { return locale.getWeekdays(); }
+                });
             case "getShortWeekdayMap":
                 return generateSymbols(context, new ResourceExtractor() {
                     @Override public String[] extract(CLDRLocale locale) { return locale.getShortWeekdays(); }
