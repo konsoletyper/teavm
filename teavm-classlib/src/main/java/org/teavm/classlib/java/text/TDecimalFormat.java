@@ -25,8 +25,7 @@ import org.teavm.classlib.java.util.TLocale;
  * @author Alexey Andreev
  */
 public class TDecimalFormat extends TNumberFormat {
-    private transient boolean parseBigDecimal = false;
-    private transient TDecimalFormatSymbols symbols;
+    private TDecimalFormatSymbols symbols;
 
     public TDecimalFormat() {
         this(CLDRHelper.resolveDecimalFormat(TLocale.getDefault().getLanguage(), TLocale.getDefault().getCountry()));
@@ -37,8 +36,9 @@ public class TDecimalFormat extends TNumberFormat {
     }
 
     public TDecimalFormat(String pattern, TDecimalFormatSymbols value) {
-        symbols = (TDecimalFormatSymbols) value.clone();
+        symbols = (TDecimalFormatSymbols)value.clone();
         TLocale locale = symbols.getLocale();
+        applyPattern(pattern);
 
         CLDRDecimalData decimalData = CLDRHelper.resolveDecimalData(locale.getLanguage(), locale.getCountry());
         super.setMaximumFractionDigits(decimalData.getMaximumFractionDigits());
@@ -47,13 +47,12 @@ public class TDecimalFormat extends TNumberFormat {
         super.setMinimumIntegerDigits(decimalData.getMinimumIntegerDigits());
     }
 
-    public DecimalFormatSymbols getDecimalFormatSymbols() {
-        return (DecimalFormatSymbols) symbols.clone();
+    public void applyPattern(String pattern) {
+
     }
 
-    @Override
-    public StringBuffer format(double value, StringBuffer buffer, TFieldPosition field) {
-        return null;
+    public DecimalFormatSymbols getDecimalFormatSymbols() {
+        return (DecimalFormatSymbols)symbols.clone();
     }
 
     @Override
@@ -63,6 +62,11 @@ public class TDecimalFormat extends TNumberFormat {
 
     @Override
     public Number parse(String string, TParsePosition position) {
+        return null;
+    }
+
+    @Override
+    public StringBuffer format(double value, StringBuffer buffer, TFieldPosition field) {
         return null;
     }
 }

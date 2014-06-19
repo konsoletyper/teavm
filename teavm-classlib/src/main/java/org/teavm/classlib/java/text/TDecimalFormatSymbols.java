@@ -15,6 +15,8 @@
  */
 package org.teavm.classlib.java.text;
 
+import org.teavm.classlib.impl.unicode.CLDRDecimalData;
+import org.teavm.classlib.impl.unicode.CLDRHelper;
 import org.teavm.classlib.java.util.TLocale;
 
 /**
@@ -22,19 +24,167 @@ import org.teavm.classlib.java.util.TLocale;
  * @author Alexey Andreev
  */
 public class TDecimalFormatSymbols {
-    public TDecimalFormatSymbols() {
+    private TLocale locale;
+    private char zeroDigit;
+    private char groupingSeparator;
+    private char decimalSeparator;
+    private char perMill;
+    private char percent;
+    private char digit;
+    private char patternSeparator;
+    private String NaN;
+    private String infinity;
+    private char minusSign;
+    private char monetaryDecimalSeparator;
+    private String exponentSeparator;
 
+    public TDecimalFormatSymbols() {
+        this(TLocale.getDefault());
     }
 
     public TDecimalFormatSymbols(TLocale locale) {
+        this.locale = locale;
+        initData();
+    }
 
+    private void initData() {
+        CLDRDecimalData data = CLDRHelper.resolveDecimalData(locale.getLanguage(), locale.getCountry());
+        zeroDigit = '0';
+        groupingSeparator = (char)data.getGroupingSeparator();
+        decimalSeparator = (char)data.getDecimalSeparator();
+        perMill = (char)data.getPerMill();
+        percent = (char)data.getPercent();
+        digit = '#';
+        patternSeparator = ';';
+        NaN = data.getNaN();
+        infinity = data.getInfinity();
+        minusSign = (char)data.getMinusSign();
+        monetaryDecimalSeparator = (char)data.getMonetaryDecimalSeparator();
+        exponentSeparator = data.getExponentSeparator();
+    }
+
+    public static TLocale[] getAvailableLocales() {
+        return TLocale.getAvailableLocales();
+    }
+
+    public static final TDecimalFormatSymbols getInstance() {
+        return new TDecimalFormatSymbols();
+    }
+
+    public static final TDecimalFormatSymbols getInstance(TLocale locale) {
+        return new TDecimalFormatSymbols(locale);
+    }
+
+    public char getZeroDigit() {
+        return zeroDigit;
+    }
+
+    public void setZeroDigit(char zeroDigit) {
+        this.zeroDigit = zeroDigit;
+    }
+
+    public char getGroupingSeparator() {
+        return groupingSeparator;
+    }
+
+    public void setGroupingSeparator(char groupingSeparator) {
+        this.groupingSeparator = groupingSeparator;
+    }
+
+    public char getPerMill() {
+        return perMill;
+    }
+
+    public void setPerMill(char perMill) {
+        this.perMill = perMill;
+    }
+
+    public char getPercent() {
+        return percent;
+    }
+
+    public void setPercent(char percent) {
+        this.percent = percent;
     }
 
     public TLocale getLocale() {
-        return null;
+        return locale;
     }
 
+    public char getDecimalSeparator() {
+        return decimalSeparator;
+    }
+
+    public void setDecimalSeparator(char decimalSeparator) {
+        this.decimalSeparator = decimalSeparator;
+    }
+
+    public char getDigit() {
+        return digit;
+    }
+
+    public void setDigit(char digit) {
+        this.digit = digit;
+    }
+
+    public char getPatternSeparator() {
+        return patternSeparator;
+    }
+
+    public void setPatternSeparator(char patternSeparator) {
+        this.patternSeparator = patternSeparator;
+    }
+
+    public String getNaN() {
+        return NaN;
+    }
+
+    public void setNaN(String naN) {
+        NaN = naN;
+    }
+
+    public String getInfinity() {
+        return infinity;
+    }
+
+    public void setInfinity(String infinity) {
+        this.infinity = infinity;
+    }
+
+    public char getMinusSign() {
+        return minusSign;
+    }
+
+    public void setMinusSign(char minusSign) {
+        this.minusSign = minusSign;
+    }
+
+    public char getMonetaryDecimalSeparator() {
+        return monetaryDecimalSeparator;
+    }
+
+    public void setMonetaryDecimalSeparator(char monetaryDecimalSeparator) {
+        this.monetaryDecimalSeparator = monetaryDecimalSeparator;
+    }
+
+    public String getExponentSeparator() {
+        return exponentSeparator;
+    }
+
+    public void setExponentSeparator(String exponentSeparator) {
+        this.exponentSeparator = exponentSeparator;
+    }
+
+    public void setLocale(TLocale locale) {
+        this.locale = locale;
+    }
+
+    @Override
     public Object clone() {
-        return null;
+        try {
+            return super.clone();
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError("This exception should not been thrown", e);
+        }
     }
 }

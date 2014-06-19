@@ -37,4 +37,40 @@ public interface CLDRDecimalData extends Resource {
     int getMinimumIntegerDigits();
 
     void setMinimumIntegerDigits(int value);
+
+    int getGroupingSeparator();
+
+    void setGroupingSeparator(int value);
+
+    int getDecimalSeparator();
+
+    void setDecimalSeparator(int value);
+
+    int getPerMill();
+
+    void setPerMill(int value);
+
+    int getPercent();
+
+    void setPercent(int value);
+
+    String getNaN();
+
+    void setNaN(String nan);
+
+    String getInfinity();
+
+    void setInfinity(String infinity);
+
+    int getMinusSign();
+
+    void setMinusSign(int value);
+
+    int getMonetaryDecimalSeparator();
+
+    void setMonetaryDecimalSeparator(int value);
+
+    String getExponentSeparator();
+
+    void setExponentSeparator(String value);
 }
