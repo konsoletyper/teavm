@@ -212,7 +212,7 @@ public class TeaVMTool {
             if (mainPageIncluded) {
                 String text;
                 try (Reader reader = new InputStreamReader(classLoader.getResourceAsStream(
-                        "org/teavm/maven/main.html"), "UTF-8")) {
+                        "org/teavm/tooling/main.html"), "UTF-8")) {
                     text = IOUtils.toString(reader).replace("${classes.js}", targetFileName);
                 }
                 File mainPageFile = new File(targetDirectory, "main.html");
