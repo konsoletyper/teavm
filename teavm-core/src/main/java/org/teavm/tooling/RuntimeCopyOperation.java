@@ -13,29 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.maven;
+package org.teavm.tooling;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class ClassAlias {
-    private String className;
-    private String alias;
-
-    public String getClassName() {
-        return className;
-    }
-
-    public void setClassName(String className) {
-        this.className = className;
-    }
-
-    public String getAlias() {
-        return alias;
-    }
-
-    public void setAlias(String alias) {
-        this.alias = alias;
-    }
+public enum RuntimeCopyOperation {
+    SEPARATE,
+    MERGED,
+    NONE
 }
