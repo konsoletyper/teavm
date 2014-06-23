@@ -13,14 +13,24 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.maven;
+package org.teavm.tooling;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public enum RuntimeCopyOperation {
-    SEPARATE,
-    MERGED,
-    NONE
+public class TeaVMToolException extends Exception {
+    private static final long serialVersionUID = 579149191624783241L;
+
+    public TeaVMToolException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public TeaVMToolException(String message) {
+        super(message);
+    }
+
+    public TeaVMToolException(Throwable cause) {
+        super(cause);
+    }
 }

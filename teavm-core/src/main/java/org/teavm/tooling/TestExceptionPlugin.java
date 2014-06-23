@@ -13,29 +13,18 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.maven;
+package org.teavm.tooling;
+
+import org.teavm.vm.spi.TeaVMHost;
+import org.teavm.vm.spi.TeaVMPlugin;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class ClassAlias {
-    private String className;
-    private String alias;
-
-    public String getClassName() {
-        return className;
-    }
-
-    public void setClassName(String className) {
-        this.className = className;
-    }
-
-    public String getAlias() {
-        return alias;
-    }
-
-    public void setAlias(String alias) {
-        this.alias = alias;
+class TestExceptionPlugin implements TeaVMPlugin {
+    @Override
+    public void install(TeaVMHost host) {
+        host.add(new TestExceptionDependency());
     }
 }

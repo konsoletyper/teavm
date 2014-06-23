@@ -78,6 +78,7 @@
     <module>teavm-html4j</module>
     <module>teavm-samples</module>
     <module>teavm-platform</module>
+    <module>teavm-cli</module>
   </modules>
 
   <dependencyManagement>
