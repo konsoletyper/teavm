@@ -45,17 +45,20 @@ public class TeaVMRunner {
                 .withLongOpt("minify")
                 .create("m"));
         options.addOption(OptionBuilder
+                .withArgName("separate|merge|none")
                 .hasArg()
                 .withDescription("how to attach runtime. Possible values are: separate|merge|none")
                 .withLongOpt("runtime")
                 .create("r"));
         options.addOption(OptionBuilder
                 .withDescription("causes TeaVM to include default main page")
-                .create("mainpage"));
+                .withLongOpt("mainpage")
+                .create());
         options.addOption(OptionBuilder
                 .withDescription("causes TeaVM to log bytecode")
                 .create("logbytecode"));
         options.addOption(OptionBuilder
+                .withArgName("number")
                 .hasArg()
                 .withDescription("how many threads should TeaVM run")
                 .withLongOpt("threads")
@@ -125,6 +128,7 @@ public class TeaVMRunner {
             tool.setMainClass(args[0]);
         }
         tool.setLog(new ConsoleTeaVMToolLog());
+        tool.getProperties().putAll(System.getProperties());
 
         try {
             tool.generate();
@@ -136,7 +140,7 @@ public class TeaVMRunner {
 
     private static void printUsage(Options options) {
         HelpFormatter formatter = new HelpFormatter();
-        formatter.printHelp("java " + TeaVMRunner.class.getName() + "[OPTIONS] [qualified.main.Class]", options);
+        formatter.printHelp("java " + TeaVMRunner.class.getName() + " [OPTIONS] [qualified.main.Class]", options);
         System.exit(-1);
     }
 }
