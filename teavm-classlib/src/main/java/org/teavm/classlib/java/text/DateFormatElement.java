@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.text;
 
 import org.teavm.classlib.java.util.TCalendar;
+import org.teavm.classlib.java.util.TGregorianCalendar;
 
 /**
  *
@@ -154,6 +155,124 @@ abstract class DateFormatElement {
                 position.setErrorIndex(position.getIndex());
             } else {
                 date.set(TCalendar.AM_PM, ampm);
+            }
+        }
+    }
+
+    public static class Numeric extends DateFormatElement {
+        private int field;
+        private int length;
+        private int offset;
+
+        public Numeric(int field, int length, int offset) {
+            this.field = field;
+            this.length = length;
+            this.offset = offset;
+        }
+
+        @Override
+        public void format(TCalendar date, StringBuffer buffer) {
+            int number = date.get(field) + offset;
+            String str = Integer.toString(number);
+            for (int i = str.length(); i < length; ++i) {
+                buffer.append('0');
+            }
+            buffer.append(str);
+        }
+
+        @Override
+        public void parse(String text, TCalendar date, TParsePosition position) {
+            int num = 0;
+            int i = 0;
+            int pos = position.getIndex();
+            while (position.getIndex() < text.length() && i < length) {
+                char c = text.charAt(pos);
+                if (c >= '0' && c <= '9') {
+                    num = num * 10 + (c - '0');
+                    ++pos;
+                    ++i;
+                } else {
+                    break;
+                }
+            }
+            if (i == 0) {
+                position.setErrorIndex(position.getIndex());
+                return;
+            }
+            position.setIndex(pos);
+            date.set(field, num - offset);
+        }
+    }
+
+    public static class Year extends DateFormatElement {
+        private int field;
+
+        public Year(int field) {
+            this.field = field;
+        }
+
+        @Override
+        public void format(TCalendar date, StringBuffer buffer) {
+            int number = date.get(field);
+            if (number < 10) {
+                buffer.append(number);
+            } else {
+                buffer.append((char)((number % 100 / 10) + '0'));
+                buffer.append((char)((number % 10) + '0'));
+            }
+        }
+
+        @Override
+        public void parse(String text, TCalendar date, TParsePosition position) {
+            int num = 0;
+            int pos = position.getIndex();
+            char c = text.charAt(pos++);
+            if (c < '0' || c > '9') {
+                position.setErrorIndex(position.getErrorIndex());
+                return;
+            }
+            num = c - '0';
+            c = text.charAt(pos);
+            if (c >= '0' && c <= '9') {
+                num = num * 10 + (c - '0');
+                ++pos;
+            }
+            position.setIndex(pos);
+            TCalendar calendar = new TGregorianCalendar();
+            int currentYear = calendar.get(TCalendar.YEAR);
+            int currentShortYear = currentYear % 100;
+            int century = currentYear / 100;
+            if (currentShortYear > 80) {
+                if (num < currentShortYear - 80) {
+                    century++;
+                }
+            } else {
+                if (num > currentShortYear + 20) {
+                    --century;
+                }
+            }
+            date.set(field, num + century * 100);
+        }
+    }
+
+    public static class ConstantText extends DateFormatElement {
+        private String textConstant;
+
+        public ConstantText(String textConstant) {
+            this.textConstant = textConstant;
+        }
+
+        @Override
+        public void format(TCalendar date, StringBuffer buffer) {
+            buffer.append(textConstant);
+        }
+
+        @Override
+        public void parse(String text, TCalendar date, TParsePosition position) {
+            if (matches(text, position.getIndex(), textConstant)) {
+                position.setIndex(position.getIndex() + textConstant.length());
+            } else {
+                position.setErrorIndex(position.getIndex());
             }
         }
     }
