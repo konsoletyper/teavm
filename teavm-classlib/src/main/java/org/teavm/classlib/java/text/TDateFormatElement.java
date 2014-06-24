@@ -22,7 +22,7 @@ import org.teavm.classlib.java.util.TGregorianCalendar;
  *
  * @author Alexey Andreev
  */
-abstract class DateFormatElement {
+abstract class TDateFormatElement {
     public abstract void format(TCalendar date, StringBuffer buffer);
 
     public abstract void parse(String text, TCalendar date, TParsePosition position);
@@ -49,7 +49,7 @@ abstract class DateFormatElement {
         return -1;
     }
 
-    public static class MonthText extends DateFormatElement {
+    public static class MonthText extends TDateFormatElement {
         String[] months;
         String[] shortMonths;
         boolean abbreviated;
@@ -80,7 +80,7 @@ abstract class DateFormatElement {
         }
     }
 
-    public static class WeekdayText extends DateFormatElement {
+    public static class WeekdayText extends TDateFormatElement {
         String[] weeks;
         String[] shortWeeks;
         boolean abbreviated;
@@ -111,7 +111,7 @@ abstract class DateFormatElement {
         }
     }
 
-    public static class EraText extends DateFormatElement {
+    public static class EraText extends TDateFormatElement {
         String[] eras;
 
         public EraText(TDateFormatSymbols symbols) {
@@ -135,7 +135,7 @@ abstract class DateFormatElement {
         }
     }
 
-    public static class AmPmText extends DateFormatElement {
+    public static class AmPmText extends TDateFormatElement {
         String[] ampms;
 
         public AmPmText(TDateFormatSymbols symbols) {
@@ -159,20 +159,18 @@ abstract class DateFormatElement {
         }
     }
 
-    public static class Numeric extends DateFormatElement {
+    public static class Numeric extends TDateFormatElement {
         private int field;
         private int length;
-        private int offset;
 
-        public Numeric(int field, int length, int offset) {
+        public Numeric(int field, int length) {
             this.field = field;
             this.length = length;
-            this.offset = offset;
         }
 
         @Override
         public void format(TCalendar date, StringBuffer buffer) {
-            int number = date.get(field) + offset;
+            int number = processBeforeFormat(date.get(field));
             String str = Integer.toString(number);
             for (int i = str.length(); i < length; ++i) {
                 buffer.append('0');
@@ -200,11 +198,70 @@ abstract class DateFormatElement {
                 return;
             }
             position.setIndex(pos);
-            date.set(field, num - offset);
+            date.set(field, processAfterParse(num));
+        }
+
+        protected int processBeforeFormat(int num) {
+            return num;
+        }
+
+        protected int processAfterParse(int num) {
+            return num;
         }
     }
 
-    public static class Year extends DateFormatElement {
+    public static class NumericMonth extends Numeric {
+        public NumericMonth(int length) {
+            super(TCalendar.MONTH, length);
+        }
+
+        @Override
+        protected int processBeforeFormat(int num) {
+            return num + 1;
+        }
+
+        @Override
+        protected int processAfterParse(int num) {
+            return num - 1;
+        }
+    }
+
+    public static class NumericWeekday extends Numeric {
+        public NumericWeekday(int length) {
+            super(TCalendar.DAY_OF_WEEK, length);
+        }
+
+        @Override
+        protected int processBeforeFormat(int num) {
+            return num == 1 ? 7 : num - 1;
+        }
+
+        @Override
+        protected int processAfterParse(int num) {
+            return num == 7 ? 1 : num + 1;
+        }
+    }
+
+    public static class NumericHour extends Numeric {
+        private int limit;
+
+        public NumericHour(int field, int length, int limit) {
+            super(field, length);
+            this.limit = limit;
+        }
+
+        @Override
+        protected int processBeforeFormat(int num) {
+            return num == 0 ? limit : num;
+        }
+
+        @Override
+        protected int processAfterParse(int num) {
+            return num == limit ? 0 : num;
+        }
+    }
+
+    public static class Year extends TDateFormatElement {
         private int field;
 
         public Year(int field) {
@@ -255,7 +312,7 @@ abstract class DateFormatElement {
         }
     }
 
-    public static class ConstantText extends DateFormatElement {
+    public static class ConstantText extends TDateFormatElement {
         private String textConstant;
 
         public ConstantText(String textConstant) {

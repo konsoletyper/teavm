@@ -108,6 +108,30 @@ public class CLDRHelper {
     @MetadataProvider(FirstDayOfWeekMetadataGenerator.class)
     public static native ResourceMap<IntResource> getFirstDayOfWeek();
 
+    public static String resolveDateFormat(String language, String country) {
+        return resolveFormatSymbols(getDateFormatMap(), language, country);
+    }
+
+    private static native ResourceMap<StringResource> getDateFormatMap();
+
+    public static String resolveFullDateFormat(String language, String country) {
+        return resolveFormatSymbols(getFullDateFormatMap(), language, country);
+    }
+
+    private static native ResourceMap<StringResource> getFullDateFormatMap();
+
+    public static String resolveLongDateFormat(String language, String country) {
+        return resolveFormatSymbols(getLongDateFormatMap(), language, country);
+    }
+
+    private static native ResourceMap<StringResource> getLongDateFormatMap();
+
+    public static String resolveShortDateFormat(String language, String country) {
+        return resolveFormatSymbols(getShortDateFormatMap(), language, country);
+    }
+
+    private static native ResourceMap<StringResource> getShortDateFormatMap();
+
     public static String resolveNumberFormat(String language, String country) {
         return resolveFormatSymbols(getNumberFormatMap(), language, country);
     }

@@ -15,32 +15,69 @@
  */
 package org.teavm.classlib.java.text;
 
+import org.teavm.classlib.impl.unicode.CLDRHelper;
 import org.teavm.classlib.java.util.TCalendar;
 import org.teavm.classlib.java.util.TDate;
 import org.teavm.classlib.java.util.TGregorianCalendar;
+import org.teavm.classlib.java.util.TLocale;
 
 /**
  *
  * @author Alexey Andreev
  */
 public class TSimpleDateFormat extends TDateFormat {
-    private DateFormatElement[] elements;
+    private TDateFormatSymbols dateFormatSymbols;
+    private TDateFormatElement[] elements;
+    private String pattern;
+
+    public TSimpleDateFormat() {
+        this(getDefaultPattern());
+    }
+
+    private static String getDefaultPattern() {
+        TLocale locale = TLocale.getDefault();
+        return CLDRHelper.resolveDateFormat(locale.getLanguage(), locale.getCountry());
+    }
+
+    public TSimpleDateFormat(String pattern) {
+        this(pattern, TLocale.getDefault());
+    }
+
+    public TSimpleDateFormat(String pattern, TLocale locale) {
+        this(pattern, new TDateFormatSymbols(locale));
+    }
+
+    public TSimpleDateFormat(String pattern, TDateFormatSymbols dateFormatSymbols) {
+        dateFormatSymbols = (TDateFormatSymbols)dateFormatSymbols.clone();
+        applyPattern(pattern);
+    }
 
     @Override
     public StringBuffer format(TDate date, StringBuffer buffer, TFieldPosition field) {
         TCalendar calendar = new TGregorianCalendar();
         calendar.setTime(date);
-        for (DateFormatElement element : elements) {
+        for (TDateFormatElement element : elements) {
             element.format(calendar, buffer);
         }
         return buffer;
+    }
+
+    public void applyPattern(String pattern) {
+        this.pattern = pattern;
+        reparsePattern();
+    }
+
+    private void reparsePattern() {
+        TSimpleDatePatternParser parser = new TSimpleDatePatternParser(dateFormatSymbols);
+        parser.parsePattern(pattern);
+        elements = parser.getElements().toArray(new TDateFormatElement[0]);
     }
 
     @Override
     public TDate parse(String string, TParsePosition position) {
         TCalendar calendar = new TGregorianCalendar();
         calendar.set(0, 0, 0, 0, 0, 0);
-        for (DateFormatElement element : elements) {
+        for (TDateFormatElement element : elements) {
             if (position.getIndex() > string.length()) {
                 position.setErrorIndex(position.getErrorIndex());
                 return null;
@@ -51,5 +88,26 @@ public class TSimpleDateFormat extends TDateFormat {
             }
         }
         return calendar.getTime();
+    }
+
+    @Override
+    public Object clone() {
+        TSimpleDateFormat copy = (TSimpleDateFormat)super.clone();
+        copy.dateFormatSymbols = (TDateFormatSymbols)dateFormatSymbols.clone();
+        copy.elements = elements.clone();
+        return copy;
+    }
+
+    public TDateFormatSymbols getDateFormatSymbols() {
+        return (TDateFormatSymbols)dateFormatSymbols.clone();
+    }
+
+    public void setDateFormatSymbols(TDateFormatSymbols newFormatSymbols) {
+        dateFormatSymbols = (TDateFormatSymbols)newFormatSymbols.clone();
+        reparsePattern();
+    }
+
+    public String toPattern() {
+        return pattern;
     }
 }

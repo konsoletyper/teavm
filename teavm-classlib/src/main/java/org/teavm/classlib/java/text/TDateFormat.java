@@ -17,6 +17,7 @@
 
 package org.teavm.classlib.java.text;
 
+import org.teavm.classlib.impl.unicode.CLDRHelper;
 import org.teavm.classlib.java.util.*;
 
 public abstract class TDateFormat extends TFormat {
@@ -58,9 +59,11 @@ public abstract class TDateFormat extends TFormat {
         return clone;
     }
 
+    // TODO: implement
+    /*
     @Override
     public boolean equals(Object object) {
-        /*if (this == object) {
+        if (this == object) {
             return true;
         }
         if (!(object instanceof DateFormat)) {
@@ -70,10 +73,11 @@ public abstract class TDateFormat extends TFormat {
         return numberFormat.equals(dateFormat.numberFormat) &&
                 calendar.getFirstDayOfWeek() == dateFormat.calendar.getFirstDayOfWeek() &&
                 calendar.getMinimalDaysInFirstWeek() == dateFormat.calendar.getMinimalDaysInFirstWeek() &&
-                calendar.isLenient() == dateFormat.calendar.isLenient();*/
-         // TODO: implement
+                calendar.isLenient() == dateFormat.calendar.isLenient();
+
         return false;
     }
+    */
 
     @Override
     public final StringBuffer format(Object object, StringBuffer buffer, TFieldPosition field) {
@@ -110,11 +114,22 @@ public abstract class TDateFormat extends TFormat {
     }
 
     public final static TDateFormat getDateInstance(int style, TLocale locale) {
-        /*checkDateStyle(style);
-        com.ibm.icu.text.DateFormat icuFormat = com.ibm.icu.text.DateFormat.getDateInstance(style, locale);
-        return new SimpleDateFormat(locale, (com.ibm.icu.text.SimpleDateFormat) icuFormat);*/
-        // TODO: implement
-        return null;
+        switch (style) {
+            case SHORT:
+                return new TSimpleDateFormat(CLDRHelper.resolveShortDateFormat(
+                        locale.getLanguage(), locale.getCountry()), locale);
+            case MEDIUM:
+                return new TSimpleDateFormat(CLDRHelper.resolveDateFormat(
+                        locale.getLanguage(), locale.getCountry()), locale);
+            case LONG:
+                return new TSimpleDateFormat(CLDRHelper.resolveLongDateFormat(
+                        locale.getLanguage(), locale.getCountry()), locale);
+            case FULL:
+                return new TSimpleDateFormat(CLDRHelper.resolveFullDateFormat(
+                        locale.getLanguage(), locale.getCountry()), locale);
+            default:
+                throw new IllegalArgumentException("Unknown style: " + style);
+        }
     }
 
     public final static TDateFormat getDateTimeInstance() {
@@ -184,13 +199,14 @@ public abstract class TDateFormat extends TFormat {
     }
 
 
-    @Override
+    // TODO: implement
+    /*@Override
     public int hashCode() {
-        /*return calendar.getFirstDayOfWeek() + calendar.getMinimalDaysInFirstWeek() +
-                (calendar.isLenient() ? 1231 : 1237) + numberFormat.hashCode();*/
-        // TODO: implement
+        return calendar.getFirstDayOfWeek() + calendar.getMinimalDaysInFirstWeek() +
+                (calendar.isLenient() ? 1231 : 1237) + numberFormat.hashCode();
+
         return 0;
-    }
+    }*/
 
     public boolean isLenient() {
         return calendar.isLenient();
@@ -276,7 +292,6 @@ public abstract class TDateFormat extends TFormat {
 
     private static void checkTimeStyle(int style) {
         if (!(style == SHORT || style == MEDIUM || style == LONG || style == FULL || style == DEFAULT)) {
-            // text.0F=Illegal time style: {0}
             throw new IllegalArgumentException("Illegal time style: " + style);
         }
     }
