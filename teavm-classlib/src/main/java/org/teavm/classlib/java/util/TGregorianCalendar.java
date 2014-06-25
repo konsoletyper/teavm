@@ -303,7 +303,7 @@ public class TGregorianCalendar extends TCalendar {
     }
 
     private static int getTimeZoneOffset(double time) {
-        return TDate.getTimezoneOffset(time);
+        return -TDate.getTimezoneOffset(time) * 1000 * 60;
     }
 
     @Override
@@ -517,7 +517,7 @@ public class TGregorianCalendar extends TCalendar {
                 }
                 if (isSet[WEEK_OF_MONTH] && lastDateFieldSet != DAY_OF_WEEK_IN_MONTH) {
                     int skew = mod7(days - 3 - (getFirstDayOfWeek() - 1));
-                    days += (fields[WEEK_OF_MONTH] - 1) * 7 + mod7(skew + dayOfWeek - (days - 3)) - skew;
+                    days += (fields[WEEK_OF_MONTH] - 1) * 7 + mod7(skew + dayOfWeek - (days - 2)) - skew;
                 } else if (isSet[DAY_OF_WEEK_IN_MONTH]) {
                     if (fields[DAY_OF_WEEK_IN_MONTH] >= 0) {
                         days += mod7(dayOfWeek - (days - 3)) + (fields[DAY_OF_WEEK_IN_MONTH] - 1) * 7;
@@ -567,12 +567,7 @@ public class TGregorianCalendar extends TCalendar {
             timeVal -= julianError() * 86400000L;
         }
 
-        long timeValWithoutDST = timeVal - getTimeZoneOffset(timeVal);
-        this.time = timeVal;
-        if (timeValWithoutDST != timeVal) {
-            computeFields();
-            areFieldsSet = true;
-        }
+        this.time = timeVal - getTimeZoneOffset(timeVal);
     }
 
     private int computeYearAndDay(long dayCount, long localTime) {

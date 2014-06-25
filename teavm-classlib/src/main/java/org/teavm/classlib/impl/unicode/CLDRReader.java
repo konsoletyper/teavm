@@ -144,7 +144,7 @@ public class CLDRReader {
     private void readEras(String localeCode, CLDRLocale locale, JsonObject root) {
         JsonObject erasJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
                 .get("dates").getAsJsonObject().get("calendars").getAsJsonObject()
-                .get("gregorian").getAsJsonObject().get("eras").getAsJsonObject().get("eraNames").getAsJsonObject();
+                .get("gregorian").getAsJsonObject().get("eras").getAsJsonObject().get("eraAbbr").getAsJsonObject();
         String bc = erasJson.get("0").getAsString();
         String ac = erasJson.get("1").getAsString();
         locale.eras = new String[] { bc, ac };

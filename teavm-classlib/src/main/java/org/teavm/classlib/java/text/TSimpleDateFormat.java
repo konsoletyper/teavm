@@ -29,6 +29,7 @@ public class TSimpleDateFormat extends TDateFormat {
     private TDateFormatSymbols dateFormatSymbols;
     private TDateFormatElement[] elements;
     private String pattern;
+    private TLocale locale;
 
     public TSimpleDateFormat() {
         this(getDefaultPattern());
@@ -45,16 +46,18 @@ public class TSimpleDateFormat extends TDateFormat {
 
     public TSimpleDateFormat(String pattern, TLocale locale) {
         this(pattern, new TDateFormatSymbols(locale));
+        this.locale = locale;
     }
 
     public TSimpleDateFormat(String pattern, TDateFormatSymbols dateFormatSymbols) {
-        dateFormatSymbols = (TDateFormatSymbols)dateFormatSymbols.clone();
+        this.dateFormatSymbols = (TDateFormatSymbols)dateFormatSymbols.clone();
+        locale = TLocale.getDefault();
         applyPattern(pattern);
     }
 
     @Override
     public StringBuffer format(TDate date, StringBuffer buffer, TFieldPosition field) {
-        TCalendar calendar = new TGregorianCalendar();
+        TCalendar calendar = new TGregorianCalendar(locale);
         calendar.setTime(date);
         for (TDateFormatElement element : elements) {
             element.format(calendar, buffer);
@@ -75,8 +78,9 @@ public class TSimpleDateFormat extends TDateFormat {
 
     @Override
     public TDate parse(String string, TParsePosition position) {
-        TCalendar calendar = new TGregorianCalendar();
+        TCalendar calendar = new TGregorianCalendar(locale);
         calendar.set(0, 0, 0, 0, 0, 0);
+        calendar.set(TCalendar.MILLISECOND, 0);
         for (TDateFormatElement element : elements) {
             if (position.getIndex() > string.length()) {
                 position.setErrorIndex(position.getErrorIndex());
