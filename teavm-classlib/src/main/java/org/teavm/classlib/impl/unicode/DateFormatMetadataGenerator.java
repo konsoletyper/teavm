@@ -29,26 +29,20 @@ public class DateFormatMetadataGenerator implements MetadataGenerator {
         switch (method.getName()) {
             case "getDateFormatMap":
                 return getDateFormatMap(context, new FormatExtractor() {
-                    @Override public String extract(CLDRLocale locale) {
-                        return locale.getMediumDateFormat();
+                    @Override public CLDRDateFormats extract(CLDRLocale locale) {
+                        return locale.getDateFormats();
                     }
                 });
-            case "getShortDateFormatMap":
+            case "getTimeFormatMap":
                 return getDateFormatMap(context, new FormatExtractor() {
-                    @Override public String extract(CLDRLocale locale) {
-                        return locale.getShortDateFormat();
+                    @Override public CLDRDateFormats extract(CLDRLocale locale) {
+                        return locale.getTimeFormats();
                     }
                 });
-            case "getLongDateFormatMap":
+            case "getDateTimeFormatMap":
                 return getDateFormatMap(context, new FormatExtractor() {
-                    @Override public String extract(CLDRLocale locale) {
-                        return locale.getLongDateFormat();
-                    }
-                });
-            case "getFullDateFormatMap":
-                return getDateFormatMap(context, new FormatExtractor() {
-                    @Override public String extract(CLDRLocale locale) {
-                        return locale.getFullDateFormat();
+                    @Override public CLDRDateFormats extract(CLDRLocale locale) {
+                        return locale.getDateTimeFormats();
                     }
                 });
             default:
@@ -58,16 +52,20 @@ public class DateFormatMetadataGenerator implements MetadataGenerator {
 
     private Resource getDateFormatMap(MetadataGeneratorContext context, FormatExtractor extractor) {
         CLDRReader reader = context.getService(CLDRReader.class);
-        ResourceMap<StringResource> result = context.createResourceMap();
+        ResourceMap<DateFormatCollection> result = context.createResourceMap();
         for (Map.Entry<String, CLDRLocale> entry : reader.getKnownLocales().entrySet()) {
-            StringResource formatRes = context.createResource(StringResource.class);
-            formatRes.setValue(extractor.extract(entry.getValue()));
+            DateFormatCollection formatRes = context.createResource(DateFormatCollection.class);
+            CLDRDateFormats formats = extractor.extract(entry.getValue());
+            formatRes.setShortFormat(formats.getShortFormat());
+            formatRes.setMediumFormat(formats.getMediumFormat());
+            formatRes.setLongFormat(formats.getLongFormat());
+            formatRes.setFullFormat(formats.getFullFormat());
             result.put(entry.getKey(), formatRes);
         }
         return result;
     }
 
     interface FormatExtractor {
-        String extract(CLDRLocale locale);
+        CLDRDateFormats extract(CLDRLocale locale);
     }
 }

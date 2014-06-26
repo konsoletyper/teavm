@@ -55,7 +55,7 @@ class TSimpleDatePatternParser {
                 case 'y':
                 case 'Y': {
                     int rep = parseRepetitions();
-                    if (rep <= 2) {
+                    if (rep == 2) {
                         elements.add(new TDateFormatElement.Year(TCalendar.YEAR));
                     } else {
                         elements.add(new TDateFormatElement.Numeric(TCalendar.YEAR, rep));

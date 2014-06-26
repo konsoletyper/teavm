@@ -37,7 +37,7 @@ public class TSimpleDateFormat extends TDateFormat {
 
     private static String getDefaultPattern() {
         TLocale locale = TLocale.getDefault();
-        return CLDRHelper.resolveDateFormat(locale.getLanguage(), locale.getCountry());
+        return CLDRHelper.resolveDateFormats(locale.getLanguage(), locale.getCountry()).getMediumFormat();
     }
 
     public TSimpleDateFormat(String pattern) {

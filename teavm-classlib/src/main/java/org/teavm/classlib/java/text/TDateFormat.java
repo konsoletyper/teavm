@@ -18,6 +18,7 @@
 package org.teavm.classlib.java.text;
 
 import org.teavm.classlib.impl.unicode.CLDRHelper;
+import org.teavm.classlib.impl.unicode.DateFormatCollection;
 import org.teavm.classlib.java.util.*;
 
 public abstract class TDateFormat extends TFormat {
@@ -95,52 +96,63 @@ public abstract class TDateFormat extends TFormat {
         return calendar;
     }
 
-    public final static TDateFormat getDateInstance() {
+    public static TDateFormat getDateInstance() {
         return getDateInstance(DEFAULT);
     }
 
-    public final static TDateFormat getDateInstance(int style) {
-        checkDateStyle(style);
+    public static TDateFormat getDateInstance(int style) {
         return getDateInstance(style, TLocale.getDefault());
     }
 
-    public final static TDateFormat getDateInstance(int style, TLocale locale) {
+    public static TDateFormat getDateInstance(int style, TLocale locale) {
+        return new TSimpleDateFormat(getDateFormatString(style, locale), locale);
+    }
+
+    private static String getDateFormatString(int style, TLocale locale) {
+        DateFormatCollection formats = CLDRHelper.resolveDateFormats(locale.getLanguage(), locale.getCountry());
         switch (style) {
             case SHORT:
-                return new TSimpleDateFormat(CLDRHelper.resolveShortDateFormat(
-                        locale.getLanguage(), locale.getCountry()), locale);
+                return formats.getShortFormat();
             case MEDIUM:
-                return new TSimpleDateFormat(CLDRHelper.resolveDateFormat(
-                        locale.getLanguage(), locale.getCountry()), locale);
+                return formats.getMediumFormat();
             case LONG:
-                return new TSimpleDateFormat(CLDRHelper.resolveLongDateFormat(
-                        locale.getLanguage(), locale.getCountry()), locale);
+                return formats.getLongFormat();
             case FULL:
-                return new TSimpleDateFormat(CLDRHelper.resolveFullDateFormat(
-                        locale.getLanguage(), locale.getCountry()), locale);
+                return formats.getFullFormat();
             default:
                 throw new IllegalArgumentException("Unknown style: " + style);
         }
     }
 
-    public final static TDateFormat getDateTimeInstance() {
+    public static TDateFormat getDateTimeInstance() {
         return getDateTimeInstance(DEFAULT, DEFAULT);
     }
 
-    public final static TDateFormat getDateTimeInstance(int dateStyle, int timeStyle) {
-        checkTimeStyle(timeStyle);
-        checkDateStyle(dateStyle);
+    public static TDateFormat getDateTimeInstance(int dateStyle, int timeStyle) {
         return getDateTimeInstance(dateStyle, timeStyle, TLocale.getDefault());
     }
 
-    public final static TDateFormat getDateTimeInstance(int dateStyle, int timeStyle, TLocale locale) {
-        /*checkTimeStyle(timeStyle);
-        checkDateStyle(dateStyle);
-        com.ibm.icu.text.DateFormat icuFormat = com.ibm.icu.text.DateFormat.getDateTimeInstance(dateStyle, timeStyle,
-                locale);
-        return new SimpleDateFormat(locale, (com.ibm.icu.text.SimpleDateFormat) icuFormat);*/
-        // TODO: implement
-        return null;
+    public static TDateFormat getDateTimeInstance(int dateStyle, int timeStyle, TLocale locale) {
+        String pattern = getDateTimeFormatString(Math.max(dateStyle, timeStyle), locale);
+        pattern = pattern.replace("{0}", getTimeFormatString(dateStyle, locale))
+                .replace("{1}", getDateFormatString(timeStyle, locale));
+        return new TSimpleDateFormat(pattern, locale);
+    }
+
+    public static String getDateTimeFormatString(int style, TLocale locale) {
+        DateFormatCollection formats = CLDRHelper.resolveDateTimeFormats(locale.getLanguage(), locale.getCountry());
+        switch (style) {
+            case SHORT:
+                return formats.getShortFormat();
+            case MEDIUM:
+                return formats.getMediumFormat();
+            case LONG:
+                return formats.getLongFormat();
+            case FULL:
+                return formats.getFullFormat();
+            default:
+                throw new IllegalArgumentException("Unknown style: " + style);
+        }
     }
 
     public final static TDateFormat getInstance() {
@@ -172,19 +184,29 @@ public abstract class TDateFormat extends TFormat {
         return getTimeInstance(DEFAULT);
     }
 
-    public final static TDateFormat getTimeInstance(int style) {
-        checkTimeStyle(style);
+    public static TDateFormat getTimeInstance(int style) {
         return getTimeInstance(style, TLocale.getDefault());
     }
 
-    public final static TDateFormat getTimeInstance(int style, TLocale locale) {
-        /*checkTimeStyle(style);
-        com.ibm.icu.text.DateFormat icuFormat = com.ibm.icu.text.DateFormat.getTimeInstance(style, locale);
-        return new SimpleDateFormat(locale, (com.ibm.icu.text.SimpleDateFormat) icuFormat);*/
-        // TODO: implement
-        return null;
+    public static TDateFormat getTimeInstance(int style, TLocale locale) {
+        return new TSimpleDateFormat(getTimeFormatString(style, locale), locale);
     }
 
+    private static String getTimeFormatString(int style, TLocale locale) {
+        DateFormatCollection formats = CLDRHelper.resolveTimeFormats(locale.getLanguage(), locale.getCountry());
+        switch (style) {
+            case SHORT:
+                return formats.getShortFormat();
+            case MEDIUM:
+                return formats.getMediumFormat();
+            case LONG:
+                return formats.getLongFormat();
+            case FULL:
+                return formats.getFullFormat();
+            default:
+                throw new IllegalArgumentException("Unknown style: " + style);
+        }
+    }
 
     @Override
     public int hashCode() {
@@ -261,18 +283,6 @@ public abstract class TDateFormat extends TFormat {
             }
 
             return table.get(new Integer(calendarField));
-        }
-    }
-
-    private static void checkDateStyle(int style) {
-        if (!(style == SHORT || style == MEDIUM || style == LONG || style == FULL || style == DEFAULT)) {
-            throw new IllegalArgumentException("Illegal date style: " + style);
-        }
-    }
-
-    private static void checkTimeStyle(int style) {
-        if (!(style == SHORT || style == MEDIUM || style == LONG || style == FULL || style == DEFAULT)) {
-            throw new IllegalArgumentException("Illegal time style: " + style);
         }
     }
 }

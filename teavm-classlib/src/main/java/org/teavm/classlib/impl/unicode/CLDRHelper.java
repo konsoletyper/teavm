@@ -108,33 +108,26 @@ public class CLDRHelper {
     @MetadataProvider(FirstDayOfWeekMetadataGenerator.class)
     public static native ResourceMap<IntResource> getFirstDayOfWeek();
 
-    public static String resolveDateFormat(String language, String country) {
-        return resolveFormatSymbols(getDateFormatMap(), language, country);
+    public static DateFormatCollection resolveDateFormats(String language, String country) {
+        return resolveDateFormats(getDateFormatMap(), language, country);
     }
 
     @MetadataProvider(DateFormatMetadataGenerator.class)
-    private static native ResourceMap<StringResource> getDateFormatMap();
+    private static native ResourceMap<DateFormatCollection> getDateFormatMap();
 
-    public static String resolveFullDateFormat(String language, String country) {
-        return resolveFormatSymbols(getFullDateFormatMap(), language, country);
+    public static DateFormatCollection resolveTimeFormats(String language, String country) {
+        return resolveDateFormats(getTimeFormatMap(), language, country);
     }
 
     @MetadataProvider(DateFormatMetadataGenerator.class)
-    private static native ResourceMap<StringResource> getFullDateFormatMap();
+    private static native ResourceMap<DateFormatCollection> getTimeFormatMap();
 
-    public static String resolveLongDateFormat(String language, String country) {
-        return resolveFormatSymbols(getLongDateFormatMap(), language, country);
+    public static DateFormatCollection resolveDateTimeFormats(String language, String country) {
+        return resolveDateFormats(getDateTimeFormatMap(), language, country);
     }
 
     @MetadataProvider(DateFormatMetadataGenerator.class)
-    private static native ResourceMap<StringResource> getLongDateFormatMap();
-
-    public static String resolveShortDateFormat(String language, String country) {
-        return resolveFormatSymbols(getShortDateFormatMap(), language, country);
-    }
-
-    @MetadataProvider(DateFormatMetadataGenerator.class)
-    private static native ResourceMap<StringResource> getShortDateFormatMap();
+    private static native ResourceMap<DateFormatCollection> getDateTimeFormatMap();
 
     public static String resolveNumberFormat(String language, String country) {
         return resolveFormatSymbols(getNumberFormatMap(), language, country);
@@ -153,6 +146,12 @@ public class CLDRHelper {
     }
 
     private static native ResourceMap<StringResource> getPercentFormatMap();
+
+    private static DateFormatCollection resolveDateFormats(ResourceMap<DateFormatCollection> map,
+            String language, String country) {
+        String localeCode = getCode(language, country);
+        return map.has(localeCode) ? map.get(localeCode) : map.has(language) ? map.get(language) : map.get("root");
+    }
 
     private static String resolveFormatSymbols(ResourceMap<StringResource> map, String language, String country) {
         String localeCode = getCode(language, country);

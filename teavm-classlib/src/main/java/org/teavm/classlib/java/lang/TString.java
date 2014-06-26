@@ -400,7 +400,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         int sz = length() - target.length();
         int i = 0;
         outer:
-        for (; i < sz; ++i) {
+        for (; i <= sz; ++i) {
             for (int j = 0; j < target.length(); ++j) {
                 if (charAt(i + j) != target.charAt(j)) {
                     sb.append(charAt(i));

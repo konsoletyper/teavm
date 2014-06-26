@@ -109,6 +109,8 @@ public class CLDRReader {
                         readWeekdays(localeName, localeInfo, root);
                         readShortWeekdays(localeName, localeInfo, root);
                         readDateFormats(localeName, localeInfo, root);
+                        readTimeFormats(localeName, localeInfo, root);
+                        readDateTimeFormats(localeName, localeInfo, root);
                         break;
                     }
                 }
@@ -209,10 +211,27 @@ public class CLDRReader {
         JsonObject formatsJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
                 .get("dates").getAsJsonObject().get("calendars").getAsJsonObject()
                 .get("gregorian").getAsJsonObject().get("dateFormats").getAsJsonObject();
-        locale.shortDateFormat = formatsJson.get("short").getAsString();
-        locale.mediumDateFormat = formatsJson.get("medium").getAsString();
-        locale.longDateFormat = formatsJson.get("long").getAsString();
-        locale.fullDateFormat = formatsJson.get("full").getAsString();
+        locale.dateFormats = new CLDRDateFormats(formatsJson.get("short").getAsString(),
+                formatsJson.get("medium").getAsString(), formatsJson.get("long").getAsString(),
+                formatsJson.get("full").getAsString());
+    }
+
+    private void readTimeFormats(String localeCode, CLDRLocale locale, JsonObject root) {
+        JsonObject formatsJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
+                .get("dates").getAsJsonObject().get("calendars").getAsJsonObject()
+                .get("gregorian").getAsJsonObject().get("timeFormats").getAsJsonObject();
+        locale.timeFormats = new CLDRDateFormats(formatsJson.get("short").getAsString(),
+                formatsJson.get("medium").getAsString(), formatsJson.get("long").getAsString(),
+                formatsJson.get("full").getAsString());
+    }
+
+    private void readDateTimeFormats(String localeCode, CLDRLocale locale, JsonObject root) {
+        JsonObject formatsJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
+                .get("dates").getAsJsonObject().get("calendars").getAsJsonObject()
+                .get("gregorian").getAsJsonObject().get("dateTimeFormats").getAsJsonObject();
+        locale.dateTimeFormats = new CLDRDateFormats(formatsJson.get("short").getAsString(),
+                formatsJson.get("medium").getAsString(), formatsJson.get("long").getAsString(),
+                formatsJson.get("full").getAsString());
     }
 
     private void readWeekData(InputStream input) {

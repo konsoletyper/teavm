@@ -612,6 +612,24 @@ LongInt_add = function(a, b) {
     a.hi = (a_hilo & 0xFFFF) | (a_hihi << 16);
     a.sup = sup;
 }
+LongInt_inc = function(a) {
+    a.lo = (a.lo + 1) | 0;
+    if (a.lo == 0) {
+        a.hi = (a.hi + 1) | 0;
+        if (a.hi == 0) {
+            a.sup = (a.sup + 1) | 0xFFFF;
+        }
+    }
+}
+LongInt_dec = function(a) {
+    a.lo = (a.lo - 1) | 0;
+    if (a.lo == -1) {
+        a.hi = (a.hi - 1) | 0;
+        if (a.hi == -1) {
+            a.sup = (a.sup - 1) | 0xFFFF;
+        }
+    }
+}
 LongInt_ucompare = function(a, b) {
     var r = (a.sup - b.sup);
     if (r != 0) {
@@ -696,7 +714,7 @@ LongInt_div = function(a, b) {
         if (LongInt_ucompare(t, a) >= 0) {
             while (LongInt_ucompare(t, a) > 0) {
                 LongInt_sub(t, b);
-                q = (q - 1) | 0;
+                --digit;
             }
         } else {
             while (true) {
@@ -706,7 +724,7 @@ LongInt_div = function(a, b) {
                     break;
                 }
                 t = nextT;
-                q = (q + 1) | 0;
+                ++digit;
             }
         }
         LongInt_sub(a, t);
