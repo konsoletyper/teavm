@@ -155,7 +155,6 @@ public abstract class TNumberFormat extends TFormat {
         TParsePosition pos = new TParsePosition(0);
         Number number = parse(string, pos);
         if (pos.getIndex() == 0) {
-            // text.1D=: {0}
             throw new TParseException("Unparseable number: " + string, pos.getErrorIndex());
         }
         return number;

@@ -79,8 +79,7 @@ public class TSimpleDateFormat extends TDateFormat {
     @Override
     public TDate parse(String string, TParsePosition position) {
         TCalendar calendar = new TGregorianCalendar(locale);
-        calendar.set(0, 0, 0, 0, 0, 0);
-        calendar.set(TCalendar.MILLISECOND, 0);
+        calendar.clear();
         for (TDateFormatElement element : elements) {
             if (position.getIndex() > string.length()) {
                 position.setErrorIndex(position.getErrorIndex());

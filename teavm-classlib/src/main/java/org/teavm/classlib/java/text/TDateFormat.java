@@ -22,7 +22,6 @@ import org.teavm.classlib.java.util.*;
 
 public abstract class TDateFormat extends TFormat {
     protected TCalendar calendar;
-    //protected NumberFormat numberFormat;
     public final static int DEFAULT = 2;
     public final static int FULL = 0;
     public final static int LONG = 1;
@@ -54,30 +53,22 @@ public abstract class TDateFormat extends TFormat {
     public Object clone() {
         TDateFormat clone = (TDateFormat) super.clone();
         clone.calendar = (TCalendar) calendar.clone();
-        // TODO: implement
-        //clone.numberFormat = (NumberFormat) numberFormat.clone();
         return clone;
     }
 
-    // TODO: implement
-    /*
     @Override
     public boolean equals(Object object) {
         if (this == object) {
             return true;
         }
-        if (!(object instanceof DateFormat)) {
+        if (!(object instanceof TDateFormat)) {
             return false;
         }
-        DateFormat dateFormat = (DateFormat) object;
-        return numberFormat.equals(dateFormat.numberFormat) &&
-                calendar.getFirstDayOfWeek() == dateFormat.calendar.getFirstDayOfWeek() &&
+        TDateFormat dateFormat = (TDateFormat) object;
+        return calendar.getFirstDayOfWeek() == dateFormat.calendar.getFirstDayOfWeek() &&
                 calendar.getMinimalDaysInFirstWeek() == dateFormat.calendar.getMinimalDaysInFirstWeek() &&
                 calendar.isLenient() == dateFormat.calendar.isLenient();
-
-        return false;
     }
-    */
 
     @Override
     public final StringBuffer format(Object object, StringBuffer buffer, TFieldPosition field) {
@@ -156,10 +147,6 @@ public abstract class TDateFormat extends TFormat {
         return getDateTimeInstance(SHORT, SHORT);
     }
 
-    /*public NumberFormat getNumberFormat() {
-        return numberFormat;
-    }*/
-
     static String getStyleName(int style) {
         String styleName;
         switch (style) {
@@ -199,14 +186,11 @@ public abstract class TDateFormat extends TFormat {
     }
 
 
-    // TODO: implement
-    /*@Override
+    @Override
     public int hashCode() {
         return calendar.getFirstDayOfWeek() + calendar.getMinimalDaysInFirstWeek() +
-                (calendar.isLenient() ? 1231 : 1237) + numberFormat.hashCode();
-
-        return 0;
-    }*/
+                (calendar.isLenient() ? 1231 : 1237);
+    }
 
     public boolean isLenient() {
         return calendar.isLenient();
@@ -235,10 +219,6 @@ public abstract class TDateFormat extends TFormat {
     public void setLenient(boolean value) {
         calendar.setLenient(value);
     }
-
-    /*public void setNumberFormat(NumberFormat format) {
-        numberFormat = format;
-    }*/
 
     public static class Field extends TFormat.Field {
         private static THashMap<Integer, Field> table = new THashMap<>();

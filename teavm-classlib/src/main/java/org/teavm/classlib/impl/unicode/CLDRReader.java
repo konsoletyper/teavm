@@ -108,6 +108,7 @@ public class CLDRReader {
                         readShortMonths(localeName, localeInfo, root);
                         readWeekdays(localeName, localeInfo, root);
                         readShortWeekdays(localeName, localeInfo, root);
+                        readDateFormats(localeName, localeInfo, root);
                         break;
                     }
                 }
@@ -183,25 +184,35 @@ public class CLDRReader {
     }
 
     private void readWeekdays(String localeCode, CLDRLocale locale, JsonObject root) {
-        JsonObject monthsJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
+        JsonObject weekdaysJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
                 .get("dates").getAsJsonObject().get("calendars").getAsJsonObject()
                 .get("gregorian").getAsJsonObject().get("days").getAsJsonObject()
                 .get("format").getAsJsonObject().get("wide").getAsJsonObject();
         locale.weekdays = new String[7];
         for (int i = 0; i < 7; ++i) {
-            locale.weekdays[i] = monthsJson.get(weekdayKeys[i]).getAsString();
+            locale.weekdays[i] = weekdaysJson.get(weekdayKeys[i]).getAsString();
         }
     }
 
     private void readShortWeekdays(String localeCode, CLDRLocale locale, JsonObject root) {
-        JsonObject monthsJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
+        JsonObject weekdaysJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
                 .get("dates").getAsJsonObject().get("calendars").getAsJsonObject()
                 .get("gregorian").getAsJsonObject().get("days").getAsJsonObject()
-                .get("format").getAsJsonObject().get("short").getAsJsonObject();
+                .get("format").getAsJsonObject().get("abbreviated").getAsJsonObject();
         locale.shortWeekdays = new String[7];
         for (int i = 0; i < 7; ++i) {
-            locale.shortWeekdays[i] = monthsJson.get(weekdayKeys[i]).getAsString();
+            locale.shortWeekdays[i] = weekdaysJson.get(weekdayKeys[i]).getAsString();
         }
+    }
+
+    private void readDateFormats(String localeCode, CLDRLocale locale, JsonObject root) {
+        JsonObject formatsJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
+                .get("dates").getAsJsonObject().get("calendars").getAsJsonObject()
+                .get("gregorian").getAsJsonObject().get("dateFormats").getAsJsonObject();
+        locale.shortDateFormat = formatsJson.get("short").getAsString();
+        locale.mediumDateFormat = formatsJson.get("medium").getAsString();
+        locale.longDateFormat = formatsJson.get("long").getAsString();
+        locale.fullDateFormat = formatsJson.get("full").getAsString();
     }
 
     private void readWeekData(InputStream input) {

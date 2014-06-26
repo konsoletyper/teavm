@@ -47,7 +47,7 @@ public class TDecimalFormat extends TNumberFormat {
         super.setMinimumIntegerDigits(decimalData.getMinimumIntegerDigits());
     }
 
-    public void applyPattern(String pattern) {
+    public void applyPattern(@SuppressWarnings("unused") String pattern) {
 
     }
 

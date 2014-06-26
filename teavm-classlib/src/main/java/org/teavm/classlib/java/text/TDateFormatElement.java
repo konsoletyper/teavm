@@ -93,7 +93,7 @@ abstract class TDateFormatElement {
 
         @Override
         public void format(TCalendar date, StringBuffer buffer) {
-            int weekday = date.get(TCalendar.DAY_OF_WEEK);
+            int weekday = date.get(TCalendar.DAY_OF_WEEK) - 1;
             buffer.append(abbreviated ? shortWeeks[weekday] : weeks[weekday]);
         }
 
@@ -183,7 +183,7 @@ abstract class TDateFormatElement {
             int num = 0;
             int i = 0;
             int pos = position.getIndex();
-            while (position.getIndex() < text.length() && i < length) {
+            while (pos < text.length()) {
                 char c = text.charAt(pos);
                 if (c >= '0' && c <= '9') {
                     num = num * 10 + (c - '0');
@@ -193,7 +193,7 @@ abstract class TDateFormatElement {
                     break;
                 }
             }
-            if (i == 0) {
+            if (i < length) {
                 position.setErrorIndex(position.getIndex());
                 return;
             }

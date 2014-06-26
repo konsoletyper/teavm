@@ -33,6 +33,10 @@ public class CLDRLocale {
     String[] shortMonths;
     String[] weekdays;
     String[] shortWeekdays;
+    String shortDateFormat;
+    String mediumDateFormat;
+    String longDateFormat;
+    String fullDateFormat;
 
     public Map<String, String> getLanguages() {
         return Collections.unmodifiableMap(languages);
@@ -64,5 +68,21 @@ public class CLDRLocale {
 
     public String[] getShortWeekdays() {
         return Arrays.copyOf(shortWeekdays, shortWeekdays.length);
+    }
+
+    public String getShortDateFormat() {
+        return shortDateFormat;
+    }
+
+    public String getMediumDateFormat() {
+        return mediumDateFormat;
+    }
+
+    public String getLongDateFormat() {
+        return longDateFormat;
+    }
+
+    public String getFullDateFormat() {
+        return fullDateFormat;
     }
 }
