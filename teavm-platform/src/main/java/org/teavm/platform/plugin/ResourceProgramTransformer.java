@@ -62,7 +62,7 @@ class ResourceProgramTransformer {
             return Arrays.<Instruction>asList(accessInsn);
         }
         ClassReader iface = innerSource.get(method.getClassName());
-        if (!isSubclass(iface, Resource.class.getName())) {
+        if (iface == null || !isSubclass(iface, Resource.class.getName())) {
             return null;
         }
         if (method.getName().startsWith("get")) {
