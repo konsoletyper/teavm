@@ -199,8 +199,15 @@ public class Decompiler {
         for (int i = 0; i < this.graph.size(); ++i) {
             Block block = stack.peek();
             while (block.end == i) {
+                Block oldBlock = block;
                 stack.pop();
                 block = stack.peek();
+                if (block.start >= 0) {
+                    int mappedStart = indexer.nodeAt(block.start);
+                    if (blockMap[mappedStart] == oldBlock) {
+                        blockMap[mappedStart] = block;
+                    }
+                }
             }
             while (parentNode.getEnd() == i) {
                 currentNode = parentNode.getNext();

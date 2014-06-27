@@ -35,7 +35,7 @@ public class TRandom extends TObject implements TSerializable {
     }
 
     protected int next(int bits) {
-        return (int)(random() * (1 << TMath.min(32, bits)));
+        return (int)(random() * (1L << TMath.min(32, bits)));
     }
 
     public void nextBytes(byte[] bytes) {

@@ -37,6 +37,9 @@ class BreakToContinueReplacer implements StatementVisitor {
     }
 
     public void visitSequence(List<Statement> statements) {
+        if (statements == null) {
+            return;
+        }
         for (int i = 0; i < statements.size(); ++i) {
             Statement stmt = statements.get(i);
             stmt.acceptVisitor(this);

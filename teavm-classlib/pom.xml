@@ -99,6 +99,7 @@
             <argument>java.lang.annotation</argument>
             <argument>java.lang.reflect</argument>
             <argument>java.io</argument>
+            <argument>java.math</argument>
             <argument>java.net</argument>
             <argument>java.text</argument>
             <argument>java.util</argument>
