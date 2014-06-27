@@ -274,16 +274,16 @@ public class Decompiler {
         while (currentNode != null && currentNode.getStart() == start) {
             Block block;
             IdentifiedStatement statement;
-            if (loopSuccessors[start] == currentNode.getEnd()) {
+            boolean loop = false;
+            if (loopSuccessors[start] == currentNode.getEnd() || isSingleBlockLoop(start)) {
                 WhileStatement whileStatement = new WhileStatement();
                 statement = whileStatement;
-                block = new Block(statement, whileStatement.getBody(), start,
-                        currentNode.getEnd());
+                block = new Block(statement, whileStatement.getBody(), start, currentNode.getEnd());
+                loop = true;
             } else {
                 BlockStatement blockStatement = new BlockStatement();
                 statement = blockStatement;
-                block = new Block(statement, blockStatement.getBody(), start,
-                        currentNode.getEnd());
+                block = new Block(statement, blockStatement.getBody(), start, currentNode.getEnd());
             }
             result.add(block);
             int mappedIndex = indexer.nodeAt(currentNode.getEnd());
@@ -291,7 +291,7 @@ public class Decompiler {
                     !(blockMap[mappedIndex].statement instanceof WhileStatement))) {
                 blockMap[mappedIndex] = block;
             }
-            if (loopSuccessors[start] == currentNode.getEnd()) {
+            if (loop) {
                 blockMap[indexer.nodeAt(start)] = block;
             }
             parentNode = currentNode;
@@ -301,6 +301,15 @@ public class Decompiler {
             block.statement.setId("block" + lastBlockId++);
         }
         return result;
+    }
+
+    private boolean isSingleBlockLoop(int index) {
+        for (int succ : graph.outgoingEdges(index)) {
+            if (succ == index) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void unflatCode() {
@@ -344,6 +353,11 @@ public class Decompiler {
             }
             if (start < node - 1) {
                 ranges.add(new RangeTree.Range(start, node));
+            }
+        }
+        for (int node = 0; node < sz; ++node) {
+            if (isSingleBlockLoop(node)) {
+                ranges.add(new RangeTree.Range(node, node));
             }
         }
         codeTree = new RangeTree(sz + 1, ranges);
