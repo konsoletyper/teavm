@@ -15,8 +15,8 @@
  */
 package org.teavm.samples;
 
-import java.text.DateFormatSymbols;
-import java.util.Calendar;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
@@ -38,23 +38,34 @@ public class DateTime {
     private static Window window = (Window)JS.getGlobal();
     private static HTMLDocument document = window.getDocument();
     private static HTMLSelectElement localeElem = (HTMLSelectElement)document.getElementById("locale");
-    private static HTMLSelectElement fieldElem = (HTMLSelectElement)document.getElementById("field");
+    private static HTMLSelectElement formatElem = (HTMLSelectElement)document.getElementById("format");
+    private static HTMLSelectElement customFormatElem = (HTMLSelectElement)document.getElementById("custom-format");
     private static Date currentDate = new Date();
     private static Locale[] locales;
     private static Locale currentLocale;
-    private static int currentField;
+    private static DateFormat dateFormat;
 
     public static void main(String[] args) {
         fillLocales();
-        bindFieldEvent();
         window.setInterval(new TimerHandler() {
-            @Override
-            public void onTimer() {
+            @Override public void onTimer() {
                 updateCurrentTime();
             }
         }, 250);
         updateCurrentLocale();
-        updateCurrentField();
+        updateFormat();
+        formatElem.addEventListener("change", new EventListener() {
+            @Override public void handleEvent(Event evt) {
+                updateFormat();
+                updateCurrentTimeText();
+            }
+        });
+        customFormatElem.addEventListener("change", new EventListener() {
+            @Override public void handleEvent(Event evt) {
+                updateFormat();
+                updateCurrentTimeText();
+            }
+        });
     }
 
     private static void fillLocales() {
@@ -68,15 +79,8 @@ public class DateTime {
         localeElem.addEventListener("change", new EventListener() {
             @Override public void handleEvent(Event evt) {
                 updateCurrentLocale();
+                updateFormat();
                 updateCurrentTimeText();
-            }
-        });
-    }
-
-    private static void bindFieldEvent() {
-        fieldElem.addEventListener("change", new EventListener() {
-            @Override public void handleEvent(Event evt) {
-                updateCurrentField();
             }
         });
     }
@@ -97,89 +101,64 @@ public class DateTime {
     private static void setCurrentTime(Date date) {
         currentDate = date;
         updateCurrentTimeText();
-        updateFieldText();
     }
 
     private static void updateCurrentTimeText() {
         HTMLInputElement timeElem = (HTMLInputElement)document.getElementById("current-time");
-        timeElem.setValue(currentDate.toString());
+        try {
+            timeElem.setValue(dateFormat.format(currentDate));
+        } catch (RuntimeException e) {
+            timeElem.setValue("Error formatting date");
+        }
     }
 
-    private static void updateCurrentField() {
-        switch (fieldElem.getValue()) {
-            case "era":
-                currentField = Calendar.ERA;
+    private static void updateFormat() {
+        customFormatElem.setDisabled(true);
+        switch (formatElem.getValue()) {
+            case "short-date":
+                dateFormat = DateFormat.getDateInstance(DateFormat.SHORT, currentLocale);
                 break;
-            case "year":
-                currentField = Calendar.YEAR;
+            case "medium-date":
+                dateFormat = DateFormat.getDateInstance(DateFormat.MEDIUM, currentLocale);
                 break;
-            case "month":
-                currentField = Calendar.MONTH;
+            case "long-date":
+                dateFormat = DateFormat.getDateInstance(DateFormat.LONG, currentLocale);
                 break;
-            case "week-of-year":
-                currentField = Calendar.WEEK_OF_YEAR;
+            case "full-date":
+                dateFormat = DateFormat.getDateInstance(DateFormat.FULL, currentLocale);
                 break;
-            case "week-of-month":
-                currentField = Calendar.WEEK_OF_MONTH;
+            case "short-time":
+                dateFormat = DateFormat.getTimeInstance(DateFormat.SHORT, currentLocale);
                 break;
-            case "date":
-                currentField = Calendar.DATE;
+            case "medium-time":
+                dateFormat = DateFormat.getTimeInstance(DateFormat.MEDIUM, currentLocale);
                 break;
-            case "day-of-year":
-                currentField = Calendar.DAY_OF_YEAR;
+            case "long-time":
+                dateFormat = DateFormat.getTimeInstance(DateFormat.LONG, currentLocale);
                 break;
-            case "day-of-week":
-                currentField = Calendar.DAY_OF_WEEK;
+            case "full-time":
+                dateFormat = DateFormat.getTimeInstance(DateFormat.FULL, currentLocale);
                 break;
-            case "am-pm":
-                currentField = Calendar.AM_PM;
+            case "short-datetime":
+                dateFormat = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, currentLocale);
                 break;
-            case "hour":
-                currentField = Calendar.HOUR;
+            case "medium-datetime":
+                dateFormat = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM, currentLocale);
                 break;
-            case "hour-of-day":
-                currentField = Calendar.HOUR_OF_DAY;
+            case "long-datetime":
+                dateFormat = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG, currentLocale);
                 break;
-            case "minute":
-                currentField = Calendar.MINUTE;
+            case "full-datetime":
+                dateFormat = DateFormat.getDateTimeInstance(DateFormat.FULL, DateFormat.FULL, currentLocale);
                 break;
-            case "second":
-                currentField = Calendar.SECOND;
-                break;
-            case "zone-offset":
-                currentField = Calendar.ZONE_OFFSET;
-                break;
-        }
-        updateFieldText();
-    }
-
-    private static void updateFieldText() {
-        HTMLInputElement fieldValueElem = (HTMLInputElement)document.getElementById("field-value");
-        Calendar calendar = new GregorianCalendar(currentLocale);
-        calendar.setTime(currentDate);
-        int value = calendar.get(currentField);
-        fieldValueElem.setValue(String.valueOf(value));
-
-        DateFormatSymbols symbols = new DateFormatSymbols(currentLocale);
-        String text;
-        switch (currentField) {
-            case Calendar.ERA:
-                text = symbols.getEras()[value];
-                break;
-            case Calendar.AM_PM:
-                text = symbols.getAmPmStrings()[value];
-                break;
-            case Calendar.MONTH:
-                text = symbols.getMonths()[value] + "/" + symbols.getShortMonths()[value];
-                break;
-            case Calendar.DAY_OF_WEEK:
-                text = symbols.getWeekdays()[value - 1] + "/" + symbols.getShortWeekdays()[value - 1];
-                break;
-            default:
-                text = "";
+            case "custom":
+                customFormatElem.setDisabled(false);
+                try {
+                    dateFormat = new SimpleDateFormat(customFormatElem.getValue(), currentLocale);
+                } catch (IllegalArgumentException e) {
+                    dateFormat = new SimpleDateFormat("'Invalid pattern'");
+                }
                 break;
         }
-        HTMLInputElement fieldTextElem = (HTMLInputElement)document.getElementById("field-value-text");
-        fieldTextElem.setValue(text);
     }
 }

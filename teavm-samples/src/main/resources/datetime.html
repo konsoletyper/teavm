@@ -22,28 +22,23 @@
       <input type="text" id="week-length" readonly size="5">
     </div>
     <div>
-      <label for="field">Pick a field:</label>
-      <select id="field" size="1">
-        <option value="era">Era</option>
-        <option value="year">Year</option>
-        <option value="month">Month</option>
-        <option value="week-of-year">Week of year</option>
-        <option value="week-of-month">Week of month</option>
-        <option value="date">Date</option>
-        <option value="day-of-year">Day of year</option>
-        <option value="day-of-week">Day of week</option>
-        <option value="am-pm">AM/PM</option>
-        <option value="hour">Hour</option>
-        <option value="hour-of-day">Hour of day</option>
-        <option value="minute">Minute</option>
-        <option value="second">Second</option>
-        <option value="zone-offset">Zone offset</option>
+      <label for="format">Format:</label>
+      <select id="format" size="1">
+        <option value="short-date">Date (short)</option>
+        <option value="medium-date">Date (medium)</option>
+        <option value="long-date">Date (long)</option>
+        <option value="full-date">Date (full)</option>
+        <option value="short-time">Time (short)</option>
+        <option value="medium-time">Time (medium)</option>
+        <option value="long-time">Time (long)</option>
+        <option value="full-time">Time (full)</option>
+        <option value="short-datetime">Date and time (short)</option>
+        <option value="medium-datetime">Date and (medium)</option>
+        <option value="long-datetime">Date and time (long)</option>
+        <option value="full-datetime">Date and time (full)</option>
+        <option value="custom">Custom</option>
       </select>
-    </div>
-    <div>
-      <label for="field-value">Field value is:</label>
-      <input type="text" id="field-value" readonly>
-      <input type="text" id="field-value-text" readonly>
+      <input type="text" id="custom-format" disabled value="yyyy-MM-dd HH:mm:ss">
     </div>
   </body>
 </html>

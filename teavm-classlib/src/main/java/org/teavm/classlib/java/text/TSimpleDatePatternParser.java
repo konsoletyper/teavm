@@ -148,14 +148,17 @@ class TSimpleDatePatternParser {
                     elements.add(new TDateFormatElement.Numeric(TCalendar.MILLISECOND, rep));
                     break;
                 }
-                default: {
-                    StringBuilder sb = new StringBuilder();
-                    while (index < pattern.length() && !isControl(pattern.charAt(index))) {
-                        sb.append(pattern.charAt(index++));
+                default:
+                    if (isControl(c)) {
+                        parseRepetitions();
+                    } else {
+                        StringBuilder sb = new StringBuilder();
+                        while (index < pattern.length() && !isControl(pattern.charAt(index))) {
+                            sb.append(pattern.charAt(index++));
+                        }
+                        elements.add(new TDateFormatElement.ConstantText(sb.toString()));
                     }
-                    elements.add(new TDateFormatElement.ConstantText(sb.toString()));
                     break;
-                }
             }
         }
     }
