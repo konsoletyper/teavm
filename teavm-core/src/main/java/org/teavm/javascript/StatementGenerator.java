@@ -574,7 +574,7 @@ class StatementGenerator implements InstructionVisitor {
     }
 
     Statement generateJumpStatement(BasicBlock target) {
-        if (nextBlock == target) {
+        if (nextBlock == target && blockMap[target.getIndex()] == null) {
             return null;
         }
         Decompiler.Block block = blockMap[target.getIndex()];

@@ -357,7 +357,7 @@ public class Decompiler {
         }
         for (int node = 0; node < sz; ++node) {
             if (isSingleBlockLoop(node)) {
-                ranges.add(new RangeTree.Range(node, node));
+                ranges.add(new RangeTree.Range(node, node + 1));
             }
         }
         codeTree = new RangeTree(sz + 1, ranges);
