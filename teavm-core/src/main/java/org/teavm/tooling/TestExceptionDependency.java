@@ -19,15 +19,14 @@ import org.teavm.dependency.*;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
-import org.teavm.model.ValueType;
 
 /**
  *
  * @author Alexey Andreev
  */
 class TestExceptionDependency implements DependencyListener {
-    private MethodReference getMessageRef = new MethodReference("java.lang.Throwable", "getMessage",
-            ValueType.object("java.lang.String"));
+    private MethodReference getMessageRef = new MethodReference(ExceptionHelper.class, "showException",
+            Throwable.class, String.class);
     private DependencyNode allClasses;
 
     @Override
@@ -59,7 +58,7 @@ class TestExceptionDependency implements DependencyListener {
     @Override
     public void methodAchieved(DependencyAgent agent, MethodDependency method) {
         if (method.getReference().equals(getMessageRef)) {
-            allClasses.connect(method.getVariable(0));
+            allClasses.connect(method.getVariable(1));
         }
     }
 

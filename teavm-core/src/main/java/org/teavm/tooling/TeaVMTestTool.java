@@ -290,10 +290,9 @@ public class TeaVMTestTool {
         }
         File file = new File(outputDir, targetName);
         try (Writer innerWriter = new OutputStreamWriter(new FileOutputStream(file), "UTF-8")) {
-            MethodReference cons = new MethodReference(methodRef.getClassName(),
-                    new MethodDescriptor("<init>", ValueType.VOID));
-            MethodReference exceptionMsg = new MethodReference("java.lang.Throwable", "getMessage",
-                    ValueType.object("java.lang.String"));
+            MethodReference cons = new MethodReference(methodRef.getClassName(), "<init>", ValueType.VOID);
+            MethodReference exceptionMsg = new MethodReference(ExceptionHelper.class, "showException",
+                    Throwable.class, String.class);
             vm.entryPoint("initInstance", cons);
             vm.entryPoint("runTest", methodRef).withValue(0, cons.getClassName());
             vm.entryPoint("extractException", exceptionMsg);
