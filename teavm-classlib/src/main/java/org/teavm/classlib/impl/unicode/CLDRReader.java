@@ -38,10 +38,21 @@ public class CLDRReader {
     private Set<String> availableLocales = new LinkedHashSet<>();
     private Set<String> availableLanguages = new LinkedHashSet<>();
     private Set<String> availableCountries = new LinkedHashSet<>();
+    private boolean initialized;
+    private Properties properties;
+    private ClassLoader classLoader;
 
     public CLDRReader(Properties properties, ClassLoader classLoader) {
-        findAvailableLocales(properties);
-        readCLDR(classLoader);
+        this.properties = properties;
+        this.classLoader = classLoader;
+    }
+
+    private synchronized void ensureInitialized() {
+        if (!initialized) {
+            initialized = true;
+            findAvailableLocales(properties);
+            readCLDR(classLoader);
+        }
     }
 
     private void findAvailableLocales(Properties properties) {
@@ -278,30 +289,37 @@ public class CLDRReader {
     }
 
     public Map<String, CLDRLocale> getKnownLocales() {
+        ensureInitialized();
         return Collections.unmodifiableMap(knownLocales);
     }
 
     public Set<String> getAvailableLocales() {
+        ensureInitialized();
         return Collections.unmodifiableSet(availableLocales);
     }
 
     public Set<String> getAvailableLanguages() {
+        ensureInitialized();
         return Collections.unmodifiableSet(availableLanguages);
     }
 
     public Set<String> getAvailableCountries() {
+        ensureInitialized();
         return Collections.unmodifiableSet(availableCountries);
     }
 
     public Map<String, Integer> getMinDaysMap() {
+        ensureInitialized();
         return Collections.unmodifiableMap(minDaysMap);
     }
 
     public Map<String, Integer> getFirstDayMap() {
+        ensureInitialized();
         return Collections.unmodifiableMap(firstDayMap);
     }
 
     public Map<String, String> getLikelySubtags() {
+        ensureInitialized();
         return Collections.unmodifiableMap(likelySubtags);
     }
 }

@@ -100,6 +100,7 @@
             <argument>java.lang.reflect</argument>
             <argument>java.io</argument>
             <argument>java.net</argument>
+            <argument>java.text</argument>
             <argument>java.util</argument>
             <argument>java.util.logging</argument>
             <argument>java.util.concurrent</argument>
