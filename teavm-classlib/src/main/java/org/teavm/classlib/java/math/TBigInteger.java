@@ -1334,7 +1334,7 @@ public class TBigInteger extends Number implements Comparable<TBigInteger>, Seri
             throw new ArithmeticException("BigInteger: modulus not positive");
         }
         TBigInteger rem = remainder(m);
-        return ((rem.sign < 0) ? rem.add(m) : rem);
+        return rem.sign < 0 ? rem.add(m) : rem;
     }
 
     /**

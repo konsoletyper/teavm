@@ -340,7 +340,8 @@ public class LoopInvariantMotion implements MethodOptimization {
 
         @Override
         public void visit(ArrayLengthInstruction insn) {
-            canMove = true;
+            // TODO: Sometimes we can cast NPE when array is null and its length is read only in certain cases
+            //canMove = true;
         }
 
         @Override
@@ -349,7 +350,8 @@ public class LoopInvariantMotion implements MethodOptimization {
 
         @Override
         public void visit(UnwrapArrayInstruction insn) {
-            canMove = true;
+            // TODO: Sometimes we can cast NPE when array is null and is is unwrapped only in certain cases
+            //canMove = true;
         }
 
         @Override
