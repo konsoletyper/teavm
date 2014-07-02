@@ -447,9 +447,9 @@ Long_sub = function(a, b) {
     var b_hihi = b.hi >>> 16;
 
     var lolo = (a_lolo - b_lolo) | 0;
-    var lohi = (a_lohi - b_lohi - (lolo >> 16)) | 0;
-    var hilo = (a_hilo - b_hilo - (lohi >> 16)) | 0;
-    var hihi = (a_hihi - b_hihi - (hilo >> 16)) | 0;
+    var lohi = (a_lohi - b_lohi + (lolo >> 16)) | 0;
+    var hilo = (a_hilo - b_hilo + (lohi >> 16)) | 0;
+    var hihi = (a_hihi - b_hihi + (hilo >> 16)) | 0;
     return new Long((lolo & 0xFFFF) | ((lohi & 0xFFFF) << 16), (hilo & 0xFFFF) | ((hihi & 0xFFFF) << 16));
 }
 Long_compare = function(a, b) {
@@ -617,7 +617,7 @@ LongInt_inc = function(a) {
     if (a.lo == 0) {
         a.hi = (a.hi + 1) | 0;
         if (a.hi == 0) {
-            a.sup = (a.sup + 1) | 0xFFFF;
+            a.sup = (a.sup + 1) & 0xFFFF;
         }
     }
 }
@@ -626,7 +626,7 @@ LongInt_dec = function(a) {
     if (a.lo == -1) {
         a.hi = (a.hi - 1) | 0;
         if (a.hi == -1) {
-            a.sup = (a.sup - 1) | 0xFFFF;
+            a.sup = (a.sup - 1) & 0xFFFF;
         }
     }
 }
@@ -662,7 +662,7 @@ LongInt_numOfLeadingZeroBits = function(a) {
     return 31 - n;
 }
 LongInt_shl = function(a, b) {
-    if (b == 0) {
+    if (b === 0) {
         return;
     } else if (b < 32) {
         a.sup = ((a.hi >>> (32 - b)) | (a.sup << b)) & 0xFFFF;
@@ -687,7 +687,7 @@ LongInt_shl = function(a, b) {
     }
 }
 LongInt_shr = function(a, b) {
-    if (b == 0) {
+    if (b === 0) {
         return;
     } else if (b === 32) {
         a.lo = a.hi;
@@ -697,7 +697,7 @@ LongInt_shr = function(a, b) {
         a.lo = (a.lo >>> b) | (a.hi << (32 - b));
         a.hi = (a.hi >>> b) | (a.sup << (32 - b));
         a.sup >>>= b;
-    } else if (b == 64) {
+    } else if (b === 64) {
         a.lo = a.sup;
         a.hi = 0;
         a.sup = 0;

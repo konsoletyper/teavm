@@ -257,7 +257,7 @@ class StatementGenerator implements InstructionVisitor {
                         value = castToInteger(value);
                         break;
                     case LONG:
-                        value = castFromLong(value);
+                        value = castLongToInt(value);
                         break;
                     default:
                         break;
@@ -551,6 +551,10 @@ class StatementGenerator implements InstructionVisitor {
 
     private Expr castToInteger(Expr value) {
         return Expr.binary(BinaryOperation.BITWISE_OR, value, Expr.constant(0));
+    }
+
+    private Expr castLongToInt(Expr value) {
+        return Expr.unary(UnaryOperation.LONG_TO_INT, value);
     }
 
     private Expr castToLong(Expr value) {

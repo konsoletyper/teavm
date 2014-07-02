@@ -905,6 +905,10 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     expr.getOperand().acceptVisitor(this);
                     writer.append(')');
                     break;
+                case LONG_TO_INT:
+                    expr.getOperand().acceptVisitor(this);
+                    writer.append(".lo");
+                    break;
                 case NEGATE_LONG:
                     writer.append("Long_neg(");
                     expr.getOperand().acceptVisitor(this);
