@@ -486,10 +486,24 @@ Long_mul = function(a, b) {
     var b_hilo = b.hi & 0xFFFF;
     var b_hihi = b.hi >>> 16;
 
-    var lolo = (a_lolo * b_lolo) | 0;
-    var lohi = (a_lohi * b_lolo + a_lolo * b_lohi + (lolo >>> 16)) | 0;
-    var hilo = (a_hilo * b_lolo + a_lohi * b_lohi + a_lolo * b_hilo + (lohi >>> 16)) | 0;
-    var hihi = (a_hihi * b_lolo + a_hilo * b_lohi + a_lohi * b_hilo + a_lolo * b_hihi + (hilo >>> 16)) | 0;
+    var lolo = 0;
+    var lohi = 0;
+    var hilo = 0;
+    var hihi = 0;
+    lolo = (a_lolo * b_lolo) | 0;
+    lohi = lolo >>> 16;
+    lohi = ((lohi & 0xFFFF) + a_lohi * b_lolo) | 0;
+    hilo = (hilo + (lohi >>> 16)) | 0;
+    lohi = ((lohi & 0xFFFF) + a_lolo * b_lohi) | 0;
+    hilo = (hilo + (lohi >>> 16)) | 0;
+    hihi = hilo >>> 16;
+    hilo = ((hilo & 0xFFFF) + a_hilo * b_lolo) | 0;
+    hihi = (hihi + (hilo >>> 16)) | 0;
+    hilo = ((hilo & 0xFFFF) + a_lohi * b_lohi) | 0;
+    hihi = (hihi + (hilo >>> 16)) | 0;
+    hilo = ((hilo & 0xFFFF) + a_lolo * b_hilo) | 0;
+    hihi = (hihi + (hilo >>> 16)) | 0;
+    hihi = (hihi + a_hihi * b_lolo + a_hilo * b_lohi + a_lohi * b_hilo + a_lolo * b_hihi) | 0;
     var result = new Long((lolo & 0xFFFF) | (lohi << 16), (hilo & 0xFFFF) | (hihi << 16));
     return positive ? result : Long_neg(result);
 }
@@ -531,23 +545,36 @@ Long_xor = function(a, b) {
 }
 Long_shl = function(a, b) {
     b &= 63;
-    if (b < 32) {
+    if (b == 0) {
+        return a;
+    } else if (b < 32) {
         return new Long(a.lo << b, (a.lo >>> (32 - b)) | (a.hi << b));
+    } else if (b == 32) {
+        return new Long(0, a.lo);
     } else {
         return new Long(0, a.lo << (b - 32));
     }
 }
 Long_shr = function(a, b) {
     b &= 63;
-    if (b < 32) {
+    if (b == 0) {
+        return a;
+    } else if (b < 32) {
         return new Long((a.lo >>> b) | (a.hi << (32 - b)), a.hi >> b);
+    } else if (b == 32) {
+        return new Long(a.hi, a.hi >> 31);
     } else {
         return new Long((a.hi >> (b - 32)), a.hi >> 31);
     }
 }
 Long_shru = function(a, b) {
-    if (b < 32) {
+    b &= 63;
+    if (b == 0) {
+        return a;
+    } else if (b < 32) {
         return new Long((a.lo >>> b) | (a.hi << (32 - b)), a.hi >>> b);
+    } else if (b == 32) {
+        return new Long(a.hi, 0);
     } else {
         return new Long((a.hi >>> (b - 32)), 0);
     }
