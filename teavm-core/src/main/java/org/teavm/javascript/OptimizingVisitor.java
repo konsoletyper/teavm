@@ -479,8 +479,11 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         statement.getBody().clear();
         statement.getBody().addAll(statements);
         if (statement.getCondition() != null) {
+            List<Statement> sequenceBackup = resultSequence;
+            resultSequence = new ArrayList<>();
             statement.getCondition().acceptVisitor(this);
             statement.setCondition(resultExpr);
+            resultSequence = sequenceBackup;
         }
         while (true) {
             if (!statement.getBody().isEmpty() && statement.getBody().get(0) instanceof ConditionalStatement) {
