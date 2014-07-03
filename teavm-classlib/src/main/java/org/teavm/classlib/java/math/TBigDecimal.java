@@ -2275,7 +2275,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
         if (toStringImage != null) {
             return toStringImage;
         }
-        if(bitLength < 32) {
+        if (bitLength < 32) {
             toStringImage = TConversion.toDecimalScaledString(smallValue,scale);
             return toStringImage;
         }
@@ -2714,8 +2714,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
             bits >>= 1;
         }
         // Construct the 64 double bits: [sign(1), exponent(11), mantisa(52)]
-        bits = (sign & 0x8000000000000000L) | ((long)exponent << 52)
-                | (bits & 0xFFFFFFFFFFFFFL);
+        bits = (sign & 0x8000000000000000L) | ((long)exponent << 52) | (bits & 0xFFFFFFFFFFFFFL);
         return Double.longBitsToDouble(bits);
     }
 

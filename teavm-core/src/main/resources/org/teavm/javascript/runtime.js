@@ -391,7 +391,11 @@ Long_fromInt = function(val) {
     return val >= 0 ? new Long(val, 0) : new Long(val, -1);
 }
 Long_fromNumber = function(val) {
-    return new Long(val | 0, (val / 0x100000000) | 0);
+    if (val >= 0) {
+        return new Long(val | 0, (val / 0x100000000) | 0);
+    } else {
+        return new Long(val | 0, (-(Math.abs(val) / 0x100000000) - 1) | 0);
+    }
 }
 Long_toNumber = function(val) {
     var lo = val.lo;

@@ -84,7 +84,7 @@ public class BigDecimalConvertTest {
         BigDecimal aNumber = new BigDecimal(a);
         long minusZero = -9223372036854775808L;
         double result = aNumber.doubleValue();
-        assertTrue("incorrect value", Double.doubleToLongBits(result) == minusZero);
+        assertEquals(minusZero, Double.doubleToLongBits(result));
     }
 
     /**
@@ -107,7 +107,7 @@ public class BigDecimalConvertTest {
         String a = "-1238096483923847.6356789029578E+21";
         BigDecimal aNumber = new BigDecimal(a);
         float result = -1.2380965E36F;
-        assertTrue("incorrect value", aNumber.floatValue() == result);
+        assertEquals("incorrect value", result, aNumber.floatValue(), 1E30);
     }
 
     /**
@@ -118,7 +118,7 @@ public class BigDecimalConvertTest {
         String a = "1238096483923847.6356789029578E+21";
         BigDecimal aNumber = new BigDecimal(a);
         float result = 1.2380965E36F;
-        assertTrue("incorrect value", aNumber.floatValue() == result);
+        assertEquals("incorrect value", result, aNumber.floatValue(), 1E30);
     }
 
     /**

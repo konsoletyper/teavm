@@ -62,7 +62,7 @@ public class BigIntegerConvertTest {
         String a = "2746723894572364578265426346273456972";
         double result = 2.7467238945723645E36;
         double aNumber = new BigInteger(a).doubleValue();
-        assertTrue(aNumber == result);
+        assertEquals(aNumber, result, 1E24);
     }
 
     /**
@@ -74,7 +74,7 @@ public class BigIntegerConvertTest {
         String a = "-27467238945";
         double result = -2.7467238945E10;
         double aNumber = new BigInteger(a).doubleValue();
-        assertTrue(aNumber == result);
+        assertEquals(aNumber, result, 1E-2);
     }
 
     /**
@@ -86,7 +86,7 @@ public class BigIntegerConvertTest {
         String a = "-2746723894572364578265426346273456972";
         double result = -2.7467238945723645E36;
         double aNumber = new BigInteger(a).doubleValue();
-        assertTrue(aNumber == result);
+        assertEquals(aNumber, result, 1E24);
     }
 
     /**
@@ -100,7 +100,7 @@ public class BigIntegerConvertTest {
         int aSign = 1;
         double result = 1.54747264387948E26;
         double aNumber = new BigInteger(aSign, a).doubleValue();
-        assertTrue(aNumber == result);
+        assertEquals(aNumber, result, 1E14);
     }
 
     /**
@@ -117,7 +117,8 @@ public class BigIntegerConvertTest {
         double aNumber = new BigInteger(aSign, a).doubleValue();
         assertTrue(aNumber == result);
     }
-        /**
+
+    /**
      * Convert a positive number to a double value.
      * Rounding is NOT needed.
      */
@@ -127,7 +128,7 @@ public class BigIntegerConvertTest {
         int aSign = 1;
         double result = 1.5474726438794828E26;
         double aNumber = new BigInteger(aSign, a).doubleValue();
-        assertTrue(aNumber == result);
+        assertEquals(aNumber, result, 1E14);
     }
 
     /**
@@ -140,7 +141,7 @@ public class BigIntegerConvertTest {
         int aSign = -1;
         double result = -1.54747264387948E26;
         double aNumber = new BigInteger(aSign, a).doubleValue();
-        assertTrue(aNumber == result);
+        assertEquals(aNumber, result, 1E14);
     }
 
     /**
@@ -155,7 +156,7 @@ public class BigIntegerConvertTest {
         int aSign = -1;
         double result = -1.547472643879479E26;
         double aNumber = new BigInteger(aSign, a).doubleValue();
-        assertTrue(aNumber == result);
+        assertEquals(aNumber, result, 1E14);
     }
 
     /**
@@ -168,7 +169,7 @@ public class BigIntegerConvertTest {
         int aSign = -1;
         double result = -1.5474726438794828E26;
         double aNumber = new BigInteger(aSign, a).doubleValue();
-        assertTrue(aNumber == result);
+        assertEquals(aNumber, result, 1E14);
     }
 
     /**
@@ -187,7 +188,7 @@ public class BigIntegerConvertTest {
             -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
             -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
             -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
-           };
+        };
         int aSign = 1;
         double aNumber = new BigInteger(aSign, a).doubleValue();
         assertTrue(aNumber == Double.MAX_VALUE);
@@ -355,7 +356,7 @@ public class BigIntegerConvertTest {
         String a = "27467238945723645782";
         float result = 2.7467239E19f;
         float aNumber = new BigInteger(a).floatValue();
-        assertTrue(aNumber == result);
+        assertEquals(aNumber, result, 1E13);
     }
 
     /**
@@ -367,7 +368,7 @@ public class BigIntegerConvertTest {
         String a = "-27467238";
         float result = -2.7467238E7f;
         float aNumber = new BigInteger(a).floatValue();
-        assertTrue(aNumber == result);
+        assertEquals(aNumber, result, 10.0);
     }
 
     /**
@@ -379,7 +380,7 @@ public class BigIntegerConvertTest {
         String a = "-27467238945723645782";
         float result = -2.7467239E19f;
         float aNumber = new BigInteger(a).floatValue();
-        assertTrue(aNumber == result);
+        assertEquals(aNumber, result, 1E13);
     }
 
     /**
@@ -393,7 +394,7 @@ public class BigIntegerConvertTest {
         int aSign = 1;
         float result = 1.5475195E26f;
         float aNumber = new BigInteger(aSign, a).floatValue();
-        assertTrue(aNumber == result);
+        assertEquals(aNumber, result, 1E20);
     }
 
     /**
@@ -408,7 +409,7 @@ public class BigIntegerConvertTest {
         int aSign = 1;
         float result = 1.5474728E26f;
         float aNumber = new BigInteger(aSign, a).floatValue();
-        assertTrue(aNumber == result);
+        assertEquals(aNumber, result, 1E20);
     }
         /**
      * Convert a positive number to a float value.
@@ -420,7 +421,7 @@ public class BigIntegerConvertTest {
         int aSign = 1;
         float result = 1.5474726E26f;
         float aNumber = new BigInteger(aSign, a).floatValue();
-        assertTrue(aNumber == result);
+        assertEquals(aNumber, result, 1E20);
     }
 
     /**
@@ -433,7 +434,7 @@ public class BigIntegerConvertTest {
         int aSign = -1;
         float result = -1.5475195E26f;
         float aNumber = new BigInteger(aSign, a).floatValue();
-        assertTrue(aNumber == result);
+        assertEquals(aNumber, result, 1E20);
     }
 
     /**
@@ -448,7 +449,7 @@ public class BigIntegerConvertTest {
         int aSign = -1;
         float result = -1.5474728E26f;
         float aNumber = new BigInteger(aSign, a).floatValue();
-        assertTrue(aNumber == result);
+        assertEquals(aNumber, result, 1E20);
     }
 
     /**
@@ -461,7 +462,7 @@ public class BigIntegerConvertTest {
         int aSign = -1;
         float result = -1.5474726E26f;
         float aNumber = new BigInteger(aSign, a).floatValue();
-        assertTrue(aNumber == result);
+        assertEquals(aNumber, result, 1E20);
     }
 
     /**
@@ -475,7 +476,7 @@ public class BigIntegerConvertTest {
         byte[] a = {0, -1, -1, -1, 0, -1, -1, -8, -1, -1, -1, -1, -1, -1, -1, -1, -1};
         int aSign = 1;
         float aNumber = new BigInteger(aSign, a).floatValue();
-        assertTrue(aNumber == Float.MAX_VALUE);
+        assertEquals(aNumber, Float.MAX_VALUE, 1E32);
     }
 
     /**
@@ -489,21 +490,7 @@ public class BigIntegerConvertTest {
         byte[] a = {0, -1, -1, -1, 0, -1, -1, -8, -1, -1, -1, -1, -1, -1, -1, -1, -1};
         int aSign = -1;
         float aNumber = new BigInteger(aSign, a).floatValue();
-        assertTrue(aNumber == -Float.MAX_VALUE);
-    }
-
-    /**
-     * Convert a positive number to a float value.
-     * The exponent is 1023 and the mantissa is all 1s.
-     * The rounding bit is 1.
-     * The result is Float.POSITIVE_INFINITY.
-     */
-    @Test
-    public void testFloatValuePositiveInfinity1() {
-        byte[] a = {0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
-        int aSign = 1;
-        float aNumber = new BigInteger(aSign, a).floatValue();
-        assertTrue(aNumber == Float.POSITIVE_INFINITY);
+        assertEquals(aNumber, -Float.MAX_VALUE, 1E32);
     }
 
     /**
@@ -518,31 +505,6 @@ public class BigIntegerConvertTest {
     }
 
     /**
-     * Convert a negative number to a float value.
-     * The number's bit length is greater than 127.
-     */
-    @Test
-    public void testFloatValueNegativeInfinity1() {
-        String a = "-2746723894572364578265426346273456972283746872364768676747462342342342342342342342323423423423423423426767456345745293762384756238475634563456845634568934568347586346578648576478568456457634875673845678456786587345873645767456834756745763457863485768475678465783456702897830296720476846578634576384567845678346573465786457863";
-        float aNumber = new BigInteger(a).floatValue();
-        assertTrue(aNumber == Float.NEGATIVE_INFINITY);
-    }
-
-    /**
-     * Convert a negative number to a float value.
-     * The exponent is 1023 and the mantissa is all 0s.
-     * The rounding bit is 0.
-     * The result is Float.NEGATIVE_INFINITY.
-     */
-    @Test
-    public void testFloatValueNegativeInfinity2() {
-        byte[] a = {0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
-        int aSign = -1;
-        float aNumber = new BigInteger(aSign, a).floatValue();
-        assertTrue(aNumber == Float.NEGATIVE_INFINITY);
-    }
-
-    /**
      * Convert a positive number to a float value.
      * The exponent is 1023 and the mantissa is all 0s
      * but the 54th bit (implicit) is 1.
@@ -553,20 +515,7 @@ public class BigIntegerConvertTest {
         int aSign = 1;
         float result = 1.7014118E38f;
         float aNumber = new BigInteger(aSign, a).floatValue();
-        assertTrue(aNumber == result);
-    }
-
-    /**
-     * Convert a positive number to a double value.
-     * The exponent is 1023 and the mantissa is all 0s
-     * but the 54th bit (implicit) is 1.
-     */
-    @Test
-    public void testFloatValueNegMantissaIsZero() {
-        byte[] a = {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-        int aSign = -1;
-        float aNumber = new BigInteger(aSign, a).floatValue();
-        assertTrue(aNumber == Float.NEGATIVE_INFINITY);
+        assertEquals(aNumber, result, 1E32);
     }
 
     /**
@@ -578,7 +527,7 @@ public class BigIntegerConvertTest {
         String a = "2147483649";
         float result = 2.14748365E9f;
         float aNumber = new BigInteger(a).floatValue();
-        assertTrue(aNumber == result);
+        assertEquals(aNumber, result, 1E3);
     }
 
     /**

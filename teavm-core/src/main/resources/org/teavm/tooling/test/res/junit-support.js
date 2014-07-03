@@ -234,6 +234,7 @@ JUnitServer.prototype.cleanupTests = function() {
         this.totalTimeElem.removeChild(this.totalTimeElem.firstChild);
     }
     this.runCount = 0;
+    this.failCount = 0;
     this.progressElem.style.width = "0%";
     var nodes = this.tree.getNodes();
     for (var i = 0; i < nodes.length; ++i) {
