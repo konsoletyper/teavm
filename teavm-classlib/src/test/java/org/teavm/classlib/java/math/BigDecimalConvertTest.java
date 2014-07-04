@@ -152,7 +152,7 @@ public class BigDecimalConvertTest {
         BigDecimal aNumber = new BigDecimal(a);
         int minusZero = -2147483648;
         float result = aNumber.floatValue();
-        assertTrue("incorrect value", Float.floatToIntBits(result) == minusZero);
+        assertEquals("incorrect value", Float.floatToIntBits(result), minusZero);
     }
 
     /**
@@ -478,7 +478,7 @@ public class BigDecimalConvertTest {
         String a = "-123.4564563673567380964839238475457356735674573563567890295784902768787678287E-5";
         BigDecimal aNumber = new BigDecimal(a);
         String result = "-0.001234564563673567380964839238475457356735674573563567890295784902768787678287";
-        assertTrue("incorrect value", aNumber.toString().equals(result));
+        assertEquals("incorrect value", result, aNumber.toString());
     }
 
     /**
@@ -549,58 +549,6 @@ public class BigDecimalConvertTest {
         BigDecimal aNumber = BigDecimal.valueOf(a, scale);
         String result = "9.8374823947823578E+28";
         assertTrue("incorrect value", aNumber.toString().equals(result));
-    }
-
-    /**
-     * Create a BigDecimal from a negative double value
-     */
-    @Test
-    public void testValueOfDoubleNeg() {
-        double a = -65678765876567576.98788767;
-        BigDecimal result = BigDecimal.valueOf(a);
-        String res = "-65678765876567576";
-        int resScale = 0;
-        assertEquals("incorrect value", res, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
-    }
-
-    /**
-     * Create a BigDecimal from a positive double value
-     */
-    @Test
-    public void testValueOfDoublePos1() {
-        double a = 65678765876567576.98788767;
-        BigDecimal result = BigDecimal.valueOf(a);
-        String res = "65678765876567576";
-        int resScale = 0;
-        assertEquals("incorrect value", res, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
-    }
-
-    /**
-     * Create a BigDecimal from a positive double value
-     */
-    @Test
-    public void testValueOfDoublePos2() {
-        double a = 12321237576.98788767;
-        BigDecimal result = BigDecimal.valueOf(a);
-        String res = "12321237576.987888";
-        int resScale = 6;
-        assertEquals("incorrect value", res, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
-    }
-
-    /**
-     * Create a BigDecimal from a positive double value
-     */
-    @Test
-    public void testValueOfDoublePos3() {
-        double a = 12321237576.9878838;
-        BigDecimal result = BigDecimal.valueOf(a);
-        String res = "12321237576.987885";
-        int resScale = 6;
-        assertEquals("incorrect value", res, result.toString());
-        assertEquals("incorrect scale", resScale, result.scale());
     }
 
     /**

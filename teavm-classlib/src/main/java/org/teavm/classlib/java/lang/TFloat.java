@@ -263,7 +263,7 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
             doubleMantissa = abs * 0x1p126f * binaryExponent(negExp - 126);
         }
         int mantissa = (int)(doubleMantissa + 0.5f) & 0x7FFFFF;
-        return mantissa | ((exp + 127) << 23) | (value < 0 ? (1 << 31) : 0);
+        return mantissa | ((exp + 127) << 23) | (value < 0 || 1 / value == NEGATIVE_INFINITY  ? (1 << 31) : 0);
     }
 
     public static float intBitsToFloat(int bits) {

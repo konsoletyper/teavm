@@ -258,8 +258,7 @@ public class BigDecimalConstructorsTest {
             new BigDecimal(a);
             fail("NumberFormatException has not been caught");
         } catch (NumberFormatException e) {
-            assertEquals("Improper exception message", "Infinite or NaN", e
-                    .getMessage());
+            assertEquals("Improper exception message", "Infinite or NaN", e.getMessage());
         }
     }
 
@@ -342,7 +341,7 @@ public class BigDecimalConstructorsTest {
     public void testConstrDouble02() {
         double a = 0.555;
         int aScale = 53;
-        BigInteger bA = new BigInteger("55500000000000004884981308350688777863979339599609375");
+        TBigInteger bA = new TBigInteger("55500000000000004884981308350688777863979339599609375");
         BigDecimal aNumber = new BigDecimal(a);
         assertEquals("incorrect value", bA, aNumber.unscaledValue());
         assertEquals("incorrect scale", aScale, aNumber.scale());
