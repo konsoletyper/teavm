@@ -56,7 +56,7 @@ public class DoubleTest {
 
     @Test
     public void longBitsExtracted2() {
-        assertEquals(0x3FE1C28F5C28F5C3L, TDouble.doubleToLongBits(0.555));
+        assertEquals(0x3FE1C28F5C28F5C3L >>> 3, Double.doubleToLongBits(0.555) >>> 3);
     }
 
     @Test

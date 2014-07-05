@@ -366,7 +366,6 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
             newScale = (long)scale - Integer.parseInt(scaleString);
             scale = (int)newScale;
             if (newScale != scale) {
-                // math.02=
                 throw new NumberFormatException("Scale out of range.");
             }
         }
