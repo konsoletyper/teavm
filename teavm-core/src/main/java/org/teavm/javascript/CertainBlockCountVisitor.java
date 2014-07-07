@@ -15,16 +15,33 @@
  */
 package org.teavm.javascript;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import org.teavm.javascript.ast.*;
 
 /**
  *
  * @author Alexey Andreev
  */
-class BlockRefCountVisitor implements StatementVisitor {
-    Map<IdentifiedStatement, Integer> refs = new HashMap<>();
+class CertainBlockCountVisitor implements StatementVisitor {
+    private BlockStatement blockToCount;
+    private int count;
+
+    public CertainBlockCountVisitor(BlockStatement blockToCount) {
+        this.blockToCount = blockToCount;
+    }
+
+    public int getCount() {
+        return count;
+    }
+
+    public void visit(List<Statement> statements) {
+        if (statements == null) {
+            return;
+        }
+        for (Statement part : statements) {
+            part.acceptVisitor(this);
+        }
+    }
 
     @Override
     public void visit(AssignmentStatement statement) {
@@ -32,48 +49,31 @@ class BlockRefCountVisitor implements StatementVisitor {
 
     @Override
     public void visit(SequentialStatement statement) {
-        for (Statement part : statement.getSequence()) {
-            part.acceptVisitor(this);
-        }
+        visit(statement.getSequence());
     }
 
     @Override
     public void visit(ConditionalStatement statement) {
-        for (Statement stmt : statement.getConsequent()) {
-            stmt.acceptVisitor(this);
-        }
-        for (Statement stmt : statement.getAlternative()) {
-            stmt.acceptVisitor(this);
-        }
+        visit(statement.getConsequent());
+        visit(statement.getAlternative());
     }
 
     @Override
     public void visit(SwitchStatement statement) {
-        refs.put(statement, 0);
         for (SwitchClause clause : statement.getClauses()) {
-            for (Statement part : clause.getBody()) {
-                part.acceptVisitor(this);
-            }
+            visit(clause.getBody());
         }
-        for (Statement part : statement.getDefaultClause()) {
-            part.acceptVisitor(this);
-        }
+        visit(statement.getDefaultClause());
     }
 
     @Override
     public void visit(WhileStatement statement) {
-        refs.put(statement, 0);
-        for (Statement part : statement.getBody()) {
-            part.acceptVisitor(this);
-        }
+        visit(statement.getBody());
     }
 
     @Override
     public void visit(BlockStatement statement) {
-        refs.put(statement, 0);
-        for (Statement part : statement.getBody()) {
-            part.acceptVisitor(this);
-        }
+        visit(statement.getBody());
     }
 
     @Override
@@ -82,12 +82,16 @@ class BlockRefCountVisitor implements StatementVisitor {
 
     @Override
     public void visit(BreakStatement statement) {
-        refs.put(statement.getTarget(), refs.get(statement.getTarget()) + 1);
+        if (statement.getTarget() == blockToCount) {
+            ++count;
+        }
     }
 
     @Override
     public void visit(ContinueStatement statement) {
-        refs.put(statement.getTarget(), refs.get(statement.getTarget()) + 1);
+        if (statement.getTarget() == blockToCount) {
+            ++count;
+        }
     }
 
     @Override
@@ -108,11 +112,7 @@ class BlockRefCountVisitor implements StatementVisitor {
 
     @Override
     public void visit(TryCatchStatement statement) {
-        for (Statement part : statement.getProtectedBody()) {
-            part.acceptVisitor(this);
-        }
-        for (Statement part : statement.getHandler()) {
-            part.acceptVisitor(this);
-        }
+        visit(statement.getProtectedBody());
+        visit(statement.getHandler());
     }
 }

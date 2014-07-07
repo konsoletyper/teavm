@@ -36,8 +36,8 @@ public class ClassSetOptimizer {
     }
 
     private List<MethodOptimization> getOptimizations() {
-        return Arrays.<MethodOptimization>asList(new LoopInvariantMotion(), new GlobalValueNumbering(),
-                new UnusedVariableElimination());
+        return Arrays.<MethodOptimization>asList(new ArrayUnwrapMotion(), new LoopInvariantMotion(),
+                new GlobalValueNumbering(), new UnusedVariableElimination());
     }
 
     public void optimizeAll(ListableClassHolderSource classSource) {
