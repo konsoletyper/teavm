@@ -35,8 +35,6 @@ import org.teavm.model.*;
  * @author Alexey Andreev
  */
 public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext {
-    private static final MethodReference internRef = new MethodReference("java.lang.String", "intern",
-            ValueType.object("java.lang.String"));
     private static final String variableNames = "abcdefghijkmnopqrstuvwxyz";
     private NamingStrategy naming;
     private SourceWriter writer;
@@ -44,6 +42,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     private ClassLoader classLoader;
     private boolean minifying;
     private Map<MethodReference, InjectorHolder> injectorMap = new HashMap<>();
+    private Map<String, Integer> stringPoolMap = new HashMap<>();
+    private List<String> stringPool = new ArrayList<>();
     private Properties properties = new Properties();
     private ServiceRepository services;
 
@@ -107,6 +107,24 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         this.properties.putAll(properties);
     }
 
+    public void renderStringPool() throws RenderingException {
+        if (stringPool.isEmpty()) {
+            return;
+        }
+        try {
+            writer.append("$rt_stringPool([");
+            for (int i = 0; i < stringPool.size(); ++i) {
+                if (i > 0) {
+                    writer.append(',').ws();
+                }
+                writer.append('"').append(escapeString(stringPool.get(i))).append('"');
+            }
+            writer.append("]);").newLine();
+        } catch (IOException e) {
+            throw new RenderingException("IO error", e);
+        }
+    }
+
     public void renderRuntime() throws RenderingException {
         try {
             renderRuntimeCls();
@@ -114,6 +132,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             renderRuntimeUnwrapString();
             renderRuntimeObjcls();
             renderRuntimeNullCheck();
+            renderRuntimeIntern();
         } catch (NamingException e) {
             throw new RenderingException("Error rendering runtime methods. See a cause for details", e);
         } catch (IOException e) {
@@ -196,6 +215,13 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 .append("());").softNewLine();
         writer.outdent().append("}").softNewLine();
         writer.append("return val;").softNewLine();
+        writer.outdent().append("}").newLine();
+    }
+
+    private void renderRuntimeIntern() throws IOException {
+        writer.append("$rt_intern = function(str) {").indent().softNewLine();
+        writer.append("return ").appendMethodBody(new MethodReference(String.class, "intern", String.class))
+            .append("(str);").softNewLine();
         writer.outdent().append("}").newLine();
     }
 
@@ -972,7 +998,14 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             ValueType type = (ValueType)cst;
             return "$rt_cls(" + typeToClsString(naming, type) + ")";
         } else if (cst instanceof String) {
-            return naming.getFullNameFor(internRef) + "($rt_str(\"" + escapeString((String)cst) + "\"))";
+            String string = (String)cst;
+            Integer index = stringPoolMap.get(string);
+            if (index == null) {
+                index = stringPool.size();
+                stringPool.add(string);
+                stringPoolMap.put(string, index);
+            }
+            return "$rt_s(" + index + ")";
         } else if (cst instanceof Long) {
             long value = (Long)cst;
             if (value == 0) {

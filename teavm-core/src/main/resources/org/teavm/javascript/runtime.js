@@ -381,6 +381,15 @@ function $rt_virtualMethods(cls) {
         }
     }
 }
+function $rt_stringPool(strings) {
+    $rt_stringPool_instance = new Array(strings.length);
+    for (var i = 0; i < strings.length; ++i) {
+        $rt_stringPool_instance[i] = $rt_intern($rt_str(strings[i]));
+    }
+}
+function $rt_s(index) {
+    return $rt_stringPool_instance[index];
+}
 
 Long = function(lo, hi) {
     this.lo = lo | 0;
