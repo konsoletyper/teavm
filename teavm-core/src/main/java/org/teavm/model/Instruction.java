@@ -23,6 +23,7 @@ import org.teavm.model.instructions.InstructionVisitor;
  */
 public abstract class Instruction {
     private BasicBlock basicBlock;
+    private InstructionLocation location;
 
     void setBasicBlock(BasicBlock basicBlock) {
         this.basicBlock = basicBlock;
@@ -34,6 +35,14 @@ public abstract class Instruction {
 
     public Program getProgram() {
         return basicBlock != null ? basicBlock.getProgram() : null;
+    }
+
+    public InstructionLocation getLocation() {
+        return location;
+    }
+
+    public void setLocation(InstructionLocation location) {
+        this.location = location;
     }
 
     public abstract void acceptVisitor(InstructionVisitor visitor);

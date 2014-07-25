@@ -21,6 +21,7 @@ package org.teavm.javascript.ast;
  */
 public class ThrowStatement extends Statement {
     private Expr exception;
+    private NodeLocation location;
 
     public Expr getException() {
         return exception;
@@ -28,6 +29,14 @@ public class ThrowStatement extends Statement {
 
     public void setException(Expr exception) {
         this.exception = exception;
+    }
+
+    public NodeLocation getLocation() {
+        return location;
+    }
+
+    public void setLocation(NodeLocation location) {
+        this.location = location;
     }
 
     @Override

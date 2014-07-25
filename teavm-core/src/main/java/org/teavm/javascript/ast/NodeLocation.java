@@ -1,5 +1,5 @@
 /*
- *  Copyright 2012 Alexey Andreev.
+ *  Copyright 2014 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,32 +15,32 @@
  */
 package org.teavm.javascript.ast;
 
+import org.teavm.model.MethodDescriptor;
+
 /**
  *
  * @author Alexey Andreev
  */
-public class ReturnStatement extends Statement {
-    private Expr result;
-    private NodeLocation location;
+public class NodeLocation {
+    private String className;
+    private MethodDescriptor method;
+    private int lineNumber;
 
-    public Expr getResult() {
-        return result;
+    public NodeLocation(String className, MethodDescriptor method, int lineNumber) {
+        this.className = className;
+        this.method = method;
+        this.lineNumber = lineNumber;
     }
 
-    public void setResult(Expr result) {
-        this.result = result;
+    public String getClassName() {
+        return className;
     }
 
-    public NodeLocation getLocation() {
-        return location;
+    public MethodDescriptor getMethod() {
+        return method;
     }
 
-    public void setLocation(NodeLocation location) {
-        this.location = location;
-    }
-
-    @Override
-    public void acceptVisitor(StatementVisitor visitor) {
-        visitor.visit(this);
+    public int getLineNumber() {
+        return lineNumber;
     }
 }

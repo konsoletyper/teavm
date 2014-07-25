@@ -1,5 +1,5 @@
 /*
- *  Copyright 2012 Alexey Andreev.
+ *  Copyright 2014 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,34 +13,25 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript.ast;
+package org.teavm.debugging;
+
+import org.teavm.model.MethodReference;
+
 
 /**
  *
  * @author Alexey Andreev
  */
-public class ReturnStatement extends Statement {
-    private Expr result;
-    private NodeLocation location;
-
-    public Expr getResult() {
-        return result;
-    }
-
-    public void setResult(Expr result) {
-        this.result = result;
-    }
-
-    public NodeLocation getLocation() {
-        return location;
-    }
-
-    public void setLocation(NodeLocation location) {
-        this.location = location;
+public class DummyDebugInformationEmitter implements DebugInformationEmitter {
+    @Override
+    public void emitFile(String fileName) {
     }
 
     @Override
-    public void acceptVisitor(StatementVisitor visitor) {
-        visitor.visit(this);
+    public void emitMethod(MethodReference method) {
+    }
+
+    @Override
+    public void emitLineNumber(String lineNumber) {
     }
 }

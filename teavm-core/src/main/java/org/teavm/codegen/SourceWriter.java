@@ -25,14 +25,15 @@ import org.teavm.model.ValueType;
  *
  * @author Alexey Andreev
  */
-public class SourceWriter implements Appendable {
+public class SourceWriter implements Appendable, LocationProvider {
     private Appendable innerWriter;
     private int indentSize;
     private NamingStrategy naming;
     private boolean lineStart;
     private boolean minified;
     private int lineWidth;
-    private int pos;
+    private int column;
+    private int line;
 
     SourceWriter(NamingStrategy naming, Appendable innerWriter, int lineWidth) {
         this.naming = naming;
@@ -64,7 +65,7 @@ public class SourceWriter implements Appendable {
         if (value == '\n') {
             newLine();
         } else {
-            pos++;
+            column++;
         }
         return this;
     }
@@ -94,7 +95,7 @@ public class SourceWriter implements Appendable {
             return;
         }
         appendIndent();
-        pos += end - start;
+        column += end - start;
         innerWriter.append(csq, start, end);
     }
 
@@ -131,7 +132,7 @@ public class SourceWriter implements Appendable {
         if (lineStart) {
             for (int i = 0; i < indentSize; ++i) {
                 innerWriter.append("    ");
-                pos += 4;
+                column += 4;
             }
             lineStart = false;
         }
@@ -139,25 +140,26 @@ public class SourceWriter implements Appendable {
 
     public SourceWriter newLine() throws IOException{
         innerWriter.append('\n');
-        pos = 0;
+        column = 0;
+        ++line;
         lineStart = true;
         return this;
     }
 
     public SourceWriter ws() throws IOException {
-        if (pos >= lineWidth) {
+        if (column >= lineWidth) {
             newLine();
         } else {
             if (!minified) {
                 innerWriter.append(' ');
-                pos++;
+                column++;
             }
         }
         return this;
     }
 
     public SourceWriter tokenBoundary() throws IOException {
-        if (pos >= lineWidth) {
+        if (column >= lineWidth) {
             newLine();
         }
         return this;
@@ -166,7 +168,7 @@ public class SourceWriter implements Appendable {
     public SourceWriter softNewLine() throws IOException{
         if (!minified) {
             innerWriter.append('\n');
-            pos = 0;
+            column = 0;
             lineStart = true;
         }
         return this;
@@ -184,5 +186,15 @@ public class SourceWriter implements Appendable {
 
     public NamingStrategy getNaming() {
         return naming;
+    }
+
+    @Override
+    public int getColumn() {
+        return column;
+    }
+
+    @Override
+    public int getLine() {
+        return line;
     }
 }

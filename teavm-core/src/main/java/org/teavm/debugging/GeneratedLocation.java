@@ -1,5 +1,5 @@
 /*
- *  Copyright 2012 Alexey Andreev.
+ *  Copyright 2014 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,34 +13,35 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript.ast;
+package org.teavm.debugging;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class ReturnStatement extends Statement {
-    private Expr result;
-    private NodeLocation location;
+public class GeneratedLocation implements Comparable<GeneratedLocation> {
+    private int line;
+    private int column;
 
-    public Expr getResult() {
-        return result;
+    public GeneratedLocation(int line, int column) {
+        this.line = line;
+        this.column = column;
     }
 
-    public void setResult(Expr result) {
-        this.result = result;
+    public int getLine() {
+        return line;
     }
 
-    public NodeLocation getLocation() {
-        return location;
-    }
-
-    public void setLocation(NodeLocation location) {
-        this.location = location;
+    public int getColumn() {
+        return column;
     }
 
     @Override
-    public void acceptVisitor(StatementVisitor visitor) {
-        visitor.visit(this);
+    public int compareTo(GeneratedLocation o) {
+        int r = Integer.compare(line, o.line);
+        if (r == 0) {
+            r = Integer.compare(column, o.column);
+        }
+        return r;
     }
 }

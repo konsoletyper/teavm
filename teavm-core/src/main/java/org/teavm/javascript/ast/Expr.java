@@ -25,6 +25,8 @@ import org.teavm.model.*;
  * @author Alexey Andreev
  */
 public abstract class Expr implements Cloneable {
+    private NodeLocation location;
+
     public abstract void acceptVisitor(ExprVisitor visitor);
 
     @Override
@@ -147,5 +149,13 @@ public abstract class Expr implements Cloneable {
         StaticClassExpr expr = new StaticClassExpr();
         expr.setType(type);
         return expr;
+    }
+
+    public NodeLocation getLocation() {
+        return location;
+    }
+
+    public void setLocation(NodeLocation location) {
+        this.location = location;
     }
 }
