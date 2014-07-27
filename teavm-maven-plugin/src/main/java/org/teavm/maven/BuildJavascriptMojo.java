@@ -74,6 +74,12 @@ public class BuildJavascriptMojo extends AbstractMojo {
     @Parameter
     private boolean bytecodeLogging;
 
+    @Parameter
+    private boolean debugInformationGenerated;
+
+    @Parameter
+    private File debugInformationFile;
+
     @Parameter(required = false)
     private int numThreads = 1;
 
@@ -144,6 +150,22 @@ public class BuildJavascriptMojo extends AbstractMojo {
         this.methodAliases = methodAliases;
     }
 
+    public boolean isDebugInformationGenerated() {
+        return debugInformationGenerated;
+    }
+
+    public void setDebugInformationGenerated(boolean debugInformationGenerated) {
+        this.debugInformationGenerated = debugInformationGenerated;
+    }
+
+    public File getDebugInformationFile() {
+        return debugInformationFile;
+    }
+
+    public void setDebugInformationFile(File debugInformationFile) {
+        this.debugInformationFile = debugInformationFile;
+    }
+
     @Override
     public void execute() throws MojoExecutionException {
         Log log = getLog();
@@ -168,6 +190,10 @@ public class BuildJavascriptMojo extends AbstractMojo {
             }
             if (properties != null) {
                 tool.getProperties().putAll(properties);
+            }
+            if (isDebugInformationGenerated()) {
+                tool.setDebugInformation(debugInformationFile != null ? debugInformationFile :
+                    new File(targetDirectory, targetFileName + ".teavmdbg"));
             }
             tool.generate();
         } catch (RuntimeException e) {

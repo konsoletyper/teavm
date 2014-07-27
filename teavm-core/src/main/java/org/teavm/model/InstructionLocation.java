@@ -20,19 +20,19 @@ package org.teavm.model;
  * @author Alexey Andreev
  */
 public class InstructionLocation {
-    private String className;
-    private MethodDescriptor method;
-    private int lineNumber = -1;
+    private String fileName;
+    private int line = -1;
 
-    public String getClassName() {
-        return className;
+    public InstructionLocation(String fileName, int line) {
+        this.fileName = fileName;
+        this.line = line;
     }
 
-    public MethodDescriptor getMethod() {
-        return method;
+    public String getFileName() {
+        return fileName;
     }
 
-    public int getLineNumber() {
-        return lineNumber;
+    public int getLine() {
+        return line;
     }
 }

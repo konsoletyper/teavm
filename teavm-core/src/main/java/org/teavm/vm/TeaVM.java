@@ -20,6 +20,7 @@ import java.util.*;
 import org.teavm.codegen.*;
 import org.teavm.common.FiniteExecutor;
 import org.teavm.common.ServiceRepository;
+import org.teavm.debugging.DebugInformationEmitter;
 import org.teavm.dependency.*;
 import org.teavm.javascript.Decompiler;
 import org.teavm.javascript.Renderer;
@@ -81,6 +82,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     private List<RendererListener> rendererListeners = new ArrayList<>();
     private Map<Class<?>, Object> services = new HashMap<>();
     private Properties properties = new Properties();
+    private DebugInformationEmitter debugEmitter;
 
     TeaVM(ClassReaderSource classSource, ClassLoader classLoader, FiniteExecutor executor) {
         this.classSource = classSource;
@@ -267,6 +269,14 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         dependencyChecker.checkForMissingItems();
     }
 
+    public DebugInformationEmitter getDebugEmitter() {
+        return debugEmitter;
+    }
+
+    public void setDebugEmitter(DebugInformationEmitter debugEmitter) {
+        this.debugEmitter = debugEmitter;
+    }
+
     /**
      * <p>Does actual build. Call this method after TeaVM is fully configured and all entry points
      * are specified. This method may fail if there are items (classes, methods and fields)
@@ -338,6 +348,9 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         builder.setMinified(minifying);
         SourceWriter sourceWriter = builder.build(writer);
         Renderer renderer = new Renderer(sourceWriter, classSet, classLoader, this);
+        if (debugEmitter != null) {
+            renderer.setDebugEmitter(debugEmitter);
+        }
         for (Map.Entry<MethodReference, Injector> entry : methodInjectors.entrySet()) {
             renderer.addInjector(entry.getKey(), entry.getValue());
         }

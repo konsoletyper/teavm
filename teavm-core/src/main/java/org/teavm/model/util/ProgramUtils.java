@@ -110,6 +110,12 @@ public final class ProgramUtils {
     private static class InstructionCopyReader implements InstructionReader {
         Instruction copy;
         Program programCopy;
+        InstructionLocation location;
+
+        @Override
+        public void location(InstructionLocation location) {
+            this.location = location;
+        }
 
         private Variable copyVar(VariableReader var) {
             return programCopy.variableAt(var.getIndex());
@@ -122,6 +128,7 @@ public final class ProgramUtils {
         @Override
         public void nop() {
             copy = new EmptyInstruction();
+            copy.setLocation(location);
         }
 
         @Override
@@ -130,6 +137,7 @@ public final class ProgramUtils {
             insnCopy.setConstant(cst);
             insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
+            copy.setLocation(location);
         }
 
         @Override
@@ -137,6 +145,7 @@ public final class ProgramUtils {
             NullConstantInstruction insnCopy = new NullConstantInstruction();
             insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
+            copy.setLocation(location);
         }
 
         @Override
@@ -145,6 +154,7 @@ public final class ProgramUtils {
             insnCopy.setConstant(cst);
             insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
+            copy.setLocation(location);
         }
 
         @Override
@@ -153,6 +163,7 @@ public final class ProgramUtils {
             insnCopy.setConstant(cst);
             insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
+            copy.setLocation(location);
         }
 
         @Override
@@ -161,6 +172,7 @@ public final class ProgramUtils {
             insnCopy.setConstant(cst);
             insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
+            copy.setLocation(location);
         }
 
         @Override
@@ -169,6 +181,7 @@ public final class ProgramUtils {
             insnCopy.setConstant(cst);
             insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
+            copy.setLocation(location);
         }
 
         @Override
@@ -177,6 +190,7 @@ public final class ProgramUtils {
             insnCopy.setConstant(cst);
             insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
+            copy.setLocation(location);
         }
 
         @Override
@@ -187,6 +201,7 @@ public final class ProgramUtils {
             insnCopy.setSecondOperand(copyVar(second));
             insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
+            copy.setLocation(location);
         }
 
         @Override
@@ -195,6 +210,7 @@ public final class ProgramUtils {
             insnCopy.setOperand(copyVar(operand));
             insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
+            copy.setLocation(location);
         }
 
         @Override
@@ -203,6 +219,7 @@ public final class ProgramUtils {
             insnCopy.setAssignee(copyVar(assignee));
             insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
+            copy.setLocation(location);
         }
 
         @Override
@@ -212,6 +229,7 @@ public final class ProgramUtils {
             insnCopy.setReceiver(copyVar(receiver));
             insnCopy.setTargetType(targetType);
             copy = insnCopy;
+            copy.setLocation(location);
         }
 
         @Override
@@ -221,6 +239,7 @@ public final class ProgramUtils {
             insnCopy.setValue(copyVar(value));
             insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
+            copy.setLocation(location);
         }
 
         @Override
@@ -230,6 +249,7 @@ public final class ProgramUtils {
             insnCopy.setValue(copyVar(value));
             insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
+            copy.setLocation(location);
         }
 
         @Override
@@ -240,6 +260,7 @@ public final class ProgramUtils {
             insnCopy.setConsequent(copyBlock(consequent));
             insnCopy.setAlternative(copyBlock(alternative));
             copy = insnCopy;
+            copy.setLocation(location);
         }
 
         @Override
@@ -251,6 +272,7 @@ public final class ProgramUtils {
             insnCopy.setConsequent(copyBlock(consequent));
             insnCopy.setAlternative(copyBlock(alternative));
             copy = insnCopy;
+            copy.setLocation(location);
         }
 
         @Override
@@ -258,6 +280,7 @@ public final class ProgramUtils {
             JumpInstruction insnCopy = new JumpInstruction();
             insnCopy.setTarget(copyBlock(target));
             copy = insnCopy;
+            copy.setLocation(location);
         }
 
         @Override
@@ -273,6 +296,7 @@ public final class ProgramUtils {
                 insnCopy.getEntries().add(entryCopy);
             }
             copy = insnCopy;
+            copy.setLocation(location);
         }
 
         @Override
@@ -280,6 +304,7 @@ public final class ProgramUtils {
             ExitInstruction insnCopy = new ExitInstruction();
             insnCopy.setValueToReturn(valueToReturn != null ? copyVar(valueToReturn) : null);
             copy = insnCopy;
+            copy.setLocation(location);
         }
 
         @Override
@@ -287,6 +312,7 @@ public final class ProgramUtils {
             RaiseInstruction insnCopy = new RaiseInstruction();
             insnCopy.setException(copyVar(exception));
             copy = insnCopy;
+            copy.setLocation(location);
         }
 
         @Override
@@ -296,6 +322,7 @@ public final class ProgramUtils {
             insnCopy.setSize(copyVar(size));
             insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
+            copy.setLocation(location);
         }
 
         @Override
@@ -308,6 +335,7 @@ public final class ProgramUtils {
                 insnCopy.getDimensions().add(copyVar(dim));
             }
             copy = insnCopy;
+            copy.setLocation(location);
         }
 
         @Override
@@ -316,6 +344,7 @@ public final class ProgramUtils {
             insnCopy.setType(type);
             insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
+            copy.setLocation(location);
         }
 
         @Override
@@ -327,6 +356,7 @@ public final class ProgramUtils {
             insnCopy.setInstance(instance != null ? copyVar(instance) : null);
             insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
+            copy.setLocation(location);
         }
 
         @Override
@@ -336,6 +366,7 @@ public final class ProgramUtils {
             insnCopy.setInstance(instance != null ? copyVar(instance) : null);
             insnCopy.setValue(copyVar(value));
             copy = insnCopy;
+            copy.setLocation(location);
         }
 
         @Override
@@ -344,6 +375,7 @@ public final class ProgramUtils {
             insnCopy.setArray(copyVar(array));
             insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
+            copy.setLocation(location);
         }
 
         @Override
@@ -352,6 +384,7 @@ public final class ProgramUtils {
             insnCopy.setArray(copyVar(array));
             insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
+            copy.setLocation(location);
         }
 
         @Override
@@ -360,6 +393,7 @@ public final class ProgramUtils {
             insnCopy.setArray(copyVar(array));
             insnCopy.setReceiver(copyVar(receiver));
             copy = insnCopy;
+            copy.setLocation(location);
         }
 
         @Override
@@ -369,6 +403,7 @@ public final class ProgramUtils {
             insnCopy.setReceiver(copyVar(receiver));
             insnCopy.setIndex(copyVar(index));
             copy = insnCopy;
+            copy.setLocation(location);
         }
 
         @Override
@@ -378,6 +413,7 @@ public final class ProgramUtils {
             insnCopy.setValue(copyVar(value));
             insnCopy.setIndex(copyVar(index));
             copy = insnCopy;
+            copy.setLocation(location);
         }
 
         @Override
@@ -392,6 +428,7 @@ public final class ProgramUtils {
                 insnCopy.getArguments().add(copyVar(arg));
             }
             copy = insnCopy;
+            copy.setLocation(location);
         }
 
         @Override
@@ -401,6 +438,7 @@ public final class ProgramUtils {
             insnCopy.setReceiver(copyVar(receiver));
             insnCopy.setType(type);
             copy = insnCopy;
+            copy.setLocation(location);
         }
 
         @Override
@@ -408,6 +446,7 @@ public final class ProgramUtils {
             InitClassInstruction insnCopy = new InitClassInstruction();
             insnCopy.setClassName(className);
             copy = insnCopy;
+            copy.setLocation(location);
         }
 
         @Override
@@ -416,6 +455,7 @@ public final class ProgramUtils {
             insnCopy.setReceiver(copyVar(receiver));
             insnCopy.setValue(copyVar(value));
             copy = insnCopy;
+            copy.setLocation(location);
         }
     }
 }

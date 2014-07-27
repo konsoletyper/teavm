@@ -31,18 +31,23 @@ public class ProgramParser {
     static final byte SINGLE = 1;
     static final byte DOUBLE_FIRST_HALF = 2;
     static final byte DOUBLE_SECOND_HALF = 3;
+    private String fileName;
     private StackFrame[] stackBefore;
     private StackFrame[] stackAfter;
     private StackFrame stack;
     private int index;
     private int[] nextIndexes;
     private Map<Label, Integer> labelIndexes;
+    private Map<Label, Integer> lineNumbers;
     private List<List<Instruction>> targetInstructions;
     private List<Instruction> builder = new ArrayList<>();
     private List<BasicBlock> basicBlocks = new ArrayList<>();
     private int minLocal;
     private Program program;
     private String currentClassName;
+    private int currentLineNumber;
+    private boolean lineNumberChanged;
+    private InstructionLocation lastInsnLocation;
 
     private static class Step {
         public final int source;
@@ -72,7 +77,17 @@ public class ProgramParser {
         }
     }
 
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
     public Program parse(MethodNode method, String className) {
+        currentLineNumber = -1;
+        lineNumberChanged = true;
         program = new Program();
         this.currentClassName = className;
         InsnList instructions = method.instructions;
@@ -151,10 +166,15 @@ public class ProgramParser {
             minLocal = 1;
         }
         labelIndexes = new HashMap<>();
+        lineNumbers = new HashMap<>();
         for (int i = 0; i < instructions.size(); ++i) {
             AbstractInsnNode node = instructions.get(i);
             if (node instanceof LabelNode) {
                 labelIndexes.put(((LabelNode)node).getLabel(), i);
+            }
+            if (node instanceof LineNumberNode) {
+                LineNumberNode lineNumberNode = (LineNumberNode)node;
+                lineNumbers.put(lineNumberNode.start.getLabel(), lineNumberNode.line);
             }
         }
         targetInstructions = new ArrayList<>(instructions.size());
@@ -289,6 +309,15 @@ public class ProgramParser {
         AssignInstruction insn = new AssignInstruction();
         insn.setAssignee(getVariable(source));
         insn.setReceiver(getVariable(target));
+        addInstruction(insn);
+    }
+
+    private void addInstruction(Instruction insn) {
+        if (lineNumberChanged) {
+            lastInsnLocation = new InstructionLocation(fileName, currentLineNumber);
+            lineNumberChanged = false;
+        }
+        insn.setLocation(lastInsnLocation);
         builder.add(insn);
     }
 
@@ -338,7 +367,7 @@ public class ProgramParser {
                     ConstructInstruction insn = new ConstructInstruction();
                     insn.setReceiver(getVariable(pushSingle()));
                     insn.setType(cls);
-                    builder.add(insn);
+                    addInstruction(insn);
                     break;
                 }
                 case Opcodes.ANEWARRAY: {
@@ -347,7 +376,7 @@ public class ProgramParser {
                     insn.setSize(getVariable(popSingle()));
                     insn.setReceiver(getVariable(pushSingle()));
                     insn.setItemType(valueType);
-                    builder.add(insn);
+                    addInstruction(insn);
                     break;
                 }
                 case Opcodes.INSTANCEOF: {
@@ -355,7 +384,7 @@ public class ProgramParser {
                     insn.setValue(getVariable(popSingle()));
                     insn.setReceiver(getVariable(pushSingle()));
                     insn.setType(parseType(type));
-                    builder.add(insn);
+                    addInstruction(insn);
                     break;
                 }
                 case Opcodes.CHECKCAST: {
@@ -363,7 +392,7 @@ public class ProgramParser {
                     insn.setValue(getVariable(popSingle()));
                     insn.setReceiver(getVariable(pushSingle()));
                     insn.setTargetType(parseType(type));
-                    builder.add(insn);
+                    addInstruction(insn);
                     break;
                 }
             }
@@ -389,15 +418,14 @@ public class ProgramParser {
             SwitchInstruction insn = new SwitchInstruction();
             insn.setCondition(getVariable(popSingle()));
             insn.getEntries().addAll(Arrays.asList(table));
-            builder.add(insn);
+            addInstruction(insn);
             int defaultIndex = labelIndexes.get(dflt);
             insn.setDefaultTarget(getBasicBlock(defaultIndex));
             nextIndexes[labels.length] = defaultIndex;
         }
 
         @Override
-        public AnnotationVisitor visitParameterAnnotation(int parameter, String desc,
-                boolean visible) {
+        public AnnotationVisitor visitParameterAnnotation(int parameter, String desc, boolean visible) {
             return null;
         }
 
@@ -412,7 +440,7 @@ public class ProgramParser {
             insn.setItemType(arrayType);
             insn.setReceiver(getVariable(pushSingle()));
             insn.getDimensions().addAll(Arrays.asList(dimensions));
-            builder.add(insn);
+            addInstruction(insn);
         }
 
         @Override
@@ -428,7 +456,7 @@ public class ProgramParser {
                             CloneArrayInstruction insn = new CloneArrayInstruction();
                             insn.setArray(getVariable(popSingle()));
                             insn.setReceiver(getVariable(pushSingle()));
-                            builder.add(insn);
+                            addInstruction(insn);
                             break;
                         }
                         ownerCls = "java.lang.Object";
@@ -458,7 +486,7 @@ public class ProgramParser {
                             insn.setReceiver(getVariable(result));
                         }
                         insn.getArguments().addAll(Arrays.asList(args));
-                        builder.add(insn);
+                        addInstruction(insn);
                     } else {
                         InvokeInstruction insn = new InvokeInstruction();
                         if (opcode == Opcodes.INVOKESPECIAL) {
@@ -472,7 +500,7 @@ public class ProgramParser {
                         }
                         insn.setInstance(getVariable(instance));
                         insn.getArguments().addAll(Arrays.asList(args));
-                        builder.add(insn);
+                        addInstruction(insn);
                     }
                     break;
                 }
@@ -499,15 +527,14 @@ public class ProgramParser {
             SwitchInstruction insn = new SwitchInstruction();
             insn.setCondition(getVariable(popSingle()));
             insn.getEntries().addAll(Arrays.asList(table));
-            builder.add(insn);
+            addInstruction(insn);
             int defaultTarget = labelIndexes.get(dflt);
             insn.setDefaultTarget(getBasicBlock(defaultTarget));
             nextIndexes[labels.length] = labelIndexes.get(dflt);
         }
 
         @Override
-        public void visitLocalVariable(String name, String desc, String signature, Label start,
-                Label end, int index) {
+        public void visitLocalVariable(String name, String desc, String signature, Label start, Label end, int index) {
         }
 
         @Override
@@ -528,12 +555,12 @@ public class ProgramParser {
                 StringConstantInstruction insn = new StringConstantInstruction();
                 insn.setConstant((String)cst);
                 insn.setReceiver(getVariable(pushSingle()));
-                builder.add(insn);
+                addInstruction(insn);
             } else if (cst instanceof Type) {
                 ClassConstantInstruction insn = new ClassConstantInstruction();
                 insn.setConstant(ValueType.parse(((Type)cst).getDescriptor()));
                 insn.setReceiver(getVariable(pushSingle()));
-                builder.add(insn);
+                addInstruction(insn);
             } else {
                 throw new IllegalArgumentException();
             }
@@ -541,6 +568,11 @@ public class ProgramParser {
 
         @Override
         public void visitLabel(Label label) {
+            Integer lineNumber = lineNumbers.get(label);
+            if (lineNumber != null) {
+                currentLineNumber = lineNumber;
+                lineNumberChanged = true;
+            }
         }
 
         private void emitBranching(BranchingCondition condition, int value, int target) {
@@ -548,7 +580,7 @@ public class ProgramParser {
             insn.setOperand(getVariable(value));
             insn.setConsequent(getBasicBlock(target));
             insn.setAlternative(getBasicBlock(index + 1));
-            builder.add(insn);
+            addInstruction(insn);
         }
 
         private void emitBranching(BinaryBranchingCondition condition, int first, int second,
@@ -558,7 +590,7 @@ public class ProgramParser {
             insn.setSecondOperand(getVariable(second));
             insn.setConsequent(getBasicBlock(target));
             insn.setAlternative(getBasicBlock(index + 1));
-            builder.add(insn);
+            addInstruction(insn);
         }
 
         private void emitBinary(BinaryOperation operation, NumericOperandType operandType,
@@ -567,21 +599,21 @@ public class ProgramParser {
             insn.setFirstOperand(getVariable(first));
             insn.setSecondOperand(getVariable(second));
             insn.setReceiver(getVariable(receiver));
-            builder.add(insn);
+            addInstruction(insn);
         }
 
         private void emitNeg(NumericOperandType operandType, int operand, int receiver) {
             NegateInstruction insn = new NegateInstruction(operandType);
             insn.setOperand(getVariable(operand));
             insn.setReceiver(getVariable(receiver));
-            builder.add(insn);
+            addInstruction(insn);
         }
 
         private void emitNumberCast(NumericOperandType source, NumericOperandType target, int value, int result) {
             CastNumberInstruction insn = new CastNumberInstruction(source, target);
             insn.setReceiver(getVariable(result));
             insn.setValue(getVariable(value));
-            builder.add(insn);
+            addInstruction(insn);
         }
 
         @Override
@@ -669,7 +701,7 @@ public class ProgramParser {
                 case Opcodes.GOTO: {
                     JumpInstruction insn = new JumpInstruction();
                     insn.setTarget(getBasicBlock(target));
-                    builder.add(insn);
+                    addInstruction(insn);
                     nextIndexes = new int[] { labelIndexes.get(label) };
                     return;
                 }
@@ -686,14 +718,14 @@ public class ProgramParser {
                     IntegerConstantInstruction insn = new IntegerConstantInstruction();
                     insn.setConstant(operand);
                     insn.setReceiver(getVariable(pushSingle()));
-                    builder.add(insn);
+                    addInstruction(insn);
                     break;
                 }
                 case Opcodes.SIPUSH: {
                     IntegerConstantInstruction insn = new IntegerConstantInstruction();
                     insn.setConstant(operand);
                     insn.setReceiver(getVariable(pushSingle()));
-                    builder.add(insn);
+                    addInstruction(insn);
                     break;
                 }
                 case Opcodes.NEWARRAY: {
@@ -730,7 +762,7 @@ public class ProgramParser {
                     insn.setSize(getVariable(popSingle()));
                     insn.setReceiver(getVariable(pushSingle()));
                     insn.setItemType(itemType);
-                    builder.add(insn);
+                    addInstruction(insn);
                     break;
                 }
             }
@@ -740,28 +772,28 @@ public class ProgramParser {
             IntegerConstantInstruction insn = new IntegerConstantInstruction();
             insn.setConstant(value);
             insn.setReceiver(getVariable(pushSingle()));
-            builder.add(insn);
+            addInstruction(insn);
         }
 
         private void pushConstant(long value) {
             LongConstantInstruction insn = new LongConstantInstruction();
             insn.setConstant(value);
             insn.setReceiver(getVariable(pushDouble()));
-            builder.add(insn);
+            addInstruction(insn);
         }
 
         private void pushConstant(double value) {
             DoubleConstantInstruction insn = new DoubleConstantInstruction();
             insn.setConstant(value);
             insn.setReceiver(getVariable(pushDouble()));
-            builder.add(insn);
+            addInstruction(insn);
         }
 
         private void pushConstant(float value) {
             FloatConstantInstruction insn = new FloatConstantInstruction();
             insn.setConstant(value);
             insn.setReceiver(getVariable(pushSingle()));
-            builder.add(insn);
+            addInstruction(insn);
         }
 
         private void loadArrayElement(int sz, ArrayElementType type) {
@@ -771,12 +803,12 @@ public class ProgramParser {
             UnwrapArrayInstruction unwrapInsn = new UnwrapArrayInstruction(type);
             unwrapInsn.setArray(getVariable(array));
             unwrapInsn.setReceiver(unwrapInsn.getArray());
-            builder.add(unwrapInsn);
+            addInstruction(unwrapInsn);
             GetElementInstruction insn = new GetElementInstruction();
             insn.setArray(getVariable(array));
             insn.setIndex(getVariable(arrIndex));
             insn.setReceiver(getVariable(var));
-            builder.add(insn);
+            addInstruction(insn);
         }
 
         private void storeArrayElement(int sz, ArrayElementType type) {
@@ -786,12 +818,12 @@ public class ProgramParser {
             UnwrapArrayInstruction unwrapInsn = new UnwrapArrayInstruction(type);
             unwrapInsn.setArray(getVariable(array));
             unwrapInsn.setReceiver(unwrapInsn.getArray());
-            builder.add(unwrapInsn);
+            addInstruction(unwrapInsn);
             PutElementInstruction insn = new PutElementInstruction();
             insn.setArray(getVariable(array));
             insn.setIndex(getVariable(arrIndex));
             insn.setValue(getVariable(value));
-            builder.add(insn);
+            addInstruction(insn);
         }
 
         @Override
@@ -800,7 +832,7 @@ public class ProgramParser {
                 case Opcodes.ACONST_NULL: {
                     NullConstantInstruction insn = new NullConstantInstruction();
                     insn.setReceiver(getVariable(pushSingle()));
-                    builder.add(insn);
+                    addInstruction(insn);
                     break;
                 }
                 case Opcodes.ICONST_M1:
@@ -851,7 +883,7 @@ public class ProgramParser {
                             CastIntegerDirection.TO_INTEGER);
                     insn.setValue(getVariable(popSingle()));
                     insn.setReceiver(getVariable(pushSingle()));
-                    builder.add(insn);
+                    addInstruction(insn);
                     break;
                 }
                 case Opcodes.IALOAD:
@@ -866,7 +898,7 @@ public class ProgramParser {
                             CastIntegerDirection.TO_INTEGER);
                     insn.setValue(getVariable(popSingle()));
                     insn.setReceiver(getVariable(pushSingle()));
-                    builder.add(insn);
+                    addInstruction(insn);
                     break;
                 }
                 case Opcodes.CALOAD: {
@@ -875,7 +907,7 @@ public class ProgramParser {
                             CastIntegerDirection.TO_INTEGER);
                     insn.setValue(getVariable(popSingle()));
                     insn.setReceiver(getVariable(pushSingle()));
-                    builder.add(insn);
+                    addInstruction(insn);
                     break;
                 }
                 case Opcodes.AALOAD:
@@ -1353,7 +1385,7 @@ public class ProgramParser {
                             CastIntegerDirection.FROM_INTEGER);
                     insn.setValue(getVariable(popSingle()));
                     insn.setReceiver(getVariable(pushSingle()));
-                    builder.add(insn);
+                    addInstruction(insn);
                     break;
                 }
                 case Opcodes.I2C: {
@@ -1361,7 +1393,7 @@ public class ProgramParser {
                             CastIntegerDirection.FROM_INTEGER);
                     insn.setValue(getVariable(popSingle()));
                     insn.setReceiver(getVariable(pushSingle()));
-                    builder.add(insn);
+                    addInstruction(insn);
                     break;
                 }
                 case Opcodes.I2S: {
@@ -1369,7 +1401,7 @@ public class ProgramParser {
                             CastIntegerDirection.FROM_INTEGER);
                     insn.setValue(getVariable(popSingle()));
                     insn.setReceiver(getVariable(pushSingle()));
-                    builder.add(insn);
+                    addInstruction(insn);
                     break;
                 }
                 case Opcodes.I2F: {
@@ -1449,7 +1481,7 @@ public class ProgramParser {
                 case Opcodes.ARETURN: {
                     ExitInstruction insn = new ExitInstruction();
                     insn.setValueToReturn(getVariable(popSingle()));
-                    builder.add(insn);
+                    addInstruction(insn);
                     nextIndexes = new int[0];
                     return;
                 }
@@ -1457,13 +1489,13 @@ public class ProgramParser {
                 case Opcodes.DRETURN: {
                     ExitInstruction insn = new ExitInstruction();
                     insn.setValueToReturn(getVariable(popDouble()));
-                    builder.add(insn);
+                    addInstruction(insn);
                     nextIndexes = new int[0];
                     return;
                 }
                 case Opcodes.RETURN: {
                     ExitInstruction insn = new ExitInstruction();
-                    builder.add(insn);
+                    addInstruction(insn);
                     nextIndexes = new int[0];
                     return;
                 }
@@ -1473,17 +1505,17 @@ public class ProgramParser {
                     UnwrapArrayInstruction unwrapInsn = new UnwrapArrayInstruction(ArrayElementType.OBJECT);
                     unwrapInsn.setArray(getVariable(a));
                     unwrapInsn.setReceiver(getVariable(r));
-                    builder.add(unwrapInsn);
+                    addInstruction(unwrapInsn);
                     ArrayLengthInstruction insn = new ArrayLengthInstruction();
                     insn.setArray(getVariable(a));
                     insn.setReceiver(getVariable(r));
-                    builder.add(insn);
+                    addInstruction(insn);
                     break;
                 }
                 case Opcodes.ATHROW: {
                     RaiseInstruction insn = new RaiseInstruction();
                     insn.setException(getVariable(popSingle()));
-                    builder.add(insn);
+                    addInstruction(insn);
                     nextIndexes = new int[0];
                     return;
                 }
@@ -1502,7 +1534,7 @@ public class ProgramParser {
             IntegerConstantInstruction intInsn = new IntegerConstantInstruction();
             intInsn.setConstant(increment);
             intInsn.setReceiver(getVariable(tmp));
-            builder.add(intInsn);
+            addInstruction(intInsn);
             emitBinary(BinaryOperation.ADD, NumericOperandType.INT, var, tmp, var);
         }
 
@@ -1523,7 +1555,7 @@ public class ProgramParser {
                     insn.setField(new FieldReference(ownerCls, name));
                     insn.setFieldType(type);
                     insn.setReceiver(getVariable(value));
-                    builder.add(insn);
+                    addInstruction(insn);
                     break;
                 }
                 case Opcodes.PUTFIELD: {
@@ -1533,7 +1565,7 @@ public class ProgramParser {
                     insn.setInstance(getVariable(instance));
                     insn.setField(new FieldReference(ownerCls, name));
                     insn.setValue(getVariable(value));
-                    builder.add(insn);
+                    addInstruction(insn);
                     break;
                 }
                 case Opcodes.GETSTATIC: {
@@ -1542,26 +1574,26 @@ public class ProgramParser {
                     if (!owner.equals(currentClassName)) {
                         InitClassInstruction initInsn = new InitClassInstruction();
                         initInsn.setClassName(ownerCls);
-                        builder.add(initInsn);
+                        addInstruction(initInsn);
                     }
                     GetFieldInstruction insn = new GetFieldInstruction();
                     insn.setField(new FieldReference(ownerCls, name));
                     insn.setFieldType(type);
                     insn.setReceiver(getVariable(value));
-                    builder.add(insn);
+                    addInstruction(insn);
                     break;
                 }
                 case Opcodes.PUTSTATIC: {
                     if (!owner.equals(currentClassName)) {
                         InitClassInstruction initInsn = new InitClassInstruction();
                         initInsn.setClassName(ownerCls);
-                        builder.add(initInsn);
+                        addInstruction(initInsn);
                     }
                     int value = desc.equals("D") || desc.equals("J") ? popDouble() : popSingle();
                     PutFieldInstruction insn = new PutFieldInstruction();
                     insn.setField(new FieldReference(ownerCls, name));
                     insn.setValue(getVariable(value));
-                    builder.add(insn);
+                    addInstruction(insn);
                     break;
                 }
             }

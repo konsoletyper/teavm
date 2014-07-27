@@ -33,13 +33,11 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     }
 
     private static boolean isZero(Expr expr) {
-        return expr instanceof ConstantExpr &&
-                Integer.valueOf(0).equals(((ConstantExpr)expr).getValue());
+        return expr instanceof ConstantExpr && Integer.valueOf(0).equals(((ConstantExpr)expr).getValue());
     }
 
     private static boolean isComparison(Expr expr) {
-        return expr instanceof BinaryExpr &&
-                ((BinaryExpr)expr).getOperation() == BinaryOperation.COMPARE;
+        return expr instanceof BinaryExpr && ((BinaryExpr)expr).getOperation() == BinaryOperation.COMPARE;
     }
 
     @Override
@@ -76,6 +74,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                     BinaryExpr comparison = (BinaryExpr)p;
                     Expr result = BinaryExpr.binary(expr.getOperation(),
                             comparison.getFirstOperand(), comparison.getSecondOperand());
+                    result.setLocation(comparison.getLocation());
                     if (invert) {
                         result = ExprOptimizer.invert(result);
                     }
@@ -139,6 +138,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         VariableExpr var = (VariableExpr)assignment.getLeftValue();
         if (var.getIndex() == index) {
             resultSequence.remove(resultSequence.size() - 1);
+            assignment.getRightValue().setLocation(assignment.getLocation());
             assignment.getRightValue().acceptVisitor(this);
         }
     }
@@ -207,7 +207,9 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         }
         Expr[] args = expr.getArguments().toArray(new Expr[0]);
         args = Arrays.copyOfRange(args, 1, args.length);
-        assignment.setRightValue(Expr.constructObject(expr.getMethod(), args));
+        Expr constructrExpr = Expr.constructObject(expr.getMethod(), args);
+        constructrExpr.setLocation(expr.getLocation());
+        assignment.setRightValue(constructrExpr);
         stats.reads[var.getIndex()]--;
         return true;
     }
@@ -259,8 +261,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     public void visit(AssignmentStatement statement) {
         if (statement.getLeftValue() == null) {
             statement.getRightValue().acceptVisitor(this);
-            if (resultExpr instanceof InvocationExpr &&
-                    tryApplyConstructor((InvocationExpr)resultExpr)) {
+            if (resultExpr instanceof InvocationExpr && tryApplyConstructor((InvocationExpr)resultExpr)) {
                 resultStmt = new SequentialStatement();
             } else {
                 statement.setRightValue(resultExpr);

@@ -23,6 +23,8 @@ import org.teavm.codegen.NamingException;
 import org.teavm.codegen.NamingStrategy;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.common.ServiceRepository;
+import org.teavm.debugging.DebugInformationEmitter;
+import org.teavm.debugging.DummyDebugInformationEmitter;
 import org.teavm.javascript.ast.*;
 import org.teavm.javascript.ni.GeneratorContext;
 import org.teavm.javascript.ni.InjectedBy;
@@ -46,6 +48,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     private List<String> stringPool = new ArrayList<>();
     private Properties properties = new Properties();
     private ServiceRepository services;
+    private DebugInformationEmitter debugEmitter = new DummyDebugInformationEmitter();
+    private Deque<NodeLocation> locationStack = new ArrayDeque<>();
 
     private static class InjectorHolder {
         public final Injector injector;
@@ -100,6 +104,14 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     @Override
     public Properties getProperties() {
         return new Properties(properties);
+    }
+
+    public DebugInformationEmitter getDebugEmitter() {
+        return debugEmitter;
+    }
+
+    public void setDebugEmitter(DebugInformationEmitter debugEmitter) {
+        this.debugEmitter = debugEmitter;
     }
 
     public void setProperties(Properties properties) {
@@ -462,6 +474,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
 
     public void renderBody(MethodNode method, boolean inner) throws IOException {
         MethodReference ref = method.getReference();
+        debugEmitter.emitMethod(ref);
         if (inner) {
             writer.appendMethodBody(ref).ws().append("=").ws().append("function(");
         } else {
@@ -480,6 +493,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         writer.append(")").ws().append("{").softNewLine().indent();
         method.acceptVisitor(new MethodBodyRenderer());
         writer.outdent().append("}").newLine();
+        debugEmitter.emitMethod(null);
     }
 
     private class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
@@ -545,15 +559,40 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         }
     }
 
+    private void pushLocation(NodeLocation location) {
+        locationStack.push(location);
+        if (location != null) {
+            debugEmitter.emitLocation(location.getFileName(), location.getLine());
+        } else {
+            debugEmitter.emitLocation(null, -1);
+        }
+    }
+
+    private void popLocation() {
+        locationStack.pop();
+        NodeLocation location = locationStack.peek();
+        if (location != null) {
+            debugEmitter.emitLocation(location.getFileName(), location.getLine());
+        } else {
+            debugEmitter.emitLocation(null, -1);
+        }
+    }
+
     @Override
     public void visit(AssignmentStatement statement) throws RenderingException {
         try {
+            if (statement.getLocation() != null) {
+                pushLocation(statement.getLocation());
+            }
             if (statement.getLeftValue() != null) {
                 statement.getLeftValue().acceptVisitor(this);
                 writer.ws().append("=").ws();
             }
             statement.getRightValue().acceptVisitor(this);
             writer.append(";").softNewLine();
+            if (statement.getLocation() != null) {
+                popLocation();
+            }
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
         }
@@ -672,11 +711,17 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     @Override
     public void visit(BreakStatement statement) {
         try {
+            if (statement.getLocation() != null) {
+                pushLocation(statement.getLocation());
+            }
             writer.append("break");
             if (statement.getTarget() != null) {
                 writer.append(' ').append(statement.getTarget().getId());
             }
             writer.append(";").softNewLine();
+            if (statement.getLocation() != null) {
+                popLocation();
+            }
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
         }
@@ -685,11 +730,17 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     @Override
     public void visit(ContinueStatement statement) {
         try {
+            if (statement.getLocation() != null) {
+                pushLocation(statement.getLocation());
+            }
             writer.append("continue");
             if (statement.getTarget() != null) {
                 writer.append(' ').append(statement.getTarget().getId());
             }
             writer.append(";").softNewLine();
+            if (statement.getLocation() != null) {
+                popLocation();
+            }
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
         }
@@ -698,12 +749,18 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     @Override
     public void visit(ReturnStatement statement) {
         try {
+            if (statement.getLocation() != null) {
+                pushLocation(statement.getLocation());
+            }
             writer.append("return");
             if (statement.getResult() != null) {
                 writer.append(' ');
                 statement.getResult().acceptVisitor(this);
             }
             writer.append(";").softNewLine();
+            if (statement.getLocation() != null) {
+                popLocation();
+            }
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
         }
@@ -712,9 +769,15 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     @Override
     public void visit(ThrowStatement statement) {
         try {
+            if (statement.getLocation() != null) {
+                pushLocation(statement.getLocation());
+            }
             writer.append("$rt_throw(");
             statement.getException().acceptVisitor(this);
             writer.append(");").softNewLine();
+            if (statement.getLocation() != null) {
+                popLocation();
+            }
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
         }
@@ -746,7 +809,13 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     @Override
     public void visit(InitClassStatement statement) {
         try {
+            if (statement.getLocation() != null) {
+                pushLocation(statement.getLocation());
+            }
             writer.appendClass(statement.getClassName()).append("_$clinit();").softNewLine();
+            if (statement.getLocation() != null) {
+                popLocation();
+            }
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
         }
@@ -767,11 +836,17 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
 
     private void visitBinary(BinaryExpr expr, String op) {
         try {
+            if (expr.getLocation() != null) {
+                pushLocation(expr.getLocation());
+            }
             writer.append('(');
             expr.getFirstOperand().acceptVisitor(this);
             writer.ws().append(op).ws();
             expr.getSecondOperand().acceptVisitor(this);
             writer.append(')');
+            if (expr.getLocation() != null) {
+                popLocation();
+            }
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
         }
@@ -779,12 +854,18 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
 
     private void visitBinaryFunction(BinaryExpr expr, String function) {
         try {
+            if (expr.getLocation() != null) {
+                pushLocation(expr.getLocation());
+            }
             writer.append(function);
             writer.append('(');
             expr.getFirstOperand().acceptVisitor(this);
             writer.append(",").ws();
             expr.getSecondOperand().acceptVisitor(this);
             writer.append(')');
+            if (expr.getLocation() != null) {
+                popLocation();
+            }
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
         }
@@ -900,6 +981,9 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
 
     @Override
     public void visit(UnaryExpr expr) {
+        if (expr.getLocation() != null) {
+            pushLocation(expr.getLocation());
+        }
         try {
             switch (expr.getOperation()) {
                 case NOT:
@@ -964,11 +1048,17 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
         }
+        if (expr.getLocation() != null) {
+            popLocation();
+        }
     }
 
     @Override
     public void visit(ConditionalExpr expr) {
         try {
+            if (expr.getLocation() != null) {
+                pushLocation(expr.getLocation());
+            }
             writer.append('(');
             expr.getCondition().acceptVisitor(this);
             writer.ws().append("?").ws();
@@ -976,6 +1066,9 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             writer.ws().append(":").ws();
             expr.getAlternative().acceptVisitor(this);
             writer.append(')');
+            if (expr.getLocation() != null) {
+                popLocation();
+            }
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
         }
@@ -984,7 +1077,13 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     @Override
     public void visit(ConstantExpr expr) {
         try {
+            if (expr.getLocation() != null) {
+                pushLocation(expr.getLocation());
+            }
             writer.append(constantToString(expr.getValue()));
+            if (expr.getLocation() != null) {
+                popLocation();
+            }
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
         }
@@ -1113,7 +1212,13 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     @Override
     public void visit(VariableExpr expr) {
         try {
+            if (expr.getLocation() != null) {
+                pushLocation(expr.getLocation());
+            }
             writer.append(variableName(expr.getIndex()));
+            if (expr.getLocation() != null) {
+                popLocation();
+            }
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
         }
@@ -1122,10 +1227,16 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     @Override
     public void visit(SubscriptExpr expr) {
         try {
+            if (expr.getLocation() != null) {
+                pushLocation(expr.getLocation());
+            }
             expr.getArray().acceptVisitor(this);
             writer.append('[');
             expr.getIndex().acceptVisitor(this);
             writer.append(']');
+            if (expr.getLocation() != null) {
+                popLocation();
+            }
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
         }
@@ -1134,8 +1245,14 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     @Override
     public void visit(UnwrapArrayExpr expr) {
         try {
+            if (expr.getLocation() != null) {
+                pushLocation(expr.getLocation());
+            }
             expr.getArray().acceptVisitor(this);
             writer.append(".data");
+            if (expr.getLocation() != null) {
+                popLocation();
+            }
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
         }
@@ -1144,55 +1261,61 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     @Override
     public void visit(InvocationExpr expr) {
         try {
+            if (expr.getLocation() != null) {
+                pushLocation(expr.getLocation());
+            }
             Injector injector = getInjector(expr.getMethod());
             if (injector != null) {
                 injector.generate(new InjectorContextImpl(expr.getArguments()), expr.getMethod());
-                return;
+            } else {
+                String className = naming.getNameFor(expr.getMethod().getClassName());
+                String name = naming.getNameFor(expr.getMethod());
+                String fullName = naming.getFullNameFor(expr.getMethod());
+                switch (expr.getType()) {
+                    case STATIC:
+                        writer.append(fullName).append("(");
+                        for (int i = 0; i < expr.getArguments().size(); ++i) {
+                            if (i > 0) {
+                                writer.append(",").ws();
+                            }
+                            expr.getArguments().get(i).acceptVisitor(this);
+                        }
+                        writer.append(')');
+                        break;
+                    case SPECIAL:
+                        writer.append(fullName).append("(");
+                        expr.getArguments().get(0).acceptVisitor(this);
+                        for (int i = 1; i < expr.getArguments().size(); ++i) {
+                            writer.append(",").ws();
+                            expr.getArguments().get(i).acceptVisitor(this);
+                        }
+                        writer.append(")");
+                        break;
+                    case DYNAMIC:
+                        expr.getArguments().get(0).acceptVisitor(this);
+                        writer.append(".").append(name).append("(");
+                        for (int i = 1; i < expr.getArguments().size(); ++i) {
+                            if (i > 1) {
+                                writer.append(",").ws();
+                            }
+                            expr.getArguments().get(i).acceptVisitor(this);
+                        }
+                        writer.append(')');
+                        break;
+                    case CONSTRUCTOR:
+                        writer.append(className).append(".").append(name).append("(");
+                        for (int i = 0; i < expr.getArguments().size(); ++i) {
+                            if (i > 0) {
+                                writer.append(",").ws();
+                            }
+                            expr.getArguments().get(i).acceptVisitor(this);
+                        }
+                        writer.append(')');
+                        break;
+                }
             }
-            String className = naming.getNameFor(expr.getMethod().getClassName());
-            String name = naming.getNameFor(expr.getMethod());
-            String fullName = naming.getFullNameFor(expr.getMethod());
-            switch (expr.getType()) {
-                case STATIC:
-                    writer.append(fullName).append("(");
-                    for (int i = 0; i < expr.getArguments().size(); ++i) {
-                        if (i > 0) {
-                            writer.append(",").ws();
-                        }
-                        expr.getArguments().get(i).acceptVisitor(this);
-                    }
-                    writer.append(')');
-                    break;
-                case SPECIAL:
-                    writer.append(fullName).append("(");
-                    expr.getArguments().get(0).acceptVisitor(this);
-                    for (int i = 1; i < expr.getArguments().size(); ++i) {
-                        writer.append(",").ws();
-                        expr.getArguments().get(i).acceptVisitor(this);
-                    }
-                    writer.append(")");
-                    break;
-                case DYNAMIC:
-                    expr.getArguments().get(0).acceptVisitor(this);
-                    writer.append(".").append(name).append("(");
-                    for (int i = 1; i < expr.getArguments().size(); ++i) {
-                        if (i > 1) {
-                            writer.append(",").ws();
-                        }
-                        expr.getArguments().get(i).acceptVisitor(this);
-                    }
-                    writer.append(')');
-                    break;
-                case CONSTRUCTOR:
-                    writer.append(className).append(".").append(name).append("(");
-                    for (int i = 0; i < expr.getArguments().size(); ++i) {
-                        if (i > 0) {
-                            writer.append(",").ws();
-                        }
-                        expr.getArguments().get(i).acceptVisitor(this);
-                    }
-                    writer.append(')');
-                    break;
+            if (expr.getLocation() != null) {
+                popLocation();
             }
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
@@ -1202,8 +1325,14 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     @Override
     public void visit(QualificationExpr expr) {
         try {
+            if (expr.getLocation() != null) {
+                pushLocation(expr.getLocation());
+            }
             expr.getQualified().acceptVisitor(this);
             writer.append('.').appendField(expr.getField());
+            if (expr.getLocation() != null) {
+                popLocation();
+            }
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
         }
@@ -1212,7 +1341,13 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     @Override
     public void visit(NewExpr expr) {
         try {
+            if (expr.getLocation() != null) {
+                pushLocation(expr.getLocation());
+            }
             writer.append("new ").append(naming.getNameFor(expr.getConstructedClass())).append("()");
+            if (expr.getLocation() != null) {
+                popLocation();
+            }
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
         }
@@ -1220,6 +1355,9 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
 
     @Override
     public void visit(NewArrayExpr expr) {
+        if (expr.getLocation() != null) {
+            pushLocation(expr.getLocation());
+        }
         try {
             ValueType type = expr.getType();
             if (type instanceof ValueType.Primitive) {
@@ -1273,10 +1411,16 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
         }
+        if (expr.getLocation() != null) {
+            popLocation();
+        }
     }
 
     @Override
     public void visit(NewMultiArrayExpr expr) {
+        if (expr.getLocation() != null) {
+            pushLocation(expr.getLocation());
+        }
         try {
             ValueType type = expr.getType();
             for (int i = 0; i < expr.getDimensions().size(); ++i) {
@@ -1328,10 +1472,16 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
         }
+        if (expr.getLocation() != null) {
+            popLocation();
+        }
     }
 
     @Override
     public void visit(InstanceOfExpr expr) {
+        if (expr.getLocation() != null) {
+            pushLocation(expr.getLocation());
+        }
         try {
             if (expr.getType() instanceof ValueType.Object) {
                 String clsName = ((ValueType.Object)expr.getType()).getClassName();
@@ -1349,14 +1499,23 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
         }
+        if (expr.getLocation() != null) {
+            popLocation();
+        }
     }
 
     @Override
     public void visit(StaticClassExpr expr) {
+        if (expr.getLocation() != null) {
+            pushLocation(expr.getLocation());
+        }
         try {
             writer.append(typeToClsString(naming, expr.getType()));
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
+        }
+        if (expr.getLocation() != null) {
+            popLocation();
         }
     }
 

@@ -58,6 +58,10 @@ public class TeaVMRunner {
                 .withDescription("causes TeaVM to log bytecode")
                 .create("logbytecode"));
         options.addOption(OptionBuilder
+                .withDescription("Generate debug information")
+                .withLongOpt("debug")
+                .create('D'));
+        options.addOption(OptionBuilder
                 .withArgName("number")
                 .hasArg()
                 .withDescription("how many threads should TeaVM run")
@@ -118,6 +122,9 @@ public class TeaVMRunner {
                 printUsage(options);
                 return;
             }
+        }
+        if (commandLine.hasOption('D')) {
+            tool.setDebugInformation(new File(tool.getTargetDirectory(), tool.getTargetFileName() + ".teavmdbg"));
         }
         args = commandLine.getArgs();
         if (args.length > 1) {

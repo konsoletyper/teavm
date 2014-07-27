@@ -37,21 +37,21 @@ final class ExprOptimizer {
             Expr b = binary.getSecondOperand();
             switch (binary.getOperation()) {
                 case EQUALS:
-                    return Expr.binary(BinaryOperation.NOT_EQUALS, a, b);
+                    return Expr.binary(BinaryOperation.NOT_EQUALS, a, b, expr.getLocation());
                 case NOT_EQUALS:
-                    return Expr.binary(BinaryOperation.EQUALS, a, b);
+                    return Expr.binary(BinaryOperation.EQUALS, a, b, expr.getLocation());
                 case LESS:
-                    return Expr.binary(BinaryOperation.GREATER_OR_EQUALS, a, b);
+                    return Expr.binary(BinaryOperation.GREATER_OR_EQUALS, a, b, expr.getLocation());
                 case LESS_OR_EQUALS:
                     return Expr.binary(BinaryOperation.GREATER, a, b);
                 case GREATER:
-                    return Expr.binary(BinaryOperation.LESS_OR_EQUALS, a, b);
+                    return Expr.binary(BinaryOperation.LESS_OR_EQUALS, a, b, expr.getLocation());
                 case GREATER_OR_EQUALS:
-                    return Expr.binary(BinaryOperation.LESS, a, b);
+                    return Expr.binary(BinaryOperation.LESS, a, b, expr.getLocation());
                 case STRICT_EQUALS:
-                    return Expr.binary(BinaryOperation.STRICT_NOT_EQUALS, a, b);
+                    return Expr.binary(BinaryOperation.STRICT_NOT_EQUALS, a, b, expr.getLocation());
                 case STRICT_NOT_EQUALS:
-                    return Expr.binary(BinaryOperation.STRICT_EQUALS, a, b);
+                    return Expr.binary(BinaryOperation.STRICT_EQUALS, a, b, expr.getLocation());
                 default:
                     break;
             }

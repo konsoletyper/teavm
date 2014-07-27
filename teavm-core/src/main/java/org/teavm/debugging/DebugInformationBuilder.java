@@ -49,6 +49,7 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
 
     @Override
     public void emitLocation(String fileName, int line) {
+        debugInformation = null;
         Integer fileIndex;
         if (fileName != null) {
             fileIndex = fileNameMap.get(fileName);
@@ -76,6 +77,7 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
 
     @Override
     public void emitMethod(MethodReference method) {
+        debugInformation = null;
         currentMethod = method;
     }
 

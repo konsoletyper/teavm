@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Properties;
 import org.apache.commons.io.IOUtils;
 import org.teavm.common.ThreadPoolFiniteExecutor;
+import org.teavm.debugging.DebugInformationBuilder;
 import org.teavm.javascript.RenderingContext;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.MethodDescriptor;
@@ -43,6 +44,7 @@ public class TeaVMTool {
     private Properties properties = new Properties();
     private boolean mainPageIncluded;
     private boolean bytecodeLogging;
+    private File debugInformation;
     private int numThreads = 1;
     private List<ClassHolderTransformer> transformers = new ArrayList<>();
     private List<ClassAlias> classAliases = new ArrayList<>();
@@ -106,6 +108,14 @@ public class TeaVMTool {
         this.bytecodeLogging = bytecodeLogging;
     }
 
+    public File getDebugInformation() {
+        return debugInformation;
+    }
+
+    public void setDebugInformation(File debugInformation) {
+        this.debugInformation = debugInformation;
+    }
+
     public int getNumThreads() {
         return numThreads;
     }
@@ -166,6 +176,8 @@ public class TeaVMTool {
             vm.setMinifying(minifying);
             vm.setBytecodeLogging(bytecodeLogging);
             vm.setProperties(properties);
+            DebugInformationBuilder debugEmitter = debugInformation != null ? new DebugInformationBuilder() : null;
+            vm.setDebugEmitter(debugEmitter);
             vm.installPlugins();
             for (ClassHolderTransformer transformer : transformers) {
                 vm.add(transformer);
@@ -205,6 +217,12 @@ public class TeaVMTool {
                 vm.build(writer, new DirectoryBuildTarget(targetDirectory));
                 vm.checkForMissingItems();
                 log.info("JavaScript file successfully built");
+                if (debugInformation != null) {
+                    try (OutputStream debugInfoOut = new FileOutputStream(debugInformation)) {
+                        debugEmitter.getDebugInformation().write(debugInfoOut);
+                    }
+                    log.info("Debug information successfully written");
+                }
             }
             if (runtime == RuntimeCopyOperation.SEPARATE) {
                 resourceToFile("org/teavm/javascript/runtime.js", "runtime.js");

@@ -229,7 +229,16 @@ public class Decompiler {
                 int tmp = indexer.nodeAt(next);
                 generator.nextBlock = next < indexer.size() ? program.basicBlockAt(tmp) : null;
                 generator.statements.clear();
+                InstructionLocation lastLocation = null;
+                NodeLocation nodeLocation = null;
                 for (Instruction insn : generator.currentBlock.getInstructions()) {
+                    if (lastLocation != insn.getLocation()) {
+                        lastLocation = insn.getLocation();
+                        nodeLocation = new NodeLocation(lastLocation.getFileName(), lastLocation.getLine());
+                    }
+                    if (insn.getLocation() != null) {
+                        generator.setCurrentLocation(nodeLocation);
+                    }
                     insn.acceptVisitor(generator);
                 }
                 for (TryCatchBlock tryCatch : generator.currentBlock.getTryCatchBlocks()) {

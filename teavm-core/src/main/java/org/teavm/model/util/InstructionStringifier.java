@@ -24,10 +24,24 @@ import org.teavm.model.instructions.*;
  * @author Alexey Andreev
  */
 public class InstructionStringifier implements InstructionReader {
+    private InstructionLocation location;
     private StringBuilder sb;
 
     public InstructionStringifier(StringBuilder sb) {
         this.sb = sb;
+    }
+
+    @Override
+    public void location(InstructionLocation location) {
+        if (this.location != location) {
+            if (location != null) {
+                sb.append("at " + (location.getFileName() != null ? location.getFileName() : "<unknown>") + ":" +
+                        (location.getLine() >= 0 ? String.valueOf(location.getLine()) : "<unknown>"));
+            } else {
+                sb.append("<unkwnown>");
+            }
+            this.location = location;
+        }
     }
 
     @Override

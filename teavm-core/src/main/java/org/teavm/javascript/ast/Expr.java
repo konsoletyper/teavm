@@ -56,6 +56,12 @@ public abstract class Expr implements Cloneable {
         return expr;
     }
 
+    public static Expr binary(BinaryOperation op, Expr first, Expr second, NodeLocation loc) {
+        Expr expr = binary(op, first, second);
+        expr.setLocation(loc);
+        return expr;
+    }
+
     public static Expr unary(UnaryOperation op, Expr arg) {
         UnaryExpr expr = new UnaryExpr();
         expr.setOperand(arg);

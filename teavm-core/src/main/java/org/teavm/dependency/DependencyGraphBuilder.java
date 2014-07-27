@@ -213,6 +213,10 @@ class DependencyGraphBuilder {
 
     private InstructionReader reader = new InstructionReader() {
         @Override
+        public void location(InstructionLocation location) {
+        }
+
+        @Override
         public void nop() {
         }
 

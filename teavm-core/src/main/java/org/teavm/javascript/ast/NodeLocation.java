@@ -15,32 +15,24 @@
  */
 package org.teavm.javascript.ast;
 
-import org.teavm.model.MethodDescriptor;
-
 /**
  *
  * @author Alexey Andreev
  */
 public class NodeLocation {
-    private String className;
-    private MethodDescriptor method;
-    private int lineNumber;
+    private String fileName;
+    private int line;
 
-    public NodeLocation(String className, MethodDescriptor method, int lineNumber) {
-        this.className = className;
-        this.method = method;
-        this.lineNumber = lineNumber;
+    public NodeLocation(String fileName, int line) {
+        this.fileName = fileName;
+        this.line = line;
     }
 
-    public String getClassName() {
-        return className;
+    public String getFileName() {
+        return fileName;
     }
 
-    public MethodDescriptor getMethod() {
-        return method;
-    }
-
-    public int getLineNumber() {
-        return lineNumber;
+    public int getLine() {
+        return line;
     }
 }

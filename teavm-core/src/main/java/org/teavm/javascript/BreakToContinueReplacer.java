@@ -88,6 +88,7 @@ class BreakToContinueReplacer implements StatementVisitor {
         if (statement.getTarget() == replacedBreak) {
             replaceBy = new ContinueStatement();
             replaceBy.setTarget(replacement);
+            replaceBy.setLocation(statement.getLocation());
         }
     }
 

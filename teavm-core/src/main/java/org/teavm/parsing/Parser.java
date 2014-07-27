@@ -31,11 +31,12 @@ public final class Parser {
     private Parser() {
     }
 
-    public static MethodHolder parseMethod(MethodNode node, String className) {
+    public static MethodHolder parseMethod(MethodNode node, String className, String fileName) {
         ValueType[] signature = MethodDescriptor.parseSignature(node.desc);
         MethodHolder method = new MethodHolder(node.name, signature);
         parseModifiers(node.access, method);
         ProgramParser programParser = new ProgramParser();
+        programParser.setFileName(fileName);
         Program program = programParser.parse(node, className);
         new UnreachableBasicBlockEliminator().optimize(program);
         SSATransformer ssaProducer = new SSATransformer();
@@ -65,7 +66,7 @@ public final class Parser {
         }
         for (Object obj : node.methods) {
             MethodNode methodNode = (MethodNode)obj;
-            cls.addMethod(parseMethod(methodNode, node.name));
+            cls.addMethod(parseMethod(methodNode, node.name, node.sourceFile));
         }
         if (node.outerClass != null) {
             cls.setOwnerName(node.outerClass.replace('/', '.'));

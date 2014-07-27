@@ -15,7 +15,13 @@
  */
 package org.teavm.debugging;
 
-import java.util.*;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 import org.teavm.model.MethodReference;
 
 /**
@@ -90,6 +96,11 @@ public class DebugInformation {
     private int indexByKey(GeneratedLocation[] keys, GeneratedLocation location) {
         int index = Arrays.binarySearch(keys, location);
         return index >= 0 ? index : -index - 2;
+    }
+
+    public void write(OutputStream output) throws IOException {
+        DebugInformationWriter writer = new DebugInformationWriter(new DataOutputStream(output));
+        writer.write(this);
     }
 
     static class FileDescription {

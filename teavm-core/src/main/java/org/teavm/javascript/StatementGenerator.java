@@ -36,6 +36,11 @@ class StatementGenerator implements InstructionVisitor {
     Decompiler.Block[] blockMap;
     Program program;
     ClassHolderSource classSource;
+    private NodeLocation currentLocation;
+
+    public void setCurrentLocation(NodeLocation currentLocation) {
+        this.currentLocation = currentLocation;
+    }
 
     @Override
     public void visit(EmptyInstruction insn) {
@@ -237,8 +242,10 @@ class StatementGenerator implements InstructionVisitor {
 
     @Override
     public void visit(AssignInstruction insn) {
-        statements.add(Statement.assign(Expr.var(insn.getReceiver().getIndex()),
-                Expr.var(insn.getAssignee().getIndex())));
+        AssignmentStatement stmt = Statement.assign(Expr.var(insn.getReceiver().getIndex()),
+                Expr.var(insn.getAssignee().getIndex()));
+        stmt.setLocation(currentLocation);
+        statements.add(stmt);
     }
 
     @Override
@@ -365,19 +372,27 @@ class StatementGenerator implements InstructionVisitor {
         BasicBlock alternative = insn.getAlternative();
         switch (insn.getCondition()) {
             case EQUAL:
-                branch(Expr.binary(BinaryOperation.EQUALS, Expr.var(a), Expr.var(b)), consequent, alternative);
+                branch(withLocation(Expr.binary(BinaryOperation.EQUALS, Expr.var(a), Expr.var(b))),
+                        consequent, alternative);
                 break;
             case REFERENCE_EQUAL:
-                branch(Expr.binary(BinaryOperation.STRICT_EQUALS, Expr.var(a), Expr.var(b)), consequent, alternative);
+                branch(withLocation(Expr.binary(BinaryOperation.STRICT_EQUALS, Expr.var(a), Expr.var(b))),
+                        consequent, alternative);
                 break;
             case NOT_EQUAL:
-                branch(Expr.binary(BinaryOperation.NOT_EQUALS, Expr.var(a), Expr.var(b)), consequent, alternative);
+                branch(withLocation(Expr.binary(BinaryOperation.NOT_EQUALS, Expr.var(a), Expr.var(b))),
+                        consequent, alternative);
                 break;
             case REFERENCE_NOT_EQUAL:
-                branch(Expr.binary(BinaryOperation.STRICT_NOT_EQUALS, Expr.var(a), Expr.var(b)),
+                branch(withLocation(Expr.binary(BinaryOperation.STRICT_NOT_EQUALS, Expr.var(a), Expr.var(b))),
                         consequent, alternative);
                 break;
         }
+    }
+
+    private Expr withLocation(Expr expr) {
+        expr.setLocation(currentLocation);
+        return expr;
     }
 
     @Override
@@ -428,13 +443,16 @@ class StatementGenerator implements InstructionVisitor {
 
     @Override
     public void visit(ExitInstruction insn) {
-        statements.add(Statement.exitFunction(insn.getValueToReturn() != null ?
-                Expr.var(insn.getValueToReturn().getIndex()) : null));
+        ReturnStatement stmt = Statement.exitFunction(insn.getValueToReturn() != null ?
+                Expr.var(insn.getValueToReturn().getIndex()) : null);
+        stmt.setLocation(currentLocation);
+        statements.add(stmt);
     }
 
     @Override
     public void visit(RaiseInstruction insn) {
         ThrowStatement stmt = new ThrowStatement();
+        stmt.setLocation(currentLocation);
         stmt.setException(Expr.var(insn.getException().getIndex()));
         statements.add(stmt);
     }
@@ -462,24 +480,27 @@ class StatementGenerator implements InstructionVisitor {
     @Override
     public void visit(GetFieldInstruction insn) {
         if (insn.getInstance() != null) {
-            statements.add(Statement.assign(Expr.var(insn.getReceiver().getIndex()),
-                    Expr.qualify(Expr.var(insn.getInstance().getIndex()), insn.getField())));
+            AssignmentStatement stmt = Statement.assign(Expr.var(insn.getReceiver().getIndex()),
+                    Expr.qualify(Expr.var(insn.getInstance().getIndex()), insn.getField()));
+            stmt.setLocation(currentLocation);
+            statements.add(stmt);
         } else {
             Expr fieldExpr = Expr.qualify(Expr.staticClass(ValueType.object(insn.getField().getClassName())),
                     insn.getField());
-            statements.add(Statement.assign(Expr.var(insn.getReceiver().getIndex()), fieldExpr));
+            AssignmentStatement stmt = Statement.assign(Expr.var(insn.getReceiver().getIndex()), fieldExpr);
+            stmt.setLocation(currentLocation);
+            statements.add(stmt);
         }
     }
 
     @Override
     public void visit(PutFieldInstruction insn) {
         if (insn.getInstance() != null) {
-            statements.add(Statement.assign(Expr.qualify(Expr.var(insn.getInstance().getIndex()), insn.getField()),
-                    Expr.var(insn.getValue().getIndex())));
+            assign(Expr.qualify(Expr.var(insn.getInstance().getIndex()), insn.getField()), insn.getValue().getIndex());
         } else {
             Expr fieldExpr = Expr.qualify(Expr.staticClass(ValueType.object(insn.getField().getClassName())),
                     insn.getField());
-            statements.add(Statement.assign(fieldExpr, Expr.var(insn.getValue().getIndex())));
+            assign(fieldExpr, insn.getValue().getIndex());
         }
     }
 
@@ -511,8 +532,10 @@ class StatementGenerator implements InstructionVisitor {
 
     @Override
     public void visit(PutElementInstruction insn) {
-        statements.add(Statement.assign(Expr.subscript(Expr.var(insn.getArray().getIndex()),
-                Expr.var(insn.getIndex().getIndex())), Expr.var(insn.getValue().getIndex())));
+        AssignmentStatement stmt = Statement.assign(Expr.subscript(Expr.var(insn.getArray().getIndex()),
+                Expr.var(insn.getIndex().getIndex())), Expr.var(insn.getValue().getIndex()));
+        stmt.setLocation(currentLocation);
+        statements.add(stmt);
     }
 
     @Override
@@ -535,7 +558,9 @@ class StatementGenerator implements InstructionVisitor {
         if (insn.getReceiver() != null) {
             assign(invocationExpr, insn.getReceiver().getIndex());
         } else {
-            statements.add(Statement.assign(null, invocationExpr));
+            AssignmentStatement stmt = Statement.assign(null, invocationExpr);
+            stmt.setLocation(currentLocation);
+            statements.add(stmt);
         }
     }
 
@@ -546,7 +571,9 @@ class StatementGenerator implements InstructionVisitor {
     }
 
     private void assign(Expr source, int target) {
-        statements.add(Statement.assign(Expr.var(target), source));
+        AssignmentStatement stmt = Statement.assign(Expr.var(target), source);
+        stmt.setLocation(currentLocation);
+        statements.add(stmt);
     }
 
     private Expr castToInteger(Expr value) {
@@ -584,10 +611,12 @@ class StatementGenerator implements InstructionVisitor {
         Decompiler.Block block = blockMap[target.getIndex()];
         if (target.getIndex() == indexer.nodeAt(block.end)) {
             BreakStatement breakStmt = new BreakStatement();
+            breakStmt.setLocation(currentLocation);
             breakStmt.setTarget(block.statement);
             return breakStmt;
         } else {
             ContinueStatement contStmt = new ContinueStatement();
+            contStmt.setLocation(currentLocation);
             contStmt.setTarget(block.statement);
             return contStmt;
         }
@@ -601,6 +630,7 @@ class StatementGenerator implements InstructionVisitor {
         }
         return body;
     }
+
     private void branch(Expr condition, BasicBlock consequentBlock, BasicBlock alternativeBlock) {
         Statement consequent = generateJumpStatement(consequentBlock);
         Statement alternative = generateJumpStatement(alternativeBlock);
@@ -610,12 +640,16 @@ class StatementGenerator implements InstructionVisitor {
     }
 
     private Expr compare(BinaryOperation op, Variable value) {
-        return Expr.binary(op, Expr.var(value.getIndex()), Expr.constant(0));
+        Expr expr = Expr.binary(op, Expr.var(value.getIndex()), Expr.constant(0));
+        expr.setLocation(currentLocation);
+        return expr;
     }
 
     @Override
     public void visit(InitClassInstruction insn) {
-        statements.add(Statement.initClass(insn.getClassName()));
+        InitClassStatement stmt = Statement.initClass(insn.getClassName());
+        stmt.setLocation(currentLocation);
+        statements.add(stmt);
     }
 
     @Override
