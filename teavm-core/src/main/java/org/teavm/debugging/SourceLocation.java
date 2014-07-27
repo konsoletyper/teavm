@@ -15,7 +15,6 @@
  */
 package org.teavm.debugging;
 
-import org.teavm.model.MethodReference;
 
 /**
  *
@@ -24,12 +23,10 @@ import org.teavm.model.MethodReference;
 public class SourceLocation {
     private String fileName;
     private int line;
-    private MethodReference method;
 
-    public SourceLocation(String fileName, int line, MethodReference method) {
+    public SourceLocation(String fileName, int line) {
         this.fileName = fileName;
         this.line = line;
-        this.method = method;
     }
 
     public String getFileName() {
@@ -38,9 +35,5 @@ public class SourceLocation {
 
     public int getLine() {
         return line;
-    }
-
-    public MethodReference getMethod() {
-        return method;
     }
 }

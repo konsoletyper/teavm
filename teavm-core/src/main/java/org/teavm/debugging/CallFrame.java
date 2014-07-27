@@ -15,18 +15,26 @@
  */
 package org.teavm.debugging;
 
+import org.teavm.model.MethodReference;
+
 /**
  *
  * @author Alexey Andreev
  */
 public class CallFrame {
     private SourceLocation location;
+    private MethodReference method;
 
-    CallFrame(SourceLocation location) {
+    CallFrame(SourceLocation location, MethodReference method) {
         this.location = location;
+        this.method = method;
     }
 
     public SourceLocation getLocation() {
         return location;
+    }
+
+    public MethodReference getMethod() {
+        return method;
     }
 }

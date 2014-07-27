@@ -24,14 +24,10 @@ import org.teavm.model.MethodReference;
  */
 public class DummyDebugInformationEmitter implements DebugInformationEmitter {
     @Override
-    public void emitFile(String fileName) {
+    public void emitLocation(String fileName, int line) {
     }
 
     @Override
     public void emitMethod(MethodReference method) {
-    }
-
-    @Override
-    public void emitLineNumber(String lineNumber) {
     }
 }

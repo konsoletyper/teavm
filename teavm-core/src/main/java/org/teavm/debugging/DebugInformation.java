@@ -16,7 +16,6 @@
 package org.teavm.debugging;
 
 import java.util.*;
-import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 
 /**
@@ -24,31 +23,31 @@ import org.teavm.model.MethodReference;
  * @author Alexey Andreev
  */
 public class DebugInformation {
-    List<String> fileNames = new ArrayList<>();
-    Map<String, Integer> fileNameMap = new HashMap<>();
-    List<String> classNames = new ArrayList<>();
-    Map<String, Integer> classNameMap = new HashMap<>();
-    List<MethodDescriptor> methods = new ArrayList<>();
-    Map<MethodDescriptor, Integer> methodMap = new HashMap<>();
-    List<FileDescription> fileDescriptions = new ArrayList<>();
+    String[] fileNames;
+    Map<String, Integer> fileNameMap;
+    FileDescription[] fileDescriptions;
+    // TODO: for less memory consumption replace with two arrays + custom binary search
     GeneratedLocation[] fileNameKeys;
     int[] fileNameValues;
-    GeneratedLocation[] classKeys;
-    int[] classValues;
-    GeneratedLocation[] methodKeys;
-    int[] methodValues;
     GeneratedLocation[] lineNumberKeys;
     int[] lineNumberValues;
 
-    public Collection<GeneratedLocation> getGeneratedLocations(String fileName, int lineNumber) {
+    public Collection<GeneratedLocation> getGeneratedLocations(String fileName, int line) {
         Integer fileIndex = fileNameMap.get(fileName);
         if (fileIndex == null) {
             return Collections.emptyList();
         }
-        FileDescription description = fileDescriptions.get(lineNumber);
-        return lineNumber < description.generatedLocations.length ?
-                Arrays.asList(description.generatedLocations[lineNumber]) :
-                Collections.<GeneratedLocation>emptyList();
+        FileDescription description = fileIndex >= 0 ? fileDescriptions[fileIndex] : null;
+        if (description == null) {
+            return null;
+        }
+        GeneratedLocation[] locations = line < description.generatedLocations.length ?
+                description.generatedLocations[line] : null;
+        return locations != null ? Arrays.asList(locations) : Collections.<GeneratedLocation>emptyList();
+    }
+
+    public Collection<GeneratedLocation> getGeneratedLocations(SourceLocation sourceLocation) {
+        return getGeneratedLocations(sourceLocation.getFileName(), sourceLocation.getLine());
     }
 
     public SourceLocation getSourceLocation(int line, int column) {
@@ -57,18 +56,35 @@ public class DebugInformation {
 
     public SourceLocation getSourceLocation(GeneratedLocation generatedLocation) {
         String fileName = componentByKey(fileNameKeys, fileNameValues, fileNames, generatedLocation);
-        String className = componentByKey(classKeys, classValues, classNames, generatedLocation);
-        MethodDescriptor method = componentByKey(methodKeys, methodValues, methods, generatedLocation);
         int lineNumberIndex = indexByKey(lineNumberKeys, generatedLocation);
         int lineNumber = lineNumberIndex >= 0 ? lineNumberValues[lineNumberIndex] : -1;
-        return new SourceLocation(fileName, lineNumber, new MethodReference(className, method));
+        return new SourceLocation(fileName, lineNumber);
     }
 
-    private <T> T componentByKey(GeneratedLocation[] keys, int[] valueIndexes, List<T> values,
+    public MethodReference getMethodAt(String fileName, int line) {
+        if (line < 0) {
+            return null;
+        }
+        Integer fileIndex = fileNameMap.get(fileName);
+        if (fileIndex == null) {
+            return null;
+        }
+        FileDescription description = fileDescriptions[fileIndex];
+        if (description == null) {
+            return null;
+        }
+        return line < description.methodMap.length ? description.methodMap[line] : null;
+    }
+
+    public MethodReference getMethodAt(SourceLocation sourceLocation) {
+        return getMethodAt(sourceLocation.getFileName(), sourceLocation.getLine());
+    }
+
+    private <T> T componentByKey(GeneratedLocation[] keys, int[] valueIndexes, T[] values,
             GeneratedLocation location) {
         int keyIndex = indexByKey(keys, location);
         int valueIndex = keyIndex >= 0 ? valueIndexes[keyIndex] : -1;
-        return valueIndex >= 0 ? values.get(valueIndex) : null;
+        return valueIndex >= 0 ? values[valueIndex] : null;
     }
 
     private int indexByKey(GeneratedLocation[] keys, GeneratedLocation location) {
@@ -76,7 +92,8 @@ public class DebugInformation {
         return index >= 0 ? index : -index - 2;
     }
 
-    class FileDescription {
+    static class FileDescription {
         GeneratedLocation[][] generatedLocations;
+        MethodReference[] methodMap;
     }
 }

@@ -22,9 +22,7 @@ import org.teavm.model.MethodReference;
  * @author Alexey Andreev
  */
 public interface DebugInformationEmitter {
-    void emitFile(String fileName);
+    void emitLocation(String fileName, int line);
 
     void emitMethod(MethodReference method);
-
-    void emitLineNumber(String lineNumber);
 }

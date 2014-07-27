@@ -16,6 +16,7 @@
 package org.teavm.debugging;
 
 import java.util.*;
+import org.teavm.model.MethodReference;
 
 /**
  *
@@ -65,12 +66,14 @@ public class Debugger {
             return;
         }
         // TODO: lookup all locations that are "out of" the current location and create temporary breakpoints
+        javaScriptDebugger.stepOut();
     }
 
     public void stepOver() {
         if (!javaScriptDebugger.isSuspended()) {
             return;
         }
+        javaScriptDebugger.stepOver();
         // TODO: lookup all locations that are "after" the current location and create temporary breakpoints
     }
 
@@ -115,9 +118,10 @@ public class Debugger {
             boolean wasEmpty = false;
             for (JavaScriptCallFrame jsFrame : javaScriptDebugger.getCallStack()) {
                 SourceLocation loc = debugInformation.getSourceLocation(jsFrame.getLocation());
-                boolean empty = loc.getFileName() != null || loc.getMethod() != null  || loc.getLine() < 0;
+                boolean empty = loc == null || (loc.getFileName() == null && loc.getLine() < 0);
+                MethodReference method = !empty ? debugInformation.getMethodAt(loc) : null;
                 if (!empty || !wasEmpty) {
-                    frames.add(new CallFrame(loc));
+                    frames.add(new CallFrame(loc, method));
                 }
                 wasEmpty = empty;
             }
