@@ -39,6 +39,7 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
         return locationProvider;
     }
 
+    @Override
     public void setLocationProvider(LocationProvider locationProvider) {
         this.locationProvider = locationProvider;
     }
@@ -114,8 +115,9 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
                 fileDesc.methodMap = fileDescProto.methodMap.toArray(new MethodReference[0]);
                 fileDesc.generatedLocations = new GeneratedLocation[fileDescProto.generatedLocations.size()][];
                 for (int i = 0; i < fileDescProto.generatedLocations.size(); ++i) {
-                    fileDesc.generatedLocations[i] = fileDescProto.generatedLocations.get(index)
-                            .toArray(new GeneratedLocation[0]);
+                    List<GeneratedLocation> locations = fileDescProto.generatedLocations.get(index);
+                    fileDesc.generatedLocations[i] = locations != null ?
+                            locations.toArray(new GeneratedLocation[0]) : null;
                 }
             }
         }
@@ -132,6 +134,10 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
                         line - generatedLocations.size() + 1, null));
             }
             List<GeneratedLocation> existingLocations = generatedLocations.get(line);
+            if (existingLocations == null) {
+                existingLocations = new ArrayList<>();
+                generatedLocations.set(line, existingLocations);
+            }
             existingLocations.add(location);
         }
 

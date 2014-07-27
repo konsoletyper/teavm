@@ -351,6 +351,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         if (debugEmitter != null) {
             renderer.setDebugEmitter(debugEmitter);
         }
+        debugEmitter.setLocationProvider(sourceWriter);
         for (Map.Entry<MethodReference, Injector> entry : methodInjectors.entrySet()) {
             renderer.addInjector(entry.getKey(), entry.getValue());
         }

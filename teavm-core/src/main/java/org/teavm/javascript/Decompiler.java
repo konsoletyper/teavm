@@ -232,7 +232,7 @@ public class Decompiler {
                 InstructionLocation lastLocation = null;
                 NodeLocation nodeLocation = null;
                 for (Instruction insn : generator.currentBlock.getInstructions()) {
-                    if (lastLocation != insn.getLocation()) {
+                    if (insn.getLocation() != null && lastLocation != insn.getLocation()) {
                         lastLocation = insn.getLocation();
                         nodeLocation = new NodeLocation(lastLocation.getFileName(), lastLocation.getLine());
                     }

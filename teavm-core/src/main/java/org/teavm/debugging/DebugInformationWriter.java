@@ -110,7 +110,11 @@ class DebugInformationWriter {
 
     private void writeNumber(int number) throws IOException {
         do {
-            number = (number << 1) | (number >>> 31);
+            if (number < 0) {
+                number = (-number << 1) | 1;
+            } else {
+                number = number << 1;
+            }
             byte b = (byte)(number & 0x7F);
             if ((number & 0xFFFFFF80) != 0) {
                 b |= 0x80;

@@ -37,8 +37,6 @@ public class InstructionStringifier implements InstructionReader {
             if (location != null) {
                 sb.append("at " + (location.getFileName() != null ? location.getFileName() : "<unknown>") + ":" +
                         (location.getLine() >= 0 ? String.valueOf(location.getLine()) : "<unknown>"));
-            } else {
-                sb.append("<unkwnown>");
             }
             this.location = location;
         }

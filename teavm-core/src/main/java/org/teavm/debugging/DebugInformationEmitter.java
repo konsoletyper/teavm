@@ -15,6 +15,7 @@
  */
 package org.teavm.debugging;
 
+import org.teavm.codegen.LocationProvider;
 import org.teavm.model.MethodReference;
 
 /**
@@ -22,6 +23,8 @@ import org.teavm.model.MethodReference;
  * @author Alexey Andreev
  */
 public interface DebugInformationEmitter {
+    void setLocationProvider(LocationProvider locationProvider);
+
     void emitLocation(String fileName, int line);
 
     void emitMethod(MethodReference method);
