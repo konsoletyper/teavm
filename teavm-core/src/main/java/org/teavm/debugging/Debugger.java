@@ -119,7 +119,7 @@ public class Debugger {
             for (JavaScriptCallFrame jsFrame : javaScriptDebugger.getCallStack()) {
                 SourceLocation loc = debugInformation.getSourceLocation(jsFrame.getLocation());
                 boolean empty = loc == null || (loc.getFileName() == null && loc.getLine() < 0);
-                MethodReference method = !empty ? debugInformation.getMethodAt(loc) : null;
+                MethodReference method = !empty ? debugInformation.getMethodAt(jsFrame.getLocation()) : null;
                 if (!empty || !wasEmpty) {
                     frames.add(new CallFrame(loc, method));
                 }

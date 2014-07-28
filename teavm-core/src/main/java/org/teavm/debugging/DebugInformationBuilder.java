@@ -17,7 +17,8 @@ package org.teavm.debugging;
 
 import java.util.*;
 import org.teavm.codegen.LocationProvider;
-import org.teavm.model.MethodReference;
+import org.teavm.common.IntegerArray;
+import org.teavm.model.MethodDescriptor;
 
 /**
  *
@@ -26,14 +27,17 @@ import org.teavm.model.MethodReference;
 public class DebugInformationBuilder implements DebugInformationEmitter {
     private LocationProvider locationProvider;
     private DebugInformation debugInformation;
-    private List<String> fileNames = new ArrayList<>();
-    private Map<String, Integer> fileNameMap = new HashMap<>();
-    private List<Entry> fileNameEntries = new ArrayList<>();
-    private List<Entry> lineNumberEntries = new ArrayList<>();
-    private MethodReference currentMethod;
+    private MappedList files = new MappedList();
+    private MappedList classes = new MappedList();
+    private MappedList methods = new MappedList();
+    private Mapping fileMapping = new Mapping();
+    private Mapping lineMapping = new Mapping();
+    private Mapping classMapping = new Mapping();
+    private Mapping methodMapping = new Mapping();
+    private MethodDescriptor currentMethod;
+    private String currentClass;
     private String currentFileName;
     private int currentLine;
-    private List<FileDescriptionProto> fileDescriptions = new ArrayList<>();
 
     public LocationProvider getLocationProvider() {
         return locationProvider;
@@ -44,118 +48,100 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
         this.locationProvider = locationProvider;
     }
 
-    private GeneratedLocation getGeneratedLocation() {
-        return new GeneratedLocation(locationProvider.getLine(), locationProvider.getColumn());
-    }
-
     @Override
     public void emitLocation(String fileName, int line) {
         debugInformation = null;
-        Integer fileIndex;
-        if (fileName != null) {
-            fileIndex = fileNameMap.get(fileName);
-            if (fileIndex == null) {
-                fileIndex = fileNames.size();
-                fileNames.add(fileName);
-                fileNameMap.put(fileName, fileIndex);
-                fileDescriptions.add(new FileDescriptionProto());
-            }
-        } else {
-            fileIndex = -1;
-        }
-        if (currentFileName != fileName) {
-            fileNameEntries.add(new Entry(getGeneratedLocation(), fileIndex));
+        int fileIndex = files.index(fileName);
+        if (!Objects.equals(currentFileName, fileName)) {
+            fileMapping.add(locationProvider, fileIndex);
+            currentFileName = fileName;
         }
         if (currentLine != line) {
-            lineNumberEntries.add(new Entry(getGeneratedLocation(), line));
-        }
-        if (fileName != null && line >= 0 && (currentFileName != fileName || currentLine != line)) {
-            FileDescriptionProto fileDesc = fileDescriptions.get(fileIndex);
-            fileDesc.setMethod(line, currentMethod);
-            fileDesc.addGeneratedLocation(line, getGeneratedLocation());
+            lineMapping.add(locationProvider, line);
+            currentLine = line;
         }
     }
 
     @Override
-    public void emitMethod(MethodReference method) {
+    public void emitClass(String className) {
         debugInformation = null;
-        currentMethod = method;
+        int classIndex = classes.index(className);
+        if (!Objects.equals(className, currentClass)) {
+            classMapping.add(locationProvider, classIndex);
+            currentClass = className;
+        }
+    }
+
+    @Override
+    public void emitMethod(MethodDescriptor method) {
+        debugInformation = null;
+        int methodIndex = methods.index(method != null ? method.toString() : null);
+        if (!Objects.equals(method, currentMethod)) {
+            methodMapping.add(locationProvider, methodIndex);
+            currentMethod = method;
+        }
     }
 
     public DebugInformation getDebugInformation() {
         if (debugInformation == null) {
             debugInformation = new DebugInformation();
 
-            debugInformation.fileNames = fileNames.toArray(new String[0]);
-            debugInformation.fileNameMap = new HashMap<>(fileNameMap);
+            debugInformation.fileNames = files.getItems();
+            debugInformation.fileNameMap = files.getIndexes();
+            debugInformation.classNames = classes.getItems();
+            debugInformation.classNameMap = classes.getIndexes();
+            debugInformation.methods = methods.getItems();
+            debugInformation.methodMap = methods.getIndexes();
 
-            debugInformation.fileNameKeys = new GeneratedLocation[fileNameEntries.size()];
-            debugInformation.fileNameValues = new int[fileNameEntries.size()];
-            int index = 0;
-            for (Entry entry : fileNameEntries) {
-                debugInformation.fileNameKeys[index] = entry.key;
-                debugInformation.fileNameValues[index] = entry.value;
-                index++;
-            }
+            debugInformation.fileMapping = fileMapping.build();
+            debugInformation.lineMapping = lineMapping.build();
+            debugInformation.classMapping = classMapping.build();
+            debugInformation.methodMapping = methodMapping.build();
 
-            debugInformation.lineNumberKeys = new GeneratedLocation[lineNumberEntries.size()];
-            debugInformation.lineNumberValues = new int[lineNumberEntries.size()];
-            index = 0;
-            for (Entry entry : lineNumberEntries) {
-                debugInformation.lineNumberKeys[index] = entry.key;
-                debugInformation.lineNumberValues[index] = entry.value;
-                index++;
-            }
-
-            debugInformation.fileDescriptions = new DebugInformation.FileDescription[fileDescriptions.size()];
-            index = 0;
-            for (FileDescriptionProto fileDescProto : fileDescriptions) {
-                DebugInformation.FileDescription fileDesc = new DebugInformation.FileDescription();
-                debugInformation.fileDescriptions[index++] = fileDesc;
-                fileDesc.methodMap = fileDescProto.methodMap.toArray(new MethodReference[0]);
-                fileDesc.generatedLocations = new GeneratedLocation[fileDescProto.generatedLocations.size()][];
-                for (int i = 0; i < fileDescProto.generatedLocations.size(); ++i) {
-                    List<GeneratedLocation> locations = fileDescProto.generatedLocations.get(index);
-                    fileDesc.generatedLocations[i] = locations != null ?
-                            locations.toArray(new GeneratedLocation[0]) : null;
-                }
-            }
+            debugInformation.rebuildFileDescriptions();
         }
         return debugInformation;
     }
 
-    static class FileDescriptionProto {
-        List<List<GeneratedLocation>> generatedLocations = new ArrayList<>();
-        List<MethodReference> methodMap = new ArrayList<>();
+    static class Mapping {
+        IntegerArray lines = new IntegerArray(1);
+        IntegerArray columns = new IntegerArray(1);
+        IntegerArray values = new IntegerArray(1);
 
-        void addGeneratedLocation(int line, GeneratedLocation location) {
-            if (line >= generatedLocations.size()) {
-                generatedLocations.addAll(Collections.<List<GeneratedLocation>>nCopies(
-                        line - generatedLocations.size() + 1, null));
-            }
-            List<GeneratedLocation> existingLocations = generatedLocations.get(line);
-            if (existingLocations == null) {
-                existingLocations = new ArrayList<>();
-                generatedLocations.set(line, existingLocations);
-            }
-            existingLocations.add(location);
+        public void add(LocationProvider location, int value) {
+            lines.add(location.getLine());
+            columns.add(location.getColumn());
+            values.add(value);
         }
 
-        void setMethod(int line, MethodReference method) {
-            if (line >= methodMap.size()) {
-                methodMap.addAll(Collections.<MethodReference>nCopies(line - methodMap.size() + 1, null));
-            }
-            methodMap.set(line, method);
+        DebugInformation.Mapping build() {
+            return new DebugInformation.Mapping(lines.getAll(), columns.getAll(), values.getAll());
         }
     }
 
-    static class Entry {
-        GeneratedLocation key;
-        int value;
+    static class MappedList {
+        private List<String> list = new ArrayList<>();
+        private Map<String, Integer> map = new HashMap<>();
 
-        public Entry(GeneratedLocation key, int value) {
-            this.key = key;
-            this.value = value;
+        public int index(String item) {
+            if (item == null) {
+                return -1;
+            }
+            Integer index = map.get(item);
+            if (index == null) {
+                index = list.size();
+                list.add(item);
+                map.put(item, index);
+            }
+            return index;
+        }
+
+        public String[] getItems() {
+            return list.toArray(new String[list.size()]);
+        }
+
+        public Map<String, Integer> getIndexes() {
+            return new HashMap<>(map);
         }
     }
 }

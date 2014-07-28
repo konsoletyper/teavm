@@ -16,7 +16,7 @@
 package org.teavm.debugging;
 
 import org.teavm.codegen.LocationProvider;
-import org.teavm.model.MethodReference;
+import org.teavm.model.MethodDescriptor;
 
 /**
  *
@@ -27,5 +27,7 @@ public interface DebugInformationEmitter {
 
     void emitLocation(String fileName, int line);
 
-    void emitMethod(MethodReference method);
+    void emitMethod(MethodDescriptor method);
+
+    void emitClass(String className);
 }

@@ -242,6 +242,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     }
 
     public void render(ClassNode cls) throws RenderingException {
+        debugEmitter.emitClass(cls.getName());
         try {
             writer.append("function ").appendClass(cls.getName()).append("()").ws().append("{")
                     .indent().softNewLine();
@@ -354,6 +355,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
         }
+        debugEmitter.emitClass(null);
     }
 
     private static Object getDefaultValue(ValueType type) {
@@ -383,6 +385,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
 
     private void renderInitializer(MethodNode method) throws IOException {
         MethodReference ref = method.getReference();
+        debugEmitter.emitMethod(ref.getDescriptor());
         writer.appendClass(ref.getClassName()).append(".").appendMethod(ref).ws().append("=").ws().append("function(");
         for (int i = 1; i <= ref.parameterCount(); ++i) {
             if (i > 1) {
@@ -403,21 +406,23 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         writer.append(");").softNewLine();
         writer.append("return result;").softNewLine();
         writer.outdent().append("}").newLine();
+        debugEmitter.emitMethod(null);
     }
 
     private void renderVirtualDeclarations(String className, List<MethodNode> methods)
             throws NamingException, IOException {
+        if (methods.isEmpty()) {
+            return;
+        }
         for (MethodNode method : methods) {
             MethodReference ref = method.getReference();
             if (ref.getDescriptor().getName().equals("<init>")) {
                 renderInitializer(method);
             }
         }
-        if (methods.isEmpty()) {
-            return;
-        }
         writer.append("$rt_virtualMethods(").appendClass(className).indent();
         for (MethodNode method : methods) {
+            debugEmitter.emitMethod(method.getReference().getDescriptor());
             MethodReference ref = method.getReference();
             writer.append(",").newLine();
             if (method.isOriginalNamePreserved()) {
@@ -443,12 +448,14 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 writer.append(",").ws().append(variableName(i));
             }
             writer.append(");").ws().append("}");
+            debugEmitter.emitMethod(null);
         }
         writer.append(");").newLine().outdent();
     }
 
     private void renderStaticDeclaration(MethodNode method) throws NamingException, IOException {
         MethodReference ref = method.getReference();
+        debugEmitter.emitMethod(ref.getDescriptor());
         if (ref.getDescriptor().getName().equals("<init>")) {
             renderInitializer(method);
         }
@@ -470,11 +477,12 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             writer.appendClass(ref.getClassName()).append(".").append(ref.getName()).ws().append("=")
                     .ws().appendClass(ref.getClassName()).append(".").appendMethod(ref).append(';').newLine();
         }
+        debugEmitter.emitMethod(null);
     }
 
     public void renderBody(MethodNode method, boolean inner) throws IOException {
         MethodReference ref = method.getReference();
-        debugEmitter.emitMethod(ref);
+        debugEmitter.emitMethod(ref.getDescriptor());
         if (inner) {
             writer.appendMethodBody(ref).ws().append("=").ws().append("function(");
         } else {

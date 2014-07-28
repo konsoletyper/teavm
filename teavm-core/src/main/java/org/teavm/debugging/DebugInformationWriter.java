@@ -17,12 +17,6 @@ package org.teavm.debugging;
 
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import org.teavm.common.IntegerArray;
-import org.teavm.debugging.DebugInformation.FileDescription;
-import org.teavm.model.MethodReference;
 
 /**
  *
@@ -37,84 +31,52 @@ class DebugInformationWriter {
     }
 
     public void write(DebugInformation debugInfo) throws IOException {
-        writeNumber(debugInfo.fileNames.length);
-        for (int i = 0; i < debugInfo.fileNames.length; ++i) {
-            String fileName = debugInfo.fileNames[i];
-            writeString(fileName);
-            writeMethods(debugInfo.fileDescriptions[i]);
-        }
+        writeStringArray(debugInfo.fileNames);
+        writeStringArray(debugInfo.classNames);
+        writeStringArray(debugInfo.methods);
 
-        writeNumber(debugInfo.fileNameKeys.length);
-        resetRelativeNumber();
-        for (int i = 0; i < debugInfo.fileNameKeys.length; ++i) {
-            writeRelativeNumber(debugInfo.fileNameKeys[i].getLine());
-        }
-        resetRelativeNumber();
-        for (int i = 0; i < debugInfo.fileNameKeys.length; ++i) {
-            writeRelativeNumber(debugInfo.fileNameKeys[i].getColumn());
-        }
-        resetRelativeNumber();
-        for (int i = 0; i < debugInfo.fileNameValues.length; ++i) {
-            writeRelativeNumber(debugInfo.fileNameValues[i]);
-        }
+        writeMapping(debugInfo.fileMapping);
+        writeMapping(debugInfo.lineMapping);
+        writeMapping(debugInfo.classMapping);
+        writeMapping(debugInfo.methodMapping);
+    }
 
-        writeNumber(debugInfo.lineNumberKeys.length);
-        resetRelativeNumber();
-        resetRelativeNumber();
-        for (int i = 0; i < debugInfo.lineNumberKeys.length; ++i) {
-            writeRelativeNumber(debugInfo.lineNumberKeys[i].getLine());
-        }
-        resetRelativeNumber();
-        for (int i = 0; i < debugInfo.lineNumberKeys.length; ++i) {
-            writeRelativeNumber(debugInfo.lineNumberKeys[i].getColumn());
-        }
-        resetRelativeNumber();
-        for (int i = 0; i < debugInfo.fileNameValues.length; ++i) {
-            writeRelativeNumber(debugInfo.lineNumberValues[i]);
+    private void writeStringArray(String[] array) throws IOException {
+        writeUnsignedNumber(array.length);
+        for (int i = 0; i < array.length; ++i) {
+            writeString(array[i]);
         }
     }
 
-    private void writeMethods(FileDescription fileDesc) throws IOException {
-        Map<MethodReference, IntegerArray> methodLineMap = new HashMap<>();
-        for (int i = 0; i < fileDesc.methodMap.length; ++i) {
-            MethodReference method = fileDesc.methodMap[i];
-            if (method == null) {
-                continue;
-            }
-            IntegerArray lines = methodLineMap.get(method);
-            if (lines == null) {
-                lines = new IntegerArray(1);
-                methodLineMap.put(method, lines);
-            }
-            lines.add(i);
+    private void writeMapping(DebugInformation.Mapping mapping) throws IOException {
+        writeUnsignedNumber(mapping.lines.length);
+        int[] lines = mapping.lines.clone();
+        int last = 0;
+        for (int i = 0; i < lines.length; ++i) {
+            last = lines[i];
+            lines[i] -= last;
         }
-        writeNumber(methodLineMap.size());
-        for (MethodReference method : methodLineMap.keySet()) {
-            writeString(method.toString());
-            int[] lines = methodLineMap.get(method).getAll();
-            Arrays.sort(lines);
-            for (int i = 0; i < lines.length;) {
-                writeRelativeNumber(i);
-                int j = i;
-                int last = lines[i];
-                ++i;
-                while (i < lines.length && lines[i] == last + 1) {
-                    ++i;
-                    ++last;
-                }
-                writeNumber(i - j);
-            }
-            writeRelativeNumber(-1);
+        writeRle(lines);
+        resetRelativeNumber();
+        for (int i = 0; i < mapping.columns.length; ++i) {
+            writeRelativeNumber(mapping.columns[i]);
+        }
+        resetRelativeNumber();
+        for (int i = 0; i < mapping.values.length; ++i) {
+            writeRelativeNumber(mapping.values[i]);
         }
     }
 
     private void writeNumber(int number) throws IOException {
+        writeUnsignedNumber(convertToSigned(number));
+    }
+
+    private int convertToSigned(int number) {
+        return number < 0 ? (-number << 1) | 1 : number << 1;
+    }
+
+    private void writeUnsignedNumber(int number) throws IOException {
         do {
-            if (number < 0) {
-                number = (-number << 1) | 1;
-            } else {
-                number = number << 1;
-            }
             byte b = (byte)(number & 0x7F);
             if ((number & 0xFFFFFF80) != 0) {
                 b |= 0x80;
@@ -122,6 +84,25 @@ class DebugInformationWriter {
             number >>>= 7;
             output.writeByte(b);
         } while (number != 0);
+    }
+
+    private void writeRle(int[] array) throws IOException {
+        writeUnsignedNumber(array.length);
+        for (int i = 0; i < array.length;) {
+            int e = array[i];
+            int count = 1;
+            ++i;
+            while (i < array.length && array[i] == e) {
+                ++count;
+                ++i;
+            }
+            if (count > 1) {
+                writeUnsignedNumber((convertToSigned(e) << 1) | 1);
+                writeUnsignedNumber(count);
+            } else {
+                writeUnsignedNumber(convertToSigned(e) << 1);
+            }
+        }
     }
 
     private void writeRelativeNumber(int number) throws IOException {
@@ -134,7 +115,8 @@ class DebugInformationWriter {
     }
 
     private void writeString(String str) throws IOException {
-        writeNumber(str.length());
-        output.write(str.getBytes("UTF-8"));
+        byte[] bytes = str.getBytes("UTF-8");
+        writeUnsignedNumber(bytes.length);
+        output.write(bytes);
     }
 }

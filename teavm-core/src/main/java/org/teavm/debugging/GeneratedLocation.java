@@ -44,4 +44,30 @@ public class GeneratedLocation implements Comparable<GeneratedLocation> {
         }
         return r;
     }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + column;
+        result = prime * result + line;
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        GeneratedLocation other = (GeneratedLocation)obj;
+        return line == other.line && column == other.column;
+    }
+
+    @Override
+    public String toString() {
+        return "line: " + line + ", column: " + column;
+    }
 }
