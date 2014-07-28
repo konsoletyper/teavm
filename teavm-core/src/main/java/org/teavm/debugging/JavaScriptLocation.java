@@ -19,6 +19,26 @@ package org.teavm.debugging;
  *
  * @author Alexey Andreev
  */
-public interface JavaScriptCallFrame {
-    JavaScriptLocation getLocation();
+public class JavaScriptLocation {
+    private String script;
+    private int line;
+    private int column;
+
+    public JavaScriptLocation(String script, int line, int column) {
+        this.script = script;
+        this.line = line;
+        this.column = column;
+    }
+
+    public String getScript() {
+        return script;
+    }
+
+    public int getLine() {
+        return line;
+    }
+
+    public int getColumn() {
+        return column;
+    }
 }

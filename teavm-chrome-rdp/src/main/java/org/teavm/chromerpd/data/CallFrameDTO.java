@@ -13,12 +13,29 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.debugging;
+package org.teavm.chromerpd.data;
 
 /**
  *
  * @author Alexey Andreev
  */
-public interface JavaScriptCallFrame {
-    JavaScriptLocation getLocation();
+public class CallFrameDTO {
+    private String callFrameId;
+    private LocationDTO location;
+
+    public String getCallFrameId() {
+        return callFrameId;
+    }
+
+    public void setCallFrameId(String callFrameId) {
+        this.callFrameId = callFrameId;
+    }
+
+    public LocationDTO getLocation() {
+        return location;
+    }
+
+    public void setLocation(LocationDTO location) {
+        this.location = location;
+    }
 }

@@ -15,10 +15,30 @@
  */
 package org.teavm.debugging;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+
 /**
  *
  * @author Alexey Andreev
  */
-public interface JavaScriptCallFrame {
-    JavaScriptLocation getLocation();
+public class URLDebugInformationProvider implements DebugInformationProvider {
+    private String baseURL;
+
+    public URLDebugInformationProvider(String baseURL) {
+        this.baseURL = baseURL;
+    }
+
+    @Override
+    public DebugInformation getDebugInformation(String script) {
+        try {
+            URL url = new URL(baseURL + script);
+            try (InputStream input = url.openStream()) {
+                return DebugInformation.read(input);
+            }
+        } catch (IOException e) {
+            return null;
+        }
+    }
 }

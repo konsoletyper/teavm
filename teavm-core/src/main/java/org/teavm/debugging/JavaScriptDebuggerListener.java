@@ -23,4 +23,6 @@ public interface JavaScriptDebuggerListener {
     void paused();
 
     void resumed();
+
+    void scriptAdded(String name);
 }

@@ -41,6 +41,10 @@ public class DebugInformation {
     Mapping methodMapping;
     Mapping lineMapping;
 
+    public String[] getCoveredSourceFiles() {
+        return fileNames.clone();
+    }
+
     public Collection<GeneratedLocation> getGeneratedLocations(String fileName, int line) {
         Integer fileIndex = fileNameMap.get(fileName);
         if (fileIndex == null) {
@@ -90,6 +94,10 @@ public class DebugInformation {
         return new MethodReference(className, MethodDescriptor.parse(method));
     }
 
+    public MethodReference getMethodAt(int line, int column) {
+        return getMethodAt(new GeneratedLocation(line, column));
+    }
+
     private <T> T componentByKey(Mapping mapping, T[] values, GeneratedLocation location) {
         int keyIndex = indexByKey(mapping, location);
         int valueIndex = keyIndex >= 0 ? mapping.values[keyIndex] : -1;
@@ -106,7 +114,7 @@ public class DebugInformation {
         writer.write(this);
     }
 
-    public DebugInformation read(InputStream input) throws IOException {
+    public static DebugInformation read(InputStream input) throws IOException {
         DebugInformationReader reader = new DebugInformationReader(input);
         return reader.read();
     }

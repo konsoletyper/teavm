@@ -19,6 +19,6 @@ package org.teavm.debugging;
  *
  * @author Alexey Andreev
  */
-public interface JavaScriptCallFrame {
-    JavaScriptLocation getLocation();
+public interface DebugInformationProvider {
+    DebugInformation getDebugInformation(String script);
 }

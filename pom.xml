@@ -65,8 +65,10 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <html4j.version>0.7.5</html4j.version>
     <sonatypeOssDistMgmtSnapshotsUrl>https://oss.sonatype.org/content/repositories/snapshots/</sonatypeOssDistMgmtSnapshotsUrl>
+    <html4j.version>0.7.5</html4j.version>
+    <jetty.version>9.2.1.v20140609</jetty.version>
+    <slf4j.version>1.7.7</slf4j.version>
   </properties>
 
   <modules>
@@ -79,6 +81,7 @@
     <module>teavm-samples</module>
     <module>teavm-platform</module>
     <module>teavm-cli</module>
+    <module>teavm-chrome-rdp</module>
   </modules>
 
   <dependencyManagement>
@@ -133,6 +136,26 @@
         <groupId>org.apache.maven</groupId>
         <artifactId>maven-core</artifactId>
         <version>3.0</version>
+      </dependency>
+      <dependency>
+        <groupId>javax.websocket</groupId>
+        <artifactId>javax.websocket-api</artifactId>
+        <version>1.0</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-server</artifactId>
+        <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty.websocket</groupId>
+        <artifactId>javax-websocket-server-impl</artifactId>
+        <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>${slf4j.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

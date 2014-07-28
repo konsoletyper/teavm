@@ -13,12 +13,31 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.debugging;
+package org.teavm.chromerpd.data;
+
+import org.codehaus.jackson.JsonNode;
 
 /**
  *
  * @author Alexey Andreev
  */
-public interface JavaScriptCallFrame {
-    JavaScriptLocation getLocation();
+public class Message {
+    private String method;
+    private JsonNode params;
+
+    public String getMethod() {
+        return method;
+    }
+
+    public void setMethod(String method) {
+        this.method = method;
+    }
+
+    public JsonNode getParams() {
+        return params;
+    }
+
+    public void setParams(JsonNode params) {
+        this.params = params;
+    }
 }

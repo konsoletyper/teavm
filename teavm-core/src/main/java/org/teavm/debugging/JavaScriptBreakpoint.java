@@ -28,7 +28,7 @@ public interface JavaScriptBreakpoint {
 
     String getFileName();
 
-    GeneratedLocation getLocation();
+    JavaScriptLocation getLocation();
 
     void destroy();
 }

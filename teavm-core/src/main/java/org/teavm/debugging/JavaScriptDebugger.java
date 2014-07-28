@@ -34,7 +34,7 @@ public interface JavaScriptDebugger {
 
     void stepOver();
 
-    void continueToLocation(GeneratedLocation location);
+    void continueToLocation(JavaScriptLocation location);
 
     boolean isSuspended();
 
@@ -42,5 +42,5 @@ public interface JavaScriptDebugger {
 
     JavaScriptBreakpoint getCurrentBreakpoint();
 
-    JavaScriptBreakpoint createBreakpoint(GeneratedLocation location);
+    JavaScriptBreakpoint createBreakpoint(JavaScriptLocation location);
 }

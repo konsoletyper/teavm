@@ -13,12 +13,30 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.debugging;
+package org.teavm.chromerpd;
+
+import org.teavm.debugging.JavaScriptCallFrame;
+import org.teavm.debugging.JavaScriptLocation;
 
 /**
  *
  * @author Alexey Andreev
  */
-public interface JavaScriptCallFrame {
-    JavaScriptLocation getLocation();
+public class RDPCallFrame implements JavaScriptCallFrame {
+    private String chromeId;
+    private JavaScriptLocation location;
+
+    public RDPCallFrame(String chromeId, JavaScriptLocation location) {
+        this.chromeId = chromeId;
+        this.location = location;
+    }
+
+    public String getChromeId() {
+        return chromeId;
+    }
+
+    @Override
+    public JavaScriptLocation getLocation() {
+        return location;
+    }
 }
