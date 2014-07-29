@@ -13,40 +13,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.chromerpd.data;
-
-import org.codehaus.jackson.JsonNode;
+package org.teavm.chromerpd.messages;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class Message {
-    private Integer id;
-    private String method;
-    private JsonNode params;
+public class RemoveBreakpointCommand {
+    private String breakpointId;
 
-    public Integer getId() {
-        return id;
+    public String getBreakpointId() {
+        return breakpointId;
     }
 
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public String getMethod() {
-        return method;
-    }
-
-    public void setMethod(String method) {
-        this.method = method;
-    }
-
-    public JsonNode getParams() {
-        return params;
-    }
-
-    public void setParams(JsonNode params) {
-        this.params = params;
+    public void setBreakpointId(String breakpointId) {
+        this.breakpointId = breakpointId;
     }
 }

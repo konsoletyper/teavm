@@ -21,32 +21,23 @@ import org.codehaus.jackson.JsonNode;
  *
  * @author Alexey Andreev
  */
-public class Message {
-    private Integer id;
-    private String method;
-    private JsonNode params;
+public class Response {
+    private int id;
+    private JsonNode result;
 
-    public Integer getId() {
+    public int getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(int id) {
         this.id = id;
     }
 
-    public String getMethod() {
-        return method;
+    public JsonNode getResult() {
+        return result;
     }
 
-    public void setMethod(String method) {
-        this.method = method;
-    }
-
-    public JsonNode getParams() {
-        return params;
-    }
-
-    public void setParams(JsonNode params) {
-        this.params = params;
+    public void setResult(JsonNode result) {
+        this.result = result;
     }
 }

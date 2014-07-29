@@ -32,7 +32,7 @@ public class Debugger {
     private Map<String, DebugInformation> debugInformationMap = new HashMap<>();
     private Map<String, List<DebugInformation>> debugInformationFileMap = new HashMap<>();
     private Map<DebugInformation, String> scriptMap = new HashMap<>();
-    Map<String, Breakpoint> breakpointMap = new HashMap<>();
+    Map<JavaScriptBreakpoint, Breakpoint> breakpointMap = new HashMap<>();
     private CallFrame[] callStack;
 
     public Debugger(JavaScriptDebugger javaScriptDebugger, DebugInformationProvider debugInformationProvider) {
@@ -83,6 +83,10 @@ public class Debugger {
         return list != null ? list : Collections.<DebugInformation>emptyList();
     }
 
+    public void continueToLocation(SourceLocation location) {
+        continueToLocation(location.getFileName(), location.getLine());
+    }
+
     public void continueToLocation(String fileName, int line) {
         if (!javaScriptDebugger.isSuspended()) {
             return;
@@ -105,20 +109,24 @@ public class Debugger {
         return javaScriptDebugger.isSuspended();
     }
 
-    public Breakpoint createBreakpoint(String fileName, int line) {
+    public Breakpoint createBreakpoint(String file, int line) {
+        return createBreakpoint(new SourceLocation(file, line));
+    }
+
+    public Breakpoint createBreakpoint(SourceLocation location) {
         List<JavaScriptBreakpoint> jsBreakpoints = new ArrayList<>();
-        for (DebugInformation debugInformation : debugInformationBySource(fileName)) {
-            Collection<GeneratedLocation> locations = debugInformation.getGeneratedLocations(fileName, line);
-            for (GeneratedLocation location : locations) {
+        for (DebugInformation debugInformation : debugInformationBySource(location.getFileName())) {
+            Collection<GeneratedLocation> locations = debugInformation.getGeneratedLocations(location);
+            for (GeneratedLocation genLocation : locations) {
                 JavaScriptLocation jsLocation = new JavaScriptLocation(scriptMap.get(debugInformation),
-                        location.getLine(), location.getColumn());
+                        genLocation.getLine(), genLocation.getColumn());
                 JavaScriptBreakpoint jsBreakpoint = javaScriptDebugger.createBreakpoint(jsLocation);
                 if (jsBreakpoint != null) {
                     jsBreakpoints.add(jsBreakpoint);
                 }
             }
         }
-        return !jsBreakpoints.isEmpty() ? new Breakpoint(this, jsBreakpoints, fileName, line) : null;
+        return !jsBreakpoints.isEmpty() ? new Breakpoint(this, jsBreakpoints, location) : null;
     }
 
     public CallFrame[] getCallStack() {

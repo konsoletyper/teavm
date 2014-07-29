@@ -20,27 +20,22 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.websocket.OnMessage;
-import javax.websocket.OnOpen;
-import javax.websocket.Session;
-import javax.websocket.server.ServerEndpoint;
+import javax.websocket.*;
 import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonProcessingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.teavm.chromerpd.data.CallFrameDTO;
 import org.teavm.chromerpd.data.LocationDTO;
 import org.teavm.chromerpd.data.Message;
-import org.teavm.chromerpd.messages.ContinueToLocationCommand;
-import org.teavm.chromerpd.messages.ScriptParsedNotification;
-import org.teavm.chromerpd.messages.SuspendedNotification;
+import org.teavm.chromerpd.data.Response;
+import org.teavm.chromerpd.messages.*;
 import org.teavm.debugging.*;
 
 /**
  *
  * @author Alexey Andreev
  */
-@ServerEndpoint("/")
-public class ChromeRDPDebugger implements JavaScriptDebugger {
+@ClientEndpoint
+public class ChromeRDPDebuggerEndpoint implements JavaScriptDebugger {
     private List<JavaScriptDebuggerListener> listeners = new ArrayList<>();
     private Session session;
     private RDPCallFrame[] callStack = new RDPCallFrame[0];
@@ -48,25 +43,43 @@ public class ChromeRDPDebugger implements JavaScriptDebugger {
     private Map<String, String> scriptIds = new HashMap<>();
     private boolean suspended;
     private ObjectMapper mapper = new ObjectMapper();
+    private Map<Integer, Deferred> deferredResponses = new HashMap<>();
+    private int messageIdGenerator;
+    boolean closed;
 
     @OnOpen
     public void open(Session session) {
         this.session = session;
+        Object container = session.getUserProperties().get("container");
+        if (container instanceof ChromeRDPContainer) {
+            ((ChromeRDPContainer)container).setDebugger(this);
+        }
+    }
+
+    @OnClose
+    public void close() {
+        closed = true;
     }
 
     @OnMessage
     public void receive(String messageText) throws IOException {
-        Message message = mapper.reader(Message.class).readValue(messageText);
-        switch (message.getMethod()) {
-            case "Debugger.paused":
-                firePaused(parseJson(SuspendedNotification.class, message.getParams()));
-                break;
-            case "Debugger.resumed":
-                fireResumed();
-                break;
-            case "Debugger.scriptParsed":
-                scriptParsed(parseJson(ScriptParsedNotification.class, message.getParams()));
-                break;
+        JsonNode jsonMessage = mapper.readTree(messageText);
+        if (jsonMessage.has("result")) {
+            Response response = mapper.reader(Response.class).readValue(jsonMessage);
+            deferredResponses.remove(response.getId()).set(response.getResult());
+        } else {
+            Message message = mapper.reader(Message.class).readValue(messageText);
+            switch (message.getMethod()) {
+                case "Debugger.paused":
+                    firePaused(parseJson(SuspendedNotification.class, message.getParams()));
+                    break;
+                case "Debugger.resumed":
+                    fireResumed();
+                    break;
+                case "Debugger.scriptParsed":
+                    scriptParsed(parseJson(ScriptParsedNotification.class, message.getParams()));
+                    break;
+            }
         }
     }
 
@@ -92,6 +105,14 @@ public class ChromeRDPDebugger implements JavaScriptDebugger {
 
     JavaScriptLocation map(LocationDTO dto) {
         return new JavaScriptLocation(scripts.get(dto.getScriptId()), dto.getLineNumber(), dto.getColumnNumber());
+    }
+
+    LocationDTO unmap(JavaScriptLocation location) {
+        LocationDTO dto = new LocationDTO();
+        dto.setScriptId(scriptIds.get(location.getScript()));
+        dto.setLineNumber(location.getLine());
+        dto.setColumnNumber(location.getColumn());
+        return dto;
     }
 
     private void fireResumed() {
@@ -123,6 +144,9 @@ public class ChromeRDPDebugger implements JavaScriptDebugger {
     }
 
     private void sendMessage(Message message) {
+        if (closed) {
+            return;
+        }
         try {
             String messageText = mapper.writer().writeValueAsString(message);
             session.getAsyncRemote().sendText(messageText);
@@ -133,6 +157,9 @@ public class ChromeRDPDebugger implements JavaScriptDebugger {
 
     @Override
     public void suspend() {
+        if (closed) {
+            return;
+        }
         Message message = new Message();
         message.setMethod("Debugger.pause");
         sendMessage(message);
@@ -140,6 +167,9 @@ public class ChromeRDPDebugger implements JavaScriptDebugger {
 
     @Override
     public void resume() {
+        if (closed) {
+            return;
+        }
         Message message = new Message();
         message.setMethod("Debugger.resume");
         sendMessage(message);
@@ -147,6 +177,9 @@ public class ChromeRDPDebugger implements JavaScriptDebugger {
 
     @Override
     public void stepInto() {
+        if (closed) {
+            return;
+        }
         Message message = new Message();
         message.setMethod("Debugger.stepInto");
         sendMessage(message);
@@ -154,6 +187,9 @@ public class ChromeRDPDebugger implements JavaScriptDebugger {
 
     @Override
     public void stepOut() {
+        if (closed) {
+            return;
+        }
         Message message = new Message();
         message.setMethod("Debugger.stepOut");
         sendMessage(message);
@@ -161,6 +197,9 @@ public class ChromeRDPDebugger implements JavaScriptDebugger {
 
     @Override
     public void stepOver() {
+        if (closed) {
+            return;
+        }
         Message message = new Message();
         message.setMethod("Debugger.stepOver");
         sendMessage(message);
@@ -171,11 +210,7 @@ public class ChromeRDPDebugger implements JavaScriptDebugger {
         Message message = new Message();
         message.setMethod("Debugger.continueToLocation");
         ContinueToLocationCommand params = new ContinueToLocationCommand();
-        LocationDTO locationDTO = new LocationDTO();
-        locationDTO.setScriptId(scriptIds.get(location.getScript()));
-        locationDTO.setLineNumber(location.getLine());
-        locationDTO.setColumnNumber(location.getColumn());
-        params.setLocation(locationDTO);
+        params.setLocation(unmap(location));
         message.setParams(mapper.valueToTree(params));
         sendMessage(message);
     }
@@ -197,6 +232,30 @@ public class ChromeRDPDebugger implements JavaScriptDebugger {
 
     @Override
     public JavaScriptBreakpoint createBreakpoint(JavaScriptLocation location) {
-        return null;
+        Message message = new Message();
+        message.setId(messageIdGenerator++);
+        message.setMethod("Debugger.setBreakpoint");
+        SetBreakpointCommand params = new SetBreakpointCommand();
+        params.setLocation(unmap(location));
+        message.setParams(mapper.valueToTree(params));
+        Deferred deferred = new Deferred();
+        deferredResponses.put(message.getId(), deferred);
+        sendMessage(message);
+        try {
+            SetBreakpointResponse response = mapper.reader(SetBreakpointResponse.class)
+                    .readValue((JsonNode)deferred.get());
+            return new RDPBreakpoint(response.getBreakpointId(), this, map(response.getActualLocation()));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    void destroyBreakpoint(RDPBreakpoint breakpoint) {
+        Message message = new Message();
+        message.setMethod("Debugger.removeBreakpoint");
+        RemoveBreakpointCommand params = new RemoveBreakpointCommand();
+        params.setBreakpointId(breakpoint.getChromeId());
+        message.setParams(mapper.valueToTree(params));
+        sendMessage(message);
     }
 }

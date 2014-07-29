@@ -24,45 +24,25 @@ import java.util.List;
 public class Breakpoint {
     private Debugger debugger;
     private List<JavaScriptBreakpoint> jsBreakpoints;
-    private String fileName;
-    private int line;
-    private boolean enabled = true;
+    private SourceLocation location;
 
-    Breakpoint(Debugger debugger, List<JavaScriptBreakpoint> jsBreakpoints, String fileName, int line) {
+    Breakpoint(Debugger debugger, List<JavaScriptBreakpoint> jsBreakpoints, SourceLocation location) {
         this.debugger = debugger;
         this.jsBreakpoints = jsBreakpoints;
-        this.fileName = fileName;
-        this.line = line;
+        this.location = location;
         for (JavaScriptBreakpoint jsBreakpoint : jsBreakpoints) {
-            debugger.breakpointMap.put(jsBreakpoint.getId(), this);
+            debugger.breakpointMap.put(jsBreakpoint, this);
         }
     }
 
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(boolean enabled) {
-        if (this.enabled == enabled) {
-            return;
-        }
-        for (JavaScriptBreakpoint jsBreakpoint : jsBreakpoints) {
-            jsBreakpoint.setEnabled(enabled);
-        }
-    }
-
-    public String getFileName() {
-        return fileName;
-    }
-
-    public int getLine() {
-        return line;
+    public SourceLocation getLocation() {
+        return location;
     }
 
     public void destroy() {
         for (JavaScriptBreakpoint jsBreakpoint : jsBreakpoints) {
             jsBreakpoint.destroy();
-            debugger.breakpointMap.remove(jsBreakpoint.getId());
+            debugger.breakpointMap.remove(jsBreakpoint);
         }
         jsBreakpoints.clear();
     }

@@ -13,40 +13,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.chromerpd.data;
-
-import org.codehaus.jackson.JsonNode;
+package org.teavm.chromerpd;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class Message {
-    private Integer id;
-    private String method;
-    private JsonNode params;
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public String getMethod() {
-        return method;
-    }
-
-    public void setMethod(String method) {
-        this.method = method;
-    }
-
-    public JsonNode getParams() {
-        return params;
-    }
-
-    public void setParams(JsonNode params) {
-        this.params = params;
-    }
+public interface ChromeRDPContainer {
+    void setDebugger(ChromeRDPDebuggerEndpoint debugger);
 }

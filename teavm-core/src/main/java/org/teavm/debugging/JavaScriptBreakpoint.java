@@ -20,14 +20,6 @@ package org.teavm.debugging;
  * @author Alexey Andreev
  */
 public interface JavaScriptBreakpoint {
-    boolean isEnabled();
-
-    void setEnabled(boolean enabled);
-
-    String getId();
-
-    String getFileName();
-
     JavaScriptLocation getLocation();
 
     void destroy();
