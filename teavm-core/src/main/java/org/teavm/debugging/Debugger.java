@@ -165,6 +165,9 @@ public class Debugger {
             return;
         }
         DebugInformation debugInfo = debugInformationProvider.getDebugInformation(name);
+        if (debugInfo == null) {
+            return;
+        }
         debugInformationMap.put(name, debugInfo);
         for (String sourceFile : debugInfo.getCoveredSourceFiles()) {
             List<DebugInformation> list = debugInformationFileMap.get(sourceFile);

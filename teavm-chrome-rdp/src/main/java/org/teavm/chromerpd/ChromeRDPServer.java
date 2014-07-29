@@ -63,7 +63,7 @@ public class ChromeRDPServer {
     }
 
     public void start() {
-        Server server = new Server();
+        final Server server = new Server();
         ServerConnector connector = new ServerConnector(server);
         connector.setPort(port);
         server.addConnector(connector);
@@ -78,6 +78,7 @@ public class ChromeRDPServer {
             wscontainer.addEndpoint(new RPDEndpointConfig());
             server.start();
             server.dump(output);
+            server.join();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -140,11 +141,15 @@ public class ChromeRDPServer {
     }
 
     void setDebugger(JavaScriptDebugger debugger) {
-        if (!this.debugger.compareAndSet(null, debugger)) {
-            throw new IllegalStateException("Can't handle more than one connection");
-        }
-        for (ChromeRDPServerListener listener : listeners) {
-            listener.connected(this);
+        if (debugger != null) {
+            if (!this.debugger.compareAndSet(null, debugger)) {
+                throw new IllegalStateException("Can't handle more than one connection");
+            }
+            for (ChromeRDPServerListener listener : listeners) {
+                listener.connected(this);
+            }
+        } else {
+            this.debugger.set(null);
         }
     }
 }

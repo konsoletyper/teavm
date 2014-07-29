@@ -495,13 +495,16 @@ class StatementGenerator implements InstructionVisitor {
 
     @Override
     public void visit(PutFieldInstruction insn) {
+        Expr right = Expr.var(insn.getValue().getIndex());
+        Expr left;
         if (insn.getInstance() != null) {
-            assign(Expr.qualify(Expr.var(insn.getInstance().getIndex()), insn.getField()), insn.getValue().getIndex());
+            left = Expr.qualify(Expr.var(insn.getInstance().getIndex()), insn.getField());
         } else {
-            Expr fieldExpr = Expr.qualify(Expr.staticClass(ValueType.object(insn.getField().getClassName())),
-                    insn.getField());
-            assign(fieldExpr, insn.getValue().getIndex());
+            left = Expr.qualify(Expr.staticClass(ValueType.object(insn.getField().getClassName())), insn.getField());
         }
+        AssignmentStatement stmt = Statement.assign(left, right);
+        stmt.setLocation(currentLocation);
+        statements.add(stmt);
     }
 
     @Override

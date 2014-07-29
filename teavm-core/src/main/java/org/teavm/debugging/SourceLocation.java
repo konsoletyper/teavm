@@ -36,4 +36,9 @@ public class SourceLocation {
     public int getLine() {
         return line;
     }
+
+    @Override
+    public String toString() {
+        return fileName + ":" + line;
+    }
 }

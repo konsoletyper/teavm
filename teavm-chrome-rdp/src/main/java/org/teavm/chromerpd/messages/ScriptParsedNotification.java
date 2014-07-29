@@ -15,10 +15,13 @@
  */
 package org.teavm.chromerpd.messages;
 
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+
 /**
  *
  * @author Alexey Andreev
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ScriptParsedNotification {
     private String scriptId;
     private String url;

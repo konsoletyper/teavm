@@ -16,12 +16,14 @@
 package org.teavm.chromerpd.messages;
 
 import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.teavm.chromerpd.data.CallFrameDTO;
 
 /**
  *
  * @author Alexey Andreev
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class SuspendedNotification {
     private CallFrameDTO[] callFrames;
     private String reason;

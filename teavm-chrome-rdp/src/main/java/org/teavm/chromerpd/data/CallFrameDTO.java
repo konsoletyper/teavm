@@ -15,10 +15,13 @@
  */
 package org.teavm.chromerpd.data;
 
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+
 /**
  *
  * @author Alexey Andreev
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class CallFrameDTO {
     private String callFrameId;
     private LocationDTO location;

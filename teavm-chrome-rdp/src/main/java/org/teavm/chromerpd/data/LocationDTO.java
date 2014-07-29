@@ -15,10 +15,13 @@
  */
 package org.teavm.chromerpd.data;
 
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+
 /**
  *
  * @author Alexey Andreev
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class LocationDTO {
     private int columnNumber;
     private int lineNumber;

@@ -16,11 +16,13 @@
 package org.teavm.chromerpd.data;
 
 import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 /**
  *
  * @author Alexey Andreev
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class Response {
     private int id;
     private JsonNode result;

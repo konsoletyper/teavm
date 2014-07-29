@@ -49,7 +49,6 @@ class DebugInformationWriter {
     }
 
     private void writeMapping(DebugInformation.Mapping mapping) throws IOException {
-        writeUnsignedNumber(mapping.lines.length);
         int[] lines = mapping.lines.clone();
         int last = 0;
         for (int i = 0; i < lines.length; ++i) {

@@ -15,12 +15,14 @@
  */
 package org.teavm.chromerpd.messages;
 
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.teavm.chromerpd.data.LocationDTO;
 
 /**
  *
  * @author Alexey Andreev
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class SetBreakpointCommand {
     private LocationDTO location;
 

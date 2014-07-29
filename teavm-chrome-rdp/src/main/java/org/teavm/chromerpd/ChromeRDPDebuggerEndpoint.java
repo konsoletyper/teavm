@@ -20,7 +20,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.websocket.*;
+import javax.websocket.OnClose;
+import javax.websocket.OnMessage;
+import javax.websocket.OnOpen;
+import javax.websocket.Session;
+import javax.websocket.server.ServerEndpoint;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.teavm.chromerpd.data.CallFrameDTO;
@@ -34,7 +38,7 @@ import org.teavm.debugging.*;
  *
  * @author Alexey Andreev
  */
-@ClientEndpoint
+@ServerEndpoint("/")
 public class ChromeRDPDebuggerEndpoint implements JavaScriptDebugger {
     private List<JavaScriptDebuggerListener> listeners = new ArrayList<>();
     private Session session;
@@ -46,19 +50,25 @@ public class ChromeRDPDebuggerEndpoint implements JavaScriptDebugger {
     private Map<Integer, Deferred> deferredResponses = new HashMap<>();
     private int messageIdGenerator;
     boolean closed;
+    private ChromeRDPContainer container;
 
     @OnOpen
     public void open(Session session) {
         this.session = session;
-        Object container = session.getUserProperties().get("container");
+        Object container = session.getUserProperties().get("rdp.container");
         if (container instanceof ChromeRDPContainer) {
-            ((ChromeRDPContainer)container).setDebugger(this);
+            this.container = (ChromeRDPContainer)container;
+            this.container.setDebugger(this);
         }
     }
 
     @OnClose
     public void close() {
         closed = true;
+        if (this.container != null) {
+            this.container.setDebugger(null);
+            this.container = null;
+        }
     }
 
     @OnMessage

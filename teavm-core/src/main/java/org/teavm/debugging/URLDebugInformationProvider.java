@@ -33,7 +33,7 @@ public class URLDebugInformationProvider implements DebugInformationProvider {
     @Override
     public DebugInformation getDebugInformation(String script) {
         try {
-            URL url = new URL(baseURL + script);
+            URL url = new URL(baseURL + script + ".teavmdbg");
             try (InputStream input = url.openStream()) {
                 return DebugInformation.read(input);
             }

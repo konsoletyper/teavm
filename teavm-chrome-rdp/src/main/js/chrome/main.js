@@ -4,6 +4,7 @@ chrome.browserAction.onClicked.addListener(function(tab) {
     new DebuggerAgent(tab).attach();
 });
 function DebuggerAgent(tab) {
+    this.pendingMessages = [];
     this.connection = null;
     this.tab = null;
     this.debuggee = { tabId : tab.id };
@@ -14,18 +15,24 @@ DebuggerAgent.prototype.attach = function() {
     chrome.debugger.attach(this.debuggee, "1.0", (function(callback) {
         this.attachedToDebugger = true;
         chrome.debugger.sendCommand(this.debuggee, "Debugger.enable", {}, callback);
-    }).bind(this, connectToServer.bind(this)));
+    }).bind(this, this.connectToServer.bind(this)));
 };
 DebuggerAgent.prototype.connectToServer = function() {
     this.connection = new WebSocket("ws://localhost:2357/");
     this.connection.onmessage = function(event) {
-        receiveMessage(this.debuggee, this.connection, JSON.parse(event.data));
+        this.receiveMessage(JSON.parse(event.data));
     }.bind(this);
     this.connection.onclose = function(event) {
         if (this.connection != null) {
             this.connection = null;
             this.disconnect();
         }
+    }.bind(this);
+    this.connection.onopen = function() {
+        for (var i = 0; i < this.pendingMessages.length; ++i) {
+            this.connection.send(JSON.stringify(this.pendingMessages[i]));
+        }
+        this.pendingMessages = null;
     }.bind(this);
 };
 DebuggerAgent.prototype.receiveMessage = function(message) {
@@ -58,7 +65,11 @@ chrome.debugger.onEvent.addListener(function(source, method, params) {
         return;
     }
     var message = { method : method, params : params };
-    this.connection.send(JSON.stringify(message));
+    if (agent.pendingMessages) {
+        agent.pendingMessages.push(message);
+    } else if (agent.connection) {
+        agent.connection.send(JSON.stringify(message));
+    }
 });
 chrome.debugger.onDetach.addListener(function(source) {
     var agent = debuggerAgentMap[source.tabId];

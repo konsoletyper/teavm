@@ -45,7 +45,7 @@ class DebugInformationReader {
     }
 
     private int processSign(int number) {
-        boolean negative = (number & 1) == 1;
+        boolean negative = (number & 1) != 0;
         number >>>= 1;
         return !negative ? number : -number;
     }
@@ -57,12 +57,12 @@ class DebugInformationReader {
             last += lines[i];
             lines[i] = last;
         }
-        int[] columns = new int[readUnsignedNumber()];
+        int[] columns = new int[lines.length];
         resetRelativeNumber();
         for (int i = 0; i < columns.length; ++i) {
             columns[i] = readRelativeNumber();
         }
-        int[] values = new int[readUnsignedNumber()];
+        int[] values = new int[lines.length];
         resetRelativeNumber();
         for (int i = 0; i < values.length; ++i) {
             values[i] = readRelativeNumber();
@@ -88,7 +88,7 @@ class DebugInformationReader {
             }
             n = processSign(n >>> 1);
             while (count-- > 0) {
-                array[i] = n;
+                array[i++] = n;
             }
         }
         return array;
@@ -100,13 +100,15 @@ class DebugInformationReader {
 
     private int readUnsignedNumber() throws IOException {
         int number = 0;
+        int shift = 0;
         while (true) {
             int r = input.read();
             if (r < 0) {
                 throw new EOFException();
             }
             byte b = (byte)r;
-            number = (number << 7) | (b & 0x7F);
+            number |= (b & 0x7F) << shift;
+            shift += 7;
             if ((b & 0x80) == 0) {
                 break;
             }
