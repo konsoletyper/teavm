@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.chromerpd;
+package org.teavm.chromerdp;
 
 import java.util.*;
 import javax.websocket.Decoder;
@@ -25,7 +25,6 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer;
-import org.teavm.debugging.JavaScriptDebugger;
 
 /**
  *
@@ -33,8 +32,7 @@ import org.teavm.debugging.JavaScriptDebugger;
  */
 public class ChromeRDPServer {
     private int port = 2357;
-    private Appendable output = System.err;
-    private ChromeRDPDebugger debugger = new ChromeRDPDebugger();
+    private ChromeRDPExchangeConsumer exchangeConsumer;
 
     public int getPort() {
         return port;
@@ -44,12 +42,12 @@ public class ChromeRDPServer {
         this.port = port;
     }
 
-    public Appendable getOutput() {
-        return output;
+    public ChromeRDPExchangeConsumer getExchangeConsumer() {
+        return exchangeConsumer;
     }
 
-    public void setOutput(Appendable output) {
-        this.output = output;
+    public void setExchangeConsumer(ChromeRDPExchangeConsumer exchangeConsumer) {
+        this.exchangeConsumer = exchangeConsumer;
     }
 
     public void start() {
@@ -67,7 +65,6 @@ public class ChromeRDPServer {
         try {
             wscontainer.addEndpoint(new RPDEndpointConfig());
             server.start();
-            server.dump(output);
             server.join();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -78,7 +75,7 @@ public class ChromeRDPServer {
         private Map<String, Object> userProperties = new HashMap<>();
 
         public RPDEndpointConfig() {
-            userProperties.put("chrome.rdp", debugger);
+            userProperties.put("chrome.rdp", exchangeConsumer);
         }
 
         @Override
@@ -120,9 +117,5 @@ public class ChromeRDPServer {
         public List<String> getSubprotocols() {
             return Collections.emptyList();
         }
-    }
-
-    public JavaScriptDebugger getDebugger() {
-        return debugger;
     }
 }

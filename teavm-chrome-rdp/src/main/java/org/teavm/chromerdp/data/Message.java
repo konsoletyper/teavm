@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.chromerpd.data;
+package org.teavm.chromerdp.data;
 
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
@@ -23,23 +23,32 @@ import org.codehaus.jackson.annotate.JsonIgnoreProperties;
  * @author Alexey Andreev
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Response {
-    private int id;
-    private JsonNode result;
+public class Message {
+    private Integer id;
+    private String method;
+    private JsonNode params;
 
-    public int getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
-    public JsonNode getResult() {
-        return result;
+    public String getMethod() {
+        return method;
     }
 
-    public void setResult(JsonNode result) {
-        this.result = result;
+    public void setMethod(String method) {
+        this.method = method;
+    }
+
+    public JsonNode getParams() {
+        return params;
+    }
+
+    public void setParams(JsonNode params) {
+        this.params = params;
     }
 }

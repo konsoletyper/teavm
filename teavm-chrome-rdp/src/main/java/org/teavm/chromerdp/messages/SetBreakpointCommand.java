@@ -13,41 +13,24 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.chromerpd.data;
+package org.teavm.chromerdp.messages;
 
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+import org.teavm.chromerdp.data.LocationDTO;
 
 /**
  *
  * @author Alexey Andreev
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class LocationDTO {
-    private int columnNumber;
-    private int lineNumber;
-    private String scriptId;
+public class SetBreakpointCommand {
+    private LocationDTO location;
 
-    public int getColumnNumber() {
-        return columnNumber;
+    public LocationDTO getLocation() {
+        return location;
     }
 
-    public void setColumnNumber(int columnNumber) {
-        this.columnNumber = columnNumber;
-    }
-
-    public int getLineNumber() {
-        return lineNumber;
-    }
-
-    public void setLineNumber(int lineNumber) {
-        this.lineNumber = lineNumber;
-    }
-
-    public String getScriptId() {
-        return scriptId;
-    }
-
-    public void setScriptId(String scriptId) {
-        this.scriptId = scriptId;
+    public void setLocation(LocationDTO location) {
+        this.location = location;
     }
 }

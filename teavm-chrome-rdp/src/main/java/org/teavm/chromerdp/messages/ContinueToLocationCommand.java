@@ -13,42 +13,24 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.chromerpd.data;
+package org.teavm.chromerdp.messages;
 
-import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+import org.teavm.chromerdp.data.LocationDTO;
 
 /**
  *
  * @author Alexey Andreev
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Message {
-    private Integer id;
-    private String method;
-    private JsonNode params;
+public class ContinueToLocationCommand {
+    private LocationDTO location;
 
-    public Integer getId() {
-        return id;
+    public LocationDTO getLocation() {
+        return location;
     }
 
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public String getMethod() {
-        return method;
-    }
-
-    public void setMethod(String method) {
-        this.method = method;
-    }
-
-    public JsonNode getParams() {
-        return params;
-    }
-
-    public void setParams(JsonNode params) {
-        this.params = params;
+    public void setLocation(LocationDTO location) {
+        this.location = location;
     }
 }

@@ -13,12 +13,23 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.chromerpd;
+package org.teavm.chromerdp.messages;
+
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 /**
  *
  * @author Alexey Andreev
  */
-public interface ChromeRDPContainer {
-    void setDebugger(ChromeRDPDebuggerEndpoint debugger);
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class RemoveBreakpointCommand {
+    private String breakpointId;
+
+    public String getBreakpointId() {
+        return breakpointId;
+    }
+
+    public void setBreakpointId(String breakpointId) {
+        this.breakpointId = breakpointId;
+    }
 }

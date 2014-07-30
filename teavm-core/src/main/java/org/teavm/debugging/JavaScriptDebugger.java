@@ -42,7 +42,5 @@ public interface JavaScriptDebugger {
 
     JavaScriptCallFrame[] getCallStack();
 
-    JavaScriptBreakpoint getCurrentBreakpoint();
-
     JavaScriptBreakpoint createBreakpoint(JavaScriptLocation location);
 }

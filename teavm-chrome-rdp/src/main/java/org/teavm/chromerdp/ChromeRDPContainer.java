@@ -13,24 +13,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.chromerpd.messages;
-
-import org.codehaus.jackson.annotate.JsonIgnoreProperties;
-import org.teavm.chromerpd.data.LocationDTO;
+package org.teavm.chromerdp;
 
 /**
  *
  * @author Alexey Andreev
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
-public class SetBreakpointCommand {
-    private LocationDTO location;
-
-    public LocationDTO getLocation() {
-        return location;
-    }
-
-    public void setLocation(LocationDTO location) {
-        this.location = location;
-    }
+public interface ChromeRDPContainer {
+    void setDebugger(ChromeRDPDebuggerEndpoint debugger);
 }

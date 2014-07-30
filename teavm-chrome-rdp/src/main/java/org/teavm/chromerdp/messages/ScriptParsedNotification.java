@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.chromerpd.messages;
+package org.teavm.chromerdp.messages;
 
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
@@ -22,14 +22,23 @@ import org.codehaus.jackson.annotate.JsonIgnoreProperties;
  * @author Alexey Andreev
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class RemoveBreakpointCommand {
-    private String breakpointId;
+public class ScriptParsedNotification {
+    private String scriptId;
+    private String url;
 
-    public String getBreakpointId() {
-        return breakpointId;
+    public String getScriptId() {
+        return scriptId;
     }
 
-    public void setBreakpointId(String breakpointId) {
-        this.breakpointId = breakpointId;
+    public void setScriptId(String scriptId) {
+        this.scriptId = scriptId;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
     }
 }

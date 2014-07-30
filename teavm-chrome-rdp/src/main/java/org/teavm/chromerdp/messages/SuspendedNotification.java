@@ -13,33 +13,43 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.chromerpd.messages;
+package org.teavm.chromerdp.messages;
 
+import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
-import org.teavm.chromerpd.data.LocationDTO;
+import org.teavm.chromerdp.data.CallFrameDTO;
 
 /**
  *
  * @author Alexey Andreev
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class SetBreakpointResponse {
-    private String breakpointId;
-    private LocationDTO actualLocation;
+public class SuspendedNotification {
+    private CallFrameDTO[] callFrames;
+    private String reason;
+    private JsonNode data;
 
-    public String getBreakpointId() {
-        return breakpointId;
+    public CallFrameDTO[] getCallFrames() {
+        return callFrames;
     }
 
-    public void setBreakpointId(String breakpointId) {
-        this.breakpointId = breakpointId;
+    public void setCallFrames(CallFrameDTO[] callFrames) {
+        this.callFrames = callFrames;
     }
 
-    public LocationDTO getActualLocation() {
-        return actualLocation;
+    public String getReason() {
+        return reason;
     }
 
-    public void setActualLocation(LocationDTO actualLocation) {
-        this.actualLocation = actualLocation;
+    public void setReason(String reason) {
+        this.reason = reason;
+    }
+
+    public JsonNode getData() {
+        return data;
+    }
+
+    public void setData(JsonNode data) {
+        this.data = data;
     }
 }

@@ -79,7 +79,7 @@ public class Debugger {
         continueToLocation(location.getFileName(), location.getLine());
     }
 
-    public synchronized void continueToLocation(String fileName, int line) {
+    public void continueToLocation(String fileName, int line) {
         if (!javaScriptDebugger.isSuspended()) {
             return;
         }
@@ -105,7 +105,7 @@ public class Debugger {
         return createBreakpoint(new SourceLocation(file, line));
     }
 
-    public synchronized Breakpoint createBreakpoint(SourceLocation location) {
+    public Breakpoint createBreakpoint(SourceLocation location) {
         Breakpoint breakpoint = new Breakpoint(this, location);
         breakpoints.add(breakpoint);
         updateInternalBreakpoints(breakpoint);
@@ -113,7 +113,7 @@ public class Debugger {
         return breakpoint;
     }
 
-    public synchronized Set<Breakpoint> getBreakpoints() {
+    public Set<Breakpoint> getBreakpoints() {
         return new HashSet<>(breakpoints);
     }
 
@@ -153,7 +153,7 @@ public class Debugger {
         }
     }
 
-    public synchronized CallFrame[] getCallStack() {
+    public CallFrame[] getCallStack() {
         if (!isSuspended()) {
             return null;
         }
@@ -184,7 +184,7 @@ public class Debugger {
         return callStack.clone();
     }
 
-    private synchronized void addScript(String name) {
+    private void addScript(String name) {
         if (debugInformationMap.containsKey(name)) {
             return;
         }
@@ -212,7 +212,7 @@ public class Debugger {
         return javaScriptDebugger.isAttached();
     }
 
-    synchronized void destroyBreakpoint(Breakpoint breakpoint) {
+    void destroyBreakpoint(Breakpoint breakpoint) {
         for (JavaScriptBreakpoint jsBreakpoint : breakpoint.jsBreakpoints) {
             jsBreakpoint.destroy();
             breakpointMap.remove(jsBreakpoint);
@@ -221,7 +221,7 @@ public class Debugger {
         breakpoints.remove(this);
     }
 
-    private synchronized void fireResumed() {
+    private void fireResumed() {
         for (JavaScriptBreakpoint jsBreakpoint : temporaryJsBreakpoints) {
             jsBreakpoint.destroy();
         }
@@ -231,7 +231,7 @@ public class Debugger {
         }
     }
 
-    private synchronized void fireAttached() {
+    private void fireAttached() {
         for (Breakpoint breakpoint : breakpoints) {
             updateInternalBreakpoints(breakpoint);
             updateBreakpointStatus(breakpoint, false);
@@ -241,7 +241,7 @@ public class Debugger {
         }
     }
 
-    private synchronized void fireDetached() {
+    private void fireDetached() {
         for (Breakpoint breakpoint : breakpoints) {
             updateBreakpointStatus(breakpoint, false);
         }
@@ -250,7 +250,7 @@ public class Debugger {
         }
     }
 
-    private synchronized void fireBreakpointChanged(JavaScriptBreakpoint jsBreakpoint) {
+    private void fireBreakpointChanged(JavaScriptBreakpoint jsBreakpoint) {
         Breakpoint breakpoint = breakpointMap.get(jsBreakpoint);
         if (breakpoint != null) {
             updateBreakpointStatus(breakpoint, true);

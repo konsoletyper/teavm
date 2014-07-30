@@ -13,32 +13,33 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.chromerpd.messages;
+package org.teavm.chromerdp.messages;
 
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+import org.teavm.chromerdp.data.LocationDTO;
 
 /**
  *
  * @author Alexey Andreev
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class ScriptParsedNotification {
-    private String scriptId;
-    private String url;
+public class SetBreakpointResponse {
+    private String breakpointId;
+    private LocationDTO actualLocation;
 
-    public String getScriptId() {
-        return scriptId;
+    public String getBreakpointId() {
+        return breakpointId;
     }
 
-    public void setScriptId(String scriptId) {
-        this.scriptId = scriptId;
+    public void setBreakpointId(String breakpointId) {
+        this.breakpointId = breakpointId;
     }
 
-    public String getUrl() {
-        return url;
+    public LocationDTO getActualLocation() {
+        return actualLocation;
     }
 
-    public void setUrl(String url) {
-        this.url = url;
+    public void setActualLocation(LocationDTO actualLocation) {
+        this.actualLocation = actualLocation;
     }
 }

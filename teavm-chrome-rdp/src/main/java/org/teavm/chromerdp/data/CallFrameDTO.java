@@ -13,18 +13,26 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.chromerpd.messages;
+package org.teavm.chromerdp.data;
 
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
-import org.teavm.chromerpd.data.LocationDTO;
 
 /**
  *
  * @author Alexey Andreev
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class ContinueToLocationCommand {
+public class CallFrameDTO {
+    private String callFrameId;
     private LocationDTO location;
+
+    public String getCallFrameId() {
+        return callFrameId;
+    }
+
+    public void setCallFrameId(String callFrameId) {
+        this.callFrameId = callFrameId;
+    }
 
     public LocationDTO getLocation() {
         return location;

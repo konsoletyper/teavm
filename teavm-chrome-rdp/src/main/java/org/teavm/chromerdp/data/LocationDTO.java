@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.chromerpd.data;
+package org.teavm.chromerdp.data;
 
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
@@ -22,23 +22,32 @@ import org.codehaus.jackson.annotate.JsonIgnoreProperties;
  * @author Alexey Andreev
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class CallFrameDTO {
-    private String callFrameId;
-    private LocationDTO location;
+public class LocationDTO {
+    private int columnNumber;
+    private int lineNumber;
+    private String scriptId;
 
-    public String getCallFrameId() {
-        return callFrameId;
+    public int getColumnNumber() {
+        return columnNumber;
     }
 
-    public void setCallFrameId(String callFrameId) {
-        this.callFrameId = callFrameId;
+    public void setColumnNumber(int columnNumber) {
+        this.columnNumber = columnNumber;
     }
 
-    public LocationDTO getLocation() {
-        return location;
+    public int getLineNumber() {
+        return lineNumber;
     }
 
-    public void setLocation(LocationDTO location) {
-        this.location = location;
+    public void setLineNumber(int lineNumber) {
+        this.lineNumber = lineNumber;
+    }
+
+    public String getScriptId() {
+        return scriptId;
+    }
+
+    public void setScriptId(String scriptId) {
+        this.scriptId = scriptId;
     }
 }

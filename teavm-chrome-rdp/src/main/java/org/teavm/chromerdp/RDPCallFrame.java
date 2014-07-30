@@ -13,41 +13,30 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.chromerpd;
+package org.teavm.chromerdp;
 
-import org.teavm.debugging.JavaScriptBreakpoint;
+import org.teavm.debugging.JavaScriptCallFrame;
 import org.teavm.debugging.JavaScriptLocation;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class RDPBreakpoint implements JavaScriptBreakpoint {
-    volatile String chromeId;
-    private ChromeRDPDebugger debugger;
+public class RDPCallFrame implements JavaScriptCallFrame {
+    private String chromeId;
     private JavaScriptLocation location;
 
-    RDPBreakpoint(ChromeRDPDebugger debugger, JavaScriptLocation location) {
-        this.debugger = debugger;
+    public RDPCallFrame(String chromeId, JavaScriptLocation location) {
+        this.chromeId = chromeId;
         this.location = location;
+    }
+
+    public String getChromeId() {
+        return chromeId;
     }
 
     @Override
     public JavaScriptLocation getLocation() {
         return location;
-    }
-
-    @Override
-    public void destroy() {
-        if (debugger != null) {
-            debugger.destroyBreakpoint(this);
-            chromeId = null;
-            debugger = null;
-        }
-    }
-
-    @Override
-    public boolean isValid() {
-        return chromeId != null;
     }
 }

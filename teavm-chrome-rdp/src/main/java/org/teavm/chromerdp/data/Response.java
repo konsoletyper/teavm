@@ -13,43 +13,33 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.chromerpd.messages;
+package org.teavm.chromerdp.data;
 
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
-import org.teavm.chromerpd.data.CallFrameDTO;
 
 /**
  *
  * @author Alexey Andreev
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class SuspendedNotification {
-    private CallFrameDTO[] callFrames;
-    private String reason;
-    private JsonNode data;
+public class Response {
+    private int id;
+    private JsonNode result;
 
-    public CallFrameDTO[] getCallFrames() {
-        return callFrames;
+    public int getId() {
+        return id;
     }
 
-    public void setCallFrames(CallFrameDTO[] callFrames) {
-        this.callFrames = callFrames;
+    public void setId(int id) {
+        this.id = id;
     }
 
-    public String getReason() {
-        return reason;
+    public JsonNode getResult() {
+        return result;
     }
 
-    public void setReason(String reason) {
-        this.reason = reason;
-    }
-
-    public JsonNode getData() {
-        return data;
-    }
-
-    public void setData(JsonNode data) {
-        this.data = data;
+    public void setResult(JsonNode result) {
+        this.result = result;
     }
 }

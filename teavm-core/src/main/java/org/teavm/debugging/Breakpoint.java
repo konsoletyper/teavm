@@ -37,7 +37,7 @@ public class Breakpoint {
         return location;
     }
 
-    public synchronized void destroy() {
+    public void destroy() {
         debugger.destroyBreakpoint(this);
         debugger = null;
     }
