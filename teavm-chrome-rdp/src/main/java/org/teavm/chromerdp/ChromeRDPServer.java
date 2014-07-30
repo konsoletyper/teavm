@@ -33,6 +33,7 @@ import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainer
 public class ChromeRDPServer {
     private int port = 2357;
     private ChromeRDPExchangeConsumer exchangeConsumer;
+    private Server server;
 
     public int getPort() {
         return port;
@@ -51,7 +52,7 @@ public class ChromeRDPServer {
     }
 
     public void start() {
-        final Server server = new Server();
+        server = new Server();
         ServerConnector connector = new ServerConnector(server);
         connector.setPort(port);
         server.addConnector(connector);
@@ -66,6 +67,14 @@ public class ChromeRDPServer {
             wscontainer.addEndpoint(new RPDEndpointConfig());
             server.start();
             server.join();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void stop() {
+        try {
+            server.stop();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
