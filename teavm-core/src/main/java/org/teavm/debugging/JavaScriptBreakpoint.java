@@ -22,5 +22,7 @@ package org.teavm.debugging;
 public interface JavaScriptBreakpoint {
     JavaScriptLocation getLocation();
 
+    boolean isValid();
+
     void destroy();
 }

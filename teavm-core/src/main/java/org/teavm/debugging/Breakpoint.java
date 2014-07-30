@@ -15,6 +15,7 @@
  */
 package org.teavm.debugging;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -23,16 +24,13 @@ import java.util.List;
  */
 public class Breakpoint {
     private Debugger debugger;
-    private List<JavaScriptBreakpoint> jsBreakpoints;
+    List<JavaScriptBreakpoint> jsBreakpoints = new ArrayList<>();
     private SourceLocation location;
+    boolean valid;
 
-    Breakpoint(Debugger debugger, List<JavaScriptBreakpoint> jsBreakpoints, SourceLocation location) {
+    Breakpoint(Debugger debugger, SourceLocation location) {
         this.debugger = debugger;
-        this.jsBreakpoints = jsBreakpoints;
         this.location = location;
-        for (JavaScriptBreakpoint jsBreakpoint : jsBreakpoints) {
-            debugger.breakpointMap.put(jsBreakpoint, this);
-        }
     }
 
     public SourceLocation getLocation() {
@@ -44,11 +42,17 @@ public class Breakpoint {
             jsBreakpoint.destroy();
             debugger.breakpointMap.remove(jsBreakpoint);
         }
+        debugger.breakpoints.remove(this);
         jsBreakpoints.clear();
+        debugger = null;
+    }
+
+    public boolean isValid() {
+        return valid;
     }
 
     public boolean isDestroyed() {
-        return jsBreakpoints.isEmpty();
+        return debugger == null;
     }
 
     public Debugger getDebugger() {

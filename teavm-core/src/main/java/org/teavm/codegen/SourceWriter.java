@@ -169,6 +169,7 @@ public class SourceWriter implements Appendable, LocationProvider {
         if (!minified) {
             innerWriter.append('\n');
             column = 0;
+            ++line;
             lineStart = true;
         }
         return this;

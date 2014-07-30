@@ -203,8 +203,8 @@ public class DebugInformation {
             ensureLine(sourceLine);
             generatedLocationSize.set(sourceLine, generatedLocationSize.get(sourceLine) + 1);
             int slot = generatedLocationStart.get(sourceLine);
-            slot = addData(slot, column);
             slot = addData(slot, line);
+            slot = addData(slot, column);
             generatedLocationStart.set(sourceLine, slot);
         }
 

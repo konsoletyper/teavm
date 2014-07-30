@@ -24,5 +24,11 @@ public interface JavaScriptDebuggerListener {
 
     void resumed();
 
+    void attached();
+
+    void detached();
+
+    void breakpointChanged(JavaScriptBreakpoint breakpoint);
+
     void scriptAdded(String name);
 }

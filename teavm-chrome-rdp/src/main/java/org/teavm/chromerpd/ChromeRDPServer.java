@@ -16,7 +16,6 @@
 package org.teavm.chromerpd;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
 import javax.websocket.Decoder;
 import javax.websocket.Encoder;
 import javax.websocket.Extension;
@@ -35,8 +34,7 @@ import org.teavm.debugging.JavaScriptDebugger;
 public class ChromeRDPServer {
     private int port = 2357;
     private Appendable output = System.err;
-    private AtomicReference<JavaScriptDebugger> debugger = new AtomicReference<>();
-    private List<ChromeRDPServerListener> listeners = new ArrayList<>();
+    private ChromeRDPDebugger debugger = new ChromeRDPDebugger();
 
     public int getPort() {
         return port;
@@ -52,14 +50,6 @@ public class ChromeRDPServer {
 
     public void setOutput(Appendable output) {
         this.output = output;
-    }
-
-    public void addListener(ChromeRDPServerListener listener) {
-        listeners.add(listener);
-    }
-
-    public void removeListener(ChromeRDPServerListener listener) {
-        listeners.remove(listener);
     }
 
     public void start() {
@@ -88,11 +78,7 @@ public class ChromeRDPServer {
         private Map<String, Object> userProperties = new HashMap<>();
 
         public RPDEndpointConfig() {
-            userProperties.put("rdp.container", new ChromeRDPContainer() {
-                @Override public void setDebugger(ChromeRDPDebuggerEndpoint debugger) {
-                    ChromeRDPServer.this.setDebugger(debugger);
-                }
-            });
+            userProperties.put("chrome.rdp", debugger);
         }
 
         @Override
@@ -137,19 +123,6 @@ public class ChromeRDPServer {
     }
 
     public JavaScriptDebugger getDebugger() {
-        return debugger.get();
-    }
-
-    void setDebugger(JavaScriptDebugger debugger) {
-        if (debugger != null) {
-            if (!this.debugger.compareAndSet(null, debugger)) {
-                throw new IllegalStateException("Can't handle more than one connection");
-            }
-            for (ChromeRDPServerListener listener : listeners) {
-                listener.connected(this);
-            }
-        } else {
-            this.debugger.set(null);
-        }
+        return debugger;
     }
 }

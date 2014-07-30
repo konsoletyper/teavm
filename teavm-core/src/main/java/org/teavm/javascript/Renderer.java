@@ -1498,6 +1498,9 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     writer.append("(");
                     expr.getExpr().acceptVisitor(this);
                     writer.append(" instanceof ").appendClass(clsName).append(")");
+                    if (expr.getLocation() != null) {
+                        popLocation();
+                    }
                     return;
                 }
             }

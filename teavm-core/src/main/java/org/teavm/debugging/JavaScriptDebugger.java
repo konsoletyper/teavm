@@ -38,6 +38,8 @@ public interface JavaScriptDebugger {
 
     boolean isSuspended();
 
+    boolean isAttached();
+
     JavaScriptCallFrame[] getCallStack();
 
     JavaScriptBreakpoint getCurrentBreakpoint();

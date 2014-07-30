@@ -109,6 +109,13 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
         IntegerArray values = new IntegerArray(1);
 
         public void add(LocationProvider location, int value) {
+            if (lines.size() > 1) {
+                int last = lines.size() - 1;
+                if (lines.get(last) == location.getLine() && columns.get(last) == location.getColumn()) {
+                    values.set(last, value);
+                    return;
+                }
+            }
             lines.add(location.getLine());
             columns.add(location.getColumn());
             values.add(value);

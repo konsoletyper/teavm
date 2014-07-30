@@ -52,8 +52,9 @@ class DebugInformationWriter {
         int[] lines = mapping.lines.clone();
         int last = 0;
         for (int i = 0; i < lines.length; ++i) {
-            last = lines[i];
+            int next = lines[i];
             lines[i] -= last;
+            last = next;
         }
         writeRle(lines);
         resetRelativeNumber();

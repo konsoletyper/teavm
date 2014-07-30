@@ -33,6 +33,7 @@ public class Debugger {
     private Map<String, List<DebugInformation>> debugInformationFileMap = new HashMap<>();
     private Map<DebugInformation, String> scriptMap = new HashMap<>();
     Map<JavaScriptBreakpoint, Breakpoint> breakpointMap = new HashMap<>();
+    Set<Breakpoint> breakpoints = new HashSet<>();
     private CallFrame[] callStack;
 
     public Debugger(JavaScriptDebugger javaScriptDebugger, DebugInformationProvider debugInformationProvider) {
@@ -58,23 +59,14 @@ public class Debugger {
     }
 
     public void stepInto() {
-        if (!javaScriptDebugger.isSuspended()) {
-            return;
-        }
         javaScriptDebugger.stepInto();
     }
 
     public void stepOut() {
-        if (!javaScriptDebugger.isSuspended()) {
-            return;
-        }
         javaScriptDebugger.stepOut();
     }
 
     public void stepOver() {
-        if (!javaScriptDebugger.isSuspended()) {
-            return;
-        }
         javaScriptDebugger.stepOver();
     }
 
@@ -114,19 +106,49 @@ public class Debugger {
     }
 
     public Breakpoint createBreakpoint(SourceLocation location) {
-        List<JavaScriptBreakpoint> jsBreakpoints = new ArrayList<>();
+        Breakpoint breakpoint = new Breakpoint(this, location);
+        breakpoints.add(breakpoint);
+        updateInternalBreakpoints(breakpoint);
+        updateBreakpointStatus(breakpoint, false);
+        return breakpoint;
+    }
+
+    public Set<Breakpoint> getBreakpoints() {
+        return Collections.unmodifiableSet(breakpoints);
+    }
+
+    void updateInternalBreakpoints(Breakpoint breakpoint) {
+        for (JavaScriptBreakpoint jsBreakpoint : breakpoint.jsBreakpoints) {
+            breakpointMap.remove(jsBreakpoint);
+            jsBreakpoint.destroy();
+        }
+        SourceLocation location = breakpoint.getLocation();
         for (DebugInformation debugInformation : debugInformationBySource(location.getFileName())) {
             Collection<GeneratedLocation> locations = debugInformation.getGeneratedLocations(location);
             for (GeneratedLocation genLocation : locations) {
                 JavaScriptLocation jsLocation = new JavaScriptLocation(scriptMap.get(debugInformation),
                         genLocation.getLine(), genLocation.getColumn());
                 JavaScriptBreakpoint jsBreakpoint = javaScriptDebugger.createBreakpoint(jsLocation);
-                if (jsBreakpoint != null) {
-                    jsBreakpoints.add(jsBreakpoint);
+                breakpoint.jsBreakpoints.add(jsBreakpoint);
+            }
+        }
+    }
+
+    void updateBreakpointStatus(Breakpoint breakpoint, boolean fireEvent) {
+        boolean valid = false;
+        for (JavaScriptBreakpoint jsBreakpoint : breakpoint.jsBreakpoints) {
+            if (jsBreakpoint.isValid()) {
+                valid = true;
+            }
+        }
+        if (breakpoint.valid != valid) {
+            breakpoint.valid = valid;
+            if (fireEvent) {
+                for (DebuggerListener listener : listeners) {
+                    listener.breakpointStatusChanged(breakpoint);
                 }
             }
         }
-        return !jsBreakpoints.isEmpty() ? new Breakpoint(this, jsBreakpoints, location) : null;
     }
 
     public CallFrame[] getCallStack() {
@@ -178,6 +200,14 @@ public class Debugger {
             list.add(debugInfo);
         }
         scriptMap.put(debugInfo, name);
+        for (Breakpoint breakpoint : breakpoints) {
+            updateInternalBreakpoints(breakpoint);
+            updateBreakpointStatus(breakpoint, true);
+        }
+    }
+
+    public boolean isAttached() {
+        return javaScriptDebugger.isAttached();
     }
 
     private JavaScriptDebuggerListener javaScriptListener = new JavaScriptDebuggerListener() {
@@ -202,6 +232,36 @@ public class Debugger {
         @Override
         public void scriptAdded(String name) {
             addScript(name);
+        }
+
+        @Override
+        public void attached() {
+            for (Breakpoint breakpoint : breakpoints) {
+                updateInternalBreakpoints(breakpoint);
+                updateBreakpointStatus(breakpoint, false);
+            }
+            for (DebuggerListener listener : listeners) {
+                listener.attached();
+            }
+        }
+
+        @Override
+        public void detached() {
+            for (Breakpoint breakpoint : breakpoints) {
+                updateBreakpointStatus(breakpoint, true);
+            }
+            for (DebuggerListener listener : listeners) {
+                listener.detached();
+            }
+        }
+
+        @Override
+        public void breakpointChanged(JavaScriptBreakpoint jsBreakpoint) {
+            Breakpoint breakpoint = breakpointMap.get(jsBreakpoint);
+            if (breakpoint != null) {
+                updateInternalBreakpoints(breakpoint);
+                updateBreakpointStatus(breakpoint, false);
+            }
         }
     };
 }

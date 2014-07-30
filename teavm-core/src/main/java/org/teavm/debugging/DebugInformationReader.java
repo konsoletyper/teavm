@@ -41,6 +41,7 @@ class DebugInformationReader {
         debugInfo.classMapping = readMapping();
         debugInfo.methodMapping = readMapping();
         debugInfo.rebuildFileDescriptions();
+        debugInfo.rebuildMaps();
         return debugInfo;
     }
 

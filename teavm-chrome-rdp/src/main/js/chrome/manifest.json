@@ -13,7 +13,6 @@
     },
 
     "background": {
-        "scripts": ["main.js"],
-        "persistent": false
+        "scripts": ["main.js"]
     }
 }

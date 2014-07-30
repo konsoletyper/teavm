@@ -23,4 +23,10 @@ public interface DebuggerListener {
     void resumed();
 
     void paused();
+
+    void breakpointStatusChanged(Breakpoint breakpoint);
+
+    void attached();
+
+    void detached();
 }
