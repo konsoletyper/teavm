@@ -37,13 +37,8 @@ public class Breakpoint {
         return location;
     }
 
-    public void destroy() {
-        for (JavaScriptBreakpoint jsBreakpoint : jsBreakpoints) {
-            jsBreakpoint.destroy();
-            debugger.breakpointMap.remove(jsBreakpoint);
-        }
-        debugger.breakpoints.remove(this);
-        jsBreakpoints.clear();
+    public synchronized void destroy() {
+        debugger.destroyBreakpoint(this);
         debugger = null;
     }
 
@@ -51,7 +46,7 @@ public class Breakpoint {
         return valid;
     }
 
-    public boolean isDestroyed() {
+    public synchronized boolean isDestroyed() {
         return debugger == null;
     }
 

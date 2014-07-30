@@ -61,8 +61,9 @@ public class DebugInformation {
         int end = description.generatedLocationStart[line + 1];
         GeneratedLocation[] resultArray = new GeneratedLocation[(end - start) / 2];
         for (int i = 0; i < resultArray.length; ++i) {
-            resultArray[i] = new GeneratedLocation(description.generatedLocationData[i * 2],
-                    description.generatedLocationData[i * 2 + 1]);
+            int genLine = description.generatedLocationData[start++];
+            int genColumn = description.generatedLocationData[start++];
+            resultArray[i] = new GeneratedLocation(genLine, genColumn);
         }
         return Arrays.asList(resultArray);
     }

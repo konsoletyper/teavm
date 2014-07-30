@@ -23,7 +23,7 @@ import org.teavm.debugging.JavaScriptLocation;
  * @author Alexey Andreev
  */
 public class RDPBreakpoint implements JavaScriptBreakpoint {
-    String chromeId;
+    volatile String chromeId;
     private ChromeRDPDebugger debugger;
     private JavaScriptLocation location;
 
@@ -41,12 +41,13 @@ public class RDPBreakpoint implements JavaScriptBreakpoint {
     public void destroy() {
         if (debugger != null) {
             debugger.destroyBreakpoint(this);
+            chromeId = null;
             debugger = null;
         }
     }
 
     @Override
     public boolean isValid() {
-        return false;
+        return chromeId != null;
     }
 }

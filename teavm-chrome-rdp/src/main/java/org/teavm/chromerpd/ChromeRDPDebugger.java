@@ -107,7 +107,7 @@ public class ChromeRDPDebugger implements JavaScriptDebugger {
     }
 
     @Override
-    public JavaScriptBreakpoint createBreakpoint(JavaScriptLocation location) {
+    public synchronized JavaScriptBreakpoint createBreakpoint(JavaScriptLocation location) {
         RDPBreakpoint breakpoint = new RDPBreakpoint(this, location);
         breakpoints.add(breakpoint);
         if (endpoint != null) {
@@ -116,7 +116,7 @@ public class ChromeRDPDebugger implements JavaScriptDebugger {
         return breakpoint;
     }
 
-    void destroyBreakpoint(RDPBreakpoint breakpoint) {
+    synchronized void destroyBreakpoint(RDPBreakpoint breakpoint) {
         breakpoints.remove(breakpoint);
         if (endpoint != null) {
             endpoint.destroyBreakpoint(breakpoint);
@@ -138,6 +138,12 @@ public class ChromeRDPDebugger implements JavaScriptDebugger {
     void fireScriptAdded(String script) {
         for (JavaScriptDebuggerListener listener : listeners) {
             listener.scriptAdded(script);
+        }
+    }
+
+    void fireBreakpointStatusChanged(RDPBreakpoint breakpoint) {
+        for (JavaScriptDebuggerListener listener : listeners) {
+            listener.breakpointChanged(breakpoint);
         }
     }
 }

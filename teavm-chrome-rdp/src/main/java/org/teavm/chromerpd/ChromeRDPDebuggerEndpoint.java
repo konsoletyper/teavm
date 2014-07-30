@@ -18,7 +18,10 @@ package org.teavm.chromerpd;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import javax.websocket.*;
+import javax.websocket.OnClose;
+import javax.websocket.OnMessage;
+import javax.websocket.OnOpen;
+import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -27,7 +30,9 @@ import org.teavm.chromerpd.data.LocationDTO;
 import org.teavm.chromerpd.data.Message;
 import org.teavm.chromerpd.data.Response;
 import org.teavm.chromerpd.messages.*;
-import org.teavm.debugging.*;
+import org.teavm.debugging.JavaScriptBreakpoint;
+import org.teavm.debugging.JavaScriptCallFrame;
+import org.teavm.debugging.JavaScriptLocation;
 
 /**
  *
@@ -39,9 +44,9 @@ public class ChromeRDPDebuggerEndpoint {
     private RDPCallFrame[] callStack = new RDPCallFrame[0];
     private Map<String, String> scripts = new HashMap<>();
     private Map<String, String> scriptIds = new HashMap<>();
-    private boolean suspended;
+    private boolean suspended = false;
     private ObjectMapper mapper = new ObjectMapper();
-    private Map<Integer, Deferred> deferredResponses = new HashMap<>();
+    private Map<Integer, ResponseHandler> responseHandlers = new HashMap<>();
     private int messageIdGenerator;
     boolean closed;
     private ChromeRDPDebugger debugger;
@@ -70,7 +75,7 @@ public class ChromeRDPDebuggerEndpoint {
         JsonNode jsonMessage = mapper.readTree(messageText);
         if (jsonMessage.has("result")) {
             Response response = mapper.reader(Response.class).readValue(jsonMessage);
-            deferredResponses.remove(response.getId()).set(response.getResult());
+            responseHandlers.remove(response.getId()).received(response.getResult());
         } else {
             Message message = mapper.reader(Message.class).readValue(messageText);
             switch (message.getMethod()) {
@@ -91,13 +96,14 @@ public class ChromeRDPDebuggerEndpoint {
         return mapper.reader(type).readValue(node);
     }
 
-    private void firePaused(SuspendedNotification params) {
+    private synchronized void firePaused(SuspendedNotification params) {
         suspended = true;
         CallFrameDTO[] callFrameDTOs = params.getCallFrames();
-        RDPCallFrame[] callFrames = new RDPCallFrame[callFrameDTOs.length];
-        for (int i = 0; i < callFrames.length; ++i) {
-            callFrames[i] = map(callFrameDTOs[i]);
+        RDPCallFrame[] callStack = new RDPCallFrame[callFrameDTOs.length];
+        for (int i = 0; i < callStack.length; ++i) {
+            callStack[i] = map(callFrameDTOs[i]);
         }
+        this.callStack = callStack;
         debugger.firePaused();
     }
 
@@ -117,12 +123,13 @@ public class ChromeRDPDebuggerEndpoint {
         return dto;
     }
 
-    private void fireResumed() {
+    private synchronized void fireResumed() {
         suspended = false;
+        callStack = null;
         debugger.fireResumed();
     }
 
-    private void scriptParsed(ScriptParsedNotification params) {
+    private synchronized void scriptParsed(ScriptParsedNotification params) {
         if (scripts.containsKey(params.getScriptId())) {
             return;
         }
@@ -188,7 +195,7 @@ public class ChromeRDPDebuggerEndpoint {
         sendMessage(message);
     }
 
-    public void continueToLocation(JavaScriptLocation location) {
+    public synchronized void continueToLocation(JavaScriptLocation location) {
         Message message = new Message();
         message.setMethod("Debugger.continueToLocation");
         ContinueToLocationCommand params = new ContinueToLocationCommand();
@@ -197,35 +204,34 @@ public class ChromeRDPDebuggerEndpoint {
         sendMessage(message);
     }
 
-    public boolean isSuspended() {
+    public synchronized boolean isSuspended() {
         return suspended;
     }
 
-    public JavaScriptCallFrame[] getCallStack() {
+    public synchronized JavaScriptCallFrame[] getCallStack() {
         return callStack;
     }
 
-    public JavaScriptBreakpoint getCurrentBreakpoint() {
+    public synchronized JavaScriptBreakpoint getCurrentBreakpoint() {
         return null;
     }
 
-    public void updateBreakpoint(RDPBreakpoint breakpoint) {
+    public synchronized void updateBreakpoint(final RDPBreakpoint breakpoint) {
         Message message = new Message();
-        message.setId(messageIdGenerator++);
+        message.setId(++messageIdGenerator);
         message.setMethod("Debugger.setBreakpoint");
         SetBreakpointCommand params = new SetBreakpointCommand();
         params.setLocation(unmap(breakpoint.getLocation()));
         message.setParams(mapper.valueToTree(params));
-        Deferred deferred = new Deferred();
-        deferredResponses.put(message.getId(), deferred);
+        ResponseHandler handler = new ResponseHandler() {
+            @Override public void received(JsonNode node) throws IOException {
+                SetBreakpointResponse response = mapper.reader(SetBreakpointResponse.class).readValue(node);
+                breakpoint.chromeId = response.getBreakpointId();
+                debugger.fireBreakpointStatusChanged(breakpoint);
+            }
+        };
+        responseHandlers.put(message.getId(), handler);
         sendMessage(message);
-        try {
-            SetBreakpointResponse response = mapper.reader(SetBreakpointResponse.class)
-                    .readValue((JsonNode)deferred.get());
-            breakpoint.chromeId = response.getBreakpointId();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     void destroyBreakpoint(RDPBreakpoint breakpoint) {
@@ -237,5 +243,9 @@ public class ChromeRDPDebuggerEndpoint {
             message.setParams(mapper.valueToTree(params));
             sendMessage(message);
         }
+    }
+
+    interface ResponseHandler {
+        void received(JsonNode node) throws IOException;
     }
 }
