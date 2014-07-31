@@ -40,6 +40,8 @@ public interface JavaScriptDebugger {
 
     boolean isAttached();
 
+    void detach();
+
     JavaScriptCallFrame[] getCallStack();
 
     JavaScriptBreakpoint createBreakpoint(JavaScriptLocation location);

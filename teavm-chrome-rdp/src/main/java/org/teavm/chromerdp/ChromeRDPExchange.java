@@ -7,6 +7,8 @@ package org.teavm.chromerdp;
 public interface ChromeRDPExchange {
     void send(String message);
 
+    void disconnect();
+
     void addListener(ChromeRDPExchangeListener listener);
 
     void removeListener(ChromeRDPExchangeListener listener);

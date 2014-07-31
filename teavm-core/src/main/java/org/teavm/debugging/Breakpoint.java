@@ -24,7 +24,7 @@ import java.util.List;
  */
 public class Breakpoint {
     private Debugger debugger;
-    List<JavaScriptBreakpoint> jsBreakpoints = new ArrayList<>();
+    volatile List<JavaScriptBreakpoint> jsBreakpoints = new ArrayList<>();
     private SourceLocation location;
     boolean valid;
 

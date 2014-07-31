@@ -29,11 +29,13 @@ public class TeaVMThread implements IThread {
             @Override
             public void resumed() {
                 updateStackTrace();
+                fireEvent(new DebugEvent(TeaVMThread.this, DebugEvent.RESUME));
             }
 
             @Override
             public void paused() {
                 updateStackTrace();
+                fireEvent(new DebugEvent(TeaVMThread.this, DebugEvent.SUSPEND));
             }
 
             @Override
@@ -70,16 +72,17 @@ public class TeaVMThread implements IThread {
 
     @Override
     public boolean canTerminate() {
-        return false;
+        return true;
     }
 
     @Override
     public boolean isTerminated() {
-        return false;
+        return debugTarget.isTerminated();
     }
 
     @Override
     public void terminate() throws DebugException {
+        debugTarget.terminate();
     }
 
     @SuppressWarnings("rawtypes")
@@ -190,6 +193,6 @@ public class TeaVMThread implements IThread {
 
     @Override
     public boolean hasStackFrames() throws DebugException {
-        return true;
+        return stackTrace != null;
     }
 }

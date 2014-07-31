@@ -52,6 +52,15 @@ public class ChromeRDPDebuggerEndpoint implements ChromeRDPExchange {
         }
     }
 
+    @Override
+    public void disconnect() {
+        try {
+            session.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @OnMessage
     public void receive(String message) throws IOException {
         for (ChromeRDPExchangeListener listener : listeners) {

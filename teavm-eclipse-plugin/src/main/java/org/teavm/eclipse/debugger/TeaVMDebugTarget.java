@@ -14,6 +14,7 @@ import org.teavm.chromerdp.ChromeRDPServer;
 import org.teavm.debugging.Breakpoint;
 import org.teavm.debugging.Debugger;
 import org.teavm.debugging.DebuggerListener;
+import org.teavm.debugging.JavaScriptDebugger;
 
 /**
  *
@@ -23,6 +24,7 @@ import org.teavm.debugging.DebuggerListener;
 public class TeaVMDebugTarget implements IDebugTarget, IStep {
     ILaunch launch;
     Debugger teavmDebugger;
+    JavaScriptDebugger jsDebugger;
     private ChromeRDPServer server;
     private boolean terminated;
     private TeaVMDebugProcess process;
@@ -90,6 +92,7 @@ public class TeaVMDebugTarget implements IDebugTarget, IStep {
         terminated = true;
         server.stop();
         fireEvent(new DebugEvent(this, DebugEvent.TERMINATE));
+        fireEvent(new DebugEvent(thread, DebugEvent.TERMINATE));
     }
 
     @Override
@@ -187,6 +190,7 @@ public class TeaVMDebugTarget implements IDebugTarget, IStep {
 
     @Override
     public void disconnect() throws DebugException {
+        teavmDebugger.detach();
     }
 
     @Override

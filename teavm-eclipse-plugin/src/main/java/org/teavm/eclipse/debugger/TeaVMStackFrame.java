@@ -74,7 +74,7 @@ public class TeaVMStackFrame implements IStackFrame {
 
     @Override
     public boolean canResume() {
-        return false;
+        return thread.getTopStackFrame() == this;
     }
 
     @Override

@@ -48,6 +48,6 @@ public class RDPBreakpoint implements JavaScriptBreakpoint {
 
     @Override
     public boolean isValid() {
-        return chromeId != null;
+        return chromeId != null && debugger != null && debugger.isAttached();
     }
 }

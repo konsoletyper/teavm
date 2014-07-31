@@ -2,6 +2,9 @@ package org.teavm.chromerdp;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.teavm.chromerdp.data.CallFrameDTO;
@@ -16,16 +19,21 @@ import org.teavm.debugging.*;
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeConsumer {
+    private static final Object dummy = new Object();
     private ChromeRDPExchange exchange;
-    private List<JavaScriptDebuggerListener> listeners = new ArrayList<>();
-    private Set<RDPBreakpoint> breakpoints = new HashSet<>();
-    private RDPCallFrame[] callStack = new RDPCallFrame[0];
-    private Map<String, String> scripts = new HashMap<>();
-    private Map<String, String> scriptIds = new HashMap<>();
+    private ConcurrentMap<JavaScriptDebuggerListener, Object> listeners = new ConcurrentHashMap<>();
+    private ConcurrentMap<RDPBreakpoint, Object> breakpoints = new ConcurrentHashMap<>();
+    private volatile RDPCallFrame[] callStack = new RDPCallFrame[0];
+    private ConcurrentMap<String, String> scripts = new ConcurrentHashMap<>();
+    private ConcurrentMap<String, String> scriptIds = new ConcurrentHashMap<>();
     private boolean suspended = false;
     private ObjectMapper mapper = new ObjectMapper();
-    private Map<Integer, ResponseHandler> responseHandlers = new HashMap<>();
-    private int messageIdGenerator;
+    private ConcurrentMap<Integer, ResponseHandler> responseHandlers = new ConcurrentHashMap<>();
+    private AtomicInteger messageIdGenerator = new AtomicInteger();
+
+    private List<JavaScriptDebuggerListener> getListeners() {
+        return new ArrayList<>(listeners.keySet());
+    }
 
     @Override
     public void setExchange(ChromeRDPExchange exchange) {
@@ -37,15 +45,15 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
         }
         this.exchange = exchange;
         if (exchange != null) {
-            for (RDPBreakpoint breakpoint : breakpoints) {
+            for (RDPBreakpoint breakpoint : breakpoints.keySet().toArray(new RDPBreakpoint[0])) {
                 updateBreakpoint(breakpoint);
             }
-            for (JavaScriptDebuggerListener listener : listeners) {
+            for (JavaScriptDebuggerListener listener : getListeners()) {
                 listener.attached();
             }
         } else {
             suspended = false;
-            for (JavaScriptDebuggerListener listener : listeners) {
+            for (JavaScriptDebuggerListener listener : getListeners()) {
                 listener.detached();
             }
         }
@@ -86,7 +94,7 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
             callStack[i] = map(callFrameDTOs[i]);
         }
         this.callStack = callStack;
-        for (JavaScriptDebuggerListener listener : listeners) {
+        for (JavaScriptDebuggerListener listener : getListeners()) {
             listener.paused();
         }
     }
@@ -94,18 +102,17 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
     private synchronized void fireResumed() {
         suspended = false;
         callStack = null;
-        for (JavaScriptDebuggerListener listener : listeners) {
+        for (JavaScriptDebuggerListener listener : getListeners()) {
             listener.resumed();
         }
     }
 
     private synchronized void scriptParsed(ScriptParsedNotification params) {
-        if (scripts.containsKey(params.getScriptId())) {
+        if (scripts.putIfAbsent(params.getScriptId(), params.getUrl()) != null) {
             return;
         }
-        scripts.put(params.getScriptId(), params.getUrl());
         scriptIds.put(params.getUrl(), params.getScriptId());
-        for (JavaScriptDebuggerListener listener : listeners) {
+        for (JavaScriptDebuggerListener listener : getListeners()) {
             listener.scriptAdded(params.getUrl());
         }
     }
@@ -113,7 +120,7 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
 
     @Override
     public void addListener(JavaScriptDebuggerListener listener) {
-        listeners.add(listener);
+        listeners.put(listener, dummy);
     }
 
     @Override
@@ -195,22 +202,31 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
     }
 
     @Override
+    public void detach() {
+        if (exchange != null) {
+            exchange.disconnect();
+        }
+    }
+
+    @Override
     public JavaScriptCallFrame[] getCallStack() {
         if (exchange == null) {
             return null;
         }
+        JavaScriptCallFrame[] callStack = this.callStack;
         return callStack != null ? callStack.clone() : null;
     }
 
     @Override
     public JavaScriptBreakpoint createBreakpoint(JavaScriptLocation location) {
         RDPBreakpoint breakpoint = new RDPBreakpoint(this, location);
-        breakpoints.add(breakpoint);
+        breakpoints.put(breakpoint, dummy);
         updateBreakpoint(breakpoint);
         return breakpoint;
     }
 
     void destroyBreakpoint(RDPBreakpoint breakpoint) {
+        breakpoints.remove(breakpoint);
         if (breakpoint.chromeId != null) {
             Message message = new Message();
             message.setMethod("Debugger.removeBreakpoint");
@@ -222,7 +238,7 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
     }
 
     void fireScriptAdded(String script) {
-        for (JavaScriptDebuggerListener listener : listeners) {
+        for (JavaScriptDebuggerListener listener : getListeners()) {
             listener.scriptAdded(script);
         }
     }
@@ -232,7 +248,7 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
             return;
         }
         Message message = new Message();
-        message.setId(++messageIdGenerator);
+        message.setId(messageIdGenerator.incrementAndGet());
         message.setMethod("Debugger.setBreakpoint");
         SetBreakpointCommand params = new SetBreakpointCommand();
         params.setLocation(unmap(breakpoint.getLocation()));
@@ -241,7 +257,7 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
             @Override public void received(JsonNode node) throws IOException {
                 SetBreakpointResponse response = mapper.reader(SetBreakpointResponse.class).readValue(node);
                 breakpoint.chromeId = response.getBreakpointId();
-                for (JavaScriptDebuggerListener listener : listeners) {
+                for (JavaScriptDebuggerListener listener : getListeners()) {
                     listener.breakpointChanged(breakpoint);
                 }
             }
