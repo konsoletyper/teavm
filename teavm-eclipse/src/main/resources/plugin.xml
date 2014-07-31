@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+<plugin id="org.teavm.eclipse" version="0.2" name="TeaVM plugin" class="org.teavm.eclipse.TeaVMEclipsePlugin">
+  <extension point="org.eclipse.debug.core.launchConfigurationTypes">
+    <launchConfigurationType
+        sourceLocatorId="org.teavm.eclipse.debugger.sourceLookup"
+        name="TeaVM remote"
+        delegate="org.teavm.eclipse.debugger.TeaVMLaunchConfigurationDelegate"
+        modes="debug"
+        id="org.teavm.eclipse.debugger.launchConfig">
+    </launchConfigurationType>
+  </extension>
+  <extension point="org.eclipse.debug.core.sourceLocators">
+    <sourceLocator
+        name="TeaVM Source Lookup Director"
+        class="org.teavm.eclipse.debugger.TeaVMSourceLookupDirector"
+        id="org.teavm.eclipse.debugger.sourceLookup">
+    </sourceLocator>
+  </extension>
+  <extension point="org.eclipse.debug.ui.launchConfigurationTabGroups">
+    <launchConfigurationTabGroup
+        type="org.teavm.eclipse.debugger.launchConfig"
+        description="Debug TeaVM program"
+        class="org.teavm.eclipse.debugger.ui.TeaVMTabGroup"
+        id="org.teavm.eclipse.debugger.ui.tabs">
+    </launchConfigurationTabGroup>
+  </extension>
+</plugin>

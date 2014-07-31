@@ -24,6 +24,8 @@
   </parent>
   <artifactId>teavm-chrome-rdp</artifactId>
 
+  <packaging>bundle</packaging>
+
   <name>TeaVM debugging backend for Google Chrome RDP</name>
   <description>TeaVM debugging backend for Google Chrome RDP</description>
 
