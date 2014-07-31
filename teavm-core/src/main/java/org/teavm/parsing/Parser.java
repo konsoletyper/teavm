@@ -64,9 +64,10 @@ public final class Parser {
             FieldNode fieldNode = (FieldNode)obj;
             cls.addField(parseField(fieldNode));
         }
+        String fullFileName = node.name.substring(0, node.name.lastIndexOf('/') + 1) + node.sourceFile;
         for (Object obj : node.methods) {
             MethodNode methodNode = (MethodNode)obj;
-            cls.addMethod(parseMethod(methodNode, node.name, node.sourceFile));
+            cls.addMethod(parseMethod(methodNode, node.name, fullFileName));
         }
         if (node.outerClass != null) {
             cls.setOwnerName(node.outerClass.replace('/', '.'));

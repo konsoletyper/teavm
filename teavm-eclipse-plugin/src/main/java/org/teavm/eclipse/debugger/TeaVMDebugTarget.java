@@ -2,19 +2,14 @@ package org.teavm.eclipse.debugger;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IMarkerDelta;
-import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.debug.core.DebugEvent;
 import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.core.DebugPlugin;
 import org.eclipse.debug.core.ILaunch;
-import org.eclipse.debug.core.model.IBreakpoint;
-import org.eclipse.debug.core.model.IDebugTarget;
-import org.eclipse.debug.core.model.IMemoryBlock;
-import org.eclipse.debug.core.model.IProcess;
-import org.eclipse.debug.core.model.IThread;
+import org.eclipse.debug.core.model.*;
+import org.eclipse.jdt.debug.core.IJavaLineBreakpoint;
 import org.teavm.chromerdp.ChromeRDPServer;
 import org.teavm.debugging.Breakpoint;
 import org.teavm.debugging.Debugger;
@@ -25,12 +20,13 @@ import org.teavm.debugging.DebuggerListener;
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 @SuppressWarnings("rawtypes")
-public class TeaVMDebugTarget implements IDebugTarget {
+public class TeaVMDebugTarget implements IDebugTarget, IStep {
     ILaunch launch;
     Debugger teavmDebugger;
     private ChromeRDPServer server;
     private boolean terminated;
     private TeaVMDebugProcess process;
+    private TeaVMThread thread;
     Map<IBreakpoint, Breakpoint> breakpointMap = new HashMap<>();
     Map<Breakpoint, IBreakpoint> breakpointBackMap = new HashMap<>();
 
@@ -39,6 +35,11 @@ public class TeaVMDebugTarget implements IDebugTarget {
         this.teavmDebugger = teavmDebugger;
         this.server = server;
         this.process = new TeaVMDebugProcess(launch);
+        this.thread = new TeaVMThread(this);
+        DebugPlugin.getDefault().getBreakpointManager().addBreakpointListener(this);
+        for (IBreakpoint breakpoint : DebugPlugin.getDefault().getBreakpointManager().getBreakpoints()) {
+            breakpointAdded(breakpoint);
+        }
         teavmDebugger.addListener(new DebuggerListener() {
             @Override
             public void resumed() {
@@ -88,6 +89,7 @@ public class TeaVMDebugTarget implements IDebugTarget {
     public void terminate() throws DebugException {
         terminated = true;
         server.stop();
+        fireEvent(new DebugEvent(this, DebugEvent.TERMINATE));
     }
 
     @Override
@@ -98,25 +100,25 @@ public class TeaVMDebugTarget implements IDebugTarget {
     @Override
     public void breakpointAdded(IBreakpoint breakpoint) {
         try {
-            breakpoint.setRegistered(true);
-            int line = breakpoint.getMarker().getAttribute(IMarker.LINE_NUMBER, 1);
-            String fileName = getRelativePath(breakpoint.getMarker().getResource());
-            teavmDebugger.createBreakpoint(fileName, line);
+            if (breakpoint instanceof IJavaLineBreakpoint) {
+                IJavaLineBreakpoint lineBreakpoint = (IJavaLineBreakpoint)breakpoint;
+                String fileName = lineBreakpoint.getTypeName().replace('.', '/') + ".java";
+                Breakpoint teavmBreakpoint = teavmDebugger.createBreakpoint(fileName, lineBreakpoint.getLineNumber());
+                breakpointMap.put(lineBreakpoint, teavmBreakpoint);
+                breakpointBackMap.put(teavmBreakpoint, lineBreakpoint);
+                breakpoint.setRegistered(true);
+            } else {
+                breakpoint.setRegistered(false);
+            }
         } catch (CoreException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private String getRelativePath(IResource resource) {
-        if ((resource.getType() & IResource.PROJECT) != 0 ||
-                (resource.getType() & IResource.VIRTUAL) != 0) {
-            return "";
-        }
-        return getRelativePath(resource.getParent()) + "/" + resource.getName();
-    }
-
     @Override
-    public void breakpointChanged(IBreakpoint arg0, IMarkerDelta arg1) {
+    public void breakpointChanged(IBreakpoint breakpoint, IMarkerDelta markerDelta) {
+        breakpointRemoved(breakpoint, markerDelta);
+        breakpointAdded(breakpoint);
     }
 
     @Override
@@ -189,7 +191,7 @@ public class TeaVMDebugTarget implements IDebugTarget {
 
     @Override
     public boolean isDisconnected() {
-        return teavmDebugger.isAttached();
+        return !teavmDebugger.isAttached();
     }
 
     @Override
@@ -204,7 +206,7 @@ public class TeaVMDebugTarget implements IDebugTarget {
 
     @Override
     public IThread[] getThreads() throws DebugException {
-        return null;
+        return new IThread[] { thread };
     }
 
     @Override
@@ -214,11 +216,41 @@ public class TeaVMDebugTarget implements IDebugTarget {
 
     @Override
     public boolean supportsBreakpoint(IBreakpoint breakpoint) {
-        try {
-            return breakpoint.getMarker().getAttribute(IMarker.LINE_NUMBER) != null;
-        } catch (CoreException e) {
-            // TODO: Log this exception
-            return false;
-        }
+        return breakpoint instanceof IJavaLineBreakpoint;
+    }
+
+    @Override
+    public boolean canStepInto() {
+        return true;
+    }
+
+    @Override
+    public boolean canStepOver() {
+        return true;
+    }
+
+    @Override
+    public boolean canStepReturn() {
+        return true;
+    }
+
+    @Override
+    public boolean isStepping() {
+        return false;
+    }
+
+    @Override
+    public void stepInto() throws DebugException {
+        thread.stepInto();
+    }
+
+    @Override
+    public void stepOver() throws DebugException {
+        thread.stepOver();
+    }
+
+    @Override
+    public void stepReturn() throws DebugException {
+        thread.stepReturn();
     }
 }

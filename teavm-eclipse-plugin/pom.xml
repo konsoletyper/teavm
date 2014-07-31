@@ -11,13 +11,6 @@
   <artifactId>teavm-eclipse</artifactId>
   <packaging>bundle</packaging>
 
-  <repositories>
-    <repository>
-        <id>swt-repo</id>
-        <url>https://swt-repo.googlecode.com/svn/repo/</url>
-    </repository>
-  </repositories>
-
   <dependencies>
     <dependency>
       <groupId>org.teavm</groupId>
@@ -30,14 +23,9 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.eclipse.core</groupId>
-      <artifactId>runtime</artifactId>
-      <version>3.9.100-v20131218-1515</version>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.swt</groupId>
-      <artifactId>org.eclipse.swt.win32.win32.x86</artifactId>
-      <version>4.2.2</version>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>1.1.2</version>
     </dependency>
   </dependencies>
 
@@ -52,6 +40,17 @@
             <Export-Package>org.teavm.eclipse.*</Export-Package>
             <Bundle-SymbolicName>teavm-eclipse</Bundle-SymbolicName>
           </instructions>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>2.8</version>
+        <goals>
+          <goal>dependency:copy-dependencies</goal>
+        </goals>
+        <configuration>
+          <outputDirectory>${basedir}/lib</outputDirectory>
         </configuration>
       </plugin>
     </plugins>

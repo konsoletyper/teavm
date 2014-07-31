@@ -2,11 +2,7 @@ package org.teavm.eclipse.debugger;
 
 import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.core.ILaunch;
-import org.eclipse.debug.core.model.IDebugTarget;
-import org.eclipse.debug.core.model.IRegisterGroup;
-import org.eclipse.debug.core.model.IStackFrame;
-import org.eclipse.debug.core.model.IThread;
-import org.eclipse.debug.core.model.IVariable;
+import org.eclipse.debug.core.model.*;
 import org.teavm.debugging.CallFrame;
 
 /**
@@ -43,17 +39,17 @@ public class TeaVMStackFrame implements IStackFrame {
 
     @Override
     public boolean canStepInto() {
-        return false;
+        return thread.getTopStackFrame() == this;
     }
 
     @Override
     public boolean canStepOver() {
-        return false;
+        return thread.getTopStackFrame() == this;
     }
 
     @Override
     public boolean canStepReturn() {
-        return false;
+        return thread.getTopStackFrame() == this;
     }
 
     @Override
@@ -63,14 +59,17 @@ public class TeaVMStackFrame implements IStackFrame {
 
     @Override
     public void stepInto() throws DebugException {
+        thread.stepInto();
     }
 
     @Override
     public void stepOver() throws DebugException {
+        thread.stepOver();
     }
 
     @Override
     public void stepReturn() throws DebugException {
+        thread.stepReturn();
     }
 
     @Override
@@ -80,20 +79,22 @@ public class TeaVMStackFrame implements IStackFrame {
 
     @Override
     public boolean canSuspend() {
-        return false;
+        return thread.getTopStackFrame() == this;
     }
 
     @Override
     public boolean isSuspended() {
-        return false;
+        return thread.isSuspended();
     }
 
     @Override
     public void resume() throws DebugException {
+        thread.resume();
     }
 
     @Override
     public void suspend() throws DebugException {
+        thread.suspend();
     }
 
     @Override
@@ -108,7 +109,7 @@ public class TeaVMStackFrame implements IStackFrame {
 
     @Override
     public String getModelIdentifier() {
-        return thread.getModelIdentifier();
+        return thread.getModelIdentifier() + ".thread";
     }
 
     @Override
@@ -127,8 +128,14 @@ public class TeaVMStackFrame implements IStackFrame {
     }
 
     @Override
-    public String getName() throws DebugException {
-        return callFrame.getLocation() != null ? callFrame.getLocation().getFileName() : "unknown";
+    public String getName() {
+        StringBuilder sb = new StringBuilder();
+        String fileName = callFrame.getLocation() != null ? callFrame.getLocation().getFileName() : null;
+        sb.append(fileName != null ? fileName : "unknown");
+        if (callFrame.getLocation() != null) {
+            sb.append(":").append(callFrame.getLocation().getLine());
+        }
+        return sb.toString();
     }
 
     @Override

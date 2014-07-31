@@ -43,7 +43,7 @@ public class TeaVMTab extends AbstractLaunchConfigurationTab {
 
     @Override
     public String getName() {
-        return null;
+        return "TeaVM";
     }
 
     @Override

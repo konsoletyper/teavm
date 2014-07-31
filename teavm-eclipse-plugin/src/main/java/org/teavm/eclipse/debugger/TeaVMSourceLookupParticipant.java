@@ -11,11 +11,11 @@ import org.teavm.debugging.SourceLocation;
 public class TeaVMSourceLookupParticipant extends AbstractSourceLookupParticipant {
     @Override
     public String getSourceName(Object object) throws CoreException {
-        if (object instanceof TeaVMStackFrame) {
-            TeaVMStackFrame stackFrame = (TeaVMStackFrame)object;
-            SourceLocation location = stackFrame.callFrame.getLocation();
-            return location != null ? location.getFileName() : null;
+        if (!(object instanceof TeaVMStackFrame)) {
+            return null;
         }
-        return null;
+        TeaVMStackFrame stackFrame = (TeaVMStackFrame)object;
+        SourceLocation location = stackFrame.callFrame.getLocation();
+        return location != null ? location.getFileName() : null;
     }
 }

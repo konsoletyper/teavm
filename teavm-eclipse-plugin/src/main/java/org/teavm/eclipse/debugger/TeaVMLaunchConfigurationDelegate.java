@@ -9,7 +9,7 @@ import org.eclipse.debug.core.ILaunch;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.ILaunchManager;
 import org.eclipse.debug.core.model.ILaunchConfigurationDelegate;
-import org.eclipse.swt.widgets.Display;
+import org.eclipse.ui.PlatformUI;
 import org.teavm.chromerdp.*;
 import org.teavm.debugging.Debugger;
 import org.teavm.debugging.URLDebugInformationProvider;
@@ -26,14 +26,17 @@ public class TeaVMLaunchConfigurationDelegate implements ILaunchConfigurationDel
             throw new IllegalArgumentException("Only debug mode supported");
         }
         int port = configuration.getAttribute("teavm-debugger-port", 2357);
-        ChromeRDPServer server = new ChromeRDPServer();
+        final ChromeRDPServer server = new ChromeRDPServer();
         server.setPort(port);
         ChromeRDPDebugger jsDebugger = new ChromeRDPDebugger();
         server.setExchangeConsumer(new SynchronousMessageExchange(jsDebugger));
         Debugger debugger = new Debugger(jsDebugger, new URLDebugInformationProvider(""));
-        server.start();
+        new Thread() {
+            @Override public void run() {
+                server.start();
+            }
+        }.start();
         launch.addDebugTarget(new TeaVMDebugTarget(launch, debugger, server));
-        monitor.done();
     }
 
     private static class SynchronousMessageExchange implements ChromeRDPExchangeConsumer,
@@ -52,17 +55,21 @@ public class TeaVMLaunchConfigurationDelegate implements ILaunchConfigurationDel
             debugger.setExchange(this);
             exchange.addListener(new ChromeRDPExchangeListener() {
                 @Override public void received(final String message) throws IOException {
-                    Display.getCurrent().asyncExec(new Runnable() {
-                        @Override public void run() {
-                            try {
-                                for (ChromeRDPExchangeListener listener : listeners) {
-                                    listener.received(message);
-                                }
-                            } catch (IOException e) {
-                                // TODO: add logging
-                            }
+                    postToUIThread(message);
+                }
+            });
+        }
+
+        private void postToUIThread(final String message) {
+            PlatformUI.getWorkbench().getDisplay().asyncExec(new Runnable() {
+                @Override public void run() {
+                    try {
+                        for (ChromeRDPExchangeListener listener : listeners) {
+                            listener.received(message);
                         }
-                    });
+                    } catch (IOException e) {
+                        // TODO: add logging
+                    }
                 }
             });
         }
