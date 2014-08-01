@@ -1,7 +1,8 @@
 package org.teavm.eclipse.debugger;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IMarkerDelta;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.debug.core.DebugEvent;
@@ -26,13 +27,13 @@ public class TeaVMDebugTarget implements IDebugTarget, IStep {
     Debugger teavmDebugger;
     JavaScriptDebugger jsDebugger;
     private ChromeRDPServer server;
-    private boolean terminated;
+    private volatile boolean terminated;
     private TeaVMDebugProcess process;
     private TeaVMThread thread;
-    Map<IBreakpoint, Breakpoint> breakpointMap = new HashMap<>();
-    Map<Breakpoint, IBreakpoint> breakpointBackMap = new HashMap<>();
+    ConcurrentMap<IBreakpoint, Breakpoint> breakpointMap = new ConcurrentHashMap<>();
+    ConcurrentMap<Breakpoint, IBreakpoint> breakpointBackMap = new ConcurrentHashMap<>();
 
-    public TeaVMDebugTarget(ILaunch launch, Debugger teavmDebugger, ChromeRDPServer server) {
+    public TeaVMDebugTarget(ILaunch launch, final Debugger teavmDebugger, ChromeRDPServer server) {
         this.launch = launch;
         this.teavmDebugger = teavmDebugger;
         this.server = server;
@@ -56,21 +57,43 @@ public class TeaVMDebugTarget implements IDebugTarget, IStep {
             @Override
             public void detached() {
                 fireEvent(new DebugEvent(TeaVMDebugTarget.this, DebugEvent.CHANGE));
+                for (Breakpoint teavmBreakpoint : teavmDebugger.getBreakpoints()) {
+                    updateBreakpoint(teavmBreakpoint);
+                }
             }
 
             @Override
             public void breakpointStatusChanged(Breakpoint teavmBreakpoint) {
-                IBreakpoint breakpoint = breakpointBackMap.get(teavmBreakpoint);
-                if (breakpoint != null) {
-                    fireEvent(new DebugEvent(breakpoint, DebugEvent.CHANGE));
-                }
+                updateBreakpoint(teavmBreakpoint);
             }
 
             @Override
             public void attached() {
                 fireEvent(new DebugEvent(TeaVMDebugTarget.this, DebugEvent.CHANGE));
+                for (Breakpoint teavmBreakpoint : teavmDebugger.getBreakpoints()) {
+                    updateBreakpoint(teavmBreakpoint);
+                }
             }
         });
+    }
+
+    private void updateBreakpoint(Breakpoint teavmBreakpoint) {
+        IBreakpoint breakpoint = breakpointBackMap.get(teavmBreakpoint);
+        if (breakpoint != null) {
+            try {
+                if (!teavmBreakpoint.isValid() && teavmDebugger.isAttached()) {
+                    breakpoint.getMarker().setAttribute(IMarker.PROBLEM,
+                            "Can't transfer this breakpoint to browser");
+                    breakpoint.getMarker().setAttribute(IMarker.SEVERITY, IMarker.SEVERITY_WARNING);
+                } else {
+                    breakpoint.getMarker().setAttribute(IMarker.PROBLEM, null);
+                    breakpoint.getMarker().setAttribute(IMarker.SEVERITY, null);
+                }
+            } catch (CoreException e) {
+                throw new RuntimeException(e);
+            }
+            fireEvent(new DebugEvent(breakpoint, DebugEvent.CHANGE));
+        }
     }
 
     private void fireEvent(DebugEvent event) {
@@ -91,8 +114,13 @@ public class TeaVMDebugTarget implements IDebugTarget, IStep {
     public void terminate() throws DebugException {
         terminated = true;
         server.stop();
+        fireEvent(new DebugEvent(this, DebugEvent.RESUME));
+        fireEvent(new DebugEvent(thread, DebugEvent.RESUME));
+        fireEvent(new DebugEvent(process, DebugEvent.RESUME));
         fireEvent(new DebugEvent(this, DebugEvent.TERMINATE));
         fireEvent(new DebugEvent(thread, DebugEvent.TERMINATE));
+        fireEvent(new DebugEvent(process, DebugEvent.TERMINATE));
+        launch.removeProcess(process);
     }
 
     @Override
@@ -103,16 +131,11 @@ public class TeaVMDebugTarget implements IDebugTarget, IStep {
     @Override
     public void breakpointAdded(IBreakpoint breakpoint) {
         try {
-            if (breakpoint instanceof IJavaLineBreakpoint) {
-                IJavaLineBreakpoint lineBreakpoint = (IJavaLineBreakpoint)breakpoint;
-                String fileName = lineBreakpoint.getTypeName().replace('.', '/') + ".java";
-                Breakpoint teavmBreakpoint = teavmDebugger.createBreakpoint(fileName, lineBreakpoint.getLineNumber());
-                breakpointMap.put(lineBreakpoint, teavmBreakpoint);
-                breakpointBackMap.put(teavmBreakpoint, lineBreakpoint);
-                breakpoint.setRegistered(true);
-            } else {
-                breakpoint.setRegistered(false);
-            }
+            IJavaLineBreakpoint lineBreakpoint = (IJavaLineBreakpoint)breakpoint;
+            String fileName = lineBreakpoint.getTypeName().replace('.', '/') + ".java";
+            Breakpoint teavmBreakpoint = teavmDebugger.createBreakpoint(fileName, lineBreakpoint.getLineNumber());
+            breakpointMap.put(lineBreakpoint, teavmBreakpoint);
+            breakpointBackMap.put(teavmBreakpoint, lineBreakpoint);
         } catch (CoreException e) {
             throw new RuntimeException(e);
         }
@@ -145,7 +168,7 @@ public class TeaVMDebugTarget implements IDebugTarget, IStep {
 
     @Override
     public boolean isSuspended() {
-        return teavmDebugger.isSuspended();
+        return teavmDebugger.isSuspended() && !terminated;
     }
 
     @Override

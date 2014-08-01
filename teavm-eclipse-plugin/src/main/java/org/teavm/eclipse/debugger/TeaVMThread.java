@@ -20,7 +20,7 @@ import org.teavm.debugging.DebuggerListener;
 public class TeaVMThread implements IThread {
     private Debugger teavmDebugger;
     private TeaVMDebugTarget debugTarget;
-    private TeaVMStackFrame[] stackTrace;
+    private volatile TeaVMStackFrame[] stackTrace;
 
     public TeaVMThread(TeaVMDebugTarget debugTarget) {
         this.debugTarget = debugTarget;
@@ -54,14 +54,15 @@ public class TeaVMThread implements IThread {
 
     private void updateStackTrace() {
         if (teavmDebugger.getCallStack() == null) {
-            stackTrace = null;
+            this.stackTrace = null;
         } else {
             CallFrame[] teavmCallStack = teavmDebugger.getCallStack();
-            stackTrace = new TeaVMStackFrame[teavmCallStack.length];
+            TeaVMStackFrame[] stackTrace = new TeaVMStackFrame[teavmCallStack.length];
             for (int i = 0; i < teavmCallStack.length; ++i) {
                 CallFrame teavmFrame = teavmCallStack[i];
                 stackTrace[i] = new TeaVMStackFrame(this, teavmFrame);
             }
+            this.stackTrace = stackTrace;
         }
         fireEvent(new DebugEvent(this, DebugEvent.CHANGE));
     }
@@ -183,11 +184,13 @@ public class TeaVMThread implements IThread {
 
     @Override
     public IStackFrame[] getStackFrames() throws DebugException {
+        TeaVMStackFrame[] stackTrace = this.stackTrace;
         return stackTrace != null ? stackTrace.clone() : new IStackFrame[0];
     }
 
     @Override
     public IStackFrame getTopStackFrame() {
+        TeaVMStackFrame[] stackTrace = this.stackTrace;
         return stackTrace != null && stackTrace.length > 0 ? stackTrace[0] : null;
     }
 
