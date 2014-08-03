@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: TeaVM plugin for Eclipse
 Bundle-SymbolicName: teavm-eclipse-plugin;singleton:=true
-Bundle-Version: 0.2.0.SNAPSHOT
+Bundle-Version: 0.2.0.qualifer
 Bundle-Vendor: Alexey Andreev <konsoletyper@gmail.com>
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Require-Bundle: org.eclipse.core.runtime;bundle-version="3.9.0",
@@ -17,7 +17,8 @@ Require-Bundle: org.eclipse.core.runtime;bundle-version="3.9.0",
  org.eclipse.ui.editors;bundle-version="3.8.100",
  org.eclipse.ui.ide;bundle-version="3.9.0",
  org.eclipse.jdt.ui;bundle-version="3.9.2"
-Bundle-ClassPath: lib/asm-5.0.1.jar,
+Bundle-ClassPath: .,
+ lib/asm-5.0.1.jar,
  lib/asm-commons-5.0.1.jar,
  lib/asm-debug-all-4.2.jar,
  lib/asm-tree-5.0.1.jar,
@@ -40,6 +41,8 @@ Bundle-ClassPath: lib/asm-5.0.1.jar,
  lib/jetty-util-9.2.1.v20140609.jar,
  lib/jetty-webapp-9.2.1.v20140609.jar,
  lib/jetty-xml-9.2.1.v20140609.jar,
+ lib/logback-classic-1.1.2.jar,
+ lib/logback-core-1.1.2.jar,
  lib/slf4j-api-1.7.7.jar,
  lib/teavm-chrome-rdp-0.2-SNAPSHOT.jar,
  lib/teavm-core-0.2-SNAPSHOT.jar,
@@ -47,9 +50,8 @@ Bundle-ClassPath: lib/asm-5.0.1.jar,
  lib/websocket-client-9.2.1.v20140609.jar,
  lib/websocket-common-9.2.1.v20140609.jar,
  lib/websocket-server-9.2.1.v20140609.jar,
- lib/websocket-servlet-9.2.1.v20140609.jar,
- .,
- lib/logback-classic-1.1.2.jar,
- lib/logback-core-1.1.2.jar
+ lib/websocket-servlet-9.2.1.v20140609.jar
 Export-Package: org.teavm.eclipse.debugger,
  org.teavm.eclipse.debugger.ui
+Import-Package: org.teavm.chromerdp;version="0.2.0",
+ org.teavm.debugging;version="0.2.0"

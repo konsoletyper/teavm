@@ -8,8 +8,8 @@
     <artifactId>teavm</artifactId>
     <version>0.2-SNAPSHOT</version>
   </parent>
-  <artifactId>teavm-eclipse</artifactId>
-  <packaging>bundle</packaging>
+  <artifactId>teavm-eclipse-plugin</artifactId>
+  <packaging>pom</packaging>
 
   <dependencies>
     <dependency>
@@ -30,28 +30,34 @@
   </dependencies>
 
   <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.eclipse.tycho</groupId>
+          <artifactId>tycho-packaging-plugin</artifactId>
+          <version>${tycho.version}</version>
+          <configuration>
+            <strictVersions>false</strictVersions>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
     <plugins>
-      <plugin>
-        <groupId>org.apache.felix</groupId>
-        <artifactId>maven-bundle-plugin</artifactId>
-        <extensions>true</extensions>
-        <configuration>
-          <instructions>
-            <Export-Package>org.teavm.eclipse.*</Export-Package>
-            <Bundle-SymbolicName>teavm-eclipse</Bundle-SymbolicName>
-          </instructions>
-        </configuration>
-      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
         <version>2.8</version>
-        <goals>
-          <goal>dependency:copy-dependencies</goal>
-        </goals>
-        <configuration>
-          <outputDirectory>${basedir}/lib</outputDirectory>
-        </configuration>
+        <executions>
+          <execution>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${basedir}/lib</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
