@@ -53,5 +53,3 @@ Bundle-ClassPath: .,
  lib/websocket-servlet-9.2.1.v20140609.jar
 Export-Package: org.teavm.eclipse.debugger,
  org.teavm.eclipse.debugger.ui
-Import-Package: org.teavm.chromerdp;version="0.2.0",
- org.teavm.debugging;version="0.2.0"
