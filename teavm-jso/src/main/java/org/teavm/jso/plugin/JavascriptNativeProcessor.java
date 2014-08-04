@@ -81,7 +81,7 @@ class JavascriptNativeProcessor {
                     if (isProperGetter(method.getDescriptor())) {
                         String propertyName = method.getName().charAt(0) == 'i' ? cutPrefix(method.getName(), 2) :
                                 cutPrefix(method.getName(), 3);
-                        Variable result = invoke.getReceiver() != null ? program.createVariable() : null;
+                        Variable result = invoke.getReceiver() != null ? program.createVariable(null) : null;
                         addPropertyGet(propertyName, invoke.getInstance(), result);
                         if (result != null) {
                             result = unwrap(result, method.getResultType());
@@ -96,7 +96,7 @@ class JavascriptNativeProcessor {
                     }
                 } else if (method.getAnnotations().get(JSIndexer.class.getName()) != null) {
                     if (isProperGetIndexer(method.getDescriptor())) {
-                        Variable result = invoke.getReceiver() != null ? program.createVariable() : null;
+                        Variable result = invoke.getReceiver() != null ? program.createVariable(null) : null;
                         addIndexerGet(invoke.getInstance(), wrap(invoke.getArguments().get(0),
                                 method.parameterType(0)), result);
                         if (result != null) {
@@ -143,7 +143,7 @@ class JavascriptNativeProcessor {
                                     "a proper native JavaScript method or constructor declaration");
                         }
                     }
-                    Variable result = invoke.getReceiver() != null ? program.createVariable() : null;
+                    Variable result = invoke.getReceiver() != null ? program.createVariable(null) : null;
                     InvokeInstruction newInvoke = new InvokeInstruction();
                     ValueType[] signature = new ValueType[method.parameterCount() + 3];
                     Arrays.fill(signature, ValueType.object(JSObject.class.getName()));
@@ -226,7 +226,7 @@ class JavascriptNativeProcessor {
     }
 
     private Variable addString(String str) {
-        Variable var = program.createVariable();
+        Variable var = program.createVariable(null);
         StringConstantInstruction nameInsn = new StringConstantInstruction();
         nameInsn.setReceiver(var);
         nameInsn.setConstant(str);
@@ -261,7 +261,7 @@ class JavascriptNativeProcessor {
             } else if (className.equals("java.lang.String")) {
                 return unwrap(var, "unwrapString", ValueType.object("java.lang.String"));
             } else {
-                Variable result = program.createVariable();
+                Variable result = program.createVariable(null);
                 CastInstruction castInsn = new CastInstruction();
                 castInsn.setReceiver(result);
                 castInsn.setValue(var);
@@ -274,7 +274,7 @@ class JavascriptNativeProcessor {
     }
 
     private Variable unwrap(Variable var, String methodName, ValueType resultType) {
-        Variable result = program.createVariable();
+        Variable result = program.createVariable(null);
         InvokeInstruction insn = new InvokeInstruction();
         insn.setMethod(new MethodReference(JS.class.getName(), methodName, ValueType.object(JSObject.class.getName()),
                 resultType));
@@ -301,7 +301,7 @@ class JavascriptNativeProcessor {
             throw new RuntimeException("Wrong functor: " + type.getName());
         }
         String name = type.getMethods().iterator().next().getName();
-        Variable functor = program.createVariable();
+        Variable functor = program.createVariable(null);
         Variable nameVar = addStringWrap(addString(name));
         InvokeInstruction insn = new InvokeInstruction();
         insn.setMethod(new MethodReference(JS.class.getName(), "function",
@@ -321,7 +321,7 @@ class JavascriptNativeProcessor {
                 return var;
             }
         }
-        Variable result = program.createVariable();
+        Variable result = program.createVariable(null);
         InvokeInstruction insn = new InvokeInstruction();
         insn.setMethod(new MethodReference(JS.class.getName(), "wrap", type,
                 ValueType.object(JSObject.class.getName())));

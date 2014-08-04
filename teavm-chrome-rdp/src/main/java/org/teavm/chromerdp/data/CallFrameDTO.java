@@ -25,6 +25,7 @@ import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 public class CallFrameDTO {
     private String callFrameId;
     private LocationDTO location;
+    private ScopeDTO[] scopeChain;
 
     public String getCallFrameId() {
         return callFrameId;
@@ -40,5 +41,13 @@ public class CallFrameDTO {
 
     public void setLocation(LocationDTO location) {
         this.location = location;
+    }
+
+    public ScopeDTO[] getScopeChain() {
+        return scopeChain;
+    }
+
+    public void setScopeChain(ScopeDTO[] scopeChain) {
+        this.scopeChain = scopeChain;
     }
 }

@@ -37,6 +37,10 @@ public class DummyDebugInformationEmitter implements DebugInformationEmitter {
     }
 
     @Override
+    public void emitVariable(String sourceName, String generatedName) {
+    }
+
+    @Override
     public void setLocationProvider(LocationProvider locationProvider) {
     }
 }

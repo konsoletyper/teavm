@@ -23,9 +23,11 @@ public class Variable implements VariableReader {
     private Program program;
     private int index;
     private int register;
+    private String debugName;
 
-    Variable(Program program) {
+    Variable(Program program, String debugName) {
         this.program = program;
+        this.debugName = debugName;
     }
 
     @Override
@@ -53,5 +55,14 @@ public class Variable implements VariableReader {
 
     public void setRegister(int register) {
         this.register = register;
+    }
+
+    @Override
+    public String getDebugName() {
+        return debugName;
+    }
+
+    public void setDebugName(String debugName) {
+        this.debugName = debugName;
     }
 }

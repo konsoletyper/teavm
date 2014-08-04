@@ -35,8 +35,8 @@ public class Program implements ProgramReader {
         return block;
     }
 
-    public Variable createVariable() {
-        Variable variable = new Variable(this);
+    public Variable createVariable(String debugName) {
+        Variable variable = new Variable(this, debugName);
         variable.setIndex(variables.size());
         variables.add(variable);
         variable.setRegister(lastUsedRegister++);

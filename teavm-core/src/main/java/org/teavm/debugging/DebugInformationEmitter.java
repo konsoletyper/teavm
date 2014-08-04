@@ -30,4 +30,6 @@ public interface DebugInformationEmitter {
     void emitMethod(MethodDescriptor method);
 
     void emitClass(String className);
+
+    void emitVariable(String sourceName, String generatedName);
 }

@@ -40,11 +40,11 @@ public final class Parser {
         Program program = programParser.parse(node, className);
         new UnreachableBasicBlockEliminator().optimize(program);
         SSATransformer ssaProducer = new SSATransformer();
-        ssaProducer.transformToSSA(program, method.getParameterTypes());
+        ssaProducer.transformToSSA(program, programParser, method.getParameterTypes());
         method.setProgram(program);
         parseAnnotations(method.getAnnotations(), node.visibleAnnotations, node.invisibleAnnotations);
         while (program.variableCount() <= method.parameterCount()) {
-            program.createVariable();
+            program.createVariable(null);
         }
         return method;
     }

@@ -30,10 +30,12 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
     private MappedList files = new MappedList();
     private MappedList classes = new MappedList();
     private MappedList methods = new MappedList();
+    private MappedList variableNames = new MappedList();
     private Mapping fileMapping = new Mapping();
     private Mapping lineMapping = new Mapping();
     private Mapping classMapping = new Mapping();
     private Mapping methodMapping = new Mapping();
+    private Map<Integer, Mapping> variableMappings = new HashMap<>();
     private MethodDescriptor currentMethod;
     private String currentClass;
     private String currentFileName;
@@ -82,6 +84,18 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
         }
     }
 
+    @Override
+    public void emitVariable(String sourceName, String generatedName) {
+        int sourceIndex = variableNames.index(sourceName);
+        int generatedIndex = variableNames.index(generatedName);
+        Mapping mapping = variableMappings.get(generatedIndex);
+        if (mapping == null) {
+            mapping = new Mapping();
+            variableMappings.put(generatedIndex, mapping);
+        }
+        mapping.add(locationProvider, sourceIndex);
+    }
+
     public DebugInformation getDebugInformation() {
         if (debugInformation == null) {
             debugInformation = new DebugInformation();
@@ -92,11 +106,18 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
             debugInformation.classNameMap = classes.getIndexes();
             debugInformation.methods = methods.getItems();
             debugInformation.methodMap = methods.getIndexes();
+            debugInformation.variableNames = variableNames.getItems();
+            debugInformation.variableNameMap = variableNames.getIndexes();
 
             debugInformation.fileMapping = fileMapping.build();
             debugInformation.lineMapping = lineMapping.build();
             debugInformation.classMapping = classMapping.build();
             debugInformation.methodMapping = methodMapping.build();
+            debugInformation.variableMappings = new DebugInformation.Mapping[variableNames.list.size()];
+            for (int var : variableMappings.keySet()) {
+                Mapping mapping = variableMappings.get(var);
+                debugInformation.variableMappings[var] = mapping.build();
+            }
 
             debugInformation.rebuildFileDescriptions();
         }

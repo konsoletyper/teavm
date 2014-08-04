@@ -15,10 +15,14 @@
  */
 package org.teavm.debugging;
 
+import java.util.Map;
+
 /**
  *
  * @author Alexey Andreev
  */
 public interface JavaScriptCallFrame {
     JavaScriptLocation getLocation();
+
+    Map<String, JavaScriptVariable> getVariables();
 }

@@ -20,13 +20,14 @@ import org.objectweb.asm.*;
 import org.objectweb.asm.tree.*;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
+import org.teavm.model.util.DefinitionExtractor;
 import org.teavm.model.util.InstructionTransitionExtractor;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class ProgramParser {
+public class ProgramParser implements VariableDebugInformation {
     static final byte ROOT = 0;
     static final byte SINGLE = 1;
     static final byte DOUBLE_FIRST_HALF = 2;
@@ -48,6 +49,9 @@ public class ProgramParser {
     private int currentLineNumber;
     private boolean lineNumberChanged;
     private InstructionLocation lastInsnLocation;
+    private Map<Integer, List<LocalVariableNode>> localVariableMap = new HashMap<>();
+    private Map<Instruction, String> variableDebugNames = new HashMap<>();
+    private Map<Integer, String> parameterNames = new HashMap<>();
 
     private static class Step {
         public final int source;
@@ -113,9 +117,27 @@ public class ProgramParser {
         }
         int signatureVars = countSignatureVariables(method.desc);
         while (program.variableCount() <= signatureVars) {
-            program.createVariable();
+            program.createVariable(getVariableDebugName(program.variableCount(), 0));
+        }
+        for (int i = 0; i < signatureVars; ++i) {
+            parameterNames.put(i, getVariableDebugName(i, 0));
         }
         return program;
+    }
+
+    private String getVariableDebugName(int var, int location) {
+        List<LocalVariableNode> nodes = localVariableMap.get(var);
+        if (nodes == null) {
+            return null;
+        }
+        for (LocalVariableNode node : nodes) {
+            int start = labelIndexes.get(node.start.getLabel());
+            int end = labelIndexes.get(node.end.getLabel());
+            if (location >= start && location < end) {
+                return node.name;
+            }
+        }
+        return null;
     }
 
     private int countSignatureVariables(String desc) {
@@ -159,6 +181,16 @@ public class ProgramParser {
         return depth;
     }
 
+    @Override
+    public String getDefinitionDebugName(Instruction insn) {
+        return variableDebugNames.get(insn);
+    }
+
+    @Override
+    public String getParameterDebugName(int index) {
+        return parameterNames.get(index);
+    }
+
     private void prepare(MethodNode method) {
         InsnList instructions = method.instructions;
         minLocal = 0;
@@ -176,6 +208,14 @@ public class ProgramParser {
                 LineNumberNode lineNumberNode = (LineNumberNode)node;
                 lineNumbers.put(lineNumberNode.start.getLabel(), lineNumberNode.line);
             }
+        }
+        for (LocalVariableNode localVar : method.localVariables) {
+            List<LocalVariableNode> vars = localVariableMap.get(localVar.index);
+            if (vars == null) {
+                vars = new ArrayList<>();
+                localVariableMap.put(localVar.index, vars);
+            }
+            vars.add(localVar);
         }
         targetInstructions = new ArrayList<>(instructions.size());
         targetInstructions.addAll(Collections.<List<Instruction>>nCopies(instructions.size(), null));
@@ -250,6 +290,20 @@ public class ProgramParser {
     }
 
     private void assemble() {
+        DefinitionExtractor defExtractor = new DefinitionExtractor();
+        for (int i = 0; i < targetInstructions.size(); ++i) {
+            List<Instruction> instructionList = targetInstructions.get(i);
+            for (Instruction insn : instructionList) {
+                insn.acceptVisitor(defExtractor);
+                for (Variable var : defExtractor.getDefinedVariables()) {
+                    String debugName = getVariableDebugName(var.getIndex(), i);
+                    if (debugName != null) {
+                        variableDebugNames.put(insn, debugName);
+                    }
+                }
+            }
+        }
+
         BasicBlock basicBlock = null;
         for (int i = 0; i < basicBlocks.size(); ++i) {
             BasicBlock newBasicBlock = basicBlocks.get(i);
@@ -300,7 +354,7 @@ public class ProgramParser {
 
     private Variable getVariable(int index) {
         while (index >= program.variableCount()) {
-            program.createVariable();
+            program.createVariable(null);
         }
         return program.variableAt(index);
     }

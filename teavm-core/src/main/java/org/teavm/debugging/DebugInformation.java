@@ -35,11 +35,14 @@ public class DebugInformation {
     Map<String, Integer> classNameMap;
     String[] methods;
     Map<String, Integer> methodMap;
+    String[] variableNames;
+    Map<String, Integer> variableNameMap;
     FileDescription[] fileDescriptions;
     Mapping fileMapping;
     Mapping classMapping;
     Mapping methodMapping;
     Mapping lineMapping;
+    Mapping[] variableMappings;
 
     public String[] getCoveredSourceFiles() {
         return fileNames.clone();
@@ -99,6 +102,22 @@ public class DebugInformation {
         return getMethodAt(new GeneratedLocation(line, column));
     }
 
+    public String getVariableMeaningAt(int line, int column, String variable) {
+        return getVariableMeaningAt(new GeneratedLocation(line, column), variable);
+    }
+
+    public String getVariableMeaningAt(GeneratedLocation location, String variable) {
+        Integer varIndex = variableNameMap.get(variable);
+        if (varIndex == null) {
+            return null;
+        }
+        Mapping mapping = variableMappings[varIndex];
+        if (mapping == null) {
+            return null;
+        }
+        return componentByKey(mapping, variableNames, location);
+    }
+
     private <T> T componentByKey(Mapping mapping, T[] values, GeneratedLocation location) {
         int keyIndex = indexByKey(mapping, location);
         int valueIndex = keyIndex >= 0 ? mapping.values[keyIndex] : -1;
@@ -124,6 +143,7 @@ public class DebugInformation {
         fileNameMap = mapArray(fileNames);
         classNameMap = mapArray(classNames);
         methodMap = mapArray(methods);
+        variableNameMap = mapArray(variableNames);
     }
 
     private Map<String, Integer> mapArray(String[] array) {

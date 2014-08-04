@@ -38,12 +38,14 @@ public class SSATransformer {
     private Phi[][] phiMap;
     private int[][] phiIndexMap;
     private ValueType[] arguments;
+    private VariableDebugInformation variableDebugInfo;
 
-    public void transformToSSA(Program program, ValueType[] arguments) {
+    public void transformToSSA(Program program, VariableDebugInformation variableDebugInfo, ValueType[] arguments) {
         if (program.basicBlockCount() == 0) {
             return;
         }
         this.program = program;
+        this.variableDebugInfo = variableDebugInfo;
         this.arguments = arguments;
         cfg = ProgramUtils.buildControlFlowGraphWithoutTryCatch(program);
         domTree = GraphUtils.buildDominatorTree(cfg);
@@ -54,6 +56,9 @@ public class SSATransformer {
         for (int i = 0; i < phiMap.length; ++i) {
             phiMap[i] = new Phi[program.variableCount()];
             phiIndexMap[i] = new int[program.variableCount()];
+        }
+        for (int i = 0; i < program.variableCount(); ++i) {
+            program.variableAt(i).setDebugName(variableDebugInfo.getParameterDebugName(i));
         }
         applySignature();
         domFrontiers = GraphUtils.findDominanceFrontiers(cfg, domTree);
@@ -136,16 +141,17 @@ public class SSATransformer {
             processed[currentBlock.getIndex()] = true;
             variableMap = Arrays.copyOf(task.variables, task.variables.length);
             for (Phi phi : currentBlock.getPhis()) {
-                Variable var = program.createVariable();
+                Variable var = program.createVariable(phi.getReceiver().getDebugName());
                 variableMap[phi.getReceiver().getIndex()] = var;
                 phi.setReceiver(var);
             }
             if (!caughtBlocks.get(currentBlock.getIndex()).isEmpty()) {
                 Phi phi = new Phi();
-                phi.setReceiver(program.createVariable());
+                phi.setReceiver(program.createVariable(null));
                 for (TryCatchBlock tryCatch : caughtBlocks.get(currentBlock.getIndex())) {
                     variableMap[tryCatch.getExceptionVariable().getIndex()] = phi.getReceiver();
-                    tryCatch.setExceptionVariable(program.createVariable());
+                    tryCatch.setExceptionVariable(program.createVariable(
+                            tryCatch.getExceptionVariable().getDebugName()));
                     Incoming incoming = new Incoming();
                     incoming.setSource(tryCatch.getProtectedBlock());
                     incoming.setValue(tryCatch.getExceptionVariable());
@@ -210,8 +216,8 @@ public class SSATransformer {
         }
     }
 
-    private Variable define(Variable var) {
-        Variable result = program.createVariable();
+    private Variable define(Variable var, String debugName) {
+        Variable result = program.createVariable(debugName);
         variableMap[var.getIndex()] = result;
         return result;
     }
@@ -231,56 +237,56 @@ public class SSATransformer {
 
         @Override
         public void visit(ClassConstantInstruction insn) {
-            insn.setReceiver(define(insn.getReceiver()));
+            insn.setReceiver(define(insn.getReceiver(), variableDebugInfo.getDefinitionDebugName(insn)));
         }
 
         @Override
         public void visit(NullConstantInstruction insn) {
-            insn.setReceiver(define(insn.getReceiver()));
+            insn.setReceiver(define(insn.getReceiver(), variableDebugInfo.getDefinitionDebugName(insn)));
         }
 
         @Override
         public void visit(IntegerConstantInstruction insn) {
-            insn.setReceiver(define(insn.getReceiver()));
+            insn.setReceiver(define(insn.getReceiver(), variableDebugInfo.getDefinitionDebugName(insn)));
         }
 
         @Override
         public void visit(LongConstantInstruction insn) {
-            insn.setReceiver(define(insn.getReceiver()));
+            insn.setReceiver(define(insn.getReceiver(), variableDebugInfo.getDefinitionDebugName(insn)));
         }
 
         @Override
         public void visit(FloatConstantInstruction insn) {
-            insn.setReceiver(define(insn.getReceiver()));
+            insn.setReceiver(define(insn.getReceiver(), variableDebugInfo.getDefinitionDebugName(insn)));
         }
 
         @Override
         public void visit(DoubleConstantInstruction insn) {
-            insn.setReceiver(define(insn.getReceiver()));
+            insn.setReceiver(define(insn.getReceiver(), variableDebugInfo.getDefinitionDebugName(insn)));
         }
 
         @Override
         public void visit(StringConstantInstruction insn) {
-            insn.setReceiver(define(insn.getReceiver()));
+            insn.setReceiver(define(insn.getReceiver(), variableDebugInfo.getDefinitionDebugName(insn)));
         }
 
         @Override
         public void visit(BinaryInstruction insn) {
             insn.setFirstOperand(use(insn.getFirstOperand()));
             insn.setSecondOperand(use(insn.getSecondOperand()));
-            insn.setReceiver(define(insn.getReceiver()));
+            insn.setReceiver(define(insn.getReceiver(), variableDebugInfo.getDefinitionDebugName(insn)));
         }
 
         @Override
         public void visit(NegateInstruction insn) {
             insn.setOperand(use(insn.getOperand()));
-            insn.setReceiver(define(insn.getReceiver()));
+            insn.setReceiver(define(insn.getReceiver(), variableDebugInfo.getDefinitionDebugName(insn)));
         }
 
         @Override
         public void visit(AssignInstruction insn) {
             insn.setAssignee(use(insn.getAssignee()));
-            insn.setReceiver(define(insn.getReceiver()));
+            insn.setReceiver(define(insn.getReceiver(), variableDebugInfo.getDefinitionDebugName(insn)));
         }
 
         @Override
@@ -318,12 +324,12 @@ public class SSATransformer {
         @Override
         public void visit(ConstructArrayInstruction insn) {
             insn.setSize(use(insn.getSize()));
-            insn.setReceiver(define(insn.getReceiver()));
+            insn.setReceiver(define(insn.getReceiver(), variableDebugInfo.getDefinitionDebugName(insn)));
         }
 
         @Override
         public void visit(ConstructInstruction insn) {
-            insn.setReceiver(define(insn.getReceiver()));
+            insn.setReceiver(define(insn.getReceiver(), variableDebugInfo.getDefinitionDebugName(insn)));
         }
 
         @Override
@@ -332,7 +338,7 @@ public class SSATransformer {
             for (int i = 0; i < dimensions.size(); ++i) {
                 dimensions.set(i, use(dimensions.get(i)));
             }
-            insn.setReceiver(define(insn.getReceiver()));
+            insn.setReceiver(define(insn.getReceiver(), variableDebugInfo.getDefinitionDebugName(insn)));
         }
 
         @Override
@@ -340,7 +346,7 @@ public class SSATransformer {
             if (insn.getInstance() != null) {
                 insn.setInstance(use(insn.getInstance()));
             }
-            insn.setReceiver(define(insn.getReceiver()));
+            insn.setReceiver(define(insn.getReceiver(), variableDebugInfo.getDefinitionDebugName(insn)));
         }
 
         @Override
@@ -355,7 +361,7 @@ public class SSATransformer {
         public void visit(GetElementInstruction insn) {
             insn.setArray(use(insn.getArray()));
             insn.setIndex(use(insn.getIndex()));
-            insn.setReceiver(define(insn.getReceiver()));
+            insn.setReceiver(define(insn.getReceiver(), variableDebugInfo.getDefinitionDebugName(insn)));
         }
 
         @Override
@@ -375,50 +381,50 @@ public class SSATransformer {
                 insn.setInstance(use(insn.getInstance()));
             }
             if (insn.getReceiver() != null) {
-                insn.setReceiver(define(insn.getReceiver()));
+                insn.setReceiver(define(insn.getReceiver(), variableDebugInfo.getDefinitionDebugName(insn)));
             }
         }
 
         @Override
         public void visit(IsInstanceInstruction insn) {
             insn.setValue(use(insn.getValue()));
-            insn.setReceiver(define(insn.getReceiver()));
+            insn.setReceiver(define(insn.getReceiver(), variableDebugInfo.getDefinitionDebugName(insn)));
         }
 
         @Override
         public void visit(CastInstruction insn) {
             insn.setValue(use(insn.getValue()));
-            insn.setReceiver(define(insn.getReceiver()));
+            insn.setReceiver(define(insn.getReceiver(), variableDebugInfo.getDefinitionDebugName(insn)));
         }
 
         @Override
         public void visit(CastNumberInstruction insn) {
             insn.setValue(use(insn.getValue()));
-            insn.setReceiver(define(insn.getReceiver()));
+            insn.setReceiver(define(insn.getReceiver(), variableDebugInfo.getDefinitionDebugName(insn)));
         }
 
         @Override
         public void visit(CastIntegerInstruction insn) {
             insn.setValue(use(insn.getValue()));
-            insn.setReceiver(define(insn.getReceiver()));
+            insn.setReceiver(define(insn.getReceiver(), variableDebugInfo.getDefinitionDebugName(insn)));
         }
 
         @Override
         public void visit(ArrayLengthInstruction insn) {
             insn.setArray(use(insn.getArray()));
-            insn.setReceiver(define(insn.getReceiver()));
+            insn.setReceiver(define(insn.getReceiver(), variableDebugInfo.getDefinitionDebugName(insn)));
         }
 
         @Override
         public void visit(UnwrapArrayInstruction insn) {
             insn.setArray(use(insn.getArray()));
-            insn.setReceiver(define(insn.getReceiver()));
+            insn.setReceiver(define(insn.getReceiver(), variableDebugInfo.getDefinitionDebugName(insn)));
         }
 
         @Override
         public void visit(CloneArrayInstruction insn) {
             insn.setArray(use(insn.getArray()));
-            insn.setReceiver(define(insn.getReceiver()));
+            insn.setReceiver(define(insn.getReceiver(), variableDebugInfo.getDefinitionDebugName(insn)));
         }
 
         @Override
@@ -428,7 +434,7 @@ public class SSATransformer {
         @Override
         public void visit(NullCheckInstruction insn) {
             insn.setValue(use(insn.getValue()));
-            insn.setReceiver(define(insn.getReceiver()));
+            insn.setReceiver(define(insn.getReceiver(), variableDebugInfo.getDefinitionDebugName(insn)));
         }
     };
 }

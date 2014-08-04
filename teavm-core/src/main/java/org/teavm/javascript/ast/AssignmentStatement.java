@@ -23,6 +23,7 @@ public class AssignmentStatement extends Statement {
     private Expr leftValue;
     private Expr rightValue;
     private NodeLocation location;
+    private String debugName;
 
     public Expr getLeftValue() {
         return leftValue;
@@ -46,6 +47,14 @@ public class AssignmentStatement extends Statement {
 
     public void setLocation(NodeLocation location) {
         this.location = location;
+    }
+
+    public String getDebugName() {
+        return debugName;
+    }
+
+    public void setDebugName(String debugName) {
+        this.debugName = debugName;
     }
 
     @Override

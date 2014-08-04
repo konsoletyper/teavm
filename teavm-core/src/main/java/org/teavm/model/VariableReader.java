@@ -24,5 +24,7 @@ public interface VariableReader {
 
     ProgramReader getProgram();
 
+    String getDebugName();
+
     int getRegister();
 }

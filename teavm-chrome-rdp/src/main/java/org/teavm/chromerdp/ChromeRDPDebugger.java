@@ -1,16 +1,16 @@
 package org.teavm.chromerdp;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Exchanger;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.teavm.chromerdp.data.CallFrameDTO;
-import org.teavm.chromerdp.data.LocationDTO;
-import org.teavm.chromerdp.data.Message;
-import org.teavm.chromerdp.data.Response;
+import org.teavm.chromerdp.data.*;
 import org.teavm.chromerdp.messages.*;
 import org.teavm.debugging.*;
 
@@ -266,6 +266,37 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
         sendMessage(message);
     }
 
+    List<RDPLocalVariable> getScope(String scopeId) {
+        if (exchange == null) {
+            return Collections.emptyList();
+        }
+        Message message = new Message();
+        message.setId(messageIdGenerator.incrementAndGet());
+        message.setMethod("Runtime.getProperties");
+        GetPropertiesCommand params = new GetPropertiesCommand();
+        params.setObjectId(scopeId);
+        params.setOwnProperties(true);
+        message.setParams(mapper.valueToTree(params));
+        final Exchanger<List<RDPLocalVariable>> exchanger = new Exchanger<>();
+        responseHandlers.put(message.getId(), new ResponseHandler() {
+            @Override public void received(JsonNode node) throws IOException {
+                GetPropertiesResponse response = mapper.reader(GetPropertiesResponse.class).readValue(node);
+                // TODO: parse response
+                try {
+                    exchanger.exchange(new ArrayList<RDPLocalVariable>());
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+        sendMessage(message);
+        try {
+            return exchanger.exchange(null);
+        } catch (InterruptedException e) {
+            return Collections.emptyList();
+        }
+    }
+
     private <T> T parseJson(Class<T> type, JsonNode node) throws IOException {
         return mapper.reader(type).readValue(node);
     }
@@ -282,7 +313,14 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
     }
 
     RDPCallFrame map(CallFrameDTO dto) {
-        return new RDPCallFrame(dto.getCallFrameId(), map(dto.getLocation()));
+        String scopeId = null;
+        for (ScopeDTO scope : dto.getScopeChain()) {
+            if (scope.getType().equals("local")) {
+                scopeId = scope.getObject();
+                break;
+            }
+        }
+        return new RDPCallFrame(dto.getCallFrameId(), map(dto.getLocation()), new RDPScope(this, scopeId));
     }
 
     JavaScriptLocation map(LocationDTO dto) {

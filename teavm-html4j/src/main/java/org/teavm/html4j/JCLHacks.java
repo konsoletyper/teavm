@@ -44,13 +44,13 @@ public class JCLHacks implements ClassHolderTransformer {
         MethodHolder method = new MethodHolder(desc);
         Program program = new Program();
         for (int i = 0; i < desc.parameterCount(); ++i) {
-            program.createVariable();
+            program.createVariable(null);
         }
         if (!staticMethod) {
-            program.createVariable();
+            program.createVariable(null);
         }
-        program.createVariable();
-        Variable var = program.createVariable();
+        program.createVariable(null);
+        Variable var = program.createVariable(null);
         BasicBlock block = program.createBasicBlock();
         ConstructInstruction cons = new ConstructInstruction();
         cons.setType("java.lang.SecurityException");
@@ -75,8 +75,8 @@ public class JCLHacks implements ClassHolderTransformer {
     private MethodHolder createThreadSleep() {
         MethodHolder method = new MethodHolder("sleep", ValueType.LONG, ValueType.VOID);
         Program program = new Program();
-        program.createVariable();
-        program.createVariable();
+        program.createVariable(null);
+        program.createVariable(null);
         BasicBlock block = program.createBasicBlock();
         ExitInstruction exit = new ExitInstruction();
         block.getInstructions().add(exit);

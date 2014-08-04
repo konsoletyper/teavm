@@ -15,6 +15,8 @@
  */
 package org.teavm.debugging;
 
+import java.util.Collections;
+import java.util.Map;
 import org.teavm.model.MethodReference;
 
 /**
@@ -24,10 +26,12 @@ import org.teavm.model.MethodReference;
 public class CallFrame {
     private SourceLocation location;
     private MethodReference method;
+    private Map<String, LocalVariable> variables;
 
-    CallFrame(SourceLocation location, MethodReference method) {
+    CallFrame(SourceLocation location, MethodReference method, Map<String, LocalVariable> variables) {
         this.location = location;
         this.method = method;
+        this.variables = Collections.unmodifiableMap(variables);
     }
 
     public SourceLocation getLocation() {
@@ -36,5 +40,9 @@ public class CallFrame {
 
     public MethodReference getMethod() {
         return method;
+    }
+
+    public Map<String, LocalVariable> getVariables() {
+        return variables;
     }
 }

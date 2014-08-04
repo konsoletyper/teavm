@@ -34,11 +34,37 @@ class DebugInformationWriter {
         writeStringArray(debugInfo.fileNames);
         writeStringArray(debugInfo.classNames);
         writeStringArray(debugInfo.methods);
+        writeStringArray(debugInfo.variableNames);
 
         writeMapping(debugInfo.fileMapping);
         writeMapping(debugInfo.lineMapping);
         writeMapping(debugInfo.classMapping);
         writeMapping(debugInfo.methodMapping);
+        writeUnsignedNumber(nonNullVariableMappings(debugInfo));
+        writeVariableMappings(debugInfo);
+    }
+
+    private void writeVariableMappings(DebugInformation debugInfo) throws IOException {
+        int lastVar = 0;
+        for (int i = 0; i < debugInfo.variableMappings.length; ++i) {
+            DebugInformation.Mapping mapping = debugInfo.variableMappings[i];
+            if (mapping == null) {
+                continue;
+            }
+            writeUnsignedNumber(i - lastVar);
+            lastVar = i;
+            writeMapping(mapping);
+        }
+    }
+
+    private int nonNullVariableMappings(DebugInformation debugInfo) {
+        int count = 0;
+        for (int i = 0; i < debugInfo.variableMappings.length; ++i) {
+            if (debugInfo.variableMappings[i] != null) {
+                ++count;
+            }
+        }
+        return count;
     }
 
     private void writeStringArray(String[] array) throws IOException {

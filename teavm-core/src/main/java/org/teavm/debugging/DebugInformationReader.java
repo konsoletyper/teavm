@@ -36,13 +36,28 @@ class DebugInformationReader {
         debugInfo.fileNames = readStrings();
         debugInfo.classNames = readStrings();
         debugInfo.methods = readStrings();
+        debugInfo.variableNames = readStrings();
         debugInfo.fileMapping = readMapping();
         debugInfo.lineMapping = readMapping();
         debugInfo.classMapping = readMapping();
         debugInfo.methodMapping = readMapping();
+        debugInfo.variableMappings = readVariableMappings(debugInfo.variableNames.length);
         debugInfo.rebuildFileDescriptions();
         debugInfo.rebuildMaps();
         return debugInfo;
+    }
+
+    private DebugInformation.Mapping[] readVariableMappings(int count) throws IOException {
+        DebugInformation.Mapping[] mappings = new DebugInformation.Mapping[count];
+        int varCount = readUnsignedNumber();
+        while (varCount-- > 0) {
+            int lastVar = 0;
+            for (int i = 0; i < mappings.length; ++i) {
+                lastVar += readUnsignedNumber();
+                mappings[lastVar] = readMapping();
+            }
+        }
+        return mappings;
     }
 
     private int processSign(int number) {

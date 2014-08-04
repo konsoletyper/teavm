@@ -15,8 +15,11 @@
  */
 package org.teavm.chromerdp;
 
+import java.util.Collections;
+import java.util.Map;
 import org.teavm.debugging.JavaScriptCallFrame;
 import org.teavm.debugging.JavaScriptLocation;
+import org.teavm.debugging.JavaScriptVariable;
 
 /**
  *
@@ -25,10 +28,13 @@ import org.teavm.debugging.JavaScriptLocation;
 public class RDPCallFrame implements JavaScriptCallFrame {
     private String chromeId;
     private JavaScriptLocation location;
+    private Map<String, JavaScriptVariable> variables;
 
-    public RDPCallFrame(String chromeId, JavaScriptLocation location) {
+    public RDPCallFrame(String chromeId, JavaScriptLocation location,
+            Map<String, ? extends JavaScriptVariable> variables) {
         this.chromeId = chromeId;
         this.location = location;
+        this.variables = Collections.unmodifiableMap(variables);
     }
 
     public String getChromeId() {
@@ -38,5 +44,10 @@ public class RDPCallFrame implements JavaScriptCallFrame {
     @Override
     public JavaScriptLocation getLocation() {
         return location;
+    }
+
+    @Override
+    public Map<String, JavaScriptVariable> getVariables() {
+        return variables;
     }
 }

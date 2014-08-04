@@ -186,7 +186,7 @@ public class Debugger {
                 MethodReference method = !empty ? debugInformation.getMethodAt(jsFrame.getLocation().getLine(),
                         jsFrame.getLocation().getColumn()) : null;
                 if (!empty || !wasEmpty) {
-                    frames.add(new CallFrame(loc, method));
+                    frames.add(new CallFrame(loc, method, new HashMap<String, LocalVariable>()));
                 }
                 wasEmpty = empty;
             }

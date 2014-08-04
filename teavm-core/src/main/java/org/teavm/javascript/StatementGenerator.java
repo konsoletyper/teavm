@@ -48,44 +48,44 @@ class StatementGenerator implements InstructionVisitor {
 
     @Override
     public void visit(ClassConstantInstruction insn) {
-        assign(Expr.constant(insn.getConstant()), insn.getReceiver().getIndex());
+        assign(Expr.constant(insn.getConstant()), insn.getReceiver());
     }
 
     @Override
     public void visit(NullConstantInstruction insn) {
-        assign(Expr.constant(null), insn.getReceiver().getIndex());
+        assign(Expr.constant(null), insn.getReceiver());
     }
 
     @Override
     public void visit(IntegerConstantInstruction insn) {
-        assign(Expr.constant(insn.getConstant()), insn.getReceiver().getIndex());
+        assign(Expr.constant(insn.getConstant()), insn.getReceiver());
     }
 
     @Override
     public void visit(LongConstantInstruction insn) {
-        assign(Expr.constant(insn.getConstant()), insn.getReceiver().getIndex());
+        assign(Expr.constant(insn.getConstant()), insn.getReceiver());
     }
 
     @Override
     public void visit(FloatConstantInstruction insn) {
-        assign(Expr.constant(insn.getConstant()), insn.getReceiver().getIndex());
+        assign(Expr.constant(insn.getConstant()), insn.getReceiver());
     }
 
     @Override
     public void visit(DoubleConstantInstruction insn) {
-        assign(Expr.constant(insn.getConstant()), insn.getReceiver().getIndex());
+        assign(Expr.constant(insn.getConstant()), insn.getReceiver());
     }
 
     @Override
     public void visit(StringConstantInstruction insn) {
-        assign(Expr.constant(insn.getConstant()), insn.getReceiver().getIndex());
+        assign(Expr.constant(insn.getConstant()), insn.getReceiver());
     }
 
     @Override
     public void visit(BinaryInstruction insn) {
         int first = insn.getFirstOperand().getIndex();
         int second = insn.getSecondOperand().getIndex();
-        int result = insn.getReceiver().getIndex();
+        Variable result = insn.getReceiver();
         switch (insn.getOperation()) {
             case ADD:
                 switch (insn.getOperandType()) {
@@ -227,15 +227,15 @@ class StatementGenerator implements InstructionVisitor {
         switch (insn.getOperandType()) {
             case INT:
                 assign(castToInteger(Expr.unary(UnaryOperation.NEGATE, Expr.var(insn.getOperand().getIndex()))),
-                        insn.getReceiver().getIndex());
+                        insn.getReceiver());
                 break;
             case LONG:
                 assign(Expr.unary(UnaryOperation.NEGATE_LONG, Expr.var(insn.getOperand().getIndex())),
-                        insn.getReceiver().getIndex());
+                        insn.getReceiver());
                 break;
             default:
                 assign(Expr.unary(UnaryOperation.NEGATE, Expr.var(insn.getOperand().getIndex())),
-                        insn.getReceiver().getIndex());
+                        insn.getReceiver());
                 break;
         }
     }
@@ -244,13 +244,14 @@ class StatementGenerator implements InstructionVisitor {
     public void visit(AssignInstruction insn) {
         AssignmentStatement stmt = Statement.assign(Expr.var(insn.getReceiver().getIndex()),
                 Expr.var(insn.getAssignee().getIndex()));
+        stmt.setDebugName(insn.getReceiver().getDebugName());
         stmt.setLocation(currentLocation);
         statements.add(stmt);
     }
 
     @Override
     public void visit(CastInstruction insn) {
-        assign(Expr.var(insn.getValue().getIndex()), insn.getReceiver().getIndex());
+        assign(Expr.var(insn.getValue().getIndex()), insn.getReceiver());
     }
 
     @Override
@@ -292,7 +293,7 @@ class StatementGenerator implements InstructionVisitor {
             default:
                 break;
         }
-        assign(value, insn.getReceiver().getIndex());
+        assign(value, insn.getReceiver());
     }
 
     @Override
@@ -323,7 +324,7 @@ class StatementGenerator implements InstructionVisitor {
                 }
                 break;
         }
-        assign(value, insn.getReceiver().getIndex());
+        assign(value, insn.getReceiver());
     }
 
     @Override
@@ -459,13 +460,12 @@ class StatementGenerator implements InstructionVisitor {
 
     @Override
     public void visit(ConstructArrayInstruction insn) {
-        assign(Expr.createArray(insn.getItemType(), Expr.var(insn.getSize().getIndex())),
-                insn.getReceiver().getIndex());
+        assign(Expr.createArray(insn.getItemType(), Expr.var(insn.getSize().getIndex())), insn.getReceiver());
     }
 
     @Override
     public void visit(ConstructInstruction insn) {
-        assign(Expr.createObject(insn.getType()), insn.getReceiver().getIndex());
+        assign(Expr.createObject(insn.getType()), insn.getReceiver());
     }
 
     @Override
@@ -474,7 +474,7 @@ class StatementGenerator implements InstructionVisitor {
         for (int i = 0; i < dimensionExprs.length; ++i) {
             dimensionExprs[i] = Expr.var(insn.getDimensions().get(i).getIndex());
         }
-        assign(Expr.createArray(insn.getItemType(), dimensionExprs), insn.getReceiver().getIndex());
+        assign(Expr.createArray(insn.getItemType(), dimensionExprs), insn.getReceiver());
     }
 
     @Override
@@ -509,28 +509,27 @@ class StatementGenerator implements InstructionVisitor {
 
     @Override
     public void visit(ArrayLengthInstruction insn) {
-        assign(Expr.unary(UnaryOperation.LENGTH, Expr.var(insn.getArray().getIndex())), insn.getReceiver().getIndex());
+        assign(Expr.unary(UnaryOperation.LENGTH, Expr.var(insn.getArray().getIndex())), insn.getReceiver());
     }
 
     @Override
     public void visit(UnwrapArrayInstruction insn) {
         UnwrapArrayExpr unwrapExpr = new UnwrapArrayExpr(insn.getElementType());
         unwrapExpr.setArray(Expr.var(insn.getArray().getIndex()));
-        assign(unwrapExpr, insn.getReceiver().getIndex());
+        assign(unwrapExpr, insn.getReceiver());
     }
 
     @Override
     public void visit(CloneArrayInstruction insn) {
         MethodDescriptor cloneMethodDesc = new MethodDescriptor("clone", ValueType.object("java.lang.Object"));
         MethodReference cloneMethod = new MethodReference("java.lang.Object", cloneMethodDesc);
-        assign(Expr.invoke(cloneMethod, Expr.var(insn.getArray().getIndex()), new Expr[0]),
-                insn.getReceiver().getIndex());
+        assign(Expr.invoke(cloneMethod, Expr.var(insn.getArray().getIndex()), new Expr[0]), insn.getReceiver());
     }
 
     @Override
     public void visit(GetElementInstruction insn) {
         assign(Expr.subscript(Expr.var(insn.getArray().getIndex()), Expr.var(insn.getIndex().getIndex())),
-                insn.getReceiver().getIndex());
+                insn.getReceiver());
     }
 
     @Override
@@ -559,7 +558,7 @@ class StatementGenerator implements InstructionVisitor {
             invocationExpr = Expr.invokeStatic(insn.getMethod(), exprArgs);
         }
         if (insn.getReceiver() != null) {
-            assign(invocationExpr, insn.getReceiver().getIndex());
+            assign(invocationExpr, insn.getReceiver());
         } else {
             AssignmentStatement stmt = Statement.assign(null, invocationExpr);
             stmt.setLocation(currentLocation);
@@ -569,13 +568,13 @@ class StatementGenerator implements InstructionVisitor {
 
     @Override
     public void visit(IsInstanceInstruction insn) {
-        assign(Expr.instanceOf(Expr.var(insn.getValue().getIndex()), insn.getType()),
-                insn.getReceiver().getIndex());
+        assign(Expr.instanceOf(Expr.var(insn.getValue().getIndex()), insn.getType()), insn.getReceiver());
     }
 
-    private void assign(Expr source, int target) {
-        AssignmentStatement stmt = Statement.assign(Expr.var(target), source);
+    private void assign(Expr source, Variable target) {
+        AssignmentStatement stmt = Statement.assign(Expr.var(target.getIndex()), source);
         stmt.setLocation(currentLocation);
+        stmt.setDebugName(target.getDebugName());
         statements.add(stmt);
     }
 
@@ -599,11 +598,11 @@ class StatementGenerator implements InstructionVisitor {
         return Expr.unary(UnaryOperation.LONG_TO_NUM, value);
     }
 
-    private void binary(int first, int second, int result, BinaryOperation op) {
+    private void binary(int first, int second, Variable result, BinaryOperation op) {
         assign(Expr.binary(op, Expr.var(first), Expr.var(second)), result);
     }
 
-    private void intBinary(int first, int second, int result, BinaryOperation op) {
+    private void intBinary(int first, int second, Variable result, BinaryOperation op) {
         assign(castToInteger(Expr.binary(op, Expr.var(first), Expr.var(second))), result);
     }
 
@@ -657,7 +656,6 @@ class StatementGenerator implements InstructionVisitor {
 
     @Override
     public void visit(NullCheckInstruction insn) {
-        assign(Expr.unary(UnaryOperation.NULL_CHECK, Expr.var(insn.getValue().getIndex())),
-                insn.getReceiver().getIndex());
+        assign(Expr.unary(UnaryOperation.NULL_CHECK, Expr.var(insn.getValue().getIndex())), insn.getReceiver());
     }
 }

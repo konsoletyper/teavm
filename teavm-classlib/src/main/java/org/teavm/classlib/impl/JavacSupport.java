@@ -33,8 +33,8 @@ public class JavacSupport implements ClassHolderTransformer {
                     ValueType.object("javax.tools.JavaCompiler")));
             Program program = new Program();
             BasicBlock block = program.createBasicBlock();
-            program.createVariable();
-            Variable var = program.createVariable();
+            program.createVariable(null);
+            Variable var = program.createVariable(null);
             ConstructInstruction construct = new ConstructInstruction();
             construct.setReceiver(var);
             construct.setType("com.sun.tools.javac.api.JavacTool");

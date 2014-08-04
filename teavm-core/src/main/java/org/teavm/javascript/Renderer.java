@@ -518,6 +518,9 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         public void visit(RegularMethodNode method) {
             try {
                 MethodReference ref = method.getReference();
+                for (int i = 0; i < method.getParameterDebugNames().size(); ++i) {
+                    debugEmitter.emitVariable(method.getParameterDebugNames().get(i), variableName(i));
+                }
                 int variableCount = 0;
                 for (int var : method.getVariables()) {
                     variableCount = Math.max(variableCount, var + 1);
@@ -600,6 +603,10 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             writer.append(";").softNewLine();
             if (statement.getLocation() != null) {
                 popLocation();
+            }
+            if (statement.getLeftValue() instanceof VariableExpr) {
+                VariableExpr receiver = (VariableExpr)statement.getLeftValue();
+                debugEmitter.emitVariable(statement.getDebugName(), variableName(receiver.getIndex()));
             }
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
