@@ -8,14 +8,14 @@ import org.codehaus.jackson.annotate.JsonIgnoreProperties;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ScopeDTO {
-    private String object;
+    private RemoteObjectDTO object;
     private String type;
 
-    public String getObject() {
+    public RemoteObjectDTO getObject() {
         return object;
     }
 
-    public void setObject(String object) {
+    public void setObject(RemoteObjectDTO object) {
         this.object = object;
     }
 

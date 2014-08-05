@@ -13,16 +13,16 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.parsing;
+package org.teavm.debugging;
 
-import org.teavm.model.Instruction;
+import java.util.Map;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface VariableDebugInformation {
-    String getDefinitionDebugName(Instruction insn);
+public abstract class Value {
+    public abstract String getRepresentation();
 
-    String getParameterDebugName(int index);
+    public abstract Map<String, Variable> getProperties();
 }

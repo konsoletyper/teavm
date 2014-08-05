@@ -119,13 +119,16 @@ public class ProgramParser implements VariableDebugInformation {
         while (program.variableCount() <= signatureVars) {
             program.createVariable(getVariableDebugName(program.variableCount(), 0));
         }
-        for (int i = 0; i < signatureVars; ++i) {
+        for (int i = 0; i <= signatureVars; ++i) {
             parameterNames.put(i, getVariableDebugName(i, 0));
         }
         return program;
     }
 
     private String getVariableDebugName(int var, int location) {
+        if (var < 0) {
+            return null;
+        }
         List<LocalVariableNode> nodes = localVariableMap.get(var);
         if (nodes == null) {
             return null;
@@ -293,10 +296,13 @@ public class ProgramParser implements VariableDebugInformation {
         DefinitionExtractor defExtractor = new DefinitionExtractor();
         for (int i = 0; i < targetInstructions.size(); ++i) {
             List<Instruction> instructionList = targetInstructions.get(i);
+            if (instructionList == null) {
+                continue;
+            }
             for (Instruction insn : instructionList) {
                 insn.acceptVisitor(defExtractor);
                 for (Variable var : defExtractor.getDefinedVariables()) {
-                    String debugName = getVariableDebugName(var.getIndex(), i);
+                    String debugName = getVariableDebugName(var.getIndex() - minLocal, i);
                     if (debugName != null) {
                         variableDebugNames.put(insn, debugName);
                     }

@@ -50,12 +50,10 @@ class DebugInformationReader {
     private DebugInformation.Mapping[] readVariableMappings(int count) throws IOException {
         DebugInformation.Mapping[] mappings = new DebugInformation.Mapping[count];
         int varCount = readUnsignedNumber();
+        int lastVar = 0;
         while (varCount-- > 0) {
-            int lastVar = 0;
-            for (int i = 0; i < mappings.length; ++i) {
-                lastVar += readUnsignedNumber();
-                mappings[lastVar] = readMapping();
-            }
+            lastVar += readUnsignedNumber();
+            mappings[lastVar] = readMapping();
         }
         return mappings;
     }

@@ -40,12 +40,12 @@ class DebugInformationWriter {
         writeMapping(debugInfo.lineMapping);
         writeMapping(debugInfo.classMapping);
         writeMapping(debugInfo.methodMapping);
-        writeUnsignedNumber(nonNullVariableMappings(debugInfo));
         writeVariableMappings(debugInfo);
     }
 
     private void writeVariableMappings(DebugInformation debugInfo) throws IOException {
         int lastVar = 0;
+        writeUnsignedNumber(nonNullVariableMappings(debugInfo));
         for (int i = 0; i < debugInfo.variableMappings.length; ++i) {
             DebugInformation.Mapping mapping = debugInfo.variableMappings[i];
             if (mapping == null) {

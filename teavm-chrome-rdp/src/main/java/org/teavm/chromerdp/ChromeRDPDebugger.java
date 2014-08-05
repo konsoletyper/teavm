@@ -4,9 +4,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.Exchanger;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -277,24 +275,45 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
         params.setObjectId(scopeId);
         params.setOwnProperties(true);
         message.setParams(mapper.valueToTree(params));
-        final Exchanger<List<RDPLocalVariable>> exchanger = new Exchanger<>();
+        final BlockingQueue<List<RDPLocalVariable>> sync = new LinkedTransferQueue<>();
         responseHandlers.put(message.getId(), new ResponseHandler() {
             @Override public void received(JsonNode node) throws IOException {
                 GetPropertiesResponse response = mapper.reader(GetPropertiesResponse.class).readValue(node);
-                // TODO: parse response
-                try {
-                    exchanger.exchange(new ArrayList<RDPLocalVariable>());
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
+                sync.add(parseProperties(response.getResult()));
             }
         });
         sendMessage(message);
         try {
-            return exchanger.exchange(null);
+            return sync.take();
         } catch (InterruptedException e) {
             return Collections.emptyList();
         }
+    }
+
+    private List<RDPLocalVariable> parseProperties(PropertyDescriptorDTO[] properties) {
+        List<RDPLocalVariable> variables = new ArrayList<>();
+        if (properties != null) {
+            for (PropertyDescriptorDTO property : properties) {
+                RemoteObjectDTO remoteValue = property.getValue();
+                RDPValue value;
+                switch (remoteValue.getType()) {
+                    case "undefined":
+                        value = new RDPValue("undefined");
+                        break;
+                    case "object":
+                    case "function":
+                        value = new RDPValue(remoteValue.getObjectId());
+                        break;
+                    default:
+                        value = new RDPValue(remoteValue.getValue().asText());
+                        break;
+                }
+
+                RDPLocalVariable var = new RDPLocalVariable(property.getName(), value);
+                variables.add(var);
+            }
+        }
+        return variables;
     }
 
     private <T> T parseJson(Class<T> type, JsonNode node) throws IOException {
@@ -316,7 +335,7 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
         String scopeId = null;
         for (ScopeDTO scope : dto.getScopeChain()) {
             if (scope.getType().equals("local")) {
-                scopeId = scope.getObject();
+                scopeId = scope.getObject().getObjectId();
                 break;
             }
         }

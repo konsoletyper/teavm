@@ -13,16 +13,26 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.parsing;
-
-import org.teavm.model.Instruction;
+package org.teavm.debugging;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface VariableDebugInformation {
-    String getDefinitionDebugName(Instruction insn);
+public class Variable {
+    private String name;
+    private Value value;
 
-    String getParameterDebugName(int index);
+    Variable(String name, Value value) {
+        this.name = name;
+        this.value = value;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public Value getValue() {
+        return value;
+    }
 }

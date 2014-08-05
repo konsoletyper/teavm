@@ -9,13 +9,13 @@ import org.teavm.chromerdp.data.PropertyDescriptorDTO;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GetPropertiesResponse {
-    private PropertyDescriptorDTO[] properties;
+    private PropertyDescriptorDTO[] result;
 
-    public PropertyDescriptorDTO[] getProperties() {
-        return properties;
+    public PropertyDescriptorDTO[] getResult() {
+        return result;
     }
 
-    public void setProperties(PropertyDescriptorDTO[] properties) {
-        this.properties = properties;
+    public void setResult(PropertyDescriptorDTO[] properties) {
+        this.result = properties;
     }
 }

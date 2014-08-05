@@ -26,9 +26,9 @@ import org.teavm.model.MethodReference;
 public class CallFrame {
     private SourceLocation location;
     private MethodReference method;
-    private Map<String, LocalVariable> variables;
+    private Map<String, Variable> variables;
 
-    CallFrame(SourceLocation location, MethodReference method, Map<String, LocalVariable> variables) {
+    CallFrame(SourceLocation location, MethodReference method, Map<String, Variable> variables) {
         this.location = location;
         this.method = method;
         this.variables = Collections.unmodifiableMap(variables);
@@ -42,7 +42,7 @@ public class CallFrame {
         return method;
     }
 
-    public Map<String, LocalVariable> getVariables() {
+    public Map<String, Variable> getVariables() {
         return variables;
     }
 }

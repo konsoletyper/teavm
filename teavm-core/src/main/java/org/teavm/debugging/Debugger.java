@@ -186,7 +186,8 @@ public class Debugger {
                 MethodReference method = !empty ? debugInformation.getMethodAt(jsFrame.getLocation().getLine(),
                         jsFrame.getLocation().getColumn()) : null;
                 if (!empty || !wasEmpty) {
-                    frames.add(new CallFrame(loc, method, new HashMap<String, LocalVariable>()));
+                    VariableMap vars = new VariableMap(jsFrame.getVariables(), this, jsFrame.getLocation());
+                    frames.add(new CallFrame(loc, method, vars));
                 }
                 wasEmpty = empty;
             }
@@ -277,6 +278,14 @@ public class Debugger {
         if (breakpoint != null) {
             updateBreakpointStatus(breakpoint, true);
         }
+    }
+
+    public String mapVariable(String variable, JavaScriptLocation location) {
+        DebugInformation debugInfo = debugInformationMap.get(location.getScript());
+        if (debugInfo == null) {
+            return null;
+        }
+        return debugInfo.getVariableMeaningAt(location.getLine(), location.getColumn(), variable);
     }
 
     private JavaScriptDebuggerListener javaScriptListener = new JavaScriptDebuggerListener() {
