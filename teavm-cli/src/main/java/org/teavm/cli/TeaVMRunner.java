@@ -56,7 +56,8 @@ public class TeaVMRunner {
                 .create());
         options.addOption(OptionBuilder
                 .withDescription("causes TeaVM to log bytecode")
-                .create("logbytecode"));
+                .withLongOpt("logbytecode")
+                .create());
         options.addOption(OptionBuilder
                 .withDescription("Generate debug information")
                 .withLongOpt("debug")

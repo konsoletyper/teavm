@@ -26,6 +26,14 @@ public class ListingBuilder {
     public String buildListing(ProgramReader program, String prefix) {
         StringBuilder sb = new StringBuilder();
         InstructionStringifier stringifier = new InstructionStringifier(sb);
+        for (int i = 0; i < program.variableCount(); ++i) {
+            sb.append(prefix).append("var @").append(i);
+            VariableReader var = program.variableAt(i);
+            if (var.getDebugName() != null) {
+                sb.append(" as ").append(var.getDebugName());
+            }
+            sb.append('\n');
+        }
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlockReader block = program.basicBlockAt(i);
             sb.append(prefix).append("$").append(i).append(":\n");

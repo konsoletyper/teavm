@@ -31,15 +31,13 @@ public class InstructionStringifier implements InstructionReader {
         this.sb = sb;
     }
 
+    public InstructionLocation getLocation() {
+        return location;
+    }
+
     @Override
     public void location(InstructionLocation location) {
-        if (this.location != location) {
-            if (location != null) {
-                sb.append("at " + (location.getFileName() != null ? location.getFileName() : "<unknown>") + ":" +
-                        (location.getLine() >= 0 ? String.valueOf(location.getLine()) : "<unknown>"));
-            }
-            this.location = location;
-        }
+        this.location = location;
     }
 
     @Override

@@ -20,7 +20,6 @@ import org.objectweb.asm.*;
 import org.objectweb.asm.tree.*;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
-import org.teavm.model.util.DefinitionExtractor;
 import org.teavm.model.util.InstructionTransitionExtractor;
 
 /**
@@ -50,8 +49,7 @@ public class ProgramParser implements VariableDebugInformation {
     private boolean lineNumberChanged;
     private InstructionLocation lastInsnLocation;
     private Map<Integer, List<LocalVariableNode>> localVariableMap = new HashMap<>();
-    private Map<Instruction, String> variableDebugNames = new HashMap<>();
-    private Map<Integer, String> parameterNames = new HashMap<>();
+    private Map<Instruction, Map<Integer, String>> variableDebugNames = new HashMap<>();
 
     private static class Step {
         public final int source;
@@ -117,30 +115,9 @@ public class ProgramParser implements VariableDebugInformation {
         }
         int signatureVars = countSignatureVariables(method.desc);
         while (program.variableCount() <= signatureVars) {
-            program.createVariable(getVariableDebugName(program.variableCount(), 0));
-        }
-        for (int i = 0; i <= signatureVars; ++i) {
-            parameterNames.put(i, getVariableDebugName(i, 0));
+            program.createVariable(null);
         }
         return program;
-    }
-
-    private String getVariableDebugName(int var, int location) {
-        if (var < 0) {
-            return null;
-        }
-        List<LocalVariableNode> nodes = localVariableMap.get(var);
-        if (nodes == null) {
-            return null;
-        }
-        for (LocalVariableNode node : nodes) {
-            int start = labelIndexes.get(node.start.getLabel());
-            int end = labelIndexes.get(node.end.getLabel());
-            if (location >= start && location < end) {
-                return node.name;
-            }
-        }
-        return null;
     }
 
     private int countSignatureVariables(String desc) {
@@ -185,13 +162,9 @@ public class ProgramParser implements VariableDebugInformation {
     }
 
     @Override
-    public String getDefinitionDebugName(Instruction insn) {
-        return variableDebugNames.get(insn);
-    }
-
-    @Override
-    public String getParameterDebugName(int index) {
-        return parameterNames.get(index);
+    public Map<Integer, String> getDebugNames(Instruction insn) {
+        Map<Integer, String> map = variableDebugNames.get(insn);
+        return map != null ? Collections.unmodifiableMap(map) : Collections.<Integer, String>emptyMap();
     }
 
     private void prepare(MethodNode method) {
@@ -213,10 +186,11 @@ public class ProgramParser implements VariableDebugInformation {
             }
         }
         for (LocalVariableNode localVar : method.localVariables) {
-            List<LocalVariableNode> vars = localVariableMap.get(localVar.index);
+            int location = labelIndexes.get(localVar.start.getLabel());
+            List<LocalVariableNode> vars = localVariableMap.get(location);
             if (vars == null) {
                 vars = new ArrayList<>();
-                localVariableMap.put(localVar.index, vars);
+                localVariableMap.put(location, vars);
             }
             vars.add(localVar);
         }
@@ -293,24 +267,8 @@ public class ProgramParser implements VariableDebugInformation {
     }
 
     private void assemble() {
-        DefinitionExtractor defExtractor = new DefinitionExtractor();
-        for (int i = 0; i < targetInstructions.size(); ++i) {
-            List<Instruction> instructionList = targetInstructions.get(i);
-            if (instructionList == null) {
-                continue;
-            }
-            for (Instruction insn : instructionList) {
-                insn.acceptVisitor(defExtractor);
-                for (Variable var : defExtractor.getDefinedVariables()) {
-                    String debugName = getVariableDebugName(var.getIndex() - minLocal, i);
-                    if (debugName != null) {
-                        variableDebugNames.put(insn, debugName);
-                    }
-                }
-            }
-        }
-
         BasicBlock basicBlock = null;
+        Map<Integer, String> accumulatedDebugNames = new HashMap<>();
         for (int i = 0; i < basicBlocks.size(); ++i) {
             BasicBlock newBasicBlock = basicBlocks.get(i);
             if (newBasicBlock != null) {
@@ -320,8 +278,24 @@ public class ProgramParser implements VariableDebugInformation {
                     basicBlock.getInstructions().add(insn);
                 }
                 basicBlock = newBasicBlock;
+                if (!basicBlock.getInstructions().isEmpty()) {
+                    Map<Integer, String> debugNames = new HashMap<>(accumulatedDebugNames);
+                    variableDebugNames.put(basicBlock.getInstructions().get(0), debugNames);
+                }
             }
             List<Instruction> builtInstructions = targetInstructions.get(i);
+            List<LocalVariableNode> localVarNodes = localVariableMap.get(i);
+            if (localVarNodes != null) {
+                if (builtInstructions == null || builtInstructions.isEmpty()) {
+                    builtInstructions = Arrays.<Instruction>asList(new EmptyInstruction());
+                }
+                Map<Integer, String> debugNames = new HashMap<>();
+                variableDebugNames.put(builtInstructions.get(0), debugNames);
+                for (LocalVariableNode localVar : localVarNodes) {
+                    debugNames.put(localVar.index + minLocal, localVar.name);
+                }
+                accumulatedDebugNames.putAll(debugNames);
+            }
             if (builtInstructions != null) {
                 basicBlock.getInstructions().addAll(builtInstructions);
             }
