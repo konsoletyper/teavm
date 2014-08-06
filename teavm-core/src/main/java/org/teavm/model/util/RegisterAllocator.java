@@ -214,6 +214,15 @@ public class RegisterAllocator {
                         varMap[tryCatch.getExceptionVariable().getIndex()]));
             }
         }
+        String[] originalNames = new String[program.variableCount()];
+        for (int i = 0; i < program.variableCount(); ++i) {
+            Variable var = program.variableAt(i);
+            originalNames[i] = var.getDebugName();
+            var.setDebugName(null);
+        }
+        for (int i = 0; i < program.variableCount(); ++i) {
+            program.variableAt(varMap[i]).mergeDebugName(originalNames[i]);
+        }
     }
 
     private void renameInterferenceGraph(List<MutableGraphNode> graph, DisjointSet classes, final int[] varMap) {

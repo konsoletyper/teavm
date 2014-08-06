@@ -65,4 +65,17 @@ public class Variable implements VariableReader {
     public void setDebugName(String debugName) {
         this.debugName = debugName;
     }
+
+    public void mergeDebugName(String otherDebugName) {
+        if (otherDebugName == null) {
+            return;
+        }
+        String[] parts = debugName != null ? debugName.split("\\|") : new String[0];
+        for (String part : parts) {
+            if (otherDebugName.equals(part)) {
+                return;
+            }
+        }
+        debugName = debugName != null ? debugName + "|" + otherDebugName : otherDebugName;
+    }
 }

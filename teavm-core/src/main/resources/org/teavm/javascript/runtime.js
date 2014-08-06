@@ -391,6 +391,16 @@ function $rt_s(index) {
     return $rt_stringPool_instance[index];
 }
 
+function $dbg_repr(obj) {
+    return obj.toString();
+}
+function $dbg_class(obj) {
+    if (obj instanceof Long) {
+        return "long";
+    }
+    return obj.constructor.$meta.name;
+}
+
 Long = function(lo, hi) {
     this.lo = lo | 0;
     this.hi = hi | 0;

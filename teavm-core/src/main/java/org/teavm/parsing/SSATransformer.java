@@ -175,12 +175,14 @@ public class SSATransformer {
                 int[] phiIndexes = phiIndexMap[successor];
                 List<Phi> phis = program.basicBlockAt(successor).getPhis();
                 for (int j = 0; j < phis.size(); ++j) {
+                    Phi phi = phis.get(j);
                     Variable var = variableMap[phiIndexes[j]];
                     if (var != null) {
                         Incoming incoming = new Incoming();
                         incoming.setSource(currentBlock);
                         incoming.setValue(var);
-                        phis.get(j).getIncomings().add(incoming);
+                        phi.getIncomings().add(incoming);
+                        phi.getReceiver().mergeDebugName(var.getDebugName());
                     }
                 }
             }
