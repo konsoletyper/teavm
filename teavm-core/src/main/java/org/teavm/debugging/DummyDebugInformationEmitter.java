@@ -43,4 +43,12 @@ public class DummyDebugInformationEmitter implements DebugInformationEmitter {
     @Override
     public void setLocationProvider(LocationProvider locationProvider) {
     }
+
+    @Override
+    public void addClass(String className) {
+    }
+
+    @Override
+    public void addField(String fieldName, String jsName) {
+    }
 }

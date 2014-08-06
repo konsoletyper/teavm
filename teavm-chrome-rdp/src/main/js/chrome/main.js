@@ -38,7 +38,8 @@ DebuggerAgent.prototype.connectToServer = function() {
 DebuggerAgent.prototype.receiveMessage = function(message) {
     chrome.debugger.sendCommand(this.debuggee, message.method, message.params, function(response) {
         if (message.id) {
-            var responseToServer = { id : message.id, result : response };
+            var responseToServer = { id : message.id, result : response,
+                    error : response ? undefined : chrome.runtime.lastError };
             this.connection.send(JSON.stringify(responseToServer));
         }
     }.bind(this));

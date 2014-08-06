@@ -398,7 +398,8 @@ function $dbg_class(obj) {
     if (obj instanceof Long) {
         return "long";
     }
-    return obj.constructor.$meta.name;
+    var meta = obj.constructor.$meta;
+    return meta ? meta.name : "";
 }
 
 Long = function(lo, hi) {

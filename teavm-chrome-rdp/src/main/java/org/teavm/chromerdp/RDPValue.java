@@ -11,9 +11,18 @@ import org.teavm.debugging.JavaScriptVariable;
  */
 public class RDPValue implements JavaScriptValue {
     private String representation;
+    private String typeName;
+    private ChromeRDPDebugger debugger;
+    private String objectId;
+    private Map<String, ? extends JavaScriptVariable> properties;
 
-    public RDPValue(String representation) {
+    public RDPValue(ChromeRDPDebugger debugger, String representation, String typeName, String objectId) {
         this.representation = representation;
+        this.typeName = typeName;
+        this.debugger = debugger;
+        this.objectId = objectId;
+        properties = objectId != null ? new RDPScope(debugger, objectId) :
+                Collections.<String, RDPLocalVariable>emptyMap();
     }
 
     @Override
@@ -22,7 +31,18 @@ public class RDPValue implements JavaScriptValue {
     }
 
     @Override
+    public String getClassName() {
+        if (objectId != null) {
+            String className = debugger.getClassName(objectId);
+            return className != null ? className : "object";
+        } else {
+            return typeName;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
     public Map<String, JavaScriptVariable> getProperties() {
-        return Collections.emptyMap();
+        return (Map<String, JavaScriptVariable>)properties;
     }
 }

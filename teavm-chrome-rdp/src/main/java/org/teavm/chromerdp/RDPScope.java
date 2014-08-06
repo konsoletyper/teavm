@@ -4,13 +4,14 @@ import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public class RDPScope extends AbstractMap<String, RDPLocalVariable> {
-    private volatile Map<String, RDPLocalVariable> backingMap;
+    private AtomicReference<Map<String, RDPLocalVariable>> backingMap = new AtomicReference<>();
     private ChromeRDPDebugger debugger;
     private String id;
 
@@ -22,32 +23,31 @@ public class RDPScope extends AbstractMap<String, RDPLocalVariable> {
     @Override
     public Set<Entry<String, RDPLocalVariable>> entrySet() {
         initBackingMap();
-        return backingMap.entrySet();
+        return backingMap.get().entrySet();
     }
 
     @Override
     public int size() {
         initBackingMap();
-        return backingMap.size();
+        return backingMap.get().size();
     }
 
     @Override
     public RDPLocalVariable get(Object key) {
         initBackingMap();
-        return backingMap.get(key);
+        return backingMap.get().get(key);
     }
 
     private void initBackingMap() {
-        if (backingMap != null) {
+        if (backingMap.get() != null) {
             return;
         }
-        if (id == null) {
-            backingMap = new HashMap<>();
-        }
         Map<String, RDPLocalVariable> newBackingMap = new HashMap<>();
-        for (RDPLocalVariable variable : debugger.getScope(id)) {
-            newBackingMap.put(variable.getName(), variable);
+        if (id != null) {
+            for (RDPLocalVariable variable : debugger.getScope(id)) {
+                newBackingMap.put(variable.getName(), variable);
+            }
         }
-        backingMap = newBackingMap;
+        backingMap.compareAndSet(null, newBackingMap);
     }
 }

@@ -288,6 +288,16 @@ public class Debugger {
         return debugInfo.getVariableMeaningAt(location.getLine(), location.getColumn(), variable);
     }
 
+    public String mapField(String className, String jsField) {
+        for (DebugInformation debugInfo : debugInformationMap.values()) {
+            String meaning = debugInfo.getFieldMeaning(className, jsField);
+            if (meaning != null) {
+                return meaning;
+            }
+        }
+        return null;
+    }
+
     private JavaScriptDebuggerListener javaScriptListener = new JavaScriptDebuggerListener() {
         @Override
         public void resumed() {

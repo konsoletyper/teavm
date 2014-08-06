@@ -243,6 +243,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
 
     public void render(ClassNode cls) throws RenderingException {
         debugEmitter.emitClass(cls.getName());
+        debugEmitter.addClass(cls.getName());
         try {
             writer.append("function ").appendClass(cls.getName()).append("()").ws().append("{")
                     .indent().softNewLine();
@@ -254,8 +255,10 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 if (value == null) {
                     value = getDefaultValue(field.getType());
                 }
-                writer.append("this.").appendField(new FieldReference(cls.getName(), field.getName())).ws()
-                        .append("=").ws().append(constantToString(value)).append(";").softNewLine();
+                FieldReference fieldRef = new FieldReference(cls.getName(), field.getName());
+                writer.append("this.").appendField(fieldRef).ws().append("=").ws().append(constantToString(value))
+                        .append(";").softNewLine();
+                debugEmitter.addField(field.getName(), naming.getNameFor(fieldRef));
             }
             writer.outdent().append("}").newLine();
 
@@ -267,8 +270,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 if (value == null) {
                     value = getDefaultValue(field.getType());
                 }
-                writer.appendClass(cls.getName()).append('.')
-                        .appendField(new FieldReference(cls.getName(), field.getName())).ws().append("=").ws()
+                FieldReference fieldRef = new FieldReference(cls.getName(), field.getName());
+                writer.appendClass(cls.getName()).append('.').appendField(fieldRef).ws().append("=").ws()
                         .append(constantToString(value)).append(";").softNewLine();
             }
 

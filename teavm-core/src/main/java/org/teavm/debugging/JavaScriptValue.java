@@ -24,5 +24,7 @@ import java.util.Map;
 public interface JavaScriptValue {
     String getRepresentation();
 
+    String getClassName();
+
     Map<String, JavaScriptVariable> getProperties();
 }

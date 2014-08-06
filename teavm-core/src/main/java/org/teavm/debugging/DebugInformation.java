@@ -33,6 +33,8 @@ public class DebugInformation {
     Map<String, Integer> fileNameMap;
     String[] classNames;
     Map<String, Integer> classNameMap;
+    String[] fields;
+    Map<String, Integer> fieldMap;
     String[] methods;
     Map<String, Integer> methodMap;
     String[] variableNames;
@@ -43,6 +45,7 @@ public class DebugInformation {
     Mapping methodMapping;
     Mapping lineMapping;
     Mapping[] variableMappings;
+    List<Map<Integer, Integer>> classesMetadata;
 
     public String[] getCoveredSourceFiles() {
         return fileNames.clone();
@@ -118,6 +121,19 @@ public class DebugInformation {
         return componentByKey(mapping, variableNames, location);
     }
 
+    public String getFieldMeaning(String className, String jsName) {
+        Integer classIndex = classNameMap.get(className);
+        if (classIndex == null) {
+            return null;
+        }
+        Integer jsIndex = fieldMap.get(jsName);
+        if (jsIndex == null) {
+            return null;
+        }
+        Integer fieldIndex = classesMetadata.get(classIndex).get(jsIndex);
+        return fieldIndex != null ? fields[fieldIndex] : null;
+    }
+
     private <T> T componentByKey(Mapping mapping, T[] values, GeneratedLocation location) {
         int keyIndex = indexByKey(mapping, location);
         int valueIndex = keyIndex >= 0 ? mapping.values[keyIndex] : -1;
@@ -142,6 +158,7 @@ public class DebugInformation {
     void rebuildMaps() {
         fileNameMap = mapArray(fileNames);
         classNameMap = mapArray(classNames);
+        fieldMap = mapArray(fields);
         methodMap = mapArray(methods);
         variableNameMap = mapArray(variableNames);
     }

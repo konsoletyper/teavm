@@ -29,6 +29,7 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
     private DebugInformation debugInformation;
     private MappedList files = new MappedList();
     private MappedList classes = new MappedList();
+    private MappedList fields = new MappedList();
     private MappedList methods = new MappedList();
     private MappedList variableNames = new MappedList();
     private Mapping fileMapping = new Mapping();
@@ -39,6 +40,8 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
     private MethodDescriptor currentMethod;
     private String currentClass;
     private String currentFileName;
+    private int currentClassMetadata = -1;
+    private List<ClassMetadata> classesMetadata = new ArrayList<>();
     private int currentLine;
 
     public LocationProvider getLocationProvider() {
@@ -96,18 +99,32 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
         mapping.add(locationProvider, sourceIndex);
     }
 
+    @Override
+    public void addClass(String className) {
+        int classIndex = classes.index(className);
+        while (classIndex >= classesMetadata.size()) {
+            classesMetadata.add(new ClassMetadata());
+        }
+        currentClassMetadata = classIndex;
+    }
+
+    @Override
+    public void addField(String fieldName, String jsName) {
+        ClassMetadata metadata = classesMetadata.get(currentClassMetadata);
+        int fieldIndex = fields.index(fieldName);
+        int jsIndex = fields.index(jsName);
+        metadata.fieldMap.put(jsIndex, fieldIndex);
+    }
+
     public DebugInformation getDebugInformation() {
         if (debugInformation == null) {
             debugInformation = new DebugInformation();
 
-            debugInformation.fileNames = files.getItems();
-            debugInformation.fileNameMap = files.getIndexes();
+            debugInformation.fileNames = files.getItems();;
             debugInformation.classNames = classes.getItems();
-            debugInformation.classNameMap = classes.getIndexes();
+            debugInformation.fields = fields.getItems();
             debugInformation.methods = methods.getItems();
-            debugInformation.methodMap = methods.getIndexes();
             debugInformation.variableNames = variableNames.getItems();
-            debugInformation.variableNameMap = variableNames.getIndexes();
 
             debugInformation.fileMapping = fileMapping.build();
             debugInformation.lineMapping = lineMapping.build();
@@ -119,7 +136,19 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
                 debugInformation.variableMappings[var] = mapping.build();
             }
 
+            List<Map<Integer, Integer>> builtMetadata = new ArrayList<>(classes.list.size());
+            for (int i = 0; i < classes.list.size(); ++i) {
+                if (i >= classesMetadata.size()) {
+                    builtMetadata.add(new HashMap<Integer, Integer>());
+                } else {
+                    Map<Integer, Integer> map = new HashMap<>(classesMetadata.get(i).fieldMap);
+                    builtMetadata.add(map);
+                }
+            }
+            debugInformation.classesMetadata = builtMetadata;
+
             debugInformation.rebuildFileDescriptions();
+            debugInformation.rebuildMaps();
         }
         return debugInformation;
     }
@@ -171,5 +200,9 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
         public Map<String, Integer> getIndexes() {
             return new HashMap<>(map);
         }
+    }
+
+    static class ClassMetadata {
+        Map<Integer, Integer> fieldMap = new HashMap<>();
     }
 }

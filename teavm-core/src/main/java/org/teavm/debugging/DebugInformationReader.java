@@ -18,6 +18,10 @@ package org.teavm.debugging;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -35,6 +39,7 @@ class DebugInformationReader {
         DebugInformation debugInfo = new DebugInformation();
         debugInfo.fileNames = readStrings();
         debugInfo.classNames = readStrings();
+        debugInfo.fields = readStrings();
         debugInfo.methods = readStrings();
         debugInfo.variableNames = readStrings();
         debugInfo.fileMapping = readMapping();
@@ -42,6 +47,7 @@ class DebugInformationReader {
         debugInfo.classMapping = readMapping();
         debugInfo.methodMapping = readMapping();
         debugInfo.variableMappings = readVariableMappings(debugInfo.variableNames.length);
+        debugInfo.classesMetadata = readClassesMetadata(debugInfo.classNames.length);
         debugInfo.rebuildFileDescriptions();
         debugInfo.rebuildMaps();
         return debugInfo;
@@ -56,6 +62,22 @@ class DebugInformationReader {
             mappings[lastVar] = readMapping();
         }
         return mappings;
+    }
+
+    private List<Map<Integer, Integer>> readClassesMetadata(int count) throws IOException {
+        List<Map<Integer, Integer>> classes = new ArrayList<>(count);
+        for (int i = 0; i < count; ++i) {
+            Map<Integer, Integer> cls = new HashMap<>();
+            classes.add(cls);
+            int entryCount = readUnsignedNumber();
+            resetRelativeNumber();
+            for (int j = 0; j < entryCount; ++j) {
+                int key = readRelativeNumber();
+                int value = readUnsignedNumber();
+                cls.put(key, value);
+            }
+        }
+        return classes;
     }
 
     private int processSign(int number) {

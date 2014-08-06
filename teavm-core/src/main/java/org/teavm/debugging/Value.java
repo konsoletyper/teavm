@@ -16,13 +16,34 @@
 package org.teavm.debugging;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public abstract class Value {
-    public abstract String getRepresentation();
+public class Value {
+    private Debugger debugger;
+    private JavaScriptValue jsValue;
+    private AtomicReference<PropertyMap> properties = new AtomicReference<>();
 
-    public abstract Map<String, Variable> getProperties();
+    Value(Debugger debugger, JavaScriptValue jsValue) {
+        this.debugger = debugger;
+        this.jsValue = jsValue;
+    }
+
+    public String getRepresentation() {
+        return jsValue.getRepresentation();
+    }
+
+    public String getType() {
+        return jsValue.getClassName();
+    }
+
+    public Map<String, Variable> getProperties() {
+        if (properties.get() == null) {
+            properties.compareAndSet(null, new PropertyMap(jsValue.getClassName(), jsValue.getProperties(), debugger));
+        }
+        return properties.get();
+    }
 }

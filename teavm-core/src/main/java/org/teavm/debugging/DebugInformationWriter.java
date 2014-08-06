@@ -17,6 +17,10 @@ package org.teavm.debugging;
 
 import java.io.DataOutput;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -33,6 +37,7 @@ class DebugInformationWriter {
     public void write(DebugInformation debugInfo) throws IOException {
         writeStringArray(debugInfo.fileNames);
         writeStringArray(debugInfo.classNames);
+        writeStringArray(debugInfo.fields);
         writeStringArray(debugInfo.methods);
         writeStringArray(debugInfo.variableNames);
 
@@ -41,6 +46,7 @@ class DebugInformationWriter {
         writeMapping(debugInfo.classMapping);
         writeMapping(debugInfo.methodMapping);
         writeVariableMappings(debugInfo);
+        writeClassMetadata(debugInfo.classesMetadata);
     }
 
     private void writeVariableMappings(DebugInformation debugInfo) throws IOException {
@@ -54,6 +60,20 @@ class DebugInformationWriter {
             writeUnsignedNumber(i - lastVar);
             lastVar = i;
             writeMapping(mapping);
+        }
+    }
+
+    private void writeClassMetadata(List<Map<Integer, Integer>> classes) throws IOException {
+        for (int i = 0; i < classes.size(); ++i) {
+            Map<Integer, Integer> cls = classes.get(i);
+            writeUnsignedNumber(cls.size());
+            List<Integer> keys = new ArrayList<>(cls.keySet());
+            Collections.sort(keys);
+            resetRelativeNumber();
+            for (int key : keys) {
+                writeRelativeNumber(key);
+                writeUnsignedNumber(cls.get(key));
+            }
         }
     }
 
