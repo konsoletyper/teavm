@@ -45,7 +45,7 @@ public class DummyDebugInformationEmitter implements DebugInformationEmitter {
     }
 
     @Override
-    public void addClass(String className) {
+    public void addClass(String className, String parentName) {
     }
 
     @Override

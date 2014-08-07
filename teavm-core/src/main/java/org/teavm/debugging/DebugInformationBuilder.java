@@ -104,12 +104,14 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
     }
 
     @Override
-    public void addClass(String className) {
+    public void addClass(String className, String parentName) {
         int classIndex = classes.index(className);
+        int parentIndex = classes.index(parentName);
         while (classIndex >= classesMetadata.size()) {
             classesMetadata.add(new ClassMetadata());
         }
         currentClassMetadata = classIndex;
+        classesMetadata.get(currentClassMetadata).parentIndex = parentIndex;
     }
 
     @Override
@@ -140,13 +142,16 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
                 debugInformation.variableMappings[var] = mapping.build();
             }
 
-            List<Map<Integer, Integer>> builtMetadata = new ArrayList<>(classes.list.size());
+            List<DebugInformation.ClassMetadata> builtMetadata = new ArrayList<>(classes.list.size());
             for (int i = 0; i < classes.list.size(); ++i) {
                 if (i >= classesMetadata.size()) {
-                    builtMetadata.add(new HashMap<Integer, Integer>());
+                    builtMetadata.add(new DebugInformation.ClassMetadata());
                 } else {
-                    Map<Integer, Integer> map = new HashMap<>(classesMetadata.get(i).fieldMap);
-                    builtMetadata.add(map);
+                    ClassMetadata origMetadata = classesMetadata.get(i);
+                    DebugInformation.ClassMetadata mappedMetadata = new DebugInformation.ClassMetadata();
+                    mappedMetadata.fieldMap.putAll(origMetadata.fieldMap);
+                    mappedMetadata.parentId = origMetadata.parentIndex >= 0 ? origMetadata.parentIndex : null;
+                    builtMetadata.add(mappedMetadata);
                 }
             }
             debugInformation.classesMetadata = builtMetadata;
@@ -285,6 +290,7 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
     }
 
     static class ClassMetadata {
+        int parentIndex;
         Map<Integer, Integer> fieldMap = new HashMap<>();
     }
 }

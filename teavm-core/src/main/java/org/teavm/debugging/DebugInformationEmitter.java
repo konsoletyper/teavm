@@ -33,7 +33,7 @@ public interface DebugInformationEmitter {
 
     void emitVariable(String[] sourceNames, String generatedName);
 
-    void addClass(String className);
+    void addClass(String className, String parentName);
 
     void addField(String fieldName, String jsName);
 }

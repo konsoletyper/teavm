@@ -19,9 +19,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  *
@@ -64,17 +62,21 @@ class DebugInformationReader {
         return mappings;
     }
 
-    private List<Map<Integer, Integer>> readClassesMetadata(int count) throws IOException {
-        List<Map<Integer, Integer>> classes = new ArrayList<>(count);
+    private List<DebugInformation.ClassMetadata> readClassesMetadata(int count) throws IOException {
+        List<DebugInformation.ClassMetadata> classes = new ArrayList<>(count);
         for (int i = 0; i < count; ++i) {
-            Map<Integer, Integer> cls = new HashMap<>();
+            DebugInformation.ClassMetadata cls = new DebugInformation.ClassMetadata();
             classes.add(cls);
+            cls.parentId = readUnsignedNumber() - 1;
+            if (cls.parentId.equals(-1)) {
+                cls.parentId = null;
+            }
             int entryCount = readUnsignedNumber();
             resetRelativeNumber();
             for (int j = 0; j < entryCount; ++j) {
                 int key = readRelativeNumber();
                 int value = readUnsignedNumber();
-                cls.put(key, value);
+                cls.fieldMap.put(key, value);
             }
         }
         return classes;

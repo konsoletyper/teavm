@@ -243,7 +243,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
 
     public void render(ClassNode cls) throws RenderingException {
         debugEmitter.emitClass(cls.getName());
-        debugEmitter.addClass(cls.getName());
+        debugEmitter.addClass(cls.getName(), cls.getParentName());
         try {
             writer.append("function ").appendClass(cls.getName()).append("()").ws().append("{")
                     .indent().softNewLine();

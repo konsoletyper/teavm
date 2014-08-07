@@ -2,6 +2,7 @@ package org.teavm.chromerdp;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import org.teavm.debugging.JavaScriptValue;
 import org.teavm.debugging.JavaScriptVariable;
 
@@ -10,14 +11,15 @@ import org.teavm.debugging.JavaScriptVariable;
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public class RDPValue implements JavaScriptValue {
-    private String representation;
+    private AtomicReference<String> representation = new AtomicReference<>();
+    private AtomicReference<String> className = new AtomicReference<>();
     private String typeName;
     private ChromeRDPDebugger debugger;
     private String objectId;
     private Map<String, ? extends JavaScriptVariable> properties;
 
     public RDPValue(ChromeRDPDebugger debugger, String representation, String typeName, String objectId) {
-        this.representation = representation;
+        this.representation.set(representation == null && objectId == null ? "" : representation);
         this.typeName = typeName;
         this.debugger = debugger;
         this.objectId = objectId;
@@ -27,17 +29,23 @@ public class RDPValue implements JavaScriptValue {
 
     @Override
     public String getRepresentation() {
-        return representation;
+        if (representation.get() == null) {
+            representation.compareAndSet(null, debugger.getRepresentation(objectId));
+        }
+        return representation.get();
     }
 
     @Override
     public String getClassName() {
-        if (objectId != null) {
-            String className = debugger.getClassName(objectId);
-            return className != null ? className : "object";
-        } else {
-            return typeName;
+        if (className.get() == null) {
+            if (objectId != null) {
+                String computedClassName = debugger.getClassName(objectId);
+                className.compareAndSet(null, computedClassName != null ? computedClassName : "@Object");
+            } else {
+                className.compareAndSet(null, "@" + typeName);
+            }
         }
+        return className.get();
     }
 
     @SuppressWarnings("unchecked")

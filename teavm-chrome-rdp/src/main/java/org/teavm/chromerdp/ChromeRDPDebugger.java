@@ -62,30 +62,45 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
 
     private ChromeRDPExchangeListener exchangeListener = new ChromeRDPExchangeListener() {
         @Override public void received(String messageText) throws IOException {
-            JsonNode jsonMessage = mapper.readTree(messageText);
-            if (jsonMessage.has("id")) {
-                Response response = mapper.reader(Response.class).readValue(jsonMessage);
-                responseHandlers.remove(response.getId()).received(response.getResult());
-            } else {
-                Message message = mapper.reader(Message.class).readValue(messageText);
-                if (message.getMethod() == null) {
-                    return;
-                }
-                switch (message.getMethod()) {
-                    case "Debugger.paused":
-                        firePaused(parseJson(SuspendedNotification.class, message.getParams()));
-                        break;
-                    case "Debugger.resumed":
-                        fireResumed();
-                        break;
-                    case "Debugger.scriptParsed":
-                        scriptParsed(parseJson(ScriptParsedNotification.class, message.getParams()));
-                        break;
-                }
-            }
+            receiveMessage(messageText);
         }
     };
 
+    private void receiveMessage(final String messageText) {
+        new Thread() {
+            @Override public void run() {
+                try {
+                    JsonNode jsonMessage = mapper.readTree(messageText);
+                    if (jsonMessage.has("id")) {
+                        Response response = mapper.reader(Response.class).readValue(jsonMessage);
+                        if (response.getError() != null) {
+                            System.err.println(response.getError().toString());
+                        }
+                        responseHandlers.remove(response.getId()).received(response.getResult());
+                    } else {
+                        Message message = mapper.reader(Message.class).readValue(messageText);
+                        if (message.getMethod() == null) {
+                            return;
+                        }
+                        switch (message.getMethod()) {
+                            case "Debugger.paused":
+                                firePaused(parseJson(SuspendedNotification.class, message.getParams()));
+                                break;
+                            case "Debugger.resumed":
+                                fireResumed();
+                                break;
+                            case "Debugger.scriptParsed":
+                                scriptParsed(parseJson(ScriptParsedNotification.class, message.getParams()));
+                                break;
+                        }
+                    }
+                } catch (Exception e) {
+                    // TODO: logging
+                    e.printStackTrace();
+                }
+            }
+        }.start();
+    }
 
     private synchronized void firePaused(SuspendedNotification params) {
         suspended = true;
@@ -256,8 +271,12 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
         message.setParams(mapper.valueToTree(params));
         ResponseHandler handler = new ResponseHandler() {
             @Override public void received(JsonNode node) throws IOException {
-                SetBreakpointResponse response = mapper.reader(SetBreakpointResponse.class).readValue(node);
-                breakpoint.chromeId = response.getBreakpointId();
+                if (node != null) {
+                    SetBreakpointResponse response = mapper.reader(SetBreakpointResponse.class).readValue(node);
+                    breakpoint.chromeId = response.getBreakpointId();
+                } else {
+                    breakpoint.chromeId = null;
+                }
                 for (JavaScriptDebuggerListener listener : getListeners()) {
                     listener.breakpointChanged(breakpoint);
                 }
@@ -314,7 +333,8 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
                     sync.add("");
                 } else {
                     CallFunctionResponse response = mapper.reader(CallFunctionResponse.class).readValue(node);
-                    sync.add(response.getResult().getValue().getTextValue());
+                    RemoteObjectDTO result = response.getResult();
+                    sync.add(result.getValue() != null ? result.getValue().getTextValue() : "");
                 }
             }
         });
@@ -324,6 +344,51 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
             return result.isEmpty() ? null : result;
         } catch (InterruptedException e) {
             return null;
+        }
+    }
+
+    String getRepresentation(String objectId) {
+        if (exchange == null) {
+            return null;
+        }
+        Message message = new Message();
+        message.setId(messageIdGenerator.incrementAndGet());
+        message.setMethod("Runtime.callFunctionOn");
+        CallFunctionCommand params = new CallFunctionCommand();
+        CallArgumentDTO arg = new CallArgumentDTO();
+        arg.setObjectId(objectId);
+        params.setObjectId(objectId);
+        params.setArguments(new CallArgumentDTO[] { arg });
+        params.setFunctionDeclaration("$dbg_repr");
+        message.setParams(mapper.valueToTree(params));
+        final BlockingQueue<RepresentationWrapper> sync = new LinkedTransferQueue<>();
+        responseHandlers.put(message.getId(), new ResponseHandler() {
+            @Override public void received(JsonNode node) throws IOException {
+                if (node == null) {
+                    sync.add(new RepresentationWrapper(null));
+                } else {
+                    CallFunctionResponse response = mapper.reader(CallFunctionResponse.class).readValue(node);
+                    RemoteObjectDTO result = response.getResult();
+                    sync.add(new RepresentationWrapper(result.getValue() != null ?
+                            result.getValue().getTextValue() : null));
+                }
+            }
+        });
+        sendMessage(message);
+        try {
+            RepresentationWrapper result = sync.take();
+            return result.repr;
+        } catch (InterruptedException e) {
+            return null;
+        }
+    }
+
+    private static class RepresentationWrapper {
+        String repr;
+
+        public RepresentationWrapper(String repr) {
+            super();
+            this.repr = repr;
         }
     }
 
@@ -339,8 +404,7 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
                         break;
                     case "object":
                     case "function":
-                        value = new RDPValue(this, remoteValue.getDescription(), remoteValue.getType(),
-                                remoteValue.getObjectId());
+                        value = new RDPValue(this, null, remoteValue.getType(), remoteValue.getObjectId());
                         break;
                     default:
                         value = new RDPValue(this, remoteValue.getValue().asText(), remoteValue.getType(),

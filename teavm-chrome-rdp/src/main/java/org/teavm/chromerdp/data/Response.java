@@ -26,6 +26,7 @@ import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 public class Response {
     private int id;
     private JsonNode result;
+    private JsonNode error;
 
     public int getId() {
         return id;
@@ -41,5 +42,13 @@ public class Response {
 
     public void setResult(JsonNode result) {
         this.result = result;
+    }
+
+    public JsonNode getError() {
+        return error;
+    }
+
+    public void setError(JsonNode error) {
+        this.error = error;
     }
 }

@@ -108,6 +108,17 @@ $rt_arraycls = function(cls) {
         };
         arraycls.prototype = new ($rt_objcls())();
         arraycls.prototype.constructor = arraycls;
+        arraycls.prototype.toString = function() {
+            var str = "[";
+            for (var i = 0; i < this.data.length; ++i) {
+                if (i > 0) {
+                    str += ", ";
+                }
+                str += this.data[i].toString();
+            }
+            str += "]";
+            return str;
+        }
         arraycls.$meta = { item : cls, supertypes : [$rt_objcls()], primitive : false, superclass : $rt_objcls() };
         cls.$array = arraycls;
     }
@@ -392,19 +403,63 @@ function $rt_s(index) {
 }
 
 function $dbg_repr(obj) {
-    return obj.toString();
+    return obj.toString ? obj.toString() : "";
 }
 function $dbg_class(obj) {
     if (obj instanceof Long) {
         return "long";
     }
-    var meta = obj.constructor.$meta;
-    return meta ? meta.name : "";
+    var cls = obj.constructor;
+    var arrayDegree = 0;
+    while (cls.$meta && cls.$meta.item) {
+        ++arrayDegree;
+        cls = cls.$meta.item;
+    }
+    var clsName = "";
+    if (cls === $rt_booleancls()) {
+        clsName = "boolean";
+    } else if (cls === $rt_bytecls()) {
+        clsName = "byte";
+    } else if (cls === $rt_shortcls()) {
+        clsName = "short";
+    } else if (cls === $rt_charcls()) {
+        clsName = "char";
+    } else if (cls === $rt_intcls()) {
+        clsName = "int";
+    } else if (cls === $rt_longcls()) {
+        clsName = "long";
+    } else if (cls === $rt_floatcls()) {
+        clsName = "float";
+    } else if (cls === $rt_doublecls()) {
+        clsName = "double";
+    } else {
+        clsName = cls.$meta ? cls.$meta.name : "@" + cls.name;
+    }
+    while (arrayDegree-- > 0) {
+        clsName += "[]";
+    }
+    return clsName;
 }
 
 Long = function(lo, hi) {
     this.lo = lo | 0;
     this.hi = hi | 0;
+}
+Long.prototype.toString = function() {
+    var result = [];
+    var n = this;
+    var positive = Long_isPositive(n);
+    if (!positive) {
+        n = Long_neg(n);
+    }
+    var radix = new Long(10, 0);
+    do {
+        var divRem = Long_divRem(n, radix);
+        result.push(String.fromCharCode(48 + divRem[1].lo));
+        n = divRem[0];
+    } while (n.lo != 0 || n.hi != 0);
+    result = result.reverse().join('');
+    return positive ? result : "-" + result;
 }
 Long_ZERO = new Long(0, 0);
 Long_fromInt = function(val) {

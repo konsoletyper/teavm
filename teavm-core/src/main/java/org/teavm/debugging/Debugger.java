@@ -26,8 +26,6 @@ import org.teavm.model.MethodReference;
  *
  * @author Alexey Andreev
  */
-// TODO: variable name handling
-// TODO: class fields handling
 public class Debugger {
     private static final Object dummyObject = new Object();
     private ConcurrentMap<DebuggerListener, Object> listeners = new ConcurrentHashMap<>();
@@ -198,13 +196,16 @@ public class Debugger {
 
     private void addScript(String name) {
         if (debugInformationMap.containsKey(name)) {
+            updateBreakpoints();
             return;
         }
         DebugInformation debugInfo = debugInformationProvider.getDebugInformation(name);
         if (debugInfo == null) {
+            updateBreakpoints();
             return;
         }
         if (debugInformationMap.putIfAbsent(name, debugInfo) != null) {
+            updateBreakpoints();
             return;
         }
         for (String sourceFile : debugInfo.getCoveredSourceFiles()) {
@@ -220,6 +221,10 @@ public class Debugger {
             list.put(debugInfo, dummyObject);
         }
         scriptMap.put(debugInfo, name);
+        updateBreakpoints();
+    }
+
+    private void updateBreakpoints() {
         for (Breakpoint breakpoint : breakpoints.keySet()) {
             updateInternalBreakpoints(breakpoint);
             updateBreakpointStatus(breakpoint, true);

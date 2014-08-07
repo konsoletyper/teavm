@@ -45,7 +45,7 @@ public class DebugInformation {
     Mapping methodMapping;
     Mapping lineMapping;
     MultiMapping[] variableMappings;
-    List<Map<Integer, Integer>> classesMetadata;
+    List<ClassMetadata> classesMetadata;
 
     public String[] getCoveredSourceFiles() {
         return fileNames.clone();
@@ -130,8 +130,15 @@ public class DebugInformation {
         if (jsIndex == null) {
             return null;
         }
-        Integer fieldIndex = classesMetadata.get(classIndex).get(jsIndex);
-        return fieldIndex != null ? fields[fieldIndex] : null;
+        while (classIndex != null) {
+            ClassMetadata cls = classesMetadata.get(classIndex);
+            Integer fieldIndex = cls.fieldMap.get(jsIndex);
+            if (fieldIndex != null) {
+                return fields[fieldIndex];
+            }
+            classIndex = cls.parentId;
+        }
+        return null;
     }
 
     private <T> T componentByKey(Mapping mapping, T[] values, GeneratedLocation location) {
@@ -371,5 +378,10 @@ public class DebugInformation {
         public int size() {
             return lines.length;
         }
+    }
+
+    static class ClassMetadata {
+        Integer parentId;
+        Map<Integer, Integer> fieldMap = new HashMap<>();
     }
 }

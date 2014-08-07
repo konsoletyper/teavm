@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import org.teavm.debugging.DebugInformation.ClassMetadata;
 
 /**
  *
@@ -63,16 +63,17 @@ class DebugInformationWriter {
         }
     }
 
-    private void writeClassMetadata(List<Map<Integer, Integer>> classes) throws IOException {
+    private void writeClassMetadata(List<ClassMetadata> classes) throws IOException {
         for (int i = 0; i < classes.size(); ++i) {
-            Map<Integer, Integer> cls = classes.get(i);
-            writeUnsignedNumber(cls.size());
-            List<Integer> keys = new ArrayList<>(cls.keySet());
+            ClassMetadata cls = classes.get(i);
+            writeUnsignedNumber(cls.parentId != null ? cls.parentId + 1 : 0);
+            writeUnsignedNumber(cls.fieldMap.size());
+            List<Integer> keys = new ArrayList<>(cls.fieldMap.keySet());
             Collections.sort(keys);
             resetRelativeNumber();
             for (int key : keys) {
                 writeRelativeNumber(key);
-                writeUnsignedNumber(cls.get(key));
+                writeUnsignedNumber(cls.fieldMap.get(key));
             }
         }
     }
