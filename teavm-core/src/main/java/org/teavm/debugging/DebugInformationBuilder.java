@@ -120,7 +120,7 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
         if (debugInformation == null) {
             debugInformation = new DebugInformation();
 
-            debugInformation.fileNames = files.getItems();;
+            debugInformation.fileNames = files.getItems();
             debugInformation.classNames = classes.getItems();
             debugInformation.fields = fields.getItems();
             debugInformation.methods = methods.getItems();
