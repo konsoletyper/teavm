@@ -13,6 +13,6 @@ import org.eclipse.debug.ui.sourcelookup.SourceLookupTab;
 public class TeaVMTabGroup extends AbstractLaunchConfigurationTabGroup {
     @Override
     public void createTabs(ILaunchConfigurationDialog dialog, String mode) {
-        setTabs(new ILaunchConfigurationTab[] { new TeaVMTab(), new SourceLookupTab(), new CommonTab() });
+        setTabs(new ILaunchConfigurationTab[] { new SourceLookupTab(), new CommonTab() });
     }
 }

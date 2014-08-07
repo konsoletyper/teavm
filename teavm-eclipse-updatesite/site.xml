@@ -3,7 +3,7 @@
    <description name="TeaVM update site">
       TeaVM update site
    </description>
-   <feature url="features/teavm.eclipse.feature_0.2.0.201408032032.jar" id="teavm.eclipse.feature" version="0.2.0.201408032032" os="aix,hpux,linux,macosx,qnx,solaris,win32" ws="carbon,cocoa,gtk,motif,photon,win32,wpf" arch="ia64,ia64_32,PA_RISC,ppc,sparc,x86,x86_64">
+   <feature url="features/teavm.eclipse.feature_0.2.0.201408071508.jar" id="teavm.eclipse.feature" version="0.2.0.201408071508" os="aix,hpux,linux,macosx,qnx,solaris,win32" ws="carbon,cocoa,gtk,motif,photon,win32,wpf" arch="ia64,ia64_32,PA_RISC,ppc,sparc,x86,x86_64">
       <category name="teavm"/>
    </feature>
    <category-def name="teavm" label="TeaVM"/>

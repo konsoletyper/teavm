@@ -9,6 +9,10 @@ import org.eclipse.core.runtime.Plugin;
 public class TeaVMEclipsePlugin extends Plugin {
     private static TeaVMEclipsePlugin defaultInstance;
 
+    static {
+        System.out.println();
+    }
+
     public TeaVMEclipsePlugin() {
         defaultInstance = this;
     }

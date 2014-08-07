@@ -19,7 +19,7 @@ import org.teavm.debugging.DebuggerListener;
  */
 public class TeaVMThread implements IThread {
     private Debugger teavmDebugger;
-    private TeaVMDebugTarget debugTarget;
+    TeaVMDebugTarget debugTarget;
     private volatile TeaVMStackFrame[] stackTrace;
 
     public TeaVMThread(TeaVMDebugTarget debugTarget) {

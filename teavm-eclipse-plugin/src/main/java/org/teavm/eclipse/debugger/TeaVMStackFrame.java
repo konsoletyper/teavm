@@ -10,12 +10,14 @@ import org.teavm.debugging.CallFrame;
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public class TeaVMStackFrame implements IStackFrame {
-    private TeaVMThread thread;
+    TeaVMThread thread;
     CallFrame callFrame;
+    private TeaVMVariablesHolder variablesHolder;
 
     public TeaVMStackFrame(TeaVMThread thread, CallFrame callFrame) {
         this.thread = thread;
         this.callFrame = callFrame;
+        this.variablesHolder = new TeaVMVariablesHolder(thread.debugTarget, callFrame.getVariables().values());
     }
 
     @Override
@@ -150,7 +152,7 @@ public class TeaVMStackFrame implements IStackFrame {
 
     @Override
     public IVariable[] getVariables() throws DebugException {
-        return new IVariable[0];
+        return variablesHolder.getVariables();
     }
 
     @Override
