@@ -44,7 +44,7 @@ public final class Parser {
         method.setProgram(program);
         parseAnnotations(method.getAnnotations(), node.visibleAnnotations, node.invisibleAnnotations);
         while (program.variableCount() <= method.parameterCount()) {
-            program.createVariable(null);
+            program.createVariable();
         }
         return method;
     }

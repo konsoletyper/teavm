@@ -31,7 +31,7 @@ public interface DebugInformationEmitter {
 
     void emitClass(String className);
 
-    void emitVariable(String sourceName, String generatedName);
+    void emitVariable(String[] sourceNames, String generatedName);
 
     void addClass(String className);
 

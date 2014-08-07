@@ -522,7 +522,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             try {
                 MethodReference ref = method.getReference();
                 for (int i = 0; i < method.getParameterDebugNames().size(); ++i) {
-                    debugEmitter.emitVariable(method.getParameterDebugNames().get(i), variableName(i));
+                    debugEmitter.emitVariable(method.getParameterDebugNames().get(i).toArray(new String[0]),
+                            variableName(i));
                 }
                 int variableCount = 0;
                 for (int var : method.getVariables()) {
@@ -609,7 +610,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             }
             if (statement.getLeftValue() instanceof VariableExpr) {
                 VariableExpr receiver = (VariableExpr)statement.getLeftValue();
-                debugEmitter.emitVariable(statement.getDebugName(), variableName(receiver.getIndex()));
+                debugEmitter.emitVariable(statement.getDebugNames().toArray(new String[0]),
+                        variableName(receiver.getIndex()));
             }
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);

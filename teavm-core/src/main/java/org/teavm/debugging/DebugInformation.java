@@ -44,7 +44,7 @@ public class DebugInformation {
     Mapping classMapping;
     Mapping methodMapping;
     Mapping lineMapping;
-    Mapping[] variableMappings;
+    MultiMapping[] variableMappings;
     List<Map<Integer, Integer>> classesMetadata;
 
     public String[] getCoveredSourceFiles() {
@@ -105,18 +105,18 @@ public class DebugInformation {
         return getMethodAt(new GeneratedLocation(line, column));
     }
 
-    public String getVariableMeaningAt(int line, int column, String variable) {
+    public String[] getVariableMeaningAt(int line, int column, String variable) {
         return getVariableMeaningAt(new GeneratedLocation(line, column), variable);
     }
 
-    public String getVariableMeaningAt(GeneratedLocation location, String variable) {
+    public String[] getVariableMeaningAt(GeneratedLocation location, String variable) {
         Integer varIndex = variableNameMap.get(variable);
         if (varIndex == null) {
-            return null;
+            return new String[0];
         }
-        Mapping mapping = variableMappings[varIndex];
+        MultiMapping mapping = variableMappings[varIndex];
         if (mapping == null) {
-            return null;
+            return new String[0];
         }
         return componentByKey(mapping, variableNames, location);
     }
@@ -140,7 +140,26 @@ public class DebugInformation {
         return valueIndex >= 0 ? values[valueIndex] : null;
     }
 
+    private String[] componentByKey(MultiMapping mapping, String[] values, GeneratedLocation location) {
+        int keyIndex = indexByKey(mapping, location);
+        if (keyIndex < 0) {
+            return new String[0];
+        }
+        int start = mapping.offsets[keyIndex];
+        int end = mapping.offsets[keyIndex + 1];
+        String[] result = new String[end - start];
+        for (int i = 0; i < result.length; ++i) {
+            result[i] = values[mapping.data[i + start]];
+        }
+        return result;
+    }
+
     private int indexByKey(Mapping mapping, GeneratedLocation location) {
+        int index = Collections.binarySearch(mapping.keyList(), location);
+        return index >= 0 ? index : -index - 2;
+    }
+
+    private int indexByKey(MultiMapping mapping, GeneratedLocation location) {
         int index = Collections.binarySearch(mapping.keyList(), location);
         return index >= 0 ? index : -index - 2;
     }
@@ -293,6 +312,32 @@ public class DebugInformation {
             this.lines = lines;
             this.columns = columns;
             this.values = values;
+        }
+
+        public LocationList keyList() {
+            return new LocationList(lines, columns);
+        }
+
+        public int size() {
+            return lines.length;
+        }
+
+        public GeneratedLocation key(int index) {
+            return new GeneratedLocation(lines[index], columns[index]);
+        }
+    }
+
+    static class MultiMapping {
+        int[] lines;
+        int[] columns;
+        int[] offsets;
+        int[] data;
+
+        public MultiMapping(int[] lines, int[] columns, int[] offsets, int[] data) {
+            this.lines = lines;
+            this.columns = columns;
+            this.offsets = offsets;
+            this.data = data;
         }
 
         public LocationList keyList() {

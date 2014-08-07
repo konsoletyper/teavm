@@ -115,7 +115,7 @@ public class ProgramParser implements VariableDebugInformation {
         }
         int signatureVars = countSignatureVariables(method.desc);
         while (program.variableCount() <= signatureVars) {
-            program.createVariable(null);
+            program.createVariable();
         }
         return program;
     }
@@ -334,7 +334,7 @@ public class ProgramParser implements VariableDebugInformation {
 
     private Variable getVariable(int index) {
         while (index >= program.variableCount()) {
-            program.createVariable(null);
+            program.createVariable();
         }
         return program.variableAt(index);
     }

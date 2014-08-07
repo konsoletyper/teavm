@@ -15,6 +15,9 @@
  */
 package org.teavm.javascript.ast;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  *
  * @author Alexey Andreev
@@ -23,7 +26,7 @@ public class AssignmentStatement extends Statement {
     private Expr leftValue;
     private Expr rightValue;
     private NodeLocation location;
-    private String debugName;
+    private Set<String> debugNames = new HashSet<>();
 
     public Expr getLeftValue() {
         return leftValue;
@@ -49,12 +52,8 @@ public class AssignmentStatement extends Statement {
         this.location = location;
     }
 
-    public String getDebugName() {
-        return debugName;
-    }
-
-    public void setDebugName(String debugName) {
-        this.debugName = debugName;
+    public Set<String> getDebugNames() {
+        return debugNames;
     }
 
     @Override

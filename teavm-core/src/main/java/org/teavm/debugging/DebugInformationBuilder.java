@@ -36,7 +36,7 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
     private Mapping lineMapping = new Mapping();
     private Mapping classMapping = new Mapping();
     private Mapping methodMapping = new Mapping();
-    private Map<Integer, Mapping> variableMappings = new HashMap<>();
+    private Map<Integer, MultiMapping> variableMappings = new HashMap<>();
     private MethodDescriptor currentMethod;
     private String currentClass;
     private String currentFileName;
@@ -88,15 +88,19 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
     }
 
     @Override
-    public void emitVariable(String sourceName, String generatedName) {
-        int sourceIndex = variableNames.index(sourceName);
+    public void emitVariable(String[] sourceNames, String generatedName) {
+        int[] sourceIndexes = new int[sourceNames.length];
+        for (int i = 0; i < sourceIndexes.length; ++i) {
+            sourceIndexes[i] = variableNames.index(sourceNames[i]);
+        }
+        Arrays.sort(sourceIndexes);
         int generatedIndex = variableNames.index(generatedName);
-        Mapping mapping = variableMappings.get(generatedIndex);
+        MultiMapping mapping = variableMappings.get(generatedIndex);
         if (mapping == null) {
-            mapping = new Mapping();
+            mapping = new MultiMapping();
             variableMappings.put(generatedIndex, mapping);
         }
-        mapping.add(locationProvider, sourceIndex);
+        mapping.add(locationProvider, sourceIndexes);
     }
 
     @Override
@@ -130,9 +134,9 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
             debugInformation.lineMapping = lineMapping.build();
             debugInformation.classMapping = classMapping.build();
             debugInformation.methodMapping = methodMapping.build();
-            debugInformation.variableMappings = new DebugInformation.Mapping[variableNames.list.size()];
+            debugInformation.variableMappings = new DebugInformation.MultiMapping[variableNames.list.size()];
             for (int var : variableMappings.keySet()) {
-                Mapping mapping = variableMappings.get(var);
+                MultiMapping mapping = variableMappings.get(var);
                 debugInformation.variableMappings[var] = mapping.build();
             }
 
@@ -163,6 +167,12 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
                 int last = lines.size() - 1;
                 if (lines.get(last) == location.getLine() && columns.get(last) == location.getColumn()) {
                     values.set(last, value);
+                    // TODO: check why this gives an invalid result
+                    /*if (values.get(last) == values.get(last - 1)) {
+                        values.remove(last);
+                        lines.remove(last);
+                        columns.remove(last);
+                    }*/
                     return;
                 }
             }
@@ -173,6 +183,78 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
 
         DebugInformation.Mapping build() {
             return new DebugInformation.Mapping(lines.getAll(), columns.getAll(), values.getAll());
+        }
+    }
+
+    static class MultiMapping {
+        IntegerArray lines = new IntegerArray(1);
+        IntegerArray columns = new IntegerArray(1);
+        IntegerArray offsets = new IntegerArray(1);
+        IntegerArray data = new IntegerArray(1);
+
+        public MultiMapping() {
+            offsets.add(0);
+        }
+
+        public void add(LocationProvider location, int[] values) {
+            if (lines.size() > 1) {
+                int last = lines.size() - 1;
+                if (lines.get(last) == location.getLine() && columns.get(last) == location.getColumn()) {
+                    addToLast(values);
+                    return;
+                }
+            }
+            lines.add(location.getLine());
+            columns.add(location.getColumn());
+            data.addAll(values);
+            offsets.add(data.size());
+        }
+
+        private void addToLast(int[] values) {
+            int start = offsets.get(offsets.size() - 2);
+            int end = offsets.get(offsets.size() - 1);
+            int[] existing = data.getRange(start, end);
+            values = merge(existing, values);
+            if (values.length == existing.length) {
+                return;
+            }
+            data.remove(start, end - start);
+            data.addAll(values);
+            offsets.set(offsets.size() - 1, data.size());
+        }
+
+        private int[] merge(int[] a, int[] b) {
+            int[] result = new int[a.length + b.length];
+            int i = 0;
+            int j = 0;
+            int k = 0;
+            while (i < a.length && j < b.length) {
+                int p = a[i];
+                int q = b[j];
+                if (p == q) {
+                    result[k++] = p;
+                    ++i;
+                    ++j;
+                } else if (p < q) {
+                    result[k++] = p;
+                    ++i;
+                } else {
+                    result[k++] = q;
+                    ++j;
+                }
+            }
+            while (i < a.length) {
+                result[k++] = a[i++];
+            }
+            while (j < b.length) {
+                result[k++] = b[j++];
+            }
+            return k < result.length ? Arrays.copyOf(result, k) : result;
+        }
+
+        public DebugInformation.MultiMapping build() {
+            return new DebugInformation.MultiMapping(lines.getAll(), columns.getAll(), offsets.getAll(),
+                    data.getAll());
         }
     }
 

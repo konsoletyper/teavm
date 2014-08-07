@@ -49,7 +49,7 @@ public class NullPointerExceptionTransformer implements ClassHolderTransformer {
                 }
                 NullCheckInstruction nullCheck = new NullCheckInstruction();
                 nullCheck.setValue(invoke.getInstance());
-                Variable var = block.getProgram().createVariable(null);
+                Variable var = block.getProgram().createVariable();
                 nullCheck.setReceiver(var);
                 invoke.setInstance(var);
                 block.getInstructions().add(i++, nullCheck);

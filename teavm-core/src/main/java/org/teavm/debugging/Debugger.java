@@ -280,15 +280,15 @@ public class Debugger {
         }
     }
 
-    public String mapVariable(String variable, JavaScriptLocation location) {
+    String[] mapVariable(String variable, JavaScriptLocation location) {
         DebugInformation debugInfo = debugInformationMap.get(location.getScript());
         if (debugInfo == null) {
-            return null;
+            return new String[0];
         }
         return debugInfo.getVariableMeaningAt(location.getLine(), location.getColumn(), variable);
     }
 
-    public String mapField(String className, String jsField) {
+    String mapField(String className, String jsField) {
         for (DebugInformation debugInfo : debugInformationMap.values()) {
             String meaning = debugInfo.getFieldMeaning(className, jsField);
             if (meaning != null) {

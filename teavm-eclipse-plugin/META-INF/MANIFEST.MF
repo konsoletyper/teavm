@@ -5,18 +5,18 @@ Bundle-SymbolicName: teavm-eclipse-plugin;singleton:=true
 Bundle-Version: 0.2.0.qualifer
 Bundle-Vendor: Alexey Andreev <konsoletyper@gmail.com>
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
-Require-Bundle: org.eclipse.core.runtime;bundle-version="3.9.0",
- org.eclipse.debug.core;bundle-version="3.8.0",
- org.eclipse.debug.ui;bundle-version="3.9.0",
- org.eclipse.swt;bundle-version="3.102.0",
- org.eclipse.ui;bundle-version="3.105.0",
- org.eclipse.jdt.debug;bundle-version="3.8.0",
- org.eclipse.jdt.debug.ui;bundle-version="3.6.200",
- org.eclipse.jdt.core;bundle-version="3.9.2",
- org.eclipse.jdt.launching;bundle-version="3.7.1",
- org.eclipse.ui.editors;bundle-version="3.8.100",
- org.eclipse.ui.ide;bundle-version="3.9.0",
- org.eclipse.jdt.ui;bundle-version="3.9.2"
+Require-Bundle: org.eclipse.core.runtime;bundle-version="[3.8.0,4.0)",
+ org.eclipse.debug.core;bundle-version="[3.7.0,4.0)",
+ org.eclipse.debug.ui;bundle-version="[3.8.0,4.0)",
+ org.eclipse.swt;bundle-version="[3.8.1,4.0)",
+ org.eclipse.ui;bundle-version="[3.7.1,4.0)",
+ org.eclipse.jdt.debug;bundle-version="[3.7.101,4.0.0)",
+ org.eclipse.jdt.debug.ui;bundle-version="[3.6.100,4.0.0)",
+ org.eclipse.jdt.core;bundle-version="[3.8.3,4.0.0)",
+ org.eclipse.jdt.launching;bundle-version="[3.6.1,4.0.0)",
+ org.eclipse.ui.editors;bundle-version="[3.8.0,4.0.0)",
+ org.eclipse.ui.ide;bundle-version="[3.8.2,4.0.0)",
+ org.eclipse.jdt.ui;bundle-version="[3.8.2,4.0.0)"
 Bundle-ClassPath: .,
  lib/asm-5.0.1.jar,
  lib/asm-commons-5.0.1.jar,

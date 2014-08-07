@@ -140,17 +140,19 @@ public class SSATransformer {
             processed[currentBlock.getIndex()] = true;
             variableMap = Arrays.copyOf(task.variables, task.variables.length);
             for (Phi phi : currentBlock.getPhis()) {
-                Variable var = program.createVariable(phi.getReceiver().getDebugName());
+                Variable var = program.createVariable();
+                var.getDebugNames().addAll(phi.getReceiver().getDebugNames());
                 variableMap[phi.getReceiver().getIndex()] = var;
                 phi.setReceiver(var);
             }
             if (!caughtBlocks.get(currentBlock.getIndex()).isEmpty()) {
                 Phi phi = new Phi();
-                phi.setReceiver(program.createVariable(null));
+                phi.setReceiver(program.createVariable());
                 for (TryCatchBlock tryCatch : caughtBlocks.get(currentBlock.getIndex())) {
                     variableMap[tryCatch.getExceptionVariable().getIndex()] = phi.getReceiver();
-                    tryCatch.setExceptionVariable(program.createVariable(
-                            tryCatch.getExceptionVariable().getDebugName()));
+                    Set<String> debugNames = tryCatch.getExceptionVariable().getDebugNames();
+                    tryCatch.setExceptionVariable(program.createVariable());
+                    tryCatch.getExceptionVariable().getDebugNames().addAll(debugNames);
                     Incoming incoming = new Incoming();
                     incoming.setSource(tryCatch.getProtectedBlock());
                     incoming.setValue(tryCatch.getExceptionVariable());
@@ -182,7 +184,7 @@ public class SSATransformer {
                         incoming.setSource(currentBlock);
                         incoming.setValue(var);
                         phi.getIncomings().add(incoming);
-                        phi.getReceiver().mergeDebugName(var.getDebugName());
+                        phi.getReceiver().getDebugNames().addAll(var.getDebugNames());
                     }
                 }
             }
@@ -219,7 +221,7 @@ public class SSATransformer {
     }
 
     private Variable define(Variable var) {
-        Variable result = program.createVariable(null);
+        Variable result = program.createVariable();
         variableMap[var.getIndex()] = result;
         return result;
     }
@@ -231,7 +233,7 @@ public class SSATransformer {
         }
         String debugName = variableDebugMap.get(var.getIndex());
         if (debugName != null) {
-            mappedVar.setDebugName(debugName);
+            mappedVar.getDebugNames().add(debugName);
         }
         return mappedVar;
     }

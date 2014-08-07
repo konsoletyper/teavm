@@ -62,12 +62,11 @@ class VariableMap extends AbstractMap<String, Variable> {
         Map<String, Variable> vars = new HashMap<>();
         for (Map.Entry<String, JavaScriptVariable> entry : jsVariables.entrySet()) {
             JavaScriptVariable jsVar = entry.getValue();
-            String name = debugger.mapVariable(entry.getKey(), location);
-            if (name == null) {
-                continue;
-            }
+            String[] names = debugger.mapVariable(entry.getKey(), location);
             Value value = new Value(debugger, jsVar.getValue());
-            vars.put(entry.getKey(), new Variable(name, value));
+            for (String name : names) {
+                vars.put(name, new Variable(name, value));
+            }
         }
         backingMap.compareAndSet(null, vars);
     }

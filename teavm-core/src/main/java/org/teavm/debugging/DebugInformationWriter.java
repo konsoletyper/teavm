@@ -53,7 +53,7 @@ class DebugInformationWriter {
         int lastVar = 0;
         writeUnsignedNumber(nonNullVariableMappings(debugInfo));
         for (int i = 0; i < debugInfo.variableMappings.length; ++i) {
-            DebugInformation.Mapping mapping = debugInfo.variableMappings[i];
+            DebugInformation.MultiMapping mapping = debugInfo.variableMappings[i];
             if (mapping == null) {
                 continue;
             }
@@ -91,6 +91,30 @@ class DebugInformationWriter {
         writeUnsignedNumber(array.length);
         for (int i = 0; i < array.length; ++i) {
             writeString(array[i]);
+        }
+    }
+
+    private void writeMapping(DebugInformation.MultiMapping mapping) throws IOException {
+        int[] lines = mapping.lines.clone();
+        int last = 0;
+        for (int i = 0; i < lines.length; ++i) {
+            int next = lines[i];
+            lines[i] -= last;
+            last = next;
+        }
+        writeRle(lines);
+        resetRelativeNumber();
+        for (int i = 0; i < mapping.columns.length; ++i) {
+            writeRelativeNumber(mapping.columns[i]);
+        }
+        int lastOffset = 0;
+        for (int i = 1; i < mapping.offsets.length; ++i) {
+            writeUnsignedNumber(mapping.offsets[i] - lastOffset);
+            lastOffset = mapping.offsets[i];
+        }
+        resetRelativeNumber();
+        for (int i = 0; i < mapping.data.length; ++i) {
+            writeRelativeNumber(mapping.data[i]);
         }
     }
 

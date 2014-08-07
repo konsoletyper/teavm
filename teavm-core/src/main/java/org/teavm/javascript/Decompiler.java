@@ -271,7 +271,7 @@ public class Decompiler {
         int paramCount = method.getSignature().length;
         for (int i = 0; i < paramCount; ++i) {
             Variable var = program.variableAt(i);
-            methodNode.getParameterDebugNames().add(var.getDebugName());
+            methodNode.getParameterDebugNames().add(new HashSet<>(var.getDebugNames()));
         }
         return methodNode;
     }

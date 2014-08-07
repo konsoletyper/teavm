@@ -97,7 +97,7 @@ public class RegisterAllocator {
         final Phi phi = incoming.getPhi();
         Program program = phi.getBasicBlock().getProgram();
         AssignInstruction copyInstruction = new AssignInstruction();
-        Variable firstCopy = program.createVariable(incoming.getValue().getDebugName());
+        Variable firstCopy = program.createVariable();
         copyInstruction.setReceiver(firstCopy);
         copyInstruction.setAssignee(incoming.getValue());
         BasicBlock source = blockMap.get(incoming.getSource());
@@ -214,14 +214,14 @@ public class RegisterAllocator {
                         varMap[tryCatch.getExceptionVariable().getIndex()]));
             }
         }
-        String[] originalNames = new String[program.variableCount()];
+        String[][] originalNames = new String[program.variableCount()][];
         for (int i = 0; i < program.variableCount(); ++i) {
             Variable var = program.variableAt(i);
-            originalNames[i] = var.getDebugName();
-            var.setDebugName(null);
+            originalNames[i] = var.getDebugNames().toArray(new String[0]);
+            var.getDebugNames().clear();
         }
         for (int i = 0; i < program.variableCount(); ++i) {
-            program.variableAt(varMap[i]).mergeDebugName(originalNames[i]);
+            program.variableAt(varMap[i]).getDebugNames().addAll(Arrays.asList(originalNames[i]));
         }
     }
 

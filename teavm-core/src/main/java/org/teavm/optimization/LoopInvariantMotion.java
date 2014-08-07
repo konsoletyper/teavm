@@ -179,7 +179,7 @@ public class LoopInvariantMotion implements MethodOptimization {
                     phi.getIncomings().remove(j--);
                     if (preheaderPhi == null) {
                         preheaderPhi = new Phi();
-                        preheaderPhi.setReceiver(program.createVariable(null));
+                        preheaderPhi.setReceiver(program.createVariable());
                         preheader.getPhis().add(preheaderPhi);
                     }
                     preheaderPhi.getIncomings().add(incoming);
@@ -391,7 +391,8 @@ public class LoopInvariantMotion implements MethodOptimization {
 
         @Override
         public void visit(ClassConstantInstruction insn) {
-            var = program.createVariable(insn.getReceiver().getDebugName());
+            var = program.createVariable();
+            var.getDebugNames().addAll(insn.getReceiver().getDebugNames());
             ClassConstantInstruction copy = new ClassConstantInstruction();
             copy.setConstant(insn.getConstant());
             copy.setReceiver(var);
@@ -400,7 +401,8 @@ public class LoopInvariantMotion implements MethodOptimization {
 
         @Override
         public void visit(NullConstantInstruction insn) {
-            var = program.createVariable(insn.getReceiver().getDebugName());
+            var = program.createVariable();
+            var.getDebugNames().addAll(insn.getReceiver().getDebugNames());
             NullConstantInstruction copy = new NullConstantInstruction();
             copy.setReceiver(var);
             this.copy = copy;
@@ -408,7 +410,8 @@ public class LoopInvariantMotion implements MethodOptimization {
 
         @Override
         public void visit(IntegerConstantInstruction insn) {
-            var = program.createVariable(insn.getReceiver().getDebugName());
+            var = program.createVariable();
+            var.getDebugNames().addAll(insn.getReceiver().getDebugNames());
             IntegerConstantInstruction copy = new IntegerConstantInstruction();
             copy.setConstant(insn.getConstant());
             copy.setReceiver(var);
@@ -417,7 +420,8 @@ public class LoopInvariantMotion implements MethodOptimization {
 
         @Override
         public void visit(LongConstantInstruction insn) {
-            var = program.createVariable(insn.getReceiver().getDebugName());
+            var = program.createVariable();
+            var.getDebugNames().addAll(insn.getReceiver().getDebugNames());
             LongConstantInstruction copy = new LongConstantInstruction();
             copy.setConstant(insn.getConstant());
             copy.setReceiver(var);
@@ -426,7 +430,8 @@ public class LoopInvariantMotion implements MethodOptimization {
 
         @Override
         public void visit(FloatConstantInstruction insn) {
-            var = program.createVariable(insn.getReceiver().getDebugName());
+            var = program.createVariable();
+            var.getDebugNames().addAll(insn.getReceiver().getDebugNames());
             FloatConstantInstruction copy = new FloatConstantInstruction();
             copy.setConstant(insn.getConstant());
             copy.setReceiver(var);
@@ -435,7 +440,8 @@ public class LoopInvariantMotion implements MethodOptimization {
 
         @Override
         public void visit(DoubleConstantInstruction insn) {
-            var = program.createVariable(insn.getReceiver().getDebugName());
+            var = program.createVariable();
+            var.getDebugNames().addAll(insn.getReceiver().getDebugNames());
             DoubleConstantInstruction copy = new DoubleConstantInstruction();
             copy.setConstant(insn.getConstant());
             copy.setReceiver(var);
@@ -444,7 +450,8 @@ public class LoopInvariantMotion implements MethodOptimization {
 
         @Override
         public void visit(StringConstantInstruction insn) {
-            var = program.createVariable(insn.getReceiver().getDebugName());
+            var = program.createVariable();
+            var.getDebugNames().addAll(insn.getReceiver().getDebugNames());
             StringConstantInstruction copy = new StringConstantInstruction();
             copy.setConstant(insn.getConstant());
             copy.setReceiver(var);

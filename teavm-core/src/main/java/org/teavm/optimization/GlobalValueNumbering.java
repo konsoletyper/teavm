@@ -114,7 +114,7 @@ public class GlobalValueNumbering implements MethodOptimization {
             if (map[i] != i) {
                 Variable var = program.variableAt(i);
                 Variable mapVar = program.variableAt(map[i]);
-                mapVar.mergeDebugName(var.getDebugName());
+                mapVar.getDebugNames().addAll(var.getDebugNames());
                 program.deleteVariable(i);
             }
         }

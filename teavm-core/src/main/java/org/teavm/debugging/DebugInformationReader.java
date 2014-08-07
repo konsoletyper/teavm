@@ -53,13 +53,13 @@ class DebugInformationReader {
         return debugInfo;
     }
 
-    private DebugInformation.Mapping[] readVariableMappings(int count) throws IOException {
-        DebugInformation.Mapping[] mappings = new DebugInformation.Mapping[count];
+    private DebugInformation.MultiMapping[] readVariableMappings(int count) throws IOException {
+        DebugInformation.MultiMapping[] mappings = new DebugInformation.MultiMapping[count];
         int varCount = readUnsignedNumber();
         int lastVar = 0;
         while (varCount-- > 0) {
             lastVar += readUnsignedNumber();
-            mappings[lastVar] = readMapping();
+            mappings[lastVar] = readMultiMapping();
         }
         return mappings;
     }
@@ -84,6 +84,32 @@ class DebugInformationReader {
         boolean negative = (number & 1) != 0;
         number >>>= 1;
         return !negative ? number : -number;
+    }
+
+    private DebugInformation.MultiMapping readMultiMapping() throws IOException {
+        int[] lines = readRle();
+        int last = 0;
+        for (int i = 0; i < lines.length; ++i) {
+            last += lines[i];
+            lines[i] = last;
+        }
+        int[] columns = new int[lines.length];
+        resetRelativeNumber();
+        for (int i = 0; i < columns.length; ++i) {
+            columns[i] = readRelativeNumber();
+        }
+        int[] offsets = new int[lines.length + 1];
+        int lastOffset = 0;
+        for (int i = 1; i < offsets.length; ++i) {
+            lastOffset += readUnsignedNumber();
+            offsets[i] = lastOffset;
+        }
+        int[] data = new int[lastOffset];
+        resetRelativeNumber();
+        for (int i = 0; i < data.length; ++i) {
+            data[i] = readRelativeNumber();
+        }
+        return new DebugInformation.MultiMapping(lines, columns, offsets, data);
     }
 
     private DebugInformation.Mapping readMapping() throws IOException {

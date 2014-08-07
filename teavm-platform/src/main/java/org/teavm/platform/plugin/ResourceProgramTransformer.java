@@ -131,7 +131,7 @@ class ResourceProgramTransformer {
         } else if (type instanceof ValueType.Object) {
             switch (((ValueType.Object)type).getClassName()) {
                 case "java.lang.String": {
-                    Variable resultVar = insn.getProgram().createVariable(null);
+                    Variable resultVar = insn.getProgram().createVariable();
                     getProperty(insn, property, instructions, resultVar);
                     InvokeInstruction castInvoke = new InvokeInstruction();
                     castInvoke.setType(InvocationType.SPECIAL);
@@ -143,7 +143,7 @@ class ResourceProgramTransformer {
                     return instructions;
                 }
                 default: {
-                    Variable resultVar = insn.getProgram().createVariable(null);
+                    Variable resultVar = insn.getProgram().createVariable();
                     getProperty(insn, property, instructions, resultVar);
                     CastInstruction castInsn = new CastInstruction();
                     castInsn.setReceiver(insn.getReceiver());
@@ -159,7 +159,7 @@ class ResourceProgramTransformer {
 
     private void getProperty(InvokeInstruction insn, String property, List<Instruction> instructions,
             Variable resultVar) {
-        Variable nameVar = program.createVariable(null);
+        Variable nameVar = program.createVariable();
         StringConstantInstruction nameInsn = new StringConstantInstruction();
         nameInsn.setConstant(property);
         nameInsn.setReceiver(nameVar);
@@ -176,7 +176,7 @@ class ResourceProgramTransformer {
 
     private void getAndCastProperty(InvokeInstruction insn, String property, List<Instruction> instructions,
             Class<?> primitive) {
-        Variable resultVar = program.createVariable(null);
+        Variable resultVar = program.createVariable();
         getProperty(insn, property, instructions, resultVar);
         InvokeInstruction castInvoke = new InvokeInstruction();
         castInvoke.setType(InvocationType.SPECIAL);
@@ -220,7 +220,7 @@ class ResourceProgramTransformer {
         } else if (type instanceof ValueType.Object) {
             switch (((ValueType.Object)type).getClassName()) {
                 case "java.lang.String": {
-                    Variable castVar = insn.getProgram().createVariable(null);
+                    Variable castVar = insn.getProgram().createVariable();
                     InvokeInstruction castInvoke = new InvokeInstruction();
                     castInvoke.setType(InvocationType.SPECIAL);
                     castInvoke.setMethod(new MethodReference(ResourceAccessor.class, "castFromString",
@@ -242,7 +242,7 @@ class ResourceProgramTransformer {
 
     private void setProperty(InvokeInstruction insn, String property, List<Instruction> instructions,
             Variable valueVar) {
-        Variable nameVar = program.createVariable(null);
+        Variable nameVar = program.createVariable();
         StringConstantInstruction nameInsn = new StringConstantInstruction();
         nameInsn.setConstant(property);
         nameInsn.setReceiver(nameVar);
@@ -259,7 +259,7 @@ class ResourceProgramTransformer {
 
     private void castAndSetProperty(InvokeInstruction insn, String property, List<Instruction> instructions,
             Class<?> primitive) {
-        Variable castVar = program.createVariable(null);
+        Variable castVar = program.createVariable();
         InvokeInstruction castInvoke = new InvokeInstruction();
         castInvoke.setType(InvocationType.SPECIAL);
         String primitiveCapitalized = primitive.getName();

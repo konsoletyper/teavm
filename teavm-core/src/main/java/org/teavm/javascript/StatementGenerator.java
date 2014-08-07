@@ -244,7 +244,7 @@ class StatementGenerator implements InstructionVisitor {
     public void visit(AssignInstruction insn) {
         AssignmentStatement stmt = Statement.assign(Expr.var(insn.getReceiver().getIndex()),
                 Expr.var(insn.getAssignee().getIndex()));
-        stmt.setDebugName(insn.getReceiver().getDebugName());
+        stmt.getDebugNames().addAll(insn.getReceiver().getDebugNames());
         stmt.setLocation(currentLocation);
         statements.add(stmt);
     }
@@ -574,7 +574,7 @@ class StatementGenerator implements InstructionVisitor {
     private void assign(Expr source, Variable target) {
         AssignmentStatement stmt = Statement.assign(Expr.var(target.getIndex()), source);
         stmt.setLocation(currentLocation);
-        stmt.setDebugName(target.getDebugName());
+        stmt.getDebugNames().addAll(target.getDebugNames());
         statements.add(stmt);
     }
 

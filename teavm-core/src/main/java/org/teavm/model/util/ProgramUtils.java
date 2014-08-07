@@ -73,7 +73,8 @@ public final class ProgramUtils {
         InstructionCopyReader insnCopier = new InstructionCopyReader();
         insnCopier.programCopy = copy;
         for (int i = 0; i < program.variableCount(); ++i) {
-            copy.createVariable(program.variableAt(i).getDebugName());
+            Variable var = copy.createVariable();
+            var.getDebugNames().addAll(program.variableAt(i).readDebugNames());
         }
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             copy.createBasicBlock();
