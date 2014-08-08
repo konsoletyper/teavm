@@ -26,6 +26,7 @@ public class TeaVMTab extends AbstractLaunchConfigurationTab {
         GridLayout layout = new GridLayout();
         layout.verticalSpacing = 6;
         layout.numColumns = 2;
+        layout.horizontalSpacing = 6;
         root.setLayout(layout);
 
         Label portLabel = new Label(root, SWT.NONE);

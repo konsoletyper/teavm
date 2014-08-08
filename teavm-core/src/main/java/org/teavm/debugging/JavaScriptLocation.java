@@ -41,4 +41,9 @@ public class JavaScriptLocation {
     public int getColumn() {
         return column;
     }
+
+    @Override
+    public String toString() {
+        return script + ":(" + line + ";" + column + ")";
+    }
 }

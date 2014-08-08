@@ -232,6 +232,8 @@ public class DebugInformation {
 
     static class FileDescriptionBuilder {
         FileDescriptionProto[] files;
+        int lastFileIndex = -1;
+        int lastSourceLine = -1;
 
         public FileDescriptionBuilder(int size) {
             files = new FileDescriptionProto[size];
@@ -244,6 +246,11 @@ public class DebugInformation {
             if (sourceLine == -1 || fileIndex == -1) {
                 return;
             }
+            if (lastFileIndex == fileIndex && lastSourceLine == sourceLine) {
+                return;
+            }
+            lastFileIndex = fileIndex;
+            lastSourceLine = sourceLine;
             FileDescriptionProto proto = files[fileIndex];
             proto.addLocation(sourceLine, line, column);
         }
