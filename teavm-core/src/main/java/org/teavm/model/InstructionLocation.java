@@ -15,6 +15,8 @@
  */
 package org.teavm.model;
 
+import java.util.Objects;
+
 /**
  *
  * @author Alexey Andreev
@@ -34,5 +36,26 @@ public class InstructionLocation {
 
     public int getLine() {
         return line;
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + (fileName == null ? 0 : fileName.hashCode());
+        result = prime * result + line;
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof InstructionLocation)) {
+            return false;
+        }
+        InstructionLocation other = (InstructionLocation)obj;
+        return Objects.equals(fileName, other.fileName) && line == other.line;
     }
 }

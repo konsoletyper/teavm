@@ -36,4 +36,6 @@ public interface DebugInformationEmitter {
     void addClass(String className, String parentName);
 
     void addField(String fieldName, String jsName);
+
+    void addSuccessors(SourceLocation location, SourceLocation[] successors);
 }

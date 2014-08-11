@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import org.teavm.common.IntegerArray;
 
 /**
  *
@@ -46,6 +47,7 @@ class DebugInformationReader {
         debugInfo.methodMapping = readMapping();
         debugInfo.variableMappings = readVariableMappings(debugInfo.variableNames.length);
         debugInfo.classesMetadata = readClassesMetadata(debugInfo.classNames.length);
+        debugInfo.controlFlowGraphs = readCFGs(debugInfo.fileNames.length);
         debugInfo.rebuildFileDescriptions();
         debugInfo.rebuildMaps();
         return debugInfo;
@@ -80,6 +82,47 @@ class DebugInformationReader {
             }
         }
         return classes;
+    }
+
+    private DebugInformation.CFG[] readCFGs(int count) throws IOException {
+        DebugInformation.CFG[] cfgs = new DebugInformation.CFG[count];
+        for (int i = 0; i < count; ++i) {
+            cfgs[i] = readCFG(i);
+        }
+        return cfgs;
+    }
+
+    private DebugInformation.CFG readCFG(int index) throws IOException {
+        int[] offsets = new int[readUnsignedNumber() + 1];
+        IntegerArray lines = new IntegerArray(1);
+        IntegerArray files = new IntegerArray(1);
+        for (int i = 0; i < offsets.length - 1; ++i) {
+            offsets[i] = lines.size();
+            int sz = readUnsignedNumber();
+            if (sz == 0) {
+                continue;
+            } else if (sz == 1) {
+                lines.add(-1);
+                files.add(-1);
+            } else if (sz == 2) {
+                lines.add(i + 1);
+                files.add(index);
+            } else {
+                sz -= 2;
+                int last = i;
+                for (int j = 0; j < sz; ++j) {
+                    last += readNumber();
+                    lines.add(last);
+                    files.add(index + readNumber());
+                }
+            }
+        }
+        offsets[offsets.length - 1] = lines.size();
+        DebugInformation.CFG cfg = new DebugInformation.CFG();
+        cfg.offsets = offsets;
+        cfg.lines = lines.getAll();
+        cfg.files = files.getAll();
+        return cfg;
     }
 
     private int processSign(int number) {

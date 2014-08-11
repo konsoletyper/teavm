@@ -51,4 +51,8 @@ public class DummyDebugInformationEmitter implements DebugInformationEmitter {
     @Override
     public void addField(String fieldName, String jsName) {
     }
+
+    @Override
+    public void addSuccessors(SourceLocation location, SourceLocation[] successors) {
+    }
 }

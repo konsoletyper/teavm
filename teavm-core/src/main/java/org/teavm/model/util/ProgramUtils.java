@@ -15,7 +15,7 @@
  */
 package org.teavm.model.util;
 
-import java.util.List;
+import java.util.*;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphBuilder;
 import org.teavm.model.*;
@@ -66,6 +66,67 @@ public final class ProgramUtils {
             }
         }
         return graphBuilder.build();
+    }
+
+    public static Map<InstructionLocation, InstructionLocation[]> getLocationCFG(Program program) {
+        Graph graph = buildControlFlowGraph(program);
+        class Step {
+            InstructionLocation location;
+            int block;
+        }
+        Deque<Step> stack = new ArrayDeque<>();
+        for (int i = 0; i < graph.size(); ++i) {
+            if (graph.incomingEdgesCount(i) == 0) {
+                Step step = new Step();
+                step.block = i;
+                step.location = null;
+                stack.push(step);
+            }
+        }
+        boolean[] visited = new boolean[graph.size()];
+        Map<InstructionLocation, Set<InstructionLocation>> locationGraphBuilder = new HashMap<>();
+        while (!stack.isEmpty()) {
+            Step step = stack.pop();
+            if (visited[step.block]) {
+                continue;
+            }
+            visited[step.block] = true;
+            BasicBlock block = program.basicBlockAt(step.block);
+            InstructionLocation location = step.location;
+            for (Instruction insn : block.getInstructions()) {
+                if (insn.getLocation() != null) {
+                    if (location != null) {
+                        Set<InstructionLocation> successors = locationGraphBuilder.get(location);
+                        if (successors == null) {
+                            successors = new HashSet<>();
+                            locationGraphBuilder.put(location, successors);
+                        }
+                        successors.add(insn.getLocation());
+                    }
+                    location = insn.getLocation();
+                }
+            }
+            if (graph.outgoingEdgesCount(step.block) == 0) {
+                Set<InstructionLocation> successors = locationGraphBuilder.get(location);
+                if (successors == null) {
+                    successors = new HashSet<>();
+                    locationGraphBuilder.put(location, successors);
+                }
+                successors.add(new InstructionLocation(null, -1));
+            } else {
+                for (int next : graph.outgoingEdges(step.block)) {
+                    step = new Step();
+                    step.location = location;
+                    step.block = next;
+                    stack.push(step);
+                }
+            }
+        }
+        Map<InstructionLocation, InstructionLocation[]> locationGraph = new HashMap<>();
+        for (Map.Entry<InstructionLocation, Set<InstructionLocation>> entry : locationGraphBuilder.entrySet()) {
+            locationGraph.put(entry.getKey(), entry.getValue().toArray(new InstructionLocation[0]));
+        }
+        return locationGraph;
     }
 
     public static Program copy(ProgramReader program) {

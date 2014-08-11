@@ -45,6 +45,7 @@ public class DebugInformation {
     Mapping methodMapping;
     Mapping lineMapping;
     MultiMapping[] variableMappings;
+    CFG[] controlFlowGraphs;
     List<ClassMetadata> classesMetadata;
 
     public String[] getCoveredSourceFiles() {
@@ -119,6 +120,34 @@ public class DebugInformation {
             return new String[0];
         }
         return componentByKey(mapping, variableNames, location);
+    }
+
+    public SourceLocation[] getFollowingLines(SourceLocation location) {
+        Integer fileIndex = fileNameMap.get(location.getFileName());
+        if (fileIndex == null) {
+            return null;
+        }
+        CFG cfg = controlFlowGraphs[fileIndex];
+        if (cfg == null) {
+            return null;
+        }
+        int start = cfg.offsets[location.getLine()];
+        int end = cfg.offsets[location.getLine() + 1];
+        if (end - start == 1 && cfg.offsets[start] == -1) {
+            return new SourceLocation[0];
+        } else if (start == end) {
+            return null;
+        }
+        SourceLocation[] result = new SourceLocation[end - start];
+        for (int i = 0; i < result.length; ++i) {
+            int line = cfg.lines[i + start];
+            if (line >= 0) {
+                result[i] = new SourceLocation(fileNames[cfg.files[i + start]], line);
+            } else {
+                result[i] = null;
+            }
+        }
+        return result;
     }
 
     public String getFieldMeaning(String className, String jsName) {
@@ -390,5 +419,11 @@ public class DebugInformation {
     static class ClassMetadata {
         Integer parentId;
         Map<Integer, Integer> fieldMap = new HashMap<>();
+    }
+
+    static class CFG {
+        int[] lines;
+        int[] files;
+        int[] offsets;
     }
 }

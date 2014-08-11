@@ -18,6 +18,7 @@ package org.teavm.debugging;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.teavm.debugging.DebugInformation.ClassMetadata;
@@ -47,6 +48,7 @@ class DebugInformationWriter {
         writeMapping(debugInfo.methodMapping);
         writeVariableMappings(debugInfo);
         writeClassMetadata(debugInfo.classesMetadata);
+        writeCFGs(debugInfo);
     }
 
     private void writeVariableMappings(DebugInformation debugInfo) throws IOException {
@@ -135,6 +137,38 @@ class DebugInformationWriter {
         resetRelativeNumber();
         for (int i = 0; i < mapping.values.length; ++i) {
             writeRelativeNumber(mapping.values[i]);
+        }
+    }
+
+    private void writeCFGs(DebugInformation debugInfo) throws IOException {
+        for (int i = 0; i < debugInfo.controlFlowGraphs.length; ++i) {
+            writeCFG(debugInfo.controlFlowGraphs[i], i);
+        }
+    }
+
+    private void writeCFG(DebugInformation.CFG mapping, int fileIndex) throws IOException {
+        writeUnsignedNumber(mapping.offsets.length - 1);
+        for (int i = 0; i < mapping.offsets.length - 1; ++i) {
+            int start = mapping.offsets[i];
+            int sz = mapping.offsets[i + 1] - start;
+            if (sz == 0) {
+                writeUnsignedNumber(0);
+            } else if (sz == 1 && mapping.lines[start] == -1) {
+                writeUnsignedNumber(1);
+            } else if (sz == 1 && mapping.lines[start] == i + 1 && mapping.files[start] == fileIndex) {
+                writeUnsignedNumber(2);
+            } else {
+                writeUnsignedNumber(2 + sz);
+                int[] lines = Arrays.copyOfRange(mapping.lines, start, start + sz);
+                int[] files = Arrays.copyOfRange(mapping.files, start, start + sz);
+                int last = i;
+                for (int j = 0; j < sz; ++j) {
+                    int succ = lines[j];
+                    writeNumber(succ - last);
+                    writeNumber(files[j] - fileIndex);
+                    last = succ;
+                }
+            }
         }
     }
 

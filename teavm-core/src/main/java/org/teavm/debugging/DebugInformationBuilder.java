@@ -42,6 +42,7 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
     private String currentFileName;
     private int currentClassMetadata = -1;
     private List<ClassMetadata> classesMetadata = new ArrayList<>();
+    private List<CFG> cfgs = new ArrayList<>();
     private int currentLine;
 
     public LocationProvider getLocationProvider() {
@@ -122,6 +123,26 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
         metadata.fieldMap.put(jsIndex, fieldIndex);
     }
 
+    @Override
+    public void addSuccessors(SourceLocation location, SourceLocation[] successors) {
+        int fileIndex = files.index(location.getFileName());
+        if (cfgs.size() <= fileIndex) {
+            cfgs.addAll(Collections.<CFG>nCopies(fileIndex - cfgs.size() + 1, null));
+        }
+        CFG cfg = cfgs.get(fileIndex);
+        if (cfg == null) {
+            cfg = new CFG();
+            cfgs.set(fileIndex, cfg);
+        }
+        for (SourceLocation succ : successors) {
+            if (succ == null) {
+                cfg.add(location.getLine(), fileIndex, -1);
+            } else {
+                cfg.add(location.getLine(), files.index(succ.getFileName()), succ.getLine());
+            }
+        }
+    }
+
     public DebugInformation getDebugInformation() {
         if (debugInformation == null) {
             debugInformation = new DebugInformation();
@@ -155,6 +176,13 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
                 }
             }
             debugInformation.classesMetadata = builtMetadata;
+
+            DebugInformation.CFG[] cfgs = new DebugInformation.CFG[files.list.size()];
+            for (int i = 0; i < this.cfgs.size(); ++i) {
+                if (this.cfgs.get(i) != null) {
+                    cfgs[i] = this.cfgs.get(i).build();
+                }
+            }
 
             debugInformation.rebuildFileDescriptions();
             debugInformation.rebuildMaps();
@@ -293,4 +321,59 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
         int parentIndex;
         Map<Integer, Integer> fieldMap = new HashMap<>();
     }
+
+    static class CFG {
+        IntegerArray start = new IntegerArray(1);
+        IntegerArray next = new IntegerArray(1);
+        IntegerArray lines = new IntegerArray(1);
+        IntegerArray files = new IntegerArray(1);
+
+        public void add(int line, int succLine, int succFile) {
+            while (start.size() <= line) {
+                start.add(-1);
+            }
+            int ptr = start.get(line);
+            start.set(line, lines.size());
+            next.add(ptr);
+            lines.add(succLine);
+            files.add(succFile);
+        }
+
+        public DebugInformation.CFG build() {
+            int[] offsets = new int[start.size() + 1];
+            IntegerArray linesData = new IntegerArray(1);
+            IntegerArray filesData = new IntegerArray(1);
+            for (int i = 0; i < start.size(); ++i) {
+                IntegerArray linesChunk = new IntegerArray(1);
+                IntegerArray filesChunk = new IntegerArray(1);
+                int ptr = start.get(i);
+                while (ptr > 0) {
+                    linesChunk.add(lines.get(ptr));
+                    filesChunk.add(files.get(ptr));
+                    ptr = next.get(ptr);
+                }
+                long[] pairs = new long[linesChunk.size()];
+                for (int j = 0; j < pairs.length; ++j) {
+                    pairs[j] = (filesChunk.get(j) << 32) | linesChunk.get(j);
+                }
+                Arrays.sort(pairs);
+                int distinctSize = 0;
+                for (int j = 0; j < pairs.length; ++j) {
+                    long pair = pairs[j];
+                    if (distinctSize == 0 || pair != pairs[distinctSize]) {
+                        pairs[distinctSize++] = pair;
+                        linesData.add((int)(pair >>> 32));
+                        filesData.add((int)pair);
+                    }
+                }
+                offsets[i + 1] = linesData.size();
+            }
+            DebugInformation.CFG cfg = new DebugInformation.CFG();
+            cfg.offsets = offsets;
+            cfg.lines = lines.getAll();
+            cfg.files = files.getAll();
+            return cfg;
+        }
+    }
+
 }
