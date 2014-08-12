@@ -21,6 +21,7 @@ import org.teavm.codegen.*;
 import org.teavm.common.FiniteExecutor;
 import org.teavm.common.ServiceRepository;
 import org.teavm.debugging.DebugInformationEmitter;
+import org.teavm.debugging.SourceLocation;
 import org.teavm.dependency.*;
 import org.teavm.javascript.Decompiler;
 import org.teavm.javascript.Renderer;
@@ -349,6 +350,14 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         SourceWriter sourceWriter = builder.build(writer);
         Renderer renderer = new Renderer(sourceWriter, classSet, classLoader, this);
         if (debugEmitter != null) {
+            for (String className : classSet.getClassNames()) {
+                ClassHolder cls = classSet.get(className);
+                for (MethodHolder method : cls.getMethods()) {
+                    if (method.getProgram() != null) {
+                        emitCFG(debugEmitter, method.getProgram());
+                    }
+                }
+            }
             renderer.setDebugEmitter(debugEmitter);
         }
         renderer.getDebugEmitter().setLocationProvider(sourceWriter);
@@ -385,6 +394,25 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         } catch (IOException e) {
             throw new RenderingException("IO Error occured", e);
         }
+    }
+
+    private void emitCFG(DebugInformationEmitter emitter, Program program) {
+        Map<InstructionLocation, InstructionLocation[]> cfg = ProgramUtils.getLocationCFG(program);
+        for (Map.Entry<InstructionLocation, InstructionLocation[]> entry : cfg.entrySet()) {
+            SourceLocation location = map(entry.getKey());
+            SourceLocation[] successors = new SourceLocation[entry.getValue().length];
+            for (int i = 0; i < entry.getValue().length; ++i) {
+                successors[i] = map(entry.getValue()[i]);
+            }
+            emitter.addSuccessors(location, successors);
+        }
+    }
+
+    private static SourceLocation map(InstructionLocation location) {
+        if (location == null) {
+            return null;
+        }
+        return new SourceLocation(location.getFileName(), location.getLine());
     }
 
     private void devirtualize(ListableClassHolderSource classes, DependencyInfo dependency) {

@@ -58,4 +58,9 @@ public class InstructionLocation {
         InstructionLocation other = (InstructionLocation)obj;
         return Objects.equals(fileName, other.fileName) && line == other.line;
     }
+
+    @Override
+    public String toString() {
+        return fileName + ":" + line;
+    }
 }

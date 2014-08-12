@@ -61,7 +61,7 @@ public class DebugInformation {
         if (description == null) {
             return Collections.emptyList();
         }
-        if (line > description.generatedLocationStart.length) {
+        if (line >= description.generatedLocationStart.length - 1) {
             return Collections.emptyList();
         }
         int start = description.generatedLocationStart[line];

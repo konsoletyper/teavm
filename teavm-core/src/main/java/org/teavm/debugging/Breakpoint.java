@@ -46,7 +46,7 @@ public class Breakpoint {
         return valid;
     }
 
-    public synchronized boolean isDestroyed() {
+    public boolean isDestroyed() {
         return debugger == null;
     }
 

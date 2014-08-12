@@ -54,24 +54,62 @@ public class Debugger {
         listeners.remove(listener);
     }
 
-    public synchronized void suspend() {
+    public void suspend() {
         javaScriptDebugger.suspend();
     }
 
-    public synchronized void resume() {
+    public void resume() {
         javaScriptDebugger.resume();
     }
 
-    public synchronized void stepInto() {
+    public void stepInto() {
         javaScriptDebugger.stepInto();
     }
 
-    public synchronized void stepOut() {
+    public void stepOut() {
         javaScriptDebugger.stepOut();
     }
 
-    public synchronized void stepOver() {
-        javaScriptDebugger.stepOver();
+    public void stepOver() {
+        CallFrame[] callStack = getCallStack();
+        if (callStack == null || callStack.length == 0) {
+            javaScriptDebugger.stepOver();
+            return;
+        }
+        CallFrame recentFrame = callStack[0];
+        if (recentFrame.getLocation() == null || recentFrame.getLocation().getFileName() == null ||
+                recentFrame.getLocation().getLine() < 0) {
+            javaScriptDebugger.stepOver();
+            return;
+        }
+        Set<JavaScriptLocation> successors = new HashSet<>();
+        for (int i = 0; i < callStack.length; ++i) {
+            CallFrame frame = callStack[i];
+            boolean exits = false;
+            for (Map.Entry<String, DebugInformation> entry : debugInformationMap.entrySet()) {
+                DebugInformation debugInfo = entry.getValue();
+                SourceLocation[] following = debugInfo.getFollowingLines(frame.getLocation());
+                if (following == null) {
+                    continue;
+                }
+                for (SourceLocation successor : debugInfo.getFollowingLines(frame.getLocation())) {
+                    if (successor == null) {
+                        exits = true;
+                    } else {
+                        for (GeneratedLocation loc : debugInfo.getGeneratedLocations(successor)) {
+                            successors.add(new JavaScriptLocation(entry.getKey(), loc.getLine(), loc.getColumn()));
+                        }
+                    }
+                }
+            }
+            if (!exits) {
+                break;
+            }
+        }
+        for (JavaScriptLocation successor : successors) {
+            temporaryBreakpoints.add(javaScriptDebugger.createBreakpoint(successor));
+        }
+        javaScriptDebugger.resume();
     }
 
     private List<DebugInformation> debugInformationBySource(String sourceFile) {
@@ -249,8 +287,8 @@ public class Debugger {
     }
 
     private void fireResumed() {
-        List<JavaScriptBreakpoint> termporaryBreakpoints = new ArrayList<>();
-        this.temporaryBreakpoints.drainTo(termporaryBreakpoints);
+        List<JavaScriptBreakpoint> temporaryBreakpoints = new ArrayList<>();
+        this.temporaryBreakpoints.drainTo(temporaryBreakpoints);
         for (JavaScriptBreakpoint jsBreakpoint : temporaryBreakpoints) {
             jsBreakpoint.destroy();
         }

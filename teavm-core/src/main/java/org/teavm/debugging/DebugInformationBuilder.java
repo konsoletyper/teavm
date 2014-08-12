@@ -136,9 +136,9 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
         }
         for (SourceLocation succ : successors) {
             if (succ == null) {
-                cfg.add(location.getLine(), fileIndex, -1);
+                cfg.add(location.getLine(), -1, fileIndex);
             } else {
-                cfg.add(location.getLine(), files.index(succ.getFileName()), succ.getLine());
+                cfg.add(location.getLine(), succ.getLine(), files.index(succ.getFileName()));
             }
         }
     }
@@ -183,6 +183,7 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
                     cfgs[i] = this.cfgs.get(i).build();
                 }
             }
+            debugInformation.controlFlowGraphs = cfgs;
 
             debugInformation.rebuildFileDescriptions();
             debugInformation.rebuildMaps();
@@ -354,7 +355,7 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
                 }
                 long[] pairs = new long[linesChunk.size()];
                 for (int j = 0; j < pairs.length; ++j) {
-                    pairs[j] = (filesChunk.get(j) << 32) | linesChunk.get(j);
+                    pairs[j] = (((long)filesChunk.get(j)) << 32) | linesChunk.get(j);
                 }
                 Arrays.sort(pairs);
                 int distinctSize = 0;
@@ -362,16 +363,16 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
                     long pair = pairs[j];
                     if (distinctSize == 0 || pair != pairs[distinctSize]) {
                         pairs[distinctSize++] = pair;
-                        linesData.add((int)(pair >>> 32));
-                        filesData.add((int)pair);
+                        filesData.add((int)(pair >>> 32));
+                        linesData.add((int)pair);
                     }
                 }
                 offsets[i + 1] = linesData.size();
             }
             DebugInformation.CFG cfg = new DebugInformation.CFG();
             cfg.offsets = offsets;
-            cfg.lines = lines.getAll();
-            cfg.files = files.getAll();
+            cfg.lines = linesData.getAll();
+            cfg.files = filesData.getAll();
             return cfg;
         }
     }

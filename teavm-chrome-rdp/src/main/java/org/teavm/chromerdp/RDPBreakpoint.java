@@ -15,6 +15,7 @@
  */
 package org.teavm.chromerdp;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import org.teavm.debugging.JavaScriptBreakpoint;
 import org.teavm.debugging.JavaScriptLocation;
 
@@ -24,8 +25,9 @@ import org.teavm.debugging.JavaScriptLocation;
  */
 public class RDPBreakpoint implements JavaScriptBreakpoint {
     volatile String chromeId;
-    private ChromeRDPDebugger debugger;
+    ChromeRDPDebugger debugger;
     private JavaScriptLocation location;
+    AtomicInteger referenceCount = new AtomicInteger();
 
     RDPBreakpoint(ChromeRDPDebugger debugger, JavaScriptLocation location) {
         this.debugger = debugger;
@@ -41,8 +43,6 @@ public class RDPBreakpoint implements JavaScriptBreakpoint {
     public void destroy() {
         if (debugger != null) {
             debugger.destroyBreakpoint(this);
-            chromeId = null;
-            debugger = null;
         }
     }
 

@@ -15,6 +15,8 @@
  */
 package org.teavm.debugging;
 
+import java.util.Objects;
+
 /**
  *
  * @author Alexey Andreev
@@ -40,6 +42,23 @@ public class JavaScriptLocation {
 
     public int getColumn() {
         return column;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof JavaScriptLocation)) {
+            return false;
+        }
+        JavaScriptLocation other = (JavaScriptLocation)obj;
+        return Objects.equals(other.script, script) && other.line == line;
+    }
+
+    @Override
+    public int hashCode() {
+        return (31 + line) * 31 + Objects.hashCode(script);
     }
 
     @Override
