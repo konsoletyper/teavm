@@ -27,8 +27,8 @@
 	<classpathentry exported="true" kind="lib" path="lib/logback-classic-1.1.2.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/logback-core-1.1.2.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/slf4j-api-1.7.7.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/teavm-chrome-rdp-0.2-SNAPSHOT.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/teavm-core-0.2-SNAPSHOT.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/teavm-chrome-rdp-0.2-SNAPSHOT.jar" sourcepath="/teavm-chrome-rdp"/>
+	<classpathentry exported="true" kind="lib" path="lib/teavm-core-0.2-SNAPSHOT.jar" sourcepath="/teavm-core"/>
 	<classpathentry exported="true" kind="lib" path="lib/websocket-api-9.2.1.v20140609.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/websocket-client-9.2.1.v20140609.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/websocket-common-9.2.1.v20140609.jar"/>

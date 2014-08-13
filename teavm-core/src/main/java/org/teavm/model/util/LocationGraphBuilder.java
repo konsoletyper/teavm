@@ -99,7 +99,7 @@ class LocationGraphBuilder {
         for (Map.Entry<InstructionLocation, Set<InstructionLocation>> entry : graphBuilder.entrySet()) {
             InstructionLocation[] successors = entry.getValue().toArray(new InstructionLocation[0]);
             for (int i = 0; i < successors.length; ++i) {
-                if (successors[i].getLine() < 0) {
+                if (successors[i] != null && successors[i].getLine() < 0) {
                     successors[i] = null;
                 }
             }

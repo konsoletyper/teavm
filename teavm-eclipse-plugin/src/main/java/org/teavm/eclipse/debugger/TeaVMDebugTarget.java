@@ -2,7 +2,6 @@ package org.teavm.eclipse.debugger;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import org.eclipse.core.resources.IMarker;
 import org.eclipse.core.resources.IMarkerDelta;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.debug.core.DebugEvent;
@@ -31,7 +30,7 @@ public class TeaVMDebugTarget implements IDebugTarget, IStep {
     private TeaVMDebugProcess process;
     private TeaVMThread thread;
     ConcurrentMap<IBreakpoint, Breakpoint> breakpointMap = new ConcurrentHashMap<>();
-    ConcurrentMap<Breakpoint, IBreakpoint> breakpointBackMap = new ConcurrentHashMap<>();
+    ConcurrentMap<Breakpoint, IJavaLineBreakpoint> breakpointBackMap = new ConcurrentHashMap<>();
 
     public TeaVMDebugTarget(ILaunch launch, final Debugger teavmDebugger, ChromeRDPServer server) {
         this.launch = launch;
@@ -78,17 +77,15 @@ public class TeaVMDebugTarget implements IDebugTarget, IStep {
     }
 
     private void updateBreakpoint(Breakpoint teavmBreakpoint) {
-        IBreakpoint breakpoint = breakpointBackMap.get(teavmBreakpoint);
+        IJavaLineBreakpoint breakpoint = breakpointBackMap.get(teavmBreakpoint);
         if (breakpoint != null) {
             try {
                 if (!teavmBreakpoint.isValid() && teavmDebugger.isAttached()) {
-                    breakpoint.getMarker().setAttribute(IMarker.PROBLEM,
-                            "Can't transfer this breakpoint to browser");
-                    breakpoint.getMarker().setAttribute(IMarker.SEVERITY, IMarker.SEVERITY_WARNING);
+                    breakpoint.getMarker().setAttribute("org.eclipse.jdt.debug.core.installCount", 0);
                 } else {
-                    breakpoint.getMarker().setAttribute(IMarker.PROBLEM, null);
-                    breakpoint.getMarker().setAttribute(IMarker.SEVERITY, null);
+                    breakpoint.getMarker().setAttribute("org.eclipse.jdt.debug.core.installCount", 1);
                 }
+                DebugPlugin.getDefault().getBreakpointManager().fireBreakpointChanged(breakpoint);
             } catch (CoreException e) {
                 throw new RuntimeException(e);
             }
