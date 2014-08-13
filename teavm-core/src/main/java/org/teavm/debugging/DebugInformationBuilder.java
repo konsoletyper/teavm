@@ -348,7 +348,7 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
                 IntegerArray linesChunk = new IntegerArray(1);
                 IntegerArray filesChunk = new IntegerArray(1);
                 int ptr = start.get(i);
-                while (ptr > 0) {
+                while (ptr >= 0) {
                     linesChunk.add(lines.get(ptr));
                     filesChunk.add(files.get(ptr));
                     ptr = next.get(ptr);
@@ -361,7 +361,7 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
                 int distinctSize = 0;
                 for (int j = 0; j < pairs.length; ++j) {
                     long pair = pairs[j];
-                    if (distinctSize == 0 || pair != pairs[distinctSize]) {
+                    if (distinctSize == 0 || pair != pairs[distinctSize - 1]) {
                         pairs[distinctSize++] = pair;
                         filesData.add((int)(pair >>> 32));
                         linesData.add((int)pair);

@@ -325,10 +325,9 @@ public class DebugInformation {
         FileDescription build() {
             FileDescription description = new FileDescription();
             description.generatedLocationData = new int[generatedLocationData.size()];
-            description.generatedLocationStart = new int[generatedLocationStart.size()];
+            description.generatedLocationStart = new int[generatedLocationStart.size() + 1];
             int current = 0;
             for (int i = 0; i < generatedLocationStart.size(); ++i) {
-                description.generatedLocationStart[i] = current;
                 current += generatedLocationSize.get(i) * 2;
                 int j = current;
                 int ptr = generatedLocationStart.get(i);
@@ -336,6 +335,7 @@ public class DebugInformation {
                     description.generatedLocationData[--j] = generatedLocationData.get(ptr);
                     ptr = generatedLocationPointers.get(ptr);
                 }
+                description.generatedLocationStart[i + 1] = current;
             }
             return description;
         }
