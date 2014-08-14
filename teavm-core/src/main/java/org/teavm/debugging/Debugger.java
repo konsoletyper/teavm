@@ -148,11 +148,13 @@ public class Debugger {
     }
 
     public Breakpoint createBreakpoint(SourceLocation location) {
-        Breakpoint breakpoint = new Breakpoint(this, location);
-        breakpoints.put(breakpoint, dummyObject);
-        updateInternalBreakpoints(breakpoint);
-        updateBreakpointStatus(breakpoint, false);
-        return breakpoint;
+        synchronized (breakpoints) {
+            Breakpoint breakpoint = new Breakpoint(this, location);
+            breakpoints.put(breakpoint, dummyObject);
+            updateInternalBreakpoints(breakpoint);
+            updateBreakpointStatus(breakpoint, false);
+            return breakpoint;
+        }
     }
 
     public Set<Breakpoint> getBreakpoints() {
@@ -160,6 +162,9 @@ public class Debugger {
     }
 
     void updateInternalBreakpoints(Breakpoint breakpoint) {
+        if (breakpoint.isDestroyed()) {
+            return;
+        }
         for (JavaScriptBreakpoint jsBreakpoint : breakpoint.jsBreakpoints) {
             breakpointMap.remove(jsBreakpoint);
             jsBreakpoint.destroy();
@@ -263,9 +268,11 @@ public class Debugger {
     }
 
     private void updateBreakpoints() {
-        for (Breakpoint breakpoint : breakpoints.keySet()) {
-            updateInternalBreakpoints(breakpoint);
-            updateBreakpointStatus(breakpoint, true);
+        synchronized (breakpointMap) {
+            for (Breakpoint breakpoint : breakpoints.keySet()) {
+                updateInternalBreakpoints(breakpoint);
+                updateBreakpointStatus(breakpoint, true);
+            }
         }
     }
 
@@ -298,9 +305,11 @@ public class Debugger {
     }
 
     private void fireAttached() {
-        for (Breakpoint breakpoint : breakpoints.keySet()) {
-            updateInternalBreakpoints(breakpoint);
-            updateBreakpointStatus(breakpoint, false);
+        synchronized (breakpointMap) {
+            for (Breakpoint breakpoint : breakpoints.keySet()) {
+                updateInternalBreakpoints(breakpoint);
+                updateBreakpointStatus(breakpoint, false);
+            }
         }
         for (DebuggerListener listener : getListeners()) {
             listener.attached();

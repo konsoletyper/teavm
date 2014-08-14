@@ -15,6 +15,8 @@ import org.teavm.debugging.Breakpoint;
 import org.teavm.debugging.Debugger;
 import org.teavm.debugging.DebuggerListener;
 import org.teavm.debugging.JavaScriptDebugger;
+import static org.teavm.eclipse.debugger.TeaVMDebugConstants.*;
+
 
 /**
  *
@@ -80,10 +82,10 @@ public class TeaVMDebugTarget implements IDebugTarget, IStep {
         IJavaLineBreakpoint breakpoint = breakpointBackMap.get(teavmBreakpoint);
         if (breakpoint != null) {
             try {
-                if (!teavmBreakpoint.isValid() && teavmDebugger.isAttached()) {
-                    breakpoint.getMarker().setAttribute("org.eclipse.jdt.debug.core.installCount", 0);
+                if (!teavmBreakpoint.isValid() || !teavmDebugger.isAttached()) {
+                    breakpoint.getMarker().setAttribute(JAVA_BREAKPOINT_INSTALL_COUNT, 0);
                 } else {
-                    breakpoint.getMarker().setAttribute("org.eclipse.jdt.debug.core.installCount", 1);
+                    breakpoint.getMarker().setAttribute(JAVA_BREAKPOINT_INSTALL_COUNT, 1);
                 }
                 DebugPlugin.getDefault().getBreakpointManager().fireBreakpointChanged(breakpoint);
             } catch (CoreException e) {
@@ -140,8 +142,6 @@ public class TeaVMDebugTarget implements IDebugTarget, IStep {
 
     @Override
     public void breakpointChanged(IBreakpoint breakpoint, IMarkerDelta markerDelta) {
-        breakpointRemoved(breakpoint, markerDelta);
-        breakpointAdded(breakpoint);
     }
 
     @Override
@@ -200,7 +200,7 @@ public class TeaVMDebugTarget implements IDebugTarget, IStep {
 
     @Override
     public String getModelIdentifier() {
-        return "org.teavm.eclipse.debugger";
+        return DEBUG_TARGET_ID;
     }
 
     @Override

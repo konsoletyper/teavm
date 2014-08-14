@@ -111,7 +111,7 @@ public class TeaVMStackFrame implements IStackFrame {
 
     @Override
     public String getModelIdentifier() {
-        return thread.getModelIdentifier() + ".thread";
+        return TeaVMDebugConstants.STACK_FRAME_ID;
     }
 
     @Override

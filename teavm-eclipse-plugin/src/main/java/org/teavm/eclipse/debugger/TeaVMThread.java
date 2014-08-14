@@ -164,7 +164,7 @@ public class TeaVMThread implements IThread {
 
     @Override
     public String getModelIdentifier() {
-        return debugTarget.getModelIdentifier();
+        return TeaVMDebugConstants.THREAD_ID;
     }
 
     @Override

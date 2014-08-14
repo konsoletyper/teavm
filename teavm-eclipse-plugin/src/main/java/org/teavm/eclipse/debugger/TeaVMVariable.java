@@ -7,6 +7,7 @@ import org.eclipse.debug.core.model.IDebugTarget;
 import org.eclipse.debug.core.model.IValue;
 import org.eclipse.debug.core.model.IVariable;
 import org.teavm.debugging.Variable;
+import org.teavm.eclipse.TeaVMEclipsePlugin;
 
 /**
  *
@@ -25,12 +26,12 @@ public class TeaVMVariable implements IVariable {
 
     @Override
     public void setValue(IValue arg0) throws DebugException {
-        throw new DebugException(new Status(Status.ERROR, "org.teavm.eclipse", "Can't set value"));
+        throw new DebugException(new Status(Status.ERROR, TeaVMEclipsePlugin.ID, "Can't set value"));
     }
 
     @Override
     public void setValue(String arg0) throws DebugException {
-        throw new DebugException(new Status(Status.ERROR, "org.teavm.eclipse", "Can't set value"));
+        throw new DebugException(new Status(Status.ERROR, TeaVMEclipsePlugin.ID, "Can't set value"));
     }
 
     @Override
@@ -60,7 +61,7 @@ public class TeaVMVariable implements IVariable {
 
     @Override
     public String getModelIdentifier() {
-        return "org.teavm.eclipse.debugger.variable";
+        return TeaVMDebugConstants.VARIABLE_ID;
     }
 
     @SuppressWarnings("rawtypes")

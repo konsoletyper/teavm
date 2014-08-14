@@ -34,8 +34,8 @@
   </extension>
   <extension point="org.eclipse.debug.ui.debugModelPresentations">
     <debugModelPresentation
-        class="org.teavm.eclipse.debugger.TeaVMDebugModelPresentation"
-        id="org.teavm.eclipse.debugger.thread">
+        class="org.teavm.eclipse.debugger.ui.TeaVMDebugModelPresentation"
+        id="org.teavm.eclipse.debugger.frame">
     </debugModelPresentation>
   </extension>
 </plugin>

@@ -20,4 +20,6 @@ public class TeaVMEclipsePlugin extends Plugin {
     public static TeaVMEclipsePlugin getDefault() {
         return defaultInstance;
     }
+
+    public static final String ID = "org.teavm.eclipse";
 }

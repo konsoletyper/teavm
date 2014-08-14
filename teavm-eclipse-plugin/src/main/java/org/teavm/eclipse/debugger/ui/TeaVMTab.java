@@ -7,7 +7,6 @@ import org.eclipse.debug.ui.AbstractLaunchConfigurationTab;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
-import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
@@ -23,6 +22,7 @@ public class TeaVMTab extends AbstractLaunchConfigurationTab {
     @Override
     public void createControl(Composite container) {
         Composite root = new Composite(container, SWT.NONE);
+        setControl(root);
         GridLayout layout = new GridLayout();
         layout.verticalSpacing = 6;
         layout.numColumns = 2;
@@ -31,10 +31,8 @@ public class TeaVMTab extends AbstractLaunchConfigurationTab {
 
         Label portLabel = new Label(root, SWT.NONE);
         portLabel.setText("&Port");
-        portLabel.setLayoutData(new GridData(GridData.BEGINNING));
 
         portField = new Text(root, SWT.SINGLE | SWT.BORDER);
-        portField.setLayoutData(new GridData(GridData.FILL_HORIZONTAL));
         portField.addModifyListener(new ModifyListener() {
             @Override public void modifyText(ModifyEvent event) {
                 updateLaunchConfigurationDialog();

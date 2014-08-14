@@ -34,7 +34,7 @@ public class TeaVMValue implements IValue {
 
     @Override
     public String getModelIdentifier() {
-        return "org.teavm.eclipse.debugger.value";
+        return TeaVMDebugConstants.VALUE_ID;
     }
 
     @SuppressWarnings("rawtypes")

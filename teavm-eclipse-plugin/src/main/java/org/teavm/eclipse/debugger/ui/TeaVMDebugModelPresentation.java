@@ -1,4 +1,4 @@
-package org.teavm.eclipse.debugger;
+package org.teavm.eclipse.debugger.ui;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.debug.core.model.ILineBreakpoint;
@@ -9,6 +9,7 @@ import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.part.FileEditorInput;
+import org.teavm.eclipse.debugger.TeaVMStackFrame;
 
 /**
  *
