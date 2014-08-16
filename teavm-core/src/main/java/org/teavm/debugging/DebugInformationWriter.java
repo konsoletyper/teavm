@@ -147,18 +147,21 @@ class DebugInformationWriter {
     }
 
     private void writeCFG(DebugInformation.CFG mapping, int fileIndex) throws IOException {
-        writeUnsignedNumber(mapping.offsets.length - 1);
+        writeUnsignedNumber(mapping.lines.length);
+        int lastLine = 0;
         for (int i = 0; i < mapping.offsets.length - 1; ++i) {
             int start = mapping.offsets[i];
             int sz = mapping.offsets[i + 1] - start;
             if (sz == 0) {
+                continue;
+            }
+            writeUnsignedNumber(i - lastLine);
+            if (sz == 1 && mapping.lines[start] == -1) {
                 writeUnsignedNumber(0);
-            } else if (sz == 1 && mapping.lines[start] == -1) {
-                writeUnsignedNumber(1);
             } else if (sz == 1 && mapping.lines[start] == i + 1 && mapping.files[start] == fileIndex) {
-                writeUnsignedNumber(2);
+                writeUnsignedNumber(1);
             } else {
-                writeUnsignedNumber(2 + sz);
+                writeUnsignedNumber(1 + sz);
                 int[] lines = Arrays.copyOfRange(mapping.lines, start, start + sz);
                 int[] files = Arrays.copyOfRange(mapping.files, start, start + sz);
                 int last = i;
@@ -169,6 +172,7 @@ class DebugInformationWriter {
                     last = succ;
                 }
             }
+            lastLine = i;
         }
     }
 

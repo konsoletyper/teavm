@@ -93,35 +93,35 @@ class DebugInformationReader {
     }
 
     private DebugInformation.CFG readCFG(int index) throws IOException {
-        int[] offsets = new int[readUnsignedNumber() + 1];
-        IntegerArray lines = new IntegerArray(1);
-        IntegerArray files = new IntegerArray(1);
-        for (int i = 0; i < offsets.length - 1; ++i) {
-            offsets[i] = lines.size();
+        IntegerArray offsets = new IntegerArray(1);
+        int[] lines = new int[readUnsignedNumber()];
+        int[] files = new int[lines.length];
+        int i = 0;
+        int line = 0;
+        offsets.add(0);
+        while (i < lines.length) {
+            line += readUnsignedNumber();
             int sz = readUnsignedNumber();
             if (sz == 0) {
-                continue;
+                lines[i] = -1;
+                files[i++] = -1;
             } else if (sz == 1) {
-                lines.add(-1);
-                files.add(-1);
-            } else if (sz == 2) {
-                lines.add(i + 1);
-                files.add(index);
-            } else {
-                sz -= 2;
-                int last = i;
-                for (int j = 0; j < sz; ++j) {
-                    last += readNumber();
-                    lines.add(last);
-                    files.add(index + readNumber());
-                }
+                lines[i] = line + 1;
+                files[i++] = index;
             }
+            sz -= 1;
+            int last = line;
+            for (int j = 0; j < sz; ++j) {
+                last += readNumber();
+                lines[i] = last;
+                files[i++] = index + readNumber();
+            }
+            offsets.add(i);
         }
-        offsets[offsets.length - 1] = lines.size();
         DebugInformation.CFG cfg = new DebugInformation.CFG();
-        cfg.offsets = offsets;
-        cfg.lines = lines.getAll();
-        cfg.files = files.getAll();
+        cfg.offsets = offsets.getAll();
+        cfg.lines = lines;
+        cfg.files = files;
         return cfg;
     }
 
