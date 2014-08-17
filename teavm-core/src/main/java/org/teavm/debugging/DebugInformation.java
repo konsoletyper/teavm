@@ -39,11 +39,14 @@ public class DebugInformation {
     Map<String, Integer> methodMap;
     String[] variableNames;
     Map<String, Integer> variableNameMap;
+    long[] exactMethods;
+    Map<Long, Integer> exactMethodMap;
     FileDescription[] fileDescriptions;
     Mapping fileMapping;
     Mapping classMapping;
     Mapping methodMapping;
     Mapping lineMapping;
+    Mapping callSiteMapping;
     MultiMapping[] variableMappings;
     CFG[] controlFlowGraphs;
     List<ClassMetadata> classesMetadata;
@@ -170,6 +173,25 @@ public class DebugInformation {
         return null;
     }
 
+    public MethodReference getCallSite(GeneratedLocation location) {
+        int keyIndex = indexByKey(callSiteMapping, location);
+        if (keyIndex < 0) {
+            return null;
+        }
+        int valueIndex = callSiteMapping.values[keyIndex];
+        if (valueIndex < 0) {
+            return null;
+        }
+        long item = exactMethods[valueIndex];
+        int classIndex = (int)(item >> 32);
+        int methodIndex = (int)item;
+        return new MethodReference(classNames[classIndex], MethodDescriptor.parse(methods[methodIndex]));
+    }
+
+    public MethodReference getCallSite(int line, int column) {
+        return getCallSite(new GeneratedLocation(line, column));
+    }
+
     private <T> T componentByKey(Mapping mapping, T[] values, GeneratedLocation location) {
         int keyIndex = indexByKey(mapping, location);
         int valueIndex = keyIndex >= 0 ? mapping.values[keyIndex] : -1;
@@ -216,6 +238,10 @@ public class DebugInformation {
         fieldMap = mapArray(fields);
         methodMap = mapArray(methods);
         variableNameMap = mapArray(variableNames);
+        exactMethodMap = new HashMap<>();
+        for (int i = 0; i < exactMethods.length; ++i) {
+            exactMethodMap.put(exactMethods[i], i);
+        }
     }
 
     private Map<String, Integer> mapArray(String[] array) {

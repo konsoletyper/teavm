@@ -17,6 +17,7 @@ package org.teavm.debugging;
 
 import org.teavm.codegen.LocationProvider;
 import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodReference;
 
 /**
  *
@@ -32,6 +33,8 @@ public interface DebugInformationEmitter {
     void emitClass(String className);
 
     void emitVariable(String[] sourceNames, String generatedName);
+
+    void emitCallSite(MethodReference method);
 
     void addClass(String className, String parentName);
 

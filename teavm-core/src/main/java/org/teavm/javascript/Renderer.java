@@ -50,6 +50,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     private ServiceRepository services;
     private DebugInformationEmitter debugEmitter = new DummyDebugInformationEmitter();
     private Deque<NodeLocation> locationStack = new ArrayDeque<>();
+    private Deque<MethodReference> callSiteStack = new ArrayDeque<>();
 
     private static class InjectorHolder {
         public final Injector injector;
@@ -591,6 +592,17 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         } else {
             debugEmitter.emitLocation(null, -1);
         }
+    }
+
+    private void pushCallSite(MethodReference method) {
+        callSiteStack.push(method);
+        debugEmitter.emitCallSite(method);
+    }
+
+    private void popCallSite() {
+        callSiteStack.pop();
+        MethodReference method = callSiteStack.peek();
+        debugEmitter.emitCallSite(method);
     }
 
     @Override
@@ -1284,6 +1296,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             if (expr.getLocation() != null) {
                 pushLocation(expr.getLocation());
             }
+            pushCallSite(expr.getMethod());
             Injector injector = getInjector(expr.getMethod());
             if (injector != null) {
                 injector.generate(new InjectorContextImpl(expr.getArguments()), expr.getMethod());
@@ -1334,6 +1347,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                         break;
                 }
             }
+            popCallSite();
             if (expr.getLocation() != null) {
                 popLocation();
             }

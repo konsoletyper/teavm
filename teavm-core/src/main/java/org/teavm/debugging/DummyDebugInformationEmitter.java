@@ -17,6 +17,7 @@ package org.teavm.debugging;
 
 import org.teavm.codegen.LocationProvider;
 import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodReference;
 
 
 /**
@@ -38,6 +39,10 @@ public class DummyDebugInformationEmitter implements DebugInformationEmitter {
 
     @Override
     public void emitVariable(String[] sourceName, String generatedName) {
+    }
+
+    @Override
+    public void emitCallSite(MethodReference method) {
     }
 
     @Override

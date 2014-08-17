@@ -19,6 +19,7 @@ import java.util.*;
 import org.teavm.codegen.LocationProvider;
 import org.teavm.common.IntegerArray;
 import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodReference;
 
 /**
  *
@@ -32,10 +33,13 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
     private MappedList fields = new MappedList();
     private MappedList methods = new MappedList();
     private MappedList variableNames = new MappedList();
+    private List<Long> exactMethods = new ArrayList<>();
+    private Map<Long, Integer> exactMethodMap = new HashMap<>();
     private Mapping fileMapping = new Mapping();
     private Mapping lineMapping = new Mapping();
     private Mapping classMapping = new Mapping();
     private Mapping methodMapping = new Mapping();
+    private Mapping callSiteMapping = new Mapping();
     private Map<Integer, MultiMapping> variableMappings = new HashMap<>();
     private MethodDescriptor currentMethod;
     private String currentClass;
@@ -105,6 +109,24 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
     }
 
     @Override
+    public void emitCallSite(MethodReference method) {
+        if (method != null) {
+            int methodIndex = methods.index(method.getDescriptor().toString());
+            int classIndex = classes.index(method.getClassName());
+            long fullIndex = (((long)classIndex << 32) | methodIndex) + 1;
+            Integer exactMethodIndex = exactMethodMap.get(fullIndex);
+            if (exactMethodIndex == null) {
+                exactMethodIndex = exactMethods.size();
+                exactMethodMap.put(fullIndex, exactMethodIndex);
+                exactMethods.add(fullIndex);
+            }
+            callSiteMapping.add(locationProvider, exactMethodIndex);
+        } else {
+            callSiteMapping.add(locationProvider, -1);
+        }
+    }
+
+    @Override
     public void addClass(String className, String parentName) {
         int classIndex = classes.index(className);
         int parentIndex = classes.index(parentName);
@@ -152,11 +174,17 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
             debugInformation.fields = fields.getItems();
             debugInformation.methods = methods.getItems();
             debugInformation.variableNames = variableNames.getItems();
+            debugInformation.exactMethods = new long[exactMethods.size()];
+            for (int i = 0; i < exactMethods.size(); ++i) {
+                debugInformation.exactMethods[i] = exactMethods.get(i);
+            }
+            debugInformation.exactMethodMap = new HashMap<>(exactMethodMap);
 
             debugInformation.fileMapping = fileMapping.build();
             debugInformation.lineMapping = lineMapping.build();
             debugInformation.classMapping = classMapping.build();
             debugInformation.methodMapping = methodMapping.build();
+            debugInformation.callSiteMapping = callSiteMapping.build();
             debugInformation.variableMappings = new DebugInformation.MultiMapping[variableNames.list.size()];
             for (int var : variableMappings.keySet()) {
                 MultiMapping mapping = variableMappings.get(var);

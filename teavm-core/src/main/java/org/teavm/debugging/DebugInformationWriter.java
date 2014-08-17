@@ -41,11 +41,13 @@ class DebugInformationWriter {
         writeStringArray(debugInfo.fields);
         writeStringArray(debugInfo.methods);
         writeStringArray(debugInfo.variableNames);
+        writeExactMethods(debugInfo.exactMethods);
 
         writeMapping(debugInfo.fileMapping);
         writeMapping(debugInfo.lineMapping);
         writeMapping(debugInfo.classMapping);
         writeMapping(debugInfo.methodMapping);
+        writeMapping(debugInfo.callSiteMapping);
         writeVariableMappings(debugInfo);
         writeClassMetadata(debugInfo.classesMetadata);
         writeCFGs(debugInfo);
@@ -94,6 +96,21 @@ class DebugInformationWriter {
         writeUnsignedNumber(array.length);
         for (int i = 0; i < array.length; ++i) {
             writeString(array[i]);
+        }
+    }
+
+    private void writeExactMethods(long[] array) throws IOException {
+        int lastClass = 0;
+        int lastMethod = 0;
+        writeUnsignedNumber(array.length);
+        for (int i = 0; i < array.length; ++i) {
+            long item = array[i];
+            int classIndex = (int)(item >> 32);
+            int methodIndex = (int)item;
+            writeNumber(classIndex - lastClass);
+            lastClass = classIndex;
+            writeNumber(methodIndex - lastMethod);
+            lastMethod = methodIndex;
         }
     }
 

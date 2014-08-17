@@ -41,10 +41,12 @@ class DebugInformationReader {
         debugInfo.fields = readStrings();
         debugInfo.methods = readStrings();
         debugInfo.variableNames = readStrings();
+        debugInfo.exactMethods = readExactMethods();
         debugInfo.fileMapping = readMapping();
         debugInfo.lineMapping = readMapping();
         debugInfo.classMapping = readMapping();
         debugInfo.methodMapping = readMapping();
+        debugInfo.callSiteMapping = readMapping();
         debugInfo.variableMappings = readVariableMappings(debugInfo.variableNames.length);
         debugInfo.classesMetadata = readClassesMetadata(debugInfo.classNames.length);
         debugInfo.controlFlowGraphs = readCFGs(debugInfo.fileNames.length);
@@ -183,6 +185,18 @@ class DebugInformationReader {
             array[i] = readString();
         }
         return array;
+    }
+
+    private long[] readExactMethods() throws IOException {
+        long[] result = new long[readUnsignedNumber()];
+        int lastClass = 0;
+        int lastMethod = 0;
+        for (int i = 0; i < result.length; ++i) {
+            lastClass += readNumber();
+            lastMethod += readNumber();
+            result[i] = ((long)lastClass << 32) | lastMethod;
+        }
+        return result;
     }
 
     private int[] readRle() throws IOException {
