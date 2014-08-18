@@ -212,9 +212,7 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
                 }
             }
             debugInformation.controlFlowGraphs = cfgs;
-
-            debugInformation.rebuildFileDescriptions();
-            debugInformation.rebuildMaps();
+            debugInformation.rebuild();
         }
         return debugInformation;
     }

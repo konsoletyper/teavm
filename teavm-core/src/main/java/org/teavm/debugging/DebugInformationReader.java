@@ -50,8 +50,7 @@ class DebugInformationReader {
         debugInfo.variableMappings = readVariableMappings(debugInfo.variableNames.length);
         debugInfo.classesMetadata = readClassesMetadata(debugInfo.classNames.length);
         debugInfo.controlFlowGraphs = readCFGs(debugInfo.fileNames.length);
-        debugInfo.rebuildFileDescriptions();
-        debugInfo.rebuildMaps();
+        debugInfo.rebuild();
         return debugInfo;
     }
 

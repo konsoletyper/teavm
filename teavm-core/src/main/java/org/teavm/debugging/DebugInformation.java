@@ -50,6 +50,8 @@ public class DebugInformation {
     MultiMapping[] variableMappings;
     CFG[] controlFlowGraphs;
     List<ClassMetadata> classesMetadata;
+    MethodEntrances methodEntrances;
+    MethodTree methodTree;
 
     public String[] getCoveredSourceFiles() {
         return fileNames.clone();
@@ -192,6 +194,23 @@ public class DebugInformation {
         return getCallSite(new GeneratedLocation(line, column));
     }
 
+    public GeneratedLocation[] getMethodEntrances(MethodReference methodRef) {
+        Integer classIndex = classNameMap.get(methodRef.getClassName());
+        if (classIndex == null) {
+            return new GeneratedLocation[0];
+        }
+        Integer methodIndex = methodMap.get(methodRef.getDescriptor().toString());
+        if (methodIndex == null) {
+            return new GeneratedLocation[0];
+        }
+        long exact = ((long)classIndex << 32) | methodIndex;
+        Integer index = exactMethodMap.get(exact);
+        if (index == null) {
+            return new GeneratedLocation[0];
+        }
+        return methodEntrances.getEntrances(index);
+    }
+
     private <T> T componentByKey(Mapping mapping, T[] values, GeneratedLocation location) {
         int keyIndex = indexByKey(mapping, location);
         int valueIndex = keyIndex >= 0 ? mapping.values[keyIndex] : -1;
@@ -230,6 +249,12 @@ public class DebugInformation {
     public static DebugInformation read(InputStream input) throws IOException {
         DebugInformationReader reader = new DebugInformationReader(input);
         return reader.read();
+    }
+
+    void rebuild() {
+        rebuildMaps();
+        rebuildFileDescriptions();
+        rebuildEntrances();
     }
 
     void rebuildMaps() {
@@ -283,6 +308,107 @@ public class DebugInformation {
             ++lineIndex;
         }
         fileDescriptions = builder.build();
+    }
+
+    void rebuildEntrances() {
+        methodEntrances = new MethodEntrancesBuilder().build();
+    }
+
+    void rebuildMethodTree() {
+        for (int i = 0; i < classesMetadata.size(); ++i) {
+            ClassMetadata clsData = classesMetadata.get(i);
+            clsData.parentId;
+        }
+    }
+
+    class MethodEntrancesBuilder {
+        int[] start;
+        IntegerArray data;
+        IntegerArray next;
+        int methodIndex;
+        int classIndex;
+
+        public MethodEntrances build() {
+            methodIndex = -1;
+            classIndex = -1;
+            start = new int[exactMethods.length];
+            Arrays.fill(start, -1);
+            data = new IntegerArray(0);
+            next = new IntegerArray(0);
+            int methodMappingIndex = 0;
+            int classMappingIndex = 0;
+            while (methodMappingIndex < methodMapping.lines.length &&
+                    classMappingIndex < classMapping.lines.length) {
+                GeneratedLocation methodLoc = new GeneratedLocation(methodMapping.lines[methodMappingIndex],
+                        methodMapping.columns[methodMappingIndex]);
+                GeneratedLocation classLoc = new GeneratedLocation(classMapping.lines[classMappingIndex],
+                        classMapping.columns[classMappingIndex]);
+                int cmp = methodLoc.compareTo(classLoc);
+                if (cmp < 0) {
+                    methodIndex = methodMapping.values[methodMappingIndex++];
+                    addMethodEntrance(methodLoc);
+                } else if (cmp > 0) {
+                    classIndex = classMapping.values[classMappingIndex++];
+                    addMethodEntrance(classLoc);
+                } else {
+                    methodIndex = methodMapping.values[methodMappingIndex++];
+                    classIndex = classMapping.values[classMappingIndex++];
+                    addMethodEntrance(classLoc);
+                }
+            }
+            while (methodMappingIndex < methodMapping.lines.length) {
+                GeneratedLocation methodLoc = new GeneratedLocation(methodMapping.lines[methodMappingIndex],
+                        methodMapping.columns[methodMappingIndex]);
+                methodIndex = methodMapping.values[methodMappingIndex++];
+                addMethodEntrance(methodLoc);
+            }
+            while (classMappingIndex < classMapping.lines.length) {
+                GeneratedLocation classLoc = new GeneratedLocation(classMapping.lines[classMappingIndex],
+                        classMapping.columns[classMappingIndex]);
+                classIndex = classMapping.values[classMappingIndex++];
+                addMethodEntrance(classLoc);
+            }
+            return assemble();
+        }
+
+        private void addMethodEntrance(GeneratedLocation location) {
+            int lineIndex = indexByKey(lineMapping, location);
+            if (lineIndex < 0) {
+                return;
+            }
+            if (lineMapping.values[lineIndex] < 0) {
+                return;
+            }
+            long exactMethod = ((long)classIndex << 32) | methodIndex;
+            Integer exactMethodIndex = exactMethodMap.get(exactMethod);
+            if (exactMethodIndex == null) {
+                return;
+            }
+            int ptr = start[exactMethodIndex];
+            start[exactMethodIndex] = data.size();
+            next.add(ptr);
+            data.add(location.getColumn());
+            ptr = data.size();
+            next.add(ptr);
+            data.add(location.getLine());
+            start[exactMethodIndex] = data.size();
+        }
+
+        private MethodEntrances assemble() {
+            MethodEntrances entrances = new MethodEntrances();
+            entrances.offsets = new int[start.length + 1];
+            entrances.data = new int[data.size()];
+            int index = 0;
+            for (int i = 0; i < start.length; ++i) {
+                int ptr = start[i];
+                while (ptr != -1) {
+                    entrances.data[index++] = data.get(ptr);
+                    ptr = next.get(ptr);
+                }
+                entrances.offsets[i + 1] = index;
+            }
+            return entrances;
+        }
     }
 
     static class FileDescriptionBuilder {
@@ -451,5 +577,45 @@ public class DebugInformation {
         int[] lines;
         int[] files;
         int[] offsets;
+    }
+
+    static class MethodEntrances {
+        int[] data;
+        int[] offsets;
+
+        public GeneratedLocation[] getEntrances(int index) {
+            if (index < 0 || index > offsets.length - 1) {
+                return new GeneratedLocation[0];
+            }
+            int start = offsets[index];
+            int end = offsets[index + 1];
+            GeneratedLocation[] result = new GeneratedLocation[(end - start) / 2];
+            for (int i = 0; i < result.length; ++i) {
+                result[i] = new GeneratedLocation(data[start + i * 2], data[start + i * 2 + 1]);
+            }
+            return result;
+        }
+    }
+
+    class MethodTree {
+        int[] data;
+        int[] offsets;
+
+        public MethodReference[] getOverridingMethods(int index) {
+            if (index < 0 || index > offsets.length - 1) {
+                return new MethodReference[0];
+            }
+            int start = offsets[index];
+            int end = offsets[index + 1];
+            MethodReference[] references = new MethodReference[end - start];
+            for (int i = 0; i < references.length; ++i) {
+                long item = exactMethods[data[start + i]];
+                int classIndex = (int)(item >> 32);
+                int methodIndex = (int)item;
+                references[i] = new MethodReference(classNames[classIndex],
+                        MethodDescriptor.parse(methods[methodIndex]));
+            }
+            return references;
+        }
     }
 }
