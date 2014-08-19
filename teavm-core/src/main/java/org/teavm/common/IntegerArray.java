@@ -40,6 +40,10 @@ public class IntegerArray {
         return array;
     }
 
+    public void clear() {
+        sz = 0;
+    }
+
     public void optimize() {
         if (sz > data.length) {
             data = Arrays.copyOf(data, sz);

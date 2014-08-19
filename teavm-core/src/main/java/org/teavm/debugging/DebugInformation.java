@@ -136,6 +136,9 @@ public class DebugInformation {
         if (cfg == null) {
             return null;
         }
+        if (location.getLine() >= cfg.offsets.length - 1) {
+            return null;
+        }
         int start = cfg.offsets[location.getLine()];
         int end = cfg.offsets[location.getLine() + 1];
         if (end - start == 1 && cfg.offsets[start] == -1) {
@@ -184,31 +187,78 @@ public class DebugInformation {
         if (valueIndex < 0) {
             return null;
         }
-        long item = exactMethods[valueIndex];
-        int classIndex = (int)(item >> 32);
-        int methodIndex = (int)item;
-        return new MethodReference(classNames[classIndex], MethodDescriptor.parse(methods[methodIndex]));
+        return getExactMethod(valueIndex);
     }
 
     public MethodReference getCallSite(int line, int column) {
         return getCallSite(new GeneratedLocation(line, column));
     }
 
+    public GeneratedLocation[] getCallSiteEntrances(GeneratedLocation location) {
+        MethodReference method = getCallSite(location);
+        if (method == null) {
+            return null;
+        }
+        Set<GeneratedLocation> locations = new HashSet<>();
+        for (MethodReference overriding : getOverridingMethods(method)) {
+            locations.addAll(Arrays.asList(getMethodEntrances(overriding)));
+        }
+        return locations.toArray(new GeneratedLocation[0]);
+    }
+
     public GeneratedLocation[] getMethodEntrances(MethodReference methodRef) {
-        Integer classIndex = classNameMap.get(methodRef.getClassName());
-        if (classIndex == null) {
-            return new GeneratedLocation[0];
-        }
-        Integer methodIndex = methodMap.get(methodRef.getDescriptor().toString());
-        if (methodIndex == null) {
-            return new GeneratedLocation[0];
-        }
-        long exact = ((long)classIndex << 32) | methodIndex;
-        Integer index = exactMethodMap.get(exact);
+        Integer index = getExactMethodIndex(methodRef);
         if (index == null) {
             return new GeneratedLocation[0];
         }
         return methodEntrances.getEntrances(index);
+    }
+
+    private Integer getExactMethodIndex(MethodReference methodRef) {
+        Integer classIndex = classNameMap.get(methodRef.getClassName());
+        if (classIndex == null) {
+            return null;
+        }
+        Integer methodIndex = methodMap.get(methodRef.getDescriptor().toString());
+        if (methodIndex == null) {
+            return null;
+        }
+        return getExactMethodIndex(classIndex, methodIndex);
+    }
+
+    public MethodReference getExactMethod(int index) {
+        long item = exactMethods[index];
+        int classIndex = (int)(item >> 32);
+        int methodIndex = (int)item;
+        return new MethodReference(classNames[classIndex], MethodDescriptor.parse(methods[methodIndex]));
+    }
+
+    public MethodReference[] getDirectOverridingMethods(MethodReference methodRef) {
+        Integer methodIndex = getExactMethodIndex(methodRef);
+        if (methodIndex == null) {
+            return new MethodReference[0];
+        }
+        int start = methodTree.offsets[methodIndex];
+        int end = methodTree.offsets[methodIndex + 1];
+        MethodReference[] result = new MethodReference[end - start];
+        for (int i = 0; i < result.length; ++i) {
+            result[i] = getExactMethod(methodTree.data[i]);
+        }
+        return result;
+    }
+
+    public MethodReference[] getOverridingMethods(MethodReference methodRef) {
+        Set<MethodReference> overridingMethods = new HashSet<>();
+        getOverridingMethods(methodRef, overridingMethods);
+        return overridingMethods.toArray(new MethodReference[0]);
+    }
+
+    private void getOverridingMethods(MethodReference methodRef, Set<MethodReference> overridingMethods) {
+        if (overridingMethods.add(methodRef)) {
+            for (MethodReference overridingMethod : getDirectOverridingMethods(methodRef)) {
+                getOverridingMethods(overridingMethod, overridingMethods);
+            }
+        }
     }
 
     private <T> T componentByKey(Mapping mapping, T[] values, GeneratedLocation location) {
@@ -255,6 +305,7 @@ public class DebugInformation {
         rebuildMaps();
         rebuildFileDescriptions();
         rebuildEntrances();
+        rebuildMethodTree();
     }
 
     void rebuildMaps() {
@@ -315,10 +366,76 @@ public class DebugInformation {
     }
 
     void rebuildMethodTree() {
+        long[] exactMethods = this.exactMethods.clone();
+        Arrays.sort(exactMethods);
+        IntegerArray methods = new IntegerArray(1);
+        int lastClass = -1;
+        for (int i = 0; i < exactMethods.length; ++i) {
+            long exactMethod = exactMethods[i];
+            int classIndex = (int)(exactMethod >> 32);
+            if (classIndex != lastClass) {
+                if (lastClass >= 0) {
+                    ClassMetadata clsData = classesMetadata.get(lastClass);
+                    clsData.methods = methods.getAll();
+                    methods.clear();
+                }
+                lastClass = classIndex;
+            }
+            int methodIndex = (int)exactMethod;
+            methods.add(methodIndex);
+        }
+        if (lastClass >= 0) {
+            ClassMetadata clsData = classesMetadata.get(lastClass);
+            clsData.methods = methods.getAll();
+            Arrays.sort(clsData.methods);
+        }
+
+        int[] start = new int[exactMethods.length];
+        Arrays.fill(start, -1);
+        IntegerArray data = new IntegerArray(1);
+        IntegerArray next = new IntegerArray(1);
         for (int i = 0; i < classesMetadata.size(); ++i) {
             ClassMetadata clsData = classesMetadata.get(i);
-            clsData.parentId;
+            if (clsData.parentId == null || clsData.methods == null) {
+                continue;
+            }
+            for (int methodIndex : clsData.methods) {
+                ClassMetadata superclsData = classesMetadata.get(clsData.parentId);
+                Integer parentId = clsData.parentId;
+                while (superclsData != null) {
+                    if (Arrays.binarySearch(superclsData.methods, methodIndex) >= 0) {
+                        int childMethod = getExactMethodIndex(i, methodIndex);
+                        int parentMethod = getExactMethodIndex(parentId, methodIndex);
+                        int ptr = start[parentMethod];
+                        start[parentMethod] = data.size();
+                        data.add(childMethod);
+                        next.add(ptr);
+                        break;
+                    }
+                    parentId = superclsData.parentId;
+                    superclsData = parentId != null ? classesMetadata.get(parentId) : null;
+                }
+            }
         }
+
+        MethodTree methodTree = new MethodTree();
+        methodTree.offsets = new int[start.length + 1];
+        methodTree.data = new int[data.size()];
+        int index = 0;
+        for (int i = 0; i < start.length; ++i) {
+            int ptr = start[i];
+            while (ptr != -1) {
+                methodTree.data[index++] = data.get(ptr);
+                ptr = next.get(ptr);
+            }
+            methodTree.offsets[i + 1] = index;
+        }
+        this.methodTree = methodTree;
+    }
+
+    private Integer getExactMethodIndex(int classIndex, int methodIndex) {
+        long entry = ((long)classIndex << 32) | methodIndex;
+        return exactMethodMap.get(entry);
     }
 
     class MethodEntrancesBuilder {
@@ -571,6 +688,7 @@ public class DebugInformation {
     static class ClassMetadata {
         Integer parentId;
         Map<Integer, Integer> fieldMap = new HashMap<>();
+        int[] methods;
     }
 
     static class CFG {

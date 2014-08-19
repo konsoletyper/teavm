@@ -101,7 +101,8 @@ class DebugInformationReader {
         int line = 0;
         offsets.add(0);
         while (i < lines.length) {
-            line += readUnsignedNumber();
+            int passedLines = readUnsignedNumber();
+            line += passedLines;
             int sz = readUnsignedNumber();
             if (sz == 0) {
                 lines[i] = -1;
@@ -117,7 +118,9 @@ class DebugInformationReader {
                 lines[i] = last;
                 files[i++] = index + readNumber();
             }
-            offsets.add(i);
+            for (int j = 0; j < passedLines; ++j) {
+                offsets.add(i);
+            }
         }
         DebugInformation.CFG cfg = new DebugInformation.CFG();
         cfg.offsets = offsets.getAll();

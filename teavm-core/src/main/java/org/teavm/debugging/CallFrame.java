@@ -24,11 +24,14 @@ import org.teavm.model.MethodReference;
  * @author Alexey Andreev
  */
 public class CallFrame {
+    JavaScriptLocation originalLocation;
     private SourceLocation location;
     private MethodReference method;
     private Map<String, Variable> variables;
 
-    CallFrame(SourceLocation location, MethodReference method, Map<String, Variable> variables) {
+    CallFrame(JavaScriptLocation originalLocation, SourceLocation location, MethodReference method,
+            Map<String, Variable> variables) {
+        this.originalLocation = originalLocation;
         this.location = location;
         this.method = method;
         this.variables = Collections.unmodifiableMap(variables);

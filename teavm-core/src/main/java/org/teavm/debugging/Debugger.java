@@ -63,7 +63,7 @@ public class Debugger {
     }
 
     public void stepInto() {
-        javaScriptDebugger.stepInto();
+        step(true);
     }
 
     public void stepOut() {
@@ -71,32 +71,54 @@ public class Debugger {
     }
 
     public void stepOver() {
+        step(false);
+    }
+
+    private void step(boolean enterMethod) {
         CallFrame[] callStack = getCallStack();
         if (callStack == null || callStack.length == 0) {
-            javaScriptDebugger.stepOver();
+            if (enterMethod) {
+                javaScriptDebugger.stepInto();
+            } else {
+                javaScriptDebugger.stepOver();
+            }
             return;
         }
         CallFrame recentFrame = callStack[0];
         if (recentFrame.getLocation() == null || recentFrame.getLocation().getFileName() == null ||
                 recentFrame.getLocation().getLine() < 0) {
-            javaScriptDebugger.stepOver();
+            if (enterMethod) {
+                javaScriptDebugger.stepInto();
+            } else {
+                javaScriptDebugger.stepOver();
+            }
             return;
         }
         Set<JavaScriptLocation> successors = new HashSet<>();
         for (int i = 0; i < callStack.length; ++i) {
             CallFrame frame = callStack[i];
             boolean exits = false;
+            DebugInformation mainDebugInfo = debugInformationMap.get(frame.originalLocation.getScript());
+            GeneratedLocation genLoc = new GeneratedLocation(frame.originalLocation.getLine(),
+                    frame.originalLocation.getColumn());
+            MethodReference callMethod = mainDebugInfo != null ? mainDebugInfo.getCallSite(genLoc) : null;
             for (Map.Entry<String, DebugInformation> entry : debugInformationMap.entrySet()) {
                 DebugInformation debugInfo = entry.getValue();
                 SourceLocation[] following = debugInfo.getFollowingLines(frame.getLocation());
-                if (following == null) {
-                    continue;
+                if (following != null) {
+                    for (SourceLocation successor : following) {
+                        if (successor == null) {
+                            exits = true;
+                        } else {
+                            for (GeneratedLocation loc : debugInfo.getGeneratedLocations(successor)) {
+                                successors.add(new JavaScriptLocation(entry.getKey(), loc.getLine(), loc.getColumn()));
+                            }
+                        }
+                    }
                 }
-                for (SourceLocation successor : debugInfo.getFollowingLines(frame.getLocation())) {
-                    if (successor == null) {
-                        exits = true;
-                    } else {
-                        for (GeneratedLocation loc : debugInfo.getGeneratedLocations(successor)) {
+                if (enterMethod && callMethod != null) {
+                    for (MethodReference potentialMethod : debugInfo.getOverridingMethods(callMethod)) {
+                        for (GeneratedLocation loc : debugInfo.getMethodEntrances(potentialMethod)) {
                             successors.add(new JavaScriptLocation(entry.getKey(), loc.getLine(), loc.getColumn()));
                         }
                     }
@@ -228,7 +250,7 @@ public class Debugger {
                         jsFrame.getLocation().getColumn()) : null;
                 if (!empty || !wasEmpty) {
                     VariableMap vars = new VariableMap(jsFrame.getVariables(), this, jsFrame.getLocation());
-                    frames.add(new CallFrame(loc, method, vars));
+                    frames.add(new CallFrame(jsFrame.getLocation(), loc, method, vars));
                 }
                 wasEmpty = empty;
             }
