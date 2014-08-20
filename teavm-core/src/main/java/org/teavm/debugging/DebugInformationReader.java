@@ -98,10 +98,12 @@ class DebugInformationReader {
         int[] lines = new int[readUnsignedNumber()];
         int[] files = new int[lines.length];
         int i = 0;
-        int line = 0;
-        offsets.add(0);
+        int line = -1;
         while (i < lines.length) {
             int passedLines = readUnsignedNumber();
+            for (int j = 0; j < passedLines; ++j) {
+                offsets.add(i);
+            }
             line += passedLines;
             int sz = readUnsignedNumber();
             if (sz == 0) {
@@ -110,18 +112,17 @@ class DebugInformationReader {
             } else if (sz == 1) {
                 lines[i] = line + 1;
                 files[i++] = index;
-            }
-            sz -= 1;
-            int last = line;
-            for (int j = 0; j < sz; ++j) {
-                last += readNumber();
-                lines[i] = last;
-                files[i++] = index + readNumber();
-            }
-            for (int j = 0; j < passedLines; ++j) {
-                offsets.add(i);
+            } else {
+                sz -= 1;
+                int last = line;
+                for (int j = 0; j < sz; ++j) {
+                    last += readNumber();
+                    lines[i] = last;
+                    files[i++] = index + readNumber();
+                }
             }
         }
+        offsets.add(i);
         DebugInformation.CFG cfg = new DebugInformation.CFG();
         cfg.offsets = offsets.getAll();
         cfg.lines = lines;

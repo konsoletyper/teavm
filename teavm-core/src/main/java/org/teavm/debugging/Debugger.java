@@ -102,8 +102,9 @@ public class Debugger {
             GeneratedLocation genLoc = new GeneratedLocation(frame.originalLocation.getLine(),
                     frame.originalLocation.getColumn());
             MethodReference callMethod = mainDebugInfo != null ? mainDebugInfo.getCallSite(genLoc) : null;
-            for (Map.Entry<String, DebugInformation> entry : debugInformationMap.entrySet()) {
-                DebugInformation debugInfo = entry.getValue();
+            String script = frame.originalLocation.getScript();
+            DebugInformation debugInfo = debugInformationMap.get(script);
+            if (debugInfo != null) {
                 SourceLocation[] following = debugInfo.getFollowingLines(frame.getLocation());
                 if (following != null) {
                     for (SourceLocation successor : following) {
@@ -111,7 +112,7 @@ public class Debugger {
                             exits = true;
                         } else {
                             for (GeneratedLocation loc : debugInfo.getGeneratedLocations(successor)) {
-                                successors.add(new JavaScriptLocation(entry.getKey(), loc.getLine(), loc.getColumn()));
+                                successors.add(new JavaScriptLocation(script, loc.getLine(), loc.getColumn()));
                             }
                         }
                     }
@@ -119,7 +120,7 @@ public class Debugger {
                 if (enterMethod && callMethod != null) {
                     for (MethodReference potentialMethod : debugInfo.getOverridingMethods(callMethod)) {
                         for (GeneratedLocation loc : debugInfo.getMethodEntrances(potentialMethod)) {
-                            successors.add(new JavaScriptLocation(entry.getKey(), loc.getLine(), loc.getColumn()));
+                            successors.add(new JavaScriptLocation(script, loc.getLine(), loc.getColumn()));
                         }
                     }
                 }

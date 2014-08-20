@@ -228,7 +228,7 @@ public class DebugInformation {
 
     public MethodReference getExactMethod(int index) {
         long item = exactMethods[index];
-        int classIndex = (int)(item >> 32);
+        int classIndex = (int)(item >>> 32);
         int methodIndex = (int)item;
         return new MethodReference(classNames[classIndex], MethodDescriptor.parse(methods[methodIndex]));
     }
@@ -372,7 +372,7 @@ public class DebugInformation {
         int lastClass = -1;
         for (int i = 0; i < exactMethods.length; ++i) {
             long exactMethod = exactMethods[i];
-            int classIndex = (int)(exactMethod >> 32);
+            int classIndex = (int)(exactMethod >>> 32);
             if (classIndex != lastClass) {
                 if (lastClass >= 0) {
                     ClassMetadata clsData = classesMetadata.get(lastClass);
@@ -454,6 +454,7 @@ public class DebugInformation {
             next = new IntegerArray(0);
             int methodMappingIndex = 0;
             int classMappingIndex = 0;
+            GeneratedLocation previousLocation = new GeneratedLocation(0, 0);
             while (methodMappingIndex < methodMapping.lines.length &&
                     classMappingIndex < classMapping.lines.length) {
                 GeneratedLocation methodLoc = new GeneratedLocation(methodMapping.lines[methodMappingIndex],
@@ -462,38 +463,39 @@ public class DebugInformation {
                         classMapping.columns[classMappingIndex]);
                 int cmp = methodLoc.compareTo(classLoc);
                 if (cmp < 0) {
+                    addMethodEntrance(previousLocation, methodLoc);
+                    previousLocation = methodLoc;
                     methodIndex = methodMapping.values[methodMappingIndex++];
-                    addMethodEntrance(methodLoc);
                 } else if (cmp > 0) {
+                    addMethodEntrance(previousLocation, classLoc);
+                    previousLocation = classLoc;
                     classIndex = classMapping.values[classMappingIndex++];
-                    addMethodEntrance(classLoc);
                 } else {
+                    addMethodEntrance(previousLocation, classLoc);
+                    previousLocation = classLoc;
                     methodIndex = methodMapping.values[methodMappingIndex++];
                     classIndex = classMapping.values[classMappingIndex++];
-                    addMethodEntrance(classLoc);
                 }
             }
             while (methodMappingIndex < methodMapping.lines.length) {
                 GeneratedLocation methodLoc = new GeneratedLocation(methodMapping.lines[methodMappingIndex],
                         methodMapping.columns[methodMappingIndex]);
+                addMethodEntrance(previousLocation, methodLoc);
+                previousLocation = methodLoc;
                 methodIndex = methodMapping.values[methodMappingIndex++];
-                addMethodEntrance(methodLoc);
             }
             while (classMappingIndex < classMapping.lines.length) {
                 GeneratedLocation classLoc = new GeneratedLocation(classMapping.lines[classMappingIndex],
                         classMapping.columns[classMappingIndex]);
+                addMethodEntrance(previousLocation, classLoc);
+                previousLocation = classLoc;
                 classIndex = classMapping.values[classMappingIndex++];
-                addMethodEntrance(classLoc);
             }
             return assemble();
         }
 
-        private void addMethodEntrance(GeneratedLocation location) {
-            int lineIndex = indexByKey(lineMapping, location);
-            if (lineIndex < 0) {
-                return;
-            }
-            if (lineMapping.values[lineIndex] < 0) {
+        private void addMethodEntrance(GeneratedLocation location, GeneratedLocation limit) {
+            if (classIndex < 0 || methodIndex < 0) {
                 return;
             }
             long exactMethod = ((long)classIndex << 32) | methodIndex;
@@ -501,14 +503,35 @@ public class DebugInformation {
             if (exactMethodIndex == null) {
                 return;
             }
+
+            int lineIndex = indexByKey(lineMapping, location);
+            if (lineIndex < 0) {
+                lineIndex = 0;
+            }
+            int line = -1;
+            while (lineIndex < lineMapping.values.length) {
+                location = new GeneratedLocation(lineMapping.lines[lineIndex], lineMapping.columns[lineIndex]);
+                if (location.compareTo(limit) >= 0) {
+                    break;
+                }
+                if (lineMapping.values[lineIndex] >= 0) {
+                    line = lineMapping.values[lineIndex];
+                    break;
+                }
+                ++lineIndex;
+            }
+            if (line == -1) {
+                return;
+            }
+
             int ptr = start[exactMethodIndex];
             start[exactMethodIndex] = data.size();
             next.add(ptr);
-            data.add(location.getColumn());
             ptr = data.size();
+            data.add(location.getColumn());
             next.add(ptr);
-            data.add(location.getLine());
             start[exactMethodIndex] = data.size();
+            data.add(location.getLine());
         }
 
         private MethodEntrances assemble() {
@@ -728,7 +751,7 @@ public class DebugInformation {
             MethodReference[] references = new MethodReference[end - start];
             for (int i = 0; i < references.length; ++i) {
                 long item = exactMethods[data[start + i]];
-                int classIndex = (int)(item >> 32);
+                int classIndex = (int)(item >>> 32);
                 int methodIndex = (int)item;
                 references[i] = new MethodReference(classNames[classIndex],
                         MethodDescriptor.parse(methods[methodIndex]));

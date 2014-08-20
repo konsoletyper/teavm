@@ -165,7 +165,7 @@ class DebugInformationWriter {
 
     private void writeCFG(DebugInformation.CFG mapping, int fileIndex) throws IOException {
         writeUnsignedNumber(mapping.lines.length);
-        int lastLine = 0;
+        int lastLine = -1;
         for (int i = 0; i < mapping.offsets.length - 1; ++i) {
             int start = mapping.offsets[i];
             int sz = mapping.offsets[i + 1] - start;
