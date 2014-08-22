@@ -178,6 +178,24 @@ public class DebugInformation {
         return null;
     }
 
+    public GeneratedLocation getNearestCallSite(GeneratedLocation location) {
+        int keyIndex = indexByKey(callSiteMapping, location);
+        if (keyIndex < 0) {
+            keyIndex = 0;
+        }
+        while (keyIndex < callSiteMapping.values.length) {
+            int valueIndex = callSiteMapping.values[keyIndex];
+            if (valueIndex >= 0) {
+                MethodReference method = getExactMethod(valueIndex);
+                if (method != null) {
+                    return new GeneratedLocation(callSiteMapping.lines[keyIndex], callSiteMapping.columns[keyIndex]);
+                }
+            }
+            ++keyIndex;
+        }
+        return null;
+    }
+
     public MethodReference getCallSite(GeneratedLocation location) {
         int keyIndex = indexByKey(callSiteMapping, location);
         if (keyIndex < 0) {

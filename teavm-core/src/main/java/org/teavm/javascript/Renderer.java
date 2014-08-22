@@ -24,6 +24,7 @@ import org.teavm.codegen.NamingStrategy;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.common.ServiceRepository;
 import org.teavm.debugging.DebugInformationEmitter;
+import org.teavm.debugging.DeferredCallSite;
 import org.teavm.debugging.DummyDebugInformationEmitter;
 import org.teavm.javascript.ast.*;
 import org.teavm.javascript.ni.GeneratorContext;
@@ -50,7 +51,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     private ServiceRepository services;
     private DebugInformationEmitter debugEmitter = new DummyDebugInformationEmitter();
     private Deque<NodeLocation> locationStack = new ArrayDeque<>();
-    private Deque<MethodReference> callSiteStack = new ArrayDeque<>();
+    private DeferredCallSite lastCallSite;
 
     private static class InjectorHolder {
         public final Injector injector;
@@ -592,17 +593,6 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         } else {
             debugEmitter.emitLocation(null, -1);
         }
-    }
-
-    private void pushCallSite(MethodReference method) {
-        callSiteStack.push(method);
-        debugEmitter.emitCallSite(method);
-    }
-
-    private void popCallSite() {
-        callSiteStack.pop();
-        MethodReference method = callSiteStack.peek();
-        debugEmitter.emitCallSite(method);
     }
 
     @Override
@@ -1296,7 +1286,6 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             if (expr.getLocation() != null) {
                 pushLocation(expr.getLocation());
             }
-            pushCallSite(expr.getMethod());
             Injector injector = getInjector(expr.getMethod());
             if (injector != null) {
                 injector.generate(new InjectorContextImpl(expr.getArguments()), expr.getMethod());
@@ -1304,9 +1293,16 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 String className = naming.getNameFor(expr.getMethod().getClassName());
                 String name = naming.getNameFor(expr.getMethod());
                 String fullName = naming.getFullNameFor(expr.getMethod());
+                DeferredCallSite callSite = null;
+                boolean shouldEraseCallSite = lastCallSite == null;
                 switch (expr.getType()) {
                     case STATIC:
+                        callSite = debugEmitter.emitCallSite();
+                        if (lastCallSite == null) {
+                            lastCallSite = callSite;
+                        }
                         writer.append(fullName).append("(");
+                        debugEmitter.emitEmptyCallSite();
                         for (int i = 0; i < expr.getArguments().size(); ++i) {
                             if (i > 0) {
                                 writer.append(",").ws();
@@ -1316,7 +1312,12 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                         writer.append(')');
                         break;
                     case SPECIAL:
+                        callSite = debugEmitter.emitCallSite();
+                        if (lastCallSite == null) {
+                            lastCallSite = callSite;
+                        }
                         writer.append(fullName).append("(");
+                        debugEmitter.emitEmptyCallSite();
                         expr.getArguments().get(0).acceptVisitor(this);
                         for (int i = 1; i < expr.getArguments().size(); ++i) {
                             writer.append(",").ws();
@@ -1326,7 +1327,12 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                         break;
                     case DYNAMIC:
                         expr.getArguments().get(0).acceptVisitor(this);
+                        callSite = debugEmitter.emitCallSite();
+                        if (lastCallSite == null) {
+                            lastCallSite = callSite;
+                        }
                         writer.append(".").append(name).append("(");
+                        debugEmitter.emitEmptyCallSite();
                         for (int i = 1; i < expr.getArguments().size(); ++i) {
                             if (i > 1) {
                                 writer.append(",").ws();
@@ -1336,7 +1342,12 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                         writer.append(')');
                         break;
                     case CONSTRUCTOR:
+                        callSite = debugEmitter.emitCallSite();
+                        if (lastCallSite == null) {
+                            lastCallSite = callSite;
+                        }
                         writer.append(className).append(".").append(name).append("(");
+                        debugEmitter.emitEmptyCallSite();
                         for (int i = 0; i < expr.getArguments().size(); ++i) {
                             if (i > 0) {
                                 writer.append(",").ws();
@@ -1346,8 +1357,14 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                         writer.append(')');
                         break;
                 }
+                if (lastCallSite != null) {
+                    lastCallSite.setMethod(expr.getMethod());
+                    lastCallSite = callSite;
+                }
+                if (shouldEraseCallSite) {
+                    lastCallSite = null;
+                }
             }
-            popCallSite();
             if (expr.getLocation() != null) {
                 popLocation();
             }

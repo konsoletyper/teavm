@@ -117,21 +117,29 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
     }
 
     @Override
-    public void emitCallSite(MethodReference method) {
-        if (method != null) {
-            int methodIndex = methods.index(method.getDescriptor().toString());
-            int classIndex = classes.index(method.getClassName());
-            long fullIndex = ((long)classIndex << 32) | methodIndex;
-            Integer exactMethodIndex = exactMethodMap.get(fullIndex);
-            if (exactMethodIndex == null) {
-                exactMethodIndex = exactMethods.size();
-                exactMethodMap.put(fullIndex, exactMethodIndex);
-                exactMethods.add(fullIndex);
+    public DeferredCallSite emitCallSite() {
+        DeferredCallSite callSite = new DeferredCallSite() {
+            int index = callSiteMapping.values.size();
+            @Override public void setMethod(MethodReference method) {
+                int methodIndex = methods.index(method.getDescriptor().toString());
+                int classIndex = classes.index(method.getClassName());
+                long fullIndex = ((long)classIndex << 32) | methodIndex;
+                Integer exactMethodIndex = exactMethodMap.get(fullIndex);
+                if (exactMethodIndex == null) {
+                    exactMethodIndex = exactMethods.size();
+                    exactMethodMap.put(fullIndex, exactMethodIndex);
+                    exactMethods.add(fullIndex);
+                }
+                callSiteMapping.values.set(index, exactMethodIndex);
             }
-            callSiteMapping.add(locationProvider, exactMethodIndex);
-        } else {
-            callSiteMapping.add(locationProvider, -1);
-        }
+        };
+        callSiteMapping.add(locationProvider, -1);
+        return callSite;
+    }
+
+    @Override
+    public void emitEmptyCallSite() {
+        callSiteMapping.add(locationProvider, -1);
     }
 
     @Override

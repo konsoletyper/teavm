@@ -101,7 +101,13 @@ public class Debugger {
             DebugInformation mainDebugInfo = debugInformationMap.get(frame.originalLocation.getScript());
             GeneratedLocation genLoc = new GeneratedLocation(frame.originalLocation.getLine(),
                     frame.originalLocation.getColumn());
-            MethodReference callMethod = mainDebugInfo != null ? mainDebugInfo.getCallSite(genLoc) : null;
+            MethodReference callMethod = null;
+            if (mainDebugInfo != null) {
+                GeneratedLocation callSiteLoc = mainDebugInfo.getNearestCallSite(genLoc);
+                if (callSiteLoc != null) {
+                    callMethod = mainDebugInfo.getCallSite(callSiteLoc);
+                }
+            }
             String script = frame.originalLocation.getScript();
             DebugInformation debugInfo = debugInformationMap.get(script);
             if (debugInfo != null) {

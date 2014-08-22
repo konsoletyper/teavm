@@ -15,31 +15,12 @@
  */
 package org.teavm.debugging;
 
-import org.teavm.codegen.LocationProvider;
-import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodReference;
 
 /**
  *
  * @author Alexey Andreev
  */
-public interface DebugInformationEmitter {
-    void setLocationProvider(LocationProvider locationProvider);
-
-    void emitLocation(String fileName, int line);
-
-    void emitMethod(MethodDescriptor method);
-
-    void emitClass(String className);
-
-    void emitVariable(String[] sourceNames, String generatedName);
-
-    DeferredCallSite emitCallSite();
-
-    void emitEmptyCallSite();
-
-    void addClass(String className, String parentName);
-
-    void addField(String fieldName, String jsName);
-
-    void addSuccessors(SourceLocation location, SourceLocation[] successors);
+public interface DeferredCallSite {
+    void setMethod(MethodReference method);
 }
