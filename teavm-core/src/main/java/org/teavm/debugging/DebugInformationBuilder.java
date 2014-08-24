@@ -63,11 +63,11 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
         debugInformation = null;
         int fileIndex = files.index(fileName);
         if (!Objects.equals(currentFileName, fileName)) {
-            fileMapping.add(locationProvider, fileIndex);
+            fileMapping.add(locationProvider, fileIndex, true);
             currentFileName = fileName;
         }
         if (currentLine != line) {
-            lineMapping.add(locationProvider, line);
+            lineMapping.add(locationProvider, line, true);
             currentLine = line;
         }
     }
@@ -77,7 +77,7 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
         debugInformation = null;
         int classIndex = classes.index(className);
         if (!Objects.equals(className, currentClass)) {
-            classMapping.add(locationProvider, classIndex);
+            classMapping.add(locationProvider, classIndex, true);
             currentClass = className;
         }
     }
@@ -87,7 +87,7 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
         debugInformation = null;
         int methodIndex = methods.index(method != null ? method.toString() : null);
         if (!Objects.equals(method, currentMethod)) {
-            methodMapping.add(locationProvider, methodIndex);
+            methodMapping.add(locationProvider, methodIndex, true);
             currentMethod = method;
         }
         if (currentClass != null) {
@@ -133,13 +133,13 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
                 callSiteMapping.values.set(index, exactMethodIndex);
             }
         };
-        callSiteMapping.add(locationProvider, -1);
+        callSiteMapping.add(locationProvider, -1, false);
         return callSite;
     }
 
     @Override
     public void emitEmptyCallSite() {
-        callSiteMapping.add(locationProvider, -1);
+        callSiteMapping.add(locationProvider, -1, false);
     }
 
     @Override
@@ -238,8 +238,8 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
         IntegerArray columns = new IntegerArray(1);
         IntegerArray values = new IntegerArray(1);
 
-        public void add(LocationProvider location, int value) {
-            if (lines.size() > 1) {
+        public void add(LocationProvider location, int value, boolean merge) {
+            if (merge && lines.size() > 1) {
                 int last = lines.size() - 1;
                 if (lines.get(last) == location.getLine() && columns.get(last) == location.getColumn()) {
                     values.set(last, value);

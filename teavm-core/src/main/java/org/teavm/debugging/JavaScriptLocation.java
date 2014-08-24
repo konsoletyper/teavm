@@ -53,12 +53,12 @@ public class JavaScriptLocation {
             return false;
         }
         JavaScriptLocation other = (JavaScriptLocation)obj;
-        return Objects.equals(other.script, script) && other.line == line;
+        return Objects.equals(other.script, script) && other.line == line && other.column == column;
     }
 
     @Override
     public int hashCode() {
-        return (31 + line) * 31 + Objects.hashCode(script);
+        return (31 + column) * ((31 + line) * 31 + Objects.hashCode(script));
     }
 
     @Override

@@ -74,43 +74,40 @@ public class Debugger {
         step(false);
     }
 
+    private void jsStep(boolean enterMethod) {
+        if (enterMethod) {
+            javaScriptDebugger.stepInto();
+        } else {
+            javaScriptDebugger.stepOver();
+        }
+    }
+
     private void step(boolean enterMethod) {
         CallFrame[] callStack = getCallStack();
         if (callStack == null || callStack.length == 0) {
-            if (enterMethod) {
-                javaScriptDebugger.stepInto();
-            } else {
-                javaScriptDebugger.stepOver();
-            }
+            jsStep(enterMethod);
             return;
         }
         CallFrame recentFrame = callStack[0];
         if (recentFrame.getLocation() == null || recentFrame.getLocation().getFileName() == null ||
                 recentFrame.getLocation().getLine() < 0) {
-            if (enterMethod) {
-                javaScriptDebugger.stepInto();
-            } else {
-                javaScriptDebugger.stepOver();
-            }
+            jsStep(enterMethod);
             return;
         }
         Set<JavaScriptLocation> successors = new HashSet<>();
-        for (int i = 0; i < callStack.length; ++i) {
-            CallFrame frame = callStack[i];
-            boolean exits = false;
-            DebugInformation mainDebugInfo = debugInformationMap.get(frame.originalLocation.getScript());
+        for (CallFrame frame : callStack) {
+            boolean exits;
+            String script = frame.originalLocation.getScript();
             GeneratedLocation genLoc = new GeneratedLocation(frame.originalLocation.getLine(),
                     frame.originalLocation.getColumn());
-            MethodReference callMethod = null;
-            if (mainDebugInfo != null) {
-                GeneratedLocation callSiteLoc = mainDebugInfo.getNearestCallSite(genLoc);
-                if (callSiteLoc != null) {
-                    callMethod = mainDebugInfo.getCallSite(callSiteLoc);
-                }
-            }
-            String script = frame.originalLocation.getScript();
             DebugInformation debugInfo = debugInformationMap.get(script);
-            if (debugInfo != null) {
+            if (frame.getLocation() != null && debugInfo != null) {
+                exits = false;
+                MethodReference callMethod = null;
+                GeneratedLocation callSiteLoc = debugInfo.getNearestCallSite(genLoc);
+                if (callSiteLoc != null) {
+                    callMethod = debugInfo.getCallSite(callSiteLoc);
+                }
                 SourceLocation[] following = debugInfo.getFollowingLines(frame.getLocation());
                 if (following != null) {
                     for (SourceLocation successor : following) {
@@ -130,6 +127,8 @@ public class Debugger {
                         }
                     }
                 }
+            } else {
+                exits = true;
             }
             if (!exits) {
                 break;
