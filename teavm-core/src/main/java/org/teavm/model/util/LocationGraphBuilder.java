@@ -66,7 +66,7 @@ class LocationGraphBuilder {
             for (Instruction insn : block.getInstructions()) {
                 if (insn.getLocation() != null) {
                     if (!started) {
-                        step.startLocations.add(location);
+                        step.startLocations.add(insn.getLocation());
                     }
                     started = true;
                     if (blockLocations[step.block] == null) {

@@ -45,9 +45,6 @@ public class ProgramParser implements VariableDebugInformation {
     private int minLocal;
     private Program program;
     private String currentClassName;
-    private int currentLineNumber;
-    private boolean lineNumberChanged;
-    private InstructionLocation lastInsnLocation;
     private Map<Integer, List<LocalVariableNode>> localVariableMap = new HashMap<>();
     private Map<Instruction, Map<Integer, String>> variableDebugNames = new HashMap<>();
 
@@ -88,8 +85,6 @@ public class ProgramParser implements VariableDebugInformation {
     }
 
     public Program parse(MethodNode method, String className) {
-        currentLineNumber = -1;
-        lineNumberChanged = true;
         program = new Program();
         this.currentClassName = className;
         InsnList instructions = method.instructions;
@@ -103,7 +98,7 @@ public class ProgramParser implements VariableDebugInformation {
         insn.setTarget(program.basicBlockAt(1));
         program.basicBlockAt(0).getInstructions().add(insn);
         doAnalyze(method);
-        assemble();
+        assemble(method);
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
             for (int j = 0; j < block.getTryCatchBlocks().size(); ++j) {
@@ -266,9 +261,11 @@ public class ProgramParser implements VariableDebugInformation {
         }
     }
 
-    private void assemble() {
+    private void assemble(MethodNode methodNode) {
         BasicBlock basicBlock = null;
         Map<Integer, String> accumulatedDebugNames = new HashMap<>();
+        Integer lastLineNumber = null;
+        InstructionLocation lastLocation = null;
         for (int i = 0; i < basicBlocks.size(); ++i) {
             BasicBlock newBasicBlock = basicBlocks.get(i);
             if (newBasicBlock != null) {
@@ -296,7 +293,19 @@ public class ProgramParser implements VariableDebugInformation {
                 }
                 accumulatedDebugNames.putAll(debugNames);
             }
+            AbstractInsnNode insnNode = methodNode.instructions.get(i);
+            if (insnNode instanceof LabelNode) {
+                Label label = ((LabelNode)insnNode).getLabel();
+                Integer lineNumber = lineNumbers.get(label);
+                if (lineNumber != null && !lineNumber.equals(lastLineNumber)) {
+                    lastLineNumber = lineNumber;
+                    lastLocation = new InstructionLocation(fileName, lastLineNumber);
+                }
+            }
             if (builtInstructions != null) {
+                for (Instruction insn : builtInstructions) {
+                    insn.setLocation(lastLocation);
+                }
                 basicBlock.getInstructions().addAll(builtInstructions);
             }
         }
@@ -347,11 +356,6 @@ public class ProgramParser implements VariableDebugInformation {
     }
 
     private void addInstruction(Instruction insn) {
-        if (lineNumberChanged) {
-            lastInsnLocation = new InstructionLocation(fileName, currentLineNumber);
-            lineNumberChanged = false;
-        }
-        insn.setLocation(lastInsnLocation);
         builder.add(insn);
     }
 
@@ -602,11 +606,6 @@ public class ProgramParser implements VariableDebugInformation {
 
         @Override
         public void visitLabel(Label label) {
-            Integer lineNumber = lineNumbers.get(label);
-            if (lineNumber != null) {
-                currentLineNumber = lineNumber;
-                lineNumberChanged = true;
-            }
         }
 
         private void emitBranching(BranchingCondition condition, int value, int target) {
