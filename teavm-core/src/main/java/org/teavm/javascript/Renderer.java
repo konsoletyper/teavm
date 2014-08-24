@@ -631,9 +631,15 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     public void visit(ConditionalStatement statement) {
         try {
             while (true) {
+                if (statement.getCondition().getLocation() != null) {
+                    pushLocation(statement.getCondition().getLocation());
+                }
                 writer.append("if").ws().append("(");
                 statement.getCondition().acceptVisitor(this);
                 writer.append(")").ws().append("{").softNewLine().indent();
+                if (statement.getCondition().getLocation() != null) {
+                    popLocation();
+                }
                 for (Statement part : statement.getConsequent()) {
                     part.acceptVisitor(this);
                 }

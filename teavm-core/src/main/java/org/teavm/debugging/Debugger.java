@@ -108,18 +108,8 @@ public class Debugger {
                 if (callSiteLoc != null) {
                     callMethod = debugInfo.getCallSite(callSiteLoc);
                 }
-                SourceLocation[] following = debugInfo.getFollowingLines(frame.getLocation());
-                if (following != null) {
-                    for (SourceLocation successor : following) {
-                        if (successor == null) {
-                            exits = true;
-                        } else {
-                            for (GeneratedLocation loc : debugInfo.getGeneratedLocations(successor)) {
-                                successors.add(new JavaScriptLocation(script, loc.getLine(), loc.getColumn()));
-                            }
-                        }
-                    }
-                }
+                exits = addFollowing(debugInfo, frame.getLocation(), script, new HashSet<SourceLocation>(),
+                        successors);
                 if (enterMethod && callMethod != null) {
                     for (MethodReference potentialMethod : debugInfo.getOverridingMethods(callMethod)) {
                         for (GeneratedLocation loc : debugInfo.getMethodEntrances(potentialMethod)) {
@@ -138,6 +128,32 @@ public class Debugger {
             temporaryBreakpoints.add(javaScriptDebugger.createBreakpoint(successor));
         }
         javaScriptDebugger.resume();
+    }
+
+    private boolean addFollowing(DebugInformation debugInfo, SourceLocation location, String script,
+            Set<SourceLocation> visited, Set<JavaScriptLocation> successors) {
+        if (!visited.add(location)) {
+            return false;
+        }
+        SourceLocation[] following = debugInfo.getFollowingLines(location);
+        boolean exits = false;
+        if (following != null) {
+            for (SourceLocation successor : following) {
+                if (successor == null) {
+                    exits = true;
+                } else {
+                    Collection<GeneratedLocation> genLocations = debugInfo.getGeneratedLocations(successor);
+                    if (!genLocations.isEmpty()) {
+                        for (GeneratedLocation loc : genLocations) {
+                            successors.add(new JavaScriptLocation(script, loc.getLine(), loc.getColumn()));
+                        }
+                    } else {
+                        exits |= addFollowing(debugInfo, successor, script, visited, successors);
+                    }
+                }
+            }
+        }
+        return exits;
     }
 
     private List<DebugInformation> debugInformationBySource(String sourceFile) {
