@@ -103,11 +103,7 @@ public class Debugger {
             DebugInformation debugInfo = debugInformationMap.get(script);
             if (frame.getLocation() != null && debugInfo != null) {
                 exits = false;
-                MethodReference callMethod = null;
-                GeneratedLocation callSiteLoc = debugInfo.getNearestCallSite(genLoc);
-                if (callSiteLoc != null) {
-                    callMethod = debugInfo.getCallSite(callSiteLoc);
-                }
+                MethodReference callMethod = debugInfo.getCallSite(genLoc);
                 exits = addFollowing(debugInfo, frame.getLocation(), script, new HashSet<SourceLocation>(),
                         successors);
                 if (enterMethod && callMethod != null) {
