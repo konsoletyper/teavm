@@ -15,10 +15,7 @@
  */
 package org.teavm.debugging;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.*;
 import org.teavm.common.IntegerArray;
 import org.teavm.model.MethodDescriptor;
@@ -294,6 +291,10 @@ public class DebugInformation {
     public void write(OutputStream output) throws IOException {
         DebugInformationWriter writer = new DebugInformationWriter(new DataOutputStream(output));
         writer.write(this);
+    }
+
+    public void writeAsSourceMaps(Writer output, String sourceFile) throws IOException {
+        new SourceMapsWriter(output).write(sourceFile, this);
     }
 
     public static DebugInformation read(InputStream input) throws IOException {

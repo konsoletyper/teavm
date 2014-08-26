@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Properties;
 import org.apache.commons.io.IOUtils;
 import org.teavm.common.ThreadPoolFiniteExecutor;
+import org.teavm.debugging.DebugInformation;
 import org.teavm.debugging.DebugInformationBuilder;
 import org.teavm.javascript.RenderingContext;
 import org.teavm.model.ClassHolderTransformer;
@@ -45,6 +46,8 @@ public class TeaVMTool {
     private boolean mainPageIncluded;
     private boolean bytecodeLogging;
     private File debugInformation;
+    private String sourceMapsFileName;
+    private boolean sourceMapsFileGenerated;
     private int numThreads = 1;
     private List<ClassHolderTransformer> transformers = new ArrayList<>();
     private List<ClassAlias> classAliases = new ArrayList<>();
@@ -122,6 +125,22 @@ public class TeaVMTool {
 
     public void setNumThreads(int numThreads) {
         this.numThreads = numThreads;
+    }
+
+    public String getSourceMapsFileName() {
+        return sourceMapsFileName;
+    }
+
+    public void setSourceMapsFileName(String sourceMapsFileName) {
+        this.sourceMapsFileName = sourceMapsFileName;
+    }
+
+    public boolean isSourceMapsFileGenerated() {
+        return sourceMapsFileGenerated;
+    }
+
+    public void setSourceMapsFileGenerated(boolean sourceMapsFileGenerated) {
+        this.sourceMapsFileGenerated = sourceMapsFileGenerated;
     }
 
     public Properties getProperties() {
@@ -218,10 +237,23 @@ public class TeaVMTool {
                 vm.checkForMissingItems();
                 log.info("JavaScript file successfully built");
                 if (debugInformation != null) {
+                    DebugInformation debugInfo = debugEmitter.getDebugInformation();
                     try (OutputStream debugInfoOut = new FileOutputStream(debugInformation)) {
-                        debugEmitter.getDebugInformation().write(debugInfoOut);
+                        debugInfo.write(debugInfoOut);
                     }
                     log.info("Debug information successfully written");
+                    if (sourceMapsFileGenerated) {
+                        String sourceMapsFileName = this.sourceMapsFileName;
+                        if (sourceMapsFileName == null) {
+                            sourceMapsFileName = targetFileName + ".map";
+                        }
+                        writer.append("\n//# sourceMappingURL=").append(sourceMapsFileName);
+                        try (Writer sourceMapsOut = new OutputStreamWriter(new FileOutputStream(
+                                new File(targetDirectory, sourceMapsFileName)), "UTF-8")) {
+                            debugInfo.writeAsSourceMaps(sourceMapsOut, targetFileName);
+                        }
+                        log.info("Source maps successfully written");
+                    }
                 }
             }
             if (runtime == RuntimeCopyOperation.SEPARATE) {

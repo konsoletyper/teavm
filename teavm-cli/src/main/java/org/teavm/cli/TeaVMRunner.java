@@ -63,6 +63,10 @@ public class TeaVMRunner {
                 .withLongOpt("debug")
                 .create('D'));
         options.addOption(OptionBuilder
+                .withDescription("Generate source maps")
+                .withLongOpt("sourcemaps")
+                .create());
+        options.addOption(OptionBuilder
                 .withArgName("number")
                 .hasArg()
                 .withDescription("how many threads should TeaVM run")
@@ -126,6 +130,9 @@ public class TeaVMRunner {
         }
         if (commandLine.hasOption('D')) {
             tool.setDebugInformation(new File(tool.getTargetDirectory(), tool.getTargetFileName() + ".teavmdbg"));
+            if (commandLine.hasOption("sourcemaps")) {
+                tool.setSourceMapsFileGenerated(true);
+            }
         }
         args = commandLine.getArgs();
         if (args.length > 1) {
