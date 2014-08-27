@@ -18,6 +18,8 @@ package org.teavm.debugging;
 import java.io.*;
 import java.util.*;
 import org.teavm.common.IntegerArray;
+import org.teavm.common.RecordArray;
+import org.teavm.common.RecordArrayBuilder;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 
@@ -45,6 +47,7 @@ public class DebugInformation {
     Mapping lineMapping;
     Mapping callSiteMapping;
     MultiMapping[] variableMappings;
+    RecordArray[] lineCallSites;
     CFG[] controlFlowGraphs;
     List<ClassMetadata> classesMetadata;
     MethodEntrances methodEntrances;
@@ -258,6 +261,24 @@ public class DebugInformation {
         }
     }
 
+    public MethodReference[] getCallSites(SourceLocation location) {
+        Integer fileIndex = fileNameMap.get(location.getFileName());
+        if (fileIndex == null) {
+            return new MethodReference[0];
+        }
+        RecordArray mapping = lineCallSites[fileIndex];
+        if (location.getLine() >= mapping.size()) {
+            return new MethodReference[0];
+        }
+        int[] callSiteIds = mapping.get(location.getLine()).getArray(0);
+        MethodReference[] methods = new MethodReference[callSiteIds.length];
+        for (int i = 0; i < callSiteIds.length; ++i) {
+            int exactMethodId = callSiteMapping.values[callSiteIds[i]];
+            methods[i] = getExactMethod(exactMethodId);
+        }
+        return methods;
+    }
+
     private <T> T componentByKey(Mapping mapping, T[] values, GeneratedLocation location) {
         int keyIndex = indexByKey(mapping, location);
         int valueIndex = keyIndex >= 0 ? mapping.values[keyIndex] : -1;
@@ -281,6 +302,11 @@ public class DebugInformation {
     private int indexByKey(Mapping mapping, GeneratedLocation location) {
         int index = Collections.binarySearch(mapping.keyList(), location);
         return index >= 0 ? index : -index - 2;
+    }
+
+    private int valueByKey(Mapping mapping, GeneratedLocation location) {
+        int index = indexByKey(mapping, location);
+        return index >= 0 ? mapping.values[index] : -1;
     }
 
     private int indexByKey(MultiMapping mapping, GeneratedLocation location) {
@@ -307,6 +333,7 @@ public class DebugInformation {
         rebuildFileDescriptions();
         rebuildEntrances();
         rebuildMethodTree();
+        rebuildLineCallSites();
     }
 
     void rebuildMaps() {
@@ -437,6 +464,32 @@ public class DebugInformation {
     private Integer getExactMethodIndex(int classIndex, int methodIndex) {
         long entry = ((long)classIndex << 32) | methodIndex;
         return exactMethodMap.get(entry);
+    }
+
+    private void rebuildLineCallSites() {
+        lineCallSites = new RecordArray[fileNames.length];
+        RecordArrayBuilder[] builders = new RecordArrayBuilder[fileNames.length];
+        for (int i = 0; i < lineCallSites.length; ++i) {
+            builders[i] = new RecordArrayBuilder(0, 1);
+        }
+        for (int i = 0; i < callSiteMapping.lines.length; ++i) {
+            GeneratedLocation loc = callSiteMapping.key(i);
+            int methodId = callSiteMapping.values[i];
+            if (methodId >= 0) {
+                int line = valueByKey(lineMapping, loc);
+                int fileId = valueByKey(fileMapping, loc);
+                if (fileId >= 0 && line >= 0) {
+                    RecordArrayBuilder builder = builders[fileId];
+                    while (builder.size() <= line) {
+                        builder.add();
+                    }
+                    builder.get(line).getArray(0).add(i);
+                }
+            }
+        }
+        for (int i = 0; i < lineCallSites.length; ++i) {
+            lineCallSites[i] = builders[i].build();
+        }
     }
 
     class MethodEntrancesBuilder {

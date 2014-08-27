@@ -27,21 +27,26 @@ public class RecordArray {
     private int[] data;
     private int[] substart;
     private int[] subdata;
+    private int size;
 
-    RecordArray(int recordSize, int arraysPerRecord, int[] data, int[] substart, int[] subdata) {
+    RecordArray(int recordSize, int arraysPerRecord, int size, int[] data, int[] substart, int[] subdata) {
         this.recordSize = recordSize;
         this.arraysPerRecord = arraysPerRecord;
+        this.size = size;
         this.data = data;
         this.substart = substart;
         this.subdata = subdata;
     }
 
     public Record get(int index) {
+        if (index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException("Index " + index + " is outside of [0; " + size + ")");
+        }
         return new Record(index * recordSize, index * arraysPerRecord);
     }
 
     public int size() {
-        return data.length / recordSize;
+        return size;
     }
 
     public int getRecordSize() {

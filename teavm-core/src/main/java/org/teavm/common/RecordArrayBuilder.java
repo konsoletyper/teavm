@@ -22,6 +22,7 @@ package org.teavm.common;
 public class RecordArrayBuilder {
     private int recordSize;
     private int arraysPerRecord;
+    private int size;
     private IntegerArray data = new IntegerArray(1);
     private IntegerArray substart = new IntegerArray(1);
     private IntegerArray subdata = new IntegerArray(1);
@@ -33,6 +34,9 @@ public class RecordArrayBuilder {
     }
 
     public Record get(int index) {
+        if (index < 0 || index >= size) {
+            throw new IndexOutOfBoundsException("Index " + index + " is outside of [0; " + size + ")");
+        }
         return new Record(index * recordSize, index * arraysPerRecord);
     }
 
@@ -45,11 +49,12 @@ public class RecordArrayBuilder {
         for (int i = 0; i < arraysPerRecord; ++i) {
             substart.add(-1);
         }
+        ++size;
         return new Record(offset, arrayOffset);
     }
 
     public int size() {
-        return data.size() / recordSize;
+        return size;
     }
 
     public int getRecordSize() {
@@ -71,7 +76,7 @@ public class RecordArrayBuilder {
             }
             builtSubstart[i + 1] = builtSubdata.size();
         }
-        return new RecordArray(recordSize, arraysPerRecord, data.getAll(), builtSubstart, builtSubdata.getAll());
+        return new RecordArray(recordSize, arraysPerRecord, size, data.getAll(), builtSubstart, builtSubdata.getAll());
     }
 
     public class Record {

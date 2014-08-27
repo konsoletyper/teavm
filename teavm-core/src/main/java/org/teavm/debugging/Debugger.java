@@ -98,18 +98,18 @@ public class Debugger {
         for (CallFrame frame : callStack) {
             boolean exits;
             String script = frame.originalLocation.getScript();
-            GeneratedLocation genLoc = new GeneratedLocation(frame.originalLocation.getLine(),
-                    frame.originalLocation.getColumn());
             DebugInformation debugInfo = debugInformationMap.get(script);
-            if (frame.getLocation() != null && debugInfo != null) {
-                exits = false;
-                MethodReference callMethod = debugInfo.getCallSite(genLoc);
+            if (frame.getLocation() != null && frame.getLocation().getFileName() != null &&
+                    frame.getLocation().getLine() >= 0 && debugInfo != null) {
+                MethodReference[] callMethods = debugInfo.getCallSites(frame.getLocation());
                 exits = addFollowing(debugInfo, frame.getLocation(), script, new HashSet<SourceLocation>(),
                         successors);
-                if (enterMethod && callMethod != null) {
-                    for (MethodReference potentialMethod : debugInfo.getOverridingMethods(callMethod)) {
-                        for (GeneratedLocation loc : debugInfo.getMethodEntrances(potentialMethod)) {
-                            successors.add(new JavaScriptLocation(script, loc.getLine(), loc.getColumn()));
+                if (enterMethod) {
+                    for (MethodReference callMethod : callMethods) {
+                        for (MethodReference potentialMethod : debugInfo.getOverridingMethods(callMethod)) {
+                            for (GeneratedLocation loc : debugInfo.getMethodEntrances(potentialMethod)) {
+                                successors.add(new JavaScriptLocation(script, loc.getLine(), loc.getColumn()));
+                            }
                         }
                     }
                 }
