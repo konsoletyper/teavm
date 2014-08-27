@@ -76,7 +76,18 @@ public class RecordArrayBuilder {
             }
             builtSubstart[i + 1] = builtSubdata.size();
         }
-        return new RecordArray(recordSize, arraysPerRecord, size, data.getAll(), builtSubstart, builtSubdata.getAll());
+        int[] builtSubdataArray = builtSubdata.getAll();
+        for (int i = 1; i < builtSubstart.length; ++i) {
+            int start = builtSubstart[i - 1];
+            int end = builtSubstart[i];
+            int h = (builtSubstart[i] - start) / 2;
+            for (int j = 0; j < h; ++j) {
+                int tmp = builtSubdataArray[start + j];
+                builtSubdataArray[start + j] = builtSubdataArray[end - j - 1];
+                builtSubdataArray[end - j - 1] = tmp;
+            }
+        }
+        return new RecordArray(recordSize, arraysPerRecord, size, data.getAll(), builtSubstart, builtSubdataArray);
     }
 
     public class Record {

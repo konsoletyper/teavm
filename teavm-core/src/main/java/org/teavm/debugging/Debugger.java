@@ -291,7 +291,7 @@ public class Debugger {
             updateBreakpoints();
             return;
         }
-        for (String sourceFile : debugInfo.getCoveredSourceFiles()) {
+        for (String sourceFile : debugInfo.getFilesNames()) {
             ConcurrentMap<DebugInformation, Object> list = debugInformationFileMap.get(sourceFile);
             if (list == null) {
                 list = new ConcurrentHashMap<>();
