@@ -18,6 +18,8 @@ package org.teavm.debugging;
 import java.util.*;
 import org.teavm.codegen.LocationProvider;
 import org.teavm.common.IntegerArray;
+import org.teavm.common.RecordArray;
+import org.teavm.common.RecordArrayBuilder;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 
@@ -35,12 +37,12 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
     private MappedList variableNames = new MappedList();
     private List<Long> exactMethods = new ArrayList<>();
     private Map<Long, Integer> exactMethodMap = new HashMap<>();
-    private Mapping fileMapping = new Mapping();
-    private Mapping lineMapping = new Mapping();
-    private Mapping classMapping = new Mapping();
-    private Mapping methodMapping = new Mapping();
-    private Mapping callSiteMapping = new Mapping();
-    private Map<Integer, MultiMapping> variableMappings = new HashMap<>();
+    private RecordArrayBuilder fileMapping = new RecordArrayBuilder(3, 0);
+    private RecordArrayBuilder lineMapping = new RecordArrayBuilder(3, 0);
+    private RecordArrayBuilder classMapping = new RecordArrayBuilder(3, 0);
+    private RecordArrayBuilder methodMapping = new RecordArrayBuilder(3, 0);
+    private RecordArrayBuilder callSiteMapping = new RecordArrayBuilder(3, 1);
+    private Map<Integer, RecordArrayBuilder> variableMappings = new HashMap<>();
     private MethodDescriptor currentMethod;
     private String currentClass;
     private String currentFileName;
@@ -63,13 +65,32 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
         debugInformation = null;
         int fileIndex = files.index(fileName);
         if (!Objects.equals(currentFileName, fileName)) {
-            fileMapping.add(locationProvider, fileIndex, true);
+            add(fileMapping, fileIndex);
             currentFileName = fileName;
         }
         if (currentLine != line) {
-            lineMapping.add(locationProvider, line, true);
+            add(lineMapping, line);
             currentLine = line;
         }
+    }
+
+    private  RecordArrayBuilder.Record add(RecordArrayBuilder builder) {
+        if (builder.size() > 1) {
+            RecordArrayBuilder.Record lastRecord = builder.get(builder.size() - 1);
+            if (lastRecord.get(0) == locationProvider.getLine() && lastRecord.get(1) == locationProvider.getColumn()) {
+                return lastRecord;
+            }
+        }
+        RecordArrayBuilder.Record record = builder.add();
+        record.set(0, locationProvider.getLine());
+        record.set(1, locationProvider.getColumn());
+        return record;
+    }
+
+    private  RecordArrayBuilder.Record add(RecordArrayBuilder builder, int value) {
+        RecordArrayBuilder.Record record = add(builder);
+        record.set(2, value);
+        return record;
     }
 
     @Override
@@ -77,7 +98,7 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
         debugInformation = null;
         int classIndex = classes.index(className);
         if (!Objects.equals(className, currentClass)) {
-            classMapping.add(locationProvider, classIndex, true);
+            add(classMapping, classIndex);
             currentClass = className;
         }
     }
@@ -87,7 +108,7 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
         debugInformation = null;
         int methodIndex = methods.index(method != null ? method.toString() : null);
         if (!Objects.equals(method, currentMethod)) {
-            methodMapping.add(locationProvider, methodIndex, true);
+            add(methodMapping, methodIndex);
             currentMethod = method;
         }
         if (currentClass != null) {
@@ -108,19 +129,42 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
         }
         Arrays.sort(sourceIndexes);
         int generatedIndex = variableNames.index(generatedName);
-        MultiMapping mapping = variableMappings.get(generatedIndex);
+        RecordArrayBuilder mapping = variableMappings.get(generatedIndex);
         if (mapping == null) {
-            mapping = new MultiMapping();
+            mapping = new RecordArrayBuilder(2, 1);
             variableMappings.put(generatedIndex, mapping);
         }
-        mapping.add(locationProvider, sourceIndexes);
+
+        RecordArrayBuilder.Record record = add(mapping);
+        RecordArrayBuilder.RecordSubArray array = record.getArray(0);
+        for (int sourceIndex : sourceIndexes) {
+            array.add(sourceIndex);
+        }
     }
 
     @Override
     public DeferredCallSite emitCallSite() {
+        final RecordArrayBuilder.Record record = add(callSiteMapping, DebuggerCallSite.NONE);
         DeferredCallSite callSite = new DeferredCallSite() {
-            int index = callSiteMapping.values.size();
-            @Override public void setMethod(MethodReference method) {
+            @Override
+            public void setVirtualMethod(MethodReference method) {
+                record.set(2, DebuggerCallSite.VIRTUAL);
+                RecordArrayBuilder.RecordSubArray array = record.getArray(0);
+                array.clear();
+                array.add(getExactMethodIndex(method));
+            }
+            @Override
+            public void setStaticMethod(MethodReference method) {
+                record.set(2, DebuggerCallSite.STATIC);
+                RecordArrayBuilder.RecordSubArray array = record.getArray(0);
+                array.clear();
+                array.add(getExactMethodIndex(method));
+            }
+            @Override
+            public void clean() {
+                record.set(2, DebuggerCallSite.NONE);
+            }
+            private int getExactMethodIndex(MethodReference method) {
                 int methodIndex = methods.index(method.getDescriptor().toString());
                 int classIndex = classes.index(method.getClassName());
                 long fullIndex = ((long)classIndex << 32) | methodIndex;
@@ -130,16 +174,10 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
                     exactMethodMap.put(fullIndex, exactMethodIndex);
                     exactMethods.add(fullIndex);
                 }
-                callSiteMapping.values.set(index, exactMethodIndex);
+                return exactMethodIndex;
             }
         };
-        callSiteMapping.add(locationProvider, -1, false);
         return callSite;
-    }
-
-    @Override
-    public void emitEmptyCallSite() {
-        callSiteMapping.add(locationProvider, -1, false);
     }
 
     @Override
@@ -181,6 +219,43 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
         }
     }
 
+    private RecordArrayBuilder compress(RecordArrayBuilder builder) {
+        int lastValue = 0;
+        RecordArrayBuilder compressed = new RecordArrayBuilder(builder.getRecordSize(), builder.getArraysPerRecord());
+        for (int i = 0; i < builder.size(); ++i) {
+            RecordArrayBuilder.Record record = builder.get(i);
+            if (i == 0 || lastValue != record.get(2)) {
+                RecordArrayBuilder.Record compressedRecord = compressed.add();
+                for (int j = 0; j < builder.getRecordSize(); ++j) {
+                    compressedRecord.set(j, record.get(j));
+                }
+            }
+        }
+        return compressed;
+    }
+
+    private void compressAndSortArrays(RecordArrayBuilder builder) {
+        for (int i = 0; i < builder.size(); ++i) {
+            RecordArrayBuilder.Record record = builder.get(i);
+            for (int j = 0; j < builder.getArraysPerRecord(); ++j) {
+                RecordArrayBuilder.RecordSubArray array = record.getArray(j);
+                int[] data = array.getData();
+                Arrays.sort(data);
+                array.clear();
+                if (data.length > 0) {
+                    int last = data[0];
+                    array.add(last);
+                    for (int k = 1; k < data.length; ++k) {
+                        if (data[k] != last) {
+                            last = data[k];
+                            array.add(last);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     public DebugInformation getDebugInformation() {
         if (debugInformation == null) {
             debugInformation = new DebugInformation();
@@ -196,14 +271,15 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
             }
             debugInformation.exactMethodMap = new HashMap<>(exactMethodMap);
 
-            debugInformation.fileMapping = fileMapping.build();
-            debugInformation.lineMapping = lineMapping.build();
-            debugInformation.classMapping = classMapping.build();
-            debugInformation.methodMapping = methodMapping.build();
+            debugInformation.fileMapping = compress(fileMapping).build();
+            debugInformation.lineMapping = compress(lineMapping).build();
+            debugInformation.classMapping = compress(classMapping).build();
+            debugInformation.methodMapping = compress(methodMapping).build();
             debugInformation.callSiteMapping = callSiteMapping.build();
-            debugInformation.variableMappings = new DebugInformation.MultiMapping[variableNames.list.size()];
+            debugInformation.variableMappings = new RecordArray[variableNames.list.size()];
             for (int var : variableMappings.keySet()) {
-                MultiMapping mapping = variableMappings.get(var);
+                RecordArrayBuilder mapping = variableMappings.get(var);
+                compressAndSortArrays(mapping);
                 debugInformation.variableMappings[var] = mapping.build();
             }
 
@@ -231,107 +307,6 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
             debugInformation.rebuild();
         }
         return debugInformation;
-    }
-
-    static class Mapping {
-        IntegerArray lines = new IntegerArray(1);
-        IntegerArray columns = new IntegerArray(1);
-        IntegerArray values = new IntegerArray(1);
-
-        public void add(LocationProvider location, int value, boolean merge) {
-            if (merge && lines.size() > 1) {
-                int last = lines.size() - 1;
-                if (lines.get(last) == location.getLine() && columns.get(last) == location.getColumn()) {
-                    values.set(last, value);
-                    // TODO: check why this gives an invalid result
-                    /*if (values.get(last) == values.get(last - 1)) {
-                        values.remove(last);
-                        lines.remove(last);
-                        columns.remove(last);
-                    }*/
-                    return;
-                }
-            }
-            lines.add(location.getLine());
-            columns.add(location.getColumn());
-            values.add(value);
-        }
-
-        DebugInformation.Mapping build() {
-            return new DebugInformation.Mapping(lines.getAll(), columns.getAll(), values.getAll());
-        }
-    }
-
-    static class MultiMapping {
-        IntegerArray lines = new IntegerArray(1);
-        IntegerArray columns = new IntegerArray(1);
-        IntegerArray offsets = new IntegerArray(1);
-        IntegerArray data = new IntegerArray(1);
-
-        public MultiMapping() {
-            offsets.add(0);
-        }
-
-        public void add(LocationProvider location, int[] values) {
-            if (lines.size() > 1) {
-                int last = lines.size() - 1;
-                if (lines.get(last) == location.getLine() && columns.get(last) == location.getColumn()) {
-                    addToLast(values);
-                    return;
-                }
-            }
-            lines.add(location.getLine());
-            columns.add(location.getColumn());
-            data.addAll(values);
-            offsets.add(data.size());
-        }
-
-        private void addToLast(int[] values) {
-            int start = offsets.get(offsets.size() - 2);
-            int end = offsets.get(offsets.size() - 1);
-            int[] existing = data.getRange(start, end);
-            values = merge(existing, values);
-            if (values.length == existing.length) {
-                return;
-            }
-            data.remove(start, end - start);
-            data.addAll(values);
-            offsets.set(offsets.size() - 1, data.size());
-        }
-
-        private int[] merge(int[] a, int[] b) {
-            int[] result = new int[a.length + b.length];
-            int i = 0;
-            int j = 0;
-            int k = 0;
-            while (i < a.length && j < b.length) {
-                int p = a[i];
-                int q = b[j];
-                if (p == q) {
-                    result[k++] = p;
-                    ++i;
-                    ++j;
-                } else if (p < q) {
-                    result[k++] = p;
-                    ++i;
-                } else {
-                    result[k++] = q;
-                    ++j;
-                }
-            }
-            while (i < a.length) {
-                result[k++] = a[i++];
-            }
-            while (j < b.length) {
-                result[k++] = b[j++];
-            }
-            return k < result.length ? Arrays.copyOf(result, k) : result;
-        }
-
-        public DebugInformation.MultiMapping build() {
-            return new DebugInformation.MultiMapping(lines.getAll(), columns.getAll(), offsets.getAll(),
-                    data.getAll());
-        }
     }
 
     static class MappedList {

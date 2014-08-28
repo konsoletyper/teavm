@@ -44,13 +44,10 @@ public class DummyDebugInformationEmitter implements DebugInformationEmitter {
     @Override
     public DeferredCallSite emitCallSite() {
         return new DeferredCallSite() {
-            @Override public void setMethod(MethodReference method) {
-            }
+            @Override public void setVirtualMethod(MethodReference method) { }
+            @Override public void setStaticMethod(MethodReference method) { }
+            @Override public void clean() { }
         };
-    }
-
-    @Override
-    public void emitEmptyCallSite() {
     }
 
     @Override

@@ -101,16 +101,14 @@ public class Debugger {
             DebugInformation debugInfo = debugInformationMap.get(script);
             if (frame.getLocation() != null && frame.getLocation().getFileName() != null &&
                     frame.getLocation().getLine() >= 0 && debugInfo != null) {
-                MethodReference[] callMethods = debugInfo.getCallSites(frame.getLocation());
                 exits = addFollowing(debugInfo, frame.getLocation(), script, new HashSet<SourceLocation>(),
                         successors);
                 if (enterMethod) {
-                    for (MethodReference callMethod : callMethods) {
-                        for (MethodReference potentialMethod : debugInfo.getOverridingMethods(callMethod)) {
-                            for (GeneratedLocation loc : debugInfo.getMethodEntrances(potentialMethod)) {
-                                successors.add(new JavaScriptLocation(script, loc.getLine(), loc.getColumn()));
-                            }
-                        }
+                    CallSiteSuccessorFinder successorFinder = new CallSiteSuccessorFinder(debugInfo, script,
+                            successors);
+                    DebuggerCallSite[] callSites = debugInfo.getCallSites(frame.getLocation());
+                    for (DebuggerCallSite callSite : callSites) {
+                        callSite.acceptVisitor(successorFinder);
                     }
                 }
             } else {
@@ -124,6 +122,34 @@ public class Debugger {
             temporaryBreakpoints.add(javaScriptDebugger.createBreakpoint(successor));
         }
         javaScriptDebugger.resume();
+    }
+
+    private static class CallSiteSuccessorFinder implements DebuggerCallSiteVisitor {
+        private DebugInformation debugInfo;
+        private String script;
+        Set<JavaScriptLocation> locations;
+
+        public CallSiteSuccessorFinder(DebugInformation debugInfo, String script, Set<JavaScriptLocation> locations) {
+            this.debugInfo = debugInfo;
+            this.script = script;
+            this.locations = locations;
+        }
+
+        @Override
+        public void visit(DebuggerVirtualCallSite callSite) {
+            for (MethodReference potentialMethod : debugInfo.getOverridingMethods(callSite.getMethod())) {
+                for (GeneratedLocation loc : debugInfo.getMethodEntrances(potentialMethod)) {
+                    locations.add(new JavaScriptLocation(script, loc.getLine(), loc.getColumn()));
+                }
+            }
+        }
+
+        @Override
+        public void visit(DebuggerStaticCallSite callSite) {
+            for (GeneratedLocation loc : debugInfo.getMethodEntrances(callSite.getMethod())) {
+                locations.add(new JavaScriptLocation(script, loc.getLine(), loc.getColumn()));
+            }
+        }
     }
 
     private boolean addFollowing(DebugInformation debugInfo, SourceLocation location, String script,

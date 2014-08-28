@@ -57,6 +57,18 @@ public class RecordArray {
         return arraysPerRecord;
     }
 
+    public int[] cut(int index) {
+        if (index < 0 || index >= recordSize) {
+            throw new IndexOutOfBoundsException("Index " + index + " is outside of [0; " + recordSize + ")");
+        }
+        int[] result = new int[size];
+        for (int i = 0; i < size; ++i) {
+            result[i] = data[index];
+            index += recordSize;
+        }
+        return result;
+    }
+
     public class Record {
         int offset;
         int arrayOffset;

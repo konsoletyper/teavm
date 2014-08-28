@@ -27,9 +27,7 @@ class SourceMapsWriter {
     private Writer output;
     private int lastLine;
     private int lastColumn;
-    private int sourceLine;
     private int lastSourceLine;
-    private int sourceFile;
     private int lastSourceFile;
     private boolean first;
 
@@ -58,31 +56,10 @@ class SourceMapsWriter {
         first = true;
         lastLine = 0;
         lastColumn = 0;
-        sourceLine = -1;
-        sourceFile = -1;
         lastSourceFile = 0;
         lastSourceLine = 0;
-        int i = 0;
-        int j = 0;
-        while (i < debugInfo.lineMapping.lines.length && j < debugInfo.fileMapping.lines.length) {
-            GeneratedLocation a = debugInfo.lineMapping.key(i);
-            GeneratedLocation b = debugInfo.fileMapping.key(j);
-            int cmp = a.compareTo(b);
-            if (cmp < 0) {
-                writeSegment(a, sourceFile, debugInfo.lineMapping.values[i++]);
-            } else if (cmp > 0) {
-                writeSegment(b, debugInfo.fileMapping.values[j++], sourceLine);
-            } else {
-                writeSegment(a, debugInfo.fileMapping.values[j++], debugInfo.lineMapping.values[i++] - 1);
-            }
-        }
-        while (i < debugInfo.lineMapping.lines.length) {
-            GeneratedLocation a = debugInfo.lineMapping.key(i);
-            writeSegment(a, sourceFile, debugInfo.lineMapping.values[i++]);
-        }
-        while (j < debugInfo.fileMapping.lines.length) {
-            GeneratedLocation b = debugInfo.fileMapping.key(j);
-            writeSegment(b, debugInfo.fileMapping.values[j++], sourceLine);
+        for (SourceLocationIterator iter = debugInfo.iterateOverSourceLocations(); !iter.isEndReached(); iter.next()) {
+            writeSegment(iter.getLocation(), iter.getFileNameId(), iter.getLine());
         }
         output.write("\"}");
     }
@@ -106,8 +83,6 @@ class SourceMapsWriter {
             lastSourceLine = sourceLine;
         }
         lastColumn = loc.getColumn();
-        this.sourceFile = sourceFile;
-        this.sourceLine = sourceLine;
         first = false;
     }
 

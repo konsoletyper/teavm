@@ -35,8 +35,6 @@ public interface DebugInformationEmitter {
 
     DeferredCallSite emitCallSite();
 
-    void emitEmptyCallSite();
-
     void addClass(String className, String parentName);
 
     void addField(String fieldName, String jsName);

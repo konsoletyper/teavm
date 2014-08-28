@@ -15,39 +15,41 @@
  */
 package org.teavm.debugging;
 
+import org.teavm.model.MethodDescriptor;
+
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-public class FileNameIterator {
+public class MethodIterator {
     private DebugInformation debugInformation;
     private int index;
 
-    FileNameIterator(DebugInformation debugInformation) {
+    MethodIterator(DebugInformation debugInformation) {
         this.debugInformation = debugInformation;
     }
 
     public boolean isEndReached() {
-        return index < debugInformation.fileMapping.size();
+        return index < debugInformation.methodMapping.size();
     }
 
     public GeneratedLocation getLocation() {
         if (isEndReached()) {
             throw new IllegalStateException("End already reached");
         }
-        return DebugInformation.key(debugInformation.fileMapping.get(index));
+        return DebugInformation.key(debugInformation.methodMapping.get(index));
     }
 
-    public int getFileNameId() {
+    public int getMethodId() {
         if (isEndReached()) {
             throw new IllegalStateException("End already reached");
         }
-        return debugInformation.fileMapping.get(index).get(2);
+        return debugInformation.methodMapping.get(index).get(2);
     }
 
-    public String getFileName() {
-        int fileNameId = getFileNameId();
-        return fileNameId >= 0 ? debugInformation.getFileName(fileNameId) : null;
+    public MethodDescriptor getMethod() {
+        int methodId = getMethodId();
+        return methodId >= 0 ? debugInformation.getMethod(methodId) : null;
     }
 
     public void next() {

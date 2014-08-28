@@ -110,6 +110,13 @@ public class RecordArrayBuilder {
             return data.get(index + offset);
         }
 
+        public void set(int index, int value) {
+            if (index >= recordSize) {
+                throw new IndexOutOfBoundsException("Index out of bounds: " + index + " of " + recordSize);
+            }
+            data.set(index + offset, value);
+        }
+
         public int size() {
             return recordSize;
         }

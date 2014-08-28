@@ -22,5 +22,9 @@ import org.teavm.model.MethodReference;
  * @author Alexey Andreev
  */
 public interface DeferredCallSite {
-    void setMethod(MethodReference method);
+    void setVirtualMethod(MethodReference method);
+
+    void setStaticMethod(MethodReference method);
+
+    void clean();
 }

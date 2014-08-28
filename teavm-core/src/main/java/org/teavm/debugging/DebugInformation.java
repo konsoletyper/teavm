@@ -46,7 +46,7 @@ public class DebugInformation {
     RecordArray methodMapping;
     RecordArray lineMapping;
     RecordArray callSiteMapping;
-    MultiMapping[] variableMappings;
+    RecordArray[] variableMappings;
     RecordArray[] lineCallSites;
     CFG[] controlFlowGraphs;
     List<ClassMetadata> classesMetadata;
@@ -71,6 +71,71 @@ public class DebugInformation {
 
     public String getFileName(int fileNameId) {
         return fileNames[fileNameId];
+    }
+
+    public String[] getClassNames() {
+        return classNames.clone();
+    }
+
+    public String getClassName(int classNameId) {
+        return classNames[classNameId];
+    }
+
+    public MethodDescriptor[] getMethods() {
+        MethodDescriptor[] descriptors = new MethodDescriptor[methods.length];
+        for (int i = 0; i < descriptors.length; ++i) {
+            descriptors[i] = MethodDescriptor.parse(methods[i]);
+        }
+        return descriptors;
+    }
+
+    public MethodDescriptor getMethod(int methodId) {
+        return MethodDescriptor.parse(methods[methodId]);
+    }
+
+    public MethodReference[] getExactMethods() {
+        MethodReference[] result = new MethodReference[exactMethods.length];
+        for (int i = 0; i < result.length; ++i) {
+            result[i] = getExactMethod(i);
+        }
+        return result;
+    }
+
+    private Integer getExactMethodIndex(MethodReference methodRef) {
+        Integer classIndex = classNameMap.get(methodRef.getClassName());
+        if (classIndex == null) {
+            return null;
+        }
+        Integer methodIndex = methodMap.get(methodRef.getDescriptor().toString());
+        if (methodIndex == null) {
+            return null;
+        }
+        return getExactMethodIndex(classIndex, methodIndex);
+    }
+
+    public MethodReference getExactMethod(int index) {
+        long item = exactMethods[index];
+        int classIndex = (int)(item >>> 32);
+        int methodIndex = (int)item;
+        return new MethodReference(classNames[classIndex], MethodDescriptor.parse(methods[methodIndex]));
+    }
+
+    public int getExactMethodId(int classNameId, int methodId) {
+        long full = ((long)classNameId << 32) | methodId;
+        Integer id = exactMethodMap.get(full);
+        return id != null ? id : -1;
+    }
+
+    public ClassNameIterator iterateOverClassNames() {
+        return new ClassNameIterator(this);
+    }
+
+    public MethodIterator iterateOverMethods() {
+        return new MethodIterator(this);
+    }
+
+    public ExactMethodIterator iterateOverExactMethods() {
+        return new ExactMethodIterator(this);
     }
 
     public Collection<GeneratedLocation> getGeneratedLocations(String fileName, int line) {
@@ -139,11 +204,11 @@ public class DebugInformation {
         if (varIndex == null) {
             return new String[0];
         }
-        MultiMapping mapping = variableMappings[varIndex];
+        RecordArray mapping = variableMappings[varIndex];
         if (mapping == null) {
             return new String[0];
         }
-        return componentByKey(mapping, variableNames, location);
+        return componentSetByKey(mapping, variableNames, location);
     }
 
     public SourceLocation[] getFollowingLines(SourceLocation location) {
@@ -212,7 +277,7 @@ public class DebugInformation {
             case DebuggerCallSite.STATIC:
                 return new DebuggerStaticCallSite(getExactMethod(data[0]));
             case DebuggerCallSite.VIRTUAL:
-                return new DebuggerVirtualCallSite(getExactMethod(data[0]), data[1], variableNames[data[1]]);
+                return new DebuggerVirtualCallSite(getExactMethod(data[0]));
             default:
                 throw new AssertionError("Unrecognized call site type: " + type);
         }
@@ -227,26 +292,12 @@ public class DebugInformation {
         if (index == null) {
             return new GeneratedLocation[0];
         }
-        return methodEntrances.getEntrances(index);
-    }
-
-    private Integer getExactMethodIndex(MethodReference methodRef) {
-        Integer classIndex = classNameMap.get(methodRef.getClassName());
-        if (classIndex == null) {
-            return null;
+        int[] data = methodEntrances.get(0).getArray(0);
+        GeneratedLocation[] entrances = new GeneratedLocation[data.length / 2];
+        for (int i = 0; i < entrances.length; ++i) {
+            entrances[i] = new GeneratedLocation(data[i * 2], data[i * 2 + 1]);
         }
-        Integer methodIndex = methodMap.get(methodRef.getDescriptor().toString());
-        if (methodIndex == null) {
-            return null;
-        }
-        return getExactMethodIndex(classIndex, methodIndex);
-    }
-
-    public MethodReference getExactMethod(int index) {
-        long item = exactMethods[index];
-        int classIndex = (int)(item >>> 32);
-        int methodIndex = (int)item;
-        return new MethodReference(classNames[classIndex], MethodDescriptor.parse(methods[methodIndex]));
+        return entrances;
     }
 
     public MethodReference[] getDirectOverridingMethods(MethodReference methodRef) {
@@ -300,16 +351,15 @@ public class DebugInformation {
         return valueIndex >= 0 ? values[valueIndex] : null;
     }
 
-    private String[] componentByKey(MultiMapping mapping, String[] values, GeneratedLocation location) {
+    private String[] componentSetByKey(RecordArray mapping, String[] values, GeneratedLocation location) {
         int keyIndex = indexByKey(mapping, location);
         if (keyIndex < 0) {
             return new String[0];
         }
-        int start = mapping.offsets[keyIndex];
-        int end = mapping.offsets[keyIndex + 1];
-        String[] result = new String[end - start];
+        int[] valueIndexes = mapping.get(keyIndex).getArray(0);
+        String[] result = new String[valueIndexes.length];
         for (int i = 0; i < result.length; ++i) {
-            result[i] = values[mapping.data[i + start]];
+            result[i] = values[valueIndexes[i]];
         }
         return result;
     }
@@ -322,11 +372,6 @@ public class DebugInformation {
     private int valueByKey(RecordArray mapping, GeneratedLocation location) {
         int index = indexByKey(mapping, location);
         return index >= 0 ? mapping.get(index).get(2) : -1;
-    }
-
-    private int indexByKey(MultiMapping mapping, GeneratedLocation location) {
-        int index = Collections.binarySearch(mapping.keyList(), location);
-        return index >= 0 ? index : -index - 2;
     }
 
     public void write(OutputStream output) throws IOException {
@@ -372,48 +417,56 @@ public class DebugInformation {
     }
 
     void rebuildFileDescriptions() {
-        FileDescriptionBuilder builder = new FileDescriptionBuilder(fileNames.length);
-        int fileIndex = 0;
-        int lineIndex = 0;
-        int currentFile = -1;
-        int currentLine = -1;
-        while (fileIndex < fileMapping.size() && lineIndex < lineMapping.size()) {
-            RecordArray.Record fileRec = fileMapping.get(fileIndex);
-            RecordArray.Record lineRec = lineMapping.get(lineIndex);
-            GeneratedLocation fileLoc = key(fileRec);
-            GeneratedLocation lineLoc = key(lineRec);
-            int cmp = fileLoc.compareTo(lineLoc);
-            if (cmp < 0) {
-                currentFile = fileRec.get(2);
-                fileIndex++;
-            } else if (cmp > 0){
-                currentLine = lineRec.get(2);
-                lineIndex++;
-            } else {
-                currentFile = fileRec.get(2);
-                currentLine = lineRec.get(2);
-                fileIndex++;
-                lineIndex++;
+        RecordArrayBuilder[] builders = new RecordArrayBuilder[fileNames.length];
+        for (int i = 0; i < builders.length; ++i) {
+            builders[i] = new RecordArrayBuilder(0, 1);
+        }
+        for (SourceLocationIterator iter = iterateOverSourceLocations(); !iter.isEndReached(); iter.next()) {
+            if (iter.getFileNameId() >= 0 && iter.getLine() >= 0) {
+                RecordArrayBuilder builder = builders[iter.getFileNameId()];
+                while (builder.size() <= iter.getLine()) {
+                    builder.add();
+                }
+                GeneratedLocation loc = iter.getLocation();
+                RecordArrayBuilder.RecordSubArray array = builder.get(iter.getLine()).getArray(0);
+                array.add(loc.getLine());
+                array.add(loc.getColumn());
             }
-            builder.emit(fileLoc.getLine(), fileLoc.getColumn(), currentFile, currentLine);
         }
-        while (fileIndex < fileMapping.size()) {
-            RecordArray.Record fileRec = fileMapping.get(fileIndex++);
-            builder.emit(fileRec.get(0), fileRec.get(1), fileRec.get(2), currentLine);
+        fileDescriptions = new RecordArray[builders.length];
+        for (int i = 0; i < fileDescriptions.length; ++i) {
+            fileDescriptions[i] = builders[i].build();
         }
-        while (lineIndex < lineMapping.size()) {
-            RecordArray.Record lineRec = lineMapping.get(lineIndex++);
-            builder.emit(lineRec.get(0), lineRec.get(1), currentFile, lineRec.get(2));
-        }
-        fileDescriptions = builder.build();
     }
 
     void rebuildEntrances() {
         RecordArrayBuilder builder = new RecordArrayBuilder(0, 1);
-        for (SourceLocationIterator iter = iterateOverSourceLocations(); !iter.isEndReached(); iter.next()) {
-            iter.getLocation();
+        for (int i = 0; i < exactMethods.length; ++i) {
+            builder.add();
         }
-        methodEntrances = new MethodEntrancesBuilder().build();
+        GeneratedLocation prevLocation = new GeneratedLocation(0, 0);
+        MethodReference prevMethod = null;
+        for (ExactMethodIterator iter = iterateOverExactMethods(); !iter.isEndReached(); iter.next()) {
+            int id = iter.getExactMethodId();
+            if (prevMethod != null) {
+                int lineIndex = Math.max(0, indexByKey(lineMapping, prevLocation));
+                while (lineIndex < 0) {
+                    if (key(lineMapping.get(lineIndex)).compareTo(iter.getLocation()) >= 0) {
+                        break;
+                    }
+                    int line = lineMapping.get(0).get(2);
+                    if (line >= 0) {
+                        GeneratedLocation firstLineLoc = key(lineMapping.get(lineIndex));
+                        RecordArrayBuilder.RecordSubArray array = builder.get(id).getArray(0);
+                        array.add(firstLineLoc.getLine());
+                        array.add(firstLineLoc.getColumn());
+                        break;
+                    }
+                }
+            }
+            prevMethod = iter.getExactMethod();
+            prevLocation = iter.getLocation();
+        }
     }
 
     void rebuildMethodTree() {
@@ -516,186 +569,8 @@ public class DebugInformation {
         }
     }
 
-    class MethodEntrancesBuilder {
-        int[] start;
-        IntegerArray data;
-        IntegerArray next;
-        int methodIndex;
-        int classIndex;
-
-        public MethodEntrances build() {
-            methodIndex = -1;
-            classIndex = -1;
-            start = new int[exactMethods.length];
-            Arrays.fill(start, -1);
-            data = new IntegerArray(0);
-            next = new IntegerArray(0);
-            int methodMappingIndex = 0;
-            int classMappingIndex = 0;
-            GeneratedLocation previousLocation = new GeneratedLocation(0, 0);
-            while (methodMappingIndex < methodMapping.lines.length &&
-                    classMappingIndex < classMapping.lines.length) {
-                GeneratedLocation methodLoc = new GeneratedLocation(methodMapping.lines[methodMappingIndex],
-                        methodMapping.columns[methodMappingIndex]);
-                GeneratedLocation classLoc = new GeneratedLocation(classMapping.lines[classMappingIndex],
-                        classMapping.columns[classMappingIndex]);
-                int cmp = methodLoc.compareTo(classLoc);
-                if (cmp < 0) {
-                    addMethodEntrance(previousLocation, methodLoc);
-                    previousLocation = methodLoc;
-                    methodIndex = methodMapping.values[methodMappingIndex++];
-                } else if (cmp > 0) {
-                    addMethodEntrance(previousLocation, classLoc);
-                    previousLocation = classLoc;
-                    classIndex = classMapping.values[classMappingIndex++];
-                } else {
-                    addMethodEntrance(previousLocation, classLoc);
-                    previousLocation = classLoc;
-                    methodIndex = methodMapping.values[methodMappingIndex++];
-                    classIndex = classMapping.values[classMappingIndex++];
-                }
-            }
-            while (methodMappingIndex < methodMapping.lines.length) {
-                GeneratedLocation methodLoc = new GeneratedLocation(methodMapping.lines[methodMappingIndex],
-                        methodMapping.columns[methodMappingIndex]);
-                addMethodEntrance(previousLocation, methodLoc);
-                previousLocation = methodLoc;
-                methodIndex = methodMapping.values[methodMappingIndex++];
-            }
-            while (classMappingIndex < classMapping.lines.length) {
-                GeneratedLocation classLoc = new GeneratedLocation(classMapping.lines[classMappingIndex],
-                        classMapping.columns[classMappingIndex]);
-                addMethodEntrance(previousLocation, classLoc);
-                previousLocation = classLoc;
-                classIndex = classMapping.values[classMappingIndex++];
-            }
-            return assemble();
-        }
-
-        private void addMethodEntrance(GeneratedLocation location, GeneratedLocation limit) {
-            if (classIndex < 0 || methodIndex < 0) {
-                return;
-            }
-            long exactMethod = ((long)classIndex << 32) | methodIndex;
-            Integer exactMethodIndex = exactMethodMap.get(exactMethod);
-            if (exactMethodIndex == null) {
-                return;
-            }
-
-            int lineIndex = indexByKey(lineMapping, location);
-            if (lineIndex < 0) {
-                lineIndex = 0;
-            }
-            int line = -1;
-            while (lineIndex < lineMapping.values.length) {
-                location = new GeneratedLocation(lineMapping.lines[lineIndex], lineMapping.columns[lineIndex]);
-                if (location.compareTo(limit) >= 0) {
-                    break;
-                }
-                if (lineMapping.values[lineIndex] >= 0) {
-                    line = lineMapping.values[lineIndex];
-                    break;
-                }
-                ++lineIndex;
-            }
-            if (line == -1) {
-                return;
-            }
-
-            int ptr = start[exactMethodIndex];
-            start[exactMethodIndex] = data.size();
-            next.add(ptr);
-            ptr = data.size();
-            data.add(location.getColumn());
-            next.add(ptr);
-            start[exactMethodIndex] = data.size();
-            data.add(location.getLine());
-        }
-
-        private MethodEntrances assemble() {
-            MethodEntrances entrances = new MethodEntrances();
-            entrances.offsets = new int[start.length + 1];
-            entrances.data = new int[data.size()];
-            int index = 0;
-            for (int i = 0; i < start.length; ++i) {
-                int ptr = start[i];
-                while (ptr != -1) {
-                    entrances.data[index++] = data.get(ptr);
-                    ptr = next.get(ptr);
-                }
-                entrances.offsets[i + 1] = index;
-            }
-            return entrances;
-        }
-    }
-
-    static class FileDescriptionBuilder {
-        RecordArrayBuilder[] files;
-        int lastFileIndex = -1;
-        int lastSourceLine = -1;
-
-        public FileDescriptionBuilder(int size) {
-            files = new RecordArrayBuilder[size];
-            for (int i = 0; i < size; ++i) {
-                files[i] = new RecordArrayBuilder(0, 1);
-            }
-        }
-
-        void emit(int line, int column, int fileIndex, int sourceLine) {
-            if (sourceLine == -1 || fileIndex == -1) {
-                return;
-            }
-            if (lastFileIndex == fileIndex && lastSourceLine == sourceLine) {
-                return;
-            }
-            lastFileIndex = fileIndex;
-            lastSourceLine = sourceLine;
-            RecordArrayBuilder proto = files[fileIndex];
-            while (proto.size() <= sourceLine) {
-                proto.add();
-            }
-            RecordArrayBuilder.RecordSubArray array = proto.get(sourceLine).getArray(0);
-            array.add(line);
-            array.add(column);
-        }
-
-        public RecordArray[] build() {
-            RecordArray[] descriptions = new RecordArray[files.length];
-            for (int i = 0; i < files.length; ++i) {
-                descriptions[i] = files[i].build();
-            }
-            return descriptions;
-        }
-    }
-
     static GeneratedLocation key(RecordArray.Record record) {
         return new GeneratedLocation(record.get(0), record.get(1));
-    }
-
-    static class MultiMapping {
-        int[] lines;
-        int[] columns;
-        int[] offsets;
-        int[] data;
-
-        public MultiMapping(int[] lines, int[] columns, int[] offsets, int[] data) {
-            this.lines = lines;
-            this.columns = columns;
-            this.offsets = offsets;
-            this.data = data;
-        }
-
-        public LocationList keyList() {
-            return new LocationList(lines, columns);
-        }
-
-        public int size() {
-            return lines.length;
-        }
-
-        public GeneratedLocation key(int index) {
-            return new GeneratedLocation(lines[index], columns[index]);
-        }
     }
 
     static class LocationList extends AbstractList<GeneratedLocation> {

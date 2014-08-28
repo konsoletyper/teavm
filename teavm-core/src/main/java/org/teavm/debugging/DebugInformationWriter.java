@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import org.teavm.common.RecordArray;
 import org.teavm.debugging.DebugInformation.ClassMetadata;
 
 /**
@@ -57,13 +58,13 @@ class DebugInformationWriter {
         int lastVar = 0;
         writeUnsignedNumber(nonNullVariableMappings(debugInfo));
         for (int i = 0; i < debugInfo.variableMappings.length; ++i) {
-            DebugInformation.MultiMapping mapping = debugInfo.variableMappings[i];
+            RecordArray mapping = debugInfo.variableMappings[i];
             if (mapping == null) {
                 continue;
             }
             writeUnsignedNumber(i - lastVar);
             lastVar = i;
-            writeMapping(mapping);
+            writeMultiMapping(mapping);
         }
     }
 
@@ -114,8 +115,8 @@ class DebugInformationWriter {
         }
     }
 
-    private void writeMapping(DebugInformation.MultiMapping mapping) throws IOException {
-        int[] lines = mapping.lines.clone();
+    private void writeLinesAndColumns(RecordArray mapping) throws IOException {
+        int[] lines = mapping.cut(0);
         int last = 0;
         for (int i = 0; i < lines.length; ++i) {
             int next = lines[i];
@@ -124,36 +125,36 @@ class DebugInformationWriter {
         }
         writeRle(lines);
         resetRelativeNumber();
-        for (int i = 0; i < mapping.columns.length; ++i) {
-            writeRelativeNumber(mapping.columns[i]);
-        }
-        int lastOffset = 0;
-        for (int i = 1; i < mapping.offsets.length; ++i) {
-            writeUnsignedNumber(mapping.offsets[i] - lastOffset);
-            lastOffset = mapping.offsets[i];
-        }
-        resetRelativeNumber();
-        for (int i = 0; i < mapping.data.length; ++i) {
-            writeRelativeNumber(mapping.data[i]);
+        int[] columns = mapping.cut(1);
+        int lastLine = -1;
+        for (int i = 0; i < columns.length; ++i) {
+            if (lastLine != mapping.get(i).get(0)) {
+                resetRelativeNumber();
+                lastLine = mapping.get(i).get(0);
+            }
+            writeRelativeNumber(columns[i]);
         }
     }
 
-    private void writeMapping(DebugInformation.Mapping mapping) throws IOException {
-        int[] lines = mapping.lines.clone();
-        int last = 0;
-        for (int i = 0; i < lines.length; ++i) {
-            int next = lines[i];
-            lines[i] -= last;
-            last = next;
+    private void writeMultiMapping(RecordArray mapping) throws IOException {
+        writeLinesAndColumns(mapping);
+        for (int i = 0; i < mapping.size(); ++i) {
+            int[] array = mapping.get(0).getArray(0);
+            writeUnsignedNumber(array.length);
+            int lastNumber = 0;
+            for (int elem : array) {
+                writeUnsignedNumber(elem - lastNumber);
+                lastNumber = elem;
+            }
         }
-        writeRle(lines);
+    }
+
+    private void writeMapping(RecordArray mapping) throws IOException {
+        writeLinesAndColumns(mapping);
         resetRelativeNumber();
-        for (int i = 0; i < mapping.columns.length; ++i) {
-            writeRelativeNumber(mapping.columns[i]);
-        }
-        resetRelativeNumber();
-        for (int i = 0; i < mapping.values.length; ++i) {
-            writeRelativeNumber(mapping.values[i]);
+        int[] values = mapping.cut(2);
+        for (int i = 0; i < values.length; ++i) {
+            writeRelativeNumber(values[i]);
         }
     }
 

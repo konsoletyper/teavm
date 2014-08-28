@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2014 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 package org.teavm.debugging;
 
 import org.teavm.model.MethodReference;
@@ -8,13 +23,9 @@ import org.teavm.model.MethodReference;
  */
 public class DebuggerVirtualCallSite extends DebuggerCallSite {
     private MethodReference method;
-    private int variableId;
-    private String variableName;
 
-    DebuggerVirtualCallSite(MethodReference method, int variableId, String variableName) {
+    DebuggerVirtualCallSite(MethodReference method) {
         this.method = method;
-        this.variableId = variableId;
-        this.variableName = variableName;
     }
 
     public MethodReference getMethod() {
@@ -23,22 +34,6 @@ public class DebuggerVirtualCallSite extends DebuggerCallSite {
 
     public void setMethod(MethodReference method) {
         this.method = method;
-    }
-
-    public int getVariableId() {
-        return variableId;
-    }
-
-    public void setVariableId(int variableId) {
-        this.variableId = variableId;
-    }
-
-    public String getVariableName() {
-        return variableName;
-    }
-
-    public void setVariableName(String variableName) {
-        this.variableName = variableName;
     }
 
     @Override

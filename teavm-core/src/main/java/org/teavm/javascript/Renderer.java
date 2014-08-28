@@ -608,7 +608,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 writer.ws().append("=").ws();
             }
             statement.getRightValue().acceptVisitor(this);
-            debugEmitter.emitEmptyCallSite();
+            debugEmitter.emitCallSite();
             writer.append(";").softNewLine();
             if (statement.getLocation() != null) {
                 popLocation();
@@ -640,7 +640,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 prevCallSite = debugEmitter.emitCallSite();
                 writer.append("if").ws().append("(");
                 statement.getCondition().acceptVisitor(this);
-                debugEmitter.emitEmptyCallSite();
+                debugEmitter.emitCallSite();
                 writer.append(")").ws().append("{").softNewLine().indent();
                 if (statement.getCondition().getLocation() != null) {
                     popLocation();
@@ -678,7 +678,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             prevCallSite = debugEmitter.emitCallSite();
             writer.append("switch").ws().append("(");
             statement.getValue().acceptVisitor(this);
-            debugEmitter.emitEmptyCallSite();
+            debugEmitter.emitCallSite();
             writer.append(")").ws().append("{").softNewLine().indent();
             for (SwitchClause clause : statement.getClauses()) {
                 for (int condition : clause.getConditions()) {
@@ -713,7 +713,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             if (statement.getCondition() != null) {
                 prevCallSite = debugEmitter.emitCallSite();
                 statement.getCondition().acceptVisitor(this);
-                debugEmitter.emitEmptyCallSite();
+                debugEmitter.emitCallSite();
             } else {
                 writer.append("true");
             }
@@ -794,7 +794,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 writer.append(' ');
                 prevCallSite = debugEmitter.emitCallSite();
                 statement.getResult().acceptVisitor(this);
-                debugEmitter.emitEmptyCallSite();
+                debugEmitter.emitCallSite();
             }
             writer.append(";").softNewLine();
             if (statement.getLocation() != null) {
@@ -815,7 +815,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             prevCallSite = debugEmitter.emitCallSite();
             statement.getException().acceptVisitor(this);
             writer.append(");").softNewLine();
-            debugEmitter.emitEmptyCallSite();
+            debugEmitter.emitCallSite();
             if (statement.getLocation() != null) {
                 popLocation();
             }
@@ -1317,6 +1317,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 if (lastCallSite == null) {
                     lastCallSite = callSite;
                 }
+                boolean virtual = false;
                 switch (expr.getType()) {
                     case STATIC:
                         writer.append(fullName).append("(");
@@ -1350,6 +1351,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                             expr.getArguments().get(i).acceptVisitor(this);
                         }
                         writer.append(')');
+                        virtual = true;
                         break;
                     case CONSTRUCTOR:
                         writer.append(className).append(".").append(name).append("(");
@@ -1364,7 +1366,11 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                         break;
                 }
                 if (lastCallSite != null) {
-                    lastCallSite.setMethod(expr.getMethod());
+                    if (virtual) {
+                        lastCallSite.setVirtualMethod(expr.getMethod());
+                    } else {
+                        lastCallSite.setStaticMethod(expr.getMethod());
+                    }
                     lastCallSite = callSite;
                 }
                 if (shouldEraseCallSite) {
