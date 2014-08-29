@@ -17,6 +17,8 @@ package org.teavm.debugging;
 
 import java.util.Collections;
 import java.util.Map;
+import org.teavm.debugging.information.SourceLocation;
+import org.teavm.debugging.javascript.JavaScriptLocation;
 import org.teavm.model.MethodReference;
 
 /**

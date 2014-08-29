@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.debugging;
+package org.teavm.debugging.information;
 
 import java.io.DataOutput;
 import java.io.IOException;
@@ -21,8 +21,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import org.teavm.common.IntegerArray;
 import org.teavm.common.RecordArray;
-import org.teavm.debugging.DebugInformation.ClassMetadata;
+import org.teavm.debugging.information.DebugInformation.ClassMetadata;
 
 /**
  *
@@ -48,7 +49,7 @@ class DebugInformationWriter {
         writeMapping(debugInfo.lineMapping);
         writeMapping(debugInfo.classMapping);
         writeMapping(debugInfo.methodMapping);
-        writeMapping(debugInfo.callSiteMapping);
+        writeCallSiteMapping(debugInfo.callSiteMapping);
         writeVariableMappings(debugInfo);
         writeClassMetadata(debugInfo.classesMetadata);
         writeCFGs(debugInfo);
@@ -115,27 +116,6 @@ class DebugInformationWriter {
         }
     }
 
-    private void writeLinesAndColumns(RecordArray mapping) throws IOException {
-        int[] lines = mapping.cut(0);
-        int last = 0;
-        for (int i = 0; i < lines.length; ++i) {
-            int next = lines[i];
-            lines[i] -= last;
-            last = next;
-        }
-        writeRle(lines);
-        resetRelativeNumber();
-        int[] columns = mapping.cut(1);
-        int lastLine = -1;
-        for (int i = 0; i < columns.length; ++i) {
-            if (lastLine != mapping.get(i).get(0)) {
-                resetRelativeNumber();
-                lastLine = mapping.get(i).get(0);
-            }
-            writeRelativeNumber(columns[i]);
-        }
-    }
-
     private void writeMultiMapping(RecordArray mapping) throws IOException {
         writeLinesAndColumns(mapping);
         for (int i = 0; i < mapping.size(); ++i) {
@@ -151,47 +131,108 @@ class DebugInformationWriter {
 
     private void writeMapping(RecordArray mapping) throws IOException {
         writeLinesAndColumns(mapping);
-        resetRelativeNumber();
-        int[] values = mapping.cut(2);
-        for (int i = 0; i < values.length; ++i) {
-            writeRelativeNumber(values[i]);
+        writeRle(extractValues(mapping));
+    }
+
+    private void writeCallSiteMapping(RecordArray mapping) throws IOException {
+        writeLinesAndColumns(mapping);
+        writeRle(extractValues(mapping));
+        writeRle(extractCallSites(mapping));
+    }
+
+    private void writeLinesAndColumns(RecordArray mapping) throws IOException {
+        writeUnsignedNumber(mapping.size());
+        writeRle(extractLines(mapping));
+        writeRle(extractColumns(mapping));
+    }
+
+    private int[] extractLines(RecordArray mapping) {
+        int[] lines = mapping.cut(0);
+        int last = 0;
+        for (int i = 0; i < lines.length; ++i) {
+            int next = lines[i];
+            lines[i] -= last;
+            last = next;
         }
+        return lines;
+    }
+
+    private int[] extractColumns(RecordArray mapping) {
+        int[] columns = mapping.cut(1);
+        int lastLine = -1;
+        int lastColumn = 0;
+        for (int i = 0; i < columns.length; ++i) {
+            if (lastLine != mapping.get(i).get(0)) {
+                lastColumn = 0;
+                lastLine = mapping.get(i).get(0);
+            }
+            int column = columns[i];
+            columns[i] = column - lastColumn;
+            lastColumn = column;
+        }
+        return columns;
+    }
+
+    private int[] extractValues(RecordArray mapping) {
+        int[] values = mapping.cut(2);
+        int last = 0;
+        for (int i = 0; i < values.length; ++i) {
+            int value = values[i];
+            if (value == -1) {
+                values[i] = 0;
+            } else {
+                values[i] = 1 + convertToSigned(value - last);
+                last = value;
+            }
+        }
+        return values;
+    }
+
+    private int[] extractCallSites(RecordArray mapping) {
+        int[] callSites = mapping.cut(3);
+        int last = 0;
+        int j = 0;
+        for (int i = 0; i < callSites.length; ++i) {
+            int type = mapping.get(i).get(2);
+            if (type != 0) {
+                int callSite = callSites[i];
+                callSites[j++] = 1 + convertToSigned(callSite - last);
+                last = callSite;
+            }
+        }
+        return Arrays.copyOf(callSites, j);
     }
 
     private void writeCFGs(DebugInformation debugInfo) throws IOException {
         for (int i = 0; i < debugInfo.controlFlowGraphs.length; ++i) {
-            writeCFG(debugInfo.controlFlowGraphs[i], i);
+            writeCFG(debugInfo.controlFlowGraphs[i]);
         }
     }
 
-    private void writeCFG(DebugInformation.CFG mapping, int fileIndex) throws IOException {
-        writeUnsignedNumber(mapping.lines.length);
-        int lastLine = -1;
-        for (int i = 0; i < mapping.offsets.length - 1; ++i) {
-            int start = mapping.offsets[i];
-            int sz = mapping.offsets[i + 1] - start;
-            if (sz == 0) {
+    private void writeCFG(RecordArray mapping) throws IOException {
+        writeUnsignedNumber(mapping.size());
+        writeRle(mapping.cut(0));
+        IntegerArray files = new IntegerArray(1);
+        IntegerArray lines = new IntegerArray(1);
+        int lastFile = 0;
+        int lastLine = 0;
+        for (int i = 0; i < mapping.size(); ++i) {
+            int type = mapping.get(i).get(0);
+            if (type == 0) {
                 continue;
             }
-            writeUnsignedNumber(i - lastLine);
-            if (sz == 1 && mapping.lines[start] == -1) {
-                writeUnsignedNumber(0);
-            } else if (sz == 1 && mapping.lines[start] == i + 1 && mapping.files[start] == fileIndex) {
-                writeUnsignedNumber(1);
-            } else {
-                writeUnsignedNumber(1 + sz);
-                int[] lines = Arrays.copyOfRange(mapping.lines, start, start + sz);
-                int[] files = Arrays.copyOfRange(mapping.files, start, start + sz);
-                int last = i;
-                for (int j = 0; j < sz; ++j) {
-                    int succ = lines[j];
-                    writeNumber(succ - last);
-                    writeNumber(files[j] - fileIndex);
-                    last = succ;
-                }
+            int[] data = mapping.get(i).getArray(0);
+            for (int j = 0; j < data.length; j += 2) {
+                int file = data[j];
+                int line = data[j + 1];
+                files.add(file - lastFile);
+                lines.add(line - lastLine);
+                lastFile = file;
+                lastLine = line;
             }
-            lastLine = i;
         }
+        writeRle(files.getAll());
+        writeRle(lines.getAll());
     }
 
     private void writeNumber(int number) throws IOException {
@@ -214,20 +255,26 @@ class DebugInformationWriter {
     }
 
     private void writeRle(int[] array) throws IOException {
-        writeUnsignedNumber(array.length);
+        int last = 0;
         for (int i = 0; i < array.length;) {
             int e = array[i];
             int count = 1;
+            int current = i;
             ++i;
             while (i < array.length && array[i] == e) {
                 ++count;
                 ++i;
             }
             if (count > 1) {
+                if (current > last) {
+                    writeUnsignedNumber(convertToSigned(current - last) | 0);
+                    while (last < current) {
+                        writeUnsignedNumber(array[last++]);
+                    }
+                }
                 writeUnsignedNumber((convertToSigned(e) << 1) | 1);
                 writeUnsignedNumber(count);
-            } else {
-                writeUnsignedNumber(convertToSigned(e) << 1);
+                last = i;
             }
         }
     }

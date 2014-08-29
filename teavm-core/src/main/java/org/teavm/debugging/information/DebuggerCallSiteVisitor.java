@@ -13,12 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.debugging;
+package org.teavm.debugging.information;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface DebugInformationProvider {
-    DebugInformation getDebugInformation(String script);
+public interface DebuggerCallSiteVisitor {
+    void visit(DebuggerVirtualCallSite callSite);
+
+    void visit(DebuggerStaticCallSite callSite);
 }

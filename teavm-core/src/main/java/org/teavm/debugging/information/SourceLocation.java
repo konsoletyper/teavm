@@ -13,22 +13,31 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.debugging;
+package org.teavm.debugging.information;
 
 /**
  *
  * @author Alexey Andreev
  */
-public interface JavaScriptDebuggerListener {
-    void paused();
+public class SourceLocation {
+    private String fileName;
+    private int line;
 
-    void resumed();
+    public SourceLocation(String fileName, int line) {
+        this.fileName = fileName;
+        this.line = line;
+    }
 
-    void attached();
+    public String getFileName() {
+        return fileName;
+    }
 
-    void detached();
+    public int getLine() {
+        return line;
+    }
 
-    void breakpointChanged(JavaScriptBreakpoint breakpoint);
-
-    void scriptAdded(String name);
+    @Override
+    public String toString() {
+        return fileName + ":" + line;
+    }
 }

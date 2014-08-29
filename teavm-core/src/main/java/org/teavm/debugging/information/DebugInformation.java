@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.debugging;
+package org.teavm.debugging.information;
 
 import java.io.*;
 import java.util.*;
@@ -48,7 +48,7 @@ public class DebugInformation {
     RecordArray callSiteMapping;
     RecordArray[] variableMappings;
     RecordArray[] lineCallSites;
-    CFG[] controlFlowGraphs;
+    RecordArray[] controlFlowGraphs;
     List<ClassMetadata> classesMetadata;
     RecordArray methodEntrances;
     MethodTree methodTree;
@@ -216,28 +216,26 @@ public class DebugInformation {
         if (fileIndex == null) {
             return null;
         }
-        CFG cfg = controlFlowGraphs[fileIndex];
+        RecordArray cfg = controlFlowGraphs[fileIndex];
         if (cfg == null) {
             return null;
         }
-        if (location.getLine() >= cfg.offsets.length - 1) {
+        if (location.getLine() >= cfg.size()) {
             return null;
         }
-        int start = cfg.offsets[location.getLine()];
-        int end = cfg.offsets[location.getLine() + 1];
-        if (end - start == 1 && cfg.offsets[start] == -1) {
-            return new SourceLocation[0];
-        } else if (start == end) {
+        int type = cfg.get(location.getLine()).get(0);
+        if (type == 0) {
             return null;
         }
-        SourceLocation[] result = new SourceLocation[end - start];
-        for (int i = 0; i < result.length; ++i) {
-            int line = cfg.lines[i + start];
-            if (line >= 0) {
-                result[i] = new SourceLocation(fileNames[cfg.files[i + start]], line);
-            } else {
-                result[i] = null;
-            }
+        int[] data = cfg.get(location.getLine()).getArray(0);
+        int length = data.length / 2;
+        int size = length;
+        if (type == 2) {
+            ++size;
+        }
+        SourceLocation[] result = new SourceLocation[size];
+        for (int i = 0; i < length; ++i) {
+            result[i] = new SourceLocation(fileNames[data[i * 2]], data[i * 2 + 1]);
         }
         return result;
     }
@@ -598,11 +596,6 @@ public class DebugInformation {
         int[] methods;
     }
 
-    static class CFG {
-        int[] lines;
-        int[] files;
-        int[] offsets;
-    }
 
     class MethodTree {
         int[] data;

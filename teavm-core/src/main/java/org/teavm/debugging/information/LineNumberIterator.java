@@ -13,41 +13,37 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.debugging;
+package org.teavm.debugging.information;
+
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class ClassNameIterator {
+public class LineNumberIterator {
     private DebugInformation debugInformation;
     private int index;
 
-    ClassNameIterator(DebugInformation debugInformation) {
+    LineNumberIterator(DebugInformation debugInformation) {
         this.debugInformation = debugInformation;
     }
 
     public boolean isEndReached() {
-        return index < debugInformation.classMapping.size();
+        return index < debugInformation.lineMapping.size();
     }
 
     public GeneratedLocation getLocation() {
         if (isEndReached()) {
             throw new IllegalStateException("End already reached");
         }
-        return DebugInformation.key(debugInformation.classMapping.get(index));
+        return DebugInformation.key(debugInformation.lineMapping.get(index));
     }
 
-    public int getClassNameId() {
+    public int getLineNumber() {
         if (isEndReached()) {
             throw new IllegalStateException("End already reached");
         }
-        return debugInformation.classMapping.get(index).get(2);
-    }
-
-    public String getClassName() {
-        int classNameId = getClassNameId();
-        return classNameId >= 0 ? debugInformation.getClassName(classNameId) : null;
+        return debugInformation.lineMapping.get(index).get(2);
     }
 
     public void next() {

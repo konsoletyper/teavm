@@ -16,8 +16,8 @@
 package org.teavm.chromerdp;
 
 import java.util.concurrent.atomic.AtomicInteger;
-import org.teavm.debugging.JavaScriptBreakpoint;
-import org.teavm.debugging.JavaScriptLocation;
+import org.teavm.debugging.javascript.JavaScriptBreakpoint;
+import org.teavm.debugging.javascript.JavaScriptLocation;
 
 /**
  *

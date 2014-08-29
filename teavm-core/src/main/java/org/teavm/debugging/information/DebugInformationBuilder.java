@@ -13,11 +13,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.debugging;
+package org.teavm.debugging.information;
 
 import java.util.*;
 import org.teavm.codegen.LocationProvider;
-import org.teavm.common.IntegerArray;
 import org.teavm.common.RecordArray;
 import org.teavm.common.RecordArrayBuilder;
 import org.teavm.model.MethodDescriptor;
@@ -41,14 +40,14 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
     private RecordArrayBuilder lineMapping = new RecordArrayBuilder(3, 0);
     private RecordArrayBuilder classMapping = new RecordArrayBuilder(3, 0);
     private RecordArrayBuilder methodMapping = new RecordArrayBuilder(3, 0);
-    private RecordArrayBuilder callSiteMapping = new RecordArrayBuilder(3, 1);
+    private RecordArrayBuilder callSiteMapping = new RecordArrayBuilder(4, 0);
     private Map<Integer, RecordArrayBuilder> variableMappings = new HashMap<>();
     private MethodDescriptor currentMethod;
     private String currentClass;
     private String currentFileName;
     private int currentClassMetadata = -1;
     private List<ClassMetadata> classesMetadata = new ArrayList<>();
-    private List<CFG> cfgs = new ArrayList<>();
+    private List<RecordArrayBuilder> cfgs = new ArrayList<>();
     private int currentLine;
 
     public LocationProvider getLocationProvider() {
@@ -149,20 +148,17 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
             @Override
             public void setVirtualMethod(MethodReference method) {
                 record.set(2, DebuggerCallSite.VIRTUAL);
-                RecordArrayBuilder.RecordSubArray array = record.getArray(0);
-                array.clear();
-                array.add(getExactMethodIndex(method));
+                record.set(3, getExactMethodIndex(method));
             }
             @Override
             public void setStaticMethod(MethodReference method) {
                 record.set(2, DebuggerCallSite.STATIC);
-                RecordArrayBuilder.RecordSubArray array = record.getArray(0);
-                array.clear();
-                array.add(getExactMethodIndex(method));
+                record.set(3, getExactMethodIndex(method));
             }
             @Override
             public void clean() {
                 record.set(2, DebuggerCallSite.NONE);
+                record.set(3, 0);
             }
             private int getExactMethodIndex(MethodReference method) {
                 int methodIndex = methods.index(method.getDescriptor().toString());
@@ -202,19 +198,21 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
     @Override
     public void addSuccessors(SourceLocation location, SourceLocation[] successors) {
         int fileIndex = files.index(location.getFileName());
-        if (cfgs.size() <= fileIndex) {
-            cfgs.addAll(Collections.<CFG>nCopies(fileIndex - cfgs.size() + 1, null));
+        while (cfgs.size() <= fileIndex) {
+            cfgs.add(new RecordArrayBuilder(1, 1));
         }
-        CFG cfg = cfgs.get(fileIndex);
-        if (cfg == null) {
-            cfg = new CFG();
-            cfgs.set(fileIndex, cfg);
+        RecordArrayBuilder cfg = cfgs.get(fileIndex);
+        RecordArrayBuilder.Record record = cfg.get(location.getLine());
+        if (record.get(0) == 0) {
+            record.set(0, 1);
         }
+        RecordArrayBuilder.RecordSubArray array = record.getArray(0);
         for (SourceLocation succ : successors) {
             if (succ == null) {
-                cfg.add(location.getLine(), -1, fileIndex);
+                record.set(0, 2);
             } else {
-                cfg.add(location.getLine(), succ.getLine(), files.index(succ.getFileName()));
+                array.add(files.index(succ.getFileName()));
+                array.add(succ.getLine());
             }
         }
     }
@@ -297,7 +295,7 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
             }
             debugInformation.classesMetadata = builtMetadata;
 
-            DebugInformation.CFG[] cfgs = new DebugInformation.CFG[files.list.size()];
+            RecordArray[] cfgs = new RecordArray[files.list.size()];
             for (int i = 0; i < this.cfgs.size(); ++i) {
                 if (this.cfgs.get(i) != null) {
                     cfgs[i] = this.cfgs.get(i).build();
@@ -339,59 +337,4 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
         int parentIndex;
         Map<Integer, Integer> fieldMap = new HashMap<>();
     }
-
-    static class CFG {
-        IntegerArray start = new IntegerArray(1);
-        IntegerArray next = new IntegerArray(1);
-        IntegerArray lines = new IntegerArray(1);
-        IntegerArray files = new IntegerArray(1);
-
-        public void add(int line, int succLine, int succFile) {
-            while (start.size() <= line) {
-                start.add(-1);
-            }
-            int ptr = start.get(line);
-            start.set(line, lines.size());
-            next.add(ptr);
-            lines.add(succLine);
-            files.add(succFile);
-        }
-
-        public DebugInformation.CFG build() {
-            int[] offsets = new int[start.size() + 1];
-            IntegerArray linesData = new IntegerArray(1);
-            IntegerArray filesData = new IntegerArray(1);
-            for (int i = 0; i < start.size(); ++i) {
-                IntegerArray linesChunk = new IntegerArray(1);
-                IntegerArray filesChunk = new IntegerArray(1);
-                int ptr = start.get(i);
-                while (ptr >= 0) {
-                    linesChunk.add(lines.get(ptr));
-                    filesChunk.add(files.get(ptr));
-                    ptr = next.get(ptr);
-                }
-                long[] pairs = new long[linesChunk.size()];
-                for (int j = 0; j < pairs.length; ++j) {
-                    pairs[j] = (((long)filesChunk.get(j)) << 32) | linesChunk.get(j);
-                }
-                Arrays.sort(pairs);
-                int distinctSize = 0;
-                for (int j = 0; j < pairs.length; ++j) {
-                    long pair = pairs[j];
-                    if (distinctSize == 0 || pair != pairs[distinctSize - 1]) {
-                        pairs[distinctSize++] = pair;
-                        filesData.add((int)(pair >>> 32));
-                        linesData.add((int)pair);
-                    }
-                }
-                offsets[i + 1] = linesData.size();
-            }
-            DebugInformation.CFG cfg = new DebugInformation.CFG();
-            cfg.offsets = offsets;
-            cfg.lines = linesData.getAll();
-            cfg.files = filesData.getAll();
-            return cfg;
-        }
-    }
-
 }

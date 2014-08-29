@@ -13,16 +13,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.debugging;
+package org.teavm.debugging.information;
 
 /**
  *
  * @author Alexey Andreev
  */
-public interface JavaScriptBreakpoint {
-    JavaScriptLocation getLocation();
-
-    boolean isValid();
-
-    void destroy();
+public interface DebugInformationProvider {
+    DebugInformation getDebugInformation(String script);
 }

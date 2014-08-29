@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.debugging;
+package org.teavm.debugging.information;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import org.teavm.common.IntegerArray;
+import org.teavm.common.RecordArray;
 
 /**
  *
@@ -54,8 +55,8 @@ class DebugInformationReader {
         return debugInfo;
     }
 
-    private DebugInformation.MultiMapping[] readVariableMappings(int count) throws IOException {
-        DebugInformation.MultiMapping[] mappings = new DebugInformation.MultiMapping[count];
+    private RecordArray[] readVariableMappings(int count) throws IOException {
+        RecordArray[] mappings = new RecordArray[count];
         int varCount = readUnsignedNumber();
         int lastVar = 0;
         while (varCount-- > 0) {
@@ -136,7 +137,7 @@ class DebugInformationReader {
         return !negative ? number : -number;
     }
 
-    private DebugInformation.MultiMapping readMultiMapping() throws IOException {
+    private RecordArray readMultiMapping() throws IOException {
         int[] lines = readRle();
         int last = 0;
         for (int i = 0; i < lines.length; ++i) {

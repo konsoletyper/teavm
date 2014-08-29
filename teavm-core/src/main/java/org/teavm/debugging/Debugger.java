@@ -20,6 +20,8 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import org.teavm.debugging.information.*;
+import org.teavm.debugging.javascript.*;
 import org.teavm.model.MethodReference;
 
 /**

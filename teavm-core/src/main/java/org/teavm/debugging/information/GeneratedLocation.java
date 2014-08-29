@@ -13,27 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.debugging;
-
-import java.util.Objects;
+package org.teavm.debugging.information;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class JavaScriptLocation {
-    private String script;
+public class GeneratedLocation implements Comparable<GeneratedLocation> {
     private int line;
     private int column;
 
-    public JavaScriptLocation(String script, int line, int column) {
-        this.script = script;
+    public GeneratedLocation(int line, int column) {
         this.line = line;
         this.column = column;
-    }
-
-    public String getScript() {
-        return script;
     }
 
     public int getLine() {
@@ -45,24 +37,37 @@ public class JavaScriptLocation {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
+    public int compareTo(GeneratedLocation o) {
+        int r = Integer.compare(line, o.line);
+        if (r == 0) {
+            r = Integer.compare(column, o.column);
         }
-        if (!(obj instanceof JavaScriptLocation)) {
-            return false;
-        }
-        JavaScriptLocation other = (JavaScriptLocation)obj;
-        return Objects.equals(other.script, script) && other.line == line && other.column == column;
+        return r;
     }
 
     @Override
     public int hashCode() {
-        return (31 + column) * ((31 + line) * 31 + Objects.hashCode(script));
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + column;
+        result = prime * result + line;
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        GeneratedLocation other = (GeneratedLocation)obj;
+        return line == other.line && column == other.column;
     }
 
     @Override
     public String toString() {
-        return script + ":(" + line + ";" + column + ")";
+        return "line: " + line + ", column: " + column;
     }
 }

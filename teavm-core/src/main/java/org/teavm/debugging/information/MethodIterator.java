@@ -13,36 +13,43 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.debugging;
+package org.teavm.debugging.information;
+
+import org.teavm.model.MethodDescriptor;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-public class LineNumberIterator {
+public class MethodIterator {
     private DebugInformation debugInformation;
     private int index;
 
-    LineNumberIterator(DebugInformation debugInformation) {
+    MethodIterator(DebugInformation debugInformation) {
         this.debugInformation = debugInformation;
     }
 
     public boolean isEndReached() {
-        return index < debugInformation.lineMapping.size();
+        return index < debugInformation.methodMapping.size();
     }
 
     public GeneratedLocation getLocation() {
         if (isEndReached()) {
             throw new IllegalStateException("End already reached");
         }
-        return DebugInformation.key(debugInformation.lineMapping.get(index));
+        return DebugInformation.key(debugInformation.methodMapping.get(index));
     }
 
-    public int getLineNumber() {
+    public int getMethodId() {
         if (isEndReached()) {
             throw new IllegalStateException("End already reached");
         }
-        return debugInformation.lineMapping.get(index).get(2);
+        return debugInformation.methodMapping.get(index).get(2);
+    }
+
+    public MethodDescriptor getMethod() {
+        int methodId = getMethodId();
+        return methodId >= 0 ? debugInformation.getMethod(methodId) : null;
     }
 
     public void next() {

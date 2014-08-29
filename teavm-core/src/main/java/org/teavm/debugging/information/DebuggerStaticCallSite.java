@@ -13,16 +13,27 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.debugging;
+package org.teavm.debugging.information;
+
+import org.teavm.model.MethodReference;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public abstract class DebuggerCallSite {
-    static final int NONE = 0;
-    static final int STATIC = 1;
-    static final int VIRTUAL = 2;
+public class DebuggerStaticCallSite extends DebuggerCallSite {
+    private MethodReference method;
 
-    public abstract void acceptVisitor(DebuggerCallSiteVisitor visitor);
+    DebuggerStaticCallSite(MethodReference method) {
+        this.method = method;
+    }
+
+    public MethodReference getMethod() {
+        return method;
+    }
+
+    @Override
+    public void acceptVisitor(DebuggerCallSiteVisitor visitor) {
+        visitor.visit(this);
+    }
 }

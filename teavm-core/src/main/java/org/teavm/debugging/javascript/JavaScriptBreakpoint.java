@@ -13,18 +13,16 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.debugging;
-
-import java.util.Map;
+package org.teavm.debugging.javascript;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-public interface JavaScriptValue {
-    String getRepresentation();
+public interface JavaScriptBreakpoint {
+    JavaScriptLocation getLocation();
 
-    String getClassName();
+    boolean isValid();
 
-    Map<String, JavaScriptVariable> getProperties();
+    void destroy();
 }

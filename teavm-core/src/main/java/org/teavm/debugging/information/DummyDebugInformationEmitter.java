@@ -13,12 +13,11 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.debugging;
+package org.teavm.debugging.information;
 
 import org.teavm.codegen.LocationProvider;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
-
 
 /**
  *

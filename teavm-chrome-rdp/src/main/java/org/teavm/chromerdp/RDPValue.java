@@ -3,8 +3,8 @@ package org.teavm.chromerdp;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
-import org.teavm.debugging.JavaScriptValue;
-import org.teavm.debugging.JavaScriptVariable;
+import org.teavm.debugging.javascript.JavaScriptValue;
+import org.teavm.debugging.javascript.JavaScriptVariable;
 
 /**
  *

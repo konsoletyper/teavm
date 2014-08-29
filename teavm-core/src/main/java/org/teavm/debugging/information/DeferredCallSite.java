@@ -13,14 +13,18 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.debugging;
+package org.teavm.debugging.information;
+
+import org.teavm.model.MethodReference;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-public interface JavaScriptVariable {
-    String getName();
+public interface DeferredCallSite {
+    void setVirtualMethod(MethodReference method);
 
-    JavaScriptValue getValue();
+    void setStaticMethod(MethodReference method);
+
+    void clean();
 }

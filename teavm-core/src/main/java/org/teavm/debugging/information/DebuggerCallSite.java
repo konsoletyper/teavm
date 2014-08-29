@@ -13,16 +13,16 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.debugging;
-
-import java.util.Map;
+package org.teavm.debugging.information;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface JavaScriptCallFrame {
-    JavaScriptLocation getLocation();
+public abstract class DebuggerCallSite {
+    static final int NONE = 0;
+    static final int STATIC = 1;
+    static final int VIRTUAL = 2;
 
-    Map<String, JavaScriptVariable> getVariables();
+    public abstract void acceptVisitor(DebuggerCallSiteVisitor visitor);
 }

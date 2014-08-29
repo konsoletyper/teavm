@@ -1,7 +1,7 @@
 package org.teavm.chromerdp;
 
-import org.teavm.debugging.JavaScriptValue;
-import org.teavm.debugging.JavaScriptVariable;
+import org.teavm.debugging.javascript.JavaScriptValue;
+import org.teavm.debugging.javascript.JavaScriptVariable;
 
 /**
  *

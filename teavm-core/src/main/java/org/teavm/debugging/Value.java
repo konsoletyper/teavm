@@ -17,6 +17,7 @@ package org.teavm.debugging;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import org.teavm.debugging.javascript.JavaScriptValue;
 
 /**
  *

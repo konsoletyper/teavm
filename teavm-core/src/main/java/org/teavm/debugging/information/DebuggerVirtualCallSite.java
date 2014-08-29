@@ -13,32 +13,31 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.debugging;
+package org.teavm.debugging.information;
 
+import org.teavm.model.MethodReference;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class SourceLocation {
-    private String fileName;
-    private int line;
+public class DebuggerVirtualCallSite extends DebuggerCallSite {
+    private MethodReference method;
 
-    public SourceLocation(String fileName, int line) {
-        this.fileName = fileName;
-        this.line = line;
+    DebuggerVirtualCallSite(MethodReference method) {
+        this.method = method;
     }
 
-    public String getFileName() {
-        return fileName;
+    public MethodReference getMethod() {
+        return method;
     }
 
-    public int getLine() {
-        return line;
+    public void setMethod(MethodReference method) {
+        this.method = method;
     }
 
     @Override
-    public String toString() {
-        return fileName + ":" + line;
+    public void acceptVisitor(DebuggerCallSiteVisitor visitor) {
+        visitor.visit(this);
     }
 }

@@ -17,6 +17,8 @@ package org.teavm.debugging;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.teavm.debugging.information.SourceLocation;
+import org.teavm.debugging.javascript.JavaScriptBreakpoint;
 
 /**
  *

@@ -13,19 +13,27 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.debugging;
+package org.teavm.debugging.javascript;
+
+import java.util.Objects;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class GeneratedLocation implements Comparable<GeneratedLocation> {
+public class JavaScriptLocation {
+    private String script;
     private int line;
     private int column;
 
-    public GeneratedLocation(int line, int column) {
+    public JavaScriptLocation(String script, int line, int column) {
+        this.script = script;
         this.line = line;
         this.column = column;
+    }
+
+    public String getScript() {
+        return script;
     }
 
     public int getLine() {
@@ -37,37 +45,24 @@ public class GeneratedLocation implements Comparable<GeneratedLocation> {
     }
 
     @Override
-    public int compareTo(GeneratedLocation o) {
-        int r = Integer.compare(line, o.line);
-        if (r == 0) {
-            r = Integer.compare(column, o.column);
-        }
-        return r;
-    }
-
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + column;
-        result = prime * result + line;
-        return result;
-    }
-
-    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }
-        if (obj == null) {
+        if (!(obj instanceof JavaScriptLocation)) {
             return false;
         }
-        GeneratedLocation other = (GeneratedLocation)obj;
-        return line == other.line && column == other.column;
+        JavaScriptLocation other = (JavaScriptLocation)obj;
+        return Objects.equals(other.script, script) && other.line == line && other.column == column;
+    }
+
+    @Override
+    public int hashCode() {
+        return (31 + column) * ((31 + line) * 31 + Objects.hashCode(script));
     }
 
     @Override
     public String toString() {
-        return "line: " + line + ", column: " + column;
+        return script + ":(" + line + ";" + column + ")";
     }
 }

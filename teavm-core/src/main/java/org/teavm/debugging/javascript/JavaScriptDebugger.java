@@ -13,27 +13,36 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.debugging;
-
-import org.teavm.model.MethodReference;
+package org.teavm.debugging.javascript;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-public class DebuggerStaticCallSite extends DebuggerCallSite {
-    private MethodReference method;
+public interface JavaScriptDebugger {
+    void addListener(JavaScriptDebuggerListener listener);
 
-    DebuggerStaticCallSite(MethodReference method) {
-        this.method = method;
-    }
+    void removeListener(JavaScriptDebuggerListener listener);
 
-    public MethodReference getMethod() {
-        return method;
-    }
+    void suspend();
 
-    @Override
-    public void acceptVisitor(DebuggerCallSiteVisitor visitor) {
-        visitor.visit(this);
-    }
+    void resume();
+
+    void stepInto();
+
+    void stepOut();
+
+    void stepOver();
+
+    void continueToLocation(JavaScriptLocation location);
+
+    boolean isSuspended();
+
+    boolean isAttached();
+
+    void detach();
+
+    JavaScriptCallFrame[] getCallStack();
+
+    JavaScriptBreakpoint createBreakpoint(JavaScriptLocation location);
 }

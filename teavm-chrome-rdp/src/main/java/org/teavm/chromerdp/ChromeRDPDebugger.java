@@ -12,7 +12,7 @@ import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.teavm.chromerdp.data.*;
 import org.teavm.chromerdp.messages.*;
-import org.teavm.debugging.*;
+import org.teavm.debugging.javascript.*;
 
 /**
  *

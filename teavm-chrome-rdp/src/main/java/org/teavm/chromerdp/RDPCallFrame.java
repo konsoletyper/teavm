@@ -17,9 +17,9 @@ package org.teavm.chromerdp;
 
 import java.util.Collections;
 import java.util.Map;
-import org.teavm.debugging.JavaScriptCallFrame;
-import org.teavm.debugging.JavaScriptLocation;
-import org.teavm.debugging.JavaScriptVariable;
+import org.teavm.debugging.javascript.JavaScriptCallFrame;
+import org.teavm.debugging.javascript.JavaScriptLocation;
+import org.teavm.debugging.javascript.JavaScriptVariable;
 
 /**
  *

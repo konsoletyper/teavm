@@ -13,31 +13,22 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.debugging;
-
-import org.teavm.model.MethodReference;
+package org.teavm.debugging.javascript;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-public class DebuggerVirtualCallSite extends DebuggerCallSite {
-    private MethodReference method;
+public interface JavaScriptDebuggerListener {
+    void paused();
 
-    DebuggerVirtualCallSite(MethodReference method) {
-        this.method = method;
-    }
+    void resumed();
 
-    public MethodReference getMethod() {
-        return method;
-    }
+    void attached();
 
-    public void setMethod(MethodReference method) {
-        this.method = method;
-    }
+    void detached();
 
-    @Override
-    public void acceptVisitor(DebuggerCallSiteVisitor visitor) {
-        visitor.visit(this);
-    }
+    void breakpointChanged(JavaScriptBreakpoint breakpoint);
+
+    void scriptAdded(String name);
 }

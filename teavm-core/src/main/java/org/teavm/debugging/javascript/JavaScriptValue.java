@@ -13,36 +13,18 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.debugging;
+package org.teavm.debugging.javascript;
+
+import java.util.Map;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface JavaScriptDebugger {
-    void addListener(JavaScriptDebuggerListener listener);
+public interface JavaScriptValue {
+    String getRepresentation();
 
-    void removeListener(JavaScriptDebuggerListener listener);
+    String getClassName();
 
-    void suspend();
-
-    void resume();
-
-    void stepInto();
-
-    void stepOut();
-
-    void stepOver();
-
-    void continueToLocation(JavaScriptLocation location);
-
-    boolean isSuspended();
-
-    boolean isAttached();
-
-    void detach();
-
-    JavaScriptCallFrame[] getCallStack();
-
-    JavaScriptBreakpoint createBreakpoint(JavaScriptLocation location);
+    Map<String, JavaScriptVariable> getProperties();
 }
