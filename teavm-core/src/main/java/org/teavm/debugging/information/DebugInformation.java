@@ -290,7 +290,7 @@ public class DebugInformation {
         if (index == null) {
             return new GeneratedLocation[0];
         }
-        int[] data = methodEntrances.get(0).getArray(0);
+        int[] data = methodEntrances.get(index).getArray(0);
         GeneratedLocation[] entrances = new GeneratedLocation[data.length / 2];
         for (int i = 0; i < entrances.length; ++i) {
             entrances[i] = new GeneratedLocation(data[i * 2], data[i * 2 + 1]);
@@ -453,7 +453,7 @@ public class DebugInformation {
                     if (key(lineMapping.get(lineIndex)).compareTo(iter.getLocation()) >= 0) {
                         break;
                     }
-                    int line = lineMapping.get(0).get(2);
+                    int line = lineMapping.get(lineIndex).get(2);
                     if (line >= 0) {
                         GeneratedLocation firstLineLoc = key(lineMapping.get(lineIndex));
                         RecordArrayBuilder.SubArray array = builder.get(prevMethodId).getArray(0);
@@ -461,6 +461,7 @@ public class DebugInformation {
                         array.add(firstLineLoc.getColumn());
                         break;
                     }
+                    ++lineIndex;
                 }
             }
             prevMethod = iter.getExactMethod();
