@@ -34,7 +34,10 @@ import org.teavm.jso.JS;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class DateTime {
+public final class DateTime {
+    private DateTime() {
+    }
+
     private static Window window = (Window)JS.getGlobal();
     private static HTMLDocument document = window.getDocument();
     private static HTMLSelectElement localeElem = (HTMLSelectElement)document.getElementById("locale");

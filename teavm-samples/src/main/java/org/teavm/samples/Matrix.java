@@ -42,7 +42,7 @@ import java.util.Arrays;
  */
 public class Matrix {
     private final int rank;
-    private final float data[][];
+    private final float[][] data;
 
     public Matrix(int r) {
         this(r, new float[r][r]);
@@ -75,7 +75,7 @@ public class Matrix {
             throw new IllegalArgumentException("Rank doesn't match");
         }
 
-        final float res[][] = new float[rank][rank];
+        final float[][] res = new float[rank][rank];
         for (int i = 0; i < rank; i++) {
             for (int j = 0; j < rank; j++) {
                 float ij = 0;

@@ -24,7 +24,10 @@ import org.teavm.tooling.TeaVMTool;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class TeaVMRunner {
+public final class TeaVMRunner {
+    private TeaVMRunner() {
+    }
+
     @SuppressWarnings("static-access")
     public static void main(String[] args) {
         Options options = new Options();

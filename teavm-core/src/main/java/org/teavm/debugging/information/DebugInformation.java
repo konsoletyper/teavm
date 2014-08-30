@@ -208,7 +208,20 @@ public class DebugInformation {
         if (mapping == null) {
             return new String[0];
         }
-        return componentSetByKey(mapping, variableNames, location);
+        int keyIndex = indexByKey(mapping, location);
+        if (keyIndex < 0) {
+            return new String[0];
+        }
+        GeneratedLocation keyLocation = key(mapping.get(keyIndex));
+        if (!Objects.equals(getMethodAt(keyLocation), getMethodAt(location))) {
+            return new String[0];
+        }
+        int[] valueIndexes = mapping.get(keyIndex).getArray(0);
+        String[] result = new String[valueIndexes.length];
+        for (int i = 0; i < result.length; ++i) {
+            result[i] = variableNames[valueIndexes[i]];
+        }
+        return result;
     }
 
     public SourceLocation[] getFollowingLines(SourceLocation location) {
@@ -347,19 +360,6 @@ public class DebugInformation {
         int keyIndex = indexByKey(mapping, location);
         int valueIndex = keyIndex >= 0 ? mapping.get(keyIndex).get(2) : -1;
         return valueIndex >= 0 ? values[valueIndex] : null;
-    }
-
-    private String[] componentSetByKey(RecordArray mapping, String[] values, GeneratedLocation location) {
-        int keyIndex = indexByKey(mapping, location);
-        if (keyIndex < 0) {
-            return new String[0];
-        }
-        int[] valueIndexes = mapping.get(keyIndex).getArray(0);
-        String[] result = new String[valueIndexes.length];
-        for (int i = 0; i < result.length; ++i) {
-            result[i] = values[valueIndexes[i]];
-        }
-        return result;
     }
 
     private int indexByKey(RecordArray mapping, GeneratedLocation location) {
@@ -509,7 +509,7 @@ public class DebugInformation {
                 ClassMetadata superclsData = classesMetadata.get(clsData.parentId);
                 Integer parentId = clsData.parentId;
                 while (superclsData != null) {
-                    if (Arrays.binarySearch(superclsData.methods, methodIndex) >= 0) {
+                    if (superclsData.methods != null && Arrays.binarySearch(superclsData.methods, methodIndex) >= 0) {
                         int childMethod = getExactMethodIndex(i, methodIndex);
                         int parentMethod = getExactMethodIndex(parentId, methodIndex);
                         int ptr = start[parentMethod];

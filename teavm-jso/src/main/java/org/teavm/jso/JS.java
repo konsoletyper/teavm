@@ -212,7 +212,7 @@ public final class JS {
         return new Iterable<T>() {
             @Override public Iterator<T> iterator() {
                 return new Iterator<T>() {
-                    int index = 0;
+                    int index;
                     @Override public boolean hasNext() {
                         return index < array.getLength();
                     }

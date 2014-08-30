@@ -27,7 +27,9 @@
     <module name="SimplifyBooleanExpression"/>
     <module name="SimplifyBooleanReturn"/>
     <module name="StringLiteralEquality"/>
-    <module name="IllegalThrows"/>
+    <module name="IllegalThrows">
+      <property name="illegalClassNames" value="java.lang.Error, java.lang.RuntimeException"/>
+    </module>
     <module name="ExplicitInitialization"/>
     <module name="DefaultComesLast"/>
     <module name="FallThrough"/>

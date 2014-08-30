@@ -250,6 +250,9 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         try {
             writer.append("function ").appendClass(cls.getName()).append("()").ws().append("{")
                     .indent().softNewLine();
+            if (cls.getParentName() != null) {
+                writer.appendClass(cls.getParentName()).append(".call(this);").softNewLine();
+            }
             for (FieldNode field : cls.getFields()) {
                 if (field.getModifiers().contains(NodeModifier.STATIC)) {
                     continue;

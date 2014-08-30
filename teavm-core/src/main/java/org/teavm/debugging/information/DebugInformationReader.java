@@ -115,8 +115,8 @@ class DebugInformationReader {
         for (int sz : sizes) {
             totalSize += sz;
         }
-        int files[] = readRle(totalSize);
-        int lines[] = readRle(totalSize);
+        int[] files = readRle(totalSize);
+        int[] lines = readRle(totalSize);
         int lastFile = 0;
         int lastLine = 0;
         int index = 0;
@@ -150,7 +150,7 @@ class DebugInformationReader {
             RecordArrayBuilder.SubArray array = builder.get(i).getArray(0);
             int last = 0;
             for (int j = 0; j < count; ++j) {
-                last += readUnsignedNumber();
+                last += readNumber();
                 array.add(last);
             }
         }

@@ -23,12 +23,14 @@ import org.teavm.dom.events.EventListener;
 import org.teavm.dom.events.EventTarget;
 import org.teavm.jso.JS;
 
-
 /**
  *
  * @author Alexey Andreev
  */
-public class HelloWorld {
+public final class HelloWorld {
+    private HelloWorld() {
+    }
+
     private static Window window;
     private static Document document;
     private static Element body;

@@ -23,6 +23,9 @@ import org.teavm.codegen.SourceWriter;
  * @author Alexey Andreev
  */
 final class ResourceWriterHelper {
+    private ResourceWriterHelper() {
+    }
+
     public static void write(SourceWriter writer, Object resource) throws IOException {
         if (resource == null) {
             writer.append("null");

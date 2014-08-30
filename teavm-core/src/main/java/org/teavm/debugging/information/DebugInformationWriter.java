@@ -119,11 +119,11 @@ class DebugInformationWriter {
     private void writeMultiMapping(RecordArray mapping) throws IOException {
         writeLinesAndColumns(mapping);
         for (int i = 0; i < mapping.size(); ++i) {
-            int[] array = mapping.get(0).getArray(0);
+            int[] array = mapping.get(i).getArray(0);
             writeUnsignedNumber(array.length);
             int lastNumber = 0;
             for (int elem : array) {
-                writeUnsignedNumber(elem - lastNumber);
+                writeNumber(elem - lastNumber);
                 lastNumber = elem;
             }
         }

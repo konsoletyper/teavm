@@ -21,7 +21,10 @@ import java.io.IOException;
  *
  * @author Alexey Andreev
  */
-public class MatrixMultiplication {
+public final class MatrixMultiplication {
+    private MatrixMultiplication() {
+    }
+
     public static void main(String[] args) throws IOException {
         for (int k = 0; k < 20; ++k) {
             long startTime = System.currentTimeMillis();

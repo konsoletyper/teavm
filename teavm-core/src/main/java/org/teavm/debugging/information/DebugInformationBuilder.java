@@ -226,6 +226,7 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
         for (int i = 0; i < builder.size(); ++i) {
             RecordArrayBuilder.Record record = builder.get(i);
             if (i == 0 || lastValue != record.get(2)) {
+                lastValue = record.get(2);
                 RecordArrayBuilder.Record compressedRecord = compressed.add();
                 for (int j = 0; j < builder.getRecordSize(); ++j) {
                     compressedRecord.set(j, record.get(j));
