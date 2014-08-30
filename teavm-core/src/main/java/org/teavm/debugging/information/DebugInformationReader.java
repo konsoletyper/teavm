@@ -20,8 +20,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import org.teavm.common.IntegerArray;
 import org.teavm.common.RecordArray;
+import org.teavm.common.RecordArrayBuilder;
 
 /**
  *
@@ -47,7 +47,7 @@ class DebugInformationReader {
         debugInfo.lineMapping = readMapping();
         debugInfo.classMapping = readMapping();
         debugInfo.methodMapping = readMapping();
-        debugInfo.callSiteMapping = readMapping();
+        debugInfo.callSiteMapping = readCallSiteMapping();
         debugInfo.variableMappings = readVariableMappings(debugInfo.variableNames.length);
         debugInfo.classesMetadata = readClassesMetadata(debugInfo.classNames.length);
         debugInfo.controlFlowGraphs = readCFGs(debugInfo.fileNames.length);
@@ -86,49 +86,55 @@ class DebugInformationReader {
         return classes;
     }
 
-    private DebugInformation.CFG[] readCFGs(int count) throws IOException {
-        DebugInformation.CFG[] cfgs = new DebugInformation.CFG[count];
+    private RecordArray[] readCFGs(int count) throws IOException {
+        RecordArray[] cfgs = new RecordArray[count];
         for (int i = 0; i < count; ++i) {
-            cfgs[i] = readCFG(i);
+            cfgs[i] = readCFG();
         }
         return cfgs;
     }
 
-    private DebugInformation.CFG readCFG(int index) throws IOException {
-        IntegerArray offsets = new IntegerArray(1);
-        int[] lines = new int[readUnsignedNumber()];
-        int[] files = new int[lines.length];
-        int i = 0;
-        int line = -1;
-        while (i < lines.length) {
-            int passedLines = readUnsignedNumber();
-            for (int j = 0; j < passedLines; ++j) {
-                offsets.add(i);
-            }
-            line += passedLines;
-            int sz = readUnsignedNumber();
-            if (sz == 0) {
-                lines[i] = -1;
-                files[i++] = -1;
-            } else if (sz == 1) {
-                lines[i] = line + 1;
-                files[i++] = index;
-            } else {
-                sz -= 1;
-                int last = line;
-                for (int j = 0; j < sz; ++j) {
-                    last += readNumber();
-                    lines[i] = last;
-                    files[i++] = index + readNumber();
-                }
+    private RecordArray readCFG() throws IOException {
+        RecordArrayBuilder builder = new RecordArrayBuilder(1, 1);
+        int size = readUnsignedNumber();
+        for (int i = 0; i < size; ++i) {
+            builder.add();
+        }
+        int[] types = readRle(size);
+        int nonEmptyItems = 0;
+        for (int i = 0; i < size; ++i) {
+            int type = types[i];
+            builder.get(i).set(0, type);
+            if (type != 0) {
+                ++nonEmptyItems;
             }
         }
-        offsets.add(i);
-        DebugInformation.CFG cfg = new DebugInformation.CFG();
-        cfg.offsets = offsets.getAll();
-        cfg.lines = lines;
-        cfg.files = files;
-        return cfg;
+        int[] sizes = readRle(nonEmptyItems);
+        int j = 0;
+        int totalSize = 0;
+        for (int sz : sizes) {
+            totalSize += sz;
+        }
+        int files[] = readRle(totalSize);
+        int lines[] = readRle(totalSize);
+        int lastFile = 0;
+        int lastLine = 0;
+        int index = 0;
+        for (int i = 0; i < sizes.length; ++i) {
+            while (types[j] == 0) {
+                ++j;
+            }
+            size = sizes[i];
+            RecordArrayBuilder.SubArray array = builder.get(j++).getArray(0);
+            for (int k = 0; k < size; ++k) {
+                lastFile += processSign(files[index]);
+                lastLine += processSign(lines[index]);
+                array.add(lastFile);
+                array.add(lastLine);
+                ++index;
+            }
+        }
+        return builder.build();
     }
 
     private int processSign(int number) {
@@ -138,49 +144,108 @@ class DebugInformationReader {
     }
 
     private RecordArray readMultiMapping() throws IOException {
-        int[] lines = readRle();
-        int last = 0;
-        for (int i = 0; i < lines.length; ++i) {
-            last += lines[i];
-            lines[i] = last;
+        RecordArrayBuilder builder = readLinesAndColumns(2, 1);
+        for (int i = 0; i < builder.size(); ++i) {
+            int count = readUnsignedNumber();
+            RecordArrayBuilder.SubArray array = builder.get(i).getArray(0);
+            int last = 0;
+            for (int j = 0; j < count; ++j) {
+                last += readUnsignedNumber();
+                array.add(last);
+            }
         }
-        int[] columns = new int[lines.length];
-        resetRelativeNumber();
-        for (int i = 0; i < columns.length; ++i) {
-            columns[i] = readRelativeNumber();
-        }
-        int[] offsets = new int[lines.length + 1];
-        int lastOffset = 0;
-        for (int i = 1; i < offsets.length; ++i) {
-            lastOffset += readUnsignedNumber();
-            offsets[i] = lastOffset;
-        }
-        int[] data = new int[lastOffset];
-        resetRelativeNumber();
-        for (int i = 0; i < data.length; ++i) {
-            data[i] = readRelativeNumber();
-        }
-        return new DebugInformation.MultiMapping(lines, columns, offsets, data);
+        return builder.build();
     }
 
-    private DebugInformation.Mapping readMapping() throws IOException {
-        int[] lines = readRle();
+    private RecordArray readMapping() throws IOException {
+        RecordArrayBuilder builder = readLinesAndColumns(3, 0);
+        readValues(builder);
+        return builder.build();
+    }
+
+    private RecordArray readCallSiteMapping() throws IOException {
+        RecordArrayBuilder builder = readLinesAndColumns(4, 0);
+        readValues(builder);
+        readCallSites(builder);
+        return builder.build();
+    }
+
+    private RecordArrayBuilder readLinesAndColumns(int fields, int arrays) throws IOException {
+        RecordArrayBuilder builder = new RecordArrayBuilder(fields, arrays);
+        int size = readUnsignedNumber();
+        for (int i = 0; i < size; ++i) {
+            builder.add();
+        }
+        int[] lines = extractLines(readRle(builder.size()));
+        int[] columns = extractColumns(readRle(builder.size()), lines);
+        for (int i = 0; i < builder.size(); ++i) {
+            RecordArrayBuilder.Record record = builder.get(i);
+            record.set(0, lines[i]);
+            record.set(1, columns[i]);
+        }
+        return builder;
+    }
+
+    private void readValues(RecordArrayBuilder builder) throws IOException {
+        int[] values = extractValues(readRle(builder.size()));
+        for (int i = 0; i < builder.size(); ++i) {
+            builder.get(i).set(2, values[i]);
+        }
+    }
+
+    private void readCallSites(RecordArrayBuilder builder) throws IOException {
+        int sz = 0;
+        for (int i = 0; i < builder.size(); ++i) {
+            if (builder.get(i).get(2) != 0) {
+                ++sz;
+            }
+        }
+        int[] data = readRle(sz);
+        int j = 0;
+        int last = 0;
+        for (int i = 0; i < builder.size(); ++i) {
+            if (builder.get(i).get(2) != 0) {
+                last += processSign(data[j++]);
+                builder.get(i).set(3, last);
+            }
+        }
+    }
+
+    private int[] extractLines(int[] lines) {
         int last = 0;
         for (int i = 0; i < lines.length; ++i) {
             last += lines[i];
             lines[i] = last;
         }
-        int[] columns = new int[lines.length];
-        resetRelativeNumber();
+        return lines;
+    }
+
+    private int[] extractColumns(int[] columns, int[] lines) {
+        int last = 0;
+        int lastLine = -1;
         for (int i = 0; i < columns.length; ++i) {
-            columns[i] = readRelativeNumber();
+            if (lines[i] != lastLine) {
+                lastLine = lines[i];
+                last = 0;
+            }
+            last += columns[i];
+            columns[i] = last;
         }
-        int[] values = new int[lines.length];
-        resetRelativeNumber();
+        return columns;
+    }
+
+    private int[] extractValues(int[] values) {
+        int last = 0;
         for (int i = 0; i < values.length; ++i) {
-            values[i] = readRelativeNumber();
+            int value = values[i];
+            if (value == 0) {
+                values[i] = -1;
+            } else {
+                last += processSign(value - 1);
+                values[i] = last;
+            }
         }
-        return new DebugInformation.Mapping(lines, columns, values);
+        return values;
     }
 
     private String[] readStrings() throws IOException {
@@ -203,17 +268,21 @@ class DebugInformationReader {
         return result;
     }
 
-    private int[] readRle() throws IOException {
-        int[] array = new int[readUnsignedNumber()];
-        for (int i = 0; i < array.length;) {
-            int n = readUnsignedNumber();
-            int count = 1;
-            if ((n & 1) != 0) {
-                count = readUnsignedNumber();
-            }
-            n = processSign(n >>> 1);
-            while (count-- > 0) {
-                array[i++] = n;
+    private int[] readRle(int size) throws IOException {
+        int[] array = new int[size];
+        for (int i = 0; i < size;) {
+            int count = readUnsignedNumber();
+            boolean repeat = (count & 1) != 0;
+            count >>>= 1;
+            if (!repeat) {
+                while (count-- > 0) {
+                    array[i++] = readUnsignedNumber();
+                }
+            } else {
+                int n = readUnsignedNumber();
+                while (count-- > 0) {
+                    array[i++] = n;
+                }
             }
         }
         return array;

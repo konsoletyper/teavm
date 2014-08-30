@@ -28,7 +28,6 @@ public class SourceLocationIterator {
     private GeneratedLocation location;
     private int fileId = -1;
     private int line = -1;
-    private boolean endReached;
 
     SourceLocationIterator(DebugInformation debugInformation) {
         this.debugInformation = debugInformation;
@@ -36,18 +35,15 @@ public class SourceLocationIterator {
     }
 
     public boolean isEndReached() {
-        return endReached;
+        return fileIndex >= debugInformation.fileMapping.size() &&
+                lineIndex >= debugInformation.lineMapping.size();
     }
 
     private void read() {
-        if (lineIndex >= debugInformation.lineMapping.size()) {
-            nextFileRecord();
-        } else if (fileIndex >= debugInformation.fileMapping.size()) {
-            nextLineRecord();
-        } else if (fileIndex < debugInformation.fileMapping.size() &&
+        if (fileIndex < debugInformation.fileMapping.size() &&
                 lineIndex < debugInformation.lineMapping.size()) {
-            RecordArray.Record fileRecord = debugInformation.fileMapping.get(fileIndex++);
-            RecordArray.Record lineRecord = debugInformation.lineMapping.get(lineIndex++);
+            RecordArray.Record fileRecord = debugInformation.fileMapping.get(fileIndex);
+            RecordArray.Record lineRecord = debugInformation.lineMapping.get(lineIndex);
             GeneratedLocation fileLoc = DebugInformation.key(fileRecord);
             GeneratedLocation lineLoc = DebugInformation.key(lineRecord);
             int cmp = fileLoc.compareTo(lineLoc);
@@ -59,8 +55,12 @@ public class SourceLocationIterator {
                 nextFileRecord();
                 nextLineRecord();
             }
+        } else if (fileIndex < debugInformation.fileMapping.size()) {
+            nextFileRecord();
+        } else if (lineIndex < debugInformation.lineMapping.size()) {
+            nextLineRecord();
         } else {
-            endReached = true;
+            throw new IllegalStateException("End already reached");
         }
     }
 

@@ -135,7 +135,7 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
         }
 
         RecordArrayBuilder.Record record = add(mapping);
-        RecordArrayBuilder.RecordSubArray array = record.getArray(0);
+        RecordArrayBuilder.SubArray array = record.getArray(0);
         for (int sourceIndex : sourceIndexes) {
             array.add(sourceIndex);
         }
@@ -202,11 +202,14 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
             cfgs.add(new RecordArrayBuilder(1, 1));
         }
         RecordArrayBuilder cfg = cfgs.get(fileIndex);
+        while (cfg.size() <= location.getLine()) {
+            cfg.add();
+        }
         RecordArrayBuilder.Record record = cfg.get(location.getLine());
         if (record.get(0) == 0) {
             record.set(0, 1);
         }
-        RecordArrayBuilder.RecordSubArray array = record.getArray(0);
+        RecordArrayBuilder.SubArray array = record.getArray(0);
         for (SourceLocation succ : successors) {
             if (succ == null) {
                 record.set(0, 2);
@@ -236,7 +239,7 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
         for (int i = 0; i < builder.size(); ++i) {
             RecordArrayBuilder.Record record = builder.get(i);
             for (int j = 0; j < builder.getArraysPerRecord(); ++j) {
-                RecordArrayBuilder.RecordSubArray array = record.getArray(j);
+                RecordArrayBuilder.SubArray array = record.getArray(j);
                 int[] data = array.getData();
                 Arrays.sort(data);
                 array.clear();

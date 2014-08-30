@@ -30,7 +30,6 @@ public class ExactMethodIterator {
     private int methodIndex;
     private int classId = -1;
     private int methodId = -1;
-    private boolean endReached;
 
     ExactMethodIterator(DebugInformation debugInformation) {
         this.debugInformation = debugInformation;
@@ -38,18 +37,15 @@ public class ExactMethodIterator {
     }
 
     public boolean isEndReached() {
-        return endReached;
+        return methodIndex >= debugInformation.methodMapping.size() &&
+                classIndex >= debugInformation.classMapping.size();
     }
 
     private void read() {
-        if (classIndex >= debugInformation.classMapping.size()) {
-            nextClassRecord();
-        } else if (methodIndex >= debugInformation.methodMapping.size()) {
-            nextMethodRecord();
-        } else if (classIndex < debugInformation.classMapping.size() &&
+        if (classIndex < debugInformation.classMapping.size() &&
                 methodIndex < debugInformation.methodMapping.size()) {
-            RecordArray.Record classRecord = debugInformation.classMapping.get(classIndex++);
-            RecordArray.Record methodRecord = debugInformation.methodMapping.get(methodIndex++);
+            RecordArray.Record classRecord = debugInformation.classMapping.get(classIndex);
+            RecordArray.Record methodRecord = debugInformation.methodMapping.get(methodIndex);
             GeneratedLocation classLoc = DebugInformation.key(classRecord);
             GeneratedLocation methodLoc = DebugInformation.key(methodRecord);
             int cmp = classLoc.compareTo(methodLoc);
@@ -61,8 +57,12 @@ public class ExactMethodIterator {
                 nextClassRecord();
                 nextMethodRecord();
             }
+        } else if (classIndex < debugInformation.classMapping.size()) {
+            nextClassRecord();
+        } else if (methodIndex < debugInformation.methodMapping.size()) {
+            nextMethodRecord();
         } else {
-            endReached = true;
+            throw new IllegalStateException("End already reached");
         }
     }
 
@@ -110,11 +110,15 @@ public class ExactMethodIterator {
     }
 
     public int getExactMethodId() {
+        if (classId < 0 || methodId < 0) {
+            return -1;
+        }
         return debugInformation.getExactMethodId(classId, methodId);
     }
 
     public MethodReference getExactMethod() {
-        return new MethodReference(getClassName(), getMethod());
+        int methodId = getExactMethodId();
+        return methodId >= 0 ? debugInformation.getExactMethod(getExactMethodId()) : null;
     }
 
     public GeneratedLocation getLocation() {

@@ -125,18 +125,18 @@ public class RecordArrayBuilder {
             return arraysPerRecord;
         }
 
-        public RecordSubArray getArray(int index) {
+        public SubArray getArray(int index) {
             if (index > arraysPerRecord) {
                 throw new IndexOutOfBoundsException("Index out of bounds: " + index + " of " + arraysPerRecord);
             }
-            return new RecordSubArray(arrayOffset + index);
+            return new SubArray(arrayOffset + index);
         }
     }
 
-    public class RecordSubArray {
+    public class SubArray {
         private int offset;
 
-        public RecordSubArray(int offset) {
+        public SubArray(int offset) {
             this.offset = offset;
         }
 

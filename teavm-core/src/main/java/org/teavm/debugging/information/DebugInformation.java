@@ -267,15 +267,15 @@ public class DebugInformation {
 
     private DebuggerCallSite getCallSite(int index) {
         RecordArray.Record record = callSiteMapping.get(index);
-        int type = record.get(0);
-        int[] data = record.getArray(0);
+        int type = record.get(2);
+        int method = record.get(3);
         switch (type) {
             case DebuggerCallSite.NONE:
                 return null;
             case DebuggerCallSite.STATIC:
-                return new DebuggerStaticCallSite(getExactMethod(data[0]));
+                return new DebuggerStaticCallSite(getExactMethod(method));
             case DebuggerCallSite.VIRTUAL:
-                return new DebuggerVirtualCallSite(getExactMethod(data[0]));
+                return new DebuggerVirtualCallSite(getExactMethod(method));
             default:
                 throw new AssertionError("Unrecognized call site type: " + type);
         }
@@ -426,7 +426,7 @@ public class DebugInformation {
                     builder.add();
                 }
                 GeneratedLocation loc = iter.getLocation();
-                RecordArrayBuilder.RecordSubArray array = builder.get(iter.getLine()).getArray(0);
+                RecordArrayBuilder.SubArray array = builder.get(iter.getLine()).getArray(0);
                 array.add(loc.getLine());
                 array.add(loc.getColumn());
             }
@@ -444,18 +444,19 @@ public class DebugInformation {
         }
         GeneratedLocation prevLocation = new GeneratedLocation(0, 0);
         MethodReference prevMethod = null;
+        int prevMethodId = -1;
         for (ExactMethodIterator iter = iterateOverExactMethods(); !iter.isEndReached(); iter.next()) {
             int id = iter.getExactMethodId();
             if (prevMethod != null) {
                 int lineIndex = Math.max(0, indexByKey(lineMapping, prevLocation));
-                while (lineIndex < 0) {
+                while (lineIndex < lineMapping.size()) {
                     if (key(lineMapping.get(lineIndex)).compareTo(iter.getLocation()) >= 0) {
                         break;
                     }
                     int line = lineMapping.get(0).get(2);
                     if (line >= 0) {
                         GeneratedLocation firstLineLoc = key(lineMapping.get(lineIndex));
-                        RecordArrayBuilder.RecordSubArray array = builder.get(id).getArray(0);
+                        RecordArrayBuilder.SubArray array = builder.get(prevMethodId).getArray(0);
                         array.add(firstLineLoc.getLine());
                         array.add(firstLineLoc.getColumn());
                         break;
@@ -463,8 +464,10 @@ public class DebugInformation {
                 }
             }
             prevMethod = iter.getExactMethod();
+            prevMethodId = id;
             prevLocation = iter.getLocation();
         }
+        methodEntrances = builder.build();
     }
 
     void rebuildMethodTree() {

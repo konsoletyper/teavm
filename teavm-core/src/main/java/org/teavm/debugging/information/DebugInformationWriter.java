@@ -131,22 +131,22 @@ class DebugInformationWriter {
 
     private void writeMapping(RecordArray mapping) throws IOException {
         writeLinesAndColumns(mapping);
-        writeRle(extractValues(mapping));
+        writeRle(packValues(mapping));
     }
 
     private void writeCallSiteMapping(RecordArray mapping) throws IOException {
         writeLinesAndColumns(mapping);
-        writeRle(extractValues(mapping));
-        writeRle(extractCallSites(mapping));
+        writeRle(packValues(mapping));
+        writeRle(packCallSites(mapping));
     }
 
     private void writeLinesAndColumns(RecordArray mapping) throws IOException {
         writeUnsignedNumber(mapping.size());
-        writeRle(extractLines(mapping));
-        writeRle(extractColumns(mapping));
+        writeRle(packLines(mapping));
+        writeRle(packColumns(mapping));
     }
 
-    private int[] extractLines(RecordArray mapping) {
+    private int[] packLines(RecordArray mapping) {
         int[] lines = mapping.cut(0);
         int last = 0;
         for (int i = 0; i < lines.length; ++i) {
@@ -157,7 +157,7 @@ class DebugInformationWriter {
         return lines;
     }
 
-    private int[] extractColumns(RecordArray mapping) {
+    private int[] packColumns(RecordArray mapping) {
         int[] columns = mapping.cut(1);
         int lastLine = -1;
         int lastColumn = 0;
@@ -173,7 +173,7 @@ class DebugInformationWriter {
         return columns;
     }
 
-    private int[] extractValues(RecordArray mapping) {
+    private int[] packValues(RecordArray mapping) {
         int[] values = mapping.cut(2);
         int last = 0;
         for (int i = 0; i < values.length; ++i) {
@@ -188,7 +188,7 @@ class DebugInformationWriter {
         return values;
     }
 
-    private int[] extractCallSites(RecordArray mapping) {
+    private int[] packCallSites(RecordArray mapping) {
         int[] callSites = mapping.cut(3);
         int last = 0;
         int j = 0;
@@ -196,7 +196,7 @@ class DebugInformationWriter {
             int type = mapping.get(i).get(2);
             if (type != 0) {
                 int callSite = callSites[i];
-                callSites[j++] = 1 + convertToSigned(callSite - last);
+                callSites[j++] = convertToSigned(callSite - last);
                 last = callSite;
             }
         }
@@ -212,6 +212,7 @@ class DebugInformationWriter {
     private void writeCFG(RecordArray mapping) throws IOException {
         writeUnsignedNumber(mapping.size());
         writeRle(mapping.cut(0));
+        IntegerArray sizes = new IntegerArray(1);
         IntegerArray files = new IntegerArray(1);
         IntegerArray lines = new IntegerArray(1);
         int lastFile = 0;
@@ -222,15 +223,17 @@ class DebugInformationWriter {
                 continue;
             }
             int[] data = mapping.get(i).getArray(0);
+            sizes.add(data.length / 2);
             for (int j = 0; j < data.length; j += 2) {
                 int file = data[j];
                 int line = data[j + 1];
-                files.add(file - lastFile);
-                lines.add(line - lastLine);
+                files.add(convertToSigned(file - lastFile));
+                lines.add(convertToSigned(line - lastLine));
                 lastFile = file;
                 lastLine = line;
             }
         }
+        writeRle(sizes.getAll());
         writeRle(files.getAll());
         writeRle(lines.getAll());
     }
@@ -267,14 +270,20 @@ class DebugInformationWriter {
             }
             if (count > 1) {
                 if (current > last) {
-                    writeUnsignedNumber(convertToSigned(current - last) | 0);
+                    writeUnsignedNumber(((current - last) << 1) | 0);
                     while (last < current) {
                         writeUnsignedNumber(array[last++]);
                     }
                 }
-                writeUnsignedNumber((convertToSigned(e) << 1) | 1);
-                writeUnsignedNumber(count);
+                writeUnsignedNumber((count << 1) | 1);
+                writeUnsignedNumber(e);
                 last = i;
+            }
+        }
+        if (array.length > last) {
+            writeUnsignedNumber(((array.length - last) << 1) | 0);
+            while (last < array.length) {
+                writeUnsignedNumber(array[last++]);
             }
         }
     }
