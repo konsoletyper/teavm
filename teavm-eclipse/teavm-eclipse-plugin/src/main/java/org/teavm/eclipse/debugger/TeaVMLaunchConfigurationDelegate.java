@@ -9,7 +9,7 @@ import org.eclipse.debug.core.model.ILaunchConfigurationDelegate;
 import org.teavm.chromerdp.ChromeRDPDebugger;
 import org.teavm.chromerdp.ChromeRDPServer;
 import org.teavm.debugging.Debugger;
-import org.teavm.debugging.URLDebugInformationProvider;
+import org.teavm.debugging.information.URLDebugInformationProvider;
 
 /**
  *

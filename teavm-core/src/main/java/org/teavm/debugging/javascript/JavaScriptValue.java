@@ -27,4 +27,6 @@ public interface JavaScriptValue {
     String getClassName();
 
     Map<String, JavaScriptVariable> getProperties();
+
+    boolean hasInnerStructure();
 }

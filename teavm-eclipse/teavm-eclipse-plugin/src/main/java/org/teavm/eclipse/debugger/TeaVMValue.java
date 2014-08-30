@@ -15,10 +15,12 @@ public class TeaVMValue implements IValue {
     TeaVMDebugTarget debugTarget;
     private Value teavmValue;
     private TeaVMVariablesHolder variablesHolder;
+    private boolean innerStructure;
 
     public TeaVMValue(TeaVMDebugTarget debugTarget, Value teavmValue) {
         this.debugTarget = debugTarget;
         this.teavmValue = teavmValue;
+        this.innerStructure = teavmValue.hasInnerStructure();
         this.variablesHolder = new TeaVMVariablesHolder(debugTarget, teavmValue.getProperties().values());
     }
 
@@ -60,7 +62,7 @@ public class TeaVMValue implements IValue {
 
     @Override
     public boolean hasVariables() throws DebugException {
-        return true;
+        return innerStructure;
     }
 
     @Override

@@ -2,7 +2,7 @@ package org.teavm.eclipse.debugger;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.debug.core.sourcelookup.AbstractSourceLookupParticipant;
-import org.teavm.debugging.SourceLocation;
+import org.teavm.debugging.information.SourceLocation;
 
 /**
  *

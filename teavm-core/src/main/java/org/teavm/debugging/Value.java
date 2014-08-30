@@ -47,4 +47,8 @@ public class Value {
         }
         return properties.get();
     }
+
+    public boolean hasInnerStructure() {
+        return jsValue.hasInnerStructure();
+    }
 }

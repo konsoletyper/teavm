@@ -119,6 +119,7 @@ public class Debugger {
             if (!exits) {
                 break;
             }
+            enterMethod = true;
         }
         for (JavaScriptLocation successor : successors) {
             temporaryBreakpoints.add(javaScriptDebugger.createBreakpoint(successor));

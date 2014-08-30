@@ -1,5 +1,7 @@
 package org.teavm.eclipse.debugger;
 
+import static org.teavm.eclipse.debugger.TeaVMDebugConstants.DEBUG_TARGET_ID;
+import static org.teavm.eclipse.debugger.TeaVMDebugConstants.JAVA_BREAKPOINT_INSTALL_COUNT;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.eclipse.core.resources.IMarkerDelta;
@@ -14,8 +16,7 @@ import org.teavm.chromerdp.ChromeRDPServer;
 import org.teavm.debugging.Breakpoint;
 import org.teavm.debugging.Debugger;
 import org.teavm.debugging.DebuggerListener;
-import org.teavm.debugging.JavaScriptDebugger;
-import static org.teavm.eclipse.debugger.TeaVMDebugConstants.*;
+import org.teavm.debugging.javascript.JavaScriptDebugger;
 
 
 /**
@@ -38,7 +39,7 @@ public class TeaVMDebugTarget implements IDebugTarget, IStep {
         this.launch = launch;
         this.teavmDebugger = teavmDebugger;
         this.server = server;
-        this.process = new TeaVMDebugProcess(launch);
+        this.process = new TeaVMDebugProcess(launch, this);
         this.thread = new TeaVMThread(this);
         DebugPlugin.getDefault().getBreakpointManager().addBreakpointListener(this);
         for (IBreakpoint breakpoint : DebugPlugin.getDefault().getBreakpointManager().getBreakpoints()) {
@@ -101,7 +102,7 @@ public class TeaVMDebugTarget implements IDebugTarget, IStep {
 
     @Override
     public boolean canTerminate() {
-        return true;
+        return !terminated;
     }
 
     @Override
@@ -113,13 +114,10 @@ public class TeaVMDebugTarget implements IDebugTarget, IStep {
     public void terminate() throws DebugException {
         terminated = true;
         server.stop();
-        fireEvent(new DebugEvent(this, DebugEvent.RESUME));
-        fireEvent(new DebugEvent(thread, DebugEvent.RESUME));
-        fireEvent(new DebugEvent(process, DebugEvent.RESUME));
-        fireEvent(new DebugEvent(this, DebugEvent.TERMINATE));
         fireEvent(new DebugEvent(thread, DebugEvent.TERMINATE));
+        fireEvent(new DebugEvent(thread, DebugEvent.CHANGE));
         fireEvent(new DebugEvent(process, DebugEvent.TERMINATE));
-        launch.removeProcess(process);
+        fireEvent(new DebugEvent(this, DebugEvent.TERMINATE));
     }
 
     @Override
@@ -155,12 +153,12 @@ public class TeaVMDebugTarget implements IDebugTarget, IStep {
 
     @Override
     public boolean canResume() {
-        return true;
+        return !terminated;
     }
 
     @Override
     public boolean canSuspend() {
-        return true;
+        return !terminated;
     }
 
     @Override
@@ -205,7 +203,7 @@ public class TeaVMDebugTarget implements IDebugTarget, IStep {
 
     @Override
     public boolean canDisconnect() {
-        return true;
+        return !terminated && !isDisconnected();
     }
 
     @Override
@@ -230,12 +228,12 @@ public class TeaVMDebugTarget implements IDebugTarget, IStep {
 
     @Override
     public IThread[] getThreads() throws DebugException {
-        return new IThread[] { thread };
+        return !terminated ? new IThread[] { thread } : new IThread[0];
     }
 
     @Override
     public boolean hasThreads() throws DebugException {
-        return true;
+        return !terminated;
     }
 
     @Override
@@ -245,22 +243,22 @@ public class TeaVMDebugTarget implements IDebugTarget, IStep {
 
     @Override
     public boolean canStepInto() {
-        return true;
+        return !terminated;
     }
 
     @Override
     public boolean canStepOver() {
-        return true;
+        return !terminated;
     }
 
     @Override
     public boolean canStepReturn() {
-        return true;
+        return !terminated;
     }
 
     @Override
     public boolean isStepping() {
-        return false;
+        return !terminated;
     }
 
     @Override

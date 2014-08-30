@@ -16,9 +16,11 @@ public class TeaVMDebugProcess implements IProcess {
     private Map<String, String> attributes = new HashMap<>();
     private ILaunch launch;
     private TeaVMStreamsProxy streamsProxy = new TeaVMStreamsProxy();
+    private TeaVMDebugTarget debugTarget;
 
-    public TeaVMDebugProcess(ILaunch launch) {
+    public TeaVMDebugProcess(ILaunch launch, TeaVMDebugTarget debugTarget) {
         this.launch = launch;
+        this.debugTarget = debugTarget;
     }
 
     @Override
@@ -28,16 +30,17 @@ public class TeaVMDebugProcess implements IProcess {
 
     @Override
     public boolean canTerminate() {
-        return false;
+        return debugTarget.canTerminate();
     }
 
     @Override
     public boolean isTerminated() {
-        return false;
+        return debugTarget.isTerminated();
     }
 
     @Override
     public void terminate() throws DebugException {
+        debugTarget.terminate();
     }
 
     @Override

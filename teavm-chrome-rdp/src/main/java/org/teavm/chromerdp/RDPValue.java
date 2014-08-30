@@ -32,12 +32,15 @@ public class RDPValue implements JavaScriptValue {
     private ChromeRDPDebugger debugger;
     private String objectId;
     private Map<String, ? extends JavaScriptVariable> properties;
+    private boolean innerStructure;
 
-    public RDPValue(ChromeRDPDebugger debugger, String representation, String typeName, String objectId) {
+    public RDPValue(ChromeRDPDebugger debugger, String representation, String typeName, String objectId,
+            boolean innerStructure) {
         this.representation.set(representation == null && objectId == null ? "" : representation);
         this.typeName = typeName;
         this.debugger = debugger;
         this.objectId = objectId;
+        this.innerStructure = innerStructure;
         properties = objectId != null ? new RDPScope(debugger, objectId) :
                 Collections.<String, RDPLocalVariable>emptyMap();
     }
@@ -67,5 +70,10 @@ public class RDPValue implements JavaScriptValue {
     @Override
     public Map<String, JavaScriptVariable> getProperties() {
         return (Map<String, JavaScriptVariable>)properties;
+    }
+
+    @Override
+    public boolean hasInnerStructure() {
+        return innerStructure;
     }
 }

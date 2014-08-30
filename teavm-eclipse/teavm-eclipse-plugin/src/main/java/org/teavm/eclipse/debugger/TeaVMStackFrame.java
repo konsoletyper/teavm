@@ -22,16 +22,17 @@ public class TeaVMStackFrame implements IStackFrame {
 
     @Override
     public boolean canTerminate() {
-        return false;
+        return thread.canTerminate();
     }
 
     @Override
     public boolean isTerminated() {
-        return false;
+        return thread.isTerminated();
     }
 
     @Override
     public void terminate() throws DebugException {
+        thread.terminate();
     }
 
     @Override

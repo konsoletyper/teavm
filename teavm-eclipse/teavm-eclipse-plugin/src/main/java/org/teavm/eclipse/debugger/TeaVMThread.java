@@ -73,7 +73,7 @@ public class TeaVMThread implements IThread {
 
     @Override
     public boolean canTerminate() {
-        return true;
+        return debugTarget.canTerminate();
     }
 
     @Override
@@ -94,12 +94,12 @@ public class TeaVMThread implements IThread {
 
     @Override
     public boolean canResume() {
-        return true;
+        return debugTarget.canResume();
     }
 
     @Override
     public boolean canSuspend() {
-        return true;
+        return debugTarget.canSuspend();
     }
 
     @Override
@@ -119,22 +119,22 @@ public class TeaVMThread implements IThread {
 
     @Override
     public boolean canStepInto() {
-        return true;
+        return debugTarget.canStepInto();
     }
 
     @Override
     public boolean canStepOver() {
-        return true;
+        return debugTarget.canStepOver();
     }
 
     @Override
     public boolean canStepReturn() {
-        return true;
+        return debugTarget.canStepReturn();
     }
 
     @Override
     public boolean isStepping() {
-        return false;
+        return debugTarget.isStepping();
     }
 
     @Override
@@ -184,18 +184,24 @@ public class TeaVMThread implements IThread {
 
     @Override
     public IStackFrame[] getStackFrames() throws DebugException {
+        if (isTerminated()) {
+            return new IStackFrame[0];
+        }
         TeaVMStackFrame[] stackTrace = this.stackTrace;
         return stackTrace != null ? stackTrace.clone() : new IStackFrame[0];
     }
 
     @Override
     public IStackFrame getTopStackFrame() {
+        if (isTerminated()) {
+            return null;
+        }
         TeaVMStackFrame[] stackTrace = this.stackTrace;
         return stackTrace != null && stackTrace.length > 0 ? stackTrace[0] : null;
     }
 
     @Override
     public boolean hasStackFrames() throws DebugException {
-        return stackTrace != null;
+        return !isTerminated() && stackTrace != null;
     }
 }

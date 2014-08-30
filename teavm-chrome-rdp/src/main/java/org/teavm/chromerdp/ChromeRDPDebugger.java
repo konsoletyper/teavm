@@ -450,15 +450,15 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
                 RDPValue value;
                 switch (remoteValue.getType()) {
                     case "undefined":
-                        value = new RDPValue(this, "undefined", "undefined", null);
+                        value = new RDPValue(this, "undefined", "undefined", null, false);
                         break;
                     case "object":
                     case "function":
-                        value = new RDPValue(this, null, remoteValue.getType(), remoteValue.getObjectId());
+                        value = new RDPValue(this, null, remoteValue.getType(), remoteValue.getObjectId(), true);
                         break;
                     default:
                         value = new RDPValue(this, remoteValue.getValue().asText(), remoteValue.getType(),
-                                remoteValue.getObjectId());
+                                remoteValue.getObjectId(), false);
                         break;
                 }
 
