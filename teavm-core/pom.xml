@@ -51,7 +51,6 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
         <configuration>
-          <propertyExpansion>config_loc=${basedir}</propertyExpansion>
           <configLocation>../checkstyle.xml</configLocation>
         </configuration>
       </plugin>
