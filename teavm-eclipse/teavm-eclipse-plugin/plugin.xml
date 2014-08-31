@@ -32,6 +32,13 @@
         id="org.teavm.eclipse.debugger.ui.tabs">
     </launchConfigurationTabGroup>
   </extension>
+  <extension point="org.eclipse.debug.ui.launchConfigurationTypeImages">
+    <launchConfigurationTypeImage
+        id="org.teavm.eclipse.debugger.ui.launchConfigIcon"
+        configTypeID="org.teavm.eclipse.debugger.launchConfig"
+        icon="teavm-16.png">
+    </launchConfigurationTypeImage>
+  </extension>
   <extension point="org.eclipse.debug.ui.debugModelPresentations">
     <debugModelPresentation
         class="org.teavm.eclipse.debugger.ui.TeaVMDebugModelPresentation"
