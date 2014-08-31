@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2014 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 package org.teavm.eclipse.debugger;
 
 import static org.teavm.eclipse.debugger.TeaVMDebugConstants.DEBUG_TARGET_ID;
@@ -18,7 +33,6 @@ import org.teavm.debugging.Debugger;
 import org.teavm.debugging.DebuggerListener;
 import org.teavm.debugging.javascript.JavaScriptDebugger;
 
-
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
@@ -32,15 +46,19 @@ public class TeaVMDebugTarget implements IDebugTarget, IStep {
     private volatile boolean terminated;
     private TeaVMDebugProcess process;
     private TeaVMThread thread;
+    private TeaVMJSThread jsThread;
     ConcurrentMap<IBreakpoint, Breakpoint> breakpointMap = new ConcurrentHashMap<>();
     ConcurrentMap<Breakpoint, IJavaLineBreakpoint> breakpointBackMap = new ConcurrentHashMap<>();
 
-    public TeaVMDebugTarget(ILaunch launch, final Debugger teavmDebugger, ChromeRDPServer server) {
+    public TeaVMDebugTarget(ILaunch launch, final Debugger teavmDebugger, JavaScriptDebugger jsDebugger,
+            ChromeRDPServer server) {
         this.launch = launch;
         this.teavmDebugger = teavmDebugger;
+        this.jsDebugger = jsDebugger;
         this.server = server;
         this.process = new TeaVMDebugProcess(launch, this);
         this.thread = new TeaVMThread(this);
+        this.jsThread = new TeaVMJSThread(this);
         DebugPlugin.getDefault().getBreakpointManager().addBreakpointListener(this);
         for (IBreakpoint breakpoint : DebugPlugin.getDefault().getBreakpointManager().getBreakpoints()) {
             breakpointAdded(breakpoint);
@@ -116,6 +134,8 @@ public class TeaVMDebugTarget implements IDebugTarget, IStep {
         server.stop();
         fireEvent(new DebugEvent(thread, DebugEvent.TERMINATE));
         fireEvent(new DebugEvent(thread, DebugEvent.CHANGE));
+        fireEvent(new DebugEvent(jsThread, DebugEvent.TERMINATE));
+        fireEvent(new DebugEvent(jsThread, DebugEvent.CHANGE));
         fireEvent(new DebugEvent(process, DebugEvent.TERMINATE));
         fireEvent(new DebugEvent(this, DebugEvent.TERMINATE));
     }
@@ -228,7 +248,7 @@ public class TeaVMDebugTarget implements IDebugTarget, IStep {
 
     @Override
     public IThread[] getThreads() throws DebugException {
-        return !terminated ? new IThread[] { thread } : new IThread[0];
+        return !terminated ? new IThread[] { thread, jsThread } : new IThread[0];
     }
 
     @Override

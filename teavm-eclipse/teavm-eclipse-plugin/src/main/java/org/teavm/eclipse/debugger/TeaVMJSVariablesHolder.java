@@ -17,33 +17,33 @@ package org.teavm.eclipse.debugger;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
-import org.teavm.debugging.Variable;
+import org.teavm.debugging.javascript.JavaScriptVariable;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class TeaVMVariablesHolder {
+public class TeaVMJSVariablesHolder {
     private TeaVMDebugTarget debugTarget;
-    private Collection<Variable> teavmVariables;
-    private AtomicReference<TeaVMVariable[]> variables = new AtomicReference<>();
+    private Collection<JavaScriptVariable> teavmVariables;
+    private AtomicReference<TeaVMJSVariable[]> variables = new AtomicReference<>();
 
-    public TeaVMVariablesHolder(TeaVMDebugTarget debugTarget, Collection<Variable> teavmVariables) {
+    public TeaVMJSVariablesHolder(TeaVMDebugTarget debugTarget, Collection<JavaScriptVariable> teavmVariables) {
         this.debugTarget = debugTarget;
         this.teavmVariables = teavmVariables;
     }
 
-    public TeaVMVariable[] getVariables() {
+    public TeaVMJSVariable[] getVariables() {
         if (variables.get() == null) {
-            TeaVMVariable[] newVariables = new TeaVMVariable[teavmVariables.size()];
-            List<Variable> teavmVarList = new ArrayList<>(teavmVariables);
-            Collections.sort(teavmVarList, new Comparator<Variable>() {
-                @Override public int compare(Variable o1, Variable o2) {
+            TeaVMJSVariable[] newVariables = new TeaVMJSVariable[teavmVariables.size()];
+            List<JavaScriptVariable> teavmVarList = new ArrayList<>(teavmVariables);
+            Collections.sort(teavmVarList, new Comparator<JavaScriptVariable>() {
+                @Override public int compare(JavaScriptVariable o1, JavaScriptVariable o2) {
                     return o1.getName().compareTo(o2.getName());
                 }
             });
             for (int i = 0; i < teavmVarList.size(); ++i) {
-                newVariables[i] = new TeaVMVariable(debugTarget, teavmVarList.get(i));
+                newVariables[i] = new TeaVMJSVariable(debugTarget, teavmVarList.get(i));
             }
             variables.compareAndSet(null, newVariables);
         }

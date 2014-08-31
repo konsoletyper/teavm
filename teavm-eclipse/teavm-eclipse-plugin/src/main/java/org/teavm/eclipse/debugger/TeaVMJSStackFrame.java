@@ -18,24 +18,24 @@ package org.teavm.eclipse.debugger;
 import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.core.ILaunch;
 import org.eclipse.debug.core.model.*;
-import org.teavm.debugging.CallFrame;
+import org.teavm.debugging.javascript.JavaScriptCallFrame;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class TeaVMStackFrame implements IStackFrame {
-    TeaVMThread thread;
-    CallFrame callFrame;
-    private TeaVMVariablesHolder variablesHolder;
+public class TeaVMJSStackFrame implements IStackFrame {
+    TeaVMJSThread thread;
+    JavaScriptCallFrame callFrame;
+    private TeaVMJSVariablesHolder variablesHolder;
 
-    public TeaVMStackFrame(TeaVMThread thread, CallFrame callFrame) {
+    public TeaVMJSStackFrame(TeaVMJSThread thread, JavaScriptCallFrame callFrame) {
         this.thread = thread;
         this.callFrame = callFrame;
-        this.variablesHolder = new TeaVMVariablesHolder(thread.debugTarget, callFrame.getVariables().values());
+        this.variablesHolder = new TeaVMJSVariablesHolder(thread.debugTarget, callFrame.getVariables().values());
     }
 
-    public CallFrame getCallFrame() {
+    public JavaScriptCallFrame getCallFrame() {
         return callFrame;
     }
 
@@ -136,26 +136,27 @@ public class TeaVMStackFrame implements IStackFrame {
 
     @Override
     public int getCharEnd() throws DebugException {
-        return -1;
+        return callFrame.getLocation() != null ? callFrame.getLocation().getColumn() + 2 : -1;
     }
 
     @Override
     public int getCharStart() throws DebugException {
-        return -1;
+        return callFrame.getLocation() != null ? callFrame.getLocation().getColumn() + 1 : -1;
     }
 
     @Override
     public int getLineNumber() throws DebugException {
-        return callFrame.getLocation() != null ? callFrame.getLocation().getLine() : -1;
+        return callFrame.getLocation() != null ? callFrame.getLocation().getLine() + 1 : -1;
     }
 
     @Override
     public String getName() {
         StringBuilder sb = new StringBuilder();
-        String fileName = callFrame.getLocation() != null ? callFrame.getLocation().getFileName() : null;
+        String fileName = callFrame.getLocation() != null ? callFrame.getLocation().getScript(): null;
         sb.append(fileName != null ? fileName : "unknown");
         if (callFrame.getLocation() != null) {
-            sb.append(":").append(callFrame.getLocation().getLine());
+            sb.append(" at ").append(callFrame.getLocation().getLine() + 1).append(";").append(
+                    callFrame.getLocation().getColumn() + 1);
         }
         return sb.toString();
     }

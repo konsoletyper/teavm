@@ -20,23 +20,23 @@ import org.eclipse.debug.core.ILaunch;
 import org.eclipse.debug.core.model.IDebugTarget;
 import org.eclipse.debug.core.model.IValue;
 import org.eclipse.debug.core.model.IVariable;
-import org.teavm.debugging.Value;
+import org.teavm.debugging.javascript.JavaScriptValue;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class TeaVMValue implements IValue {
+public class TeaVMJSValue implements IValue {
     TeaVMDebugTarget debugTarget;
-    private Value teavmValue;
-    private TeaVMVariablesHolder variablesHolder;
+    private JavaScriptValue teavmValue;
+    private TeaVMJSVariablesHolder variablesHolder;
     private boolean innerStructure;
 
-    public TeaVMValue(TeaVMDebugTarget debugTarget, Value teavmValue) {
+    public TeaVMJSValue(TeaVMDebugTarget debugTarget, JavaScriptValue teavmValue) {
         this.debugTarget = debugTarget;
         this.teavmValue = teavmValue;
         this.innerStructure = teavmValue.hasInnerStructure();
-        this.variablesHolder = new TeaVMVariablesHolder(debugTarget, teavmValue.getProperties().values());
+        this.variablesHolder = new TeaVMJSVariablesHolder(debugTarget, teavmValue.getProperties().values());
     }
 
     @Override
@@ -62,7 +62,7 @@ public class TeaVMValue implements IValue {
 
     @Override
     public String getReferenceTypeName() throws DebugException {
-        return teavmValue.getType();
+        return teavmValue.getClassName();
     }
 
     @Override

@@ -21,22 +21,22 @@ import org.eclipse.debug.core.ILaunch;
 import org.eclipse.debug.core.model.IDebugTarget;
 import org.eclipse.debug.core.model.IValue;
 import org.eclipse.debug.core.model.IVariable;
-import org.teavm.debugging.Variable;
+import org.teavm.debugging.javascript.JavaScriptVariable;
 import org.teavm.eclipse.TeaVMEclipsePlugin;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class TeaVMVariable implements IVariable {
+public class TeaVMJSVariable implements IVariable {
     private TeaVMDebugTarget debugTarget;
-    private Variable var;
-    private TeaVMValue value;
+    private JavaScriptVariable var;
+    private TeaVMJSValue value;
 
-    public TeaVMVariable(TeaVMDebugTarget debugTarget, Variable var) {
+    public TeaVMJSVariable(TeaVMDebugTarget debugTarget, JavaScriptVariable var) {
         this.debugTarget = debugTarget;
         this.var = var;
-        this.value = new TeaVMValue(debugTarget, var.getValue());
+        this.value = new TeaVMJSValue(debugTarget, var.getValue());
     }
 
     @Override
@@ -92,7 +92,7 @@ public class TeaVMVariable implements IVariable {
 
     @Override
     public String getReferenceTypeName() throws DebugException {
-        return var.getValue().getType();
+        return var.getValue().getClassName();
     }
 
     @Override
