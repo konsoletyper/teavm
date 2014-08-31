@@ -15,6 +15,11 @@
  */
 package org.teavm.eclipse.debugger.ui;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import org.eclipse.core.filesystem.EFS;
+import org.eclipse.core.filesystem.IFileStore;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.debug.core.model.ILineBreakpoint;
 import org.eclipse.debug.core.model.IValue;
@@ -23,6 +28,8 @@ import org.eclipse.debug.ui.IValueDetailListener;
 import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.ui.IEditorInput;
+import org.eclipse.ui.editors.text.EditorsUI;
+import org.eclipse.ui.ide.FileStoreEditorInput;
 import org.eclipse.ui.part.FileEditorInput;
 import org.teavm.debugging.CallFrame;
 import org.teavm.debugging.javascript.JavaScriptCallFrame;
@@ -41,6 +48,8 @@ public class TeaVMDebugModelPresentation extends LabelProvider implements IDebug
     public String getEditorId(IEditorInput input, Object element) {
         if (element instanceof IFile || element instanceof ILineBreakpoint) {
             return JavaUI.ID_CU_EDITOR;
+        } else if (element instanceof URL) {
+            return EditorsUI.DEFAULT_TEXT_EDITOR_ID;
         }
         return null;
     }
@@ -52,6 +61,15 @@ public class TeaVMDebugModelPresentation extends LabelProvider implements IDebug
         }
         if (element instanceof ILineBreakpoint) {
             return new FileEditorInput((IFile)((ILineBreakpoint)element).getMarker().getResource());
+        }
+        if (element instanceof URL) {
+            try {
+                URI uri = new URI(element.toString());
+                IFileStore store = EFS.getLocalFileSystem().getStore(uri);
+                return new FileStoreEditorInput(store);
+            } catch (URISyntaxException e) {
+                return null;
+            }
         }
         return null;
     }

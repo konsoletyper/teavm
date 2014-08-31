@@ -136,12 +136,12 @@ public class TeaVMJSStackFrame implements IStackFrame {
 
     @Override
     public int getCharEnd() throws DebugException {
-        return callFrame.getLocation() != null ? callFrame.getLocation().getColumn() + 2 : -1;
+        return -1;
     }
 
     @Override
     public int getCharStart() throws DebugException {
-        return callFrame.getLocation() != null ? callFrame.getLocation().getColumn() + 1 : -1;
+        return -1;
     }
 
     @Override
