@@ -19,12 +19,17 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.teavm.chromerdp.data.*;
 import org.teavm.chromerdp.messages.*;
 import org.teavm.debugging.javascript.*;
@@ -34,6 +39,7 @@ import org.teavm.debugging.javascript.*;
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeConsumer {
+    private static final Logger logger = LoggerFactory.getLogger(ChromeRDPDebugger.class);
     private static final Object dummy = new Object();
     private ChromeRDPExchange exchange;
     private ConcurrentMap<JavaScriptDebuggerListener, Object> listeners = new ConcurrentHashMap<>();
@@ -114,8 +120,9 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
                         }
                     }
                 } catch (Exception e) {
-                    // TODO: logging
-                    e.printStackTrace();
+                    if (logger.isErrorEnabled()) {
+                        logger.error("Error receiving message from Google Chrome", e);
+                    }
                 }
             }
         }.start();
@@ -285,7 +292,9 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
             breakpointLocationMap.remove(breakpoint.getLocation());
             breakpoints.remove(breakpoint);
             if (breakpoint.chromeId != null) {
-                System.out.println("Removing breakpoint at " + breakpoint.getLocation());
+                if (logger.isInfoEnabled()) {
+                    logger.info("Removing breakpoint at {}", breakpoint.getLocation());
+                }
                 Message message = new Message();
                 message.setMethod("Debugger.removeBreakpoint");
                 RemoveBreakpointCommand params = new RemoveBreakpointCommand();
@@ -316,15 +325,20 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
         SetBreakpointCommand params = new SetBreakpointCommand();
         params.setLocation(unmap(breakpoint.getLocation()));
         message.setParams(mapper.valueToTree(params));
-        System.out.println("Setting breakpoint at: " + breakpoint.getLocation());
+        if (logger.isInfoEnabled()) {
+            logger.info("Setting breakpoint at {}, message id is ", breakpoint.getLocation(), message.getId());
+        }
         ResponseHandler handler = new ResponseHandler() {
             @Override public void received(JsonNode node) throws IOException {
                 if (node != null) {
                     SetBreakpointResponse response = mapper.reader(SetBreakpointResponse.class).readValue(node);
                     breakpoint.chromeId = response.getBreakpointId();
                 } else {
-                    System.err.println("Error setting breakpoint at " + breakpoint.getLocation() +
-                            ", message id is " + message.getId());
+                    if (logger.isWarnEnabled()) {
+                        logger.warn("Error setting breakpoint at {}, message id is {}",
+                                breakpoint.getLocation(), message.getId());
+                    }
+                    System.err.println();
                     breakpoint.chromeId = null;
                 }
                 for (JavaScriptDebuggerListener listener : getListeners()) {
