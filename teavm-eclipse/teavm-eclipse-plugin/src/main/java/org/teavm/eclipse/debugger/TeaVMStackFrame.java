@@ -146,7 +146,8 @@ public class TeaVMStackFrame implements IStackFrame {
 
     @Override
     public int getLineNumber() throws DebugException {
-        return callFrame.getLocation() != null ? callFrame.getLocation().getLine() : -1;
+        return callFrame.getLocation() != null ? callFrame.getLocation().getLine() :
+                callFrame.getOriginalLocation().getLine();
     }
 
     @Override

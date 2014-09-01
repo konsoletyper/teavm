@@ -33,6 +33,7 @@ import org.eclipse.ui.ide.FileStoreEditorInput;
 import org.eclipse.ui.part.FileEditorInput;
 import org.teavm.debugging.CallFrame;
 import org.teavm.debugging.javascript.JavaScriptCallFrame;
+import org.teavm.debugging.javascript.JavaScriptLocation;
 import org.teavm.eclipse.debugger.TeaVMJSStackFrame;
 import org.teavm.eclipse.debugger.TeaVMStackFrame;
 import org.teavm.model.MethodDescriptor;
@@ -97,7 +98,7 @@ public class TeaVMDebugModelPresentation extends LabelProvider implements IDebug
     private String callFrameAsString(CallFrame callFrame) {
         MethodReference method = callFrame.getMethod();
         if (method == null) {
-            return "<native JavaScript code>";
+            return locationAsString(callFrame.getOriginalLocation());
         }
         StringBuilder sb = new StringBuilder();
         sb.append(classAsString(method.getClassName())).append('.').append(method.getName()).append('(');
@@ -166,11 +167,14 @@ public class TeaVMDebugModelPresentation extends LabelProvider implements IDebug
     }
 
     private String callFrameAsString(JavaScriptCallFrame callFrame) {
+        return locationAsString(callFrame.getLocation());
+    }
+
+    private String locationAsString(JavaScriptLocation location) {
         StringBuilder sb = new StringBuilder();
-        String script = callFrame.getLocation().getScript();
+        String script = location.getScript();
         sb.append(script.substring(script.lastIndexOf('/') + 1));
-        sb.append(" at ").append(callFrame.getLocation().getLine() + 1).append(";")
-                .append(callFrame.getLocation().getColumn() + 1);
+        sb.append(" at ").append(location.getLine() + 1).append(";").append(location.getColumn() + 1);
         return sb.toString();
     }
 }

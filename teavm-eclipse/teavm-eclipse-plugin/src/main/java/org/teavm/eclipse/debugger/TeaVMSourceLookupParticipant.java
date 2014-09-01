@@ -20,6 +20,7 @@ import java.net.URL;
 import java.util.Arrays;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.debug.core.sourcelookup.AbstractSourceLookupParticipant;
+import org.teavm.debugging.CallFrame;
 import org.teavm.debugging.information.SourceLocation;
 import org.teavm.debugging.javascript.JavaScriptLocation;
 
@@ -33,7 +34,11 @@ public class TeaVMSourceLookupParticipant extends AbstractSourceLookupParticipan
         if (object instanceof TeaVMStackFrame) {
             TeaVMStackFrame stackFrame = (TeaVMStackFrame)object;
             SourceLocation location = stackFrame.callFrame.getLocation();
-            return location != null ? location.getFileName() : null;
+            if (location != null) {
+                return location.getFileName();
+            }
+            JavaScriptLocation jsLocation = stackFrame.callFrame.getOriginalLocation();
+            return jsLocation != null ? jsLocation.getScript() : null;
         } else if (object instanceof TeaVMJSStackFrame) {
             TeaVMJSStackFrame stackFrame = (TeaVMJSStackFrame)object;
             JavaScriptLocation location = stackFrame.callFrame.getLocation();
@@ -50,18 +55,29 @@ public class TeaVMSourceLookupParticipant extends AbstractSourceLookupParticipan
             TeaVMJSStackFrame stackFrame = (TeaVMJSStackFrame)object;
             JavaScriptLocation location = stackFrame.getCallFrame().getLocation();
             if (location != null) {
-                URL url;
-                try {
-                    url = new URL(location.getScript());
-                } catch (MalformedURLException e) {
-                    url = null;
-                }
-                if (url != null) {
-                    result = Arrays.copyOf(result, result.length + 1);
-                    result[result.length - 1] = url;
-                }
+                result = addElement(result, location);
+            }
+        } else if (object instanceof TeaVMStackFrame) {
+            TeaVMStackFrame stackFrame = (TeaVMStackFrame)object;
+            CallFrame callFrame = stackFrame.getCallFrame();
+            if (callFrame.getMethod() == null && callFrame.getLocation() != null) {
+                result = addElement(result, callFrame.getOriginalLocation());
             }
         }
         return result;
+    }
+
+    private Object[] addElement(Object[] elements, JavaScriptLocation location) {
+        URL url;
+        try {
+            url = new URL(location.getScript());
+        } catch (MalformedURLException e) {
+            url = null;
+        }
+        if (url != null) {
+            elements = Arrays.copyOf(elements, elements.length + 1);
+            elements[elements.length - 1] = url;
+        }
+        return elements;
     }
 }

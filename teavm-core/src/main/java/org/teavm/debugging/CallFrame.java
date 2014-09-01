@@ -39,6 +39,10 @@ public class CallFrame {
         this.variables = Collections.unmodifiableMap(variables);
     }
 
+    public JavaScriptLocation getOriginalLocation() {
+        return originalLocation;
+    }
+
     public SourceLocation getLocation() {
         return location;
     }
