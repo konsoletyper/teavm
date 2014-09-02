@@ -116,8 +116,12 @@ public class JavaScriptConvGenerator implements Generator {
         writer.outdent().append("} else if (" + type + " === ").appendClass("java.lang.Double")
                 .append(") {").indent().softNewLine();
         writer.append("return ").appendMethodBody(valueOfDoubleMethod).append("(" + obj + ");").softNewLine();
-        writer.outdent().append("} else if (" + type + " === $rt_intcls()) {").indent().softNewLine();
+        writer.outdent().append("} else if (" + type + " === $rt_intcls() || " + type + " === $rt_bytecls() || " +
+                type + " === $rt_shortcls()) {").indent().softNewLine();
         writer.append("return " + obj + "|0;").softNewLine();
+        writer.outdent().append("} else if (" + type + " === $rt_doublecls() || " + type + " == $rt_floatcls()) {")
+                .indent().softNewLine();
+        writer.append("return " + obj + ";").softNewLine();
         writer.outdent().append("} else if (" + type + " === ").appendClass("java.lang.Boolean")
                 .append(") {").indent().softNewLine();
         writer.append("return ").appendMethodBody(valueOfBooleanMethod).append("(" + obj + "?1:0);").softNewLine();

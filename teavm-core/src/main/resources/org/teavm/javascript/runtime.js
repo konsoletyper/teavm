@@ -21,7 +21,7 @@ $rt_compare = function(a, b) {
     return a > b ? 1 : a < b ? -1 : 0;
 }
 $rt_isInstance = function(obj, cls) {
-    return obj != null && obj.constructor.$meta && $rt_isAssignable(obj.constructor, cls);
+    return obj !== null && !!obj.constructor.$meta && $rt_isAssignable(obj.constructor, cls);
 }
 $rt_isAssignable = function(from, to) {
     if (from === to) {
