@@ -105,7 +105,7 @@ public class JavaScriptBodyGenerator implements Generator {
                         .append(Renderer.typeToClsString(naming, reader.parameterType(i))).append(")");
             }
             sb.append(")); })(");
-            sb.append(ident == null ? "null, " : ident);
+            sb.append(ident == null ? "null" : ident);
             return sb.toString();
         }
         private MethodReader findMethod(String clsName, MethodDescriptor desc) {
