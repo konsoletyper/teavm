@@ -42,7 +42,7 @@ public class NewInstanceDependencySupport implements DependencyListener {
         }
         MethodReader method = cls.getMethod(new MethodDescriptor("<init>", ValueType.VOID));
         if (method != null) {
-            allClassesNode.propagate(className);
+            allClassesNode.propagate(agent.getType(className));
         }
     }
 
@@ -53,8 +53,8 @@ public class NewInstanceDependencySupport implements DependencyListener {
             newInstanceStack = method.getStack();
             allClassesNode.connect(method.getResult());
             method.getResult().addConsumer(new DependencyConsumer() {
-                @Override public void consume(String type) {
-                    attachConstructor(agent, type);
+                @Override public void consume(DependencyAgentType type) {
+                    attachConstructor(agent, type.getName());
                 }
             });
         }

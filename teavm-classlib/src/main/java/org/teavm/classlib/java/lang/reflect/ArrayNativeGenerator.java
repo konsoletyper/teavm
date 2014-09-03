@@ -44,7 +44,7 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
                 achieveGetLength(agent, method);
                 break;
             case "newInstanceImpl":
-                method.getResult().propagate("[java.lang.Object");
+                method.getResult().propagate(agent.getType("[java.lang.Object"));
                 break;
             case "getImpl":
                 achieveGet(agent, method);
@@ -80,8 +80,8 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
 
     private void achieveGetLength(final DependencyAgent agent, final MethodDependency method) {
         method.getVariable(1).addConsumer(new DependencyConsumer() {
-            @Override public void consume(String type) {
-                if (!type.startsWith("[")) {
+            @Override public void consume(DependencyAgentType type) {
+                if (!type.getName().startsWith("[")) {
                     MethodReference cons = new MethodReference(IllegalArgumentException.class, "<init>", void.class);
                     agent.linkMethod(cons, method.getStack()).use();
                 }
@@ -128,16 +128,16 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
     private void achieveGet(final DependencyAgent agent, final MethodDependency method) {
         method.getVariable(1).getArrayItem().connect(method.getResult());
         method.getVariable(1).addConsumer(new DependencyConsumer() {
-            @Override public void consume(String type) {
-                if (type.startsWith("[")) {
-                    type = type.substring(1);
+            @Override public void consume(DependencyAgentType type) {
+                if (type.getName().startsWith("[")) {
+                    String typeName = type.getName().substring(1);
                     for (int i = 0; i < primitiveTypes.length; ++i) {
-                        if (primitiveTypes[i].toString().equals(type)) {
+                        if (primitiveTypes[i].toString().equals(typeName)) {
                             String wrapper = "java.lang." + primitiveWrappers[i];
                             MethodReference methodRef = new MethodReference(wrapper, "valueOf",
                                     primitiveTypes[i], ValueType.object(wrapper));
                             agent.linkMethod(methodRef, method.getStack()).use();
-                            method.getResult().propagate("java.lang." + primitiveWrappers[i]);
+                            method.getResult().propagate(agent.getType("java.lang." + primitiveWrappers[i]));
                         }
                     }
                 }

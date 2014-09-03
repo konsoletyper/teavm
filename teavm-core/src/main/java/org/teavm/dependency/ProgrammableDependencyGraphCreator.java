@@ -48,7 +48,7 @@ class ProgrammableDependencyGraphCreator implements DependencyGraphCreator {
                     checker.getClassSource().get(conn.superclass)));
         }
         for (TypePropagation propagation : typePropagations) {
-            nodes[propagation.var].propagate(propagation.type);
+            nodes[propagation.var].propagate(checker.getType(propagation.type));
         }
         for (String className : initializedClasses) {
             checker.initClass(className, stack);
@@ -79,11 +79,11 @@ class ProgrammableDependencyGraphCreator implements DependencyGraphCreator {
             this.classSource = classSource;
             this.superClass = superClass;
         }
-        @Override public boolean match(String type) {
+        @Override public boolean match(DependencyAgentType type) {
             if (superClass.getName().equals("java.lang.Object")) {
                 return true;
             }
-            return isAssignableFrom(classSource, superClass, type);
+            return isAssignableFrom(classSource, superClass, type.getName());
         }
     }
 

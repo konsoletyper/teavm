@@ -1,5 +1,5 @@
 /*
- *  Copyright 2013 Alexey Andreev.
+ *  Copyright 2014 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,6 +19,28 @@ package org.teavm.dependency;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface DependencyConsumer {
-    void consume(DependencyAgentType type);
+public class DependencyType implements DependencyAgentType {
+    private DependencyChecker dependencyChecker;
+    private String name;
+    int index;
+
+    public DependencyType(DependencyChecker dependencyChecker, String name, int index) {
+        this.dependencyChecker = dependencyChecker;
+        this.name = name;
+        this.index = index;
+    }
+
+    public DependencyChecker getDependencyChecker() {
+        return dependencyChecker;
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public DependencyAgent getDependencyAgent() {
+        return dependencyChecker;
+    }
 }

@@ -86,7 +86,7 @@ public class ObjectNativeGenerator implements Generator, Injector, DependencyPlu
     private void achieveGetClass(DependencyAgent agent, MethodDependency method) {
         MethodReference initMethod = new MethodReference(Class.class, "createNew", Class.class);
         agent.linkMethod(initMethod, method.getStack()).use();
-        method.getResult().propagate("java.lang.Class");
+        method.getResult().propagate(agent.getType("java.lang.Class"));
     }
 
     private void generateHashCode(GeneratorContext context, SourceWriter writer) throws IOException {

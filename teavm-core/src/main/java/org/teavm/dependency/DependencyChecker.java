@@ -17,8 +17,6 @@ package org.teavm.dependency;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import org.teavm.common.*;
 import org.teavm.common.ConcurrentCachedMapper.KeyListener;
 import org.teavm.model.*;
@@ -29,7 +27,6 @@ import org.teavm.model.util.ModelUtils;
  * @author Alexey Andreev
  */
 public class DependencyChecker implements DependencyInfo, DependencyAgent {
-    private static Object dummyValue = new Object();
     static final boolean shouldLog = System.getProperty("org.teavm.logDependencies", "false").equals("true");
     private int classNameSuffix;
     private DependencyClassSource classSource;
@@ -37,18 +34,20 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     private FiniteExecutor executor;
     private Mapper<MethodReference, MethodReader> methodReaderCache;
     private Mapper<FieldReference, FieldReader> fieldReaderCache;
-    private ConcurrentMap<MethodReference, DependencyStack> stacks = new ConcurrentHashMap<>();
-    private ConcurrentMap<FieldReference, DependencyStack> fieldStacks = new ConcurrentHashMap<>();
-    private ConcurrentMap<String, DependencyStack> classStacks = new ConcurrentHashMap<>();
+    private Map<MethodReference, DependencyStack> stacks = new HashMap<>();
+    private Map<FieldReference, DependencyStack> fieldStacks = new HashMap<>();
+    private Map<String, DependencyStack> classStacks = new HashMap<>();
     private ConcurrentCachedMapper<MethodReference, MethodDependency> methodCache;
     private ConcurrentCachedMapper<FieldReference, FieldDependency> fieldCache;
-    private ConcurrentMap<String, Object> achievableClasses = new ConcurrentHashMap<>();
-    private ConcurrentMap<String, Object> initializedClasses = new ConcurrentHashMap<>();
+    private Set<String> achievableClasses = new HashSet<>();
+    private Set<String> initializedClasses = new HashSet<>();
     private List<DependencyListener> listeners = new ArrayList<>();
     private ServiceRepository services;
-    ConcurrentMap<MethodReference, DependencyStack> missingMethods = new ConcurrentHashMap<>();
-    ConcurrentMap<String, DependencyStack> missingClasses = new ConcurrentHashMap<>();
-    ConcurrentMap<FieldReference, DependencyStack> missingFields = new ConcurrentHashMap<>();
+    Map<MethodReference, DependencyStack> missingMethods = new HashMap<>();
+    Map<String, DependencyStack> missingClasses = new HashMap<>();
+    Map<FieldReference, DependencyStack> missingFields = new HashMap<>();
+    List<DependencyType> types = new ArrayList<>();
+    Map<String, DependencyType> typeMap = new HashMap<>();
 
     public DependencyChecker(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services) {
         this(classSource, classLoader, services, new SimpleFiniteExecutor());
@@ -114,6 +113,17 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     }
 
     @Override
+    public DependencyType getType(String name) {
+        DependencyType type = typeMap.get(name);
+        if (type == null) {
+            type = new DependencyType(this, name, types.size());
+            types.add(type);
+            typeMap.put(name, type);
+        }
+        return type;
+    }
+
+    @Override
     public DependencyNode createNode() {
         return new DependencyNode(this);
     }
@@ -155,13 +165,13 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         MethodDependency method = linkMethod(methodRef, DependencyStack.ROOT);
         method.use();
         DependencyNode[] varNodes = method.getVariables();
-        varNodes[0].propagate(methodRef.getClassName());
+        varNodes[0].propagate(getType(methodRef.getClassName()));
         for (int i = 0; i < argumentTypes.length; ++i) {
-            varNodes[i + 1].propagate(argumentTypes[i]);
+            varNodes[i + 1].propagate(getType(argumentTypes[i]));
         }
     }
 
-    void schedulePropagation(final DependencyConsumer consumer, final String type) {
+    void schedulePropagation(final DependencyConsumer consumer, final DependencyType type) {
         executor.executeFast(new Runnable() {
             @Override public void run() {
                 consumer.consume(type);
@@ -174,14 +184,14 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     }
 
     boolean achieveClass(String className, DependencyStack stack) {
-        classStacks.putIfAbsent(className, stack);
-        boolean result = achievableClasses.putIfAbsent(className, dummyValue) == null;
-        if (result) {
-            for (DependencyListener listener : listeners) {
-                listener.classAchieved(this, className);
-            }
+        classStacks.put(className, stack);
+        if (!achievableClasses.add(className)) {
+            return false;
         }
-        return result;
+        for (DependencyListener listener : listeners) {
+            listener.classAchieved(this, className);
+        }
+        return true;
     }
 
     @Override
@@ -189,16 +199,16 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         if (methodRef == null) {
             throw new IllegalArgumentException();
         }
-        stacks.putIfAbsent(methodRef, stack);
+        stacks.put(methodRef, stack);
         return methodCache.map(methodRef);
     }
 
     @Override
     public void initClass(String className, final DependencyStack stack) {
-        classStacks.putIfAbsent(className, stack);
+        classStacks.put(className, stack);
         MethodDescriptor clinitDesc = new MethodDescriptor("<clinit>", ValueType.VOID);
         while (className != null) {
-            if (initializedClasses.putIfAbsent(className, clinitDesc) != null) {
+            if (!initializedClasses.add(className)) {
                 break;
             }
             achieveClass(className, stack);
@@ -221,7 +231,7 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     }
 
     private void achieveInterfaces(String className, DependencyStack stack) {
-        classStacks.putIfAbsent(className, stack);
+        classStacks.put(className, stack);
         ClassReader cls = classSource.get(className);
         if (cls == null) {
             missingClasses.put(className, stack);
@@ -306,7 +316,7 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
             thrown.setTag(methodRef + ":THROWN");
         }
         stack = new DependencyStack(methodRef, stack);
-        final MethodDependency dep = new MethodDependency(parameterNodes, paramCount, resultNode, thrown,
+        final MethodDependency dep = new MethodDependency(this, parameterNodes, paramCount, resultNode, thrown,
                 stack, method, methodRef);
         if (method != null) {
             executor.execute(new Runnable() {
@@ -316,7 +326,7 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
                 }
             });
         } else {
-            missingMethods.putIfAbsent(methodRef, stack);
+            missingMethods.put(methodRef, stack);
         }
         if (method != null) {
             final DependencyStack callerStack = stack;
@@ -347,12 +357,12 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
 
     @Override
     public Collection<String> getAchievableClasses() {
-        return new HashSet<>(achievableClasses.keySet());
+        return new HashSet<>(achievableClasses);
     }
 
     @Override
     public FieldDependency linkField(FieldReference fieldRef, DependencyStack stack) {
-        fieldStacks.putIfAbsent(fieldRef, stack);
+        fieldStacks.put(fieldRef, stack);
         return fieldCache.map(fieldRef);
     }
 
@@ -364,7 +374,7 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     private FieldDependency createFieldNode(FieldReference fieldRef, FieldReader field, DependencyStack stack) {
         DependencyNode node = new DependencyNode(this);
         if (field == null) {
-            missingFields.putIfAbsent(fieldRef, stack);
+            missingFields.put(fieldRef, stack);
         }
         if (shouldLog) {
             node.setTag(fieldRef.getClassName() + "#" + fieldRef.getFieldName());

@@ -15,10 +15,12 @@
  */
 package org.teavm.dependency;
 
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
+import org.teavm.common.IntegerArray;
 
 /**
  *
@@ -26,9 +28,8 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public class DependencyNode implements ValueDependencyInfo {
     private DependencyChecker dependencyChecker;
-    private static final Object mapValue = new Object();
-    private ConcurrentMap<DependencyConsumer, Object> followers = new ConcurrentHashMap<>();
-    private ConcurrentMap<String, Object> types = new ConcurrentHashMap<>();
+    private Set<DependencyConsumer> followers = new HashSet<>();
+    private BitSet types = new BitSet();
     private ConcurrentMap<DependencyNode, DependencyNodeToNodeTransition> transitions = new ConcurrentHashMap<>();
     private volatile String tag;
     private final AtomicReference<DependencyNode> arrayItemNode = new AtomicReference<>();
@@ -44,24 +45,36 @@ public class DependencyNode implements ValueDependencyInfo {
         this.degree = degree;
     }
 
-    public void propagate(String type) {
+    public void propagate(DependencyAgentType agentType) {
+        if (!(agentType instanceof DependencyType)) {
+            throw new IllegalArgumentException("The given type does not belong to the same dependency checker");
+        }
+        DependencyType type = (DependencyType)agentType;
+        if (type.getDependencyChecker() != dependencyChecker) {
+            throw new IllegalArgumentException("The given type does not belong to the same dependency checker");
+        }
         if (degree > 2) {
             return;
         }
-        if (types.putIfAbsent(type, mapValue) == null) {
+        if (!types.get(type.index)) {
+            types.set(type.index);
             if (DependencyChecker.shouldLog) {
-                System.out.println(tag + " -> " + type);
+                System.out.println(tag + " -> " + type.getName());
             }
-            for (DependencyConsumer consumer : followers.keySet().toArray(new DependencyConsumer[0])) {
+            for (DependencyConsumer consumer : followers.toArray(new DependencyConsumer[followers.size()])) {
                 dependencyChecker.schedulePropagation(consumer, type);
             }
         }
     }
 
     public void addConsumer(DependencyConsumer consumer) {
-        if (followers.putIfAbsent(consumer, mapValue) == null) {
-            for (String type : types.keySet().toArray(new String[0])) {
-                dependencyChecker.schedulePropagation(consumer, type);
+        if (followers.add(consumer)) {
+            IntegerArray indexes = new IntegerArray(8);
+            for (int index = types.nextSetBit(0); index >= 0; index = types.nextSetBit(index + 1)) {
+                indexes.add(index);
+            }
+            for (int index : indexes.getAll()) {
+                dependencyChecker.schedulePropagation(consumer, dependencyChecker.types.get(index));
             }
         }
     }
@@ -112,14 +125,26 @@ public class DependencyNode implements ValueDependencyInfo {
         return arrayItemNode.get() != null && !arrayItemNode.get().types.isEmpty();
     }
 
+    public boolean hasType(DependencyAgentType type) {
+        if (!(type instanceof DependencyType)) {
+            return false;
+        }
+        DependencyType typeImpl = (DependencyType)type;
+        return typeImpl.getDependencyChecker() == dependencyChecker && types.get(typeImpl.index);
+    }
+
     @Override
     public boolean hasType(String type) {
-        return types.containsKey(type);
+        return hasType(dependencyChecker.getType(type));
     }
 
     @Override
     public String[] getTypes() {
-        return types != null ? types.keySet().toArray(new String[types.size()]) : new String[0];
+        List<String> result = new ArrayList<>();
+        for (int index = types.nextSetBit(0); index >= 0; index = types.nextSetBit(index + 1)) {
+            result.add(dependencyChecker.types.get(index).getName());
+        }
+        return result.toArray(new String[result.size()]);
     }
 
     public String getTag() {

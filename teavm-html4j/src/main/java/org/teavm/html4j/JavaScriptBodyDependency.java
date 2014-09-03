@@ -37,7 +37,7 @@ public class JavaScriptBodyDependency implements DependencyListener {
         public OneDirectionalConnection( DependencyNode target) {
             this.target = target;
         }
-        @Override public void consume(String type) {
+        @Override public void consume(DependencyAgentType type) {
             target.propagate(type);
         }
     }
@@ -47,7 +47,7 @@ public class JavaScriptBodyDependency implements DependencyListener {
         ClassReader cls = agent.getClassSource().get(className);
         if (cls != null && !cls.hasModifier(ElementModifier.ABSTRACT) &&
                 !cls.hasModifier(ElementModifier.INTERFACE)) {
-            allClassesNode.propagate(className);
+            allClassesNode.propagate(agent.getType(className));
         }
     }
 
@@ -161,11 +161,11 @@ public class JavaScriptBodyDependency implements DependencyListener {
             this.caller = caller;
             this.superClass = agent.getClassSource().get(superMethod.getOwnerName());
         }
-        @Override public void consume(String type) {
-            if (!isAssignableFrom(superClass, type)) {
+        @Override public void consume(DependencyAgentType type) {
+            if (!isAssignableFrom(superClass, type.getName())) {
                 return;
             }
-            MethodReference methodRef = new MethodReference(type, superMethod.getDescriptor());
+            MethodReference methodRef = new MethodReference(type.getName(), superMethod.getDescriptor());
             MethodDependency method = agent.linkMethod(methodRef, caller.getStack());
             method.use();
             for (int i = 0; i < method.getParameterCount(); ++i) {

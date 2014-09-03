@@ -40,7 +40,7 @@ public class EnumDependencySupport implements DependencyListener {
         if (cls == null || cls.getParent() == null || !cls.getParent().equals("java.lang.Enum")) {
             return;
         }
-        allEnums.propagate(className);
+        allEnums.propagate(agent.getType(className));
         if (enumConstantsStack != null) {
             MethodReader method = cls.getMethod(new MethodDescriptor("values",
                     ValueType.arrayOf(ValueType.object(cls.getName()))));
@@ -55,7 +55,7 @@ public class EnumDependencySupport implements DependencyListener {
         if (method.getReference().getClassName().equals("java.lang.Class") &&
                 method.getReference().getName().equals("getEnumConstantsImpl")) {
             allEnums.connect(method.getResult().getArrayItem());
-            method.getResult().propagate("[java.lang.Enum");
+            method.getResult().propagate(agent.getType("[java.lang.Enum"));
             enumConstantsStack = method.getStack();
             for (String cls : agent.getAchievableClasses()) {
                 classAchieved(agent, cls);

@@ -104,9 +104,10 @@ class DependencyGraphBuilder {
         }
 
         @Override
-        public void consume(String type) {
+        public void consume(DependencyAgentType type) {
             for (int i = 0; i < exceptions.length; ++i) {
-                if (exceptions[i] == null || isAssignableFrom(checker.getClassSource(), exceptions[i], type)) {
+                if (exceptions[i] == null || isAssignableFrom(checker.getClassSource(), exceptions[i],
+                        type.getName())) {
                     vars[i].propagate(type);
                     return;
                 }
@@ -140,7 +141,8 @@ class DependencyGraphBuilder {
         }
 
         @Override
-        public void consume(String className) {
+        public void consume(DependencyAgentType type) {
+            String className = type.getName();
             if (DependencyChecker.shouldLog) {
                 System.out.println("Virtual call of " + methodDesc + " detected on " + node.getTag() + ". " +
                         "Target class is " + className);
@@ -201,8 +203,8 @@ class DependencyGraphBuilder {
 
     private static class TypePropagationRunner implements Runnable {
         private DependencyNode node;
-        private String type;
-        public TypePropagationRunner(DependencyNode node, String type) {
+        private DependencyType type;
+        public TypePropagationRunner(DependencyNode node, DependencyType type) {
             this.node = node;
             this.type = type;
         }
@@ -222,7 +224,8 @@ class DependencyGraphBuilder {
 
         @Override
         public void classConstant(VariableReader receiver, ValueType cst) {
-            useRunners.add(new TypePropagationRunner(nodes[receiver.getIndex()], "java.lang.Class"));
+            useRunners.add(new TypePropagationRunner(nodes[receiver.getIndex()],
+                    dependencyChecker.getType("java.lang.Class")));
             while (cst instanceof ValueType.Array) {
                 cst = ((ValueType.Array)cst).getItemType();
             }
@@ -258,9 +261,10 @@ class DependencyGraphBuilder {
 
         @Override
         public void stringConstant(VariableReader receiver, String cst) {
-            useRunners.add(new TypePropagationRunner(nodes[receiver.getIndex()], "java.lang.String"));
+            useRunners.add(new TypePropagationRunner(nodes[receiver.getIndex()],
+                    dependencyChecker.getType("java.lang.String")));
             MethodDependency method = dependencyChecker.linkMethod(new MethodReference(String.class,
-                    "<init>", char.class, void.class), callerStack);
+                    "<init>", char[].class, void.class), callerStack);
             method.use();
         }
 
@@ -289,11 +293,11 @@ class DependencyGraphBuilder {
                 final ClassReader targetClass = dependencyChecker.getClassSource().get(targetClsName);
                 if (targetClass != null) {
                     valueNode.connect(receiverNode, new DependencyTypeFilter() {
-                        @Override public boolean match(String type) {
+                        @Override public boolean match(DependencyAgentType type) {
                             if (targetClass.getName().equals("java.lang.Object")) {
                                 return true;
                             }
-                            return isAssignableFrom(dependencyChecker.getClassSource(), targetClass, type);
+                            return isAssignableFrom(dependencyChecker.getClassSource(), targetClass, type.getName());
                         }
                     });
                     return;
@@ -345,7 +349,8 @@ class DependencyGraphBuilder {
 
         @Override
         public void createArray(VariableReader receiver, ValueType itemType, VariableReader size) {
-            useRunners.add(new TypePropagationRunner(nodes[receiver.getIndex()], "[" + itemType));
+            useRunners.add(new TypePropagationRunner(nodes[receiver.getIndex()],
+                    dependencyChecker.getType("[" + itemType)));
             final String className = extractClassName(itemType);
             if (className != null) {
                 useRunners.add(new Runnable() {
@@ -371,12 +376,13 @@ class DependencyGraphBuilder {
                 sb.append('[');
             }
             sb.append(itemType);
-            useRunners.add(new TypePropagationRunner(nodes[receiver.getIndex()], sb.toString()));
+            useRunners.add(new TypePropagationRunner(nodes[receiver.getIndex()],
+                    dependencyChecker.getType(sb.toString())));
         }
 
         @Override
         public void create(VariableReader receiver, String type) {
-            useRunners.add(new TypePropagationRunner(nodes[receiver.getIndex()], type));
+            useRunners.add(new TypePropagationRunner(nodes[receiver.getIndex()], dependencyChecker.getType(type)));
         }
 
         @Override
@@ -405,7 +411,7 @@ class DependencyGraphBuilder {
             DependencyNode arrayNode = nodes[array.getIndex()];
             final DependencyNode receiverNode = nodes[receiver.getIndex()];
             arrayNode.addConsumer(new DependencyConsumer() {
-                @Override public void consume(String type) {
+                @Override public void consume(DependencyAgentType type) {
                     receiverNode.propagate(type);
                 }
             });
@@ -522,7 +528,7 @@ class DependencyGraphBuilder {
                             "<init>", ValueType.VOID), callerStack);
                 }
             });
-            currentExceptionConsumer.consume("java.lang.NullPointerException");
+            currentExceptionConsumer.consume(dependencyChecker.getType("java.lang.NullPointerException"));
         }
     };
 }

@@ -27,6 +27,8 @@ import org.teavm.model.MethodReference;
 public interface DependencyAgent extends DependencyInfo, ServiceRepository {
     DependencyNode createNode();
 
+    DependencyAgentType getType(String name);
+
     String generateClassName();
 
     void submitClass(ClassHolder cls);
