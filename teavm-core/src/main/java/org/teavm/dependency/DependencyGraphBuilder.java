@@ -259,9 +259,8 @@ class DependencyGraphBuilder {
         @Override
         public void stringConstant(VariableReader receiver, String cst) {
             useRunners.add(new TypePropagationRunner(nodes[receiver.getIndex()], "java.lang.String"));
-            MethodDependency method = dependencyChecker.linkMethod(new MethodReference("java.lang.String",
-                    new MethodDescriptor("<init>", ValueType.arrayOf(ValueType.CHARACTER), ValueType.VOID)),
-                    callerStack);
+            MethodDependency method = dependencyChecker.linkMethod(new MethodReference(String.class,
+                    "<init>", char.class, void.class), callerStack);
             method.use();
         }
 
