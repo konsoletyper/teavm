@@ -20,7 +20,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.teavm.common.*;
-import org.teavm.common.ConcurrentCachedMapper.KeyListener;
+import org.teavm.common.CachedMapper.KeyListener;
 import org.teavm.model.*;
 import org.teavm.model.util.ModelUtils;
 
@@ -34,43 +34,37 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     private int classNameSuffix;
     private DependencyClassSource classSource;
     private ClassLoader classLoader;
-    private FiniteExecutor executor;
     private Mapper<MethodReference, MethodReader> methodReaderCache;
     private Mapper<FieldReference, FieldReader> fieldReaderCache;
     private ConcurrentMap<MethodReference, DependencyStack> stacks = new ConcurrentHashMap<>();
     private ConcurrentMap<FieldReference, DependencyStack> fieldStacks = new ConcurrentHashMap<>();
     private ConcurrentMap<String, DependencyStack> classStacks = new ConcurrentHashMap<>();
-    private ConcurrentCachedMapper<MethodReference, MethodDependency> methodCache;
-    private ConcurrentCachedMapper<FieldReference, FieldDependency> fieldCache;
+    private CachedMapper<MethodReference, MethodDependency> methodCache;
+    private CachedMapper<FieldReference, FieldDependency> fieldCache;
     private ConcurrentMap<String, Object> achievableClasses = new ConcurrentHashMap<>();
     private ConcurrentMap<String, Object> initializedClasses = new ConcurrentHashMap<>();
     private List<DependencyListener> listeners = new ArrayList<>();
     private ServiceRepository services;
+    private Queue<Runnable> tasks = new ArrayDeque<>();
     ConcurrentMap<MethodReference, DependencyStack> missingMethods = new ConcurrentHashMap<>();
     ConcurrentMap<String, DependencyStack> missingClasses = new ConcurrentHashMap<>();
     ConcurrentMap<FieldReference, DependencyStack> missingFields = new ConcurrentHashMap<>();
 
     public DependencyChecker(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services) {
-        this(classSource, classLoader, services, new SimpleFiniteExecutor());
-    }
-
-    public DependencyChecker(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services,
-            FiniteExecutor executor) {
         this.classSource = new DependencyClassSource(classSource);
         this.classLoader = classLoader;
-        this.executor = executor;
         this.services = services;
-        methodReaderCache = new ConcurrentCachedMapper<>(new Mapper<MethodReference, MethodReader>() {
+        methodReaderCache = new CachedMapper<>(new Mapper<MethodReference, MethodReader>() {
             @Override public MethodReader map(MethodReference preimage) {
                 return findMethodReader(preimage);
             }
         });
-        fieldReaderCache = new ConcurrentCachedMapper<>(new Mapper<FieldReference, FieldReader>() {
+        fieldReaderCache = new CachedMapper<>(new Mapper<FieldReference, FieldReader>() {
             @Override public FieldReader map(FieldReference preimage) {
                 return findFieldReader(preimage);
             }
         });
-        methodCache = new ConcurrentCachedMapper<>(new Mapper<MethodReference, MethodDependency>() {
+        methodCache = new CachedMapper<>(new Mapper<MethodReference, MethodDependency>() {
             @Override public MethodDependency map(MethodReference preimage) {
                 MethodReader method = methodReaderCache.map(preimage);
                 if (method != null && !method.getReference().equals(preimage)) {
@@ -80,7 +74,7 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
                 return createMethodDep(preimage, method, stacks.get(preimage));
             }
         });
-        fieldCache = new ConcurrentCachedMapper<>(new Mapper<FieldReference, FieldDependency>() {
+        fieldCache = new CachedMapper<>(new Mapper<FieldReference, FieldDependency>() {
             @Override public FieldDependency map(FieldReference preimage) {
                 FieldReader field = fieldReaderCache.map(preimage);
                 if (field != null && !field.getReference().equals(preimage)) {
@@ -162,15 +156,11 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     }
 
     void schedulePropagation(final DependencyConsumer consumer, final String type) {
-        executor.executeFast(new Runnable() {
+        tasks.add(new Runnable() {
             @Override public void run() {
                 consumer.consume(type);
             }
         });
-    }
-
-    public FiniteExecutor getExecutor() {
-        return executor;
     }
 
     boolean achieveClass(String className, DependencyStack stack) {
@@ -210,7 +200,7 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
             }
             if (cls.getMethod(clinitDesc) != null) {
                 final MethodReference methodRef = new MethodReference(className, clinitDesc);
-                executor.executeFast(new Runnable() {
+                tasks.add(new Runnable() {
                     @Override public void run() {
                         linkMethod(methodRef, new DependencyStack(methodRef, stack)).use();
                     }
@@ -309,7 +299,7 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         final MethodDependency dep = new MethodDependency(parameterNodes, paramCount, resultNode, thrown,
                 stack, method, methodRef);
         if (method != null) {
-            executor.execute(new Runnable() {
+            tasks.add(new Runnable() {
                 @Override public void run() {
                     DependencyGraphBuilder graphBuilder = new DependencyGraphBuilder(DependencyChecker.this);
                     graphBuilder.buildGraph(dep);
@@ -320,7 +310,7 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         }
         if (method != null) {
             final DependencyStack callerStack = stack;
-            executor.execute(new Runnable() {
+            tasks.add(new Runnable() {
                 @Override public void run() {
                     initClass(dep.getReference().getClassName(), callerStack);
                 }
@@ -448,6 +438,12 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
                 }
             }
             sb.append('\n');
+        }
+    }
+
+    public void processDependencies() {
+        while (!tasks.isEmpty()) {
+            tasks.poll().run();
         }
     }
 

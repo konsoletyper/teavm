@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import org.apache.commons.io.IOUtils;
-import org.teavm.common.ThreadPoolFiniteExecutor;
 import org.teavm.debugging.information.DebugInformation;
 import org.teavm.debugging.information.DebugInformationBuilder;
 import org.teavm.javascript.RenderingContext;
@@ -48,7 +47,6 @@ public class TeaVMTool {
     private File debugInformation;
     private String sourceMapsFileName;
     private boolean sourceMapsFileGenerated;
-    private int numThreads = 1;
     private List<ClassHolderTransformer> transformers = new ArrayList<>();
     private List<ClassAlias> classAliases = new ArrayList<>();
     private List<MethodAlias> methodAliases = new ArrayList<>();
@@ -119,14 +117,6 @@ public class TeaVMTool {
         this.debugInformation = debugInformation;
     }
 
-    public int getNumThreads() {
-        return numThreads;
-    }
-
-    public void setNumThreads(int numThreads) {
-        this.numThreads = numThreads;
-    }
-
     public String getSourceMapsFileName() {
         return sourceMapsFileName;
     }
@@ -176,21 +166,10 @@ public class TeaVMTool {
     }
 
     public void generate() throws TeaVMToolException {
-        Runnable finalizer = null;
         try {
             log.info("Building JavaScript file");
             TeaVMBuilder vmBuilder = new TeaVMBuilder();
             vmBuilder.setClassLoader(classLoader).setClassSource(new ClasspathClassHolderSource(classLoader));
-            if (numThreads != 1) {
-                int threads = numThreads != 0 ? numThreads : Runtime.getRuntime().availableProcessors();
-                final ThreadPoolFiniteExecutor executor = new ThreadPoolFiniteExecutor(threads);
-                finalizer = new Runnable() {
-                    @Override public void run() {
-                        executor.stop();
-                    }
-                };
-                vmBuilder.setExecutor(executor);
-            }
             TeaVM vm = vmBuilder.build();
             vm.setMinifying(minifying);
             vm.setBytecodeLogging(bytecodeLogging);
@@ -272,10 +251,6 @@ public class TeaVMTool {
             }
         } catch (IOException e) {
             throw new TeaVMToolException("IO error occured", e);
-        } finally {
-            if (finalizer != null) {
-                finalizer.run();
-            }
         }
     }
 

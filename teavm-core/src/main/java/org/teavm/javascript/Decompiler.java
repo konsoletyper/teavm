@@ -42,14 +42,12 @@ public class Decompiler {
     private RangeTree codeTree;
     private RangeTree.Node currentNode;
     private RangeTree.Node parentNode;
-    private FiniteExecutor executor;
     private Map<MethodReference, Generator> generators = new HashMap<>();
     private Set<MethodReference> methodsToPass = new HashSet<>();
 
-    public Decompiler(ClassHolderSource classSource, ClassLoader classLoader, FiniteExecutor executor) {
+    public Decompiler(ClassHolderSource classSource, ClassLoader classLoader) {
         this.classSource = classSource;
         this.classLoader = classLoader;
-        this.executor = executor;
     }
 
     public int getGraphSize() {
@@ -79,18 +77,8 @@ public class Decompiler {
         final List<ClassNode> result = new ArrayList<>();
         for (int i = 0; i < sequence.size(); ++i) {
             final String className = sequence.get(i);
-            result.add(null);
-            final int index = i;
-            executor.execute(new Runnable() {
-                @Override public void run() {
-                    Decompiler copy = new Decompiler(classSource, classLoader, executor);
-                    copy.generators = generators;
-                    copy.methodsToPass = methodsToPass;
-                    result.set(index, copy.decompile(classSource.get(className)));
-                }
-            });
+            result.add(decompile(classSource.get(className)));
         }
-        executor.complete();
         return result;
     }
 

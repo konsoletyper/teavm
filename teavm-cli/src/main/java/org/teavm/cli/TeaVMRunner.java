@@ -69,12 +69,6 @@ public final class TeaVMRunner {
                 .withDescription("Generate source maps")
                 .withLongOpt("sourcemaps")
                 .create());
-        options.addOption(OptionBuilder
-                .withArgName("number")
-                .hasArg()
-                .withDescription("how many threads should TeaVM run")
-                .withLongOpt("threads")
-                .create("t"));
 
         if (args.length == 0) {
             printUsage(options);
@@ -121,15 +115,6 @@ public final class TeaVMRunner {
         }
         if (commandLine.hasOption("mainpage")) {
             tool.setMainPageIncluded(true);
-        }
-        if (commandLine.hasOption("t")) {
-            try {
-                tool.setNumThreads(Integer.parseInt(commandLine.getOptionValue("t")));
-            } catch (NumberFormatException e) {
-                System.err.println("Wrong parameter for -t option specified");
-                printUsage(options);
-                return;
-            }
         }
         if (commandLine.hasOption('D')) {
             tool.setDebugInformation(new File(tool.getTargetDirectory(), tool.getTargetFileName() + ".teavmdbg"));

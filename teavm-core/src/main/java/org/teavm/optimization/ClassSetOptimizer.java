@@ -17,7 +17,6 @@ package org.teavm.optimization;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Executor;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ListableClassHolderSource;
 import org.teavm.model.MethodHolder;
@@ -29,12 +28,6 @@ import org.teavm.model.util.ProgramUtils;
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public class ClassSetOptimizer {
-    private Executor executor;
-
-    public ClassSetOptimizer(Executor executor) {
-        this.executor = executor;
-    }
-
     private List<MethodOptimization> getOptimizations() {
         return Arrays.<MethodOptimization>asList(new ArrayUnwrapMotion(), new LoopInvariantMotion(),
                 new GlobalValueNumbering(), new UnusedVariableElimination());
@@ -43,18 +36,13 @@ public class ClassSetOptimizer {
     public void optimizeAll(ListableClassHolderSource classSource) {
         for (String className : classSource.getClassNames()) {
             ClassHolder cls = classSource.get(className);
-            for (final MethodHolder method : cls.getMethods()) {
+            for (MethodHolder method : cls.getMethods()) {
                 if (method.getProgram() != null && method.getProgram().basicBlockCount() > 0) {
-                    executor.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            Program program = ProgramUtils.copy(method.getProgram());
-                            for (MethodOptimization optimization : getOptimizations()) {
-                                optimization.optimize(method, program);
-                            }
-                            method.setProgram(program);
-                        }
-                    });
+                    Program program = ProgramUtils.copy(method.getProgram());
+                    for (MethodOptimization optimization : getOptimizations()) {
+                        optimization.optimize(method, program);
+                    }
+                    method.setProgram(program);
                 }
             }
         }

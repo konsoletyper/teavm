@@ -80,9 +80,6 @@ public class BuildJavascriptMojo extends AbstractMojo {
     @Parameter
     private File debugInformationFile;
 
-    @Parameter(required = false)
-    private int numThreads = 1;
-
     @Parameter
     private String[] transformers;
 
@@ -124,10 +121,6 @@ public class BuildJavascriptMojo extends AbstractMojo {
 
     public void setMainPageIncluded(boolean mainPageIncluded) {
         this.mainPageIncluded = mainPageIncluded;
-    }
-
-    public void setNumThreads(int numThreads) {
-        this.numThreads = numThreads;
     }
 
     public String[] getTransformers() {
@@ -177,7 +170,6 @@ public class BuildJavascriptMojo extends AbstractMojo {
             tool.setMainClass(mainClass);
             tool.setMainPageIncluded(mainPageIncluded);
             tool.setMinifying(minifying);
-            tool.setNumThreads(numThreads);
             tool.setRuntime(runtime);
             tool.setTargetDirectory(targetDirectory);
             tool.setTargetFileName(targetFileName);

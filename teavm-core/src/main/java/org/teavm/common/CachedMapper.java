@@ -15,29 +15,23 @@
  */
 package org.teavm.common;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CountDownLatch;
+import java.util.*;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class ConcurrentCachedMapper<T, R> implements Mapper<T, R> {
+public class CachedMapper<T, R> implements Mapper<T, R> {
     private Mapper<T, R> innerMapper;
-    private ConcurrentMap<T, Wrapper<R>> cache = new ConcurrentHashMap<>();
+    private Map<T, Wrapper<R>> cache = new HashMap<>();
     private List<KeyListener<T>> keyListeners = new ArrayList<>();
 
     private static class Wrapper<S> {
-        volatile S value;
-        volatile CountDownLatch latch = new CountDownLatch(1);
+        S value;
+        boolean computed;
     }
 
-    public ConcurrentCachedMapper(Mapper<T, R> innerMapper) {
+    public CachedMapper(Mapper<T, R> innerMapper) {
         this.innerMapper = innerMapper;
     }
 
@@ -51,25 +45,12 @@ public class ConcurrentCachedMapper<T, R> implements Mapper<T, R> {
         Wrapper<R> wrapper = cache.get(preimage);
         if (wrapper == null) {
             wrapper = new Wrapper<>();
-            Wrapper<R> oldWrapper = cache.putIfAbsent(preimage, wrapper);
-            if (oldWrapper == null) {
-                wrapper.value = innerMapper.map(preimage);
-                wrapper.latch.countDown();
-                wrapper.latch = null;
-                for (KeyListener<T> listener : keyListeners) {
-                    listener.keyAdded(preimage);
-                }
-            } else {
-                wrapper = oldWrapper;
-            }
+            cache.put(preimage, wrapper);
+            wrapper.value = innerMapper.map(preimage);
+            wrapper.computed = true;
         }
-        CountDownLatch latch = wrapper.latch;
-        if (latch != null) {
-            try {
-                latch.await();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
+        if (!wrapper.computed) {
+            throw new IllegalStateException("Recursive calls are not allowed");
         }
         return wrapper.value;
     }

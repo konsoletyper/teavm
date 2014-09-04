@@ -20,7 +20,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import org.teavm.common.ConcurrentCachedMapper;
+import org.teavm.common.CachedMapper;
 import org.teavm.common.Mapper;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
@@ -36,7 +36,7 @@ class DependencyClassSource implements ClassReaderSource {
     private ClassReaderSource innerSource;
     private ConcurrentMap<String, ClassHolder> generatedClasses = new ConcurrentHashMap<>();
     private List<ClassHolderTransformer> transformers = new ArrayList<>();
-    private ConcurrentCachedMapper<String, ClassReader> cache = new ConcurrentCachedMapper<>(
+    private CachedMapper<String, ClassReader> cache = new CachedMapper<>(
             new Mapper<String, ClassReader>() {
         @Override public ClassReader map(String preimage) {
             return findAndTransformClass(preimage);

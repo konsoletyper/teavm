@@ -208,7 +208,7 @@ public class TeaVMTestTool {
                         log.debug("Building test for " + method);
                         try {
                             decompileClassesForTest(classLoader, new CopyClassHolderSource(classSource), method,
-                                    fileNames.get(method), new SimpleFiniteExecutor());
+                                    fileNames.get(method));
                         } catch (IOException e) {
                             log.error("Error generating JavaScript", e);
                         }
@@ -275,11 +275,10 @@ public class TeaVMTestTool {
     }
 
     private void decompileClassesForTest(ClassLoader classLoader, ClassHolderSource classSource,
-            MethodReference methodRef, String targetName, FiniteExecutor executor) throws IOException {
+            MethodReference methodRef, String targetName) throws IOException {
         TeaVM vm = new TeaVMBuilder()
                 .setClassLoader(classLoader)
                 .setClassSource(classSource)
-                .setExecutor(executor)
                 .build();
         vm.setProperties(properties);
         vm.setMinifying(minifying);

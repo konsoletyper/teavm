@@ -18,7 +18,6 @@ package org.teavm.vm;
 import java.io.*;
 import java.util.*;
 import org.teavm.codegen.*;
-import org.teavm.common.FiniteExecutor;
 import org.teavm.common.ServiceRepository;
 import org.teavm.debugging.information.DebugInformationEmitter;
 import org.teavm.debugging.information.SourceLocation;
@@ -71,7 +70,6 @@ import org.teavm.vm.spi.TeaVMPlugin;
 public class TeaVM implements TeaVMHost, ServiceRepository {
     private ClassReaderSource classSource;
     private DependencyChecker dependencyChecker;
-    private FiniteExecutor executor;
     private ClassLoader classLoader;
     private boolean minifying = true;
     private boolean bytecodeLogging;
@@ -85,11 +83,10 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     private Properties properties = new Properties();
     private DebugInformationEmitter debugEmitter;
 
-    TeaVM(ClassReaderSource classSource, ClassLoader classLoader, FiniteExecutor executor) {
+    TeaVM(ClassReaderSource classSource, ClassLoader classLoader) {
         this.classSource = classSource;
         this.classLoader = classLoader;
-        dependencyChecker = new DependencyChecker(this.classSource, classLoader, this, executor);
-        this.executor = executor;
+        dependencyChecker = new DependencyChecker(this.classSource, classLoader, this);
     }
 
     @Override
@@ -307,7 +304,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                 DependencyStack.ROOT).use();
         dependencyChecker.linkMethod(new MethodReference("java.lang.Object", new MethodDescriptor("clone",
                 ValueType.object("java.lang.Object"))), DependencyStack.ROOT).use();
-        executor.complete();
+        dependencyChecker.processDependencies();
         if (hasMissingItems()) {
             return;
         }
@@ -318,12 +315,9 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
         // Optimize and allocate registers
         devirtualize(classSet, dependencyChecker);
-        executor.complete();
-        ClassSetOptimizer optimizer = new ClassSetOptimizer(executor);
+        ClassSetOptimizer optimizer = new ClassSetOptimizer();
         optimizer.optimizeAll(classSet);
-        executor.complete();
         allocateRegisters(classSet);
-        executor.complete();
         if (bytecodeLogging) {
             try {
                 logBytecode(new PrintWriter(new OutputStreamWriter(logStream, "UTF-8")), classSet);
@@ -333,7 +327,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
 
         // Decompile
-        Decompiler decompiler = new Decompiler(classSet, classLoader, executor);
+        Decompiler decompiler = new Decompiler(classSet, classLoader);
         for (Map.Entry<MethodReference, Generator> entry : methodGenerators.entrySet()) {
             decompiler.addGenerator(entry.getKey(), entry.getValue());
         }
@@ -421,11 +415,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             ClassHolder cls = classes.get(className);
             for (final MethodHolder method : cls.getMethods()) {
                 if (method.getProgram() != null) {
-                    executor.execute(new Runnable() {
-                        @Override public void run() {
-                            devirtualization.apply(method);
-                        }
-                    });
+                    devirtualization.apply(method);
                 }
             }
         }
@@ -436,14 +426,10 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             ClassHolder cls = classes.get(className);
             for (final MethodHolder method : cls.getMethods()) {
                 if (method.getProgram() != null && method.getProgram().basicBlockCount() > 0) {
-                    executor.execute(new Runnable() {
-                        @Override public void run() {
-                            RegisterAllocator allocator = new RegisterAllocator();
-                            Program program = ProgramUtils.copy(method.getProgram());
-                            allocator.allocateRegisters(method, program);
-                            method.setProgram(program);
-                        }
-                    });
+                    RegisterAllocator allocator = new RegisterAllocator();
+                    Program program = ProgramUtils.copy(method.getProgram());
+                    allocator.allocateRegisters(method, program);
+                    method.setProgram(program);
                 }
             }
         }

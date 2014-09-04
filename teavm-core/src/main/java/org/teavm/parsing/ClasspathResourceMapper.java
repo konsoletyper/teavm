@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.*;
-import org.teavm.common.ConcurrentCachedMapper;
+import org.teavm.common.CachedMapper;
 import org.teavm.common.Mapper;
 import org.teavm.model.ClassHolder;
 
@@ -58,7 +58,7 @@ public class ClasspathResourceMapper implements Mapper<String, ClassHolder> {
         } catch (IOException e) {
             throw new RuntimeException("Error reading resources", e);
         }
-        renamer = new ClassRefsRenamer(new ConcurrentCachedMapper<>(classNameMapper));
+        renamer = new ClassRefsRenamer(new CachedMapper<>(classNameMapper));
     }
 
     private void loadProperties(Properties properties, Map<String, Transformation> cache) {
