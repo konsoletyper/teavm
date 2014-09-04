@@ -16,9 +16,9 @@
 package org.teavm.dependency;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.Set;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 import org.teavm.model.util.ListingBuilder;
@@ -124,7 +124,7 @@ class DependencyGraphBuilder {
         private final DependencyNode[] parameters;
         private final DependencyNode result;
         private final DependencyStack stack;
-        private final ConcurrentMap<MethodReference, MethodReference> knownMethods = new ConcurrentHashMap<>();
+        private final Set<MethodReference> knownMethods = new HashSet<>();
         private ExceptionConsumer exceptionConsumer;
 
         public VirtualCallConsumer(DependencyNode node, ClassReader filterClass,
@@ -155,13 +155,13 @@ class DependencyGraphBuilder {
             }
             MethodReference methodRef = new MethodReference(className, methodDesc);
             MethodDependency methodDep = checker.linkMethod(methodRef, stack);
-            if (!methodDep.isMissing() && knownMethods.putIfAbsent(methodRef, methodRef) == null) {
+            if (!methodDep.isMissing() && knownMethods.add(methodRef)) {
                 methodDep.use();
                 DependencyNode[] targetParams = methodDep.getVariables();
                 for (int i = 0; i < parameters.length; ++i) {
                     parameters[i].connect(targetParams[i]);
                 }
-                if (methodDep.getResult() != null) {
+                if (result != null && methodDep.getResult() != null) {
                     methodDep.getResult().connect(result);
                 }
                 methodDep.getThrown().addConsumer(exceptionConsumer);

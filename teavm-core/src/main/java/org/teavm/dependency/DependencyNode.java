@@ -16,10 +16,6 @@
 package org.teavm.dependency;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  *
@@ -29,10 +25,9 @@ public class DependencyNode implements ValueDependencyInfo {
     private DependencyChecker dependencyChecker;
     private Set<DependencyConsumer> followers = new HashSet<>();
     private BitSet types = new BitSet();
-    private ConcurrentMap<DependencyNode, DependencyNodeToNodeTransition> transitions = new ConcurrentHashMap<>();
+    private Map<DependencyNode, DependencyNodeToNodeTransition> transitions = new HashMap<>();
     private volatile String tag;
-    private final AtomicReference<DependencyNode> arrayItemNode = new AtomicReference<>();
-    private volatile CountDownLatch arrayItemNodeLatch = new CountDownLatch(1);
+    private DependencyNode arrayItemNode;
     private int degree;
 
     DependencyNode(DependencyChecker dependencyChecker) {
@@ -105,7 +100,8 @@ public class DependencyNode implements ValueDependencyInfo {
 
     public void connect(DependencyNode node, DependencyTypeFilter filter) {
         DependencyNodeToNodeTransition transition = new DependencyNodeToNodeTransition(this, node, filter);
-        if (transitions.putIfAbsent(node, transition) == null) {
+        if (!transitions.containsKey(node)) {
+            transitions.put(node, transition);
             if (DependencyChecker.shouldLog) {
                 System.out.println("Connecting " + tag + " to " + node.tag);
             }
@@ -119,34 +115,18 @@ public class DependencyNode implements ValueDependencyInfo {
 
     @Override
     public DependencyNode getArrayItem() {
-        DependencyNode result = arrayItemNode.get();
-        if (result == null) {
-            result = new DependencyNode(dependencyChecker, degree + 1);
-            if (arrayItemNode.compareAndSet(null, result)) {
-                if (DependencyChecker.shouldLog) {
-                    arrayItemNode.get().tag = tag + "[";
-                }
-                arrayItemNodeLatch.countDown();
-                arrayItemNodeLatch = null;
-            } else {
-                result = arrayItemNode.get();
+        if (arrayItemNode == null) {
+            arrayItemNode = new DependencyNode(dependencyChecker, degree + 1);
+            if (DependencyChecker.shouldLog) {
+                arrayItemNode.tag = tag + "[";
             }
         }
-        CountDownLatch latch = arrayItemNodeLatch;
-        if (latch != null) {
-            try {
-                latch.await();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return result;
-            }
-        }
-        return result;
+        return arrayItemNode;
     }
 
     @Override
     public boolean hasArrayType() {
-        return arrayItemNode.get() != null && !arrayItemNode.get().types.isEmpty();
+        return arrayItemNode != null && arrayItemNode.types.isEmpty();
     }
 
     public boolean hasType(DependencyAgentType type) {
