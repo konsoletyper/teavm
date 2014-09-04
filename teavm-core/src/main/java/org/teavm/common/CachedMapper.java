@@ -48,6 +48,9 @@ public class CachedMapper<T, R> implements Mapper<T, R> {
             cache.put(preimage, wrapper);
             wrapper.value = innerMapper.map(preimage);
             wrapper.computed = true;
+            for (KeyListener<T> listener : keyListeners) {
+                listener.keyAdded(preimage);
+            }
         }
         if (!wrapper.computed) {
             throw new IllegalStateException("Recursive calls are not allowed");

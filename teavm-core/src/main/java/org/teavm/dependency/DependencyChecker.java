@@ -153,7 +153,7 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
 
     public void addEntryPoint(MethodReference methodRef, String... argumentTypes) {
         ValueType[] parameters = methodRef.getDescriptor().getParameterTypes();
-        if (parameters.length != argumentTypes.length) {
+        if (parameters.length + 1 != argumentTypes.length) {
             throw new IllegalArgumentException("argumentTypes length does not match the number of method's arguments");
         }
         MethodDependency method = linkMethod(methodRef, DependencyStack.ROOT);
@@ -169,6 +169,16 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         tasks.add(new Runnable() {
             @Override public void run() {
                 consumer.consume(type);
+            }
+        });
+    }
+
+    void schedulePropagation(final DependencyConsumer consumer, final DependencyType[] types) {
+        tasks.add(new Runnable() {
+            @Override public void run() {
+                for (DependencyType type : types) {
+                    consumer.consume(type);
+                }
             }
         });
     }

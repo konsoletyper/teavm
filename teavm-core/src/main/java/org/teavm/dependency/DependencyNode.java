@@ -20,7 +20,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
-import org.teavm.common.IntegerArray;
 
 /**
  *
@@ -67,15 +66,40 @@ public class DependencyNode implements ValueDependencyInfo {
         }
     }
 
+    public void propagate(DependencyAgentType[] agentTypes) {
+        DependencyType[] types = new DependencyType[agentTypes.length];
+        int j = 0;
+        for (int i = 0; i < agentTypes.length; ++i) {
+            DependencyAgentType agentType = agentTypes[i];
+            if (!(agentType instanceof DependencyType)) {
+                throw new IllegalArgumentException("The given type does not belong to the same dependency checker");
+            }
+            DependencyType type = (DependencyType)agentType;
+            if (type.getDependencyChecker() != dependencyChecker) {
+                throw new IllegalArgumentException("The given type does not belong to the same dependency checker");
+            }
+            if (!this.types.get(type.index)) {
+                types[j++] = type;
+            }
+        }
+        for (int i = 0; i < j; ++i) {
+            this.types.set(types[i].index);
+            if (DependencyChecker.shouldLog) {
+                System.out.println(tag + " -> " + types[i].getName());
+            }
+        }
+        for (DependencyConsumer consumer : followers.toArray(new DependencyConsumer[followers.size()])) {
+            dependencyChecker.schedulePropagation(consumer, Arrays.copyOf(types, j));
+        }
+    }
+
     public void addConsumer(DependencyConsumer consumer) {
         if (followers.add(consumer)) {
-            IntegerArray indexes = new IntegerArray(8);
-            for (int index = types.nextSetBit(0); index >= 0; index = types.nextSetBit(index + 1)) {
-                indexes.add(index);
+            List<DependencyType> types = new ArrayList<>();
+            for (int index = this.types.nextSetBit(0); index >= 0; index = this.types.nextSetBit(index + 1)) {
+                types.add(dependencyChecker.types.get(index));
             }
-            for (int index : indexes.getAll()) {
-                dependencyChecker.schedulePropagation(consumer, dependencyChecker.types.get(index));
-            }
+            dependencyChecker.schedulePropagation(consumer, types.toArray(new DependencyType[types.size()]));
         }
     }
 

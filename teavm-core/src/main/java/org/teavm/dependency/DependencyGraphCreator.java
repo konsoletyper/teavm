@@ -20,5 +20,5 @@ package org.teavm.dependency;
  * @author Alexey Andreev
  */
 public interface DependencyGraphCreator {
-    DependencyGraphCreatorProduct createDependency(DependencyChecker checker, DependencyStack stack);
+    void createDependency(MethodDependency method);
 }
