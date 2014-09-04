@@ -89,6 +89,9 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
     @Parameter
     private Properties properties;
 
+    @Parameter
+    private boolean incremental;
+
     private TeaVMTestTool tool = new TeaVMTestTool();
 
     public void setProject(MavenProject project) {
@@ -133,6 +136,10 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
 
     public void setProperties(Properties properties) {
         this.properties = properties;
+    }
+
+    public void setIncremental(boolean incremental) {
+        this.incremental = incremental;
     }
 
     @Override

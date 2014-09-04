@@ -21,6 +21,9 @@ import org.apache.commons.io.IOUtils;
 import org.teavm.common.FiniteExecutor;
 import org.teavm.common.SimpleFiniteExecutor;
 import org.teavm.common.ThreadPoolFiniteExecutor;
+import org.teavm.javascript.EmptyRegularMethodNodeCache;
+import org.teavm.javascript.InMemoryRegularMethodNodeCache;
+import org.teavm.javascript.RegularMethodNodeCache;
 import org.teavm.model.*;
 import org.teavm.parsing.ClasspathClassHolderSource;
 import org.teavm.testing.JUnitTestAdapter;
@@ -48,6 +51,8 @@ public class TeaVMTestTool {
     private List<String> testClasses = new ArrayList<>();
     private ClassLoader classLoader = TeaVMTestTool.class.getClassLoader();
     private TeaVMToolLog log = new EmptyTeaVMToolLog();
+    private boolean incremental;
+    private RegularMethodNodeCache astCache;
 
     public File getOutputDir() {
         return outputDir;
@@ -113,6 +118,14 @@ public class TeaVMTestTool {
         this.log = log;
     }
 
+    public boolean isIncremental() {
+        return incremental;
+    }
+
+    public void setIncremental(boolean incremental) {
+        this.incremental = incremental;
+    }
+
     public void generate() throws TeaVMToolException {
         Runnable finalizer = null;
         try {
@@ -131,7 +144,8 @@ public class TeaVMTestTool {
             resourceToFile(prefix + "/res/toggle-small-expand.png", "res/toggle-small-expand.png");
             resourceToFile(prefix + "/res/toggle-small.png", "res/toggle-small.png");
             resourceToFile(prefix + "/junit.html", "junit.html");
-            final ClassHolderSource classSource = new ClasspathClassHolderSource(classLoader);
+            final ClassHolderSource classSource = new PreOptimizingClassHolderSource(
+                    new ClasspathClassHolderSource(classLoader));
             for (String testClass : testClasses) {
                 ClassHolder classHolder = classSource.get(testClass);
                 if (classHolder == null) {
@@ -141,6 +155,10 @@ public class TeaVMTestTool {
             }
 
             includeAdditionalScripts(classLoader);
+            astCache = new EmptyRegularMethodNodeCache();
+            if (incremental) {
+                astCache = new InMemoryRegularMethodNodeCache();
+            }
             File allTestsFile = new File(outputDir, "tests/all.js");
             try (Writer allTestsWriter = new OutputStreamWriter(new FileOutputStream(allTestsFile), "UTF-8")) {
                 allTestsWriter.write("prepare = function() {\n");
@@ -280,6 +298,8 @@ public class TeaVMTestTool {
                 .setClassLoader(classLoader)
                 .setClassSource(classSource)
                 .build();
+        vm.setIncremental(incremental);
+        vm.setAstCache(astCache);
         vm.setProperties(properties);
         vm.setMinifying(minifying);
         vm.installPlugins();

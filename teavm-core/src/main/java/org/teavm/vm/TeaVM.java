@@ -22,9 +22,7 @@ import org.teavm.common.ServiceRepository;
 import org.teavm.debugging.information.DebugInformationEmitter;
 import org.teavm.debugging.information.SourceLocation;
 import org.teavm.dependency.*;
-import org.teavm.javascript.Decompiler;
-import org.teavm.javascript.Renderer;
-import org.teavm.javascript.RenderingException;
+import org.teavm.javascript.*;
 import org.teavm.javascript.ast.ClassNode;
 import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.Injector;
@@ -82,6 +80,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     private Map<Class<?>, Object> services = new HashMap<>();
     private Properties properties = new Properties();
     private DebugInformationEmitter debugEmitter;
+    private RegularMethodNodeCache astCache = new EmptyRegularMethodNodeCache();
+    private boolean incremental;
 
     TeaVM(ClassReaderSource classSource, ClassLoader classLoader) {
         this.classSource = classSource;
@@ -162,6 +162,22 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     @Override
     public Properties getProperties() {
         return new Properties(properties);
+    }
+
+    public RegularMethodNodeCache getAstCache() {
+        return astCache;
+    }
+
+    public void setAstCache(RegularMethodNodeCache methodAstCache) {
+        this.astCache = methodAstCache;
+    }
+
+    public boolean isIncremental() {
+        return incremental;
+    }
+
+    public void setIncremental(boolean incremental) {
+        this.incremental = incremental;
     }
 
     /**
@@ -314,7 +330,9 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         ListableClassHolderSource classSet = linker.link(dependencyChecker);
 
         // Optimize and allocate registers
-        devirtualize(classSet, dependencyChecker);
+        if (!incremental) {
+            devirtualize(classSet, dependencyChecker);
+        }
         ClassSetOptimizer optimizer = new ClassSetOptimizer();
         optimizer.optimizeAll(classSet);
         allocateRegisters(classSet);
@@ -328,6 +346,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
         // Decompile
         Decompiler decompiler = new Decompiler(classSet, classLoader);
+        decompiler.setRegularMethodCache(incremental ? astCache : null);
         for (Map.Entry<MethodReference, Generator> entry : methodGenerators.entrySet()) {
             decompiler.addGenerator(entry.getKey(), entry.getValue());
         }

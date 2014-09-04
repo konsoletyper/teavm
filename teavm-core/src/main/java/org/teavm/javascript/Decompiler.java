@@ -44,10 +44,19 @@ public class Decompiler {
     private RangeTree.Node parentNode;
     private Map<MethodReference, Generator> generators = new HashMap<>();
     private Set<MethodReference> methodsToPass = new HashSet<>();
+    private RegularMethodNodeCache regularMethodCache;
 
     public Decompiler(ClassHolderSource classSource, ClassLoader classLoader) {
         this.classSource = classSource;
         this.classLoader = classLoader;
+    }
+
+    public RegularMethodNodeCache getRegularMethodCache() {
+        return regularMethodCache;
+    }
+
+    public void setRegularMethodCache(RegularMethodNodeCache regularMethodCache) {
+        this.regularMethodCache = regularMethodCache;
     }
 
     public int getGraphSize() {
@@ -165,6 +174,18 @@ public class Decompiler {
     }
 
     public RegularMethodNode decompileRegular(MethodHolder method) {
+        if (regularMethodCache == null) {
+            return decompileRegularCacheMiss(method);
+        }
+        RegularMethodNode node = regularMethodCache.get(method.getReference());
+        if (node == null) {
+            node = decompileRegularCacheMiss(method);
+            regularMethodCache.store(method.getReference(), node);
+        }
+        return node;
+    }
+
+    public RegularMethodNode decompileRegularCacheMiss(MethodHolder method) {
         lastBlockId = 1;
         graph = ProgramUtils.buildControlFlowGraph(method.getProgram());
         indexer = new GraphIndexer(graph);
