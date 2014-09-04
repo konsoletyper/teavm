@@ -37,7 +37,7 @@ class TestExceptionDependency implements DependencyListener {
     @Override
     public void classAchieved(DependencyAgent agent, String className) {
         if (isException(agent.getClassSource(), className)) {
-            allClasses.propagate(className);
+            allClasses.propagate(agent.getType(className));
         }
     }
 

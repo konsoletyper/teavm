@@ -32,11 +32,11 @@ class DependencyNodeToNodeTransition implements DependencyConsumer {
     }
 
     @Override
-    public void consume(String type) {
+    public void consume(DependencyAgentType type) {
         if (filter != null && !filter.match(type)) {
             return;
         }
-        if (type.startsWith("[")) {
+        if (type.getName().startsWith("[")) {
             source.getArrayItem().connect(destination.getArrayItem());
             destination.getArrayItem().connect(source.getArrayItem());
         }

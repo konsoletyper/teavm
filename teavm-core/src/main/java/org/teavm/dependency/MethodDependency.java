@@ -25,6 +25,7 @@ import org.teavm.model.MethodReference;
  * @author Alexey Andreev
  */
 public class MethodDependency implements MethodDependencyInfo {
+    private DependencyChecker dependencyChecker;
     private DependencyNode[] variableNodes;
     private int parameterCount;
     private DependencyNode resultNode;
@@ -35,8 +36,10 @@ public class MethodDependency implements MethodDependencyInfo {
     private AtomicBoolean used = new AtomicBoolean();
     private volatile Runnable useRunner;
 
-    MethodDependency(DependencyNode[] variableNodes, int parameterCount, DependencyNode resultNode,
-            DependencyNode thrown, DependencyStack stack, MethodReader method, MethodReference reference) {
+    MethodDependency(DependencyChecker dependencyChecker, DependencyNode[] variableNodes, int parameterCount,
+            DependencyNode resultNode, DependencyNode thrown, DependencyStack stack, MethodReader method,
+            MethodReference reference) {
+        this.dependencyChecker = dependencyChecker;
         this.variableNodes = Arrays.copyOf(variableNodes, variableNodes.length);
         this.parameterCount = parameterCount;
         this.thrown = thrown;
@@ -44,6 +47,10 @@ public class MethodDependency implements MethodDependencyInfo {
         this.stack = stack;
         this.method = method;
         this.reference = reference;
+    }
+
+    public DependencyAgent getDependencyAgent() {
+        return dependencyChecker;
     }
 
     @Override

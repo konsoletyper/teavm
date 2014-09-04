@@ -56,7 +56,7 @@ public class CharacterNativeGenerator implements Generator, DependencyPlugin {
         switch (method.getReference().getName()) {
             case "obtainDigitMapping":
             case "obtainClasses":
-                method.getResult().propagate("java.lang.String");
+                method.getResult().propagate(agent.getType("java.lang.String"));
                 break;
         }
     }

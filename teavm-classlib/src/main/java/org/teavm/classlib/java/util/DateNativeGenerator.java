@@ -75,7 +75,7 @@ public class DateNativeGenerator implements Generator, DependencyPlugin {
             case "toString":
             case "toLocaleFormat":
             case "toGMTString":
-                method.getResult().propagate("java.lang.String");
+                method.getResult().propagate(agent.getType("java.lang.String"));
                 break;
         }
     }

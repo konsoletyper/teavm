@@ -1,5 +1,5 @@
 /*
- *  Copyright 2013 Alexey Andreev.
+ *  Copyright 2014 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package org.teavm.dependency;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface DependencyConsumer {
-    void consume(DependencyAgentType type);
+public interface DependencyAgentType {
+    String getName();
+
+    DependencyAgent getDependencyAgent();
 }

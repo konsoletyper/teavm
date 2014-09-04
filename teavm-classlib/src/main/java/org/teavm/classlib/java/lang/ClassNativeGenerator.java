@@ -202,7 +202,7 @@ public class ClassNativeGenerator implements Generator, Injector, DependencyPlug
             case "getComponentType0":
             case "forNameImpl":
             case "getDeclaringClass":
-                graph.getResult().propagate("java.lang.Class");
+                graph.getResult().propagate(agent.getType("java.lang.Class"));
                 break;
             case "newInstance":
                 agent.linkMethod(new MethodReference(InstantiationException.class.getName(), "<init>",

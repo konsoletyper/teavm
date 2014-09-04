@@ -89,7 +89,7 @@ public class ServiceLoaderSupport implements Generator, DependencyListener {
             while (resources.hasMoreElements()) {
                 URL resource = resources.nextElement();
                 try (InputStream stream = resource.openStream()) {
-                    parseServiceFile(className, stream);
+                    parseServiceFile(agent, className, stream);
                 }
             }
         } catch (IOException e) {
@@ -97,7 +97,7 @@ public class ServiceLoaderSupport implements Generator, DependencyListener {
         }
     }
 
-    private void parseServiceFile(String service, InputStream input) throws IOException {
+    private void parseServiceFile(DependencyAgent agent, String service, InputStream input) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(input, "UTF-8"));
         while (true) {
             String line = reader.readLine();
@@ -114,7 +114,7 @@ public class ServiceLoaderSupport implements Generator, DependencyListener {
                 serviceMap.put(service, implementors);
             }
             implementors.add(line);
-            allClassesNode.propagate(line);
+            allClassesNode.propagate(agent.getType(line));
         }
     }
 
@@ -122,12 +122,12 @@ public class ServiceLoaderSupport implements Generator, DependencyListener {
     public void methodAchieved(final DependencyAgent agent, MethodDependency method) {
         MethodReference ref = method.getReference();
         if (ref.getClassName().equals("java.util.ServiceLoader") && ref.getName().equals("loadServices")) {
-            method.getResult().propagate("[java.lang.Object");
+            method.getResult().propagate(agent.getType("[java.lang.Object"));
             stack = method.getStack();
             allClassesNode.connect(method.getResult().getArrayItem());
             method.getResult().getArrayItem().addConsumer(new DependencyConsumer() {
-                @Override public void consume(String type) {
-                    initConstructor(agent, type);
+                @Override public void consume(DependencyAgentType type) {
+                    initConstructor(agent, type.getName());
                 }
             });
         }

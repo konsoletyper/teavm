@@ -37,7 +37,7 @@ class ResourceAccessorDependencyListener implements DependencyListener {
     public void methodAchieved(DependencyAgent agent, MethodDependency method) {
         switch (method.getReference().getName()) {
             case "castToString":
-                method.getResult().propagate("java.lang.String");
+                method.getResult().propagate(agent.getType("java.lang.String"));
                 break;
         }
     }

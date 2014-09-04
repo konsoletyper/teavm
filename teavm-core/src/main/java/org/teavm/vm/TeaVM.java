@@ -298,7 +298,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                 ValueType.VOID), DependencyStack.ROOT).use();
         MethodDependency internDep = dependencyChecker.linkMethod(new MethodReference("java.lang.String", "intern",
                 ValueType.object("java.lang.String")), DependencyStack.ROOT);
-        internDep.getVariable(0).propagate("java.lang.String");
+        internDep.getVariable(0).propagate(dependencyChecker.getType("java.lang.String"));
         internDep.use();
         dependencyChecker.linkMethod(new MethodReference("java.lang.String", "length", ValueType.INTEGER),
                 DependencyStack.ROOT).use();
