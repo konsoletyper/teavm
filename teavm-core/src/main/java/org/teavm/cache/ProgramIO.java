@@ -28,9 +28,11 @@ import org.teavm.model.instructions.*;
  */
 public class ProgramIO {
     private SymbolTable symbolTable;
+    private SymbolTable fileTable;
 
-    public ProgramIO(SymbolTable symbolTable) {
+    public ProgramIO(SymbolTable symbolTable, SymbolTable fileTable) {
         this.symbolTable = symbolTable;
+        this.fileTable = fileTable;
     }
 
     public void write(Program program, OutputStream output) throws IOException {
@@ -49,7 +51,6 @@ public class ProgramIO {
             BasicBlock basicBlock = program.basicBlockAt(i);
             data.writeShort(basicBlock.getPhis().size());
             data.writeShort(basicBlock.getTryCatchBlocks().size());
-            data.writeShort(basicBlock.getInstructions().size());
             for (Phi phi : basicBlock.getPhis()) {
                 data.writeShort(phi.getReceiver().getIndex());
                 data.writeShort(phi.getIncomings().size());
@@ -59,7 +60,7 @@ public class ProgramIO {
                 }
             }
             for (TryCatchBlock tryCatch : basicBlock.getTryCatchBlocks()) {
-                data.writeInt(tryCatch.getExceptionType() != null ? symbolTable.findSymbol(
+                data.writeInt(tryCatch.getExceptionType() != null ? symbolTable.lookup(
                         tryCatch.getExceptionType()) : -1);
                 data.writeShort(tryCatch.getExceptionVariable() != null ?
                         tryCatch.getExceptionVariable().getIndex() : -1);
@@ -74,6 +75,7 @@ public class ProgramIO {
                     throw (IOException)e.getCause();
                 }
             }
+            data.writeByte(-1);
         }
     }
 
@@ -98,7 +100,7 @@ public class ProgramIO {
             try {
                 output.writeByte(1);
                 output.writeShort(insn.getReceiver().getIndex());
-                output.writeInt(symbolTable.findSymbol(insn.getConstant().toString()));
+                output.writeInt(symbolTable.lookup(insn.getConstant().toString()));
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -163,7 +165,7 @@ public class ProgramIO {
             try {
                 output.writeByte(7);
                 output.writeShort(insn.getReceiver().getIndex());
-                output.writeInt(symbolTable.findSymbol(insn.getConstant()));
+                output.writeInt(symbolTable.lookup(insn.getConstant()));
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -211,7 +213,7 @@ public class ProgramIO {
             try {
                 output.writeByte(11);
                 output.writeShort(insn.getReceiver().getIndex());
-                output.writeInt(symbolTable.findSymbol(insn.getTargetType().toString()));
+                output.writeInt(symbolTable.lookup(insn.getTargetType().toString()));
                 output.writeShort(insn.getValue().getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
@@ -283,72 +285,224 @@ public class ProgramIO {
 
         @Override
         public void visit(SwitchInstruction insn) {
+            try {
+                output.writeByte(17);
+                output.writeShort(insn.getCondition().getIndex());
+                output.writeShort(insn.getDefaultTarget().getIndex());
+                output.writeShort(insn.getEntries().size());
+                for (SwitchTableEntry entry : insn.getEntries()) {
+                    output.writeInt(entry.getCondition());
+                    output.writeShort(entry.getTarget().getIndex());
+                }
+            } catch (IOException e) {
+                throw new IOExceptionWrapper(e);
+            }
         }
 
         @Override
         public void visit(ExitInstruction insn) {
+            try {
+                if (insn.getValueToReturn() != null) {
+                    output.writeByte(18);
+                    output.writeShort(insn.getValueToReturn() != null ? insn.getValueToReturn().getIndex() : -1);
+                } else {
+                    output.writeByte(19);
+                }
+            } catch (IOException e) {
+                throw new IOExceptionWrapper(e);
+            }
         }
 
         @Override
         public void visit(RaiseInstruction insn) {
+            try {
+                output.writeByte(20);
+                output.writeShort(insn.getException().getIndex());
+            } catch (IOException e) {
+                throw new IOExceptionWrapper(e);
+            }
         }
 
         @Override
         public void visit(ConstructArrayInstruction insn) {
+            try {
+                output.writeByte(21);
+                output.writeShort(insn.getReceiver().getIndex());
+                output.writeInt(symbolTable.lookup(insn.getItemType().toString()));
+                output.writeShort(insn.getSize().getIndex());
+            } catch (IOException e) {
+                throw new IOExceptionWrapper(e);
+            }
         }
 
         @Override
         public void visit(ConstructInstruction insn) {
+            try {
+                output.writeByte(22);
+                output.writeShort(insn.getReceiver().getIndex());
+                output.writeInt(symbolTable.lookup(insn.getType()));
+            } catch (IOException e) {
+                throw new IOExceptionWrapper(e);
+            }
         }
 
         @Override
         public void visit(ConstructMultiArrayInstruction insn) {
+            try {
+                output.writeByte(23);
+                output.writeShort(insn.getReceiver().getIndex());
+                output.writeInt(symbolTable.lookup(insn.getItemType().toString()));
+                output.writeByte(insn.getDimensions().size());
+                for (Variable dimension : insn.getDimensions()) {
+                    output.writeShort(dimension.getIndex());
+                }
+            } catch (IOException e) {
+                throw new IOExceptionWrapper(e);
+            }
         }
 
         @Override
         public void visit(GetFieldInstruction insn) {
+            try {
+                output.writeByte(insn.getInstance() != null ? 24 : 25);
+                output.writeShort(insn.getReceiver().getIndex());
+                if (insn.getInstance() != null) {
+                    output.writeShort(insn.getInstance().getIndex());
+                }
+                output.writeInt(symbolTable.lookup(insn.getField().toString()));
+                output.writeInt(symbolTable.lookup(insn.getFieldType().toString()));
+            } catch (IOException e) {
+                throw new IOExceptionWrapper(e);
+            }
         }
 
         @Override
         public void visit(PutFieldInstruction insn) {
+            try {
+                output.writeByte(insn.getInstance() != null ? 26 : 27);
+                if (insn.getInstance() != null) {
+                    output.writeShort(insn.getInstance().getIndex());
+                }
+                output.writeInt(symbolTable.lookup(insn.getField().toString()));
+                output.writeShort(insn.getValue().getIndex());
+            } catch (IOException e) {
+                throw new IOExceptionWrapper(e);
+            }
         }
 
         @Override
         public void visit(ArrayLengthInstruction insn) {
+            try {
+                output.writeByte(28);
+                output.writeShort(insn.getReceiver().getIndex());
+                output.writeShort(insn.getArray().getIndex());
+            } catch (IOException e) {
+                throw new IOExceptionWrapper(e);
+            }
         }
 
         @Override
         public void visit(CloneArrayInstruction insn) {
+            try {
+                output.writeByte(29);
+                output.writeShort(insn.getReceiver().getIndex());
+                output.writeShort(insn.getArray().getIndex());
+            } catch (IOException e) {
+                throw new IOExceptionWrapper(e);
+            }
         }
 
         @Override
         public void visit(UnwrapArrayInstruction insn) {
+            try {
+                output.writeByte(30);
+                output.writeShort(insn.getReceiver().getIndex());
+                output.writeByte(insn.getElementType().ordinal());
+                output.writeShort(insn.getArray().getIndex());
+            } catch (IOException e) {
+                throw new IOExceptionWrapper(e);
+            }
         }
 
         @Override
         public void visit(GetElementInstruction insn) {
+            try {
+                output.writeByte(31);
+                output.writeShort(insn.getReceiver().getIndex());
+                output.writeShort(insn.getArray().getIndex());
+                output.writeShort(insn.getIndex().getIndex());
+            } catch (IOException e) {
+                throw new IOExceptionWrapper(e);
+            }
         }
 
         @Override
         public void visit(PutElementInstruction insn) {
+            try {
+                output.writeByte(32);
+                output.writeShort(insn.getArray().getIndex());
+                output.writeShort(insn.getIndex().getIndex());
+                output.writeShort(insn.getValue().getIndex());
+            } catch (IOException e) {
+                throw new IOExceptionWrapper(e);
+            }
         }
 
         @Override
         public void visit(InvokeInstruction insn) {
+            try {
+                switch (insn.getType()) {
+                    case SPECIAL:
+                        output.write(insn.getInstance() == null ? 32 : 33);
+                        break;
+                    case VIRTUAL:
+                        output.write(34);
+                        break;
+                }
+                output.writeShort(insn.getReceiver() != null ? insn.getReceiver().getIndex() : -1);
+                if (insn.getInstance() != null) {
+                    output.writeShort(insn.getInstance().getIndex());
+                }
+                output.writeInt(symbolTable.lookup(insn.getMethod().toString()));
+                for (int i = 0; i < insn.getArguments().size(); ++i) {
+                    output.writeShort(insn.getArguments().get(i).getIndex());
+                }
+            } catch (IOException e) {
+                throw new IOExceptionWrapper(e);
+            }
         }
 
         @Override
         public void visit(IsInstanceInstruction insn) {
+            try {
+                output.writeByte(35);
+                output.writeShort(insn.getReceiver().getIndex());
+                output.writeShort(insn.getValue().getIndex());
+            } catch (IOException e) {
+                throw new IOExceptionWrapper(e);
+            }
         }
 
         @Override
         public void visit(InitClassInstruction insn) {
+            try {
+                output.writeByte(36);
+                output.writeInt(symbolTable.lookup(insn.getClassName()));
+            } catch (IOException e) {
+                throw new IOExceptionWrapper(e);
+            }
         }
 
         @Override
         public void visit(NullCheckInstruction insn) {
+            try {
+                output.writeByte(37);
+                output.writeShort(insn.getReceiver().getIndex());
+                output.writeShort(insn.getValue().getIndex());
+            } catch (IOException e) {
+                throw new IOExceptionWrapper(e);
+            }
         }
-
     }
 
     private static class IOExceptionWrapper extends RuntimeException {

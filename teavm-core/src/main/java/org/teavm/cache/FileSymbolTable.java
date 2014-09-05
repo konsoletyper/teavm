@@ -76,12 +76,12 @@ public class FileSymbolTable implements SymbolTable {
     }
 
     @Override
-    public String symbolAt(int index) {
+    public String at(int index) {
         return symbols.get(index);
     }
 
     @Override
-    public int findSymbol(String symbol) {
+    public int lookup(String symbol) {
         Integer index = symbolMap.get(symbol);
         if (index == null) {
             index = symbols.size();

@@ -20,7 +20,7 @@ package org.teavm.cache;
  * @author Alexey Andreev
  */
 public interface SymbolTable {
-    String symbolAt(int index);
+    String at(int index);
 
-    int findSymbol(String symbol);
+    int lookup(String symbol);
 }
