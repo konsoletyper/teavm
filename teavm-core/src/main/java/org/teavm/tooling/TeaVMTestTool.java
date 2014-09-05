@@ -53,6 +53,7 @@ public class TeaVMTestTool {
     private TeaVMToolLog log = new EmptyTeaVMToolLog();
     private boolean incremental;
     private RegularMethodNodeCache astCache;
+    private ProgramCache programCache;
 
     public File getOutputDir() {
         return outputDir;
@@ -144,8 +145,10 @@ public class TeaVMTestTool {
             resourceToFile(prefix + "/res/toggle-small-expand.png", "res/toggle-small-expand.png");
             resourceToFile(prefix + "/res/toggle-small.png", "res/toggle-small.png");
             resourceToFile(prefix + "/junit.html", "junit.html");
-            final ClassHolderSource classSource = new PreOptimizingClassHolderSource(
-                    new ClasspathClassHolderSource(classLoader));
+            ClassHolderSource classSource = new ClasspathClassHolderSource(classLoader);
+            if (incremental) {
+                classSource = new PreOptimizingClassHolderSource(classSource);
+            }
             for (String testClass : testClasses) {
                 ClassHolder classHolder = classSource.get(testClass);
                 if (classHolder == null) {
@@ -158,6 +161,7 @@ public class TeaVMTestTool {
             astCache = new EmptyRegularMethodNodeCache();
             if (incremental) {
                 astCache = new InMemoryRegularMethodNodeCache();
+                programCache = new InMemoryProgramCache();
             }
             File allTestsFile = new File(outputDir, "tests/all.js");
             try (Writer allTestsWriter = new OutputStreamWriter(new FileOutputStream(allTestsFile), "UTF-8")) {
@@ -221,11 +225,12 @@ public class TeaVMTestTool {
                 executor = threadedExecutor;
             }
             for (final MethodReference method : testMethods) {
+                final ClassHolderSource builderClassSource = classSource;
                 executor.execute(new Runnable() {
                     @Override public void run() {
                         log.debug("Building test for " + method);
                         try {
-                            decompileClassesForTest(classLoader, new CopyClassHolderSource(classSource), method,
+                            decompileClassesForTest(classLoader, new CopyClassHolderSource(builderClassSource), method,
                                     fileNames.get(method));
                         } catch (IOException e) {
                             log.error("Error generating JavaScript", e);
@@ -300,6 +305,7 @@ public class TeaVMTestTool {
                 .build();
         vm.setIncremental(incremental);
         vm.setAstCache(astCache);
+        vm.setProgramCache(programCache);
         vm.setProperties(properties);
         vm.setMinifying(minifying);
         vm.installPlugins();

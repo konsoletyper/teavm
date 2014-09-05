@@ -30,8 +30,7 @@ import org.teavm.model.*;
 import org.teavm.model.util.ListingBuilder;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.model.util.RegisterAllocator;
-import org.teavm.optimization.ClassSetOptimizer;
-import org.teavm.optimization.Devirtualization;
+import org.teavm.optimization.*;
 import org.teavm.vm.spi.RendererListener;
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
@@ -80,6 +79,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     private Map<Class<?>, Object> services = new HashMap<>();
     private Properties properties = new Properties();
     private DebugInformationEmitter debugEmitter;
+    private ProgramCache programCache;
     private RegularMethodNodeCache astCache = new EmptyRegularMethodNodeCache();
     private boolean incremental;
 
@@ -170,6 +170,14 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
     public void setAstCache(RegularMethodNodeCache methodAstCache) {
         this.astCache = methodAstCache;
+    }
+
+    public ProgramCache getProgramCache() {
+        return programCache;
+    }
+
+    public void setProgramCache(ProgramCache programCache) {
+        this.programCache = programCache;
     }
 
     public boolean isIncremental() {
@@ -333,27 +341,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         if (!incremental) {
             devirtualize(classSet, dependencyChecker);
         }
-        ClassSetOptimizer optimizer = new ClassSetOptimizer();
-        optimizer.optimizeAll(classSet);
-        allocateRegisters(classSet);
-        if (bytecodeLogging) {
-            try {
-                logBytecode(new PrintWriter(new OutputStreamWriter(logStream, "UTF-8")), classSet);
-            } catch (UnsupportedEncodingException e) {
-                // Just don't do anything
-            }
-        }
 
-        // Decompile
-        Decompiler decompiler = new Decompiler(classSet, classLoader);
-        decompiler.setRegularMethodCache(incremental ? astCache : null);
-        for (Map.Entry<MethodReference, Generator> entry : methodGenerators.entrySet()) {
-            decompiler.addGenerator(entry.getKey(), entry.getValue());
-        }
-        for (MethodReference injectedMethod : methodInjectors.keySet()) {
-            decompiler.addMethodToPass(injectedMethod);
-        }
-        List<ClassNode> clsNodes = decompiler.decompile(classSet.getClassNames());
+        List<ClassNode> clsNodes = modelToAst(classSet);
 
         // Render
         DefaultNamingStrategy naming = new DefaultNamingStrategy(aliasProvider, dependencyChecker.getClassSource());
@@ -440,29 +429,61 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
     }
 
-    private void allocateRegisters(ListableClassHolderSource classes) {
-        for (String className : classes.getClassNames()) {
-            ClassHolder cls = classes.get(className);
-            for (final MethodHolder method : cls.getMethods()) {
-                if (method.getProgram() != null && method.getProgram().basicBlockCount() > 0) {
-                    RegisterAllocator allocator = new RegisterAllocator();
-                    Program program = ProgramUtils.copy(method.getProgram());
-                    allocator.allocateRegisters(method, program);
-                    method.setProgram(program);
-                }
-            }
+    private List<ClassNode> modelToAst(ListableClassHolderSource classes) {
+        Decompiler decompiler = new Decompiler(classes, classLoader);
+        decompiler.setRegularMethodCache(incremental ? astCache : null);
+
+        for (Map.Entry<MethodReference, Generator> entry : methodGenerators.entrySet()) {
+            decompiler.addGenerator(entry.getKey(), entry.getValue());
         }
+        for (MethodReference injectedMethod : methodInjectors.keySet()) {
+            decompiler.addMethodToPass(injectedMethod);
+        }
+        List<String> classOrder = decompiler.getClassOrdering(classes.getClassNames());
+        List<ClassNode> classNodes = new ArrayList<>();
+        try (PrintWriter bytecodeLogger = bytecodeLogging ?
+                new PrintWriter(new OutputStreamWriter(logStream, "UTF-8")) : null) {
+            for (String className : classOrder) {
+                ClassHolder cls = classes.get(className);
+                for (MethodHolder method : cls.getMethods()) {
+                    processMethod(method);
+                    if (bytecodeLogging) {
+                        logMethodBytecode(bytecodeLogger, method);
+                    }
+                }
+                classNodes.add(decompiler.decompile(cls));
+            }
+        } catch (UnsupportedEncodingException e) {
+            throw new AssertionError("UTF-8 is expected to be supported");
+        }
+        return classNodes;
     }
 
-    private void logBytecode(PrintWriter writer, ListableClassHolderSource classes) {
-        for (String className : classes.getClassNames()) {
-            ClassHolder classHolder = classes.get(className);
-            printModifiers(writer, classHolder);
-            writer.println("class " + className);
-            for (MethodHolder method : classHolder.getMethods()) {
-                logMethodBytecode(writer, method);
+    private void processMethod(MethodHolder method) {
+        if (method.getProgram() == null) {
+            return;
+        }
+        Program optimizedProgram = incremental && programCache != null ?
+                programCache.get(method.getReference()) : null;
+        if (optimizedProgram == null) {
+            optimizedProgram = ProgramUtils.copy(method.getProgram());
+            if (optimizedProgram.basicBlockCount() > 0) {
+                for (MethodOptimization optimization : getOptimizations()) {
+                    optimization.optimize(method, optimizedProgram);
+                }
+                RegisterAllocator allocator = new RegisterAllocator();
+                allocator.allocateRegisters(method, optimizedProgram);
+            }
+            if (incremental && programCache != null) {
+                programCache.store(method.getReference(), optimizedProgram);
             }
         }
+        method.setProgram(optimizedProgram);
+    }
+
+    private List<MethodOptimization> getOptimizations() {
+        return Arrays.<MethodOptimization>asList(new ArrayUnwrapMotion(), new LoopInvariantMotion(),
+                new GlobalValueNumbering(), new UnusedVariableElimination());
     }
 
     private void logMethodBytecode(PrintWriter writer, MethodHolder method) {

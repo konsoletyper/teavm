@@ -163,6 +163,7 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
             tool.setOutputDir(outputDir);
             tool.setNumThreads(numThreads);
             tool.setMinifying(minifying);
+            tool.setIncremental(incremental);
             if (properties != null) {
                 tool.getProperties().putAll(properties);
             }

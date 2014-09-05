@@ -91,6 +91,15 @@ public class Decompiler {
         return result;
     }
 
+    public List<String> getClassOrdering(Collection<String> classNames) {
+        List<String> sequence = new ArrayList<>();
+        Set<String> visited = new HashSet<>();
+        for (String className : classNames) {
+            orderClasses(className, visited, sequence);
+        }
+        return sequence;
+    }
+
     public void addGenerator(MethodReference method, Generator generator) {
         generators.put(method, generator);
     }
