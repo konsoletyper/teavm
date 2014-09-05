@@ -296,7 +296,7 @@ public class InstructionStringifier implements InstructionReader {
 
     @Override
     public void cloneArray(VariableReader receiver, VariableReader array) {
-        sb.append("@").append(receiver.getIndex()).append("@").append(array.getIndex()).append(".clone()");
+        sb.append("@").append(receiver.getIndex()).append(" := @").append(array.getIndex()).append(".clone()");
     }
 
     @Override

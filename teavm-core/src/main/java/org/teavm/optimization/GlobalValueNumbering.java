@@ -360,6 +360,8 @@ public class GlobalValueNumbering implements MethodOptimization {
 
         @Override
         public void visit(CloneArrayInstruction insn) {
+            int a = map[insn.getArray().getIndex()];
+            insn.setArray(program.variableAt(a));
         }
 
         @Override
