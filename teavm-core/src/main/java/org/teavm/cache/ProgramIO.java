@@ -15,10 +15,8 @@
  */
 package org.teavm.cache;
 
-import java.io.DataOutput;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
+import java.util.Objects;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 
@@ -29,6 +27,12 @@ import org.teavm.model.instructions.*;
 public class ProgramIO {
     private SymbolTable symbolTable;
     private SymbolTable fileTable;
+    private static BinaryOperation[] binaryOperations = BinaryOperation.values();
+    private static NumericOperandType[] numericOperandTypes = NumericOperandType.values();
+    private static IntegerSubtype[] integerSubtypes = IntegerSubtype.values();
+    private static CastIntegerDirection[] castIntegerDirections = CastIntegerDirection.values();
+    private static BranchingCondition[] branchingConditions = BranchingCondition.values();
+    private static BinaryBranchingCondition[] binaryBranchingConditions = BinaryBranchingCondition.values();
 
     public ProgramIO(SymbolTable symbolTable, SymbolTable fileTable) {
         this.symbolTable = symbolTable;
@@ -64,12 +68,22 @@ public class ProgramIO {
                         tryCatch.getExceptionType()) : -1);
                 data.writeShort(tryCatch.getExceptionVariable() != null ?
                         tryCatch.getExceptionVariable().getIndex() : -1);
-                data.writeShort(tryCatch.getProtectedBlock().getIndex());
                 data.writeShort(tryCatch.getHandler().getIndex());
             }
+            InstructionLocation location = null;
             InstructionWriter insnWriter = new InstructionWriter(data);
             for (Instruction insn : basicBlock.getInstructions()) {
                 try {
+                    if (!Objects.equals(location, insn.getLocation())) {
+                        location = insn.getLocation();
+                        if (location == null || location.getFileName() == null || location.getLine() < 0) {
+                            data.writeByte(-2);
+                        } else {
+                            data.writeByte(-3);
+                            data.writeShort(fileTable.lookup(location.getFileName()));
+                            data.writeShort(location.getLine());
+                        }
+                    }
                     insn.acceptVisitor(insnWriter);
                 } catch (IOExceptionWrapper e) {
                     throw (IOException)e.getCause();
@@ -77,6 +91,78 @@ public class ProgramIO {
             }
             data.writeByte(-1);
         }
+    }
+
+    public Program read(InputStream input) throws IOException {
+        DataInput data = new DataInputStream(input);
+        Program program = new Program();
+        int varCount = data.readShort();
+        int basicBlockCount = data.readShort();
+        for (int i = 0; i < varCount; ++i) {
+            Variable var = program.createVariable();
+            var.setRegister(data.readShort());
+            int debugNameCount = data.readShort();
+            for (int j = 0; j < debugNameCount; ++j) {
+                var.getDebugNames().add(data.readUTF());
+            }
+        }
+        for (int i = 0; i < basicBlockCount; ++i) {
+            program.createBasicBlock();
+        }
+        for (int i = 0; i < basicBlockCount; ++i) {
+            BasicBlock block = program.basicBlockAt(i);
+            int phiCount = data.readShort();
+            int tryCatchCount = data.readShort();
+            for (int j = 0; j < phiCount; ++j) {
+                Phi phi = new Phi();
+                phi.setReceiver(program.variableAt(data.readShort()));
+                int incomingCount = data.readShort();
+                for (int k = 0; k < incomingCount; ++k) {
+                    Incoming incoming = new Incoming();
+                    incoming.setSource(program.basicBlockAt(data.readShort()));
+                    incoming.setValue(program.variableAt(data.readShort()));
+                    phi.getIncomings().add(incoming);
+                }
+                block.getPhis().add(phi);
+            }
+            for (int j = 0; j < tryCatchCount; ++j) {
+                TryCatchBlock tryCatch = new TryCatchBlock();
+                int typeIndex = data.readInt();
+                if (typeIndex >= 0) {
+                    tryCatch.setExceptionType(symbolTable.at(data.readShort()));
+                }
+                short varIndex = data.readShort();
+                if (varIndex >= 0) {
+                    tryCatch.setExceptionVariable(program.variableAt(varIndex));
+                }
+                tryCatch.setHandler(program.basicBlockAt(data.readShort()));
+                block.getTryCatchBlocks().add(tryCatch);
+            }
+            InstructionLocation location = null;
+            insnLoop: while (true) {
+                byte insnType = data.readByte();
+                switch (insnType) {
+                    case -1:
+                        break insnLoop;
+                    case -2:
+                        location = null;
+                        break;
+                    case -3: {
+                        String file = fileTable.at(data.readShort());
+                        short line = data.readShort();
+                        location = new InstructionLocation(file, line);
+                        break;
+                    }
+                    default: {
+                        Instruction insn = readInstruction(insnType, program, data);
+                        insn.setLocation(location);
+                        block.getInstructions().add(insn);
+                        break;
+                    }
+                }
+            }
+        }
+        return program;
     }
 
     private class InstructionWriter implements InstructionVisitor {
@@ -509,6 +595,121 @@ public class ProgramIO {
         private static final long serialVersionUID = -1765050162629001951L;
         public IOExceptionWrapper(Throwable cause) {
             super(cause);
+        }
+    }
+
+    private Instruction readInstruction(byte insnType, Program program, DataInput input) throws IOException {
+        switch (insnType) {
+            case 0:
+                return new EmptyInstruction();
+            case 1: {
+                ClassConstantInstruction insn = new ClassConstantInstruction();
+                insn.setReceiver(program.variableAt(input.readShort()));
+                insn.setConstant(ValueType.parse(symbolTable.at(input.readInt())));
+                return insn;
+            }
+            case 2: {
+                NullConstantInstruction insn = new NullConstantInstruction();
+                insn.setReceiver(program.variableAt(input.readShort()));
+                return insn;
+            }
+            case 3: {
+                IntegerConstantInstruction insn = new IntegerConstantInstruction();
+                insn.setReceiver(program.variableAt(input.readShort()));
+                insn.setConstant(input.readInt());
+                return insn;
+            }
+            case 4: {
+                LongConstantInstruction insn = new LongConstantInstruction();
+                insn.setReceiver(program.variableAt(input.readShort()));
+                insn.setConstant(input.readLong());
+                return insn;
+            }
+            case 5: {
+                FloatConstantInstruction insn = new FloatConstantInstruction();
+                insn.setReceiver(program.variableAt(input.readShort()));
+                insn.setConstant(input.readFloat());
+                return insn;
+            }
+            case 6: {
+                DoubleConstantInstruction insn = new DoubleConstantInstruction();
+                insn.setReceiver(program.variableAt(input.readShort()));
+                insn.setConstant(input.readDouble());
+                return insn;
+            }
+            case 7: {
+                StringConstantInstruction insn = new StringConstantInstruction();
+                insn.setReceiver(program.variableAt(input.readShort()));
+                insn.setConstant(symbolTable.at(input.readInt()));
+                return insn;
+            }
+            case 8: {
+                Variable receiver = program.variableAt(input.readShort());
+                BinaryOperation operation = binaryOperations[input.readByte()];
+                NumericOperandType operandType = numericOperandTypes[input.readByte()];
+                BinaryInstruction insn = new BinaryInstruction(operation, operandType);
+                insn.setReceiver(receiver);
+                insn.setFirstOperand(program.variableAt(input.readShort()));
+                insn.setSecondOperand(program.variableAt(input.readShort()));
+                return insn;
+            }
+            case 9: {
+                Variable receiver = program.variableAt(input.readShort());
+                NumericOperandType operandType = numericOperandTypes[input.readByte()];
+                NegateInstruction insn = new NegateInstruction(operandType);
+                insn.setReceiver(receiver);
+                insn.setOperand(program.variableAt(input.readShort()));
+                return insn;
+            }
+            case 10: {
+                AssignInstruction insn = new AssignInstruction();
+                insn.setReceiver(program.variableAt(input.readShort()));
+                insn.setAssignee(program.variableAt(input.readShort()));
+                return insn;
+            }
+            case 11: {
+                CastInstruction insn = new CastInstruction();
+                insn.setReceiver(program.variableAt(input.readShort()));
+                insn.setTargetType(ValueType.parse(symbolTable.at(input.readInt())));
+                insn.setValue(program.variableAt(input.readShort()));
+                return insn;
+            }
+            case 12: {
+                Variable receiver = program.variableAt(input.readShort());
+                NumericOperandType sourceType = numericOperandTypes[input.readByte()];
+                NumericOperandType targetType = numericOperandTypes[input.readByte()];
+                CastNumberInstruction insn = new CastNumberInstruction(sourceType, targetType);
+                insn.setReceiver(receiver);
+                insn.setValue(program.variableAt(input.readShort()));
+                return insn;
+            }
+            case 13: {
+                Variable receiver = program.variableAt(input.readShort());
+                IntegerSubtype targetType = integerSubtypes[input.readByte()];
+                CastIntegerDirection direction = castIntegerDirections[input.readByte()];
+                CastIntegerInstruction insn = new CastIntegerInstruction(targetType, direction);
+                insn.setReceiver(receiver);
+                insn.setValue(program.variableAt(input.readShort()));
+                return insn;
+            }
+            case 14: {
+                BranchingInstruction insn = new BranchingInstruction(branchingConditions[input.readByte()]);
+                insn.setOperand(program.variableAt(input.readShort()));
+                insn.setConsequent(program.basicBlockAt(input.readShort()));
+                insn.setAlternative(program.basicBlockAt(input.readShort()));
+                return insn;
+            }
+            case 15: {
+                BinaryBranchingCondition cond = binaryBranchingConditions[input.readByte()];
+                BinaryBranchingInstruction insn = new BinaryBranchingInstruction(cond);
+                insn.setFirstOperand(program.variableAt(input.readShort()));
+                insn.setSecondOperand(program.variableAt(input.readShort()));
+                insn.setConsequent(program.basicBlockAt(input.readShort()));
+                insn.setAlternative(program.basicBlockAt(input.readShort()));
+                return insn;
+            }
+            default:
+                throw new RuntimeException("Unknown instruction type: " + insnType);
         }
     }
 }
