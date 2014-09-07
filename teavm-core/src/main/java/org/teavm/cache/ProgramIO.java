@@ -33,6 +33,7 @@ public class ProgramIO {
     private static CastIntegerDirection[] castIntegerDirections = CastIntegerDirection.values();
     private static BranchingCondition[] branchingConditions = BranchingCondition.values();
     private static BinaryBranchingCondition[] binaryBranchingConditions = BinaryBranchingCondition.values();
+    private static ArrayElementType[] arrayElementTypes = ArrayElementType.values();
 
     public ProgramIO(SymbolTable symbolTable, SymbolTable fileTable) {
         this.symbolTable = symbolTable;
@@ -539,10 +540,10 @@ public class ProgramIO {
             try {
                 switch (insn.getType()) {
                     case SPECIAL:
-                        output.write(insn.getInstance() == null ? 32 : 33);
+                        output.write(insn.getInstance() == null ? 33 : 34);
                         break;
                     case VIRTUAL:
-                        output.write(34);
+                        output.write(35);
                         break;
                 }
                 output.writeShort(insn.getReceiver() != null ? insn.getReceiver().getIndex() : -1);
@@ -561,8 +562,9 @@ public class ProgramIO {
         @Override
         public void visit(IsInstanceInstruction insn) {
             try {
-                output.writeByte(35);
+                output.writeByte(36);
                 output.writeShort(insn.getReceiver().getIndex());
+                output.writeInt(symbolTable.lookup(insn.getType().toString()));
                 output.writeShort(insn.getValue().getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
@@ -572,7 +574,7 @@ public class ProgramIO {
         @Override
         public void visit(InitClassInstruction insn) {
             try {
-                output.writeByte(36);
+                output.writeByte(37);
                 output.writeInt(symbolTable.lookup(insn.getClassName()));
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
@@ -582,7 +584,7 @@ public class ProgramIO {
         @Override
         public void visit(NullCheckInstruction insn) {
             try {
-                output.writeByte(37);
+                output.writeByte(38);
                 output.writeShort(insn.getReceiver().getIndex());
                 output.writeShort(insn.getValue().getIndex());
             } catch (IOException e) {
@@ -746,8 +748,146 @@ public class ProgramIO {
                 insn.setSize(program.variableAt(input.readShort()));
                 return insn;
             }
+            case 22: {
+                ConstructInstruction insn = new ConstructInstruction();
+                insn.setReceiver(program.variableAt(input.readShort()));
+                insn.setType(symbolTable.at(input.readInt()));
+                return insn;
+            }
+            case 23: {
+                ConstructMultiArrayInstruction insn = new ConstructMultiArrayInstruction();
+                insn.setReceiver(program.variableAt(input.readShort()));
+                insn.setItemType(ValueType.parse(symbolTable.at(input.readInt())));
+                return insn;
+            }
+            case 24: {
+                GetFieldInstruction insn = new GetFieldInstruction();
+                insn.setReceiver(program.variableAt(input.readShort()));
+                insn.setInstance(program.variableAt(input.readShort()));
+                insn.setField(parseFieldReference(symbolTable.at(input.readInt())));
+                return insn;
+            }
+            case 25: {
+                GetFieldInstruction insn = new GetFieldInstruction();
+                insn.setReceiver(program.variableAt(input.readShort()));
+                insn.setField(parseFieldReference(symbolTable.at(input.readInt())));
+                return insn;
+            }
+            case 26: {
+                PutFieldInstruction insn = new PutFieldInstruction();
+                insn.setInstance(program.variableAt(input.readShort()));
+                insn.setField(parseFieldReference(symbolTable.at(input.readInt())));
+                insn.setValue(program.variableAt(input.readShort()));
+                return insn;
+            }
+            case 27: {
+                PutFieldInstruction insn = new PutFieldInstruction();
+                insn.setField(parseFieldReference(symbolTable.at(input.readInt())));
+                insn.setValue(program.variableAt(input.readShort()));
+                return insn;
+            }
+            case 28: {
+                ArrayLengthInstruction insn = new ArrayLengthInstruction();
+                insn.setReceiver(program.variableAt(input.readShort()));
+                insn.setArray(program.variableAt(input.readShort()));
+                return insn;
+            }
+            case 29: {
+                CloneArrayInstruction insn = new CloneArrayInstruction();
+                insn.setReceiver(program.variableAt(input.readShort()));
+                insn.setArray(program.variableAt(input.readShort()));
+                return insn;
+            }
+            case 30: {
+                Variable receiver = program.variableAt(input.readShort());
+                UnwrapArrayInstruction insn = new UnwrapArrayInstruction(arrayElementTypes[input.readByte()]);
+                insn.setReceiver(receiver);
+                insn.setArray(program.variableAt(input.readShort()));
+                return insn;
+            }
+            case 31: {
+                GetElementInstruction insn = new GetElementInstruction();
+                insn.setReceiver(program.variableAt(input.readShort()));
+                insn.setArray(program.variableAt(input.readShort()));
+                insn.setIndex(program.variableAt(input.readShort()));
+                return insn;
+            }
+            case 32: {
+                PutElementInstruction insn = new PutElementInstruction();
+                insn.setArray(program.variableAt(input.readShort()));
+                insn.setIndex(program.variableAt(input.readShort()));
+                insn.setValue(program.variableAt(input.readShort()));
+                return insn;
+            }
+            case 33: {
+                InvokeInstruction insn = new InvokeInstruction();
+                insn.setType(InvocationType.SPECIAL);
+                int receiverIndex = input.readShort();
+                insn.setReceiver(receiverIndex >= 0 ? program.variableAt(receiverIndex) : null);
+                insn.setMethod(parseMethodReference(symbolTable.at(input.readInt())));
+                int paramCount = insn.getMethod().getDescriptor().parameterCount();
+                for (int i = 0; i < paramCount; ++i) {
+                    insn.getArguments().add(program.variableAt(input.readShort()));
+                }
+                return insn;
+            }
+            case 34: {
+                InvokeInstruction insn = new InvokeInstruction();
+                insn.setType(InvocationType.SPECIAL);
+                int receiverIndex = input.readShort();
+                insn.setReceiver(receiverIndex >= 0 ? program.variableAt(receiverIndex) : null);
+                insn.setInstance(program.variableAt(input.readShort()));
+                insn.setMethod(parseMethodReference(symbolTable.at(input.readInt())));
+                int paramCount = insn.getMethod().getDescriptor().parameterCount();
+                for (int i = 0; i < paramCount; ++i) {
+                    insn.getArguments().add(program.variableAt(input.readShort()));
+                }
+                return insn;
+            }
+            case 35: {
+                InvokeInstruction insn = new InvokeInstruction();
+                insn.setType(InvocationType.VIRTUAL);
+                int receiverIndex = input.readShort();
+                insn.setReceiver(receiverIndex >= 0 ? program.variableAt(receiverIndex) : null);
+                insn.setInstance(program.variableAt(input.readShort()));
+                insn.setMethod(parseMethodReference(symbolTable.at(input.readInt())));
+                int paramCount = insn.getMethod().getDescriptor().parameterCount();
+                for (int i = 0; i < paramCount; ++i) {
+                    insn.getArguments().add(program.variableAt(input.readShort()));
+                }
+                return insn;
+            }
+            case 36: {
+                IsInstanceInstruction insn = new IsInstanceInstruction();
+                insn.setReceiver(program.variableAt(input.readShort()));
+                insn.setType(ValueType.parse(symbolTable.at(input.readInt())));
+                insn.setValue(program.variableAt(input.readShort()));
+                return insn;
+            }
+            case 37: {
+                InitClassInstruction insn = new InitClassInstruction();
+                insn.setClassName(symbolTable.at(input.readInt()));
+                return insn;
+            }
+            case 38: {
+                NullCheckInstruction insn = new NullCheckInstruction();
+                insn.setReceiver(program.variableAt(input.readShort()));
+                insn.setValue(program.variableAt(input.readShort()));
+                return insn;
+            }
             default:
                 throw new RuntimeException("Unknown instruction type: " + insnType);
         }
+    }
+
+    private FieldReference parseFieldReference(String text) {
+        int nameIndex = text.lastIndexOf('.');
+        return new FieldReference(text.substring(0, nameIndex), text.substring(nameIndex + 1));
+    }
+
+    private MethodReference parseMethodReference(String text) {
+        int descIndex = text.lastIndexOf('.');
+        return new MethodReference(text.substring(0, descIndex),
+                MethodDescriptor.parse(text.substring(descIndex) + 1));
     }
 }
