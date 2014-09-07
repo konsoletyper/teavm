@@ -708,6 +708,44 @@ public class ProgramIO {
                 insn.setAlternative(program.basicBlockAt(input.readShort()));
                 return insn;
             }
+            case 16: {
+                JumpInstruction insn = new JumpInstruction();
+                insn.setTarget(program.basicBlockAt(input.readShort()));
+                return insn;
+            }
+            case 17: {
+                SwitchInstruction insn = new SwitchInstruction();
+                insn.setCondition(program.variableAt(input.readShort()));
+                insn.setDefaultTarget(program.basicBlockAt(input.readShort()));
+                int entryCount = input.readShort();
+                for (int i = 0; i < entryCount; ++i) {
+                    SwitchTableEntry entry = new SwitchTableEntry();
+                    entry.setCondition(input.readInt());
+                    entry.setTarget(program.basicBlockAt(input.readShort()));
+                    insn.getEntries().add(entry);
+                }
+                return insn;
+            }
+            case 18: {
+                ExitInstruction insn = new ExitInstruction();
+                insn.setValueToReturn(program.variableAt(input.readShort()));
+                return insn;
+            }
+            case 19: {
+                return new ExitInstruction();
+            }
+            case 20: {
+                RaiseInstruction insn = new RaiseInstruction();
+                insn.setException(program.variableAt(input.readShort()));
+                return insn;
+            }
+            case 21: {
+                ConstructArrayInstruction insn = new ConstructArrayInstruction();
+                insn.setReceiver(program.variableAt(input.readShort()));
+                insn.setItemType(ValueType.parse(symbolTable.at(input.readInt())));
+                insn.setSize(program.variableAt(input.readShort()));
+                return insn;
+            }
             default:
                 throw new RuntimeException("Unknown instruction type: " + insnType);
         }
