@@ -519,6 +519,7 @@ public class ProgramParser implements VariableDebugInformation {
                     }
                     if (instance == -1) {
                         InvokeInstruction insn = new InvokeInstruction();
+                        insn.setType(InvocationType.SPECIAL);
                         insn.setMethod(new MethodReference(ownerCls, method));
                         if (result >= 0) {
                             insn.setReceiver(getVariable(result));

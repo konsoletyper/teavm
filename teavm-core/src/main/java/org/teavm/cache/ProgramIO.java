@@ -252,7 +252,7 @@ public class ProgramIO {
             try {
                 output.writeByte(7);
                 output.writeShort(insn.getReceiver().getIndex());
-                output.writeInt(symbolTable.lookup(insn.getConstant()));
+                output.writeUTF(insn.getConstant());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -456,7 +456,8 @@ public class ProgramIO {
                 if (insn.getInstance() != null) {
                     output.writeShort(insn.getInstance().getIndex());
                 }
-                output.writeInt(symbolTable.lookup(insn.getField().toString()));
+                output.writeInt(symbolTable.lookup(insn.getField().getClassName()));
+                output.writeInt(symbolTable.lookup(insn.getField().getFieldName()));
                 output.writeInt(symbolTable.lookup(insn.getFieldType().toString()));
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
@@ -470,7 +471,8 @@ public class ProgramIO {
                 if (insn.getInstance() != null) {
                     output.writeShort(insn.getInstance().getIndex());
                 }
-                output.writeInt(symbolTable.lookup(insn.getField().toString()));
+                output.writeInt(symbolTable.lookup(insn.getField().getClassName()));
+                output.writeInt(symbolTable.lookup(insn.getField().getFieldName()));
                 output.writeShort(insn.getValue().getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
@@ -550,7 +552,8 @@ public class ProgramIO {
                 if (insn.getInstance() != null) {
                     output.writeShort(insn.getInstance().getIndex());
                 }
-                output.writeInt(symbolTable.lookup(insn.getMethod().toString()));
+                output.writeInt(symbolTable.lookup(insn.getMethod().getClassName()));
+                output.writeInt(symbolTable.lookup(insn.getMethod().getDescriptor().toString()));
                 for (int i = 0; i < insn.getArguments().size(); ++i) {
                     output.writeShort(insn.getArguments().get(i).getIndex());
                 }
@@ -642,7 +645,7 @@ public class ProgramIO {
             case 7: {
                 StringConstantInstruction insn = new StringConstantInstruction();
                 insn.setReceiver(program.variableAt(input.readShort()));
-                insn.setConstant(symbolTable.at(input.readInt()));
+                insn.setConstant(input.readUTF());
                 return insn;
             }
             case 8: {
@@ -764,25 +767,33 @@ public class ProgramIO {
                 GetFieldInstruction insn = new GetFieldInstruction();
                 insn.setReceiver(program.variableAt(input.readShort()));
                 insn.setInstance(program.variableAt(input.readShort()));
-                insn.setField(parseFieldReference(symbolTable.at(input.readInt())));
+                String className = symbolTable.at(input.readInt());
+                String fieldName = symbolTable.at(input.readInt());
+                insn.setField(new FieldReference(className, fieldName));
                 return insn;
             }
             case 25: {
                 GetFieldInstruction insn = new GetFieldInstruction();
                 insn.setReceiver(program.variableAt(input.readShort()));
-                insn.setField(parseFieldReference(symbolTable.at(input.readInt())));
+                String className = symbolTable.at(input.readInt());
+                String fieldName = symbolTable.at(input.readInt());
+                insn.setField(new FieldReference(className, fieldName));
                 return insn;
             }
             case 26: {
                 PutFieldInstruction insn = new PutFieldInstruction();
                 insn.setInstance(program.variableAt(input.readShort()));
-                insn.setField(parseFieldReference(symbolTable.at(input.readInt())));
+                String className = symbolTable.at(input.readInt());
+                String fieldName = symbolTable.at(input.readInt());
+                insn.setField(new FieldReference(className, fieldName));
                 insn.setValue(program.variableAt(input.readShort()));
                 return insn;
             }
             case 27: {
                 PutFieldInstruction insn = new PutFieldInstruction();
-                insn.setField(parseFieldReference(symbolTable.at(input.readInt())));
+                String className = symbolTable.at(input.readInt());
+                String fieldName = symbolTable.at(input.readInt());
+                insn.setField(new FieldReference(className, fieldName));
                 insn.setValue(program.variableAt(input.readShort()));
                 return insn;
             }
@@ -824,7 +835,9 @@ public class ProgramIO {
                 insn.setType(InvocationType.SPECIAL);
                 int receiverIndex = input.readShort();
                 insn.setReceiver(receiverIndex >= 0 ? program.variableAt(receiverIndex) : null);
-                insn.setMethod(parseMethodReference(symbolTable.at(input.readInt())));
+                String className = symbolTable.at(input.readInt());
+                MethodDescriptor methodDesc = MethodDescriptor.parse(symbolTable.at(input.readInt()));
+                insn.setMethod(new MethodReference(className, methodDesc));
                 int paramCount = insn.getMethod().getDescriptor().parameterCount();
                 for (int i = 0; i < paramCount; ++i) {
                     insn.getArguments().add(program.variableAt(input.readShort()));
@@ -837,7 +850,9 @@ public class ProgramIO {
                 int receiverIndex = input.readShort();
                 insn.setReceiver(receiverIndex >= 0 ? program.variableAt(receiverIndex) : null);
                 insn.setInstance(program.variableAt(input.readShort()));
-                insn.setMethod(parseMethodReference(symbolTable.at(input.readInt())));
+                String className = symbolTable.at(input.readInt());
+                MethodDescriptor methodDesc = MethodDescriptor.parse(symbolTable.at(input.readInt()));
+                insn.setMethod(new MethodReference(className, methodDesc));
                 int paramCount = insn.getMethod().getDescriptor().parameterCount();
                 for (int i = 0; i < paramCount; ++i) {
                     insn.getArguments().add(program.variableAt(input.readShort()));
@@ -850,7 +865,9 @@ public class ProgramIO {
                 int receiverIndex = input.readShort();
                 insn.setReceiver(receiverIndex >= 0 ? program.variableAt(receiverIndex) : null);
                 insn.setInstance(program.variableAt(input.readShort()));
-                insn.setMethod(parseMethodReference(symbolTable.at(input.readInt())));
+                String className = symbolTable.at(input.readInt());
+                MethodDescriptor methodDesc = MethodDescriptor.parse(symbolTable.at(input.readInt()));
+                insn.setMethod(new MethodReference(className, methodDesc));
                 int paramCount = insn.getMethod().getDescriptor().parameterCount();
                 for (int i = 0; i < paramCount; ++i) {
                     insn.getArguments().add(program.variableAt(input.readShort()));
@@ -878,16 +895,5 @@ public class ProgramIO {
             default:
                 throw new RuntimeException("Unknown instruction type: " + insnType);
         }
-    }
-
-    private FieldReference parseFieldReference(String text) {
-        int nameIndex = text.lastIndexOf('.');
-        return new FieldReference(text.substring(0, nameIndex), text.substring(nameIndex + 1));
-    }
-
-    private MethodReference parseMethodReference(String text) {
-        int descIndex = text.lastIndexOf('.');
-        return new MethodReference(text.substring(0, descIndex),
-                MethodDescriptor.parse(text.substring(descIndex) + 1));
     }
 }
