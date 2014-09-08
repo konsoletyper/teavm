@@ -24,6 +24,8 @@ import org.teavm.model.*;
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public class DiskCachedClassHolderSource implements ClassHolderSource {
+    private static AccessLevel[] accessLevels = AccessLevel.values();
+    private static ElementModifier[] elementModifiers = ElementModifier.values();
     private File directory;
     private SymbolTable symbolTable;
     private ClassHolderSource innerSource;
@@ -47,8 +49,22 @@ public class DiskCachedClassHolderSource implements ClassHolderSource {
         if (item == null) {
             item = new Item();
             cache.put(name, item);
-            item.cls = innerSource.get(name);
-            newClasses.add(name);
+            File classFile = new File(directory, name.replace('.', '/') + ".teavm-cls");
+            if (classFile.exists()) {
+                Date classDate = classDateProvider.getModificationDate(name);
+                if (classDate != null && classDate.before(new Date(classFile.lastModified()))) {
+                    try (InputStream input = new FileInputStream(classFile)) {
+                        item.cls = readClass(input, name);
+                    } catch (IOException e) {
+                        // We could not access cache file, so let's parse class file
+                        item.cls = null;
+                    }
+                }
+            }
+            if (item.cls == null) {
+                item.cls = innerSource.get(name);
+                newClasses.add(name);
+            }
         }
         return item.cls;
     }
@@ -81,12 +97,39 @@ public class DiskCachedClassHolderSource implements ClassHolderSource {
             output.writeInt(symbolTable.lookup(iface));
         }
         writeAnnotations(output, cls.getAnnotations());
+        output.writeShort(cls.getFields().size());
         for (FieldHolder field : cls.getFields()) {
             writeField(output, field);
         }
+        output.writeShort(cls.getMethods().size());
         for (MethodHolder method : cls.getMethods()) {
             writeMethod(stream, method);
         }
+    }
+
+    private ClassHolder readClass(InputStream stream, String name) throws IOException {
+        DataInput input = new DataInputStream(stream);
+        ClassHolder cls = new ClassHolder(name);
+        cls.setLevel(accessLevels[input.readByte()]);
+        cls.getModifiers().addAll(unpackModifiers(input.readInt()));
+        int parentIndex = input.readInt();
+        cls.setParent(parentIndex >= 0 ? symbolTable.at(parentIndex) : null);
+        int ownerIndex = input.readInt();
+        cls.setOwnerName(ownerIndex >= 0 ? symbolTable.at(ownerIndex) : null);
+        int ifaceCount = input.readByte();
+        for (int i = 0; i < ifaceCount; ++i) {
+            cls.getInterfaces().add(symbolTable.at(input.readInt()));
+        }
+        readAnnotations(input, cls.getAnnotations());
+        int fieldCount = input.readShort();
+        for (int i = 0; i < fieldCount; ++i) {
+            cls.addField(readField(input));
+        }
+        int methodCount = input.readShort();
+        for (int i = 0; i < methodCount; ++i) {
+            cls.addMethod(readMethod(stream));
+        }
+        return cls;
     }
 
     private void writeField(DataOutput output, FieldHolder field) throws IOException {
@@ -96,6 +139,16 @@ public class DiskCachedClassHolderSource implements ClassHolderSource {
         output.writeInt(packModifiers(field.getModifiers()));
         writeFieldValue(output, field.getInitialValue());
         writeAnnotations(output, field.getAnnotations());
+    }
+
+    private FieldHolder readField(DataInput input) throws IOException {
+        FieldHolder field = new FieldHolder(symbolTable.at(input.readInt()));
+        field.setType(ValueType.parse(symbolTable.at(input.readInt())));
+        field.setLevel(accessLevels[input.readByte()]);
+        field.getModifiers().addAll(unpackModifiers(input.readInt()));
+        field.setInitialValue(readFieldValue(input));
+        readAnnotations(input, field.getAnnotations());
+        return field;
     }
 
     private void writeFieldValue(DataOutput output, Object value) throws IOException {
@@ -119,19 +172,51 @@ public class DiskCachedClassHolderSource implements ClassHolderSource {
         }
     }
 
+    private Object readFieldValue(DataInput input) throws IOException {
+        int type = input.readByte();
+        switch (type) {
+            case 0:
+                return null;
+            case 1:
+                return input.readInt();
+            case 2:
+                return input.readLong();
+            case 3:
+                return input.readFloat();
+            case 4:
+                return input.readDouble();
+            case 5:
+                return input.readUTF();
+            default:
+                throw new RuntimeException("Unexpected field value type: " + type);
+        }
+    }
+
     private void writeMethod(OutputStream stream, MethodHolder method) throws IOException {
         DataOutputStream output = new DataOutputStream(stream);
-        output.writeInt(symbolTable.lookup(method.getName()));
         output.writeInt(symbolTable.lookup(method.getDescriptor().toString()));
         output.writeByte(method.getLevel().ordinal());
         output.writeInt(packModifiers(method.getModifiers()));
         writeAnnotations(output, method.getAnnotations());
         if (method.getProgram() != null) {
-            output.writeByte(1);
+            output.writeBoolean(true);
             programIO.write(method.getProgram(), output);
         } else {
-            output.writeByte(0);
+            output.writeBoolean(false);
         }
+    }
+
+    private MethodHolder readMethod(InputStream stream) throws IOException {
+        DataInputStream input = new DataInputStream(stream);
+        MethodHolder method = new MethodHolder(MethodDescriptor.parse(symbolTable.at(input.readInt())));
+        method.setLevel(accessLevels[input.readByte()]);
+        method.getModifiers().addAll(unpackModifiers(input.readInt()));
+        readAnnotations(input, method.getAnnotations());
+        boolean hasProgram = input.readBoolean();
+        if (hasProgram) {
+            method.setProgram(programIO.read(input));
+        }
+        return method;
     }
 
     private void writeAnnotations(DataOutput output, AnnotationContainer annotations) throws IOException {
@@ -145,6 +230,14 @@ public class DiskCachedClassHolderSource implements ClassHolderSource {
         }
     }
 
+    private void readAnnotations(DataInput input, AnnotationContainer annotations) throws IOException {
+        int annotCount = input.readShort();
+        for (int i = 0; i < annotCount; ++i) {
+            AnnotationHolder annot = readAnnotation(input);
+            annotations.add(annot);
+        }
+    }
+
     private void writeAnnotation(DataOutput output, AnnotationHolder annotation) throws IOException {
         output.writeInt(symbolTable.lookup(annotation.getType()));
         output.writeShort(annotation.getValues().size());
@@ -152,6 +245,17 @@ public class DiskCachedClassHolderSource implements ClassHolderSource {
             output.writeInt(symbolTable.lookup(entry.getKey()));
             writeAnnotationValue(output, entry.getValue());
         }
+    }
+
+    private AnnotationHolder readAnnotation(DataInput input) throws IOException {
+        AnnotationHolder annotation = new AnnotationHolder(symbolTable.at(input.readInt()));
+        int valueCount = input.readShort();
+        for (int i = 0; i < valueCount; ++i) {
+            String name = symbolTable.at(input.readInt());
+            AnnotationValue value = readAnnotationValue(input);
+            annotation.getValues().put(name, value);
+        }
+        return annotation;
     }
 
     private void writeAnnotationValue(DataOutput output, AnnotationValue value) throws IOException {
@@ -174,7 +278,7 @@ public class DiskCachedClassHolderSource implements ClassHolderSource {
                 break;
             case AnnotationValue.ENUM:
                 output.writeInt(symbolTable.lookup(value.getEnumValue().getClassName()));
-                output.writeInt(symbolTable.lookup(value.getEnumValue().getClassName()));
+                output.writeInt(symbolTable.lookup(value.getEnumValue().getFieldName()));
                 break;
             case AnnotationValue.FLOAT:
                 output.writeDouble(value.getFloat());
@@ -202,11 +306,62 @@ public class DiskCachedClassHolderSource implements ClassHolderSource {
         }
     }
 
+    private AnnotationValue readAnnotationValue(DataInput input) throws IOException {
+        byte type = input.readByte();
+        switch (type) {
+            case AnnotationValue.ANNOTATION:
+                return new AnnotationValue(readAnnotation(input));
+            case AnnotationValue.BOOLEAN:
+                return new AnnotationValue(input.readBoolean());
+            case AnnotationValue.BYTE:
+                return new AnnotationValue(input.readByte());
+            case AnnotationValue.CLASS:
+                return new AnnotationValue(ValueType.parse(symbolTable.at(input.readInt())));
+            case AnnotationValue.DOUBLE:
+                return new AnnotationValue(input.readDouble());
+            case AnnotationValue.ENUM: {
+                String className = symbolTable.at(input.readInt());
+                String fieldName = symbolTable.at(input.readInt());
+                return new AnnotationValue(new FieldReference(className, fieldName));
+            }
+            case AnnotationValue.FLOAT:
+                return new AnnotationValue(input.readFloat());
+            case AnnotationValue.INT:
+                return new AnnotationValue(input.readInt());
+            case AnnotationValue.LIST: {
+                List<AnnotationValue> list = new ArrayList<>();
+                int sz = input.readShort();
+                for (int i = 0; i < sz; ++i) {
+                    list.add(readAnnotationValue(input));
+                }
+                return new AnnotationValue(list);
+            }
+            case AnnotationValue.LONG:
+                return new AnnotationValue(input.readLong());
+            case AnnotationValue.SHORT:
+                return new AnnotationValue(input.readShort());
+            case AnnotationValue.STRING:
+                return new AnnotationValue(input.readUTF());
+            default:
+                throw new RuntimeException("Unexpected annotation value type: " + type);
+        }
+    }
+
     private int packModifiers(Set<ElementModifier> modifiers) {
         int result = 0;
         for (ElementModifier modifier : modifiers) {
             result |= 1 << modifier.ordinal();
         }
         return result;
+    }
+
+    private Set<ElementModifier> unpackModifiers(int packed) {
+        Set<ElementModifier> modifiers = EnumSet.noneOf(ElementModifier.class);
+        while (packed != 0) {
+            int n = Integer.numberOfTrailingZeros(packed);
+            packed ^= 1 << n;
+            modifiers.add(elementModifiers[n]);
+        }
+        return modifiers;
     }
 }

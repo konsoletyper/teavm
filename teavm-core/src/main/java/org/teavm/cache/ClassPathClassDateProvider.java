@@ -33,7 +33,7 @@ public class ClassPathClassDateProvider implements ClassDateProvider {
 
     @Override
     public Date getModificationDate(String className) {
-        URL url = classLoader.getResource(className);
+        URL url = classLoader.getResource(className.replace('.', '/') + ".class");
         if (url == null) {
             return null;
         }
