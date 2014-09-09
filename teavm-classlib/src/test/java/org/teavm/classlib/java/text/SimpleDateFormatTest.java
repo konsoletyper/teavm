@@ -18,10 +18,7 @@ package org.teavm.classlib.java.text;
 import static org.junit.Assert.assertEquals;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.Locale;
+import java.util.*;
 import org.junit.Test;
 
 /**
@@ -38,114 +35,114 @@ public class SimpleDateFormatTest {
     @Test
     public void fieldsFormatted() {
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
-        assertEquals("2014-06-24 17:33:49", format.format(getDateWithZoneOffset(1403602429504L)));
+        assertEquals("2014-06-24 09:33:49", format.format(getDateWithZoneOffset(1403602429504L)));
     }
 
     @Test
     public void fieldsParsed() throws ParseException {
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
-        assertEquals(1403602429000L, getTimeWithoutZoneOffset(format.parse("2014-06-24 17:33:49")));
+        assertEquals(1403602429000L, getTimeWithoutZoneOffset(format.parse("2014-06-24 09:33:49")));
     }
 
     @Test
     public void eraHandled() throws ParseException {
         SimpleDateFormat format = new SimpleDateFormat("G yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
-        assertEquals("AD 2014-06-24 17:33:49", format.format(getDateWithZoneOffset(1403602429504L)));
-        assertEquals(1403602429000L, getTimeWithoutZoneOffset(format.parse("AD 2014-06-24 17:33:49")));
+        assertEquals("AD 2014-06-24 09:33:49", format.format(getDateWithZoneOffset(1403602429504L)));
+        assertEquals(1403602429000L, getTimeWithoutZoneOffset(format.parse("AD 2014-06-24 09:33:49")));
     }
 
     @Test
     public void shortYearHandled() throws ParseException {
         SimpleDateFormat format = new SimpleDateFormat("yy-MM-dd HH:mm:ss", Locale.ENGLISH);
-        assertEquals("14-06-24 17:33:49", format.format(getDateWithZoneOffset(1403602429504L)));
-        assertEquals(1403602429000L, getTimeWithoutZoneOffset(format.parse("14-06-24 17:33:49")));
+        assertEquals("14-06-24 09:33:49", format.format(getDateWithZoneOffset(1403602429504L)));
+        assertEquals(1403602429000L, getTimeWithoutZoneOffset(format.parse("14-06-24 09:33:49")));
     }
 
     @Test
     public void weekInYearHandled() throws ParseException {
         long day = 24 * 3600 * 1000;
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss www", Locale.ENGLISH);
-        assertEquals("2014-06-24 17:33:49 026", format.format(getDateWithZoneOffset(1403602429504L)));
-        assertEquals("2014-06-28 17:33:49 026", format.format(getDateWithZoneOffset(1403602429504L + day * 4)));
-        assertEquals("2014-06-29 17:33:49 027", format.format(getDateWithZoneOffset(1403602429504L + day * 5)));
-        assertEquals(1403602429000L, getTimeWithoutZoneOffset(format.parse("2014-06-24 17:33:49 026")));
-        assertEquals(1403602429000L + day * 4, getTimeWithoutZoneOffset(format.parse("2014-06-28 17:33:49 026")));
-        assertEquals(1403602429000L + day * 5, getTimeWithoutZoneOffset(format.parse("2014-06-29 17:33:49 027")));
+        assertEquals("2014-06-24 09:33:49 026", format.format(getDateWithZoneOffset(1403602429504L)));
+        assertEquals("2014-06-28 09:33:49 026", format.format(getDateWithZoneOffset(1403602429504L + day * 4)));
+        assertEquals("2014-06-29 09:33:49 027", format.format(getDateWithZoneOffset(1403602429504L + day * 5)));
+        assertEquals(1403602429000L, getTimeWithoutZoneOffset(format.parse("2014-06-24 09:33:49 026")));
+        assertEquals(1403602429000L + day * 4, getTimeWithoutZoneOffset(format.parse("2014-06-28 09:33:49 026")));
+        assertEquals(1403602429000L + day * 5, getTimeWithoutZoneOffset(format.parse("2014-06-29 09:33:49 027")));
     }
 
     @Test
     public void weekInMonthHandled() throws ParseException {
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss WW", Locale.ENGLISH);
-        assertEquals("2014-06-24 17:33:49 04", format.format(getDateWithZoneOffset(1403602429504L)));
-        assertEquals(1403602429000L, getTimeWithoutZoneOffset(format.parse("2014-06-24 17:33:49 04")));
+        assertEquals("2014-06-24 09:33:49 04", format.format(getDateWithZoneOffset(1403602429504L)));
+        assertEquals(1403602429000L, getTimeWithoutZoneOffset(format.parse("2014-06-24 09:33:49 04")));
     }
 
     @Test
     public void dayInYearHandled() throws ParseException {
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss DD", Locale.ENGLISH);
-        assertEquals("2014-06-24 17:33:49 175", format.format(getDateWithZoneOffset(1403602429504L)));
-        assertEquals(1403602429000L, getTimeWithoutZoneOffset(format.parse("2014-06-24 17:33:49 175")));
+        assertEquals("2014-06-24 09:33:49 175", format.format(getDateWithZoneOffset(1403602429504L)));
+        assertEquals(1403602429000L, getTimeWithoutZoneOffset(format.parse("2014-06-24 09:33:49 175")));
     }
 
     @Test
     public void weekdayInMonthHandled() throws ParseException {
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss F", Locale.ENGLISH);
-        assertEquals("2014-06-24 17:33:49 4", format.format(getDateWithZoneOffset(1403602429504L)));
-        assertEquals(1403602429000L, getTimeWithoutZoneOffset(format.parse("2014-06-24 17:33:49 4")));
+        assertEquals("2014-06-24 09:33:49 4", format.format(getDateWithZoneOffset(1403602429504L)));
+        assertEquals(1403602429000L, getTimeWithoutZoneOffset(format.parse("2014-06-24 09:33:49 4")));
     }
 
     @Test
     public void shortWeekdayHandled() throws ParseException {
         SimpleDateFormat format = new SimpleDateFormat("E yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
-        assertEquals("Tue 2014-06-24 17:33:49", format.format(getDateWithZoneOffset(1403602429504L)));
-        assertEquals(1403602429000L, getTimeWithoutZoneOffset(format.parse("Tue 2014-06-24 17:33:49")));
+        assertEquals("Tue 2014-06-24 09:33:49", format.format(getDateWithZoneOffset(1403602429504L)));
+        assertEquals(1403602429000L, getTimeWithoutZoneOffset(format.parse("Tue 2014-06-24 09:33:49")));
     }
 
     @Test
     public void longWeekdayHandled() throws ParseException {
         SimpleDateFormat format = new SimpleDateFormat("EEEE, yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
-        assertEquals("Tuesday, 2014-06-24 17:33:49", format.format(getDateWithZoneOffset(1403602429504L)));
-        assertEquals(1403602429000L, getTimeWithoutZoneOffset(format.parse("Tuesday, 2014-06-24 17:33:49")));
+        assertEquals("Tuesday, 2014-06-24 09:33:49", format.format(getDateWithZoneOffset(1403602429504L)));
+        assertEquals(1403602429000L, getTimeWithoutZoneOffset(format.parse("Tuesday, 2014-06-24 09:33:49")));
     }
 
     @Test
     public void numericWeekdayHandled() throws ParseException {
         SimpleDateFormat format = new SimpleDateFormat("u yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
-        assertEquals("2 2014-06-24 17:33:49", format.format(getDateWithZoneOffset(1403602429504L)));
-        assertEquals(1403602429000L, getTimeWithoutZoneOffset(format.parse("2 2014-06-24 17:33:49")));
+        assertEquals("2 2014-06-24 09:33:49", format.format(getDateWithZoneOffset(1403602429504L)));
+        assertEquals(1403602429000L, getTimeWithoutZoneOffset(format.parse("2 2014-06-24 09:33:49")));
     }
 
     @Test
     public void amPmHandled() throws ParseException {
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd 'at' hh:mm:ss a", Locale.ENGLISH);
-        assertEquals("2014-06-24 at 05:33:49 PM", format.format(getDateWithZoneOffset(1403602429504L)));
-        assertEquals(1403602429000L, getTimeWithoutZoneOffset(format.parse("2014-06-24 at 05:33:49 PM")));
+        assertEquals("2014-06-24 at 09:33:49 AM", format.format(getDateWithZoneOffset(1403602429504L)));
+        assertEquals(1403602429000L, getTimeWithoutZoneOffset(format.parse("2014-06-24 at 09:33:49 AM")));
     }
 
     @Test
     public void shortMonthHandled() throws ParseException {
         SimpleDateFormat format = new SimpleDateFormat("MMM, dd yyyy HH:mm:ss", Locale.ENGLISH);
-        assertEquals("Jun, 24 2014 17:33:49", format.format(getDateWithZoneOffset(1403602429504L)));
-        assertEquals(1403602429000L, getTimeWithoutZoneOffset(format.parse("Jun, 24 2014 17:33:49")));
+        assertEquals("Jun, 24 2014 09:33:49", format.format(getDateWithZoneOffset(1403602429504L)));
+        assertEquals(1403602429000L, getTimeWithoutZoneOffset(format.parse("Jun, 24 2014 09:33:49")));
     }
 
     @Test
     public void longMonthHandled() throws ParseException {
         SimpleDateFormat format = new SimpleDateFormat("MMMM, dd yyyy HH:mm:ss", Locale.ENGLISH);
-        assertEquals("June, 24 2014 17:33:49", format.format(getDateWithZoneOffset(1403602429504L)));
-        assertEquals(1403602429000L, getTimeWithoutZoneOffset(format.parse("June, 24 2014 17:33:49")));
+        assertEquals("June, 24 2014 09:33:49", format.format(getDateWithZoneOffset(1403602429504L)));
+        assertEquals(1403602429000L, getTimeWithoutZoneOffset(format.parse("June, 24 2014 09:33:49")));
     }
 
     private Date getDateWithZoneOffset(long milliseconds) {
         Calendar calendar = new GregorianCalendar(Locale.ENGLISH);
         calendar.setTimeInMillis(milliseconds);
-        milliseconds += calendar.get(Calendar.ZONE_OFFSET);
+        milliseconds -= calendar.get(Calendar.ZONE_OFFSET);
         return new Date(milliseconds);
     }
 
     private long getTimeWithoutZoneOffset(Date date) {
         Calendar calendar = new GregorianCalendar(Locale.ENGLISH);
         calendar.setTime(date);
-        return calendar.getTimeInMillis() - calendar.get(Calendar.ZONE_OFFSET);
+        return calendar.getTimeInMillis() + calendar.get(Calendar.ZONE_OFFSET);
     }
 }

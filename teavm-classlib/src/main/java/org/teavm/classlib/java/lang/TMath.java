@@ -283,9 +283,9 @@ public final class TMath extends TObject {
         return direction > start ? start + ulp(start) : start - ulp(start);
     }
 
-    public static float nextAfter(float start, float direction) {
+    public static float nextAfter(float start, double direction) {
         if (start == direction) {
-            return direction;
+            return start;
         }
         return direction > start ? start + ulp(start) : start - ulp(start);
     }

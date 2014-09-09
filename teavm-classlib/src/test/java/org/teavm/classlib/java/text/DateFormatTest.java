@@ -32,41 +32,41 @@ public class DateFormatTest {
     @Test
     public void shortDateFormatHandled() throws ParseException {
         DateFormat format = DateFormat.getDateInstance(DateFormat.SHORT, Locale.ENGLISH);
-        assertEquals("6/24/14", format.format(getDateWithZoneOffset(1403539200000L)));
-        assertEquals(1403539200000L, getTimeWithoutZoneOffset(format.parse("6/24/14")));
+        assertEquals("6/23/14", format.format(getDateWithZoneOffset(1403481600000L)));
+        assertEquals(1403481600000L, getTimeWithoutZoneOffset(format.parse("6/23/14")));
     }
 
     @Test
     public void mediumDateFormatHandled() throws ParseException {
         DateFormat format = DateFormat.getDateInstance(DateFormat.MEDIUM, Locale.ENGLISH);
-        assertEquals("Jun 24, 2014", format.format(getDateWithZoneOffset(1403539200000L)));
-        assertEquals(1403539200000L, getTimeWithoutZoneOffset(format.parse("Jun 24, 2014")));
+        assertEquals("Jun 23, 2014", format.format(getDateWithZoneOffset(1403481600000L)));
+        assertEquals(1403481600000L, getTimeWithoutZoneOffset(format.parse("Jun 23, 2014")));
     }
 
     @Test
     public void longDateFormatHandled() throws ParseException {
         DateFormat format = DateFormat.getDateInstance(DateFormat.LONG, Locale.ENGLISH);
-        assertEquals("June 24, 2014", format.format(getDateWithZoneOffset(1403539200000L)));
-        assertEquals(1403539200000L, getTimeWithoutZoneOffset(format.parse("June 24, 2014")));
+        assertEquals("June 23, 2014", format.format(getDateWithZoneOffset(1403481600000L)));
+        assertEquals(1403481600000L, getTimeWithoutZoneOffset(format.parse("June 23, 2014")));
     }
 
     @Test
     public void fullDateFormatHandled() throws ParseException {
         DateFormat format = DateFormat.getDateInstance(DateFormat.FULL, Locale.ENGLISH);
-        assertEquals("Tuesday, June 24, 2014", format.format(getDateWithZoneOffset(1403539200000L)));
-        assertEquals(1403539200000L, getTimeWithoutZoneOffset(format.parse("Tuesday, June 24, 2014")));
+        assertEquals("Monday, June 23, 2014", format.format(getDateWithZoneOffset(1403481600000L)));
+        assertEquals(1403481600000L, getTimeWithoutZoneOffset(format.parse("Monday, June 23, 2014")));
     }
 
     private Date getDateWithZoneOffset(long milliseconds) {
         Calendar calendar = new GregorianCalendar(Locale.ENGLISH);
         calendar.setTimeInMillis(milliseconds);
-        milliseconds += calendar.get(Calendar.ZONE_OFFSET);
+        milliseconds -= calendar.get(Calendar.ZONE_OFFSET);
         return new Date(milliseconds);
     }
 
     private long getTimeWithoutZoneOffset(Date date) {
         Calendar calendar = new GregorianCalendar(Locale.ENGLISH);
         calendar.setTime(date);
-        return calendar.getTimeInMillis() - calendar.get(Calendar.ZONE_OFFSET);
+        return calendar.getTimeInMillis() + calendar.get(Calendar.ZONE_OFFSET);
     }
 }
