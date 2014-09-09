@@ -15,6 +15,7 @@
  */
 package org.teavm.parsing;
 
+import java.util.Date;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.resource.ClasspathResourceReader;
@@ -25,13 +26,14 @@ import org.teavm.resource.ResourceClassHolderMapper;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class ClasspathClassHolderSource implements ClassHolderSource {
+public class ClasspathClassHolderSource implements ClassHolderSource, ClassDateProvider {
     private MapperClassHolderSource innerClassSource;
+    private ClasspathResourceMapper classPathMapper;
 
     public ClasspathClassHolderSource(ClassLoader classLoader) {
         ClasspathResourceReader reader = new ClasspathResourceReader(classLoader);
         ResourceClassHolderMapper rawMapper = new ResourceClassHolderMapper(reader);
-        ClasspathResourceMapper classPathMapper = new ClasspathResourceMapper(classLoader, rawMapper);
+        classPathMapper = new ClasspathResourceMapper(classLoader, rawMapper);
         innerClassSource = new MapperClassHolderSource(classPathMapper);
     }
 
@@ -42,5 +44,10 @@ public class ClasspathClassHolderSource implements ClassHolderSource {
     @Override
     public ClassHolder get(String name) {
         return innerClassSource.get(name);
+    }
+
+    @Override
+    public Date getModificationDate(String className) {
+        return classPathMapper.getModificationDate(className);
     }
 }

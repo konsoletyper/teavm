@@ -19,6 +19,7 @@ import java.io.*;
 import java.util.*;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
+import org.teavm.parsing.ClassDateProvider;
 
 /**
  *
@@ -46,7 +47,7 @@ public class DiskProgramCache implements ProgramCache {
             cache.put(method, item);
             File file = getMethodFile(method);
             if (file.exists()) {
-                try (InputStream stream = new FileInputStream(file)) {
+                try (InputStream stream = new BufferedInputStream(new FileInputStream(file))) {
                     DataInput input = new DataInputStream(stream);
                     int depCount = input.readShort();
                     boolean dependenciesChanged = false;
@@ -65,9 +66,6 @@ public class DiskProgramCache implements ProgramCache {
                     // we could not read program, just leave it empty
                 }
             }
-        }
-        if (item.program == null) {
-            System.out.println(method);
         }
         return item.program;
     }

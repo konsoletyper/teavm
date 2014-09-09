@@ -39,7 +39,7 @@ public class FileSymbolTable implements SymbolTable {
         symbols.clear();
         symbolMap.clear();
         firstUnstoredIndex = 0;
-        try (DataInputStream input = new DataInputStream(new FileInputStream(file))) {
+        try (DataInputStream input = new DataInputStream(new BufferedInputStream(new FileInputStream(file)))) {
             while (true) {
                 int length = input.read();
                 if (length == -1) {

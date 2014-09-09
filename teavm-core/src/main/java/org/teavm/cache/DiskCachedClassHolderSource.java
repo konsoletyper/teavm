@@ -18,6 +18,7 @@ package org.teavm.cache;
 import java.io.*;
 import java.util.*;
 import org.teavm.model.*;
+import org.teavm.parsing.ClassDateProvider;
 
 /**
  *
@@ -53,7 +54,7 @@ public class DiskCachedClassHolderSource implements ClassHolderSource {
             if (classFile.exists()) {
                 Date classDate = classDateProvider.getModificationDate(name);
                 if (classDate != null && classDate.before(new Date(classFile.lastModified()))) {
-                    try (InputStream input = new FileInputStream(classFile)) {
+                    try (InputStream input = new BufferedInputStream(new FileInputStream(classFile))) {
                         item.cls = readClass(input, name);
                     } catch (IOException e) {
                         // We could not access cache file, so let's parse class file

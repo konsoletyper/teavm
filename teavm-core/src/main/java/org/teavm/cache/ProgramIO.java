@@ -130,7 +130,7 @@ public class ProgramIO {
                 TryCatchBlock tryCatch = new TryCatchBlock();
                 int typeIndex = data.readInt();
                 if (typeIndex >= 0) {
-                    tryCatch.setExceptionType(symbolTable.at(data.readShort()));
+                    tryCatch.setExceptionType(symbolTable.at(typeIndex));
                 }
                 short varIndex = data.readShort();
                 if (varIndex >= 0) {

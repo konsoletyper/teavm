@@ -15,8 +15,10 @@
  */
 package org.teavm.parsing;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.*;
 import org.teavm.common.CachedMapper;
@@ -27,12 +29,13 @@ import org.teavm.model.ClassHolder;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class ClasspathResourceMapper implements Mapper<String, ClassHolder> {
+public class ClasspathResourceMapper implements Mapper<String, ClassHolder>, ClassDateProvider {
     private static final String PACKAGE_PREFIX = "packagePrefix.";
     private static final String CLASS_PREFIX = "classPrefix.";
     private Mapper<String, ClassHolder> innerMapper;
     private List<Transformation> transformations = new ArrayList<>();
     private ClassRefsRenamer renamer;
+    private ClassLoader classLoader;
 
     private static class Transformation {
         String packageName;
@@ -59,6 +62,7 @@ public class ClasspathResourceMapper implements Mapper<String, ClassHolder> {
             throw new RuntimeException("Error reading resources", e);
         }
         renamer = new ClassRefsRenamer(new CachedMapper<>(classNameMapper));
+        this.classLoader = classLoader;
     }
 
     private void loadProperties(Properties properties, Map<String, Transformation> cache) {
@@ -126,4 +130,51 @@ public class ClasspathResourceMapper implements Mapper<String, ClassHolder> {
             return renameClass(preimage);
         }
     };
+
+    @Override
+    public Date getModificationDate(String className) {
+        int dotIndex = className.lastIndexOf('.');
+        String packageName;
+        String simpleName;
+        if (dotIndex > 0) {
+            packageName = className.substring(0, dotIndex + 1);
+            simpleName = className.substring(dotIndex + 1);
+        } else {
+            packageName = "";
+            simpleName = className;
+        }
+        for (Transformation transformation : transformations) {
+            if (packageName.startsWith(transformation.packageName)) {
+                String fullName = transformation.packagePrefix + packageName + transformation.classPrefix + simpleName;
+                Date date = getOriginalModificationDate(fullName);
+                if (date != null) {
+                    return date;
+                }
+            }
+        }
+        return getOriginalModificationDate(className);
+    }
+
+    private Date getOriginalModificationDate(String className) {
+        URL url = classLoader.getResource(className.replace('.', '/') + ".class");
+        if (url == null) {
+            return null;
+        }
+        if (url.getProtocol().equals("file")) {
+            try {
+                File file = new File(url.toURI());
+                return file.exists() ? new Date(file.lastModified()) : null;
+            } catch (URISyntaxException e) {
+                // If URI is invalid, we just report that class should be reparsed
+                return null;
+            }
+        } else if (url.getProtocol().equals("jar") && url.getPath().startsWith("file:")) {
+            int exclIndex = url.getPath().indexOf('!');
+            String jarFileName = exclIndex >= 0 ? url.getPath().substring(0, exclIndex) : url.getPath();
+            File file = new File(jarFileName.substring("file:".length()));
+            return file.exists() ? new Date(file.lastModified()) : null;
+        } else {
+            return null;
+        }
+    }
 }
