@@ -166,7 +166,7 @@ public class JCLComparisonBuilder {
             return false;
         }
         int slashIndex = name.lastIndexOf('/');
-        return packages.contains(name.substring(0, slashIndex));
+        return slashIndex >= 0 && packages.contains(name.substring(0, slashIndex));
     }
 
     private void compareClass(InputStream input) throws IOException {
