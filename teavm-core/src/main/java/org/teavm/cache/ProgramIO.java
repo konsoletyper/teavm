@@ -770,6 +770,7 @@ public class ProgramIO {
                 String className = symbolTable.at(input.readInt());
                 String fieldName = symbolTable.at(input.readInt());
                 insn.setField(new FieldReference(className, fieldName));
+                insn.setFieldType(ValueType.parse(symbolTable.at(input.readInt())));
                 return insn;
             }
             case 25: {
@@ -778,6 +779,7 @@ public class ProgramIO {
                 String className = symbolTable.at(input.readInt());
                 String fieldName = symbolTable.at(input.readInt());
                 insn.setField(new FieldReference(className, fieldName));
+                insn.setFieldType(ValueType.parse(symbolTable.at(input.readInt())));
                 return insn;
             }
             case 26: {

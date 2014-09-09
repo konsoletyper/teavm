@@ -45,10 +45,10 @@ public class ClassPathClassDateProvider implements ClassDateProvider {
                 // If URI is invalid, we just report that class should be reparsed
                 return null;
             }
-        } else if (url.getProtocol().equals("jar")) {
+        } else if (url.getProtocol().equals("jar") && url.getPath().startsWith("file:")) {
             int exclIndex = url.getPath().indexOf('!');
             String jarFileName = exclIndex >= 0 ? url.getPath().substring(0, exclIndex) : url.getPath();
-            File file = new File(jarFileName);
+            File file = new File(jarFileName.substring("file:".length()));
             return file.exists() ? new Date(file.lastModified()) : null;
         } else {
             return null;
