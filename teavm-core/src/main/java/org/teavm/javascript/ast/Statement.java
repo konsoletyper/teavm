@@ -48,13 +48,6 @@ public abstract class Statement {
         return stmt;
     }
 
-    public static IncrementStatement increment(int var, int amount) {
-        IncrementStatement stmt = new IncrementStatement();
-        stmt.setVar(var);
-        stmt.setAmount(amount);
-        return stmt;
-    }
-
     public static Statement cond(Expr predicate, List<Statement> consequent, List<Statement> alternative) {
         ConditionalStatement statement = new ConditionalStatement();
         statement.setCondition(predicate);

@@ -158,10 +158,6 @@ public class RenamingVisitor implements StatementVisitor, ExprVisitor {
     }
 
     @Override
-    public void visit(ForStatement statement) {
-    }
-
-    @Override
     public void visit(BreakStatement statement) {
     }
 
@@ -179,11 +175,6 @@ public class RenamingVisitor implements StatementVisitor, ExprVisitor {
     @Override
     public void visit(ThrowStatement statement) {
         statement.getException().acceptVisitor(this);
-    }
-
-    @Override
-    public void visit(IncrementStatement statement) {
-        statement.setVar(varNames[statement.getVar()]);
     }
 
     @Override

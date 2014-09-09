@@ -744,11 +744,6 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     }
 
     @Override
-    public void visit(ForStatement statement) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void visit(BreakStatement statement) {
         try {
             if (statement.getLocation() != null) {
@@ -822,29 +817,6 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             if (statement.getLocation() != null) {
                 popLocation();
             }
-        } catch (IOException e) {
-            throw new RenderingException("IO error occured", e);
-        }
-    }
-
-    @Override
-    public void visit(IncrementStatement statement) {
-        try {
-            writer.append(variableName(statement.getVar()));
-            if (statement.getAmount() > 0) {
-                if (statement.getAmount() == 1) {
-                    writer.append("++");
-                } else {
-                    writer.ws().append("+=").ws().append(statement.getAmount());
-                }
-            } else {
-                if (statement.getAmount() == -1) {
-                    writer.append("--");
-                } else {
-                    writer.ws().append("-=").ws().append(statement.getAmount());
-                }
-            }
-            writer.append(";").softNewLine();
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
         }

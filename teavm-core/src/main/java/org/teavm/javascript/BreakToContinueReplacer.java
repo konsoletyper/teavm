@@ -80,10 +80,6 @@ class BreakToContinueReplacer implements StatementVisitor {
     }
 
     @Override
-    public void visit(ForStatement statement) {
-    }
-
-    @Override
     public void visit(BreakStatement statement) {
         if (statement.getTarget() == replacedBreak) {
             replaceBy = new ContinueStatement();
@@ -105,10 +101,6 @@ class BreakToContinueReplacer implements StatementVisitor {
 
     @Override
     public void visit(ThrowStatement statement) {
-    }
-
-    @Override
-    public void visit(IncrementStatement statement) {
     }
 
     @Override

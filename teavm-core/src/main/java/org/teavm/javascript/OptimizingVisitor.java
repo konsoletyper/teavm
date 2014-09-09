@@ -530,10 +530,6 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     }
 
     @Override
-    public void visit(ForStatement statement) {
-    }
-
-    @Override
     public void visit(BreakStatement statement) {
         resultStmt = statement;
     }
@@ -557,11 +553,6 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         statement.getException().acceptVisitor(this);
         statement.setException(resultExpr);
         resultStmt = statement;
-    }
-
-    @Override
-    public void visit(IncrementStatement statement) {
-        resultStmt = Statement.increment(statement.getVar(), statement.getAmount());
     }
 
     @Override
