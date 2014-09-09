@@ -62,7 +62,8 @@ public class FileSymbolTable implements SymbolTable {
         if (firstUnstoredIndex >= symbols.size()) {
             return;
         }
-        try (DataOutputStream output = new DataOutputStream(new FileOutputStream(file, true))) {
+        try (DataOutputStream output = new DataOutputStream(new BufferedOutputStream(
+                new FileOutputStream(file, true)))) {
             while (firstUnstoredIndex < symbols.size()) {
                 String symbol = symbols.get(firstUnstoredIndex);
                 output.writeByte((symbol.length() >> 8) & 0xFF);

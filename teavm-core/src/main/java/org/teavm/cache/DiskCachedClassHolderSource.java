@@ -80,7 +80,7 @@ public class DiskCachedClassHolderSource implements ClassHolderSource {
             if (item.cls != null) {
                 File classFile = new File(directory, className.replace('.', '/') + ".teavm-cls");
                 classFile.getParentFile().mkdirs();
-                try (OutputStream output = new FileOutputStream(classFile)) {
+                try (OutputStream output = new BufferedOutputStream(new FileOutputStream(classFile))) {
                     writeClass(output, item.cls);
                 }
             }

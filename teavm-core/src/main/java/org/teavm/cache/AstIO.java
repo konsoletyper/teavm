@@ -32,6 +32,11 @@ public class AstIO {
     private SymbolTable symbolTable;
     private SymbolTable fileTable;
 
+    public AstIO(SymbolTable symbolTable, SymbolTable fileTable) {
+        this.symbolTable = symbolTable;
+        this.fileTable = fileTable;
+    }
+
     public void write(DataOutput output, RegularMethodNode method) throws IOException {
         output.writeInt(packModifiers(method.getModifiers()));
         output.writeShort(method.getVariables().size());

@@ -91,7 +91,7 @@ public class DiskProgramCache implements ProgramCache {
                 }
             }
             file.getParentFile().mkdirs();
-            try (OutputStream stream = new FileOutputStream(file)) {
+            try (OutputStream stream = new BufferedOutputStream(new FileOutputStream(file))) {
                 DataOutput output = new DataOutputStream(stream);
                 output.writeShort(analyzer.dependencies.size());
                 for (String dep : analyzer.dependencies) {
@@ -104,57 +104,7 @@ public class DiskProgramCache implements ProgramCache {
 
     private File getMethodFile(MethodReference method) {
         File dir = new File(directory, method.getClassName().replace('.', '/'));
-        String desc = method.getDescriptor().toString();
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < desc.length(); ++i) {
-            char c = desc.charAt(i);
-            switch (c) {
-                case '/':
-                    sb.append("$s");
-                    break;
-                case '\\':
-                    sb.append("$b");
-                    break;
-                case '?':
-                    sb.append("$q");
-                    break;
-                case '%':
-                    sb.append("$p");
-                    break;
-                case '*':
-                    sb.append("$a");
-                    break;
-                case ':':
-                    sb.append("$c");
-                    break;
-                case '|':
-                    sb.append("$v");
-                    break;
-                case '$':
-                    sb.append("$$");
-                    break;
-                case '"':
-                    sb.append("$Q");
-                    break;
-                case '<':
-                    sb.append("$l");
-                    break;
-                case '>':
-                    sb.append("$g");
-                    break;
-                case '.':
-                    sb.append("$d");
-                    break;
-                case ' ':
-                    sb.append("$w");
-                    break;
-                default:
-                    sb.append(c);
-                    break;
-            }
-
-        }
-        return new File(dir, sb + ".teavm-opt");
+        return new File(dir, FileNameEncoder.encodeFileName(method.getDescriptor().toString()) + ".teavm-opt");
     }
 
     static class Item {
