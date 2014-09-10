@@ -761,6 +761,10 @@ public class ProgramIO {
                 ConstructMultiArrayInstruction insn = new ConstructMultiArrayInstruction();
                 insn.setReceiver(program.variableAt(input.readShort()));
                 insn.setItemType(ValueType.parse(symbolTable.at(input.readInt())));
+                int dimensionCount = input.readByte();
+                for (int i = 0; i < dimensionCount; ++i) {
+                    insn.getDimensions().add(program.variableAt(input.readShort()));
+                }
                 return insn;
             }
             case 24: {

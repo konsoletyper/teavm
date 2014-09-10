@@ -642,7 +642,7 @@ public class AstIO {
                 if (exceptionTypeIndex >= 0) {
                     stmt.setExceptionType(symbolTable.at(exceptionTypeIndex));
                 }
-                int exceptionVarIndex = input.readInt();
+                int exceptionVarIndex = input.readShort();
                 if (exceptionVarIndex >= 0) {
                     stmt.setExceptionVariable(exceptionVarIndex);
                 }
