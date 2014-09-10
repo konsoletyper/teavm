@@ -20,8 +20,11 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
 import org.teavm.javascript.ast.*;
+import org.teavm.model.FieldReference;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
+import org.teavm.model.instructions.ArrayElementType;
 
 /**
  *
@@ -31,10 +34,10 @@ public class AstIO {
     private static NodeModifier[] nodeModifiers = NodeModifier.values();
     private static BinaryOperation[] binaryOperations = BinaryOperation.values();
     private static UnaryOperation[] unaryOperations = UnaryOperation.values();
+    private static ArrayElementType[] arrayElementTypes = ArrayElementType.values();
     private SymbolTable symbolTable;
     private SymbolTable fileTable;
     private Map<String, IdentifiedStatement> statementMap = new HashMap<>();
-    private IdentifiedStatement lastStatement;
 
     public AstIO(SymbolTable symbolTable, SymbolTable fileTable) {
         this.symbolTable = symbolTable;
@@ -563,7 +566,6 @@ public class AstIO {
                 WhileStatement stmt = new WhileStatement();
                 stmt.setId(readNullableString(input));
                 stmt.setCondition(readExpr(input));
-                lastStatement = stmt;
                 if (stmt.getId() != null) {
                     statementMap.put(stmt.getId(), stmt);
                 }
@@ -573,7 +575,6 @@ public class AstIO {
             case 6: {
                 WhileStatement stmt = new WhileStatement();
                 stmt.setId(readNullableString(input));
-                lastStatement = stmt;
                 if (stmt.getId() != null) {
                     statementMap.put(stmt.getId(), stmt);
                 }
@@ -583,7 +584,6 @@ public class AstIO {
             case 7: {
                 BlockStatement stmt = new BlockStatement();
                 stmt.setId(readNullableString(input));
-                lastStatement = stmt;
                 if (stmt.getId() != null) {
                     statementMap.put(stmt.getId(), stmt);
                 }
@@ -599,7 +599,6 @@ public class AstIO {
             case 9: {
                 BreakStatement stmt = new BreakStatement();
                 stmt.setLocation(readLocation(input));
-                stmt.setTarget(lastStatement);
                 return stmt;
             }
             case 10: {
@@ -611,7 +610,6 @@ public class AstIO {
             case 11: {
                 ContinueStatement stmt = new ContinueStatement();
                 stmt.setLocation(readLocation(input));
-                stmt.setTarget(lastStatement);
                 return stmt;
             }
             case 12: {
@@ -668,7 +666,148 @@ public class AstIO {
     }
 
     private Expr readExpr(DataInput input) throws IOException {
-        return null;
+        NodeLocation location = readLocation(input);
+        Expr expr = readExprWithoutLocation(input);
+        expr.setLocation(location);
+        return expr;
+    }
+
+    private Expr readExprWithoutLocation(DataInput input) throws IOException {
+        byte type = input.readByte();
+        switch (type) {
+            case 0: {
+                BinaryExpr expr = new BinaryExpr();
+                expr.setOperation(binaryOperations[input.readByte()]);
+                expr.setFirstOperand(readExpr(input));
+                expr.setSecondOperand(readExpr(input));
+                return expr;
+            }
+            case 1: {
+                UnaryExpr expr = new UnaryExpr();
+                expr.setOperation(unaryOperations[input.readByte()]);
+                expr.setOperand(readExpr(input));
+                return expr;
+            }
+            case 2: {
+                ConditionalExpr expr = new ConditionalExpr();
+                expr.setCondition(readExpr(input));
+                expr.setConsequent(readExpr(input));
+                expr.setAlternative(readExpr(input));
+                return expr;
+            }
+            case 3: {
+                ConstantExpr expr = new ConstantExpr();
+                return expr;
+            }
+            case 4: {
+                ConstantExpr expr = new ConstantExpr();
+                expr.setValue(input.readInt());
+                return expr;
+            }
+            case 5: {
+                ConstantExpr expr = new ConstantExpr();
+                expr.setValue(input.readLong());
+                return expr;
+            }
+            case 6: {
+                ConstantExpr expr = new ConstantExpr();
+                expr.setValue(input.readFloat());
+                return expr;
+            }
+            case 7: {
+                ConstantExpr expr = new ConstantExpr();
+                expr.setValue(input.readDouble());
+                return expr;
+            }
+            case 8: {
+                ConstantExpr expr = new ConstantExpr();
+                expr.setValue(input.readUTF());
+                return expr;
+            }
+            case 9: {
+                ConstantExpr expr = new ConstantExpr();
+                expr.setValue(symbolTable.at(input.readInt()));
+                return expr;
+            }
+            case 10: {
+                VariableExpr expr = new VariableExpr();
+                expr.setIndex(input.readShort());
+                return expr;
+            }
+            case 11: {
+                SubscriptExpr expr = new SubscriptExpr();
+                expr.setArray(readExpr(input));
+                expr.setIndex(readExpr(input));
+                return expr;
+            }
+            case 12: {
+                UnwrapArrayExpr expr = new UnwrapArrayExpr(arrayElementTypes[input.readByte()]);
+                expr.setArray(readExpr(input));
+                return expr;
+            }
+            case 13:
+                return parseInvocationExpr(InvocationType.CONSTRUCTOR, input);
+            case 14:
+                return parseInvocationExpr(InvocationType.STATIC, input);
+            case 15:
+                return parseInvocationExpr(InvocationType.SPECIAL, input);
+            case 16:
+                return parseInvocationExpr(InvocationType.DYNAMIC, input);
+            case 17: {
+                QualificationExpr expr = new QualificationExpr();
+                expr.setQualified(readExpr(input));
+                String className = symbolTable.at(input.readInt());
+                String fieldName = symbolTable.at(input.readInt());
+                expr.setField(new FieldReference(className, fieldName));
+                return expr;
+            }
+            case 18: {
+                NewExpr expr = new NewExpr();
+                expr.setConstructedClass(symbolTable.at(input.readInt()));
+                return expr;
+            }
+            case 19: {
+                NewArrayExpr expr = new NewArrayExpr();
+                expr.setLength(readExpr(input));
+                expr.setType(ValueType.parse(symbolTable.at(input.readInt())));
+                return expr;
+            }
+            case 20: {
+                NewMultiArrayExpr expr = new NewMultiArrayExpr();
+                int dimensionCount = input.readByte();
+                for (int i = 0; i < dimensionCount; ++i) {
+                    expr.getDimensions().add(readExpr(input));
+                }
+                expr.setType(ValueType.parse(symbolTable.at(input.readInt())));
+                return expr;
+            }
+            case 21: {
+                InstanceOfExpr expr = new InstanceOfExpr();
+                expr.setExpr(readExpr(input));
+                expr.setType(ValueType.parse(symbolTable.at(input.readInt())));
+                return expr;
+            }
+            case 22: {
+                StaticClassExpr expr = new StaticClassExpr();
+                expr.setType(ValueType.parse(symbolTable.at(input.readInt())));
+                return expr;
+            }
+            default:
+                throw new RuntimeException("Unknown expression type: " + type);
+        }
+    }
+
+    private InvocationExpr parseInvocationExpr(InvocationType invocationType, DataInput input) throws IOException {
+        InvocationExpr expr = new InvocationExpr();
+        expr.setType(invocationType);
+        String className = symbolTable.at(input.readInt());
+        MethodDescriptor method = MethodDescriptor.parse(symbolTable.at(input.readInt()));
+        expr.setMethod(new MethodReference(className, method));
+        int argCount = input.readShort();
+        for (int i = 0; i < argCount; ++i) {
+            expr.getArguments().add(readExpr(input));
+        }
+        return expr;
     }
 
     static class IOExceptionWrapper extends RuntimeException {

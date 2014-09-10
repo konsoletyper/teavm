@@ -36,6 +36,7 @@ public class ClasspathResourceMapper implements Mapper<String, ClassHolder>, Cla
     private List<Transformation> transformations = new ArrayList<>();
     private ClassRefsRenamer renamer;
     private ClassLoader classLoader;
+    private Map<String, ModificationDate> modificationDates = new HashMap<>();
 
     private static class Transformation {
         String packageName;
@@ -133,6 +134,16 @@ public class ClasspathResourceMapper implements Mapper<String, ClassHolder>, Cla
 
     @Override
     public Date getModificationDate(String className) {
+        ModificationDate mdate = modificationDates.get(className);
+        if (mdate == null) {
+            mdate = new ModificationDate();
+            modificationDates.put(className, mdate);
+            mdate.date = calculateModificationDate(className);
+        }
+        return mdate.date;
+    }
+
+    private Date calculateModificationDate(String className) {
         int dotIndex = className.lastIndexOf('.');
         String packageName;
         String simpleName;
@@ -176,5 +187,9 @@ public class ClasspathResourceMapper implements Mapper<String, ClassHolder>, Cla
         } else {
             return null;
         }
+    }
+
+    static class ModificationDate {
+        Date date;
     }
 }

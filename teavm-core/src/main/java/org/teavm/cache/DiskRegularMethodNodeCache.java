@@ -46,6 +46,27 @@ public class DiskRegularMethodNodeCache implements RegularMethodNodeCache {
         if (item == null) {
             item = new Item();
             cache.put(methodReference, item);
+            File file = getMethodFile(methodReference);
+            if (file.exists()) {
+                try (InputStream stream = new BufferedInputStream(new FileInputStream(file))) {
+                    DataInput input = new DataInputStream(stream);
+                    int depCount = input.readShort();
+                    boolean dependenciesChanged = false;
+                    for (int i = 0; i < depCount; ++i) {
+                        String depClass = input.readUTF();
+                        Date depDate = classDateProvider.getModificationDate(depClass);
+                        if (depDate == null || depDate.after(new Date(file.lastModified()))) {
+                            dependenciesChanged = true;
+                            break;
+                        }
+                    }
+                    if (!dependenciesChanged) {
+                        item.node = astIO.read(input, methodReference);
+                    }
+                } catch (IOException e) {
+                    // we could not read program, just leave it empty
+                }
+            }
         }
         return item.node;
     }
