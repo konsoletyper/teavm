@@ -68,6 +68,7 @@
               <mainClass>org.teavm.samples.HelloWorld</mainClass>
               <mainPageIncluded>true</mainPageIncluded>
               <debugInformationGenerated>true</debugInformationGenerated>
+              <sourceMapsGenerated>true</sourceMapsGenerated>
               <targetDirectory>${project.build.directory}/javascript/hello</targetDirectory>
             </configuration>
           </execution>
@@ -82,6 +83,7 @@
               <mainClass>org.teavm.samples.MatrixMultiplication</mainClass>
               <mainPageIncluded>true</mainPageIncluded>
               <debugInformationGenerated>true</debugInformationGenerated>
+              <sourceMapsGenerated>true</sourceMapsGenerated>
               <targetDirectory>${project.build.directory}/javascript/matrix</targetDirectory>
             </configuration>
           </execution>
@@ -96,6 +98,7 @@
               <mainClass>org.teavm.samples.DateTime</mainClass>
               <targetDirectory>${project.build.directory}/javascript/datetime</targetDirectory>
               <debugInformationGenerated>true</debugInformationGenerated>
+              <sourceMapsGenerated>true</sourceMapsGenerated>
               <properties>
                 <java.util.Locale.available>en_US,en_GB,ru_RU,ru_UA,nl_NL,nl_BE</java.util.Locale.available>
               </properties>

@@ -78,7 +78,13 @@ public class BuildJavascriptMojo extends AbstractMojo {
     private boolean debugInformationGenerated;
 
     @Parameter
-    private File debugInformationFile;
+    private boolean sourceMapsGenerated;
+
+    @Parameter
+    private boolean incremental;
+
+    @Parameter(defaultValue = "${project.build.directory}/teavm-cache")
+    private File cacheDirectory;
 
     @Parameter
     private String[] transformers;
@@ -151,12 +157,28 @@ public class BuildJavascriptMojo extends AbstractMojo {
         this.debugInformationGenerated = debugInformationGenerated;
     }
 
-    public File getDebugInformationFile() {
-        return debugInformationFile;
+    public boolean isSourceMapsGenerated() {
+        return sourceMapsGenerated;
     }
 
-    public void setDebugInformationFile(File debugInformationFile) {
-        this.debugInformationFile = debugInformationFile;
+    public void setSourceMapsGenerated(boolean sourceMapsGenerated) {
+        this.sourceMapsGenerated = sourceMapsGenerated;
+    }
+
+    public boolean isIncremental() {
+        return incremental;
+    }
+
+    public void setIncremental(boolean incremental) {
+        this.incremental = incremental;
+    }
+
+    public File getCacheDirectory() {
+        return cacheDirectory;
+    }
+
+    public void setCacheDirectory(File cacheDirectory) {
+        this.cacheDirectory = cacheDirectory;
     }
 
     @Override
@@ -183,10 +205,10 @@ public class BuildJavascriptMojo extends AbstractMojo {
             if (properties != null) {
                 tool.getProperties().putAll(properties);
             }
-            if (isDebugInformationGenerated()) {
-                tool.setDebugInformation(debugInformationFile != null ? debugInformationFile :
-                    new File(targetDirectory, targetFileName + ".teavmdbg"));
-            }
+            tool.setCacheDirectory(cacheDirectory);
+            tool.setIncremental(incremental);
+            tool.setDebugInformationGenerated(debugInformationGenerated);
+            tool.setSourceMapsFileGenerated(sourceMapsGenerated);
             tool.generate();
         } catch (RuntimeException e) {
             throw new MojoExecutionException("Unexpected error occured", e);

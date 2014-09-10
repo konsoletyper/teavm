@@ -68,6 +68,19 @@ public final class TeaVMRunner {
         options.addOption(OptionBuilder
                 .withDescription("Generate source maps")
                 .withLongOpt("sourcemaps")
+                .create('S'));
+        options.addOption(OptionBuilder
+                .withDescription("Incremental build")
+                .withLongOpt("incremental")
+                .create('i'));
+        options.addOption(OptionBuilder
+                .withArgName("directory")
+                .withDescription("Incremental build cache directory")
+                .withLongOpt("cachedir")
+                .create('c'));
+        options.addOption(OptionBuilder
+                .withDescription("Generate source maps")
+                .withLongOpt("sourcemaps")
                 .create());
 
         if (args.length == 0) {
@@ -117,10 +130,16 @@ public final class TeaVMRunner {
             tool.setMainPageIncluded(true);
         }
         if (commandLine.hasOption('D')) {
-            tool.setDebugInformation(new File(tool.getTargetDirectory(), tool.getTargetFileName() + ".teavmdbg"));
-            if (commandLine.hasOption("sourcemaps")) {
-                tool.setSourceMapsFileGenerated(true);
-            }
+            tool.setDebugInformationGenerated(true);
+        }
+        if (commandLine.hasOption('S')) {
+            tool.setSourceMapsFileGenerated(true);
+        }
+        if (commandLine.hasOption('i')) {
+            tool.setIncremental(true);
+        }
+        if (commandLine.hasOption('c')) {
+            tool.setCacheDirectory(new File(commandLine.getOptionValue('c')));
         }
         args = commandLine.getArgs();
         if (args.length > 1) {

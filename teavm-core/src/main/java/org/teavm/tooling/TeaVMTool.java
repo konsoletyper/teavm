@@ -20,13 +20,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import org.apache.commons.io.IOUtils;
+import org.teavm.cache.DiskCachedClassHolderSource;
+import org.teavm.cache.DiskProgramCache;
+import org.teavm.cache.DiskRegularMethodNodeCache;
+import org.teavm.cache.FileSymbolTable;
 import org.teavm.debugging.information.DebugInformation;
 import org.teavm.debugging.information.DebugInformationBuilder;
 import org.teavm.javascript.RenderingContext;
-import org.teavm.model.ClassHolderTransformer;
-import org.teavm.model.MethodDescriptor;
-import org.teavm.model.MethodReference;
-import org.teavm.model.ValueType;
+import org.teavm.model.*;
 import org.teavm.parsing.ClasspathClassHolderSource;
 import org.teavm.vm.*;
 import org.teavm.vm.spi.AbstractRendererListener;
@@ -44,14 +45,20 @@ public class TeaVMTool {
     private Properties properties = new Properties();
     private boolean mainPageIncluded;
     private boolean bytecodeLogging;
-    private File debugInformation;
-    private String sourceMapsFileName;
+    private boolean debugInformationGenerated;
     private boolean sourceMapsFileGenerated;
+    private boolean incremental;
+    private File cacheDirectory = new File("./teavm-cache");
     private List<ClassHolderTransformer> transformers = new ArrayList<>();
     private List<ClassAlias> classAliases = new ArrayList<>();
     private List<MethodAlias> methodAliases = new ArrayList<>();
     private TeaVMToolLog log = new EmptyTeaVMToolLog();
     private ClassLoader classLoader = TeaVMTool.class.getClassLoader();
+    private DiskCachedClassHolderSource cachedClassSource;
+    private DiskProgramCache programCache;
+    private DiskRegularMethodNodeCache astCache;
+    private FileSymbolTable symbolTable;
+    private FileSymbolTable fileTable;
 
     public File getTargetDirectory() {
         return targetDirectory;
@@ -75,6 +82,14 @@ public class TeaVMTool {
 
     public void setMinifying(boolean minifying) {
         this.minifying = minifying;
+    }
+
+    public boolean isIncremental() {
+        return incremental;
+    }
+
+    public void setIncremental(boolean incremental) {
+        this.incremental = incremental;
     }
 
     public String getMainClass() {
@@ -109,20 +124,20 @@ public class TeaVMTool {
         this.bytecodeLogging = bytecodeLogging;
     }
 
-    public File getDebugInformation() {
-        return debugInformation;
+    public boolean isDebugInformationGenerated() {
+        return debugInformationGenerated;
     }
 
-    public void setDebugInformation(File debugInformation) {
-        this.debugInformation = debugInformation;
+    public void setDebugInformationGenerated(boolean debugInformationGenerated) {
+        this.debugInformationGenerated = debugInformationGenerated;
     }
 
-    public String getSourceMapsFileName() {
-        return sourceMapsFileName;
+    public File getCacheDirectory() {
+        return cacheDirectory;
     }
 
-    public void setSourceMapsFileName(String sourceMapsFileName) {
-        this.sourceMapsFileName = sourceMapsFileName;
+    public void setCacheDirectory(File cacheDirectory) {
+        this.cacheDirectory = cacheDirectory;
     }
 
     public boolean isSourceMapsFileGenerated() {
@@ -169,13 +184,38 @@ public class TeaVMTool {
         try {
             log.info("Building JavaScript file");
             TeaVMBuilder vmBuilder = new TeaVMBuilder();
-            vmBuilder.setClassLoader(classLoader).setClassSource(new ClasspathClassHolderSource(classLoader));
+            if (incremental) {
+                cacheDirectory.mkdirs();
+                symbolTable = new FileSymbolTable(new File(cacheDirectory, "symbols"));
+                fileTable = new FileSymbolTable(new File(cacheDirectory, "files"));
+                ClasspathClassHolderSource innerClassSource = new ClasspathClassHolderSource(classLoader);
+                ClassHolderSource classSource = new PreOptimizingClassHolderSource(innerClassSource);
+                cachedClassSource = new DiskCachedClassHolderSource(cacheDirectory, symbolTable, fileTable,
+                        classSource, innerClassSource);
+                programCache = new DiskProgramCache(cacheDirectory, symbolTable, fileTable, innerClassSource);
+                astCache = new DiskRegularMethodNodeCache(cacheDirectory, symbolTable, fileTable, innerClassSource);
+                try {
+                    symbolTable.update();
+                    fileTable.update();
+                } catch (IOException e) {
+                    log.info("Cache was not read");
+                }
+                vmBuilder.setClassLoader(classLoader).setClassSource(cachedClassSource);
+            } else {
+                vmBuilder.setClassLoader(classLoader).setClassSource(new ClasspathClassHolderSource(classLoader));
+            }
             TeaVM vm = vmBuilder.build();
             vm.setMinifying(minifying);
             vm.setBytecodeLogging(bytecodeLogging);
             vm.setProperties(properties);
-            DebugInformationBuilder debugEmitter = debugInformation != null ? new DebugInformationBuilder() : null;
+            DebugInformationBuilder debugEmitter = debugInformationGenerated || sourceMapsFileGenerated ?
+                    new DebugInformationBuilder() : null;
             vm.setDebugEmitter(debugEmitter);
+            vm.setIncremental(incremental);
+            if (incremental) {
+                vm.setAstCache(astCache);
+                vm.setProgramCache(programCache);
+            }
             vm.installPlugins();
             for (ClassHolderTransformer transformer : transformers) {
                 vm.add(transformer);
@@ -215,24 +255,32 @@ public class TeaVMTool {
                 vm.build(writer, new DirectoryBuildTarget(targetDirectory));
                 vm.checkForMissingItems();
                 log.info("JavaScript file successfully built");
-                if (debugInformation != null) {
+                if (debugInformationGenerated) {
                     DebugInformation debugInfo = debugEmitter.getDebugInformation();
-                    try (OutputStream debugInfoOut = new FileOutputStream(debugInformation)) {
+                    try (OutputStream debugInfoOut = new FileOutputStream(new File(targetDirectory,
+                            targetFileName + ".teavmdbg"))) {
                         debugInfo.write(debugInfoOut);
                     }
                     log.info("Debug information successfully written");
-                    if (sourceMapsFileGenerated) {
-                        String sourceMapsFileName = this.sourceMapsFileName;
-                        if (sourceMapsFileName == null) {
-                            sourceMapsFileName = targetFileName + ".map";
-                        }
-                        writer.append("\n//# sourceMappingURL=").append(sourceMapsFileName);
-                        try (Writer sourceMapsOut = new OutputStreamWriter(new FileOutputStream(
-                                new File(targetDirectory, sourceMapsFileName)), "UTF-8")) {
-                            debugInfo.writeAsSourceMaps(sourceMapsOut, targetFileName);
-                        }
-                        log.info("Source maps successfully written");
+                }
+                if (sourceMapsFileGenerated) {
+                    DebugInformation debugInfo = debugEmitter.getDebugInformation();
+                    String sourceMapsFileName = targetFileName + ".map";
+                    writer.append("\n//# sourceMappingURL=").append(sourceMapsFileName);
+                    try (Writer sourceMapsOut = new OutputStreamWriter(new FileOutputStream(
+                            new File(targetDirectory, sourceMapsFileName)), "UTF-8")) {
+                        debugInfo.writeAsSourceMaps(sourceMapsOut, targetFileName);
                     }
+                    log.info("Source maps successfully written");
+                }
+                if (incremental) {
+                    programCache.flush();
+                    astCache.flush();
+                    cachedClassSource.flush();
+                    symbolTable.flush();
+                    fileTable.flush();
+                    log.info(mainClass);
+                    log.info("Cache updated");
                 }
             }
             if (runtime == RuntimeCopyOperation.SEPARATE) {
