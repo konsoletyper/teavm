@@ -15,11 +15,12 @@
  */
 package org.teavm.cache;
 
+import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import org.teavm.javascript.ast.*;
+import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
 /**
@@ -27,10 +28,13 @@ import org.teavm.model.ValueType;
  * @author Alexey Andreev
  */
 public class AstIO {
+    private static NodeModifier[] nodeModifiers = NodeModifier.values();
     private static BinaryOperation[] binaryOperations = BinaryOperation.values();
     private static UnaryOperation[] unaryOperations = UnaryOperation.values();
     private SymbolTable symbolTable;
     private SymbolTable fileTable;
+    private Map<String, IdentifiedStatement> statementMap = new HashMap<>();
+    private IdentifiedStatement lastStatement;
 
     public AstIO(SymbolTable symbolTable, SymbolTable fileTable) {
         this.symbolTable = symbolTable;
@@ -45,16 +49,38 @@ public class AstIO {
         }
         output.writeShort(method.getParameterDebugNames().size());
         for (Set<String> debugNames : method.getParameterDebugNames()) {
-            output.writeShort(debugNames.size());
+            output.writeShort(debugNames != null ? debugNames.size() : 0);
             for (String debugName : debugNames) {
                 output.writeUTF(debugName);
             }
         }
+        output.writeBoolean(method.isOriginalNamePreserved());
         try {
             method.getBody().acceptVisitor(new NodeWriter(output));
         } catch (IOExceptionWrapper e) {
             throw new IOException("Error writing method body", e.getCause());
         }
+    }
+
+    public RegularMethodNode read(DataInput input, MethodReference method) throws IOException {
+        RegularMethodNode node = new RegularMethodNode(method);
+        node.getModifiers().addAll(unpackModifiers(input.readInt()));
+        int varCount = input.readShort();
+        for (int i = 0; i < varCount; ++i) {
+            node.getVariables().add((int)input.readShort());
+        }
+        int paramDebugNameCount = input.readShort();
+        for (int i = 0; i < paramDebugNameCount; ++i) {
+            int debugNameCount = input.readShort();
+            Set<String> debugNames = new HashSet<>();
+            for (int j = 0; j < debugNameCount; ++j) {
+                debugNames.add(input.readUTF());
+            }
+            node.getParameterDebugNames().add(debugNames);
+        }
+        node.setOriginalNamePreserved(input.readBoolean());
+        node.setBody(readStatement(input));
+        return node;
     }
 
     private int packModifiers(Set<NodeModifier> modifiers) {
@@ -63,6 +89,16 @@ public class AstIO {
             packed |= 1 << modifier.ordinal();
         }
         return packed;
+    }
+
+    private Set<NodeModifier> unpackModifiers(int packed) {
+        EnumSet<NodeModifier> modifiers = EnumSet.noneOf(NodeModifier.class);
+        while (packed != 0) {
+            int shift = Integer.numberOfTrailingZeros(packed);
+            modifiers.add(nodeModifiers[shift]);
+            packed ^= 1 << shift;
+        }
+        return modifiers;
     }
 
     class NodeWriter implements ExprVisitor, StatementVisitor {
@@ -244,7 +280,7 @@ public class AstIO {
             try {
                 output.writeByte(15);
                 writeLocation(statement.getLocation());
-                output.writeUTF(statement.getClassName());
+                output.writeInt(symbolTable.lookup(statement.getClassName()));
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -457,6 +493,182 @@ public class AstIO {
                 throw new IOExceptionWrapper(e);
             }
         }
+    }
+
+    private NodeLocation readLocation(DataInput input) throws IOException {
+        int fileIndex = input.readShort();
+        if (fileIndex == -1) {
+            return null;
+        } else {
+            return new NodeLocation(fileTable.at(fileIndex), input.readShort());
+        }
+    }
+
+    private Statement readStatement(DataInput input) throws IOException {
+        byte type = input.readByte();
+        switch (type) {
+            case 0: {
+                AssignmentStatement stmt = new AssignmentStatement();
+                stmt.setLocation(readLocation(input));
+                int debugNameCount = input.readShort();
+                for (int i = 0; i < debugNameCount; ++i) {
+                    stmt.getDebugNames().add(input.readUTF());
+                }
+                stmt.setLeftValue(readExpr(input));
+                stmt.setRightValue(readExpr(input));
+                return stmt;
+            }
+            case 1: {
+                AssignmentStatement stmt = new AssignmentStatement();
+                stmt.setLocation(readLocation(input));
+                int debugNameCount = input.readShort();
+                for (int i = 0; i < debugNameCount; ++i) {
+                    stmt.getDebugNames().add(input.readUTF());
+                }
+                stmt.setRightValue(readExpr(input));
+                return stmt;
+            }
+            case 2: {
+                SequentialStatement stmt = new SequentialStatement();
+                readSequence(input, stmt.getSequence());
+                return stmt;
+            }
+            case 3: {
+                ConditionalStatement stmt = new ConditionalStatement();
+                stmt.setCondition(readExpr(input));
+                readSequence(input, stmt.getConsequent());
+                readSequence(input, stmt.getAlternative());
+                return stmt;
+            }
+            case 4: {
+                SwitchStatement stmt = new SwitchStatement();
+                stmt.setId(readNullableString(input));
+                stmt.setValue(readExpr(input));
+                int clauseCount = input.readShort();
+                for (int i = 0; i < clauseCount; ++i) {
+                    SwitchClause clause = new SwitchClause();
+                    int conditionCount = input.readShort();
+                    int[] conditions = new int[conditionCount];
+                    for (int j = 0; j < conditionCount; ++j) {
+                        conditions[j] = input.readInt();
+                    }
+                    clause.setConditions(conditions);
+                    readSequence(input, clause.getBody());
+                    stmt.getClauses().add(clause);
+                }
+                readSequence(input, stmt.getDefaultClause());
+                return stmt;
+            }
+            case 5: {
+                WhileStatement stmt = new WhileStatement();
+                stmt.setId(readNullableString(input));
+                stmt.setCondition(readExpr(input));
+                lastStatement = stmt;
+                if (stmt.getId() != null) {
+                    statementMap.put(stmt.getId(), stmt);
+                }
+                readSequence(input, stmt.getBody());
+                return stmt;
+            }
+            case 6: {
+                WhileStatement stmt = new WhileStatement();
+                stmt.setId(readNullableString(input));
+                lastStatement = stmt;
+                if (stmt.getId() != null) {
+                    statementMap.put(stmt.getId(), stmt);
+                }
+                readSequence(input, stmt.getBody());
+                return stmt;
+            }
+            case 7: {
+                BlockStatement stmt = new BlockStatement();
+                stmt.setId(readNullableString(input));
+                lastStatement = stmt;
+                if (stmt.getId() != null) {
+                    statementMap.put(stmt.getId(), stmt);
+                }
+                readSequence(input, stmt.getBody());
+                return stmt;
+            }
+            case 8: {
+                BreakStatement stmt = new BreakStatement();
+                stmt.setLocation(readLocation(input));
+                stmt.setTarget(statementMap.get(input.readUTF()));
+                return stmt;
+            }
+            case 9: {
+                BreakStatement stmt = new BreakStatement();
+                stmt.setLocation(readLocation(input));
+                stmt.setTarget(lastStatement);
+                return stmt;
+            }
+            case 10: {
+                ContinueStatement stmt = new ContinueStatement();
+                stmt.setLocation(readLocation(input));
+                stmt.setTarget(statementMap.get(input.readUTF()));
+                return stmt;
+            }
+            case 11: {
+                ContinueStatement stmt = new ContinueStatement();
+                stmt.setLocation(readLocation(input));
+                stmt.setTarget(lastStatement);
+                return stmt;
+            }
+            case 12: {
+                ReturnStatement stmt = new ReturnStatement();
+                stmt.setLocation(readLocation(input));
+                stmt.setResult(readExpr(input));
+                return stmt;
+            }
+            case 13: {
+                ReturnStatement stmt = new ReturnStatement();
+                stmt.setLocation(readLocation(input));
+                return stmt;
+            }
+            case 14: {
+                ThrowStatement stmt = new ThrowStatement();
+                stmt.setLocation(readLocation(input));
+                stmt.setException(readExpr(input));
+                return stmt;
+            }
+            case 15: {
+                InitClassStatement stmt = new InitClassStatement();
+                stmt.setLocation(readLocation(input));
+                stmt.setClassName(symbolTable.at(input.readInt()));
+                return stmt;
+            }
+            case 16: {
+                TryCatchStatement stmt = new TryCatchStatement();
+                readSequence(input, stmt.getProtectedBody());
+                int exceptionTypeIndex = input.readInt();
+                if (exceptionTypeIndex >= 0) {
+                    stmt.setExceptionType(symbolTable.at(exceptionTypeIndex));
+                }
+                int exceptionVarIndex = input.readInt();
+                if (exceptionVarIndex >= 0) {
+                    stmt.setExceptionVariable(exceptionVarIndex);
+                }
+                readSequence(input, stmt.getHandler());
+                return stmt;
+            }
+            default:
+                throw new RuntimeException("Unexpected statement type: " + type);
+        }
+    }
+
+    private void readSequence(DataInput input, List<Statement> statements) throws IOException {
+        int count = input.readShort();
+        for (int i = 0; i < count; ++i) {
+            statements.add(readStatement(input));
+        }
+    }
+
+    private String readNullableString(DataInput input) throws IOException {
+        return input.readBoolean() ? input.readUTF() : null;
+    }
+
+    private Expr readExpr(DataInput input) throws IOException {
+        return null;
     }
 
     static class IOExceptionWrapper extends RuntimeException {
