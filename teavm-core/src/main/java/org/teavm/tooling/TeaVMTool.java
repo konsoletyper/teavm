@@ -279,7 +279,6 @@ public class TeaVMTool {
                     cachedClassSource.flush();
                     symbolTable.flush();
                     fileTable.flush();
-                    log.info(mainClass);
                     log.info("Cache updated");
                 }
             }

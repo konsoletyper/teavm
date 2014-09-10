@@ -78,10 +78,6 @@ public final class TeaVMRunner {
                 .withDescription("Incremental build cache directory")
                 .withLongOpt("cachedir")
                 .create('c'));
-        options.addOption(OptionBuilder
-                .withDescription("Generate source maps")
-                .withLongOpt("sourcemaps")
-                .create());
 
         if (args.length == 0) {
             printUsage(options);
@@ -140,6 +136,8 @@ public final class TeaVMRunner {
         }
         if (commandLine.hasOption('c')) {
             tool.setCacheDirectory(new File(commandLine.getOptionValue('c')));
+        } else {
+            tool.setCacheDirectory(new File(tool.getTargetDirectory(), "teavm-cache"));
         }
         args = commandLine.getArgs();
         if (args.length > 1) {
