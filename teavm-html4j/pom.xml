@@ -79,7 +79,6 @@
             <phase>process-test-classes</phase>
             <configuration>
               <minifying>false</minifying>
-              <numThreads>1</numThreads>
               <outputDir>${project.build.directory}/javascript-test</outputDir>
               <debugInformationGenerated>true</debugInformationGenerated>
               <sourceMapsGenerated>true</sourceMapsGenerated>
@@ -93,7 +92,6 @@
             <phase>process-test-classes</phase>
             <configuration>
               <minifying>false</minifying>
-              <numThreads>1</numThreads>
               <scanDependencies>true</scanDependencies>
               <outputDir>${project.build.directory}/javascript-tck</outputDir>
               <adapterClass>org.teavm.html4j.testing.KOTestAdapter</adapterClass>

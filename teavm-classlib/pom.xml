@@ -72,7 +72,6 @@
             <phase>process-test-classes</phase>
             <configuration>
               <minifying>false</minifying>
-              <numThreads>1</numThreads>
               <properties>
                 <java.util.Locale.available>en, en_US, en_GB, ru, ru_RU</java.util.Locale.available>
               </properties>

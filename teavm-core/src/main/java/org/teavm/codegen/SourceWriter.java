@@ -83,7 +83,7 @@ public class SourceWriter implements Appendable, LocationProvider {
             if (csq.charAt(i) == '\n') {
                 appendSingleLine(csq, last, i);
                 newLine();
-                last = i;
+                last = i + 1;
             }
         }
         appendSingleLine(csq, last, end);

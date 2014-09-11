@@ -99,7 +99,10 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
                     if (jsonMessage.has("id")) {
                         Response response = mapper.reader(Response.class).readValue(jsonMessage);
                         if (response.getError() != null) {
-                            System.err.println("#" + jsonMessage.get("id") + ": " + response.getError().toString());
+                            if (logger.isWarnEnabled()) {
+                                logger.warn("Error message #{} received from browser: {}", jsonMessage.get("id"),
+                                        response.getError().toString());
+                            }
                         }
                         responseHandlers.remove(response.getId()).received(response.getResult());
                     } else {
@@ -338,7 +341,6 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
                         logger.warn("Error setting breakpoint at {}, message id is {}",
                                 breakpoint.getLocation(), message.getId());
                     }
-                    System.err.println();
                     breakpoint.chromeId = null;
                 }
                 for (JavaScriptDebuggerListener listener : getListeners()) {
