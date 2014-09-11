@@ -81,6 +81,8 @@
               <minifying>false</minifying>
               <numThreads>1</numThreads>
               <outputDir>${project.build.directory}/javascript-test</outputDir>
+              <debugInformationGenerated>true</debugInformationGenerated>
+              <sourceMapsGenerated>true</sourceMapsGenerated>
             </configuration>
           </execution>
           <execution>
@@ -98,6 +100,8 @@
               <transformers>
                 <param>org.teavm.javascript.NullPointerExceptionTransformer</param>
               </transformers>
+              <debugInformationGenerated>true</debugInformationGenerated>
+              <sourceMapsGenerated>true</sourceMapsGenerated>
             </configuration>
           </execution>
         </executions>

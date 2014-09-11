@@ -79,7 +79,9 @@ class LocationGraphBuilder {
                 }
             }
             if (graph.outgoingEdgesCount(step.block) == 0) {
-                addEdge(location, new InstructionLocation(null, -1));
+                if (location != null) {
+                    addEdge(location, new InstructionLocation(null, -1));
+                }
             } else {
                 for (int next : graph.outgoingEdges(step.block)) {
                     stack.push(new Step(location, started ? new HashSet<InstructionLocation>() : step.startLocations,

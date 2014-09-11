@@ -368,7 +368,6 @@ public class TeaVMTestTool {
             try (OutputStream debugInfoOut = new FileOutputStream(new File(outputDir, targetName + ".teavmdbg"))) {
                 debugInfo.write(debugInfoOut);
             }
-            log.info("Debug information successfully written");
         }
         if (sourceMapsGenerated) {
             DebugInformation debugInfo = debugInfoBuilder.getDebugInformation();
@@ -377,7 +376,6 @@ public class TeaVMTestTool {
                     new File(outputDir, sourceMapsFileName)), "UTF-8")) {
                 debugInfo.writeAsSourceMaps(sourceMapsOut, targetName);
             }
-            log.info("Source maps successfully written");
         }
     }
 
