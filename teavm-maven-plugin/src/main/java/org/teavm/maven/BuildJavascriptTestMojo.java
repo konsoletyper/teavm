@@ -92,6 +92,12 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
     @Parameter
     private boolean incremental;
 
+    @Parameter
+    private boolean debugInformationGenerated;
+
+    @Parameter
+    private boolean sourceMapsGenerated;
+
     private TeaVMTestTool tool = new TeaVMTestTool();
 
     public void setProject(MavenProject project) {
@@ -142,6 +148,22 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
         this.incremental = incremental;
     }
 
+    public boolean isDebugInformationGenerated() {
+        return debugInformationGenerated;
+    }
+
+    public void setDebugInformationGenerated(boolean debugInformationGenerated) {
+        this.debugInformationGenerated = debugInformationGenerated;
+    }
+
+    public boolean isSourceMapsGenerated() {
+        return sourceMapsGenerated;
+    }
+
+    public void setSourceMapsGenerated(boolean sourceMapsGenerated) {
+        this.sourceMapsGenerated = sourceMapsGenerated;
+    }
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         if (System.getProperty("maven.test.skip", "false").equals("true") ||
@@ -164,6 +186,8 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
             tool.setNumThreads(numThreads);
             tool.setMinifying(minifying);
             tool.setIncremental(incremental);
+            tool.setDebugInformationGenerated(debugInformationGenerated);
+            tool.setSourceMapsGenerated(sourceMapsGenerated);
             if (properties != null) {
                 tool.getProperties().putAll(properties);
             }

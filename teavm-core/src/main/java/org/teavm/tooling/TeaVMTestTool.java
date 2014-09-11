@@ -21,6 +21,8 @@ import org.apache.commons.io.IOUtils;
 import org.teavm.common.FiniteExecutor;
 import org.teavm.common.SimpleFiniteExecutor;
 import org.teavm.common.ThreadPoolFiniteExecutor;
+import org.teavm.debugging.information.DebugInformation;
+import org.teavm.debugging.information.DebugInformationBuilder;
 import org.teavm.javascript.EmptyRegularMethodNodeCache;
 import org.teavm.javascript.InMemoryRegularMethodNodeCache;
 import org.teavm.javascript.RegularMethodNodeCache;
@@ -51,6 +53,8 @@ public class TeaVMTestTool {
     private List<String> testClasses = new ArrayList<>();
     private ClassLoader classLoader = TeaVMTestTool.class.getClassLoader();
     private TeaVMToolLog log = new EmptyTeaVMToolLog();
+    private boolean debugInformationGenerated;
+    private boolean sourceMapsGenerated;
     private boolean incremental;
     private RegularMethodNodeCache astCache;
     private ProgramCache programCache;
@@ -125,6 +129,22 @@ public class TeaVMTestTool {
 
     public void setIncremental(boolean incremental) {
         this.incremental = incremental;
+    }
+
+    public boolean isDebugInformationGenerated() {
+        return debugInformationGenerated;
+    }
+
+    public void setDebugInformationGenerated(boolean debugInformationGenerated) {
+        this.debugInformationGenerated = debugInformationGenerated;
+    }
+
+    public boolean isSourceMapsGenerated() {
+        return sourceMapsGenerated;
+    }
+
+    public void setSourceMapsGenerated(boolean sourceMapsGenerated) {
+        this.sourceMapsGenerated = sourceMapsGenerated;
     }
 
     public void generate() throws TeaVMToolException {
@@ -314,6 +334,8 @@ public class TeaVMTestTool {
             vm.add(transformer);
         }
         File file = new File(outputDir, targetName);
+        DebugInformationBuilder debugInfoBuilder = sourceMapsGenerated || debugInformationGenerated ?
+                new DebugInformationBuilder() : null;
         try (Writer innerWriter = new OutputStreamWriter(new FileOutputStream(file), "UTF-8")) {
             MethodReference cons = new MethodReference(methodRef.getClassName(), "<init>", ValueType.VOID);
             MethodReference exceptionMsg = new MethodReference(ExceptionHelper.class, "showException",
@@ -322,11 +344,15 @@ public class TeaVMTestTool {
             vm.entryPoint("runTest", methodRef).withValue(0, cons.getClassName());
             vm.entryPoint("extractException", exceptionMsg);
             vm.exportType("TestClass", cons.getClassName());
+            vm.setDebugEmitter(debugInfoBuilder);
             vm.build(innerWriter, new DirectoryBuildTarget(outputDir));
             if (!vm.hasMissingItems()) {
                 innerWriter.append("\n");
                 innerWriter.append("\nJUnitClient.run();");
-                innerWriter.close();
+                if (sourceMapsGenerated) {
+                    String sourceMapsFileName = targetName + ".map";
+                    innerWriter.append("\n//# sourceMappingURL=").append(sourceMapsFileName);
+                }
             } else {
                 innerWriter.append("JUnitClient.reportError(\n");
                 StringBuilder sb = new StringBuilder();
@@ -336,6 +362,22 @@ public class TeaVMTestTool {
                 log.warning("Error building test " + methodRef);
                 log.warning(sb.toString());
             }
+        }
+        if (sourceMapsGenerated) {
+            DebugInformation debugInfo = debugInfoBuilder.getDebugInformation();
+            try (OutputStream debugInfoOut = new FileOutputStream(new File(outputDir, targetName + ".teavmdbg"))) {
+                debugInfo.write(debugInfoOut);
+            }
+            log.info("Debug information successfully written");
+        }
+        if (sourceMapsGenerated) {
+            DebugInformation debugInfo = debugInfoBuilder.getDebugInformation();
+            String sourceMapsFileName = targetName + ".map";
+            try (Writer sourceMapsOut = new OutputStreamWriter(new FileOutputStream(
+                    new File(outputDir, sourceMapsFileName)), "UTF-8")) {
+                debugInfo.writeAsSourceMaps(sourceMapsOut, targetName);
+            }
+            log.info("Source maps successfully written");
         }
     }
 
