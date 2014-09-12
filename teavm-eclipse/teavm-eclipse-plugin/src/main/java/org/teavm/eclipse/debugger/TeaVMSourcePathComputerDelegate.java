@@ -18,13 +18,24 @@ package org.teavm.eclipse.debugger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.eclipse.core.resources.IFolder;
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.sourcelookup.ISourceContainer;
 import org.eclipse.debug.core.sourcelookup.ISourcePathComputerDelegate;
+import org.eclipse.debug.core.sourcelookup.containers.DirectorySourceContainer;
+import org.eclipse.debug.core.sourcelookup.containers.ExternalArchiveSourceContainer;
+import org.eclipse.debug.core.sourcelookup.containers.FolderSourceContainer;
+import org.eclipse.jdt.core.IClasspathEntry;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IPackageFragmentRoot;
+import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.launching.IRuntimeClasspathEntry;
 import org.eclipse.jdt.launching.JavaRuntime;
+import org.eclipse.jdt.launching.sourcelookup.containers.ClasspathContainerSourceContainer;
 
 /**
  *
@@ -35,7 +46,7 @@ public class TeaVMSourcePathComputerDelegate implements ISourcePathComputerDeleg
     public ISourceContainer[] computeSourceContainers(ILaunchConfiguration config, IProgressMonitor monitor)
             throws CoreException {
         List<ISourceContainer> sourceContainers = new ArrayList<>();
-        /*IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
+        IProject[] projects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
         for (IProject project : projects) {
             if (!project.isOpen()) {
                 continue;
@@ -47,8 +58,28 @@ public class TeaVMSourcePathComputerDelegate implements ISourcePathComputerDeleg
                         sourceContainers.add(new FolderSourceContainer((IFolder)fragmentRoot.getResource(), true));
                     }
                 }
+                for (IClasspathEntry entry : javaProject.getResolvedClasspath(true)) {
+                    switch (entry.getEntryKind()) {
+                        case IClasspathEntry.CPE_CONTAINER:
+                            sourceContainers.add(new ClasspathContainerSourceContainer(entry.getPath()));
+                            break;
+                        case IClasspathEntry.CPE_LIBRARY:;
+                            sourceContainers.add(new ExternalArchiveSourceContainer(entry.getPath().toString(), true));
+                            if (entry.getSourceAttachmentPath() != null) {
+                                System.out.println(entry.getSourceAttachmentPath());
+                                sourceContainers.add(new ExternalArchiveSourceContainer(
+                                        entry.getSourceAttachmentPath().toString(), true));
+                                sourceContainers.add(new DirectorySourceContainer(entry.getSourceAttachmentPath(),
+                                        true));
+                            }
+                            break;
+                        case IClasspathEntry.CPE_SOURCE:
+                            sourceContainers.add(new DirectorySourceContainer(entry.getPath(), true));
+                            break;
+                    }
+                }
             }
-        }*/
+        }
         IRuntimeClasspathEntry[] entries = JavaRuntime.computeUnresolvedSourceLookupPath(config);
         IRuntimeClasspathEntry[] resolved = JavaRuntime.resolveSourceLookupPath(entries, config);
         sourceContainers.addAll(Arrays.asList(JavaRuntime.getSourceContainers(resolved)));
