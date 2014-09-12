@@ -56,6 +56,11 @@ public class TeaVMStackFrame implements IStackFrame {
 
     @Override
     public Object getAdapter(@SuppressWarnings("rawtypes") Class type) {
+        if (type.equals(ILaunch.class)) {
+            return thread.debugTarget.getLaunch();
+        } else if (type.equals(IDebugElement.class)) {
+            return this;
+        }
         return null;
     }
 

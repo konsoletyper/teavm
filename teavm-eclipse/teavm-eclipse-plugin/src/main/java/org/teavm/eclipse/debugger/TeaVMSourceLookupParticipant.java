@@ -17,9 +17,20 @@ package org.teavm.eclipse.debugger;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Arrays;
+import java.util.*;
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.debug.core.sourcelookup.AbstractSourceLookupParticipant;
+import org.eclipse.debug.core.sourcelookup.ISourceContainer;
+import org.eclipse.debug.core.sourcelookup.ISourceLookupDirector;
+import org.eclipse.debug.core.sourcelookup.containers.ArchiveSourceContainer;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IPackageFragmentRoot;
+import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jdt.core.JavaModelException;
+import org.eclipse.jdt.launching.sourcelookup.containers.PackageFragmentRootSourceContainer;
 import org.teavm.debugging.CallFrame;
 import org.teavm.debugging.information.SourceLocation;
 import org.teavm.debugging.javascript.JavaScriptLocation;
@@ -29,6 +40,14 @@ import org.teavm.debugging.javascript.JavaScriptLocation;
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public class TeaVMSourceLookupParticipant extends AbstractSourceLookupParticipant {
+    private Map<ISourceContainer, ISourceContainer> delegateContainers = new HashMap<>();
+
+    @Override
+    protected ISourceContainer getDelegateContainer(ISourceContainer container) {
+        ISourceContainer delegate = delegateContainers.get(container);
+        return delegate != null ? delegate : super.getDelegateContainer(container);
+    }
+
     @Override
     public String getSourceName(Object object) throws CoreException {
         if (object instanceof TeaVMStackFrame) {
@@ -50,24 +69,24 @@ public class TeaVMSourceLookupParticipant extends AbstractSourceLookupParticipan
 
     @Override
     public Object[] findSourceElements(Object object) throws CoreException {
-        Object[] result = super.findSourceElements(object);
+        List<Object> result = new ArrayList<>(Arrays.asList(super.findSourceElements(object)));
         if (object instanceof TeaVMJSStackFrame) {
             TeaVMJSStackFrame stackFrame = (TeaVMJSStackFrame)object;
             JavaScriptLocation location = stackFrame.getCallFrame().getLocation();
             if (location != null) {
-                result = addElement(result, location);
+                addUrlElement(result, location);
             }
         } else if (object instanceof TeaVMStackFrame) {
             TeaVMStackFrame stackFrame = (TeaVMStackFrame)object;
             CallFrame callFrame = stackFrame.getCallFrame();
             if (callFrame.getMethod() == null && callFrame.getLocation() != null) {
-                result = addElement(result, callFrame.getOriginalLocation());
+                addUrlElement(result, callFrame.getOriginalLocation());
             }
         }
-        return result;
+        return result.toArray();
     }
 
-    private Object[] addElement(Object[] elements, JavaScriptLocation location) {
+    private void addUrlElement(List<Object> elements, JavaScriptLocation location) {
         URL url;
         try {
             url = new URL(location.getScript());
@@ -75,9 +94,40 @@ public class TeaVMSourceLookupParticipant extends AbstractSourceLookupParticipan
             url = null;
         }
         if (url != null) {
-            elements = Arrays.copyOf(elements, elements.length + 1);
-            elements[elements.length - 1] = url;
+            elements.add(url);
         }
-        return elements;
+    }
+
+    @Override
+    public void sourceContainersChanged(ISourceLookupDirector director) {
+        delegateContainers.clear();
+        ISourceContainer[] containers = director.getSourceContainers();
+        for (int i = 0; i < containers.length; i++) {
+            ISourceContainer container = containers[i];
+            if (container.getType().getId().equals(ArchiveSourceContainer.TYPE_ID)) {
+                IFile file = ((ArchiveSourceContainer)container).getFile();
+                IProject project = file.getProject();
+                IJavaProject javaProject = JavaCore.create(project);
+                if (javaProject.exists()) {
+                    try {
+                        IPackageFragmentRoot[] roots = javaProject.getPackageFragmentRoots();
+                        for (int j = 0; j < roots.length; j++) {
+                            IPackageFragmentRoot root = roots[j];
+                            if (file.equals(root.getUnderlyingResource())) {
+                                delegateContainers.put(container, new PackageFragmentRootSourceContainer(root));
+                            } else {
+                                IPath path = root.getSourceAttachmentPath();
+                                if (path != null) {
+                                    if (file.getFullPath().equals(path)) {
+                                        delegateContainers.put(container, new PackageFragmentRootSourceContainer(root));
+                                    }
+                                }
+                            }
+                        }
+                    } catch (JavaModelException e) {
+                    }
+                }
+            }
+        }
     }
 }

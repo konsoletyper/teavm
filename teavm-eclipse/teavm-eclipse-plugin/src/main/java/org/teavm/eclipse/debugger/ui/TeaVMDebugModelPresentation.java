@@ -21,6 +21,7 @@ import java.net.URL;
 import org.eclipse.core.filesystem.EFS;
 import org.eclipse.core.filesystem.IFileStore;
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IStorage;
 import org.eclipse.debug.core.model.ILineBreakpoint;
 import org.eclipse.debug.core.model.IValue;
 import org.eclipse.debug.ui.IDebugModelPresentation;
@@ -47,7 +48,7 @@ import org.teavm.model.ValueType;
 public class TeaVMDebugModelPresentation extends LabelProvider implements IDebugModelPresentation {
     @Override
     public String getEditorId(IEditorInput input, Object element) {
-        if (element instanceof IFile || element instanceof ILineBreakpoint) {
+        if (element instanceof IFile || element instanceof ILineBreakpoint || element instanceof IStorage) {
             return JavaUI.ID_CU_EDITOR;
         } else if (element instanceof URL) {
             return EditorsUI.DEFAULT_TEXT_EDITOR_ID;
@@ -71,6 +72,9 @@ public class TeaVMDebugModelPresentation extends LabelProvider implements IDebug
             } catch (URISyntaxException e) {
                 return null;
             }
+        }
+        if (element instanceof IStorage) {
+            return new StorageEditorInput((IStorage)element);
         }
         return null;
     }
