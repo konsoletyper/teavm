@@ -33,10 +33,8 @@ import org.eclipse.ui.editors.text.EditorsUI;
 import org.eclipse.ui.ide.FileStoreEditorInput;
 import org.eclipse.ui.part.FileEditorInput;
 import org.teavm.debugging.CallFrame;
-import org.teavm.debugging.Value;
 import org.teavm.debugging.javascript.JavaScriptCallFrame;
 import org.teavm.debugging.javascript.JavaScriptLocation;
-import org.teavm.debugging.javascript.JavaScriptValue;
 import org.teavm.eclipse.debugger.*;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
@@ -96,23 +94,12 @@ public class TeaVMDebugModelPresentation extends LabelProvider implements IDebug
 
     @Override
     public String getText(Object element) {
-        System.out.println(element.getClass().getName());
         if (element instanceof TeaVMJavaStackFrame) {
             TeaVMJavaStackFrame stackFrame = (TeaVMJavaStackFrame)element;
             return callFrameAsString(stackFrame.getCallFrame());
         } else if (element instanceof TeaVMJSStackFrame) {
             TeaVMJSStackFrame stackFrame = (TeaVMJSStackFrame)element;
             return callFrameAsString(stackFrame.getCallFrame());
-        } else if (element instanceof TeaVMJavaVariable) {
-            TeaVMJavaVariable var = (TeaVMJavaVariable)element;
-            return getText((TeaVMJavaValue)var.getValue());
-        } else if (element instanceof TeaVMJavaValue) {
-            return getText((TeaVMJavaValue)element);
-        } else if (element instanceof TeaVMJSVariable) {
-            TeaVMJSVariable var = (TeaVMJSVariable)element;
-            return getText((TeaVMJSValue)var.getValue());
-        } else if (element instanceof TeaVMJSValue) {
-            return getText((TeaVMJSValue)element);
         } else if (element instanceof TeaVMDebugTarget) {
             return ((TeaVMDebugTarget)element).getName();
         } else if (element instanceof TeaVMThread) {
@@ -121,25 +108,6 @@ public class TeaVMDebugModelPresentation extends LabelProvider implements IDebug
         return super.getText(element);
     }
 
-    private String getText(TeaVMJavaValue value) {
-        TeaVMDebugTarget debugTarget = value.getDebugTarget();
-        Value teavmValue = value.getTeavmValue();
-        if (teavmValue.getInstanceId() == null) {
-            return teavmValue.getType() + " (id: " + debugTarget.getId(teavmValue.getInstanceId()) + ")";
-        } else {
-            return teavmValue.getRepresentation();
-        }
-    }
-
-    private String getText(TeaVMJSValue value) {
-        TeaVMDebugTarget debugTarget = value.getDebugTarget();
-        JavaScriptValue jsValue = value.getJavaScriptValue();
-        if (jsValue.getInstanceId() == null) {
-            return jsValue.getClassName() + " (id: " + debugTarget.getId(jsValue.getInstanceId()) + ")";
-        } else {
-            return jsValue.getRepresentation();
-        }
-    }
 
     private String callFrameAsString(CallFrame callFrame) {
         MethodReference method = callFrame.getMethod();

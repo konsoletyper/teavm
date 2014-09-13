@@ -1284,6 +1284,9 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             if (injector != null) {
                 injector.generate(new InjectorContextImpl(expr.getArguments()), expr.getMethod());
             } else {
+                if (expr.getType() == InvocationType.DYNAMIC) {
+                    expr.getArguments().get(0).acceptVisitor(this);
+                }
                 String className = naming.getNameFor(expr.getMethod().getClassName());
                 String name = naming.getNameFor(expr.getMethod());
                 String fullName = naming.getFullNameFor(expr.getMethod());
@@ -1293,6 +1296,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     lastCallSite = callSite;
                 }
                 boolean virtual = false;
+                System.out.println("Render invocation of " + expr.getMethod());
                 switch (expr.getType()) {
                     case STATIC:
                         writer.append(fullName).append("(");
@@ -1316,7 +1320,6 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                         writer.append(")");
                         break;
                     case DYNAMIC:
-                        expr.getArguments().get(0).acceptVisitor(this);
                         writer.append(".").append(name).append("(");
                         prevCallSite = debugEmitter.emitCallSite();
                         for (int i = 1; i < expr.getArguments().size(); ++i) {
