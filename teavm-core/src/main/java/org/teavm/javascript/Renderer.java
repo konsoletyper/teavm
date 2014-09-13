@@ -1296,7 +1296,6 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     lastCallSite = callSite;
                 }
                 boolean virtual = false;
-                System.out.println("Render invocation of " + expr.getMethod());
                 switch (expr.getType()) {
                     case STATIC:
                         writer.append(fullName).append("(");
