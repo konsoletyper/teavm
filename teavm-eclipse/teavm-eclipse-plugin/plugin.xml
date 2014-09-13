@@ -42,7 +42,7 @@
   <extension point="org.eclipse.debug.ui.debugModelPresentations">
     <debugModelPresentation
         class="org.teavm.eclipse.debugger.ui.TeaVMDebugModelPresentation"
-        id="org.teavm.eclipse.debugger.frame">
+        id="org.teavm.eclipse.debugger">
     </debugModelPresentation>
   </extension>
 </plugin>

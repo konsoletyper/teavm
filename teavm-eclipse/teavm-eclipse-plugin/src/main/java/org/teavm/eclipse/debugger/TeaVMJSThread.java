@@ -17,12 +17,6 @@ package org.teavm.eclipse.debugger;
 
 import org.eclipse.debug.core.DebugEvent;
 import org.eclipse.debug.core.DebugException;
-import org.eclipse.debug.core.DebugPlugin;
-import org.eclipse.debug.core.ILaunch;
-import org.eclipse.debug.core.model.IBreakpoint;
-import org.eclipse.debug.core.model.IDebugTarget;
-import org.eclipse.debug.core.model.IStackFrame;
-import org.eclipse.debug.core.model.IThread;
 import org.teavm.debugging.javascript.JavaScriptBreakpoint;
 import org.teavm.debugging.javascript.JavaScriptCallFrame;
 import org.teavm.debugging.javascript.JavaScriptDebugger;
@@ -32,12 +26,11 @@ import org.teavm.debugging.javascript.JavaScriptDebuggerListener;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class TeaVMJSThread implements IThread {
+public class TeaVMJSThread extends TeaVMThread {
     private JavaScriptDebugger jsDebugger;
-    TeaVMDebugTarget debugTarget;
-    private volatile TeaVMJSStackFrame[] stackTrace;
 
     public TeaVMJSThread(TeaVMDebugTarget debugTarget) {
+        super(debugTarget);
         this.debugTarget = debugTarget;
         this.jsDebugger = debugTarget.jsDebugger;
         jsDebugger.addListener(new JavaScriptDebuggerListener() {
@@ -66,7 +59,8 @@ public class TeaVMJSThread implements IThread {
         });
     }
 
-    private void updateStackTrace() {
+    @Override
+    protected void updateStackTrace() {
         if (jsDebugger.getCallStack() == null) {
             this.stackTrace = null;
         } else {
@@ -74,61 +68,11 @@ public class TeaVMJSThread implements IThread {
             TeaVMJSStackFrame[] stackTrace = new TeaVMJSStackFrame[jsCallStack.length];
             for (int i = 0; i < jsCallStack.length; ++i) {
                 JavaScriptCallFrame jsFrame = jsCallStack[i];
-                stackTrace[i] = new TeaVMJSStackFrame(this, jsFrame);
+                stackTrace[i] = new TeaVMJSStackFrame(this, jsDebugger, jsFrame);
             }
             this.stackTrace = stackTrace;
         }
         fireEvent(new DebugEvent(this, DebugEvent.CHANGE));
-    }
-
-    private void fireEvent(DebugEvent event) {
-        DebugPlugin.getDefault().fireDebugEventSet(new DebugEvent[] { event });
-    }
-
-    @Override
-    public boolean canTerminate() {
-        return debugTarget.canTerminate();
-    }
-
-    @Override
-    public boolean isTerminated() {
-        return debugTarget.isTerminated();
-    }
-
-    @Override
-    public void terminate() throws DebugException {
-        debugTarget.terminate();
-    }
-
-    @SuppressWarnings("rawtypes")
-    @Override
-    public Object getAdapter(Class type) {
-        return null;
-    }
-
-    @Override
-    public boolean canResume() {
-        return debugTarget.canResume();
-    }
-
-    @Override
-    public boolean canSuspend() {
-        return debugTarget.canSuspend();
-    }
-
-    @Override
-    public boolean isSuspended() {
-        return jsDebugger.isSuspended();
-    }
-
-    @Override
-    public void resume() throws DebugException {
-        jsDebugger.resume();
-    }
-
-    @Override
-    public void suspend() throws DebugException {
-        jsDebugger.suspend();
     }
 
     @Override
@@ -167,55 +111,22 @@ public class TeaVMJSThread implements IThread {
     }
 
     @Override
-    public IDebugTarget getDebugTarget() {
-        return debugTarget;
-    }
-
-    @Override
-    public ILaunch getLaunch() {
-        return debugTarget.launch;
-    }
-
-    @Override
-    public String getModelIdentifier() {
-        return TeaVMDebugConstants.THREAD_ID;
-    }
-
-    @Override
-    public IBreakpoint[] getBreakpoints() {
-        return debugTarget.breakpointMap.keySet().toArray(new IBreakpoint[0]);
-    }
-
-    @Override
-    public String getName() throws DebugException {
+    public String getName() {
         return "JavaScript";
     }
 
     @Override
-    public int getPriority() throws DebugException {
-        return 0;
+    public boolean isSuspended() {
+        return jsDebugger.isSuspended();
     }
 
     @Override
-    public IStackFrame[] getStackFrames() throws DebugException {
-        if (isTerminated()) {
-            return new IStackFrame[0];
-        }
-        TeaVMJSStackFrame[] stackTrace = this.stackTrace;
-        return stackTrace != null ? stackTrace.clone() : new IStackFrame[0];
+    public void resume() throws DebugException {
+        jsDebugger.resume();
     }
 
     @Override
-    public IStackFrame getTopStackFrame() {
-        if (isTerminated()) {
-            return null;
-        }
-        TeaVMJSStackFrame[] stackTrace = this.stackTrace;
-        return stackTrace != null && stackTrace.length > 0 ? stackTrace[0] : null;
-    }
-
-    @Override
-    public boolean hasStackFrames() throws DebugException {
-        return !isTerminated() && stackTrace != null;
+    public void suspend() throws DebugException {
+        jsDebugger.suspend();
     }
 }

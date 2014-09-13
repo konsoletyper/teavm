@@ -16,59 +16,58 @@
 package org.teavm.eclipse.debugger;
 
 import org.eclipse.debug.core.DebugException;
-import org.eclipse.debug.core.model.*;
-import org.teavm.debugging.javascript.JavaScriptCallFrame;
-import org.teavm.debugging.javascript.JavaScriptDebugger;
+import org.eclipse.debug.core.model.IVariable;
+import org.teavm.debugging.CallFrame;
+import org.teavm.debugging.Debugger;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class TeaVMJSStackFrame extends TeaVMStackFrame {
-    JavaScriptCallFrame callFrame;
-    JavaScriptDebugger jsDebugger;
-    private TeaVMJSVariablesHolder variablesHolder;
+public class TeaVMJavaStackFrame extends TeaVMStackFrame {
+    Debugger teavmDebugger;
+    CallFrame callFrame;
+    private TeaVMJavaVariablesHolder variablesHolder;
 
-    public TeaVMJSStackFrame(TeaVMThread thread, JavaScriptDebugger jsDebugger, JavaScriptCallFrame callFrame) {
+    public TeaVMJavaStackFrame(TeaVMThread thread, Debugger teavmDebugger, CallFrame callFrame) {
         super(thread);
         this.callFrame = callFrame;
-        this.jsDebugger = jsDebugger;
-        this.variablesHolder = new TeaVMJSVariablesHolder(thread.debugTarget, callFrame.getVariables().values(),
-                callFrame.getThisVariable(), callFrame.getClosureVariable());
+        this.teavmDebugger = teavmDebugger;
+        this.variablesHolder = new TeaVMJavaVariablesHolder(thread.debugTarget, callFrame.getVariables().values());
     }
 
-    public JavaScriptCallFrame getCallFrame() {
+    public CallFrame getCallFrame() {
         return callFrame;
     }
 
     @Override
     public void stepInto() throws DebugException {
-        jsDebugger.stepInto();
+        teavmDebugger.stepInto();
     }
 
     @Override
     public void stepOver() throws DebugException {
-        jsDebugger.stepOver();
+        teavmDebugger.stepOver();
     }
 
     @Override
     public void stepReturn() throws DebugException {
-        jsDebugger.stepOut();
+        teavmDebugger.stepOut();
     }
 
     @Override
     public int getLineNumber() throws DebugException {
-        return callFrame.getLocation() != null ? callFrame.getLocation().getLine() + 1 : -1;
+        return callFrame.getLocation() != null && callFrame.getLocation().getLine() >= 0 ?
+                callFrame.getLocation().getLine() : callFrame.getOriginalLocation().getLine() + 1;
     }
 
     @Override
     public String getName() {
         StringBuilder sb = new StringBuilder();
-        String fileName = callFrame.getLocation() != null ? callFrame.getLocation().getScript(): null;
+        String fileName = callFrame.getLocation() != null ? callFrame.getLocation().getFileName() : null;
         sb.append(fileName != null ? fileName : "unknown");
         if (callFrame.getLocation() != null) {
-            sb.append(" at ").append(callFrame.getLocation().getLine() + 1).append(";").append(
-                    callFrame.getLocation().getColumn() + 1);
+            sb.append(":").append(callFrame.getLocation().getLine());
         }
         return sb.toString();
     }

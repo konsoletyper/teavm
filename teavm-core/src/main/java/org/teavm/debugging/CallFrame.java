@@ -18,6 +18,7 @@ package org.teavm.debugging;
 import java.util.Collections;
 import java.util.Map;
 import org.teavm.debugging.information.SourceLocation;
+import org.teavm.debugging.javascript.JavaScriptCallFrame;
 import org.teavm.debugging.javascript.JavaScriptLocation;
 import org.teavm.model.MethodReference;
 
@@ -26,21 +27,31 @@ import org.teavm.model.MethodReference;
  * @author Alexey Andreev
  */
 public class CallFrame {
-    JavaScriptLocation originalLocation;
+    private Debugger debugger;
+    private JavaScriptCallFrame originalCallFrame;
     private SourceLocation location;
     private MethodReference method;
     private Map<String, Variable> variables;
 
-    CallFrame(JavaScriptLocation originalLocation, SourceLocation location, MethodReference method,
+    CallFrame(Debugger debugger, JavaScriptCallFrame originalFrame, SourceLocation location, MethodReference method,
             Map<String, Variable> variables) {
-        this.originalLocation = originalLocation;
+        this.debugger = debugger;
+        this.originalCallFrame = originalFrame;
         this.location = location;
         this.method = method;
         this.variables = Collections.unmodifiableMap(variables);
     }
 
+    public Debugger getDebugger() {
+        return debugger;
+    }
+
     public JavaScriptLocation getOriginalLocation() {
-        return originalLocation;
+        return originalCallFrame.getLocation();
+    }
+
+    public JavaScriptCallFrame getOriginalCallFrame() {
+        return originalCallFrame;
     }
 
     public SourceLocation getLocation() {

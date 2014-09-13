@@ -50,8 +50,8 @@ public class TeaVMSourceLookupParticipant extends AbstractSourceLookupParticipan
 
     @Override
     public String getSourceName(Object object) throws CoreException {
-        if (object instanceof TeaVMStackFrame) {
-            TeaVMStackFrame stackFrame = (TeaVMStackFrame)object;
+        if (object instanceof TeaVMJavaStackFrame) {
+            TeaVMJavaStackFrame stackFrame = (TeaVMJavaStackFrame)object;
             SourceLocation location = stackFrame.callFrame.getLocation();
             if (location != null) {
                 return location.getFileName();
@@ -76,8 +76,8 @@ public class TeaVMSourceLookupParticipant extends AbstractSourceLookupParticipan
             if (location != null) {
                 addUrlElement(result, location);
             }
-        } else if (object instanceof TeaVMStackFrame) {
-            TeaVMStackFrame stackFrame = (TeaVMStackFrame)object;
+        } else if (object instanceof TeaVMJavaStackFrame) {
+            TeaVMJavaStackFrame stackFrame = (TeaVMJavaStackFrame)object;
             CallFrame callFrame = stackFrame.getCallFrame();
             if (callFrame.getMethod() == null && callFrame.getLocation() != null) {
                 addUrlElement(result, callFrame.getOriginalLocation());

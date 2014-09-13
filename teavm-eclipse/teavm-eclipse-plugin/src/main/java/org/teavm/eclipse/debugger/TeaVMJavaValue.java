@@ -16,33 +16,37 @@
 package org.teavm.eclipse.debugger;
 
 import org.eclipse.debug.core.DebugException;
-import org.teavm.debugging.javascript.JavaScriptValue;
+import org.teavm.debugging.Value;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-public class TeaVMJSValue extends TeaVMValue {
-    private JavaScriptValue jsValue;
+public class TeaVMJavaValue extends TeaVMValue {
+    private Value teavmValue;
     private boolean innerStructure;
 
-    public TeaVMJSValue(TeaVMDebugTarget debugTarget, JavaScriptValue teavmValue) {
-        super(debugTarget, new TeaVMJSVariablesHolder(debugTarget, teavmValue.getProperties().values(), null, null));
-        this.jsValue = teavmValue;
+    public TeaVMJavaValue(TeaVMDebugTarget debugTarget, Value teavmValue) {
+        super(debugTarget, new TeaVMJavaVariablesHolder(debugTarget, teavmValue.getProperties().values()));
+        this.teavmValue = teavmValue;
         this.innerStructure = teavmValue.hasInnerStructure();
+    }
+
+    public Value getTeavmValue() {
+        return teavmValue;
     }
 
     @Override
     public String getReferenceTypeName() throws DebugException {
-        return jsValue.getClassName();
+        return teavmValue.getType();
     }
 
     @Override
     public String getValueString() throws DebugException {
-        if (jsValue.getInstanceId() != null) {
-            return jsValue.getClassName() + " (id: " + getDebugTarget().getId(jsValue.getInstanceId()) + ")";
+        if (teavmValue.getInstanceId() != null) {
+            return teavmValue.getType() + " (id: " + getDebugTarget().getId(teavmValue.getInstanceId()) + ")";
         } else {
-            return jsValue.getRepresentation();
+            return teavmValue.getRepresentation();
         }
     }
 
@@ -51,12 +55,8 @@ public class TeaVMJSValue extends TeaVMValue {
         return innerStructure;
     }
 
-    public JavaScriptValue getJavaScriptValue() {
-        return jsValue;
-    }
-
     @Override
     public String getDescription() {
-        return jsValue.getRepresentation();
+        return teavmValue.getRepresentation();
     }
 }

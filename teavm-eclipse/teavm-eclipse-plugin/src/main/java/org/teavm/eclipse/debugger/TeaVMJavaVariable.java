@@ -16,17 +16,17 @@
 package org.teavm.eclipse.debugger;
 
 import org.eclipse.debug.core.DebugException;
-import org.teavm.debugging.javascript.JavaScriptVariable;
+import org.teavm.debugging.Variable;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-public class TeaVMJSVariable extends TeaVMVariable {
-    private JavaScriptVariable var;
+public class TeaVMJavaVariable extends TeaVMVariable {
+    private Variable var;
 
-    public TeaVMJSVariable(TeaVMDebugTarget debugTarget, JavaScriptVariable var) {
-        super(debugTarget, new TeaVMJSValue(debugTarget, var.getValue()));
+    public TeaVMJavaVariable(TeaVMDebugTarget debugTarget, Variable var) {
+        super(debugTarget, new TeaVMJavaValue(debugTarget, var.getValue()));
         this.var = var;
     }
 
@@ -37,6 +37,6 @@ public class TeaVMJSVariable extends TeaVMVariable {
 
     @Override
     public String getReferenceTypeName() throws DebugException {
-        return var.getValue().getClassName();
+        return var.getValue().getType();
     }
 }

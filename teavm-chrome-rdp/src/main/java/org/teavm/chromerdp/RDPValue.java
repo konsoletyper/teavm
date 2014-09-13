@@ -76,4 +76,9 @@ public class RDPValue implements JavaScriptValue {
     public boolean hasInnerStructure() {
         return innerStructure;
     }
+
+    @Override
+    public String getInstanceId() {
+        return objectId;
+    }
 }

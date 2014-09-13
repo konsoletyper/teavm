@@ -48,6 +48,10 @@ public class Debugger {
         javaScriptDebugger.addListener(javaScriptListener);
     }
 
+    public JavaScriptDebugger getJavaScriptDebugger() {
+        return javaScriptDebugger;
+    }
+
     public void addListener(DebuggerListener listener) {
         listeners.put(listener, dummyObject);
     }
@@ -99,7 +103,7 @@ public class Debugger {
         Set<JavaScriptLocation> successors = new HashSet<>();
         for (CallFrame frame : callStack) {
             boolean exits;
-            String script = frame.originalLocation.getScript();
+            String script = frame.getOriginalLocation().getScript();
             DebugInformation debugInfo = debugInformationMap.get(script);
             if (frame.getLocation() != null && frame.getLocation().getFileName() != null &&
                     frame.getLocation().getLine() >= 0 && debugInfo != null) {
@@ -297,7 +301,7 @@ public class Debugger {
                         jsFrame.getLocation().getColumn()) : null;
                 if (!empty || !wasEmpty) {
                     VariableMap vars = new VariableMap(jsFrame.getVariables(), this, jsFrame.getLocation());
-                    frames.add(new CallFrame(jsFrame.getLocation(), loc, method, vars));
+                    frames.add(new CallFrame(this, jsFrame, loc, method, vars));
                 }
                 wasEmpty = empty;
             }

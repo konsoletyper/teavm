@@ -49,6 +49,16 @@ public class Value {
     }
 
     public boolean hasInnerStructure() {
+        if (getType().equals("long")) {
+            return false;
+        }
         return jsValue.hasInnerStructure();
+    }
+
+    public String getInstanceId() {
+        if (getType().equals("long")) {
+            return null;
+        }
+        return jsValue.getInstanceId();
     }
 }

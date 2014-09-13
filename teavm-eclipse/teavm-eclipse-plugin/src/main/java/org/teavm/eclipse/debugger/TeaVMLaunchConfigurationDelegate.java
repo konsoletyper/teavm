@@ -20,7 +20,7 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.debug.core.ILaunch;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.ILaunchManager;
-import org.eclipse.debug.core.model.ILaunchConfigurationDelegate;
+import org.eclipse.debug.core.model.LaunchConfigurationDelegate;
 import org.teavm.chromerdp.ChromeRDPDebugger;
 import org.teavm.chromerdp.ChromeRDPServer;
 import org.teavm.debugging.Debugger;
@@ -30,7 +30,7 @@ import org.teavm.debugging.information.URLDebugInformationProvider;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class TeaVMLaunchConfigurationDelegate implements ILaunchConfigurationDelegate {
+public class TeaVMLaunchConfigurationDelegate extends LaunchConfigurationDelegate {
     @Override
     public void launch(ILaunchConfiguration configuration, String mode, ILaunch launch, IProgressMonitor monitor)
             throws CoreException {

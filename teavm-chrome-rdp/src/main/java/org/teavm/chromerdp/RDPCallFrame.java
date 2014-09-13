@@ -17,24 +17,29 @@ package org.teavm.chromerdp;
 
 import java.util.Collections;
 import java.util.Map;
-import org.teavm.debugging.javascript.JavaScriptCallFrame;
-import org.teavm.debugging.javascript.JavaScriptLocation;
-import org.teavm.debugging.javascript.JavaScriptVariable;
+import org.teavm.debugging.javascript.*;
 
 /**
  *
  * @author Alexey Andreev
  */
 public class RDPCallFrame implements JavaScriptCallFrame {
+    private JavaScriptDebugger debugger;
     private String chromeId;
     private JavaScriptLocation location;
     private Map<String, JavaScriptVariable> variables;
+    private JavaScriptValue thisObject;
+    private JavaScriptValue closure;
 
-    public RDPCallFrame(String chromeId, JavaScriptLocation location,
-            Map<String, ? extends JavaScriptVariable> variables) {
+    public RDPCallFrame(JavaScriptDebugger debugger, String chromeId, JavaScriptLocation location,
+            Map<String, ? extends JavaScriptVariable> variables, JavaScriptValue thisObject,
+            JavaScriptValue closure) {
+        this.debugger = debugger;
         this.chromeId = chromeId;
         this.location = location;
         this.variables = Collections.unmodifiableMap(variables);
+        this.thisObject = thisObject;
+        this.closure = closure;
     }
 
     public String getChromeId() {
@@ -49,5 +54,20 @@ public class RDPCallFrame implements JavaScriptCallFrame {
     @Override
     public Map<String, JavaScriptVariable> getVariables() {
         return variables;
+    }
+
+    @Override
+    public JavaScriptDebugger getDebugger() {
+        return debugger;
+    }
+
+    @Override
+    public JavaScriptValue getThisVariable() {
+        return thisObject;
+    }
+
+    @Override
+    public JavaScriptValue getClosureVariable() {
+        return closure;
     }
 }

@@ -17,6 +17,7 @@ package org.teavm.eclipse.debugger;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.eclipse.core.runtime.PlatformObject;
 import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.core.ILaunch;
 import org.eclipse.debug.core.model.IProcess;
@@ -26,21 +27,13 @@ import org.eclipse.debug.core.model.IStreamsProxy;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-@SuppressWarnings("rawtypes")
-public class TeaVMDebugProcess implements IProcess {
-    private Map<String, String> attributes = new HashMap<>();
-    private ILaunch launch;
-    private TeaVMStreamsProxy streamsProxy = new TeaVMStreamsProxy();
+public class TeaVMDebugProcess extends PlatformObject implements IProcess {
     private TeaVMDebugTarget debugTarget;
+    private Map<String, String> attributes = new HashMap<>();
+    private TeaVMStreamsProxy streamsProxy = new TeaVMStreamsProxy();
 
-    public TeaVMDebugProcess(ILaunch launch, TeaVMDebugTarget debugTarget) {
-        this.launch = launch;
+    public TeaVMDebugProcess(TeaVMDebugTarget debugTarget) {
         this.debugTarget = debugTarget;
-    }
-
-    @Override
-    public Object getAdapter(Class arg0) {
-        return null;
     }
 
     @Override
@@ -74,11 +67,6 @@ public class TeaVMDebugProcess implements IProcess {
     }
 
     @Override
-    public ILaunch getLaunch() {
-        return launch;
-    }
-
-    @Override
     public IStreamsProxy getStreamsProxy() {
         return streamsProxy;
     }
@@ -86,5 +74,10 @@ public class TeaVMDebugProcess implements IProcess {
     @Override
     public void setAttribute(String attr, String value) {
         attributes.put(attr, value);
+    }
+
+    @Override
+    public ILaunch getLaunch() {
+        return debugTarget.getLaunch();
     }
 }

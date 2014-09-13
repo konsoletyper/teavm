@@ -17,10 +17,13 @@ package org.teavm.eclipse.debugger;
 
 import static org.teavm.eclipse.debugger.TeaVMDebugConstants.DEBUG_TARGET_ID;
 import static org.teavm.eclipse.debugger.TeaVMDebugConstants.JAVA_BREAKPOINT_INSTALL_COUNT;
+import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.eclipse.core.resources.IMarkerDelta;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.PlatformObject;
 import org.eclipse.debug.core.DebugEvent;
 import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.core.DebugPlugin;
@@ -37,18 +40,18 @@ import org.teavm.debugging.javascript.JavaScriptDebugger;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-@SuppressWarnings("rawtypes")
-public class TeaVMDebugTarget implements IDebugTarget, IStep {
+public class TeaVMDebugTarget extends PlatformObject implements IDebugTarget, IStep {
     ILaunch launch;
     Debugger teavmDebugger;
     JavaScriptDebugger jsDebugger;
     private ChromeRDPServer server;
     private volatile boolean terminated;
     private TeaVMDebugProcess process;
-    private TeaVMThread thread;
+    private TeaVMJavaThread thread;
     private TeaVMJSThread jsThread;
     ConcurrentMap<IBreakpoint, Breakpoint> breakpointMap = new ConcurrentHashMap<>();
     ConcurrentMap<Breakpoint, IJavaLineBreakpoint> breakpointBackMap = new ConcurrentHashMap<>();
+    private Map<String, Integer> instanceIdMap = new WeakHashMap<>();
 
     public TeaVMDebugTarget(ILaunch launch, final Debugger teavmDebugger, JavaScriptDebugger jsDebugger,
             ChromeRDPServer server) {
@@ -56,8 +59,8 @@ public class TeaVMDebugTarget implements IDebugTarget, IStep {
         this.teavmDebugger = teavmDebugger;
         this.jsDebugger = jsDebugger;
         this.server = server;
-        this.process = new TeaVMDebugProcess(launch, this);
-        this.thread = new TeaVMThread(this);
+        this.process = new TeaVMDebugProcess(this);
+        this.thread = new TeaVMJavaThread(this);
         this.jsThread = new TeaVMJSThread(this);
         DebugPlugin.getDefault().getBreakpointManager().addBreakpointListener(this);
         for (IBreakpoint breakpoint : DebugPlugin.getDefault().getBreakpointManager().getBreakpoints()) {
@@ -67,16 +70,30 @@ public class TeaVMDebugTarget implements IDebugTarget, IStep {
             @Override
             public void resumed() {
                 fireEvent(new DebugEvent(TeaVMDebugTarget.this, DebugEvent.RESUME));
+                thread.fireResumeEvent(0);
+                if (jsThread != null) {
+                    jsThread.fireResumeEvent(0);
+                }
             }
 
             @Override
             public void paused() {
                 fireEvent(new DebugEvent(TeaVMDebugTarget.this, DebugEvent.SUSPEND));
+                thread.fireSuspendEvent(0);
+                thread.fireChangeEvent(0);
+                if (jsThread != null) {
+                    jsThread.fireSuspendEvent(0);
+                    jsThread.fireChangeEvent(0);
+                }
             }
 
             @Override
             public void detached() {
                 fireEvent(new DebugEvent(TeaVMDebugTarget.this, DebugEvent.CHANGE));
+                thread.fireChangeEvent(0);
+                if (jsThread != null) {
+                    jsThread.fireChangeEvent(0);
+                }
                 for (Breakpoint teavmBreakpoint : teavmDebugger.getBreakpoints()) {
                     updateBreakpoint(teavmBreakpoint);
                 }
@@ -132,17 +149,10 @@ public class TeaVMDebugTarget implements IDebugTarget, IStep {
     public void terminate() throws DebugException {
         terminated = true;
         server.stop();
-        fireEvent(new DebugEvent(thread, DebugEvent.TERMINATE));
-        fireEvent(new DebugEvent(thread, DebugEvent.CHANGE));
-        fireEvent(new DebugEvent(jsThread, DebugEvent.TERMINATE));
-        fireEvent(new DebugEvent(jsThread, DebugEvent.CHANGE));
+        thread.fireTerminateEvent();
+        jsThread.fireTerminateEvent();
         fireEvent(new DebugEvent(process, DebugEvent.TERMINATE));
         fireEvent(new DebugEvent(this, DebugEvent.TERMINATE));
-    }
-
-    @Override
-    public Object getAdapter(Class arg0) {
-        return null;
     }
 
     @Override
@@ -237,7 +247,7 @@ public class TeaVMDebugTarget implements IDebugTarget, IStep {
     }
 
     @Override
-    public String getName() throws DebugException {
+    public String getName() {
         return "TeaVM debugger";
     }
 
@@ -294,5 +304,16 @@ public class TeaVMDebugTarget implements IDebugTarget, IStep {
     @Override
     public void stepReturn() throws DebugException {
         thread.stepReturn();
+    }
+
+    public int getId(String instanceId) {
+        synchronized (instanceIdMap) {
+            Integer id = instanceIdMap.get(instanceId);
+            if (id == null) {
+                id = instanceIdMap.size();
+                instanceIdMap.put(instanceId, id);
+            }
+            return id;
+        }
     }
 }

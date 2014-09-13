@@ -22,7 +22,13 @@ import java.util.Map;
  * @author Alexey Andreev
  */
 public interface JavaScriptCallFrame {
+    JavaScriptDebugger getDebugger();
+
     JavaScriptLocation getLocation();
 
     Map<String, JavaScriptVariable> getVariables();
+
+    JavaScriptValue getThisVariable();
+
+    JavaScriptValue getClosureVariable();
 }

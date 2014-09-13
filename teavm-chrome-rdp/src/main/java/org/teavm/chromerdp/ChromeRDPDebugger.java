@@ -502,13 +502,21 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
 
     RDPCallFrame map(CallFrameDTO dto) {
         String scopeId = null;
+        RDPValue thisObject = null;
+        RDPValue closure = null;
         for (ScopeDTO scope : dto.getScopeChain()) {
             if (scope.getType().equals("local")) {
                 scopeId = scope.getObject().getObjectId();
-                break;
+            } else if (scope.getType().equals("closure")) {
+                closure = new RDPValue(this, scope.getObject().getDescription(), scope.getObject().getType(),
+                        scope.getObject().getObjectId(), true);
+            } else if (scope.getType().equals("global")) {
+                thisObject = new RDPValue(this, scope.getObject().getDescription(), scope.getObject().getType(),
+                        scope.getObject().getObjectId(), true);
             }
         }
-        return new RDPCallFrame(dto.getCallFrameId(), map(dto.getLocation()), new RDPScope(this, scopeId));
+        return new RDPCallFrame(this, dto.getCallFrameId(), map(dto.getLocation()), new RDPScope(this, scopeId),
+                thisObject, closure);
     }
 
     JavaScriptLocation map(LocationDTO dto) {
