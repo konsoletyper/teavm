@@ -45,4 +45,16 @@
         id="org.teavm.eclipse.debugger">
     </debugModelPresentation>
   </extension>
+
+  <extension point="org.eclipse.core.resources.natures" id="nature" name="TeaVM nature">
+    <runtime>
+      <run class="org.teavm.eclipse.TeaVMProjectNature"/>
+    </runtime>
+  </extension>
+  <extension point="org.eclipse.ui.propertyPages">
+    <page id="org.teavm.eclipse.projectProperties" name="TeaVM"
+        objectClass="org.eclipse.core.resources.IProject"
+        class="org.teavm.eclipse.ui.TeaVMProjectPropertyPage">
+    </page>
+  </extension>
 </plugin>

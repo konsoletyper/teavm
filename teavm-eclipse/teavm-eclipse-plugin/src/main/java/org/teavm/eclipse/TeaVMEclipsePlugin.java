@@ -22,10 +22,13 @@ import org.eclipse.core.runtime.Plugin;
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public class TeaVMEclipsePlugin extends Plugin {
+    public static final String ID = "org.teavm.eclipse";
+
+    public static final String NATURE_ID = "org.teavm.eclipse.nature";
+
     private static TeaVMEclipsePlugin defaultInstance;
 
     static {
-        System.out.println();
     }
 
     public TeaVMEclipsePlugin() {
@@ -35,6 +38,4 @@ public class TeaVMEclipsePlugin extends Plugin {
     public static TeaVMEclipsePlugin getDefault() {
         return defaultInstance;
     }
-
-    public static final String ID = "org.teavm.eclipse";
 }
