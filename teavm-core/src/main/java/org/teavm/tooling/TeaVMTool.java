@@ -180,7 +180,7 @@ public class TeaVMTool {
         this.classLoader = classLoader;
     }
 
-    public void generate() throws TeaVMToolException {
+    public void generate() throws TeaVMToolException, InterruptedException {
         try {
             log.info("Building JavaScript file");
             TeaVMBuilder vmBuilder = new TeaVMBuilder();

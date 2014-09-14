@@ -254,6 +254,8 @@ public class TeaVMTestTool {
                                     fileNames.get(method));
                         } catch (IOException e) {
                             log.error("Error generating JavaScript", e);
+                        } catch (InterruptedException e) {
+                            log.error("Error generating JavaScript", e);
                         }
                     }
                 });
@@ -318,7 +320,7 @@ public class TeaVMTestTool {
     }
 
     private void decompileClassesForTest(ClassLoader classLoader, ClassHolderSource classSource,
-            MethodReference methodRef, String targetName) throws IOException {
+            MethodReference methodRef, String targetName) throws IOException, InterruptedException {
         TeaVM vm = new TeaVMBuilder()
                 .setClassLoader(classLoader)
                 .setClassSource(classSource)
