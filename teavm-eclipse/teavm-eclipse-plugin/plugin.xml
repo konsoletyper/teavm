@@ -52,9 +52,13 @@
     </runtime>
   </extension>
   <extension point="org.eclipse.ui.propertyPages">
-    <page id="org.teavm.eclipse.projectProperties" name="TeaVM"
-        objectClass="org.eclipse.core.resources.IProject"
-        class="org.teavm.eclipse.ui.TeaVMProjectPropertyPage">
+    <page id="org.teavm.eclipse.projectProperties" name="TeaVM" class="org.teavm.eclipse.ui.TeaVMProjectPropertyPage">
+      <enabledWhen>
+        <or>
+          <instanceof value="org.eclipse.core.resources.IProject"/>
+          <instanceof value="org.eclipse.jdt.core.IJavaProject"/>
+        </or>
+      </enabledWhen>
     </page>
   </extension>
 </plugin>

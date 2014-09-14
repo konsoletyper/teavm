@@ -15,21 +15,19 @@
  */
 package org.teavm.eclipse;
 
-import org.eclipse.core.runtime.Plugin;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.ui.plugin.AbstractUIPlugin;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class TeaVMEclipsePlugin extends Plugin {
+public class TeaVMEclipsePlugin extends AbstractUIPlugin {
     public static final String ID = "org.teavm.eclipse";
-
-    public static final String NATURE_ID = "org.teavm.eclipse.nature";
-
+    public static final String NATURE_ID = ID + ".nature";
+    public static final String MAIN_METHOD_DIALOG_ID = ID + ".dialogs.mainMethod";
     private static TeaVMEclipsePlugin defaultInstance;
-
-    static {
-    }
 
     public TeaVMEclipsePlugin() {
         defaultInstance = this;
@@ -37,5 +35,13 @@ public class TeaVMEclipsePlugin extends Plugin {
 
     public static TeaVMEclipsePlugin getDefault() {
         return defaultInstance;
+    }
+
+    public static IStatus makeError(Throwable e) {
+        return new Status(IStatus.ERROR, ID, "Error occured", e);
+    }
+
+    public static void logError(Throwable e) {
+        getDefault().getLog().log(makeError(e));
     }
 }
