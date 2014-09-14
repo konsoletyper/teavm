@@ -15,8 +15,18 @@
  */
 package org.teavm.eclipse;
 
+import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IProjectDescription;
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.jface.operation.IRunnableContext;
+import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 
 /**
@@ -28,6 +38,7 @@ public class TeaVMEclipsePlugin extends AbstractUIPlugin {
     public static final String NATURE_ID = ID + ".nature";
     public static final String MAIN_METHOD_DIALOG_ID = ID + ".dialogs.mainMethod";
     private static TeaVMEclipsePlugin defaultInstance;
+    private ConcurrentMap<IProject, TeaVMProjectSettings> settingsMap = new ConcurrentHashMap<>();
 
     public TeaVMEclipsePlugin() {
         defaultInstance = this;
@@ -43,5 +54,79 @@ public class TeaVMEclipsePlugin extends AbstractUIPlugin {
 
     public static void logError(Throwable e) {
         getDefault().getLog().log(makeError(e));
+    }
+
+    public TeaVMProjectSettings getSettings(IProject project) {
+        TeaVMProjectSettings settings = settingsMap.get(project);
+        if (settings == null) {
+            settings = new PreferencesBasedTeaVMProjectSettings(project);
+            settingsMap.putIfAbsent(project, settings);
+            settings = settingsMap.get(project);
+        }
+        return settings;
+    }
+
+    public IStatus addNature(IRunnableContext runnableContext, final IProject project) {
+        try {
+            runnableContext.run(false, true, new IRunnableWithProgress() {
+                @Override
+                public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
+                    try {
+                        addNature(monitor, project);
+                    } catch (CoreException e) {
+                        throw new InvocationTargetException(e);
+                    }
+                }
+            });
+            return Status.OK_STATUS;
+        } catch (InterruptedException e) {
+            return makeError(e);
+        } catch (InvocationTargetException e) {
+            return Status.CANCEL_STATUS;
+        }
+    }
+
+    public void addNature(IProgressMonitor progressMonitor, IProject project) throws CoreException {
+        IProjectDescription projectDescription = project.getDescription();
+        String[] natureIds = projectDescription.getNatureIds();
+        natureIds = Arrays.copyOf(natureIds, natureIds.length + 1);
+        natureIds[natureIds.length - 1] = TeaVMEclipsePlugin.NATURE_ID;
+        projectDescription.setNatureIds(natureIds);
+        project.setDescription(projectDescription, progressMonitor);
+    }
+
+    public IStatus removeNature(IRunnableContext runnableContext, final IProject project) {
+        try {
+            runnableContext.run(false, true, new IRunnableWithProgress() {
+                @Override
+                public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
+                    try {
+                        removeNature(monitor, project);
+                    } catch (CoreException e) {
+                        throw new InvocationTargetException(e);
+                    }
+                }
+            });
+            return Status.OK_STATUS;
+        } catch (InterruptedException e) {
+            return makeError(e);
+        } catch (InvocationTargetException e) {
+            return Status.CANCEL_STATUS;
+        }
+    }
+
+    public void removeNature(IProgressMonitor progressMonitor, IProject project) throws CoreException {
+        IProjectDescription projectDescription = project.getDescription();
+        String[] natureIds = projectDescription.getNatureIds();
+        String[] newNatureIds = new String[natureIds.length - 1];
+        for (int i = 0; i < natureIds.length; ++i) {
+            if (natureIds[i].equals(TeaVMEclipsePlugin.NATURE_ID)) {
+                System.arraycopy(natureIds, 0, newNatureIds, 0, i);
+                System.arraycopy(natureIds, i + 1, newNatureIds, i, newNatureIds.length - i);
+                projectDescription.setNatureIds(newNatureIds);
+                project.setDescription(projectDescription, progressMonitor);
+                break;
+            }
+        }
     }
 }

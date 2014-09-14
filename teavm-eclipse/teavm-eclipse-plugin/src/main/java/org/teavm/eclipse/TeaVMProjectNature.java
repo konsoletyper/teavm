@@ -28,4 +28,8 @@ public class TeaVMProjectNature implements IProjectNature {
     public void setProject(IProject project) {
         this.project = project;
     }
+
+    public TeaVMProjectSettings getSettings() {
+        return TeaVMEclipsePlugin.getDefault().getSettings(project);
+    }
 }
