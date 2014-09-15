@@ -63,7 +63,7 @@ public class TeaVMSourcePathComputerDelegate implements ISourcePathComputerDeleg
                         case IClasspathEntry.CPE_CONTAINER:
                             sourceContainers.add(new ClasspathContainerSourceContainer(entry.getPath()));
                             break;
-                        case IClasspathEntry.CPE_LIBRARY:;
+                        case IClasspathEntry.CPE_LIBRARY:
                             sourceContainers.add(new ExternalArchiveSourceContainer(entry.getPath().toString(), true));
                             if (entry.getSourceAttachmentPath() != null) {
                                 System.out.println(entry.getSourceAttachmentPath());

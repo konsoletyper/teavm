@@ -167,7 +167,7 @@ public class TeaVMProjectPropertyWidget extends Composite {
 
     private void chooseFileSystemTargetDirectory() {
         String filePath = targetDirectoryField.getText();
-        FileDialog dialog = new FileDialog(getShell(), SWT.SAVE);
+        DirectoryDialog dialog = new DirectoryDialog(getShell());
         filePath = dialog.open();
         if (filePath != null) {
             targetDirectoryField.setText(filePath);

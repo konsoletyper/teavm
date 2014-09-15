@@ -59,6 +59,8 @@ public class TeaVMTool {
     private DiskRegularMethodNodeCache astCache;
     private FileSymbolTable symbolTable;
     private FileSymbolTable fileTable;
+    private boolean cancelled;
+    private TeaVMProgressListener progressListener;
 
     public File getTargetDirectory() {
         return targetDirectory;
@@ -180,8 +182,17 @@ public class TeaVMTool {
         this.classLoader = classLoader;
     }
 
-    public void generate() throws TeaVMToolException, InterruptedException {
+    public void setProgressListener(TeaVMProgressListener progressListener) {
+        this.progressListener = progressListener;
+    }
+
+    public boolean wasCancelled() {
+        return cancelled;
+    }
+
+    public void generate() throws TeaVMToolException {
         try {
+            cancelled = false;
             log.info("Building JavaScript file");
             TeaVMBuilder vmBuilder = new TeaVMBuilder();
             if (incremental) {
@@ -205,6 +216,9 @@ public class TeaVMTool {
                 vmBuilder.setClassLoader(classLoader).setClassSource(new ClasspathClassHolderSource(classLoader));
             }
             TeaVM vm = vmBuilder.build();
+            if (progressListener != null) {
+                vm.setProgressListener(progressListener);
+            }
             vm.setMinifying(minifying);
             vm.setBytecodeLogging(bytecodeLogging);
             vm.setProperties(properties);
@@ -221,8 +235,7 @@ public class TeaVMTool {
                 vm.add(transformer);
             }
             if (mainClass != null) {
-                MethodDescriptor mainMethodDesc = new MethodDescriptor("main", ValueType.arrayOf(
-                        ValueType.object("java.lang.String")), ValueType.VOID);
+                MethodDescriptor mainMethodDesc = new MethodDescriptor("main", String[].class, void.class);
                 vm.entryPoint("main", new MethodReference(mainClass, mainMethodDesc))
                         .withValue(1, "java.lang.String");
             }
@@ -253,6 +266,11 @@ public class TeaVMTool {
                     vm.add(runtimeInjector);
                 }
                 vm.build(writer, new DirectoryBuildTarget(targetDirectory));
+                if (vm.wasCancelled()) {
+                    log.info("Build cancelled");
+                    cancelled = true;
+                    return;
+                }
                 vm.checkForMissingItems();
                 log.info("JavaScript file successfully built");
                 if (debugInformationGenerated) {

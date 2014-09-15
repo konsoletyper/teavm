@@ -26,7 +26,7 @@ public class MainClassSelectionDialog extends FilteredItemsSelectionDialog {
     public MainClassSelectionDialog(Shell shell, IJavaProject javaProject) {
         super(shell, false);
         this.javaProject = javaProject;
-        setTitle("Searching main class");
+        setTitle("Selecting main class");
         LabelProvider labelProvider = new LabelProvider()  {
             @Override public String getText(Object element) {
                 return getElementName(element);

@@ -83,14 +83,19 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     private RegularMethodNodeCache astCache = new EmptyRegularMethodNodeCache();
     private boolean incremental;
     private TeaVMProgressListener progressListener;
+    private boolean cancelled;
 
     TeaVM(ClassReaderSource classSource, ClassLoader classLoader) {
         this.classSource = classSource;
         this.classLoader = classLoader;
         dependencyChecker = new DependencyChecker(this.classSource, classLoader, this);
         progressListener = new TeaVMProgressListener() {
-            @Override public void progressReached(int progress) throws InterruptedException { }
-            @Override public void phaseStarted(TeaVMPhase phase, int count) throws InterruptedException { }
+            @Override public TeaVMProgressFeedback progressReached(int progress) {
+                return TeaVMProgressFeedback.CONTINUE;
+            }
+            @Override public TeaVMProgressFeedback phaseStarted(TeaVMPhase phase, int count) {
+                return TeaVMProgressFeedback.CONTINUE;
+            }
         };
     }
 
@@ -199,6 +204,10 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
     public void setProgressListener(TeaVMProgressListener progressListener) {
         this.progressListener = progressListener;
+    }
+
+    public boolean wasCancelled() {
+        return cancelled;
     }
 
     /**
@@ -323,9 +332,12 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
      * @param target where to generate additional resources. Can be null, but if there are
      * plugins or inteceptors that generate additional resources, the build process will fail.
      */
-    public void build(Appendable writer, BuildTarget target) throws RenderingException, InterruptedException {
+    public void build(Appendable writer, BuildTarget target) throws RenderingException {
         // Check dependencies
-        progressListener.phaseStarted(TeaVMPhase.DEPENDENCY_CHECKING, 1);
+        reportPhase(TeaVMPhase.DEPENDENCY_CHECKING, 1);
+        if (wasCancelled()) {
+            return;
+        }
         AliasProvider aliasProvider = minifying ? new MinifyingAliasProvider() : new DefaultAliasProvider();
         dependencyChecker.linkMethod(new MethodReference("java.lang.Class", "createNew",
                 ValueType.object("java.lang.Class")), DependencyStack.ROOT).use();
@@ -343,26 +355,38 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         dependencyChecker.linkMethod(new MethodReference("java.lang.Object", new MethodDescriptor("clone",
                 ValueType.object("java.lang.Object"))), DependencyStack.ROOT).use();
         dependencyChecker.processDependencies();
-        progressListener.progressReached(1);
-        if (hasMissingItems()) {
+        reportProgress(1);
+        if (wasCancelled() || hasMissingItems()) {
             return;
         }
 
         // Link
-        progressListener.phaseStarted(TeaVMPhase.LINKING, 1);
+        reportPhase(TeaVMPhase.LINKING, 1);
+        if (wasCancelled()) {
+            return;
+        }
         Linker linker = new Linker();
         ListableClassHolderSource classSet = linker.link(dependencyChecker);
-        progressListener.progressReached(1);
+        reportProgress(1);
+        if (wasCancelled()) {
+            return;
+        }
 
         // Optimize and allocate registers
         if (!incremental) {
             devirtualize(classSet, dependencyChecker);
+            if (wasCancelled()) {
+                return;
+            }
         }
 
         List<ClassNode> clsNodes = modelToAst(classSet);
 
         // Render
-        progressListener.phaseStarted(TeaVMPhase.RENDERING, classSet.getClassNames().size());
+        reportPhase(TeaVMPhase.RENDERING, classSet.getClassNames().size());
+        if (wasCancelled()) {
+            return;
+        }
         DefaultNamingStrategy naming = new DefaultNamingStrategy(aliasProvider, dependencyChecker.getClassSource());
         naming.setMinifying(minifying);
         SourceWriterBuilder builder = new SourceWriterBuilder(naming);
@@ -378,7 +402,10 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                         emitCFG(debugEmitter, method.getProgram());
                     }
                 }
-                progressListener.progressReached(++classIndex);
+                reportProgress(++classIndex);
+                if (wasCancelled()) {
+                    return;
+                }
             }
             renderer.setDebugEmitter(debugEmitter);
         }
@@ -418,6 +445,18 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
     }
 
+    private void reportPhase(TeaVMPhase phase, int progressLimit) {
+        if (progressListener.phaseStarted(phase, progressLimit) == TeaVMProgressFeedback.CANCEL) {
+            cancelled = true;
+        }
+    }
+
+    private void reportProgress(int progress) {
+        if (progressListener.progressReached(progress) == TeaVMProgressFeedback.CANCEL) {
+            cancelled = true;
+        }
+    }
+
     private void emitCFG(DebugInformationEmitter emitter, Program program) {
         Map<InstructionLocation, InstructionLocation[]> cfg = ProgramUtils.getLocationCFG(program);
         for (Map.Entry<InstructionLocation, InstructionLocation[]> entry : cfg.entrySet()) {
@@ -437,9 +476,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         return new SourceLocation(location.getFileName(), location.getLine());
     }
 
-    private void devirtualize(ListableClassHolderSource classes, DependencyInfo dependency)
-            throws InterruptedException {
-        progressListener.phaseStarted(TeaVMPhase.DEVIRTUALIZATION, classes.getClassNames().size());
+    private void devirtualize(ListableClassHolderSource classes, DependencyInfo dependency)  {
+        reportPhase(TeaVMPhase.DEVIRTUALIZATION, classes.getClassNames().size());
+        if (wasCancelled()) {
+            return;
+        }
         final Devirtualization devirtualization = new Devirtualization(dependency, classes);
         int index = 0;
         for (String className : classes.getClassNames()) {
@@ -449,11 +490,14 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                     devirtualization.apply(method);
                 }
             }
-            progressListener.progressReached(++index);
+            reportProgress(++index);
+            if (wasCancelled()) {
+                return;
+            }
         }
     }
 
-    private List<ClassNode> modelToAst(ListableClassHolderSource classes) throws InterruptedException {
+    private List<ClassNode> modelToAst(ListableClassHolderSource classes) {
         progressListener.phaseStarted(TeaVMPhase.DECOMPILATION, classes.getClassNames().size());
         Decompiler decompiler = new Decompiler(classes, classLoader);
         decompiler.setRegularMethodCache(incremental ? astCache : null);
@@ -606,7 +650,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
     }
 
-    public void build(File dir, String fileName) throws RenderingException, InterruptedException {
+    public void build(File dir, String fileName) throws RenderingException {
         try (Writer writer = new OutputStreamWriter(new FileOutputStream(new File(dir, fileName)), "UTF-8")) {
             build(writer, new DirectoryBuildTarget(dir));
         } catch (UnsupportedEncodingException e) {

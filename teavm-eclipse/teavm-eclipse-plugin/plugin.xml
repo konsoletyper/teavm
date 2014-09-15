@@ -50,6 +50,7 @@
     <runtime>
       <run class="org.teavm.eclipse.TeaVMProjectNature"/>
     </runtime>
+    <builder id="org.teavm.eclipse.builder"/>
   </extension>
   <extension point="org.eclipse.ui.propertyPages">
     <page id="org.teavm.eclipse.projectProperties" name="TeaVM" class="org.teavm.eclipse.ui.TeaVMProjectPropertyPage">
@@ -60,5 +61,10 @@
         </or>
       </enabledWhen>
     </page>
+  </extension>
+  <extension point="org.eclipse.core.resources.builders" id="builder" name="TeaVM builder">
+    <builder hasNature="true">
+      <run class="org.teavm.eclipse.TeaVMBuilder"/>
+    </builder>
   </extension>
 </plugin>

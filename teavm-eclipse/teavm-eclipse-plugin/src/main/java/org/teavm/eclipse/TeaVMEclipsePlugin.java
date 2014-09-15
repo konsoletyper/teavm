@@ -36,6 +36,7 @@ import org.eclipse.ui.plugin.AbstractUIPlugin;
 public class TeaVMEclipsePlugin extends AbstractUIPlugin {
     public static final String ID = "org.teavm.eclipse";
     public static final String NATURE_ID = ID + ".nature";
+    public static final String BUILDER_ID = ID + ".builder";
     public static final String MAIN_METHOD_DIALOG_ID = ID + ".dialogs.mainMethod";
     private static TeaVMEclipsePlugin defaultInstance;
     private ConcurrentMap<IProject, TeaVMProjectSettings> settingsMap = new ConcurrentHashMap<>();

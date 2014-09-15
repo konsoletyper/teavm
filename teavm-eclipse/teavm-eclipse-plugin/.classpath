@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src/main/java"/>
+	<classpathentry exported="true" kind="lib" path="lib/gson-2.2.4.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/teavm-classlib-0.2-SNAPSHOT.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/teavm-platform-0.2-SNAPSHOT.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/asm-5.0.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/asm-commons-5.0.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/asm-debug-all-4.2.jar"/>

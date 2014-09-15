@@ -4,14 +4,10 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IResource;
-import org.eclipse.core.resources.IncrementalProjectBuilder;
-import org.eclipse.core.resources.ResourcesPlugin;
+import java.util.*;
+import org.eclipse.core.resources.*;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.variables.VariablesPlugin;
 import org.eclipse.jdt.core.IClasspathEntry;
@@ -19,6 +15,7 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.teavm.tooling.RuntimeCopyOperation;
 import org.teavm.tooling.TeaVMTool;
+import org.teavm.tooling.TeaVMToolException;
 
 /**
  *
@@ -39,7 +36,12 @@ public class TeaVMBuilder extends IncrementalProjectBuilder {
         tool.setRuntime(RuntimeCopyOperation.SEPARATE);
         tool.setMinifying(false);
         tool.setMainClass(projectSettings.getMainClass());
-
+        tool.setProgressListener(new TeaVMEclipseProgressListener(monitor));
+        try {
+            tool.generate();
+        } catch (TeaVMToolException e) {
+            throw new CoreException(TeaVMEclipsePlugin.makeError(e));
+        }
         return null;
     }
 
@@ -57,9 +59,10 @@ public class TeaVMBuilder extends IncrementalProjectBuilder {
             return new URL[0];
         }
         IJavaProject javaProject = JavaCore.create(project);
-        List<URL> urls = new ArrayList<>();
+        PathCollector collector = new PathCollector();
+        IWorkspaceRoot workspaceRoot = project.getWorkspace().getRoot();
         try {
-            urls.add(javaProject.getOutputLocation().toFile().toURI().toURL());
+            collector.addPath(workspaceRoot.findMember(javaProject.getOutputLocation()).getLocation());
         } catch (MalformedURLException e) {
             TeaVMEclipsePlugin.logError(e);
         }
@@ -68,7 +71,7 @@ public class TeaVMBuilder extends IncrementalProjectBuilder {
             switch (entry.getEntryKind()) {
                 case IClasspathEntry.CPE_LIBRARY:
                     try {
-                        urls.add(entry.getPath().toFile().toURI().toURL());
+                        collector.addPath(entry.getPath());
                     } catch (MalformedURLException e) {
                         TeaVMEclipsePlugin.logError(e);
                     }
@@ -76,7 +79,7 @@ public class TeaVMBuilder extends IncrementalProjectBuilder {
                 case IClasspathEntry.CPE_SOURCE:
                     if (entry.getOutputLocation() != null) {
                         try {
-                            urls.add(entry.getOutputLocation().toFile().toURI().toURL());
+                            collector.addPath(workspaceRoot.findMember(entry.getOutputLocation()).getLocation());
                         } catch (MalformedURLException e) {
                             TeaVMEclipsePlugin.logError(e);
                         }
@@ -91,7 +94,8 @@ public class TeaVMBuilder extends IncrementalProjectBuilder {
                     IJavaProject depJavaProject = JavaCore.create(depProject);
                     if (depJavaProject.getOutputLocation() != null) {
                         try {
-                            urls.add(depJavaProject.getOutputLocation().toFile().toURI().toURL());
+                            collector.addPath(workspaceRoot.findMember(depJavaProject.getOutputLocation())
+                                    .getLocation());
                         } catch (MalformedURLException e) {
                             TeaVMEclipsePlugin.logError(e);
                         }
@@ -100,6 +104,31 @@ public class TeaVMBuilder extends IncrementalProjectBuilder {
                 }
             }
         }
-        return urls.toArray(new URL[urls.size()]);
+        return collector.getUrls();
+    }
+
+    static class PathCollector {
+        private Set<URL> urlSet = new HashSet<>();
+        private List<URL> urls = new ArrayList<>();
+
+        public void addPath(IPath path) throws MalformedURLException {
+            File file = path.toFile();
+            if (!file.exists()) {
+                return;
+            }
+            if (file.isDirectory()) {
+                file = new File(file.getAbsolutePath() + "/");
+            } else {
+                file = new File(file.getAbsolutePath());
+            }
+            URL url = file.toURI().toURL();
+            if (urlSet.add(url)) {
+                urls.add(url);
+            }
+        }
+
+        public URL[] getUrls() {
+            return urls.toArray(new URL[urls.size()]);
+        }
     }
 }
