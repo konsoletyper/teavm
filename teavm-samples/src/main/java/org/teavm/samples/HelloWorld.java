@@ -40,7 +40,6 @@ public final class HelloWorld {
         document = window.getDocument();
         body = document.getDocumentElement().getElementsByTagName("body").item(0);
         createButton();
-        new Thread().start();
     }
 
     private static void createButton() {
