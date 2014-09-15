@@ -235,7 +235,7 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         if (method != null) {
             tasks.add(new Runnable() {
                 @Override public void run() {
-                    linkMethod(method.getReference(), stack);
+                    linkMethod(method.getReference(), stack).use();
                 }
             });
         }

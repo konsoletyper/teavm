@@ -10,9 +10,10 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.variables.VariablesPlugin;
-import org.eclipse.jdt.core.IClasspathEntry;
-import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jdt.core.*;
+import org.teavm.dependency.*;
+import org.teavm.model.InstructionLocation;
+import org.teavm.model.MethodReference;
 import org.teavm.tooling.RuntimeCopyOperation;
 import org.teavm.tooling.TeaVMTool;
 import org.teavm.tooling.TeaVMToolException;
@@ -22,6 +23,9 @@ import org.teavm.tooling.TeaVMToolException;
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public class TeaVMBuilder extends IncrementalProjectBuilder {
+    private URL[] classPath;
+    private IContainer[] sourceContainers;
+
     @Override
     protected IProject[] build(int kind, Map<String, String> args, IProgressMonitor monitor) throws CoreException {
         TeaVMProjectSettings projectSettings = getProjectSettings();
@@ -39,11 +43,72 @@ public class TeaVMBuilder extends IncrementalProjectBuilder {
         tool.setProgressListener(new TeaVMEclipseProgressListener(monitor));
         try {
             tool.generate();
-            tool.checkForMissingItems();
+            removeMarkers();
+            if (tool.getDependencyViolations().hasMissingItems()) {
+                putMarkers(tool.getDependencyViolations());
+            }
         } catch (TeaVMToolException e) {
             throw new CoreException(TeaVMEclipsePlugin.makeError(e));
         }
         return null;
+    }
+
+    private void removeMarkers() throws CoreException {
+        getProject().deleteMarkers(TeaVMEclipsePlugin.DEPENDENCY_MARKER_ID, true, IResource.DEPTH_INFINITE);
+    }
+
+    private void putMarkers(DependencyViolations violations) throws CoreException {
+        for (ClassDependencyInfo dep : violations.getMissingClasses()) {
+            putMarker("Missing class " + dep.getClassName(), dep.getStack());
+        }
+        for (FieldDependencyInfo dep : violations.getMissingFields()) {
+            putMarker("Missing field " + dep.getReference().toString(), dep.getStack());
+        }
+        for (MethodDependencyInfo dep : violations.getMissingMethods()) {
+            putMarker("Missing method " + dep.getReference().toString(), dep.getStack());
+        }
+    }
+
+    private void putMarker(String message, DependencyStack stack) throws CoreException {
+        while (stack != DependencyStack.ROOT) {
+            putMarker(message, stack.getLocation(), stack.getMethod());
+            stack = stack.getCause();
+        }
+    }
+
+    private void putMarker(String message, InstructionLocation location, MethodReference methodRef)
+            throws CoreException {
+        IResource resource = null;
+        if (location != null) {
+            String resourceName = location.getFileName();
+            for (IContainer container : sourceContainers) {
+                resource = container.findMember(resourceName);
+                if (resource != null) {
+                    break;
+                }
+            }
+        }
+        if (resource == null) {
+            String resourceName = methodRef.getClassName().replace('.', '/') + ".java";
+            for (IContainer container : sourceContainers) {
+                resource = container.findMember(resourceName);
+                if (resource != null) {
+                    break;
+                }
+            }
+        }
+        if (resource != null) {
+            IMarker marker = resource.createMarker(TeaVMEclipsePlugin.DEPENDENCY_MARKER_ID);
+            marker.setAttribute(IMarker.SEVERITY, IMarker.SEVERITY_ERROR);
+            marker.setAttribute(IMarker.MESSAGE, message);
+            if (location != null) {
+                marker.setAttribute(IMarker.LINE_NUMBER, location.getLine());
+            } else {
+                ICompilationUnit unit = (ICompilationUnit)JavaCore.create(resource);
+                IType type = unit.getType(methodRef.getClassName());
+                // TODO: find method declaration location and put marker there
+            }
+        }
     }
 
     private TeaVMProjectSettings getProjectSettings() {
@@ -51,16 +116,20 @@ public class TeaVMBuilder extends IncrementalProjectBuilder {
     }
 
     private ClassLoader prepareClassLoader() throws CoreException {
-        return new URLClassLoader(prepareClassPath(), Thread.currentThread().getContextClassLoader());
+        prepareClassPath();
+        return new URLClassLoader(classPath, TeaVMBuilder.class.getClassLoader());
     }
 
-    private URL[] prepareClassPath() throws CoreException {
+    private void prepareClassPath() throws CoreException {
+        classPath = new URL[0];
+        sourceContainers = new IContainer[0];
         IProject project = getProject();
         if (!project.hasNature(JavaCore.NATURE_ID)) {
-            return new URL[0];
+            return;
         }
         IJavaProject javaProject = JavaCore.create(project);
         PathCollector collector = new PathCollector();
+        SourcePathCollector srcCollector = new SourcePathCollector();
         IWorkspaceRoot workspaceRoot = project.getWorkspace().getRoot();
         try {
             collector.addPath(workspaceRoot.findMember(javaProject.getOutputLocation()).getLocation());
@@ -85,6 +154,7 @@ public class TeaVMBuilder extends IncrementalProjectBuilder {
                             TeaVMEclipsePlugin.logError(e);
                         }
                     }
+                    srcCollector.addContainer((IContainer)workspaceRoot.findMember(entry.getPath()));
                     break;
                 case IClasspathEntry.CPE_PROJECT: {
                     IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(entry.getPath());
@@ -105,7 +175,8 @@ public class TeaVMBuilder extends IncrementalProjectBuilder {
                 }
             }
         }
-        return collector.getUrls();
+        classPath = collector.getUrls();
+        sourceContainers = srcCollector.getContainers();
     }
 
     static class PathCollector {
@@ -130,6 +201,21 @@ public class TeaVMBuilder extends IncrementalProjectBuilder {
 
         public URL[] getUrls() {
             return urls.toArray(new URL[urls.size()]);
+        }
+    }
+
+    static class SourcePathCollector {
+        private Set<IContainer> containerSet = new HashSet<>();
+        private List<IContainer> containers = new ArrayList<>();
+
+        public void addContainer(IContainer container) {
+            if (containerSet.add(container)) {
+                containers.add(container);
+            }
+        }
+
+        public IContainer[] getContainers() {
+            return containers.toArray(new IContainer[containers.size()]);
         }
     }
 }

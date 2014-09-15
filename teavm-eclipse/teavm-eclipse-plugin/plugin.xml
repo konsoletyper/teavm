@@ -67,4 +67,12 @@
       <run class="org.teavm.eclipse.TeaVMBuilder"/>
     </builder>
   </extension>
+
+  <extension id="dependencyMarker" point="org.eclipse.core.resources.markers" name="TeaVM dependency problem">
+    <super type="org.eclipse.core.resources.problemmarker"/>
+    <persistent value="false"/>
+    <attribute name="severity"/>
+    <attribute name="message"/>
+    <attribute name="lineNumber"/>
+   </extension>
 </plugin>
