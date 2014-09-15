@@ -45,7 +45,6 @@ class DependencyGraphBuilder {
         if (method.getProgram() == null || method.getProgram().basicBlockCount() == 0) {
             return;
         }
-        callerStack = dep.getStack();
         program = method.getProgram();
         if (DependencyChecker.shouldLog) {
             System.out.println("Method achieved: " + method.getReference());
@@ -53,6 +52,7 @@ class DependencyGraphBuilder {
         }
         resultNode = dep.getResult();
         nodes = dep.getVariables();
+        callerStack = new DependencyStack(method.getReference(), dep.getStack());
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlockReader block = program.basicBlockAt(i);
             currentExceptionConsumer = createExceptionConsumer(dep, block);
@@ -66,7 +66,7 @@ class DependencyGraphBuilder {
                 useRunners.add(new Runnable() {
                     @Override public void run() {
                         if (tryCatch.getExceptionType() != null) {
-                            dependencyChecker.initClass(tryCatch.getExceptionType(), callerStack);
+                            dependencyChecker.linkClass(tryCatch.getExceptionType(), callerStack);
                         }
                     }
                 });
@@ -216,6 +216,7 @@ class DependencyGraphBuilder {
     private InstructionReader reader = new InstructionReader() {
         @Override
         public void location(InstructionLocation location) {
+            callerStack = new DependencyStack(callerStack.getMethod(), location, callerStack.getCause());
         }
 
         @Override
@@ -233,7 +234,7 @@ class DependencyGraphBuilder {
                 final String className = ((ValueType.Object)cst).getClassName();
                 useRunners.add(new Runnable() {
                     @Override public void run() {
-                        dependencyChecker.initClass(className, callerStack);
+                        dependencyChecker.linkClass(className, callerStack);
                     }
                 });
             }
@@ -355,7 +356,7 @@ class DependencyGraphBuilder {
             if (className != null) {
                 useRunners.add(new Runnable() {
                     @Override public void run() {
-                        dependencyChecker.initClass(className, callerStack);
+                        dependencyChecker.linkClass(className, callerStack);
                     }
                 });
             }
@@ -502,7 +503,7 @@ class DependencyGraphBuilder {
                 final String className = ((ValueType.Object)type).getClassName();
                 useRunners.add(new Runnable() {
                     @Override public void run() {
-                        dependencyChecker.initClass(className, callerStack);
+                        dependencyChecker.linkClass(className, callerStack);
                     }
                 });
             }
@@ -512,7 +513,7 @@ class DependencyGraphBuilder {
         public void initClass(final String className) {
             useRunners.add(new Runnable() {
                 @Override public void run() {
-                    dependencyChecker.initClass(className, callerStack);
+                    dependencyChecker.linkClass(className, callerStack).initClass(callerStack);
                 }
             });
         }

@@ -15,29 +15,14 @@
  */
 package org.teavm.dependency;
 
-import java.util.Collection;
-import org.teavm.model.ClassReaderSource;
-import org.teavm.model.FieldReference;
-import org.teavm.model.MethodReference;
-
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-public interface DependencyInfo {
-    ClassReaderSource getClassSource();
+public interface ClassDependencyInfo {
+    String getClassName();
 
-    ClassLoader getClassLoader();
+    boolean isMissing();
 
-    Collection<MethodReference> getAchievableMethods();
-
-    Collection<FieldReference> getAchievableFields();
-
-    Collection<String> getAchievableClasses();
-
-    FieldDependencyInfo getField(FieldReference fieldRef);
-
-    MethodDependencyInfo getMethod(MethodReference methodRef);
-
-    ClassDependencyInfo getClass(String className);
+    DependencyStack getStack();
 }

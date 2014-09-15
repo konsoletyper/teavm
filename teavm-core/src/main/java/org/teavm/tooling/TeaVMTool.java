@@ -26,6 +26,7 @@ import org.teavm.cache.DiskRegularMethodNodeCache;
 import org.teavm.cache.FileSymbolTable;
 import org.teavm.debugging.information.DebugInformation;
 import org.teavm.debugging.information.DebugInformationBuilder;
+import org.teavm.dependency.DependencyViolations;
 import org.teavm.javascript.RenderingContext;
 import org.teavm.model.*;
 import org.teavm.parsing.ClasspathClassHolderSource;
@@ -61,6 +62,7 @@ public class TeaVMTool {
     private FileSymbolTable fileTable;
     private boolean cancelled;
     private TeaVMProgressListener progressListener;
+    private TeaVM vm;
 
     public File getTargetDirectory() {
         return targetDirectory;
@@ -215,7 +217,7 @@ public class TeaVMTool {
             } else {
                 vmBuilder.setClassLoader(classLoader).setClassSource(new ClasspathClassHolderSource(classLoader));
             }
-            TeaVM vm = vmBuilder.build();
+            vm = vmBuilder.build();
             if (progressListener != null) {
                 vm.setProgressListener(progressListener);
             }
@@ -271,7 +273,10 @@ public class TeaVMTool {
                     cancelled = true;
                     return;
                 }
-                vm.checkForMissingItems();
+                if (vm.hasMissingItems()) {
+                    log.info("Missing items found");
+                    return;
+                }
                 log.info("JavaScript file successfully built");
                 if (debugInformationGenerated) {
                     DebugInformation debugInfo = debugEmitter.getDebugInformation();
@@ -317,6 +322,14 @@ public class TeaVMTool {
         } catch (IOException e) {
             throw new TeaVMToolException("IO error occured", e);
         }
+    }
+
+    public DependencyViolations getDependencyViolations() {
+        return vm.getDependencyViolations();
+    }
+
+    public void checkForMissingItems() {
+        vm.checkForMissingItems();
     }
 
     private AbstractRendererListener runtimeInjector = new AbstractRendererListener() {

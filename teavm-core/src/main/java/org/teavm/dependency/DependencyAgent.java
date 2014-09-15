@@ -35,7 +35,7 @@ public interface DependencyAgent extends DependencyInfo, ServiceRepository {
 
     MethodDependency linkMethod(MethodReference methodRef, DependencyStack stack);
 
-    void initClass(String className, final DependencyStack stack);
+    ClassDependency linkClass(String className, final DependencyStack stack);
 
     FieldDependency linkField(FieldReference fieldRef, DependencyStack stack);
 }

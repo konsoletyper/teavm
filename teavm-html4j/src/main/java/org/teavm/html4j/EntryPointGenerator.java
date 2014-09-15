@@ -69,7 +69,7 @@ public class EntryPointGenerator extends AbstractRendererListener implements Dep
     @Override
     public void started(DependencyAgent agent) {
         for (String className : classesToLoad) {
-            agent.initClass(className, DependencyStack.ROOT);
+            agent.linkClass(className, DependencyStack.ROOT).initClass(DependencyStack.ROOT);
         }
     }
 

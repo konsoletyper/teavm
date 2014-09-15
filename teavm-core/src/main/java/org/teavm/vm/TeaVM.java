@@ -232,7 +232,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
         TeaVMEntryPoint entryPoint = new TeaVMEntryPoint(name, ref,
                 dependencyChecker.linkMethod(ref, DependencyStack.ROOT));
-        dependencyChecker.initClass(ref.getClassName(), DependencyStack.ROOT);
+        dependencyChecker.linkClass(ref.getClassName(), DependencyStack.ROOT).initClass(DependencyStack.ROOT);
         if (name != null) {
             entryPoints.put(name, entryPoint);
         }
@@ -258,7 +258,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     public TeaVMEntryPoint linkMethod(MethodReference ref) {
         TeaVMEntryPoint entryPoint = new TeaVMEntryPoint("", ref,
                 dependencyChecker.linkMethod(ref, DependencyStack.ROOT));
-        dependencyChecker.initClass(ref.getClassName(), DependencyStack.ROOT);
+        dependencyChecker.linkClass(ref.getClassName(), DependencyStack.ROOT).initClass(DependencyStack.ROOT);
         return entryPoint;
     }
 
@@ -267,12 +267,12 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             throw new IllegalArgumentException("Class with public name `" + name + "' already defined for class " +
                     className);
         }
-        dependencyChecker.initClass(className, DependencyStack.ROOT);
+        dependencyChecker.linkClass(className, DependencyStack.ROOT).initClass(DependencyStack.ROOT);
         exportedClasses.put(name, className);
     }
 
     public void linkType(String className) {
-        dependencyChecker.initClass(className, DependencyStack.ROOT);
+        dependencyChecker.linkClass(className, DependencyStack.ROOT).initClass(DependencyStack.ROOT);
     }
 
     /**
@@ -301,6 +301,10 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
      */
     public void showMissingItems(Appendable target) throws IOException {
         dependencyChecker.showMissingItems(target);
+    }
+
+    public DependencyViolations getDependencyViolations() {
+        return dependencyChecker.getDependencyViolations();
     }
 
     /**

@@ -39,6 +39,7 @@ public class TeaVMBuilder extends IncrementalProjectBuilder {
         tool.setProgressListener(new TeaVMEclipseProgressListener(monitor));
         try {
             tool.generate();
+            tool.checkForMissingItems();
         } catch (TeaVMToolException e) {
             throw new CoreException(TeaVMEclipsePlugin.makeError(e));
         }

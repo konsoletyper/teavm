@@ -82,6 +82,7 @@ public class MethodDependency implements MethodDependencyInfo {
         return thrown;
     }
 
+    @Override
     public DependencyStack getStack() {
         return stack;
     }
@@ -95,6 +96,7 @@ public class MethodDependency implements MethodDependencyInfo {
         return method;
     }
 
+    @Override
     public boolean isMissing() {
         return method == null;
     }

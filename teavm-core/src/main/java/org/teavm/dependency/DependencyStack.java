@@ -74,6 +74,9 @@ public class DependencyStack {
                 break;
             } else {
                 sb.append(" used by " + stack.method);
+                if (stack.location != null) {
+                    sb.append(" : ").append(stack.location.getLine());
+                }
                 stack = stack.cause;
             }
         }

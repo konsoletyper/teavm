@@ -210,6 +210,7 @@ public class BuildJavascriptMojo extends AbstractMojo {
             tool.setDebugInformationGenerated(debugInformationGenerated);
             tool.setSourceMapsFileGenerated(sourceMapsGenerated);
             tool.generate();
+            tool.checkForMissingItems();
         } catch (RuntimeException e) {
             throw new MojoExecutionException("Unexpected error occured", e);
         } catch (TeaVMToolException e) {

@@ -15,29 +15,37 @@
  */
 package org.teavm.dependency;
 
-import org.teavm.model.FieldReader;
-import org.teavm.model.FieldReference;
+import org.teavm.model.ClassReader;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class FieldDependency implements FieldDependencyInfo {
-    private DependencyNode value;
+public class ClassDependency implements ClassDependencyInfo {
+    private DependencyChecker checker;
+    private String className;
     private DependencyStack stack;
-    private FieldReader field;
-    private FieldReference reference;
+    private ClassReader classReader;
 
-    FieldDependency(DependencyNode value, DependencyStack stack, FieldReader field, FieldReference reference) {
-        this.value = value;
+    ClassDependency(DependencyChecker checker, String className, DependencyStack stack, ClassReader classReader) {
+        this.checker = checker;
+        this.className = className;
         this.stack = stack;
-        this.field = field;
-        this.reference = reference;
+        this.classReader = classReader;
     }
 
     @Override
-    public DependencyNode getValue() {
-        return value;
+    public String getClassName() {
+        return className;
+    }
+
+    @Override
+    public boolean isMissing() {
+        return classReader == null;
+    }
+
+    public ClassReader getClassReader() {
+        return classReader;
     }
 
     @Override
@@ -45,17 +53,9 @@ public class FieldDependency implements FieldDependencyInfo {
         return stack;
     }
 
-    public FieldReader getField() {
-        return field;
-    }
-
-    @Override
-    public FieldReference getReference() {
-        return reference;
-    }
-
-    @Override
-    public boolean isMissing() {
-        return field == null;
+    public void initClass(DependencyStack stack) {
+        if (!isMissing()) {
+            checker.initClass(this, stack);
+        }
     }
 }

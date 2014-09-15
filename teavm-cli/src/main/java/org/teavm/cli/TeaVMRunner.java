@@ -152,6 +152,7 @@ public final class TeaVMRunner {
 
         try {
             tool.generate();
+            tool.checkForMissingItems();
         } catch (Exception e) {
             e.printStackTrace(System.err);
             System.exit(-2);
