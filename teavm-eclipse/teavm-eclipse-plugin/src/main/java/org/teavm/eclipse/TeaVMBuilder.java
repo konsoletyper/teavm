@@ -10,7 +10,9 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.variables.VariablesPlugin;
-import org.eclipse.jdt.core.*;
+import org.eclipse.jdt.core.IClasspathEntry;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.JavaCore;
 import org.teavm.dependency.*;
 import org.teavm.model.InstructionLocation;
 import org.teavm.model.MethodReference;
@@ -26,9 +28,15 @@ import org.teavm.tooling.TeaVMToolException;
 public class TeaVMBuilder extends IncrementalProjectBuilder {
     private URL[] classPath;
     private IContainer[] sourceContainers;
+    private IContainer[] classFileContainers;
+    private Set<IProject> usedProjects = new HashSet<>();
 
     @Override
     protected IProject[] build(int kind, Map<String, String> args, IProgressMonitor monitor) throws CoreException {
+        if ((kind == AUTO_BUILD || kind == INCREMENTAL_BUILD) && !shouldBuild()) {
+            System.out.println("Skipping project " + getProject().getName());
+            return null;
+        }
         TeaVMProjectSettings projectSettings = getProjectSettings();
         projectSettings.load();
         TeaVMTool tool = new TeaVMTool();
@@ -49,13 +57,59 @@ public class TeaVMBuilder extends IncrementalProjectBuilder {
             if (tool.getDependencyViolations().hasMissingItems()) {
                 putMarkers(tool.getDependencyViolations());
             }
+            TeaVMEclipsePlugin.getDefault().setProjectClasses(getProject(), classesToResources(tool.getClasses()));
             if (!monitor.isCanceled()) {
                 monitor.done();
             }
         } catch (TeaVMToolException e) {
             throw new CoreException(TeaVMEclipsePlugin.makeError(e));
+        } finally {
+            sourceContainers = null;
+            classFileContainers = null;
+            classPath = null;
+            usedProjects.clear();
         }
-        return null;
+        return !usedProjects.isEmpty() ? usedProjects.toArray(new IProject[0]) : null;
+    }
+
+    private Set<String> classesToResources(Collection<String> classNames) {
+        Set<String> resourcePaths = new HashSet<>();
+        for (String className : classNames) {
+            for (IContainer clsContainer : classFileContainers) {
+                IResource res = clsContainer.findMember(className.replace('.', '/') + ".class");
+                if (res != null) {
+                    resourcePaths.add(res.getFullPath().toString());
+                    usedProjects.add(res.getProject());
+                }
+            }
+        }
+        return resourcePaths;
+    }
+
+    private boolean shouldBuild() throws CoreException {
+        Set<String> classes = TeaVMEclipsePlugin.getDefault().getProjectClasses(getProject());
+        if (classes.isEmpty()) {
+            return true;
+        }
+        for (IProject project : getRelatedProjects()) {
+            IResourceDelta delta = getDelta(project);
+            if (shouldBuild(classes, delta)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean shouldBuild(Set<String> classes, IResourceDelta delta) {
+        if (classes.contains(delta.getResource().getFullPath().toString())) {
+            return true;
+        }
+        for (IResourceDelta child : delta.getAffectedChildren()) {
+            if (shouldBuild(classes, child)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void removeMarkers() throws CoreException {
@@ -200,6 +254,29 @@ public class TeaVMBuilder extends IncrementalProjectBuilder {
         return new URLClassLoader(classPath, TeaVMBuilder.class.getClassLoader());
     }
 
+    private Set<IProject> getRelatedProjects() throws CoreException {
+        Set<IProject> projects = new HashSet<>();
+        Set<IProject> visited = new HashSet<>();
+        Queue<IProject> queue = new ArrayDeque<>();
+        queue.add(getProject());
+        IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+        while (!queue.isEmpty()) {
+            IProject project = queue.remove();
+            if (!visited.add(project) || !project.hasNature(JavaCore.NATURE_ID)) {
+                continue;
+            }
+            projects.add(project);
+            IJavaProject javaProject = JavaCore.create(project);
+            for (IClasspathEntry entry : javaProject.getRawClasspath()) {
+                if (entry.getEntryKind() == IClasspathEntry.CPE_PROJECT) {
+                    project = (IProject)root.findMember(entry.getPath());
+                    queue.add(project);
+                }
+            }
+        }
+        return projects;
+    }
+
     private void prepareClassPath() throws CoreException {
         classPath = new URL[0];
         sourceContainers = new IContainer[0];
@@ -210,9 +287,14 @@ public class TeaVMBuilder extends IncrementalProjectBuilder {
         IJavaProject javaProject = JavaCore.create(project);
         PathCollector collector = new PathCollector();
         SourcePathCollector srcCollector = new SourcePathCollector();
+        SourcePathCollector binCollector = new SourcePathCollector();
         IWorkspaceRoot workspaceRoot = project.getWorkspace().getRoot();
         try {
-            collector.addPath(workspaceRoot.findMember(javaProject.getOutputLocation()).getLocation());
+            if (javaProject.getOutputLocation() != null) {
+                IContainer container = (IContainer)workspaceRoot.findMember(javaProject.getOutputLocation());
+                collector.addPath(container.getLocation());
+                binCollector.addContainer(container);
+            }
         } catch (MalformedURLException e) {
             TeaVMEclipsePlugin.logError(e);
         }
@@ -248,8 +330,10 @@ public class TeaVMBuilder extends IncrementalProjectBuilder {
                     IJavaProject depJavaProject = JavaCore.create(depProject);
                     if (depJavaProject.getOutputLocation() != null) {
                         try {
-                            collector.addPath(workspaceRoot.findMember(depJavaProject.getOutputLocation())
-                                    .getLocation());
+                            IContainer container = (IContainer)workspaceRoot.findMember(
+                                    depJavaProject.getOutputLocation());
+                            collector.addPath(container.getLocation());
+                            binCollector.addContainer(container);
                         } catch (MalformedURLException e) {
                             TeaVMEclipsePlugin.logError(e);
                         }
@@ -260,6 +344,7 @@ public class TeaVMBuilder extends IncrementalProjectBuilder {
         }
         classPath = collector.getUrls();
         sourceContainers = srcCollector.getContainers();
+        classFileContainers = binCollector.getContainers();
     }
 
     static class PathCollector {

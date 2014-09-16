@@ -28,6 +28,7 @@ import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.Injector;
 import org.teavm.model.*;
 import org.teavm.model.util.ListingBuilder;
+import org.teavm.model.util.ModelUtils;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.model.util.RegisterAllocator;
 import org.teavm.optimization.*;
@@ -307,6 +308,10 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         return dependencyChecker.getDependencyViolations();
     }
 
+    public Collection<String> getClasses() {
+        return dependencyChecker.getAchievableClasses();
+    }
+
     /**
      * <p>After building checks whether the build has failed due to some missing items (classes, methods and fields).
      * If it has failed, throws exception, containing report on all missing items.
@@ -343,23 +348,26 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             return;
         }
         AliasProvider aliasProvider = minifying ? new MinifyingAliasProvider() : new DefaultAliasProvider();
-        dependencyChecker.linkMethod(new MethodReference("java.lang.Class", "createNew",
-                ValueType.object("java.lang.Class")), DependencyStack.ROOT).use();
-        dependencyChecker.linkMethod(new MethodReference("java.lang.String", "<init>",
-                ValueType.arrayOf(ValueType.CHARACTER), ValueType.VOID), DependencyStack.ROOT).use();
-        dependencyChecker.linkMethod(new MethodReference("java.lang.String", "getChars",
-                ValueType.INTEGER, ValueType.INTEGER, ValueType.arrayOf(ValueType.CHARACTER), ValueType.INTEGER,
-                ValueType.VOID), DependencyStack.ROOT).use();
-        MethodDependency internDep = dependencyChecker.linkMethod(new MethodReference("java.lang.String", "intern",
-                ValueType.object("java.lang.String")), DependencyStack.ROOT);
+        dependencyChecker.setInterruptor(new DependencyCheckerInterruptor() {
+            @Override public boolean shouldContinue() {
+                return progressListener.progressReached(0) == TeaVMProgressFeedback.CONTINUE;
+            }
+        });
+        dependencyChecker.linkMethod(new MethodReference(Class.class, "createNew", Class.class),
+                DependencyStack.ROOT).use();
+        dependencyChecker.linkMethod(new MethodReference(String.class, "<init>", char[].class, void.class),
+                DependencyStack.ROOT).use();
+        dependencyChecker.linkMethod(new MethodReference(String.class, "getChars", int.class, int.class, char[].class,
+                int.class, void.class), DependencyStack.ROOT).use();
+        MethodDependency internDep = dependencyChecker.linkMethod(new MethodReference(String.class, "intern",
+                String.class), DependencyStack.ROOT);
         internDep.getVariable(0).propagate(dependencyChecker.getType("java.lang.String"));
         internDep.use();
-        dependencyChecker.linkMethod(new MethodReference("java.lang.String", "length", ValueType.INTEGER),
+        dependencyChecker.linkMethod(new MethodReference(String.class, "length", int.class),
                 DependencyStack.ROOT).use();
-        dependencyChecker.linkMethod(new MethodReference("java.lang.Object", new MethodDescriptor("clone",
-                ValueType.object("java.lang.Object"))), DependencyStack.ROOT).use();
+        dependencyChecker.linkMethod(new MethodReference(Object.class, "clone", Object.class),
+                DependencyStack.ROOT).use();
         dependencyChecker.processDependencies();
-        reportProgress(1);
         if (wasCancelled() || hasMissingItems()) {
             return;
         }
@@ -369,9 +377,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         if (wasCancelled()) {
             return;
         }
-        Linker linker = new Linker();
-        ListableClassHolderSource classSet = linker.link(dependencyChecker);
-        reportProgress(1);
+        ListableClassHolderSource classSet = link(dependencyChecker);
         if (wasCancelled()) {
             return;
         }
@@ -447,6 +453,23 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         } catch (IOException e) {
             throw new RenderingException("IO Error occured", e);
         }
+    }
+
+    public ListableClassHolderSource link(DependencyInfo dependency) {
+        reportPhase(TeaVMPhase.LINKING, dependency.getAchievableClasses().size());
+        Linker linker = new Linker();
+        MutableClassHolderSource cutClasses = new MutableClassHolderSource();
+        if (wasCancelled()) {
+            return cutClasses;
+        }
+        int index = 0;
+        for (String className : dependency.getAchievableClasses()) {
+            ClassHolder cls = ModelUtils.copyClass(dependency.getClassSource().get(className));
+            cutClasses.putClassHolder(cls);
+            linker.link(dependency, cls);
+            progressListener.progressReached(++index);
+        }
+        return cutClasses;
     }
 
     private void reportPhase(TeaVMPhase phase, int progressLimit) {

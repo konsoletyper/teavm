@@ -16,7 +16,7 @@
 package org.teavm.eclipse;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.eclipse.core.resources.IProject;
@@ -41,6 +41,7 @@ public class TeaVMEclipsePlugin extends AbstractUIPlugin {
     public static final String DEPENDENCY_MARKER_ID = ID + ".dependencyMarker";
     private static TeaVMEclipsePlugin defaultInstance;
     private ConcurrentMap<IProject, TeaVMProjectSettings> settingsMap = new ConcurrentHashMap<>();
+    private Map<IProject, Set<String>> projectClasses = new WeakHashMap<>();
 
     public TeaVMEclipsePlugin() {
         defaultInstance = this;
@@ -130,5 +131,19 @@ public class TeaVMEclipsePlugin extends AbstractUIPlugin {
                 break;
             }
         }
+    }
+
+    public void setProjectClasses(IProject project, Set<String> classes) {
+        synchronized (projectClasses) {
+            projectClasses.put(project, new HashSet<>(classes));
+        }
+    }
+
+    public Set<String> getProjectClasses(IProject project) {
+        Set<String> classes;
+        synchronized (projectClasses) {
+            classes = projectClasses.get(project);
+        }
+        return classes != null ? new HashSet<>(classes) : new HashSet<String>();
     }
 }

@@ -48,6 +48,8 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     List<DependencyType> types = new ArrayList<>();
     Map<String, DependencyType> typeMap = new HashMap<>();
     private DependencyViolations dependencyViolations;
+    private DependencyCheckerInterruptor interruptor;
+    private boolean interrupted;
 
     public DependencyChecker(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services) {
         this.classSource = new DependencyClassSource(classSource);
@@ -120,6 +122,18 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
                 }
             }
         });
+    }
+
+    public DependencyCheckerInterruptor getInterruptor() {
+        return interruptor;
+    }
+
+    public void setInterruptor(DependencyCheckerInterruptor interruptor) {
+        this.interruptor = interruptor;
+    }
+
+    public boolean wasInterrupted() {
+        return interrupted;
     }
 
     @Override
@@ -434,8 +448,17 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     }
 
     public void processDependencies() {
+        interrupted = false;
+        int index = 0;
         while (!tasks.isEmpty()) {
             tasks.poll().run();
+            if (++index == 100) {
+                if (interruptor != null && !interruptor.shouldContinue()) {
+                    interrupted = true;
+                    break;
+                }
+                index = 0;
+            }
         }
     }
 

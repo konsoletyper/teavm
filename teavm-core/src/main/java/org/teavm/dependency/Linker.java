@@ -19,24 +19,13 @@ import org.teavm.model.*;
 import org.teavm.model.instructions.GetFieldInstruction;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.PutFieldInstruction;
-import org.teavm.model.util.ModelUtils;
 
 /**
  *
  * @author Alexey Andreev
  */
 public class Linker {
-    public ListableClassHolderSource link(DependencyInfo dependency) {
-        MutableClassHolderSource cutClasses = new MutableClassHolderSource();
-        for (String className : dependency.getAchievableClasses()) {
-            ClassHolder cls = ModelUtils.copyClass(dependency.getClassSource().get(className));
-            cutClasses.putClassHolder(cls);
-            link(dependency, cls);
-        }
-        return cutClasses;
-    }
-
-    private void link(DependencyInfo dependency, ClassHolder cls) {
+    public void link(DependencyInfo dependency, ClassHolder cls) {
         for (MethodHolder method : cls.getMethods().toArray(new MethodHolder[0])) {
             MethodReference methodRef = new MethodReference(cls.getName(), method.getDescriptor());
             MethodDependencyInfo methodDep = dependency.getMethod(methodRef);

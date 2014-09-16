@@ -16,9 +16,7 @@
 package org.teavm.tooling;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import org.apache.commons.io.IOUtils;
 import org.teavm.cache.DiskCachedClassHolderSource;
 import org.teavm.cache.DiskProgramCache;
@@ -192,6 +190,10 @@ public class TeaVMTool {
         return cancelled;
     }
 
+    public Collection<String> getClasses() {
+        return vm != null ? vm.getClasses() : Collections.<String>emptyList();
+    }
+
     public void generate() throws TeaVMToolException {
         try {
             cancelled = false;
@@ -263,7 +265,8 @@ public class TeaVMTool {
                 }
             }
             targetDirectory.mkdirs();
-            try (FileWriter writer = new FileWriter(new File(targetDirectory, targetFileName))) {
+            try (Writer writer = new OutputStreamWriter(new BufferedOutputStream(
+                    new FileOutputStream(new File(targetDirectory, targetFileName))), "UTF-8")) {
                 if (runtime == RuntimeCopyOperation.MERGED) {
                     vm.add(runtimeInjector);
                 }
