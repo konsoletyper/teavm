@@ -14,6 +14,7 @@ import org.eclipse.jdt.core.*;
 import org.teavm.dependency.*;
 import org.teavm.model.InstructionLocation;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 import org.teavm.tooling.RuntimeCopyOperation;
 import org.teavm.tooling.TeaVMTool;
 import org.teavm.tooling.TeaVMToolException;
@@ -59,24 +60,98 @@ public class TeaVMBuilder extends IncrementalProjectBuilder {
 
     private void putMarkers(DependencyViolations violations) throws CoreException {
         for (ClassDependencyInfo dep : violations.getMissingClasses()) {
-            putMarker("Missing class " + dep.getClassName(), dep.getStack());
+            putMarker("Missing class " + getSimpleClassName(dep.getClassName()), dep.getStack());
         }
         for (FieldDependencyInfo dep : violations.getMissingFields()) {
-            putMarker("Missing field " + dep.getReference().toString(), dep.getStack());
+            putMarker("Missing field " + getSimpleClassName(dep.getReference().getClassName()) + "." +
+                    dep.getReference().getFieldName(), dep.getStack());
         }
         for (MethodDependencyInfo dep : violations.getMissingMethods()) {
-            putMarker("Missing method " + dep.getReference().toString(), dep.getStack());
+            putMarker("Missing method " + getFullMethodName(dep.getReference()), dep.getStack());
         }
     }
 
     private void putMarker(String message, DependencyStack stack) throws CoreException {
+        StringBuilder sb = new StringBuilder();
+        sb.append(message);
+        boolean wasPut = false;
         while (stack != DependencyStack.ROOT) {
-            putMarker(message, stack.getLocation(), stack.getMethod());
+            wasPut |= putMarker(sb.toString(), stack.getLocation(), stack.getMethod());
+            if (stack.getMethod() != null) {
+                sb.append(", called by ").append(getFullMethodName(stack.getMethod()));
+            }
             stack = stack.getCause();
+        }
+        if (!wasPut) {
+            IMarker marker = getProject().createMarker(TeaVMEclipsePlugin.DEPENDENCY_MARKER_ID);
+            marker.setAttribute(IMarker.SEVERITY, IMarker.SEVERITY_ERROR);
+            marker.setAttribute(IMarker.MESSAGE, message);
         }
     }
 
-    private void putMarker(String message, InstructionLocation location, MethodReference methodRef)
+    private String getFullMethodName(MethodReference methodRef) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(getSimpleClassName(methodRef.getClassName())).append('.').append(methodRef.getName()).append('(');
+        if (methodRef.getDescriptor().parameterCount() > 0) {
+            sb.append(getTypeName(methodRef.getDescriptor().parameterType(0)));
+            for (int i = 1; i < methodRef.getDescriptor().parameterCount(); ++i) {
+                sb.append(',').append(getTypeName(methodRef.getDescriptor().parameterType(i)));
+            }
+        }
+        sb.append(')');
+        return sb.toString();
+    }
+
+    private String getTypeName(ValueType type) {
+        int arrayDim = 0;
+        while (type instanceof ValueType.Array) {
+            ValueType.Array array = (ValueType.Array)type;
+            type = array.getItemType();
+        }
+        StringBuilder sb = new StringBuilder();
+        if (type instanceof ValueType.Primitive) {
+            switch (((ValueType.Primitive)type).getKind()) {
+                case BOOLEAN:
+                    sb.append("boolean");
+                    break;
+                case BYTE:
+                    sb.append("byte");
+                    break;
+                case CHARACTER:
+                    sb.append("char");
+                    break;
+                case SHORT:
+                    sb.append("short");
+                    break;
+                case INTEGER:
+                    sb.append("int");
+                    break;
+                case LONG:
+                    sb.append("long");
+                    break;
+                case FLOAT:
+                    sb.append("float");
+                    break;
+                case DOUBLE:
+                    sb.append("double");
+                    break;
+            }
+        } else if (type instanceof ValueType.Object) {
+            ValueType.Object cls = (ValueType.Object)type;
+            sb.append(getSimpleClassName(cls.getClassName()));
+        }
+        while (arrayDim-- > 0) {
+            sb.append("[]");
+        }
+        return sb.toString();
+    }
+
+    private String getSimpleClassName(String className) {
+        int index = className.lastIndexOf('.');
+        return className.substring(index + 1);
+    }
+
+    private boolean putMarker(String message, InstructionLocation location, MethodReference methodRef)
             throws CoreException {
         IResource resource = null;
         if (location != null) {
@@ -104,10 +179,11 @@ public class TeaVMBuilder extends IncrementalProjectBuilder {
             if (location != null) {
                 marker.setAttribute(IMarker.LINE_NUMBER, location.getLine());
             } else {
-                ICompilationUnit unit = (ICompilationUnit)JavaCore.create(resource);
-                IType type = unit.getType(methodRef.getClassName());
-                // TODO: find method declaration location and put marker there
+                marker.setAttribute(IMarker.LINE_NUMBER, 1);
             }
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -154,7 +230,10 @@ public class TeaVMBuilder extends IncrementalProjectBuilder {
                             TeaVMEclipsePlugin.logError(e);
                         }
                     }
-                    srcCollector.addContainer((IContainer)workspaceRoot.findMember(entry.getPath()));
+                    IContainer srcContainer = (IContainer)workspaceRoot.findMember(entry.getPath());
+                    if (srcContainer.getProject() == project) {
+                        srcCollector.addContainer(srcContainer);
+                    }
                     break;
                 case IClasspathEntry.CPE_PROJECT: {
                     IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(entry.getPath());
