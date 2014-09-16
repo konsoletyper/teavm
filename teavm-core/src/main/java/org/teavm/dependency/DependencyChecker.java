@@ -210,12 +210,13 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         ClassDependency dependency = new ClassDependency(this, className, stack, cls);
         if (dependency.isMissing()) {
             missingClasses.add(dependency);
-        }
-        if (cls.getParent() != null) {
-            linkClass(cls.getParent(), stack);
-        }
-        for (String ifaceName : cls.getInterfaces()) {
-            linkClass(ifaceName, stack);
+        } else {
+            if (cls.getParent() != null) {
+                linkClass(cls.getParent(), stack);
+            }
+            for (String ifaceName : cls.getInterfaces()) {
+                linkClass(ifaceName, stack);
+            }
         }
         return dependency;
     }

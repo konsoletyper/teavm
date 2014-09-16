@@ -78,7 +78,7 @@ public class TeaVMBuilder extends IncrementalProjectBuilder {
         while (stack != DependencyStack.ROOT) {
             wasPut |= putMarker(sb.toString(), stack.getLocation(), stack.getMethod());
             if (stack.getMethod() != null) {
-                sb.append(", called by ").append(getFullMethodName(stack.getMethod()));
+                sb.append(", used by ").append(getFullMethodName(stack.getMethod()));
             }
             stack = stack.getCause();
         }
