@@ -33,7 +33,6 @@ public class MethodDependency implements MethodDependencyInfo {
     private MethodReader method;
     private MethodReference reference;
     private boolean used;
-    private Runnable useRunner;
 
     MethodDependency(DependencyChecker dependencyChecker, DependencyNode[] variableNodes, int parameterCount,
             DependencyNode resultNode, DependencyNode thrown, DependencyStack stack, MethodReader method,
@@ -109,18 +108,7 @@ public class MethodDependency implements MethodDependencyInfo {
     public void use() {
         if (!used) {
             used = true;
-            if (useRunner != null) {
-                useRunner.run();
-                useRunner = null;
-            }
-        }
-    }
-
-    void setUseRunner(Runnable runner) {
-        if (isUsed()) {
-            runner.run();
-        } else {
-            useRunner = runner;
+            dependencyChecker.scheduleMethodAnalysis(this);
         }
     }
 }

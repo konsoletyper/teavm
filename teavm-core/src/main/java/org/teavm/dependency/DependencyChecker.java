@@ -316,21 +316,25 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         final MethodDependency dep = new MethodDependency(this, parameterNodes, paramCount, resultNode, thrown,
                 stack, method, methodRef);
         if (method != null) {
+            final DependencyStack initClassStack = stack;
             tasks.add(new Runnable() {
                 @Override public void run() {
-                    DependencyGraphBuilder graphBuilder = new DependencyGraphBuilder(DependencyChecker.this);
-                    graphBuilder.buildGraph(dep);
-                }
-            });
-            tasks.add(new Runnable() {
-                @Override public void run() {
-                    linkClass(dep.getMethod().getOwnerName(), dep.getStack());
+                    linkClass(dep.getMethod().getOwnerName(), dep.getStack()).initClass(initClassStack);
                 }
             });
         } else {
             missingMethods.add(dep);
         }
         return dep;
+    }
+
+    void scheduleMethodAnalysis(final MethodDependency dep) {
+        tasks.add(new Runnable() {
+            @Override public void run() {
+                DependencyGraphBuilder graphBuilder = new DependencyGraphBuilder(DependencyChecker.this);
+                graphBuilder.buildGraph(dep);
+            }
+        });
     }
 
     @Override
