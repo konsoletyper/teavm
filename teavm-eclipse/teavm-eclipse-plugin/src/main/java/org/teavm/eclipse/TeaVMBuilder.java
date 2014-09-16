@@ -41,12 +41,16 @@ public class TeaVMBuilder extends IncrementalProjectBuilder {
         tool.setRuntime(RuntimeCopyOperation.SEPARATE);
         tool.setMinifying(false);
         tool.setMainClass(projectSettings.getMainClass());
-        tool.setProgressListener(new TeaVMEclipseProgressListener(monitor));
+        tool.setProgressListener(new TeaVMEclipseProgressListener(this, monitor, 10000));
         try {
+            monitor.beginTask("Running TeaVM", 10000);
             tool.generate();
             removeMarkers();
             if (tool.getDependencyViolations().hasMissingItems()) {
                 putMarkers(tool.getDependencyViolations());
+            }
+            if (!monitor.isCanceled()) {
+                monitor.done();
             }
         } catch (TeaVMToolException e) {
             throw new CoreException(TeaVMEclipsePlugin.makeError(e));
