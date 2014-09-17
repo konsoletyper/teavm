@@ -7,13 +7,13 @@ import org.eclipse.core.runtime.CoreException;
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public interface TeaVMProjectSettings {
-    String getMainClass();
+    TeaVMProfile[] getProfiles();
 
-    void setMainClass(String mainClass);
+    TeaVMProfile getProfile(String name);
 
-    String getTargetDirectory();
+    void deleteProfile(TeaVMProfile profile);
 
-    void setTargetDirectory(String targetDirectory);
+    TeaVMProfile createProfile();
 
     void save() throws CoreException;
 

@@ -222,7 +222,7 @@
    </license>
 
    <plugin
-         id="teavm-eclipse-plugin"
+         id="org.teavm.eclipse"
          os="aix,hpux,linux,macosx,qnx,solaris,win32"
          ws="carbon,cocoa,gtk,motif,photon,win32,wpf"
          arch="ia64,ia64_32,PA_RISC,ppc,sparc,x86,x86_64"

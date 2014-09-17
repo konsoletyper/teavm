@@ -6,9 +6,8 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
 import org.eclipse.core.resources.*;
-import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.IPath;
-import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.*;
+import org.eclipse.core.variables.IStringVariableManager;
 import org.eclipse.core.variables.VariablesPlugin;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
@@ -26,50 +25,84 @@ import org.teavm.tooling.TeaVMToolException;
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public class TeaVMBuilder extends IncrementalProjectBuilder {
+    private static final int TICKS_PER_PROFILE = 10000;
     private URL[] classPath;
     private IContainer[] sourceContainers;
     private IContainer[] classFileContainers;
     private Set<IProject> usedProjects = new HashSet<>();
+    private static Map<TeaVMProfile, Set<String>> profileClasses = new WeakHashMap<>();
 
     @Override
     protected IProject[] build(int kind, Map<String, String> args, IProgressMonitor monitor) throws CoreException {
-        if ((kind == AUTO_BUILD || kind == INCREMENTAL_BUILD) && !shouldBuild()) {
-            System.out.println("Skipping project " + getProject().getName());
-            return null;
-        }
         TeaVMProjectSettings projectSettings = getProjectSettings();
-        projectSettings.load();
-        TeaVMTool tool = new TeaVMTool();
-        tool.setClassLoader(prepareClassLoader());
-        tool.setDebugInformationGenerated(true);
-        tool.setSourceMapsFileGenerated(true);
-        String targetDir = projectSettings.getTargetDirectory();
-        targetDir = VariablesPlugin.getDefault().getStringVariableManager().performStringSubstitution(targetDir);
-        tool.setTargetDirectory(new File(targetDir));
-        tool.setRuntime(RuntimeCopyOperation.SEPARATE);
-        tool.setMinifying(false);
-        tool.setMainClass(projectSettings.getMainClass());
-        tool.setProgressListener(new TeaVMEclipseProgressListener(this, monitor, 10000));
+        TeaVMProfile profiles[] = getEnabledProfiles(projectSettings);
+        monitor.beginTask("Running TeaVM", profiles.length * TICKS_PER_PROFILE);
         try {
-            monitor.beginTask("Running TeaVM", 10000);
-            tool.generate();
-            removeMarkers();
-            if (tool.getDependencyViolations().hasMissingItems()) {
-                putMarkers(tool.getDependencyViolations());
+            prepareClassPath();
+            ClassLoader classLoader = new URLClassLoader(classPath, TeaVMBuilder.class.getClassLoader());
+            for (TeaVMProfile profile : profiles) {
+                SubProgressMonitor subMonitor = new SubProgressMonitor(monitor, TICKS_PER_PROFILE);
+                buildProfile(kind, subMonitor, profile, classLoader);
             }
-            TeaVMEclipsePlugin.getDefault().setProjectClasses(getProject(), classesToResources(tool.getClasses()));
-            if (!monitor.isCanceled()) {
-                monitor.done();
-            }
-        } catch (TeaVMToolException e) {
-            throw new CoreException(TeaVMEclipsePlugin.makeError(e));
+
         } finally {
+            monitor.done();
             sourceContainers = null;
             classFileContainers = null;
             classPath = null;
             usedProjects.clear();
         }
         return !usedProjects.isEmpty() ? usedProjects.toArray(new IProject[0]) : null;
+    }
+
+    private TeaVMProfile[] getEnabledProfiles(TeaVMProjectSettings settings) {
+        TeaVMProfile[] profiles = settings.getProfiles();
+        int sz = 0;
+        for (int i = 0; i < profiles.length; ++i) {
+            TeaVMProfile profile = profiles[i];
+            if (profile.isEnabled()) {
+                profiles[sz++] = profile;
+            }
+        }
+        return Arrays.copyOf(profiles, sz);
+    }
+
+    private void buildProfile(int kind, IProgressMonitor monitor, TeaVMProfile profile, ClassLoader classLoader)
+            throws CoreException {
+        if ((kind == AUTO_BUILD || kind == INCREMENTAL_BUILD) && !shouldBuild(profile)) {
+            return;
+        }
+        IStringVariableManager varManager = VariablesPlugin.getDefault().getStringVariableManager();
+        TeaVMTool tool = new TeaVMTool();
+        tool.setClassLoader(classLoader);
+        tool.setDebugInformationGenerated(profile.isDebugInformationGenerated());
+        tool.setSourceMapsFileGenerated(profile.isSourceMapsGenerated());
+        String targetDir = profile.getTargetDirectory();
+        tool.setTargetDirectory(new File(varManager.performStringSubstitution(targetDir)));
+        tool.setTargetFileName(profile.getTargetFileName());
+        tool.setRuntime(RuntimeCopyOperation.SEPARATE);
+        tool.setMinifying(profile.isMinifying());
+        tool.setMainClass(profile.getMainClass());
+        tool.getProperties().putAll(profile.getProperties());
+        tool.setIncremental(profile.isIncremental());
+        String cacheDir = profile.getCacheDirectory();
+        tool.setCacheDirectory(!cacheDir.isEmpty() ? new File(varManager.performStringSubstitution(cacheDir)) : null);
+        tool.setProgressListener(new TeaVMEclipseProgressListener(this, monitor, TICKS_PER_PROFILE));
+        try {
+            monitor.beginTask("Running TeaVM", 10000);
+            tool.generate();
+            removeMarkers();
+            if (tool.getDependencyViolations().hasMissingItems()) {
+                putMarkers(tool.getDependencyViolations());
+            } else if (!tool.wasCancelled()) {
+                setClasses(profile, classesToResources(tool.getClasses()));
+            }
+            if (!monitor.isCanceled()) {
+                monitor.done();
+            }
+        } catch (TeaVMToolException e) {
+            throw new CoreException(TeaVMEclipsePlugin.makeError(e));
+        }
     }
 
     private Set<String> classesToResources(Collection<String> classNames) {
@@ -86,8 +119,8 @@ public class TeaVMBuilder extends IncrementalProjectBuilder {
         return resourcePaths;
     }
 
-    private boolean shouldBuild() throws CoreException {
-        Set<String> classes = TeaVMEclipsePlugin.getDefault().getProjectClasses(getProject());
+    private boolean shouldBuild(TeaVMProfile profile) throws CoreException {
+        Collection<String> classes = getClasses(profile);
         if (classes.isEmpty()) {
             return true;
         }
@@ -100,7 +133,7 @@ public class TeaVMBuilder extends IncrementalProjectBuilder {
         return false;
     }
 
-    private boolean shouldBuild(Set<String> classes, IResourceDelta delta) {
+    private boolean shouldBuild(Collection<String> classes, IResourceDelta delta) {
         if (classes.contains(delta.getResource().getFullPath().toString())) {
             return true;
         }
@@ -110,6 +143,18 @@ public class TeaVMBuilder extends IncrementalProjectBuilder {
             }
         }
         return false;
+    }
+
+    private Collection<String> getClasses(TeaVMProfile profile) {
+        Set<String> classes;
+        synchronized (profileClasses) {
+            classes = profileClasses.get(profile);
+        }
+        return classes != null ? new HashSet<>(classes) : new HashSet<String>();
+    }
+
+    private void setClasses(TeaVMProfile profile, Collection<String> classes) {
+        profileClasses.put(profile, new HashSet<>(classes));
     }
 
     private void removeMarkers() throws CoreException {
@@ -247,11 +292,6 @@ public class TeaVMBuilder extends IncrementalProjectBuilder {
 
     private TeaVMProjectSettings getProjectSettings() {
         return TeaVMEclipsePlugin.getDefault().getSettings(getProject());
-    }
-
-    private ClassLoader prepareClassLoader() throws CoreException {
-        prepareClassPath();
-        return new URLClassLoader(classPath, TeaVMBuilder.class.getClassLoader());
     }
 
     private Set<IProject> getRelatedProjects() throws CoreException {
