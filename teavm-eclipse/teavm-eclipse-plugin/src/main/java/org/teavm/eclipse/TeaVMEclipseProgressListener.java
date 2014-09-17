@@ -10,7 +10,7 @@ import org.teavm.vm.TeaVMProgressListener;
  * @author Alexey Andreev
  */
 class TeaVMEclipseProgressListener implements TeaVMProgressListener {
-    private TeaVMBuilder builder;
+    private TeaVMProjectBuilder builder;
     private IProgressMonitor progressMonitor;
     private TeaVMPhase currentPhase;
     private int currentProgress;
@@ -18,7 +18,7 @@ class TeaVMEclipseProgressListener implements TeaVMProgressListener {
     private int total;
     private int last;
 
-    public TeaVMEclipseProgressListener(TeaVMBuilder builder, IProgressMonitor progressMonitor, int total) {
+    public TeaVMEclipseProgressListener(TeaVMProjectBuilder builder, IProgressMonitor progressMonitor, int total) {
         this.builder = builder;
         this.progressMonitor = progressMonitor;
         this.total = total;

@@ -19,6 +19,7 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
     public static final String MAIN_CLASS = "mainClass";
     public static final String TARGET_DIRECTORY = "targetDirectory";
     public static final String TARGET_FILE_NAME = "targetFileName";
+    public static final String RUNTIME = "runtime";
     public static final String MINIFYING = "minifying";
     public static final String INCREMENTAL = "incremental";
     public static final String CACHE_DIRECTORY = "cacheDirectory";
@@ -135,6 +136,7 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
         private String targetDirectory;
         private String targetFileName;
         private boolean minifying;
+        private TeaVMRuntimeMode runtimeMode = TeaVMRuntimeMode.SEPARATE;
         private boolean incremental;
         private String cacheDirectory;
         private boolean sourceMapsGenerated;
@@ -208,6 +210,16 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
         }
 
         @Override
+        public TeaVMRuntimeMode getRuntimeMode() {
+            return runtimeMode;
+        }
+
+        @Override
+        public void setRuntimeMode(TeaVMRuntimeMode runtimeMode) {
+            this.runtimeMode = runtimeMode;
+        }
+
+        @Override
         public boolean isIncremental() {
             return incremental;
         }
@@ -249,12 +261,15 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
 
         @Override
         public Properties getProperties() {
-            return new Properties(properties);
+            Properties copy = new Properties();
+            copy.putAll(properties);
+            return copy;
         }
 
         @Override
         public void setProperties(Properties properties) {
-            this.properties = new Properties(properties);
+            this.properties = new Properties();
+            this.properties.putAll(properties);
         }
 
         public void load() throws BackingStoreException {
@@ -264,6 +279,7 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
             targetDirectory = preferences.get(TARGET_DIRECTORY, "");
             targetFileName = preferences.get(TARGET_FILE_NAME, "");
             minifying = preferences.getBoolean(MINIFYING, true);
+            runtimeMode = TeaVMRuntimeMode.valueOf(preferences.get(RUNTIME, TeaVMRuntimeMode.SEPARATE.name()));
             incremental = preferences.getBoolean(INCREMENTAL, false);
             cacheDirectory = preferences.get(CACHE_DIRECTORY, "");
             sourceMapsGenerated = preferences.getBoolean(SOURCE_MAPS, true);
@@ -283,6 +299,7 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
             preferences.put(TARGET_DIRECTORY, targetDirectory);
             preferences.put(TARGET_FILE_NAME, targetFileName);
             preferences.putBoolean(MINIFYING, minifying);
+            preferences.put(RUNTIME, runtimeMode.name());
             preferences.putBoolean(INCREMENTAL, incremental);
             preferences.put(CACHE_DIRECTORY, cacheDirectory);
             preferences.putBoolean(SOURCE_MAPS, sourceMapsGenerated);

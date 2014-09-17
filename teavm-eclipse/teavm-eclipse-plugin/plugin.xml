@@ -64,7 +64,7 @@
   </extension>
   <extension point="org.eclipse.core.resources.builders" id="builder" name="TeaVM builder">
     <builder hasNature="true">
-      <run class="org.teavm.eclipse.TeaVMBuilder"/>
+      <run class="org.teavm.eclipse.TeaVMProjectBuilder"/>
     </builder>
   </extension>
 

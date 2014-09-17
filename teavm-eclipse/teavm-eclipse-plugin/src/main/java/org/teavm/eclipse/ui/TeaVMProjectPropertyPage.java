@@ -4,6 +4,7 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.jface.dialogs.ErrorDialog;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -181,6 +182,11 @@ public class TeaVMProjectPropertyPage extends PropertyPage implements IWorkbench
             return;
         }
         TableItem item = profilesTable.getSelection()[0];
+        boolean confirmed = MessageDialog.openConfirm(getShell(), "Deletion confirmation",
+                "Are you sure to delete profile " + item.getText(0) + "?");
+        if (!confirmed) {
+            return;
+        }
         settings.deleteProfile((TeaVMProfile)item.getData());
         item.dispose();
     }
@@ -189,6 +195,10 @@ public class TeaVMProjectPropertyPage extends PropertyPage implements IWorkbench
     public boolean performOk() {
         try {
             updateNature();
+            for (int i = 0; i < profilesTable.getItemCount(); ++i) {
+                TableItem item = profilesTable.getItem(i);
+                storeItem(item);
+            }
             settings.save();
         } catch (CoreException e) {
             reportStatus(e.getStatus());

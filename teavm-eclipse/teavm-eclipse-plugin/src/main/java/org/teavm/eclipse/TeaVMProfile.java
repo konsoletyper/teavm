@@ -31,6 +31,10 @@ public interface TeaVMProfile {
 
     void setMinifying(boolean minifying);
 
+    TeaVMRuntimeMode getRuntimeMode();
+
+    void setRuntimeMode(TeaVMRuntimeMode runtimeMode);
+
     boolean isIncremental();
 
     void setIncremental(boolean incremental);

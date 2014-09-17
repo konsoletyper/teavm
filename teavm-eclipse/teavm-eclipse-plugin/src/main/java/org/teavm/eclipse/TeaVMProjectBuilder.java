@@ -24,7 +24,7 @@ import org.teavm.tooling.TeaVMToolException;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class TeaVMBuilder extends IncrementalProjectBuilder {
+public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
     private static final int TICKS_PER_PROFILE = 10000;
     private URL[] classPath;
     private IContainer[] sourceContainers;
@@ -39,7 +39,7 @@ public class TeaVMBuilder extends IncrementalProjectBuilder {
         monitor.beginTask("Running TeaVM", profiles.length * TICKS_PER_PROFILE);
         try {
             prepareClassPath();
-            ClassLoader classLoader = new URLClassLoader(classPath, TeaVMBuilder.class.getClassLoader());
+            ClassLoader classLoader = new URLClassLoader(classPath, TeaVMProjectBuilder.class.getClassLoader());
             for (TeaVMProfile profile : profiles) {
                 SubProgressMonitor subMonitor = new SubProgressMonitor(monitor, TICKS_PER_PROFILE);
                 buildProfile(kind, subMonitor, profile, classLoader);
@@ -80,8 +80,8 @@ public class TeaVMBuilder extends IncrementalProjectBuilder {
         String targetDir = profile.getTargetDirectory();
         tool.setTargetDirectory(new File(varManager.performStringSubstitution(targetDir)));
         tool.setTargetFileName(profile.getTargetFileName());
-        tool.setRuntime(RuntimeCopyOperation.SEPARATE);
         tool.setMinifying(profile.isMinifying());
+        tool.setRuntime(mapRuntime(profile.getRuntimeMode()));
         tool.setMainClass(profile.getMainClass());
         tool.getProperties().putAll(profile.getProperties());
         tool.setIncremental(profile.isIncremental());
@@ -102,6 +102,17 @@ public class TeaVMBuilder extends IncrementalProjectBuilder {
             }
         } catch (TeaVMToolException e) {
             throw new CoreException(TeaVMEclipsePlugin.makeError(e));
+        }
+    }
+
+    private RuntimeCopyOperation mapRuntime(TeaVMRuntimeMode runtimeMode) {
+        switch (runtimeMode) {
+            case MERGE:
+                return RuntimeCopyOperation.MERGED;
+            case SEPARATE:
+                return RuntimeCopyOperation.SEPARATE;
+            default:
+                return RuntimeCopyOperation.NONE;
         }
     }
 
