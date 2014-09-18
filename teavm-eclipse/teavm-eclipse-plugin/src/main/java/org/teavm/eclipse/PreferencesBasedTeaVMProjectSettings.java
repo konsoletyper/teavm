@@ -26,6 +26,7 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
     public static final String SOURCE_MAPS = "sourceMaps";
     public static final String DEBUG_INFORMATION = "debugInformation";
     public static final String PROPERTIES = "properties";
+    public static final String TRANSFORMERS = "transformers";
 
     private static final String NEW_PROFILE_NAME = "New profile";
     private List<ProfileImpl> profiles = new ArrayList<>();
@@ -142,6 +143,7 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
         private boolean sourceMapsGenerated;
         private boolean debugInformationGenerated;
         private Properties properties = new Properties();
+        private String[] transformers = new String[0];
 
         @Override
         public String getName() {
@@ -272,6 +274,16 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
             this.properties.putAll(properties);
         }
 
+        @Override
+        public String[] getTransformers() {
+            return transformers.clone();
+        }
+
+        @Override
+        public void setTransformers(String[] transformers) {
+            this.transformers = transformers.clone();
+        }
+
         public void load() throws BackingStoreException {
             preferences.sync();
             enabled = preferences.getBoolean(ENABLED, true);
@@ -290,6 +302,9 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
             for (String key : propertiesPrefs.keys()) {
                 properties.setProperty(key, propertiesPrefs.get(key, ""));
             }
+            Preferences transformersPrefs = preferences.node(TRANSFORMERS);
+            transformersPrefs.sync();
+            transformers = transformersPrefs.keys();
         }
 
         public void save() throws BackingStoreException {
@@ -310,6 +325,12 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
                 propertiesPrefs.put((String)key, properties.getProperty((String)key));
             }
             propertiesPrefs.flush();
+            Preferences transformersPrefs = preferences.node(TRANSFORMERS);
+            transformersPrefs.clear();
+            for (String transformer : transformers) {
+                transformersPrefs.put(transformer, "");
+            }
+            transformersPrefs.flush();
             preferences.flush();
         }
     }

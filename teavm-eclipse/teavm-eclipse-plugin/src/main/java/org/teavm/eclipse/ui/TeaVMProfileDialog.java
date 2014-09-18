@@ -24,21 +24,12 @@ import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.viewers.TextCellEditor;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Combo;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.DirectoryDialog;
-import org.eclipse.swt.widgets.Group;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.MessageBox;
-import org.eclipse.swt.widgets.Shell;
-import org.eclipse.swt.widgets.Table;
-import org.eclipse.swt.widgets.Text;
+import org.eclipse.swt.widgets.*;
 import org.eclipse.ui.dialogs.ElementTreeSelectionDialog;
 import org.eclipse.ui.model.WorkbenchContentProvider;
 import org.eclipse.ui.model.WorkbenchLabelProvider;
@@ -73,6 +64,9 @@ public class TeaVMProfileDialog extends Dialog {
     private Button addPropertyButton;
     private Button deletePropertyButton;
     private WritableList propertyList = new WritableList();
+    private org.eclipse.swt.widgets.List transormersList;
+    private Button addTransformerButton;
+    private Button removeTransformerButton;
     private IJavaProject javaProject;
     private TeaVMProjectSettings settings;
     private TeaVMProfile profile;
@@ -99,13 +93,26 @@ public class TeaVMProfileDialog extends Dialog {
     protected Control createDialogArea(Composite parent) {
         Composite area = (Composite)super.createDialogArea(parent);
         area.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-        //ScrolledComposite scrollContainer = new ScrolledComposite(area, SWT.V_SCROLL | SWT.H_SCROLL);
-        //scrollContainer.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, true));
-        Composite container = new Composite(area, SWT.NONE);
-        container.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-        /*scrollContainer.setContent(container);
+        ScrolledComposite scrollContainer = new ScrolledComposite(area, SWT.V_SCROLL | SWT.H_SCROLL);
+        scrollContainer.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, true));
+        TabFolder tabFolder = new TabFolder(scrollContainer, SWT.TOP);
+        scrollContainer.setContent(tabFolder);
         scrollContainer.setExpandHorizontal(true);
-        scrollContainer.setExpandVertical(true);*/
+        scrollContainer.setExpandVertical(true);
+        TabItem generalItem = new TabItem(tabFolder, SWT.NONE);
+        generalItem.setText("General");
+        generalItem.setControl(createGeneralTab(tabFolder));
+        TabItem advancedItem = new TabItem(tabFolder, SWT.NONE);
+        advancedItem.setText("Advanced");
+        advancedItem.setControl(createAdvancedTab(tabFolder));
+        load();
+        tabFolder.setSize(tabFolder.computeSize(SWT.DEFAULT, SWT.DEFAULT));
+        scrollContainer.setMinSize(tabFolder.getSize());
+        return scrollContainer;
+    }
+
+    private Composite createGeneralTab(TabFolder folder) {
+        Composite container = new Composite(folder, SWT.NONE);
         GridLayout layout = new GridLayout(1, false);
         layout.marginHeight = 8;
         layout.verticalSpacing = 10;
@@ -115,10 +122,16 @@ public class TeaVMProfileDialog extends Dialog {
         createIncrementalGroup(container);
         createDebugGroup(container);
         createPropertiesGroup(container);
-        load();
-        //container.setSize(container.computeSize(SWT.DEFAULT, SWT.DEFAULT));
-        //scrollContainer.setMinSize(container.getSize());
-        //return scrollContainer;
+        return container;
+    }
+
+    private Composite createAdvancedTab(TabFolder folder) {
+        Composite container = new Composite(folder, SWT.NONE);
+        GridLayout layout = new GridLayout(1, false);
+        layout.marginHeight = 8;
+        layout.verticalSpacing = 10;
+        container.setLayout(layout);
+        createTransformersGroup(container);
         return container;
     }
 
@@ -261,6 +274,20 @@ public class TeaVMProfileDialog extends Dialog {
     static class KeyValue {
         String key = "";
         String value = "";
+    }
+
+    private void createTransformersGroup(Composite parent) {
+        Group group = createGroup(parent, "TeaVM bytecode transformers", 2, true);
+        transormersList = new org.eclipse.swt.widgets.List(group, SWT.SINGLE | SWT.BORDER);
+        transormersList.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 3));
+
+        addTransformerButton = new Button(group, SWT.PUSH);
+        addTransformerButton.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
+        addTransformerButton.setText("Add...");
+
+        removeTransformerButton = new Button(group, SWT.PUSH);
+        removeTransformerButton.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
+        removeTransformerButton.setText("Remove");
     }
 
     private Group createGroup(Composite parent, String title, int columns, boolean fillVert) {

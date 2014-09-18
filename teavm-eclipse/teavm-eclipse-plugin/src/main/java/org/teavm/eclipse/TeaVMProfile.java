@@ -54,4 +54,8 @@ public interface TeaVMProfile {
     Properties getProperties();
 
     void setProperties(Properties properties);
+
+    String[] getTransformers();
+
+    void setTransformers(String[] transformers);
 }
