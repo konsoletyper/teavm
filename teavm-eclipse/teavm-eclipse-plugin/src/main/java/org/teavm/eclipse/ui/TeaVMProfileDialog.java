@@ -284,10 +284,20 @@ public class TeaVMProfileDialog extends Dialog {
         addTransformerButton = new Button(group, SWT.PUSH);
         addTransformerButton.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
         addTransformerButton.setText("Add...");
+        addTransformerButton.addSelectionListener(new SelectionAdapter() {
+            @Override public void widgetSelected(SelectionEvent e) {
+                addTransformer();
+            }
+        });
 
         removeTransformerButton = new Button(group, SWT.PUSH);
         removeTransformerButton.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
         removeTransformerButton.setText("Remove");
+        removeTransformerButton.addSelectionListener(new SelectionAdapter() {
+            @Override public void widgetSelected(SelectionEvent e) {
+                removeTransformer();
+            }
+        });
     }
 
     private Group createGroup(Composite parent, String title, int columns, boolean fillVert) {
@@ -480,6 +490,33 @@ public class TeaVMProfileDialog extends Dialog {
         return filePath;
     }
 
+    private void addTransformer() {
+        TransformerClassSelectionDialog selectionDialog = new TransformerClassSelectionDialog(getParentShell(),
+                javaProject);
+        if (selectionDialog.open() == MainClassSelectionDialog.OK) {
+            Object[] result = selectionDialog.getResult();
+            if (result.length > 0) {
+                IType type = (IType)result[0];
+                List<String> existingTypes = Arrays.asList(transormersList.getItems());
+                if (!existingTypes.contains(type.getFullyQualifiedName())) {
+                    transormersList.add(type.getFullyQualifiedName());
+                }
+            }
+        }
+    }
+
+    private void removeTransformer() {
+        if (transormersList.getSelectionCount() != 1) {
+            return;
+        }
+        boolean confirmed = MessageDialog.openConfirm(getShell(), "Removal confirmation",
+                "Are you sure to delete the " + transormersList.getSelection()[0] + " transformer?");
+        if (!confirmed) {
+            return;
+        }
+        transormersList.remove(transormersList.getSelectionIndex());
+    }
+
     @Override
     protected void okPressed() {
         if (save()) {
@@ -518,6 +555,7 @@ public class TeaVMProfileDialog extends Dialog {
             propertyList.add(property);
         }
         updateCacheFieldsEnabled();
+        transormersList.setItems(profile.getTransformers());
     }
 
     private boolean save() {
@@ -543,6 +581,7 @@ public class TeaVMProfileDialog extends Dialog {
             properties.setProperty(property.key, property.value);
         }
         profile.setProperties(properties);
+        profile.setTransformers(transormersList.getItems());
         return true;
     }
 }

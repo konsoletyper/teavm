@@ -1,6 +1,8 @@
 package org.teavm.eclipse;
 
 import java.io.File;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -13,6 +15,7 @@ import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.teavm.dependency.*;
+import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.InstructionLocation;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -72,6 +75,7 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
         if ((kind == AUTO_BUILD || kind == INCREMENTAL_BUILD) && !shouldBuild(profile)) {
             return;
         }
+        getProject().deleteMarkers(TeaVMEclipsePlugin.CONFIG_MARKER_ID, true, IResource.DEPTH_INFINITE);
         IStringVariableManager varManager = VariablesPlugin.getDefault().getStringVariableManager();
         TeaVMTool tool = new TeaVMTool();
         tool.setClassLoader(classLoader);
@@ -87,6 +91,9 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
         tool.setIncremental(profile.isIncremental());
         String cacheDir = profile.getCacheDirectory();
         tool.setCacheDirectory(!cacheDir.isEmpty() ? new File(varManager.performStringSubstitution(cacheDir)) : null);
+        for (ClassHolderTransformer transformer : instantiateTransformers(profile, classLoader)) {
+            tool.getTransformers().add(transformer);
+        }
         tool.setProgressListener(new TeaVMEclipseProgressListener(this, monitor, TICKS_PER_PROFILE));
         try {
             monitor.beginTask("Running TeaVM", 10000);
@@ -326,6 +333,48 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
             }
         }
         return projects;
+    }
+
+    private List<ClassHolderTransformer> instantiateTransformers(TeaVMProfile profile, ClassLoader classLoader)
+            throws CoreException{
+        List<ClassHolderTransformer> transformerInstances = new ArrayList<>();
+        for (String transformerName : profile.getTransformers()) {
+            Class<?> transformerRawType;
+            try {
+                transformerRawType = Class.forName(transformerName, true, classLoader);
+            } catch (ClassNotFoundException e) {
+                putConfigMarker("Transformer not found: " + transformerName);
+                continue;
+            }
+            if (!ClassHolderTransformer.class.isAssignableFrom(transformerRawType)) {
+                putConfigMarker("Transformer " + transformerName + " is not a subtype of " +
+                        ClassHolderTransformer.class.getName());
+                continue;
+            }
+            Class<? extends ClassHolderTransformer> transformerType = transformerRawType.asSubclass(
+                    ClassHolderTransformer.class);
+            Constructor<? extends ClassHolderTransformer> ctor;
+            try {
+                ctor = transformerType.getConstructor();
+            } catch (NoSuchMethodException e) {
+                putConfigMarker("Transformer " + transformerName + " has no default constructor");
+                continue;
+            }
+            try {
+                ClassHolderTransformer transformer = ctor.newInstance();
+                transformerInstances.add(transformer);
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+                putConfigMarker("Error instantiating transformer " + transformerName);
+                continue;
+            }
+        }
+        return transformerInstances;
+    }
+
+    private void putConfigMarker(String message) throws CoreException {
+        IMarker marker = getProject().createMarker(TeaVMEclipsePlugin.CONFIG_MARKER_ID);
+        marker.setAttribute(IMarker.SEVERITY, IMarker.SEVERITY_ERROR);
+        marker.setAttribute(IMarker.MESSAGE, message);
     }
 
     private void prepareClassPath() throws CoreException {

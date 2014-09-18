@@ -70,9 +70,15 @@
 
   <extension id="dependencyMarker" point="org.eclipse.core.resources.markers" name="TeaVM dependency problem">
     <super type="org.eclipse.core.resources.problemmarker"/>
-    <persistent value="false"/>
+    <persistent value="true"/>
     <attribute name="severity"/>
     <attribute name="message"/>
     <attribute name="lineNumber"/>
-   </extension>
+  </extension>
+  <extension id="configMarker" point="org.eclipse.core.resources.markers" name="TeaVM configuration problem">
+    <super type="org.eclipse.core.resources.problemmarker"/>
+    <persistent value="true"/>
+    <attribute name="severity"/>
+    <attribute name="message"/>
+  </extension>
 </plugin>

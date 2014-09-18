@@ -37,8 +37,9 @@ public class TeaVMEclipsePlugin extends AbstractUIPlugin {
     public static final String ID = "org.teavm.eclipse";
     public static final String NATURE_ID = ID + ".nature";
     public static final String BUILDER_ID = ID + ".builder";
-    public static final String MAIN_METHOD_DIALOG_ID = ID + ".dialogs.mainMethod";
+    public static final String CLASS_DIALOG_ID = ID + ".dialogs.classSelection";
     public static final String DEPENDENCY_MARKER_ID = ID + ".dependencyMarker";
+    public static final String CONFIG_MARKER_ID = ID + ".configMarker";
     private static TeaVMEclipsePlugin defaultInstance;
     private ConcurrentMap<IProject, TeaVMProjectSettings> settingsMap = new ConcurrentHashMap<>();
 
