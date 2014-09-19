@@ -273,5 +273,11 @@
         <module>teavm-samples</module>
       </modules>
     </profile>
+    <profile>
+      <id>enable-eclipse</id>
+      <modules>
+        <module>teavm-eclipse</module>
+      </modules>
+    </profile>
   </profiles>
 </project>
