@@ -118,7 +118,7 @@ public abstract class ClassSelectionDialog extends FilteredItemsSelectionDialog 
 
     private IType[] findTypes(String patternText, IProgressMonitor progressMonitor) {
         IJavaSearchScope scope = SearchEngine.createJavaSearchScope(new IJavaProject[] { javaProject },
-                IJavaSearchScope.SOURCES | IJavaSearchScope.REFERENCED_PROJECTS |
+                IJavaSearchScope.SOURCES | IJavaSearchScope.REFERENCED_PROJECTS | IJavaSearchScope.SYSTEM_LIBRARIES |
                 IJavaSearchScope.APPLICATION_LIBRARIES);
         SearchPattern pattern = createSearchPattern(patternText);
         SearchParticipant[] participants = new SearchParticipant[] { SearchEngine.getDefaultSearchParticipant() };

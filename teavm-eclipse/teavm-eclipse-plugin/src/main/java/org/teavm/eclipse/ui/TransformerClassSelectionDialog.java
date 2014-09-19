@@ -1,6 +1,7 @@
 package org.teavm.eclipse.ui;
 
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.jdt.core.Flags;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.search.IJavaSearchConstants;
@@ -27,6 +28,10 @@ public class TransformerClassSelectionDialog extends ClassSelectionDialog {
 
     @Override
     protected IType acceptMatch(SearchMatch match) throws CoreException {
-        return (IType)match.getElement();
+        IType type = (IType)match.getElement();
+        if ((type.getFlags() & Flags.AccPublic) != 0) {
+            return type;
+        }
+        return null;
     }
 }

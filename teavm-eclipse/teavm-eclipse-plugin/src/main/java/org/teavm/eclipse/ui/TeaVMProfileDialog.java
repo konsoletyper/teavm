@@ -1,8 +1,7 @@
 package org.teavm.eclipse.ui;
 
-import java.util.Arrays;
+import java.util.*;
 import java.util.List;
-import java.util.Properties;
 import org.eclipse.core.databinding.observable.list.WritableList;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
@@ -16,13 +15,7 @@ import org.eclipse.jface.databinding.viewers.ObservableListContentProvider;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.jface.viewers.CellEditor;
-import org.eclipse.jface.viewers.ColumnLabelProvider;
-import org.eclipse.jface.viewers.ColumnViewer;
-import org.eclipse.jface.viewers.EditingSupport;
-import org.eclipse.jface.viewers.TableViewer;
-import org.eclipse.jface.viewers.TableViewerColumn;
-import org.eclipse.jface.viewers.TextCellEditor;
+import org.eclipse.jface.viewers.*;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -64,7 +57,11 @@ public class TeaVMProfileDialog extends Dialog {
     private Button addPropertyButton;
     private Button deletePropertyButton;
     private WritableList propertyList = new WritableList();
-    private org.eclipse.swt.widgets.List transormersList;
+    private TableViewer classAliasesTableViewer;
+    private Button addClassAliasButton;
+    private Button removeClassAliasButton;
+    private WritableList classAliases = new WritableList();
+    private org.eclipse.swt.widgets.List transformersList;
     private Button addTransformerButton;
     private Button removeTransformerButton;
     private IJavaProject javaProject;
@@ -131,6 +128,7 @@ public class TeaVMProfileDialog extends Dialog {
         layout.marginHeight = 8;
         layout.verticalSpacing = 10;
         container.setLayout(layout);
+        createClassesGroup(container);
         createTransformersGroup(container);
         return container;
     }
@@ -276,10 +274,73 @@ public class TeaVMProfileDialog extends Dialog {
         String value = "";
     }
 
+    private void createClassesGroup(Composite parent) {
+        Group group = createGroup(parent, "Class aliases", 2, true);
+        classAliasesTableViewer = new TableViewer(group, SWT.BORDER | SWT.V_SCROLL);
+        classAliasesTableViewer.getTable().setLinesVisible(true);
+        classAliasesTableViewer.getTable().setHeaderVisible(true);
+        classAliasesTableViewer.getTable().setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 3));
+        classAliasesTableViewer.setContentProvider(new ObservableListContentProvider());
+        classAliasesTableViewer.setInput(classAliases);
+
+        TableViewerColumn classNameColumn = new TableViewerColumn(classAliasesTableViewer, SWT.LEFT);
+        classNameColumn.getColumn().setWidth(200);
+        classNameColumn.getColumn().setText("Class");
+        classNameColumn.setLabelProvider(new ColumnLabelProvider() {
+            @Override public String getText(Object element) {
+                ClassAliasRow item = (ClassAliasRow)element;
+                return item.className;
+            }
+        });
+
+        TableViewerColumn valueColumn = new TableViewerColumn(classAliasesTableViewer, SWT.LEFT);
+        valueColumn.getColumn().setWidth(200);
+        valueColumn.getColumn().setText("Alias");
+        valueColumn.setLabelProvider(new ColumnLabelProvider() {
+            @Override public String getText(Object element) {
+                ClassAliasRow item = (ClassAliasRow)element;
+                return item.alias;
+            }
+        });
+        valueColumn.setEditingSupport(new EditingSupport(valueColumn.getViewer()) {
+            private TextCellEditor editor = new TextCellEditor(classAliasesTableViewer.getTable());
+            @Override protected Object getValue(Object element) {
+                ClassAliasRow item = (ClassAliasRow)element;
+                return item.alias;
+            }
+            @Override protected void setValue(Object element, Object value) {
+                ClassAliasRow item = (ClassAliasRow)element;
+                item.alias = (String)value;
+                getViewer().update(element, null);
+            }
+            @Override protected boolean canEdit(Object element) { return true; }
+            @Override protected CellEditor getCellEditor(Object element) { return editor; }
+        });
+
+        addClassAliasButton = new Button(group, SWT.PUSH);
+        addClassAliasButton.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
+        addClassAliasButton.setText("Add...");
+        addClassAliasButton.addSelectionListener(new SelectionAdapter() {
+            @Override public void widgetSelected(SelectionEvent e) { addClass(); }
+        });
+
+        removeClassAliasButton = new Button(group, SWT.PUSH);
+        removeClassAliasButton.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
+        removeClassAliasButton.setText("Remove");
+        removeClassAliasButton.addSelectionListener(new SelectionAdapter() {
+            @Override public void widgetSelected(SelectionEvent e) { removeClass(); }
+        });
+    }
+
+    static class ClassAliasRow {
+        String className;
+        String alias;
+    }
+
     private void createTransformersGroup(Composite parent) {
         Group group = createGroup(parent, "TeaVM bytecode transformers", 2, true);
-        transormersList = new org.eclipse.swt.widgets.List(group, SWT.SINGLE | SWT.BORDER);
-        transormersList.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 3));
+        transformersList = new org.eclipse.swt.widgets.List(group, SWT.SINGLE | SWT.BORDER);
+        transformersList.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 3));
 
         addTransformerButton = new Button(group, SWT.PUSH);
         addTransformerButton.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
@@ -491,30 +552,63 @@ public class TeaVMProfileDialog extends Dialog {
     }
 
     private void addTransformer() {
-        TransformerClassSelectionDialog selectionDialog = new TransformerClassSelectionDialog(getParentShell(),
+        TransformerClassSelectionDialog selectionDialog = new TransformerClassSelectionDialog(getShell(),
                 javaProject);
-        if (selectionDialog.open() == MainClassSelectionDialog.OK) {
+        if (selectionDialog.open() == ClassSelectionDialog.OK) {
             Object[] result = selectionDialog.getResult();
             if (result.length > 0) {
                 IType type = (IType)result[0];
-                List<String> existingTypes = Arrays.asList(transormersList.getItems());
+                List<String> existingTypes = Arrays.asList(transformersList.getItems());
                 if (!existingTypes.contains(type.getFullyQualifiedName())) {
-                    transormersList.add(type.getFullyQualifiedName());
+                    transformersList.add(type.getFullyQualifiedName());
                 }
             }
         }
     }
 
     private void removeTransformer() {
-        if (transormersList.getSelectionCount() != 1) {
+        if (transformersList.getSelectionCount() != 1) {
             return;
         }
         boolean confirmed = MessageDialog.openConfirm(getShell(), "Removal confirmation",
-                "Are you sure to delete the " + transormersList.getSelection()[0] + " transformer?");
+                "Are you sure to delete the " + transformersList.getSelection()[0] + " transformer?");
         if (!confirmed) {
             return;
         }
-        transormersList.remove(transormersList.getSelectionIndex());
+        transformersList.remove(transformersList.getSelectionIndex());
+    }
+
+    private void addClass() {
+        AnyClassSelectionDialog selectionDialog = new AnyClassSelectionDialog(getShell(), javaProject);
+        if (selectionDialog.open() == ClassSelectionDialog.OK) {
+            Object[] result = selectionDialog.getResult();
+            if (result.length > 0) {
+                IType type = (IType)result[0];
+                for (int i = 0; i < classAliases.size(); ++i) {
+                    ClassAliasRow row = (ClassAliasRow)classAliases.get(i);
+                    if (row.className.equals(type.getFullyQualifiedName())) {
+                        return;
+                    }
+                }
+                ClassAliasRow row = new ClassAliasRow();
+                row.alias = "_";
+                row.className = type.getFullyQualifiedName();
+                classAliases.add(row);
+            }
+        }
+    }
+
+    private void removeClass() {
+        Table table = classAliasesTableViewer.getTable();
+        if (table.getSelectionCount() != 1) {
+            return;
+        }
+        boolean confirmed = MessageDialog.openConfirm(getShell(), "Removal confirmation",
+                "Are you sure to delete the " + table.getSelection()[0].getText(0) + " class?");
+        if (!confirmed) {
+            return;
+        }
+        classAliases.remove(table.getSelectionIndex());
     }
 
     @Override
@@ -555,7 +649,13 @@ public class TeaVMProfileDialog extends Dialog {
             propertyList.add(property);
         }
         updateCacheFieldsEnabled();
-        transormersList.setItems(profile.getTransformers());
+        transformersList.setItems(profile.getTransformers());
+        for (Map.Entry<String, String> entry : profile.getClassAliases().entrySet()) {
+            ClassAliasRow row = new ClassAliasRow();
+            row.className = entry.getKey();
+            row.alias = entry.getValue();
+            classAliases.add(row);
+        }
     }
 
     private boolean save() {
@@ -581,7 +681,13 @@ public class TeaVMProfileDialog extends Dialog {
             properties.setProperty(property.key, property.value);
         }
         profile.setProperties(properties);
-        profile.setTransformers(transormersList.getItems());
+        profile.setTransformers(transformersList.getItems());
+        Map<String, String> classAliasMap = new HashMap<>();
+        for (int i = 0; i < classAliases.size(); ++i) {
+            ClassAliasRow row = (ClassAliasRow)classAliases.get(i);
+            classAliasMap.put(row.className, row.alias);
+        }
+        profile.setClassAliases(classAliasMap);
         return true;
     }
 }

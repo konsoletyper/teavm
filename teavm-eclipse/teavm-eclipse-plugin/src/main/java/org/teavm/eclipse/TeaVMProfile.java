@@ -1,5 +1,6 @@
 package org.teavm.eclipse;
 
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -58,4 +59,8 @@ public interface TeaVMProfile {
     String[] getTransformers();
 
     void setTransformers(String[] transformers);
+
+    Map<String, String> getClassAliases();
+
+    void setClassAliases(Map<String, String> classAliases);
 }

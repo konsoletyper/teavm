@@ -26,6 +26,7 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
     public static final String SOURCE_MAPS = "sourceMaps";
     public static final String DEBUG_INFORMATION = "debugInformation";
     public static final String PROPERTIES = "properties";
+    public static final String CLASSES = "classes";
     public static final String TRANSFORMERS = "transformers";
 
     private static final String NEW_PROFILE_NAME = "New profile";
@@ -144,6 +145,7 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
         private boolean debugInformationGenerated;
         private Properties properties = new Properties();
         private String[] transformers = new String[0];
+        private Map<String, String> classeAliases = new HashMap<>();
 
         @Override
         public String getName() {
@@ -275,6 +277,16 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
         }
 
         @Override
+        public Map<String, String> getClassAliases() {
+            return new HashMap<>(classeAliases);
+        }
+
+        @Override
+        public void setClassAliases(Map<String, String> classAliases) {
+            this.classeAliases = new HashMap<>(classAliases);
+        }
+
+        @Override
         public String[] getTransformers() {
             return transformers.clone();
         }
@@ -305,6 +317,11 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
             Preferences transformersPrefs = preferences.node(TRANSFORMERS);
             transformersPrefs.sync();
             transformers = transformersPrefs.keys();
+            Preferences classesPrefs = preferences.node(CLASSES);
+            classesPrefs.sync();
+            for (String key : classesPrefs.keys()) {
+                classeAliases.put(key, classesPrefs.get(key, "_"));
+            }
         }
 
         public void save() throws BackingStoreException {
@@ -331,6 +348,12 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
                 transformersPrefs.put(transformer, "");
             }
             transformersPrefs.flush();
+            Preferences classesPrefs = preferences.node(CLASSES);
+            classesPrefs.clear();
+            for (String key : classeAliases.keySet()) {
+                classesPrefs.put(key, classeAliases.get(key));
+            }
+            classesPrefs.flush();
             preferences.flush();
         }
     }
