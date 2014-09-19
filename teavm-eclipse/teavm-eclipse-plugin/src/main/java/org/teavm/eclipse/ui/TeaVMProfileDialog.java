@@ -91,7 +91,7 @@ public class TeaVMProfileDialog extends Dialog {
         Composite area = (Composite)super.createDialogArea(parent);
         area.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
         ScrolledComposite scrollContainer = new ScrolledComposite(area, SWT.V_SCROLL | SWT.H_SCROLL);
-        scrollContainer.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, true));
+        scrollContainer.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
         TabFolder tabFolder = new TabFolder(scrollContainer, SWT.TOP);
         scrollContainer.setContent(tabFolder);
         scrollContainer.setExpandHorizontal(true);
