@@ -19,8 +19,9 @@
 
   <parent>
     <groupId>org.teavm</groupId>
-    <artifactId>teavm-eclipse</artifactId>
+    <artifactId>teavm</artifactId>
     <version>0.2-SNAPSHOT</version>
+    <relativePath>../..</relativePath>
   </parent>
   <artifactId>teavm-eclipse-repository</artifactId>
   <packaging>pom</packaging>
@@ -30,6 +31,8 @@
       dependencies</description>
 
   <build>
+    <pluginManagement>
+    </pluginManagement>
     <plugins>
       <plugin>
         <groupId>org.reficio</groupId>
@@ -38,7 +41,7 @@
         <executions>
           <execution>
             <id>default-cli</id>
-            <phase>package</phase>
+            <phase>prepare-package</phase>
             <goals>
               <goal>site</goal>
             </goals>

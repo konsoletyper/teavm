@@ -24,6 +24,8 @@
   </parent>
   <artifactId>teavm-classlib</artifactId>
 
+  <packaging>bundle</packaging>
+
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
@@ -52,6 +54,17 @@
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <extensions>true</extensions>
+        <configuration>
+          <instructions>
+            <Export-Package>org.teavm.classlib.*</Export-Package>
+            <Bundle-SymbolicName>teavm-classlib</Bundle-SymbolicName>
+          </instructions>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>org.teavm</groupId>
         <artifactId>teavm-maven-plugin</artifactId>

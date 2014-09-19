@@ -18,46 +18,46 @@
 <plugin>
   <extension point="org.eclipse.debug.core.launchConfigurationTypes">
     <launchConfigurationType
-        sourceLocatorId="org.teavm.eclipse.debugger.sourceLookup"
+        sourceLocatorId="teavm-eclipse-plugin.debugger.sourceLookup"
         name="TeaVM remote"
-        sourcePathComputerId="org.teavm.eclipse.debugger.sourcePath"
+        sourcePathComputerId="teavm-eclipse-plugin.debugger.sourcePath"
         delegate="org.teavm.eclipse.debugger.TeaVMLaunchConfigurationDelegate"
         modes="debug"
-        id="org.teavm.eclipse.debugger.launchConfig">
+        id="teavm-eclipse-plugin.debugger.launchConfig">
     </launchConfigurationType>
   </extension>
   <extension point="org.eclipse.debug.core.sourceLocators">
     <sourceLocator
         name="TeaVM Source Lookup Director"
         class="org.teavm.eclipse.debugger.TeaVMSourceLookupDirector"
-        id="org.teavm.eclipse.debugger.sourceLookup">
+        id="teavm-eclipse-plugin.debugger.sourceLookup">
     </sourceLocator>
   </extension>
   <extension point="org.eclipse.debug.core.sourcePathComputers">
     <sourcePathComputer
         class="org.teavm.eclipse.debugger.TeaVMSourcePathComputerDelegate"
-        id="org.teavm.eclipse.debugger.sourcePath">
+        id="teavm-eclipse-plugin.debugger.sourcePath">
     </sourcePathComputer>
   </extension>
   <extension point="org.eclipse.debug.ui.launchConfigurationTabGroups">
     <launchConfigurationTabGroup
-        type="org.teavm.eclipse.debugger.launchConfig"
+        type="teavm-eclipse-plugin.debugger.launchConfig"
         description="Debug TeaVM program"
         class="org.teavm.eclipse.debugger.ui.TeaVMTabGroup"
-        id="org.teavm.eclipse.debugger.ui.tabs">
+        id="teavm-eclipse-plugin.debugger.ui.tabs">
     </launchConfigurationTabGroup>
   </extension>
   <extension point="org.eclipse.debug.ui.launchConfigurationTypeImages">
     <launchConfigurationTypeImage
-        id="org.teavm.eclipse.debugger.ui.launchConfigIcon"
-        configTypeID="org.teavm.eclipse.debugger.launchConfig"
+        id="teavm-eclipse-plugin.debugger.ui.launchConfigIcon"
+        configTypeID="teavm-eclipse-plugin.debugger.launchConfig"
         icon="teavm-16.png">
     </launchConfigurationTypeImage>
   </extension>
   <extension point="org.eclipse.debug.ui.debugModelPresentations">
     <debugModelPresentation
         class="org.teavm.eclipse.debugger.ui.TeaVMDebugModelPresentation"
-        id="org.teavm.eclipse.debugger">
+        id="teavm-eclipse-plugin.debugger">
     </debugModelPresentation>
   </extension>
 
@@ -65,10 +65,10 @@
     <runtime>
       <run class="org.teavm.eclipse.TeaVMProjectNature"/>
     </runtime>
-    <builder id="org.teavm.eclipse.builder"/>
+    <builder id="teavm-eclipse-plugin.builder"/>
   </extension>
   <extension point="org.eclipse.ui.propertyPages">
-    <page id="org.teavm.eclipse.projectProperties" name="TeaVM" class="org.teavm.eclipse.ui.TeaVMProjectPropertyPage">
+    <page id="teavm-eclipse-plugin.projectProperties" name="TeaVM" class="org.teavm.eclipse.ui.TeaVMProjectPropertyPage">
       <enabledWhen>
         <or>
           <instanceof value="org.eclipse.core.resources.IProject"/>

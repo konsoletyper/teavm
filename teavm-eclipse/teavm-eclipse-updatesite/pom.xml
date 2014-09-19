@@ -23,30 +23,7 @@
     <artifactId>teavm-eclipse</artifactId>
     <version>0.2-SNAPSHOT</version>
   </parent>
-  <artifactId>teavm-eclipse-plugin</artifactId>
-  <packaging>eclipse-plugin</packaging>
-
-  <repositories>
-    <repository>
-      <id>teavm</id>
-      <url>${project.baseUri}../teavm-eclipse-repository/target/repository</url>
-      <layout>p2</layout>
-    </repository>
-  </repositories>
-
-  <build>
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <groupId>org.eclipse.tycho</groupId>
-          <artifactId>tycho-packaging-plugin</artifactId>
-          <version>${tycho.version}</version>
-          <configuration>
-            <strictVersions>false</strictVersions>
-          </configuration>
-        </plugin>
-      </plugins>
-    </pluginManagement>
-  </build>
-
+  <artifactId>teavm-eclipse-updatesite</artifactId>
+  <packaging>eclipse-repository</packaging>
+  <version>0.2.0-SNAPSHOT</version>
 </project>

@@ -1,42 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src/main/java"/>
-	<classpathentry exported="true" kind="lib" path="lib/gson-2.2.4.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/teavm-classlib-0.2-SNAPSHOT.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/teavm-platform-0.2-SNAPSHOT.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/asm-5.0.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/asm-commons-5.0.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/asm-debug-all-4.2.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/asm-tree-5.0.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/commons-io-2.4.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jackson-core-asl-1.9.13.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jackson-mapper-asl-1.9.13.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/javax-websocket-client-impl-9.2.1.v20140609.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/javax-websocket-server-impl-9.2.1.v20140609.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/javax.annotation-api-1.2.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/javax.servlet-api-3.1.0.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/javax.websocket-api-1.0.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jetty-annotations-9.2.1.v20140609.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jetty-http-9.2.1.v20140609.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jetty-io-9.2.1.v20140609.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jetty-jndi-9.2.1.v20140609.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jetty-plus-9.2.1.v20140609.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jetty-security-9.2.1.v20140609.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jetty-server-9.2.1.v20140609.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jetty-servlet-9.2.1.v20140609.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jetty-util-9.2.1.v20140609.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jetty-webapp-9.2.1.v20140609.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/jetty-xml-9.2.1.v20140609.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/logback-classic-1.1.2.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/logback-core-1.1.2.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/slf4j-api-1.7.7.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/teavm-chrome-rdp-0.2-SNAPSHOT.jar" sourcepath="/teavm-chrome-rdp"/>
-	<classpathentry exported="true" kind="lib" path="lib/teavm-core-0.2-SNAPSHOT.jar" sourcepath="/teavm-core"/>
-	<classpathentry exported="true" kind="lib" path="lib/websocket-api-9.2.1.v20140609.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/websocket-client-9.2.1.v20140609.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/websocket-common-9.2.1.v20140609.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/websocket-server-9.2.1.v20140609.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/websocket-servlet-9.2.1.v20140609.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
 	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
 	<classpathentry kind="output" path="target"/>
