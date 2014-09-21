@@ -48,18 +48,32 @@
             <configuration>
               <artifacts>
                 <artifact>
+                  <id>javax.interceptor:javax.interceptor-api:1.2</id>
+                </artifact>
+                <artifact>
+                  <id>javax.enterprise:cdi-api:1.2</id>
+                </artifact>
+                <artifact>
+                  <id>javax.transaction:javax.transaction-api:1.2</id>
+                </artifact>
+                <artifact>
+                  <id>org.apache.aries.spifly:org.apache.aries.spifly.dynamic.bundle:1.0.1</id>
+                </artifact>
+                <artifact>
+                  <id>org.apache.aries.spifly:org.apache.aries.spifly.dynamic.bundle:1.0.1</id>
+                </artifact>
+                <artifact>
                   <id>org.teavm:teavm-core:${project.version}</id>
-                  <source>true</source>
                 </artifact>
                 <artifact>
                   <id>org.teavm:teavm-classlib:${project.version}</id>
-                  <source>true</source>
                 </artifact>
                 <artifact>
                   <id>org.teavm:teavm-chrome-rdp:${project.version}</id>
-                  <source>true</source>
                 </artifact>
-                <artifact><id>ch.qos.logback:logback-classic:1.1.2</id></artifact>
+                <artifact>
+                  <id>ch.qos.logback:logback-classic:1.1.2</id>
+                </artifact>
               </artifacts>
             </configuration>
           </execution>

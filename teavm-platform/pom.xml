@@ -50,6 +50,7 @@
         <extensions>true</extensions>
         <configuration>
           <instructions>
+            <Bundle-Version>0.2.0.qualifier</Bundle-Version>
             <Export-Package>org.teavm.platform.*</Export-Package>
             <Bundle-SymbolicName>teavm-platform</Bundle-SymbolicName>
           </instructions>

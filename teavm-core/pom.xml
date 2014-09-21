@@ -68,6 +68,7 @@
         <extensions>true</extensions>
         <configuration>
           <instructions>
+            <Bundle-Version>0.2.0.qualifier</Bundle-Version>
             <Export-Package>org.teavm.*</Export-Package>
             <Bundle-SymbolicName>teavm-core</Bundle-SymbolicName>
             <Import-Package>org.apache.commons.io;version="[1.4,2.5)",org.junit,org.objectweb.asm;version="[4.2,6)",

@@ -25,6 +25,7 @@
   </parent>
   <artifactId>teavm-eclipse-plugin</artifactId>
   <packaging>eclipse-plugin</packaging>
+  <version>0.2.0-SNAPSHOT</version>
 
   <repositories>
     <repository>
