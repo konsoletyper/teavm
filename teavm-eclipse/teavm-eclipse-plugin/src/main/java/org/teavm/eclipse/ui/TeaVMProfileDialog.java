@@ -53,6 +53,7 @@ import org.teavm.eclipse.TeaVMRuntimeMode;
 public class TeaVMProfileDialog extends Dialog {
     private static List<TeaVMRuntimeMode> runtimeModes = Arrays.asList(TeaVMRuntimeMode.SEPARATE,
             TeaVMRuntimeMode.MERGE, TeaVMRuntimeMode.NONE);
+    private TabFolder tabFolder;
     private Text nameField;
     private Text mainClassField;
     private Button mainClassChooseButton;
@@ -107,7 +108,7 @@ public class TeaVMProfileDialog extends Dialog {
         area.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
         ScrolledComposite scrollContainer = new ScrolledComposite(area, SWT.V_SCROLL | SWT.H_SCROLL);
         scrollContainer.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-        TabFolder tabFolder = new TabFolder(scrollContainer, SWT.TOP);
+        tabFolder = new TabFolder(scrollContainer, SWT.TOP);
         scrollContainer.setContent(tabFolder);
         scrollContainer.setExpandHorizontal(true);
         scrollContainer.setExpandVertical(true);
@@ -644,6 +645,18 @@ public class TeaVMProfileDialog extends Dialog {
         cacheDirectoryWorkspaceButton.setEnabled(incrementalButton.getSelection());
     }
 
+    private static void setEnabledRecursive(Composite composite, boolean enabled) {
+        Control[] children = composite.getChildren();
+        for (int i = 0; i < children.length; i++) {
+            if (children[i] instanceof Composite) {
+                setEnabledRecursive((Composite) children[i], enabled);
+            } else {
+                children[i].setEnabled(enabled);
+            }
+        }
+        composite.setEnabled(enabled);
+    }
+
     private void load() {
         nameField.setText(profile.getName());
         mainClassField.setText(profile.getMainClass() != null ? profile.getMainClass() : "");
@@ -670,6 +683,11 @@ public class TeaVMProfileDialog extends Dialog {
             row.className = entry.getKey();
             row.alias = entry.getValue();
             classAliases.add(row);
+        }
+        for (Control control : tabFolder.getTabList()) {
+            if (control instanceof Composite) {
+                setEnabledRecursive((Composite)control, profile.getExternalToolId().isEmpty());
+            }
         }
     }
 

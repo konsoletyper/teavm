@@ -99,6 +99,11 @@ public class TeaVMProjectPropertyPage extends PropertyPage implements IWorkbench
         TableColumn fileColumn = new TableColumn(profilesTable, SWT.LEFT);
         fileColumn.setText("Target file");
         fileColumn.setWidth(150);
+        profilesTable.addSelectionListener(new SelectionAdapter() {
+            @Override public void widgetSelected(SelectionEvent e) {
+                updateTableSelection();
+            }
+        });
 
         addProfileButton = new Button(container, SWT.PUSH);
         addProfileButton.setText("Add...");
@@ -128,6 +133,16 @@ public class TeaVMProjectPropertyPage extends PropertyPage implements IWorkbench
         });
 
         return container;
+    }
+
+    private void updateTableSelection() {
+        if (profilesTable.getSelectionCount() != 1) {
+            removeProfileButton.setEnabled(false);
+            return;
+        }
+        TableItem item = profilesTable.getSelection()[0];
+        TeaVMProfile profile = (TeaVMProfile)item.getData();
+        removeProfileButton.setEnabled(profile.getExternalToolId().isEmpty());
     }
 
     private void loadProfiles() {
@@ -197,6 +212,10 @@ public class TeaVMProjectPropertyPage extends PropertyPage implements IWorkbench
             return;
         }
         TableItem item = profilesTable.getSelection()[0];
+        TeaVMProfile profile = (TeaVMProfile)item.getData();
+        if (!profile.getExternalToolId().isEmpty()) {
+            return;
+        }
         boolean confirmed = MessageDialog.openConfirm(getShell(), "Deletion confirmation",
                 "Are you sure to delete profile " + item.getText(0) + "?");
         if (!confirmed) {

@@ -78,4 +78,8 @@ public interface TeaVMProfile {
     Map<String, String> getClassAliases();
 
     void setClassAliases(Map<String, String> classAliases);
+
+    String getExternalToolId();
+
+    void setExternalToolId(String toolId);
 }

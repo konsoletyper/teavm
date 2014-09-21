@@ -99,7 +99,7 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
         tool.setDebugInformationGenerated(profile.isDebugInformationGenerated());
         tool.setSourceMapsFileGenerated(profile.isSourceMapsGenerated());
         String targetDir = profile.getTargetDirectory();
-        tool.setTargetDirectory(new File(varManager.performStringSubstitution(targetDir)));
+        tool.setTargetDirectory(new File(varManager.performStringSubstitution(targetDir, false)));
         tool.setTargetFileName(profile.getTargetFileName());
         tool.setMinifying(profile.isMinifying());
         tool.setRuntime(mapRuntime(profile.getRuntimeMode()));
@@ -107,7 +107,8 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
         tool.getProperties().putAll(profile.getProperties());
         tool.setIncremental(profile.isIncremental());
         String cacheDir = profile.getCacheDirectory();
-        tool.setCacheDirectory(!cacheDir.isEmpty() ? new File(varManager.performStringSubstitution(cacheDir)) : null);
+        tool.setCacheDirectory(!cacheDir.isEmpty() ?
+                new File(varManager.performStringSubstitution(cacheDir, false)) : null);
         for (ClassHolderTransformer transformer : instantiateTransformers(profile, classLoader)) {
             tool.getTransformers().add(transformer);
         }
