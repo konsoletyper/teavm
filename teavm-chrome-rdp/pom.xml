@@ -98,7 +98,6 @@
         <extensions>true</extensions>
         <configuration>
           <instructions>
-            <Bundle-Version>0.2.0.qualifier</Bundle-Version>
             <Export-Package>org.teavm.chromerdp</Export-Package>
             <Bundle-SymbolicName>teavm-chrome-rdp</Bundle-SymbolicName>
           </instructions>

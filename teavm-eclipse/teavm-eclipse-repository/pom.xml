@@ -30,32 +30,65 @@
   <description>A p2 repository for Eclipse that contains TeaVM core together with all required
       dependencies</description>
 
+  <dependencies>
+    <dependency>
+      <groupId>javax.interceptor</groupId>
+      <artifactId>javax.interceptor-api</artifactId>
+      <version>1.2</version>
+    </dependency>
+    <dependency>
+      <groupId>javax.enterprise</groupId>
+      <artifactId>cdi-api</artifactId>
+      <version>1.2</version>
+    </dependency>
+    <dependency>
+      <groupId>javax.transaction</groupId>
+      <artifactId>javax.transaction-api</artifactId>
+      <version>1.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.aries.spifly</groupId>
+      <artifactId>org.apache.aries.spifly.dynamic.bundle</artifactId>
+      <version>1.0.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.teavm</groupId>
+      <artifactId>teavm-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.teavm</groupId>
+      <artifactId>teavm-classlib</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.teavm</groupId>
+      <artifactId>teavm-chrome-rdp</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>1.1.2</version>
+    </dependency>
+  </dependencies>
+
   <build>
     <pluginManagement>
     </pluginManagement>
     <plugins>
-      <plugin>
+      <!-- plugin>
         <groupId>org.reficio</groupId>
         <artifactId>p2-maven-plugin</artifactId>
         <version>1.1.0</version>
         <executions>
           <execution>
             <id>default-cli</id>
-            <phase>prepare-package</phase>
             <goals>
               <goal>site</goal>
             </goals>
             <configuration>
               <artifacts>
-                <artifact>
-                  <id>javax.interceptor:javax.interceptor-api:1.2</id>
-                </artifact>
-                <artifact>
-                  <id>javax.enterprise:cdi-api:1.2</id>
-                </artifact>
-                <artifact>
-                  <id>javax.transaction:javax.transaction-api:1.2</id>
-                </artifact>
                 <artifact>
                   <id>org.apache.aries.spifly:org.apache.aries.spifly.dynamic.bundle:1.0.1</id>
                 </artifact>
@@ -76,6 +109,20 @@
                 </artifact>
               </artifacts>
             </configuration>
+          </execution>
+        </executions>
+      </plugin -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>2.8</version>
+        <executions>
+          <execution>
+            <id>copy-dependencies</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
           </execution>
         </executions>
       </plugin>

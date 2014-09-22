@@ -458,7 +458,7 @@
          id="teavm-chrome-rdp"
          download-size="0"
          install-size="0"
-         version="0.0.0"
+         version="0.2.0.qualifier"
          unpack="false"/>
 
    <plugin
@@ -490,20 +490,6 @@
          unpack="false"/>
 
    <plugin
-         id="org.apache.aries.spifly.org.apache.aries.spifly.core-internal"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="org.apache.aries.spifly.org.apache.aries.spifly.weaver-internal"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
          id="org.apache.aries.util"
          download-size="0"
          install-size="0"
@@ -526,6 +512,13 @@
 
    <plugin
          id="javax.enterprise.cdi-api"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="org.eclipse.jetty.websocket.javax.websocket.server"
          download-size="0"
          install-size="0"
          version="0.0.0"
