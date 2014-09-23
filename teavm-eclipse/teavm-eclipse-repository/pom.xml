@@ -69,6 +69,9 @@
                   <id>org.teavm:teavm-chrome-rdp:${project.version}</id>
                 </artifact>
                 <artifact>
+                  <id>org.eclipse.jetty.websocket:javax-websocket-server-impl:${jetty.version}</id>
+                </artifact>
+                <artifact>
                   <id>ch.qos.logback:logback-classic:1.1.2</id>
                 </artifact>
               </artifacts>
