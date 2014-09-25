@@ -34,8 +34,9 @@
   </properties>
 
   <modules>
-    <module>teavm-eclipse-repository</module>
+    <module>teavm-eclipse-core-plugin</module>
     <module>teavm-eclipse-plugin</module>
+    <module>teavm-eclipse-m2e-plugin</module>
     <module>teavm-eclipse-feature</module>
     <module>teavm-eclipse-updatesite</module>
   </modules>
