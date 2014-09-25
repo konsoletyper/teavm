@@ -442,7 +442,7 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
                         }
                     }
                     IContainer srcContainer = (IContainer)workspaceRoot.findMember(entry.getPath());
-                    if (srcContainer.getProject() == project) {
+                    if (srcContainer != null && srcContainer.getProject() == project) {
                         srcCollector.addContainer(srcContainer);
                     }
                     break;

@@ -15,6 +15,8 @@
  */
 package org.teavm.eclipse.debugger;
 
+import org.teavm.eclipse.TeaVMEclipsePlugin;
+
 /**
  *
  * @author Alexey Andreev
@@ -25,5 +27,5 @@ public final class TeaVMDebugConstants {
 
     public static final String JAVA_BREAKPOINT_INSTALL_COUNT = "org.eclipse.jdt.debug.core.installCount";
 
-    public static final String DEBUG_TARGET_ID = "org.teavm.eclipse.debugger";
+    public static final String DEBUG_TARGET_ID = TeaVMEclipsePlugin.ID + ".debugger";
 }

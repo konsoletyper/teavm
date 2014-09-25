@@ -108,7 +108,9 @@ public class MethodDependency implements MethodDependencyInfo {
     public void use() {
         if (!used) {
             used = true;
-            dependencyChecker.scheduleMethodAnalysis(this);
+            if (!isMissing()) {
+                dependencyChecker.scheduleMethodAnalysis(this);
+            }
         }
     }
 }
