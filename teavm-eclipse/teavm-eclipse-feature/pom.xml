@@ -28,11 +28,16 @@
 
   <packaging>eclipse-feature</packaging>
 
-  <repositories>
-    <repository>
-      <id>teavm</id>
-      <url>${project.baseUri}../teavm-eclipse-repository/target/repository</url>
-      <layout>p2</layout>
-    </repository>
-  </repositories>
+  <dependencies>
+    <dependency>
+      <groupId>org.teavm</groupId>
+      <artifactId>teavm-eclipse-core-plugin</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.teavm</groupId>
+      <artifactId>teavm-eclipse-plugin</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+  </dependencies>
 </project>

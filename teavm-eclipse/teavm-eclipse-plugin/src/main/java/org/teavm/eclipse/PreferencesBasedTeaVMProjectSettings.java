@@ -43,6 +43,7 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
     public static final String PROPERTIES = "properties";
     public static final String CLASSES = "classes";
     public static final String TRANSFORMERS = "transformers";
+    public static final String EXTERNAL_TOOL_ID = "externalTool";
 
     private static final String NEW_PROFILE_NAME = "New profile";
     private List<ProfileImpl> profiles = new ArrayList<>();
@@ -71,7 +72,7 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
         if (profileMap.get(profile.getName()) != profile) {
             return;
         }
-        profileMap.remove(profile);
+        profileMap.remove(profile.getName());
         profiles.remove(profile);
     }
 
@@ -109,7 +110,8 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
             }
             for (String key : globalPreferences.childrenNames()) {
                 if (!profileMap.containsKey(key)) {
-                    globalPreferences.node(key).removeNode();
+                    Preferences node = globalPreferences.node(key);
+                    node.removeNode();
                 }
             }
             globalPreferences.flush();
@@ -160,7 +162,8 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
         private boolean debugInformationGenerated;
         private Properties properties = new Properties();
         private String[] transformers = new String[0];
-        private Map<String, String> classeAliases = new HashMap<>();
+        private Map<String, String> classAliases = new HashMap<>();
+        private String externalToolId = "";
 
         @Override
         public String getName() {
@@ -293,12 +296,12 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
 
         @Override
         public Map<String, String> getClassAliases() {
-            return new HashMap<>(classeAliases);
+            return new HashMap<>(classAliases);
         }
 
         @Override
         public void setClassAliases(Map<String, String> classAliases) {
-            this.classeAliases = new HashMap<>(classAliases);
+            this.classAliases = new HashMap<>(classAliases);
         }
 
         @Override
@@ -309,6 +312,16 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
         @Override
         public void setTransformers(String[] transformers) {
             this.transformers = transformers.clone();
+        }
+
+        @Override
+        public String getExternalToolId() {
+            return externalToolId;
+        }
+
+        @Override
+        public void setExternalToolId(String toolId) {
+            this.externalToolId = toolId;
         }
 
         public void load() throws BackingStoreException {
@@ -335,8 +348,9 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
             Preferences classesPrefs = preferences.node(CLASSES);
             classesPrefs.sync();
             for (String key : classesPrefs.keys()) {
-                classeAliases.put(key, classesPrefs.get(key, "_"));
+                classAliases.put(key, classesPrefs.get(key, "_"));
             }
+            externalToolId = preferences.get(EXTERNAL_TOOL_ID, "");
         }
 
         public void save() throws BackingStoreException {
@@ -365,10 +379,11 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
             transformersPrefs.flush();
             Preferences classesPrefs = preferences.node(CLASSES);
             classesPrefs.clear();
-            for (String key : classeAliases.keySet()) {
-                classesPrefs.put(key, classeAliases.get(key));
+            for (String key : classAliases.keySet()) {
+                classesPrefs.put(key, classAliases.get(key));
             }
             classesPrefs.flush();
+            preferences.put(EXTERNAL_TOOL_ID, externalToolId);
             preferences.flush();
         }
     }

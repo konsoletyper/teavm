@@ -38,6 +38,7 @@
     <module>teavm-eclipse-plugin</module>
     <module>teavm-eclipse-m2e-plugin</module>
     <module>teavm-eclipse-feature</module>
+    <module>teavm-eclipse-m2e-feature</module>
     <module>teavm-eclipse-updatesite</module>
   </modules>
 
