@@ -29,8 +29,8 @@
   <description>TeaVM plugins for Eclipse</description>
 
   <properties>
-    <p2-repo.url>http://download.eclipse.org/releases/kepler</p2-repo.url>
-    <tycho.version>0.19.0</tycho.version>
+    <p2-repo.url>http://download.eclipse.org/releases/juno</p2-repo.url>
+    <tycho.version>0.21.0</tycho.version>
   </properties>
 
   <modules>
