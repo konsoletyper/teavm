@@ -23,9 +23,9 @@
     <artifactId>teavm-eclipse</artifactId>
     <version>0.2-SNAPSHOT</version>
   </parent>
-  <artifactId>teavm-eclipse-plugin</artifactId>
-  <version>0.2.0-SNAPSHOT</version>
+  <artifactId>teavm-eclipse-m2e-plugin</artifactId>
   <packaging>eclipse-plugin</packaging>
+  <version>0.2.0-SNAPSHOT</version>
 
   <build>
     <pluginManagement>
