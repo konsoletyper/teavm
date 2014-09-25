@@ -15,27 +15,50 @@
  */
 package org.teavm.dom.html;
 
-import org.teavm.dom.core.Document;
 import org.teavm.jso.JSProperty;
+import org.w3c.dom.html.HTMLFormElement;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-public interface HTMLDocument extends Document {
-    @JSProperty
-    @Override
-    HTMLHtmlElement getDocumentElement();
+public interface HTMLButtonElement extends HTMLElement {
+    String TYPE_BUTTON = "button";
 
-    @Override
-    HTMLElement createElement(String tagName);
+    String TYPE_RESET = "reset";
 
-    @Override
-    HTMLElement getElementById(String elementId);
+    String TYPE_SUBMIT = "submit";
 
     @JSProperty
-    HTMLBodyElement getBody();
+    boolean isAutofocus();
 
     @JSProperty
-    HTMLElement getHead();
+    void setAutofocus(boolean autofocus);
+
+    @JSProperty
+    boolean isDisabled();
+
+    @JSProperty
+    void setDisabled(boolean disabled);
+
+    @JSProperty
+    HTMLFormElement getForm();
+
+    @JSProperty
+    String getName();
+
+    @JSProperty
+    void setName(String name);
+
+    @JSProperty
+    String getValue();
+
+    @JSProperty
+    void setValue(String value);
+
+    @JSProperty
+    String getType();
+
+    @JSProperty
+    void setType(String type);
 }

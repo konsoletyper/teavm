@@ -25,8 +25,8 @@
   <artifactId>teavm-eclipse</artifactId>
   <packaging>pom</packaging>
 
-  <name>TeaVM Eclipse plugins</name>
-  <description>TeaVM plugins for Eclipse</description>
+  <name>TeaVM Eclipse integration</name>
+  <description>Aggregate project containing all plugins for integration TeaVM with Eclipse</description>
 
   <properties>
     <p2-repo.url>http://download.eclipse.org/releases/juno</p2-repo.url>

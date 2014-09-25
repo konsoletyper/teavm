@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <!--
     Copyright 2014 Alexey Andreev.
 
@@ -20,38 +19,19 @@
 
   <parent>
     <groupId>org.teavm</groupId>
-    <artifactId>teavm-eclipse</artifactId>
+    <artifactId>teavm</artifactId>
     <version>0.2-SNAPSHOT</version>
   </parent>
-  <artifactId>teavm-eclipse-plugin</artifactId>
-  <version>0.2.0-SNAPSHOT</version>
+  <artifactId>teavm-maven</artifactId>
 
-  <packaging>eclipse-plugin</packaging>
+  <packaging>pom</packaging>
 
-  <name>TeaVM Eclipse plugin</name>
-  <description>Contains TeaVM builder and TeaVM debugger for Eclipse</description>
+  <name>TeaVM maven</name>
+  <description>TeaVM maven integration aggregate project</description>
+  <url>http://teavm.org</url>
 
-  <dependencies>
-    <dependency>
-      <groupId>org.teavm</groupId>
-      <artifactId>teavm-eclipse-core-plugin</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-  </dependencies>
-
-  <build>
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <groupId>org.eclipse.tycho</groupId>
-          <artifactId>tycho-packaging-plugin</artifactId>
-          <version>${tycho.version}</version>
-          <configuration>
-            <strictVersions>false</strictVersions>
-          </configuration>
-        </plugin>
-      </plugins>
-    </pluginManagement>
-  </build>
-
+  <modules>
+    <module>teavm-maven-plugin</module>
+    <module>teavm-maven-webapp</module>
+  </modules>
 </project>

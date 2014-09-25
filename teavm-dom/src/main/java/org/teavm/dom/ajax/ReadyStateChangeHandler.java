@@ -13,35 +13,17 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.dom.browser;
+package org.teavm.dom.ajax;
 
-import org.teavm.dom.ajax.XMLHttpRequest;
-import org.teavm.dom.html.HTMLDocument;
-import org.teavm.jso.JSConstructor;
-import org.teavm.jso.JSGlobal;
+import org.teavm.jso.JSFunctor;
+
 import org.teavm.jso.JSObject;
-import org.teavm.jso.JSProperty;
 
 /**
  *
  * @author Alexey Andreev
  */
-public interface Window extends JSGlobal {
-    @JSProperty
-    HTMLDocument getDocument();
-
-    void alert(JSObject message);
-
-    void alert(String message);
-
-    int setTimeout(TimerHandler handler, int delay);
-
-    void clearTimeout(int timeoutId);
-
-    int setInterval(TimerHandler handler, int delay);
-
-    void clearInterval(int timeoutId);
-
-    @JSConstructor("XMLHttpRequest")
-    XMLHttpRequest createXMLHttpRequest();
+@JSFunctor
+public interface ReadyStateChangeHandler extends JSObject {
+    void stateChanged();
 }

@@ -74,7 +74,7 @@
   <modules>
     <module>teavm-core</module>
     <module>teavm-classlib</module>
-    <module>teavm-maven-plugin</module>
+    <module>teavm-maven</module>
     <module>teavm-dom</module>
     <module>teavm-jso</module>
     <module>teavm-html4j</module>

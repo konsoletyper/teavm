@@ -79,8 +79,14 @@ class JavascriptNativeProcessor {
                 MethodReader method = getMethod(invoke.getMethod());
                 if (method.getAnnotations().get(JSProperty.class.getName()) != null) {
                     if (isProperGetter(method.getDescriptor())) {
-                        String propertyName = method.getName().charAt(0) == 'i' ? cutPrefix(method.getName(), 2) :
+                        String propertyName;
+                        AnnotationReader annot = method.getAnnotations().get(JSProperty.class.getName());
+                        if (annot.getValue("value") != null) {
+                            propertyName = annot.getValue("value").getString();
+                        } else {
+                            propertyName = method.getName().charAt(0) == 'i' ? cutPrefix(method.getName(), 2) :
                                 cutPrefix(method.getName(), 3);
+                        }
                         Variable result = invoke.getReceiver() != null ? program.createVariable() : null;
                         addPropertyGet(propertyName, invoke.getInstance(), result);
                         if (result != null) {
@@ -88,8 +94,15 @@ class JavascriptNativeProcessor {
                             copyVar(result, invoke.getReceiver());
                         }
                     } else if (isProperSetter(method.getDescriptor())) {
-                        Variable wrapped = wrap(invoke.getArguments().get(0), method.parameterType(0));
-                        addPropertySet(cutPrefix(method.getName(), 3), invoke.getInstance(), wrapped);
+                        String propertyName;
+                        AnnotationReader annot = method.getAnnotations().get(JSProperty.class.getName());
+                        if (annot.getValue("value") != null) {
+                            propertyName = annot.getValue("value").getString();
+                        } else {
+                            propertyName = cutPrefix(method.getName(), 3);
+                        }
+                        Variable wrapped = wrapArgument(invoke.getArguments().get(0), method.parameterType(0));
+                        addPropertySet(propertyName, invoke.getInstance(), wrapped);
                     } else {
                         throw new RuntimeException("Method " + invoke.getMethod() + " is not " +
                                 "a proper native JavaScript property declaration");

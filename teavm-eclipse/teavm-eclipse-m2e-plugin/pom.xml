@@ -24,8 +24,12 @@
     <version>0.2-SNAPSHOT</version>
   </parent>
   <artifactId>teavm-eclipse-m2e-plugin</artifactId>
-  <packaging>eclipse-plugin</packaging>
   <version>0.2.0-SNAPSHOT</version>
+
+  <packaging>eclipse-plugin</packaging>
+
+  <name>TeaVM m2e plugin</name>
+  <description>Contains plugin that automatically configures TeaVM builder from pom.xml</description>
 
   <dependencies>
     <dependency>

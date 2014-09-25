@@ -13,35 +13,35 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.dom.browser;
+package org.teavm.dom.html;
 
-import org.teavm.dom.ajax.XMLHttpRequest;
-import org.teavm.dom.html.HTMLDocument;
-import org.teavm.jso.JSConstructor;
-import org.teavm.jso.JSGlobal;
-import org.teavm.jso.JSObject;
+import org.teavm.dom.events.EventListener;
 import org.teavm.jso.JSProperty;
 
 /**
  *
  * @author Alexey Andreev
  */
-public interface Window extends JSGlobal {
-    @JSProperty
-    HTMLDocument getDocument();
+public interface HTMLBodyElement extends HTMLElement {
+    @JSProperty("onbeforeunload")
+    void setOnBeforeUnload(EventListener listener);
 
-    void alert(JSObject message);
+    @JSProperty("onerror")
+    void setOnError(EventListener listener);
 
-    void alert(String message);
+    @JSProperty("onload")
+    void setOnLoad(EventListener listener);
 
-    int setTimeout(TimerHandler handler, int delay);
+    @JSProperty("onmessage")
+    void setOnMessage(EventListener listener);
 
-    void clearTimeout(int timeoutId);
+    @JSProperty("onoffline")
+    void setOnOffline(EventListener listener);
 
-    int setInterval(TimerHandler handler, int delay);
+    @JSProperty("ononline")
+    void setOnOnline(EventListener listener);
 
-    void clearInterval(int timeoutId);
-
-    @JSConstructor("XMLHttpRequest")
-    XMLHttpRequest createXMLHttpRequest();
+    @JSProperty("ononunload")
+    void setOnUnload(EventListener listener);
 }
+

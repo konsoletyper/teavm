@@ -19,7 +19,7 @@
 
   <parent>
     <groupId>org.teavm</groupId>
-    <artifactId>teavm</artifactId>
+    <artifactId>teavm-maven</artifactId>
     <version>0.2-SNAPSHOT</version>
   </parent>
   <artifactId>teavm-maven-plugin</artifactId>
