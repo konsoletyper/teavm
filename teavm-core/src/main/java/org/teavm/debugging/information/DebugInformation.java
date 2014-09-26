@@ -377,8 +377,8 @@ public class DebugInformation {
         writer.write(this);
     }
 
-    public void writeAsSourceMaps(Writer output, String sourceFile) throws IOException {
-        new SourceMapsWriter(output).write(sourceFile, this);
+    public void writeAsSourceMaps(Writer output, String sourceRoot, String sourceFile) throws IOException {
+        new SourceMapsWriter(output).write(sourceFile, sourceRoot, this);
     }
 
     public static DebugInformation read(InputStream input) throws IOException {

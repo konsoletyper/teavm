@@ -27,6 +27,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.repository.MavenArtifactRepository;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -36,9 +37,11 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.repository.RepositorySystem;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.testing.JUnitTestAdapter;
 import org.teavm.testing.TestAdapter;
+import org.teavm.tooling.SourceFileProvider;
 import org.teavm.tooling.TeaVMTestTool;
 import org.teavm.tooling.TeaVMToolException;
 
@@ -55,6 +58,18 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
 
     @Component
     private MavenProject project;
+
+    @Component
+    private RepositorySystem repositorySystem;
+
+    @Parameter(required = true, readonly = true, defaultValue = "${localRepository}")
+    private MavenArtifactRepository localRepository;
+
+    @Parameter(required = true, readonly = true, defaultValue = "${project.remoteArtifactRepositories}")
+    private List<MavenArtifactRepository> remoteRepositories;
+
+    @Parameter(readonly = true, defaultValue = "${plugin.artifacts}")
+    private List<Artifact> pluginArtifacts;
 
     @Parameter(defaultValue = "${project.build.directory}/javascript-test")
     private File outputDir;
@@ -97,6 +112,9 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
 
     @Parameter
     private boolean sourceMapsGenerated;
+
+    @Parameter
+    private boolean sourceFilesCopied;
 
     private TeaVMTestTool tool = new TeaVMTestTool();
 
@@ -164,6 +182,14 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
         this.sourceMapsGenerated = sourceMapsGenerated;
     }
 
+    public boolean isSourceFilesCopied() {
+        return sourceFilesCopied;
+    }
+
+    public void setSourceFilesCopied(boolean sourceFilesCopied) {
+        this.sourceFilesCopied = sourceFilesCopied;
+    }
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         if (System.getProperty("maven.test.skip", "false").equals("true") ||
@@ -188,6 +214,18 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
             tool.setIncremental(incremental);
             tool.setDebugInformationGenerated(debugInformationGenerated);
             tool.setSourceMapsGenerated(sourceMapsGenerated);
+            tool.setSourceFilesCopied(sourceFilesCopied);
+            if (sourceFilesCopied) {
+                MavenSourceFileProviderLookup lookup = new MavenSourceFileProviderLookup();
+                lookup.setMavenProject(project);
+                lookup.setRepositorySystem(repositorySystem);
+                lookup.setLocalRepository(localRepository);
+                lookup.setRemoteRepositories(remoteRepositories);
+                lookup.setPluginDependencies(pluginArtifacts);
+                for (SourceFileProvider provider : lookup.resolve()) {
+                    tool.addSourceFileProvider(provider);
+                }
+            }
             if (properties != null) {
                 tool.getProperties().putAll(properties);
             }

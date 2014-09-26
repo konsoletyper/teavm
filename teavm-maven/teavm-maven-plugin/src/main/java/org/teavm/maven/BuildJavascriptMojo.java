@@ -23,6 +23,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.repository.MavenArtifactRepository;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
@@ -31,6 +32,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.repository.RepositorySystem;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.tooling.*;
 
@@ -46,6 +48,18 @@ public class BuildJavascriptMojo extends AbstractMojo {
 
     @Component
     private MavenProject project;
+
+    @Component
+    private RepositorySystem repositorySystem;
+
+    @Parameter(required = true, readonly = true, defaultValue = "${localRepository}")
+    private MavenArtifactRepository localRepository;
+
+    @Parameter(required = true, readonly = true, defaultValue = "${project.remoteArtifactRepositories}")
+    private List<MavenArtifactRepository> remoteRepositories;
+
+    @Parameter(readonly = true, defaultValue = "${plugin.artifacts}")
+    private List<Artifact> pluginArtifacts;
 
     @Parameter(defaultValue = "${project.build.directory}/javascript")
     private File targetDirectory;
@@ -79,6 +93,9 @@ public class BuildJavascriptMojo extends AbstractMojo {
 
     @Parameter
     private boolean sourceMapsGenerated;
+
+    @Parameter
+    private boolean sourceFilesCopied;
 
     @Parameter
     private boolean incremental;
@@ -165,6 +182,14 @@ public class BuildJavascriptMojo extends AbstractMojo {
         this.sourceMapsGenerated = sourceMapsGenerated;
     }
 
+    public boolean isSourceFilesCopied() {
+        return sourceFilesCopied;
+    }
+
+    public void setSourceFilesCopied(boolean sourceFilesCopied) {
+        this.sourceFilesCopied = sourceFilesCopied;
+    }
+
     public boolean isIncremental() {
         return incremental;
     }
@@ -196,6 +221,17 @@ public class BuildJavascriptMojo extends AbstractMojo {
             tool.setTargetDirectory(targetDirectory);
             tool.setTargetFileName(targetFileName);
             tool.getTransformers().addAll(instantiateTransformers(classLoader));
+            if (sourceFilesCopied) {
+                MavenSourceFileProviderLookup lookup = new MavenSourceFileProviderLookup();
+                lookup.setMavenProject(project);
+                lookup.setRepositorySystem(repositorySystem);
+                lookup.setLocalRepository(localRepository);
+                lookup.setRemoteRepositories(remoteRepositories);
+                lookup.setPluginDependencies(pluginArtifacts);
+                for (SourceFileProvider provider : lookup.resolve()) {
+                    tool.addSourceFileProvider(provider);
+                }
+            }
             if (classAliases != null) {
                 tool.getClassAliases().addAll(Arrays.asList(classAliases));
             }
@@ -209,6 +245,7 @@ public class BuildJavascriptMojo extends AbstractMojo {
             tool.setIncremental(incremental);
             tool.setDebugInformationGenerated(debugInformationGenerated);
             tool.setSourceMapsFileGenerated(sourceMapsGenerated);
+            tool.setSourceFilesCopied(sourceFilesCopied);
             tool.generate();
             tool.checkForMissingItems();
         } catch (RuntimeException e) {

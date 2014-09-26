@@ -46,6 +46,7 @@ public class TeaVMTool {
     private boolean bytecodeLogging;
     private boolean debugInformationGenerated;
     private boolean sourceMapsFileGenerated;
+    private boolean sourceFilesCopied;
     private boolean incremental;
     private File cacheDirectory = new File("./teavm-cache");
     private List<ClassHolderTransformer> transformers = new ArrayList<>();
@@ -61,6 +62,7 @@ public class TeaVMTool {
     private boolean cancelled;
     private TeaVMProgressListener progressListener;
     private TeaVM vm;
+    private List<SourceFileProvider> sourceFileProviders = new ArrayList<>();
 
     public File getTargetDirectory() {
         return targetDirectory;
@@ -150,6 +152,14 @@ public class TeaVMTool {
         this.sourceMapsFileGenerated = sourceMapsFileGenerated;
     }
 
+    public boolean isSourceFilesCopied() {
+        return sourceFilesCopied;
+    }
+
+    public void setSourceFilesCopied(boolean sourceFilesCopied) {
+        this.sourceFilesCopied = sourceFilesCopied;
+    }
+
     public Properties getProperties() {
         return properties;
     }
@@ -192,6 +202,10 @@ public class TeaVMTool {
 
     public Collection<String> getClasses() {
         return vm != null ? vm.getClasses() : Collections.<String>emptyList();
+    }
+
+    public void addSourceFileProvider(SourceFileProvider sourceFileProvider) {
+        sourceFileProviders.add(sourceFileProvider);
     }
 
     public void generate() throws TeaVMToolException {
@@ -295,9 +309,13 @@ public class TeaVMTool {
                     writer.append("\n//# sourceMappingURL=").append(sourceMapsFileName);
                     try (Writer sourceMapsOut = new OutputStreamWriter(new FileOutputStream(
                             new File(targetDirectory, sourceMapsFileName)), "UTF-8")) {
-                        debugInfo.writeAsSourceMaps(sourceMapsOut, targetFileName);
+                        debugInfo.writeAsSourceMaps(sourceMapsOut, "src", targetFileName);
                     }
                     log.info("Source maps successfully written");
+                }
+                if (sourceFilesCopied) {
+                    copySourceFiles();
+                    log.info("Source files successfully written");
                 }
                 if (incremental) {
                     programCache.flush();
@@ -333,6 +351,16 @@ public class TeaVMTool {
 
     public void checkForMissingItems() {
         vm.checkForMissingItems();
+    }
+
+    private void copySourceFiles() {
+        if (vm.getWrittenClasses() == null) {
+            return;
+        }
+        SourceFilesCopier copier = new SourceFilesCopier(sourceFileProviders);
+        copier.addClasses(vm.getWrittenClasses());
+        copier.setLog(log);
+        copier.copy(new File(targetDirectory, "src"));
     }
 
     private AbstractRendererListener runtimeInjector = new AbstractRendererListener() {

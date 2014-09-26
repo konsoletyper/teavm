@@ -85,6 +85,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     private boolean incremental;
     private TeaVMProgressListener progressListener;
     private boolean cancelled;
+    private ListableClassHolderSource writtenClasses;
 
     TeaVM(ClassReaderSource classSource, ClassLoader classLoader) {
         this.classSource = classSource;
@@ -312,6 +313,14 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         return dependencyChecker.getAchievableClasses();
     }
 
+    public DependencyInfo getDependencyInfo() {
+        return dependencyChecker;
+    }
+
+    public ListableClassReaderSource getWrittenClasses() {
+        return writtenClasses;
+    }
+
     /**
      * <p>After building checks whether the build has failed due to some missing items (classes, methods and fields).
      * If it has failed, throws exception, containing report on all missing items.
@@ -378,6 +387,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             return;
         }
         ListableClassHolderSource classSet = link(dependencyChecker);
+        writtenClasses = classSet;
         if (wasCancelled()) {
             return;
         }

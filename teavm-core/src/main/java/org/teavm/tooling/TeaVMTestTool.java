@@ -55,9 +55,12 @@ public class TeaVMTestTool {
     private TeaVMToolLog log = new EmptyTeaVMToolLog();
     private boolean debugInformationGenerated;
     private boolean sourceMapsGenerated;
+    private boolean sourceFilesCopied;
     private boolean incremental;
+    private List<SourceFileProvider> sourceFileProviders = new ArrayList<>();
     private RegularMethodNodeCache astCache;
     private ProgramCache programCache;
+    private SourceFilesCopier sourceFilesCopier;
 
     public File getOutputDir() {
         return outputDir;
@@ -147,6 +150,18 @@ public class TeaVMTestTool {
         this.sourceMapsGenerated = sourceMapsGenerated;
     }
 
+    public boolean isSourceFilesCopied() {
+        return sourceFilesCopied;
+    }
+
+    public void setSourceFilesCopied(boolean sourceFilesCopied) {
+        this.sourceFilesCopied = sourceFilesCopied;
+    }
+
+    public void addSourceFileProvider(SourceFileProvider sourceFileProvider) {
+        sourceFileProviders.add(sourceFileProvider);
+    }
+
     public void generate() throws TeaVMToolException {
         Runnable finalizer = null;
         try {
@@ -233,6 +248,8 @@ public class TeaVMTestTool {
             }
             int methodsGenerated = 0;
             log.info("Generating test files");
+            sourceFilesCopier = new SourceFilesCopier(sourceFileProviders);
+            sourceFilesCopier.setLog(log);
             FiniteExecutor executor = new SimpleFiniteExecutor();
             if (numThreads != 1) {
                 int threads = numThreads != 0 ? numThreads : Runtime.getRuntime().availableProcessors();
@@ -260,6 +277,9 @@ public class TeaVMTestTool {
                 ++methodsGenerated;
             }
             executor.complete();
+            if (sourceFilesCopied) {
+                sourceFilesCopier.copy(new File(new File(outputDir, "tests"), "src"));
+            }
             log.info("Test files successfully generated for " + methodsGenerated + " method(s).");
         } catch (IOException e) {
             throw new TeaVMToolException("IO error occured generating JavaScript files", e);
@@ -374,8 +394,11 @@ public class TeaVMTestTool {
             String sourceMapsFileName = targetName + ".map";
             try (Writer sourceMapsOut = new OutputStreamWriter(new FileOutputStream(
                     new File(outputDir, sourceMapsFileName)), "UTF-8")) {
-                debugInfo.writeAsSourceMaps(sourceMapsOut, targetName);
+                debugInfo.writeAsSourceMaps(sourceMapsOut, "src", targetName);
             }
+        }
+        if (sourceFilesCopied && vm.getWrittenClasses() != null) {
+            sourceFilesCopier.addClasses(vm.getWrittenClasses());
         }
     }
 

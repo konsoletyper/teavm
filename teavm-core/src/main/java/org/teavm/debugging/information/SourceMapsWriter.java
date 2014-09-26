@@ -35,12 +35,14 @@ class SourceMapsWriter {
         this.output = output;
     }
 
-    public void write(String generatedFile, DebugInformation debugInfo) throws IOException {
+    public void write(String generatedFile, String sourceRoot, DebugInformation debugInfo) throws IOException {
         output.write("{\"version\":3");
         output.write(",\"file\":\"");
         writeEscapedString(generatedFile);
         output.write("\"");
-        output.write(",\"sourceRoot\":\"\"");
+        output.write(",\"sourceRoot\":\"");
+        writeEscapedString(sourceRoot);
+        output.write("\"");
         output.write(",\"sources\":[");
         for (int i = 0; i < debugInfo.fileNames.length; ++i) {
             if (i > 0) {
@@ -59,7 +61,7 @@ class SourceMapsWriter {
         lastSourceFile = 0;
         lastSourceLine = 0;
         for (SourceLocationIterator iter = debugInfo.iterateOverSourceLocations(); !iter.isEndReached(); iter.next()) {
-            writeSegment(iter.getLocation(), iter.getFileNameId(), iter.getLine());
+            writeSegment(iter.getLocation(), iter.getFileNameId(), iter.getLine() - 1);
         }
         output.write("\"}");
     }

@@ -69,6 +69,7 @@
               <mainPageIncluded>true</mainPageIncluded>
               <debugInformationGenerated>true</debugInformationGenerated>
               <sourceMapsGenerated>true</sourceMapsGenerated>
+              <sourceFilesCopied>true</sourceFilesCopied>
               <targetDirectory>${project.build.directory}/javascript/hello</targetDirectory>
             </configuration>
           </execution>
