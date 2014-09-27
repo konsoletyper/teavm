@@ -40,6 +40,7 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
     public static final String CACHE_DIRECTORY = "cacheDirectory";
     public static final String SOURCE_MAPS = "sourceMaps";
     public static final String DEBUG_INFORMATION = "debugInformation";
+    public static final String COPY_SOURCES = "copySources";
     public static final String PROPERTIES = "properties";
     public static final String CLASSES = "classes";
     public static final String TRANSFORMERS = "transformers";
@@ -160,6 +161,7 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
         private String cacheDirectory;
         private boolean sourceMapsGenerated;
         private boolean debugInformationGenerated;
+        private boolean sourceFilesCopied;
         private Properties properties = new Properties();
         private String[] transformers = new String[0];
         private Map<String, String> classAliases = new HashMap<>();
@@ -282,6 +284,16 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
         }
 
         @Override
+        public boolean isSourceFilesCopied() {
+            return sourceFilesCopied;
+        }
+
+        @Override
+        public void setSourceFilesCopied(boolean sourceFilesCopied) {
+            this.sourceFilesCopied = sourceFilesCopied;
+        }
+
+        @Override
         public Properties getProperties() {
             Properties copy = new Properties();
             copy.putAll(properties);
@@ -336,6 +348,7 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
             cacheDirectory = preferences.get(CACHE_DIRECTORY, "");
             sourceMapsGenerated = preferences.getBoolean(SOURCE_MAPS, true);
             debugInformationGenerated = preferences.getBoolean(DEBUG_INFORMATION, true);
+            sourceFilesCopied = preferences.getBoolean(COPY_SOURCES, true);
             Preferences propertiesPrefs = preferences.node(PROPERTIES);
             propertiesPrefs.sync();
             properties = new Properties();
@@ -365,6 +378,7 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
             preferences.put(CACHE_DIRECTORY, cacheDirectory);
             preferences.putBoolean(SOURCE_MAPS, sourceMapsGenerated);
             preferences.putBoolean(DEBUG_INFORMATION, debugInformationGenerated);
+            preferences.putBoolean(COPY_SOURCES, sourceFilesCopied);
             Preferences propertiesPrefs = preferences.node(PROPERTIES);
             propertiesPrefs.clear();
             for (Object key : properties.keySet()) {

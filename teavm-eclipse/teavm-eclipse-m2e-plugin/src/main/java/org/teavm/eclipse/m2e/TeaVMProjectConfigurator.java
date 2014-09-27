@@ -93,7 +93,7 @@ public class TeaVMProjectConfigurator extends AbstractProjectConfigurator {
 
     private void configureProfile(MojoExecution execution, TeaVMProfile profile, IProgressMonitor monitor)
             throws CoreException {
-        monitor.beginTask("Configuring profile " + profile.getName(), 110);
+        monitor.beginTask("Configuring profile " + profile.getName(), 120);
         String buildDir = getProjectBuildDirectory();
 
         String mainClass = maven.getMojoParameterValue(mavenSession, execution, "mainClass", String.class);
@@ -129,6 +129,11 @@ public class TeaVMProjectConfigurator extends AbstractProjectConfigurator {
         Boolean sourceMaps = maven.getMojoParameterValue(mavenSession, execution, "sourceMapsGenerated",
                 Boolean.class);
         profile.setSourceMapsGenerated(sourceMaps != null ? sourceMaps : false);
+        monitor.worked(10);
+
+        Boolean sourceFiles = maven.getMojoParameterValue(mavenSession, execution, "sourceFilesCopied",
+                Boolean.class);
+        profile.setSourceFilesCopied(sourceFiles != null ? sourceFiles : false);
         monitor.worked(10);
 
         Boolean incremental = maven.getMojoParameterValue(mavenSession, execution, "incremental", Boolean.class);

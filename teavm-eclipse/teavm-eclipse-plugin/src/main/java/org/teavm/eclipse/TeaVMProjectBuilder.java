@@ -23,7 +23,10 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
 import org.eclipse.core.resources.*;
-import org.eclipse.core.runtime.*;
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.SubProgressMonitor;
 import org.eclipse.core.variables.IStringVariableManager;
 import org.eclipse.core.variables.VariablesPlugin;
 import org.eclipse.jdt.core.IClasspathEntry;
@@ -34,10 +37,7 @@ import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.InstructionLocation;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
-import org.teavm.tooling.ClassAlias;
-import org.teavm.tooling.RuntimeCopyOperation;
-import org.teavm.tooling.TeaVMTool;
-import org.teavm.tooling.TeaVMToolException;
+import org.teavm.tooling.*;
 
 /**
  *
@@ -48,6 +48,7 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
     private URL[] classPath;
     private IContainer[] sourceContainers;
     private IContainer[] classFileContainers;
+    private SourceFileProvider[] sourceProviders;
     private Set<IProject> usedProjects = new HashSet<>();
     private static Map<TeaVMProfile, Set<String>> profileClasses = new WeakHashMap<>();
 
@@ -98,6 +99,7 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
         tool.setClassLoader(classLoader);
         tool.setDebugInformationGenerated(profile.isDebugInformationGenerated());
         tool.setSourceMapsFileGenerated(profile.isSourceMapsGenerated());
+        tool.setSourceFilesCopied(profile.isSourceFilesCopied());
         String targetDir = profile.getTargetDirectory();
         tool.setTargetDirectory(new File(varManager.performStringSubstitution(targetDir, false)));
         tool.setTargetFileName(profile.getTargetFileName());
@@ -117,6 +119,9 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
             classAlias.setClassName(entry.getKey());
             classAlias.setAlias(entry.getValue());
             tool.getClassAliases().add(classAlias);
+        }
+        for (SourceFileProvider provider : sourceProviders) {
+            tool.addSourceFileProvider(provider);
         }
         tool.setProgressListener(new TeaVMEclipseProgressListener(this, monitor, TICKS_PER_PROFILE));
         try {
@@ -167,7 +172,7 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
         }
         for (IProject project : getRelatedProjects()) {
             IResourceDelta delta = getDelta(project);
-            if (shouldBuild(classes, delta)) {
+            if (delta != null && shouldBuild(classes, delta)) {
                 return true;
             }
         }
@@ -405,6 +410,7 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
     private void prepareClassPath() throws CoreException {
         classPath = new URL[0];
         sourceContainers = new IContainer[0];
+        sourceProviders = new SourceFileProvider[0];
         IProject project = getProject();
         if (!project.hasNature(JavaCore.NATURE_ID)) {
             return;
@@ -413,6 +419,7 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
         PathCollector collector = new PathCollector();
         SourcePathCollector srcCollector = new SourcePathCollector();
         SourcePathCollector binCollector = new SourcePathCollector();
+        SourceFileCollector sourceFileCollector = new SourceFileCollector();
         IWorkspaceRoot workspaceRoot = project.getWorkspace().getRoot();
         try {
             if (javaProject.getOutputLocation() != null) {
@@ -423,53 +430,70 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
         } catch (MalformedURLException e) {
             TeaVMEclipsePlugin.logError(e);
         }
-        IClasspathEntry[] entries = javaProject.getResolvedClasspath(true);
-        for (IClasspathEntry entry : entries) {
-            switch (entry.getEntryKind()) {
-                case IClasspathEntry.CPE_LIBRARY:
-                    try {
-                        collector.addPath(entry.getPath());
-                    } catch (MalformedURLException e) {
-                        TeaVMEclipsePlugin.logError(e);
-                    }
-                    break;
-                case IClasspathEntry.CPE_SOURCE:
-                    if (entry.getOutputLocation() != null) {
+        Queue<IJavaProject> projectQueue = new ArrayDeque<>();
+        projectQueue.add(javaProject);
+        Set<IJavaProject> visitedProjects = new HashSet<>();
+        while (!projectQueue.isEmpty()) {
+            javaProject = projectQueue.remove();
+            if (!visitedProjects.add(javaProject)) {
+                continue;
+            }
+            IClasspathEntry[] entries = javaProject.getResolvedClasspath(true);
+            for (IClasspathEntry entry : entries) {
+                switch (entry.getEntryKind()) {
+                    case IClasspathEntry.CPE_LIBRARY:
                         try {
-                            collector.addPath(workspaceRoot.findMember(entry.getOutputLocation()).getLocation());
+                            collector.addPath(entry.getPath());
                         } catch (MalformedURLException e) {
                             TeaVMEclipsePlugin.logError(e);
                         }
-                    }
-                    IContainer srcContainer = (IContainer)workspaceRoot.findMember(entry.getPath());
-                    if (srcContainer != null && srcContainer.getProject() == project) {
-                        srcCollector.addContainer(srcContainer);
-                    }
-                    break;
-                case IClasspathEntry.CPE_PROJECT: {
-                    IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(entry.getPath());
-                    IProject depProject = resource.getProject();
-                    if (!depProject.hasNature(JavaCore.NATURE_ID)) {
+                        if (entry.getSourceAttachmentPath() != null) {
+                            sourceFileCollector.addFile(entry.getSourceAttachmentPath());
+                        }
+                        break;
+                    case IClasspathEntry.CPE_SOURCE:
+                        if (entry.getOutputLocation() != null) {
+                            try {
+                                collector.addPath(workspaceRoot.findMember(entry.getOutputLocation()).getLocation());
+                            } catch (MalformedURLException e) {
+                                TeaVMEclipsePlugin.logError(e);
+                            }
+                        }
+                        IContainer srcContainer = (IContainer)workspaceRoot.findMember(entry.getPath());
+                        if (srcContainer != null) {
+                            if (srcContainer.getProject() == project) {
+                                srcCollector.addContainer(srcContainer);
+                            }
+                            sourceFileCollector.addFile(srcContainer.getLocation());
+                        }
+                        break;
+                    case IClasspathEntry.CPE_PROJECT: {
+                        IResource resource = ResourcesPlugin.getWorkspace().getRoot().findMember(entry.getPath());
+                        IProject depProject = resource.getProject();
+                        if (!depProject.hasNature(JavaCore.NATURE_ID)) {
+                            break;
+                        }
+                        IJavaProject depJavaProject = JavaCore.create(depProject);
+                        if (depJavaProject.getOutputLocation() != null) {
+                            try {
+                                IContainer container = (IContainer)workspaceRoot.findMember(
+                                        depJavaProject.getOutputLocation());
+                                collector.addPath(container.getLocation());
+                                binCollector.addContainer(container);
+                            } catch (MalformedURLException e) {
+                                TeaVMEclipsePlugin.logError(e);
+                            }
+                        }
+                        projectQueue.add(depJavaProject);
                         break;
                     }
-                    IJavaProject depJavaProject = JavaCore.create(depProject);
-                    if (depJavaProject.getOutputLocation() != null) {
-                        try {
-                            IContainer container = (IContainer)workspaceRoot.findMember(
-                                    depJavaProject.getOutputLocation());
-                            collector.addPath(container.getLocation());
-                            binCollector.addContainer(container);
-                        } catch (MalformedURLException e) {
-                            TeaVMEclipsePlugin.logError(e);
-                        }
-                    }
-                    break;
                 }
             }
         }
         classPath = collector.getUrls();
         sourceContainers = srcCollector.getContainers();
         classFileContainers = binCollector.getContainers();
+        sourceProviders = sourceFileCollector.getProviders();
     }
 
     static class PathCollector {
@@ -494,6 +518,30 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
 
         public URL[] getUrls() {
             return urls.toArray(new URL[urls.size()]);
+        }
+    }
+
+    static class SourceFileCollector {
+        private Set<String> files = new HashSet<>();
+        private List<SourceFileProvider> providers = new ArrayList<>();
+
+        public void addFile(IPath path) {
+            if (!files.add(path.toString())) {
+                return;
+            }
+            File file = path.toFile();
+            if (!file.exists()) {
+                return;
+            }
+            if (file.isDirectory()) {
+                providers.add(new DirectorySourceFileProvider(file));
+            } else {
+                providers.add(new JarSourceFileProvider(file));
+            }
+        }
+
+        public SourceFileProvider[] getProviders() {
+            return providers.toArray(new SourceFileProvider[providers.size()]);
         }
     }
 

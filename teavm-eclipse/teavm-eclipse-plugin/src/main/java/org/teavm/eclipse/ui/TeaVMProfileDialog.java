@@ -69,6 +69,7 @@ public class TeaVMProfileDialog extends Dialog {
     private Button cacheDirectoryFileSystemButton;
     private Button debugInformationButton;
     private Button sourceMapsButton;
+    private Button sourceFilesCopiedButton;
     private TableViewer propertiesTableViewer;
     private Button addPropertyButton;
     private Button deletePropertyButton;
@@ -173,6 +174,7 @@ public class TeaVMProfileDialog extends Dialog {
         Group group = createGroup(parent, "Debug settings", 1, false);
         createDebugInformationField(group);
         createSourceMapsField(group);
+        createSourceFilesCopiedField(group);
     }
 
     private void createPropertiesGroup(Composite parent) {
@@ -521,6 +523,11 @@ public class TeaVMProfileDialog extends Dialog {
         sourceMapsButton.setText("Generate source maps");
     }
 
+    private void createSourceFilesCopiedField(Composite container) {
+        sourceFilesCopiedButton = new Button(container, SWT.CHECK);
+        sourceFilesCopiedButton.setText("Copy source files");
+    }
+
     public void setProject(IProject project) throws CoreException {
         if (project.hasNature(JavaCore.NATURE_ID)) {
             this.javaProject = JavaCore.create(project);
@@ -668,6 +675,7 @@ public class TeaVMProfileDialog extends Dialog {
         cacheDirectoryField.setText(profile.getCacheDirectory());
         debugInformationButton.setSelection(profile.isDebugInformationGenerated());
         sourceMapsButton.setSelection(profile.isSourceMapsGenerated());
+        sourceFilesCopiedButton.setSelection(profile.isSourceFilesCopied());
         propertyList.clear();
         Properties properties = profile.getProperties();
         for (Object key : properties.keySet()) {
@@ -708,6 +716,7 @@ public class TeaVMProfileDialog extends Dialog {
         profile.setCacheDirectory(cacheDirectoryField.getText());
         profile.setDebugInformationGenerated(debugInformationButton.getSelection());
         profile.setSourceMapsGenerated(sourceMapsButton.getSelection());
+        profile.setSourceFilesCopied(sourceFilesCopiedButton.getSelection());
         Properties properties = new Properties();
         for (Object item : propertyList) {
             KeyValue property = (KeyValue)item;

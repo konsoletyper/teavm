@@ -18,6 +18,9 @@ package org.teavm.tooling;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -28,6 +31,7 @@ import java.util.zip.ZipFile;
 public class JarSourceFileProvider implements SourceFileProvider {
     private File file;
     private ZipFile zipFile;
+    private Set<String> sourceFiles = new HashSet<>();
 
     public JarSourceFileProvider(File file) {
         this.file = file;
@@ -36,6 +40,10 @@ public class JarSourceFileProvider implements SourceFileProvider {
     @Override
     public void open() throws IOException {
         zipFile = new ZipFile(file);
+        for (Enumeration<? extends ZipEntry> enumeration = zipFile.entries(); enumeration.hasMoreElements();) {
+            ZipEntry entry = enumeration.nextElement();
+            sourceFiles.add(entry.getName());
+        }
     }
 
     @Override
@@ -45,12 +53,13 @@ public class JarSourceFileProvider implements SourceFileProvider {
         }
         ZipFile zipFile = this.zipFile;
         this.zipFile = null;
+        sourceFiles.clear();
         zipFile.close();
     }
 
     @Override
     public InputStream openSourceFile(String fullPath) throws IOException {
-        if (zipFile == null) {
+        if (zipFile == null || !sourceFiles.contains(fullPath)) {
             return null;
         }
         ZipEntry entry = zipFile.getEntry(fullPath);

@@ -67,6 +67,10 @@ public interface TeaVMProfile {
 
     void setDebugInformationGenerated(boolean debugInformationGenerated);
 
+    boolean isSourceFilesCopied();
+
+    void setSourceFilesCopied(boolean sourceFilesCopied);
+
     Properties getProperties();
 
     void setProperties(Properties properties);
