@@ -10,6 +10,7 @@
   <properties>
     <java.version>1.7</java.version>
     <teavm.version>0.2-SNAPSHOT</teavm.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
   <dependencies>

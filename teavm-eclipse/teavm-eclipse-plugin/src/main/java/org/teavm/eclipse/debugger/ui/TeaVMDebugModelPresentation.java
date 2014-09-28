@@ -26,10 +26,10 @@ import org.eclipse.debug.core.model.ILineBreakpoint;
 import org.eclipse.debug.core.model.IValue;
 import org.eclipse.debug.ui.IDebugModelPresentation;
 import org.eclipse.debug.ui.IValueDetailListener;
-import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.ui.IEditorInput;
-import org.eclipse.ui.editors.text.EditorsUI;
+import org.eclipse.ui.IEditorRegistry;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.ide.FileStoreEditorInput;
 import org.eclipse.ui.part.FileEditorInput;
 import org.teavm.debugging.CallFrame;
@@ -47,10 +47,19 @@ import org.teavm.model.ValueType;
 public class TeaVMDebugModelPresentation extends LabelProvider implements IDebugModelPresentation {
     @Override
     public String getEditorId(IEditorInput input, Object element) {
-        if (element instanceof IFile || element instanceof ILineBreakpoint || element instanceof IStorage) {
-            return JavaUI.ID_CU_EDITOR;
+        IEditorRegistry registry = PlatformUI.getWorkbench().getEditorRegistry();
+        if (element instanceof IFile) {
+            IFile file = (IFile)element;
+            return registry.getDefaultEditor(file.getName()).getId();
+        } else if (element instanceof ILineBreakpoint) {
+            String fileName = ((ILineBreakpoint)element).getMarker().getResource().getName();
+            return registry.getDefaultEditor(fileName).getId();
+        } else if (element instanceof IStorage) {
+            IStorage storage = (IStorage)element;
+            return registry.getDefaultEditor(storage.getName()).getId();
         } else if (element instanceof URL) {
-            return EditorsUI.DEFAULT_TEXT_EDITOR_ID;
+            URL url = (URL)element;
+            return registry.getDefaultEditor(url.getFile()).getId();
         }
         return null;
     }

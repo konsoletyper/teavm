@@ -23,15 +23,16 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
 import org.eclipse.core.resources.*;
-import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.IPath;
-import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.SubProgressMonitor;
+import org.eclipse.core.runtime.*;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.core.variables.IStringVariableManager;
 import org.eclipse.core.variables.VariablesPlugin;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jface.operation.IRunnableWithProgress;
+import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.progress.IProgressService;
 import org.teavm.dependency.*;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.InstructionLocation;
@@ -131,6 +132,7 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
                 putMarkers(tool.getDependencyViolations());
             } else if (!tool.wasCancelled()) {
                 setClasses(profile, classesToResources(tool.getClasses()));
+                refreshTarget(tool.getTargetDirectory());
             }
             if (!monitor.isCanceled()) {
                 monitor.done();
@@ -138,6 +140,28 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
         } catch (TeaVMToolException e) {
             throw new CoreException(TeaVMEclipsePlugin.makeError(e));
         }
+    }
+
+    private void refreshTarget(File targetDirectory) {
+        IWorkspaceRoot workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
+        IContainer[] targetContainers = workspaceRoot.findContainersForLocationURI(targetDirectory.toURI());
+        for (final IContainer container : targetContainers) {
+            if (container.exists()) {
+                Job job = new Job("Refreshing target directory") {
+                    @Override
+                    protected IStatus run(IProgressMonitor monitor) {
+                        try {
+                            container.refreshLocal(IContainer.DEPTH_INFINITE, monitor);
+                        } catch (CoreException e) {
+                            TeaVMEclipsePlugin.logError(e);
+                            return TeaVMEclipsePlugin.makeError(e);
+                        }
+                        return Status.OK_STATUS;
+                    }
+                };
+                job.schedule();
+             }
+         }
     }
 
     private RuntimeCopyOperation mapRuntime(TeaVMRuntimeMode runtimeMode) {
