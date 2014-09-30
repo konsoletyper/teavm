@@ -62,13 +62,34 @@ class PropertyMap extends AbstractMap<String, Variable> {
         Map<String, Variable> vars = new HashMap<>();
         for (Map.Entry<String, JavaScriptVariable> entry : jsVariables.entrySet()) {
             JavaScriptVariable jsVar = entry.getValue();
-            String name = debugger.mapField(className, entry.getKey());
-            if (name == null) {
-                continue;
+            String name;
+            if (className.endsWith("[]")) {
+                if (entry.getKey().equals("data")) {
+                    name = entry.getKey();
+                } else {
+                    continue;
+                }
+            } else if (isNumeric(entry.getKey())) {
+                name = entry.getKey();
+            } else {
+                name = debugger.mapField(className, entry.getKey());
+                if (name == null) {
+                    continue;
+                }
             }
             Value value = new Value(debugger, jsVar.getValue());
             vars.put(entry.getKey(), new Variable(name, value));
         }
         backingMap.compareAndSet(null, vars);
+    }
+
+    private boolean isNumeric(String str) {
+        for (int i = 0; i < str.length(); ++i) {
+            char c = str.charAt(i);
+            if (c < '0' || c > '9') {
+                return false;
+            }
+        }
+        return true;
     }
 }

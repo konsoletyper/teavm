@@ -119,6 +119,7 @@ public class JSNativeGenerator implements Generator, Injector, DependencyPlugin 
         switch (method.getReference().getName()) {
             case "invoke":
             case "instantiate":
+            case "function":
                 for (int i = 0; i < method.getReference().parameterCount(); ++i) {
                     method.getVariable(i).addConsumer(new DependencyConsumer() {
                         @Override public void consume(DependencyAgentType type) {

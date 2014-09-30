@@ -426,6 +426,9 @@ public class SSATransformer {
         @Override
         public void visit(UnwrapArrayInstruction insn) {
             insn.setArray(use(insn.getArray()));
+            for (String debugName : insn.getArray().getDebugNames()) {
+                variableDebugMap.put(insn.getReceiver().getIndex(), debugName + ".data");
+            }
             insn.setReceiver(define(insn.getReceiver()));
         }
 

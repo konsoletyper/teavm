@@ -101,6 +101,10 @@
 
               <!-- Whether TeaVM should produce source maps file -->
               <sourceMapsGenerated>true</sourceMapsGenerated>
+
+              <!-- Whether TeaVM should also put source files into output directory,
+                   for compatibility with source maps -->
+              <sourceFilesCopied>true</sourceFilesCopied>
             </configuration>
           </execution>
         </executions>
