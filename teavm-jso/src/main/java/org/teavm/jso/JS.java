@@ -117,6 +117,7 @@ public final class JS {
     public static native double unwrapDouble(JSObject obj);
 
     @GeneratedBy(JSNativeGenerator.class)
+    @PluggableDependency(JSNativeGenerator.class)
     public static native String unwrapString(JSObject obj);
 
     @InjectedBy(JSNativeGenerator.class)

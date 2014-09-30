@@ -116,12 +116,20 @@ public class JSNativeGenerator implements Generator, Injector, DependencyPlugin 
 
     @Override
     public void methodAchieved(final DependencyAgent agent, final MethodDependency method) {
-        for (int i = 0; i < method.getReference().parameterCount(); ++i) {
-            method.getVariable(i).addConsumer(new DependencyConsumer() {
-                @Override public void consume(DependencyAgentType type) {
-                    achieveFunctorMethods(agent, type.getName(), method);
+        switch (method.getReference().getName()) {
+            case "invoke":
+            case "instantiate":
+                for (int i = 0; i < method.getReference().parameterCount(); ++i) {
+                    method.getVariable(i).addConsumer(new DependencyConsumer() {
+                        @Override public void consume(DependencyAgentType type) {
+                            achieveFunctorMethods(agent, type.getName(), method);
+                        }
+                    });
                 }
-            });
+                break;
+            case "unwrapString":
+                method.getResult().propagate(agent.getType("java.lang.String"));
+                break;
         }
     }
 
