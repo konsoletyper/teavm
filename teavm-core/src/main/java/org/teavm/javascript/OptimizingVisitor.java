@@ -136,6 +136,10 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
             return;
         }
         VariableExpr var = (VariableExpr)assignment.getLeftValue();
+        if (var.getLocation() != null && assignment.getLocation() != null &&
+                !assignment.getLocation().equals(var.getLocation())) {
+            return;
+        }
         if (var.getIndex() == index) {
             resultSequence.remove(resultSequence.size() - 1);
             assignment.getRightValue().setLocation(assignment.getLocation());

@@ -50,7 +50,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     private Properties properties = new Properties();
     private ServiceRepository services;
     private DebugInformationEmitter debugEmitter = new DummyDebugInformationEmitter();
-    private Deque<NodeLocation> locationStack = new ArrayDeque<>();
+    private Deque<LocationStackEntry> locationStack = new ArrayDeque<>();
     private DeferredCallSite lastCallSite;
     private DeferredCallSite prevCallSite;
 
@@ -59,6 +59,14 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
 
         public InjectorHolder(Injector injector) {
             this.injector = injector;
+        }
+    }
+
+    private static class LocationStackEntry {
+        NodeLocation location;
+
+        public LocationStackEntry(NodeLocation location) {
+            this.location = location;
         }
     }
 
@@ -581,19 +589,26 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     }
 
     private void pushLocation(NodeLocation location) {
-        locationStack.push(location);
+        LocationStackEntry prevEntry = locationStack.peek();
         if (location != null) {
-            debugEmitter.emitLocation(location.getFileName(), location.getLine());
+            if (prevEntry == null || !location.equals(prevEntry.location)) {
+                debugEmitter.emitLocation(location.getFileName(), location.getLine());
+            }
         } else {
-            debugEmitter.emitLocation(null, -1);
+            if (prevEntry != null) {
+                debugEmitter.emitLocation(null, -1);
+            }
         }
+        locationStack.push(new LocationStackEntry(location));
     }
 
     private void popLocation() {
-        locationStack.pop();
-        NodeLocation location = locationStack.peek();
-        if (location != null) {
-            debugEmitter.emitLocation(location.getFileName(), location.getLine());
+        LocationStackEntry prevEntry = locationStack.pop();
+        LocationStackEntry entry = locationStack.peek();
+        if (entry != null) {
+            if (!entry.location.equals(prevEntry.location)) {
+                debugEmitter.emitLocation(entry.location.getFileName(), entry.location.getLine());
+            }
         } else {
             debugEmitter.emitLocation(null, -1);
         }
@@ -643,11 +658,11 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 prevCallSite = debugEmitter.emitCallSite();
                 writer.append("if").ws().append("(");
                 statement.getCondition().acceptVisitor(this);
-                debugEmitter.emitCallSite();
-                writer.append(")").ws().append("{").softNewLine().indent();
                 if (statement.getCondition().getLocation() != null) {
                     popLocation();
                 }
+                debugEmitter.emitCallSite();
+                writer.append(")").ws().append("{").softNewLine().indent();
                 for (Statement part : statement.getConsequent()) {
                     part.acceptVisitor(this);
                 }
@@ -675,12 +690,18 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     @Override
     public void visit(SwitchStatement statement) {
         try {
+            if (statement.getValue().getLocation() != null) {
+                pushLocation(statement.getValue().getLocation());
+            }
             if (statement.getId() != null) {
                 writer.append(statement.getId()).append(": ");
             }
             prevCallSite = debugEmitter.emitCallSite();
             writer.append("switch").ws().append("(");
             statement.getValue().acceptVisitor(this);
+            if (statement.getValue().getLocation() != null) {
+                popLocation();
+            }
             debugEmitter.emitCallSite();
             writer.append(")").ws().append("{").softNewLine().indent();
             for (SwitchClause clause : statement.getClauses()) {
@@ -709,6 +730,9 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     @Override
     public void visit(WhileStatement statement) {
         try {
+            if (statement.getCondition() != null && statement.getCondition().getLocation() != null) {
+                pushLocation(statement.getCondition().getLocation());
+            }
             if (statement.getId() != null) {
                 writer.append(statement.getId()).append(":").ws();
             }
@@ -717,6 +741,9 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 prevCallSite = debugEmitter.emitCallSite();
                 statement.getCondition().acceptVisitor(this);
                 debugEmitter.emitCallSite();
+                if (statement.getCondition().getLocation() != null) {
+                    popLocation();
+                }
             } else {
                 writer.append("true");
             }
@@ -997,10 +1024,10 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
 
     @Override
     public void visit(UnaryExpr expr) {
-        if (expr.getLocation() != null) {
-            pushLocation(expr.getLocation());
-        }
         try {
+            if (expr.getLocation() != null) {
+                pushLocation(expr.getLocation());
+            }
             switch (expr.getOperation()) {
                 case NOT:
                     writer.append("(!");
@@ -1061,11 +1088,11 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     writer.append(')');
                     break;
             }
+            if (expr.getLocation() != null) {
+                popLocation();
+            }
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
-        }
-        if (expr.getLocation() != null) {
-            popLocation();
         }
     }
 
@@ -1395,10 +1422,10 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
 
     @Override
     public void visit(NewArrayExpr expr) {
-        if (expr.getLocation() != null) {
-            pushLocation(expr.getLocation());
-        }
         try {
+            if (expr.getLocation() != null) {
+                pushLocation(expr.getLocation());
+            }
             ValueType type = expr.getType();
             if (type instanceof ValueType.Primitive) {
                 switch (((ValueType.Primitive)type).getKind()) {
@@ -1448,20 +1475,20 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 expr.getLength().acceptVisitor(this);
                 writer.append(")");
             }
+            if (expr.getLocation() != null) {
+                popLocation();
+            }
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
-        }
-        if (expr.getLocation() != null) {
-            popLocation();
         }
     }
 
     @Override
     public void visit(NewMultiArrayExpr expr) {
-        if (expr.getLocation() != null) {
-            pushLocation(expr.getLocation());
-        }
         try {
+            if (expr.getLocation() != null) {
+                pushLocation(expr.getLocation());
+            }
             ValueType type = expr.getType();
             for (int i = 0; i < expr.getDimensions().size(); ++i) {
                 type = ((ValueType.Array)type).getItemType();
@@ -1509,20 +1536,20 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 dimension.acceptVisitor(this);
             }
             writer.append("])");
+            if (expr.getLocation() != null) {
+                popLocation();
+            }
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
-        }
-        if (expr.getLocation() != null) {
-            popLocation();
         }
     }
 
     @Override
     public void visit(InstanceOfExpr expr) {
-        if (expr.getLocation() != null) {
-            pushLocation(expr.getLocation());
-        }
         try {
+            if (expr.getLocation() != null) {
+                pushLocation(expr.getLocation());
+            }
             if (expr.getType() instanceof ValueType.Object) {
                 String clsName = ((ValueType.Object)expr.getType()).getClassName();
                 ClassHolder cls = classSource.get(clsName);
@@ -1539,26 +1566,26 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             writer.append("$rt_isInstance(");
             expr.getExpr().acceptVisitor(this);
             writer.append(",").ws().append(typeToClsString(naming, expr.getType())).append(")");
+            if (expr.getLocation() != null) {
+                popLocation();
+            }
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
-        }
-        if (expr.getLocation() != null) {
-            popLocation();
         }
     }
 
     @Override
     public void visit(StaticClassExpr expr) {
-        if (expr.getLocation() != null) {
-            pushLocation(expr.getLocation());
-        }
         try {
+            if (expr.getLocation() != null) {
+                pushLocation(expr.getLocation());
+            }
             writer.append(typeToClsString(naming, expr.getType()));
+            if (expr.getLocation() != null) {
+                popLocation();
+            }
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
-        }
-        if (expr.getLocation() != null) {
-            popLocation();
         }
     }
 
