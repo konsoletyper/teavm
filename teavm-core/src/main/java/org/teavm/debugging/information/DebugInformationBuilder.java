@@ -36,6 +36,7 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
     private MappedList variableNames = new MappedList();
     private List<Long> exactMethods = new ArrayList<>();
     private Map<Long, Integer> exactMethodMap = new HashMap<>();
+    private RecordArrayBuilder statementStartMapping = new RecordArrayBuilder(2, 0);
     private RecordArrayBuilder fileMapping = new RecordArrayBuilder(3, 0);
     private RecordArrayBuilder lineMapping = new RecordArrayBuilder(3, 0);
     private RecordArrayBuilder classMapping = new RecordArrayBuilder(3, 0);
@@ -118,6 +119,13 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
                 exactMethods.add(fullIndex);
             }
         }
+    }
+
+    @Override
+    public void emitStatementStart() {
+        RecordArrayBuilder.Record record = statementStartMapping.add();
+        record.set(0, locationProvider.getLine());
+        record.set(1, locationProvider.getColumn());
     }
 
     @Override
@@ -273,6 +281,7 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
             }
             debugInformation.exactMethodMap = new HashMap<>(exactMethodMap);
 
+            debugInformation.statementStartMapping = statementStartMapping.build();
             debugInformation.fileMapping = compress(fileMapping).build();
             debugInformation.lineMapping = compress(lineMapping).build();
             debugInformation.classMapping = compress(classMapping).build();

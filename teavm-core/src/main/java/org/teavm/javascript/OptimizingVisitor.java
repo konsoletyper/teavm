@@ -380,7 +380,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                             cond.getConsequent().clear();
                             cond.getConsequent().addAll(innerCond.getConsequent());
                             cond.setCondition(Expr.binary(BinaryOperation.AND, cond.getCondition(),
-                                    innerCond.getCondition()));
+                                    innerCond.getCondition(), cond.getCondition().getLocation()));
                             --i;
                         } else if (cond.getAlternative().size() != 1 ||
                                 !(cond.getAlternative().get(0) instanceof ConditionalStatement)) {
@@ -408,6 +408,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
             }
         }
     }
+
 
     private void normalizeConditional(ConditionalStatement stmt) {
         if (stmt.getConsequent().isEmpty()) {
@@ -502,8 +503,10 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                     if (breakStmt.getTarget() == statement) {
                         statement.getBody().remove(0);
                         if (statement.getCondition() != null) {
-                            statement.setCondition(Expr.binary(BinaryOperation.AND, statement.getCondition(),
-                                    ExprOptimizer.invert(cond.getCondition())));
+                            Expr newCondition = Expr.binary(BinaryOperation.AND, statement.getCondition(),
+                                    ExprOptimizer.invert(cond.getCondition()));
+                            newCondition.setLocation(statement.getCondition().getLocation());
+                            statement.setCondition(newCondition);
                         } else {
                             statement.setCondition(ExprOptimizer.invert(cond.getCondition()));
                         }

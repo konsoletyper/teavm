@@ -47,6 +47,7 @@ class DebugInformationReader {
         debugInfo.lineMapping = readMapping();
         debugInfo.classMapping = readMapping();
         debugInfo.methodMapping = readMapping();
+        debugInfo.statementStartMapping = readBooleanMapping();
         debugInfo.callSiteMapping = readCallSiteMapping();
         debugInfo.variableMappings = readVariableMappings(debugInfo.variableNames.length);
         debugInfo.classesMetadata = readClassesMetadata(debugInfo.classNames.length);
@@ -154,6 +155,11 @@ class DebugInformationReader {
                 array.add(last);
             }
         }
+        return builder.build();
+    }
+
+    private RecordArray readBooleanMapping() throws IOException {
+        RecordArrayBuilder builder = readLinesAndColumns(2, 0);
         return builder.build();
     }
 

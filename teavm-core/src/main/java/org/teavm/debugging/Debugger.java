@@ -146,6 +146,7 @@ public class Debugger {
         public void visit(DebuggerVirtualCallSite callSite) {
             for (MethodReference potentialMethod : debugInfo.getOverridingMethods(callSite.getMethod())) {
                 for (GeneratedLocation loc : debugInfo.getMethodEntrances(potentialMethod)) {
+                    loc = debugInfo.getStatementLocation(loc);
                     locations.add(new JavaScriptLocation(script, loc.getLine(), loc.getColumn()));
                 }
             }
@@ -154,6 +155,7 @@ public class Debugger {
         @Override
         public void visit(DebuggerStaticCallSite callSite) {
             for (GeneratedLocation loc : debugInfo.getMethodEntrances(callSite.getMethod())) {
+                loc = debugInfo.getStatementLocation(loc);
                 locations.add(new JavaScriptLocation(script, loc.getLine(), loc.getColumn()));
             }
         }
@@ -174,6 +176,7 @@ public class Debugger {
                     Collection<GeneratedLocation> genLocations = debugInfo.getGeneratedLocations(successor);
                     if (!genLocations.isEmpty()) {
                         for (GeneratedLocation loc : genLocations) {
+                            loc = debugInfo.getStatementLocation(loc);
                             successors.add(new JavaScriptLocation(script, loc.getLine(), loc.getColumn()));
                         }
                     } else {

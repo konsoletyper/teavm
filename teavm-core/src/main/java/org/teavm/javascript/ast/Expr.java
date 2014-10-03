@@ -73,6 +73,7 @@ public abstract class Expr implements Cloneable {
         UnaryExpr result = new UnaryExpr();
         result.setOperand(expr);
         result.setOperation(UnaryOperation.NOT);
+        result.setLocation(expr.getLocation());
         return result;
     }
 

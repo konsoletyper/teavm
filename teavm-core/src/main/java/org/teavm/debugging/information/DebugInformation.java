@@ -46,6 +46,7 @@ public class DebugInformation {
     RecordArray methodMapping;
     RecordArray lineMapping;
     RecordArray callSiteMapping;
+    RecordArray statementStartMapping;
     RecordArray[] variableMappings;
     RecordArray[] lineCallSites;
     RecordArray[] controlFlowGraphs;
@@ -354,6 +355,28 @@ public class DebugInformation {
             callSites[i] = getCallSite(callSiteIds[i]);
         }
         return callSites;
+    }
+
+    public List<GeneratedLocation> getStatementStartLocations() {
+        return new LocationList(statementStartMapping);
+    }
+
+    public GeneratedLocation getStatementLocation(GeneratedLocation location) {
+        int index = indexByKey(statementStartMapping, location);
+        if (index < 0) {
+            return new GeneratedLocation(0, 0);
+        }
+        RecordArray.Record record = statementStartMapping.get(index);
+        return new GeneratedLocation(record.get(0), record.get(1));
+    }
+
+    public GeneratedLocation getNextStatementLocation(GeneratedLocation location) {
+        int index = indexByKey(statementStartMapping, location);
+        if (index >= statementStartMapping.size()) {
+            return new GeneratedLocation(0, 0);
+        }
+        RecordArray.Record record = statementStartMapping.get(index + 1);
+        return new GeneratedLocation(record.get(0), record.get(1));
     }
 
     private <T> T componentByKey(RecordArray mapping, T[] values, GeneratedLocation location) {

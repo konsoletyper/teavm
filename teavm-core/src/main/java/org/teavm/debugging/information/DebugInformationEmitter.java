@@ -27,6 +27,8 @@ public interface DebugInformationEmitter {
 
     void emitLocation(String fileName, int line);
 
+    void emitStatementStart();
+
     void emitMethod(MethodDescriptor method);
 
     void emitClass(String className);

@@ -49,6 +49,7 @@ class DebugInformationWriter {
         writeMapping(debugInfo.lineMapping);
         writeMapping(debugInfo.classMapping);
         writeMapping(debugInfo.methodMapping);
+        writeLinesAndColumns(debugInfo.statementStartMapping);
         writeCallSiteMapping(debugInfo.callSiteMapping);
         writeVariableMappings(debugInfo);
         writeClassMetadata(debugInfo.classesMetadata);

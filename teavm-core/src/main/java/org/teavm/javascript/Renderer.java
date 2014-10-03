@@ -617,6 +617,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     @Override
     public void visit(AssignmentStatement statement) throws RenderingException {
         try {
+            debugEmitter.emitStatementStart();
             if (statement.getLocation() != null) {
                 pushLocation(statement.getLocation());
             }
@@ -652,6 +653,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     public void visit(ConditionalStatement statement) {
         try {
             while (true) {
+                debugEmitter.emitStatementStart();
                 if (statement.getCondition().getLocation() != null) {
                     pushLocation(statement.getCondition().getLocation());
                 }
@@ -690,6 +692,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     @Override
     public void visit(SwitchStatement statement) {
         try {
+            debugEmitter.emitStatementStart();
             if (statement.getValue().getLocation() != null) {
                 pushLocation(statement.getValue().getLocation());
             }
@@ -730,6 +733,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     @Override
     public void visit(WhileStatement statement) {
         try {
+            debugEmitter.emitStatementStart();
             if (statement.getCondition() != null && statement.getCondition().getLocation() != null) {
                 pushLocation(statement.getCondition().getLocation());
             }
@@ -773,6 +777,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     @Override
     public void visit(BreakStatement statement) {
         try {
+            debugEmitter.emitStatementStart();
             if (statement.getLocation() != null) {
                 pushLocation(statement.getLocation());
             }
@@ -792,6 +797,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     @Override
     public void visit(ContinueStatement statement) {
         try {
+            debugEmitter.emitStatementStart();
             if (statement.getLocation() != null) {
                 pushLocation(statement.getLocation());
             }
@@ -811,6 +817,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     @Override
     public void visit(ReturnStatement statement) {
         try {
+            debugEmitter.emitStatementStart();
             if (statement.getLocation() != null) {
                 pushLocation(statement.getLocation());
             }
@@ -833,6 +840,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     @Override
     public void visit(ThrowStatement statement) {
         try {
+            debugEmitter.emitStatementStart();
             if (statement.getLocation() != null) {
                 pushLocation(statement.getLocation());
             }
@@ -852,6 +860,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     @Override
     public void visit(InitClassStatement statement) {
         try {
+            debugEmitter.emitStatementStart();
             if (statement.getLocation() != null) {
                 pushLocation(statement.getLocation());
             }
