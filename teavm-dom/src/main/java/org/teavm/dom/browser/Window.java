@@ -17,6 +17,8 @@ package org.teavm.dom.browser;
 
 import org.teavm.dom.ajax.XMLHttpRequest;
 import org.teavm.dom.html.HTMLDocument;
+import org.teavm.dom.typedarrays.ArrayBuffer;
+import org.teavm.dom.typedarrays.Int8Array;
 import org.teavm.jso.JSConstructor;
 import org.teavm.jso.JSGlobal;
 import org.teavm.jso.JSObject;
@@ -44,4 +46,25 @@ public interface Window extends JSGlobal {
 
     @JSConstructor("XMLHttpRequest")
     XMLHttpRequest createXMLHttpRequest();
+
+    @JSConstructor("ArrayBuffer")
+    ArrayBuffer createArrayBuffer(int length);
+
+    @JSConstructor("Int8Array")
+    Int8Array createInt8Array(int length);
+
+    @JSConstructor("Int8Array")
+    Int8Array createInt8Array(ArrayBuffer buffer);
+
+    @JSConstructor("Int8Array")
+    Int8Array createInt8Array(ArrayBuffer buffer, int offset, int length);
+
+    @JSConstructor("Uint8ClampedArray")
+    Int8Array createUint8ClampedArray(int length);
+
+    @JSConstructor("Uint8ClampedArray")
+    Int8Array createUint8ClampedArray(ArrayBuffer buffer);
+
+    @JSConstructor("Uint8ClampedArray")
+    Int8Array createUintClamped8Array(ArrayBuffer buffer, int offset, int length);
 }
