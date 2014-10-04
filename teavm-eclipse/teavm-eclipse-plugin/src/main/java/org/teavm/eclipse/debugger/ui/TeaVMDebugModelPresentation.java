@@ -15,11 +15,7 @@
  */
 package org.teavm.eclipse.debugger.ui;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
-import org.eclipse.core.filesystem.EFS;
-import org.eclipse.core.filesystem.IFileStore;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IStorage;
 import org.eclipse.debug.core.model.ILineBreakpoint;
@@ -30,7 +26,6 @@ import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorRegistry;
 import org.eclipse.ui.PlatformUI;
-import org.eclipse.ui.ide.FileStoreEditorInput;
 import org.eclipse.ui.part.FileEditorInput;
 import org.teavm.debugging.CallFrame;
 import org.teavm.debugging.javascript.JavaScriptCallFrame;
@@ -73,13 +68,7 @@ public class TeaVMDebugModelPresentation extends LabelProvider implements IDebug
             return new FileEditorInput((IFile)((ILineBreakpoint)element).getMarker().getResource());
         }
         if (element instanceof URL) {
-            try {
-                URI uri = new URI(element.toString());
-                IFileStore store = EFS.getLocalFileSystem().getStore(uri);
-                return new FileStoreEditorInput(store);
-            } catch (URISyntaxException e) {
-                return null;
-            }
+            return new URLEditorInput((URL)element);
         }
         if (element instanceof IStorage) {
             return new StorageEditorInput((IStorage)element);
