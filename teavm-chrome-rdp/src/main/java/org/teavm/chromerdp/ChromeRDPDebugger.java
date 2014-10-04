@@ -76,6 +76,7 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
             }
         } else {
             suspended = false;
+            callStack = null;
             for (JavaScriptDebuggerListener listener : getListeners()) {
                 listener.detached();
             }

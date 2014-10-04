@@ -18,10 +18,7 @@ package org.teavm.chromerdp;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import javax.websocket.OnClose;
-import javax.websocket.OnMessage;
-import javax.websocket.OnOpen;
-import javax.websocket.Session;
+import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
 
 /**
@@ -37,6 +34,7 @@ public class ChromeRDPDebuggerEndpoint implements ChromeRDPExchange {
     @OnOpen
     public void open(Session session) {
         this.session = session;
+        session.setMaxIdleTimeout(0);
         Object debugger = session.getUserProperties().get("chrome.rdp");
         if (debugger instanceof ChromeRDPExchangeConsumer) {
             this.debugger = (ChromeRDPExchangeConsumer)debugger;
