@@ -370,7 +370,7 @@ public class TeaVMTestTool {
                 innerWriter.append("\n");
                 innerWriter.append("\nJUnitClient.run();");
                 if (sourceMapsGenerated) {
-                    String sourceMapsFileName = targetName + ".map";
+                    String sourceMapsFileName = targetName.substring(targetName.lastIndexOf('/') + 1) + ".map";
                     innerWriter.append("\n//# sourceMappingURL=").append(sourceMapsFileName);
                 }
             } else {

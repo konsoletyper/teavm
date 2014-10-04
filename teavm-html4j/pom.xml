@@ -100,6 +100,7 @@
               </transformers>
               <debugInformationGenerated>true</debugInformationGenerated>
               <sourceMapsGenerated>true</sourceMapsGenerated>
+              <sourceFilesCopied>true</sourceFilesCopied>
             </configuration>
           </execution>
         </executions>
