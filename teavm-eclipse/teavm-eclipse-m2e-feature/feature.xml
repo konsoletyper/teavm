@@ -2,7 +2,7 @@
 <feature
       id="teavm-eclipse-m2e-feature"
       label="TeaVM maven configuration support"
-      version="0.2.0.qualifier"
+      version="0.2.0"
       provider-name="Alexey Andreev &lt;konsoletyper@gmail.com&gt;">
 
    <description url="http://www.example.com/description">
@@ -230,7 +230,7 @@
    </license>
 
    <requires>
-      <import feature="teavm-eclipse-feature" version="0.2.0.qualifier"/>
+      <import feature="teavm-eclipse-feature" version="0.2.0"/>
    </requires>
 
    <plugin
