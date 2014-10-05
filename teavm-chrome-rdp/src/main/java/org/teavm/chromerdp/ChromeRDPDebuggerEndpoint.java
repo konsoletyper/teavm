@@ -27,9 +27,11 @@ import javax.websocket.server.ServerEndpoint;
  */
 @ServerEndpoint("/")
 public class ChromeRDPDebuggerEndpoint implements ChromeRDPExchange {
+    public static final int MAX_MESSAGE_SIZE = 65534;
     private Session session;
     private ChromeRDPExchangeConsumer debugger;
     private List<ChromeRDPExchangeListener> listeners = new ArrayList<>();
+    private StringBuilder messageBuffer = new StringBuilder();
 
     @OnOpen
     public void open(Session session) {
@@ -61,14 +63,26 @@ public class ChromeRDPDebuggerEndpoint implements ChromeRDPExchange {
 
     @OnMessage
     public void receive(String message) throws IOException {
-        for (ChromeRDPExchangeListener listener : listeners) {
-            listener.received(message);
+        char ctl = message.charAt(0);
+        messageBuffer.append(message.substring(1));
+        if (ctl == '.') {
+            message = messageBuffer.toString();
+            for (ChromeRDPExchangeListener listener : listeners) {
+                listener.received(message);
+            }
+            messageBuffer = new StringBuilder();
         }
     }
 
     @Override
     public void send(String message) {
-        session.getAsyncRemote().sendText(message);
+        int index = 0;
+        while (message.length() - index > MAX_MESSAGE_SIZE) {
+            int next = index + MAX_MESSAGE_SIZE;
+            session.getAsyncRemote().sendText("," + message.substring(index, next));
+            index = next;
+        }
+        session.getAsyncRemote().sendText("." + message.substring(index));
     }
 
     @Override

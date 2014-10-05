@@ -9,8 +9,10 @@ function DebuggerAgent(tab) {
     this.tab = null;
     this.debuggee = { tabId : tab.id };
     this.attachedToDebugger = false;
+    this.messageBuffer = "";
     debuggerAgentMap[tab.id] = this;
 }
+DebuggerAgent.MAX_MESSAGE_SIZE = 65534;
 DebuggerAgent.prototype.attach = function() {
     chrome.debugger.attach(this.debuggee, "1.0", (function(callback) {
         this.attachedToDebugger = true;
@@ -20,7 +22,13 @@ DebuggerAgent.prototype.attach = function() {
 DebuggerAgent.prototype.connectToServer = function() {
     this.connection = new WebSocket("ws://localhost:2357/");
     this.connection.onmessage = function(event) {
-        this.receiveMessage(JSON.parse(event.data));
+        var str = event.data;
+        var ctl = str.substring(0, 1);
+        this.messageBuffer += str.substring(1);
+        if (ctl == '.') {
+            this.receiveMessage(JSON.parse(this.messageBuffer));
+            this.messageBuffer = "";
+        }
     }.bind(this);
     this.connection.onclose = function(event) {
         if (this.connection != null) {
@@ -30,7 +38,7 @@ DebuggerAgent.prototype.connectToServer = function() {
     }.bind(this);
     this.connection.onopen = function() {
         for (var i = 0; i < this.pendingMessages.length; ++i) {
-            this.connection.send(JSON.stringify(this.pendingMessages[i]));
+            this.sendMessage(this.pendingMessages[i]);
         }
         this.pendingMessages = null;
     }.bind(this);
@@ -40,10 +48,19 @@ DebuggerAgent.prototype.receiveMessage = function(message) {
         if (message.id) {
             var responseToServer = { id : message.id, result : response,
                     error : response ? undefined : chrome.runtime.lastError };
-            this.connection.send(JSON.stringify(responseToServer));
+            this.sendMessage(responseToServer);
         }
     }.bind(this));
 };
+DebuggerAgent.prototype.sendMessage = function(message) {
+    var str = JSON.stringify(message);
+    while (str.length > DebuggerAgent.MAX_MESSAGE_SIZE) {
+        var part = "," + str.substring(0, DebuggerAgent.MAX_MESSAGE_SIZE);
+        this.connection.send(part);
+        str = str.substring(DebuggerAgent.MAX_MESSAGE_SIZE);
+    }
+    this.connection.send("." + str);
+}
 DebuggerAgent.prototype.disconnect = function() {
     if (this.connection) {
         var conn = this.connection;
@@ -69,7 +86,7 @@ chrome.debugger.onEvent.addListener(function(source, method, params) {
     if (agent.pendingMessages) {
         agent.pendingMessages.push(message);
     } else if (agent.connection) {
-        agent.connection.send(JSON.stringify(message));
+        agent.sendMessage(message);
     }
 });
 chrome.debugger.onDetach.addListener(function(source) {
