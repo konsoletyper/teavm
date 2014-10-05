@@ -44,7 +44,6 @@
     </module>
     <module name="UpperEll"/>
     <module name="ArrayTypeStyle"/>
-    <module name="TrailingComment"/>
     <module name="RedundantModifier"/>
     <module name="ClassTypeParameterName"/>
     <module name="LocalFinalVariableName"/>

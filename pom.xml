@@ -222,8 +222,6 @@
               <id>validate</id>
               <phase>validate</phase>
               <configuration>
-                <propertyExpansion>config_loc=${basedir}/..</propertyExpansion>
-                <configLocation>../checkstyle.xml</configLocation>
                 <encoding>UTF-8</encoding>
                 <consoleOutput>true</consoleOutput>
                 <failsOnError>true</failsOnError>
@@ -234,6 +232,10 @@
               </goals>
             </execution>
           </executions>
+          <configuration>
+            <propertyExpansion>config_loc=${basedir}/..</propertyExpansion>
+            <configLocation>../checkstyle.xml</configLocation>
+          </configuration>
         </plugin>
         <plugin>
           <groupId>org.apache.felix</groupId>
@@ -265,12 +267,6 @@
           </plugin>
         </plugins>
       </build>
-    </profile>
-    <profile>
-      <id>enable-scala</id>
-      <modules>
-        <module>teavm-scala-samples</module>
-      </modules>
     </profile>
     <profile>
       <id>enable-samples</id>

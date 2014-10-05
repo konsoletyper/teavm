@@ -1,5 +1,5 @@
 /*
- *  Copyright 2013 Alexey Andreev.
+ *  Copyright 2014 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,13 +13,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-/**
- * Represents a class model that is alternative to {@link java.lang.reflection} package.
- * Model is suitable for representing classes that are not in class path. Also
- * it allows to disassemble method bodies into three-address code that is very
- * close to JVM bytecode (see {@link org.teavm.model.instructions}.
- *
- * <p>The entry point is some implementation of {@link org.teavm.model.ClassHolderSource} interface.
- *
- */
-package org.teavm.model;
+package org.teavm.samples.benchmark.teavm;
+
+import org.teavm.jso.JSObject;
+
+public interface Performance extends JSObject {
+    double now();
+}
