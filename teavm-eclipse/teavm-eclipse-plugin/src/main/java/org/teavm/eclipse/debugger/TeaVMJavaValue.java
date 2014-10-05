@@ -26,8 +26,8 @@ public class TeaVMJavaValue extends TeaVMValue {
     private Value teavmValue;
     private boolean innerStructure;
 
-    public TeaVMJavaValue(TeaVMDebugTarget debugTarget, Value teavmValue) {
-        super(debugTarget, new TeaVMJavaVariablesHolder(debugTarget, teavmValue.getProperties().values()));
+    public TeaVMJavaValue(String id, TeaVMDebugTarget debugTarget, Value teavmValue) {
+        super(id, debugTarget, new TeaVMJavaVariablesHolder(id, debugTarget, teavmValue.getProperties().values()));
         this.teavmValue = teavmValue;
         this.innerStructure = teavmValue.hasInnerStructure();
     }

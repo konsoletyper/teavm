@@ -25,8 +25,8 @@ import org.teavm.debugging.javascript.JavaScriptVariable;
 public class TeaVMJSVariable extends TeaVMVariable {
     private JavaScriptVariable var;
 
-    public TeaVMJSVariable(TeaVMDebugTarget debugTarget, JavaScriptVariable var) {
-        super(debugTarget, new TeaVMJSValue(debugTarget, var.getValue()));
+    public TeaVMJSVariable(String id, TeaVMDebugTarget debugTarget, JavaScriptVariable var) {
+        super(id, debugTarget, new TeaVMJSValue(id, debugTarget, var.getValue()));
         this.var = var;
     }
 

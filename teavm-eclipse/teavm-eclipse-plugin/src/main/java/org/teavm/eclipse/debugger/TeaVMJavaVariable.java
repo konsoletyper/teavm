@@ -25,8 +25,8 @@ import org.teavm.debugging.Variable;
 public class TeaVMJavaVariable extends TeaVMVariable {
     private Variable var;
 
-    public TeaVMJavaVariable(TeaVMDebugTarget debugTarget, Variable var) {
-        super(debugTarget, new TeaVMJavaValue(debugTarget, var.getValue()));
+    public TeaVMJavaVariable(String id, TeaVMDebugTarget debugTarget, Variable var) {
+        super(id, debugTarget, new TeaVMJavaValue(id, debugTarget, var.getValue()));
         this.var = var;
     }
 

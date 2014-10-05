@@ -24,13 +24,16 @@ import org.teavm.debugging.javascript.JavaScriptVariable;
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public class TeaVMJSVariablesHolder extends TeaVMVariablesHolder {
+    private String idPrefix;
     private TeaVMDebugTarget debugTarget;
     private Collection<JavaScriptVariable> teavmVariables;
     private JavaScriptValue thisScope;
     private JavaScriptValue closureScope;
 
-    public TeaVMJSVariablesHolder(TeaVMDebugTarget debugTarget, Collection<JavaScriptVariable> teavmVariables,
+    public TeaVMJSVariablesHolder(String idPrefix, TeaVMDebugTarget debugTarget,
+            Collection<JavaScriptVariable> teavmVariables,
             JavaScriptValue thisScope, JavaScriptValue closureScope) {
+        this.idPrefix = idPrefix;
         this.debugTarget = debugTarget;
         this.teavmVariables = teavmVariables;
         this.thisScope = thisScope;
@@ -47,13 +50,14 @@ public class TeaVMJSVariablesHolder extends TeaVMVariablesHolder {
             variables.add(new TeaVMJSScope(debugTarget, "<closure>", closureScope));
         }
         List<JavaScriptVariable> teavmVarList = new ArrayList<>(teavmVariables);
-        Collections.sort(teavmVarList, new Comparator<JavaScriptVariable>() {
-            @Override public int compare(JavaScriptVariable o1, JavaScriptVariable o2) {
-                return o1.getName().compareTo(o2.getName());
+        Collections.sort(teavmVarList, new PropertyNameComparator<JavaScriptVariable>() {
+            @Override String getName(JavaScriptVariable value) {
+                return value.getName();
             }
         });
         for (int i = 0; i < teavmVarList.size(); ++i) {
-            variables.add(new TeaVMJSVariable(debugTarget, teavmVarList.get(i)));
+            JavaScriptVariable var = teavmVarList.get(i);
+            variables.add(new TeaVMJSVariable(idPrefix + "." + var.getName(), debugTarget, var));
         }
         return variables.toArray(new TeaVMVariable[0]);
     }

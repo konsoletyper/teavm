@@ -33,7 +33,7 @@ public class TeaVMJSStackFrame extends TeaVMStackFrame {
         super(thread);
         this.callFrame = callFrame;
         this.jsDebugger = jsDebugger;
-        this.variablesHolder = new TeaVMJSVariablesHolder(thread.debugTarget, callFrame.getVariables().values(),
+        this.variablesHolder = new TeaVMJSVariablesHolder("", thread.debugTarget, callFrame.getVariables().values(),
                 callFrame.getThisVariable(), callFrame.getClosureVariable());
     }
 

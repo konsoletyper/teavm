@@ -27,7 +27,7 @@ public class TeaVMJSScope extends TeaVMVariable {
     private JavaScriptValue value;
 
     public TeaVMJSScope(TeaVMDebugTarget debugTarget, String name, JavaScriptValue value) {
-        super(debugTarget, new TeaVMJSValue(debugTarget, value));
+        super(name, debugTarget, new TeaVMJSValue(name, debugTarget, value));
         this.name = name;
     }
 

@@ -26,10 +26,12 @@ import org.teavm.eclipse.TeaVMEclipsePlugin;
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public abstract class TeaVMVariable extends TeaVMDebugElement implements IVariable {
+    private String id;
     private TeaVMValue value;
 
-    public TeaVMVariable(TeaVMDebugTarget debugTarget, TeaVMValue value) {
+    public TeaVMVariable(String id, TeaVMDebugTarget debugTarget, TeaVMValue value) {
         super(debugTarget);
+        this.id = id;
         this.value = value;
     }
 
@@ -66,5 +68,22 @@ public abstract class TeaVMVariable extends TeaVMDebugElement implements IVariab
     @Override
     public boolean hasValueChanged() throws DebugException {
         return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return 31 * id.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof TeaVMVariable)) {
+            return false;
+        }
+        TeaVMVariable other = (TeaVMVariable)obj;
+        return id.equals(other.id);
     }
 }

@@ -23,10 +23,13 @@ import org.teavm.debugging.Variable;
  * @author Alexey Andreev
  */
 public class TeaVMJavaVariablesHolder extends TeaVMVariablesHolder {
+    private String idPrefix;
     private TeaVMDebugTarget debugTarget;
     private Collection<Variable> teavmVariables;
 
-    public TeaVMJavaVariablesHolder(TeaVMDebugTarget debugTarget, Collection<Variable> teavmVariables) {
+    public TeaVMJavaVariablesHolder(String idPrefix, TeaVMDebugTarget debugTarget,
+            Collection<Variable> teavmVariables) {
+        this.idPrefix = idPrefix;
         this.debugTarget = debugTarget;
         this.teavmVariables = teavmVariables;
     }
@@ -35,13 +38,14 @@ public class TeaVMJavaVariablesHolder extends TeaVMVariablesHolder {
     protected TeaVMVariable[] createVariables() {
         TeaVMJavaVariable[] newVariables = new TeaVMJavaVariable[teavmVariables.size()];
         List<Variable> teavmVarList = new ArrayList<>(teavmVariables);
-        Collections.sort(teavmVarList, new Comparator<Variable>() {
-            @Override public int compare(Variable o1, Variable o2) {
-                return o1.getName().compareTo(o2.getName());
+        Collections.sort(teavmVarList, new PropertyNameComparator<Variable>() {
+            @Override String getName(Variable value) {
+                return value.getName();
             }
         });
         for (int i = 0; i < teavmVarList.size(); ++i) {
-            newVariables[i] = new TeaVMJavaVariable(debugTarget, teavmVarList.get(i));
+            Variable var = teavmVarList.get(i);
+            newVariables[i] = new TeaVMJavaVariable(idPrefix + "." + var.getName(), debugTarget, var);
         }
         return newVariables;
     }

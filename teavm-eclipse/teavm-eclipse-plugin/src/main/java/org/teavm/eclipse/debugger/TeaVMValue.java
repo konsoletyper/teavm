@@ -24,10 +24,12 @@ import org.eclipse.debug.core.model.IVariable;
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public abstract class TeaVMValue extends TeaVMDebugElement implements IValue {
+    private String id;
     private TeaVMVariablesHolder variablesHolder;
 
-    public TeaVMValue(TeaVMDebugTarget debugTarget, TeaVMVariablesHolder variablesHolder) {
+    public TeaVMValue(String id, TeaVMDebugTarget debugTarget, TeaVMVariablesHolder variablesHolder) {
         super(debugTarget);
+        this.id = id;
         this.variablesHolder = variablesHolder;
     }
 
@@ -42,4 +44,21 @@ public abstract class TeaVMValue extends TeaVMDebugElement implements IValue {
     }
 
     public abstract String getDescription();
+
+    @Override
+    public int hashCode() {
+        return 31 * id.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof TeaVMValue)) {
+            return false;
+        }
+        TeaVMValue other = (TeaVMValue)obj;
+        return id.equals(other.id);
+    }
 }

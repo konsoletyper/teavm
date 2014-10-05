@@ -26,8 +26,9 @@ public class TeaVMJSValue extends TeaVMValue {
     private JavaScriptValue jsValue;
     private boolean innerStructure;
 
-    public TeaVMJSValue(TeaVMDebugTarget debugTarget, JavaScriptValue teavmValue) {
-        super(debugTarget, new TeaVMJSVariablesHolder(debugTarget, teavmValue.getProperties().values(), null, null));
+    public TeaVMJSValue(String id, TeaVMDebugTarget debugTarget, JavaScriptValue teavmValue) {
+        super(id, debugTarget, new TeaVMJSVariablesHolder(id, debugTarget, teavmValue.getProperties().values(),
+                null, null));
         this.jsValue = teavmValue;
         this.innerStructure = teavmValue.hasInnerStructure();
     }
