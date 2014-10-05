@@ -21,12 +21,9 @@ import org.teavm.dependency.*;
 import org.teavm.javascript.ast.ConstantExpr;
 import org.teavm.javascript.ast.Expr;
 import org.teavm.javascript.ast.InvocationExpr;
-import org.teavm.javascript.ni.Generator;
-import org.teavm.javascript.ni.GeneratorContext;
 import org.teavm.javascript.ni.Injector;
 import org.teavm.javascript.ni.InjectorContext;
 import org.teavm.model.ClassReader;
-import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 
@@ -34,18 +31,7 @@ import org.teavm.model.MethodReference;
  *
  * @author Alexey Andreev
  */
-public class JSNativeGenerator implements Generator, Injector, DependencyPlugin {
-    @Override
-    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef)
-            throws IOException {
-        if (methodRef.getName().equals("wrap")) {
-            generateWrapString(context, writer);
-        } else if (methodRef.getName().equals("unwrapString")) {
-            writer.append("return $rt_str(").append(context.getParameterName(1)).append(");")
-                    .softNewLine();
-        }
-    }
-
+public class JSNativeGenerator implements Injector, DependencyPlugin {
     @Override
     public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
         SourceWriter writer = context.getWriter();
@@ -101,10 +87,21 @@ public class JSNativeGenerator implements Generator, Injector, DependencyPlugin 
                 writer.append("))");
                 break;
             case "wrap":
-                context.writeExpr(context.getArgument(0));
+                if (methodRef.getDescriptor().parameterType(0).isObject("java.lang.String")) {
+                    writer.append("$rt_ustr(");
+                    context.writeExpr(context.getArgument(0));
+                    writer.append(")");
+                } else {
+                    context.writeExpr(context.getArgument(0));
+                }
                 break;
             case "function":
                 generateFunction(context);
+                break;
+            case "unwrapString":
+                writer.append("$rt_str(");
+                context.writeExpr(context.getArgument(0));
+                writer.append(")");
                 break;
             default:
                 if (methodRef.getName().startsWith("unwrap")) {
@@ -146,26 +143,15 @@ public class JSNativeGenerator implements Generator, Injector, DependencyPlugin 
         }
     }
 
-    private void generateWrapString(GeneratorContext context, SourceWriter writer) throws IOException {
-        FieldReference charsField = new FieldReference("java.lang.String", "characters");
-        writer.append("var result = \"\";").softNewLine();
-        writer.append("var data = ").append(context.getParameterName(1)).append('.')
-                .appendField(charsField).append(".data;").softNewLine();
-        writer.append("for (var i = 0; i < data.length; i = (i + 1) | 0) {").indent().softNewLine();
-        writer.append("result += String.fromCharCode(data[i]);").softNewLine();
-        writer.outdent().append("}").softNewLine();
-        writer.append("return result;").softNewLine();
-    }
-
     private void generateFunction(InjectorContext context) throws IOException {
         SourceWriter writer = context.getWriter();
-        writer.append("(function($instance, $property) { return function()").ws().append("{").indent().softNewLine();
-        writer.append("return $property.apply($instance, arguments);").softNewLine();
+        writer.append("(function($instance,").ws().append("$property)").ws().append("{").ws()
+                .append("return function()").ws().append("{").indent().softNewLine();
+        writer.append("return $instance[$property].apply($instance,").ws().append("arguments);").softNewLine();
         writer.outdent().append("};})(");
         context.writeExpr(context.getArgument(0));
-        writer.append(", ");
-        context.writeExpr(context.getArgument(0));
-        renderProperty(context.getArgument(1), context);
+        writer.append(",").ws();
+        context.writeExpr(context.getArgument(1));
         writer.append(")");
     }
 

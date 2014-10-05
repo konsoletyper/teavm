@@ -81,7 +81,7 @@
               <targetDirectory>${project.build.directory}/generated/js/teavm</targetDirectory>
               <mainClass>org.teavm.samples.hello.Client</mainClass>
               <runtime>SEPARATE</runtime>
-              <minifying>true</minifying>
+              <minifying>false</minifying>
               <debugInformationGenerated>true</debugInformationGenerated>
               <sourceMapsGenerated>true</sourceMapsGenerated>
               <sourceFilesCopied>true</sourceFilesCopied>

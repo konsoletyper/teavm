@@ -17,7 +17,6 @@ package org.teavm.jso;
 
 import java.util.Iterator;
 import org.teavm.dependency.PluggableDependency;
-import org.teavm.javascript.ni.GeneratedBy;
 import org.teavm.javascript.ni.InjectedBy;
 
 /**
@@ -54,7 +53,7 @@ public final class JS {
     @InjectedBy(JSNativeGenerator.class)
     public static native JSObject getGlobal();
 
-    @GeneratedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeGenerator.class)
     public static native JSObject wrap(String str);
 
     @InjectedBy(JSNativeGenerator.class)
@@ -116,7 +115,7 @@ public final class JS {
     @InjectedBy(JSNativeGenerator.class)
     public static native double unwrapDouble(JSObject obj);
 
-    @GeneratedBy(JSNativeGenerator.class)
+    @InjectedBy(JSNativeGenerator.class)
     @PluggableDependency(JSNativeGenerator.class)
     public static native String unwrapString(JSObject obj);
 

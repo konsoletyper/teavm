@@ -187,8 +187,7 @@ class JavascriptNativeProcessor {
         Variable nameVar = addStringWrap(addString(propertyName));
         InvokeInstruction insn = new InvokeInstruction();
         insn.setType(InvocationType.SPECIAL);
-        insn.setMethod(new MethodReference(JS.class.getName(), "get", ValueType.object(JSObject.class.getName()),
-                ValueType.object(JSObject.class.getName()), ValueType.object(JSObject.class.getName())));
+        insn.setMethod(new MethodReference(JS.class, "get", JSObject.class, JSObject.class, JSObject.class));
         insn.setReceiver(receiver);
         insn.getArguments().add(instance);
         insn.getArguments().add(nameVar);
@@ -199,9 +198,8 @@ class JavascriptNativeProcessor {
         Variable nameVar = addStringWrap(addString(propertyName));
         InvokeInstruction insn = new InvokeInstruction();
         insn.setType(InvocationType.SPECIAL);
-        insn.setMethod(new MethodReference(JS.class.getName(), "set",
-                ValueType.object(JSObject.class.getName()), ValueType.object(JSObject.class.getName()),
-                ValueType.object(JSObject.class.getName()), ValueType.VOID));
+        insn.setMethod(new MethodReference(JS.class, "set", JSObject.class, JSObject.class,
+                JSObject.class, void.class));
         insn.getArguments().add(instance);
         insn.getArguments().add(nameVar);
         insn.getArguments().add(value);
@@ -211,8 +209,7 @@ class JavascriptNativeProcessor {
     private void addIndexerGet(Variable array, Variable index, Variable receiver) {
         InvokeInstruction insn = new InvokeInstruction();
         insn.setType(InvocationType.SPECIAL);
-        insn.setMethod(new MethodReference(JS.class.getName(), "get", ValueType.object(JSObject.class.getName()),
-                ValueType.object(JSObject.class.getName()), ValueType.object(JSObject.class.getName())));
+        insn.setMethod(new MethodReference(JS.class, "get", JSObject.class, JSObject.class, JSObject.class));
         insn.setReceiver(receiver);
         insn.getArguments().add(array);
         insn.getArguments().add(index);
@@ -222,9 +219,8 @@ class JavascriptNativeProcessor {
     private void addIndexerSet(Variable array, Variable index, Variable value) {
         InvokeInstruction insn = new InvokeInstruction();
         insn.setType(InvocationType.SPECIAL);
-        insn.setMethod(new MethodReference(JS.class.getName(), "set",
-                ValueType.object(JSObject.class.getName()), ValueType.object(JSObject.class.getName()),
-                ValueType.object(JSObject.class.getName()), ValueType.VOID));
+        insn.setMethod(new MethodReference(JS.class, "set", JSObject.class, JSObject.class,
+                JSObject.class, void.class));
         insn.getArguments().add(array);
         insn.getArguments().add(index);
         insn.getArguments().add(value);
@@ -322,9 +318,7 @@ class JavascriptNativeProcessor {
         Variable nameVar = addStringWrap(addString(name));
         InvokeInstruction insn = new InvokeInstruction();
         insn.setType(InvocationType.SPECIAL);
-        insn.setMethod(new MethodReference(JS.class.getName(), "function",
-                ValueType.object(JSObject.class.getName()), ValueType.object(JSObject.class.getName()),
-                ValueType.object(JSObject.class.getName())));
+        insn.setMethod(new MethodReference(JS.class, "function", JSObject.class, JSObject.class, JSObject.class));
         insn.setReceiver(functor);
         insn.getArguments().add(var);
         insn.getArguments().add(nameVar);
