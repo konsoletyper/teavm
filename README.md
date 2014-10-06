@@ -32,7 +32,7 @@ Now you can execute `mvn clean package` and get the generated `war` file.
 Deploy this `war` in Tomcat or another container, or simply unzip it and open the `index.html` page.
 
 It is much easier to develop TeaVM applications using Eclipse.
-If you prefer Eclipse, please read [this tutorial](wiki/Eclipse-tutorial).
+If you prefer Eclipse, please read [this tutorial](https://github.com/konsoletyper/teavm/wiki/Eclipse-tutorial).
 
 There is also the [teavm-samples](teavm-samples) module, containing examples of TeaVM-based projects.
 
