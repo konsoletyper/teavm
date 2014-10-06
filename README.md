@@ -18,58 +18,21 @@ You can use TeaVM for building applications for the browser, due to the followin
   * debugger;
   * interoperation with JavaScript libraries together with the set of predefined browser interfaces.
 
-How to use
-----------
 
-There are several options of using TeaVM. One is the Maven build. First, you write your code as if it were an
-ordinary Java application:
+Quick start
+-----------
 
-```Java
-package org.teavm.samples;
+There are several options of using TeaVM. One is the Maven build.
+The easiest way to create a new TeaVM project is to type in the command line:
 
-public class HelloWorld {
-    public static void main(String[] args) {
-        System.out.println("Hello, world!");
-    }
-}
-```
+    mvn -DarchetypeCatalog=local -DarchetypeGroupId=org.teavm -DarchetypeArtifactId=teavm-maven-webapp \
+      -DarchetypeVersion=0.2.0 archetype:generate
 
-Second, you include the following plugin in your `pom.xml` build section:
-
-```XML
-    <plugin>
-      <groupId>org.teavm</groupId>
-      <artifactId>teavm-maven-plugin</artifactId>
-      <version>0.2</version>
-      <dependencies>
-        <dependency>
-          <groupId>org.teavm</groupId>
-          <artifactId>teavm-classlib</artifactId>
-          <version>0.2</version>
-        </dependency>
-      </dependencies>
-      <executions>
-        <execution>
-          <id>generate-javascript</id>
-          <goals>
-            <goal>build-javascript</goal>
-          </goals>
-          <phase>process-classes</phase>
-          <configuration>
-            <minifying>true</minifying>
-            <mainClass>org.teavm.samples.HelloWorld</mainClass>
-            <mainPageIncluded>true</mainPageIncluded>
-          </configuration>
-        </execution>
-      </executions>
-    </plugin>
-```
-
-Now you can execute `mvn clean package` and get the generated JavaScript files in `target/javascript` folder.
-Just open `target/javascript/main.html` page in your browser, open developer's console and press *Refresh* and
-see what happen.
+Now you can execute `mvn clean package` and get the generated `war` file.
+Deploy this `war` in Tomcat or another container, or simply unzip it and open the `index.html` page.
 
 There is also the [teavm-samples](teavm-samples) module, containing examples of TeaVM-based projects.
+
 
 DukeScript
 ----------
@@ -79,8 +42,11 @@ easily talk to JavaScript environment to (usually) animate an HTML page. While D
 implementation of JVM, called [Bck2Brwsr](http://wiki.apidesign.org/wiki/Bck2Brwsr), TeaVM also provides
 support for running DukeScript applications, using [teavm-html4j](teavm-html4j) plugin.
 
+
 Live examples
 -------------
+
+Compare the speed of JavaScript produced by TeaVM and GWT here: [http://teavm.org/live-examples/jbox2d-benchmark/]
 
 Thanks to [Jaroslav Tulach](http://wiki.apidesign.org/wiki/User:JaroslavTulach), author of DukeScript, we have several
 DukeScript example applications. One is the minesweeper game.
