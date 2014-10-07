@@ -25,7 +25,9 @@ Quick start
 There are several options of using TeaVM. One is the Maven build.
 The easiest way to create a new TeaVM project is to type in the command line:
 
-    mvn -DarchetypeCatalog=local -DarchetypeGroupId=org.teavm -DarchetypeArtifactId=teavm-maven-webapp \
+    mvn -DarchetypeCatalog=local \
+      -DarchetypeGroupId=org.teavm \
+      -DarchetypeArtifactId=teavm-maven-webapp \
       -DarchetypeVersion=0.2.0 archetype:generate
 
 Now you can execute `mvn clean package` and get the generated `war` file.
@@ -49,7 +51,7 @@ support for running DukeScript applications, using [teavm-html4j](teavm-html4j) 
 Live examples
 -------------
 
-Compare the speed of JavaScript produced by TeaVM and GWT here: [http://teavm.org/live-examples/jbox2d-benchmark/]
+Compare the speed of JavaScript produced by TeaVM and GWT here: http://teavm.org/live-examples/jbox2d-benchmark/
 
 Thanks to [Jaroslav Tulach](http://wiki.apidesign.org/wiki/User:JaroslavTulach), author of DukeScript, we have several
 DukeScript example applications. One is the minesweeper game.
