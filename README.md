@@ -36,7 +36,9 @@ Deploy this `war` in Tomcat or another container, or simply unzip it and open th
 It is much easier to develop TeaVM applications using Eclipse.
 If you prefer Eclipse, please read [this tutorial](https://github.com/konsoletyper/teavm/wiki/Eclipse-tutorial).
 
-There is also the [teavm-samples](teavm-samples) module, containing examples of TeaVM-based projects.
+To learn TeaVM deeper, you take a look at the [teavm-samples](teavm-samples) module,
+containing examples of TeaVM-based projects.
+Also you can read [project's wiki](https://github.com/konsoletyper/teavm/wiki/).
 
 
 DukeScript
