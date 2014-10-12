@@ -22,6 +22,7 @@ import org.teavm.classlib.java.util.TArrays;
 import org.teavm.classlib.java.util.TComparator;
 import org.teavm.classlib.java.util.THashMap;
 import org.teavm.classlib.java.util.TMap;
+import org.teavm.classlib.java.util.regex.TPattern;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.javascript.ni.InjectedBy;
 import org.teavm.javascript.ni.Rename;
@@ -612,5 +613,17 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
             pool.put(interned, interned);
         }
         return interned;
+    }
+
+    public boolean matches(String regex) {
+        return TPattern.matches(regex, this.toString());
+    }
+
+    public String[] split(String regex) {
+        return TPattern.compile(regex).split(this.toString());
+    }
+
+    public String[] split(String regex, int limit) {
+        return TPattern.compile(regex).split(this.toString(), limit);
     }
 }

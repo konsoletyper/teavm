@@ -316,6 +316,10 @@ public final class TMatcher implements TMatchResult {
      */
     @Override
     public String group(int group) {
+        if (group < 0 || group > matchResult.groupCount()) {
+            throw new IndexOutOfBoundsException("Index " + group + " if out of range [0; " +
+                    matchResult.groupCount() + ")");
+        }
         return matchResult.group(group);
     }
 
