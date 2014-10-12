@@ -1252,6 +1252,12 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     if (c < ' ') {
                         sb.append("\\u00").append(Character.forDigit(c / 16, 16))
                                 .append(Character.forDigit(c % 16, 16));
+                    } else if (Character.isLowSurrogate(c) || Character.isHighSurrogate(c)) {
+                        sb.append("\\u")
+                                .append(Character.forDigit(c / 0x1000, 0x10))
+                                .append(Character.forDigit((c / 0x100) % 0x10, 0x10))
+                                .append(Character.forDigit((c / 0x10) % 0x10, 0x10))
+                                .append(Character.forDigit(c % 0x10, 0x10));
                     } else {
                         sb.append(c);
                     }

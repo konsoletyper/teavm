@@ -67,4 +67,20 @@ public class VMTest {
             // do nothing
         }
     }
+
+    @Test
+    public void setsVariableBeforeTryCatch() {
+        int a = 23;
+        try {
+            a = Integer.parseInt("not a number");
+        } catch (NumberFormatException e) {
+            // do nothing
+        }
+        assertEquals(23, a);
+    }
+
+    @Test
+    public void surrogateInStringLiteralsWork() {
+        assertEquals(0xDDC2, "a\uDDC2b".charAt(1));
+    }
 }

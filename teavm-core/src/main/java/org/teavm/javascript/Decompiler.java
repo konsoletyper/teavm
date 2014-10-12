@@ -245,7 +245,7 @@ public class Decompiler {
             if (node >= 0) {
                 generator.currentBlock = program.basicBlockAt(node);
                 int tmp = indexer.nodeAt(next);
-                generator.nextBlock = next < indexer.size() ? program.basicBlockAt(tmp) : null;
+                generator.nextBlock = tmp >= 0 && next < indexer.size() ? program.basicBlockAt(tmp) : null;
                 generator.statements.clear();
                 InstructionLocation lastLocation = null;
                 NodeLocation nodeLocation = null;
