@@ -83,10 +83,6 @@ class RedundantLabelEliminator implements StatementVisitor {
     }
 
     @Override
-    public void visit(ForStatement statement) {
-    }
-
-    @Override
     public void visit(BreakStatement statement) {
         if (statement.getTarget() == currentBlock) {
             statement.setTarget(null);
@@ -110,10 +106,6 @@ class RedundantLabelEliminator implements StatementVisitor {
 
     @Override
     public void visit(ThrowStatement statement) {
-    }
-
-    @Override
-    public void visit(IncrementStatement statement) {
     }
 
     @Override

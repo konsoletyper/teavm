@@ -40,6 +40,7 @@ public class FieldDependency implements FieldDependencyInfo {
         return value;
     }
 
+    @Override
     public DependencyStack getStack() {
         return stack;
     }
@@ -53,6 +54,7 @@ public class FieldDependency implements FieldDependencyInfo {
         return reference;
     }
 
+    @Override
     public boolean isMissing() {
         return field == null;
     }

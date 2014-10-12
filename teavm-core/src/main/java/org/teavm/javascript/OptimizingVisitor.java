@@ -26,7 +26,6 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     public Expr resultExpr;
     public Statement resultStmt;
     private ReadWriteStatsBuilder stats;
-    Map<IdentifiedStatement, Integer> referencedStatements = new HashMap<>();
     private List<Statement> resultSequence;
 
     public OptimizingVisitor(ReadWriteStatsBuilder stats) {
@@ -34,13 +33,11 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     }
 
     private static boolean isZero(Expr expr) {
-        return expr instanceof ConstantExpr &&
-                Integer.valueOf(0).equals(((ConstantExpr)expr).getValue());
+        return expr instanceof ConstantExpr && Integer.valueOf(0).equals(((ConstantExpr)expr).getValue());
     }
 
     private static boolean isComparison(Expr expr) {
-        return expr instanceof BinaryExpr &&
-                ((BinaryExpr)expr).getOperation() == BinaryOperation.COMPARE;
+        return expr instanceof BinaryExpr && ((BinaryExpr)expr).getOperation() == BinaryOperation.COMPARE;
     }
 
     @Override
@@ -77,6 +74,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                     BinaryExpr comparison = (BinaryExpr)p;
                     Expr result = BinaryExpr.binary(expr.getOperation(),
                             comparison.getFirstOperand(), comparison.getSecondOperand());
+                    result.setLocation(comparison.getLocation());
                     if (invert) {
                         result = ExprOptimizer.invert(result);
                     }
@@ -138,8 +136,13 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
             return;
         }
         VariableExpr var = (VariableExpr)assignment.getLeftValue();
+        if (var.getLocation() != null && assignment.getLocation() != null &&
+                !assignment.getLocation().equals(var.getLocation())) {
+            return;
+        }
         if (var.getIndex() == index) {
             resultSequence.remove(resultSequence.size() - 1);
+            assignment.getRightValue().setLocation(assignment.getLocation());
             assignment.getRightValue().acceptVisitor(this);
         }
     }
@@ -208,7 +211,9 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         }
         Expr[] args = expr.getArguments().toArray(new Expr[0]);
         args = Arrays.copyOfRange(args, 1, args.length);
-        assignment.setRightValue(Expr.constructObject(expr.getMethod(), args));
+        Expr constructrExpr = Expr.constructObject(expr.getMethod(), args);
+        constructrExpr.setLocation(expr.getLocation());
+        assignment.setRightValue(constructrExpr);
         stats.reads[var.getIndex()]--;
         return true;
     }
@@ -260,8 +265,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     public void visit(AssignmentStatement statement) {
         if (statement.getLeftValue() == null) {
             statement.getRightValue().acceptVisitor(this);
-            if (resultExpr instanceof InvocationExpr &&
-                    tryApplyConstructor((InvocationExpr)resultExpr)) {
+            if (resultExpr instanceof InvocationExpr && tryApplyConstructor((InvocationExpr)resultExpr)) {
                 resultStmt = new SequentialStatement();
             } else {
                 statement.setRightValue(resultExpr);
@@ -344,8 +348,6 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                     if (last instanceof BreakStatement) {
                         BreakStatement breakStmt = (BreakStatement)last;
                         if (exit != null && exit == breakStmt.getTarget()) {
-                            int refs = referencedStatements.get(breakStmt.getTarget());
-                            referencedStatements.put(breakStmt.getTarget(), refs - 1);
                             cond.getConsequent().remove(cond.getConsequent().size() - 1);
                             List<Statement> remaining = statements.subList(i + 1, statements.size());
                             cond.getAlternative().addAll(remaining);
@@ -358,8 +360,6 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                     if (last instanceof BreakStatement) {
                         BreakStatement breakStmt = (BreakStatement)last;
                         if (exit != null && exit == breakStmt.getTarget()) {
-                            int refs = referencedStatements.get(breakStmt.getTarget());
-                            referencedStatements.put(breakStmt.getTarget(), refs - 1);
                             cond.getAlternative().remove(cond.getConsequent().size() - 1);
                             List<Statement> remaining = statements.subList(i + 1, statements.size());
                             cond.getConsequent().addAll(remaining);
@@ -380,7 +380,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                             cond.getConsequent().clear();
                             cond.getConsequent().addAll(innerCond.getConsequent());
                             cond.setCondition(Expr.binary(BinaryOperation.AND, cond.getCondition(),
-                                    innerCond.getCondition()));
+                                    innerCond.getCondition(), cond.getCondition().getLocation()));
                             --i;
                         } else if (cond.getAlternative().size() != 1 ||
                                 !(cond.getAlternative().get(0) instanceof ConditionalStatement)) {
@@ -408,6 +408,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
             }
         }
     }
+
 
     private void normalizeConditional(ConditionalStatement stmt) {
         if (stmt.getConsequent().isEmpty()) {
@@ -476,11 +477,23 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
             statement.getBody().addAll(innerLoop.getBody());
         }
         List<Statement> statements = processSequence(statement.getBody());
+        for (int i = 0; i < statements.size(); ++i) {
+            if (statements.get(i) instanceof ContinueStatement) {
+                ContinueStatement continueStmt = (ContinueStatement)statements.get(i);
+                if (continueStmt.getTarget() == statement) {
+                    statements.subList(i, statements.size()).clear();
+                    break;
+                }
+            }
+        }
         statement.getBody().clear();
         statement.getBody().addAll(statements);
         if (statement.getCondition() != null) {
+            List<Statement> sequenceBackup = resultSequence;
+            resultSequence = new ArrayList<>();
             statement.getCondition().acceptVisitor(this);
             statement.setCondition(resultExpr);
+            resultSequence = sequenceBackup;
         }
         while (true) {
             if (!statement.getBody().isEmpty() && statement.getBody().get(0) instanceof ConditionalStatement) {
@@ -490,8 +503,10 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                     if (breakStmt.getTarget() == statement) {
                         statement.getBody().remove(0);
                         if (statement.getCondition() != null) {
-                            statement.setCondition(Expr.binary(BinaryOperation.AND, statement.getCondition(),
-                                    ExprOptimizer.invert(cond.getCondition())));
+                            Expr newCondition = Expr.binary(BinaryOperation.AND, statement.getCondition(),
+                                    ExprOptimizer.invert(cond.getCondition()));
+                            newCondition.setLocation(statement.getCondition().getLocation());
+                            statement.setCondition(newCondition);
                         } else {
                             statement.setCondition(ExprOptimizer.invert(cond.getCondition()));
                         }
@@ -508,7 +523,9 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     public void visit(BlockStatement statement) {
         List<Statement> statements = processSequence(statement.getBody());
         eliminateRedundantBreaks(statements, statement);
-        if (referencedStatements.get(statement).equals(0)) {
+        CertainBlockCountVisitor usageCounter = new CertainBlockCountVisitor(statement);
+        usageCounter.visit(statements);
+        if (usageCounter.getCount() == 0) {
             SequentialStatement result = new SequentialStatement();
             result.getSequence().addAll(statements);
             resultStmt = result;
@@ -517,10 +534,6 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
             statement.getBody().addAll(statements);
             resultStmt = statement;
         }
-    }
-
-    @Override
-    public void visit(ForStatement statement) {
     }
 
     @Override
@@ -547,11 +560,6 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         statement.getException().acceptVisitor(this);
         statement.setException(resultExpr);
         resultStmt = statement;
-    }
-
-    @Override
-    public void visit(IncrementStatement statement) {
-        resultStmt = Statement.increment(statement.getVar(), statement.getAmount());
     }
 
     @Override

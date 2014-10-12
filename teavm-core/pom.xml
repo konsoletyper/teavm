@@ -24,6 +24,8 @@
   </parent>
   <artifactId>teavm-core</artifactId>
 
+  <packaging>bundle</packaging>
+
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
@@ -48,24 +50,9 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
-        <version>2.11</version>
-        <executions>
-          <execution>
-            <id>validate</id>
-            <phase>validate</phase>
-            <configuration>
-              <propertyExpansion>config_loc=${basedir}</propertyExpansion>
-              <configLocation>checkstyle.xml</configLocation>
-              <encoding>UTF-8</encoding>
-              <consoleOutput>true</consoleOutput>
-              <failsOnError>true</failsOnError>
-              <linkXRef>false</linkXRef>
-            </configuration>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution>
-        </executions>
+        <configuration>
+          <configLocation>../checkstyle.xml</configLocation>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -74,6 +61,17 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <extensions>true</extensions>
+        <configuration>
+          <instructions>
+            <Export-Package>org.teavm.*</Export-Package>
+            <Bundle-SymbolicName>teavm-core</Bundle-SymbolicName>
+          </instructions>
+        </configuration>
       </plugin>
     </plugins>
   </build>

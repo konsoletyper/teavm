@@ -15,10 +15,9 @@
  */
 package org.teavm.dependency;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.Set;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 import org.teavm.model.util.ListingBuilder;
@@ -33,7 +32,6 @@ class DependencyGraphBuilder {
     private DependencyNode resultNode;
     private ProgramReader program;
     private DependencyStack callerStack;
-    private List<Runnable> useRunners = new ArrayList<>();
     private ExceptionConsumer currentExceptionConsumer;
 
     public DependencyGraphBuilder(DependencyChecker dependencyChecker) {
@@ -45,7 +43,6 @@ class DependencyGraphBuilder {
         if (method.getProgram() == null || method.getProgram().basicBlockCount() == 0) {
             return;
         }
-        callerStack = dep.getStack();
         program = method.getProgram();
         if (DependencyChecker.shouldLog) {
             System.out.println("Method achieved: " + method.getReference());
@@ -53,6 +50,7 @@ class DependencyGraphBuilder {
         }
         resultNode = dep.getResult();
         nodes = dep.getVariables();
+        callerStack = new DependencyStack(method.getReference(), dep.getStack());
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlockReader block = program.basicBlockAt(i);
             currentExceptionConsumer = createExceptionConsumer(dep, block);
@@ -62,17 +60,12 @@ class DependencyGraphBuilder {
                     nodes[incoming.getValue().getIndex()].connect(nodes[phi.getReceiver().getIndex()]);
                 }
             }
-            for (final TryCatchBlockReader tryCatch : block.readTryCatchBlocks()) {
-                useRunners.add(new Runnable() {
-                    @Override public void run() {
-                        if (tryCatch.getExceptionType() != null) {
-                            dependencyChecker.initClass(tryCatch.getExceptionType(), callerStack);
-                        }
-                    }
-                });
+            for (TryCatchBlockReader tryCatch : block.readTryCatchBlocks()) {
+                if (tryCatch.getExceptionType() != null) {
+                    dependencyChecker.linkClass(tryCatch.getExceptionType(), callerStack);
+                }
             }
         }
-        dep.setUseRunner(new MultipleRunner(useRunners));
     }
 
     private ExceptionConsumer createExceptionConsumer(MethodDependency methodDep, BasicBlockReader block) {
@@ -104,9 +97,10 @@ class DependencyGraphBuilder {
         }
 
         @Override
-        public void consume(String type) {
+        public void consume(DependencyAgentType type) {
             for (int i = 0; i < exceptions.length; ++i) {
-                if (exceptions[i] == null || isAssignableFrom(checker.getClassSource(), exceptions[i], type)) {
+                if (exceptions[i] == null || isAssignableFrom(checker.getClassSource(), exceptions[i],
+                        type.getName())) {
                     vars[i].propagate(type);
                     return;
                 }
@@ -123,7 +117,7 @@ class DependencyGraphBuilder {
         private final DependencyNode[] parameters;
         private final DependencyNode result;
         private final DependencyStack stack;
-        private final ConcurrentMap<MethodReference, MethodReference> knownMethods = new ConcurrentHashMap<>();
+        private final Set<MethodReference> knownMethods = new HashSet<>();
         private ExceptionConsumer exceptionConsumer;
 
         public VirtualCallConsumer(DependencyNode node, ClassReader filterClass,
@@ -140,7 +134,8 @@ class DependencyGraphBuilder {
         }
 
         @Override
-        public void consume(String className) {
+        public void consume(DependencyAgentType type) {
+            String className = type.getName();
             if (DependencyChecker.shouldLog) {
                 System.out.println("Virtual call of " + methodDesc + " detected on " + node.getTag() + ". " +
                         "Target class is " + className);
@@ -153,28 +148,16 @@ class DependencyGraphBuilder {
             }
             MethodReference methodRef = new MethodReference(className, methodDesc);
             MethodDependency methodDep = checker.linkMethod(methodRef, stack);
-            if (!methodDep.isMissing() && knownMethods.putIfAbsent(methodRef, methodRef) == null) {
+            if (!methodDep.isMissing() && knownMethods.add(methodRef)) {
                 methodDep.use();
                 DependencyNode[] targetParams = methodDep.getVariables();
                 for (int i = 0; i < parameters.length; ++i) {
                     parameters[i].connect(targetParams[i]);
                 }
-                if (methodDep.getResult() != null) {
+                if (result != null && methodDep.getResult() != null) {
                     methodDep.getResult().connect(result);
                 }
                 methodDep.getThrown().addConsumer(exceptionConsumer);
-            }
-        }
-    }
-
-    private static class MultipleRunner implements Runnable {
-        private List<Runnable> parts;
-        public MultipleRunner(List<Runnable> parts) {
-            this.parts = parts;
-        }
-        @Override public void run() {
-            for (Runnable part : parts) {
-                part.run();
             }
         }
     }
@@ -199,36 +182,25 @@ class DependencyGraphBuilder {
         return false;
     }
 
-    private static class TypePropagationRunner implements Runnable {
-        private DependencyNode node;
-        private String type;
-        public TypePropagationRunner(DependencyNode node, String type) {
-            this.node = node;
-            this.type = type;
-        }
-        @Override public void run() {
-            node.propagate(type);
-        }
-    }
-
     private InstructionReader reader = new InstructionReader() {
+        @Override
+        public void location(InstructionLocation location) {
+            callerStack = new DependencyStack(callerStack.getMethod(), location, callerStack.getCause());
+        }
+
         @Override
         public void nop() {
         }
 
         @Override
         public void classConstant(VariableReader receiver, ValueType cst) {
-            useRunners.add(new TypePropagationRunner(nodes[receiver.getIndex()], "java.lang.Class"));
+            nodes[receiver.getIndex()].propagate(dependencyChecker.getType("java.lang.Class"));
             while (cst instanceof ValueType.Array) {
                 cst = ((ValueType.Array)cst).getItemType();
             }
             if (cst instanceof ValueType.Object) {
                 final String className = ((ValueType.Object)cst).getClassName();
-                useRunners.add(new Runnable() {
-                    @Override public void run() {
-                        dependencyChecker.initClass(className, callerStack);
-                    }
-                });
+                dependencyChecker.linkClass(className, callerStack);
             }
         }
 
@@ -254,10 +226,9 @@ class DependencyGraphBuilder {
 
         @Override
         public void stringConstant(VariableReader receiver, String cst) {
-            useRunners.add(new TypePropagationRunner(nodes[receiver.getIndex()], "java.lang.String"));
-            MethodDependency method = dependencyChecker.linkMethod(new MethodReference("java.lang.String",
-                    new MethodDescriptor("<init>", ValueType.arrayOf(ValueType.CHARACTER), ValueType.VOID)),
-                    callerStack);
+            nodes[receiver.getIndex()].propagate(dependencyChecker.getType("java.lang.String"));
+            MethodDependency method = dependencyChecker.linkMethod(new MethodReference(String.class,
+                    "<init>", char[].class, void.class), callerStack);
             method.use();
         }
 
@@ -286,11 +257,11 @@ class DependencyGraphBuilder {
                 final ClassReader targetClass = dependencyChecker.getClassSource().get(targetClsName);
                 if (targetClass != null) {
                     valueNode.connect(receiverNode, new DependencyTypeFilter() {
-                        @Override public boolean match(String type) {
+                        @Override public boolean match(DependencyAgentType type) {
                             if (targetClass.getName().equals("java.lang.Object")) {
                                 return true;
                             }
-                            return isAssignableFrom(dependencyChecker.getClassSource(), targetClass, type);
+                            return isAssignableFrom(dependencyChecker.getClassSource(), targetClass, type.getName());
                         }
                     });
                     return;
@@ -342,14 +313,10 @@ class DependencyGraphBuilder {
 
         @Override
         public void createArray(VariableReader receiver, ValueType itemType, VariableReader size) {
-            useRunners.add(new TypePropagationRunner(nodes[receiver.getIndex()], "[" + itemType));
-            final String className = extractClassName(itemType);
+            nodes[receiver.getIndex()].propagate(dependencyChecker.getType("[" + itemType));
+            String className = extractClassName(itemType);
             if (className != null) {
-                useRunners.add(new Runnable() {
-                    @Override public void run() {
-                        dependencyChecker.initClass(className, callerStack);
-                    }
-                });
+                dependencyChecker.linkClass(className, callerStack);
             }
         }
 
@@ -368,12 +335,16 @@ class DependencyGraphBuilder {
                 sb.append('[');
             }
             sb.append(itemType);
-            useRunners.add(new TypePropagationRunner(nodes[receiver.getIndex()], sb.toString()));
+            nodes[receiver.getIndex()].propagate(dependencyChecker.getType(sb.toString()));
+            String className = extractClassName(itemType);
+            if (className != null) {
+                dependencyChecker.linkClass(className, callerStack);
+            }
         }
 
         @Override
         public void create(VariableReader receiver, String type) {
-            useRunners.add(new TypePropagationRunner(nodes[receiver.getIndex()], type));
+            nodes[receiver.getIndex()].propagate(dependencyChecker.getType(type));
         }
 
         @Override
@@ -402,7 +373,7 @@ class DependencyGraphBuilder {
             DependencyNode arrayNode = nodes[array.getIndex()];
             final DependencyNode receiverNode = nodes[receiver.getIndex()];
             arrayNode.addConsumer(new DependencyConsumer() {
-                @Override public void consume(String type) {
+                @Override public void consume(DependencyAgentType type) {
                     receiverNode.propagate(type);
                 }
             });
@@ -489,23 +460,15 @@ class DependencyGraphBuilder {
 
         @Override
         public void isInstance(VariableReader receiver, VariableReader value, final ValueType type) {
-            if (type instanceof ValueType.Object) {
-                final String className = ((ValueType.Object)type).getClassName();
-                useRunners.add(new Runnable() {
-                    @Override public void run() {
-                        dependencyChecker.initClass(className, callerStack);
-                    }
-                });
+            String className = extractClassName(type);
+            if (className != null) {
+                dependencyChecker.linkClass(className, callerStack);
             }
         }
 
         @Override
         public void initClass(final String className) {
-            useRunners.add(new Runnable() {
-                @Override public void run() {
-                    dependencyChecker.initClass(className, callerStack);
-                }
-            });
+            dependencyChecker.linkClass(className, callerStack).initClass(callerStack);
         }
 
         @Override
@@ -513,13 +476,9 @@ class DependencyGraphBuilder {
             DependencyNode valueNode = nodes[value.getIndex()];
             DependencyNode receiverNode = nodes[receiver.getIndex()];
             valueNode.connect(receiverNode);
-            useRunners.add(new Runnable() {
-                @Override public void run() {
-                    dependencyChecker.linkMethod(new MethodReference("java.lang.NullPointerException",
-                            "<init>", ValueType.VOID), callerStack);
-                }
-            });
-            currentExceptionConsumer.consume("java.lang.NullPointerException");
+            dependencyChecker.linkMethod(new MethodReference("java.lang.NullPointerException",
+                    "<init>", ValueType.VOID), callerStack).use();
+            currentExceptionConsumer.consume(dependencyChecker.getType("java.lang.NullPointerException"));
         }
     };
 }

@@ -29,8 +29,6 @@ public interface DependencyInfo {
 
     ClassLoader getClassLoader();
 
-    boolean isMethodAchievable(MethodReference methodRef);
-
     Collection<MethodReference> getAchievableMethods();
 
     Collection<FieldReference> getAchievableFields();
@@ -40,4 +38,6 @@ public interface DependencyInfo {
     FieldDependencyInfo getField(FieldReference fieldRef);
 
     MethodDependencyInfo getMethod(MethodReference methodRef);
+
+    ClassDependencyInfo getClass(String className);
 }

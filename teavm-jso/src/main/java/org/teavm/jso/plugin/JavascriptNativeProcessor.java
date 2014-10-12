@@ -79,8 +79,14 @@ class JavascriptNativeProcessor {
                 MethodReader method = getMethod(invoke.getMethod());
                 if (method.getAnnotations().get(JSProperty.class.getName()) != null) {
                     if (isProperGetter(method.getDescriptor())) {
-                        String propertyName = method.getName().charAt(0) == 'i' ? cutPrefix(method.getName(), 2) :
+                        String propertyName;
+                        AnnotationReader annot = method.getAnnotations().get(JSProperty.class.getName());
+                        if (annot.getValue("value") != null) {
+                            propertyName = annot.getValue("value").getString();
+                        } else {
+                            propertyName = method.getName().charAt(0) == 'i' ? cutPrefix(method.getName(), 2) :
                                 cutPrefix(method.getName(), 3);
+                        }
                         Variable result = invoke.getReceiver() != null ? program.createVariable() : null;
                         addPropertyGet(propertyName, invoke.getInstance(), result);
                         if (result != null) {
@@ -88,8 +94,15 @@ class JavascriptNativeProcessor {
                             copyVar(result, invoke.getReceiver());
                         }
                     } else if (isProperSetter(method.getDescriptor())) {
-                        Variable wrapped = wrap(invoke.getArguments().get(0), method.parameterType(0));
-                        addPropertySet(cutPrefix(method.getName(), 3), invoke.getInstance(), wrapped);
+                        String propertyName;
+                        AnnotationReader annot = method.getAnnotations().get(JSProperty.class.getName());
+                        if (annot.getValue("value") != null) {
+                            propertyName = annot.getValue("value").getString();
+                        } else {
+                            propertyName = cutPrefix(method.getName(), 3);
+                        }
+                        Variable wrapped = wrapArgument(invoke.getArguments().get(0), method.parameterType(0));
+                        addPropertySet(propertyName, invoke.getInstance(), wrapped);
                     } else {
                         throw new RuntimeException("Method " + invoke.getMethod() + " is not " +
                                 "a proper native JavaScript property declaration");
@@ -173,8 +186,8 @@ class JavascriptNativeProcessor {
     private void addPropertyGet(String propertyName, Variable instance, Variable receiver) {
         Variable nameVar = addStringWrap(addString(propertyName));
         InvokeInstruction insn = new InvokeInstruction();
-        insn.setMethod(new MethodReference(JS.class.getName(), "get", ValueType.object(JSObject.class.getName()),
-                ValueType.object(JSObject.class.getName()), ValueType.object(JSObject.class.getName())));
+        insn.setType(InvocationType.SPECIAL);
+        insn.setMethod(new MethodReference(JS.class, "get", JSObject.class, JSObject.class, JSObject.class));
         insn.setReceiver(receiver);
         insn.getArguments().add(instance);
         insn.getArguments().add(nameVar);
@@ -184,9 +197,9 @@ class JavascriptNativeProcessor {
     private void addPropertySet(String propertyName, Variable instance, Variable value) {
         Variable nameVar = addStringWrap(addString(propertyName));
         InvokeInstruction insn = new InvokeInstruction();
-        insn.setMethod(new MethodReference(JS.class.getName(), "set",
-                ValueType.object(JSObject.class.getName()), ValueType.object(JSObject.class.getName()),
-                ValueType.object(JSObject.class.getName()), ValueType.VOID));
+        insn.setType(InvocationType.SPECIAL);
+        insn.setMethod(new MethodReference(JS.class, "set", JSObject.class, JSObject.class,
+                JSObject.class, void.class));
         insn.getArguments().add(instance);
         insn.getArguments().add(nameVar);
         insn.getArguments().add(value);
@@ -195,8 +208,8 @@ class JavascriptNativeProcessor {
 
     private void addIndexerGet(Variable array, Variable index, Variable receiver) {
         InvokeInstruction insn = new InvokeInstruction();
-        insn.setMethod(new MethodReference(JS.class.getName(), "get", ValueType.object(JSObject.class.getName()),
-                ValueType.object(JSObject.class.getName()), ValueType.object(JSObject.class.getName())));
+        insn.setType(InvocationType.SPECIAL);
+        insn.setMethod(new MethodReference(JS.class, "get", JSObject.class, JSObject.class, JSObject.class));
         insn.setReceiver(receiver);
         insn.getArguments().add(array);
         insn.getArguments().add(index);
@@ -205,9 +218,9 @@ class JavascriptNativeProcessor {
 
     private void addIndexerSet(Variable array, Variable index, Variable value) {
         InvokeInstruction insn = new InvokeInstruction();
-        insn.setMethod(new MethodReference(JS.class.getName(), "set",
-                ValueType.object(JSObject.class.getName()), ValueType.object(JSObject.class.getName()),
-                ValueType.object(JSObject.class.getName()), ValueType.VOID));
+        insn.setType(InvocationType.SPECIAL);
+        insn.setMethod(new MethodReference(JS.class, "set", JSObject.class, JSObject.class,
+                JSObject.class, void.class));
         insn.getArguments().add(array);
         insn.getArguments().add(index);
         insn.getArguments().add(value);
@@ -304,9 +317,8 @@ class JavascriptNativeProcessor {
         Variable functor = program.createVariable();
         Variable nameVar = addStringWrap(addString(name));
         InvokeInstruction insn = new InvokeInstruction();
-        insn.setMethod(new MethodReference(JS.class.getName(), "function",
-                ValueType.object(JSObject.class.getName()), ValueType.object(JSObject.class.getName()),
-                ValueType.object(JSObject.class.getName())));
+        insn.setType(InvocationType.SPECIAL);
+        insn.setMethod(new MethodReference(JS.class, "function", JSObject.class, JSObject.class, JSObject.class));
         insn.setReceiver(functor);
         insn.getArguments().add(var);
         insn.getArguments().add(nameVar);

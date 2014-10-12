@@ -19,7 +19,7 @@ import java.io.IOException;
 import org.teavm.classlib.impl.unicode.UnicodeHelper;
 import org.teavm.classlib.impl.unicode.UnicodeSupport;
 import org.teavm.codegen.SourceWriter;
-import org.teavm.dependency.DependencyChecker;
+import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.javascript.ni.Generator;
@@ -52,11 +52,11 @@ public class CharacterNativeGenerator implements Generator, DependencyPlugin {
     }
 
     @Override
-    public void methodAchieved(DependencyChecker checker, MethodDependency method) {
+    public void methodAchieved(DependencyAgent agent, MethodDependency method) {
         switch (method.getReference().getName()) {
             case "obtainDigitMapping":
             case "obtainClasses":
-                method.getResult().propagate("java.lang.String");
+                method.getResult().propagate(agent.getType("java.lang.String"));
                 break;
         }
     }

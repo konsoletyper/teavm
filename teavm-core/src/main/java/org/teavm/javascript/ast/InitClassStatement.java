@@ -20,6 +20,7 @@ package org.teavm.javascript.ast;
  * @author Alexey Andreev
  */
 public class InitClassStatement extends Statement {
+    private NodeLocation location;
     private String className;
 
     public String getClassName() {
@@ -28,6 +29,14 @@ public class InitClassStatement extends Statement {
 
     public void setClassName(String className) {
         this.className = className;
+    }
+
+    public NodeLocation getLocation() {
+        return location;
+    }
+
+    public void setLocation(NodeLocation location) {
+        this.location = location;
     }
 
     @Override

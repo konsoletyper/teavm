@@ -16,6 +16,7 @@
 package org.teavm.model.util;
 
 import java.util.List;
+import java.util.Objects;
 import org.teavm.model.*;
 
 /**
@@ -25,7 +26,24 @@ import org.teavm.model.*;
 public class ListingBuilder {
     public String buildListing(ProgramReader program, String prefix) {
         StringBuilder sb = new StringBuilder();
-        InstructionStringifier stringifier = new InstructionStringifier(sb);
+        StringBuilder insnSb = new StringBuilder();
+        InstructionStringifier stringifier = new InstructionStringifier(insnSb);
+        for (int i = 0; i < program.variableCount(); ++i) {
+            sb.append(prefix).append("var @").append(i);
+            VariableReader var = program.variableAt(i);
+            if (!var.readDebugNames().isEmpty()) {
+                sb.append(" as ");
+                boolean first = true;
+                for (String debugName : var.readDebugNames()) {
+                    if (!first) {
+                        sb.append(", ");
+                    }
+                    first = false;
+                    sb.append(debugName);
+                }
+            }
+            sb.append('\n');
+        }
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlockReader block = program.basicBlockAt(i);
             sb.append(prefix).append("$").append(i).append(":\n");
@@ -43,10 +61,16 @@ public class ListingBuilder {
                 }
                 sb.append("\n");
             }
+            InstructionLocation location = null;
             for (int j = 0; j < block.instructionCount(); ++j) {
-                sb.append(prefix).append("    ");
+                insnSb.setLength(0);
                 block.readInstruction(j, stringifier);
-                sb.append("\n");
+                if (!Objects.equals(location, stringifier.getLocation())) {
+                    location = stringifier.getLocation();
+                    sb.append(prefix).append("  at ").append(location != null ? location.toString() :
+                            "unknown location").append('\n');
+                }
+                sb.append(prefix).append("    ").append(insnSb).append("\n");
             }
             for (TryCatchBlockReader tryCatch : block.readTryCatchBlocks()) {
                 sb.append(prefix).append("    catch ").append(tryCatch.getExceptionType()).append(" @")

@@ -23,6 +23,8 @@ import org.teavm.model.*;
  * @author Alexey Andreev
  */
 public interface InstructionReader {
+    void location(InstructionLocation location);
+
     void nop();
 
     void classConstant(VariableReader receiver, ValueType cst);

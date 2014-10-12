@@ -24,10 +24,20 @@ import org.teavm.model.instructions.*;
  * @author Alexey Andreev
  */
 public class InstructionStringifier implements InstructionReader {
+    private InstructionLocation location;
     private StringBuilder sb;
 
     public InstructionStringifier(StringBuilder sb) {
         this.sb = sb;
+    }
+
+    public InstructionLocation getLocation() {
+        return location;
+    }
+
+    @Override
+    public void location(InstructionLocation location) {
+        this.location = location;
     }
 
     @Override
@@ -286,7 +296,7 @@ public class InstructionStringifier implements InstructionReader {
 
     @Override
     public void cloneArray(VariableReader receiver, VariableReader array) {
-        sb.append("@").append(receiver.getIndex()).append("@").append(array.getIndex()).append(".clone()");
+        sb.append("@").append(receiver.getIndex()).append(" := @").append(array.getIndex()).append(".clone()");
     }
 
     @Override

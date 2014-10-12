@@ -112,6 +112,9 @@ public class GlobalValueNumbering implements MethodOptimization {
 
         for (int i = 0; i < map.length; ++i) {
             if (map[i] != i) {
+                Variable var = program.variableAt(i);
+                Variable mapVar = program.variableAt(map[i]);
+                mapVar.getDebugNames().addAll(var.getDebugNames());
                 program.deleteVariable(i);
             }
         }
@@ -357,6 +360,8 @@ public class GlobalValueNumbering implements MethodOptimization {
 
         @Override
         public void visit(CloneArrayInstruction insn) {
+            int a = map[insn.getArray().getIndex()];
+            insn.setArray(program.variableAt(a));
         }
 
         @Override

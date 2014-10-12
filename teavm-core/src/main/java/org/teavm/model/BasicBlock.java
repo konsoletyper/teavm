@@ -172,13 +172,20 @@ public class BasicBlock implements BasicBlockReader {
 
     @Override
     public void readInstruction(int index, InstructionReader reader) {
-        instructions.get(index).acceptVisitor(new InstructionReadVisitor(reader));
+        Instruction insn = instructions.get(index);
+        reader.location(insn.getLocation());
+        insn.acceptVisitor(new InstructionReadVisitor(reader));
     }
 
     @Override
     public void readAllInstructions(InstructionReader reader) {
         InstructionReadVisitor visitor = new InstructionReadVisitor(reader);
+        InstructionLocation location = null;
         for (Instruction insn : instructions) {
+            if (!Objects.equals(location, insn.getLocation())) {
+                location = insn.getLocation();
+                reader.location(location);
+            }
             insn.acceptVisitor(visitor);
         }
     }

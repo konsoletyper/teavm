@@ -163,4 +163,12 @@ public class TClass<T> extends TObject {
     @GeneratedBy(ClassNativeGenerator.class)
     @PluggableDependency(ClassNativeGenerator.class)
     public native TClass<?> getDeclaringClass();
+
+    @SuppressWarnings("unchecked")
+    public <U> TClass<? extends U> asSubclass(TClass<U> clazz) {
+        if (!clazz.isAssignableFrom(this)) {
+            throw new TClassCastException();
+        }
+        return (TClass<? extends U>)this;
+    }
 }

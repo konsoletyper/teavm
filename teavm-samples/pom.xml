@@ -16,6 +16,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
+
   <parent>
     <groupId>org.teavm</groupId>
     <artifactId>teavm</artifactId>
@@ -23,61 +24,13 @@
   </parent>
   <artifactId>teavm-samples</artifactId>
 
-  <dependencies>
-    <dependency>
-      <groupId>org.teavm</groupId>
-      <artifactId>teavm-core</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.teavm</groupId>
-      <artifactId>teavm-dom</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-  </dependencies>
+  <packaging>pom</packaging>
 
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.teavm</groupId>
-        <artifactId>teavm-maven-plugin</artifactId>
-        <version>${project.version}</version>
-        <dependencies>
-          <dependency>
-            <groupId>org.teavm</groupId>
-            <artifactId>teavm-classlib</artifactId>
-            <version>${project.version}</version>
-          </dependency>
-        </dependencies>
-        <executions>
-          <execution>
-            <id>generate-hello</id>
-            <goals>
-              <goal>build-javascript</goal>
-            </goals>
-            <phase>process-classes</phase>
-            <configuration>
-              <minifying>false</minifying>
-              <mainClass>org.teavm.samples.HelloWorld</mainClass>
-              <mainPageIncluded>true</mainPageIncluded>
-              <targetDirectory>${project.build.directory}/javascript/hello</targetDirectory>
-            </configuration>
-          </execution>
-          <execution>
-            <id>generate-matrix</id>
-            <goals>
-              <goal>build-javascript</goal>
-            </goals>
-            <phase>process-classes</phase>
-            <configuration>
-              <minifying>false</minifying>
-              <mainClass>org.teavm.samples.MatrixMultiplication</mainClass>
-              <mainPageIncluded>true</mainPageIncluded>
-              <targetDirectory>${project.build.directory}/javascript/matrix</targetDirectory>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
+  <name>TeaVM samples</name>
+  <description>TeaVM code samples</description>
+
+  <modules>
+    <module>teavm-samples-hello</module>
+    <module>teavm-samples-benchmark</module>
+  </modules>
 </project>

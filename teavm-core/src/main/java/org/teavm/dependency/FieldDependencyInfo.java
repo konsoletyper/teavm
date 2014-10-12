@@ -25,4 +25,8 @@ public interface FieldDependencyInfo {
     ValueDependencyInfo getValue();
 
     FieldReference getReference();
+
+    boolean isMissing();
+
+    DependencyStack getStack();
 }

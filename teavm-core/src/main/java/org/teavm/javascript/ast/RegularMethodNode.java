@@ -17,6 +17,7 @@ package org.teavm.javascript.ast;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import org.teavm.model.MethodReference;
 
 /**
@@ -26,6 +27,7 @@ import org.teavm.model.MethodReference;
 public class RegularMethodNode extends MethodNode {
     private Statement body;
     private List<Integer> variables = new ArrayList<>();
+    private List<Set<String>> parameterDebugNames = new ArrayList<>();
 
     public RegularMethodNode(MethodReference reference) {
         super(reference);
@@ -41,6 +43,10 @@ public class RegularMethodNode extends MethodNode {
 
     public List<Integer> getVariables() {
         return variables;
+    }
+
+    public List<Set<String>> getParameterDebugNames() {
+        return parameterDebugNames;
     }
 
     @Override

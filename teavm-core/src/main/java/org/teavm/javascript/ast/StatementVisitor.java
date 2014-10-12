@@ -32,8 +32,6 @@ public interface StatementVisitor {
 
     void visit(BlockStatement statement);
 
-    void visit(ForStatement statement);
-
     void visit(BreakStatement statement);
 
     void visit(ContinueStatement statement);
@@ -41,8 +39,6 @@ public interface StatementVisitor {
     void visit(ReturnStatement statement);
 
     void visit(ThrowStatement statement);
-
-    void visit(IncrementStatement statement);
 
     void visit(InitClassStatement statement);
 

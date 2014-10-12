@@ -190,7 +190,7 @@ public class TLong extends TNumber implements TComparable<TLong> {
         return toString(i, 2);
     }
 
-    public TString toString(long value) {
+    public static TString toString(long value) {
         return TString.wrap(new TStringBuilder().append(value).toString());
     }
 

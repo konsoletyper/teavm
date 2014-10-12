@@ -34,6 +34,17 @@ public class MethodDescriptor {
         this.signature = Arrays.copyOf(signature, signature.length);
     }
 
+    public MethodDescriptor(String name, Class<?>... signature) {
+        if (signature.length < 1) {
+            throw new IllegalArgumentException("Signature must be at least 1 element length");
+        }
+        this.name = name;
+        this.signature = new ValueType[signature.length];
+        for (int i = 0; i < signature.length; ++i) {
+            this.signature[i] = ValueType.parse(signature[i]);
+        }
+    }
+
     public String getName() {
         return name;
     }

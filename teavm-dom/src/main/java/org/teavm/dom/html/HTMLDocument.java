@@ -32,4 +32,10 @@ public interface HTMLDocument extends Document {
 
     @Override
     HTMLElement getElementById(String elementId);
+
+    @JSProperty
+    HTMLBodyElement getBody();
+
+    @JSProperty
+    HTMLElement getHead();
 }

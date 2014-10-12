@@ -38,13 +38,17 @@ public class SSATransformer {
     private Phi[][] phiMap;
     private int[][] phiIndexMap;
     private ValueType[] arguments;
+    private VariableDebugInformation variableDebugInfo;
+    private Map<Integer, String> variableDebugMap = new HashMap<>();
 
-    public void transformToSSA(Program program, ValueType[] arguments) {
+    public void transformToSSA(Program program, VariableDebugInformation variableDebugInfo, ValueType[] arguments) {
         if (program.basicBlockCount() == 0) {
             return;
         }
         this.program = program;
+        this.variableDebugInfo = variableDebugInfo;
         this.arguments = arguments;
+        variableDebugMap.clear();
         cfg = ProgramUtils.buildControlFlowGraphWithoutTryCatch(program);
         domTree = GraphUtils.buildDominatorTree(cfg);
         domFrontiers = new int[cfg.size()][];
@@ -137,6 +141,7 @@ public class SSATransformer {
             variableMap = Arrays.copyOf(task.variables, task.variables.length);
             for (Phi phi : currentBlock.getPhis()) {
                 Variable var = program.createVariable();
+                var.getDebugNames().addAll(phi.getReceiver().getDebugNames());
                 variableMap[phi.getReceiver().getIndex()] = var;
                 phi.setReceiver(var);
             }
@@ -145,7 +150,9 @@ public class SSATransformer {
                 phi.setReceiver(program.createVariable());
                 for (TryCatchBlock tryCatch : caughtBlocks.get(currentBlock.getIndex())) {
                     variableMap[tryCatch.getExceptionVariable().getIndex()] = phi.getReceiver();
+                    Set<String> debugNames = tryCatch.getExceptionVariable().getDebugNames();
                     tryCatch.setExceptionVariable(program.createVariable());
+                    tryCatch.getExceptionVariable().getDebugNames().addAll(debugNames);
                     Incoming incoming = new Incoming();
                     incoming.setSource(tryCatch.getProtectedBlock());
                     incoming.setValue(tryCatch.getExceptionVariable());
@@ -154,6 +161,7 @@ public class SSATransformer {
                 specialPhis.get(currentBlock.getIndex()).add(phi);
             }
             for (Instruction insn : currentBlock.getInstructions()) {
+                variableDebugMap.putAll(variableDebugInfo.getDebugNames(insn));
                 insn.acceptVisitor(consumer);
             }
             int[] successors = domGraph.outgoingEdges(currentBlock.getIndex());
@@ -169,12 +177,14 @@ public class SSATransformer {
                 int[] phiIndexes = phiIndexMap[successor];
                 List<Phi> phis = program.basicBlockAt(successor).getPhis();
                 for (int j = 0; j < phis.size(); ++j) {
+                    Phi phi = phis.get(j);
                     Variable var = variableMap[phiIndexes[j]];
                     if (var != null) {
                         Incoming incoming = new Incoming();
                         incoming.setSource(currentBlock);
                         incoming.setValue(var);
-                        phis.get(j).getIncomings().add(incoming);
+                        phi.getIncomings().add(incoming);
+                        phi.getReceiver().getDebugNames().addAll(var.getDebugNames());
                     }
                 }
             }
@@ -220,6 +230,10 @@ public class SSATransformer {
         Variable mappedVar = variableMap[var.getIndex()];
         if (mappedVar == null) {
             throw new AssertionError();
+        }
+        String debugName = variableDebugMap.get(var.getIndex());
+        if (debugName != null) {
+            mappedVar.getDebugNames().add(debugName);
         }
         return mappedVar;
     }
@@ -412,6 +426,9 @@ public class SSATransformer {
         @Override
         public void visit(UnwrapArrayInstruction insn) {
             insn.setArray(use(insn.getArray()));
+            for (String debugName : insn.getArray().getDebugNames()) {
+                variableDebugMap.put(insn.getReceiver().getIndex(), debugName + ".data");
+            }
             insn.setReceiver(define(insn.getReceiver()));
         }
 

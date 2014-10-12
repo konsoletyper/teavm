@@ -15,7 +15,7 @@
  */
 package org.teavm.resource;
 
-import org.teavm.common.ConcurrentCachedMapper;
+import org.teavm.common.CachedMapper;
 import org.teavm.common.Mapper;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderSource;
@@ -28,7 +28,7 @@ public class MapperClassHolderSource implements ClassHolderSource {
     private Mapper<String, ClassHolder> mapper;
 
     public MapperClassHolderSource(Mapper<String, ClassHolder> mapper) {
-        this.mapper = new ConcurrentCachedMapper<>(mapper);
+        this.mapper = new CachedMapper<>(mapper);
     }
 
     @Override

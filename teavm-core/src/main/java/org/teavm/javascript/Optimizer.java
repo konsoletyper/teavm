@@ -27,10 +27,7 @@ public class Optimizer {
     public void optimize(RegularMethodNode method, Program program) {
         ReadWriteStatsBuilder stats = new ReadWriteStatsBuilder(method.getVariables().size());
         stats.analyze(program);
-        BlockRefCountVisitor refsCounter = new BlockRefCountVisitor();
-        method.getBody().acceptVisitor(refsCounter);
         OptimizingVisitor optimizer = new OptimizingVisitor(stats);
-        optimizer.referencedStatements = refsCounter.refs;
         method.getBody().acceptVisitor(optimizer);
         method.setBody(optimizer.resultStmt);
         int paramCount = method.getReference().parameterCount();

@@ -100,10 +100,6 @@ class UnusedVariableEliminator implements ExprVisitor, StatementVisitor {
     }
 
     @Override
-    public void visit(ForStatement statement) {
-    }
-
-    @Override
     public void visit(BreakStatement statement) {
     }
 
@@ -130,11 +126,6 @@ class UnusedVariableEliminator implements ExprVisitor, StatementVisitor {
             indexes[variables[var]] = index;
         }
         return index;
-    }
-
-    @Override
-    public void visit(IncrementStatement statement) {
-        statement.setVar(renumber(statement.getVar()));
     }
 
     @Override

@@ -32,7 +32,7 @@ public class ClassLookupDependencySupport implements DependencyListener {
 
     @Override
     public void classAchieved(DependencyAgent agent, String className) {
-        allClasses.propagate(className);
+        allClasses.propagate(agent.getType(className));
     }
 
     @Override
@@ -41,8 +41,8 @@ public class ClassLookupDependencySupport implements DependencyListener {
         if (ref.getClassName().equals("java.lang.Class") && ref.getName().equals("forNameImpl")) {
             final DependencyStack stack = method.getStack();
             allClasses.addConsumer(new DependencyConsumer() {
-                @Override public void consume(String type) {
-                    ClassReader cls = agent.getClassSource().get(type);
+                @Override public void consume(DependencyAgentType type) {
+                    ClassReader cls = agent.getClassSource().get(type.getName());
                     if (cls == null) {
                         return;
                     }

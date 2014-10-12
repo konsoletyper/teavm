@@ -15,10 +15,8 @@
  */
 package org.teavm.classlib.java.util;
 
-import org.teavm.classlib.java.lang.TIllegalArgumentException;
-import org.teavm.classlib.java.lang.TIllegalStateException;
-import org.teavm.classlib.java.lang.TIndexOutOfBoundsException;
-import org.teavm.classlib.java.lang.TUnsupportedOperationException;
+import org.teavm.classlib.java.lang.*;
+import org.teavm.javascript.ni.Rename;
 
 /**
  *
@@ -56,9 +54,11 @@ public abstract class TAbstractList<E> extends TAbstractCollection<E> implements
                     throw new TIllegalStateException();
                 }
                 checkConcurrentModification();
-                TAbstractList.this.remove(index - 1);
+                TAbstractList.this.remove(removeIndex);
                 modCount = TAbstractList.this.modCount;
-                --index;
+                if (removeIndex < index) {
+                    --index;
+                }
                 --size;
                 removeIndex = -1;
             }
@@ -159,6 +159,36 @@ public abstract class TAbstractList<E> extends TAbstractCollection<E> implements
         }
     }
 
+
+    @Override
+    public int hashCode() {
+        int hashCode = 1;
+        for (TIterator<? extends E> iter = iterator(); iter.hasNext();) {
+            E elem = iter.next();
+            hashCode = 31 * hashCode + (elem != null ? elem.hashCode() : 0);
+        }
+        return hashCode;
+    }
+
+    @Override
+    @Rename("equals")
+    public boolean equals0(TObject other) {
+        if (!(other instanceof TList)) {
+            return false;
+        }
+        @SuppressWarnings("unchecked")
+        TList<Object> list = (TList<Object>)other;
+        if (size() != list.size()) {
+            return false;
+        }
+        for (int i = 0; i < list.size(); ++i) {
+            if (!TObjects.equals(get(i), list.get(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private class TListIteratorImpl implements TListIterator<E> {
         private int i;
         private int j;
@@ -187,6 +217,9 @@ public abstract class TAbstractList<E> extends TAbstractCollection<E> implements
             }
             checkConcurrentModification();
             TAbstractList.this.remove(j);
+            if (j < i) {
+                --i;
+            }
             --sz;
             lastModCount = modCount;
         }
@@ -215,9 +248,6 @@ public abstract class TAbstractList<E> extends TAbstractCollection<E> implements
             TAbstractList.this.set(j, e);
         }
         @Override public void add(E e) {
-            if (j == -1) {
-                throw new TIllegalStateException();
-            }
             TAbstractList.this.add(i++, e);
             lastModCount = modCount;
             j = -1;

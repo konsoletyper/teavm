@@ -16,7 +16,6 @@
 package org.teavm.dependency;
 
 import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 
@@ -25,6 +24,7 @@ import org.teavm.model.MethodReference;
  * @author Alexey Andreev
  */
 public class MethodDependency implements MethodDependencyInfo {
+    private DependencyChecker dependencyChecker;
     private DependencyNode[] variableNodes;
     private int parameterCount;
     private DependencyNode resultNode;
@@ -32,11 +32,12 @@ public class MethodDependency implements MethodDependencyInfo {
     private DependencyStack stack;
     private MethodReader method;
     private MethodReference reference;
-    private AtomicBoolean used = new AtomicBoolean();
-    private volatile Runnable useRunner;
+    private boolean used;
 
-    MethodDependency(DependencyNode[] variableNodes, int parameterCount, DependencyNode resultNode,
-            DependencyNode thrown, DependencyStack stack, MethodReader method, MethodReference reference) {
+    MethodDependency(DependencyChecker dependencyChecker, DependencyNode[] variableNodes, int parameterCount,
+            DependencyNode resultNode, DependencyNode thrown, DependencyStack stack, MethodReader method,
+            MethodReference reference) {
+        this.dependencyChecker = dependencyChecker;
         this.variableNodes = Arrays.copyOf(variableNodes, variableNodes.length);
         this.parameterCount = parameterCount;
         this.thrown = thrown;
@@ -44,6 +45,10 @@ public class MethodDependency implements MethodDependencyInfo {
         this.stack = stack;
         this.method = method;
         this.reference = reference;
+    }
+
+    public DependencyAgent getDependencyAgent() {
+        return dependencyChecker;
     }
 
     @Override
@@ -76,6 +81,7 @@ public class MethodDependency implements MethodDependencyInfo {
         return thrown;
     }
 
+    @Override
     public DependencyStack getStack() {
         return stack;
     }
@@ -89,31 +95,21 @@ public class MethodDependency implements MethodDependencyInfo {
         return method;
     }
 
+    @Override
     public boolean isMissing() {
         return method == null;
     }
 
     @Override
     public boolean isUsed() {
-        return used.get();
+        return used;
     }
 
     public void use() {
-        if (used.compareAndSet(false, true)) {
-            if (useRunner != null) {
-                useRunner.run();
-                useRunner = null;
-            }
-        }
-    }
-
-    void setUseRunner(Runnable runner) {
-        if (isUsed()) {
-            runner.run();
-        } else {
-            useRunner = runner;
-            if (isUsed()) {
-                runner.run();
+        if (!used) {
+            used = true;
+            if (!isMissing()) {
+                dependencyChecker.scheduleMethodAnalysis(this);
             }
         }
     }

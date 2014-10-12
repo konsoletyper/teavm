@@ -42,13 +42,21 @@ public class Decompiler {
     private RangeTree codeTree;
     private RangeTree.Node currentNode;
     private RangeTree.Node parentNode;
-    private FiniteExecutor executor;
     private Map<MethodReference, Generator> generators = new HashMap<>();
+    private Set<MethodReference> methodsToPass = new HashSet<>();
+    private RegularMethodNodeCache regularMethodCache;
 
-    public Decompiler(ClassHolderSource classSource, ClassLoader classLoader, FiniteExecutor executor) {
+    public Decompiler(ClassHolderSource classSource, ClassLoader classLoader) {
         this.classSource = classSource;
         this.classLoader = classLoader;
-        this.executor = executor;
+    }
+
+    public RegularMethodNodeCache getRegularMethodCache() {
+        return regularMethodCache;
+    }
+
+    public void setRegularMethodCache(RegularMethodNodeCache regularMethodCache) {
+        this.regularMethodCache = regularMethodCache;
     }
 
     public int getGraphSize() {
@@ -78,22 +86,26 @@ public class Decompiler {
         final List<ClassNode> result = new ArrayList<>();
         for (int i = 0; i < sequence.size(); ++i) {
             final String className = sequence.get(i);
-            result.add(null);
-            final int index = i;
-            executor.execute(new Runnable() {
-                @Override public void run() {
-                    Decompiler copy = new Decompiler(classSource, classLoader, executor);
-                    copy.generators = generators;
-                    result.set(index, copy.decompile(classSource.get(className)));
-                }
-            });
+            result.add(decompile(classSource.get(className)));
         }
-        executor.complete();
         return result;
+    }
+
+    public List<String> getClassOrdering(Collection<String> classNames) {
+        List<String> sequence = new ArrayList<>();
+        Set<String> visited = new HashSet<>();
+        for (String className : classNames) {
+            orderClasses(className, visited, sequence);
+        }
+        return sequence;
     }
 
     public void addGenerator(MethodReference method, Generator generator) {
         generators.put(method, generator);
+    }
+
+    public void addMethodToPass(MethodReference method) {
+        methodsToPass.add(method);
     }
 
     private void orderClasses(String className, Set<String> visited, List<String> order) {
@@ -125,7 +137,8 @@ public class Decompiler {
             if (method.getModifiers().contains(ElementModifier.ABSTRACT)) {
                 continue;
             }
-            if (method.getAnnotations().get(InjectedBy.class.getName()) != null) {
+            if (method.getAnnotations().get(InjectedBy.class.getName()) != null ||
+                    methodsToPass.contains(method.getReference())) {
                 continue;
             }
             MethodNode methodNode = decompile(method);
@@ -140,8 +153,8 @@ public class Decompiler {
     }
 
     public MethodNode decompile(MethodHolder method) {
-        return method.getModifiers().contains(ElementModifier.NATIVE) ?
-                decompileNative(method) : decompileRegular(method);
+        return method.getModifiers().contains(ElementModifier.NATIVE) ? decompileNative(method) :
+                decompileRegular(method);
     }
 
     public NativeMethodNode decompileNative(MethodHolder method) {
@@ -170,6 +183,18 @@ public class Decompiler {
     }
 
     public RegularMethodNode decompileRegular(MethodHolder method) {
+        if (regularMethodCache == null) {
+            return decompileRegularCacheMiss(method);
+        }
+        RegularMethodNode node = regularMethodCache.get(method.getReference());
+        if (node == null) {
+            node = decompileRegularCacheMiss(method);
+            regularMethodCache.store(method.getReference(), node);
+        }
+        return node;
+    }
+
+    public RegularMethodNode decompileRegularCacheMiss(MethodHolder method) {
         lastBlockId = 1;
         graph = ProgramUtils.buildControlFlowGraph(method.getProgram());
         indexer = new GraphIndexer(graph);
@@ -192,8 +217,15 @@ public class Decompiler {
         for (int i = 0; i < this.graph.size(); ++i) {
             Block block = stack.peek();
             while (block.end == i) {
+                Block oldBlock = block;
                 stack.pop();
                 block = stack.peek();
+                if (block.start >= 0) {
+                    int mappedStart = indexer.nodeAt(block.start);
+                    if (blockMap[mappedStart] == oldBlock) {
+                        blockMap[mappedStart] = block;
+                    }
+                }
             }
             while (parentNode.getEnd() == i) {
                 currentNode = parentNode.getNext();
@@ -215,7 +247,16 @@ public class Decompiler {
                 int tmp = indexer.nodeAt(next);
                 generator.nextBlock = next < indexer.size() ? program.basicBlockAt(tmp) : null;
                 generator.statements.clear();
+                InstructionLocation lastLocation = null;
+                NodeLocation nodeLocation = null;
                 for (Instruction insn : generator.currentBlock.getInstructions()) {
+                    if (insn.getLocation() != null && lastLocation != insn.getLocation()) {
+                        lastLocation = insn.getLocation();
+                        nodeLocation = new NodeLocation(lastLocation.getFileName(), lastLocation.getLine());
+                    }
+                    if (insn.getLocation() != null) {
+                        generator.setCurrentLocation(nodeLocation);
+                    }
                     insn.acceptVisitor(generator);
                 }
                 for (TryCatchBlock tryCatch : generator.currentBlock.getTryCatchBlocks()) {
@@ -245,6 +286,11 @@ public class Decompiler {
         Optimizer optimizer = new Optimizer();
         optimizer.optimize(methodNode, method.getProgram());
         methodNode.getModifiers().addAll(mapModifiers(method.getModifiers()));
+        int paramCount = method.getSignature().length;
+        for (int i = 0; i < paramCount; ++i) {
+            Variable var = program.variableAt(i);
+            methodNode.getParameterDebugNames().add(new HashSet<>(var.getDebugNames()));
+        }
         return methodNode;
     }
 
@@ -267,16 +313,16 @@ public class Decompiler {
         while (currentNode != null && currentNode.getStart() == start) {
             Block block;
             IdentifiedStatement statement;
-            if (loopSuccessors[start] == currentNode.getEnd()) {
+            boolean loop = false;
+            if (loopSuccessors[start] == currentNode.getEnd() || isSingleBlockLoop(start)) {
                 WhileStatement whileStatement = new WhileStatement();
                 statement = whileStatement;
-                block = new Block(statement, whileStatement.getBody(), start,
-                        currentNode.getEnd());
+                block = new Block(statement, whileStatement.getBody(), start, currentNode.getEnd());
+                loop = true;
             } else {
                 BlockStatement blockStatement = new BlockStatement();
                 statement = blockStatement;
-                block = new Block(statement, blockStatement.getBody(), start,
-                        currentNode.getEnd());
+                block = new Block(statement, blockStatement.getBody(), start, currentNode.getEnd());
             }
             result.add(block);
             int mappedIndex = indexer.nodeAt(currentNode.getEnd());
@@ -284,7 +330,7 @@ public class Decompiler {
                     !(blockMap[mappedIndex].statement instanceof WhileStatement))) {
                 blockMap[mappedIndex] = block;
             }
-            if (loopSuccessors[start] == currentNode.getEnd()) {
+            if (loop) {
                 blockMap[indexer.nodeAt(start)] = block;
             }
             parentNode = currentNode;
@@ -294,6 +340,15 @@ public class Decompiler {
             block.statement.setId("block" + lastBlockId++);
         }
         return result;
+    }
+
+    private boolean isSingleBlockLoop(int index) {
+        for (int succ : graph.outgoingEdges(index)) {
+            if (succ == index) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void unflatCode() {
@@ -337,6 +392,11 @@ public class Decompiler {
             }
             if (start < node - 1) {
                 ranges.add(new RangeTree.Range(start, node));
+            }
+        }
+        for (int node = 0; node < sz; ++node) {
+            if (isSingleBlockLoop(node)) {
+                ranges.add(new RangeTree.Range(node, node + 1));
             }
         }
         codeTree = new RangeTree(sz + 1, ranges);

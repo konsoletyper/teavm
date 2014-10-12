@@ -164,10 +164,12 @@ public final class KnockoutFXTest extends KnockoutTCK implements Transfer {
 
     @Override
     public void loadJSON(JSONCall call) {
+        if (call.isJSONP()) {
+            throw new IllegalArgumentException("This mock does not support JSONP calls");
+        }
         String url = call.composeURL(null);
         String data = urlMap.get(url);
         if (data != null) {
-            data = "[" + data + "]";
             try {
                 call.notifySuccess(toJSON(new ByteArrayInputStream(data.getBytes())));
             } catch (IOException e) {

@@ -37,6 +37,9 @@ class BreakToContinueReplacer implements StatementVisitor {
     }
 
     public void visitSequence(List<Statement> statements) {
+        if (statements == null) {
+            return;
+        }
         for (int i = 0; i < statements.size(); ++i) {
             Statement stmt = statements.get(i);
             stmt.acceptVisitor(this);
@@ -77,14 +80,11 @@ class BreakToContinueReplacer implements StatementVisitor {
     }
 
     @Override
-    public void visit(ForStatement statement) {
-    }
-
-    @Override
     public void visit(BreakStatement statement) {
         if (statement.getTarget() == replacedBreak) {
             replaceBy = new ContinueStatement();
             replaceBy.setTarget(replacement);
+            replaceBy.setLocation(statement.getLocation());
         }
     }
 
@@ -101,10 +101,6 @@ class BreakToContinueReplacer implements StatementVisitor {
 
     @Override
     public void visit(ThrowStatement statement) {
-    }
-
-    @Override
-    public void visit(IncrementStatement statement) {
     }
 
     @Override

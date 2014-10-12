@@ -40,6 +40,10 @@ public class IntegerArray {
         return array;
     }
 
+    public void clear() {
+        sz = 0;
+    }
+
     public void optimize() {
         if (sz > data.length) {
             data = Arrays.copyOf(data, sz);
@@ -54,10 +58,13 @@ public class IntegerArray {
         return data[index];
     }
 
+    public int[] getRange(int start, int end) {
+        return Arrays.copyOfRange(data, start, end);
+    }
+
     public void set(int index, int value) {
         if (index >= sz) {
-            throw new IndexOutOfBoundsException("Index " + index +
-                    " is greater than the list size " + sz);
+            throw new IndexOutOfBoundsException("Index " + index + " is greater than the list size " + sz);
         }
         data[index] = value;
     }
@@ -88,6 +95,15 @@ public class IntegerArray {
         ++sz;
         ensureCapacity();
         data[sz - 1] = item;
+    }
+
+    public void remove(int index) {
+        remove(index, 1);
+    }
+
+    public void remove(int index, int count) {
+        System.arraycopy(data, index + count, data, index, sz - index - count);
+        sz -= count;
     }
 
     public boolean contains(int item) {

@@ -88,7 +88,7 @@ public class TeaVMEntryPoint {
         if (argument > reference.parameterCount()) {
             throw new IllegalArgumentException("Illegal argument #" + argument + " of " + reference.parameterCount());
         }
-        method.getVariable(argument).propagate(type);
+        method.getVariable(argument).propagate(method.getDependencyAgent().getType(type));
         return this;
     }
 }

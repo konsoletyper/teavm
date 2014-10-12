@@ -65,17 +65,23 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <html4j.version>0.7.5</html4j.version>
     <sonatypeOssDistMgmtSnapshotsUrl>https://oss.sonatype.org/content/repositories/snapshots/</sonatypeOssDistMgmtSnapshotsUrl>
+    <html4j.version>0.9</html4j.version>
+    <jetty.version>9.2.1.v20140609</jetty.version>
+    <slf4j.version>1.7.7</slf4j.version>
   </properties>
 
   <modules>
     <module>teavm-core</module>
     <module>teavm-classlib</module>
-    <module>teavm-maven-plugin</module>
+    <module>teavm-maven</module>
     <module>teavm-dom</module>
     <module>teavm-jso</module>
     <module>teavm-html4j</module>
+    <module>teavm-samples</module>
+    <module>teavm-platform</module>
+    <module>teavm-cli</module>
+    <module>teavm-chrome-rdp</module>
   </modules>
 
   <dependencyManagement>
@@ -131,6 +137,31 @@
         <artifactId>maven-core</artifactId>
         <version>3.0</version>
       </dependency>
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-artifact</artifactId>
+        <version>3.0</version>
+      </dependency>
+      <dependency>
+        <groupId>javax.websocket</groupId>
+        <artifactId>javax.websocket-api</artifactId>
+        <version>1.0</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-server</artifactId>
+        <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty.websocket</groupId>
+        <artifactId>javax-websocket-server-impl</artifactId>
+        <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>${slf4j.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -177,6 +208,40 @@
             </execution>
           </executions>
         </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>2.17</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>2.11</version>
+          <executions>
+            <execution>
+              <id>validate</id>
+              <phase>validate</phase>
+              <configuration>
+                <encoding>UTF-8</encoding>
+                <consoleOutput>true</consoleOutput>
+                <failsOnError>true</failsOnError>
+                <linkXRef>false</linkXRef>
+              </configuration>
+              <goals>
+                <goal>check</goal>
+              </goals>
+            </execution>
+          </executions>
+          <configuration>
+            <propertyExpansion>config_loc=${basedir}/..</propertyExpansion>
+            <configLocation>../checkstyle.xml</configLocation>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.felix</groupId>
+          <artifactId>maven-bundle-plugin</artifactId>
+          <version>2.5.3</version>
+        </plugin>
       </plugins>
     </pluginManagement>
   </build>
@@ -204,15 +269,15 @@
       </build>
     </profile>
     <profile>
-      <id>enable-scala</id>
-      <modules>
-        <module>teavm-scala-samples</module>
-      </modules>
-    </profile>
-    <profile>
       <id>enable-samples</id>
       <modules>
         <module>teavm-samples</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>enable-eclipse</id>
+      <modules>
+        <module>teavm-eclipse</module>
       </modules>
     </profile>
   </profiles>

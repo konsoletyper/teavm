@@ -21,6 +21,7 @@ package org.teavm.javascript.ast;
  */
 public class ContinueStatement extends Statement {
     private IdentifiedStatement target;
+    private NodeLocation location;
 
     public IdentifiedStatement getTarget() {
         return target;
@@ -28,6 +29,14 @@ public class ContinueStatement extends Statement {
 
     public void setTarget(IdentifiedStatement target) {
         this.target = target;
+    }
+
+    public NodeLocation getLocation() {
+        return location;
+    }
+
+    public void setLocation(NodeLocation location) {
+        this.location = location;
     }
 
     @Override

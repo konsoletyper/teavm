@@ -21,6 +21,7 @@ package org.teavm.javascript.ast;
  */
 public class ReturnStatement extends Statement {
     private Expr result;
+    private NodeLocation location;
 
     public Expr getResult() {
         return result;
@@ -28,6 +29,14 @@ public class ReturnStatement extends Statement {
 
     public void setResult(Expr result) {
         this.result = result;
+    }
+
+    public NodeLocation getLocation() {
+        return location;
+    }
+
+    public void setLocation(NodeLocation location) {
+        this.location = location;
     }
 
     @Override

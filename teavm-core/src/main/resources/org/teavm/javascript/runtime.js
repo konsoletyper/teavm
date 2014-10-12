@@ -21,7 +21,7 @@ $rt_compare = function(a, b) {
     return a > b ? 1 : a < b ? -1 : 0;
 }
 $rt_isInstance = function(obj, cls) {
-    return obj != null && obj.constructor.$meta && $rt_isAssignable(obj.constructor, cls);
+    return obj !== null && !!obj.constructor.$meta && $rt_isAssignable(obj.constructor, cls);
 }
 $rt_isAssignable = function(from, to) {
     if (from === to) {
@@ -108,6 +108,17 @@ $rt_arraycls = function(cls) {
         };
         arraycls.prototype = new ($rt_objcls())();
         arraycls.prototype.constructor = arraycls;
+        arraycls.prototype.toString = function() {
+            var str = "[";
+            for (var i = 0; i < this.data.length; ++i) {
+                if (i > 0) {
+                    str += ", ";
+                }
+                str += this.data[i].toString();
+            }
+            str += "]";
+            return str;
+        }
         arraycls.$meta = { item : cls, supertypes : [$rt_objcls()], primitive : false, superclass : $rt_objcls() };
         cls.$array = arraycls;
     }
@@ -381,20 +392,93 @@ function $rt_virtualMethods(cls) {
         }
     }
 }
+function $rt_stringPool(strings) {
+    $rt_stringPool_instance = new Array(strings.length);
+    for (var i = 0; i < strings.length; ++i) {
+        $rt_stringPool_instance[i] = $rt_intern($rt_str(strings[i]));
+    }
+}
+function $rt_s(index) {
+    return $rt_stringPool_instance[index];
+}
+
+function $dbg_repr(obj) {
+    return obj.toString ? obj.toString() : "";
+}
+function $dbg_class(obj) {
+    if (obj instanceof Long) {
+        return "long";
+    }
+    var cls = obj.constructor;
+    var arrayDegree = 0;
+    while (cls.$meta && cls.$meta.item) {
+        ++arrayDegree;
+        cls = cls.$meta.item;
+    }
+    var clsName = "";
+    if (cls === $rt_booleancls()) {
+        clsName = "boolean";
+    } else if (cls === $rt_bytecls()) {
+        clsName = "byte";
+    } else if (cls === $rt_shortcls()) {
+        clsName = "short";
+    } else if (cls === $rt_charcls()) {
+        clsName = "char";
+    } else if (cls === $rt_intcls()) {
+        clsName = "int";
+    } else if (cls === $rt_longcls()) {
+        clsName = "long";
+    } else if (cls === $rt_floatcls()) {
+        clsName = "float";
+    } else if (cls === $rt_doublecls()) {
+        clsName = "double";
+    } else {
+        clsName = cls.$meta ? cls.$meta.name : "@" + cls.name;
+    }
+    while (arrayDegree-- > 0) {
+        clsName += "[]";
+    }
+    return clsName;
+}
 
 Long = function(lo, hi) {
     this.lo = lo | 0;
     this.hi = hi | 0;
+}
+Long.prototype.toString = function() {
+    var result = [];
+    var n = this;
+    var positive = Long_isPositive(n);
+    if (!positive) {
+        n = Long_neg(n);
+    }
+    var radix = new Long(10, 0);
+    do {
+        var divRem = Long_divRem(n, radix);
+        result.push(String.fromCharCode(48 + divRem[1].lo));
+        n = divRem[0];
+    } while (n.lo != 0 || n.hi != 0);
+    result = result.reverse().join('');
+    return positive ? result : "-" + result;
 }
 Long_ZERO = new Long(0, 0);
 Long_fromInt = function(val) {
     return val >= 0 ? new Long(val, 0) : new Long(val, -1);
 }
 Long_fromNumber = function(val) {
-    return new Long(val | 0, (val / 0x100000000) | 0);
+    if (val >= 0) {
+        return new Long(val | 0, (val / 0x100000000) | 0);
+    } else {
+        return new Long(val | 0, (-(Math.abs(val) / 0x100000000) - 1) | 0);
+    }
 }
 Long_toNumber = function(val) {
-    return val.hi >= 0 ? val.lo + 0x100000000 * val.hi : -0x100000000 * (val.hi ^ 0xFFFFFFFF) + val.lo;
+    var lo = val.lo;
+    var hi = val.hi;
+    if (lo < 0) {
+        lo += 0x100000000;
+    }
+    return 0x100000000 * hi + lo;
 }
 Long_add = function(a, b) {
     var a_lolo = a.lo & 0xFFFF;
@@ -410,8 +494,7 @@ Long_add = function(a, b) {
     var lohi = (a_lohi + b_lohi + (lolo >> 16)) | 0;
     var hilo = (a_hilo + b_hilo + (lohi >> 16)) | 0;
     var hihi = (a_hihi + b_hihi + (hilo >> 16)) | 0;
-    return new Long((lolo & 0xFFFF) | ((lohi & 0xFFFF) << 16),
-            (hilo & 0xFFFF) | ((hihi & 0xFFFF) << 16));
+    return new Long((lolo & 0xFFFF) | ((lohi & 0xFFFF) << 16), (hilo & 0xFFFF) | ((hihi & 0xFFFF) << 16));
 }
 Long_inc = function(a) {
     var lo = (a.lo + 1) | 0;
@@ -446,8 +529,7 @@ Long_sub = function(a, b) {
     var lohi = (a_lohi - b_lohi + (lolo >> 16)) | 0;
     var hilo = (a_hilo - b_hilo + (lohi >> 16)) | 0;
     var hihi = (a_hihi - b_hihi + (hilo >> 16)) | 0;
-    return new Long((lolo & 0xFFFF) | ((lohi & 0xFFFF) << 16),
-            (hilo & 0xFFFF) | ((hihi & 0xFFFF) << 16));
+    return new Long((lolo & 0xFFFF) | ((lohi & 0xFFFF) << 16), (hilo & 0xFFFF) | ((hihi & 0xFFFF) << 16));
 }
 Long_compare = function(a, b) {
     var r = a.hi - b.hi;
@@ -483,11 +565,25 @@ Long_mul = function(a, b) {
     var b_hilo = b.hi & 0xFFFF;
     var b_hihi = b.hi >>> 16;
 
-    var lolo = (a_lolo * b_lolo) | 0;
-    var lohi = (a_lohi * b_lolo + a_lolo * b_lohi + (lolo >> 16)) | 0;
-    var hilo = (a_hilo * b_lolo + a_lohi * b_lohi + a_lolo * b_hilo + (lohi >> 16)) | 0;
-    var hihi = (a_hihi * b_lolo + a_hilo * b_lohi + a_lohi * b_hilo + a_lolo * b_hihi + (hilo >> 16)) | 0;
-    var result = new Long((lolo & 0xFFFF) | ((lohi & 0xFFFF) << 16), (hilo & 0xFFFF) | ((hihi & 0xFFFF) << 16));
+    var lolo = 0;
+    var lohi = 0;
+    var hilo = 0;
+    var hihi = 0;
+    lolo = (a_lolo * b_lolo) | 0;
+    lohi = lolo >>> 16;
+    lohi = ((lohi & 0xFFFF) + a_lohi * b_lolo) | 0;
+    hilo = (hilo + (lohi >>> 16)) | 0;
+    lohi = ((lohi & 0xFFFF) + a_lolo * b_lohi) | 0;
+    hilo = (hilo + (lohi >>> 16)) | 0;
+    hihi = hilo >>> 16;
+    hilo = ((hilo & 0xFFFF) + a_hilo * b_lolo) | 0;
+    hihi = (hihi + (hilo >>> 16)) | 0;
+    hilo = ((hilo & 0xFFFF) + a_lohi * b_lohi) | 0;
+    hihi = (hihi + (hilo >>> 16)) | 0;
+    hilo = ((hilo & 0xFFFF) + a_lolo * b_hilo) | 0;
+    hihi = (hihi + (hilo >>> 16)) | 0;
+    hihi = (hihi + a_hihi * b_lolo + a_hilo * b_lohi + a_lohi * b_hilo + a_lolo * b_hihi) | 0;
+    var result = new Long((lolo & 0xFFFF) | (lohi << 16), (hilo & 0xFFFF) | (hihi << 16));
     return positive ? result : Long_neg(result);
 }
 Long_div = function(a, b) {
@@ -528,23 +624,36 @@ Long_xor = function(a, b) {
 }
 Long_shl = function(a, b) {
     b &= 63;
-    if (b < 32) {
+    if (b == 0) {
+        return a;
+    } else if (b < 32) {
         return new Long(a.lo << b, (a.lo >>> (32 - b)) | (a.hi << b));
+    } else if (b == 32) {
+        return new Long(0, a.lo);
     } else {
         return new Long(0, a.lo << (b - 32));
     }
 }
 Long_shr = function(a, b) {
     b &= 63;
-    if (b < 32) {
+    if (b == 0) {
+        return a;
+    } else if (b < 32) {
         return new Long((a.lo >>> b) | (a.hi << (32 - b)), a.hi >> b);
+    } else if (b == 32) {
+        return new Long(a.hi, a.hi >> 31);
     } else {
         return new Long((a.hi >> (b - 32)), a.hi >> 31);
     }
 }
 Long_shru = function(a, b) {
-    if (b < 32) {
+    b &= 63;
+    if (b == 0) {
+        return a;
+    } else if (b < 32) {
         return new Long((a.lo >>> b) | (a.hi << (32 - b)), a.hi >>> b);
+    } else if (b == 32) {
+        return new Long(a.hi, 0);
     } else {
         return new Long((a.hi >>> (b - 32)), 0);
     }
@@ -563,10 +672,10 @@ LongInt_mul = function(a, b) {
     var a_hihi = ((a.hi >>> 16) * b) | 0;
     var sup = (a.sup * b) | 0;
 
-    a_lohi = (a_lohi + (a_lolo >> 16)) | 0;
-    a_hilo = (a_hilo + (a_lohi >> 16)) | 0;
-    a_hihi = (a_hihi + (a_hilo >> 16)) | 0;
-    sup = (sup + (a_hihi >> 16)) | 0;
+    a_lohi = (a_lohi + (a_lolo >>> 16)) | 0;
+    a_hilo = (a_hilo + (a_lohi >>> 16)) | 0;
+    a_hihi = (a_hihi + (a_hilo >>> 16)) | 0;
+    sup = (sup + (a_hihi >>> 16)) | 0;
     a.lo = (a_lolo & 0xFFFF) | (a_lohi << 16);
     a.hi = (a_hilo & 0xFFFF) | (a_hihi << 16);
     a.sup = sup & 0xFFFF;
@@ -586,8 +695,8 @@ LongInt_sub = function(a, b) {
     a_hilo = (a_hilo - b_hilo + (a_lohi >> 16)) | 0;
     a_hihi = (a_hihi - b_hihi + (a_hilo >> 16)) | 0;
     sup = (a.sup - b.sup + (a_hihi >> 16)) | 0;
-    a.lo = (a_lolo & 0xFFFF) | ((a_lohi & 0xFFFF) << 16);
-    a.hi = (a_hilo & 0xFFFF) | ((a_hihi & 0xFFFF) << 16);
+    a.lo = (a_lolo & 0xFFFF) | (a_lohi << 16);
+    a.hi = (a_hilo & 0xFFFF) | (a_hihi << 16);
     a.sup = sup;
 }
 LongInt_add = function(a, b) {
@@ -608,6 +717,24 @@ LongInt_add = function(a, b) {
     a.lo = (a_lolo & 0xFFFF) | (a_lohi << 16);
     a.hi = (a_hilo & 0xFFFF) | (a_hihi << 16);
     a.sup = sup;
+}
+LongInt_inc = function(a) {
+    a.lo = (a.lo + 1) | 0;
+    if (a.lo == 0) {
+        a.hi = (a.hi + 1) | 0;
+        if (a.hi == 0) {
+            a.sup = (a.sup + 1) & 0xFFFF;
+        }
+    }
+}
+LongInt_dec = function(a) {
+    a.lo = (a.lo - 1) | 0;
+    if (a.lo == -1) {
+        a.hi = (a.hi - 1) | 0;
+        if (a.hi == -1) {
+            a.sup = (a.sup - 1) & 0xFFFF;
+        }
+    }
 }
 LongInt_ucompare = function(a, b) {
     var r = (a.sup - b.sup);
@@ -641,13 +768,23 @@ LongInt_numOfLeadingZeroBits = function(a) {
     return 31 - n;
 }
 LongInt_shl = function(a, b) {
-    if (b < 32) {
+    if (b === 0) {
+        return;
+    } else if (b < 32) {
         a.sup = ((a.hi >>> (32 - b)) | (a.sup << b)) & 0xFFFF;
         a.hi = (a.lo >>> (32 - b)) | (a.hi << b);
         a.lo <<= b;
+    } else if (b === 32) {
+        a.sup = a.hi & 0xFFFF;
+        a.hi = a.lo;
+        a.lo = 0;
     } else if (b < 64) {
         a.sup = ((a.lo >>> (64 - b)) | (a.hi << (b - 32))) & 0xFFFF;
         a.hi = a.lo << b;
+        a.lo = 0;
+    } else if (b === 64) {
+        a.sup = a.lo & 0xFFFF;
+        a.hi = 0;
         a.lo = 0;
     } else {
         a.sup = (a.lo << (b - 64)) & 0xFFFF;
@@ -656,10 +793,20 @@ LongInt_shl = function(a, b) {
     }
 }
 LongInt_shr = function(a, b) {
-    if (b < 32) {
+    if (b === 0) {
+        return;
+    } else if (b === 32) {
+        a.lo = a.hi;
+        a.hi = a.sup;
+        a.sup = 0;
+    } else if (b < 32) {
         a.lo = (a.lo >>> b) | (a.hi << (32 - b));
         a.hi = (a.hi >>> b) | (a.sup << (32 - b));
         a.sup >>>= b;
+    } else if (b === 64) {
+        a.lo = a.sup;
+        a.hi = 0;
+        a.sup = 0;
     } else if (b < 64) {
         a.lo = (a.hi >>> (b - 32)) | (a.sup << (64 - b));
         a.hi = a.sup >>> (b - 32);
@@ -693,7 +840,7 @@ LongInt_div = function(a, b) {
         if (LongInt_ucompare(t, a) >= 0) {
             while (LongInt_ucompare(t, a) > 0) {
                 LongInt_sub(t, b);
-                q = (q - 1) | 0;
+                --digit;
             }
         } else {
             while (true) {
@@ -703,7 +850,7 @@ LongInt_div = function(a, b) {
                     break;
                 }
                 t = nextT;
-                q = (q + 1) | 0;
+                ++digit;
             }
         }
         LongInt_sub(a, t);

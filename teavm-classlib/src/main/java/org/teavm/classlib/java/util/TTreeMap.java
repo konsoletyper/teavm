@@ -16,7 +16,9 @@
 package org.teavm.classlib.java.util;
 
 import org.teavm.classlib.java.io.TSerializable;
-import org.teavm.classlib.java.lang.*;
+import org.teavm.classlib.java.lang.TCloneable;
+import org.teavm.classlib.java.lang.TComparable;
+import org.teavm.classlib.java.lang.TIllegalArgumentException;
 
 public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TSerializable, TNavigableMap<K, V> {
     static class TreeNode<K, V> extends SimpleEntry<K, V> {
@@ -94,6 +96,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
     private TComparator<? super K> revertedComparator;
     private int modCount = 0;
     private EntrySet<K, V> cachedEntrySet;
+    private NavigableKeySet<K, V> cachedNavigableKeySet;
 
     public TTreeMap() {
         this((TComparator<? super K>)null);
@@ -421,42 +424,46 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
     @Override
     public Entry<K, V> lowerEntry(K key) {
-        return null;
+        return findNext(key, true);
     }
 
     @Override
     public K lowerKey(K key) {
-        return null;
+        TreeNode<K, V> node = findNext(key, true);
+        return node != null ? node.getKey() : null;
     }
 
     @Override
     public Entry<K, V> floorEntry(K key) {
-        return null;
+        return findExactOrNext(key, true);
     }
 
     @Override
     public K floorKey(K key) {
-        return null;
+        TreeNode<K, V> node = findExactOrNext(key, true);
+        return node != null ? node.getKey() : null;
     }
 
     @Override
     public Entry<K, V> ceilingEntry(K key) {
-        return null;
+        return findExactOrNext(key, false);
     }
 
     @Override
     public K ceilingKey(K key) {
-        return null;
+        TreeNode<K, V> node = findExactOrNext(key, false);
+        return node != null ? node.getKey() : null;
     }
 
     @Override
     public Entry<K, V> higherEntry(K key) {
-        return null;
+        return findNext(key, false);
     }
 
     @Override
     public K higherKey(K key) {
-        return null;
+        TreeNode<K, V> node = findNext(key, false);
+        return node != null ? node.getKey() : null;
     }
 
     @Override
@@ -494,12 +501,15 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
     @Override
     public TNavigableSet<K> navigableKeySet() {
-        return null;
+        if (cachedNavigableKeySet == null) {
+            cachedNavigableKeySet = new NavigableKeySet<>(this);
+        }
+        return cachedNavigableKeySet;
     }
 
     @Override
     public TNavigableSet<K> descendingKeySet() {
-        return null;
+        return descendingMap().navigableKeySet();
     }
 
     @Override
@@ -739,6 +749,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         private boolean toChecked;
         private EntrySet<K, V> entrySetCache;
         private boolean reverse;
+        private NavigableKeySet<K, V> cachedNavigableKeySet;
 
         public MapView(TTreeMap<K, V> owner, K from, boolean fromIncluded, boolean fromChecked,
                 K to, boolean toIncluded, boolean toChecked, boolean reverse) {
@@ -1024,14 +1035,15 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
         @Override
         public TNavigableSet<K> navigableKeySet() {
-            // TODO: implement
-            return null;
+            if (cachedNavigableKeySet == null) {
+                cachedNavigableKeySet = new NavigableKeySet<>(this);
+            }
+            return cachedNavigableKeySet;
         }
 
         @Override
         public TNavigableSet<K> descendingKeySet() {
-            // TODO: implement
-            return null;
+            return descendingMap().navigableKeySet();
         }
 
         @Override
@@ -1069,6 +1081,111 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
             } else {
                 return new MapView<>(owner, from, fromIncluded, toChecked, fromKey, inclusive, true, true);
             }
+        }
+    }
+
+    private static class NavigableKeySet<K, V> extends TAbstractSet<K> implements TNavigableSet<K> {
+        private TNavigableMap<K, V> map;
+
+        public NavigableKeySet(TNavigableMap<K, V> map) {
+            this.map = map;
+        }
+
+        @Override
+        public TComparator<? super K> comparator() {
+            return map.comparator();
+        }
+
+        @Override
+        public TSortedSet<K> subSet(K fromElement, K toElement) {
+            return map.subMap(fromElement, true, toElement, false).navigableKeySet();
+        }
+
+        @Override
+        public TSortedSet<K> headSet(K toElement) {
+            return map.headMap(toElement, false).navigableKeySet();
+        }
+
+        @Override
+        public TSortedSet<K> tailSet(K fromElement) {
+            return map.headMap(fromElement, true).navigableKeySet();
+        }
+
+        @Override
+        public K first() {
+            return map.firstKey();
+        }
+
+        @Override
+        public K last() {
+            return map.lastKey();
+        }
+
+        @Override
+        public int size() {
+            return map.size();
+        }
+
+        @Override
+        public TIterator<K> iterator() {
+            return map.keySet().iterator();
+        }
+
+        @Override
+        public K lower(K e) {
+            return map.lowerKey(e);
+        }
+
+        @Override
+        public K floor(K e) {
+            return map.floorKey(e);
+        }
+
+        @Override
+        public K ceiling(K e) {
+            return map.ceilingKey(e);
+        }
+
+        @Override
+        public K higher(K e) {
+            return map.higherKey(e);
+        }
+
+        @Override
+        public K pollFirst() {
+            TMap.Entry<K, V> entry = map.pollFirstEntry();
+            return entry != null ? entry.getKey() : null;
+        }
+
+        @Override
+        public K pollLast() {
+            TMap.Entry<K, V> entry = map.pollLastEntry();
+            return entry != null ? entry.getKey() : null;
+        }
+
+        @Override
+        public TNavigableSet<K> descendingSet() {
+            return map.descendingMap().navigableKeySet();
+        }
+
+        @Override
+        public TIterator<K> descendingIterator() {
+            return descendingSet().iterator();
+        }
+
+        @Override
+        public TNavigableSet<K> subSet(K fromElement, boolean fromInclusive, K toElement, boolean toInclusive) {
+            return map.subMap(fromElement, fromInclusive, toElement, toInclusive).navigableKeySet();
+        }
+
+        @Override
+        public TNavigableSet<K> headSet(K toElement, boolean inclusive) {
+            return map.headMap(toElement, inclusive).navigableKeySet();
+        }
+
+        @Override
+        public TNavigableSet<K> tailSet(K fromElement, boolean inclusive) {
+            return map.headMap(fromElement, inclusive).navigableKeySet();
         }
     }
 }

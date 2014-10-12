@@ -18,6 +18,7 @@ package org.teavm.vm.spi;
 import java.util.Properties;
 import org.teavm.dependency.DependencyListener;
 import org.teavm.javascript.ni.Generator;
+import org.teavm.javascript.ni.Injector;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.MethodReference;
 import org.teavm.vm.TeaVM;
@@ -36,7 +37,11 @@ public interface TeaVMHost {
 
     void add(MethodReference methodRef, Generator generator);
 
+    void add(MethodReference methodRef, Injector injector);
+
     void add(RendererListener listener);
+
+    <T> void registerService(Class<T> type, T instance);
 
     /**
      * Gets class loaded that is used by TeaVM. This class loader is usually specified by

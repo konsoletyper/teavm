@@ -29,29 +29,22 @@ public abstract class Statement {
         return new SequentialStatement();
     }
 
-    public static Statement assign(Expr left, Expr right) {
+    public static AssignmentStatement assign(Expr left, Expr right) {
         AssignmentStatement stmt = new AssignmentStatement();
         stmt.setLeftValue(left);
         stmt.setRightValue(right);
         return stmt;
     }
 
-    public static Statement exitFunction(Expr result) {
+    public static ReturnStatement exitFunction(Expr result) {
         ReturnStatement stmt = new ReturnStatement();
         stmt.setResult(result);
         return stmt;
     }
 
-    public static Statement raiseException(Expr exception) {
+    public static ThrowStatement raiseException(Expr exception) {
         ThrowStatement stmt = new ThrowStatement();
         stmt.setException(exception);
-        return stmt;
-    }
-
-    public static Statement increment(int var, int amount) {
-        IncrementStatement stmt = new IncrementStatement();
-        stmt.setVar(var);
-        stmt.setAmount(amount);
         return stmt;
     }
 
@@ -67,7 +60,7 @@ public abstract class Statement {
         return cond(predicate, consequent, Collections.<Statement>emptyList());
     }
 
-    public static Statement initClass(String className) {
+    public static InitClassStatement initClass(String className) {
         InitClassStatement stmt = new InitClassStatement();
         stmt.setClassName(className);
         return stmt;

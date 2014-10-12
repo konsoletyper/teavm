@@ -31,15 +31,16 @@ public final class Parser {
     private Parser() {
     }
 
-    public static MethodHolder parseMethod(MethodNode node, String className) {
+    public static MethodHolder parseMethod(MethodNode node, String className, String fileName) {
         ValueType[] signature = MethodDescriptor.parseSignature(node.desc);
         MethodHolder method = new MethodHolder(node.name, signature);
         parseModifiers(node.access, method);
         ProgramParser programParser = new ProgramParser();
+        programParser.setFileName(fileName);
         Program program = programParser.parse(node, className);
         new UnreachableBasicBlockEliminator().optimize(program);
         SSATransformer ssaProducer = new SSATransformer();
-        ssaProducer.transformToSSA(program, method.getParameterTypes());
+        ssaProducer.transformToSSA(program, programParser, method.getParameterTypes());
         method.setProgram(program);
         parseAnnotations(method.getAnnotations(), node.visibleAnnotations, node.invisibleAnnotations);
         while (program.variableCount() <= method.parameterCount()) {
@@ -63,9 +64,10 @@ public final class Parser {
             FieldNode fieldNode = (FieldNode)obj;
             cls.addField(parseField(fieldNode));
         }
+        String fullFileName = node.name.substring(0, node.name.lastIndexOf('/') + 1) + node.sourceFile;
         for (Object obj : node.methods) {
             MethodNode methodNode = (MethodNode)obj;
-            cls.addMethod(parseMethod(methodNode, node.name));
+            cls.addMethod(parseMethod(methodNode, node.name, fullFileName));
         }
         if (node.outerClass != null) {
             cls.setOwnerName(node.outerClass.replace('/', '.'));

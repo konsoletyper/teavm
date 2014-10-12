@@ -15,6 +15,7 @@
  */
 package org.teavm.dependency;
 
+import org.teavm.common.ServiceRepository;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
@@ -23,8 +24,10 @@ import org.teavm.model.MethodReference;
  *
  * @author Alexey Andreev
  */
-public interface DependencyAgent extends DependencyInfo {
+public interface DependencyAgent extends DependencyInfo, ServiceRepository {
     DependencyNode createNode();
+
+    DependencyAgentType getType(String name);
 
     String generateClassName();
 
@@ -32,7 +35,7 @@ public interface DependencyAgent extends DependencyInfo {
 
     MethodDependency linkMethod(MethodReference methodRef, DependencyStack stack);
 
-    void initClass(String className, final DependencyStack stack);
+    ClassDependency linkClass(String className, final DependencyStack stack);
 
     FieldDependency linkField(FieldReference fieldRef, DependencyStack stack);
 }

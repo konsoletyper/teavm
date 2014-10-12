@@ -82,17 +82,14 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
             return this;
         }
         ensureCapacity(length + string.length());
-        if (index < length) {
-            for (int i = length - 1; i >= index; --i) {
-                buffer[i + string.length()] = buffer[i];
-            }
-            length += string.length();
+        for (int i = length - 1; i >= index; --i) {
+            buffer[i + string.length()] = buffer[i];
         }
+        length += string.length();
         int j = index;
         for (int i = 0; i < string.length(); ++i) {
             buffer[j++] = string.charAt(i);
         }
-        length = j;
         return this;
     }
 

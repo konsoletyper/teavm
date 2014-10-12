@@ -261,7 +261,7 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
             doubleMantissa = abs * 0x1p1022 * binaryExponent(negExp - 1022);
         }
         long mantissa = (long)(doubleMantissa + 0.5) & 0xFFFFFFFFFFFFFL;
-        return mantissa | ((exp + 1023L) << 52) | (value < 0 ? (1L << 63) : 0);
+        return mantissa | ((exp + 1023L) << 52) | (value < 0 || 1 / value == NEGATIVE_INFINITY ? (1L << 63) : 0);
     }
 
     public static double longBitsToDouble(long bits) {

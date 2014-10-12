@@ -77,4 +77,8 @@ public class TThread extends TObject implements TRunnable {
     public long getId() {
         return 1;
     }
+
+    public static boolean holdsLock(@SuppressWarnings("unused") TObject obj) {
+        return true;
+    }
 }

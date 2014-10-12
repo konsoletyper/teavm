@@ -77,10 +77,6 @@ class ReferenceCountingVisitor implements StatementVisitor {
     }
 
     @Override
-    public void visit(ForStatement statement) {
-    }
-
-    @Override
     public void visit(BreakStatement statement) {
         if (statement.getTarget() == target) {
             ++count;
@@ -100,10 +96,6 @@ class ReferenceCountingVisitor implements StatementVisitor {
 
     @Override
     public void visit(ThrowStatement statement) {
-    }
-
-    @Override
-    public void visit(IncrementStatement statement) {
     }
 
     @Override

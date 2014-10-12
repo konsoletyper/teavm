@@ -15,8 +15,6 @@
  */
 package org.teavm.vm;
 
-import org.teavm.common.FiniteExecutor;
-import org.teavm.common.SimpleFiniteExecutor;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.parsing.ClasspathClassHolderSource;
 
@@ -27,7 +25,6 @@ import org.teavm.parsing.ClasspathClassHolderSource;
 public class TeaVMBuilder {
     ClassHolderSource classSource;
     ClassLoader classLoader;
-    FiniteExecutor executor = new SimpleFiniteExecutor();
 
     public TeaVMBuilder() {
         classLoader = TeaVMBuilder.class.getClassLoader();
@@ -52,16 +49,7 @@ public class TeaVMBuilder {
         return this;
     }
 
-    public FiniteExecutor getExecutor() {
-        return executor;
-    }
-
-    public TeaVMBuilder setExecutor(FiniteExecutor executor) {
-        this.executor = executor;
-        return this;
-    }
-
     public TeaVM build() {
-        return new TeaVM(classSource, classLoader, executor);
+        return new TeaVM(classSource, classLoader);
     }
 }

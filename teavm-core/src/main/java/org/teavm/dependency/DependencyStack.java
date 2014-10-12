@@ -15,6 +15,7 @@
  */
 package org.teavm.dependency;
 
+import org.teavm.model.InstructionLocation;
 import org.teavm.model.MethodReference;
 
 /**
@@ -25,6 +26,7 @@ public class DependencyStack {
     public static final DependencyStack ROOT = new DependencyStack();
     private MethodReference method;
     private DependencyStack cause;
+    private InstructionLocation location;
 
     private DependencyStack() {
     }
@@ -33,11 +35,20 @@ public class DependencyStack {
         this(method, ROOT);
     }
 
+    public DependencyStack(MethodReference method, InstructionLocation location) {
+        this(method, location, ROOT);
+    }
+
     public DependencyStack(MethodReference method, DependencyStack cause) {
+        this(method, null, cause);
+    }
+
+    public DependencyStack(MethodReference method, InstructionLocation location, DependencyStack cause) {
         if (method == null || cause == null) {
             throw new IllegalArgumentException("Arguments must not be null");
         }
         this.method = method;
+        this.location = location;
         this.cause = cause;
     }
 
@@ -47,6 +58,10 @@ public class DependencyStack {
 
     public DependencyStack getCause() {
         return cause;
+    }
+
+    public InstructionLocation getLocation() {
+        return location;
     }
 
     @Override
@@ -59,6 +74,9 @@ public class DependencyStack {
                 break;
             } else {
                 sb.append(" used by " + stack.method);
+                if (stack.location != null) {
+                    sb.append(" : ").append(stack.location.getLine());
+                }
                 stack = stack.cause;
             }
         }

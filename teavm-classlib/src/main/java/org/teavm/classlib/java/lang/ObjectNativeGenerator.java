@@ -17,16 +17,12 @@ package org.teavm.classlib.java.lang;
 
 import java.io.IOException;
 import org.teavm.codegen.SourceWriter;
-import org.teavm.dependency.DependencyChecker;
-import org.teavm.dependency.DependencyPlugin;
-import org.teavm.dependency.MethodDependency;
+import org.teavm.dependency.*;
 import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.GeneratorContext;
 import org.teavm.javascript.ni.Injector;
 import org.teavm.javascript.ni.InjectorContext;
-import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
-import org.teavm.model.ValueType;
 
 /**
  *
@@ -62,13 +58,13 @@ public class ObjectNativeGenerator implements Generator, Injector, DependencyPlu
     }
 
     @Override
-    public void methodAchieved(DependencyChecker checker, MethodDependency method) {
+    public void methodAchieved(DependencyAgent agent, MethodDependency method) {
         switch (method.getReference().getName()) {
             case "clone":
                 method.getVariable(0).connect(method.getResult());
                 break;
             case "getClass":
-                achieveGetClass(checker, method);
+                achieveGetClass(agent, method);
                 break;
             case "wrap":
                 method.getVariable(1).connect(method.getResult());
@@ -87,12 +83,10 @@ public class ObjectNativeGenerator implements Generator, Injector, DependencyPlu
         writer.append(".constructor)");
     }
 
-    private void achieveGetClass(DependencyChecker checker, MethodDependency method) {
-        String classClass = "java.lang.Class";
-        MethodReference initMethod = new MethodReference(classClass, new MethodDescriptor("createNew",
-                ValueType.object(classClass)));
-        checker.addEntryPoint(initMethod);
-        method.getResult().propagate("java.lang.Class");
+    private void achieveGetClass(DependencyAgent agent, MethodDependency method) {
+        MethodReference initMethod = new MethodReference(Class.class, "createNew", Class.class);
+        agent.linkMethod(initMethod, method.getStack()).use();
+        method.getResult().propagate(agent.getType("java.lang.Class"));
     }
 
     private void generateHashCode(GeneratorContext context, SourceWriter writer) throws IOException {

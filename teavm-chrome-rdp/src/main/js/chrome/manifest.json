@@ -1,0 +1,18 @@
+{
+    "manifest_version": 2,
+
+    "name": "TeaVM debugger agent",
+    "description": "TeaVM debugger agent, that sends RDP commands over WebSocket",
+    "version": "0.2",
+
+    "permissions" : ["debugger", "activeTab", "tabs"],
+
+    "browser_action" : {
+        "default_icon": "teavm-16.png",
+        "default_title ": "Connect to TeaVM debugger"
+    },
+
+    "background": {
+        "scripts": ["main.js"]
+    }
+}

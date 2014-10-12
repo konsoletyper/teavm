@@ -54,16 +54,16 @@ public class SystemNativeGenerator implements Generator, DependencyPlugin {
     }
 
     @Override
-    public void methodAchieved(DependencyChecker checker, MethodDependency method) {
+    public void methodAchieved(DependencyAgent agent, MethodDependency method) {
         switch (method.getReference().getName()) {
             case "doArrayCopy":
                 achieveArrayCopy(method);
                 break;
             case "setOut":
-                achieveSetOut(checker, method);
+                achieveSetOut(agent, method);
                 break;
             case "setErr":
-                achieveSetErr(checker, method);
+                achieveSetErr(agent, method);
                 break;
         }
     }
@@ -97,13 +97,13 @@ public class SystemNativeGenerator implements Generator, DependencyPlugin {
         src.getArrayItem().connect(dest.getArrayItem());
     }
 
-    private void achieveSetErr(DependencyChecker checker, MethodDependency method) {
-        FieldDependency fieldDep = checker.linkField(new FieldReference("java.lang.System", "err"), method.getStack());
+    private void achieveSetErr(DependencyAgent agent, MethodDependency method) {
+        FieldDependency fieldDep = agent.linkField(new FieldReference("java.lang.System", "err"), method.getStack());
         method.getVariable(1).connect(fieldDep.getValue());
     }
 
-    private void achieveSetOut(DependencyChecker checker, MethodDependency method) {
-        FieldDependency fieldDep = checker.linkField(new FieldReference("java.lang.System", "out"), method.getStack());
+    private void achieveSetOut(DependencyAgent agent, MethodDependency method) {
+        FieldDependency fieldDep = agent.linkField(new FieldReference("java.lang.System", "out"), method.getStack());
         method.getVariable(1).connect(fieldDep.getValue());
     }
 }
