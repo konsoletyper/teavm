@@ -19,7 +19,7 @@ package org.teavm.classlib.java.util.regex;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-
+import org.junit.Test;
 import junit.framework.TestCase;
 
 /**
@@ -27,6 +27,7 @@ import junit.framework.TestCase;
  */
 @SuppressWarnings("nls")
 public class ModeTest extends TestCase {
+    @Test
     public void testCase() throws PatternSyntaxException {
         Pattern p;
         Matcher m;
@@ -54,6 +55,7 @@ public class ModeTest extends TestCase {
         assertFalse(m.find());
     }
 
+    @Test
     public void testMultiline() throws PatternSyntaxException {
         Pattern p;
         Matcher m;

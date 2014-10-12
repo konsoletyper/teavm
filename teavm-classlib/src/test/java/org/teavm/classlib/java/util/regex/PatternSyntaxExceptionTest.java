@@ -18,7 +18,7 @@ package org.teavm.classlib.java.util.regex;
 
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-
+import org.junit.Test;
 import junit.framework.TestCase;
 
 
@@ -27,6 +27,7 @@ import junit.framework.TestCase;
  */
 @SuppressWarnings("nls")
 public class PatternSyntaxExceptionTest extends TestCase {
+    @Test
     public void testCase() {
         String regex = "(";
         try {
@@ -43,6 +44,7 @@ public class PatternSyntaxExceptionTest extends TestCase {
         }
     }
 
+    @Test
     public void testCase2() {
         String regex = "[4-";
         try {

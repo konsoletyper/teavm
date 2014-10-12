@@ -636,8 +636,12 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
             case 0x1E:
             case 0x1F:
                 return true;
+            case 0xA0:
+            case 0x2007:
+            case 0x202F:
+                return false;
             default:
-                return isWhitespace(codePoint);
+                return isSpaceChar(codePoint);
         }
     }
 

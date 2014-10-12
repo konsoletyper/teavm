@@ -626,42 +626,6 @@ public class MatcherTest {
     }
 
     @Test
-    public void testAllCodePoints() {
-        // Regression for HARMONY-3145
-        int[] codePoint = new int[1];
-        Pattern p = Pattern.compile("(\\p{all})+");
-        boolean res = true;
-        int cnt = 0;
-        String s;
-        for (int i = 0; i < 0x110000; i++) {
-            codePoint[0] = i;
-            s = new String(codePoint, 0, 1);
-            if (!s.matches(p.toString())) {
-                cnt++;
-                res = false;
-            }
-        }
-        assertTrue(res);
-        assertEquals(0, cnt);
-
-        p = Pattern.compile("(\\P{all})+");
-        res = true;
-        cnt = 0;
-
-        for (int i = 0; i < 0x110000; i++) {
-            codePoint[0] = i;
-            s = new String(codePoint, 0, 1);
-            if (!s.matches(p.toString())) {
-                cnt++;
-                res = false;
-            }
-        }
-
-        assertFalse(res);
-        assertEquals(0x110000, cnt);
-    }
-
-    @Test
     public void testFindRegionChanged() {
         // Regression for HARMONY-625
         Pattern pattern = Pattern.compile("(?s).*");
@@ -705,8 +669,7 @@ public class MatcherTest {
 
     @Test
     public void testGeneralPunctuationCategory() {
-        String[] s = { ",", "!", "\"", "#", "%", "&", "'", "(", ")", "-", ".",
-                "/" };
+        String[] s = { ",", "!", "\"", "#", "%", "&", "'", "(", ")", "-", ".", "/" };
         String regexp = "\\p{P}";
 
         for (int i = 0; i < s.length; i++) {
@@ -728,12 +691,9 @@ public class MatcherTest {
 
         String floatRegex = getHexFloatRegex();
         hitEndTest(true, "#03.0", floatRegex, Double.toHexString(-1.234d), true);
-        hitEndTest(true, "#03.1", floatRegex, "1 ABC"
-                + Double.toHexString(Double.NaN) + "buhuhu", false);
-        hitEndTest(true, "#03.2", floatRegex, Double.toHexString(-0.0) + "--",
-                false);
-        hitEndTest(true, "#03.3", floatRegex, "--"
-                + Double.toHexString(Double.MIN_VALUE) + "--", false);
+        hitEndTest(true, "#03.1", floatRegex, "1 ABC" + Double.toHexString(Double.NaN) + "buhuhu", false);
+        hitEndTest(true, "#03.2", floatRegex, Double.toHexString(-0.0) + "--", false);
+        hitEndTest(true, "#03.3", floatRegex, "--" + Double.toHexString(Double.MIN_VALUE) + "--", false);
 
         hitEndTest(true, "#04.0", "(\\d+) fish (\\d+) fish (\\w+) fish (\\d+)",
                 "1 fish 2 fish red fish 5", true);
@@ -743,10 +703,8 @@ public class MatcherTest {
 
     @Test
     public void testToString() {
-        String result = Pattern.compile("(\\d{1,3})").matcher(
-                "aaaa123456789045").toString();
-        assertTrue("The result doesn't contain pattern info", result
-                .contains("(\\d{1,3})"));
+        String result = Pattern.compile("(\\d{1,3})").matcher("aaaa123456789045").toString();
+        assertTrue("The result doesn't contain pattern info", result.contains("(\\d{1,3})"));
     }
 
     private void hitEndTest(boolean callFind, String testNo, String regex,
