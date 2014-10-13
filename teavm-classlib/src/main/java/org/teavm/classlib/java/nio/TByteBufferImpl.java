@@ -94,11 +94,6 @@ class TByteBufferImpl extends TByteBuffer {
     }
 
     @Override
-    public int compareTo(TByteBuffer other) {
-        return 0;
-    }
-
-    @Override
     public boolean isDirect() {
         return direct;
     }
