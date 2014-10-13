@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-  <feature url="features/teavm-eclipse-feature_0.2.0.qualifier.jar" id="teavm-eclipse-feature"
-      version="0.2.0.qualifier">
+  <feature url="features/teavm-eclipse-feature_0.3.0.qualifier.jar" id="teavm-eclipse-feature"
+      version="0.3.0.qualifier">
     <category name="teavm-category"/>
   </feature>
-  <feature url="features/teavm-eclipse-m2e-feature_0.2.0.qualifier.jar" id="teavm-eclipse-m2e-feature"
-      version="0.2.0.qualifier">
+  <feature url="features/teavm-eclipse-m2e-feature_0.3.0.qualifier.jar" id="teavm-eclipse-m2e-feature"
+      version="0.3.0.qualifier">
     <category name="teavm-category"/>
   </feature>
   <category-def name="teavm-category" label="TeaVM"/>
