@@ -1,6 +1,5 @@
 package org.teavm.classlib.java.nio;
 
-
 /**
  *
  * @author Alexey Andreev
@@ -10,28 +9,30 @@ class TByteBufferImpl extends TByteBuffer {
     private boolean readOnly;
 
     public TByteBufferImpl(int capacity, boolean direct) {
-        this(0, new byte[capacity], 0, capacity, direct, false);
+        this(0, capacity, new byte[capacity], 0, capacity, direct, false);
     }
 
-    public TByteBufferImpl(int start, byte[] array, int position, int limit, boolean direct, boolean readOnly) {
-        super(start, array, position, limit);
+    public TByteBufferImpl(int start, int capacity, byte[] array, int position, int limit,
+            boolean direct, boolean readOnly) {
+        super(start, capacity, array, position, limit);
         this.direct = direct;
         this.readOnly = readOnly;
     }
 
     @Override
     public TByteBuffer slice() {
-        return new TByteBufferImpl(position, array, 0, array.length - position, direct, readOnly);
+        return new TByteBufferImpl(position, array.length - position,  array, 0, array.length - position,
+                direct, readOnly);
     }
 
     @Override
     public TByteBuffer duplicate() {
-        return new TByteBufferImpl(start, array, position, limit, direct, readOnly);
+        return new TByteBufferImpl(start, capacity, array, position, limit, direct, readOnly);
     }
 
     @Override
     public TByteBuffer asReadOnlyBuffer() {
-        return new TByteBufferImpl(start, array, position, limit, direct, true);
+        return new TByteBufferImpl(start, capacity, array, position, limit, direct, true);
     }
 
     @Override

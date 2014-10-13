@@ -11,23 +11,30 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
     byte[] array;
     TByteOrder order = TByteOrder.BIG_ENDIAN;
 
-    TByteBuffer(int start, byte[] array, int offset, int length) {
-        super(array.length - start);
+    TByteBuffer(int start, int capacity, byte[] array, int offset, int length) {
+        super(capacity);
+        this.start = start;
         this.array = array;
         position = offset;
         limit = position + length;
     }
 
     public static TByteBuffer allocateDirect(int capacity) {
+        if (capacity < 0) {
+            throw new IllegalArgumentException("Capacity is negative: " + capacity);
+        }
         return new TByteBufferImpl(capacity, true);
     }
 
     public static TByteBuffer allocate(int capacity) {
+        if (capacity < 0) {
+            throw new IllegalArgumentException("Capacity is negative: " + capacity);
+        }
         return new TByteBufferImpl(capacity, false);
     }
 
     public static TByteBuffer wrap(byte[] array, int offset, int length) {
-        return new TByteBufferImpl(0, array, offset, offset + length, false, false);
+        return new TByteBufferImpl(0, array.length, array, offset, offset + length, false, false);
     }
 
     public static TByteBuffer wrap(byte[] array) {
