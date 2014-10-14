@@ -55,6 +55,9 @@ Live examples
 
 Compare the speed of JavaScript produced by TeaVM and GWT here: http://teavm.org/live-examples/jbox2d-benchmark/
 
+Play [Geobot](http://teavm.org/live-examples/geobot/), a little physics-based puzzle game.
+Thanks to [joan789](http://joan789.deviantart.com/) for her great artwork!
+
 Thanks to [Jaroslav Tulach](http://wiki.apidesign.org/wiki/User:JaroslavTulach), author of DukeScript, we have several
 DukeScript example applications. One is the minesweeper game.
 You can try its TeaVM-compiled version [here](http://xelfi.cz/minesweeper/teavm/), and then take a look at
