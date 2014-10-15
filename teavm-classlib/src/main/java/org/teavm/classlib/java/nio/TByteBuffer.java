@@ -11,12 +11,12 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
     byte[] array;
     TByteOrder order = TByteOrder.BIG_ENDIAN;
 
-    TByteBuffer(int start, int capacity, byte[] array, int offset, int length) {
+    TByteBuffer(int start, int capacity, byte[] array, int position, int limit) {
         super(capacity);
         this.start = start;
         this.array = array;
-        position = offset;
-        limit = position + length;
+        this.position = position;
+        this.limit = limit;
     }
 
     public static TByteBuffer allocateDirect(int capacity) {
