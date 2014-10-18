@@ -53,8 +53,11 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
     private String projectName;
 
     public PreferencesBasedTeaVMProjectSettings(IProject project) {
-        ProjectScope scope = new ProjectScope(project);
-        globalPreferences = scope.getNode(TeaVMEclipsePlugin.ID);
+        this(project, new ProjectScope(project).getNode(TeaVMEclipsePlugin.ID));
+    }
+    
+    public PreferencesBasedTeaVMProjectSettings(IProject project, IEclipsePreferences preferences) {
+        globalPreferences = preferences;
         projectName = project.getName();
     }
 

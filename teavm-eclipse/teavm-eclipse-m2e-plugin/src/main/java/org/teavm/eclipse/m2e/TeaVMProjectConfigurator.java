@@ -1,5 +1,6 @@
 package org.teavm.eclipse.m2e;
 
+import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
@@ -57,8 +58,11 @@ public class TeaVMProjectConfigurator extends AbstractProjectConfigurator {
         }
         monitor.beginTask("Configuring TeaVM builder", sz * 1000);
         TeaVMProjectSettings settings = teaVMPlugin.getSettings(project);
-        settings.load();
         try {
+            if (!hasNature) {
+                teaVMPlugin.addNature(new SubProgressMonitor(monitor, 1000), project);
+            }
+            settings.load();
             Set<String> coveredProfiles = new HashSet<>();
             for (MojoExecution execution : executions) {
                 if (monitor.isCanceled()) {
@@ -81,9 +85,6 @@ public class TeaVMProjectConfigurator extends AbstractProjectConfigurator {
                 if (!coveredProfiles.contains(profile.getName()) && profile.getExternalToolId().equals(TOOL_ID)) {
                     settings.deleteProfile(profile);
                 }
-            }
-            if (!hasNature) {
-                teaVMPlugin.addNature(new SubProgressMonitor(monitor, 1000), project);
             }
             settings.save();
         } finally {
@@ -179,24 +180,20 @@ public class TeaVMProjectConfigurator extends AbstractProjectConfigurator {
     }
 
     private String absolutePathToWorkspacePath(String path) {
-        try {
-            IStringVariableManager varManager = VariablesPlugin.getDefault().getStringVariableManager();
-            IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-            IContainer[] containers = root.findContainersForLocationURI(new URI("file://" + path));
-            if (containers.length == 0) {
-                return null;
-            }
-            IContainer container = containers[0];
-            String suffix = "";
-            while (!(container instanceof IProject)) {
-                suffix = "/" + container.getName() + suffix;
-                container = container.getParent();
-            }
-            path = container.getFullPath().toString();
-            return varManager.generateVariableExpression("workspace_loc", path) + suffix;
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
+        IStringVariableManager varManager = VariablesPlugin.getDefault().getStringVariableManager();
+        IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
+        IContainer[] containers = root.findContainersForLocationURI(new File(path).toURI());
+        if (containers.length == 0) {
+            return null;
         }
+        IContainer container = containers[0];
+        String suffix = "";
+        while (!(container instanceof IProject)) {
+            suffix = "/" + container.getName() + suffix;
+            container = container.getParent();
+        }
+        path = container.getFullPath().toString();
+        return varManager.generateVariableExpression("workspace_loc", path) + suffix;
     }
 
     private TeaVMRuntimeMode getRuntimeMode(String name) {

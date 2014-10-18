@@ -16,18 +16,21 @@
 package org.teavm.eclipse;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IProjectDescription;
+import org.eclipse.core.resources.ProjectScope;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.preferences.IEclipsePreferences;
 import org.eclipse.jface.operation.IRunnableContext;
 import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
+import org.osgi.service.prefs.BackingStoreException;
 
 /**
  *
@@ -90,6 +93,14 @@ public class TeaVMEclipsePlugin extends AbstractUIPlugin {
     }
 
     public void addNature(IProgressMonitor progressMonitor, IProject project) throws CoreException {
+        ProjectScope scope = new ProjectScope(project);
+        try {
+            IEclipsePreferences prefs = scope.getNode(TeaVMEclipsePlugin.ID);
+            prefs.flush();
+            settingsMap.put(project, new PreferencesBasedTeaVMProjectSettings(project, prefs));
+        } catch (BackingStoreException e) {
+            throw new RuntimeException("Error creating preferences", e);
+        }
         IProjectDescription projectDescription = project.getDescription();
         String[] natureIds = projectDescription.getNatureIds();
         natureIds = Arrays.copyOf(natureIds, natureIds.length + 1);
