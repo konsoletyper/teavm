@@ -164,11 +164,11 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     }
 
     private void renderRuntimeCls() throws IOException {
-        writer.append("$rt_cls").ws().append("=").ws().append("function(clsProto)").ws().append("{")
+        writer.append("function $rt_cls").ws().append("(clsProto)").ws().append("{")
                 .indent().softNewLine();
         String classClass = "java.lang.Class";
         writer.append("var cls").ws().append("=").ws().append("clsProto.classObject;").softNewLine();
-        writer.append("if").ws().append("(cls").ws().append("===").ws().append("undefined)").ws()
+        writer.append("if").ws().append("(typeof cls").ws().append("===").ws().append("'undefined')").ws()
                 .append("{").softNewLine().indent();
         MethodReference createMethodRef = new MethodReference(classClass, "createNew", ValueType.object(classClass));
         writer.append("cls").ws().append("=").ws().appendMethodBody(createMethodRef).append("();").softNewLine();
@@ -199,10 +199,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     }
 
     private void renderRuntimeString() throws IOException {
-        String stringClass = "java.lang.String";
-        MethodReference stringCons = new MethodReference(stringClass, "<init>",
-                ValueType.arrayOf(ValueType.CHARACTER), ValueType.VOID);
-        writer.append("$rt_str = function(str) {").indent().softNewLine();
+        MethodReference stringCons = new MethodReference(String.class, "<init>", char[].class, void.class);
+        writer.append("function $rt_str(str) {").indent().softNewLine();
         writer.append("var characters = $rt_createCharArray(str.length);").softNewLine();
         writer.append("var charsBuffer = characters.data;").softNewLine();
         writer.append("for (var i = 0; i < str.length; i = (i + 1) | 0) {").indent().softNewLine();
@@ -214,11 +212,10 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     }
 
     private void renderRuntimeUnwrapString() throws IOException {
-        String stringClass = "java.lang.String";
-        MethodReference stringLen = new MethodReference(stringClass, "length", ValueType.INTEGER);
-        MethodReference getChars = new MethodReference(stringClass, "getChars", ValueType.INTEGER, ValueType.INTEGER,
-                ValueType.arrayOf(ValueType.CHARACTER), ValueType.INTEGER, ValueType.VOID);
-        writer.append("$rt_ustr = function(str) {").indent().softNewLine();
+        MethodReference stringLen = new MethodReference(String.class, "length", int.class);
+        MethodReference getChars = new MethodReference(String.class, "getChars", int.class, int.class,
+                char[].class, int.class, void.class);
+        writer.append("function $rt_ustr(str) {").indent().softNewLine();
         writer.append("var result = \"\";").softNewLine();
         writer.append("var sz = ").appendMethodBody(stringLen).append("(str);").softNewLine();
         writer.append("var array = $rt_createCharArray(sz);").softNewLine();
@@ -232,7 +229,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
 
     private void renderRuntimeNullCheck() throws IOException {
         String npe = "java.lang.NullPointerException";
-        writer.append("$rt_nullCheck = function(val) {").indent().softNewLine();
+        writer.append("function $rt_nullCheck(val) {").indent().softNewLine();
         writer.append("if (val === null) {").indent().softNewLine();
         writer.append("$rt_throw(").appendClass(npe).append('.').appendMethod(npe, "<init>", ValueType.VOID)
                 .append("());").softNewLine();
@@ -242,14 +239,14 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     }
 
     private void renderRuntimeIntern() throws IOException {
-        writer.append("$rt_intern = function(str) {").indent().softNewLine();
+        writer.append("function $rt_intern(str) {").indent().softNewLine();
         writer.append("return ").appendMethodBody(new MethodReference(String.class, "intern", String.class))
             .append("(str);").softNewLine();
         writer.outdent().append("}").newLine();
     }
 
     private void renderRuntimeObjcls() throws IOException {
-        writer.append("$rt_objcls = function() { return ").appendClass("java.lang.Object").append("; }").newLine();
+        writer.append("function $rt_objcls() { return ").appendClass("java.lang.Object").append("; }").newLine();
     }
 
     public void render(ClassNode cls) throws RenderingException {
