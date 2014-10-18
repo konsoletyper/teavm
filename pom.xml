@@ -120,7 +120,7 @@
       <dependency>
         <groupId>org.ow2.asm</groupId>
         <artifactId>asm-debug-all</artifactId>
-        <version>4.2</version>
+        <version>5.0.3</version>
       </dependency>
       <dependency>
         <groupId>org.apache.maven</groupId>
@@ -192,6 +192,7 @@
           </executions>
           <configuration>
             <show>protected</show>
+            <failOnError>false</failOnError>
           </configuration>
         </plugin>
         <plugin>
