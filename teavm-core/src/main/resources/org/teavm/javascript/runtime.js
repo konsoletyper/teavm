@@ -13,17 +13,18 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-$rt_lastObjectId = 0;
-$rt_nextId = function() {
+"use strict";
+var $rt_lastObjectId = 0;
+function $rt_nextId() {
     return $rt_lastObjectId++;
 }
-$rt_compare = function(a, b) {
+function $rt_compare(a, b) {
     return a > b ? 1 : a < b ? -1 : 0;
 }
-$rt_isInstance = function(obj, cls) {
+function $rt_isInstance(obj, cls) {
     return obj !== null && !!obj.constructor.$meta && $rt_isAssignable(obj.constructor, cls);
 }
-$rt_isAssignable = function(from, to) {
+function $rt_isAssignable(from, to) {
     if (from === to) {
         return true;
     }
@@ -35,7 +36,7 @@ $rt_isAssignable = function(from, to) {
     }
     return false;
 }
-$rt_createArray = function(cls, sz) {
+function $rt_createArray(cls, sz) {
     var data = new Array(sz);
     var arr = new ($rt_arraycls(cls))(data);
     for (var i = 0; i < sz; i = (i + 1) | 0) {
@@ -43,14 +44,14 @@ $rt_createArray = function(cls, sz) {
     }
     return arr;
 }
-$rt_wrapArray = function(cls, data) {
+function $rt_wrapArray(cls, data) {
     var arr = new ($rt_arraycls(cls))(data);
     return arr;
 }
-$rt_createUnfilledArray = function(cls, sz) {
+function $rt_createUnfilledArray(cls, sz) {
     return new ($rt_arraycls(cls))(new Array(sz));
 }
-$rt_createLongArray = function(sz) {
+function $rt_createLongArray(sz) {
     var data = new Array(sz);
     var arr = new ($rt_arraycls($rt_longcls()))(data);
     for (var i = 0; i < sz; i = (i + 1) | 0) {
@@ -58,10 +59,21 @@ $rt_createLongArray = function(sz) {
     }
     return arr;
 }
+var $rt_createNumericArray;
+var $rt_createCharArray;
+var $rt_createByteArray;
+var $rt_createShortArray;
+var $rt_createIntArray;
+var $rt_createBooleanArray;
+var $rt_createFloatArray;
+var $rt_createDoubleArray;
 if (ArrayBuffer) {
     $rt_createNumericArray = function(cls, nativeArray) {
         return new ($rt_arraycls(cls))(nativeArray);
-    }
+    };
+    $rt_createCharArray = function(sz) {
+        return $rt_createNumericArray($rt_bytecls(), new Uint16Array(new ArrayBuffer(sz << 1)), 0);
+    };
     $rt_createByteArray = function(sz) {
         return $rt_createNumericArray($rt_bytecls(), new Int8Array(new ArrayBuffer(sz)), 0);
     };
@@ -80,17 +92,14 @@ if (ArrayBuffer) {
     $rt_createDoubleArray = function(sz) {
         return $rt_createNumericArray($rt_doublecls(), new Float64Array(new ArrayBuffer(sz << 3)), 0);
     };
-    $rt_createCharArray = function(sz) {
-        return $rt_createNumericArray($rt_charcls(), new Uint16Array(new ArrayBuffer(sz << 1)), 0);
-    };
 } else {
     $rt_createNumericArray = function(cls, sz) {
-        var data = new Array(sz);
-        var arr = new ($rt_arraycls(cls))(data);
-        for (var i = 0; i < sz; i = (i + 1) | 0) {
-            data[i] = 0;
-        }
-        return arr;
+      var data = new Array(sz);
+      var arr = new ($rt_arraycls(cls))(data);
+      for (var i = 0; i < sz; i = (i + 1) | 0) {
+          data[i] = 0;
+      }
+      return arr;
     }
     $rt_createByteArray = function(sz) { return $rt_createNumericArray($rt_bytecls(), sz); }
     $rt_createShortArray = function(sz) { return $rt_createNumericArray($rt_shortcls(), sz); }
@@ -100,8 +109,8 @@ if (ArrayBuffer) {
     $rt_createDoubleArray = function(sz) { return $rt_createNumericArray($rt_doublecls(), sz); }
     $rt_createCharArray = function(sz) { return $rt_createNumericArray($rt_charcls(), sz); }
 }
-$rt_arraycls = function(cls) {
-    if (cls.$array == undefined) {
+function $rt_arraycls(cls) {
+    if (typeof cls.$array === 'undefined') {
         var arraycls = function(data) {
             this.data = data;
             this.$id = $rt_nextId();
@@ -124,51 +133,51 @@ $rt_arraycls = function(cls) {
     }
     return cls.$array;
 }
-$rt_createcls = function() {
+function $rt_createcls() {
     return {
         $meta : {
             supertypes : []
         }
     };
 }
-$rt_booleanclsCache = null;
-$rt_booleancls = function() {
-    if ($rt_booleanclsCache == null) {
+var $rt_booleanclsCache = null;
+function $rt_booleancls() {
+    if ($rt_booleanclsCache === null) {
         $rt_booleanclsCache = $rt_createcls();
         $rt_booleanclsCache.primitive = true;
         $rt_booleanclsCache.name = "boolean";
     }
     return $rt_booleanclsCache;
 }
-$rt_charclsCache = null;
-$rt_charcls = function() {
-    if ($rt_charclsCache == null) {
+var $rt_charclsCache = null;
+function $rt_charcls() {
+    if ($rt_charclsCache === null) {
         $rt_charclsCache = $rt_createcls();
         $rt_charclsCache.primitive = true;
         $rt_charclsCache.name = "char";
     }
     return $rt_charclsCache;
 }
-$rt_byteclsCache = null;
-$rt_bytecls = function() {
-    if ($rt_byteclsCache == null) {
+var $rt_byteclsCache = null;
+function $rt_bytecls() {
+    if ($rt_byteclsCache === null) {
         $rt_byteclsCache = $rt_createcls();
         $rt_byteclsCache.primitive = true;
         $rt_byteclsCache.name = "byte";
     }
     return $rt_byteclsCache;
 }
-$rt_shortclsCache = null;
-$rt_shortcls = function() {
-    if ($rt_shortclsCache == null) {
+var $rt_shortclsCache = null;
+function $rt_shortcls() {
+    if ($rt_shortclsCache === null) {
         $rt_shortclsCache = $rt_createcls();
         $rt_shortclsCache.primitive = true;
         $rt_shortclsCache.name = "short";
     }
     return $rt_shortclsCache;
 }
-$rt_intclsCache = null;
-$rt_intcls = function() {
+var $rt_intclsCache = null;
+function $rt_intcls() {
     if ($rt_intclsCache === null) {
         $rt_intclsCache = $rt_createcls();
         $rt_intclsCache.primitive = true;
@@ -176,8 +185,8 @@ $rt_intcls = function() {
     }
     return $rt_intclsCache;
 }
-$rt_longclsCache = null;
-$rt_longcls = function() {
+var $rt_longclsCache = null;
+function $rt_longcls() {
     if ($rt_longclsCache === null) {
         $rt_longclsCache = $rt_createcls();
         $rt_longclsCache.primitive = true;
@@ -185,8 +194,8 @@ $rt_longcls = function() {
     }
     return $rt_longclsCache;
 }
-$rt_floatclsCache = null;
-$rt_floatcls = function() {
+var $rt_floatclsCache = null;
+function $rt_floatcls() {
     if ($rt_floatclsCache === null) {
         $rt_floatclsCache = $rt_createcls();
         $rt_floatclsCache.primitive = true;
@@ -194,8 +203,8 @@ $rt_floatcls = function() {
     }
     return $rt_floatclsCache;
 }
-$rt_doubleclsCache = null;
-$rt_doublecls = function() {
+var $rt_doubleclsCache = null;
+function $rt_doublecls() {
     if ($rt_doubleclsCache === null) {
         $rt_doubleclsCache = $rt_createcls();
         $rt_doubleclsCache.primitive = true;
@@ -203,8 +212,8 @@ $rt_doublecls = function() {
     }
     return $rt_doubleclsCache;
 }
-$rt_voidclsCache = null;
-$rt_voidcls = function() {
+var $rt_voidclsCache = null;
+function $rt_voidcls() {
     if ($rt_voidclsCache === null) {
         $rt_voidclsCache = $rt_createcls();
         $rt_voidclsCache.primitive = true;
@@ -212,7 +221,7 @@ $rt_voidcls = function() {
     }
     return $rt_voidclsCache;
 }
-$rt_clinit = function(cls) {
+function $rt_clinit(cls) {
     if (cls.$clinit) {
         var f = cls.$clinit;
         delete cls.$clinit;
@@ -220,12 +229,12 @@ $rt_clinit = function(cls) {
     }
     return cls;
 }
-$rt_init = function(cls, constructor, args) {
+function $rt_init(cls, constructor, args) {
     var obj = new cls();
     cls.prototype[constructor].apply(obj, args);
     return obj;
 }
-$rt_throw = function(ex) {
+function $rt_throw(ex) {
     var err = ex.$jsException;
     if (!err) {
         var err = new Error("Java exception thrown");
@@ -234,7 +243,7 @@ $rt_throw = function(ex) {
     }
     throw err;
 }
-$rt_createMultiArray = function(cls, dimensions) {
+function $rt_createMultiArray(cls, dimensions) {
     var arrays = new Array($rt_primitiveArrayCount(dimensions));
     var firstDim = dimensions[0] | 0;
     for (var i = 0 | 0; i < arrays.length; i = (i + 1) | 0) {
@@ -242,7 +251,7 @@ $rt_createMultiArray = function(cls, dimensions) {
     }
     return $rt_createMultiArrayImpl(cls, arrays, dimensions);
 }
-$rt_createByteMultiArray = function(dimensions) {
+function $rt_createByteMultiArray(dimensions) {
     var arrays = new Array($rt_primitiveArrayCount(dimensions));
     var firstDim = dimensions[0] | 0;
     for (var i = 0 | 0; i < arrays.length; i = (i + 1) | 0) {
@@ -250,7 +259,7 @@ $rt_createByteMultiArray = function(dimensions) {
     }
     return $rt_createMultiArrayImpl($rt_bytecls(), arrays, dimensions);
 }
-$rt_createBooleanMultiArray = function(dimensions) {
+function $rt_createBooleanMultiArray(dimensions) {
     var arrays = new Array($rt_primitiveArrayCount(dimensions));
     var firstDim = dimensions[0] | 0;
     for (var i = 0 | 0; i < arrays.length; i = (i + 1) | 0) {
@@ -258,7 +267,7 @@ $rt_createBooleanMultiArray = function(dimensions) {
     }
     return $rt_createMultiArrayImpl($rt_booleancls(), arrays, dimensions);
 }
-$rt_createShortMultiArray = function(dimensions) {
+function $rt_createShortMultiArray(dimensions) {
     var arrays = new Array($rt_primitiveArrayCount(dimensions));
     var firstDim = dimensions[0] | 0;
     for (var i = 0 | 0; i < arrays.length; i = (i + 1) | 0) {
@@ -266,7 +275,7 @@ $rt_createShortMultiArray = function(dimensions) {
     }
     return $rt_createMultiArrayImpl($rt_shortcls(), arrays, dimensions);
 }
-$rt_createIntMultiArray = function(dimensions) {
+function $rt_createIntMultiArray(dimensions) {
     var arrays = new Array($rt_primitiveArrayCount(dimensions));
     var firstDim = dimensions[0] | 0;
     for (var i = 0 | 0; i < arrays.length; i = (i + 1) | 0) {
@@ -274,7 +283,7 @@ $rt_createIntMultiArray = function(dimensions) {
     }
     return $rt_createMultiArrayImpl($rt_intcls(), arrays, dimensions);
 }
-$rt_createLongMultiArray = function(dimensions) {
+function $rt_createLongMultiArray(dimensions) {
     var arrays = new Array($rt_primitiveArrayCount(dimensions));
     var firstDim = dimensions[0] | 0;
     for (var i = 0 | 0; i < arrays.length; i = (i + 1) | 0) {
@@ -282,7 +291,7 @@ $rt_createLongMultiArray = function(dimensions) {
     }
     return $rt_createMultiArrayImpl($rt_longcls(), arrays, dimensions);
 }
-$rt_createFloatMultiArray = function(dimensions) {
+function $rt_createFloatMultiArray(dimensions) {
     var arrays = new Array($rt_primitiveArrayCount(dimensions));
     var firstDim = dimensions[0] | 0;
     for (var i = 0 | 0; i < arrays.length; i = (i + 1) | 0) {
@@ -290,7 +299,7 @@ $rt_createFloatMultiArray = function(dimensions) {
     }
     return $rt_createMultiArrayImpl($rt_floatcls(), arrays, dimensions);
 }
-$rt_createDoubleMultiArray = function(dimensions) {
+function $rt_createDoubleMultiArray(dimensions) {
     var arrays = new Array($rt_primitiveArrayCount(dimensions));
     var firstDim = dimensions[0] | 0;
     for (var i = 0 | 0; i < arrays.length; i = (i + 1) | 0) {
@@ -298,14 +307,14 @@ $rt_createDoubleMultiArray = function(dimensions) {
     }
     return $rt_createMultiArrayImpl($rt_doublecls(), arrays, dimensions);
 }
-$rt_primitiveArrayCount = function(dimensions) {
+function $rt_primitiveArrayCount(dimensions) {
     var val = dimensions[1] | 0;
     for (var i = 2 | 0; i < dimensions.length; i = (i + 1) | 0) {
         val = (val * (dimensions[i] | 0)) | 0;
     }
     return val;
 }
-$rt_createMultiArrayImpl = function(cls, arrays, dimensions) {
+function $rt_createMultiArrayImpl(cls, arrays, dimensions) {
     var limit = arrays.length;
     for (var i = 1 | 0; i < dimensions.length; i = (i + 1) | 0) {
         cls = $rt_arraycls(cls);
@@ -325,13 +334,13 @@ $rt_createMultiArrayImpl = function(cls, arrays, dimensions) {
     }
     return arrays[0];
 }
-$rt_assertNotNaN = function(value) {
-    if (typeof value == 'number' && isNaN(value)) {
+function $rt_assertNotNaN(value) {
+    if (typeof value === 'number' && isNaN(value)) {
         throw "NaN";
     }
     return value;
 }
-$rt_methodStubs = function(clinit, names) {
+function $rt_methodStubs(clinit, names) {
     for (var i = 0; i < names.length; i = (i + 1) | 0) {
         window[names[i]] = (function(name) {
             return function() {
@@ -341,9 +350,9 @@ $rt_methodStubs = function(clinit, names) {
         })(names[i]);
     }
 }
-$rt_stdoutBuffer = "";
-$rt_putStdout = function(ch) {
-    if (ch === 0xA) {
+var $rt_stdoutBuffer = "";
+function $rt_putStdout(ch) {
+    if (ch == 0xA) {
         if (console) {
             console.info($rt_stdoutBuffer);
         }
@@ -352,9 +361,9 @@ $rt_putStdout = function(ch) {
         $rt_stdoutBuffer += String.fromCharCode(ch);
     }
 }
-$rt_stderrBuffer = "";
-$rt_putStderr = function(ch) {
-    if (ch === 0xA) {
+var $rt_stderrBuffer = "";
+function $rt_putStderr(ch) {
+    if (ch == 0xA) {
         if (console) {
             console.info($rt_stderrBuffer);
         }
@@ -364,7 +373,6 @@ $rt_putStderr = function(ch) {
     }
 }
 function $rt_declClass(cls, data) {
-    cls.name = data.name;
     cls.$meta = {};
     cls.$meta.superclass = data.superclass;
     cls.$meta.supertypes = data.interfaces ? data.interfaces.slice() : [];
@@ -383,7 +391,7 @@ function $rt_virtualMethods(cls) {
     for (var i = 1; i < arguments.length; i += 2) {
         var name = arguments[i];
         var func = arguments[i + 1];
-        if (typeof name == 'string') {
+        if (typeof name === 'string') {
             cls.prototype[name] = func;
         } else {
             for (var j = 0; j < name.length; ++j) {
@@ -392,6 +400,7 @@ function $rt_virtualMethods(cls) {
         }
     }
 }
+var $rt_stringPool_instance;
 function $rt_stringPool(strings) {
     $rt_stringPool_instance = new Array(strings.length);
     for (var i = 0; i < strings.length; ++i) {
@@ -441,7 +450,7 @@ function $dbg_class(obj) {
     return clsName;
 }
 
-Long = function(lo, hi) {
+function Long(lo, hi) {
     this.lo = lo | 0;
     this.hi = hi | 0;
 }
@@ -461,18 +470,18 @@ Long.prototype.toString = function() {
     result = result.reverse().join('');
     return positive ? result : "-" + result;
 }
-Long_ZERO = new Long(0, 0);
-Long_fromInt = function(val) {
+var Long_ZERO = new Long(0, 0);
+function Long_fromInt(val) {
     return val >= 0 ? new Long(val, 0) : new Long(val, -1);
 }
-Long_fromNumber = function(val) {
+function Long_fromNumber(val) {
     if (val >= 0) {
         return new Long(val | 0, (val / 0x100000000) | 0);
     } else {
         return new Long(val | 0, (-(Math.abs(val) / 0x100000000) - 1) | 0);
     }
 }
-Long_toNumber = function(val) {
+function Long_toNumber(val) {
     var lo = val.lo;
     var hi = val.hi;
     if (lo < 0) {
@@ -480,7 +489,7 @@ Long_toNumber = function(val) {
     }
     return 0x100000000 * hi + lo;
 }
-Long_add = function(a, b) {
+function Long_add(a, b) {
     var a_lolo = a.lo & 0xFFFF;
     var a_lohi = a.lo >>> 16;
     var a_hilo = a.hi & 0xFFFF;
@@ -496,7 +505,7 @@ Long_add = function(a, b) {
     var hihi = (a_hihi + b_hihi + (hilo >> 16)) | 0;
     return new Long((lolo & 0xFFFF) | ((lohi & 0xFFFF) << 16), (hilo & 0xFFFF) | ((hihi & 0xFFFF) << 16));
 }
-Long_inc = function(a) {
+function Long_inc(a) {
     var lo = (a.lo + 1) | 0;
     var hi = a.hi;
     if (lo === 0) {
@@ -504,7 +513,7 @@ Long_inc = function(a) {
     }
     return new Long(lo, hi);
 }
-Long_dec = function(a) {
+function Long_dec(a) {
     var lo = (a.lo - 1) | 0;
     var hi = a.hi;
     if (lo === -1) {
@@ -512,10 +521,10 @@ Long_dec = function(a) {
     }
     return new Long(lo, hi);
 }
-Long_neg = function(a) {
+function Long_neg(a) {
     return Long_inc(new Long(a.lo ^ 0xFFFFFFFF, a.hi ^ 0xFFFFFFFF));
 }
-Long_sub = function(a, b) {
+function Long_sub(a, b) {
     var a_lolo = a.lo & 0xFFFF;
     var a_lohi = a.lo >>> 16;
     var a_hilo = a.hi & 0xFFFF;
@@ -531,7 +540,7 @@ Long_sub = function(a, b) {
     var hihi = (a_hihi - b_hihi + (hilo >> 16)) | 0;
     return new Long((lolo & 0xFFFF) | ((lohi & 0xFFFF) << 16), (hilo & 0xFFFF) | ((hihi & 0xFFFF) << 16));
 }
-Long_compare = function(a, b) {
+function Long_compare(a, b) {
     var r = a.hi - b.hi;
     if (r !== 0) {
         return r;
@@ -542,13 +551,13 @@ Long_compare = function(a, b) {
     }
     return (a.lo & 1) - (b.lo & 1);
 }
-Long_isPositive = function(a) {
+function Long_isPositive(a) {
     return (a.hi & 0x80000000) === 0;
 }
-Long_isNegative = function(a) {
+function Long_isNegative(a) {
     return (a.hi & 0x80000000) !== 0;
 }
-Long_mul = function(a, b) {
+function Long_mul(a, b) {
     var positive = Long_isNegative(a) === Long_isNegative(b);
     if (Long_isNegative(a)) {
         a = Long_neg(a);
@@ -586,13 +595,13 @@ Long_mul = function(a, b) {
     var result = new Long((lolo & 0xFFFF) | (lohi << 16), (hilo & 0xFFFF) | (hihi << 16));
     return positive ? result : Long_neg(result);
 }
-Long_div = function(a, b) {
+function Long_div(a, b) {
     return Long_divRem(a, b)[0];
 }
-Long_rem = function(a, b) {
+function Long_rem(a, b) {
     return Long_divRem(a, b)[1];
 }
-Long_divRem = function(a, b) {
+function Long_divRem(a, b) {
     var positive = Long_isNegative(a) === Long_isNegative(b);
     if (Long_isNegative(a)) {
         a = Long_neg(a);
@@ -607,22 +616,22 @@ Long_divRem = function(a, b) {
     q = new Long(q.lo, q.hi);
     return positive ? [q, a] : [Long_neg(q), Long_neg(a)];
 }
-Long_shiftLeft16 = function(a) {
+function Long_shiftLeft16(a) {
     return new Long(a.lo << 16, (a.lo >>> 16) | (a.hi << 16));
 }
-Long_shiftRight16 = function(a) {
+function Long_shiftRight16(a) {
     return new Long((a.lo >>> 16) | (a.hi << 16), a.hi >>> 16);
 }
-Long_and = function(a, b) {
+function Long_and(a, b) {
     return new Long(a.lo & b.lo, a.hi & b.hi);
 }
-Long_or = function(a, b) {
+function Long_or(a, b) {
     return new Long(a.lo | b.lo, a.hi | b.hi);
 }
-Long_xor = function(a, b) {
+function Long_xor(a, b) {
     return new Long(a.lo ^ b.lo, a.hi ^ b.hi);
 }
-Long_shl = function(a, b) {
+function Long_shl(a, b) {
     b &= 63;
     if (b == 0) {
         return a;
@@ -634,7 +643,7 @@ Long_shl = function(a, b) {
         return new Long(0, a.lo << (b - 32));
     }
 }
-Long_shr = function(a, b) {
+function Long_shr(a, b) {
     b &= 63;
     if (b == 0) {
         return a;
@@ -646,7 +655,7 @@ Long_shr = function(a, b) {
         return new Long((a.hi >> (b - 32)), a.hi >> 31);
     }
 }
-Long_shru = function(a, b) {
+function Long_shru(a, b) {
     b &= 63;
     if (b == 0) {
         return a;
@@ -660,12 +669,12 @@ Long_shru = function(a, b) {
 }
 
 // Represents a mutable 80-bit unsigned integer
-LongInt = function(lo, hi, sup) {
+function LongInt(lo, hi, sup) {
     this.lo = lo;
     this.hi = hi;
     this.sup = sup;
 }
-LongInt_mul = function(a, b) {
+function LongInt_mul(a, b) {
     var a_lolo = ((a.lo & 0xFFFF) * b) | 0;
     var a_lohi = ((a.lo >>> 16) * b) | 0;
     var a_hilo = ((a.hi & 0xFFFF) * b) | 0;
@@ -680,7 +689,7 @@ LongInt_mul = function(a, b) {
     a.hi = (a_hilo & 0xFFFF) | (a_hihi << 16);
     a.sup = sup & 0xFFFF;
 }
-LongInt_sub = function(a, b) {
+function LongInt_sub(a, b) {
     var a_lolo = a.lo & 0xFFFF;
     var a_lohi = a.lo >>> 16;
     var a_hilo = a.hi & 0xFFFF;
@@ -694,12 +703,12 @@ LongInt_sub = function(a, b) {
     a_lohi = (a_lohi - b_lohi + (a_lolo >> 16)) | 0;
     a_hilo = (a_hilo - b_hilo + (a_lohi >> 16)) | 0;
     a_hihi = (a_hihi - b_hihi + (a_hilo >> 16)) | 0;
-    sup = (a.sup - b.sup + (a_hihi >> 16)) | 0;
+    var sup = (a.sup - b.sup + (a_hihi >> 16)) | 0;
     a.lo = (a_lolo & 0xFFFF) | (a_lohi << 16);
     a.hi = (a_hilo & 0xFFFF) | (a_hihi << 16);
     a.sup = sup;
 }
-LongInt_add = function(a, b) {
+function LongInt_add(a, b) {
     var a_lolo = a.lo & 0xFFFF;
     var a_lohi = a.lo >>> 16;
     var a_hilo = a.hi & 0xFFFF;
@@ -713,12 +722,12 @@ LongInt_add = function(a, b) {
     a_lohi = (a_lohi + b_lohi + (a_lolo >> 16)) | 0;
     a_hilo = (a_hilo + b_hilo + (a_lohi >> 16)) | 0;
     a_hihi = (a_hihi + b_hihi + (a_hilo >> 16)) | 0;
-    sup = (a.sup + b.sup + (a_hihi >> 16)) | 0;
+    var sup = (a.sup + b.sup + (a_hihi >> 16)) | 0;
     a.lo = (a_lolo & 0xFFFF) | (a_lohi << 16);
     a.hi = (a_hilo & 0xFFFF) | (a_hihi << 16);
     a.sup = sup;
 }
-LongInt_inc = function(a) {
+function LongInt_inc(a) {
     a.lo = (a.lo + 1) | 0;
     if (a.lo == 0) {
         a.hi = (a.hi + 1) | 0;
@@ -727,7 +736,7 @@ LongInt_inc = function(a) {
         }
     }
 }
-LongInt_dec = function(a) {
+function LongInt_dec(a) {
     a.lo = (a.lo - 1) | 0;
     if (a.lo == -1) {
         a.hi = (a.hi - 1) | 0;
@@ -736,7 +745,7 @@ LongInt_dec = function(a) {
         }
     }
 }
-LongInt_ucompare = function(a, b) {
+function LongInt_ucompare(a, b) {
     var r = (a.sup - b.sup);
     if (r != 0) {
         return r;
@@ -755,7 +764,7 @@ LongInt_ucompare = function(a, b) {
     }
     return (a.lo & 1) - (b.lo & 1);
 }
-LongInt_numOfLeadingZeroBits = function(a) {
+function LongInt_numOfLeadingZeroBits(a) {
     var n = 0;
     var d = 16;
     while (d > 0) {
@@ -767,14 +776,14 @@ LongInt_numOfLeadingZeroBits = function(a) {
     }
     return 31 - n;
 }
-LongInt_shl = function(a, b) {
-    if (b === 0) {
+function LongInt_shl(a, b) {
+    if (b == 0) {
         return;
     } else if (b < 32) {
         a.sup = ((a.hi >>> (32 - b)) | (a.sup << b)) & 0xFFFF;
         a.hi = (a.lo >>> (32 - b)) | (a.hi << b);
         a.lo <<= b;
-    } else if (b === 32) {
+    } else if (b == 32) {
         a.sup = a.hi & 0xFFFF;
         a.hi = a.lo;
         a.lo = 0;
@@ -782,7 +791,7 @@ LongInt_shl = function(a, b) {
         a.sup = ((a.lo >>> (64 - b)) | (a.hi << (b - 32))) & 0xFFFF;
         a.hi = a.lo << b;
         a.lo = 0;
-    } else if (b === 64) {
+    } else if (b == 64) {
         a.sup = a.lo & 0xFFFF;
         a.hi = 0;
         a.lo = 0;
@@ -792,10 +801,10 @@ LongInt_shl = function(a, b) {
         a.lo = 0;
     }
 }
-LongInt_shr = function(a, b) {
-    if (b === 0) {
+function LongInt_shr(a, b) {
+    if (b == 0) {
         return;
-    } else if (b === 32) {
+    } else if (b == 32) {
         a.lo = a.hi;
         a.hi = a.sup;
         a.sup = 0;
@@ -803,7 +812,7 @@ LongInt_shr = function(a, b) {
         a.lo = (a.lo >>> b) | (a.hi << (32 - b));
         a.hi = (a.hi >>> b) | (a.sup << (32 - b));
         a.sup >>>= b;
-    } else if (b === 64) {
+    } else if (b == 64) {
         a.lo = a.sup;
         a.hi = 0;
         a.sup = 0;
@@ -817,17 +826,17 @@ LongInt_shr = function(a, b) {
         a.sup = 0;
     }
 }
-LongInt_copy = function(a) {
+function LongInt_copy(a) {
     return new LongInt(a.lo, a.hi, a.sup);
 }
-LongInt_div = function(a, b) {
+function LongInt_div(a, b) {
     // Normalize divisor
     var bits = b.hi !== 0 ? LongInt_numOfLeadingZeroBits(b.hi) : LongInt_numOfLeadingZeroBits(b.lo) + 32;
     var sz = 1 + ((bits / 16) | 0);
     var dividentBits = bits % 16;
     LongInt_shl(b, bits);
     LongInt_shl(a, dividentBits);
-    q = new LongInt(0, 0, 0);
+    var q = new LongInt(0, 0, 0);
     while (sz-- > 0) {
         LongInt_shl(q, 16);
         // Calculate approximate q
