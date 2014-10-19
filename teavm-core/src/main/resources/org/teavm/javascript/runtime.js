@@ -72,7 +72,7 @@ if (ArrayBuffer) {
         return new ($rt_arraycls(cls))(nativeArray);
     };
     $rt_createCharArray = function(sz) {
-        return $rt_createNumericArray($rt_bytecls(), new Uint16Array(new ArrayBuffer(sz << 1)), 0);
+        return $rt_createNumericArray($rt_charcls(), new Uint16Array(new ArrayBuffer(sz << 1)), 0);
     };
     $rt_createByteArray = function(sz) {
         return $rt_createNumericArray($rt_bytecls(), new Int8Array(new ArrayBuffer(sz)), 0);

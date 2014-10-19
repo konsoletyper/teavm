@@ -434,10 +434,10 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             renderer.addInjector(entry.getKey(), entry.getValue());
         }
         try {
-            sourceWriter.append("\"use strict\"").newLine();
             for (RendererListener listener : rendererListeners) {
                 listener.begin(renderer, target);
             }
+            sourceWriter.append("\"use strict\";").newLine();
             renderer.renderRuntime();
             for (ClassNode clsNode : clsNodes) {
                 ClassReader cls = classSet.get(clsNode.getName());

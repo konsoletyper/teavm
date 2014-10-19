@@ -47,7 +47,7 @@ public class ServiceLoaderSupport implements Generator, DependencyListener {
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
         writer.append("if (!").appendClass("java.util.ServiceLoader").append(".$$services$$) {").indent()
                 .softNewLine();
-        writer.appendClass("java.util.ServiceLoader").append("$$services$$ = true;").softNewLine();
+        writer.appendClass("java.util.ServiceLoader").append(".$$services$$ = true;").softNewLine();
         for (Map.Entry<String, List<String>> entry : serviceMap.entrySet()) {
             writer.appendClass(entry.getKey()).append(".$$serviceList$$ = [");
             List<String> implementations = entry.getValue();
