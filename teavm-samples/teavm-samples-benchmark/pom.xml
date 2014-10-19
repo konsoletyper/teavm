@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.teavm</groupId>
     <artifactId>teavm-samples</artifactId>
-    <version>0.2.0</version>
+    <version>0.2.1</version>
   </parent>
   <artifactId>teavm-samples-benchmark</artifactId>
   <packaging>war</packaging>
@@ -33,27 +33,32 @@
       <groupId>org.teavm</groupId>
       <artifactId>teavm-classlib</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.teavm</groupId>
       <artifactId>teavm-jso</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.teavm</groupId>
       <artifactId>teavm-dom</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.jbox2d</groupId>
       <artifactId>jbox2d-library</artifactId>
       <version>2.2.1.1</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.jbox2d</groupId>
       <artifactId>jbox2d-library</artifactId>
       <version>2.2.1.1</version>
       <classifier>sources</classifier>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.google.gwt</groupId>
