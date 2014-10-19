@@ -68,3 +68,9 @@ Another example is avaialble [here](http://graphhopper.com/teavm/).
 It uses [GraphHopper](https://github.com/graphhopper/graphhopper/) to build route in browser.
 Unlike original GraphHopper example it works completely in browser instead of querying server.
 Thanks to [Peter Karich](https://github.com/karussell).
+
+
+Feedback
+--------
+
+Ask your questions by email: info@teavm.org. Also you can report issues on a project's [issue tracker](https://github.com/konsoletyper/teavm/issues).
