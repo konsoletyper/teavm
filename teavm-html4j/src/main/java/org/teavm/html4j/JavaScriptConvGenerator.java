@@ -26,28 +26,22 @@ import org.teavm.model.*;
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public class JavaScriptConvGenerator implements Generator {
-    private static final String convCls = JavaScriptConv.class.getName();
-    static final MethodReference intValueMethod = new MethodReference("java.lang.Integer",
-            new MethodDescriptor("intValue", ValueType.INTEGER));
-    static final MethodReference booleanValueMethod = new MethodReference("java.lang.Boolean",
-            new MethodDescriptor("booleanValue", ValueType.BOOLEAN));
-    static final MethodReference doubleValueMethod = new MethodReference("java.lang.Double",
-            new MethodDescriptor("doubleValue", ValueType.DOUBLE));
-    static final MethodReference charValueMethod = new MethodReference("java.lang.Character",
-            new MethodDescriptor("charValue", ValueType.CHARACTER));
-    static final MethodReference valueOfIntMethod = new MethodReference("java.lang.Integer",
-            new MethodDescriptor("valueOf", ValueType.INTEGER, ValueType.object("java.lang.Integer")));
-    static final MethodReference valueOfBooleanMethod = new MethodReference("java.lang.Boolean",
-            new MethodDescriptor("valueOf", ValueType.BOOLEAN, ValueType.object("java.lang.Boolean")));
-    static final MethodReference valueOfDoubleMethod = new MethodReference("java.lang.Double",
-            new MethodDescriptor("valueOf", ValueType.DOUBLE, ValueType.object("java.lang.Double")));
-    static final MethodReference valueOfCharMethod = new MethodReference("java.lang.Character",
-            new MethodDescriptor("valueOf", ValueType.CHARACTER, ValueType.object("java.lang.Character")));
-    private static final ValueType objType = ValueType.object("java.lang.Object");
-    static final MethodReference toJsMethod = new MethodReference(convCls, new MethodDescriptor(
-            "toJavaScript", objType, objType));
-    static final MethodReference fromJsMethod = new MethodReference(convCls, new MethodDescriptor(
-            "fromJavaScript", objType, objType, objType));
+    static final MethodReference intValueMethod = new MethodReference(Integer.class, "intValue", int.class);
+    static final MethodReference booleanValueMethod = new MethodReference(Boolean.class, "booleanValue", boolean.class);
+    static final MethodReference doubleValueMethod = new MethodReference(Double.class, "doubleValue", double.class);
+    static final MethodReference charValueMethod = new MethodReference(Character.class, "charValue", char.class);
+    static final MethodReference valueOfIntMethod = new MethodReference(Integer.class, "valueOf",
+            int.class, Integer.class);
+    static final MethodReference valueOfBooleanMethod = new MethodReference(Boolean.class, "valueOf",
+            boolean.class, Boolean.class);
+    static final MethodReference valueOfDoubleMethod = new MethodReference(Double.class, "valueOf",
+            double.class, Double.class);
+    static final MethodReference valueOfCharMethod = new MethodReference(Character.class, "valueOf",
+            char.class, Character.class);
+    static final MethodReference toJsMethod = new MethodReference(JavaScriptConv.class, "toJavaScript",
+            Object.class, Object.class);
+    static final MethodReference fromJsMethod = new MethodReference(JavaScriptConv.class, "fromJavaScript",
+            Object.class, Object.class, Object.class);
 
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {

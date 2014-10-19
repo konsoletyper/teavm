@@ -107,7 +107,7 @@ abstract class JsCallback {
            }
 
            sb.append(callMethod(refId, fqn, method, params));
-           if (body.charAt(paramBeg + 1) != (')')) {
+           if (body.charAt(paramBeg + 1) != ')') {
                sb.append(",");
            }
            pos = paramBeg + 1;
