@@ -138,7 +138,7 @@ public class JavaScriptBodyDependency implements DependencyListener {
             if (!methodDep.isMissing()) {
                 if (reader.hasModifier(ElementModifier.STATIC) || reader.hasModifier(ElementModifier.FINAL)) {
                     methodDep.use();
-                    for (int i = 0; i <= methodDep.getParameterCount(); ++i) {
+                    for (int i = 0; i < methodDep.getParameterCount(); ++i) {
                         allClassesNode.connect(methodDep.getVariable(i));
                     }
                 } else {
