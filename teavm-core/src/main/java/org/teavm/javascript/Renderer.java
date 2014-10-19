@@ -540,16 +540,23 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 for (int var : method.getVariables()) {
                     variableCount = Math.max(variableCount, var + 1);
                 }
-                boolean hasVars = variableCount > ref.parameterCount() + 1;
-                if (hasVars) {
+                TryCatchFinder tryCatchFinder = new TryCatchFinder();
+                method.getBody().acceptVisitor(tryCatchFinder);
+                boolean hasTryCatch = tryCatchFinder.tryCatchFound;
+                List<String> variableNames = new ArrayList<>();
+                for (int i = ref.parameterCount() + 1; i < variableCount; ++i) {
+                    variableNames.add(variableName(i));
+                }
+                if (hasTryCatch) {
+                    variableNames.add("$je");
+                }
+                if (!variableNames.isEmpty()) {
                     writer.append("var ");
-                    boolean first = true;
-                    for (int i = ref.parameterCount() + 1; i < variableCount; ++i) {
-                        if (!first) {
+                    for (int i = 0; i < variableNames.size(); ++i) {
+                        if (i > 0) {
                             writer.append(",").ws();
                         }
-                        first = false;
-                        writer.append(variableName(i));
+                        writer.append(variableNames.get(i));
                     }
                     writer.append(";").softNewLine();
                 }

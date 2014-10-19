@@ -85,8 +85,6 @@
             <phase>process-test-classes</phase>
             <configuration>
               <minifying>false</minifying>
-              <sourceMapsGenerated>true</sourceMapsGenerated>
-              <sourceFilesCopied>true</sourceFilesCopied>
               <properties>
                 <java.util.Locale.available>en, en_US, en_GB, ru, ru_RU</java.util.Locale.available>
               </properties>
