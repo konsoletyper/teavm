@@ -1,9 +1,9 @@
 package org.teavm.classlib.java.nio;
 
 import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
-import java.nio.ByteBuffer;
-import java.nio.InvalidMarkException;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+import java.nio.*;
 import org.junit.Test;
 
 /**
@@ -159,5 +159,128 @@ public class ByteBufferTest {
         assertThat(buffer.get(15), is((byte)24));
         buffer.put(1, (byte)25);
         assertThat(duplicate.get(1), is((byte)25));
+        assertThat(duplicate.array(), is(sameInstance(buffer.array())));
+    }
+
+    @Test
+    public void getsByte() {
+        byte[] array = { 2, 3, 5, 7 };
+        ByteBuffer buffer = ByteBuffer.wrap(array);
+        assertThat(buffer.get(), is((byte)2));
+        assertThat(buffer.get(), is((byte)3));
+        buffer = buffer.slice();
+        assertThat(buffer.get(), is((byte)5));
+        assertThat(buffer.get(), is((byte)7));
+    }
+
+    @Test
+    public void gettingByteFromEmptyBufferCausesError() {
+        byte[] array = { 2, 3, 5, 7 };
+        ByteBuffer buffer = ByteBuffer.wrap(array);
+        buffer.limit(2);
+        buffer.get();
+        buffer.get();
+        try {
+            buffer.get();
+            fail("Should have thrown error");
+        } catch (BufferUnderflowException e) {
+            // ok
+        }
+    }
+
+    @Test
+    public void putsByte() {
+        byte[] array = new byte[4];
+        ByteBuffer buffer = ByteBuffer.wrap(array);
+        buffer.put((byte)2).put((byte)3).put((byte)5).put((byte)7);
+        assertThat(array, is(new byte[] { 2, 3, 5, 7 }));
+    }
+
+    @Test
+    public void puttingByteToEmptyBufferCausesError() {
+        byte[] array = new byte[4];
+        ByteBuffer buffer = ByteBuffer.wrap(array);
+        buffer.limit(2);
+        buffer.put((byte)2).put((byte)3);
+        try {
+            buffer.put((byte)5);
+            fail("Should have thrown error");
+        } catch (BufferOverflowException e) {
+            System.out.println(e);
+            assertThat(array[2], is((byte)0));
+        }
+    }
+
+    @Test(expected = ReadOnlyBufferException.class)
+    public void puttingByteToReadOnlyBufferCausesError() {
+        byte[] array = new byte[4];
+        ByteBuffer buffer = ByteBuffer.wrap(array).asReadOnlyBuffer();
+        buffer.put((byte)2);
+    }
+
+    @Test
+    public void getsByteFromGivenLocation() {
+        byte[] array = { 2, 3, 5, 7 };
+        ByteBuffer buffer = ByteBuffer.wrap(array);
+        assertThat(buffer.get(0), is((byte)2));
+        assertThat(buffer.get(1), is((byte)3));
+        buffer.get();
+        buffer = buffer.slice();
+        assertThat(buffer.get(1), is((byte)5));
+        assertThat(buffer.get(2), is((byte)7));
+    }
+
+    @Test
+    public void gettingByteFromWrongLocationCausesError() {
+        byte[] array = { 2, 3, 5, 7 };
+        ByteBuffer buffer = ByteBuffer.wrap(array);
+        buffer.limit(3);
+        try {
+            buffer.get(-1);
+        } catch (IndexOutOfBoundsException e) {
+            // ok
+        }
+        try {
+            buffer.get(3);
+        } catch (IndexOutOfBoundsException e) {
+            // ok
+        }
+    }
+
+    @Test
+    public void putsByteToGivenLocation() {
+        byte[] array = new byte[4];
+        ByteBuffer buffer = ByteBuffer.wrap(array);
+        buffer.put(0, (byte)2);
+        buffer.put(1, (byte)3);
+        buffer.get();
+        buffer = buffer.slice();
+        buffer.put(1, (byte)5);
+        buffer.put(2, (byte)7);
+        assertThat(array, is(new byte[] { 2, 3, 5, 7 }));
+    }
+
+    @Test
+    public void puttingByteToWrongLocationCausesError() {
+        byte[] array = new byte[4];
+        ByteBuffer buffer = ByteBuffer.wrap(array);
+        buffer.limit(3);
+        try {
+            buffer.put(-1, (byte)2);
+        } catch (IndexOutOfBoundsException e) {
+            // ok
+        }
+        try {
+            buffer.put(3, (byte)2);
+        } catch (IndexOutOfBoundsException e) {
+            // ok
+        }
+    }
+
+    @Test(expected = ReadOnlyBufferException.class)
+    public void puttingByteToGivenLocationOfReadOnlyBufferCausesError() {
+        byte[] array = new byte[4];
+        ByteBuffer buffer = ByteBuffer.wrap(array).asReadOnlyBuffer();
+        buffer.put(0, (byte)2);
     }
 }

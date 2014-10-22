@@ -113,6 +113,7 @@
             <argument>java.io</argument>
             <argument>java.math</argument>
             <argument>java.net</argument>
+            <argument>java.nio</argument>
             <argument>java.text</argument>
             <argument>java.util</argument>
             <argument>java.util.logging</argument>

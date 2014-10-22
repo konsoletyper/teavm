@@ -47,6 +47,7 @@ public abstract class TBuffer {
         if (mark > newLimit) {
             mark = -1;
         }
+        limit = newLimit;
         if (position > limit) {
             position = limit;
         }
