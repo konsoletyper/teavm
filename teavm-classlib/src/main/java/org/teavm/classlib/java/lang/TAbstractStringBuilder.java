@@ -773,7 +773,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
     }
 
     public TString substring(int from, int to) {
-        if (from > to || from < 0 || to >= length) {
+        if (from > to || from < 0 || to > length) {
             throw new TIndexOutOfBoundsException();
         }
         return new TString(buffer, from, to - from);

@@ -19,7 +19,7 @@ package org.teavm.classlib.java.util.regex;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-
+import org.junit.Test;
 import junit.framework.TestCase;
 
 /**
@@ -27,6 +27,7 @@ import junit.framework.TestCase;
  */
 @SuppressWarnings("nls")
 public class Pattern2Test extends TestCase {
+    @Test
     public void testSimpleMatch() throws PatternSyntaxException {
         Pattern p = Pattern.compile("foo.*");
 
@@ -48,6 +49,7 @@ public class Pattern2Test extends TestCase {
         assertTrue(Pattern.matches("", ""));
     }
 
+    @Test
     public void testCursors() {
         Pattern p;
         Matcher m;
@@ -103,6 +105,7 @@ public class Pattern2Test extends TestCase {
         }
     }
 
+    @Test
     public void testGroups() throws PatternSyntaxException {
         Pattern p;
         Matcher m;
@@ -156,6 +159,7 @@ public class Pattern2Test extends TestCase {
         assertFalse(m.find());
     }
 
+    @Test
     public void testReplace() throws PatternSyntaxException {
         Pattern p;
         Matcher m;
@@ -197,12 +201,11 @@ public class Pattern2Test extends TestCase {
         p = Pattern.compile("([CcPp][hl]e[ea]se)");
 
         m = p.matcher("I want cheese. Please.");
-        assertTrue(m.replaceFirst("<b> $1 </b>").equals(
-                "I want <b> cheese </b>. Please."));
-        assertTrue(m.replaceAll("<b> $1 </b>").equals(
-                "I want <b> cheese </b>. <b> Please </b>."));
+        assertTrue(m.replaceFirst("<b> $1 </b>").equals("I want <b> cheese </b>. Please."));
+        assertTrue(m.replaceAll("<b> $1 </b>").equals("I want <b> cheese </b>. <b> Please </b>."));
     }
 
+    @Test
     public void testEscapes() throws PatternSyntaxException {
         Pattern p;
         Matcher m;
@@ -239,7 +242,7 @@ public class Pattern2Test extends TestCase {
         assertFalse(m.find());
 
         // Test \\u and \\x sequences
-p = Pattern.compile("([0-9]+)[\\u0020:\\x21];");
+        p = Pattern.compile("([0-9]+)[\\u0020:\\x21];");
         m = p.matcher("11:;22 ;33-;44!;");
         assertTrue(m.find());
         assertEquals("11", m.group(1));
@@ -396,6 +399,7 @@ p = Pattern.compile("([0-9]+)[\\u0020:\\x21];");
         // }
     }
 
+    @Test
     public void testCharacterClasses() throws PatternSyntaxException {
         Pattern p;
         Matcher m;
@@ -654,6 +658,7 @@ p = Pattern.compile("([0-9]+)[\\u0020:\\x21];");
         // TODO
     }
 
+    @Test
     public void testPOSIXGroups() throws PatternSyntaxException {
         Pattern p;
         Matcher m;
@@ -795,6 +800,7 @@ p = Pattern.compile("([0-9]+)[\\u0020:\\x21];");
         // TODO
     }
 
+    @Test
     public void testUnicodeCategories() throws PatternSyntaxException {
         // Test Unicode categories using \p and \P
         // One letter codes: L, M, N, P, S, Z, C
@@ -843,6 +849,7 @@ p = Pattern.compile("([0-9]+)[\\u0020:\\x21];");
         // Cn
     }
 
+    @Test
     public void testUnicodeBlocks() throws PatternSyntaxException {
         Pattern p;
         Matcher m;
@@ -912,6 +919,7 @@ p = Pattern.compile("([0-9]+)[\\u0020:\\x21];");
         }
     }
 
+    @Test
     public void testCapturingGroups() throws PatternSyntaxException {
         // Test simple capturing groups
         // TODO
@@ -929,6 +937,7 @@ p = Pattern.compile("([0-9]+)[\\u0020:\\x21];");
         // TODO
     }
 
+    @Test
     public void testRepeats() {
         // Test ?
         // TODO
@@ -949,6 +958,7 @@ p = Pattern.compile("([0-9]+)[\\u0020:\\x21];");
         // TODO
     }
 
+    @Test
     public void testAnchors() throws PatternSyntaxException {
         // Test ^, default and MULTILINE
         // TODO
@@ -987,6 +997,7 @@ p = Pattern.compile("([0-9]+)[\\u0020:\\x21];");
         // TODO
     }
 
+    @Test
     public void testMisc() throws PatternSyntaxException {
         Pattern p;
         Matcher m;
@@ -1048,6 +1059,7 @@ p = Pattern.compile("([0-9]+)[\\u0020:\\x21];");
         // TODO
     }
 
+    @Test
     public void testCompile1() throws PatternSyntaxException {
         Pattern pattern = Pattern
                 .compile("[0-9A-Za-z][0-9A-Za-z\\x2e\\x3a\\x2d\\x5f]*");
@@ -1055,6 +1067,7 @@ p = Pattern.compile("([0-9]+)[\\u0020:\\x21];");
         assertTrue(pattern.matcher(name).matches());
     }
 
+    @Test
     public void testCompile2() throws PatternSyntaxException {
         String findString = "\\Qimport\\E";
 
@@ -1065,6 +1078,7 @@ p = Pattern.compile("([0-9]+)[\\u0020:\\x21];");
         assertTrue(matcher.find(0));
     }
 
+    @Test
     public void testCompile3() throws PatternSyntaxException {
         Pattern p;
         Matcher m;
@@ -1144,6 +1158,7 @@ p = Pattern.compile("([0-9]+)[\\u0020:\\x21];");
         assertFalse(m.find());
     }
 
+    @Test
     public void testCompile4() throws PatternSyntaxException {
         String findString = "\\Qpublic\\E";
         StringBuffer text = new StringBuffer("    public class Class {\n"
@@ -1166,6 +1181,7 @@ p = Pattern.compile("([0-9]+)[\\u0020:\\x21];");
         assertFalse(found);
     }
 
+    @Test
     public void testCompile5() throws PatternSyntaxException {
         Pattern p = Pattern.compile("^[0-9]");
         String s[] = p.split("12", -1);

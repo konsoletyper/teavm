@@ -17,7 +17,7 @@
 package org.teavm.classlib.java.util.regex;
 
 import java.util.regex.Pattern;
-
+import org.junit.Test;
 import junit.framework.TestCase;
 
 /**
@@ -25,6 +25,7 @@ import junit.framework.TestCase;
  */
 @SuppressWarnings("nls")
 public class PatternErrorTest extends TestCase {
+    @Test
     public void testCompileErrors() throws Exception {
         // null regex string - should get NullPointerException
         try {

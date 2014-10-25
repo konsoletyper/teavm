@@ -54,11 +54,11 @@ public final class TMatcher implements TMatchResult {
 
     private TPattern pat = null;
 
-    private AbstractSet start = null;
+    private TAbstractSet start = null;
 
     private CharSequence string = null;
 
-    private MatchResultImpl matchResult = null;
+    private TMatchResultImpl matchResult = null;
 
     // bounds
     private int leftBound = -1;
@@ -480,7 +480,7 @@ public final class TMatcher implements TMatchResult {
      * sequence starting at <code>index</code> specified; Result of the match
      * will be stored into matchResult instance;
      */
-    private boolean runMatch(AbstractSet set, int index, MatchResultImpl matchResult) {
+    private boolean runMatch(TAbstractSet set, int index, TMatchResultImpl matchResult) {
 
         if (set.matches(index, string, matchResult) >= 0) {
             matchResult.finalizeMatch();
@@ -670,7 +670,7 @@ public final class TMatcher implements TMatchResult {
         int mode = matchResult.mode();
         this.pat = pattern;
         this.start = pattern.start;
-        matchResult = new MatchResultImpl(this.string, leftBound, rightBound, pattern.groupCount(),
+        matchResult = new TMatchResultImpl(this.string, leftBound, rightBound, pattern.groupCount(),
                 pattern.compCount(), pattern.consCount());
         matchResult.setStartIndex(startIndex);
         matchResult.setMode(mode);
@@ -683,7 +683,7 @@ public final class TMatcher implements TMatchResult {
         this.string = cs;
         this.leftBound = 0;
         this.rightBound = string.length();
-        matchResult = new MatchResultImpl(cs, leftBound, rightBound, pat.groupCount(), pat.compCount(), pat.consCount());
+        matchResult = new TMatchResultImpl(cs, leftBound, rightBound, pat.groupCount(), pat.compCount(), pat.consCount());
     }
 
     @Override
