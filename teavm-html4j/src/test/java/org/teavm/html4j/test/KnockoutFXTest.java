@@ -51,12 +51,12 @@ import java.util.HashMap;
 import java.util.Map;
 import net.java.html.BrwsrCtx;
 import net.java.html.js.JavaScriptBody;
-import org.apidesign.html.boot.spi.Fn;
-import org.apidesign.html.context.spi.Contexts;
-import org.apidesign.html.json.spi.JSONCall;
-import org.apidesign.html.json.spi.Technology;
-import org.apidesign.html.json.spi.Transfer;
-import org.apidesign.html.json.tck.KnockoutTCK;
+import org.netbeans.html.boot.spi.Fn;
+import org.netbeans.html.context.spi.Contexts;
+import org.netbeans.html.json.spi.JSONCall;
+import org.netbeans.html.json.spi.Technology;
+import org.netbeans.html.json.spi.Transfer;
+import org.netbeans.html.json.tck.KnockoutTCK;
 import org.netbeans.html.ko4j.KO4J;
 import org.testng.Assert;
 

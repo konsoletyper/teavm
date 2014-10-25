@@ -28,7 +28,7 @@ The easiest way to create a new TeaVM project is to type in the command line:
     mvn -DarchetypeCatalog=local \
       -DarchetypeGroupId=org.teavm \
       -DarchetypeArtifactId=teavm-maven-webapp \
-      -DarchetypeVersion=0.2.0 archetype:generate
+      -DarchetypeVersion=0.2.1 archetype:generate
 
 Now you can execute `mvn clean package` and get the generated `war` file.
 Deploy this `war` in Tomcat or another container, or simply unzip it and open the `index.html` page.
@@ -55,6 +55,9 @@ Live examples
 
 Compare the speed of JavaScript produced by TeaVM and GWT here: http://teavm.org/live-examples/jbox2d-benchmark/
 
+Play [Geobot](http://teavm.org/live-examples/geobot/), a little physics-based puzzle game.
+Thanks to [joan789](http://joan789.deviantart.com/) for her great artwork!
+
 Thanks to [Jaroslav Tulach](http://wiki.apidesign.org/wiki/User:JaroslavTulach), author of DukeScript, we have several
 DukeScript example applications. One is the minesweeper game.
 You can try its TeaVM-compiled version [here](http://xelfi.cz/minesweeper/teavm/), and then take a look at
@@ -65,3 +68,9 @@ Another example is avaialble [here](http://graphhopper.com/teavm/).
 It uses [GraphHopper](https://github.com/graphhopper/graphhopper/) to build route in browser.
 Unlike original GraphHopper example it works completely in browser instead of querying server.
 Thanks to [Peter Karich](https://github.com/karussell).
+
+
+Feedback
+--------
+
+Ask your questions by email: info@teavm.org. Also you can report issues on a project's [issue tracker](https://github.com/konsoletyper/teavm/issues).

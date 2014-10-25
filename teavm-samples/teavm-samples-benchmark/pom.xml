@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.teavm</groupId>
     <artifactId>teavm-samples</artifactId>
-    <version>0.2-SNAPSHOT</version>
+    <version>0.3.0-SNAPSHOT</version>
   </parent>
   <artifactId>teavm-samples-benchmark</artifactId>
   <packaging>war</packaging>
@@ -91,7 +91,7 @@
               <targetDirectory>${project.build.directory}/generated/js/teavm</targetDirectory>
               <mainClass>org.teavm.samples.benchmark.teavm.BenchmarkStarter</mainClass>
               <runtime>SEPARATE</runtime>
-              <minifying>true</minifying>
+              <minifying>false</minifying>
               <debugInformationGenerated>true</debugInformationGenerated>
             </configuration>
           </execution>

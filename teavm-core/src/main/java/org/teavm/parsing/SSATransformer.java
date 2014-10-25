@@ -49,7 +49,7 @@ public class SSATransformer {
         this.variableDebugInfo = variableDebugInfo;
         this.arguments = arguments;
         variableDebugMap.clear();
-        cfg = ProgramUtils.buildControlFlowGraphWithoutTryCatch(program);
+        cfg = ProgramUtils.buildControlFlowGraphWithTryCatch(program);
         domTree = GraphUtils.buildDominatorTree(cfg);
         domFrontiers = new int[cfg.size()][];
         variableMap = new Variable[program.variableCount()];

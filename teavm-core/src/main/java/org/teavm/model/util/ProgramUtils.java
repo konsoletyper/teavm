@@ -29,7 +29,7 @@ public final class ProgramUtils {
     private ProgramUtils() {
     }
 
-    public static Graph buildControlFlowGraphWithoutTryCatch(Program program) {
+    public static Graph buildControlFlowGraph(Program program) {
         GraphBuilder graphBuilder = new GraphBuilder(program.basicBlockCount());
         InstructionTransitionExtractor transitionExtractor = new InstructionTransitionExtractor();
         for (int i = 0; i < program.basicBlockCount(); ++i) {
@@ -43,11 +43,14 @@ public final class ProgramUtils {
                     }
                 }
             }
+            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                graphBuilder.addEdge(i, tryCatch.getHandler().getIndex());
+            }
         }
         return graphBuilder.build();
     }
 
-    public static Graph buildControlFlowGraph(Program program) {
+    public static Graph buildControlFlowGraphWithTryCatch(Program program) {
         GraphBuilder graphBuilder = new GraphBuilder(program.basicBlockCount());
         InstructionTransitionExtractor transitionExtractor = new InstructionTransitionExtractor();
         for (int i = 0; i < program.basicBlockCount(); ++i) {
@@ -58,6 +61,9 @@ public final class ProgramUtils {
                 if (transitionExtractor.getTargets() != null) {
                     for (BasicBlock successor : transitionExtractor.getTargets()) {
                         graphBuilder.addEdge(i, successor.getIndex());
+                        for (TryCatchBlock succTryCatch : successor.getTryCatchBlocks()) {
+                            graphBuilder.addEdge(i, succTryCatch.getHandler().getIndex());
+                        }
                     }
                 }
             }

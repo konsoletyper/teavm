@@ -18,7 +18,7 @@ package org.teavm.html4j.testing;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Collections;
-import org.apidesign.html.json.tck.KOTest;
+import org.netbeans.html.json.tck.KOTest;
 import org.teavm.model.MethodReader;
 import org.teavm.testing.TestAdapter;
 
