@@ -22,6 +22,7 @@ import org.teavm.classlib.java.util.TArrays;
 import org.teavm.classlib.java.util.TComparator;
 import org.teavm.classlib.java.util.THashMap;
 import org.teavm.classlib.java.util.TMap;
+import org.teavm.classlib.java.util.regex.TPattern;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.javascript.ni.InjectedBy;
 import org.teavm.javascript.ni.Rename;
@@ -161,6 +162,18 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         }
     }
 
+    public boolean contentEquals(TStringBuffer buffer) {
+        if (characters.length != buffer.length()) {
+            return false;
+        }
+        for (int i = 0; i < characters.length; ++i) {
+            if (characters[i] != buffer.charAt(i)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public boolean contentEquals(TCharSequence charSeq) {
         if (this == charSeq) {
             return true;
@@ -224,6 +237,24 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
             return true;
         }
         return startsWith(prefix, 0);
+    }
+
+    public boolean regionMatches(boolean ignoreCase, int toffset, String other, int ooffset, int len) {
+        if (toffset < 0 || ooffset < 0 || toffset + len > length() || ooffset + len > other.length()) {
+            return false;
+        }
+        for (int i = 0; i < len; ++i) {
+            char a = charAt(toffset++);
+            char b = other.charAt(ooffset++);
+            if (ignoreCase) {
+                a = TCharacter.toLowerCase(a);
+                b = TCharacter.toLowerCase(b);
+            }
+            if (a != b) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public boolean regionMatches(int toffset, TString other, int ooffset, int len) {
@@ -612,5 +643,25 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
             pool.put(interned, interned);
         }
         return interned;
+    }
+
+    public boolean matches(String regex) {
+        return TPattern.matches(regex, this.toString());
+    }
+
+    public String[] split(String regex) {
+        return TPattern.compile(regex).split(this.toString());
+    }
+
+    public String[] split(String regex, int limit) {
+        return TPattern.compile(regex).split(this.toString(), limit);
+    }
+
+    public String replaceAll(String regex, String replacement) {
+        return TPattern.compile(regex).matcher(toString()).replaceAll(replacement);
+    }
+
+    public String replaceFirst(String regex, String replacement) {
+        return TPattern.compile(regex).matcher(toString()).replaceFirst(replacement);
     }
 }
