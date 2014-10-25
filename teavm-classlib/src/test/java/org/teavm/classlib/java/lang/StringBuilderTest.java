@@ -365,4 +365,9 @@ public class StringBuilderTest {
         assertEquals(3, sb.lastIndexOf("345"));
         assertEquals(-1, sb.lastIndexOf("35"));
     }
+
+    @Test
+    public void substringWithUpperBoundAtEndWorks() {
+        assertEquals("23", "123".substring(1, 3));
+    }
 }

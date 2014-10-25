@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.teavm</groupId>
     <artifactId>teavm</artifactId>
-    <version>0.2-SNAPSHOT</version>
+    <version>0.3.0-SNAPSHOT</version>
   </parent>
   <artifactId>teavm-classlib</artifactId>
 
@@ -85,8 +85,6 @@
             <phase>process-test-classes</phase>
             <configuration>
               <minifying>false</minifying>
-              <sourceMapsGenerated>true</sourceMapsGenerated>
-              <sourceFilesCopied>true</sourceFilesCopied>
               <properties>
                 <java.util.Locale.available>en, en_US, en_GB, ru, ru_RU</java.util.Locale.available>
               </properties>

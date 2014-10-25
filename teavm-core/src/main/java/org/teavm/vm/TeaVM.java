@@ -54,7 +54,7 @@ import org.teavm.vm.spi.TeaVMPlugin;
  *vm.setMinifying(false); // optionally disable obfuscation
  *vm.installPlugins();    // install all default plugins
  *                        // that are found in a classpath
- *vm.addEntryPoint("main", new MethodReference(
+ *vm.entryPoint("main", new MethodReference(
  *        "fully.qualified.ClassName",  "main",
  *         ValueType.array(ValueType.object("java.lang.String")),
  *         ValueType.VOID));
@@ -437,6 +437,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             for (RendererListener listener : rendererListeners) {
                 listener.begin(renderer, target);
             }
+            sourceWriter.append("\"use strict\";").newLine();
             renderer.renderRuntime();
             for (ClassNode clsNode : clsNodes) {
                 ClassReader cls = classSet.get(clsNode.getName());
@@ -450,12 +451,12 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             }
             renderer.renderStringPool();
             for (Map.Entry<String, TeaVMEntryPoint> entry : entryPoints.entrySet()) {
-                sourceWriter.append(entry.getKey()).ws().append("=").ws().appendMethodBody(entry.getValue().reference)
-                        .append(";").softNewLine();
+                sourceWriter.append("var ").append(entry.getKey()).ws().append("=").ws()
+                        .appendMethodBody(entry.getValue().reference).append(";").softNewLine();
             }
             for (Map.Entry<String, String> entry : exportedClasses.entrySet()) {
-                sourceWriter.append(entry.getKey()).ws().append("=").ws().appendClass(entry.getValue()).append(";")
-                        .softNewLine();
+                sourceWriter.append("var ").append(entry.getKey()).ws().append("=").ws()
+                        .appendClass(entry.getValue()).append(";").softNewLine();
             }
             for (RendererListener listener : rendererListeners) {
                 listener.complete();

@@ -85,9 +85,15 @@ public class JavaScriptBodyGenerator implements Generator {
             MethodDescriptor desc = MethodDescriptor.parse(method + params + "V");
             MethodReader reader = findMethod(fqn, desc);
             StringBuilder sb = new StringBuilder();
-            sb.append("(function($this");
+            sb.append("(function(");
+            if (ident != null) {
+                sb.append("$this");
+            }
             for (int i = 0; i < reader.parameterCount(); ++i) {
-                sb.append(", ").append("p").append(i);
+                if (ident != null || i > 0) {
+                    sb.append(", ");
+                }
+                sb.append("p").append(i);
             }
             sb.append(") { return ").append(naming.getFullNameFor(JavaScriptConvGenerator.toJsMethod)).append("(");
             if (ident == null) {
@@ -105,7 +111,9 @@ public class JavaScriptBodyGenerator implements Generator {
                         .append(Renderer.typeToClsString(naming, reader.parameterType(i))).append(")");
             }
             sb.append(")); })(");
-            sb.append(ident == null ? "null" : ident);
+            if (ident != null) {
+                sb.append(ident);
+            }
             return sb.toString();
         }
         private MethodReader findMethod(String clsName, MethodDescriptor desc) {
