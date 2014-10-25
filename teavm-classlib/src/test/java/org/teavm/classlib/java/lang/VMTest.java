@@ -83,4 +83,17 @@ public class VMTest {
     public void surrogateInStringLiteralsWork() {
         assertEquals(0xDDC2, "a\uDDC2b".charAt(1));
     }
+
+    @Test
+    public void separatesExceptionAndVariable() {
+        int n = foo();
+        try {
+            bar();
+        } catch (RuntimeException e) {
+            assertEquals(RuntimeException.class, e.getClass());
+            assertEquals(2, n);
+        }
+    }
+    private int foo() { return 2; }
+    private void bar() { throw new RuntimeException(); }
 }

@@ -28,7 +28,7 @@ The easiest way to create a new TeaVM project is to type in the command line:
     mvn -DarchetypeCatalog=local \
       -DarchetypeGroupId=org.teavm \
       -DarchetypeArtifactId=teavm-maven-webapp \
-      -DarchetypeVersion=0.2.0 archetype:generate
+      -DarchetypeVersion=0.2.1 archetype:generate
 
 Now you can execute `mvn clean package` and get the generated `war` file.
 Deploy this `war` in Tomcat or another container, or simply unzip it and open the `index.html` page.
@@ -68,3 +68,9 @@ Another example is avaialble [here](http://graphhopper.com/teavm/).
 It uses [GraphHopper](https://github.com/graphhopper/graphhopper/) to build route in browser.
 Unlike original GraphHopper example it works completely in browser instead of querying server.
 Thanks to [Peter Karich](https://github.com/karussell).
+
+
+Feedback
+--------
+
+Ask your questions by email: info@teavm.org. Also you can report issues on a project's [issue tracker](https://github.com/konsoletyper/teavm/issues).

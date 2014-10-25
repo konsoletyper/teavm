@@ -41,6 +41,9 @@ class InterferenceGraphBuilder {
             for (BasicBlock succ : succExtractor.getTargets()) {
                 liveOut.or(liveness.liveIn(succ.getIndex()));
             }
+            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                liveOut.or(liveness.liveIn(tryCatch.getHandler().getIndex()));
+            }
             live.clear();
             for (int j = 0; j < liveOut.length(); ++j) {
                 if (liveOut.get(j)) {
