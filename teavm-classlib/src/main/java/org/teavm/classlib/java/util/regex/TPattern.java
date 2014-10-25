@@ -297,14 +297,13 @@ public final class TPattern implements Serializable {
      * @see #UNIX_LINES
      */
     public static TPattern compile(String pattern, int flags) throws TPatternSyntaxException {
-
+        if (pattern == null) {
+            throw new NullPointerException("Patter is null");
+        }
         if ((flags != 0) && ((flags | flagsBitMask) != flagsBitMask)) {
-
             throw new IllegalArgumentException("");
         }
-
         TAbstractSet.counter = 1;
-
         return new TPattern().compileImpl(pattern, flags);
     }
 
