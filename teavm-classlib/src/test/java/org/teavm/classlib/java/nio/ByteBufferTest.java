@@ -283,4 +283,96 @@ public class ByteBufferTest {
         ByteBuffer buffer = ByteBuffer.wrap(array).asReadOnlyBuffer();
         buffer.put(0, (byte)2);
     }
+
+    @Test
+    public void getsBytes() {
+        byte[] array = { 2, 3, 5, 7 };
+        ByteBuffer buffer = ByteBuffer.wrap(array);
+        buffer.get();
+        byte[] receiver = new byte[2];
+        buffer.get(receiver, 0, 2);
+        assertThat(buffer.position(), is(3));
+        assertThat(receiver, is(new byte[] { 3, 5 }));
+    }
+
+    @Test
+    public void gettingBytesFromEmptyBufferCausesError() {
+        byte[] array = { 2, 3, 5, 7 };
+        ByteBuffer buffer = ByteBuffer.wrap(array);
+        buffer.limit(3);
+        byte[] receiver = new byte[4];
+        try {
+            buffer.get(receiver, 0, 4);
+            fail("Error expected");
+        } catch (BufferUnderflowException e) {
+            assertThat(receiver, is(new byte[4]));
+            assertThat(buffer.position(), is(0));
+        }
+    }
+
+    @Test
+    public void gettingBytesWithIllegalArgumentsCausesError() {
+        byte[] array = { 2, 3, 5, 7 };
+        ByteBuffer buffer = ByteBuffer.wrap(array);
+        byte[] receiver = new byte[4];
+        try {
+            buffer.get(receiver, 0, 5);
+        } catch (IndexOutOfBoundsException e) {
+            assertThat(receiver, is(new byte[4]));
+            assertThat(buffer.position(), is(0));
+        }
+        try {
+            buffer.get(receiver, -1, 3);
+        } catch (IndexOutOfBoundsException e) {
+            assertThat(receiver, is(new byte[4]));
+            assertThat(buffer.position(), is(0));
+        }
+        try {
+            buffer.get(receiver, 6, 3);
+        } catch (IndexOutOfBoundsException e) {
+            assertThat(receiver, is(new byte[4]));
+            assertThat(buffer.position(), is(0));
+        }
+    }
+
+    @Test
+    public void putsBytes() {
+        byte[] array = new byte[4];
+        ByteBuffer buffer = ByteBuffer.wrap(array);
+        buffer.get();
+        byte[] data = { 2, 3 };
+        buffer.put(data, 0, 2);
+        assertThat(buffer.position(), is(3));
+        assertThat(array, is(new byte[] {0, 2, 3, 0 }));
+    }
+
+    @Test
+    public void compacts() {
+        byte[] array = { 2, 3, 5, 7 };
+        ByteBuffer buffer = ByteBuffer.wrap(array);
+        buffer.get();
+        buffer.mark();
+        buffer.compact();
+        assertThat(array, is(new byte[] { 3, 5, 7, 7 }));
+        assertThat(buffer.position(), is(3));
+        assertThat(buffer.limit(), is(4));
+        assertThat(buffer.capacity(), is(4));
+        try {
+            buffer.reset();
+            fail("Exception expected");
+        } catch (InvalidMarkException e) {
+            // ok
+        }
+    }
+
+    @Test
+    public void marksPosition() {
+        byte[] array = { 2, 3, 5, 7 };
+        ByteBuffer buffer = ByteBuffer.wrap(array);
+        buffer.position(1);
+        buffer.mark();
+        buffer.position(2);
+        buffer.reset();
+        assertThat(buffer.position(), is(1));
+    }
 }

@@ -56,15 +56,15 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
     public abstract TByteBuffer put(int index, byte b);
 
     public TByteBuffer get(byte[] dst, int offset, int length) {
-        if (remaining() < length) {
-            throw new TBufferUnderflowException();
-        }
         if (offset < 0 || offset >= dst.length) {
             throw new IndexOutOfBoundsException("Offset " + offset + " is outside of range [0;" + dst.length + ")");
         }
         if (offset + length > dst.length) {
             throw new IndexOutOfBoundsException("The last byte in dst " + (offset + length) + " is outside " +
                     "of array of size " + dst.length);
+        }
+        if (remaining() < length) {
+            throw new TBufferUnderflowException();
         }
         if (length < 0) {
             throw new IndexOutOfBoundsException("Length " + length + " must be non-negative");
