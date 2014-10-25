@@ -206,7 +206,6 @@ public class ByteBufferTest {
             buffer.put((byte)5);
             fail("Should have thrown error");
         } catch (BufferOverflowException e) {
-            System.out.println(e);
             assertThat(array[2], is((byte)0));
         }
     }
