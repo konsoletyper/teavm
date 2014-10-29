@@ -198,4 +198,6 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
         order = bo;
         return this;
     }
+
+    public abstract TCharBuffer asCharBuffer();
 }

@@ -24,26 +24,25 @@ import org.teavm.classlib.java.lang.TReadable;
  */
 public abstract class TCharBuffer extends TBuffer implements Comparable<TCharBuffer>, Appendable,
         CharSequence, TReadable {
-    int start;
-    char[] array;
-
-    TCharBuffer(int start, int capacity, char[] array, int position, int limit) {
+    TCharBuffer(int capacity, int position, int limit) {
         super(capacity);
-        this.start = start;
-        this.array = array;
         this.position = position;
         this.limit = limit;
     }
+
+    abstract char getChar(int index);
+
+    abstract void putChar(int index, char value);
 
     public static TCharBuffer allocate(int capacity) {
         if (capacity < 0) {
             throw new IllegalArgumentException("Capacity is negative: " + capacity);
         }
-        return new TCharBufferImpl(capacity);
+        return new TCharBufferOverArray(capacity);
     }
 
     public static TCharBuffer wrap(char[] array, int offset, int length) {
-        return new TCharBufferImpl(0, array.length, array, offset, offset + length, false);
+        return new TCharBufferOverArray(0, array.length, array, offset, offset + length, false);
     }
 
     public static TCharBuffer wrap(char[] array) {
@@ -62,7 +61,12 @@ public abstract class TCharBuffer extends TBuffer implements Comparable<TCharBuf
             return -1;
         }
         int sz = Math.min(remaining(), target.remaining());
-        target.put(array, start + position, sz);
+        int srcPos = position;
+        int dstPos = target.position;
+        for (int i = 0; i < sz; ++i) {
+            target.putChar(dstPos++, getChar(srcPos++));
+        }
+        target.position += sz;
         return sz;
     }
 
@@ -102,9 +106,9 @@ public abstract class TCharBuffer extends TBuffer implements Comparable<TCharBuf
         if (length < 0) {
             throw new IndexOutOfBoundsException("Length " + length + " must be non-negative");
         }
-        int pos = position + start;
+        int pos = position;
         for (int i = 0; i < length; ++i) {
-            dst[offset++] = array[pos++];
+            dst[offset++] = getChar(pos++);
         }
         position += length;
         return this;
@@ -115,7 +119,20 @@ public abstract class TCharBuffer extends TBuffer implements Comparable<TCharBuf
     }
 
     public TCharBuffer put(TCharBuffer src) {
-        return put(src.array, src.start + src.position, src.remaining());
+        if (isReadOnly()) {
+            throw new TReadOnlyBufferException();
+        }
+        if (remaining() < src.remaining()) {
+            throw new TBufferOverflowException();
+        }
+        int length = src.remaining();
+        int pos = position;
+        int offset = src.position;
+        for (int i = 0; i < length; ++i) {
+            putChar(pos++, src.getChar(offset++));
+        }
+        position += length;
+        return this;
     }
 
     public TCharBuffer put(char[] src, int offset, int length) {
@@ -135,9 +152,9 @@ public abstract class TCharBuffer extends TBuffer implements Comparable<TCharBuf
         if (length < 0) {
             throw new IndexOutOfBoundsException("Length " + length + " must be non-negative");
         }
-        int pos = position + start;
+        int pos = position;
         for (int i = 0; i < length; ++i) {
-            array[pos++] = src[offset++];
+            putChar(pos++, src[offset++]);
         }
         position += length;
         return this;
@@ -165,9 +182,9 @@ public abstract class TCharBuffer extends TBuffer implements Comparable<TCharBuf
         if (start > end) {
             throw new IndexOutOfBoundsException("Start " + start + " must be before end " + end);
         }
-        int pos = position + this.start;
+        int pos = position;
         while (start < end) {
-            array[pos++] = src.charAt(start++);
+            putChar(pos++, src.charAt(start++));
         }
         position += sz;
         return this;
@@ -179,18 +196,24 @@ public abstract class TCharBuffer extends TBuffer implements Comparable<TCharBuf
 
     @Override
     public final boolean hasArray() {
-        return true;
+        return isArrayPresent();
     }
 
     @Override
     public final char[] array() {
-        return array;
+        return getArray();
     }
 
     @Override
     public final int arrayOffset() {
-        return start;
+        return getArrayOffset();
     }
+
+    abstract boolean isArrayPresent();
+
+    abstract char[] getArray();
+
+    abstract int getArrayOffset();
 
     public abstract TCharBuffer compact();
 
@@ -200,9 +223,9 @@ public abstract class TCharBuffer extends TBuffer implements Comparable<TCharBuf
     @Override
     public int hashCode() {
         int hashCode = 0;
-        int pos = position + start;
+        int pos = position;
         for (int i = position; i < limit; ++i) {
-            hashCode = 31 * hashCode + array[pos++];
+            hashCode = 31 * hashCode + getChar(pos++);
         }
         return hashCode;
     }
@@ -220,10 +243,10 @@ public abstract class TCharBuffer extends TBuffer implements Comparable<TCharBuf
         if (sz != other.remaining()) {
             return false;
         }
-        int a = position + start;
-        int b = other.position + other.start;
+        int a = position;
+        int b = other.position;
         for (int i = 0; i < sz; ++i) {
-            if (array[a++] != other.array[b++]) {
+            if (getChar(a++) != other.getChar(b++)) {
                 return false;
             }
         }
@@ -236,10 +259,10 @@ public abstract class TCharBuffer extends TBuffer implements Comparable<TCharBuf
             return 0;
         }
         int sz = Math.min(remaining(), other.remaining());
-        int a = position + start;
-        int b = other.position + other.start;
+        int a = position;
+        int b = other.position;
         for (int i = 0; i < sz; ++i) {
-            int r = Character.compare(array[a++], other.array[b++]);
+            int r = Character.compare(getChar(a++), other.getChar(b++));
             if (r != 0) {
                 return r;
             }
@@ -249,7 +272,12 @@ public abstract class TCharBuffer extends TBuffer implements Comparable<TCharBuf
 
     @Override
     public String toString() {
-        return new String(array, start + position, limit - position);
+        char[] chars = new char[limit - position];
+        int pos = position;
+        for (int i = 0; i < chars.length; ++i) {
+            chars[i] = getChar(pos++);
+        }
+        return new String(chars);
     }
 
     @Override

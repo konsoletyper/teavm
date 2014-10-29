@@ -102,4 +102,10 @@ class TByteBufferImpl extends TByteBuffer {
     public boolean isReadOnly() {
         return readOnly;
     }
+
+    @Override
+    public TCharBuffer asCharBuffer() {
+        int sz = remaining() / 2;
+        return new TCharBufferOverByteBuffer(start + position, sz, this, 0, sz, isReadOnly());
+    }
 }
