@@ -20,13 +20,8 @@ package org.teavm.classlib.java.nio;
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public abstract class TShortBuffer extends TBuffer implements Comparable<TShortBuffer> {
-    int start;
-    short[] array;
-
-    TShortBuffer(int start, int capacity, short[] array, int position, int limit) {
+    TShortBuffer(int capacity, int position, int limit) {
         super(capacity);
-        this.start = start;
-        this.array = array;
         this.position = position;
         this.limit = limit;
     }
@@ -35,11 +30,11 @@ public abstract class TShortBuffer extends TBuffer implements Comparable<TShortB
         if (capacity < 0) {
             throw new IllegalArgumentException("Capacity is negative: " + capacity);
         }
-        return new TShortBufferImpl(capacity);
+        return new TShortBufferOverArray(capacity);
     }
 
     public static TShortBuffer wrap(short[] array, int offset, int length) {
-        return new TShortBufferImpl(0, array.length, array, offset, offset + length, false);
+        return new TShortBufferOverArray(0, array.length, array, offset, offset + length, false);
     }
 
     public static TShortBuffer wrap(short[] array) {
@@ -60,6 +55,10 @@ public abstract class TShortBuffer extends TBuffer implements Comparable<TShortB
 
     public abstract TShortBuffer put(int index, short b);
 
+    abstract short getElement(int index);
+
+    abstract void putElement(int index, short value);
+
     public TShortBuffer get(short[] dst, int offset, int length) {
         if (offset < 0 || offset >= dst.length) {
             throw new IndexOutOfBoundsException("Offset " + offset + " is outside of range [0;" + dst.length + ")");
@@ -74,9 +73,9 @@ public abstract class TShortBuffer extends TBuffer implements Comparable<TShortB
         if (length < 0) {
             throw new IndexOutOfBoundsException("Length " + length + " must be non-negative");
         }
-        int pos = position + start;
+        int pos = position;
         for (int i = 0; i < length; ++i) {
-            dst[offset++] = array[pos++];
+            dst[offset++] = getElement(pos++);
         }
         position += length;
         return this;
@@ -87,7 +86,20 @@ public abstract class TShortBuffer extends TBuffer implements Comparable<TShortB
     }
 
     public TShortBuffer put(TShortBuffer src) {
-        return put(src.array, src.start + src.position, src.remaining());
+        if (isReadOnly()) {
+            throw new TReadOnlyBufferException();
+        }
+        if (remaining() < src.remaining()) {
+            throw new TBufferOverflowException();
+        }
+        int length = src.remaining();
+        int pos = position;
+        int offset = src.position;
+        for (int i = 0; i < length; ++i) {
+            putElement(pos++, src.getElement(offset++));
+        }
+        position += length;
+        return this;
     }
 
     public TShortBuffer put(short[] src, int offset, int length) {
@@ -107,9 +119,9 @@ public abstract class TShortBuffer extends TBuffer implements Comparable<TShortB
         if (length < 0) {
             throw new IndexOutOfBoundsException("Length " + length + " must be non-negative");
         }
-        int pos = position + start;
+        int pos = position;
         for (int i = 0; i < length; ++i) {
-            array[pos++] = src[offset++];
+            putElement(pos++, src[offset++]);
         }
         position += length;
         return this;
@@ -120,19 +132,25 @@ public abstract class TShortBuffer extends TBuffer implements Comparable<TShortB
     }
 
     @Override
-    public boolean hasArray() {
-        return true;
+    public final boolean hasArray() {
+        return isArrayPresent();
     }
 
     @Override
     public final short[] array() {
-        return array;
+        return getArray();
     }
 
     @Override
-    public int arrayOffset() {
-        return start;
+    public final int arrayOffset() {
+        return getArrayOffset();
     }
+
+    abstract boolean isArrayPresent();
+
+    abstract short[] getArray();
+
+    abstract int getArrayOffset();
 
     public abstract TShortBuffer compact();
 
@@ -148,9 +166,9 @@ public abstract class TShortBuffer extends TBuffer implements Comparable<TShortB
     @Override
     public int hashCode() {
         int hashCode = 0;
-        int pos = position + start;
+        int pos = position;
         for (int i = position; i < limit; ++i) {
-            hashCode = 31 * hashCode + array[pos++];
+            hashCode = 31 * hashCode + getElement(pos++);
         }
         return hashCode;
     }
@@ -168,10 +186,10 @@ public abstract class TShortBuffer extends TBuffer implements Comparable<TShortB
         if (sz != other.remaining()) {
             return false;
         }
-        int a = position + start;
-        int b = other.position + other.start;
+        int a = position;
+        int b = other.position;
         for (int i = 0; i < sz; ++i) {
-            if (array[a++] != other.array[b++]) {
+            if (getElement(a++) != other.getElement(b++)) {
                 return false;
             }
         }
@@ -184,14 +202,16 @@ public abstract class TShortBuffer extends TBuffer implements Comparable<TShortB
             return 0;
         }
         int sz = Math.min(remaining(), other.remaining());
-        int a = position + start;
-        int b = other.position + other.start;
+        int a = position;
+        int b = other.position;
         for (int i = 0; i < sz; ++i) {
-            int r = Short.compare(array[a++], other.array[b++]);
+            int r = Short.compare(getElement(a++), other.getElement(b++));
             if (r != 0) {
                 return r;
             }
         }
         return Integer.compare(remaining(), other.remaining());
     }
+
+    public abstract TByteOrder order();
 }

@@ -19,13 +19,13 @@ package org.teavm.classlib.java.nio;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-class TCharBufferOverByteBuffer extends TCharBufferImpl {
+class TShortBufferOverByteBuffer extends TShortBufferImpl {
     private TByteBufferImpl byteByffer;
     TByteOrder byteOrder = TByteOrder.BIG_ENDIAN;
     boolean readOnly;
     private int start;
 
-    public TCharBufferOverByteBuffer(int start, int capacity, TByteBufferImpl byteBuffer, int position, int limit,
+    public TShortBufferOverByteBuffer(int start, int capacity, TByteBufferImpl byteBuffer, int position, int limit,
             boolean readOnly) {
         super(capacity, position, limit);
         this.start = start;
@@ -34,26 +34,26 @@ class TCharBufferOverByteBuffer extends TCharBufferImpl {
     }
 
     @Override
-    TCharBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly) {
-        TCharBufferOverByteBuffer result = new TCharBufferOverByteBuffer(this.start + start * 2, capacity, byteByffer,
-                position, limit, readOnly);
+    TShortBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly) {
+        TShortBufferOverByteBuffer result = new TShortBufferOverByteBuffer(this.start + start * 2, capacity,
+                byteByffer, position, limit, readOnly);
         result.byteOrder = byteOrder;
         return result;
     }
 
     @Override
-    char getChar(int index) {
+    short getElement(int index) {
         int value;
         if (byteOrder == TByteOrder.BIG_ENDIAN) {
             value = (byteByffer.array[start + index * 2] << 8) | (byteByffer.array[start + index * 2 + 1]);
         } else {
             value = (byteByffer.array[start + index * 2 + 1] << 8) | (byteByffer.array[start + index * 2]);
         }
-        return (char)value;
+        return (short)value;
     }
 
     @Override
-    void putChar(int index, char value) {
+    void putElement(int index, short value) {
         if (byteOrder == TByteOrder.BIG_ENDIAN) {
             byteByffer.array[start + index * 2] = (byte)(value >> 8);
             byteByffer.array[start + index * 2 + 1] = (byte)value;
@@ -69,7 +69,7 @@ class TCharBufferOverByteBuffer extends TCharBufferImpl {
     }
 
     @Override
-    char[] getArray() {
+    short[] getArray() {
         throw new UnsupportedOperationException();
     }
 
@@ -81,5 +81,10 @@ class TCharBufferOverByteBuffer extends TCharBufferImpl {
     @Override
     boolean readOnly() {
         return readOnly;
+    }
+
+    @Override
+    public TByteOrder order() {
+        return byteOrder;
     }
 }

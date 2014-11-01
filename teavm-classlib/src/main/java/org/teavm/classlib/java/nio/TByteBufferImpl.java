@@ -106,6 +106,27 @@ class TByteBufferImpl extends TByteBuffer {
     @Override
     public TCharBuffer asCharBuffer() {
         int sz = remaining() / 2;
-        return new TCharBufferOverByteBuffer(start + position, sz, this, 0, sz, isReadOnly());
+        TCharBufferOverByteBuffer result = new TCharBufferOverByteBuffer(start + position, sz, this, 0, sz,
+                isReadOnly());
+        result.byteOrder = order;
+        return result;
+    }
+
+    @Override
+    public TShortBuffer asShortBuffer() {
+        int sz = remaining() / 2;
+        TShortBufferOverByteBuffer result = new TShortBufferOverByteBuffer(start + position, sz, this, 0, sz,
+                isReadOnly());
+        result.byteOrder = order;
+        return result;
+    }
+
+    @Override
+    public TIntBuffer asIntBuffer() {
+        int sz = remaining() / 4;
+        TIntBufferOverByteBuffer result = new TIntBufferOverByteBuffer(start + position, sz, this, 0, sz,
+                isReadOnly());
+        result.byteOrder = order;
+        return result;
     }
 }

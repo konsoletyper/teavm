@@ -19,50 +19,45 @@ package org.teavm.classlib.java.nio;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-class TShortBufferImpl extends TShortBuffer {
-    private boolean readOnly;
-
-    public TShortBufferImpl(int capacity) {
-        this(0, capacity, new short[capacity], 0, capacity, false);
-    }
-
-    public TShortBufferImpl(int start, int capacity, short[] array, int position, int limit, boolean readOnly) {
-        super(start, capacity, array, position, limit);
-        this.readOnly = readOnly;
+abstract class TShortBufferImpl extends TShortBuffer {
+    public TShortBufferImpl(int capacity, int position, int limit) {
+        super(capacity, position, limit);
     }
 
     @Override
     public TShortBuffer slice() {
-        return new TShortBufferImpl(position, limit - position,  array, 0, limit - position, readOnly);
+        return duplicate(position, limit - position, 0, limit - position, isReadOnly());
     }
 
     @Override
     public TShortBuffer duplicate() {
-        return new TShortBufferImpl(start, capacity, array, position, limit, readOnly);
+        return duplicate(0, capacity, position, limit, isReadOnly());
     }
 
     @Override
     public TShortBuffer asReadOnlyBuffer() {
-        return new TShortBufferImpl(start, capacity, array, position, limit, true);
+        return duplicate(0, capacity, position, limit, true);
     }
+
+    abstract TShortBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly);
 
     @Override
     public short get() {
         if (position >= limit) {
             throw new TBufferUnderflowException();
         }
-        return array[start + position++];
+        return getElement(position++);
     }
 
     @Override
     public TShortBuffer put(short b) {
-        if (readOnly) {
+        if (isReadOnly()) {
             throw new TReadOnlyBufferException();
         }
         if (position >= limit) {
             throw new TBufferOverflowException();
         }
-        array[start + position++] = b;
+        putElement(position++, b);
         return this;
     }
 
@@ -71,32 +66,31 @@ class TShortBufferImpl extends TShortBuffer {
         if (index < 0 || index >= limit) {
             throw new IndexOutOfBoundsException("Index " + index + " is outside of range [0;" + limit + ")");
         }
-        return array[start + index];
+        return getElement(index);
     }
 
     @Override
     public TShortBuffer put(int index, short b) {
-        if (readOnly) {
+        if (isReadOnly()) {
             throw new TReadOnlyBufferException();
         }
         if (index < 0 || index >= limit) {
             throw new IndexOutOfBoundsException("Index " + index + " is outside of range [0;" + limit + ")");
         }
-        array[start + index] = b;
+        putElement(index, b);
         return this;
     }
 
     @Override
     public TShortBuffer compact() {
-        if (readOnly) {
+        if (isReadOnly()) {
             throw new TReadOnlyBufferException();
         }
         if (position > 0) {
             int sz = remaining();
-            int dst = start;
-            int src = start + position;
+            int src = position;
             for (int i = 0; i < sz; ++i) {
-                array[dst++] = array[src++];
+                putElement(i, getElement(src++));
             }
             position = sz;
         }
@@ -112,6 +106,8 @@ class TShortBufferImpl extends TShortBuffer {
 
     @Override
     public boolean isReadOnly() {
-        return readOnly;
+        return readOnly();
     }
+
+    abstract boolean readOnly();
 }
