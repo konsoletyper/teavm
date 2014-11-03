@@ -475,7 +475,10 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
                     case IClasspathEntry.CPE_SOURCE:
                         if (entry.getOutputLocation() != null) {
                             try {
-                                collector.addPath(workspaceRoot.findMember(entry.getOutputLocation()).getLocation());
+                                IResource res = workspaceRoot.findMember(entry.getOutputLocation());
+                                if (res != null) {
+                                    collector.addPath(res.getLocation());
+                                }
                             } catch (MalformedURLException e) {
                                 TeaVMEclipsePlugin.logError(e);
                             }
