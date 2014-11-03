@@ -35,6 +35,57 @@ public class SystemTest {
         assertSame(a, dest[2]);
     }
 
+    @Test
+    public void copiesPrimitiveArray() {
+        int[] src = { 23, 24, 25 };
+        int[] dest = new int[3];
+        System.arraycopy(src, 0, dest, 0, 3);
+        assertEquals(23, dest[0]);
+        assertEquals(24, dest[1]);
+        assertEquals(25, dest[2]);
+    }
+
+    @Test
+    public void copiesToSubclassArray() {
+        String[] src = { "foo", "bar", "baz" };
+        Object[] dest = new Object[3];
+        System.arraycopy(src, 0, dest, 0, 3);
+        assertEquals("foo", dest[0]);
+        assertEquals("bar", dest[1]);
+        assertEquals("baz", dest[2]);
+    }
+
+    @Test
+    public void copiesToSuperclassArrayWhenItemsMatch() {
+        Object[] src = { "foo", "bar", "baz" };
+        String[] dest = new String[3];
+        System.arraycopy(src, 0, dest, 0, 3);
+        assertEquals("foo", dest[0]);
+        assertEquals("bar", dest[1]);
+        assertEquals("baz", dest[2]);
+    }
+
+    @Test
+    public void failsToConverItemsCopyingArray() {
+        Object[] src = { "foo", 23, "baz" };
+        String[] dest = new String[3];
+        try {
+            System.arraycopy(src, 0, dest, 0, 3);
+            fail("Exception expected");
+        } catch (ArrayStoreException e) {
+            assertEquals("foo", dest[0]);
+            assertNull(dest[1]);
+            assertNull(dest[2]);
+        }
+    }
+
+    @Test(expected = ArrayStoreException.class)
+    public void failsToCopyToUnrelatedReferenceArray() {
+        String[] src = { "foo", "bar", "baz" };
+        Integer[] dest = new Integer[3];
+        System.arraycopy(src, 0, dest, 0, 3);
+    }
+
     @Test(expected = IndexOutOfBoundsException.class)
     public void failsToCopyArraysWithInvalidIndexes() {
         System.arraycopy(new Object[0], 0, new Object[0], 0, 1);

@@ -35,12 +35,31 @@ public final class TSystem extends TObject {
         if (src == null || dest == null) {
             throw new TNullPointerException(TString.wrap("Either src or dest is null"));
         }
-        if (src.getClass() != dest.getClass()) {
-            throw new TArrayStoreException();
-        }
         if (srcPos < 0 || destPos < 0 || length < 0 || srcPos + length > TArray.getLength(src) ||
                 destPos + length > TArray.getLength(dest)) {
             throw new TIndexOutOfBoundsException();
+        }
+        if (src != dest) {
+            Class<?> srcType = src.getClass().getComponentType();
+            Class<?> targetType = dest.getClass().getComponentType();
+            if (srcType == null || targetType == null) {
+                throw new TArrayStoreException();
+            }
+            if (srcType != targetType) {
+                if (!srcType.isPrimitive() && !targetType.isPrimitive()) {
+                    Object[] srcArray = (Object[])(Object)src;
+                    Object[] dstArray = (Object[])(Object)dest;
+                    for (int i = 0; i < length; ++i) {
+                        Object elem = srcArray[srcPos++];
+                        if (!targetType.isInstance(elem)) {
+                            throw new TArrayStoreException();
+                        }
+                        dstArray[destPos++] = elem;
+                    }
+                } else if (!srcType.isPrimitive() || !targetType.isPrimitive()) {
+                    throw new TArrayStoreException();
+                }
+            }
         }
         doArrayCopy(src, srcPos, dest, destPos, length);
     }
