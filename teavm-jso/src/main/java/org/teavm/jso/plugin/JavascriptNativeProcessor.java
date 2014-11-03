@@ -145,6 +145,13 @@ class JavascriptNativeProcessor {
                         }
                         isConstructor = true;
                     } else {
+                        AnnotationReader methodAnnot = method.getAnnotations().get(JSMethod.class.getName());
+                        if (methodAnnot != null) {
+                            AnnotationValue redefinedMethodName = methodAnnot.getValue("value");
+                            if (redefinedMethodName != null) {
+                                name = redefinedMethodName.getString();
+                            }
+                        }
                         if (method.getResultType() != ValueType.VOID && !isSupportedType(method.getResultType())) {
                             throw new RuntimeException("Method " + invoke.getMethod() + " is not " +
                                     "a proper native JavaScript method declaration");
