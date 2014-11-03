@@ -55,6 +55,9 @@ public final class Parser {
         if (node.superName != null) {
             cls.setParent(node.superName.replace('/', '.'));
         }
+        if (cls.getName().equals("java.lang.Object")) {
+            cls.setParent(null);
+        }
         if (node.interfaces != null) {
             for (Object obj : node.interfaces) {
                 cls.getInterfaces().add(((String)obj).replace('/', '.'));

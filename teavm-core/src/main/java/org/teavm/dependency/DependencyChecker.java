@@ -225,7 +225,7 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         if (dependency.isMissing()) {
             missingClasses.add(dependency);
         } else {
-            if (cls.getParent() != null) {
+            if (cls.getParent() != null && !cls.getParent().equals(className)) {
                 linkClass(cls.getParent(), stack);
             }
             for (String ifaceName : cls.getInterfaces()) {
@@ -267,7 +267,7 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         if (reader != null) {
             return reader;
         }
-        if (cls.getParent() != null) {
+        if (cls.getParent() != null && cls.getParent().equals(cls.getParent())) {
             reader = methodReaderCache.map(new MethodReference(cls.getParent(), desc));
             if (reader != null) {
                 return reader;
@@ -293,6 +293,9 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
             FieldReader field = cls.getField(name);
             if (field != null) {
                 return field;
+            }
+            if (clsName.equals(cls.getParent())) {
+                break;
             }
             clsName = cls.getParent();
         }
