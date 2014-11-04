@@ -277,7 +277,7 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
             }
         }
         boolean negative = (bits & (1 << 31)) != 0;
-        int rawExp = ((bits >> 23) & 0x7F8) - 127;
+        int rawExp = (bits >> 23) & 0xFF;
         int mantissa = bits & 0x7FFFFF;
         if (rawExp == 0) {
             mantissa <<= 1;
