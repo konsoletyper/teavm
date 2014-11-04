@@ -307,4 +307,6 @@ public abstract class TCharBuffer extends TBuffer implements Comparable<TCharBuf
     public TCharBuffer append(char c) {
         return put(c);
     }
+
+    public abstract TByteOrder order();
 }

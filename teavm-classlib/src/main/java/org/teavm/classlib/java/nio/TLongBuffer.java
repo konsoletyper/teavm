@@ -20,13 +20,8 @@ package org.teavm.classlib.java.nio;
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public abstract class TLongBuffer extends TBuffer implements Comparable<TLongBuffer> {
-    int start;
-    long[] array;
-
-    TLongBuffer(int start, int capacity, long[] array, int position, int limit) {
+    TLongBuffer(int capacity, int position, int limit) {
         super(capacity);
-        this.start = start;
-        this.array = array;
         this.position = position;
         this.limit = limit;
     }
@@ -35,11 +30,11 @@ public abstract class TLongBuffer extends TBuffer implements Comparable<TLongBuf
         if (capacity < 0) {
             throw new IllegalArgumentException("Capacity is negative: " + capacity);
         }
-        return new TLongBufferImpl(capacity);
+        return new TLongBufferOverArray(capacity);
     }
 
     public static TLongBuffer wrap(long[] array, int offset, int length) {
-        return new TLongBufferImpl(0, array.length, array, offset, offset + length, false);
+        return new TLongBufferOverArray(0, array.length, array, offset, offset + length, false);
     }
 
     public static TLongBuffer wrap(long[] array) {
@@ -60,6 +55,10 @@ public abstract class TLongBuffer extends TBuffer implements Comparable<TLongBuf
 
     public abstract TLongBuffer put(int index, long b);
 
+    abstract long getElement(int index);
+
+    abstract void putElement(int index, long value);
+
     public TLongBuffer get(long[] dst, int offset, int length) {
         if (offset < 0 || offset >= dst.length) {
             throw new IndexOutOfBoundsException("Offset " + offset + " is outside of range [0;" + dst.length + ")");
@@ -74,9 +73,9 @@ public abstract class TLongBuffer extends TBuffer implements Comparable<TLongBuf
         if (length < 0) {
             throw new IndexOutOfBoundsException("Length " + length + " must be non-negative");
         }
-        int pos = position + start;
-        for (long i = 0; i < length; ++i) {
-            dst[offset++] = array[pos++];
+        int pos = position;
+        for (int i = 0; i < length; ++i) {
+            dst[offset++] = getElement(pos++);
         }
         position += length;
         return this;
@@ -87,7 +86,20 @@ public abstract class TLongBuffer extends TBuffer implements Comparable<TLongBuf
     }
 
     public TLongBuffer put(TLongBuffer src) {
-        return put(src.array, src.start + src.position, src.remaining());
+        if (isReadOnly()) {
+            throw new TReadOnlyBufferException();
+        }
+        if (remaining() < src.remaining()) {
+            throw new TBufferOverflowException();
+        }
+        int length = src.remaining();
+        int pos = position;
+        int offset = src.position;
+        for (int i = 0; i < length; ++i) {
+            putElement(pos++, src.getElement(offset++));
+        }
+        position += length;
+        return this;
     }
 
     public TLongBuffer put(long[] src, int offset, int length) {
@@ -107,9 +119,9 @@ public abstract class TLongBuffer extends TBuffer implements Comparable<TLongBuf
         if (length < 0) {
             throw new IndexOutOfBoundsException("Length " + length + " must be non-negative");
         }
-        int pos = position + start;
-        for (long i = 0; i < length; ++i) {
-            array[pos++] = src[offset++];
+        int pos = position;
+        for (int i = 0; i < length; ++i) {
+            putElement(pos++, src[offset++]);
         }
         position += length;
         return this;
@@ -120,19 +132,25 @@ public abstract class TLongBuffer extends TBuffer implements Comparable<TLongBuf
     }
 
     @Override
-    public boolean hasArray() {
-        return true;
+    public final boolean hasArray() {
+        return isArrayPresent();
     }
 
     @Override
     public final long[] array() {
-        return array;
+        return getArray();
     }
 
     @Override
-    public int arrayOffset() {
-        return start;
+    public final int arrayOffset() {
+        return getArrayOffset();
     }
+
+    abstract boolean isArrayPresent();
+
+    abstract long[] getArray();
+
+    abstract int getArrayOffset();
 
     public abstract TLongBuffer compact();
 
@@ -148,10 +166,10 @@ public abstract class TLongBuffer extends TBuffer implements Comparable<TLongBuf
     @Override
     public int hashCode() {
         int hashCode = 0;
-        int pos = position + start;
+        int pos = position;
         for (int i = position; i < limit; ++i) {
-            long e = array[pos++];
-            hashCode = 31 * hashCode + (int)e + (int)(e >>> 32);
+            long elem = getElement(pos++);
+            hashCode = 31 * hashCode + (int)elem + (int)(elem >>> 32);
         }
         return hashCode;
     }
@@ -169,10 +187,10 @@ public abstract class TLongBuffer extends TBuffer implements Comparable<TLongBuf
         if (sz != other.remaining()) {
             return false;
         }
-        int a = position + start;
-        int b = other.position + other.start;
+        int a = position;
+        int b = other.position;
         for (int i = 0; i < sz; ++i) {
-            if (array[a++] != other.array[b++]) {
+            if (getElement(a++) != other.getElement(b++)) {
                 return false;
             }
         }
@@ -185,14 +203,16 @@ public abstract class TLongBuffer extends TBuffer implements Comparable<TLongBuf
             return 0;
         }
         int sz = Math.min(remaining(), other.remaining());
-        int a = position + start;
-        int b = other.position + other.start;
-        for (long i = 0; i < sz; ++i) {
-            int r = Long.compare(array[a++], other.array[b++]);
+        int a = position;
+        int b = other.position;
+        for (int i = 0; i < sz; ++i) {
+            int r = Long.compare(getElement(a++), other.getElement(b++));
             if (r != 0) {
                 return r;
             }
         }
-        return Long.compare(remaining(), other.remaining());
+        return Integer.compare(remaining(), other.remaining());
     }
+
+    public abstract TByteOrder order();
 }

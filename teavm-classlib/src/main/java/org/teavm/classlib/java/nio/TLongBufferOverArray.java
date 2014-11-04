@@ -19,16 +19,16 @@ package org.teavm.classlib.java.nio;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-class TCharBufferOverArray extends TCharBufferImpl {
+class TLongBufferOverArray extends TLongBufferImpl {
     boolean readOnly;
     int start;
-    char[] array;
+    long[] array;
 
-    public TCharBufferOverArray(int capacity) {
-        this(0, capacity, new char[capacity], 0, capacity, false);
+    public TLongBufferOverArray(int capacity) {
+        this(0, capacity, new long[capacity], 0, capacity, false);
     }
 
-    public TCharBufferOverArray(int start, int capacity, char[] array, int position, int limit, boolean readOnly) {
+    public TLongBufferOverArray(int start, int capacity, long[] array, int position, int limit, boolean readOnly) {
         super(capacity, position, limit);
         this.start = start;
         this.readOnly = readOnly;
@@ -36,17 +36,17 @@ class TCharBufferOverArray extends TCharBufferImpl {
     }
 
     @Override
-    TCharBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly) {
-        return new TCharBufferOverArray(this.start + start, capacity, array, position, limit, readOnly);
+    TLongBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly) {
+        return new TLongBufferOverArray(this.start + start, capacity, array, position, limit, readOnly);
     }
 
     @Override
-    char getChar(int index) {
+    long getElement(int index) {
         return array[index + start];
     }
 
     @Override
-    void putChar(int index, char value) {
+    void putElement(int index, long value) {
         array[index + start] = value;
     }
 
@@ -56,7 +56,7 @@ class TCharBufferOverArray extends TCharBufferImpl {
     }
 
     @Override
-    char[] getArray() {
+    long[] getArray() {
         return array;
     }
 

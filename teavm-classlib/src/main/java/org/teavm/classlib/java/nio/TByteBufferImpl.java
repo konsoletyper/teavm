@@ -129,4 +129,13 @@ class TByteBufferImpl extends TByteBuffer {
         result.byteOrder = order;
         return result;
     }
+
+    @Override
+    public TLongBuffer asLongBuffer() {
+        int sz = remaining() / 8;
+        TLongBufferOverByteBuffer result = new TLongBufferOverByteBuffer(start + position, sz, this, 0, sz,
+                isReadOnly());
+        result.byteOrder = order;
+        return result;
+    }
 }

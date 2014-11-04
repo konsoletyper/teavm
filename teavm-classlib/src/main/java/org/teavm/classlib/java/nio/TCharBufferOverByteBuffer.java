@@ -82,4 +82,9 @@ class TCharBufferOverByteBuffer extends TCharBufferImpl {
     boolean readOnly() {
         return readOnly;
     }
+
+    @Override
+    public TByteOrder order() {
+        return byteOrder;
+    }
 }
