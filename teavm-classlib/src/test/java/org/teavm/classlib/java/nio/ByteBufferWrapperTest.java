@@ -16,7 +16,7 @@
 package org.teavm.classlib.java.nio;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 import java.nio.*;
 import org.junit.Test;
 
@@ -101,6 +101,31 @@ public class ByteBufferWrapperTest {
         assertThat(buffer.get(5), is((byte)0x30));
         assertThat(buffer.get(6), is((byte)0x31));
         assertThat(buffer.get(7), is((byte)0x32));
+    }
+
+    @Test
+    public void wrapsIntoFloatBuffer() {
+        byte[] array = new byte[100];
+        ByteBuffer buffer = ByteBuffer.wrap(array);
+        buffer.limit(70);
+        buffer.get(new byte[10]);
+        buffer = buffer.slice();
+        buffer.put(0, (byte)0x40);
+        buffer.put(1, (byte)0x49);
+        buffer.put(2, (byte)0x0F);
+        buffer.put(3, (byte)0xD0);
+
+        FloatBuffer wrapper = buffer.asFloatBuffer();
+        assertThat(wrapper.capacity(), is(15));
+        assertThat(wrapper.position(), is(0));
+        assertThat(wrapper.limit(), is(15));
+        assertEquals(3.14159, wrapper.get(0), 0.00001);
+
+        wrapper.put(0, 2.71828F);
+        assertThat(buffer.get(0), is((byte)0x40));
+        assertThat(buffer.get(1), is((byte)0x2D));
+        assertThat(buffer.get(2), is((byte)0xF8));
+        assertThat(buffer.get(3) & 0xF0, is(0x40));
     }
 
     @Test

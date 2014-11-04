@@ -138,4 +138,13 @@ class TByteBufferImpl extends TByteBuffer {
         result.byteOrder = order;
         return result;
     }
+
+    @Override
+    public TFloatBuffer asFloatBuffer() {
+        int sz = remaining() / 4;
+        TFloatBufferOverByteBuffer result = new TFloatBufferOverByteBuffer(start + position, sz, this, 0, sz,
+                isReadOnly());
+        result.byteOrder = order;
+        return result;
+    }
 }

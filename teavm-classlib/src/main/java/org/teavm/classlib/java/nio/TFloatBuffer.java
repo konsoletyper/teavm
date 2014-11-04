@@ -20,13 +20,8 @@ package org.teavm.classlib.java.nio;
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public abstract class TFloatBuffer extends TBuffer implements Comparable<TFloatBuffer> {
-    int start;
-    float[] array;
-
-    TFloatBuffer(int start, int capacity, float[] array, int position, int limit) {
+    TFloatBuffer(int capacity, int position, int limit) {
         super(capacity);
-        this.start = start;
-        this.array = array;
         this.position = position;
         this.limit = limit;
     }
@@ -35,11 +30,11 @@ public abstract class TFloatBuffer extends TBuffer implements Comparable<TFloatB
         if (capacity < 0) {
             throw new IllegalArgumentException("Capacity is negative: " + capacity);
         }
-        return new TFloatBufferImpl(capacity);
+        return new TFloatBufferOverArray(capacity);
     }
 
     public static TFloatBuffer wrap(float[] array, int offset, int length) {
-        return new TFloatBufferImpl(0, array.length, array, offset, offset + length, false);
+        return new TFloatBufferOverArray(0, array.length, array, offset, offset + length, false);
     }
 
     public static TFloatBuffer wrap(float[] array) {
@@ -60,6 +55,10 @@ public abstract class TFloatBuffer extends TBuffer implements Comparable<TFloatB
 
     public abstract TFloatBuffer put(int index, float b);
 
+    abstract float getElement(int index);
+
+    abstract void putElement(int index, float value);
+
     public TFloatBuffer get(float[] dst, int offset, int length) {
         if (offset < 0 || offset >= dst.length) {
             throw new IndexOutOfBoundsException("Offset " + offset + " is outside of range [0;" + dst.length + ")");
@@ -74,9 +73,9 @@ public abstract class TFloatBuffer extends TBuffer implements Comparable<TFloatB
         if (length < 0) {
             throw new IndexOutOfBoundsException("Length " + length + " must be non-negative");
         }
-        int pos = position + start;
+        int pos = position;
         for (int i = 0; i < length; ++i) {
-            dst[offset++] = array[pos++];
+            dst[offset++] = getElement(pos++);
         }
         position += length;
         return this;
@@ -87,7 +86,20 @@ public abstract class TFloatBuffer extends TBuffer implements Comparable<TFloatB
     }
 
     public TFloatBuffer put(TFloatBuffer src) {
-        return put(src.array, src.start + src.position, src.remaining());
+        if (isReadOnly()) {
+            throw new TReadOnlyBufferException();
+        }
+        if (remaining() < src.remaining()) {
+            throw new TBufferOverflowException();
+        }
+        int length = src.remaining();
+        int pos = position;
+        int offset = src.position;
+        for (int i = 0; i < length; ++i) {
+            putElement(pos++, src.getElement(offset++));
+        }
+        position += length;
+        return this;
     }
 
     public TFloatBuffer put(float[] src, int offset, int length) {
@@ -107,9 +119,9 @@ public abstract class TFloatBuffer extends TBuffer implements Comparable<TFloatB
         if (length < 0) {
             throw new IndexOutOfBoundsException("Length " + length + " must be non-negative");
         }
-        int pos = position + start;
+        int pos = position;
         for (int i = 0; i < length; ++i) {
-            array[pos++] = src[offset++];
+            putElement(pos++, src[offset++]);
         }
         position += length;
         return this;
@@ -120,19 +132,25 @@ public abstract class TFloatBuffer extends TBuffer implements Comparable<TFloatB
     }
 
     @Override
-    public boolean hasArray() {
-        return true;
+    public final boolean hasArray() {
+        return isArrayPresent();
     }
 
     @Override
     public final float[] array() {
-        return array;
+        return getArray();
     }
 
     @Override
-    public int arrayOffset() {
-        return start;
+    public final int arrayOffset() {
+        return getArrayOffset();
     }
+
+    abstract boolean isArrayPresent();
+
+    abstract float[] getArray();
+
+    abstract int getArrayOffset();
 
     public abstract TFloatBuffer compact();
 
@@ -148,9 +166,9 @@ public abstract class TFloatBuffer extends TBuffer implements Comparable<TFloatB
     @Override
     public int hashCode() {
         int hashCode = 0;
-        int pos = position + start;
+        int pos = position;
         for (int i = position; i < limit; ++i) {
-            hashCode = 31 * hashCode + Float.floatToIntBits(array[pos++]);
+            hashCode = 31 * hashCode + Float.floatToIntBits(getElement(pos++));
         }
         return hashCode;
     }
@@ -168,10 +186,10 @@ public abstract class TFloatBuffer extends TBuffer implements Comparable<TFloatB
         if (sz != other.remaining()) {
             return false;
         }
-        int a = position + start;
-        int b = other.position + other.start;
+        int a = position;
+        int b = other.position;
         for (int i = 0; i < sz; ++i) {
-            if (array[a++] != other.array[b++]) {
+            if (getElement(a++) != other.getElement(b++)) {
                 return false;
             }
         }
@@ -184,14 +202,16 @@ public abstract class TFloatBuffer extends TBuffer implements Comparable<TFloatB
             return 0;
         }
         int sz = Math.min(remaining(), other.remaining());
-        int a = position + start;
-        int b = other.position + other.start;
+        int a = position;
+        int b = other.position;
         for (int i = 0; i < sz; ++i) {
-            int r = Float.compare(array[a++], other.array[b++]);
+            int r = Float.compare(getElement(a++), other.getElement(b++));
             if (r != 0) {
                 return r;
             }
         }
         return Integer.compare(remaining(), other.remaining());
     }
+
+    public abstract TByteOrder order();
 }

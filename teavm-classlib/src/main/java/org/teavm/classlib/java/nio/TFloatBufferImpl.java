@@ -19,50 +19,45 @@ package org.teavm.classlib.java.nio;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-class TFloatBufferImpl extends TFloatBuffer {
-    private boolean readOnly;
-
-    public TFloatBufferImpl(int capacity) {
-        this(0, capacity, new float[capacity], 0, capacity, false);
-    }
-
-    public TFloatBufferImpl(int start, int capacity, float[] array, int position, int limit, boolean readOnly) {
-        super(start, capacity, array, position, limit);
-        this.readOnly = readOnly;
+abstract class TFloatBufferImpl extends TFloatBuffer {
+    public TFloatBufferImpl(int capacity, int position, int limit) {
+        super(capacity, position, limit);
     }
 
     @Override
     public TFloatBuffer slice() {
-        return new TFloatBufferImpl(position, limit - position,  array, 0, limit - position, readOnly);
+        return duplicate(position, limit - position, 0, limit - position, isReadOnly());
     }
 
     @Override
     public TFloatBuffer duplicate() {
-        return new TFloatBufferImpl(start, capacity, array, position, limit, readOnly);
+        return duplicate(0, capacity, position, limit, isReadOnly());
     }
 
     @Override
     public TFloatBuffer asReadOnlyBuffer() {
-        return new TFloatBufferImpl(start, capacity, array, position, limit, true);
+        return duplicate(0, capacity, position, limit, true);
     }
+
+    abstract TFloatBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly);
 
     @Override
     public float get() {
         if (position >= limit) {
             throw new TBufferUnderflowException();
         }
-        return array[start + position++];
+        return getElement(position++);
     }
 
     @Override
     public TFloatBuffer put(float b) {
-        if (readOnly) {
+        if (isReadOnly()) {
             throw new TReadOnlyBufferException();
         }
         if (position >= limit) {
             throw new TBufferOverflowException();
         }
-        array[start + position++] = b;
+        putElement(position++, b);
         return this;
     }
 
@@ -71,32 +66,31 @@ class TFloatBufferImpl extends TFloatBuffer {
         if (index < 0 || index >= limit) {
             throw new IndexOutOfBoundsException("Index " + index + " is outside of range [0;" + limit + ")");
         }
-        return array[start + index];
+        return getElement(index);
     }
 
     @Override
     public TFloatBuffer put(int index, float b) {
-        if (readOnly) {
+        if (isReadOnly()) {
             throw new TReadOnlyBufferException();
         }
         if (index < 0 || index >= limit) {
             throw new IndexOutOfBoundsException("Index " + index + " is outside of range [0;" + limit + ")");
         }
-        array[start + index] = b;
+        putElement(index, b);
         return this;
     }
 
     @Override
     public TFloatBuffer compact() {
-        if (readOnly) {
+        if (isReadOnly()) {
             throw new TReadOnlyBufferException();
         }
         if (position > 0) {
             int sz = remaining();
-            int dst = start;
-            int src = start + position;
+            int src = position;
             for (int i = 0; i < sz; ++i) {
-                array[dst++] = array[src++];
+                putElement(i, getElement(src++));
             }
             position = sz;
         }
@@ -112,6 +106,8 @@ class TFloatBufferImpl extends TFloatBuffer {
 
     @Override
     public boolean isReadOnly() {
-        return readOnly;
+        return readOnly();
     }
+
+    abstract boolean readOnly();
 }
