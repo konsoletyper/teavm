@@ -19,11 +19,10 @@ package org.teavm.classlib.java.nio;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-class TFloatBufferOverByteBuffer extends TFloatBufferImpl {
-    private TByteBufferImpl byteByffer;
-    TByteOrder byteOrder = TByteOrder.BIG_ENDIAN;
+abstract class TFloatBufferOverByteBuffer extends TFloatBufferImpl {
+    TByteBufferImpl byteByffer;
     boolean readOnly;
-    private int start;
+    int start;
 
     public TFloatBufferOverByteBuffer(int start, int capacity, TByteBufferImpl byteBuffer, int position, int limit,
             boolean readOnly) {
@@ -31,47 +30,6 @@ class TFloatBufferOverByteBuffer extends TFloatBufferImpl {
         this.start = start;
         this.byteByffer = byteBuffer;
         this.readOnly = readOnly;
-    }
-
-    @Override
-    TFloatBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly) {
-        TFloatBufferOverByteBuffer result = new TFloatBufferOverByteBuffer(this.start + start * 2, capacity,
-                byteByffer, position, limit, readOnly);
-        result.byteOrder = byteOrder;
-        return result;
-    }
-
-    @Override
-    float getElement(int index) {
-        int value;
-        if (byteOrder == TByteOrder.BIG_ENDIAN) {
-            value = ((byteByffer.array[start + index * 4] & 0xFF) << 24) |
-                    ((byteByffer.array[start + index * 4 + 1] & 0xFF) << 16) |
-                    ((byteByffer.array[start + index * 4 + 2] & 0xFF) << 8) |
-                    (byteByffer.array[start + index * 4 + 3] & 0xFF);
-        } else {
-            value = (byteByffer.array[start + index * 4] & 0xFF) |
-                    ((byteByffer.array[start + index * 4 + 1] & 0xFF) << 8) |
-                    ((byteByffer.array[start + index * 4 + 2] & 0xFF) << 16) |
-                    ((byteByffer.array[start + index * 4 + 3] & 0xFF) << 24);
-        }
-        return Float.intBitsToFloat(value);
-    }
-
-    @Override
-    void putElement(int index, float f) {
-        int value = Float.floatToIntBits(f);
-        if (byteOrder == TByteOrder.BIG_ENDIAN) {
-            byteByffer.array[start + index * 4] = (byte)(value >> 24);
-            byteByffer.array[start + index * 4 + 1] = (byte)(value >> 16);
-            byteByffer.array[start + index * 4 + 2] = (byte)(value >> 8);
-            byteByffer.array[start + index * 4 + 3] = (byte)value;
-        } else {
-            byteByffer.array[start + index * 4] = (byte)value;
-            byteByffer.array[start + index * 4 + 1] = (byte)(value >> 8);
-            byteByffer.array[start + index * 4 + 2] = (byte)(value >> 16);
-            byteByffer.array[start + index * 4 + 3] = (byte)(value >> 24);
-        }
     }
 
     @Override
@@ -92,10 +50,5 @@ class TFloatBufferOverByteBuffer extends TFloatBufferImpl {
     @Override
     boolean readOnly() {
         return readOnly;
-    }
-
-    @Override
-    public TByteOrder order() {
-        return byteOrder;
     }
 }

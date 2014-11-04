@@ -19,11 +19,10 @@ package org.teavm.classlib.java.nio;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-class TCharBufferOverByteBuffer extends TCharBufferImpl {
-    private TByteBufferImpl byteByffer;
-    TByteOrder byteOrder = TByteOrder.BIG_ENDIAN;
+abstract class TCharBufferOverByteBuffer extends TCharBufferImpl {
+    TByteBufferImpl byteByffer;
     boolean readOnly;
-    private int start;
+    int start;
 
     public TCharBufferOverByteBuffer(int start, int capacity, TByteBufferImpl byteBuffer, int position, int limit,
             boolean readOnly) {
@@ -31,38 +30,6 @@ class TCharBufferOverByteBuffer extends TCharBufferImpl {
         this.start = start;
         this.byteByffer = byteBuffer;
         this.readOnly = readOnly;
-    }
-
-    @Override
-    TCharBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly) {
-        TCharBufferOverByteBuffer result = new TCharBufferOverByteBuffer(this.start + start * 2, capacity, byteByffer,
-                position, limit, readOnly);
-        result.byteOrder = byteOrder;
-        return result;
-    }
-
-    @Override
-    char getChar(int index) {
-        int value;
-        if (byteOrder == TByteOrder.BIG_ENDIAN) {
-            value = ((byteByffer.array[start + index * 2] & 0xFF) << 8) |
-                    (byteByffer.array[start + index * 2 + 1] & 0xFF);
-        } else {
-            value = ((byteByffer.array[start + index * 2 + 1] & 0xFF) << 8) |
-                    (byteByffer.array[start + index * 2] & 0xFF);
-        }
-        return (char)value;
-    }
-
-    @Override
-    void putChar(int index, char value) {
-        if (byteOrder == TByteOrder.BIG_ENDIAN) {
-            byteByffer.array[start + index * 2] = (byte)(value >> 8);
-            byteByffer.array[start + index * 2 + 1] = (byte)value;
-        } else {
-            byteByffer.array[start + index * 2] = (byte)value;
-            byteByffer.array[start + index * 2 + 1] = (byte)(value >> 8);
-        }
     }
 
     @Override
@@ -83,10 +50,5 @@ class TCharBufferOverByteBuffer extends TCharBufferImpl {
     @Override
     boolean readOnly() {
         return readOnly;
-    }
-
-    @Override
-    public TByteOrder order() {
-        return byteOrder;
     }
 }

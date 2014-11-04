@@ -19,11 +19,10 @@ package org.teavm.classlib.java.nio;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-class TShortBufferOverByteBuffer extends TShortBufferImpl {
-    private TByteBufferImpl byteByffer;
-    TByteOrder byteOrder = TByteOrder.BIG_ENDIAN;
+abstract class TShortBufferOverByteBuffer extends TShortBufferImpl {
+    TByteBufferImpl byteByffer;
     boolean readOnly;
-    private int start;
+    int start;
 
     public TShortBufferOverByteBuffer(int start, int capacity, TByteBufferImpl byteBuffer, int position, int limit,
             boolean readOnly) {
@@ -31,38 +30,6 @@ class TShortBufferOverByteBuffer extends TShortBufferImpl {
         this.start = start;
         this.byteByffer = byteBuffer;
         this.readOnly = readOnly;
-    }
-
-    @Override
-    TShortBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly) {
-        TShortBufferOverByteBuffer result = new TShortBufferOverByteBuffer(this.start + start * 2, capacity,
-                byteByffer, position, limit, readOnly);
-        result.byteOrder = byteOrder;
-        return result;
-    }
-
-    @Override
-    short getElement(int index) {
-        int value;
-        if (byteOrder == TByteOrder.BIG_ENDIAN) {
-            value = ((byteByffer.array[start + index * 2] & 0xFF) << 8) |
-                    (byteByffer.array[start + index * 2 + 1] & 0xFF);
-        } else {
-            value = ((byteByffer.array[start + index * 2 + 1] & 0xFF) << 8) |
-                    (byteByffer.array[start + index * 2] & 0xFF);
-        }
-        return (short)value;
-    }
-
-    @Override
-    void putElement(int index, short value) {
-        if (byteOrder == TByteOrder.BIG_ENDIAN) {
-            byteByffer.array[start + index * 2] = (byte)(value >> 8);
-            byteByffer.array[start + index * 2 + 1] = (byte)value;
-        } else {
-            byteByffer.array[start + index * 2] = (byte)value;
-            byteByffer.array[start + index * 2 + 1] = (byte)(value >> 8);
-        }
     }
 
     @Override
@@ -83,10 +50,5 @@ class TShortBufferOverByteBuffer extends TShortBufferImpl {
     @Override
     boolean readOnly() {
         return readOnly;
-    }
-
-    @Override
-    public TByteOrder order() {
-        return byteOrder;
     }
 }

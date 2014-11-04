@@ -171,46 +171,51 @@ class TByteBufferImpl extends TByteBuffer {
     @Override
     public TCharBuffer asCharBuffer() {
         int sz = remaining() / 2;
-        TCharBufferOverByteBuffer result = new TCharBufferOverByteBuffer(start + position, sz, this, 0, sz,
-                isReadOnly());
-        result.byteOrder = order;
-        return result;
+        if (order == TByteOrder.BIG_ENDIAN) {
+            return new TCharBufferOverByteBufferBigEndian(start + position, sz, this, 0, sz, isReadOnly());
+        } else {
+            return new TCharBufferOverByteBufferLittleEndian(start + position, sz, this, 0, sz, isReadOnly());
+        }
     }
 
     @Override
     public TShortBuffer asShortBuffer() {
         int sz = remaining() / 2;
-        TShortBufferOverByteBuffer result = new TShortBufferOverByteBuffer(start + position, sz, this, 0, sz,
-                isReadOnly());
-        result.byteOrder = order;
-        return result;
+        if (order == TByteOrder.BIG_ENDIAN) {
+            return new TShortBufferOverByteBufferBigEndian(start + position, sz, this, 0, sz, isReadOnly());
+        } else {
+            return new TShortBufferOverByteBufferLittleEndian(start + position, sz, this, 0, sz, isReadOnly());
+        }
     }
 
     @Override
     public TIntBuffer asIntBuffer() {
         int sz = remaining() / 4;
-        TIntBufferOverByteBuffer result = new TIntBufferOverByteBuffer(start + position, sz, this, 0, sz,
-                isReadOnly());
-        result.byteOrder = order;
-        return result;
+        if (order == TByteOrder.BIG_ENDIAN) {
+            return new TIntBufferOverByteBufferBigEndian(start + position, sz, this, 0, sz, isReadOnly());
+        } else {
+            return new TIntBufferOverByteBufferLittleEndian(start + position, sz, this, 0, sz, isReadOnly());
+        }
     }
 
     @Override
     public TLongBuffer asLongBuffer() {
         int sz = remaining() / 8;
-        TLongBufferOverByteBuffer result = new TLongBufferOverByteBuffer(start + position, sz, this, 0, sz,
-                isReadOnly());
-        result.byteOrder = order;
-        return result;
+        if (order == TByteOrder.BIG_ENDIAN) {
+            return new TLongBufferOverByteBufferBigEndian(start + position, sz, this, 0, sz, isReadOnly());
+        } else {
+            return new TLongBufferOverByteBufferLittleEndian(start + position, sz, this, 0, sz, isReadOnly());
+        }
     }
 
     @Override
     public TFloatBuffer asFloatBuffer() {
         int sz = remaining() / 4;
-        TFloatBufferOverByteBuffer result = new TFloatBufferOverByteBuffer(start + position, sz, this, 0, sz,
-                isReadOnly());
-        result.byteOrder = order;
-        return result;
+        if (order == TByteOrder.LITTLE_ENDIAN) {
+            return new TFloatBufferOverByteBufferBigEndian(start + position, sz, this, 0, sz, isReadOnly());
+        } else {
+            return new TFloatBufferOverByteBufferLittleEndian(start + position, sz, this, 0, sz, isReadOnly());
+        }
     }
 
     @Override
