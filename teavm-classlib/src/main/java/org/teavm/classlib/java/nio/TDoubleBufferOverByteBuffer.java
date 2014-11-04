@@ -19,13 +19,13 @@ package org.teavm.classlib.java.nio;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-class TLongBufferOverByteBuffer extends TLongBufferImpl {
+class TDoubleBufferOverByteBuffer extends TDoubleBufferImpl {
     private TByteBufferImpl byteByffer;
     TByteOrder byteOrder = TByteOrder.BIG_ENDIAN;
     boolean readOnly;
     private int start;
 
-    public TLongBufferOverByteBuffer(int start, int capacity, TByteBufferImpl byteBuffer, int position, int limit,
+    public TDoubleBufferOverByteBuffer(int start, int capacity, TByteBufferImpl byteBuffer, int position, int limit,
             boolean readOnly) {
         super(capacity, position, limit);
         this.start = start;
@@ -34,15 +34,15 @@ class TLongBufferOverByteBuffer extends TLongBufferImpl {
     }
 
     @Override
-    TLongBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly) {
-        TLongBufferOverByteBuffer result = new TLongBufferOverByteBuffer(this.start + start * 2, capacity,
+    TDoubleBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly) {
+        TDoubleBufferOverByteBuffer result = new TDoubleBufferOverByteBuffer(this.start + start * 2, capacity,
                 byteByffer, position, limit, readOnly);
         result.byteOrder = byteOrder;
         return result;
     }
 
     @Override
-    long getElement(int index) {
+    double getElement(int index) {
         long value;
         if (byteOrder == TByteOrder.BIG_ENDIAN) {
             value = (((long)byteByffer.array[start + index * 8] & 0xFF) << 56) |
@@ -63,11 +63,12 @@ class TLongBufferOverByteBuffer extends TLongBufferImpl {
                     (((long)byteByffer.array[start + index * 8 + 6] & 0xFF) << 48) |
                     (((long)byteByffer.array[start + index * 8 + 7] & 0xFF) << 56);
         }
-        return value;
+        return Double.longBitsToDouble(value);
     }
 
     @Override
-    void putElement(int index, long value) {
+    void putElement(int index, double d) {
+        long value = Double.doubleToLongBits(d);
         if (byteOrder == TByteOrder.BIG_ENDIAN) {
             byteByffer.array[start + index * 8] = (byte)(value >> 56);
             byteByffer.array[start + index * 8 + 1] = (byte)(value >> 48);
@@ -95,7 +96,7 @@ class TLongBufferOverByteBuffer extends TLongBufferImpl {
     }
 
     @Override
-    long[] getArray() {
+    double[] getArray() {
         throw new UnsupportedOperationException();
     }
 

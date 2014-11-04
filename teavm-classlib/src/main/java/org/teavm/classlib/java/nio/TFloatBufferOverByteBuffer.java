@@ -45,15 +45,15 @@ class TFloatBufferOverByteBuffer extends TFloatBufferImpl {
     float getElement(int index) {
         int value;
         if (byteOrder == TByteOrder.BIG_ENDIAN) {
-            value = (byteByffer.array[start + index * 4] << 24) |
-                    (byteByffer.array[start + index * 4 + 1] << 16) |
-                    (byteByffer.array[start + index * 4 + 2] << 8) |
-                    (byteByffer.array[start + index * 4 + 3]);
+            value = ((byteByffer.array[start + index * 4] & 0xFF) << 24) |
+                    ((byteByffer.array[start + index * 4 + 1] & 0xFF) << 16) |
+                    ((byteByffer.array[start + index * 4 + 2] & 0xFF) << 8) |
+                    (byteByffer.array[start + index * 4 + 3] & 0xFF);
         } else {
-            value = (byteByffer.array[start + index * 4]) |
-                    (byteByffer.array[start + index * 4 + 1] << 8) |
-                    (byteByffer.array[start + index * 4 + 2] << 16) |
-                    (byteByffer.array[start + index * 4 + 3] << 24);
+            value = (byteByffer.array[start + index * 4] & 0xFF) |
+                    ((byteByffer.array[start + index * 4 + 1] & 0xFF) << 8) |
+                    ((byteByffer.array[start + index * 4 + 2] & 0xFF) << 16) |
+                    ((byteByffer.array[start + index * 4 + 3] & 0xFF) << 24);
         }
         return Float.intBitsToFloat(value);
     }

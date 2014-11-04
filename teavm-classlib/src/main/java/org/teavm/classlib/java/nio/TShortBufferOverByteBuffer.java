@@ -45,9 +45,11 @@ class TShortBufferOverByteBuffer extends TShortBufferImpl {
     short getElement(int index) {
         int value;
         if (byteOrder == TByteOrder.BIG_ENDIAN) {
-            value = (byteByffer.array[start + index * 2] << 8) | (byteByffer.array[start + index * 2 + 1]);
+            value = ((byteByffer.array[start + index * 2] & 0xFF) << 8) |
+                    (byteByffer.array[start + index * 2 + 1] & 0xFF);
         } else {
-            value = (byteByffer.array[start + index * 2 + 1] << 8) | (byteByffer.array[start + index * 2]);
+            value = ((byteByffer.array[start + index * 2 + 1] & 0xFF) << 8) |
+                    (byteByffer.array[start + index * 2] & 0xFF);
         }
         return (short)value;
     }

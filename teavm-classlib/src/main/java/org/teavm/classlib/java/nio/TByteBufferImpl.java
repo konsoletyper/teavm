@@ -104,6 +104,71 @@ class TByteBufferImpl extends TByteBuffer {
     }
 
     @Override
+    public char getChar() {
+        if (position + 1 >= limit) {
+            throw new TBufferUnderflowException();
+        }
+        int a = array[start + position] & 0xFF;
+        int b = array[start + position + 1] & 0xFF;
+        position += 2;
+        if (order == TByteOrder.BIG_ENDIAN) {
+            return (char)(a << 8 | b);
+        } else {
+            return (char)(b << 8 | a);
+        }
+    }
+
+    @Override
+    public TByteBuffer putChar(char value) {
+        if (readOnly) {
+            throw new TReadOnlyBufferException();
+        }
+        if (position + 1 >= limit) {
+            throw new TBufferOverflowException();
+        }
+        if (order == TByteOrder.BIG_ENDIAN) {
+            array[start + position++] = (byte)(value >> 8);
+            array[start + position++] = (byte)value;
+        } else {
+            array[start + position++] = (byte)value;
+            array[start + position++] = (byte)(value >> 8);
+        }
+        return this;
+    }
+
+    @Override
+    public char getChar(int index) {
+        if (index < 0 || index + 1 >= limit) {
+            throw new IndexOutOfBoundsException("Index " + index + " is outside of range [0;" + (limit - 1) + ")");
+        }
+        int a = array[start + index] & 0xFF;
+        int b = array[start + index + 1] & 0xFF;
+        if (order == TByteOrder.BIG_ENDIAN) {
+            return (char)(a << 8 | b);
+        } else {
+            return (char)(b << 8 | a);
+        }
+    }
+
+    @Override
+    public TByteBuffer putChar(int index, char value) {
+        if (readOnly) {
+            throw new TReadOnlyBufferException();
+        }
+        if (index < 0 || index + 1 >= limit) {
+            throw new IndexOutOfBoundsException("Index " + index + " is outside of range [0;" + (limit - 1) + ")");
+        }
+        if (order == TByteOrder.BIG_ENDIAN) {
+            array[start + index] = (byte)(value >> 8);
+            array[start + index + 1] = (byte)value;
+        } else {
+            array[start + index] = (byte)value;
+            array[start + index + 1] = (byte)(value >> 8);
+        }
+        return this;
+    }
+
+    @Override
     public TCharBuffer asCharBuffer() {
         int sz = remaining() / 2;
         TCharBufferOverByteBuffer result = new TCharBufferOverByteBuffer(start + position, sz, this, 0, sz,
@@ -143,6 +208,15 @@ class TByteBufferImpl extends TByteBuffer {
     public TFloatBuffer asFloatBuffer() {
         int sz = remaining() / 4;
         TFloatBufferOverByteBuffer result = new TFloatBufferOverByteBuffer(start + position, sz, this, 0, sz,
+                isReadOnly());
+        result.byteOrder = order;
+        return result;
+    }
+
+    @Override
+    public TDoubleBuffer asDoubleBuffer() {
+        int sz = remaining() / 8;
+        TDoubleBufferOverByteBuffer result = new TDoubleBufferOverByteBuffer(start + position, sz, this, 0, sz,
                 isReadOnly());
         result.byteOrder = order;
         return result;
