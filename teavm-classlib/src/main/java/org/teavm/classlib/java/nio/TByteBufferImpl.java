@@ -112,9 +112,9 @@ class TByteBufferImpl extends TByteBuffer {
         int b = array[start + position + 1] & 0xFF;
         position += 2;
         if (order == TByteOrder.BIG_ENDIAN) {
-            return (char)(a << 8 | b);
+            return (char)((a << 8) | b);
         } else {
-            return (char)(b << 8 | a);
+            return (char)((b << 8) | a);
         }
     }
 
@@ -144,9 +144,9 @@ class TByteBufferImpl extends TByteBuffer {
         int a = array[start + index] & 0xFF;
         int b = array[start + index + 1] & 0xFF;
         if (order == TByteOrder.BIG_ENDIAN) {
-            return (char)(a << 8 | b);
+            return (char)((a << 8) | b);
         } else {
-            return (char)(b << 8 | a);
+            return (char)((b << 8) | a);
         }
     }
 
@@ -179,6 +179,71 @@ class TByteBufferImpl extends TByteBuffer {
     }
 
     @Override
+    public short getShort() {
+        if (position + 1 >= limit) {
+            throw new TBufferUnderflowException();
+        }
+        int a = array[start + position] & 0xFF;
+        int b = array[start + position + 1] & 0xFF;
+        position += 2;
+        if (order == TByteOrder.BIG_ENDIAN) {
+            return (short)((a << 8) | b);
+        } else {
+            return (short)((b << 8) | a);
+        }
+    }
+
+    @Override
+    public TByteBuffer putShort(short value) {
+        if (readOnly) {
+            throw new TReadOnlyBufferException();
+        }
+        if (position + 1 >= limit) {
+            throw new TBufferOverflowException();
+        }
+        if (order == TByteOrder.BIG_ENDIAN) {
+            array[start + position++] = (byte)(value >> 8);
+            array[start + position++] = (byte)value;
+        } else {
+            array[start + position++] = (byte)value;
+            array[start + position++] = (byte)(value >> 8);
+        }
+        return this;
+    }
+
+    @Override
+    public short getShort(int index) {
+        if (index < 0 || index + 1 >= limit) {
+            throw new IndexOutOfBoundsException("Index " + index + " is outside of range [0;" + (limit - 1) + ")");
+        }
+        int a = array[start + index] & 0xFF;
+        int b = array[start + index + 1] & 0xFF;
+        if (order == TByteOrder.BIG_ENDIAN) {
+            return (short)((a << 8) | b);
+        } else {
+            return (short)((b << 8) | a);
+        }
+    }
+
+    @Override
+    public TByteBuffer putShort(int index, short value) {
+        if (readOnly) {
+            throw new TReadOnlyBufferException();
+        }
+        if (index < 0 || index + 1 >= limit) {
+            throw new IndexOutOfBoundsException("Index " + index + " is outside of range [0;" + (limit - 1) + ")");
+        }
+        if (order == TByteOrder.BIG_ENDIAN) {
+            array[start + index] = (byte)(value >> 8);
+            array[start + index + 1] = (byte)value;
+        } else {
+            array[start + index] = (byte)value;
+            array[start + index + 1] = (byte)(value >> 8);
+        }
+        return this;
+    }
+
+    @Override
     public TShortBuffer asShortBuffer() {
         int sz = remaining() / 2;
         if (order == TByteOrder.BIG_ENDIAN) {
@@ -186,6 +251,83 @@ class TByteBufferImpl extends TByteBuffer {
         } else {
             return new TShortBufferOverByteBufferLittleEndian(start + position, sz, this, 0, sz, isReadOnly());
         }
+    }
+
+    @Override
+    public int getInt() {
+        if (position + 3 >= limit) {
+            throw new TBufferUnderflowException();
+        }
+        int a = array[start + position] & 0xFF;
+        int b = array[start + position + 1] & 0xFF;
+        int c = array[start + position + 2] & 0xFF;
+        int d = array[start + position + 3] & 0xFF;
+        position += 4;
+        if (order == TByteOrder.BIG_ENDIAN) {
+            return (short)((a << 24) | (b << 16) | (c << 8) | d);
+        } else {
+            return (short)((d << 24) | (c << 16) | (b << 8) | a);
+        }
+    }
+
+    @Override
+    public TByteBuffer putInt(int value) {
+        if (readOnly) {
+            throw new TReadOnlyBufferException();
+        }
+        if (position + 3 >= limit) {
+            throw new TBufferOverflowException();
+        }
+        if (order == TByteOrder.BIG_ENDIAN) {
+            array[start + position++] = (byte)(value >> 24);
+            array[start + position++] = (byte)(value >> 16);
+            array[start + position++] = (byte)(value >> 8);
+            array[start + position++] = (byte)value;
+        } else {
+            array[start + position++] = (byte)value;
+            array[start + position++] = (byte)(value >> 8);
+            array[start + position++] = (byte)(value >> 16);
+            array[start + position++] = (byte)(value >> 24);
+        }
+        return this;
+    }
+
+    @Override
+    public int getInt(int index) {
+        if (index < 0 || index + 3 >= limit) {
+            throw new IndexOutOfBoundsException("Index " + index + " is outside of range [0;" + (limit - 3) + ")");
+        }
+        int a = array[start + position] & 0xFF;
+        int b = array[start + position + 1] & 0xFF;
+        int c = array[start + position + 2] & 0xFF;
+        int d = array[start + position + 3] & 0xFF;
+        if (order == TByteOrder.BIG_ENDIAN) {
+            return (short)((a << 24) | (b << 16) | (c << 8) | d);
+        } else {
+            return (short)((d << 24) | (c << 16) | (b << 8) | a);
+        }
+    }
+
+    @Override
+    public TByteBuffer putInt(int index, int value) {
+        if (readOnly) {
+            throw new TReadOnlyBufferException();
+        }
+        if (index < 0 || index + 3 >= limit) {
+            throw new IndexOutOfBoundsException("Index " + index + " is outside of range [0;" + (limit - 3) + ")");
+        }
+        if (order == TByteOrder.BIG_ENDIAN) {
+            array[start + index] = (byte)(value >> 24);
+            array[start + index + 1] = (byte)(value >> 16);
+            array[start + index + 2] = (byte)(value >> 8);
+            array[start + index + 3] = (byte)value;
+        } else {
+            array[start + index] = (byte)value;
+            array[start + index + 1] = (byte)(value >> 8);
+            array[start + index + 2] = (byte)(value >> 16);
+            array[start + index + 3] = (byte)(value >> 24);
+        }
+        return this;
     }
 
     @Override

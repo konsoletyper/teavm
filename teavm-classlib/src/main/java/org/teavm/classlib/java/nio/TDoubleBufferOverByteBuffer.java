@@ -35,7 +35,7 @@ class TDoubleBufferOverByteBuffer extends TDoubleBufferImpl {
 
     @Override
     TDoubleBuffer duplicate(int start, int capacity, int position, int limit, boolean readOnly) {
-        TDoubleBufferOverByteBuffer result = new TDoubleBufferOverByteBuffer(this.start + start * 2, capacity,
+        TDoubleBufferOverByteBuffer result = new TDoubleBufferOverByteBuffer(this.start + start * 8, capacity,
                 byteByffer, position, limit, readOnly);
         result.byteOrder = byteOrder;
         return result;

@@ -374,4 +374,128 @@ public class ByteBufferTest {
         buffer.reset();
         assertThat(buffer.position(), is(1));
     }
+
+    @Test
+    public void getsChar() {
+        byte[] array = { 0, 'A', 0, 'B' };
+        ByteBuffer buffer = ByteBuffer.wrap(array);
+        assertThat(buffer.getChar(), is('A'));
+        assertThat(buffer.getChar(), is('B'));
+        try {
+            buffer.getChar();
+            fail("Exception expected");
+        } catch (BufferUnderflowException e) {
+            // expected
+        }
+        buffer.position(3);
+        try {
+            buffer.getChar();
+            fail("Exception expected");
+        } catch (BufferUnderflowException e) {
+            // expected
+        }
+        assertThat(buffer.getChar(0), is('A'));
+        assertThat(buffer.getChar(2), is('B'));
+        try {
+            buffer.getChar(3);
+            fail("Exception expected");
+        } catch (IndexOutOfBoundsException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void putsChar() {
+        byte[] array = new byte[4];
+        ByteBuffer buffer = ByteBuffer.wrap(array);
+        buffer.putChar('A');
+        buffer.putChar('B');
+        try {
+            buffer.putChar('C');
+            fail("Exception expected");
+        } catch (BufferOverflowException e) {
+            // expected
+        }
+        buffer.position(3);
+        try {
+            buffer.putChar('D');
+            fail("Exception expected");
+        } catch (BufferOverflowException e) {
+            // expected
+        }
+        assertThat(buffer.get(0), is((byte)0));
+        assertThat(buffer.get(1), is((byte)'A'));
+        assertThat(buffer.get(2), is((byte)0));
+        assertThat(buffer.get(3), is((byte)'B'));
+        buffer.putChar(0, 'E');
+        assertThat(buffer.get(1), is((byte)'E'));
+        try {
+            buffer.putChar(3, 'F');
+            fail("Exception expected");
+        } catch (IndexOutOfBoundsException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void getsShort() {
+        byte[] array = { 0x23, 0x24, 0x25, 0x26 };
+        ByteBuffer buffer = ByteBuffer.wrap(array);
+        assertThat(buffer.getShort(), is((short)0x2324));
+        assertThat(buffer.getShort(), is((short)0x2526));
+        try {
+            buffer.getShort();
+            fail("Exception expected");
+        } catch (BufferUnderflowException e) {
+            // expected
+        }
+        buffer.position(3);
+        try {
+            buffer.getShort();
+            fail("Exception expected");
+        } catch (BufferUnderflowException e) {
+            // expected
+        }
+        assertThat(buffer.getShort(0), is((short)0x2324));
+        assertThat(buffer.getShort(2), is((short)0x2526));
+        try {
+            buffer.getShort(3);
+            fail("Exception expected");
+        } catch (IndexOutOfBoundsException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void putsShort() {
+        byte[] array = new byte[4];
+        ByteBuffer buffer = ByteBuffer.wrap(array);
+        buffer.putShort((short)0x2324);
+        buffer.putShort((short)0x2526);
+        try {
+            buffer.putShort((short)0x2728);
+            fail("Exception expected");
+        } catch (BufferOverflowException e) {
+            // expected
+        }
+        buffer.position(3);
+        try {
+            buffer.putShort((short)0x292A);
+            fail("Exception expected");
+        } catch (BufferOverflowException e) {
+            // expected
+        }
+        assertThat(buffer.get(0), is((byte)0x23));
+        assertThat(buffer.get(1), is((byte)0x24));
+        assertThat(buffer.get(2), is((byte)0x25));
+        assertThat(buffer.get(3), is((byte)0x26));
+        buffer.putShort(0, (short)0x2B2C);
+        assertThat(buffer.get(1), is((byte)0x2C));
+        try {
+            buffer.putShort(3, (short)0x2D2E);
+            fail("Exception expected");
+        } catch (IndexOutOfBoundsException e) {
+            // expected
+        }
+    }
 }

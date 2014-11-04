@@ -209,7 +209,23 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
 
     public abstract TCharBuffer asCharBuffer();
 
+    public abstract short getShort();
+
+    public abstract TByteBuffer putShort(short value);
+
+    public abstract short getShort(int index);
+
+    public abstract TByteBuffer putShort(int index, short value);
+
     public abstract TShortBuffer asShortBuffer();
+
+    public abstract int getInt();
+
+    public abstract TByteBuffer putInt(int value);
+
+    public abstract int getInt(int index);
+
+    public abstract TByteBuffer putInt(int index, int value);
 
     public abstract TIntBuffer asIntBuffer();
 
