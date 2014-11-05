@@ -25,7 +25,7 @@ import org.teavm.platform.metadata.MetadataProvider;
  */
 class MetadataProviderTransformer implements ClassHolderTransformer {
     @Override
-    public void transformClass(ClassHolder cls, ClassReaderSource innerSource) {
+    public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
         for (MethodHolder method : cls.getMethods()) {
             AnnotationReader providerAnnot = method.getAnnotations().get(MetadataProvider.class.getName());
             if (providerAnnot == null) {

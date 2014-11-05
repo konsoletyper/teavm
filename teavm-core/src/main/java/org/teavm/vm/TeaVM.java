@@ -291,7 +291,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
      * Java class library methods. The behavior of this method before building is not specified.</p>
      */
     public boolean hasMissingItems() {
-        return dependencyChecker.hasMissingItems();
+        return dependencyChecker.hasViolations();
     }
 
     /**
@@ -302,11 +302,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
      * @param target where to append all dependency diagnostics errors.
      */
     public void showMissingItems(Appendable target) throws IOException {
-        dependencyChecker.showMissingItems(target);
+        dependencyChecker.showViolations(target);
     }
 
-    public DependencyViolations getDependencyViolations() {
-        return dependencyChecker.getDependencyViolations();
+    public DependencyViolations getViolations() {
+        return dependencyChecker.getViolations();
     }
 
     public Collection<String> getClasses() {
@@ -327,8 +327,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
      * This can happen when you forgot some items in class path or when your code uses unimplemented
      * Java class library methods. The behavior of this method before building is not specified.</p>
      */
-    public void checkForMissingItems() {
-        dependencyChecker.checkForMissingItems();
+    public void checkForViolations() {
+        dependencyChecker.checkForViolations();
     }
 
     public DebugInformationEmitter getDebugEmitter() {
@@ -344,7 +344,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
      * are specified. This method may fail if there are items (classes, methods and fields)
      * that are required by entry points, but weren't found in classpath. In this case no
      * actual generation happens and no exceptions thrown, but you can further call
-     * {@link #checkForMissingItems()} or {@link #hasMissingItems()} to learn the build state.</p>
+     * {@link #checkForViolations()} or {@link #hasMissingItems()} to learn the build state.</p>
      *
      * @param writer where to generate JavaScript. Should not be null.
      * @param target where to generate additional resources. Can be null, but if there are

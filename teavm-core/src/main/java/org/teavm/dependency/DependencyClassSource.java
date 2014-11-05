@@ -22,10 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.teavm.common.CachedMapper;
 import org.teavm.common.Mapper;
-import org.teavm.model.ClassHolder;
-import org.teavm.model.ClassHolderTransformer;
-import org.teavm.model.ClassReader;
-import org.teavm.model.ClassReaderSource;
+import org.teavm.model.*;
 import org.teavm.model.util.ModelUtils;
 
 /**
@@ -34,6 +31,7 @@ import org.teavm.model.util.ModelUtils;
  */
 class DependencyClassSource implements ClassReaderSource {
     private ClassReaderSource innerSource;
+    private Diagnostics diagnostics;
     private ConcurrentMap<String, ClassHolder> generatedClasses = new ConcurrentHashMap<>();
     private List<ClassHolderTransformer> transformers = new ArrayList<>();
     private CachedMapper<String, ClassReader> cache = new CachedMapper<>(
@@ -43,8 +41,9 @@ class DependencyClassSource implements ClassReaderSource {
         }
     });
 
-    public DependencyClassSource(ClassReaderSource innerSource) {
+    public DependencyClassSource(ClassReaderSource innerSource, Diagnostics diagnostics) {
         this.innerSource = innerSource;
+        this.diagnostics = diagnostics;
     }
 
     @Override
@@ -65,7 +64,7 @@ class DependencyClassSource implements ClassReaderSource {
         ClassHolder cls = findClass(name);
         if (cls != null && !transformers.isEmpty()) {
             for (ClassHolderTransformer transformer : transformers) {
-                transformer.transformClass(cls, innerSource);
+                transformer.transformClass(cls, innerSource, diagnostics);
             }
             cls = ModelUtils.copyClass(cls);
         }

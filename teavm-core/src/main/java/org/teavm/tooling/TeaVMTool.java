@@ -345,12 +345,12 @@ public class TeaVMTool {
         }
     }
 
-    public DependencyViolations getDependencyViolations() {
-        return vm.getDependencyViolations();
+    public DependencyViolations getViolations() {
+        return vm.getViolations();
     }
 
     public void checkForMissingItems() {
-        vm.checkForMissingItems();
+        vm.checkForViolations();
     }
 
     private void copySourceFiles() {

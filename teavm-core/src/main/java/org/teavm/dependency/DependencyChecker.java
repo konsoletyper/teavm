@@ -50,9 +50,12 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     private DependencyViolations dependencyViolations;
     private DependencyCheckerInterruptor interruptor;
     private boolean interrupted;
+    private Diagnostics diagnostics;
 
-    public DependencyChecker(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services) {
-        this.classSource = new DependencyClassSource(classSource);
+    public DependencyChecker(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services,
+            Diagnostics diagnostics) {
+        this.diagnostics = diagnostics;
+        this.classSource = new DependencyClassSource(classSource, diagnostics);
         this.classLoader = classLoader;
         this.services = services;
         methodReaderCache = new CachedMapper<>(new Mapper<MethodReference, MethodReader>() {
@@ -431,23 +434,23 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         return methodCache.getKnown(methodRef);
     }
 
-    public DependencyViolations getDependencyViolations() {
+    public DependencyViolations getViolations() {
         if (dependencyViolations == null) {
             dependencyViolations = new DependencyViolations(missingMethods, missingClasses, missingFields);
         }
         return dependencyViolations;
     }
 
-    public void checkForMissingItems() {
-        getDependencyViolations().checkForMissingItems();
+    public void checkForViolations() {
+        getViolations().checkForViolations();
     }
 
-    public boolean hasMissingItems() {
-        return getDependencyViolations().hasMissingItems();
+    public boolean hasViolations() {
+        return getViolations().hasSevereViolations();
     }
 
-    public void showMissingItems(Appendable sb) throws IOException {
-        getDependencyViolations().showMissingItems(sb);
+    public void showViolations(Appendable sb) throws IOException {
+        getViolations().showViolations(sb);
     }
 
     public void processDependencies() {
@@ -468,5 +471,10 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     @Override
     public <T> T getService(Class<T> type) {
         return services.getService(type);
+    }
+
+    @Override
+    public Diagnostics getDiagnostics() {
+        return diagnostics;
     }
 }

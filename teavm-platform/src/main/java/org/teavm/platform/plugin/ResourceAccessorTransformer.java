@@ -15,10 +15,7 @@
  */
 package org.teavm.platform.plugin;
 
-import org.teavm.model.ClassHolder;
-import org.teavm.model.ClassHolderTransformer;
-import org.teavm.model.ClassReaderSource;
-import org.teavm.model.MethodHolder;
+import org.teavm.model.*;
 import org.teavm.vm.spi.TeaVMHost;
 
 /**
@@ -33,7 +30,7 @@ class ResourceAccessorTransformer implements ClassHolderTransformer {
     }
 
     @Override
-    public void transformClass(ClassHolder cls, ClassReaderSource innerSource) {
+    public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
         if (cls.getName().equals(ResourceAccessor.class.getName())) {
             ResourceAccessorGenerator generator = new ResourceAccessorGenerator();
             for (MethodHolder method : cls.getMethods()) {

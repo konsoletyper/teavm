@@ -15,10 +15,7 @@
  */
 package org.teavm.jso.plugin;
 
-import org.teavm.model.ClassHolder;
-import org.teavm.model.ClassHolderTransformer;
-import org.teavm.model.ClassReaderSource;
-import org.teavm.model.MethodHolder;
+import org.teavm.model.*;
 
 /**
  *
@@ -28,8 +25,9 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
     private ThreadLocal<JavascriptNativeProcessor> processor = new ThreadLocal<>();
 
     @Override
-    public void transformClass(ClassHolder cls, ClassReaderSource innerSource) {
+    public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
         JavascriptNativeProcessor processor = getProcessor(innerSource);
+        processor.setDiagnostics(diagnostics);
         processor.processClass(cls);
         for (MethodHolder method : cls.getMethods()) {
             if (method.getProgram() != null) {

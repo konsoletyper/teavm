@@ -13,22 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.platform.plugin;
+package org.teavm.model;
 
-import org.teavm.model.*;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-class ResourceTransformer implements ClassHolderTransformer {
-    @Override
-    public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
-        for (MethodHolder method : cls.getMethods()) {
-            Program program = method.getProgram();
-            if (program != null) {
-                new ResourceProgramTransformer(innerSource, program).transformProgram();
-            }
-        }
-    }
+public interface Diagnostics {
+    void error(InstructionLocation location, String error);
+
+    void error(String error);
+
+    void warning(InstructionLocation location, String error);
+
+    void warning(String error);
 }

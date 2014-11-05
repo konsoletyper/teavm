@@ -17,6 +17,7 @@ package org.teavm.dependency;
 
 import org.teavm.common.ServiceRepository;
 import org.teavm.model.ClassHolder;
+import org.teavm.model.Diagnostics;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 
@@ -38,4 +39,6 @@ public interface DependencyAgent extends DependencyInfo, ServiceRepository {
     ClassDependency linkClass(String className, final DependencyStack stack);
 
     FieldDependency linkField(FieldReference fieldRef, DependencyStack stack);
+
+    Diagnostics getDiagnostics();
 }

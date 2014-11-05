@@ -15,10 +15,11 @@
  */
 package org.teavm.model;
 
+
 /**
  *
  * @author Alexey Andreev
  */
 public interface ClassHolderTransformer {
-    void transformClass(ClassHolder cls, ClassReaderSource innerSource);
+    void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics);
 }

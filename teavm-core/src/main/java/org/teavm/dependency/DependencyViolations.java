@@ -47,24 +47,24 @@ public class DependencyViolations {
         return missingFields;
     }
 
-    public boolean hasMissingItems() {
+    public boolean hasSevereViolations() {
         return !missingMethods.isEmpty() || !missingClasses.isEmpty() || !missingFields.isEmpty();
     }
 
-    public void checkForMissingItems() {
-        if (!hasMissingItems()) {
+    public void checkForViolations() {
+        if (!hasSevereViolations()) {
             return;
         }
         StringBuilder sb = new StringBuilder();
         try {
-            showMissingItems(sb);
+            showViolations(sb);
         } catch (IOException e) {
             throw new AssertionError("StringBuilder should not throw IOException");
         }
         throw new IllegalStateException(sb.toString());
     }
 
-    public void showMissingItems(Appendable sb) throws IOException {
+    public void showViolations(Appendable sb) throws IOException {
         List<String> items = new ArrayList<>();
         Map<String, DependencyStack> stackMap = new HashMap<>();
         for (ClassDependencyInfo cls : missingClasses) {
@@ -80,15 +80,15 @@ public class DependencyViolations {
             items.add(field.getReference().toString());
         }
         Collections.sort(items);
-        sb.append("Can't compile due to the following items missing:\n");
+        sb.append("Can't compile due to the following violations:\n");
         for (String item : items) {
-            sb.append("  ").append(item).append("\n");
+            sb.append("Missing ").append(item).append("\n");
             DependencyStack stack = stackMap.get(item);
             if (stack == null) {
-                sb.append("    at unknown location\n");
+                sb.append("  at unknown location\n");
             } else {
                 while (stack.getMethod() != null) {
-                    sb.append("    at ").append(stack.getMethod().toString());
+                    sb.append("  at ").append(stack.getMethod().toString());
                     if (stack.getLocation() != null) {
                         sb.append(":").append(String.valueOf(stack.getLocation().getLine()));
                     }

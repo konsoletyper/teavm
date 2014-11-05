@@ -30,10 +30,15 @@ class JavascriptNativeProcessor {
     private Program program;
     private List<Instruction> replacement = new ArrayList<>();
     private NativeJavascriptClassRepository nativeRepos;
+    private Diagnostics diagnostics;
 
     public JavascriptNativeProcessor(ClassReaderSource classSource) {
         this.classSource = classSource;
         nativeRepos = new NativeJavascriptClassRepository(classSource);
+    }
+
+    public void setDiagnostics(Diagnostics diagnostics) {
+        this.diagnostics = diagnostics;
     }
 
     public void processClass(ClassHolder cls) {
@@ -90,7 +95,7 @@ class JavascriptNativeProcessor {
                         Variable result = invoke.getReceiver() != null ? program.createVariable() : null;
                         addPropertyGet(propertyName, invoke.getInstance(), result);
                         if (result != null) {
-                            result = unwrap(result, method.getResultType());
+                            result = unwrap(insn.getLocation(), result, method.getResultType());
                             copyVar(result, invoke.getReceiver());
                         }
                     } else if (isProperSetter(method.getDescriptor())) {
@@ -101,11 +106,13 @@ class JavascriptNativeProcessor {
                         } else {
                             propertyName = cutPrefix(method.getName(), 3);
                         }
-                        Variable wrapped = wrapArgument(invoke.getArguments().get(0), method.parameterType(0));
+                        Variable wrapped = wrapArgument(insn.getLocation(), invoke.getArguments().get(0),
+                                method.parameterType(0));
                         addPropertySet(propertyName, invoke.getInstance(), wrapped);
                     } else {
-                        throw new RuntimeException("Method " + invoke.getMethod() + " is not " +
+                        diagnostics.error(insn.getLocation(), "Method " + invoke.getMethod() + " is not " +
                                 "a proper native JavaScript property declaration");
+                        continue;
                     }
                 } else if (method.getAnnotations().get(JSIndexer.class.getName()) != null) {
                     if (isProperGetIndexer(method.getDescriptor())) {
@@ -113,7 +120,7 @@ class JavascriptNativeProcessor {
                         addIndexerGet(invoke.getInstance(), wrap(invoke.getArguments().get(0),
                                 method.parameterType(0)), result);
                         if (result != null) {
-                            result = unwrap(result, method.getResultType());
+                            result = unwrap(insn.getLocation(), result, method.getResultType());
                             copyVar(result, invoke.getReceiver());
                         }
                     } else if (isProperSetIndexer(method.getDescriptor())) {
@@ -121,8 +128,9 @@ class JavascriptNativeProcessor {
                         Variable value = wrap(invoke.getArguments().get(1), method.parameterType(1));
                         addIndexerSet(invoke.getInstance(), index, value);
                     } else {
-                        throw new RuntimeException("Method " + invoke.getMethod() + " is not " +
+                        diagnostics.error(insn.getLocation(), "Method " + invoke.getMethod() + " is not " +
                                 "a proper native JavaScript indexer declaration");
+                        continue;
                     }
                 } else {
                     String name = method.getName();
@@ -130,16 +138,18 @@ class JavascriptNativeProcessor {
                     boolean isConstructor = false;
                     if (constructorAnnot != null) {
                         if (!isSupportedType(method.getResultType())) {
-                            throw new RuntimeException("Method " + invoke.getMethod() + " is not " +
+                            diagnostics.error(insn.getLocation(), "Method " + invoke.getMethod() + " is not " +
                                     "a proper native JavaScript constructor declaration");
+                            continue;
                         }
                         AnnotationValue nameVal = constructorAnnot.getValue("value");
                         name = nameVal != null ? constructorAnnot.getValue("value").getString() : "";
                         if (name.isEmpty()) {
                             if (!method.getName().startsWith("new") || method.getName().length() == 3) {
-                                throw new RuntimeException("Method " + invoke.getMethod() + " is not " +
+                                diagnostics.error(insn.getLocation(), "Method " + invoke.getMethod() + " is not " +
                                         "declared as a native JavaScript constructor, but its name does " +
                                         "not satisfy conventions");
+                                continue;
                             }
                             name = method.getName().substring(3);
                         }
@@ -153,14 +163,16 @@ class JavascriptNativeProcessor {
                             }
                         }
                         if (method.getResultType() != ValueType.VOID && !isSupportedType(method.getResultType())) {
-                            throw new RuntimeException("Method " + invoke.getMethod() + " is not " +
+                            diagnostics.error(insn.getLocation(), "Method " + invoke.getMethod() + " is not " +
                                     "a proper native JavaScript method declaration");
+                            continue;
                         }
                     }
                     for (ValueType arg : method.getParameterTypes()) {
                         if (!isSupportedType(arg)) {
-                            throw new RuntimeException("Method " + invoke.getMethod() + " is not " +
+                            diagnostics.error(insn.getLocation(), "Method " + invoke.getMethod() + " is not " +
                                     "a proper native JavaScript method or constructor declaration");
+                            continue;
                         }
                     }
                     Variable result = invoke.getReceiver() != null ? program.createVariable() : null;
@@ -174,12 +186,13 @@ class JavascriptNativeProcessor {
                     newInvoke.getArguments().add(invoke.getInstance());
                     newInvoke.getArguments().add(addStringWrap(addString(name)));
                     for (int k = 0; k < invoke.getArguments().size(); ++k) {
-                        Variable arg = wrapArgument(invoke.getArguments().get(k), method.parameterType(k));
+                        Variable arg = wrapArgument(insn.getLocation(), invoke.getArguments().get(k),
+                                method.parameterType(k));
                         newInvoke.getArguments().add(arg);
                     }
                     replacement.add(newInvoke);
                     if (result != null) {
-                        result = unwrap(result, method.getResultType());
+                        result = unwrap(insn.getLocation(), result, method.getResultType());
                         copyVar(result, invoke.getReceiver());
                     }
                 }
@@ -254,7 +267,7 @@ class JavascriptNativeProcessor {
         return var;
     }
 
-    private Variable unwrap(Variable var, ValueType type) {
+    private Variable unwrap(InstructionLocation location, Variable var, ValueType type) {
         if (type instanceof ValueType.Primitive) {
             switch (((ValueType.Primitive)type).getKind()) {
                 case BOOLEAN:
@@ -290,7 +303,8 @@ class JavascriptNativeProcessor {
                 return result;
             }
         }
-        throw new IllegalArgumentException("Unsupported type: " + type);
+        diagnostics.error(location, "Unsupported type: " + type);
+        return var;
     }
 
     private Variable unwrap(Variable var, String methodName, ValueType resultType) {
@@ -305,20 +319,21 @@ class JavascriptNativeProcessor {
         return result;
     }
 
-    private Variable wrapArgument(Variable var, ValueType type) {
+    private Variable wrapArgument(InstructionLocation location, Variable var, ValueType type) {
         if (type instanceof ValueType.Object) {
             String className = ((ValueType.Object)type).getClassName();
             ClassReader cls = classSource.get(className);
             if (cls.getAnnotations().get(JSFunctor.class.getName()) != null) {
-                return wrapFunctor(var, cls);
+                return wrapFunctor(location, var, cls);
             }
         }
         return wrap(var, type);
     }
 
-    private Variable wrapFunctor(Variable var, ClassReader type) {
+    private Variable wrapFunctor(InstructionLocation location, Variable var, ClassReader type) {
         if (!type.hasModifier(ElementModifier.INTERFACE) || type.getMethods().size() != 1) {
-            throw new RuntimeException("Wrong functor: " + type.getName());
+            diagnostics.error(location, "Wrong functor: " + type.getName());
+            return var;
         }
         String name = type.getMethods().iterator().next().getName();
         Variable functor = program.createVariable();

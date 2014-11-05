@@ -26,7 +26,7 @@ import org.teavm.model.instructions.NullCheckInstruction;
  */
 public class NullPointerExceptionTransformer implements ClassHolderTransformer {
     @Override
-    public void transformClass(ClassHolder cls, ClassReaderSource innerSource) {
+    public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
         for (MethodHolder method : cls.getMethods()) {
             Program program = method.getProgram();
             if (program == null) {

@@ -24,7 +24,7 @@ import org.teavm.model.*;
  */
 public class EnumTransformer implements ClassHolderTransformer {
     @Override
-    public void transformClass(ClassHolder cls, ClassReaderSource innerSource) {
+    public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
         if (cls.getParent() != null && !cls.getParent().equals("java.lang.Enum")) {
             return;
         }

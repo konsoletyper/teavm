@@ -24,7 +24,7 @@ import org.teavm.model.instructions.*;
  */
 public class JCLHacks implements ClassHolderTransformer {
     @Override
-    public void transformClass(ClassHolder cls, ClassReaderSource innerSource) {
+    public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
         if (cls.getName().equals("java.lang.Thread")) {
             installThreadMethods(cls);
         }

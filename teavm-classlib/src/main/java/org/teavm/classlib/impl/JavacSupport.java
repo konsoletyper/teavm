@@ -27,7 +27,7 @@ import org.teavm.model.instructions.InvokeInstruction;
  */
 public class JavacSupport implements ClassHolderTransformer {
     @Override
-    public void transformClass(ClassHolder cls, ClassReaderSource innerSource) {
+    public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
         if (cls.getName().equals("javax.tools.ToolProvider")) {
             MethodHolder method = cls.getMethod(new MethodDescriptor("getSystemJavaCompiler",
                     ValueType.object("javax.tools.JavaCompiler")));
