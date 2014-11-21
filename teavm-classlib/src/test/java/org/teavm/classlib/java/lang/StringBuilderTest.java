@@ -311,6 +311,13 @@ public class StringBuilderTest {
     }
 
     @Test
+    public void deletesNothing() {
+        StringBuilder sb = new StringBuilder();
+        sb.delete(0, 0);
+        assertEquals(0, sb.length());
+    }
+
+    @Test
     public void replacesRangeWithSequenceOfSameLength() {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i <= 9; ++i) {

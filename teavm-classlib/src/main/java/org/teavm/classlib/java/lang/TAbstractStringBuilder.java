@@ -693,7 +693,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
     }
 
     public TAbstractStringBuilder delete(int start, int end) {
-        if (start > end || start >= length) {
+        if (start > end || start > length) {
             throw new TStringIndexOutOfBoundsException();
         }
         if (start == end) {
