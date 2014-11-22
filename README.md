@@ -4,7 +4,7 @@ TeaVM
 What is TeaVM?
 --------------
 
-TeaVM is an ahead-of-time translator from Java bytecode to JVM.
+TeaVM is an ahead-of-time translator from Java bytecode to JavaScript.
 It can be compared with GWT, however TeaVM does not require source code of your application and
 all required libraries.
 You can use TeaVM for building applications for the browser, due to the following features:
