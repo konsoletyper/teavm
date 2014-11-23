@@ -39,6 +39,4 @@ public interface MethodDependencyInfo {
     boolean isUsed();
 
     boolean isMissing();
-
-    DependencyStack getStack();
 }

@@ -13,19 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.model;
+package org.teavm.callgraph;
 
+import org.teavm.model.FieldReference;
+import org.teavm.model.InstructionLocation;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-public interface Diagnostics {
-    void error(InstructionLocation location, String error);
+public interface FieldAccessSite {
+    InstructionLocation getLocation();
 
-    void error(String error);
+    CallGraphNode getCallee();
 
-    void warning(InstructionLocation location, String error);
-
-    void warning(String error);
+    FieldReference getField();
 }

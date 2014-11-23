@@ -13,34 +13,13 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.vm;
-
-import org.teavm.model.InstructionLocation;
+package org.teavm.diagnostics;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class DiagnosticsProblem {
-    private DiagnosticsProblemSeverity severity;
-    private InstructionLocation location;
-    private String text;
-
-    public DiagnosticsProblem(DiagnosticsProblemSeverity severity, InstructionLocation location, String text) {
-        this.severity = severity;
-        this.location = location;
-        this.text = text;
-    }
-
-    public DiagnosticsProblemSeverity getSeverity() {
-        return severity;
-    }
-
-    public InstructionLocation getLocation() {
-        return location;
-    }
-
-    public String getText() {
-        return text;
-    }
+public enum ProblemSeverity {
+    ERROR,
+    WARNING
 }

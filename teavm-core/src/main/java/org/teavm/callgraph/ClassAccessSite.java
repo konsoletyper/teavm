@@ -13,13 +13,18 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.vm;
+package org.teavm.callgraph;
+
+import org.teavm.model.InstructionLocation;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-public enum DiagnosticsProblemSeverity {
-    ERROR,
-    WARNING
+public interface ClassAccessSite {
+    InstructionLocation getLocation();
+
+    CallGraphNode getCallee();
+
+    String getClassName();
 }

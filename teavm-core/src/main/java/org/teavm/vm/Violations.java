@@ -20,6 +20,7 @@ import java.util.Set;
 import org.teavm.dependency.ClassDependencyInfo;
 import org.teavm.dependency.FieldDependencyInfo;
 import org.teavm.dependency.MethodDependencyInfo;
+import org.teavm.diagnostics.Problem;
 
 /**
  *
@@ -32,9 +33,9 @@ public interface Violations {
 
     Set<FieldDependencyInfo> getMissingFields();
 
-    List<DiagnosticsProblem> getDiagnosticsProblems();
+    List<Problem> getDiagnosticsProblems();
 
-    List<DiagnosticsProblem> getSevereDiagnosticsProblems();
+    List<Problem> getSevereDiagnosticsProblems();
 
     boolean hasSevereViolations();
 

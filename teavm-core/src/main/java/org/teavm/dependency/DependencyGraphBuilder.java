@@ -18,6 +18,7 @@ package org.teavm.dependency;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.teavm.callgraph.DefaultCallGraphNode;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 import org.teavm.model.util.ListingBuilder;
@@ -31,7 +32,8 @@ class DependencyGraphBuilder {
     private DependencyNode[] nodes;
     private DependencyNode resultNode;
     private ProgramReader program;
-    private DependencyStack callerStack;
+    private DefaultCallGraphNode caller;
+    private InstructionLocation currentLocation;
     private ExceptionConsumer currentExceptionConsumer;
 
     public DependencyGraphBuilder(DependencyChecker dependencyChecker) {
@@ -50,7 +52,6 @@ class DependencyGraphBuilder {
         }
         resultNode = dep.getResult();
         nodes = dep.getVariables();
-        callerStack = new DependencyStack(method.getReference(), dep.getStack());
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlockReader block = program.basicBlockAt(i);
             currentExceptionConsumer = createExceptionConsumer(dep, block);
@@ -62,7 +63,7 @@ class DependencyGraphBuilder {
             }
             for (TryCatchBlockReader tryCatch : block.readTryCatchBlocks()) {
                 if (tryCatch.getExceptionType() != null) {
-                    dependencyChecker.linkClass(tryCatch.getExceptionType(), callerStack);
+                    dependencyChecker.linkClass(tryCatch.getExceptionType(), caller.getMethod(), null);
                 }
             }
         }
@@ -116,20 +117,23 @@ class DependencyGraphBuilder {
         private final DependencyChecker checker;
         private final DependencyNode[] parameters;
         private final DependencyNode result;
-        private final DependencyStack stack;
+        private final DefaultCallGraphNode caller;
+        private final InstructionLocation location;
         private final Set<MethodReference> knownMethods = new HashSet<>();
         private ExceptionConsumer exceptionConsumer;
 
         public VirtualCallConsumer(DependencyNode node, ClassReader filterClass,
                 MethodDescriptor methodDesc, DependencyChecker checker, DependencyNode[] parameters,
-                DependencyNode result, DependencyStack stack, ExceptionConsumer exceptionConsumer) {
+                DependencyNode result, DefaultCallGraphNode caller, InstructionLocation location,
+                ExceptionConsumer exceptionConsumer) {
             this.node = node;
             this.filterClass = filterClass;
             this.methodDesc = methodDesc;
             this.checker = checker;
             this.parameters = parameters;
             this.result = result;
-            this.stack = stack;
+            this.caller = caller;
+            this.location = location;
             this.exceptionConsumer = exceptionConsumer;
         }
 
@@ -147,7 +151,7 @@ class DependencyGraphBuilder {
                 return;
             }
             MethodReference methodRef = new MethodReference(className, methodDesc);
-            MethodDependency methodDep = checker.linkMethod(methodRef, stack);
+            MethodDependency methodDep = checker.linkMethod(methodRef, caller.getMethod(), location);
             if (!methodDep.isMissing() && knownMethods.add(methodRef)) {
                 methodDep.use();
                 DependencyNode[] targetParams = methodDep.getVariables();
@@ -185,7 +189,7 @@ class DependencyGraphBuilder {
     private InstructionReader reader = new InstructionReader() {
         @Override
         public void location(InstructionLocation location) {
-            callerStack = new DependencyStack(callerStack.getMethod(), location, callerStack.getCause());
+            currentLocation = location;
         }
 
         @Override
@@ -200,7 +204,7 @@ class DependencyGraphBuilder {
             }
             if (cst instanceof ValueType.Object) {
                 final String className = ((ValueType.Object)cst).getClassName();
-                dependencyChecker.linkClass(className, callerStack);
+                dependencyChecker.linkClass(className, caller.getMethod(), currentLocation);
             }
         }
 
@@ -228,7 +232,7 @@ class DependencyGraphBuilder {
         public void stringConstant(VariableReader receiver, String cst) {
             nodes[receiver.getIndex()].propagate(dependencyChecker.getType("java.lang.String"));
             MethodDependency method = dependencyChecker.linkMethod(new MethodReference(String.class,
-                    "<init>", char[].class, void.class), callerStack);
+                    "<init>", char[].class, void.class), caller.getMethod(), currentLocation);
             method.use();
         }
 
@@ -316,7 +320,7 @@ class DependencyGraphBuilder {
             nodes[receiver.getIndex()].propagate(dependencyChecker.getType("[" + itemType));
             String className = extractClassName(itemType);
             if (className != null) {
-                dependencyChecker.linkClass(className, callerStack);
+                dependencyChecker.linkClass(className, caller.getMethod(), currentLocation);
             }
         }
 
@@ -338,7 +342,7 @@ class DependencyGraphBuilder {
             nodes[receiver.getIndex()].propagate(dependencyChecker.getType(sb.toString()));
             String className = extractClassName(itemType);
             if (className != null) {
-                dependencyChecker.linkClass(className, callerStack);
+                dependencyChecker.linkClass(className, caller.getMethod(), currentLocation);
             }
         }
 
@@ -350,7 +354,7 @@ class DependencyGraphBuilder {
         @Override
         public void getField(VariableReader receiver, VariableReader instance, FieldReference field,
                 ValueType fieldType) {
-            FieldDependency fieldDep = dependencyChecker.linkField(field, callerStack);
+            FieldDependency fieldDep = dependencyChecker.linkField(field, caller.getMethod(), currentLocation);
             DependencyNode receiverNode = nodes[receiver.getIndex()];
             fieldDep.getValue().connect(receiverNode);
             initClass(field.getClassName());
@@ -358,7 +362,7 @@ class DependencyGraphBuilder {
 
         @Override
         public void putField(VariableReader instance, FieldReference field, VariableReader value) {
-            FieldDependency fieldDep = dependencyChecker.linkField(field, callerStack);
+            FieldDependency fieldDep = dependencyChecker.linkField(field, caller.getMethod(), currentLocation);
             DependencyNode valueNode = nodes[value.getIndex()];
             valueNode.connect(fieldDep.getValue());
             initClass(field.getClassName());
@@ -420,7 +424,7 @@ class DependencyGraphBuilder {
 
         private void invokeSpecial(VariableReader receiver, VariableReader instance, MethodReference method,
                 List<? extends VariableReader> arguments) {
-            MethodDependency methodDep = dependencyChecker.linkMethod(method, callerStack);
+            MethodDependency methodDep = dependencyChecker.linkMethod(method, caller.getMethod(), currentLocation);
             if (methodDep.isMissing()) {
                 return;
             }
@@ -441,7 +445,7 @@ class DependencyGraphBuilder {
 
         private void invokeVirtual(VariableReader receiver, VariableReader instance, MethodReference method,
                 List<? extends VariableReader> arguments) {
-            MethodDependency methodDep = dependencyChecker.linkMethod(method, callerStack);
+            MethodDependency methodDep = dependencyChecker.linkMethod(method, caller.getMethod(), currentLocation);
             if (methodDep.isMissing()) {
                 return;
             }
@@ -453,7 +457,7 @@ class DependencyGraphBuilder {
             DependencyConsumer listener = new VirtualCallConsumer(nodes[instance.getIndex()],
                     dependencyChecker.getClassSource().get(methodDep.getMethod().getOwnerName()),
                     method.getDescriptor(), dependencyChecker, actualArgs,
-                    receiver != null ? nodes[receiver.getIndex()] : null, callerStack,
+                    receiver != null ? nodes[receiver.getIndex()] : null, caller, currentLocation,
                     currentExceptionConsumer);
             nodes[instance.getIndex()].addConsumer(listener);
         }
@@ -462,13 +466,14 @@ class DependencyGraphBuilder {
         public void isInstance(VariableReader receiver, VariableReader value, final ValueType type) {
             String className = extractClassName(type);
             if (className != null) {
-                dependencyChecker.linkClass(className, callerStack);
+                dependencyChecker.linkClass(className, caller.getMethod(), currentLocation);
             }
         }
 
         @Override
         public void initClass(final String className) {
-            dependencyChecker.linkClass(className, callerStack).initClass(callerStack);
+            dependencyChecker.linkClass(className, caller.getMethod(), currentLocation)
+                    .initClass(caller.getMethod(), currentLocation);
         }
 
         @Override
@@ -476,8 +481,8 @@ class DependencyGraphBuilder {
             DependencyNode valueNode = nodes[value.getIndex()];
             DependencyNode receiverNode = nodes[receiver.getIndex()];
             valueNode.connect(receiverNode);
-            dependencyChecker.linkMethod(new MethodReference("java.lang.NullPointerException",
-                    "<init>", ValueType.VOID), callerStack).use();
+            dependencyChecker.linkMethod(new MethodReference(NullPointerException.class, "<init>", void.class),
+                    caller.getMethod(), currentLocation).use();
             currentExceptionConsumer.consume(dependencyChecker.getType("java.lang.NullPointerException"));
         }
     };

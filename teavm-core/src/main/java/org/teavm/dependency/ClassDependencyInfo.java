@@ -23,6 +23,4 @@ public interface ClassDependencyInfo {
     String getClassName();
 
     boolean isMissing();
-
-    DependencyStack getStack();
 }

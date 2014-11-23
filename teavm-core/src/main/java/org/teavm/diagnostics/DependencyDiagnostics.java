@@ -13,26 +13,24 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.dependency;
+package org.teavm.diagnostics;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.teavm.model.Diagnostics;
 import org.teavm.model.InstructionLocation;
-import org.teavm.vm.DiagnosticsProblem;
-import org.teavm.vm.DiagnosticsProblemSeverity;
+import org.teavm.model.MethodReference;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 class DependencyDiagnostics implements Diagnostics {
-    private List<DiagnosticsProblem> problems = new ArrayList<>();
-    private List<DiagnosticsProblem> severeProblems = new ArrayList<>();
+    private List<Problem> problems = new ArrayList<>();
+    private List<Problem> severeProblems = new ArrayList<>();
 
     @Override
-    public void error(InstructionLocation location, String error) {
-        DiagnosticsProblem violation = new DiagnosticsProblem(DiagnosticsProblemSeverity.ERROR, location, error);
+    public void error(MethodReference method, InstructionLocation location, String error, Object[] params) {
+        Problem violation = new Problem(ProblemSeverity.ERROR, location, error);
         problems.add(violation);
         severeProblems.add(violation);
     }
@@ -44,7 +42,7 @@ class DependencyDiagnostics implements Diagnostics {
 
     @Override
     public void warning(InstructionLocation location, String error) {
-        DiagnosticsProblem violation = new DiagnosticsProblem(DiagnosticsProblemSeverity.WARNING, location, error);
+        Problem violation = new Problem(ProblemSeverity.WARNING, location, error);
         problems.add(violation);
     }
 
@@ -53,11 +51,11 @@ class DependencyDiagnostics implements Diagnostics {
         warning(null, error);
     }
 
-    public List<DiagnosticsProblem> getProblems() {
+    public List<Problem> getProblems() {
         return problems;
     }
 
-    public List<DiagnosticsProblem> getSevereProblems() {
+    public List<Problem> getSevereProblems() {
         return severeProblems;
     }
 }

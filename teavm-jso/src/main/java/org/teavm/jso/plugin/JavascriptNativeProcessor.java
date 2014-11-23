@@ -16,6 +16,7 @@
 package org.teavm.jso.plugin;
 
 import java.util.*;
+import org.teavm.diagnostics.Diagnostics;
 import org.teavm.javascript.ni.PreserveOriginalName;
 import org.teavm.jso.*;
 import org.teavm.model.*;

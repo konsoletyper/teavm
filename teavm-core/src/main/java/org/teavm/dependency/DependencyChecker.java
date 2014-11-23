@@ -17,8 +17,11 @@ package org.teavm.dependency;
 
 import java.io.IOException;
 import java.util.*;
+import org.teavm.callgraph.CallGraph;
+import org.teavm.callgraph.DefaultCallGraph;
 import org.teavm.common.*;
 import org.teavm.common.CachedMapper.KeyListener;
+import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.*;
 import org.teavm.model.util.ModelUtils;
 
@@ -33,9 +36,6 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     private ClassLoader classLoader;
     private Mapper<MethodReference, MethodReader> methodReaderCache;
     private Mapper<FieldReference, FieldReader> fieldReaderCache;
-    private Map<MethodReference, DependencyStack> stacks = new HashMap<>();
-    private Map<FieldReference, DependencyStack> fieldStacks = new HashMap<>();
-    private Map<String, DependencyStack> classStacks = new HashMap<>();
     private CachedMapper<MethodReference, MethodDependency> methodCache;
     private CachedMapper<FieldReference, FieldDependency> fieldCache;
     private CachedMapper<String, ClassDependency> classCache;
@@ -51,6 +51,7 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     private DependencyCheckerInterruptor interruptor;
     private boolean interrupted;
     private Diagnostics diagnostics;
+    private DefaultCallGraph callGraph = new DefaultCallGraph();
 
     public DependencyChecker(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services,
             Diagnostics diagnostics) {
@@ -72,26 +73,24 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
             @Override public MethodDependency map(MethodReference preimage) {
                 MethodReader method = methodReaderCache.map(preimage);
                 if (method != null && !method.getReference().equals(preimage)) {
-                    stacks.put(method.getReference(), stacks.get(preimage));
                     return methodCache.map(method.getReference());
                 }
-                return createMethodDep(preimage, method, stacks.get(preimage));
+                return createMethodDep(preimage, method);
             }
         });
         fieldCache = new CachedMapper<>(new Mapper<FieldReference, FieldDependency>() {
             @Override public FieldDependency map(FieldReference preimage) {
                 FieldReader field = fieldReaderCache.map(preimage);
                 if (field != null && !field.getReference().equals(preimage)) {
-                    fieldStacks.put(field.getReference(), fieldStacks.get(preimage));
                     return fieldCache.map(field.getReference());
                 }
-                return createFieldNode(preimage, field, fieldStacks.get(preimage));
+                return createFieldNode(preimage, field);
             }
         });
 
         classCache = new CachedMapper<>(new Mapper<String, ClassDependency>() {
             @Override public ClassDependency map(String preimage) {
-                return createClassDependency(preimage, classStacks.get(preimage));
+                return createClassDependency(preimage);
             }
         });
         methodCache.addKeyListener(new KeyListener<MethodReference>() {
@@ -167,7 +166,7 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
 
     @Override
     public String generateClassName() {
-        return "$$tmp$$.TempClass" + classNameSuffix++;
+        return "$$teavm_generated_class$$" + classNameSuffix++;
     }
 
     @Override
@@ -189,7 +188,7 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         if (parameters.length + 1 != argumentTypes.length) {
             throw new IllegalArgumentException("argumentTypes length does not match the number of method's arguments");
         }
-        MethodDependency method = linkMethod(methodRef, DependencyStack.ROOT);
+        MethodDependency method = linkMethod(methodRef, null, null);
         method.use();
         DependencyNode[] varNodes = method.getVariables();
         varNodes[0].propagate(getType(methodRef.getClassName()));
@@ -218,7 +217,6 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
 
     @Override
     public ClassDependency linkClass(String className, DependencyStack stack) {
-        classStacks.put(className, stack);
         return classCache.map(className);
     }
 
@@ -239,21 +237,26 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     }
 
     @Override
-    public MethodDependency linkMethod(MethodReference methodRef, DependencyStack stack) {
+    public MethodDependency linkMethod(MethodReference methodRef, MethodReference caller,
+            InstructionLocation location) {
         if (methodRef == null) {
             throw new IllegalArgumentException();
         }
-        stacks.put(methodRef, stack);
+        callGraph.addNode(methodRef);
+        if (caller != null) {
+            callGraph.addNode(caller);
+            callGraph.getNode(caller).addCallSite(methodRef, location);
+        }
         return methodCache.map(methodRef);
     }
 
-    void initClass(ClassDependency cls, final DependencyStack stack) {
+    void initClass(ClassDependency cls, final MethodReference caller, final InstructionLocation location) {
         ClassReader reader = cls.getClassReader();
         final MethodReader method = reader.getMethod(new MethodDescriptor("<clinit>", void.class));
         if (method != null) {
             tasks.add(new Runnable() {
                 @Override public void run() {
-                    linkMethod(method.getReference(), stack).use();
+                    linkMethod(method.getReference(), caller, location).use();
                 }
             });
         }
@@ -373,7 +376,7 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     }
 
     @Override
-    public FieldDependency linkField(FieldReference fieldRef, DependencyStack stack) {
+    public FieldDependency linkField(FieldReference fieldRef, MethodReference caller, InstructionLocation location) {
         fieldStacks.put(fieldRef, stack);
         return fieldCache.map(fieldRef);
     }
@@ -434,25 +437,6 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         return methodCache.getKnown(methodRef);
     }
 
-    public DependencyViolations getViolations() {
-        if (dependencyViolations == null) {
-            dependencyViolations = new DependencyViolations(missingMethods, missingClasses, missingFields);
-        }
-        return dependencyViolations;
-    }
-
-    public void checkForViolations() {
-        getViolations().checkForViolations();
-    }
-
-    public boolean hasViolations() {
-        return getViolations().hasSevereViolations();
-    }
-
-    public void showViolations(Appendable sb) throws IOException {
-        getViolations().showViolations(sb);
-    }
-
     public void processDependencies() {
         interrupted = false;
         int index = 0;
@@ -476,5 +460,9 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     @Override
     public Diagnostics getDiagnostics() {
         return diagnostics;
+    }
+
+    public CallGraph getCallGraph() {
+        return callGraph;
     }
 }

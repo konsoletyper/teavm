@@ -13,18 +13,29 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.dependency;
+package org.teavm.callgraph;
 
-import org.teavm.model.FieldReference;
+import org.teavm.model.InstructionLocation;
 
 /**
- *
+ * <p>Call site that represents exact place in the code that calls a method.</p>.
  * @author Alexey Andreev
  */
-public interface FieldDependencyInfo {
-    ValueDependencyInfo getValue();
+public interface CallSite {
+    /**
+     * <p>Gets location of the call site</p>.
+     *
+     * @return location of the call site or <code>null</code> if no debug information found for this call site.
+     */
+    InstructionLocation getLocation();
 
-    FieldReference getReference();
+    /**
+     * <p>Gets a method that this call site invokes.</p>
+     */
+    CallGraphNode getCallee();
 
-    boolean isMissing();
+    /**
+     * <p>Gets a method that contains this call site.</p>
+     */
+    CallGraphNode getCaller();
 }

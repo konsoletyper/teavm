@@ -22,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.teavm.common.CachedMapper;
 import org.teavm.common.Mapper;
+import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.*;
 import org.teavm.model.util.ModelUtils;
 

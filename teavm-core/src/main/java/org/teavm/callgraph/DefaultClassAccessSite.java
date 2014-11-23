@@ -13,44 +13,37 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.dependency;
+package org.teavm.callgraph;
 
-import org.teavm.model.ClassReader;
 import org.teavm.model.InstructionLocation;
-import org.teavm.model.MethodReference;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class ClassDependency implements ClassDependencyInfo {
-    private DependencyChecker checker;
+public class DefaultClassAccessSite implements ClassAccessSite {
+    private InstructionLocation location;
+    private CallGraphNode callee;
     private String className;
-    private ClassReader classReader;
 
-    ClassDependency(DependencyChecker checker, String className, ClassReader classReader) {
-        this.checker = checker;
+    DefaultClassAccessSite(InstructionLocation location, CallGraphNode callee, String className) {
+        this.location = location;
+        this.callee = callee;
         this.className = className;
-        this.classReader = classReader;
+    }
+
+    @Override
+    public InstructionLocation getLocation() {
+        return location;
+    }
+
+    @Override
+    public CallGraphNode getCallee() {
+        return callee;
     }
 
     @Override
     public String getClassName() {
         return className;
-    }
-
-    @Override
-    public boolean isMissing() {
-        return classReader == null;
-    }
-
-    public ClassReader getClassReader() {
-        return classReader;
-    }
-
-    public void initClass(MethodReference caller, InstructionLocation location) {
-        if (!isMissing()) {
-            checker.initClass(this, caller, location);
-        }
     }
 }

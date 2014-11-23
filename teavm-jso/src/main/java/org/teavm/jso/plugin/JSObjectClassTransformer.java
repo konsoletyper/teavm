@@ -15,6 +15,7 @@
  */
 package org.teavm.jso.plugin;
 
+import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.*;
 
 /**

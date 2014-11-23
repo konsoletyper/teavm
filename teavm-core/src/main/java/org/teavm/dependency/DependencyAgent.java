@@ -16,10 +16,8 @@
 package org.teavm.dependency;
 
 import org.teavm.common.ServiceRepository;
-import org.teavm.model.ClassHolder;
-import org.teavm.model.Diagnostics;
-import org.teavm.model.FieldReference;
-import org.teavm.model.MethodReference;
+import org.teavm.diagnostics.Diagnostics;
+import org.teavm.model.*;
 
 /**
  *
@@ -34,11 +32,11 @@ public interface DependencyAgent extends DependencyInfo, ServiceRepository {
 
     void submitClass(ClassHolder cls);
 
-    MethodDependency linkMethod(MethodReference methodRef, DependencyStack stack);
+    MethodDependency linkMethod(MethodReference methodRef, MethodReference caller, InstructionLocation location);
 
-    ClassDependency linkClass(String className, final DependencyStack stack);
+    ClassDependency linkClass(String className, MethodReference caller, InstructionLocation location);
 
-    FieldDependency linkField(FieldReference fieldRef, DependencyStack stack);
+    FieldDependency linkField(FieldReference fieldRef, MethodReference caller, InstructionLocation location);
 
     Diagnostics getDiagnostics();
 }

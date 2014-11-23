@@ -15,6 +15,8 @@
  */
 package org.teavm.model;
 
+import org.teavm.diagnostics.Diagnostics;
+
 
 /**
  *

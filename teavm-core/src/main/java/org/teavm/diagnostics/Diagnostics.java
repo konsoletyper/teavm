@@ -13,18 +13,16 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.dependency;
+package org.teavm.diagnostics;
 
-import org.teavm.model.FieldReference;
+import org.teavm.model.CallLocation;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface FieldDependencyInfo {
-    ValueDependencyInfo getValue();
+public interface Diagnostics {
+    void error(CallLocation location, String error, Object... params);
 
-    FieldReference getReference();
-
-    boolean isMissing();
+    void warning(CallLocation location, String error, Object... params);
 }

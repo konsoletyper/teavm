@@ -15,6 +15,7 @@
  */
 package org.teavm.javascript;
 
+import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.*;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
