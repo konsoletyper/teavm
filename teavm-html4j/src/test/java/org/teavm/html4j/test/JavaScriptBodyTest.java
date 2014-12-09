@@ -16,6 +16,7 @@
 package org.teavm.html4j.test;
 
 import static org.junit.Assert.assertEquals;
+import java.util.Calendar;
 import net.java.html.js.JavaScriptBody;
 import org.junit.Test;
 
@@ -60,6 +61,18 @@ public class JavaScriptBodyTest {
         assertEquals(23, invokeStaticCallback(new AImpl()));
     }
 
+    @Test
+    public void unusedArgumentIgnored() {
+        final int[] array = new int[1];
+        invokeCallback(new Callback() {
+            @Override
+            public void exec(Calendar input) {
+                array[0] = 23;
+            }
+        });
+        assertEquals(23, array[0]);
+    }
+
     private static class AImpl implements A {
         @Override public int foo() {
             return 23;
@@ -95,4 +108,8 @@ public class JavaScriptBodyTest {
             "@org.teavm.html4j.test.JavaScriptBodyTest::staticCallback(" +
             "Lorg/teavm/html4j/test/A;)(a)", javacall = true)
     private native int invokeStaticCallback(A a);
+
+    @JavaScriptBody(args = "callback", body = "callback.@org.teavm.html4j.test.Callback::exec(" +
+            "Ljava/util/Calendar;)(null)", javacall = true)
+    private native void invokeCallback(Callback callback);
 }

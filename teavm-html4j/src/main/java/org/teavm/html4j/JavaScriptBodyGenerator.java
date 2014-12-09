@@ -106,15 +106,26 @@ public class JavaScriptBodyGenerator implements Generator {
                 if (i > 0) {
                     sb.append(", ");
                 }
+                ValueType paramType = simplifyParamType(reader.parameterType(i));
                 sb.append(naming.getFullNameFor(JavaScriptConvGenerator.fromJsMethod)).append("(p").append(i)
                         .append(", ")
-                        .append(Renderer.typeToClsString(naming, reader.parameterType(i))).append(")");
+                        .append(Renderer.typeToClsString(naming, paramType)).append(")");
             }
             sb.append(")); })(");
             if (ident != null) {
                 sb.append(ident);
             }
             return sb.toString();
+        }
+        private ValueType simplifyParamType(ValueType type) {
+            if (type instanceof ValueType.Object) {
+                return ValueType.object("java.lang.Object");
+            } else if (type instanceof ValueType.Array) {
+                ValueType.Array array = (ValueType.Array)type;
+                return ValueType.arrayOf(simplifyParamType(array.getItemType()));
+            } else {
+                return type;
+            }
         }
         private MethodReader findMethod(String clsName, MethodDescriptor desc) {
             while (clsName != null) {
