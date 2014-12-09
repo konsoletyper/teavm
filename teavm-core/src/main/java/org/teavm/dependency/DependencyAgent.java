@@ -32,11 +32,11 @@ public interface DependencyAgent extends DependencyInfo, ServiceRepository {
 
     void submitClass(ClassHolder cls);
 
-    MethodDependency linkMethod(MethodReference methodRef, MethodReference caller, InstructionLocation location);
+    MethodDependency linkMethod(MethodReference methodRef, CallLocation callLocation);
 
-    ClassDependency linkClass(String className, MethodReference caller, InstructionLocation location);
+    ClassDependency linkClass(String className, CallLocation callLocation);
 
-    FieldDependency linkField(FieldReference fieldRef, MethodReference caller, InstructionLocation location);
+    FieldDependency linkField(FieldReference fieldRef, CallLocation callLocation);
 
     Diagnostics getDiagnostics();
 }

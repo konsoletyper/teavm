@@ -15,9 +15,8 @@
  */
 package org.teavm.dependency;
 
+import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReader;
-import org.teavm.model.InstructionLocation;
-import org.teavm.model.MethodReference;
 
 /**
  *
@@ -48,9 +47,9 @@ public class ClassDependency implements ClassDependencyInfo {
         return classReader;
     }
 
-    public void initClass(MethodReference caller, InstructionLocation location) {
+    public void initClass(CallLocation callLocation) {
         if (!isMissing()) {
-            checker.initClass(this, caller, location);
+            checker.initClass(this, callLocation);
         }
     }
 }

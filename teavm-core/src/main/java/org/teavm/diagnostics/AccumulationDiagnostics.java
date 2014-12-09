@@ -17,38 +17,27 @@ package org.teavm.diagnostics;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.teavm.model.InstructionLocation;
-import org.teavm.model.MethodReference;
+import org.teavm.model.CallLocation;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-class DependencyDiagnostics implements Diagnostics {
+public class AccumulationDiagnostics implements Diagnostics {
     private List<Problem> problems = new ArrayList<>();
     private List<Problem> severeProblems = new ArrayList<>();
 
     @Override
-    public void error(MethodReference method, InstructionLocation location, String error, Object[] params) {
-        Problem violation = new Problem(ProblemSeverity.ERROR, location, error);
-        problems.add(violation);
-        severeProblems.add(violation);
+    public void error(CallLocation location, String error, Object... params) {
+        Problem problem = new Problem(ProblemSeverity.ERROR, location, error, params);
+        problems.add(problem);
+        severeProblems.add(problem);
     }
 
     @Override
-    public void error(String error) {
-        error(null, error);
-    }
-
-    @Override
-    public void warning(InstructionLocation location, String error) {
-        Problem violation = new Problem(ProblemSeverity.WARNING, location, error);
-        problems.add(violation);
-    }
-
-    @Override
-    public void warning(String error) {
-        warning(null, error);
+    public void warning(CallLocation location, String error, Object... params) {
+        Problem problem = new Problem(ProblemSeverity.ERROR, location, error, params);
+        problems.add(problem);
     }
 
     public List<Problem> getProblems() {

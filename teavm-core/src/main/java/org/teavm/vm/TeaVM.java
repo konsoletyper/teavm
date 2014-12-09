@@ -22,6 +22,7 @@ import org.teavm.common.ServiceRepository;
 import org.teavm.debugging.information.DebugInformationEmitter;
 import org.teavm.debugging.information.SourceLocation;
 import org.teavm.dependency.*;
+import org.teavm.diagnostics.AccumulationDiagnostics;
 import org.teavm.javascript.*;
 import org.teavm.javascript.ast.ClassNode;
 import org.teavm.javascript.ni.Generator;
@@ -68,6 +69,7 @@ import org.teavm.vm.spi.TeaVMPlugin;
 public class TeaVM implements TeaVMHost, ServiceRepository {
     private ClassReaderSource classSource;
     private DependencyChecker dependencyChecker;
+    private AccumulationDiagnostics diagnostics = new AccumulationDiagnostics();
     private ClassLoader classLoader;
     private boolean minifying = true;
     private boolean bytecodeLogging;
@@ -90,7 +92,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     TeaVM(ClassReaderSource classSource, ClassLoader classLoader) {
         this.classSource = classSource;
         this.classLoader = classLoader;
-        dependencyChecker = new DependencyChecker(this.classSource, classLoader, this);
+        dependencyChecker = new DependencyChecker(this.classSource, classLoader, this, diagnostics);
         progressListener = new TeaVMProgressListener() {
             @Override public TeaVMProgressFeedback progressReached(int progress) {
                 return TeaVMProgressFeedback.CONTINUE;
@@ -232,9 +234,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                         "for method " + ref);
             }
         }
-        TeaVMEntryPoint entryPoint = new TeaVMEntryPoint(name, ref,
-                dependencyChecker.linkMethod(ref, DependencyStack.ROOT));
-        dependencyChecker.linkClass(ref.getClassName(), DependencyStack.ROOT).initClass(DependencyStack.ROOT);
+        TeaVMEntryPoint entryPoint = new TeaVMEntryPoint(name, ref, dependencyChecker.linkMethod(ref, null));
+        dependencyChecker.linkClass(ref.getClassName(), null).initClass(null);
         if (name != null) {
             entryPoints.put(name, entryPoint);
         }
@@ -258,9 +259,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     }
 
     public TeaVMEntryPoint linkMethod(MethodReference ref) {
-        TeaVMEntryPoint entryPoint = new TeaVMEntryPoint("", ref,
-                dependencyChecker.linkMethod(ref, DependencyStack.ROOT));
-        dependencyChecker.linkClass(ref.getClassName(), DependencyStack.ROOT).initClass(DependencyStack.ROOT);
+        TeaVMEntryPoint entryPoint = new TeaVMEntryPoint("", ref, dependencyChecker.linkMethod(ref, null));
+        dependencyChecker.linkClass(ref.getClassName(), null).initClass(null);
         return entryPoint;
     }
 
@@ -269,12 +269,12 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             throw new IllegalArgumentException("Class with public name `" + name + "' already defined for class " +
                     className);
         }
-        dependencyChecker.linkClass(className, DependencyStack.ROOT).initClass(DependencyStack.ROOT);
+        dependencyChecker.linkClass(className, null).initClass(null);
         exportedClasses.put(name, className);
     }
 
     public void linkType(String className) {
-        dependencyChecker.linkClass(className, DependencyStack.ROOT).initClass(DependencyStack.ROOT);
+        dependencyChecker.linkClass(className, null).initClass(null);
     }
 
     /**
@@ -283,30 +283,6 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
      */
     public ClassReaderSource getClassSource() {
         return classSource;
-    }
-
-    /**
-     * <p>After building indicates whether build has failed due to some missing items (classes, methods and fields)
-     * in the classpath. This can happen when you forgot some items in class path or when your code uses unimplemented
-     * Java class library methods. The behavior of this method before building is not specified.</p>
-     */
-    public boolean hasMissingItems() {
-        return dependencyChecker.hasViolations();
-    }
-
-    /**
-     * <p>After building allows to build report on all items (classes, methods, fields) that are missing.
-     * This can happen when you forgot some items in class path or when your code uses unimplemented
-     * Java class library methods. The behavior of this method before building is not specified.</p>
-     *
-     * @param target where to append all dependency diagnostics errors.
-     */
-    public void showMissingItems(Appendable target) throws IOException {
-        dependencyChecker.showViolations(target);
-    }
-
-    public DependencyViolations getViolations() {
-        return dependencyChecker.getViolations();
     }
 
     public Collection<String> getClasses() {
@@ -319,16 +295,6 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
     public ListableClassReaderSource getWrittenClasses() {
         return writtenClasses;
-    }
-
-    /**
-     * <p>After building checks whether the build has failed due to some missing items (classes, methods and fields).
-     * If it has failed, throws exception, containing report on all missing items.
-     * This can happen when you forgot some items in class path or when your code uses unimplemented
-     * Java class library methods. The behavior of this method before building is not specified.</p>
-     */
-    public void checkForViolations() {
-        dependencyChecker.checkForViolations();
     }
 
     public DebugInformationEmitter getDebugEmitter() {
@@ -362,22 +328,19 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                 return progressListener.progressReached(0) == TeaVMProgressFeedback.CONTINUE;
             }
         });
-        dependencyChecker.linkMethod(new MethodReference(Class.class, "createNew", Class.class),
-                DependencyStack.ROOT).use();
+        dependencyChecker.linkMethod(new MethodReference(Class.class, "createNew", Class.class), null).use();
         dependencyChecker.linkMethod(new MethodReference(String.class, "<init>", char[].class, void.class),
-                DependencyStack.ROOT).use();
+                null).use();
         dependencyChecker.linkMethod(new MethodReference(String.class, "getChars", int.class, int.class, char[].class,
-                int.class, void.class), DependencyStack.ROOT).use();
+                int.class, void.class), null).use();
         MethodDependency internDep = dependencyChecker.linkMethod(new MethodReference(String.class, "intern",
-                String.class), DependencyStack.ROOT);
+                String.class), null);
         internDep.getVariable(0).propagate(dependencyChecker.getType("java.lang.String"));
         internDep.use();
-        dependencyChecker.linkMethod(new MethodReference(String.class, "length", int.class),
-                DependencyStack.ROOT).use();
-        dependencyChecker.linkMethod(new MethodReference(Object.class, "clone", Object.class),
-                DependencyStack.ROOT).use();
+        dependencyChecker.linkMethod(new MethodReference(String.class, "length", int.class), null).use();
+        dependencyChecker.linkMethod(new MethodReference(Object.class, "clone", Object.class), null).use();
         dependencyChecker.processDependencies();
-        if (wasCancelled() || hasMissingItems()) {
+        if (wasCancelled() || !diagnostics.getSevereProblems().isEmpty()) {
             return;
         }
 

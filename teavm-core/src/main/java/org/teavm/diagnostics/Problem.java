@@ -46,4 +46,8 @@ public class Problem {
     public String getText() {
         return text;
     }
+
+    public Object[] getParams() {
+        return params;
+    }
 }

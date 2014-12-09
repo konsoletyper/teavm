@@ -24,7 +24,6 @@ import org.teavm.cache.DiskRegularMethodNodeCache;
 import org.teavm.cache.FileSymbolTable;
 import org.teavm.debugging.information.DebugInformation;
 import org.teavm.debugging.information.DebugInformationBuilder;
-import org.teavm.dependency.DependencyViolations;
 import org.teavm.javascript.RenderingContext;
 import org.teavm.model.*;
 import org.teavm.parsing.ClasspathClassHolderSource;
@@ -345,10 +344,6 @@ public class TeaVMTool {
         }
     }
 
-    public DependencyViolations getViolations() {
-        return vm.getViolations();
-    }
-
     public void checkForMissingItems() {
         vm.checkForViolations();
     }
@@ -366,7 +361,6 @@ public class TeaVMTool {
     private AbstractRendererListener runtimeInjector = new AbstractRendererListener() {
         @Override
         public void begin(RenderingContext context, BuildTarget buildTarget) throws IOException {
-            @SuppressWarnings("resource")
             StringWriter writer = new StringWriter();
             resourceToWriter("org/teavm/javascript/runtime.js", writer);
             writer.close();

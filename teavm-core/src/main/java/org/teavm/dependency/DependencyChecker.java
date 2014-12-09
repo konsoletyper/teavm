@@ -47,7 +47,6 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     Set<FieldDependency> missingFields = new HashSet<>();
     List<DependencyType> types = new ArrayList<>();
     Map<String, DependencyType> typeMap = new HashMap<>();
-    private DependencyViolations dependencyViolations;
     private DependencyCheckerInterruptor interruptor;
     private boolean interrupted;
     private Diagnostics diagnostics;
@@ -188,7 +187,7 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         if (parameters.length + 1 != argumentTypes.length) {
             throw new IllegalArgumentException("argumentTypes length does not match the number of method's arguments");
         }
-        MethodDependency method = linkMethod(methodRef, null, null);
+        MethodDependency method = linkMethod(methodRef, null);
         method.use();
         DependencyNode[] varNodes = method.getVariables();
         varNodes[0].propagate(getType(methodRef.getClassName()));
@@ -216,11 +215,11 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     }
 
     @Override
-    public ClassDependency linkClass(String className, DependencyStack stack) {
+    public ClassDependency linkClass(String className, CallLocation callLocation) {
         return classCache.map(className);
     }
 
-    private ClassDependency createClassDependency(String className, DependencyStack stack) {
+    private ClassDependency createClassDependency(String className, CallLocation callLocation) {
         ClassReader cls = classSource.get(className);
         ClassDependency dependency = new ClassDependency(this, className, stack, cls);
         if (dependency.isMissing()) {
@@ -237,26 +236,25 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     }
 
     @Override
-    public MethodDependency linkMethod(MethodReference methodRef, MethodReference caller,
-            InstructionLocation location) {
+    public MethodDependency linkMethod(MethodReference methodRef, CallLocation callLocation) {
         if (methodRef == null) {
             throw new IllegalArgumentException();
         }
-        callGraph.addNode(methodRef);
-        if (caller != null) {
+        callGraph.getNode(methodRef);
+        if (callLocation != null) {
             callGraph.addNode(caller);
             callGraph.getNode(caller).addCallSite(methodRef, location);
         }
         return methodCache.map(methodRef);
     }
 
-    void initClass(ClassDependency cls, final MethodReference caller, final InstructionLocation location) {
+    void initClass(ClassDependency cls, final CallLocation callLocation) {
         ClassReader reader = cls.getClassReader();
         final MethodReader method = reader.getMethod(new MethodDescriptor("<clinit>", void.class));
         if (method != null) {
             tasks.add(new Runnable() {
                 @Override public void run() {
-                    linkMethod(method.getReference(), caller, location).use();
+                    linkMethod(method.getReference(), callLocation).use();
                 }
             });
         }
