@@ -366,7 +366,6 @@ public class TeaVMTool {
     private AbstractRendererListener runtimeInjector = new AbstractRendererListener() {
         @Override
         public void begin(RenderingContext context, BuildTarget buildTarget) throws IOException {
-            @SuppressWarnings("resource")
             StringWriter writer = new StringWriter();
             resourceToWriter("org/teavm/javascript/runtime.js", writer);
             writer.close();

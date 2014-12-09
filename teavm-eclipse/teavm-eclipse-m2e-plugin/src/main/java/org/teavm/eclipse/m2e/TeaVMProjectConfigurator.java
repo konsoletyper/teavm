@@ -1,8 +1,6 @@
 package org.teavm.eclipse.m2e;
 
 import java.io.File;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.*;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecution;

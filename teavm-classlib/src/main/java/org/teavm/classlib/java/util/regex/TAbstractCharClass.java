@@ -432,7 +432,6 @@ abstract class TAbstractCharClass extends TSpecialToken {
                 chCl.lowHighSurrogates.set(0, SURROGATE_CARDINALITY);
             }
             chCl.mayContainSupplCodepoints = mayContainSupplCodepoints;
-            ;
             return chCl;
         }
     }

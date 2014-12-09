@@ -52,7 +52,6 @@ public class JarFileResourceProvider implements ResourceProvider {
     @Override
     public InputStream openResource(String name) {
         try {
-            @SuppressWarnings("resource")
             JarInputStream input = new JarInputStream(new FileInputStream(file));
             while (true) {
                 ZipEntry entry = input.getNextEntry();
