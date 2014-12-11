@@ -83,7 +83,7 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
             @Override public void consume(DependencyAgentType type) {
                 if (!type.getName().startsWith("[")) {
                     MethodReference cons = new MethodReference(IllegalArgumentException.class, "<init>", void.class);
-                    agent.linkMethod(cons, method.getStack()).use();
+                    agent.linkMethod(cons, null).use();
                 }
             }
         });
@@ -136,7 +136,7 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
                             String wrapper = "java.lang." + primitiveWrappers[i];
                             MethodReference methodRef = new MethodReference(wrapper, "valueOf",
                                     primitiveTypes[i], ValueType.object(wrapper));
-                            agent.linkMethod(methodRef, method.getStack()).use();
+                            agent.linkMethod(methodRef, null).use();
                             method.getResult().propagate(agent.getType("java.lang." + primitiveWrappers[i]));
                         }
                     }

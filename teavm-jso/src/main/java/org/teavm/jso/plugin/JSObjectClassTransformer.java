@@ -32,7 +32,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
         processor.processClass(cls);
         for (MethodHolder method : cls.getMethods()) {
             if (method.getProgram() != null) {
-                processor.processProgram(method.getProgram());
+                processor.processProgram(method);
             }
         }
     }

@@ -15,6 +15,7 @@
  */
 package org.teavm.html4j;
 
+import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 
@@ -31,12 +32,11 @@ public class JCLHacks implements ClassHolderTransformer {
     }
 
     private void installThreadMethods(ClassHolder cls) {
-        cls.addMethod(createMethodThrowingSecurityException(new MethodDescriptor("setName",
-                ValueType.object("java.lang.String"), ValueType.VOID), false));
-        cls.addMethod(createMethodThrowingSecurityException(new MethodDescriptor("start",
-                ValueType.VOID), false));
+        cls.addMethod(createMethodThrowingSecurityException(new MethodDescriptor("setName", String.class, void.class),
+                false));
+        cls.addMethod(createMethodThrowingSecurityException(new MethodDescriptor("start", void.class), false));
         cls.addMethod(createMethodThrowingSecurityException(new MethodDescriptor("setDaemon",
-                ValueType.BOOLEAN, ValueType.VOID), false));
+                boolean.class, void.class), false));
         cls.addMethod(createThreadSleep());
     }
 
@@ -59,7 +59,7 @@ public class JCLHacks implements ClassHolderTransformer {
         InvokeInstruction invoke = new InvokeInstruction();
         invoke.setType(InvocationType.SPECIAL);
         invoke.setInstance(var);
-        invoke.setMethod(new MethodReference("java.lang.SecurityException", "<init>", ValueType.VOID));
+        invoke.setMethod(new MethodReference(SecurityException.class, "<init>", void.class));
         block.getInstructions().add(invoke);
         RaiseInstruction raise = new RaiseInstruction();
         raise.setException(var);

@@ -206,7 +206,7 @@ public class ClassNativeGenerator implements Generator, Injector, DependencyPlug
                 break;
             case "newInstance":
                 agent.linkMethod(new MethodReference(InstantiationException.class.getName(), "<init>",
-                        ValueType.VOID), graph.getStack()).use();
+                        ValueType.VOID), null).use();
                 break;
         }
     }

@@ -16,6 +16,7 @@
 package org.teavm.html4j;
 
 import net.java.html.js.JavaScriptBody;
+import org.teavm.diagnostics.Diagnostics;
 import org.teavm.javascript.ni.GeneratedBy;
 import org.teavm.model.*;
 

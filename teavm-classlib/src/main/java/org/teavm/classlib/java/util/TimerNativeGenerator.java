@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.util;
 
 import java.io.IOException;
+import java.util.TimerTask;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyPlugin;
@@ -23,21 +24,20 @@ import org.teavm.dependency.MethodDependency;
 import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.GeneratorContext;
 import org.teavm.model.MethodReference;
-import org.teavm.model.ValueType;
 
 /**
  *
  * @author Alexey Andreev
  */
 public class TimerNativeGenerator implements Generator, DependencyPlugin {
-    private static final MethodReference performOnceRef = new MethodReference("java.util.TimerTask",
-            "performOnce", ValueType.VOID);
+    private static final MethodReference performOnceRef = new MethodReference(TimerTask.class,
+            "performOnce", void.class);
 
     @Override
     public void methodAchieved(DependencyAgent agent, MethodDependency method) {
         switch (method.getReference().getName()) {
             case "scheduleOnce": {
-                MethodDependency performMethod = agent.linkMethod(performOnceRef, method.getStack());
+                MethodDependency performMethod = agent.linkMethod(performOnceRef, null);
                 performMethod.use();
                 method.getVariable(1).connect(performMethod.getVariable(1));
                 break;

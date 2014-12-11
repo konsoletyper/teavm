@@ -24,7 +24,6 @@ import org.teavm.model.*;
  */
 public class NewInstanceDependencySupport implements DependencyListener {
     private DependencyNode allClassesNode;
-    private DependencyStack newInstanceStack;
 
     @Override
     public void started(DependencyAgent agent) {
@@ -50,7 +49,6 @@ public class NewInstanceDependencySupport implements DependencyListener {
     public void methodAchieved(final DependencyAgent agent, MethodDependency method) {
         MethodReader reader = method.getMethod();
         if (reader.getOwnerName().equals("java.lang.Class") && reader.getName().equals("newInstance")) {
-            newInstanceStack = method.getStack();
             allClassesNode.connect(method.getResult());
             method.getResult().addConsumer(new DependencyConsumer() {
                 @Override public void consume(DependencyAgentType type) {
@@ -62,7 +60,7 @@ public class NewInstanceDependencySupport implements DependencyListener {
 
     private void attachConstructor(DependencyAgent checker, String type) {
         MethodReference ref = new MethodReference(type, new MethodDescriptor("<init>", ValueType.VOID));
-        checker.linkMethod(ref, newInstanceStack).use();
+        checker.linkMethod(ref, null).use();
     }
 
     @Override

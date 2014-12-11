@@ -85,7 +85,7 @@ public class ObjectNativeGenerator implements Generator, Injector, DependencyPlu
 
     private void achieveGetClass(DependencyAgent agent, MethodDependency method) {
         MethodReference initMethod = new MethodReference(Class.class, "createNew", Class.class);
-        agent.linkMethod(initMethod, method.getStack()).use();
+        agent.linkMethod(initMethod, null).use();
         method.getResult().propagate(agent.getType("java.lang.Class"));
     }
 

@@ -80,16 +80,16 @@ public class JavaScriptBodyDependency implements DependencyListener {
     }
 
     private void includeDefaultDependencies(DependencyAgent agent) {
-        agent.linkMethod(JavaScriptConvGenerator.fromJsMethod, DependencyStack.ROOT).use();
-        agent.linkMethod(JavaScriptConvGenerator.toJsMethod, DependencyStack.ROOT).use();
-        agent.linkMethod(JavaScriptConvGenerator.intValueMethod, DependencyStack.ROOT).use();
-        agent.linkMethod(JavaScriptConvGenerator.valueOfIntMethod, DependencyStack.ROOT).use();
-        agent.linkMethod(JavaScriptConvGenerator.booleanValueMethod, DependencyStack.ROOT).use();
-        agent.linkMethod(JavaScriptConvGenerator.valueOfBooleanMethod, DependencyStack.ROOT).use();
-        agent.linkMethod(JavaScriptConvGenerator.doubleValueMethod, DependencyStack.ROOT).use();
-        agent.linkMethod(JavaScriptConvGenerator.valueOfDoubleMethod, DependencyStack.ROOT).use();
-        agent.linkMethod(JavaScriptConvGenerator.charValueMethod, DependencyStack.ROOT).use();
-        agent.linkMethod(JavaScriptConvGenerator.valueOfCharMethod, DependencyStack.ROOT).use();
+        agent.linkMethod(JavaScriptConvGenerator.fromJsMethod, null).use();
+        agent.linkMethod(JavaScriptConvGenerator.toJsMethod, null).use();
+        agent.linkMethod(JavaScriptConvGenerator.intValueMethod, null).use();
+        agent.linkMethod(JavaScriptConvGenerator.valueOfIntMethod, null).use();
+        agent.linkMethod(JavaScriptConvGenerator.booleanValueMethod, null).use();
+        agent.linkMethod(JavaScriptConvGenerator.valueOfBooleanMethod, null).use();
+        agent.linkMethod(JavaScriptConvGenerator.doubleValueMethod, null).use();
+        agent.linkMethod(JavaScriptConvGenerator.valueOfDoubleMethod, null).use();
+        agent.linkMethod(JavaScriptConvGenerator.charValueMethod, null).use();
+        agent.linkMethod(JavaScriptConvGenerator.valueOfCharMethod, null).use();
     }
 
     @Override
@@ -134,7 +134,7 @@ public class JavaScriptBodyDependency implements DependencyListener {
             MethodDescriptor desc = MethodDescriptor.parse(method + params + "V");
             MethodReader reader = findMethod(agent.getClassSource(), fqn, desc);
             MethodReference ref = reader != null ? reader.getReference() : new MethodReference(fqn, desc);
-            MethodDependency methodDep = agent.linkMethod(ref, caller.getStack());
+            MethodDependency methodDep = agent.linkMethod(ref, null);
             if (!methodDep.isMissing()) {
                 if (reader.hasModifier(ElementModifier.STATIC) || reader.hasModifier(ElementModifier.FINAL)) {
                     methodDep.use();
@@ -166,7 +166,7 @@ public class JavaScriptBodyDependency implements DependencyListener {
                 return;
             }
             MethodReference methodRef = new MethodReference(type.getName(), superMethod.getDescriptor());
-            MethodDependency method = agent.linkMethod(methodRef, caller.getStack());
+            MethodDependency method = agent.linkMethod(methodRef, new CallLocation(caller.getReference()));
             method.use();
             for (int i = 0; i < method.getParameterCount(); ++i) {
                 allClassesNode.connect(method.getVariable(i));

@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.impl;
 
+import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.*;
 import org.teavm.model.instructions.ConstructInstruction;
 import org.teavm.model.instructions.ExitInstruction;

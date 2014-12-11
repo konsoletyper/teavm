@@ -138,7 +138,7 @@ public class JSNativeGenerator implements Injector, DependencyPlugin {
         ClassReader cls = agent.getClassSource().get(type);
         if (cls != null) {
             for (MethodReader method : cls.getMethods()) {
-                agent.linkMethod(method.getReference(), caller.getStack()).use();
+                agent.linkMethod(method.getReference(), null).use();
             }
         }
     }

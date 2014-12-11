@@ -27,7 +27,7 @@ import org.teavm.model.ValueType;
  */
 public class EnumDependencySupport implements DependencyListener {
     private DependencyNode allEnums;
-    private volatile DependencyStack enumConstantsStack;
+    private boolean unlocked;
 
     @Override
     public void started(DependencyAgent agent) {
@@ -41,11 +41,11 @@ public class EnumDependencySupport implements DependencyListener {
             return;
         }
         allEnums.propagate(agent.getType(className));
-        if (enumConstantsStack != null) {
+        if (unlocked) {
             MethodReader method = cls.getMethod(new MethodDescriptor("values",
                     ValueType.arrayOf(ValueType.object(cls.getName()))));
             if (method != null) {
-                agent.linkMethod(method.getReference(), enumConstantsStack).use();
+                agent.linkMethod(method.getReference(), null).use();
             }
         }
     }
@@ -54,9 +54,9 @@ public class EnumDependencySupport implements DependencyListener {
     public void methodAchieved(DependencyAgent agent, MethodDependency method) {
         if (method.getReference().getClassName().equals("java.lang.Class") &&
                 method.getReference().getName().equals("getEnumConstantsImpl")) {
+            unlocked = true;
             allEnums.connect(method.getResult().getArrayItem());
             method.getResult().propagate(agent.getType("[java.lang.Enum"));
-            enumConstantsStack = method.getStack();
             for (String cls : agent.getAchievableClasses()) {
                 classAchieved(agent, cls);
             }

@@ -39,7 +39,6 @@ public class ClassLookupDependencySupport implements DependencyListener {
     public void methodAchieved(final DependencyAgent agent, MethodDependency method) {
         MethodReference ref = method.getReference();
         if (ref.getClassName().equals("java.lang.Class") && ref.getName().equals("forNameImpl")) {
-            final DependencyStack stack = method.getStack();
             allClasses.addConsumer(new DependencyConsumer() {
                 @Override public void consume(DependencyAgentType type) {
                     ClassReader cls = agent.getClassSource().get(type.getName());
@@ -48,7 +47,7 @@ public class ClassLookupDependencySupport implements DependencyListener {
                     }
                     MethodReader initMethod = cls.getMethod(new MethodDescriptor("<clinit>", ValueType.VOID));
                     if (initMethod != null) {
-                        agent.linkMethod(initMethod.getReference(), stack).use();
+                        agent.linkMethod(initMethod.getReference(), null).use();
                     }
                 }
             });

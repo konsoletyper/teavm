@@ -98,12 +98,12 @@ public class SystemNativeGenerator implements Generator, DependencyPlugin {
     }
 
     private void achieveSetErr(DependencyAgent agent, MethodDependency method) {
-        FieldDependency fieldDep = agent.linkField(new FieldReference("java.lang.System", "err"), method.getStack());
+        FieldDependency fieldDep = agent.linkField(new FieldReference("java.lang.System", "err"), null);
         method.getVariable(1).connect(fieldDep.getValue());
     }
 
     private void achieveSetOut(DependencyAgent agent, MethodDependency method) {
-        FieldDependency fieldDep = agent.linkField(new FieldReference("java.lang.System", "out"), method.getStack());
+        FieldDependency fieldDep = agent.linkField(new FieldReference("java.lang.System", "out"), null);
         method.getVariable(1).connect(fieldDep.getValue());
     }
 }

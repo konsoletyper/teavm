@@ -37,7 +37,6 @@ public class ServiceLoaderSupport implements Generator, DependencyListener {
     private Map<String, List<String>> serviceMap = new HashMap<>();
     private DependencyNode allClassesNode;
     private ClassLoader classLoader;
-    private DependencyStack stack;
 
     public ServiceLoaderSupport(ClassLoader classLoader) {
         this.classLoader = classLoader;
@@ -123,7 +122,6 @@ public class ServiceLoaderSupport implements Generator, DependencyListener {
         MethodReference ref = method.getReference();
         if (ref.getClassName().equals("java.util.ServiceLoader") && ref.getName().equals("loadServices")) {
             method.getResult().propagate(agent.getType("[java.lang.Object"));
-            stack = method.getStack();
             allClassesNode.connect(method.getResult().getArrayItem());
             method.getResult().getArrayItem().addConsumer(new DependencyConsumer() {
                 @Override public void consume(DependencyAgentType type) {
@@ -135,7 +133,7 @@ public class ServiceLoaderSupport implements Generator, DependencyListener {
 
     private void initConstructor(DependencyAgent agent, String type) {
         MethodReference ctor = new MethodReference(type, new MethodDescriptor("<init>", ValueType.VOID));
-        agent.linkMethod(ctor, stack).use();
+        agent.linkMethod(ctor, null).use();
     }
 
     @Override
