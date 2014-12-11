@@ -29,20 +29,17 @@ public class MethodDependency implements MethodDependencyInfo {
     private int parameterCount;
     private DependencyNode resultNode;
     private DependencyNode thrown;
-    private DependencyStack stack;
     private MethodReader method;
     private MethodReference reference;
     private boolean used;
 
     MethodDependency(DependencyChecker dependencyChecker, DependencyNode[] variableNodes, int parameterCount,
-            DependencyNode resultNode, DependencyNode thrown, DependencyStack stack, MethodReader method,
-            MethodReference reference) {
+            DependencyNode resultNode, DependencyNode thrown, MethodReader method, MethodReference reference) {
         this.dependencyChecker = dependencyChecker;
         this.variableNodes = Arrays.copyOf(variableNodes, variableNodes.length);
         this.parameterCount = parameterCount;
         this.thrown = thrown;
         this.resultNode = resultNode;
-        this.stack = stack;
         this.method = method;
         this.reference = reference;
     }
@@ -79,11 +76,6 @@ public class MethodDependency implements MethodDependencyInfo {
     @Override
     public DependencyNode getThrown() {
         return thrown;
-    }
-
-    @Override
-    public DependencyStack getStack() {
-        return stack;
     }
 
     @Override

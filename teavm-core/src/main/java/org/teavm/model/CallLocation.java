@@ -25,7 +25,14 @@ public class CallLocation {
     private MethodReference method;
     private InstructionLocation sourceLocation;
 
+    public CallLocation(MethodReference method) {
+        this(method, null);
+    }
+
     public CallLocation(MethodReference method, InstructionLocation sourceLocation) {
+        if (method == null) {
+            throw new IllegalArgumentException("Method must not be null");
+        }
         this.method = method;
         this.sourceLocation = sourceLocation;
     }

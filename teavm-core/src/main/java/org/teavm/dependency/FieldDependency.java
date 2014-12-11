@@ -24,13 +24,11 @@ import org.teavm.model.FieldReference;
  */
 public class FieldDependency implements FieldDependencyInfo {
     private DependencyNode value;
-    private DependencyStack stack;
     private FieldReader field;
     private FieldReference reference;
 
-    FieldDependency(DependencyNode value, DependencyStack stack, FieldReader field, FieldReference reference) {
+    FieldDependency(DependencyNode value, FieldReader field, FieldReference reference) {
         this.value = value;
-        this.stack = stack;
         this.field = field;
         this.reference = reference;
     }
@@ -38,11 +36,6 @@ public class FieldDependency implements FieldDependencyInfo {
     @Override
     public DependencyNode getValue() {
         return value;
-    }
-
-    @Override
-    public DependencyStack getStack() {
-        return stack;
     }
 
     public FieldReader getField() {

@@ -15,14 +15,34 @@
  */
 package org.teavm.dependency;
 
-import java.io.IOException;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.callgraph.DefaultCallGraph;
-import org.teavm.common.*;
+import org.teavm.callgraph.DefaultCallGraphNode;
+import org.teavm.common.CachedMapper;
 import org.teavm.common.CachedMapper.KeyListener;
+import org.teavm.common.Mapper;
+import org.teavm.common.ServiceRepository;
 import org.teavm.diagnostics.Diagnostics;
-import org.teavm.model.*;
+import org.teavm.model.AnnotationReader;
+import org.teavm.model.CallLocation;
+import org.teavm.model.ClassHolder;
+import org.teavm.model.ClassHolderTransformer;
+import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
+import org.teavm.model.FieldReader;
+import org.teavm.model.FieldReference;
+import org.teavm.model.InstructionLocation;
+import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodReader;
+import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 import org.teavm.model.util.ModelUtils;
 
 /**
@@ -42,9 +62,6 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     private List<DependencyListener> listeners = new ArrayList<>();
     private ServiceRepository services;
     private Queue<Runnable> tasks = new ArrayDeque<>();
-    Set<MethodDependency> missingMethods = new HashSet<>();
-    Set<ClassDependency> missingClasses = new HashSet<>();
-    Set<FieldDependency> missingFields = new HashSet<>();
     List<DependencyType> types = new ArrayList<>();
     Map<String, DependencyType> typeMap = new HashMap<>();
     private DependencyCheckerInterruptor interruptor;
@@ -216,20 +233,38 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
 
     @Override
     public ClassDependency linkClass(String className, CallLocation callLocation) {
-        return classCache.map(className);
+        ClassDependency dep = classCache.map(className);
+        if (callLocation != null && callLocation.getMethod() != null) {
+            DefaultCallGraphNode callGraphNode = callGraph.getNode(callLocation.getMethod());
+            addClassAccess(callGraphNode, className, callLocation.getSourceLocation());
+        }
+        return dep;
     }
 
-    private ClassDependency createClassDependency(String className, CallLocation callLocation) {
+    private void addClassAccess(DefaultCallGraphNode node, String className, InstructionLocation loc) {
+        if (!node.addClassAccess(className, loc)) {
+            return;
+        }
         ClassReader cls = classSource.get(className);
-        ClassDependency dependency = new ClassDependency(this, className, stack, cls);
-        if (dependency.isMissing()) {
-            missingClasses.add(dependency);
-        } else {
+        if (cls != null) {
+            if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
+                addClassAccess(node, cls.getParent(), loc);
+            }
+            for (String iface : cls.getInterfaces()) {
+                addClassAccess(node, iface, loc);
+            }
+        }
+    }
+
+    private ClassDependency createClassDependency(String className) {
+        ClassReader cls = classSource.get(className);
+        ClassDependency dependency = new ClassDependency(this, className, cls);
+        if (!dependency.isMissing()) {
             if (cls.getParent() != null && !cls.getParent().equals(className)) {
-                linkClass(cls.getParent(), stack);
+                linkClass(cls.getParent(), null);
             }
             for (String ifaceName : cls.getInterfaces()) {
-                linkClass(ifaceName, stack);
+                linkClass(ifaceName, null);
             }
         }
         return dependency;
@@ -241,9 +276,8 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
             throw new IllegalArgumentException();
         }
         callGraph.getNode(methodRef);
-        if (callLocation != null) {
-            callGraph.addNode(caller);
-            callGraph.getNode(caller).addCallSite(methodRef, location);
+        if (callLocation != null && callLocation.getMethod() != null) {
+            callGraph.getNode(callLocation.getMethod()).addCallSite(methodRef, callLocation.getSourceLocation());
         }
         return methodCache.map(methodRef);
     }
@@ -306,10 +340,7 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         return null;
     }
 
-    private MethodDependency createMethodDep(MethodReference methodRef, MethodReader method, DependencyStack stack) {
-        if (stack == null) {
-            stack = DependencyStack.ROOT;
-        }
+    private MethodDependency createMethodDep(MethodReference methodRef, MethodReader method) {
         ValueType[] arguments = methodRef.getParameterTypes();
         int paramCount = arguments.length + 1;
         int varCount = Math.max(paramCount, method != null && method.getProgram() != null ?
@@ -335,16 +366,14 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
             thrown.setTag(methodRef + ":THROWN");
         }
         final MethodDependency dep = new MethodDependency(this, parameterNodes, paramCount, resultNode, thrown,
-                stack, method, methodRef);
+                method, methodRef);
         if (method != null) {
-            final DependencyStack initClassStack = stack;
             tasks.add(new Runnable() {
                 @Override public void run() {
-                    linkClass(dep.getMethod().getOwnerName(), dep.getStack()).initClass(initClassStack);
+                    CallLocation caller = new CallLocation(dep.getMethod().getReference());
+                    linkClass(dep.getMethod().getOwnerName(), caller).initClass(caller);
                 }
             });
-        } else {
-            missingMethods.add(dep);
         }
         return dep;
     }
@@ -374,9 +403,19 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     }
 
     @Override
-    public FieldDependency linkField(FieldReference fieldRef, MethodReference caller, InstructionLocation location) {
-        fieldStacks.put(fieldRef, stack);
-        return fieldCache.map(fieldRef);
+    public FieldDependency linkField(final FieldReference fieldRef, final CallLocation location) {
+        if (location != null) {
+            callGraph.getNode(location.getMethod()).addFieldAccess(fieldRef, location.getSourceLocation());
+        }
+        FieldDependency dep = fieldCache.map(fieldRef);
+        if (!dep.isMissing()) {
+            tasks.add(new Runnable() {
+                @Override public void run() {
+                    linkClass(fieldRef.getClassName(), location).initClass(location);
+                }
+            });
+        }
+        return dep;
     }
 
     @Override
@@ -389,19 +428,16 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         return classCache.getKnown(className);
     }
 
-    private FieldDependency createFieldNode(final FieldReference fieldRef, FieldReader field,
-            final DependencyStack stack) {
+    private FieldDependency createFieldNode(final FieldReference fieldRef, FieldReader field) {
         DependencyNode node = new DependencyNode(this);
         if (shouldLog) {
             node.setTag(fieldRef.getClassName() + "#" + fieldRef.getFieldName());
         }
-        FieldDependency dep = new FieldDependency(node, stack, field, fieldRef);
-        if (dep.isMissing()) {
-            missingFields.add(dep);
-        } else {
+        FieldDependency dep = new FieldDependency(node, field, fieldRef);
+        if (!dep.isMissing()) {
             tasks.add(new Runnable() {
                 @Override public void run() {
-                    linkClass(fieldRef.getClassName(), stack).initClass(stack);
+                    linkClass(fieldRef.getClassName(), null).initClass(null);
                 }
             });
         }

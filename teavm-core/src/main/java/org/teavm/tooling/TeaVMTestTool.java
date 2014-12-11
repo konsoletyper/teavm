@@ -366,21 +366,11 @@ public class TeaVMTestTool {
             vm.exportType("TestClass", cons.getClassName());
             vm.setDebugEmitter(debugInfoBuilder);
             vm.build(innerWriter, new DirectoryBuildTarget(outputDir));
-            if (!vm.hasMissingItems()) {
-                innerWriter.append("\n");
-                innerWriter.append("\nJUnitClient.run();");
-                if (sourceMapsGenerated) {
-                    String sourceMapsFileName = targetName.substring(targetName.lastIndexOf('/') + 1) + ".map";
-                    innerWriter.append("\n//# sourceMappingURL=").append(sourceMapsFileName);
-                }
-            } else {
-                innerWriter.append("JUnitClient.reportError(\n");
-                StringBuilder sb = new StringBuilder();
-                vm.showMissingItems(sb);
-                escapeStringLiteral(sb.toString(), innerWriter);
-                innerWriter.append(");");
-                log.warning("Error building test " + methodRef);
-                log.warning(sb.toString());
+            innerWriter.append("\n");
+            innerWriter.append("\nJUnitClient.run();");
+            if (sourceMapsGenerated) {
+                String sourceMapsFileName = targetName.substring(targetName.lastIndexOf('/') + 1) + ".map";
+                innerWriter.append("\n//# sourceMappingURL=").append(sourceMapsFileName);
             }
         }
         if (sourceMapsGenerated) {
@@ -400,20 +390,6 @@ public class TeaVMTestTool {
         if (sourceFilesCopied && vm.getWrittenClasses() != null) {
             sourceFilesCopier.addClasses(vm.getWrittenClasses());
         }
-    }
-
-    private void escapeStringLiteral(String text, Writer writer) throws IOException {
-        int index = 0;
-        while (true) {
-            int next = text.indexOf('\n', index);
-            if (next < 0) {
-                break;
-            }
-            escapeString(text.substring(index, next + 1), writer);
-            writer.append(" +\n");
-            index = next + 1;
-        }
-        escapeString(text.substring(index), writer);
     }
 
     private void escapeString(String string, Writer writer) throws IOException {

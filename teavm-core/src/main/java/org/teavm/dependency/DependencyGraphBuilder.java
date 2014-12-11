@@ -63,7 +63,7 @@ class DependencyGraphBuilder {
             }
             for (TryCatchBlockReader tryCatch : block.readTryCatchBlocks()) {
                 if (tryCatch.getExceptionType() != null) {
-                    dependencyChecker.linkClass(tryCatch.getExceptionType(), caller.getMethod(), null);
+                    dependencyChecker.linkClass(tryCatch.getExceptionType(), new CallLocation(caller.getMethod()));
                 }
             }
         }
@@ -151,7 +151,7 @@ class DependencyGraphBuilder {
                 return;
             }
             MethodReference methodRef = new MethodReference(className, methodDesc);
-            MethodDependency methodDep = checker.linkMethod(methodRef, caller.getMethod(), location);
+            MethodDependency methodDep = checker.linkMethod(methodRef, new CallLocation(caller.getMethod(), location));
             if (!methodDep.isMissing() && knownMethods.add(methodRef)) {
                 methodDep.use();
                 DependencyNode[] targetParams = methodDep.getVariables();
@@ -204,7 +204,7 @@ class DependencyGraphBuilder {
             }
             if (cst instanceof ValueType.Object) {
                 final String className = ((ValueType.Object)cst).getClassName();
-                dependencyChecker.linkClass(className, caller.getMethod(), currentLocation);
+                dependencyChecker.linkClass(className, new CallLocation(caller.getMethod(), currentLocation));
             }
         }
 
@@ -232,7 +232,7 @@ class DependencyGraphBuilder {
         public void stringConstant(VariableReader receiver, String cst) {
             nodes[receiver.getIndex()].propagate(dependencyChecker.getType("java.lang.String"));
             MethodDependency method = dependencyChecker.linkMethod(new MethodReference(String.class,
-                    "<init>", char[].class, void.class), caller.getMethod(), currentLocation);
+                    "<init>", char[].class, void.class), new CallLocation(caller.getMethod(), currentLocation));
             method.use();
         }
 
@@ -320,7 +320,7 @@ class DependencyGraphBuilder {
             nodes[receiver.getIndex()].propagate(dependencyChecker.getType("[" + itemType));
             String className = extractClassName(itemType);
             if (className != null) {
-                dependencyChecker.linkClass(className, caller.getMethod(), currentLocation);
+                dependencyChecker.linkClass(className, new CallLocation(caller.getMethod(), currentLocation));
             }
         }
 
@@ -342,7 +342,7 @@ class DependencyGraphBuilder {
             nodes[receiver.getIndex()].propagate(dependencyChecker.getType(sb.toString()));
             String className = extractClassName(itemType);
             if (className != null) {
-                dependencyChecker.linkClass(className, caller.getMethod(), currentLocation);
+                dependencyChecker.linkClass(className, new CallLocation(caller.getMethod(), currentLocation));
             }
         }
 
@@ -354,7 +354,8 @@ class DependencyGraphBuilder {
         @Override
         public void getField(VariableReader receiver, VariableReader instance, FieldReference field,
                 ValueType fieldType) {
-            FieldDependency fieldDep = dependencyChecker.linkField(field, caller.getMethod(), currentLocation);
+            FieldDependency fieldDep = dependencyChecker.linkField(field,
+                    new CallLocation(caller.getMethod(), currentLocation));
             DependencyNode receiverNode = nodes[receiver.getIndex()];
             fieldDep.getValue().connect(receiverNode);
             initClass(field.getClassName());
@@ -362,7 +363,8 @@ class DependencyGraphBuilder {
 
         @Override
         public void putField(VariableReader instance, FieldReference field, VariableReader value) {
-            FieldDependency fieldDep = dependencyChecker.linkField(field, caller.getMethod(), currentLocation);
+            FieldDependency fieldDep = dependencyChecker.linkField(field,
+                    new CallLocation(caller.getMethod(), currentLocation));
             DependencyNode valueNode = nodes[value.getIndex()];
             valueNode.connect(fieldDep.getValue());
             initClass(field.getClassName());
@@ -424,7 +426,8 @@ class DependencyGraphBuilder {
 
         private void invokeSpecial(VariableReader receiver, VariableReader instance, MethodReference method,
                 List<? extends VariableReader> arguments) {
-            MethodDependency methodDep = dependencyChecker.linkMethod(method, caller.getMethod(), currentLocation);
+            MethodDependency methodDep = dependencyChecker.linkMethod(method,
+                    new CallLocation(caller.getMethod(), currentLocation));
             if (methodDep.isMissing()) {
                 return;
             }
@@ -445,7 +448,8 @@ class DependencyGraphBuilder {
 
         private void invokeVirtual(VariableReader receiver, VariableReader instance, MethodReference method,
                 List<? extends VariableReader> arguments) {
-            MethodDependency methodDep = dependencyChecker.linkMethod(method, caller.getMethod(), currentLocation);
+            MethodDependency methodDep = dependencyChecker.linkMethod(method,
+                    new CallLocation(caller.getMethod(), currentLocation));
             if (methodDep.isMissing()) {
                 return;
             }
@@ -466,14 +470,14 @@ class DependencyGraphBuilder {
         public void isInstance(VariableReader receiver, VariableReader value, final ValueType type) {
             String className = extractClassName(type);
             if (className != null) {
-                dependencyChecker.linkClass(className, caller.getMethod(), currentLocation);
+                dependencyChecker.linkClass(className, new CallLocation(caller.getMethod(), currentLocation));
             }
         }
 
         @Override
         public void initClass(final String className) {
-            dependencyChecker.linkClass(className, caller.getMethod(), currentLocation)
-                    .initClass(caller.getMethod(), currentLocation);
+            CallLocation callLocation = new CallLocation(caller.getMethod(), currentLocation);
+            dependencyChecker.linkClass(className, callLocation).initClass(callLocation);
         }
 
         @Override
@@ -482,7 +486,7 @@ class DependencyGraphBuilder {
             DependencyNode receiverNode = nodes[receiver.getIndex()];
             valueNode.connect(receiverNode);
             dependencyChecker.linkMethod(new MethodReference(NullPointerException.class, "<init>", void.class),
-                    caller.getMethod(), currentLocation).use();
+                    new CallLocation(caller.getMethod(), currentLocation)).use();
             currentExceptionConsumer.consume(dependencyChecker.getType("java.lang.NullPointerException"));
         }
     };

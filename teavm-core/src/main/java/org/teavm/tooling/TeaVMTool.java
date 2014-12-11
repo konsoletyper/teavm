@@ -24,6 +24,7 @@ import org.teavm.cache.DiskRegularMethodNodeCache;
 import org.teavm.cache.FileSymbolTable;
 import org.teavm.debugging.information.DebugInformation;
 import org.teavm.debugging.information.DebugInformationBuilder;
+import org.teavm.diagnostics.ProblemProvider;
 import org.teavm.javascript.RenderingContext;
 import org.teavm.model.*;
 import org.teavm.parsing.ClasspathClassHolderSource;
@@ -199,6 +200,10 @@ public class TeaVMTool {
         return cancelled;
     }
 
+    public ProblemProvider getProblemProvider() {
+        return vm != null ? vm.getProblemProvider() : null;
+    }
+
     public Collection<String> getClasses() {
         return vm != null ? vm.getClasses() : Collections.<String>emptyList();
     }
@@ -289,10 +294,6 @@ public class TeaVMTool {
                     cancelled = true;
                     return;
                 }
-                if (vm.hasMissingItems()) {
-                    log.info("Missing items found");
-                    return;
-                }
                 log.info("JavaScript file successfully built");
                 if (debugInformationGenerated) {
                     DebugInformation debugInfo = debugEmitter.getDebugInformation();
@@ -342,10 +343,6 @@ public class TeaVMTool {
         } catch (IOException e) {
             throw new TeaVMToolException("IO error occured", e);
         }
-    }
-
-    public void checkForMissingItems() {
-        vm.checkForViolations();
     }
 
     private void copySourceFiles() {

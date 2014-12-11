@@ -89,10 +89,13 @@ public class DefaultCallGraphNode implements CallGraphNode {
         return safeFieldAccessSites;
     }
 
-    public void addFieldAccess(FieldReference field, InstructionLocation location) {
+    public boolean addFieldAccess(FieldReference field, InstructionLocation location) {
         DefaultFieldAccessSite site = new DefaultFieldAccessSite(location, this, field);
         if (fieldAccessSites.add(site)) {
             graph.addFieldAccess(site);
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -104,10 +107,13 @@ public class DefaultCallGraphNode implements CallGraphNode {
         return safeClassAccessSites;
     }
 
-    public void addClassAccess(String className, InstructionLocation location) {
+    public boolean addClassAccess(String className, InstructionLocation location) {
         DefaultClassAccessSite site = new DefaultClassAccessSite(location, this, className);
         if (classAccessSites.add(site)) {
             graph.addClassAccess(site);
+            return true;
+        } else {
+            return false;
         }
     }
 }

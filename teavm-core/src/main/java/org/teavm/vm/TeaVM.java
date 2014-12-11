@@ -23,6 +23,7 @@ import org.teavm.debugging.information.DebugInformationEmitter;
 import org.teavm.debugging.information.SourceLocation;
 import org.teavm.dependency.*;
 import org.teavm.diagnostics.AccumulationDiagnostics;
+import org.teavm.diagnostics.ProblemProvider;
 import org.teavm.javascript.*;
 import org.teavm.javascript.ast.ClassNode;
 import org.teavm.javascript.ni.Generator;
@@ -212,6 +213,10 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
     public boolean wasCancelled() {
         return cancelled;
+    }
+
+    public ProblemProvider getProblemProvider() {
+        return diagnostics;
     }
 
     /**

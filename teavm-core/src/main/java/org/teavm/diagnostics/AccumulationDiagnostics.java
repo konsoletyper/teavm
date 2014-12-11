@@ -16,6 +16,7 @@
 package org.teavm.diagnostics;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.teavm.model.CallLocation;
 
@@ -23,9 +24,11 @@ import org.teavm.model.CallLocation;
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class AccumulationDiagnostics implements Diagnostics {
+public class AccumulationDiagnostics implements Diagnostics, ProblemProvider {
     private List<Problem> problems = new ArrayList<>();
+    private List<Problem> readonlyProblems = Collections.unmodifiableList(problems);
     private List<Problem> severeProblems = new ArrayList<>();
+    private List<Problem> readonlySevereProblems = Collections.unmodifiableList(severeProblems);
 
     @Override
     public void error(CallLocation location, String error, Object... params) {
@@ -40,11 +43,13 @@ public class AccumulationDiagnostics implements Diagnostics {
         problems.add(problem);
     }
 
+    @Override
     public List<Problem> getProblems() {
-        return problems;
+        return readonlyProblems;
     }
 
+    @Override
     public List<Problem> getSevereProblems() {
-        return severeProblems;
+        return readonlySevereProblems;
     }
 }
