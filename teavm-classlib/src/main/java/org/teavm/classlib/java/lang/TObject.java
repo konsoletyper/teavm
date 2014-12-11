@@ -80,7 +80,6 @@ public class TObject {
     public final void wait0(long timeout, int nanos) throws TInterruptedException {
     }
 
-    @SuppressWarnings("unused")
     @Rename("wait")
     public final void wait0() throws TInterruptedException {
     }

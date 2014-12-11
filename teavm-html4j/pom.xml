@@ -101,6 +101,9 @@
               <debugInformationGenerated>true</debugInformationGenerated>
               <sourceMapsGenerated>true</sourceMapsGenerated>
               <sourceFilesCopied>true</sourceFilesCopied>
+              <additionalScripts>
+                
+              </additionalScripts>
             </configuration>
           </execution>
         </executions>

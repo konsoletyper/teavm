@@ -40,7 +40,6 @@ public class DirectorySourceFileProvider implements SourceFileProvider {
     }
 
     @Override
-    @SuppressWarnings("resource")
     public InputStream openSourceFile(String fullPath) throws IOException {
         File file = new File(baseDirectory, fullPath);
         return file.exists() ? new FileInputStream(file) : null;

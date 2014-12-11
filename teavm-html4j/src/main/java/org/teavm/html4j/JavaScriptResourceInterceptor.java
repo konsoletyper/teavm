@@ -49,7 +49,6 @@ public class JavaScriptResourceInterceptor extends AbstractRendererListener {
                     throw new RenderingException("Error processing JavaScriptResource annotation on class " +
                             className + ". Resource not found: " + resourceName);
                 }
-                @SuppressWarnings("resource")
                 StringWriter writer = new StringWriter();
                 IOUtils.copy(input, writer);
                 writer.close();

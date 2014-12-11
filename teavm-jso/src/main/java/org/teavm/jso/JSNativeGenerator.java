@@ -74,10 +74,10 @@ public class JSNativeGenerator implements Injector, DependencyPlugin {
                 writer.append(')');
                 break;
             case "instantiate":
-                writer.append("(new ");
+                writer.append("(new (");
                 context.writeExpr(context.getArgument(0));
                 renderProperty(context.getArgument(1), context);
-                writer.append('(');
+                writer.append(")(");
                 for (int i = 2; i < context.argumentCount(); ++i) {
                     if (i > 2) {
                         writer.append(',').ws();
