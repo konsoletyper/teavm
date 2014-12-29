@@ -16,6 +16,7 @@
 package org.teavm.classlib.impl;
 
 import org.teavm.dependency.*;
+import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReader;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
@@ -35,7 +36,7 @@ public class EnumDependencySupport implements DependencyListener {
     }
 
     @Override
-    public void classAchieved(DependencyAgent agent, String className) {
+    public void classAchieved(DependencyAgent agent, String className, CallLocation location) {
         ClassReader cls = agent.getClassSource().get(className);
         if (cls == null || cls.getParent() == null || !cls.getParent().equals("java.lang.Enum")) {
             return;
@@ -45,25 +46,25 @@ public class EnumDependencySupport implements DependencyListener {
             MethodReader method = cls.getMethod(new MethodDescriptor("values",
                     ValueType.arrayOf(ValueType.object(cls.getName()))));
             if (method != null) {
-                agent.linkMethod(method.getReference(), null).use();
+                agent.linkMethod(method.getReference(), location).use();
             }
         }
     }
 
     @Override
-    public void methodAchieved(DependencyAgent agent, MethodDependency method) {
+    public void methodAchieved(DependencyAgent agent, MethodDependency method, CallLocation location) {
         if (method.getReference().getClassName().equals("java.lang.Class") &&
                 method.getReference().getName().equals("getEnumConstantsImpl")) {
             unlocked = true;
             allEnums.connect(method.getResult().getArrayItem());
             method.getResult().propagate(agent.getType("[java.lang.Enum"));
             for (String cls : agent.getAchievableClasses()) {
-                classAchieved(agent, cls);
+                classAchieved(agent, cls, location);
             }
         }
     }
 
     @Override
-    public void fieldAchieved(DependencyAgent agent, FieldDependency field) {
+    public void fieldAchieved(DependencyAgent agent, FieldDependency field, CallLocation location) {
     }
 }

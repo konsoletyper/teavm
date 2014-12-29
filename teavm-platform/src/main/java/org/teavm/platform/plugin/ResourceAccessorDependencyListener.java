@@ -19,6 +19,7 @@ import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyListener;
 import org.teavm.dependency.FieldDependency;
 import org.teavm.dependency.MethodDependency;
+import org.teavm.model.CallLocation;
 
 /**
  *
@@ -30,11 +31,11 @@ class ResourceAccessorDependencyListener implements DependencyListener {
     }
 
     @Override
-    public void classAchieved(DependencyAgent agent, String className) {
+    public void classAchieved(DependencyAgent agent, String className, CallLocation location) {
     }
 
     @Override
-    public void methodAchieved(DependencyAgent agent, MethodDependency method) {
+    public void methodAchieved(DependencyAgent agent, MethodDependency method, CallLocation location) {
         switch (method.getReference().getName()) {
             case "castToString":
                 method.getResult().propagate(agent.getType("java.lang.String"));
@@ -43,6 +44,6 @@ class ResourceAccessorDependencyListener implements DependencyListener {
     }
 
     @Override
-    public void fieldAchieved(DependencyAgent agent, FieldDependency field) {
+    public void fieldAchieved(DependencyAgent agent, FieldDependency field, CallLocation location) {
     }
 }

@@ -31,12 +31,12 @@ public class ClassLookupDependencySupport implements DependencyListener {
     }
 
     @Override
-    public void classAchieved(DependencyAgent agent, String className) {
+    public void classAchieved(DependencyAgent agent, String className, CallLocation location) {
         allClasses.propagate(agent.getType(className));
     }
 
     @Override
-    public void methodAchieved(final DependencyAgent agent, MethodDependency method) {
+    public void methodAchieved(final DependencyAgent agent, MethodDependency method, final CallLocation location) {
         MethodReference ref = method.getReference();
         if (ref.getClassName().equals("java.lang.Class") && ref.getName().equals("forNameImpl")) {
             allClasses.addConsumer(new DependencyConsumer() {
@@ -47,7 +47,7 @@ public class ClassLookupDependencySupport implements DependencyListener {
                     }
                     MethodReader initMethod = cls.getMethod(new MethodDescriptor("<clinit>", ValueType.VOID));
                     if (initMethod != null) {
-                        agent.linkMethod(initMethod.getReference(), null).use();
+                        agent.linkMethod(initMethod.getReference(), location).use();
                     }
                 }
             });
@@ -55,6 +55,6 @@ public class ClassLookupDependencySupport implements DependencyListener {
     }
 
     @Override
-    public void fieldAchieved(DependencyAgent dependencyChecker, FieldDependency field) {
+    public void fieldAchieved(DependencyAgent dependencyChecker, FieldDependency field, CallLocation location) {
     }
 }

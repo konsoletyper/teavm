@@ -24,6 +24,7 @@ import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.GeneratorContext;
+import org.teavm.model.CallLocation;
 import org.teavm.model.MethodReference;
 
 /**
@@ -52,7 +53,7 @@ public class CharacterNativeGenerator implements Generator, DependencyPlugin {
     }
 
     @Override
-    public void methodAchieved(DependencyAgent agent, MethodDependency method) {
+    public void methodAchieved(DependencyAgent agent, MethodDependency method, CallLocation location) {
         switch (method.getReference().getName()) {
             case "obtainDigitMapping":
             case "obtainClasses":

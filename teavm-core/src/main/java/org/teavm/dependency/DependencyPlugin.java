@@ -15,10 +15,12 @@
  */
 package org.teavm.dependency;
 
+import org.teavm.model.CallLocation;
+
 /**
  *
  * @author Alexey Andreev
  */
 public interface DependencyPlugin {
-    void methodAchieved(DependencyAgent checker, MethodDependency method);
+    void methodAchieved(DependencyAgent checker, MethodDependency method, CallLocation location);
 }

@@ -26,7 +26,6 @@ import org.teavm.callgraph.CallGraph;
 import org.teavm.callgraph.DefaultCallGraph;
 import org.teavm.callgraph.DefaultCallGraphNode;
 import org.teavm.common.CachedMapper;
-import org.teavm.common.CachedMapper.KeyListener;
 import org.teavm.common.Mapper;
 import org.teavm.common.ServiceRepository;
 import org.teavm.diagnostics.Diagnostics;
@@ -107,37 +106,6 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         classCache = new CachedMapper<>(new Mapper<String, ClassDependency>() {
             @Override public ClassDependency map(String preimage) {
                 return createClassDependency(preimage);
-            }
-        });
-        methodCache.addKeyListener(new KeyListener<MethodReference>() {
-            @Override public void keyAdded(MethodReference key) {
-                MethodDependency graph = methodCache.getKnown(key);
-                if (!graph.isMissing()) {
-                    for (DependencyListener listener : listeners) {
-                        listener.methodAchieved(DependencyChecker.this, graph);
-                    }
-                    activateDependencyPlugin(graph);
-                }
-            }
-        });
-        fieldCache.addKeyListener(new KeyListener<FieldReference>() {
-            @Override public void keyAdded(FieldReference key) {
-                FieldDependency fieldDep = fieldCache.getKnown(key);
-                if (!fieldDep.isMissing()) {
-                    for (DependencyListener listener : listeners) {
-                        listener.fieldAchieved(DependencyChecker.this, fieldDep);
-                    }
-                }
-            }
-        });
-        classCache.addKeyListener(new KeyListener<String>() {
-            @Override public void keyAdded(String key) {
-                ClassDependency classDep = classCache.getKnown(key);
-                if (!classDep.isMissing()) {
-                    for (DependencyListener listener : listeners) {
-                        listener.classAchieved(DependencyChecker.this, key);
-                    }
-                }
             }
         });
     }
@@ -234,26 +202,33 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     @Override
     public ClassDependency linkClass(String className, CallLocation callLocation) {
         ClassDependency dep = classCache.map(className);
+        boolean added = true;
         if (callLocation != null && callLocation.getMethod() != null) {
             DefaultCallGraphNode callGraphNode = callGraph.getNode(callLocation.getMethod());
-            addClassAccess(callGraphNode, className, callLocation.getSourceLocation());
+            added = addClassAccess(callGraphNode, className, callLocation.getSourceLocation());
+        }
+        if (!dep.isMissing() && added) {
+            for (DependencyListener listener : listeners) {
+                listener.classAchieved(DependencyChecker.this, className, callLocation);
+            }
         }
         return dep;
     }
 
-    private void addClassAccess(DefaultCallGraphNode node, String className, InstructionLocation loc) {
+    private boolean addClassAccess(DefaultCallGraphNode node, String className, InstructionLocation loc) {
         if (!node.addClassAccess(className, loc)) {
-            return;
+            return false;
         }
         ClassReader cls = classSource.get(className);
         if (cls != null) {
             if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
-                addClassAccess(node, cls.getParent(), loc);
+                return addClassAccess(node, cls.getParent(), loc);
             }
             for (String iface : cls.getInterfaces()) {
-                addClassAccess(node, iface, loc);
+                return addClassAccess(node, iface, loc);
             }
         }
+        return false;
     }
 
     private ClassDependency createClassDependency(String className) {
@@ -276,10 +251,19 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
             throw new IllegalArgumentException();
         }
         callGraph.getNode(methodRef);
+        boolean added = true;
         if (callLocation != null && callLocation.getMethod() != null) {
-            callGraph.getNode(callLocation.getMethod()).addCallSite(methodRef, callLocation.getSourceLocation());
+            added = callGraph.getNode(callLocation.getMethod()).addCallSite(methodRef,
+                    callLocation.getSourceLocation());
         }
-        return methodCache.map(methodRef);
+        MethodDependency graph = methodCache.map(methodRef);
+        if (!graph.isMissing() && added) {
+            for (DependencyListener listener : listeners) {
+                listener.methodAchieved(this, graph, callLocation);
+            }
+            activateDependencyPlugin(graph, callLocation);
+        }
+        return graph;
     }
 
     void initClass(ClassDependency cls, final CallLocation callLocation) {
@@ -404,8 +388,9 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
 
     @Override
     public FieldDependency linkField(final FieldReference fieldRef, final CallLocation location) {
+        boolean added = true;
         if (location != null) {
-            callGraph.getNode(location.getMethod()).addFieldAccess(fieldRef, location.getSourceLocation());
+            added = callGraph.getNode(location.getMethod()).addFieldAccess(fieldRef, location.getSourceLocation());
         }
         FieldDependency dep = fieldCache.map(fieldRef);
         if (!dep.isMissing()) {
@@ -414,6 +399,11 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
                     linkClass(fieldRef.getClassName(), location).initClass(location);
                 }
             });
+        }
+        if (!dep.isMissing() && added) {
+            for (DependencyListener listener : listeners) {
+                listener.fieldAchieved(DependencyChecker.this, dep, location);
+            }
         }
         return dep;
     }
@@ -444,7 +434,18 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         return dep;
     }
 
-    private void activateDependencyPlugin(MethodDependency methodDep) {
+    private void activateDependencyPlugin(MethodDependency methodDep, CallLocation location) {
+        attachDependencyPlugin(methodDep);
+        if (methodDep.dependencyPlugin != null) {
+            methodDep.dependencyPlugin.methodAchieved(this, methodDep, location);
+        }
+    }
+
+    private void attachDependencyPlugin(MethodDependency methodDep) {
+        if (methodDep.dependencyPluginAttached) {
+            return;
+        }
+        methodDep.dependencyPluginAttached = true;
         AnnotationReader depAnnot = methodDep.getMethod().getAnnotations().get(PluggableDependency.class.getName());
         if (depAnnot == null) {
             return;
@@ -457,13 +458,11 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("Dependency plugin not found: " + depClassName, e);
         }
-        DependencyPlugin plugin;
         try {
-            plugin = (DependencyPlugin)depClass.newInstance();
+            methodDep.dependencyPlugin = (DependencyPlugin)depClass.newInstance();
         } catch (IllegalAccessException | InstantiationException e) {
             throw new RuntimeException("Can't instantiate dependency plugin " + depClassName, e);
         }
-        plugin.methodAchieved(this, methodDep);
     }
 
     @Override

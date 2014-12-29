@@ -69,16 +69,19 @@ public class DefaultCallGraphNode implements CallGraphNode {
         return safeCallersCallSites;
     }
 
-    public void addCallSite(MethodReference method, InstructionLocation location) {
+    public boolean addCallSite(MethodReference method, InstructionLocation location) {
         DefaultCallGraphNode callee = graph.getNode(method);
         DefaultCallSite callSite = new DefaultCallSite(location, callee, this);
         if (callSites.add(callSite)) {
             callee.callerCallSites.add(callSite);
+            return true;
+        } else {
+            return false;
         }
     }
 
-    public void addCallSite(MethodReference method) {
-        addCallSite(method, null);
+    public boolean addCallSite(MethodReference method) {
+        return addCallSite(method, null);
     }
 
     @Override

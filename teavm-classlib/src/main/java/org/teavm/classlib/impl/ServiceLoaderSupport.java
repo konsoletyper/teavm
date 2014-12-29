@@ -25,6 +25,7 @@ import org.teavm.codegen.SourceWriter;
 import org.teavm.dependency.*;
 import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.GeneratorContext;
+import org.teavm.model.CallLocation;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -34,6 +35,7 @@ import org.teavm.model.ValueType;
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public class ServiceLoaderSupport implements Generator, DependencyListener {
+    private Set<String> achievedClasses;
     private Map<String, List<String>> serviceMap = new HashMap<>();
     private DependencyNode allClassesNode;
     private ClassLoader classLoader;
@@ -82,7 +84,10 @@ public class ServiceLoaderSupport implements Generator, DependencyListener {
     }
 
     @Override
-    public void classAchieved(DependencyAgent agent, String className) {
+    public void classAchieved(DependencyAgent agent, String className, CallLocation location) {
+        if (!achievedClasses.add(className)) {
+            return;
+        }
         try {
             Enumeration<URL> resources = classLoader.getResources("META-INF/services/" + className);
             while (resources.hasMoreElements()) {
@@ -118,25 +123,25 @@ public class ServiceLoaderSupport implements Generator, DependencyListener {
     }
 
     @Override
-    public void methodAchieved(final DependencyAgent agent, MethodDependency method) {
+    public void methodAchieved(final DependencyAgent agent, MethodDependency method, final CallLocation location) {
         MethodReference ref = method.getReference();
         if (ref.getClassName().equals("java.util.ServiceLoader") && ref.getName().equals("loadServices")) {
             method.getResult().propagate(agent.getType("[java.lang.Object"));
             allClassesNode.connect(method.getResult().getArrayItem());
             method.getResult().getArrayItem().addConsumer(new DependencyConsumer() {
                 @Override public void consume(DependencyAgentType type) {
-                    initConstructor(agent, type.getName());
+                    initConstructor(agent, type.getName(), location);
                 }
             });
         }
     }
 
-    private void initConstructor(DependencyAgent agent, String type) {
+    private void initConstructor(DependencyAgent agent, String type, CallLocation location) {
         MethodReference ctor = new MethodReference(type, new MethodDescriptor("<init>", ValueType.VOID));
-        agent.linkMethod(ctor, null).use();
+        agent.linkMethod(ctor, location).use();
     }
 
     @Override
-    public void fieldAchieved(DependencyAgent agent, FieldDependency field) {
+    public void fieldAchieved(DependencyAgent agent, FieldDependency field, CallLocation location) {
     }
 }

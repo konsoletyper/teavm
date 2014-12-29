@@ -15,9 +15,27 @@
  */
 package org.teavm.html4j;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import net.java.html.js.JavaScriptBody;
-import org.teavm.dependency.*;
-import org.teavm.model.*;
+import org.teavm.dependency.DependencyAgent;
+import org.teavm.dependency.DependencyAgentType;
+import org.teavm.dependency.DependencyConsumer;
+import org.teavm.dependency.DependencyListener;
+import org.teavm.dependency.DependencyNode;
+import org.teavm.dependency.FieldDependency;
+import org.teavm.dependency.MethodDependency;
+import org.teavm.model.AnnotationReader;
+import org.teavm.model.AnnotationValue;
+import org.teavm.model.CallLocation;
+import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ElementModifier;
+import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodReader;
+import org.teavm.model.MethodReference;
 
 /**
  *
@@ -25,6 +43,7 @@ import org.teavm.model.*;
  */
 public class JavaScriptBodyDependency implements DependencyListener {
     private DependencyNode allClassesNode;
+    private Map<MethodReference, Set<MethodReference>> achievedMethods = new HashMap<>();
 
     @Override
     public void started(DependencyAgent agent) {
@@ -43,7 +62,7 @@ public class JavaScriptBodyDependency implements DependencyListener {
     }
 
     @Override
-    public void classAchieved(DependencyAgent agent, String className) {
+    public void classAchieved(DependencyAgent agent, String className, CallLocation location) {
         ClassReader cls = agent.getClassSource().get(className);
         if (cls != null && !cls.hasModifier(ElementModifier.ABSTRACT) &&
                 !cls.hasModifier(ElementModifier.INTERFACE)) {
@@ -52,13 +71,21 @@ public class JavaScriptBodyDependency implements DependencyListener {
     }
 
     @Override
-    public void methodAchieved(DependencyAgent agent, MethodDependency method) {
+    public void methodAchieved(DependencyAgent agent, MethodDependency method, CallLocation location) {
+        Set<MethodReference> methodsToAchieve = achievedMethods.get(method.getReference());
+        if (methodsToAchieve != null) {
+            for (MethodReference methodToAchieve : methodsToAchieve) {
+                agent.linkMethod(methodToAchieve, location);
+            }
+            return;
+        }
+        achievedMethods.put(method.getReference(), new HashSet<MethodReference>());
         if (method.isMissing()) {
             return;
         }
         AnnotationReader annot = method.getMethod().getAnnotations().get(JavaScriptBody.class.getName());
         if (annot != null) {
-            includeDefaultDependencies(agent);
+            includeDefaultDependencies(agent, location);
             AnnotationValue javacall = annot.getValue("javacall");
             if (method.getResult() != null) {
                 allClassesNode.connect(method.getResult());
@@ -74,26 +101,26 @@ public class JavaScriptBodyDependency implements DependencyListener {
             }
             if (javacall != null && javacall.getBoolean()) {
                 String body = annot.getValue("body").getString();
-                new GeneratorJsCallback(agent, method).parse(body);
+                new GeneratorJsCallback(agent, method, location).parse(body);
             }
         }
     }
 
-    private void includeDefaultDependencies(DependencyAgent agent) {
-        agent.linkMethod(JavaScriptConvGenerator.fromJsMethod, null).use();
-        agent.linkMethod(JavaScriptConvGenerator.toJsMethod, null).use();
-        agent.linkMethod(JavaScriptConvGenerator.intValueMethod, null).use();
-        agent.linkMethod(JavaScriptConvGenerator.valueOfIntMethod, null).use();
-        agent.linkMethod(JavaScriptConvGenerator.booleanValueMethod, null).use();
-        agent.linkMethod(JavaScriptConvGenerator.valueOfBooleanMethod, null).use();
-        agent.linkMethod(JavaScriptConvGenerator.doubleValueMethod, null).use();
-        agent.linkMethod(JavaScriptConvGenerator.valueOfDoubleMethod, null).use();
-        agent.linkMethod(JavaScriptConvGenerator.charValueMethod, null).use();
-        agent.linkMethod(JavaScriptConvGenerator.valueOfCharMethod, null).use();
+    private void includeDefaultDependencies(DependencyAgent agent, CallLocation location) {
+        agent.linkMethod(JavaScriptConvGenerator.fromJsMethod, location).use();
+        agent.linkMethod(JavaScriptConvGenerator.toJsMethod, location).use();
+        agent.linkMethod(JavaScriptConvGenerator.intValueMethod, location).use();
+        agent.linkMethod(JavaScriptConvGenerator.valueOfIntMethod, location).use();
+        agent.linkMethod(JavaScriptConvGenerator.booleanValueMethod, location).use();
+        agent.linkMethod(JavaScriptConvGenerator.valueOfBooleanMethod, location).use();
+        agent.linkMethod(JavaScriptConvGenerator.doubleValueMethod, location).use();
+        agent.linkMethod(JavaScriptConvGenerator.valueOfDoubleMethod, location).use();
+        agent.linkMethod(JavaScriptConvGenerator.charValueMethod, location).use();
+        agent.linkMethod(JavaScriptConvGenerator.valueOfCharMethod, location).use();
     }
 
     @Override
-    public void fieldAchieved(DependencyAgent agent, FieldDependency fieldDep) {
+    public void fieldAchieved(DependencyAgent agent, FieldDependency fieldDep, CallLocation location) {
     }
 
     private static MethodReader findMethod(ClassReaderSource classSource, String clsName, MethodDescriptor desc) {
@@ -126,15 +153,18 @@ public class JavaScriptBodyDependency implements DependencyListener {
     private class GeneratorJsCallback extends JsCallback {
         private DependencyAgent agent;
         private MethodDependency caller;
-        public GeneratorJsCallback(DependencyAgent agent, MethodDependency caller) {
+        private CallLocation location;
+        public GeneratorJsCallback(DependencyAgent agent, MethodDependency caller, CallLocation location) {
             this.agent = agent;
             this.caller = caller;
+            this.location = location;
         }
         @Override protected CharSequence callMethod(String ident, String fqn, String method, String params) {
             MethodDescriptor desc = MethodDescriptor.parse(method + params + "V");
             MethodReader reader = findMethod(agent.getClassSource(), fqn, desc);
             MethodReference ref = reader != null ? reader.getReference() : new MethodReference(fqn, desc);
-            MethodDependency methodDep = agent.linkMethod(ref, null);
+            MethodDependency methodDep = agent.linkMethod(ref, location);
+            achievedMethods.get(caller.getReference()).add(ref);
             if (!methodDep.isMissing()) {
                 if (reader.hasModifier(ElementModifier.STATIC) || reader.hasModifier(ElementModifier.FINAL)) {
                     methodDep.use();
@@ -154,8 +184,7 @@ public class JavaScriptBodyDependency implements DependencyListener {
         private MethodReader superMethod;
         private ClassReader superClass;
         private MethodDependency caller;
-        public VirtualCallbackConsumer(DependencyAgent agent, MethodReader superMethod,
-                MethodDependency caller) {
+        public VirtualCallbackConsumer(DependencyAgent agent, MethodReader superMethod, MethodDependency caller) {
             this.agent = agent;
             this.superMethod = superMethod;
             this.caller = caller;

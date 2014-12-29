@@ -186,7 +186,7 @@ public class ClassNativeGenerator implements Generator, Injector, DependencyPlug
     }
 
     @Override
-    public void methodAchieved(DependencyAgent agent, MethodDependency graph) {
+    public void methodAchieved(DependencyAgent agent, MethodDependency graph, CallLocation location) {
         switch (graph.getReference().getName()) {
             case "voidClass":
             case "booleanClass":
@@ -205,8 +205,8 @@ public class ClassNativeGenerator implements Generator, Injector, DependencyPlug
                 graph.getResult().propagate(agent.getType("java.lang.Class"));
                 break;
             case "newInstance":
-                agent.linkMethod(new MethodReference(InstantiationException.class.getName(), "<init>",
-                        ValueType.VOID), null).use();
+                agent.linkMethod(new MethodReference(InstantiationException.class, "<init>", void.class),
+                        location).use();
                 break;
         }
     }

@@ -22,6 +22,7 @@ import org.teavm.codegen.SourceWriter;
 import org.teavm.dependency.*;
 import org.teavm.javascript.Renderer;
 import org.teavm.javascript.RenderingContext;
+import org.teavm.model.CallLocation;
 import org.teavm.vm.BuildTarget;
 import org.teavm.vm.spi.AbstractRendererListener;
 
@@ -74,14 +75,14 @@ public class EntryPointGenerator extends AbstractRendererListener implements Dep
     }
 
     @Override
-    public void classAchieved(DependencyAgent agent, String className) {
+    public void classAchieved(DependencyAgent agent, String className, CallLocation location) {
     }
 
     @Override
-    public void methodAchieved(DependencyAgent agent, MethodDependency method) {
+    public void methodAchieved(DependencyAgent agent, MethodDependency method, CallLocation location) {
     }
 
     @Override
-    public void fieldAchieved(DependencyAgent agent, FieldDependency field) {
+    public void fieldAchieved(DependencyAgent agent, FieldDependency field,  CallLocation location) {
     }
 }

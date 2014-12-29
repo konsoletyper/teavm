@@ -32,6 +32,8 @@ public class MethodDependency implements MethodDependencyInfo {
     private MethodReader method;
     private MethodReference reference;
     private boolean used;
+    DependencyPlugin dependencyPlugin;
+    boolean dependencyPluginAttached;
 
     MethodDependency(DependencyChecker dependencyChecker, DependencyNode[] variableNodes, int parameterCount,
             DependencyNode resultNode, DependencyNode thrown, MethodReader method, MethodReference reference) {

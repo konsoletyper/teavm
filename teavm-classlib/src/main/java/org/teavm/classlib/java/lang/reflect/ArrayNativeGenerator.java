@@ -20,6 +20,7 @@ import org.teavm.codegen.SourceWriter;
 import org.teavm.dependency.*;
 import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.GeneratorContext;
+import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReader;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
@@ -38,7 +39,7 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
             ValueType.INTEGER, ValueType.LONG, ValueType.FLOAT, ValueType.DOUBLE, ValueType.BOOLEAN };
 
     @Override
-    public void methodAchieved(DependencyAgent agent, MethodDependency method) {
+    public void methodAchieved(DependencyAgent agent, MethodDependency method, CallLocation location) {
         switch (method.getReference().getName()) {
             case "getLength":
                 achieveGetLength(agent, method);

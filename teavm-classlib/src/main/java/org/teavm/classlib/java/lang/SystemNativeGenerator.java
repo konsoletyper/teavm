@@ -20,6 +20,7 @@ import org.teavm.codegen.SourceWriter;
 import org.teavm.dependency.*;
 import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.GeneratorContext;
+import org.teavm.model.CallLocation;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 
@@ -54,7 +55,7 @@ public class SystemNativeGenerator implements Generator, DependencyPlugin {
     }
 
     @Override
-    public void methodAchieved(DependencyAgent agent, MethodDependency method) {
+    public void methodAchieved(DependencyAgent agent, MethodDependency method, CallLocation location) {
         switch (method.getReference().getName()) {
             case "doArrayCopy":
                 achieveArrayCopy(method);

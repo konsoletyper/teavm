@@ -31,7 +31,7 @@ public class NewInstanceDependencySupport implements DependencyListener {
     }
 
     @Override
-    public void classAchieved(DependencyAgent agent, String className) {
+    public void classAchieved(DependencyAgent agent, String className, CallLocation location) {
         ClassReader cls = agent.getClassSource().get(className);
         if (cls == null) {
             return;
@@ -46,24 +46,24 @@ public class NewInstanceDependencySupport implements DependencyListener {
     }
 
     @Override
-    public void methodAchieved(final DependencyAgent agent, MethodDependency method) {
+    public void methodAchieved(final DependencyAgent agent, MethodDependency method, final CallLocation location) {
         MethodReader reader = method.getMethod();
         if (reader.getOwnerName().equals("java.lang.Class") && reader.getName().equals("newInstance")) {
             allClassesNode.connect(method.getResult());
             method.getResult().addConsumer(new DependencyConsumer() {
                 @Override public void consume(DependencyAgentType type) {
-                    attachConstructor(agent, type.getName());
+                    attachConstructor(agent, type.getName(), location);
                 }
             });
         }
     }
 
-    private void attachConstructor(DependencyAgent checker, String type) {
+    private void attachConstructor(DependencyAgent checker, String type, CallLocation location) {
         MethodReference ref = new MethodReference(type, new MethodDescriptor("<init>", ValueType.VOID));
-        checker.linkMethod(ref, null).use();
+        checker.linkMethod(ref, location).use();
     }
 
     @Override
-    public void fieldAchieved(DependencyAgent dependencyAgent, FieldDependency field) {
+    public void fieldAchieved(DependencyAgent dependencyAgent, FieldDependency field, CallLocation location) {
     }
 }

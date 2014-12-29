@@ -21,6 +21,7 @@ import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.javascript.ni.Injector;
 import org.teavm.javascript.ni.InjectorContext;
+import org.teavm.model.CallLocation;
 import org.teavm.model.MethodReference;
 
 /**
@@ -29,7 +30,7 @@ import org.teavm.model.MethodReference;
  */
 public class StringNativeGenerator implements Injector, DependencyPlugin {
     @Override
-    public void methodAchieved(DependencyAgent agent, MethodDependency method) {
+    public void methodAchieved(DependencyAgent agent, MethodDependency method, CallLocation location) {
         switch (method.getReference().getName()) {
             case "wrap":
                 method.getVariable(1).connect(method.getResult());

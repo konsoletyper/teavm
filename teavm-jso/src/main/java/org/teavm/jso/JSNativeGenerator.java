@@ -23,6 +23,7 @@ import org.teavm.javascript.ast.Expr;
 import org.teavm.javascript.ast.InvocationExpr;
 import org.teavm.javascript.ni.Injector;
 import org.teavm.javascript.ni.InjectorContext;
+import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReader;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
@@ -112,7 +113,8 @@ public class JSNativeGenerator implements Injector, DependencyPlugin {
     }
 
     @Override
-    public void methodAchieved(final DependencyAgent agent, final MethodDependency method) {
+    public void methodAchieved(final DependencyAgent agent, final MethodDependency method,
+            final CallLocation location) {
         switch (method.getReference().getName()) {
             case "invoke":
             case "instantiate":
@@ -120,7 +122,7 @@ public class JSNativeGenerator implements Injector, DependencyPlugin {
                 for (int i = 0; i < method.getReference().parameterCount(); ++i) {
                     method.getVariable(i).addConsumer(new DependencyConsumer() {
                         @Override public void consume(DependencyAgentType type) {
-                            achieveFunctorMethods(agent, type.getName(), method);
+                            achieveFunctorMethods(agent, type.getName(), method, location);
                         }
                     });
                 }
@@ -131,14 +133,15 @@ public class JSNativeGenerator implements Injector, DependencyPlugin {
         }
     }
 
-    private void achieveFunctorMethods(DependencyAgent agent, String type, MethodDependency caller) {
+    private void achieveFunctorMethods(DependencyAgent agent, String type, MethodDependency caller,
+            CallLocation location) {
         if (caller.isMissing()) {
             return;
         }
         ClassReader cls = agent.getClassSource().get(type);
         if (cls != null) {
             for (MethodReader method : cls.getMethods()) {
-                agent.linkMethod(method.getReference(), null).use();
+                agent.linkMethod(method.getReference(), location).use();
             }
         }
     }

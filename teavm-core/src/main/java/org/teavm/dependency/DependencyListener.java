@@ -15,6 +15,8 @@
  */
 package org.teavm.dependency;
 
+import org.teavm.model.CallLocation;
+
 /**
  *
  * @author Alexey Andreev
@@ -22,9 +24,9 @@ package org.teavm.dependency;
 public interface DependencyListener {
     void started(DependencyAgent agent);
 
-    void classAchieved(DependencyAgent agent, String className);
+    void classAchieved(DependencyAgent agent, String className, CallLocation location);
 
-    void methodAchieved(DependencyAgent agent, MethodDependency method);
+    void methodAchieved(DependencyAgent agent, MethodDependency method, CallLocation location);
 
-    void fieldAchieved(DependencyAgent agent, FieldDependency field);
+    void fieldAchieved(DependencyAgent agent, FieldDependency field, CallLocation location);
 }

@@ -22,6 +22,7 @@ import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.GeneratorContext;
 import org.teavm.javascript.ni.Injector;
 import org.teavm.javascript.ni.InjectorContext;
+import org.teavm.model.CallLocation;
 import org.teavm.model.MethodReference;
 
 /**
@@ -58,7 +59,7 @@ public class ObjectNativeGenerator implements Generator, Injector, DependencyPlu
     }
 
     @Override
-    public void methodAchieved(DependencyAgent agent, MethodDependency method) {
+    public void methodAchieved(DependencyAgent agent, MethodDependency method, CallLocation location) {
         switch (method.getReference().getName()) {
             case "clone":
                 method.getVariable(0).connect(method.getResult());
