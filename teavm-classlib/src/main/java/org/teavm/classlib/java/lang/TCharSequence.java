@@ -15,6 +15,8 @@
  */
 package org.teavm.classlib.java.lang;
 
+import org.teavm.javascript.ni.Rename;
+
 /**
  *
  * @author Alexey Andreev
@@ -26,5 +28,6 @@ public interface TCharSequence {
 
     TCharSequence subSequence(int start, int end);
 
+    @Rename("toString")
     TString toString0();
 }
