@@ -25,6 +25,7 @@ import org.teavm.javascript.ni.InjectedBy;
  */
 public class TClass<T> extends TObject {
     TString name;
+    TString binaryName;
     boolean primitive;
     boolean array;
     boolean isEnum;
@@ -42,7 +43,7 @@ public class TClass<T> extends TObject {
     public native boolean isAssignableFrom(TClass<?> obj);
 
     public TString getName() {
-        return new TString(name);
+        return name;
     }
 
     public boolean isPrimitive() {

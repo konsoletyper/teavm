@@ -29,6 +29,10 @@
   <name>TeaVM Java class library</name>
   <description>TeaVM Java class library emulation</description>
 
+  <properties>
+    <teavm.classlib.test.incremental>false</teavm.classlib.test.incremental>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
@@ -93,6 +97,7 @@
               <properties>
                 <java.util.Locale.available>en, en_US, en_GB, ru, ru_RU</java.util.Locale.available>
               </properties>
+              <incremental>${teavm.classlib.test.incremental}</incremental>
             </configuration>
           </execution>
         </executions>

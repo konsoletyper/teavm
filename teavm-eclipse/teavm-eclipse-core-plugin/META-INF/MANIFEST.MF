@@ -6,7 +6,7 @@ Bundle-Version: 0.3.0.qualifer
 Bundle-Vendor: Alexey Andreev <konsoletyper@gmail.com>
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ClassPath: .,
- lib/asm-debug-all-4.0.3.jar,
+ lib/asm-debug-all-5.0.3.jar,
  lib/cdi-api-1.2.jar,
  lib/commons-io-2.4.jar,
  lib/jackson-core-asl-1.9.13.jar,
