@@ -32,11 +32,11 @@
 package org.teavm.classlib.java.util;
 
 import static org.junit.Assert.*;
+import java.util.Arrays;
 import java.util.BitSet;
 import org.junit.Test;
 
 public class BitSetTest {
-
     BitSet eightbs;
 
     public BitSetTest() {
@@ -59,6 +59,23 @@ public class BitSetTest {
     }
 
     @Test
+    public void constructFromBytes() {
+        for (int i = 4; i < 8; ++i) {
+            byte[] bytes = new byte[i];
+            Arrays.fill(bytes, (byte)0x80);
+            BitSet bs = BitSet.valueOf(bytes);
+            assertEquals("Wrong length of BitSet", i * 8, bs.length());
+            for (int j = 0; j < bs.length(); ++j) {
+                if (j % 8 == 7) {
+                    assertTrue("Expected that " + j + "th bit is to be set", bs.get(j));
+                } else {
+                    assertFalse("Expected that " + j + "th bit is not to be set", bs.get(j));
+                }
+            }
+        }
+    }
+
+    @Test
     public void clonePerformed() {
         BitSet bs;
         bs = (BitSet) eightbs.clone();
@@ -76,12 +93,9 @@ public class BitSetTest {
 
         bs = (BitSet) eightbs.clone();
         bs.set(128);
-        assertFalse("Different sized BitSet with higher bit set returned true",
-                eightbs.equals(bs));
+        assertFalse("Different sized BitSet with higher bit set returned true", eightbs.equals(bs));
         bs.clear(128);
-        assertTrue(
-                "Different sized BitSet with higher bits not set returned false",
-                eightbs.equals(bs));
+        assertTrue("Different sized BitSet with higher bits not set returned false", eightbs.equals(bs));
     }
 
     @Test

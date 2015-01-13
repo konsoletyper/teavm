@@ -53,8 +53,10 @@ public class AstIO {
         output.writeShort(method.getParameterDebugNames().size());
         for (Set<String> debugNames : method.getParameterDebugNames()) {
             output.writeShort(debugNames != null ? debugNames.size() : 0);
-            for (String debugName : debugNames) {
-                output.writeUTF(debugName);
+            if (debugNames != null) {
+                for (String debugName : debugNames) {
+                    output.writeUTF(debugName);
+                }
             }
         }
         output.writeBoolean(method.isOriginalNamePreserved());

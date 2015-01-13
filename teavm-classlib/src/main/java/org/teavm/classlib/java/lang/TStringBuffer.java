@@ -200,7 +200,7 @@ public class TStringBuffer extends TAbstractStringBuilder implements TAppendable
 
     @Override
     public TStringBuffer deleteCharAt(int index) {
-        deleteCharAt(index);
+        super.deleteCharAt(index);
         return this;
     }
 

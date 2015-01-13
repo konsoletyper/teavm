@@ -54,19 +54,21 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
         int[] ints = new int[(bytes.length + 3) / 4];
         int fullInts = bytes.length / 4;
         for (int i = 0; i < fullInts; ++i) {
-            ints[i] = bytes[i * 4] | (bytes[i * 4 + 1] << 8) | (bytes[i * 4 + 2] << 16) | (bytes[i * 4 + 3] << 24);
+            ints[i] = (bytes[i * 4] & 0xFF) | ((bytes[i * 4 + 1] & 0xFF) << 8) | ((bytes[i * 4 + 2] & 0xFF) << 16) |
+                    ((bytes[i * 4 + 3] & 0xFF) << 24);
         }
         int lastInt = ints.length - 1;
-        int lastByte = bytes[lastInt * 4];
+        int lastByte = lastInt * 4;
         switch (bytes.length % 4) {
             case 3:
-                ints[lastInt] = bytes[lastByte] | (bytes[lastByte + 1] << 8) | (bytes[lastByte + 2] << 16);
+                ints[lastInt] = (bytes[lastByte] & 0xFF) | ((bytes[lastByte + 1] & 0xFF) << 8) |
+                        ((bytes[lastByte + 2] & 0xFF) << 16);
                 break;
             case 2:
-                ints[lastInt] = bytes[lastByte] | (bytes[lastByte + 1] << 8);
+                ints[lastInt] = (bytes[lastByte] & 0xFF) | ((bytes[lastByte + 1] & 0xFF) << 8);
                 break;
             case 1:
-                ints[lastInt] = bytes[lastByte];
+                ints[lastInt] = bytes[lastByte] & 0xFF;
                 break;
         }
         return new TBitSet(ints);
@@ -105,9 +107,9 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
         int fullLongs = length / 64;
         int i = 0;
         for (; i < fullLongs; ++i) {
-            longs[i] = data[i * 2] | (data[i * 2 + 1] << 32);
+            longs[i] = data[i * 2] | ((long)data[i * 2 + 1] << 32);
         }
-        if (((31 + length) / 32) % 2 == 1) {
+        if ((((31 + length) / 32) & 1) == 1) {
             longs[i] = data[i * 2];
         }
         return longs;

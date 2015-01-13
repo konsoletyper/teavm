@@ -64,7 +64,7 @@ public class TBufferedInputStream extends TFilterInputStream {
             if (result > 0) {
                 markpos = -1;
                 pos = 0;
-                count = result == -1 ? 0 : result;
+                count = result;
             }
             return result;
         }
