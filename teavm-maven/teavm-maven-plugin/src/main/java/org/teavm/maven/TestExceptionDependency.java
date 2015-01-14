@@ -16,10 +16,7 @@
 package org.teavm.maven;
 
 import org.teavm.dependency.*;
-import org.teavm.model.ClassReader;
-import org.teavm.model.ClassReaderSource;
-import org.teavm.model.MethodReference;
-import org.teavm.model.ValueType;
+import org.teavm.model.*;
 
 /**
  *
@@ -36,7 +33,7 @@ class TestExceptionDependency implements DependencyListener {
     }
 
     @Override
-    public void classAchieved(DependencyAgent agent, String className) {
+    public void classAchieved(DependencyAgent agent, String className, CallLocation location) {
         if (isException(agent.getClassSource(), className)) {
             allClasses.propagate(agent.getType(className));
         }
@@ -57,13 +54,13 @@ class TestExceptionDependency implements DependencyListener {
     }
 
     @Override
-    public void methodAchieved(DependencyAgent agent, MethodDependency method) {
+    public void methodAchieved(DependencyAgent agent, MethodDependency method, CallLocation location) {
         if (method.getReference().equals(getMessageRef)) {
             allClasses.connect(method.getVariable(0));
         }
     }
 
     @Override
-    public void fieldAchieved(DependencyAgent agent, FieldDependency field) {
+    public void fieldAchieved(DependencyAgent agent, FieldDependency field, CallLocation location) {
     }
 }

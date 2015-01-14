@@ -66,7 +66,7 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     private DependencyCheckerInterruptor interruptor;
     private boolean interrupted;
     private Diagnostics diagnostics;
-    private DefaultCallGraph callGraph = new DefaultCallGraph();
+    DefaultCallGraph callGraph = new DefaultCallGraph();
 
     public DependencyChecker(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services,
             Diagnostics diagnostics) {
@@ -495,6 +495,7 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         return diagnostics;
     }
 
+    @Override
     public CallGraph getCallGraph() {
         return callGraph;
     }

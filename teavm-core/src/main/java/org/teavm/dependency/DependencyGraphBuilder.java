@@ -41,6 +41,7 @@ class DependencyGraphBuilder {
     }
 
     public void buildGraph(MethodDependency dep) {
+        caller = dependencyChecker.callGraph.getNode(dep.getReference());
         MethodReader method = dep.getMethod();
         if (method.getProgram() == null || method.getProgram().basicBlockCount() == 0) {
             return;

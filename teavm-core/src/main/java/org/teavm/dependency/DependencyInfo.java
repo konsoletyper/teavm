@@ -16,6 +16,7 @@
 package org.teavm.dependency;
 
 import java.util.Collection;
+import org.teavm.callgraph.CallGraph;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
@@ -40,4 +41,6 @@ public interface DependencyInfo {
     MethodDependencyInfo getMethod(MethodReference methodRef);
 
     ClassDependencyInfo getClass(String className);
+
+    CallGraph getCallGraph();
 }

@@ -22,8 +22,13 @@ import org.teavm.cache.DiskCachedClassHolderSource;
 import org.teavm.cache.DiskProgramCache;
 import org.teavm.cache.DiskRegularMethodNodeCache;
 import org.teavm.cache.FileSymbolTable;
+import org.teavm.callgraph.CallGraph;
+import org.teavm.callgraph.CallGraphNode;
+import org.teavm.callgraph.CallSite;
 import org.teavm.debugging.information.DebugInformation;
 import org.teavm.debugging.information.DebugInformationBuilder;
+import org.teavm.diagnostics.DefaultProblemTextConsumer;
+import org.teavm.diagnostics.Problem;
 import org.teavm.diagnostics.ProblemProvider;
 import org.teavm.javascript.RenderingContext;
 import org.teavm.model.*;
@@ -294,7 +299,16 @@ public class TeaVMTool {
                     cancelled = true;
                     return;
                 }
-                log.info("JavaScript file successfully built");
+                ProblemProvider problemProvider = vm.getProblemProvider();
+                if (problemProvider.getProblems().isEmpty()) {
+                    log.info("JavaScript file successfully built");
+                } else if (problemProvider.getSevereProblems().isEmpty()) {
+                    log.info("JavaScript file built with warnings");
+                    describeProblems(vm);
+                } else {
+                    log.info("JavaScript file built with errors");
+                    describeProblems(vm);
+                }
                 if (debugInformationGenerated) {
                     DebugInformation debugInfo = debugEmitter.getDebugInformation();
                     try (OutputStream debugInfoOut = new FileOutputStream(new File(targetDirectory,
@@ -342,6 +356,67 @@ public class TeaVMTool {
             }
         } catch (IOException e) {
             throw new TeaVMToolException("IO error occured", e);
+        }
+    }
+
+    private void describeProblems(TeaVM vm) {
+        CallGraph cg = vm.getDependencyInfo().getCallGraph();
+        DefaultProblemTextConsumer consumer = new DefaultProblemTextConsumer();
+        for (Problem problem : vm.getProblemProvider().getProblems()) {
+            consumer.clear();
+            problem.render(consumer);
+            StringBuilder sb = new StringBuilder();
+            sb.append(consumer.getText());
+            renderCallStack(cg, problem.getLocation(), sb);
+            String problemText = sb.toString();
+            switch (problem.getSeverity()) {
+                case ERROR:
+                    log.error(problemText);
+                    break;
+                case WARNING:
+                    log.warning(problemText);
+                    break;
+            }
+        }
+    }
+
+    private void renderCallStack(CallGraph cg, CallLocation location, StringBuilder sb) {
+        if (location == null) {
+            return;
+        }
+        sb.append("\n  at ");
+        renderCallLocation(location.getMethod(), location.getSourceLocation(), sb);
+        if (location.getMethod() != null) {
+            CallGraphNode node = cg.getNode(location.getMethod());
+            while (true) {
+                Iterator<? extends CallSite> callSites = node.getCallerCallSites().iterator();
+                if (!callSites.hasNext()) {
+                    break;
+                }
+                CallSite callSite = callSites.next();
+                sb.append("\n  at ");
+                renderCallLocation(node.getMethod(), callSite.getLocation(), sb);
+                node = callSite.getCaller();
+            }
+        }
+    }
+
+    private void renderCallLocation(MethodReference method, InstructionLocation location, StringBuilder sb) {
+        if (method != null) {
+            sb.append(method);
+        } else {
+            sb.append("unknown method");
+        }
+        sb.append(' ');
+        if (location != null) {
+            sb.append("(");
+            String fileName = location.getFileName();
+            if (fileName != null) {
+                sb.append(fileName.substring(fileName.lastIndexOf('/') + 1));
+                sb.append(':');
+            }
+            sb.append(location.getLine());
+            sb.append(')');
         }
     }
 

@@ -17,6 +17,9 @@ package org.teavm.diagnostics;
 
 import java.util.Arrays;
 import org.teavm.model.CallLocation;
+import org.teavm.model.FieldReference;
+import org.teavm.model.InstructionLocation;
+import org.teavm.model.MethodReference;
 
 /**
  *
@@ -49,5 +52,97 @@ public class Problem {
 
     public Object[] getParams() {
         return params;
+    }
+
+    public void render(ProblemTextConsumer consumer) {
+        int index = 0;
+        while (index < text.length()) {
+            int next = text.indexOf("{{", index);
+            if (next < 0) {
+                break;
+            }
+            consumer.append(text.substring(index, next));
+            next = parseParameter(consumer, next);
+        }
+        consumer.append(text.substring(index));
+    }
+
+    private int parseParameter(ProblemTextConsumer consumer, int index) {
+        int next = index + 2;
+        if (next >= text.length()) {
+            return index;
+        }
+        ParamType type;
+        switch (Character.toLowerCase(text.charAt(next++))) {
+            case 'c':
+                type = ParamType.CLASS;
+                break;
+            case 'm':
+                type = ParamType.METHOD;
+                break;
+            case 'f':
+                type = ParamType.FIELD;
+                break;
+            case 'l':
+                type = ParamType.LOCATION;
+                break;
+            default:
+                return index;
+        }
+        int digitsEnd = passDigits(index);
+        if (digitsEnd == next) {
+            return index;
+        }
+        int paramIndex = Integer.parseInt(text.substring(next, digitsEnd));
+        if (paramIndex >= params.length) {
+            return index;
+        }
+        next = digitsEnd;
+        if (next + 1 >= text.length() || !text.substring(next, next + 2).equals("}}")) {
+            return index;
+        }
+        Object param = params[paramIndex];
+        switch (type) {
+            case CLASS:
+                if (!(param instanceof String)) {
+                    return index;
+                }
+                consumer.appendClass((String)param);
+                break;
+            case METHOD:
+                if (!(param instanceof MethodReference)) {
+                    return index;
+                }
+                consumer.appendMethod((MethodReference)param);
+                break;
+            case FIELD:
+                if (!(param instanceof FieldReference)) {
+                    return index;
+                }
+                consumer.appendField((FieldReference)param);
+                break;
+            case LOCATION:
+                if (!(param instanceof InstructionLocation)) {
+                    return index;
+                }
+                consumer.appendLocation((InstructionLocation)param);
+                break;
+        }
+        next += 2;
+        return next;
+    }
+
+    private int passDigits(int index) {
+        while (index < text.length() && Character.isDigit(text.charAt(index))) {
+            ++index;
+        }
+        return index;
+    }
+
+    enum ParamType {
+        CLASS,
+        METHOD,
+        FIELD,
+        LOCATION
     }
 }

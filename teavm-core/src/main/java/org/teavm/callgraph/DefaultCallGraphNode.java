@@ -15,10 +15,7 @@
  */
 package org.teavm.callgraph;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import org.teavm.model.FieldReference;
 import org.teavm.model.InstructionLocation;
 import org.teavm.model.MethodReference;
@@ -30,17 +27,18 @@ import org.teavm.model.MethodReference;
 public class DefaultCallGraphNode implements CallGraphNode {
     private DefaultCallGraph graph;
     private MethodReference method;
-    private Set<DefaultCallSite> callSites;
+    private Set<DefaultCallSite> callSites = new HashSet<>();
     private transient Set<DefaultCallSite> safeCallSites;
-    private List<DefaultCallSite> callerCallSites;
+    private List<DefaultCallSite> callerCallSites = new ArrayList<>();
     private transient List<DefaultCallSite> safeCallersCallSites;
-    private Set<DefaultFieldAccessSite> fieldAccessSites;
+    private Set<DefaultFieldAccessSite> fieldAccessSites = new HashSet<>();
     private transient Set<DefaultFieldAccessSite> safeFieldAccessSites;
-    private Set<DefaultClassAccessSite> classAccessSites;
+    private Set<DefaultClassAccessSite> classAccessSites = new HashSet<>();
     private transient Set<DefaultClassAccessSite> safeClassAccessSites;
 
-    DefaultCallGraphNode(DefaultCallGraph graph) {
+    DefaultCallGraphNode(DefaultCallGraph graph, MethodReference method) {
         this.graph = graph;
+        this.method = method;
     }
 
     @Override

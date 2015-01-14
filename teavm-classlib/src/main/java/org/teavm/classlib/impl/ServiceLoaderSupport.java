@@ -35,7 +35,7 @@ import org.teavm.model.ValueType;
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public class ServiceLoaderSupport implements Generator, DependencyListener {
-    private Set<String> achievedClasses;
+    private Set<String> achievedClasses = new HashSet<>();
     private Map<String, List<String>> serviceMap = new HashMap<>();
     private DependencyNode allClassesNode;
     private ClassLoader classLoader;

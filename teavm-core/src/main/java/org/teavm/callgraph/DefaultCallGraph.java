@@ -32,7 +32,7 @@ public class DefaultCallGraph implements CallGraph {
     public DefaultCallGraphNode getNode(MethodReference method) {
         DefaultCallGraphNode node = nodes.get(method);
         if (node == null) {
-            node = new DefaultCallGraphNode(this);
+            node = new DefaultCallGraphNode(this, method);
             nodes.put(method, node);
         }
         return nodes.get(method);
