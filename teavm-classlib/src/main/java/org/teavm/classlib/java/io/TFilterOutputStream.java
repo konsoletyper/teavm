@@ -38,7 +38,7 @@ public class TFilterOutputStream extends TOutputStream {
         } catch (TIOException e) {
             // do nothing
         }
-        close();
+        out.close();
     }
 
     @Override

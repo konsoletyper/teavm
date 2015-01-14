@@ -178,6 +178,12 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     .append("clsProto.$meta.name").ws().append("!==").ws().append("undefined").ws().append("?").ws()
                     .append("$rt_str(clsProto.$meta.name)").ws().append(":").ws().append("null;").softNewLine();
         }
+        if (classSource.get(classClass).getField("name") != null) {
+            writer.append("cls.").appendField(new FieldReference(classClass, "binaryName")).ws().append("=").ws()
+                    .append("clsProto.$meta.binaryName").ws().append("!==").ws().append("undefined").ws()
+                    .append("?").ws()
+                    .append("$rt_str(clsProto.$meta.binaryName)").ws().append(":").ws().append("null;").softNewLine();
+        }
         if (classSource.get(classClass).getField("primitive") != null) {
             writer.append("cls.").appendField(new FieldReference(classClass, "primitive"))
                     .append(" = clsProto.$meta.primitive ? 1 : 0;").newLine();

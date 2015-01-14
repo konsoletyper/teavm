@@ -51,7 +51,7 @@ public class TObject {
 
     @Rename("toString")
     public TString toString0() {
-        return TString.wrap(getClass().getName() + "@" + identity());
+        return TString.wrap(getClass().getName() + "@" + TInteger.toHexString(identity()));
     }
 
     @GeneratedBy(ObjectNativeGenerator.class)

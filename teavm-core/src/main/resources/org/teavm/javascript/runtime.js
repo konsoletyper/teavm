@@ -128,7 +128,9 @@ function $rt_arraycls(cls) {
             str += "]";
             return str;
         }
-        arraycls.$meta = { item : cls, supertypes : [$rt_objcls()], primitive : false, superclass : $rt_objcls() };
+        var name = "[" + cls.$meta.binaryName;
+        arraycls.$meta = { item : cls, supertypes : [$rt_objcls()], primitive : false, superclass : $rt_objcls(),
+                name : name, binaryName : name };
         cls.$array = arraycls;
     }
     return cls.$array;
@@ -140,84 +142,73 @@ function $rt_createcls() {
         }
     };
 }
+function $rt_createPrimitiveCls(name, binaryName) {
+    var cls = $rt_createcls();
+    cls.$meta.primitive = true;
+    cls.$meta.name = name;
+    cls.$meta.binaryName = binaryName;
+    return cls;
+}
 var $rt_booleanclsCache = null;
 function $rt_booleancls() {
     if ($rt_booleanclsCache === null) {
-        $rt_booleanclsCache = $rt_createcls();
-        $rt_booleanclsCache.primitive = true;
-        $rt_booleanclsCache.name = "boolean";
+        $rt_booleanclsCache = $rt_createPrimitiveCls("boolean", "Z");
     }
     return $rt_booleanclsCache;
 }
 var $rt_charclsCache = null;
 function $rt_charcls() {
     if ($rt_charclsCache === null) {
-        $rt_charclsCache = $rt_createcls();
-        $rt_charclsCache.primitive = true;
-        $rt_charclsCache.name = "char";
+        $rt_charclsCache = $rt_createPrimitiveCls("char", "C");
     }
     return $rt_charclsCache;
 }
 var $rt_byteclsCache = null;
 function $rt_bytecls() {
     if ($rt_byteclsCache === null) {
-        $rt_byteclsCache = $rt_createcls();
-        $rt_byteclsCache.primitive = true;
-        $rt_byteclsCache.name = "byte";
+        $rt_byteclsCache = $rt_createPrimitiveCls("byte", "B");
     }
     return $rt_byteclsCache;
 }
 var $rt_shortclsCache = null;
 function $rt_shortcls() {
     if ($rt_shortclsCache === null) {
-        $rt_shortclsCache = $rt_createcls();
-        $rt_shortclsCache.primitive = true;
-        $rt_shortclsCache.name = "short";
+        $rt_shortclsCache = $rt_createPrimitiveCls("short", "S");
     }
     return $rt_shortclsCache;
 }
 var $rt_intclsCache = null;
 function $rt_intcls() {
     if ($rt_intclsCache === null) {
-        $rt_intclsCache = $rt_createcls();
-        $rt_intclsCache.primitive = true;
-        $rt_intclsCache.name = "int";
+        $rt_intclsCache = $rt_createPrimitiveCls("int", "I");
     }
     return $rt_intclsCache;
 }
 var $rt_longclsCache = null;
 function $rt_longcls() {
     if ($rt_longclsCache === null) {
-        $rt_longclsCache = $rt_createcls();
-        $rt_longclsCache.primitive = true;
-        $rt_longclsCache.name = "long";
+        $rt_longclsCache = $rt_createPrimitiveCls("long", "J");
     }
     return $rt_longclsCache;
 }
 var $rt_floatclsCache = null;
 function $rt_floatcls() {
     if ($rt_floatclsCache === null) {
-        $rt_floatclsCache = $rt_createcls();
-        $rt_floatclsCache.primitive = true;
-        $rt_floatclsCache.name = "float";
+        $rt_floatclsCache = $rt_createPrimitiveCls("float", "F");
     }
     return $rt_floatclsCache;
 }
 var $rt_doubleclsCache = null;
 function $rt_doublecls() {
     if ($rt_doubleclsCache === null) {
-        $rt_doubleclsCache = $rt_createcls();
-        $rt_doubleclsCache.primitive = true;
-        $rt_doubleclsCache.name = "double";
+        $rt_doubleclsCache = $rt_createPrimitiveCls("double", "D");
     }
     return $rt_doubleclsCache;
 }
 var $rt_voidclsCache = null;
 function $rt_voidcls() {
     if ($rt_voidclsCache === null) {
-        $rt_voidclsCache = $rt_createcls();
-        $rt_voidclsCache.primitive = true;
-        $rt_voidclsCache.name = "void";
+        $rt_voidclsCache = $rt_createPrimitiveCls("void", "V");
     }
     return $rt_voidclsCache;
 }
@@ -383,6 +374,7 @@ function $rt_declClass(cls, data) {
         cls.prototype = new Object();
     }
     cls.$meta.name = data.name;
+    cls.$meta.binaryName = "L" + data.name + ";";
     cls.$meta.enum = data.enum;
     cls.prototype.constructor = cls;
     cls.$clinit = data.clinit;

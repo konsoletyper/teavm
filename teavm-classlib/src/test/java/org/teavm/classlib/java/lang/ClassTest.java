@@ -26,6 +26,9 @@ public class ClassTest {
     @Test
     public void classNameEvaluated() {
         assertEquals("java.lang.Object", Object.class.getName());
+        assertEquals("[Ljava.lang.Object;", Object[].class.getName());
+        assertEquals("int", int.class.getName());
+        assertEquals("[I", int[].class.getName());
     }
 
     @Test

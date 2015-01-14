@@ -63,7 +63,7 @@ public interface XMLHttpRequest extends JSObject {
     Document getResponseXML();
 
     @JSProperty
-    Integer getStatus();
+    int getStatus();
 
     @JSProperty
     String getStatusText();

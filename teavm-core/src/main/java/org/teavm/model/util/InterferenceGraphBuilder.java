@@ -60,7 +60,7 @@ class InterferenceGraphBuilder {
             }
             for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
                 if (tryCatch.getExceptionVariable() != null) {
-                    live.remove(tryCatch.getExceptionVariable());
+                    live.remove(nodes.get(tryCatch.getExceptionVariable().getIndex()));
                 }
             }
             for (int j = block.getInstructions().size() - 1; j >= 0; --j) {

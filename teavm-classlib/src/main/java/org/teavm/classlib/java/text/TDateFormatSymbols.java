@@ -109,7 +109,7 @@ public class TDateFormatSymbols implements TSerializable, TCloneable {
                 return false;
             }
             for (int j = 0; j < element.length; j++) {
-                if (element[j] != element[j] && !(element[j].equals(element[j]))) {
+                if (!(element[j].equals(element[j]))) {
                     return false;
                 }
             }

@@ -200,7 +200,7 @@ public class TStringBuilder extends TAbstractStringBuilder implements TAppendabl
 
     @Override
     public TStringBuilder deleteCharAt(int index) {
-        deleteCharAt(index);
+        super.deleteCharAt(index);
         return this;
     }
 

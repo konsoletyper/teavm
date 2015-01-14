@@ -224,7 +224,7 @@ public class Debugger {
     }
 
     public Breakpoint createBreakpoint(SourceLocation location) {
-        synchronized (breakpoints) {
+        synchronized (breakpointMap) {
             Breakpoint breakpoint = new Breakpoint(this, location);
             breakpoints.put(breakpoint, dummyObject);
             updateInternalBreakpoints(breakpoint);
@@ -366,7 +366,7 @@ public class Debugger {
             breakpointMap.remove(jsBreakpoint);
         }
         breakpoint.jsBreakpoints = new ArrayList<>();
-        breakpoints.remove(this);
+        breakpoints.remove(breakpoint);
     }
 
     private void fireResumed() {

@@ -60,4 +60,11 @@ public class ObjectTest {
     public void properInstanceDetected() {
         assertTrue(Object.class.isInstance(new Object()));
     }
+
+    @Test
+    public void toStringWorks() {
+        assertTrue(new Object().toString().startsWith("java.lang.Object@"));
+        assertTrue(new Object[2].toString().startsWith("[Ljava.lang.Object;@"));
+        assertTrue(new byte[3].toString().startsWith("[B@"));
+    }
 }
