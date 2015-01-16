@@ -15,8 +15,6 @@
  */
 package org.teavm.classlib.java.lang;
 
-import org.teavm.javascript.ni.Rename;
-
 /**
  *
  * @author Alexey Andreev
@@ -66,13 +64,12 @@ public class TByte extends TNumber implements TComparable<TByte> {
         return new TByte(value);
     }
 
-    public static TString toString(byte value) {
-        return TString.wrap(new StringBuilder().append(value).toString());
+    public static String toString(byte value) {
+        return new StringBuilder().append(value).toString();
     }
 
     @Override
-    @Rename("toString")
-    public TString toString0() {
+    public String toString() {
         return toString(value);
     }
 

@@ -372,6 +372,15 @@ public class TeaVMTestTool {
                 String sourceMapsFileName = targetName.substring(targetName.lastIndexOf('/') + 1) + ".map";
                 innerWriter.append("\n//# sourceMappingURL=").append(sourceMapsFileName);
             }
+            if (!vm.getProblemProvider().getProblems().isEmpty()) {
+                if (vm.getProblemProvider().getSevereProblems().isEmpty()) {
+                    log.warning("Test built with warnings: " + methodRef);
+                    TeaVMProblemRenderer.describeProblems(vm, log);
+                } else {
+                    log.warning("Test built with errors: " + methodRef);
+                    TeaVMProblemRenderer.describeProblems(vm, log);
+                }
+            }
         }
         if (sourceMapsGenerated) {
             DebugInformation debugInfo = debugInfoBuilder.getDebugInformation();

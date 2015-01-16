@@ -16,7 +16,6 @@
 package org.teavm.classlib.java.lang;
 
 import org.teavm.javascript.ni.GeneratedBy;
-import org.teavm.javascript.ni.Rename;
 
 /**
  *
@@ -71,13 +70,12 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
         return new TFloat(d);
     }
 
-    public static TString toString(float d) {
-        return TString.wrap(new TStringBuilder().append(d).toString());
+    public static String toString(float d) {
+        return new TStringBuilder().append(d).toString();
     }
 
     @Override
-    @Rename("toString")
-    public TString toString0() {
+    public String toString() {
         return toString(value);
     }
 

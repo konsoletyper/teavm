@@ -19,7 +19,6 @@ import org.teavm.classlib.impl.charset.UTF16Helper;
 import org.teavm.classlib.impl.unicode.UnicodeHelper;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.javascript.ni.GeneratedBy;
-import org.teavm.javascript.ni.Rename;
 
 /**
  *
@@ -118,8 +117,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     @Override
-    @Rename("toString")
-    public TString toString0() {
+    public String toString() {
         return toString(value);
     }
 
@@ -136,8 +134,8 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
         return value;
     }
 
-    public static TString toString(char c) {
-        return new TString(new char[] { c });
+    public static String toString(char c) {
+        return new String(new char[] { c });
     }
 
     public static boolean isValidCodePoint(int codePoint) {

@@ -62,7 +62,11 @@ public class Problem {
                 break;
             }
             consumer.append(text.substring(index, next));
-            next = parseParameter(consumer, next);
+            index = parseParameter(consumer, next);
+            if (index == next) {
+                consumer.append("{{");
+                index += 2;
+            }
         }
         consumer.append(text.substring(index));
     }
@@ -89,7 +93,7 @@ public class Problem {
             default:
                 return index;
         }
-        int digitsEnd = passDigits(index);
+        int digitsEnd = passDigits(next);
         if (digitsEnd == next) {
             return index;
         }

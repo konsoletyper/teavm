@@ -482,9 +482,8 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
     }
 
     @Override
-    @Rename("toString")
-    public TString toString0() {
-        TStringBuilder sb = new TStringBuilder();
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
         sb.append('{');
         boolean first = true;
         for (int i = 0; i < data.length; ++i) {
@@ -497,7 +496,7 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
                 int numZeros = TInteger.numberOfTrailingZeros(val);
                 bit += numZeros;
                 if (!first) {
-                    sb.append(TString.wrap(", "));
+                    sb.append(", ");
                 } else {
                     first = false;
                 }
@@ -507,7 +506,7 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
             }
         }
         sb.append('}');
-        return TString.wrap(sb.toString());
+        return sb.toString();
     }
 
     @Rename("clone")

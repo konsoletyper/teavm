@@ -1,5 +1,5 @@
 /*
- *  Copyright 2013 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,16 +13,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript.ni;
-
-import java.lang.annotation.*;
+package org.teavm.classlib.java.lang;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.METHOD, ElementType.CONSTRUCTOR })
-public @interface Rename {
-    String value();
+public class TNoClassDefFoundError extends TLinkageError {
+    private static final long serialVersionUID = -7662272618403764942L;
+
+    public TNoClassDefFoundError() {
+        super();
+    }
+
+    public TNoClassDefFoundError(TString message) {
+        super(message);
+    }
 }

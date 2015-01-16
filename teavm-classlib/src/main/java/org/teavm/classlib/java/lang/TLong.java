@@ -16,7 +16,6 @@
 package org.teavm.classlib.java.lang;
 
 import org.teavm.javascript.ni.GeneratedBy;
-import org.teavm.javascript.ni.Rename;
 
 /**
  *
@@ -174,29 +173,28 @@ public class TLong extends TNumber implements TComparable<TLong> {
         return value;
     }
 
-    public static TString toString(long i, int radix) {
-        return TString.wrap(new TStringBuilder().insert(0, i, radix).toString());
+    public static String toString(long i, int radix) {
+        return new TStringBuilder().insert(0, i, radix).toString();
     }
 
-    public static TString toHexString(long i) {
+    public static String toHexString(long i) {
         return toString(i, 16);
     }
 
-    public static TString toOctalString(long i) {
+    public static String toOctalString(long i) {
         return toString(i, 8);
     }
 
-    public static TString toBinaryString(long i) {
+    public static String toBinaryString(long i) {
         return toString(i, 2);
     }
 
-    public static TString toString(long value) {
-        return TString.wrap(new TStringBuilder().append(value).toString());
+    public static String toString(long value) {
+        return new TStringBuilder().append(value).toString();
     }
 
     @Override
-    @Rename("toString")
-    public TString toString0() {
+    public String toString() {
         return toString(value);
     }
 

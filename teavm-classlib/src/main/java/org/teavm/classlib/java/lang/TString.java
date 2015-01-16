@@ -25,7 +25,6 @@ import org.teavm.classlib.java.util.TMap;
 import org.teavm.classlib.java.util.regex.TPattern;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.javascript.ni.InjectedBy;
-import org.teavm.javascript.ni.Rename;
 
 /**
  *
@@ -458,9 +457,8 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     @Override
-    @Rename("toString")
-    public TString toString0() {
-        return this;
+    public String toString() {
+        return (String)(Object)this;
     }
 
     public char[] toCharArray() {

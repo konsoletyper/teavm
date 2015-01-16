@@ -24,7 +24,7 @@ import org.teavm.model.MethodReference;
  * @author Alexey Andreev
  */
 public class DefaultProblemTextConsumer implements ProblemTextConsumer {
-    private StringBuilder sb;
+    private StringBuilder sb = new StringBuilder();
 
     public void clear() {
         sb.setLength(0);

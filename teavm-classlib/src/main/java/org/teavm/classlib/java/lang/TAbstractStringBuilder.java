@@ -18,8 +18,6 @@ package org.teavm.classlib.java.lang;
 import org.teavm.classlib.impl.charset.UTF16Helper;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.util.TArrays;
-import org.teavm.javascript.ni.Remove;
-import org.teavm.javascript.ni.Rename;
 
 /**
  *
@@ -589,13 +587,6 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
         return buffer.length;
     }
 
-    @Override
-    @Rename("toString")
-    public TString toString0() {
-        return new TString(buffer, 0, length);
-    }
-
-    @Remove
     @Override
     public String toString() {
         return new String(buffer, 0, length);

@@ -17,7 +17,6 @@ package org.teavm.classlib.java.lang;
 
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.javascript.ni.GeneratedBy;
-import org.teavm.javascript.ni.Rename;
 
 /**
  *
@@ -71,13 +70,12 @@ public class TBoolean extends TObject implements TSerializable, TComparable<TBoo
         return valueOf(parseBoolean(value));
     }
 
-    public static TString toString(boolean value) {
-        return value ? TString.wrap("true") : TString.wrap("false");
+    public static String toString(boolean value) {
+        return value ? "true" : "false";
     }
 
     @Override
-    @Rename("toString")
-    public TString toString0() {
+    public String toString() {
         return toString(value);
     }
 

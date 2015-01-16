@@ -42,6 +42,7 @@ public class TClass<T> extends TObject {
     @InjectedBy(ClassNativeGenerator.class)
     public native boolean isAssignableFrom(TClass<?> obj);
 
+    @PluggableDependency(ClassNativeGenerator.class)
     public TString getName() {
         return name;
     }

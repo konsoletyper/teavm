@@ -15,8 +15,6 @@
  */
 package org.teavm.classlib.java.lang;
 
-import org.teavm.javascript.ni.Rename;
-
 /**
  *
  * @author Alexey Andreev
@@ -65,13 +63,12 @@ public class TShort extends TNumber implements TComparable<TShort> {
         return new TShort(value);
     }
 
-    public static TString toString(short value) {
-        return TString.wrap(new StringBuilder().append(value).toString());
+    public static String toString(short value) {
+        return new StringBuilder().append(value).toString();
     }
 
     @Override
-    @Rename("toString")
-    public TString toString0() {
+    public String toString() {
         return toString(value);
     }
 

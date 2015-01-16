@@ -31,6 +31,7 @@ public class TStringIndexOutOfBoundsException extends TIndexOutOfBoundsException
     }
 
     public TStringIndexOutOfBoundsException(int index) {
-        super(new TStringBuilder().append(TString.wrap("String index out of bounds: ")).append(index).toString0());
+        super(TString.wrap(new TStringBuilder().append(TString.wrap("String index out of bounds: "))
+                .append(index).toString()));
     }
 }

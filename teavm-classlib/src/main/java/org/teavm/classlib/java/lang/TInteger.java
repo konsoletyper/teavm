@@ -15,8 +15,6 @@
  */
 package org.teavm.classlib.java.lang;
 
-import org.teavm.javascript.ni.Rename;
-
 /**
  *
  * @author Alexey Andreev
@@ -37,26 +35,26 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
         this(parseInt(s));
     }
 
-    public static TString toString(int i, int radix) {
+    public static String toString(int i, int radix) {
         if (radix < MIN_VALUE || radix > MAX_VALUE) {
             radix = 10;
         }
-        return TString.wrap(new TAbstractStringBuilder(20).append(i, radix).toString());
+        return new TAbstractStringBuilder(20).append(i, radix).toString();
     }
 
-    public static TString toHexString(int i) {
+    public static String toHexString(int i) {
         return toString(i, 16);
     }
 
-    public static TString toOctalString(int i) {
+    public static String toOctalString(int i) {
         return toString(i, 8);
     }
 
-    public static TString toBinaryString(int i) {
+    public static String toBinaryString(int i) {
         return toString(i, 2);
     }
 
-    public static TString toString(int i) {
+    public static String toString(int i) {
         return toString(i, 10);
     }
 
@@ -152,8 +150,7 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
     }
 
     @Override
-    @Rename("toString")
-    public TString toString0() {
+    public String toString() {
         return toString(value);
     }
 

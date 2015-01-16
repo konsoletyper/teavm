@@ -1,5 +1,5 @@
 /*
- *  Copyright 2013 Alexey Andreev.
+ *  Copyright 2014 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,16 +13,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript.ni;
-
-import java.lang.annotation.*;
+package org.teavm.classlib.java.lang;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ ElementType.METHOD, ElementType.CONSTRUCTOR })
-public @interface Rename {
-    String value();
+public class TNoSuchMethodError extends TIncompatibleClassChangeError {
+    private static final long serialVersionUID = 7907885242472547035L;
+
+    public TNoSuchMethodError() {
+        super();
+    }
+
+    public TNoSuchMethodError(TString message) {
+        super(message);
+    }
 }

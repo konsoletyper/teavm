@@ -40,9 +40,8 @@ public abstract class TEnum<E extends TEnum<E>> extends TObject implements TComp
     }
 
     @Override
-    @Rename("toString")
-    public TString toString0() {
-        return name;
+    public String toString() {
+        return name.toString();
     }
 
     @Override

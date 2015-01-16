@@ -31,6 +31,6 @@ public class TArrayIndexOutOfBoundsException extends TIndexOutOfBoundsException 
     }
 
     public TArrayIndexOutOfBoundsException(int index) {
-        super(TInteger.toString(index));
+        super(TString.wrap(Integer.toString(index)));
     }
 }

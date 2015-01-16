@@ -29,10 +29,7 @@ import org.teavm.javascript.ast.ClassNode;
 import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.Injector;
 import org.teavm.model.*;
-import org.teavm.model.util.ListingBuilder;
-import org.teavm.model.util.ModelUtils;
-import org.teavm.model.util.ProgramUtils;
-import org.teavm.model.util.RegisterAllocator;
+import org.teavm.model.util.*;
 import org.teavm.optimization.*;
 import org.teavm.vm.spi.RendererListener;
 import org.teavm.vm.spi.TeaVMHost;
@@ -344,6 +341,21 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         internDep.use();
         dependencyChecker.linkMethod(new MethodReference(String.class, "length", int.class), null).use();
         dependencyChecker.linkMethod(new MethodReference(Object.class, "clone", Object.class), null).use();
+        MethodDependency exceptionCons = dependencyChecker.linkMethod(new MethodReference(
+                NoClassDefFoundError.class, "<init>", String.class, void.class), null);
+        exceptionCons.use();
+        exceptionCons.getVariable(0).propagate(dependencyChecker.getType(NoClassDefFoundError.class.getName()));
+        exceptionCons.getVariable(1).propagate(dependencyChecker.getType("java.lang.String"));
+        exceptionCons = dependencyChecker.linkMethod(new MethodReference(NoSuchFieldError.class, "<init>",
+                String.class, void.class), null);
+        exceptionCons.use();
+        exceptionCons.getVariable(0).propagate(dependencyChecker.getType(NoSuchFieldError.class.getName()));
+        exceptionCons.getVariable(1).propagate(dependencyChecker.getType("java.lang.String"));
+        exceptionCons = dependencyChecker.linkMethod(new MethodReference(NoSuchMethodError.class, "<init>",
+                String.class, void.class), null);
+        exceptionCons.use();
+        exceptionCons.getVariable(0).propagate(dependencyChecker.getType(NoSuchMethodError.class.getName()));
+        exceptionCons.getVariable(1).propagate(dependencyChecker.getType("java.lang.String"));
         dependencyChecker.processDependencies();
         if (wasCancelled() || !diagnostics.getSevereProblems().isEmpty()) {
             return;
@@ -438,6 +450,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         reportPhase(TeaVMPhase.LINKING, dependency.getAchievableClasses().size());
         Linker linker = new Linker();
         MutableClassHolderSource cutClasses = new MutableClassHolderSource();
+        MissingItemsProcessor missingItemsProcessor = new MissingItemsProcessor(dependency, diagnostics);
         if (wasCancelled()) {
             return cutClasses;
         }
@@ -445,6 +458,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         for (String className : dependency.getAchievableClasses()) {
             ClassHolder cls = ModelUtils.copyClass(dependency.getClassSource().get(className));
             cutClasses.putClassHolder(cls);
+            missingItemsProcessor.processClass(cls);
             linker.link(dependency, cls);
             progressListener.progressReached(++index);
         }

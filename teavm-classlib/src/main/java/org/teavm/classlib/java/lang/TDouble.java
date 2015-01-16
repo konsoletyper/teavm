@@ -17,7 +17,6 @@ package org.teavm.classlib.java.lang;
 
 import org.teavm.javascript.ni.GeneratedBy;
 import org.teavm.javascript.ni.InjectedBy;
-import org.teavm.javascript.ni.Rename;
 
 /**
  *
@@ -68,8 +67,8 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
         return new TDouble(d);
     }
 
-    public static TString toString(double d) {
-        return TString.wrap(new TStringBuilder().append(d).toString());
+    public static String toString(double d) {
+        return new TStringBuilder().append(d).toString();
     }
 
     public static TDouble valueOf(TString string) {
@@ -190,8 +189,7 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
     }
 
     @Override
-    @Rename("toString")
-    public TString toString0() {
+    public String toString() {
         return toString(value);
     }
 

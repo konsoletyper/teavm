@@ -49,9 +49,9 @@ public class TObject {
         return this == other;
     }
 
-    @Rename("toString")
-    public TString toString0() {
-        return TString.wrap(getClass().getName() + "@" + TInteger.toHexString(identity()));
+    @Override
+    public String toString() {
+        return getClass().getName() + "@" + TInteger.toHexString(identity());
     }
 
     @GeneratedBy(ObjectNativeGenerator.class)

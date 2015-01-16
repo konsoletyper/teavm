@@ -18,7 +18,6 @@ package org.teavm.classlib.java.io;
 import org.teavm.classlib.java.lang.TMath;
 import org.teavm.classlib.java.lang.TString;
 import org.teavm.classlib.java.util.TArrays;
-import org.teavm.javascript.ni.Rename;
 
 /**
  *
@@ -62,9 +61,8 @@ public class TByteArrayOutputStream extends TOutputStream {
     }
 
     @Override
-    @Rename("toString")
-    public TString toString0() {
-        return new TString(buf, 0, count);
+    public String toString() {
+        return new String(buf, 0, count);
     }
 
     public TString toString(TString charsetName) throws TUnsupportedEncodingException {

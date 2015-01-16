@@ -112,6 +112,9 @@ public class BuildJavascriptMojo extends AbstractMojo {
     @Parameter
     private MethodAlias[] methodAliases;
 
+    @Parameter
+    private boolean stopOnErrors = true;
+
     private TeaVMTool tool = new TeaVMTool();
 
     public void setProject(MavenProject project) {
@@ -198,6 +201,10 @@ public class BuildJavascriptMojo extends AbstractMojo {
         this.incremental = incremental;
     }
 
+    public void setStopOnErrors(boolean stopOnErrors) {
+        this.stopOnErrors = stopOnErrors;
+    }
+
     public File getCacheDirectory() {
         return cacheDirectory;
     }
@@ -247,7 +254,7 @@ public class BuildJavascriptMojo extends AbstractMojo {
             tool.setSourceMapsFileGenerated(sourceMapsGenerated);
             tool.setSourceFilesCopied(sourceFilesCopied);
             tool.generate();
-            if (!tool.getProblemProvider().getSevereProblems().isEmpty()) {
+            if (stopOnErrors && !tool.getProblemProvider().getSevereProblems().isEmpty()) {
                 throw new MojoExecutionException("Build error");
             }
         } catch (RuntimeException e) {
