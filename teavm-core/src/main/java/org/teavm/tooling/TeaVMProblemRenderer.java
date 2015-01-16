@@ -59,7 +59,7 @@ public final class TeaVMProblemRenderer {
         if (location == null) {
             return;
         }
-        sb.append("\n  at ");
+        sb.append("\n    at ");
         renderCallLocation(location.getMethod(), location.getSourceLocation(), sb);
         if (location.getMethod() != null) {
             CallGraphNode node = cg.getNode(location.getMethod());
@@ -69,7 +69,7 @@ public final class TeaVMProblemRenderer {
                     break;
                 }
                 CallSite callSite = callSites.next();
-                sb.append("\n  at ");
+                sb.append("\n    at ");
                 renderCallLocation(callSite.getCaller().getMethod(), callSite.getLocation(), sb);
                 node = callSite.getCaller();
             }
@@ -78,11 +78,10 @@ public final class TeaVMProblemRenderer {
 
     private static void renderCallLocation(MethodReference method, InstructionLocation location, StringBuilder sb) {
         if (method != null) {
-            sb.append(method);
+            sb.append(method.getClassName() + "." + method.getName());
         } else {
             sb.append("unknown method");
         }
-        sb.append(' ');
         if (location != null) {
             sb.append("(");
             String fileName = location.getFileName();

@@ -26,9 +26,12 @@ import org.teavm.diagnostics.AccumulationDiagnostics;
 import org.teavm.diagnostics.ProblemProvider;
 import org.teavm.javascript.*;
 import org.teavm.javascript.ast.ClassNode;
+import org.teavm.javascript.ni.GeneratedBy;
 import org.teavm.javascript.ni.Generator;
+import org.teavm.javascript.ni.InjectedBy;
 import org.teavm.javascript.ni.Injector;
 import org.teavm.model.*;
+import org.teavm.model.instructions.*;
 import org.teavm.model.util.*;
 import org.teavm.optimization.*;
 import org.teavm.vm.spi.RendererListener;
@@ -537,6 +540,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                 ClassHolder cls = classes.get(className);
                 for (MethodHolder method : cls.getMethods()) {
                     processMethod(method);
+                    preprocessNativeMethod(method);
                     if (bytecodeLogging) {
                         logMethodBytecode(bytecodeLogger, method);
                     }
@@ -548,6 +552,46 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             throw new AssertionError("UTF-8 is expected to be supported");
         }
         return classNodes;
+    }
+
+    private void preprocessNativeMethod(MethodHolder method) {
+        if (!method.getModifiers().contains(ElementModifier.NATIVE) ||
+                methodGenerators.get(method.getReference()) != null ||
+                methodInjectors.get(method.getReference()) != null ||
+                method.getAnnotations().get(GeneratedBy.class.getName()) != null ||
+                method.getAnnotations().get(InjectedBy.class.getName()) != null) {
+            return;
+        }
+        method.getModifiers().remove(ElementModifier.NATIVE);
+
+        Program program = new Program();
+        method.setProgram(program);
+        BasicBlock block = program.createBasicBlock();
+        Variable exceptionVar = program.createVariable();
+        ConstructInstruction newExceptionInsn = new ConstructInstruction();
+        newExceptionInsn.setType(NoSuchMethodError.class.getName());
+        newExceptionInsn.setReceiver(exceptionVar);
+        block.getInstructions().add(newExceptionInsn);
+
+        Variable constVar = program.createVariable();
+        StringConstantInstruction constInsn = new StringConstantInstruction();
+        constInsn.setConstant("Native method implementation not found: " + method.getReference());
+        constInsn.setReceiver(constVar);
+        block.getInstructions().add(constInsn);
+
+        InvokeInstruction initExceptionInsn = new InvokeInstruction();
+        initExceptionInsn.setInstance(exceptionVar);
+        initExceptionInsn.setMethod(new MethodReference(NoSuchMethodError.class, "<init>", String.class, void.class));
+        initExceptionInsn.setType(InvocationType.SPECIAL);
+        initExceptionInsn.getArguments().add(constVar);
+        block.getInstructions().add(initExceptionInsn);
+
+        RaiseInstruction raiseInsn = new RaiseInstruction();
+        raiseInsn.setException(exceptionVar);
+        block.getInstructions().add(raiseInsn);
+
+        diagnostics.error(new CallLocation(method.getReference()), "Native method {{m0}} has no implementation",
+                method.getReference());
     }
 
     private void processMethod(MethodHolder method) {
