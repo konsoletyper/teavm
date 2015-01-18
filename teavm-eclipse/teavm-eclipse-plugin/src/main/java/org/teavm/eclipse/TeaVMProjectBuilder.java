@@ -22,19 +22,20 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.eclipse.core.resources.*;
 import org.eclipse.core.runtime.*;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.core.variables.IStringVariableManager;
 import org.eclipse.core.variables.VariablesPlugin;
-import org.eclipse.jdt.core.IClasspathEntry;
-import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jdt.core.JavaCore;
-import org.teavm.dependency.*;
-import org.teavm.model.ClassHolderTransformer;
-import org.teavm.model.InstructionLocation;
-import org.teavm.model.MethodReference;
-import org.teavm.model.ValueType;
+import org.eclipse.jdt.core.*;
+import org.teavm.callgraph.CallGraph;
+import org.teavm.callgraph.CallGraphNode;
+import org.teavm.callgraph.CallSite;
+import org.teavm.diagnostics.Problem;
+import org.teavm.diagnostics.ProblemTextConsumer;
+import org.teavm.model.*;
 import org.teavm.tooling.*;
 
 /**
@@ -49,6 +50,7 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
     private SourceFileProvider[] sourceProviders;
     private Set<IProject> usedProjects = new HashSet<>();
     private static Map<TeaVMProfile, Set<String>> profileClasses = new WeakHashMap<>();
+    private static Pattern newLinePattern = Pattern.compile("\\r|\\n|\\r\\n");
 
     @Override
     protected IProject[] build(int kind, Map<String, String> args, IProgressMonitor monitor) throws CoreException {
@@ -125,9 +127,8 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
         try {
             monitor.beginTask("Running TeaVM", 10000);
             tool.generate();
-            if (tool.getDependencyViolations().hasMissingItems()) {
-                putMarkers(tool.getDependencyViolations());
-            } else if (!tool.wasCancelled()) {
+            if (!tool.wasCancelled()) {
+                putMarkers(tool.getDependencyInfo().getCallGraph(), tool.getProblemProvider().getProblems());
                 setClasses(profile, classesToResources(tool.getClasses()));
                 refreshTarget(tool.getTargetDirectory());
             }
@@ -225,40 +226,182 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
     }
 
     private void removeMarkers() throws CoreException {
-        getProject().deleteMarkers(TeaVMEclipsePlugin.DEPENDENCY_MARKER_ID, true, IResource.DEPTH_INFINITE);
+        for (IProject project : getProject().getWorkspace().getRoot().getProjects()) {
+            IMarker[] markers = project.findMarkers(TeaVMEclipsePlugin.PROBLEM_MARKER_ID, true,
+                    IResource.DEPTH_INFINITE);
+            for (IMarker marker : markers) {
+                String projectName = (String)marker.getAttribute(TeaVMEclipsePlugin.PROBLEM_MARKER_PROJECT_ATTRIBUTE);
+                if (projectName.equals(getProject().getName())) {
+                    marker.delete();
+                }
+            }
+        }
         getProject().deleteMarkers(TeaVMEclipsePlugin.CONFIG_MARKER_ID, true, IResource.DEPTH_INFINITE);
     }
 
-    private void putMarkers(DependencyViolations violations) throws CoreException {
-        for (ClassDependencyInfo dep : violations.getMissingClasses()) {
-            putMarker("Missing class " + getSimpleClassName(dep.getClassName()), dep.getStack());
-        }
-        for (FieldDependencyInfo dep : violations.getMissingFields()) {
-            putMarker("Missing field " + getSimpleClassName(dep.getReference().getClassName()) + "." +
-                    dep.getReference().getFieldName(), dep.getStack());
-        }
-        for (MethodDependencyInfo dep : violations.getMissingMethods()) {
-            putMarker("Missing method " + getFullMethodName(dep.getReference()), dep.getStack());
+    private void putMarkers(CallGraph cg, List<Problem> problems) throws CoreException {
+        for (Problem problem : problems) {
+            putMarker(cg, problem);
         }
     }
 
-    private void putMarker(String message, DependencyStack stack) throws CoreException {
-        StringBuilder sb = new StringBuilder();
-        sb.append(message);
+    private void putMarker(CallGraph cg, Problem problem) throws CoreException {
+        if (problem.getLocation() == null || problem.getLocation().getMethod() == null) {
+            putMarkerAtDefaultLocation(problem);
+            return;
+        }
+        CallGraphNode problemNode = cg.getNode(problem.getLocation().getMethod());
+        if (problemNode == null) {
+            putMarkerAtDefaultLocation(problem);
+            return;
+        }
+        Set<CallSite> callSites = new HashSet<>();
+        collectCallSites(callSites, problemNode);
+        String messagePrefix = problemAsString(problem);
         boolean wasPut = false;
-        while (stack != DependencyStack.ROOT) {
-            wasPut |= putMarker(sb.toString(), stack.getLocation(), stack.getMethod());
-            if (stack.getMethod() != null) {
-                sb.append(", used by ").append(getFullMethodName(stack.getMethod()));
+        for (CallSite callSite : callSites) {
+            IResource resource = findResource(new CallLocation(callSite.getCaller().getMethod(),
+                    callSite.getLocation()));
+            if (resource == null) {
+                continue;
             }
-            stack = stack.getCause();
+            wasPut = true;
+            CallGraphNode node = problemNode;
+            StringBuilder sb = new StringBuilder(messagePrefix);
+            while (node != callSite.getCaller()) {
+                sb.append(", used by ").append(getFullMethodName(node.getMethod()));
+                Iterator<? extends CallSite> callerCallSites = node.getCallerCallSites().iterator();
+                if (!callerCallSites.hasNext()) {
+                    break;
+                }
+                node = callerCallSites.next().getCaller();
+            }
+            putMarker(resource, callSite.getLocation(), callSite.getCaller().getMethod(), sb.toString());
+        }
+        IResource resource = findResource(problem.getLocation());
+        if (resource != null) {
+            putMarker(resource, problem.getLocation().getSourceLocation(), problem.getLocation().getMethod(),
+                    messagePrefix);
+            wasPut = true;
         }
         if (!wasPut) {
-            IMarker marker = getProject().createMarker(TeaVMEclipsePlugin.DEPENDENCY_MARKER_ID);
-            marker.setAttribute(IMarker.SEVERITY, IMarker.SEVERITY_ERROR);
-            marker.setAttribute(IMarker.MESSAGE, message);
+            putMarkerAtDefaultLocation(problem);
         }
     }
+
+    private void putMarker(IResource resource, InstructionLocation location, MethodReference method,
+            String text) throws CoreException {
+        IMarker marker = resource.createMarker(TeaVMEclipsePlugin.PROBLEM_MARKER_ID);
+        marker.setAttribute(IMarker.SEVERITY, IMarker.SEVERITY_ERROR);
+        marker.setAttribute(IMarker.MESSAGE, text);
+        marker.setAttribute(TeaVMEclipsePlugin.PROBLEM_MARKER_PROJECT_ATTRIBUTE, getProject().getName());
+        Integer lineNumber = location != null ? location.getLine() : null;
+        if (lineNumber == null) {
+            lineNumber = findMethodLocation(method, resource);
+        }
+        if (lineNumber == null) {
+            lineNumber = 1;
+        }
+        marker.setAttribute(IMarker.LINE_NUMBER, lineNumber);
+    }
+
+    private IResource findResource(CallLocation location) {
+        IResource resource = null;
+        if (location.getSourceLocation() != null) {
+            String resourceName = location.getSourceLocation().getFileName();
+            for (IContainer container : sourceContainers) {
+                resource = container.findMember(resourceName);
+                if (resource != null) {
+                    break;
+                }
+            }
+        }
+        if (resource == null) {
+            String resourceName = location.getMethod().getClassName().replace('.', '/') + ".java";
+            for (IContainer container : sourceContainers) {
+                resource = container.findMember(resourceName);
+                if (resource != null) {
+                    break;
+                }
+            }
+        }
+        return resource;
+    }
+
+    private void collectCallSites(Set<CallSite> callSites, CallGraphNode node) {
+        for (CallSite callSite : node.getCallerCallSites()) {
+            if (callSites.add(callSite)) {
+                collectCallSites(callSites, callSite.getCaller());
+            }
+        }
+    }
+
+    private void putMarkerAtDefaultLocation(Problem problem) throws CoreException {
+        IMarker marker = getProject().createMarker(TeaVMEclipsePlugin.PROBLEM_MARKER_ID);
+        marker.setAttribute(IMarker.SEVERITY, IMarker.SEVERITY_ERROR);
+        marker.setAttribute(IMarker.MESSAGE, problemAsString(problem));
+        marker.setAttribute(TeaVMEclipsePlugin.PROBLEM_MARKER_PROJECT_ATTRIBUTE, getProject().getName());
+    }
+
+    private Integer findMethodLocation(MethodReference methodRef, IResource resource) throws CoreException {
+        if (resource.getType() != IResource.FILE) {
+            return null;
+        }
+        IJavaElement rootElement = JavaCore.createCompilationUnitFrom((IFile)resource);
+        if (rootElement.getElementType() != IJavaElement.COMPILATION_UNIT) {
+            return null;
+        }
+        ICompilationUnit unit = (ICompilationUnit)rootElement;
+        IType type = unit.getType(getSimpleClassName(methodRef.getClassName()));
+        if (type == null) {
+            return null;
+        }
+        for (IMethod method : type.getMethods()) {
+            StringBuilder sb = new StringBuilder();
+            sb.append('(');
+            for (String paramType : method.getParameterTypes()) {
+                sb.append(Signature.getTypeErasure(paramType));
+            }
+            sb.append(')').append(Signature.getTypeErasure(method.getReturnType()));
+            if (sb.toString().equals(methodRef.toString())) {
+                return getLineNumber(method);
+            }
+        }
+        return null;
+    }
+
+    private int getLineNumber(IMethod method) throws CoreException {
+        int offset = method.getSourceRange().getOffset();
+        Matcher matcher = newLinePattern.matcher(method.getCompilationUnit().getSource());
+        int lineNumber = 1;
+        while (matcher.find() && matcher.start() < offset) {
+            ++lineNumber;
+        }
+        return lineNumber;
+    }
+
+    private String problemAsString(Problem problem) {
+        final StringBuilder sb = new StringBuilder();
+        problem.render(new ProblemTextConsumer() {
+            @Override public void appendMethod(MethodReference method) {
+                sb.append(getFullMethodName(method));
+            }
+            @Override public void appendLocation(InstructionLocation location) {
+                sb.append(location);
+            }
+            @Override public void appendField(FieldReference field) {
+                sb.append(getFullFieldName(field));
+            }
+            @Override public void appendClass(String cls) {
+                sb.append(getSimpleClassName(cls));
+            }
+            @Override public void append(String text) {
+                sb.append(text);
+            }
+        });
+        return sb.toString();
+    }
+
 
     private String getFullMethodName(MethodReference methodRef) {
         StringBuilder sb = new StringBuilder();
@@ -271,6 +414,10 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
         }
         sb.append(')');
         return sb.toString();
+    }
+
+    private String getFullFieldName(FieldReference fieldRef) {
+        return getSimpleClassName(fieldRef.getClassName()) + "." + fieldRef.getFieldName();
     }
 
     private String getTypeName(ValueType type) {
@@ -320,42 +467,6 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
     private String getSimpleClassName(String className) {
         int index = className.lastIndexOf('.');
         return className.substring(index + 1);
-    }
-
-    private boolean putMarker(String message, InstructionLocation location, MethodReference methodRef)
-            throws CoreException {
-        IResource resource = null;
-        if (location != null) {
-            String resourceName = location.getFileName();
-            for (IContainer container : sourceContainers) {
-                resource = container.findMember(resourceName);
-                if (resource != null) {
-                    break;
-                }
-            }
-        }
-        if (resource == null) {
-            String resourceName = methodRef.getClassName().replace('.', '/') + ".java";
-            for (IContainer container : sourceContainers) {
-                resource = container.findMember(resourceName);
-                if (resource != null) {
-                    break;
-                }
-            }
-        }
-        if (resource != null) {
-            IMarker marker = resource.createMarker(TeaVMEclipsePlugin.DEPENDENCY_MARKER_ID);
-            marker.setAttribute(IMarker.SEVERITY, IMarker.SEVERITY_ERROR);
-            marker.setAttribute(IMarker.MESSAGE, message);
-            if (location != null) {
-                marker.setAttribute(IMarker.LINE_NUMBER, location.getLine());
-            } else {
-                marker.setAttribute(IMarker.LINE_NUMBER, 1);
-            }
-            return true;
-        } else {
-            return false;
-        }
     }
 
     private TeaVMProjectSettings getProjectSettings() {
@@ -485,9 +596,7 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
                         }
                         IContainer srcContainer = (IContainer)workspaceRoot.findMember(entry.getPath());
                         if (srcContainer != null) {
-                            if (srcContainer.getProject() == project) {
-                                srcCollector.addContainer(srcContainer);
-                            }
+                            srcCollector.addContainer(srcContainer);
                             sourceFileCollector.addFile(srcContainer.getLocation());
                         }
                         break;

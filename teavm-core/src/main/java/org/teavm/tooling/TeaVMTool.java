@@ -24,6 +24,7 @@ import org.teavm.cache.DiskRegularMethodNodeCache;
 import org.teavm.cache.FileSymbolTable;
 import org.teavm.debugging.information.DebugInformation;
 import org.teavm.debugging.information.DebugInformationBuilder;
+import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.ProblemProvider;
 import org.teavm.javascript.RenderingContext;
 import org.teavm.model.*;
@@ -202,6 +203,10 @@ public class TeaVMTool {
 
     public ProblemProvider getProblemProvider() {
         return vm != null ? vm.getProblemProvider() : null;
+    }
+
+    public DependencyInfo getDependencyInfo() {
+        return vm.getDependencyInfo();
     }
 
     public Collection<String> getClasses() {
