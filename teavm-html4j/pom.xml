@@ -101,9 +101,6 @@
               <debugInformationGenerated>true</debugInformationGenerated>
               <sourceMapsGenerated>true</sourceMapsGenerated>
               <sourceFilesCopied>true</sourceFilesCopied>
-              <additionalScripts>
-                
-              </additionalScripts>
             </configuration>
           </execution>
         </executions>
@@ -115,6 +112,13 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <configuration>
+          <configLocation>../checkstyle.xml</configLocation>
+        </configuration>
       </plugin>
     </plugins>
     <pluginManagement>

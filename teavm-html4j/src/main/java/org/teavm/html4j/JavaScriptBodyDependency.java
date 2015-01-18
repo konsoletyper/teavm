@@ -53,7 +53,7 @@ public class JavaScriptBodyDependency implements DependencyListener {
 
     private static class OneDirectionalConnection implements DependencyConsumer {
         private DependencyNode target;
-        public OneDirectionalConnection( DependencyNode target) {
+        public OneDirectionalConnection(DependencyNode target) {
             this.target = target;
         }
         @Override public void consume(DependencyAgentType type) {
