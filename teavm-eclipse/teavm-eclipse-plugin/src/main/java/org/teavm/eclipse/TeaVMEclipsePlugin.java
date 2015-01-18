@@ -43,6 +43,7 @@ public class TeaVMEclipsePlugin extends AbstractUIPlugin {
     public static final String CLASS_DIALOG_ID = ID + ".dialogs.classSelection";
     public static final String PROBLEM_MARKER_ID = ID + ".problemMarker";
     public static final String PROBLEM_MARKER_PROJECT_ATTRIBUTE = ID + ".problemMarker.project";
+    public static final String PROBLEM_MARKER_PROFILE_ATTRIBUTE = ID + ".problemMarker.profile";
     public static final String CONFIG_MARKER_ID = ID + ".configMarker";
     private static TeaVMEclipsePlugin defaultInstance;
     private ConcurrentMap<IProject, TeaVMProjectSettings> settingsMap = new ConcurrentHashMap<>();

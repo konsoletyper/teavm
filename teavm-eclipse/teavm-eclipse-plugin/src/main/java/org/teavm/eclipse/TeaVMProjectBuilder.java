@@ -60,13 +60,15 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
         monitor.beginTask("Running TeaVM", profiles.length * TICKS_PER_PROFILE);
         try {
             prepareClassPath();
-            removeMarkers();
             ClassLoader classLoader = new URLClassLoader(classPath, TeaVMProjectBuilder.class.getClassLoader());
             for (TeaVMProfile profile : profiles) {
                 SubProgressMonitor subMonitor = new SubProgressMonitor(monitor, TICKS_PER_PROFILE);
                 buildProfile(kind, subMonitor, profile, classLoader);
             }
-
+            IMarker[] markers = getProject().findMarkers(TeaVMEclipsePlugin.PROBLEM_MARKER_ID, true, IResource.DEPTH_INFINITE);
+            for (IMarker marker : markers) {
+                System.out.println("MARKER INSTALLED: " + marker.getId());
+            }
         } finally {
             monitor.done();
             sourceContainers = null;
@@ -94,6 +96,7 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
         if ((kind == AUTO_BUILD || kind == INCREMENTAL_BUILD) && !shouldBuild(profile)) {
             return;
         }
+        removeMarkers(profile);
         IStringVariableManager varManager = VariablesPlugin.getDefault().getStringVariableManager();
         TeaVMTool tool = new TeaVMTool();
         tool.setClassLoader(classLoader);
@@ -225,14 +228,17 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
         profileClasses.put(profile, new HashSet<>(classes));
     }
 
-    private void removeMarkers() throws CoreException {
+    private void removeMarkers(TeaVMProfile profile) throws CoreException {
         for (IProject project : getProject().getWorkspace().getRoot().getProjects()) {
             IMarker[] markers = project.findMarkers(TeaVMEclipsePlugin.PROBLEM_MARKER_ID, true,
                     IResource.DEPTH_INFINITE);
             for (IMarker marker : markers) {
                 String projectName = (String)marker.getAttribute(TeaVMEclipsePlugin.PROBLEM_MARKER_PROJECT_ATTRIBUTE);
-                if (projectName.equals(getProject().getName())) {
+                String profileName = (String)marker.getAttribute(TeaVMEclipsePlugin.PROBLEM_MARKER_PROFILE_ATTRIBUTE);
+                if (projectName.equals(getProject().getName()) && profileName.equals(profile.getName())) {
                     marker.delete();
+                    System.out.println("MARKER REMOVED: " + marker.getId() + " while building project " +
+                            getProject().getName());
                 }
             }
         }

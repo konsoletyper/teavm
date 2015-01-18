@@ -90,6 +90,7 @@
     <attribute name="message"/>
     <attribute name="lineNumber"/>
     <attribute name="teavm-eclipse-plugin.problemMarker.project"/>
+    <attribute name="teavm-eclipse-plugin.problemMarker.profile"/>
   </extension>
   <extension id="configMarker" point="org.eclipse.core.resources.markers" name="TeaVM configuration problem">
     <super type="org.eclipse.core.resources.problemmarker"/>
