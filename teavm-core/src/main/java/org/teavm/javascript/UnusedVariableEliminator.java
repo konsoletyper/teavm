@@ -38,6 +38,7 @@ class UnusedVariableEliminator implements ExprVisitor, StatementVisitor {
         }
         indexes = new int[variableCount];
         Arrays.fill(indexes, -1);
+        parameterCount = Math.min(parameterCount, indexes.length - 1);
         for (int i = 0; i <= parameterCount; ++i) {
             indexes[i] = lastIndex++;
         }
