@@ -33,7 +33,9 @@ public class ExactMethodIterator {
 
     ExactMethodIterator(DebugInformation debugInformation) {
         this.debugInformation = debugInformation;
-        read();
+        if (!isEndReached()) {
+            read();
+        }
     }
 
     public boolean isEndReached() {
