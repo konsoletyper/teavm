@@ -65,10 +65,6 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
                 SubProgressMonitor subMonitor = new SubProgressMonitor(monitor, TICKS_PER_PROFILE);
                 buildProfile(kind, subMonitor, profile, classLoader);
             }
-            IMarker[] markers = getProject().findMarkers(TeaVMEclipsePlugin.PROBLEM_MARKER_ID, true, IResource.DEPTH_INFINITE);
-            for (IMarker marker : markers) {
-                System.out.println("MARKER INSTALLED: " + marker.getId());
-            }
         } finally {
             monitor.done();
             sourceContainers = null;
@@ -131,7 +127,8 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
             monitor.beginTask("Running TeaVM", 10000);
             tool.generate();
             if (!tool.wasCancelled()) {
-                putMarkers(tool.getDependencyInfo().getCallGraph(), tool.getProblemProvider().getProblems());
+                putMarkers(tool.getDependencyInfo().getCallGraph(), tool.getProblemProvider().getProblems(),
+                        profile);
                 setClasses(profile, classesToResources(tool.getClasses()));
                 refreshTarget(tool.getTargetDirectory());
             }
@@ -235,80 +232,88 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
             for (IMarker marker : markers) {
                 String projectName = (String)marker.getAttribute(TeaVMEclipsePlugin.PROBLEM_MARKER_PROJECT_ATTRIBUTE);
                 String profileName = (String)marker.getAttribute(TeaVMEclipsePlugin.PROBLEM_MARKER_PROFILE_ATTRIBUTE);
-                if (projectName.equals(getProject().getName()) && profileName.equals(profile.getName())) {
+                if (projectName.equals(getProject().getName()) && (profileName == null ||
+                        profileName.equals(profile.getName()))) {
                     marker.delete();
-                    System.out.println("MARKER REMOVED: " + marker.getId() + " while building project " +
-                            getProject().getName());
                 }
             }
         }
         getProject().deleteMarkers(TeaVMEclipsePlugin.CONFIG_MARKER_ID, true, IResource.DEPTH_INFINITE);
     }
 
-    private void putMarkers(CallGraph cg, List<Problem> problems) throws CoreException {
+    private void putMarkers(CallGraph cg, List<Problem> problems, TeaVMProfile profile) throws CoreException {
         for (Problem problem : problems) {
-            putMarker(cg, problem);
+            putMarker(cg, problem, profile);
         }
     }
 
-    private void putMarker(CallGraph cg, Problem problem) throws CoreException {
+    private void putMarker(CallGraph cg, Problem problem, TeaVMProfile profile) throws CoreException {
         if (problem.getLocation() == null || problem.getLocation().getMethod() == null) {
-            putMarkerAtDefaultLocation(problem);
+            putMarkerAtDefaultLocation(problem, profile);
             return;
         }
         CallGraphNode problemNode = cg.getNode(problem.getLocation().getMethod());
         if (problemNode == null) {
-            putMarkerAtDefaultLocation(problem);
+            putMarkerAtDefaultLocation(problem, profile);
             return;
         }
-        Set<CallSite> callSites = new HashSet<>();
-        collectCallSites(callSites, problemNode);
         String messagePrefix = problemAsString(problem);
-        boolean wasPut = false;
-        for (CallSite callSite : callSites) {
-            IResource resource = findResource(new CallLocation(callSite.getCaller().getMethod(),
-                    callSite.getLocation()));
-            if (resource == null) {
-                continue;
-            }
-            wasPut = true;
-            CallGraphNode node = problemNode;
-            StringBuilder sb = new StringBuilder(messagePrefix);
-            while (node != callSite.getCaller()) {
-                sb.append(", used by ").append(getFullMethodName(node.getMethod()));
-                Iterator<? extends CallSite> callerCallSites = node.getCallerCallSites().iterator();
-                if (!callerCallSites.hasNext()) {
-                    break;
-                }
-                node = callerCallSites.next().getCaller();
-            }
-            putMarker(resource, callSite.getLocation(), callSite.getCaller().getMethod(), sb.toString());
-        }
         IResource resource = findResource(problem.getLocation());
+        boolean wasPut = false;
         if (resource != null) {
-            putMarker(resource, problem.getLocation().getSourceLocation(), problem.getLocation().getMethod(),
-                    messagePrefix);
-            wasPut = true;
+            wasPut |= putMarker(resource, problem.getLocation().getSourceLocation(), problem.getLocation().getMethod(),
+                    messagePrefix, profile, false);
         }
         if (!wasPut) {
-            putMarkerAtDefaultLocation(problem);
+            wasPut |= putMarkersAtCallSites(problemNode, new HashSet<CallGraphNode>(), messagePrefix, profile,
+                    false);
+        }
+        if (!wasPut) {
+            wasPut |= putMarkersAtCallSites(problemNode, new HashSet<CallGraphNode>(), messagePrefix, profile, true);
+        }
+        if (!wasPut) {
+            putMarkerAtDefaultLocation(problem, profile);
         }
     }
 
-    private void putMarker(IResource resource, InstructionLocation location, MethodReference method,
-            String text) throws CoreException {
-        IMarker marker = resource.createMarker(TeaVMEclipsePlugin.PROBLEM_MARKER_ID);
-        marker.setAttribute(IMarker.SEVERITY, IMarker.SEVERITY_ERROR);
-        marker.setAttribute(IMarker.MESSAGE, text);
-        marker.setAttribute(TeaVMEclipsePlugin.PROBLEM_MARKER_PROJECT_ATTRIBUTE, getProject().getName());
+    private boolean putMarkersAtCallSites(CallGraphNode node, Set<CallGraphNode> visited, String problem,
+            TeaVMProfile profile, boolean force) throws CoreException {
+        if (!visited.add(node)) {
+            return false;
+        }
+        boolean wasPut = true;
+        for (CallSite callSite : node.getCallerCallSites()) {
+            IResource resource = findResource(new CallLocation(callSite.getCaller().getMethod(),
+                    callSite.getLocation()));
+            if (resource != null) {
+                wasPut = putMarker(resource, callSite.getLocation(), callSite.getCaller().getMethod(), problem,
+                        profile, force);
+            }
+            wasPut |= putMarkersAtCallSites(callSite.getCaller(), visited, problem + ", used by " +
+                    getFullMethodName(callSite.getCaller().getMethod()), profile, force);
+        }
+        return wasPut;
+    }
+
+    private boolean putMarker(IResource resource, InstructionLocation location, MethodReference method,
+            String text, TeaVMProfile profile, boolean force) throws CoreException {
         Integer lineNumber = location != null ? location.getLine() : null;
         if (lineNumber == null) {
             lineNumber = findMethodLocation(method, resource);
         }
         if (lineNumber == null) {
+            if (!force) {
+                return false;
+            }
             lineNumber = 1;
         }
+        IMarker marker = resource.createMarker(TeaVMEclipsePlugin.PROBLEM_MARKER_ID);
+        marker.setAttribute(IMarker.SEVERITY, IMarker.SEVERITY_ERROR);
+        marker.setAttribute(IMarker.MESSAGE, text);
+        marker.setAttribute(TeaVMEclipsePlugin.PROBLEM_MARKER_PROJECT_ATTRIBUTE, getProject().getName());
+        marker.setAttribute(TeaVMEclipsePlugin.PROBLEM_MARKER_PROFILE_ATTRIBUTE, profile.getName());
         marker.setAttribute(IMarker.LINE_NUMBER, lineNumber);
+        return true;
     }
 
     private IResource findResource(CallLocation location) {
@@ -334,19 +339,12 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
         return resource;
     }
 
-    private void collectCallSites(Set<CallSite> callSites, CallGraphNode node) {
-        for (CallSite callSite : node.getCallerCallSites()) {
-            if (callSites.add(callSite)) {
-                collectCallSites(callSites, callSite.getCaller());
-            }
-        }
-    }
-
-    private void putMarkerAtDefaultLocation(Problem problem) throws CoreException {
+    private void putMarkerAtDefaultLocation(Problem problem, TeaVMProfile profile) throws CoreException {
         IMarker marker = getProject().createMarker(TeaVMEclipsePlugin.PROBLEM_MARKER_ID);
         marker.setAttribute(IMarker.SEVERITY, IMarker.SEVERITY_ERROR);
         marker.setAttribute(IMarker.MESSAGE, problemAsString(problem));
         marker.setAttribute(TeaVMEclipsePlugin.PROBLEM_MARKER_PROJECT_ATTRIBUTE, getProject().getName());
+        marker.setAttribute(TeaVMEclipsePlugin.PROBLEM_MARKER_PROFILE_ATTRIBUTE, profile.getName());
     }
 
     private Integer findMethodLocation(MethodReference methodRef, IResource resource) throws CoreException {
@@ -364,12 +362,12 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
         }
         for (IMethod method : type.getMethods()) {
             StringBuilder sb = new StringBuilder();
-            sb.append('(');
+            sb.append(method.getElementName()).append('(');
             for (String paramType : method.getParameterTypes()) {
                 sb.append(Signature.getTypeErasure(paramType));
             }
             sb.append(')').append(Signature.getTypeErasure(method.getReturnType()));
-            if (sb.toString().equals(methodRef.toString())) {
+            if (sb.toString().equals(methodRef.getDescriptor().toString())) {
                 return getLineNumber(method);
             }
         }
@@ -400,6 +398,9 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
             }
             @Override public void appendClass(String cls) {
                 sb.append(getSimpleClassName(cls));
+            }
+            @Override public void appendType(ValueType type) {
+                sb.append(getTypeName(type));
             }
             @Override public void append(String text) {
                 sb.append(text);
@@ -472,7 +473,7 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
 
     private String getSimpleClassName(String className) {
         int index = className.lastIndexOf('.');
-        return className.substring(index + 1);
+        return className.substring(index + 1).replace('$', '.');
     }
 
     private TeaVMProjectSettings getProjectSettings() {

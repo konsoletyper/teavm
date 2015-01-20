@@ -18,6 +18,7 @@ package org.teavm.diagnostics;
 import org.teavm.model.FieldReference;
 import org.teavm.model.InstructionLocation;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 
 /**
  *
@@ -27,6 +28,8 @@ public interface ProblemTextConsumer {
     void append(String text);
 
     void appendClass(String className);
+
+    void appendType(ValueType type);
 
     void appendMethod(MethodReference method);
 

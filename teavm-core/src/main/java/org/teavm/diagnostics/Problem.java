@@ -16,10 +16,7 @@
 package org.teavm.diagnostics;
 
 import java.util.Arrays;
-import org.teavm.model.CallLocation;
-import org.teavm.model.FieldReference;
-import org.teavm.model.InstructionLocation;
-import org.teavm.model.MethodReference;
+import org.teavm.model.*;
 
 /**
  *
@@ -81,6 +78,9 @@ public class Problem {
             case 'c':
                 type = ParamType.CLASS;
                 break;
+            case 't':
+                type = ParamType.TYPE;
+                break;
             case 'm':
                 type = ParamType.METHOD;
                 break;
@@ -112,6 +112,12 @@ public class Problem {
                     return index;
                 }
                 consumer.appendClass((String)param);
+                break;
+            case TYPE:
+                if (!(param instanceof ValueType)) {
+                    return index;
+                }
+                consumer.appendType((ValueType)param);
                 break;
             case METHOD:
                 if (!(param instanceof MethodReference)) {
@@ -145,6 +151,7 @@ public class Problem {
 
     enum ParamType {
         CLASS,
+        TYPE,
         METHOD,
         FIELD,
         LOCATION

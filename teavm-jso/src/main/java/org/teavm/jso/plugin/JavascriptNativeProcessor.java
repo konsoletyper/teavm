@@ -95,10 +95,10 @@ class JavascriptNativeProcessor {
                                 cutPrefix(method.getName(), 3);
                         }
                         Variable result = invoke.getReceiver() != null ? program.createVariable() : null;
-                        addPropertyGet(propertyName, invoke.getInstance(), result);
+                        addPropertyGet(propertyName, invoke.getInstance(), result, invoke.getLocation());
                         if (result != null) {
                             result = unwrap(callLocation, result, method.getResultType());
-                            copyVar(result, invoke.getReceiver());
+                            copyVar(result, invoke.getReceiver(), invoke.getLocation());
                         }
                     } else if (isProperSetter(method.getDescriptor())) {
                         String propertyName;
@@ -110,28 +110,30 @@ class JavascriptNativeProcessor {
                         }
                         Variable wrapped = wrapArgument(callLocation, invoke.getArguments().get(0),
                                 method.parameterType(0));
-                        addPropertySet(propertyName, invoke.getInstance(), wrapped);
+                        addPropertySet(propertyName, invoke.getInstance(), wrapped, invoke.getLocation());
                     } else {
-                        diagnostics.error(callLocation, "Method " + invoke.getMethod() + " is not " +
-                                "a proper native JavaScript property declaration");
+                        diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript property " +
+                                "declaration", invoke.getMethod());
                         continue;
                     }
                 } else if (method.getAnnotations().get(JSIndexer.class.getName()) != null) {
                     if (isProperGetIndexer(method.getDescriptor())) {
                         Variable result = invoke.getReceiver() != null ? program.createVariable() : null;
                         addIndexerGet(invoke.getInstance(), wrap(invoke.getArguments().get(0),
-                                method.parameterType(0)), result);
+                                method.parameterType(0), invoke.getLocation()), result, invoke.getLocation());
                         if (result != null) {
                             result = unwrap(callLocation, result, method.getResultType());
-                            copyVar(result, invoke.getReceiver());
+                            copyVar(result, invoke.getReceiver(), invoke.getLocation());
                         }
                     } else if (isProperSetIndexer(method.getDescriptor())) {
-                        Variable index = wrap(invoke.getArguments().get(0), method.parameterType(0));
-                        Variable value = wrap(invoke.getArguments().get(1), method.parameterType(1));
-                        addIndexerSet(invoke.getInstance(), index, value);
+                        Variable index = wrap(invoke.getArguments().get(0), method.parameterType(0),
+                                invoke.getLocation());
+                        Variable value = wrap(invoke.getArguments().get(1), method.parameterType(1),
+                                invoke.getLocation());
+                        addIndexerSet(invoke.getInstance(), index, value, invoke.getLocation());
                     } else {
-                        diagnostics.error(callLocation, "Method " + invoke.getMethod() + " is not " +
-                                "a proper native JavaScript indexer declaration");
+                        diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript indexer " +
+                                "declaration", invoke.getMethod());
                         continue;
                     }
                 } else {
@@ -140,17 +142,17 @@ class JavascriptNativeProcessor {
                     boolean isConstructor = false;
                     if (constructorAnnot != null) {
                         if (!isSupportedType(method.getResultType())) {
-                            diagnostics.error(callLocation, "Method " + invoke.getMethod() + " is not " +
-                                    "a proper native JavaScript constructor declaration");
+                            diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript " +
+                                    "constructor declaration", invoke.getMethod());
                             continue;
                         }
                         AnnotationValue nameVal = constructorAnnot.getValue("value");
                         name = nameVal != null ? constructorAnnot.getValue("value").getString() : "";
                         if (name.isEmpty()) {
                             if (!method.getName().startsWith("new") || method.getName().length() == 3) {
-                                diagnostics.error(callLocation, "Method " + invoke.getMethod() + " is not " +
-                                        "declared as a native JavaScript constructor, but its name does " +
-                                        "not satisfy conventions");
+                                diagnostics.error(callLocation, "Method {{m0}} is not declared as a native " +
+                                        "JavaScript constructor, but its name does not satisfy conventions",
+                                        invoke.getMethod());
                                 continue;
                             }
                             name = method.getName().substring(3);
@@ -165,15 +167,15 @@ class JavascriptNativeProcessor {
                             }
                         }
                         if (method.getResultType() != ValueType.VOID && !isSupportedType(method.getResultType())) {
-                            diagnostics.error(callLocation, "Method " + invoke.getMethod() + " is not " +
-                                    "a proper native JavaScript method declaration");
+                            diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript method " +
+                                    "declaration", invoke.getMethod());
                             continue;
                         }
                     }
                     for (ValueType arg : method.getParameterTypes()) {
                         if (!isSupportedType(arg)) {
-                            diagnostics.error(callLocation, "Method " + invoke.getMethod() + " is not " +
-                                    "a proper native JavaScript method or constructor declaration");
+                            diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript method " +
+                                    "or constructor declaration", invoke.getMethod());
                             continue;
                         }
                     }
@@ -186,7 +188,9 @@ class JavascriptNativeProcessor {
                     newInvoke.setType(InvocationType.SPECIAL);
                     newInvoke.setReceiver(result);
                     newInvoke.getArguments().add(invoke.getInstance());
-                    newInvoke.getArguments().add(addStringWrap(addString(name)));
+                    newInvoke.getArguments().add(addStringWrap(addString(name, invoke.getLocation()),
+                            invoke.getLocation()));
+                    newInvoke.setLocation(invoke.getLocation());
                     for (int k = 0; k < invoke.getArguments().size(); ++k) {
                         Variable arg = wrapArgument(callLocation, invoke.getArguments().get(k),
                                 method.parameterType(k));
@@ -195,7 +199,7 @@ class JavascriptNativeProcessor {
                     replacement.add(newInvoke);
                     if (result != null) {
                         result = unwrap(callLocation, result, method.getResultType());
-                        copyVar(result, invoke.getReceiver());
+                        copyVar(result, invoke.getReceiver(), invoke.getLocation());
                     }
                 }
                 block.getInstructions().set(j, replacement.get(0));
@@ -205,19 +209,21 @@ class JavascriptNativeProcessor {
         }
     }
 
-    private void addPropertyGet(String propertyName, Variable instance, Variable receiver) {
-        Variable nameVar = addStringWrap(addString(propertyName));
+    private void addPropertyGet(String propertyName, Variable instance, Variable receiver,
+            InstructionLocation location) {
+        Variable nameVar = addStringWrap(addString(propertyName, location), location);
         InvokeInstruction insn = new InvokeInstruction();
         insn.setType(InvocationType.SPECIAL);
         insn.setMethod(new MethodReference(JS.class, "get", JSObject.class, JSObject.class, JSObject.class));
         insn.setReceiver(receiver);
         insn.getArguments().add(instance);
         insn.getArguments().add(nameVar);
+        insn.setLocation(location);
         replacement.add(insn);
     }
 
-    private void addPropertySet(String propertyName, Variable instance, Variable value) {
-        Variable nameVar = addStringWrap(addString(propertyName));
+    private void addPropertySet(String propertyName, Variable instance, Variable value, InstructionLocation location) {
+        Variable nameVar = addStringWrap(addString(propertyName, location), location);
         InvokeInstruction insn = new InvokeInstruction();
         insn.setType(InvocationType.SPECIAL);
         insn.setMethod(new MethodReference(JS.class, "set", JSObject.class, JSObject.class,
@@ -225,20 +231,22 @@ class JavascriptNativeProcessor {
         insn.getArguments().add(instance);
         insn.getArguments().add(nameVar);
         insn.getArguments().add(value);
+        insn.setLocation(location);
         replacement.add(insn);
     }
 
-    private void addIndexerGet(Variable array, Variable index, Variable receiver) {
+    private void addIndexerGet(Variable array, Variable index, Variable receiver, InstructionLocation location) {
         InvokeInstruction insn = new InvokeInstruction();
         insn.setType(InvocationType.SPECIAL);
         insn.setMethod(new MethodReference(JS.class, "get", JSObject.class, JSObject.class, JSObject.class));
         insn.setReceiver(receiver);
         insn.getArguments().add(array);
         insn.getArguments().add(index);
+        insn.setLocation(location);
         replacement.add(insn);
     }
 
-    private void addIndexerSet(Variable array, Variable index, Variable value) {
+    private void addIndexerSet(Variable array, Variable index, Variable value, InstructionLocation location) {
         InvokeInstruction insn = new InvokeInstruction();
         insn.setType(InvocationType.SPECIAL);
         insn.setMethod(new MethodReference(JS.class, "set", JSObject.class, JSObject.class,
@@ -246,25 +254,28 @@ class JavascriptNativeProcessor {
         insn.getArguments().add(array);
         insn.getArguments().add(index);
         insn.getArguments().add(value);
+        insn.setLocation(location);
         replacement.add(insn);
     }
 
-    private void copyVar(Variable a, Variable b) {
+    private void copyVar(Variable a, Variable b, InstructionLocation location) {
         AssignInstruction insn = new AssignInstruction();
         insn.setAssignee(a);
         insn.setReceiver(b);
+        insn.setLocation(location);
         replacement.add(insn);
     }
 
-    private Variable addStringWrap(Variable var) {
-        return wrap(var, ValueType.object("java.lang.String"));
+    private Variable addStringWrap(Variable var, InstructionLocation location) {
+        return wrap(var, ValueType.object("java.lang.String"), location);
     }
 
-    private Variable addString(String str) {
+    private Variable addString(String str, InstructionLocation location) {
         Variable var = program.createVariable();
         StringConstantInstruction nameInsn = new StringConstantInstruction();
         nameInsn.setReceiver(var);
         nameInsn.setConstant(str);
+        nameInsn.setLocation(location);
         replacement.add(nameInsn);
         return var;
     }
@@ -273,19 +284,19 @@ class JavascriptNativeProcessor {
         if (type instanceof ValueType.Primitive) {
             switch (((ValueType.Primitive)type).getKind()) {
                 case BOOLEAN:
-                    return unwrap(var, "unwrapBoolean", ValueType.BOOLEAN);
+                    return unwrap(var, "unwrapBoolean", ValueType.BOOLEAN, location.getSourceLocation());
                 case BYTE:
-                    return unwrap(var, "unwrapByte", ValueType.BYTE);
+                    return unwrap(var, "unwrapByte", ValueType.BYTE, location.getSourceLocation());
                 case SHORT:
-                    return unwrap(var, "unwrapShort", ValueType.SHORT);
+                    return unwrap(var, "unwrapShort", ValueType.SHORT, location.getSourceLocation());
                 case INTEGER:
-                    return unwrap(var, "unwrapInt", ValueType.INTEGER);
+                    return unwrap(var, "unwrapInt", ValueType.INTEGER, location.getSourceLocation());
                 case CHARACTER:
-                    return unwrap(var, "unwrapCharacter", ValueType.CHARACTER);
+                    return unwrap(var, "unwrapCharacter", ValueType.CHARACTER, location.getSourceLocation());
                 case DOUBLE:
-                    return unwrap(var, "unwrapDouble", ValueType.DOUBLE);
+                    return unwrap(var, "unwrapDouble", ValueType.DOUBLE, location.getSourceLocation());
                 case FLOAT:
-                    return unwrap(var, "unwrapFloat", ValueType.FLOAT);
+                    return unwrap(var, "unwrapFloat", ValueType.FLOAT, location.getSourceLocation());
                 case LONG:
                     break;
             }
@@ -294,22 +305,23 @@ class JavascriptNativeProcessor {
             if (className.equals(JSObject.class.getName())) {
                 return var;
             } else if (className.equals("java.lang.String")) {
-                return unwrap(var, "unwrapString", ValueType.object("java.lang.String"));
+                return unwrap(var, "unwrapString", ValueType.object("java.lang.String"), location.getSourceLocation());
             } else {
                 Variable result = program.createVariable();
                 CastInstruction castInsn = new CastInstruction();
                 castInsn.setReceiver(result);
                 castInsn.setValue(var);
                 castInsn.setTargetType(type);
+                castInsn.setLocation(location.getSourceLocation());
                 replacement.add(castInsn);
                 return result;
             }
         }
-        diagnostics.error(location, "Unsupported type: " + type);
+        diagnostics.error(location, "Unsupported type: {{t0}}", type);
         return var;
     }
 
-    private Variable unwrap(Variable var, String methodName, ValueType resultType) {
+    private Variable unwrap(Variable var, String methodName, ValueType resultType, InstructionLocation location) {
         Variable result = program.createVariable();
         InvokeInstruction insn = new InvokeInstruction();
         insn.setMethod(new MethodReference(JS.class.getName(), methodName, ValueType.object(JSObject.class.getName()),
@@ -317,6 +329,7 @@ class JavascriptNativeProcessor {
         insn.getArguments().add(var);
         insn.setReceiver(result);
         insn.setType(InvocationType.SPECIAL);
+        insn.setLocation(location);
         replacement.add(insn);
         return result;
     }
@@ -329,28 +342,29 @@ class JavascriptNativeProcessor {
                 return wrapFunctor(location, var, cls);
             }
         }
-        return wrap(var, type);
+        return wrap(var, type, location.getSourceLocation());
     }
 
     private Variable wrapFunctor(CallLocation location, Variable var, ClassReader type) {
         if (!type.hasModifier(ElementModifier.INTERFACE) || type.getMethods().size() != 1) {
-            diagnostics.error(location, "Wrong functor: " + type.getName());
+            diagnostics.error(location, "Wrong functor: {{c0}}", type.getName());
             return var;
         }
         String name = type.getMethods().iterator().next().getName();
         Variable functor = program.createVariable();
-        Variable nameVar = addStringWrap(addString(name));
+        Variable nameVar = addStringWrap(addString(name, location.getSourceLocation()), location.getSourceLocation());
         InvokeInstruction insn = new InvokeInstruction();
         insn.setType(InvocationType.SPECIAL);
         insn.setMethod(new MethodReference(JS.class, "function", JSObject.class, JSObject.class, JSObject.class));
         insn.setReceiver(functor);
         insn.getArguments().add(var);
         insn.getArguments().add(nameVar);
+        insn.setLocation(location.getSourceLocation());
         replacement.add(insn);
         return functor;
     }
 
-    private Variable wrap(Variable var, ValueType type) {
+    private Variable wrap(Variable var, ValueType type, InstructionLocation location) {
         if (type instanceof ValueType.Object) {
             String className = ((ValueType.Object)type).getClassName();
             if (!className.equals("java.lang.String")) {
@@ -364,6 +378,7 @@ class JavascriptNativeProcessor {
         insn.getArguments().add(var);
         insn.setReceiver(result);
         insn.setType(InvocationType.SPECIAL);
+        insn.setLocation(location);
         replacement.add(insn);
         return result;
     }

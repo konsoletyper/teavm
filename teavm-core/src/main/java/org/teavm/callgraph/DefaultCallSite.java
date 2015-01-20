@@ -16,7 +16,6 @@
 package org.teavm.callgraph;
 
 import java.util.Objects;
-import org.teavm.model.CallLocation;
 import org.teavm.model.InstructionLocation;
 
 /**
@@ -27,24 +26,16 @@ public class DefaultCallSite implements CallSite {
     private InstructionLocation location;
     private DefaultCallGraphNode callee;
     private DefaultCallGraphNode caller;
-    private CallLocation exactLocation;
 
     DefaultCallSite(InstructionLocation location, DefaultCallGraphNode callee, DefaultCallGraphNode caller) {
         this.location = location;
         this.callee = callee;
         this.caller = caller;
-        if (caller != null) {
-            exactLocation = new CallLocation(caller.getMethod(), location);
-        }
     }
 
     @Override
     public InstructionLocation getLocation() {
         return location;
-    }
-
-    public CallLocation getExactLocation() {
-        return exactLocation;
     }
 
     @Override
