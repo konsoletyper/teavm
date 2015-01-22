@@ -459,7 +459,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
         int index = 0;
         for (String className : dependency.getAchievableClasses()) {
-            ClassHolder cls = ModelUtils.copyClass(dependency.getClassSource().get(className));
+            ClassReader clsReader = dependency.getClassSource().get(className);
+            if (clsReader == null) {
+                continue;
+            }
+            ClassHolder cls = ModelUtils.copyClass(clsReader);
             cutClasses.putClassHolder(cls);
             missingItemsProcessor.processClass(cls);
             linker.link(dependency, cls);

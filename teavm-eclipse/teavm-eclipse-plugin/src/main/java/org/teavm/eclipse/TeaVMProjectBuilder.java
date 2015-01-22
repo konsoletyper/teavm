@@ -92,7 +92,6 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
         if ((kind == AUTO_BUILD || kind == INCREMENTAL_BUILD) && !shouldBuild(profile)) {
             return;
         }
-        removeMarkers(profile);
         IStringVariableManager varManager = VariablesPlugin.getDefault().getStringVariableManager();
         TeaVMTool tool = new TeaVMTool();
         tool.setClassLoader(classLoader);
@@ -127,6 +126,7 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
             monitor.beginTask("Running TeaVM", 10000);
             tool.generate();
             if (!tool.wasCancelled()) {
+                removeMarkers(profile);
                 putMarkers(tool.getDependencyInfo().getCallGraph(), tool.getProblemProvider().getProblems(),
                         profile);
                 setClasses(profile, classesToResources(tool.getClasses()));
