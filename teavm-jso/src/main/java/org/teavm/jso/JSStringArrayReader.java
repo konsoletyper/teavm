@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,30 +13,16 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.dom.html;
-
-import org.teavm.dom.canvas.CanvasImageSource;
-import org.teavm.jso.JSObject;
-import org.teavm.jso.JSProperty;
+package org.teavm.jso;
 
 /**
  *
  * @author Alexey Andreev
  */
-public interface HTMLCanvasElement extends HTMLElement, CanvasImageSource {
+public interface JSStringArrayReader extends JSObject {
     @JSProperty
-    int getWidth();
+    int getLength();
 
-    @JSProperty
-    void setWidth(int width);
-
-    @JSProperty
-    int getHeight();
-
-    @JSProperty
-    void setHeight(int height);
-
-    JSObject getContext(String contextId);
-
-    JSObject getContext(String contextId, JSObject attributes);
+    @JSIndexer
+    String get(int index);
 }

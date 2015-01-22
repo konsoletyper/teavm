@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,30 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.dom.html;
+package org.teavm.dom.webgl;
 
-import org.teavm.dom.canvas.CanvasImageSource;
 import org.teavm.jso.JSObject;
-import org.teavm.jso.JSProperty;
 
 /**
  *
  * @author Alexey Andreev
  */
-public interface HTMLCanvasElement extends HTMLElement, CanvasImageSource {
-    @JSProperty
-    int getWidth();
+public interface WebGLProgram extends JSObject {
 
-    @JSProperty
-    void setWidth(int width);
-
-    @JSProperty
-    int getHeight();
-
-    @JSProperty
-    void setHeight(int height);
-
-    JSObject getContext(String contextId);
-
-    JSObject getContext(String contextId, JSObject attributes);
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,9 +13,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.dom.html;
+package org.teavm.dom.webgl;
 
-import org.teavm.dom.canvas.CanvasImageSource;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
@@ -23,20 +22,40 @@ import org.teavm.jso.JSProperty;
  *
  * @author Alexey Andreev
  */
-public interface HTMLCanvasElement extends HTMLElement, CanvasImageSource {
+public interface WebGLContextAttributes extends JSObject {
     @JSProperty
-    int getWidth();
-
-    @JSProperty
-    void setWidth(int width);
+    boolean isAlpha();
 
     @JSProperty
-    int getHeight();
+    void setAlpha(boolean alpha);
 
     @JSProperty
-    void setHeight(int height);
+    boolean isDepth();
 
-    JSObject getContext(String contextId);
+    @JSProperty
+    void setDepth(boolean depth);
 
-    JSObject getContext(String contextId, JSObject attributes);
+    @JSProperty
+    boolean isScencil();
+
+    @JSProperty
+    void setStencil(boolean stencil);
+
+    @JSProperty
+    boolean isAntialias();
+
+    @JSProperty
+    void setAntialias(boolean antialias);
+
+    @JSProperty
+    boolean isPremultipliedAlpha();
+
+    @JSProperty
+    void setPremultipliedAlpha(boolean premultipliedAlpha);
+
+    @JSProperty
+    boolean isPreserveDrawingBuffer();
+
+    @JSProperty
+    void setPreserveDrawingBuffer(boolean preserveDrawingBuffer);
 }
