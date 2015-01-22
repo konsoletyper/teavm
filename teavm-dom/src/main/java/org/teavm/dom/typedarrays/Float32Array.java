@@ -13,16 +13,18 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.dom.webgl;
+package org.teavm.dom.typedarrays;
 
-import org.teavm.jso.JSConstructor;
-import org.teavm.jso.JSObject;
+import org.teavm.jso.JSIndexer;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface WebGLContextAttributesFactory extends JSObject {
-    @JSConstructor("Object")
-    WebGLContextAttributes createWebGLContextAttributes();
+public interface Float32Array extends ArrayBufferView {
+    @JSIndexer
+    float get(int index);
+
+    @JSIndexer
+    void set(int index, float value);
 }

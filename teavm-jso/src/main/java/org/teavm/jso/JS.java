@@ -47,6 +47,12 @@ public final class JS {
 
     public static native <T extends JSObject> JSArray<T> createArray(int size);
 
+    public static native JSIntArray createIntArray(int size);
+
+    public static native JSStringArray createStringArray(int size);
+
+    public static native JSFloatArray createFloatArray(int size);
+
     @InjectedBy(JSNativeGenerator.class)
     public static native JSObject getTypeName(JSObject obj);
 
@@ -89,6 +95,78 @@ public final class JS {
 
     public static <T extends JSObject> JSArray<JSArray<JSArray<T>>> wrap(T[][][] array) {
         JSArray<JSArray<JSArray<T>>> result = createArray(array.length);
+        for (int i = 0; i < array.length; ++i) {
+            result.set(i, wrap(array[i]));
+        }
+        return result;
+    }
+
+    public static JSIntArray wrap(int[] array) {
+        JSIntArray result = createIntArray(array.length);
+        for (int i = 0; i < array.length; ++i) {
+            result.set(i, array[i]);
+        }
+        return result;
+    }
+
+    public static JSArray<JSIntArray> wrap(int[][] array) {
+        JSArray<JSIntArray> result = createArray(array.length);
+        for (int i = 0; i < array.length; ++i) {
+            result.set(i, wrap(array[i]));
+        }
+        return result;
+    }
+
+    public static JSArray<JSArray<JSIntArray>> wrap(int[][][] array) {
+        JSArray<JSArray<JSIntArray>> result = createArray(array.length);
+        for (int i = 0; i < array.length; ++i) {
+            result.set(i, wrap(array[i]));
+        }
+        return result;
+    }
+
+    public static JSStringArray wrap(String[] array) {
+        JSStringArray result = createStringArray(array.length);
+        for (int i = 0; i < array.length; ++i) {
+            result.set(i, array[i]);
+        }
+        return result;
+    }
+
+    public static JSArray<JSStringArray> wrap(String[][] array) {
+        JSArray<JSStringArray> result = createArray(array.length);
+        for (int i = 0; i < array.length; ++i) {
+            result.set(i, wrap(array[i]));
+        }
+        return result;
+    }
+
+    public static JSArray<JSArray<JSStringArray>> wrap(String[][][] array) {
+        JSArray<JSArray<JSStringArray>> result = createArray(array.length);
+        for (int i = 0; i < array.length; ++i) {
+            result.set(i, wrap(array[i]));
+        }
+        return result;
+    }
+
+    public static JSFloatArray wrap(float[] array) {
+        JSFloatArray result = createFloatArray(array.length);
+        for (int i = 0; i < array.length; ++i) {
+            result.set(i, array[i]);
+        }
+        return result;
+    }
+
+    public static JSArray<JSFloatArray> wrap(float[][] array) {
+        JSArray<JSFloatArray> result = createArray(array.length);
+        for (int i = 0; i < array.length; ++i) {
+            result.set(i, wrap(array[i]));
+        }
+        return result;
+    }
+
+    public static JSArray<JSArray<JSFloatArray>> wrap(float[][][] array) {
+        JSArray<JSArray<JSFloatArray>> result = createArray(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, wrap(array[i]));
         }

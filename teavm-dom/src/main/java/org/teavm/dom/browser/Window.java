@@ -32,6 +32,9 @@ public interface Window extends JSGlobal {
     @JSProperty
     HTMLDocument getDocument();
 
+    @JSProperty
+    Screen getScreen();
+
     void alert(JSObject message);
 
     void alert(String message);
@@ -67,4 +70,22 @@ public interface Window extends JSGlobal {
 
     @JSConstructor("Uint8ClampedArray")
     Int8Array createUintClamped8Array(ArrayBuffer buffer, int offset, int length);
+
+    @JSConstructor("Int32Array")
+    Int8Array createInt32Array(int length);
+
+    @JSConstructor("Int32Array")
+    Int8Array createInt32Array(ArrayBuffer buffer);
+
+    @JSConstructor("Int32Array")
+    Int8Array createInt32Array(ArrayBuffer buffer, int offset, int length);
+
+    @JSConstructor("Float32Array")
+    Int8Array createFloat32Array(int length);
+
+    @JSConstructor("Float32Array")
+    Int8Array createFloat32Array(ArrayBuffer buffer);
+
+    @JSConstructor("Float32Array")
+    Int8Array createFloat32Array(ArrayBuffer buffer, int offset, int length);
 }

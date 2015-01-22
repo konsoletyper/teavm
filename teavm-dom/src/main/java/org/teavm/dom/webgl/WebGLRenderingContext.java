@@ -15,12 +15,14 @@
  */
 package org.teavm.dom.webgl;
 
+import org.teavm.dom.canvas.ImageData;
 import org.teavm.dom.html.HTMLCanvasElement;
+import org.teavm.dom.html.HTMLImageElement;
 import org.teavm.dom.typedarrays.ArrayBuffer;
 import org.teavm.dom.typedarrays.ArrayBufferView;
-import org.teavm.jso.JSArrayReader;
-import org.teavm.jso.JSObject;
-import org.teavm.jso.JSProperty;
+import org.teavm.dom.typedarrays.Float32Array;
+import org.teavm.dom.typedarrays.Int32Array;
+import org.teavm.jso.*;
 
 /**
  *
@@ -385,7 +387,10 @@ public interface WebGLRenderingContext extends JSObject {
 
     boolean isContextLost();
 
-    JSArrayReader<JSObject> getSupportedExtensions();
+    JSStringArrayReader getSupportedExtensions();
+
+    @JSMethod("getSupportedExtensions")
+    String[] getSupportedExtensionArray();
 
     JSObject getExtension(String name);
 
@@ -437,4 +442,310 @@ public interface WebGLRenderingContext extends JSObject {
     void colorMask(boolean red, boolean green, boolean blue, boolean alpha);
 
     void compileShader(WebGLShader shader);
+
+    void compressedTexImage2D(int target, int level, int internalformat, int width, int height, int border,
+            ArrayBufferView data);
+
+    void compressedTexSubImage2D(int target, int level, int xoffset, int yoffset, int width, int height, int format,
+               ArrayBufferView data);
+
+    void copyTexImage2D(int target, int level, int internalformat, int x, int y, int width, int height, int border);
+
+    void copyTexSubImage2D(int target, int level, int xoffset, int yoffset, int x, int y, int width, int height);
+
+
+    WebGLBuffer createBuffer();
+
+    WebGLFramebuffer createFramebuffer();
+
+    WebGLProgram createProgram();
+
+    WebGLRenderbuffer createRenderbuffer();
+
+    WebGLShader createShader(int type);
+
+    WebGLTexture createTexture();
+
+    void cullFace(int mode);
+
+    void deleteBuffer(WebGLBuffer buffer);
+
+    void deleteFramebuffer(WebGLFramebuffer framebuffer);
+
+    void deleteProgram(WebGLProgram program);
+
+    void deleteRenderbuffer(WebGLRenderbuffer renderbuffer);
+
+    void deleteShader(WebGLShader shader);
+
+    void deleteTexture(WebGLTexture texture);
+
+    void depthFunc(int func);
+
+    void depthMask(boolean flag);
+
+    void depthRange(float zNear, float zFar);
+
+    void detachShader(WebGLProgram program, WebGLShader shader);
+
+    void disable(int cap);
+
+    void disableVertexAttribArray(int index);
+
+    void drawArrays(int mode, int first, int count);
+
+    void drawElements(int mode, int count, int type, int offset);
+
+    void enable(int cap);
+
+    void enableVertexAttribArray(int index);
+
+    void finish();
+
+    void flush();
+
+    void framebufferRenderbuffer(int target, int attachment, int renderbuffertarget, WebGLRenderbuffer renderbuffer);
+
+    void framebufferTexture2D(int target, int attachment, int textarget, WebGLTexture texture, int level);
+
+    void frontFace(int mode);
+
+    void generateMipmap(int target);
+
+    WebGLActiveInfo getActiveAttrib(WebGLProgram program, int index);
+
+    WebGLActiveInfo getActiveUniform(WebGLProgram program, int index);
+
+    JSArrayReader<WebGLShader> getAttachedShaders(WebGLProgram program);
+
+    @JSMethod("getAttachedShaders")
+    WebGLShader[] getAttachedShadersArray(WebGLProgram program);
+
+    int getAttribLocation(WebGLProgram program, String name);
+
+    JSObject getBufferParameter(int target, int pname);
+
+    JSObject getParameter(int pname);
+
+    int getError();
+
+    JSObject getFramebufferAttachmentParameter(int target, int attachment, int pname);
+
+    JSObject getProgramParameter(WebGLProgram program, int pname);
+
+    String getProgramInfoLog(WebGLProgram program);
+
+    JSObject getRenderbufferParameter(int target, int pname);
+
+    JSObject getShaderParameter(WebGLShader shader, int pname);
+
+    WebGLShaderPrecisionFormat getShaderPrecisionFormat(int shadertype, int precisiontype);
+
+    String getShaderInfoLog(WebGLShader shader);
+
+    String getShaderSource(WebGLShader shader);
+
+    JSObject getTexParameter(int target, int pname);
+
+    JSObject getUniform(WebGLProgram program, WebGLUniformLocation location);
+
+    WebGLUniformLocation getUniformLocation(WebGLProgram program, String name);
+
+    JSObject getVertexAttrib(int index, int pname);
+
+    int getVertexAttribOffset(int index, int pname);
+
+    void hint(int target, int mode);
+
+    boolean isBuffer(WebGLBuffer buffer);
+
+    boolean isEnabled(int cap);
+
+    boolean isFramebuffer(WebGLFramebuffer framebuffer);
+
+    boolean isProgram(WebGLProgram program);
+
+    boolean isRenderbuffer(WebGLRenderbuffer renderbuffer);
+
+    boolean isShader(WebGLShader shader);
+
+    boolean isTexture(WebGLTexture texture);
+
+    void lineWidth(float width);
+
+    void linkProgram(WebGLProgram program);
+
+    void pixelStorei(int pname, int param);
+
+    void polygonOffset(float factor, float units);
+
+    void readPixels(int x, int y, int width, int height, int format, int type, ArrayBufferView pixels);
+
+    void renderbufferStorage(int target, int internalformat, int width, int height);
+
+    void sampleCoverage(float value, boolean invert);
+
+    void scissor(int x, int y, int width, int height);
+
+    void shaderSource(WebGLShader shader, String source);
+
+    void stencilFunc(int func, int ref, int mask);
+
+    void stencilFuncSeparate(int face, int func, int ref, int mask);
+
+    void stencilMask(int mask);
+
+    void stencilMaskSeparate(int face, int mask);
+
+    void stencilOp(int fail, int zfail, int zpass);
+
+    void stencilOpSeparate(int face, int fail, int zfail, int zpass);
+
+    void texImage2D(int target, int level, int internalformat, int width, int height, int border, int format,
+            int type, ArrayBufferView pixels);
+
+    void texImage2D(int target, int level, int internalformat, int format, int type, ImageData pixels);
+
+    void texImage2D(int target, int level, int internalformat, int format, int type, HTMLImageElement image);
+
+    void texImage2D(int target, int level, int internalformat, int format, int type, HTMLCanvasElement canvas);
+
+    //void texImage2D(int target, int level, int internalformat, int format, int type, HTMLVideoElement video);
+
+    void texParameterf(int target, int pname, float param);
+
+    void texParameteri(int target, int pname, int param);
+
+    void texSubImage2D(int target, int level, int xoffset, int yoffset, int width, int height,  int format, int type,
+            ArrayBufferView pixels);
+
+    void texSubImage2D(int target, int level, int xoffset, int yoffset, int format, int type, ImageData pixels);
+
+    void texSubImage2D(int target, int level, int xoffset, int yoffset, int format, int type, HTMLImageElement image);
+
+    void texSubImage2D(int target, int level, int xoffset, int yoffset, int format, int type, HTMLCanvasElement canvas);
+
+    //void texSubImage2D(int target, int level, int xoffset, int yoffset, int format, int type, HTMLVideoElement video);
+
+    void uniform1f(WebGLUniformLocation location, float x);
+
+    void uniform1fv(WebGLUniformLocation location, Float32Array v);
+
+    void uniform1fv(WebGLUniformLocation location, JSFloatArrayReader v);
+
+    void uniform1fv(WebGLUniformLocation location, float[] v);
+
+    void uniform1i(WebGLUniformLocation location, int x);
+
+    void uniform1iv(WebGLUniformLocation location, Int32Array v);
+
+    void uniform1iv(WebGLUniformLocation location, JSIntArrayReader v);
+
+    void uniform1iv(WebGLUniformLocation location, int[] v);
+
+    void uniform2f(WebGLUniformLocation location, float x, float y);
+
+    void uniform2fv(WebGLUniformLocation location, Float32Array v);
+
+    void uniform2fv(WebGLUniformLocation location, JSFloatArrayReader v);
+
+    void uniform2fv(WebGLUniformLocation location, float[] v);
+
+    void uniform2i(WebGLUniformLocation location, int x, int y);
+
+    void uniform2iv(WebGLUniformLocation location, Int32Array v);
+
+    void uniform2iv(WebGLUniformLocation location, JSIntArrayReader v);
+
+    void uniform2iv(WebGLUniformLocation location, int[] v);
+
+    void uniform3f(WebGLUniformLocation location, float x, float y, float z);
+
+    void uniform3fv(WebGLUniformLocation location, Float32Array v);
+
+    void uniform3fv(WebGLUniformLocation location, JSFloatArrayReader v);
+
+    void uniform3fv(WebGLUniformLocation location, float[] v);
+
+    void uniform3i(WebGLUniformLocation location, int x, int y, int z);
+
+    void uniform3iv(WebGLUniformLocation location, Int32Array v);
+
+    void uniform3iv(WebGLUniformLocation location, JSIntArrayReader v);
+
+    void uniform3iv(WebGLUniformLocation location, int[] v);
+
+    void uniform4f(WebGLUniformLocation location, float x, float y, float z, float w);
+
+    void uniform4fv(WebGLUniformLocation location, Float32Array v);
+
+    void uniform4fv(WebGLUniformLocation location, JSFloatArrayReader v);
+
+    void uniform4fv(WebGLUniformLocation location, float[] v);
+
+    void uniform4i(WebGLUniformLocation location, int x, int y, int z, int w);
+
+    void uniform4iv(WebGLUniformLocation location, Int32Array v);
+
+    void uniform4iv(WebGLUniformLocation location, JSIntArrayReader v);
+
+    void uniform4iv(WebGLUniformLocation location, int[] v);
+
+    void uniformMatrix2fv(WebGLUniformLocation location, boolean transpose, Float32Array value);
+
+    void uniformMatrix2fv(WebGLUniformLocation location, boolean transpose, JSFloatArrayReader value);
+
+    void uniformMatrix2fv(WebGLUniformLocation location, boolean transpose, float[] value);
+
+    void uniformMatrix3fv(WebGLUniformLocation location, boolean transpose, Float32Array value);
+
+    void uniformMatrix3fv(WebGLUniformLocation location, boolean transpose, JSFloatArrayReader value);
+
+    void uniformMatrix3fv(WebGLUniformLocation location, boolean transpose, float[] value);
+
+    void uniformMatrix4fv(WebGLUniformLocation location, boolean transpose, Float32Array value);
+
+    void uniformMatrix4fv(WebGLUniformLocation location, boolean transpose, JSFloatArrayReader value);
+
+    void uniformMatrix4fv(WebGLUniformLocation location, boolean transpose, float[] value);
+
+    void useProgram(WebGLProgram program);
+
+    void validateProgram(WebGLProgram program);
+
+    void vertexAttrib1f(int indx, float x);
+
+    void vertexAttrib1fv(int indx, Float32Array values);
+
+    void vertexAttrib1fv(int indx, JSFloatArrayReader values);
+
+    void vertexAttrib1fv(int indx, float[] values);
+
+    void vertexAttrib2f(int indx, float x, float y);
+
+    void vertexAttrib2fv(int indx, Float32Array values);
+
+    void vertexAttrib2fv(int indx, JSFloatArrayReader values);
+
+    void vertexAttrib2fv(int indx, float[] values);
+
+    void vertexAttrib3f(int indx, float x, float y, float z);
+
+    void vertexAttrib3fv(int indx, Float32Array values);
+
+    void vertexAttrib3fv(int indx, JSFloatArrayReader values);
+
+    void vertexAttrib3fv(int indx, float[] values);
+
+    void vertexAttrib4f(int indx, float x, float y, float z, float w);
+
+    void vertexAttrib4fv(int indx, Float32Array values);
+
+    void vertexAttrib4fv(int indx, JSFloatArrayReader values);
+
+    void vertexAttrib4fv(int indx, float[] values);
+
+    void vertexAttribPointer(int indx, int size, int type, boolean normalized, int stride, int offset);
+
+    void viewport(int x, int y, int width, int height);
 }

@@ -22,5 +22,4 @@ import org.teavm.jso.JSObject;
  * @author Alexey Andreev
  */
 public interface WebGLProgram extends JSObject {
-
 }

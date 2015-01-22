@@ -37,13 +37,13 @@ public interface JSArray<T extends JSObject> extends JSArrayReader<T> {
 
     String join();
 
-    JSArray<T> concat(JSArray<T> a);
+    JSArray<T> concat(JSArrayReader<T> a);
 
-    JSArray<T> concat(JSArray<T> a, JSArray<T> b);
+    JSArray<T> concat(JSArrayReader<T> a, JSArrayReader<T> b);
 
-    JSArray<T> concat(JSArray<T> a, JSArray<T> b, JSArray<T> c);
+    JSArray<T> concat(JSArrayReader<T> a, JSArrayReader<T> b, JSArrayReader<T> c);
 
-    JSArray<T> concat(JSArray<T> a, JSArray<T> b, JSArray<T> c, JSArray<T> d);
+    JSArray<T> concat(JSArrayReader<T> a, JSArrayReader<T> b, JSArrayReader<T> c, JSArrayReader<T> d);
 
     T pop();
 

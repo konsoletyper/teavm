@@ -15,14 +15,20 @@
  */
 package org.teavm.dom.webgl;
 
-import org.teavm.jso.JSConstructor;
 import org.teavm.jso.JSObject;
+import org.teavm.jso.JSProperty;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface WebGLContextAttributesFactory extends JSObject {
-    @JSConstructor("Object")
-    WebGLContextAttributes createWebGLContextAttributes();
+public interface WebGLShaderPrecisionFormat extends JSObject {
+    @JSProperty
+    int getRangeMin();
+
+    @JSProperty
+    int getRangeMax();
+
+    @JSProperty
+    int getPrecision();
 }

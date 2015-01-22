@@ -13,16 +13,13 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.dom.webgl;
-
-import org.teavm.jso.JSConstructor;
-import org.teavm.jso.JSObject;
+package org.teavm.jso;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface WebGLContextAttributesFactory extends JSObject {
-    @JSConstructor("Object")
-    WebGLContextAttributes createWebGLContextAttributes();
+@JSFunctor
+public interface JSIntSortFunction extends JSObject {
+    int compare(int a, int b);
 }

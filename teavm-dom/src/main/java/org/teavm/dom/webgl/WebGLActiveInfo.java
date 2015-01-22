@@ -15,14 +15,12 @@
  */
 package org.teavm.dom.webgl;
 
-import org.teavm.jso.JSConstructor;
 import org.teavm.jso.JSObject;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface WebGLContextAttributesFactory extends JSObject {
-    @JSConstructor("Object")
-    WebGLContextAttributes createWebGLContextAttributes();
+public interface WebGLActiveInfo extends JSObject {
+
 }

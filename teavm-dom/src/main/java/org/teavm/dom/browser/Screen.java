@@ -13,16 +13,28 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.dom.webgl;
+package org.teavm.dom.browser;
 
-import org.teavm.jso.JSConstructor;
 import org.teavm.jso.JSObject;
+import org.teavm.jso.JSProperty;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface WebGLContextAttributesFactory extends JSObject {
-    @JSConstructor("Object")
-    WebGLContextAttributes createWebGLContextAttributes();
+public interface Screen extends JSObject {
+    @JSProperty
+    int getWidth();
+
+    @JSProperty
+    int getHeight();
+
+    @JSProperty
+    int getAvailWidth();
+
+    @JSProperty
+    int getAvailHeight();
+
+    @JSProperty
+    int getColorDepth();
 }
