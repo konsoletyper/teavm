@@ -53,6 +53,16 @@ public class UnreachableBasicBlockEliminator {
         }
         for (int i = 0; i < reachable.length; ++i) {
             if (!reachable[i]) {
+                BasicBlock block = program.basicBlockAt(i);
+                if (block.getLastInstruction() != null) {
+                    block.getLastInstruction().acceptVisitor(transitionExtractor);
+                    for (BasicBlock successor : transitionExtractor.getTargets()) {
+                        successor.removeIncomingsFrom(block);
+                    }
+                }
+                for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                    tryCatch.getHandler().removeIncomingsFrom(block);
+                }
                 program.deleteBasicBlock(i);
             }
         }

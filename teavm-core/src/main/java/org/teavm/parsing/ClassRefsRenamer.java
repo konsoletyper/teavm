@@ -22,12 +22,13 @@ import org.teavm.javascript.ni.Rename;
 import org.teavm.javascript.ni.Superclass;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
+import org.teavm.model.util.ModelUtils;
 
 /**
  *
  * @author Alexey Andreev
  */
-class ClassRefsRenamer implements InstructionVisitor {
+public class ClassRefsRenamer implements InstructionVisitor {
     private Mapper<String, String> classNameMapper;
 
     public ClassRefsRenamer(Mapper<String, String> classNameMapper) {
@@ -54,8 +55,7 @@ class ClassRefsRenamer implements InstructionVisitor {
             renamedCls.addMethod(rename(method));
         }
         for (FieldHolder field : cls.getFields().toArray(new FieldHolder[0])) {
-            cls.removeField(field);
-            renamedCls.addField(field);
+            renamedCls.addField(ModelUtils.copyField(field));
         }
         if (cls.getOwnerName() != null) {
             renamedCls.setOwnerName(classNameMapper.map(cls.getOwnerName()));
