@@ -13,13 +13,18 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.dom.webgl;
+package org.teavm.dom.typedarrays;
 
-import org.teavm.jso.JSObject;
+import org.teavm.jso.JSIndexer;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface WebGLUniformLocation extends JSObject {
+public interface Float64Array extends ArrayBufferView {
+    @JSIndexer
+    double get(int index);
+
+    @JSIndexer
+    void set(int index, double value);
 }

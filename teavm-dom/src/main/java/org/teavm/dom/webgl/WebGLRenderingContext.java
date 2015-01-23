@@ -527,17 +527,38 @@ public interface WebGLRenderingContext extends JSObject {
 
     JSObject getParameter(int pname);
 
+    @JSMethod("getParameter")
+    int getParameteri(int pname);
+
+    @JSMethod("getParameter")
+    String getParameterString(int pname);
+
+    @JSMethod("getParameter")
+    float getParameterf(int pname);
+
     int getError();
 
     JSObject getFramebufferAttachmentParameter(int target, int attachment, int pname);
 
     JSObject getProgramParameter(WebGLProgram program, int pname);
 
+    @JSMethod("getProgramParameter")
+    boolean getProgramParameterb(WebGLProgram program, int pname);
+
+    @JSMethod("getProgramParameter")
+    int getProgramParameteri(WebGLProgram program, int pname);
+
     String getProgramInfoLog(WebGLProgram program);
 
     JSObject getRenderbufferParameter(int target, int pname);
 
     JSObject getShaderParameter(WebGLShader shader, int pname);
+
+    @JSMethod("getShaderParameter")
+    boolean getShaderParameterb(WebGLShader shader, int pname);
+
+    @JSMethod("getShaderParameter")
+    int getShaderParameteri(WebGLShader shader, int pname);
 
     WebGLShaderPrecisionFormat getShaderPrecisionFormat(int shadertype, int precisiontype);
 

@@ -17,8 +17,7 @@ package org.teavm.dom.browser;
 
 import org.teavm.dom.ajax.XMLHttpRequest;
 import org.teavm.dom.html.HTMLDocument;
-import org.teavm.dom.typedarrays.ArrayBuffer;
-import org.teavm.dom.typedarrays.Int8Array;
+import org.teavm.dom.typedarrays.*;
 import org.teavm.jso.JSConstructor;
 import org.teavm.jso.JSGlobal;
 import org.teavm.jso.JSObject;
@@ -62,30 +61,57 @@ public interface Window extends JSGlobal {
     @JSConstructor("Int8Array")
     Int8Array createInt8Array(ArrayBuffer buffer, int offset, int length);
 
-    @JSConstructor("Uint8ClampedArray")
-    Int8Array createUint8ClampedArray(int length);
+    @JSConstructor("Uint8Array")
+    Uint8Array createUint8Array(int length);
+
+    @JSConstructor("Uint8Array")
+    Uint8Array createUint8Array(ArrayBuffer buffer);
+
+    @JSConstructor("Uint8Array")
+    Uint8Array createUint8Array(ArrayBuffer buffer, int offset, int length);
 
     @JSConstructor("Uint8ClampedArray")
-    Int8Array createUint8ClampedArray(ArrayBuffer buffer);
+    Uint8ClampedArray createUint8ClampedArray(int length);
 
     @JSConstructor("Uint8ClampedArray")
-    Int8Array createUintClamped8Array(ArrayBuffer buffer, int offset, int length);
+    Uint8ClampedArray createUint8ClampedArray(ArrayBuffer buffer);
+
+    @JSConstructor("Uint8ClampedArray")
+    Uint8ClampedArray createUintClamped8Array(ArrayBuffer buffer, int offset, int length);
+
+    @JSConstructor("Int16Array")
+    Int16Array createInt16Array(int length);
+
+    @JSConstructor("Int16Array")
+    Int16Array createInt16Array(ArrayBuffer buffer);
+
+    @JSConstructor("Int16Array")
+    Int16Array createInt16Array(ArrayBuffer buffer, int offset, int length);
 
     @JSConstructor("Int32Array")
-    Int8Array createInt32Array(int length);
+    Int32Array createInt32Array(int length);
 
     @JSConstructor("Int32Array")
-    Int8Array createInt32Array(ArrayBuffer buffer);
+    Int32Array createInt32Array(ArrayBuffer buffer);
 
     @JSConstructor("Int32Array")
-    Int8Array createInt32Array(ArrayBuffer buffer, int offset, int length);
+    Int32Array createInt32Array(ArrayBuffer buffer, int offset, int length);
 
     @JSConstructor("Float32Array")
-    Int8Array createFloat32Array(int length);
+    Float32Array createFloat32Array(int length);
 
     @JSConstructor("Float32Array")
-    Int8Array createFloat32Array(ArrayBuffer buffer);
+    Float32Array createFloat32Array(ArrayBuffer buffer);
 
     @JSConstructor("Float32Array")
-    Int8Array createFloat32Array(ArrayBuffer buffer, int offset, int length);
+    Float32Array createFloat32Array(ArrayBuffer buffer, int offset, int length);
+
+    @JSConstructor("Float64Array")
+    Float64Array createFloat64Array(int length);
+
+    @JSConstructor("Float64Array")
+    Float64Array createFloat64Array(ArrayBuffer buffer);
+
+    @JSConstructor("Float64Array")
+    Float64Array createFloat64Array(ArrayBuffer buffer, int offset, int length);
 }
