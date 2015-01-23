@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,36 +13,16 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.dom.html;
+package org.teavm.dom.json;
 
-import org.teavm.dom.core.Document;
-import org.teavm.dom.events.EventTarget;
-import org.teavm.jso.JSProperty;
+import org.teavm.jso.JSObject;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface HTMLDocument extends Document, EventTarget {
-    @JSProperty
-    @Override
-    HTMLHtmlElement getDocumentElement();
+public interface JSON extends JSObject {
+    String stringify(JSObject object);
 
-    @Override
-    HTMLElement createElement(String tagName);
-
-    @Override
-    HTMLElement getElementById(String elementId);
-
-    @JSProperty
-    HTMLBodyElement getBody();
-
-    @JSProperty
-    HTMLElement getHead();
-
-    @JSProperty
-    int getScrollLeft();
-
-    @JSProperty
-    int getScrollTop();
+    JSObject parse(String string);
 }

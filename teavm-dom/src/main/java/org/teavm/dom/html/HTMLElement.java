@@ -80,4 +80,26 @@ public interface HTMLElement extends Element, ElementCSSInlineStyle, EventTarget
 
     @JSProperty
     String getAccessKeyLabel();
+
+    @JSProperty
+    int getClientWidth();
+
+    @JSProperty
+    int getClientHeight();
+
+    @JSProperty
+    int getAbsoluteLeft();
+
+    @JSProperty
+    int getAbsoluteTop();
+
+    @JSProperty
+    int getScrollLeft();
+
+    @JSProperty
+    int getScrollTop();
+
+    @JSProperty
+    @Override
+    HTMLDocument getOwnerDocument();
 }

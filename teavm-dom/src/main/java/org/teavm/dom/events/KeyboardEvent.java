@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,36 +13,52 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.dom.html;
+package org.teavm.dom.events;
 
-import org.teavm.dom.core.Document;
-import org.teavm.dom.events.EventTarget;
 import org.teavm.jso.JSProperty;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface HTMLDocument extends Document, EventTarget {
-    @JSProperty
-    @Override
-    HTMLHtmlElement getDocumentElement();
+public interface KeyboardEvent extends Event {
+    int DOM_KEY_LOCATION_STANDARD = 0x00;
 
-    @Override
-    HTMLElement createElement(String tagName);
+    int DOM_KEY_LOCATION_LEFT = 0x01;
 
-    @Override
-    HTMLElement getElementById(String elementId);
+    int DOM_KEY_LOCATION_RIGHT = 0x02;
+
+    int DOM_KEY_LOCATION_NUMPAD = 0x03;
 
     @JSProperty
-    HTMLBodyElement getBody();
+    String getKey();
 
     @JSProperty
-    HTMLElement getHead();
+    int getKeyCode();
 
     @JSProperty
-    int getScrollLeft();
+    String getCode();
 
     @JSProperty
-    int getScrollTop();
+    int getLocation();
+
+    @JSProperty
+    boolean isCtrlKey();
+
+    @JSProperty
+    boolean isShiftKey();
+
+    @JSProperty
+    boolean isAltKey();
+
+    @JSProperty
+    boolean isMetaKey();
+
+    @JSProperty
+    boolean isRepeat();
+
+    @JSProperty("isComposing")
+    boolean isComposing();
+
+    boolean getModifierState(String keyArg);
 }

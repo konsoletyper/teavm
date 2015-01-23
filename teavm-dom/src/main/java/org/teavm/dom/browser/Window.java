@@ -17,6 +17,7 @@ package org.teavm.dom.browser;
 
 import org.teavm.dom.ajax.XMLHttpRequest;
 import org.teavm.dom.html.HTMLDocument;
+import org.teavm.dom.json.JSON;
 import org.teavm.dom.typedarrays.*;
 import org.teavm.jso.JSConstructor;
 import org.teavm.jso.JSGlobal;
@@ -45,6 +46,9 @@ public interface Window extends JSGlobal {
     int setInterval(TimerHandler handler, int delay);
 
     void clearInterval(int timeoutId);
+
+    @JSProperty("JSON")
+    JSON getJSON();
 
     @JSConstructor("XMLHttpRequest")
     XMLHttpRequest createXMLHttpRequest();

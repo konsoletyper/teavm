@@ -53,6 +53,8 @@ public interface XMLHttpRequest extends JSObject {
     @JSProperty("onreadystatechange")
     void setOnReadyStateChange(ReadyStateChangeHandler handler);
 
+    void overrideMimeType(String mimeType);
+
     @JSProperty
     int getReadyState();
 

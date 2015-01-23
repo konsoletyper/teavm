@@ -100,4 +100,7 @@ public interface Node extends JSObject {
     String getLocalName();
 
     boolean hasAttributes();
+
+    @JSProperty
+    Document getOwnerDocument();
 }
