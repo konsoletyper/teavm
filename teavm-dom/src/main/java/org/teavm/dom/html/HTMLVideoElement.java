@@ -27,10 +27,10 @@ public interface HTMLVideoElement extends HTMLMediaElement {
     int getWidth();
 
     @JSProperty
-    void setWidth(int width);
+    int getHeight();
 
     @JSProperty
-    int getHeight();
+    void setWidth(int width);
 
     @JSProperty
     void setHeight(int height);
@@ -39,14 +39,11 @@ public interface HTMLVideoElement extends HTMLMediaElement {
     int getVideoWidth();
 
     @JSProperty
-    void setVideoWidth(int videoWidth);
-
-    @JSProperty
     int getVideoHeight();
 
     @JSProperty
-    void setVideoHeight(int videoHeight);
-
-    @JSProperty
     String getPoster();
+    
+    @JSProperty
+    void setPoster(String poster);
 }

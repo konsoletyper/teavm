@@ -31,16 +31,16 @@ import org.teavm.jso.JSProperty;
  */
 public interface HTMLMediaElement extends HTMLElement {
 
-    public static final int HAVE_NOTHING = 0;
-    public static final int HAVE_METADATA = 1;
-    public static final int HAVE_CURRENT_DATA = 2;
-    public static final int HAVE_FUTURE_DATA = 3;
-    public static final int HAVE_ENOUGH_DATA = 4;
+    int HAVE_NOTHING = 0;
+    int HAVE_METADATA = 1;
+    int HAVE_CURRENT_DATA = 2;
+    int HAVE_FUTURE_DATA = 3;
+    int HAVE_ENOUGH_DATA = 4;
 
-    public static final int NETWORK_EMPTY = 0;
-    public static final int NETWORK_IDLE = 1;
-    public static final int NETWORK_LOADING = 2;
-    public static final int NETWORK_NO_SOURCE = 3;
+    int NETWORK_EMPTY = 0;
+    int NETWORK_IDLE = 1;
+    int NETWORK_LOADING = 2;
+    int NETWORK_NO_SOURCE = 3;
 
     @JSProperty
     MediaError getError();
@@ -55,10 +55,10 @@ public interface HTMLMediaElement extends HTMLElement {
     String getCurrentSrc();
 
     @JSProperty
-    void setCurrentSrc(String currentSrc);
+    String getCrossOrigin();
 
     @JSProperty
-    String getCrossOrigin();
+    void setCrossOrigin(String crossOrigin);
 
     @JSProperty
     int getNetworkState();
@@ -88,10 +88,10 @@ public interface HTMLMediaElement extends HTMLElement {
     double getDuration();
 
     @JSProperty
-    Date getStartOffsetTime();
+    Date getStartDate();
 
     @JSProperty
-    boolean getPaused();
+    boolean isPaused();
 
     @JSProperty
     double getDefaultPlaybackRate();
@@ -112,38 +112,43 @@ public interface HTMLMediaElement extends HTMLElement {
     TimeRanges getSeekable();
 
     @JSProperty
-    boolean getEnded();
+    boolean isEnded();
 
     @JSProperty
     boolean isAutoplay();
 
     @JSProperty
     void setAutoplay(boolean autoplay);
-    
+
+    @JSProperty
     boolean isLoop();
-    
+
+    @JSProperty
     void setLoop(boolean loop);
-    
+
     @JSProperty
     String getMediaGroup();
+
+    @JSProperty
+    void setMediaGroup(String mediaGroup);
 
     @JSProperty
     MediaController getController();
 
     @JSProperty
-    void setController(MediaController controller);    
+    void setController(MediaController controller);
 
     @JSProperty
-    boolean getControlls();
+    boolean isControls();
 
     @JSProperty
-    void setControlls(boolean controlls);
+    void setControls(boolean controls);
 
     @JSProperty
     float getVolume();
 
     @JSProperty
-    void setVolume(float volume);    
+    void setVolume(float volume);
 
     @JSProperty
     boolean isMuted();
@@ -156,11 +161,11 @@ public interface HTMLMediaElement extends HTMLElement {
 
     @JSProperty
     void setDefaultMuted(boolean defaultMuted);
-    
+
     AudioTrackList getAudioTracks();
-    
+
     VideoTrackList getVideoTracks();
-    
+
     TextTrackList getTextTracks();
 
     TextTrack addTextTrack(String kind);
