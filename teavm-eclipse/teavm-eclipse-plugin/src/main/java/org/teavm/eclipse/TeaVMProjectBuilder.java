@@ -605,6 +605,11 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
                         if (srcContainer != null) {
                             srcCollector.addContainer(srcContainer);
                             sourceFileCollector.addFile(srcContainer.getLocation());
+                            try {
+                                collector.addPath(srcContainer.getLocation());
+                            } catch (MalformedURLException e) {
+                                TeaVMEclipsePlugin.logError(e);
+                            }
                         }
                         break;
                     case IClasspathEntry.CPE_PROJECT: {
