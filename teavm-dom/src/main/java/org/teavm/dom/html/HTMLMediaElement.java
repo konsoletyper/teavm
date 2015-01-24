@@ -1,21 +1,20 @@
 /*
- * Copyright 2015 Alexey Andreev.
+ *  Copyright 2014 Alexey Andreev.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
 package org.teavm.dom.html;
 
-import org.teavm.dom.media.VideoTrackList;
 import java.util.Date;
 import org.teavm.dom.media.AudioTrackList;
 import org.teavm.dom.media.MediaController;
@@ -23,6 +22,7 @@ import org.teavm.dom.media.MediaError;
 import org.teavm.dom.media.TextTrack;
 import org.teavm.dom.media.TextTrackList;
 import org.teavm.dom.media.TimeRanges;
+import org.teavm.dom.media.VideoTrackList;
 import org.teavm.jso.JSProperty;
 
 /**
