@@ -18,8 +18,10 @@ package org.teavm.jso;
 import java.util.Iterator;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.javascript.ni.InjectedBy;
+import org.teavm.jso.plugin.JSNativeGenerator;
 
 /**
+ * <p>Container of static methods to manipulate over {@link JSObject}s.</p>
  *
  * @author Alexey Andreev
  */
@@ -56,6 +58,10 @@ public final class JS {
     @InjectedBy(JSNativeGenerator.class)
     public static native JSObject getTypeName(JSObject obj);
 
+    /**
+     * Gets global JavaScript object, that is similar to the <code>window</code> object in the browser.
+     * @return global object.
+     */
     @InjectedBy(JSNativeGenerator.class)
     public static native JSObject getGlobal();
 

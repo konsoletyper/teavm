@@ -16,31 +16,28 @@
 package org.teavm.jso.plugin;
 
 import org.teavm.diagnostics.Diagnostics;
+import org.teavm.jso.JSBody;
 import org.teavm.model.*;
 
 /**
  *
  * @author Alexey Andreev
  */
-class JSObjectClassTransformer implements ClassHolderTransformer {
-    private ThreadLocal<JavascriptNativeProcessor> processor = new ThreadLocal<>();
+public class JSObjectClassTransformer implements ClassHolderTransformer {
+    private JavascriptNativeProcessor processor;
 
     @Override
     public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
-        JavascriptNativeProcessor processor = getProcessor(innerSource);
+        processor = new JavascriptNativeProcessor(innerSource);
         processor.setDiagnostics(diagnostics);
         processor.processClass(cls);
-        for (MethodHolder method : cls.getMethods()) {
-            if (method.getProgram() != null) {
+        for (MethodHolder method : cls.getMethods().toArray(new MethodHolder[0])) {
+            if (method.getAnnotations().get(JSBody.class.getName()) != null) {
+                processor.processJSBody(cls, method);
+            } else if (method.getProgram() != null &&
+                    method.getAnnotations().get(JSBodyImpl.class.getName()) == null) {
                 processor.processProgram(method);
             }
         }
-    }
-
-    private JavascriptNativeProcessor getProcessor(ClassReaderSource innerSource) {
-        if (processor.get() == null) {
-            processor.set(new JavascriptNativeProcessor(innerSource));
-        }
-        return processor.get();
     }
 }

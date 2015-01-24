@@ -37,17 +37,15 @@ public interface JSFunction extends JSObject {
     JSObject call(JSObject thisArg, JSObject a, JSObject b, JSObject c,
             JSObject d);
 
-    JSObject call(JSObject thisArg, JSObject a, JSObject b, JSObject c,
-            JSObject d, JSObject e);
+    JSObject call(JSObject thisArg, JSObject a, JSObject b, JSObject c, JSObject d, JSObject e);
 
-    JSObject call(JSObject thisArg, JSObject a, JSObject b, JSObject c,
-            JSObject d, JSObject e, JSObject f);
+    JSObject call(JSObject thisArg, JSObject a, JSObject b, JSObject c, JSObject d, JSObject e, JSObject f);
 
-    JSObject call(JSObject thisArg, JSObject a, JSObject b, JSObject c,
-            JSObject d, JSObject e, JSObject f, JSObject g);
+    JSObject call(JSObject thisArg, JSObject a, JSObject b, JSObject c, JSObject d, JSObject e, JSObject f,
+            JSObject g);
 
-    JSObject call(JSObject thisArg, JSObject a, JSObject b, JSObject c,
-            JSObject d, JSObject e, JSObject f, JSObject g, JSObject h);
+    JSObject call(JSObject thisArg, JSObject a, JSObject b, JSObject c, JSObject d, JSObject e, JSObject f,
+            JSObject g, JSObject h);
 
     JSObject apply(JSObject thisArg, JSObject[] arguments);
 }

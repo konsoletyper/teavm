@@ -17,6 +17,7 @@ package org.teavm.jso.plugin;
 
 import java.util.*;
 import org.teavm.diagnostics.Diagnostics;
+import org.teavm.javascript.ni.GeneratedBy;
 import org.teavm.javascript.ni.PreserveOriginalName;
 import org.teavm.jso.*;
 import org.teavm.model.*;
@@ -32,6 +33,7 @@ class JavascriptNativeProcessor {
     private List<Instruction> replacement = new ArrayList<>();
     private NativeJavascriptClassRepository nativeRepos;
     private Diagnostics diagnostics;
+    private int methodIndexGenerator;
 
     public JavascriptNativeProcessor(ClassReaderSource classSource) {
         this.classSource = classSource;
@@ -209,6 +211,101 @@ class JavascriptNativeProcessor {
         }
     }
 
+    public void processJSBody(ClassHolder cls, MethodHolder methodToProcess) {
+        CallLocation location = new CallLocation(methodToProcess.getReference());
+        boolean isStatic = methodToProcess.hasModifier(ElementModifier.STATIC);
+
+        // validate parameter names
+        AnnotationHolder bodyAnnot = methodToProcess.getAnnotations().get(JSBody.class.getName());
+        int jsParamCount = bodyAnnot.getValue("params").getList().size();
+        if (methodToProcess.parameterCount() != jsParamCount) {
+            diagnostics.error(location, "JSBody method {{m0}} declares " + methodToProcess.parameterCount() +
+                    " parameters, but annotation specifies " + jsParamCount, methodToProcess);
+            return;
+        }
+
+        // remove annotation and make non-native
+        methodToProcess.getAnnotations().remove(JSBody.class.getName());
+        methodToProcess.getModifiers().remove(ElementModifier.NATIVE);
+
+        // generate parameter types for original method and validate
+        int paramCount = methodToProcess.parameterCount();
+        if (!isStatic) {
+            ++paramCount;
+        }
+        ValueType[] paramTypes = new ValueType[paramCount];
+        int offset = 0;
+        if (!isStatic) {
+            ValueType paramType = ValueType.object(cls.getName());
+            paramTypes[offset++] = paramType;
+            if (!isSupportedType(paramType)) {
+                diagnostics.error(location, "Non-static JSBody method {{m0}} is owned by non-JS class {{c1}}",
+                        methodToProcess.getReference(), cls.getName());
+            }
+        }
+        if (methodToProcess.getResultType() != ValueType.VOID && !isSupportedType(methodToProcess.getResultType())) {
+            diagnostics.error(location, "JSBody method {{m0}} returns unsupported type {{t1}}",
+                    methodToProcess.getReference(), methodToProcess.getResultType());
+        }
+
+        // generate parameter types for proxy method
+        for (int i = 0; i < methodToProcess.parameterCount(); ++i) {
+            paramTypes[offset++] = methodToProcess.parameterType(i);
+        }
+        ValueType[] proxyParamTypes = new ValueType[paramCount + 1];
+        for (int i = 0; i < paramCount; ++i) {
+            proxyParamTypes[i] = ValueType.parse(JSObject.class);
+        }
+        proxyParamTypes[paramCount] = methodToProcess.getResultType() == ValueType.VOID ? ValueType.VOID :
+                ValueType.parse(JSObject.class);
+
+        // create proxy method
+        MethodHolder proxyMethod = new MethodHolder("$js_body$_" + methodIndexGenerator++, proxyParamTypes);
+        proxyMethod.getModifiers().add(ElementModifier.NATIVE);
+        proxyMethod.getModifiers().add(ElementModifier.STATIC);
+        AnnotationHolder genBodyAnnot = new AnnotationHolder(JSBodyImpl.class.getName());
+        genBodyAnnot.getValues().put("script", bodyAnnot.getValue("script"));
+        genBodyAnnot.getValues().put("params", bodyAnnot.getValue("params"));
+        genBodyAnnot.getValues().put("isStatic", new AnnotationValue(isStatic));
+        AnnotationHolder generatorAnnot = new AnnotationHolder(GeneratedBy.class.getName());
+        generatorAnnot.getValues().put("value", new AnnotationValue(ValueType.parse(JSBodyGenerator.class)));
+        proxyMethod.getAnnotations().add(genBodyAnnot);
+        proxyMethod.getAnnotations().add(generatorAnnot);
+        cls.addMethod(proxyMethod);
+
+        // create program that invokes proxy method
+        program = new Program();
+        BasicBlock block = program.createBasicBlock();
+        List<Variable> params = new ArrayList<>();
+        for (int i = 0; i < paramCount; ++i) {
+            params.add(program.createVariable());
+        }
+        methodToProcess.setProgram(program);
+
+        // Generate invoke instruction
+        replacement.clear();
+        InvokeInstruction invoke = new InvokeInstruction();
+        invoke.setType(InvocationType.SPECIAL);
+        invoke.setMethod(proxyMethod.getReference());
+        for (int i = 0; i < paramCount; ++i) {
+            Variable var = program.createVariable();
+            invoke.getArguments().add(wrapArgument(location, var, paramTypes[i]));
+        }
+        block.getInstructions().addAll(replacement);
+        block.getInstructions().add(invoke);
+
+        // Generate return
+        ExitInstruction exit = new ExitInstruction();
+        if (methodToProcess.getResultType() != ValueType.VOID) {
+            replacement.clear();
+            Variable result = program.createVariable();
+            invoke.setReceiver(result);
+            exit.setValueToReturn(unwrap(location, result, methodToProcess.getResultType()));
+            block.getInstructions().addAll(replacement);
+        }
+        block.getInstructions().add(exit);
+    }
+
     private void addPropertyGet(String propertyName, Variable instance, Variable receiver,
             InstructionLocation location) {
         Variable nameVar = addStringWrap(addString(propertyName, location), location);
@@ -373,8 +470,7 @@ class JavascriptNativeProcessor {
         }
         Variable result = program.createVariable();
         InvokeInstruction insn = new InvokeInstruction();
-        insn.setMethod(new MethodReference(JS.class.getName(), "wrap", type,
-                ValueType.object(JSObject.class.getName())));
+        insn.setMethod(new MethodReference(JS.class.getName(), "wrap", type, ValueType.parse(JSObject.class)));
         insn.getArguments().add(var);
         insn.setReceiver(result);
         insn.setType(InvocationType.SPECIAL);

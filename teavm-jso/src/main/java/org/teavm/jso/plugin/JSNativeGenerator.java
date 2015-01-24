@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso;
+package org.teavm.jso.plugin;
 
 import java.io.IOException;
 import org.teavm.codegen.SourceWriter;
@@ -23,6 +23,7 @@ import org.teavm.javascript.ast.Expr;
 import org.teavm.javascript.ast.InvocationExpr;
 import org.teavm.javascript.ni.Injector;
 import org.teavm.javascript.ni.InjectorContext;
+import org.teavm.jso.JS;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReader;
 import org.teavm.model.MethodReader;
