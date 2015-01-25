@@ -20,6 +20,6 @@ package org.teavm.jso;
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 @JSFunctor
-public interface JSFloatSortFunction {
-    int compare(float a, float b);
+public interface JSDoubleSortFunction {
+    int compare(double a, double b);
 }

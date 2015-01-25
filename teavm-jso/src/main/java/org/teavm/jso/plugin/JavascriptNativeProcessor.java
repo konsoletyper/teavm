@@ -470,13 +470,42 @@ class JavascriptNativeProcessor {
         }
         Variable result = program.createVariable();
         InvokeInstruction insn = new InvokeInstruction();
-        insn.setMethod(new MethodReference(JS.class.getName(), "wrap", type, ValueType.parse(JSObject.class)));
+        insn.setMethod(new MethodReference(JS.class.getName(), "wrap", type, getWrapperType(type)));
         insn.getArguments().add(var);
         insn.setReceiver(result);
         insn.setType(InvocationType.SPECIAL);
         insn.setLocation(location);
         replacement.add(insn);
         return result;
+    }
+
+    private ValueType getWrapperType(ValueType type) {
+        if (type instanceof ValueType.Array) {
+            ValueType itemType = ((ValueType.Array)type).getItemType();
+            if (itemType instanceof ValueType.Primitive) {
+                switch (((ValueType.Primitive)itemType).getKind()) {
+                    case BOOLEAN:
+                        return ValueType.parse(JSBooleanArray.class);
+                    case BYTE:
+                    case SHORT:
+                    case INTEGER:
+                    case CHARACTER:
+                        return ValueType.parse(JSIntArray.class);
+                    case FLOAT:
+                    case DOUBLE:
+                        return ValueType.parse(JSDoubleArray.class);
+                    case LONG:
+                    default:
+                        return ValueType.parse(JSArray.class);
+                }
+            } else if (itemType.isObject("java.lang.String")) {
+                return ValueType.parse(JSStringArray.class);
+            } else {
+                return ValueType.parse(JSArray.class);
+            }
+        } else {
+            return ValueType.parse(JSObject.class);
+        }
     }
 
     private MethodReader getMethod(MethodReference ref) {

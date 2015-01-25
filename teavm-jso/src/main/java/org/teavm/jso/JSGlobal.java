@@ -36,14 +36,20 @@ public interface JSGlobal extends JSObject {
     JSStringArray newStringArray(int sz);
 
     @JSConstructor("Array")
+    JSBooleanArray newBooleanArray();
+
+    @JSConstructor("Array")
+    JSBooleanArray newBooleanArray(int sz);
+
+    @JSConstructor("Array")
     JSIntArray newIntArray();
 
     @JSConstructor("Array")
     JSIntArray newIntArray(int sz);
 
     @JSConstructor("Array")
-    JSFloatArray newFloatArray();
+    JSDoubleArray newDoubleArray();
 
     @JSConstructor("Array")
-    JSFloatArray newFloatArray(int sz);
+    JSDoubleArray newDoubleArray(int sz);
 }

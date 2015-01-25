@@ -652,7 +652,7 @@ public interface WebGLRenderingContext extends JSObject {
 
     void uniform1fv(WebGLUniformLocation location, Float32Array v);
 
-    void uniform1fv(WebGLUniformLocation location, JSFloatArrayReader v);
+    void uniform1fv(WebGLUniformLocation location, JSDoubleArrayReader v);
 
     void uniform1fv(WebGLUniformLocation location, float[] v);
 
@@ -668,7 +668,7 @@ public interface WebGLRenderingContext extends JSObject {
 
     void uniform2fv(WebGLUniformLocation location, Float32Array v);
 
-    void uniform2fv(WebGLUniformLocation location, JSFloatArrayReader v);
+    void uniform2fv(WebGLUniformLocation location, JSDoubleArrayReader v);
 
     void uniform2fv(WebGLUniformLocation location, float[] v);
 
@@ -684,7 +684,7 @@ public interface WebGLRenderingContext extends JSObject {
 
     void uniform3fv(WebGLUniformLocation location, Float32Array v);
 
-    void uniform3fv(WebGLUniformLocation location, JSFloatArrayReader v);
+    void uniform3fv(WebGLUniformLocation location, JSDoubleArrayReader v);
 
     void uniform3fv(WebGLUniformLocation location, float[] v);
 
@@ -700,7 +700,7 @@ public interface WebGLRenderingContext extends JSObject {
 
     void uniform4fv(WebGLUniformLocation location, Float32Array v);
 
-    void uniform4fv(WebGLUniformLocation location, JSFloatArrayReader v);
+    void uniform4fv(WebGLUniformLocation location, JSDoubleArrayReader v);
 
     void uniform4fv(WebGLUniformLocation location, float[] v);
 
@@ -714,19 +714,19 @@ public interface WebGLRenderingContext extends JSObject {
 
     void uniformMatrix2fv(WebGLUniformLocation location, boolean transpose, Float32Array value);
 
-    void uniformMatrix2fv(WebGLUniformLocation location, boolean transpose, JSFloatArrayReader value);
+    void uniformMatrix2fv(WebGLUniformLocation location, boolean transpose, JSDoubleArrayReader value);
 
     void uniformMatrix2fv(WebGLUniformLocation location, boolean transpose, float[] value);
 
     void uniformMatrix3fv(WebGLUniformLocation location, boolean transpose, Float32Array value);
 
-    void uniformMatrix3fv(WebGLUniformLocation location, boolean transpose, JSFloatArrayReader value);
+    void uniformMatrix3fv(WebGLUniformLocation location, boolean transpose, JSDoubleArrayReader value);
 
     void uniformMatrix3fv(WebGLUniformLocation location, boolean transpose, float[] value);
 
     void uniformMatrix4fv(WebGLUniformLocation location, boolean transpose, Float32Array value);
 
-    void uniformMatrix4fv(WebGLUniformLocation location, boolean transpose, JSFloatArrayReader value);
+    void uniformMatrix4fv(WebGLUniformLocation location, boolean transpose, JSDoubleArrayReader value);
 
     void uniformMatrix4fv(WebGLUniformLocation location, boolean transpose, float[] value);
 
@@ -738,7 +738,7 @@ public interface WebGLRenderingContext extends JSObject {
 
     void vertexAttrib1fv(int indx, Float32Array values);
 
-    void vertexAttrib1fv(int indx, JSFloatArrayReader values);
+    void vertexAttrib1fv(int indx, JSDoubleArrayReader values);
 
     void vertexAttrib1fv(int indx, float[] values);
 
@@ -746,7 +746,7 @@ public interface WebGLRenderingContext extends JSObject {
 
     void vertexAttrib2fv(int indx, Float32Array values);
 
-    void vertexAttrib2fv(int indx, JSFloatArrayReader values);
+    void vertexAttrib2fv(int indx, JSDoubleArrayReader values);
 
     void vertexAttrib2fv(int indx, float[] values);
 
@@ -754,7 +754,7 @@ public interface WebGLRenderingContext extends JSObject {
 
     void vertexAttrib3fv(int indx, Float32Array values);
 
-    void vertexAttrib3fv(int indx, JSFloatArrayReader values);
+    void vertexAttrib3fv(int indx, JSDoubleArrayReader values);
 
     void vertexAttrib3fv(int indx, float[] values);
 
@@ -762,7 +762,7 @@ public interface WebGLRenderingContext extends JSObject {
 
     void vertexAttrib4fv(int indx, Float32Array values);
 
-    void vertexAttrib4fv(int indx, JSFloatArrayReader values);
+    void vertexAttrib4fv(int indx, JSDoubleArrayReader values);
 
     void vertexAttrib4fv(int indx, float[] values);
 
