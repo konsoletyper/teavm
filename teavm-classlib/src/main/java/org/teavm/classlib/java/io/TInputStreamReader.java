@@ -75,6 +75,9 @@ public class TInputStreamReader extends TReader {
 
     @Override
     public int read(char[] cbuf, int off, int len) throws TIOException {
+        if (eof && outBuffer.end()) {
+            return -1;
+        }
         CharBuffer wrapBuffer = new CharBuffer(cbuf, off, off + len);
         while (!wrapBuffer.end()) {
             wrapBuffer.put(outBuffer);
