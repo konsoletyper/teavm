@@ -28,7 +28,7 @@ import org.teavm.jso.JSProperty;
  *
  * @author Alexey Andreev
  */
-public interface Window extends JSGlobal {
+public interface Window extends JSGlobal, WindowLocalStorage, WindowSessionStorage {
     @JSProperty
     HTMLDocument getDocument();
 
