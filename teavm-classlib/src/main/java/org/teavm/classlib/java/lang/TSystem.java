@@ -47,15 +47,8 @@ public final class TSystem extends TObject {
             }
             if (srcType != targetType) {
                 if (!srcType.isPrimitive() && !targetType.isPrimitive()) {
-                    Object[] srcArray = (Object[])(Object)src;
-                    Object[] dstArray = (Object[])(Object)dest;
-                    for (int i = 0; i < length; ++i) {
-                        Object elem = srcArray[srcPos++];
-                        if (!targetType.isInstance(elem)) {
-                            throw new TArrayStoreException();
-                        }
-                        dstArray[destPos++] = elem;
-                    }
+                    doArrayCopy(src, srcPos, dest, destPos, length);
+                    return;
                 } else if (!srcType.isPrimitive() || !targetType.isPrimitive()) {
                     throw new TArrayStoreException();
                 }
