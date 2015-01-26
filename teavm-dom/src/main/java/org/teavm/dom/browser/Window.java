@@ -16,7 +16,6 @@
 package org.teavm.dom.browser;
 
 import org.teavm.dom.ajax.XMLHttpRequest;
-import org.teavm.dom.events.EventTarget;
 import org.teavm.dom.html.HTMLDocument;
 import org.teavm.dom.json.JSON;
 import org.teavm.dom.typedarrays.*;
@@ -29,7 +28,7 @@ import org.teavm.jso.JSProperty;
  *
  * @author Alexey Andreev
  */
-public interface Window extends JSGlobal, EventTarget {
+public interface Window extends JSGlobal, StorageProvider {
     @JSProperty
     HTMLDocument getDocument();
 
