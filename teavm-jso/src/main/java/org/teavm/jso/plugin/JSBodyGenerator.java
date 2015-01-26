@@ -76,7 +76,7 @@ public class JSBodyGenerator implements Generator {
                 .softNewLine();
         writer.outdent().append("}").softNewLine();
 
-        writer.appendMethodBody(methodRef).append('(');
+        writer.append("return ").appendMethodBody(methodRef).append('(');
         for (int i = 0; i < count; ++i) {
             if (i > 0) {
                 writer.append(',').ws();
