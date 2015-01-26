@@ -1,0 +1,12 @@
+video {
+  border: 1px solid black;
+  padding: 0; margin: 0;
+  width: 427px;
+  height: 240px;
+  background-color: black;
+  margin: auto;
+  float: left;
+}
+#buttons { 
+    text-align: center;
+}

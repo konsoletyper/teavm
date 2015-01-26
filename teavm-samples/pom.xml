@@ -33,5 +33,6 @@
     <module>teavm-samples-hello</module>
     <module>teavm-samples-benchmark</module>
     <module>teavm-samples-storage</module>
+    <module>teavm-samples-video</module>
   </modules>
 </project>
