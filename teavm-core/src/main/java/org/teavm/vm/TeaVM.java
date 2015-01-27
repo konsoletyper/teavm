@@ -396,6 +396,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         builder.setMinified(minifying);
         SourceWriter sourceWriter = builder.build(writer);
         Renderer renderer = new Renderer(sourceWriter, classSet, classLoader, this);
+        renderer.setProperties(properties);
         if (debugEmitter != null) {
             int classIndex = 0;
             for (String className : classSet.getClassNames()) {
