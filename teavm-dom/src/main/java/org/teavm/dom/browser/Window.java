@@ -93,6 +93,15 @@ public interface Window extends JSGlobal, EventTarget, StorageProvider {
     @JSConstructor("Int16Array")
     Int16Array createInt16Array(ArrayBuffer buffer, int offset, int length);
 
+    @JSConstructor("Uint16Array")
+    Uint16Array createUint16Array(int length);
+
+    @JSConstructor("Uint16Array")
+    Uint16Array createUint16Array(ArrayBuffer buffer);
+
+    @JSConstructor("Uint16Array")
+    Uint16Array createUint16Array(ArrayBuffer buffer, int offset, int length);
+
     @JSConstructor("Int32Array")
     Int32Array createInt32Array(int length);
 
