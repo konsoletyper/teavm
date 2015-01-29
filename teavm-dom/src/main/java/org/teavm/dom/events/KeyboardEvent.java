@@ -40,6 +40,9 @@ public interface KeyboardEvent extends Event {
     String getCode();
 
     @JSProperty
+    int getCharCode();
+
+    @JSProperty
     int getLocation();
 
     @JSProperty
