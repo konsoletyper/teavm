@@ -199,8 +199,12 @@ public class TLong extends TNumber implements TComparable<TLong> {
     }
 
     @Override
+    public int hashCode() {
+        return hashCode(value);
+    }
+
     @GeneratedBy(LongNativeGenerator.class)
-    public native int hashCode();
+    private static native int hashCode(long value);
 
     @Override
     public boolean equals(Object other) {
