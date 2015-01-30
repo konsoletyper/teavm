@@ -1,5 +1,5 @@
 /*
- *  Copyright 2013 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,35 +15,34 @@
  */
 package org.teavm.javascript.ast;
 
-import org.teavm.javascript.ni.Generator;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import org.teavm.model.MethodReference;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-public class NativeMethodNode extends MethodNode {
-    private Generator generator;
-    private boolean async;
+public class AsyncMethodNode extends MethodNode {
+    private List<AsyncMethodPart> body = new ArrayList<>();
+    private List<Integer> variables = new ArrayList<>();
+    private List<Set<String>> parameterDebugNames = new ArrayList<>();
 
-    public NativeMethodNode(MethodReference reference) {
+    public AsyncMethodNode(MethodReference reference) {
         super(reference);
     }
 
-    public Generator getGenerator() {
-        return generator;
+    public List<AsyncMethodPart> getBody() {
+        return body;
     }
 
-    public void setGenerator(Generator generator) {
-        this.generator = generator;
+    public List<Integer> getVariables() {
+        return variables;
     }
 
-    public boolean isAsync() {
-        return async;
-    }
-
-    public void setAsync(boolean async) {
-        this.async = async;
+    public List<Set<String>> getParameterDebugNames() {
+        return parameterDebugNames;
     }
 
     @Override

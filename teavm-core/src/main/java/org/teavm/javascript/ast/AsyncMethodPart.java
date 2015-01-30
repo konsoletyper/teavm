@@ -1,5 +1,5 @@
 /*
- *  Copyright 2013 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,12 +17,25 @@ package org.teavm.javascript.ast;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-public interface MethodNodeVisitor {
-    void visit(RegularMethodNode methodNode);
+public class AsyncMethodPart {
+    private Statement statement;
+    private Integer inputVariable;
 
-    void visit(AsyncMethodNode methodNode);
+    public Statement getStatement() {
+        return statement;
+    }
 
-    void visit(NativeMethodNode methodNode);
+    public void setStatement(Statement statement) {
+        this.statement = statement;
+    }
+
+    public Integer getInputVariable() {
+        return inputVariable;
+    }
+
+    public void setInputVariable(Integer inputVariable) {
+        this.inputVariable = inputVariable;
+    }
 }

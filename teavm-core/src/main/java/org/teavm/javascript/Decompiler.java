@@ -23,7 +23,7 @@ import org.teavm.javascript.ni.Generator;
 import org.teavm.javascript.ni.InjectedBy;
 import org.teavm.javascript.ni.PreserveOriginalName;
 import org.teavm.model.*;
-import org.teavm.model.util.ProgramUtils;
+import org.teavm.model.util.AsyncProgramSplitter;
 
 /**
  *
@@ -153,11 +153,16 @@ public class Decompiler {
     }
 
     public MethodNode decompile(MethodHolder method) {
-        return method.getModifiers().contains(ElementModifier.NATIVE) ? decompileNative(method) :
+        return method.getModifiers().contains(ElementModifier.NATIVE) ? decompileNative(method, false) :
                 decompileRegular(method);
     }
 
-    public NativeMethodNode decompileNative(MethodHolder method) {
+    public MethodNode decompileAsync(MethodHolder method) {
+        return method.getModifiers().contains(ElementModifier.NATIVE) ? decompileNative(method, true) :
+                decompileAsync(method);
+    }
+
+    public NativeMethodNode decompileNative(MethodHolder method, boolean async) {
         Generator generator = generators.get(method.getReference());
         if (generator == null) {
             AnnotationHolder annotHolder = method.getAnnotations().get(GeneratedBy.class.getName());
@@ -179,10 +184,12 @@ public class Decompiler {
                 method.getDescriptor()));
         methodNode.getModifiers().addAll(mapModifiers(method.getModifiers()));
         methodNode.setGenerator(generator);
+        methodNode.setAsync(async);
         return methodNode;
     }
 
     public RegularMethodNode decompileRegular(MethodHolder method) {
+        // TODO: add caching in case of incremental build
         if (regularMethodCache == null) {
             return decompileRegularCacheMiss(method);
         }
@@ -191,17 +198,52 @@ public class Decompiler {
             node = decompileRegularCacheMiss(method);
             regularMethodCache.store(method.getReference(), node);
         }
+        // TODO: add optimization
+        node.getModifiers().addAll(mapModifiers(method.getModifiers()));
+        int paramCount = Math.min(method.getSignature().length, method.getProgram().variableCount());
+        for (int i = 0; i < paramCount; ++i) {
+            Variable var = method.getProgram().variableAt(i);
+            node.getParameterDebugNames().add(new HashSet<>(var.getDebugNames()));
+        }
+        return node;
+    }
+
+    public AsyncMethodNode decompileRegularAsync(MethodHolder method) {
+        AsyncMethodNode node = new AsyncMethodNode(method.getReference());
+        AsyncProgramSplitter splitter = new AsyncProgramSplitter();
+        splitter.split(method.getProgram());
+        for (int i = 0; i < splitter.size(); ++i) {
+            AsyncMethodPart part = new AsyncMethodPart();
+            part.setInputVariable(splitter.getInput(i));
+            part.setStatement(getRegularMethodStatement(splitter.getProgram(i)));
+        }
         return node;
     }
 
     public RegularMethodNode decompileRegularCacheMiss(MethodHolder method) {
+        RegularMethodNode methodNode = new RegularMethodNode(method.getReference());
+        Program program = method.getProgram();
+        methodNode.setBody(getRegularMethodStatement(program));
+        for (int i = 0; i < program.variableCount(); ++i) {
+            methodNode.getVariables().add(program.variableAt(i).getRegister());
+        }
+        Optimizer optimizer = new Optimizer();
+        optimizer.optimize(methodNode, method.getProgram());
+        methodNode.getModifiers().addAll(mapModifiers(method.getModifiers()));
+        int paramCount = Math.min(method.getSignature().length, program.variableCount());
+        for (int i = 0; i < paramCount; ++i) {
+            Variable var = program.variableAt(i);
+            methodNode.getParameterDebugNames().add(new HashSet<>(var.getDebugNames()));
+        }
+        return methodNode;
+    }
+
+    private Statement getRegularMethodStatement(Program program) {
         lastBlockId = 1;
-        graph = ProgramUtils.buildControlFlowGraph(method.getProgram());
         indexer = new GraphIndexer(graph);
         graph = indexer.getGraph();
         loopGraph = new LoopGraph(this.graph);
         unflatCode();
-        Program program = method.getProgram();
         blockMap = new Block[program.basicBlockCount() * 2 + 1];
         Deque<Block> stack = new ArrayDeque<>();
         BlockStatement rootStmt = new BlockStatement();
@@ -276,22 +318,7 @@ public class Decompiler {
         }
         SequentialStatement result = new SequentialStatement();
         result.getSequence().addAll(rootStmt.getBody());
-        MethodReference reference = new MethodReference(method.getOwnerName(), method.getDescriptor());
-        RegularMethodNode methodNode = new RegularMethodNode(reference);
-        methodNode.getModifiers().addAll(mapModifiers(method.getModifiers()));
-        methodNode.setBody(result);
-        for (int i = 0; i < program.variableCount(); ++i) {
-            methodNode.getVariables().add(program.variableAt(i).getRegister());
-        }
-        Optimizer optimizer = new Optimizer();
-        optimizer.optimize(methodNode, method.getProgram());
-        methodNode.getModifiers().addAll(mapModifiers(method.getModifiers()));
-        int paramCount = Math.min(method.getSignature().length, program.variableCount());
-        for (int i = 0; i < paramCount; ++i) {
-            Variable var = program.variableAt(i);
-            methodNode.getParameterDebugNames().add(new HashSet<>(var.getDebugNames()));
-        }
-        return methodNode;
+        return result;
     }
 
     private Set<NodeModifier> mapModifiers(Set<ElementModifier> modifiers) {

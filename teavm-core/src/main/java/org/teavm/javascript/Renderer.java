@@ -53,6 +53,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     private Deque<LocationStackEntry> locationStack = new ArrayDeque<>();
     private DeferredCallSite lastCallSite;
     private DeferredCallSite prevCallSite;
+    private boolean async;
 
     private static class InjectorHolder {
         public final Injector injector;
@@ -537,6 +538,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         @Override
         public void visit(RegularMethodNode method) {
             try {
+                Renderer.this.async = false;
                 MethodReference ref = method.getReference();
                 for (int i = 0; i < method.getParameterDebugNames().size(); ++i) {
                     debugEmitter.emitVariable(method.getParameterDebugNames().get(i).toArray(new String[0]),
@@ -567,6 +569,50 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     writer.append(";").softNewLine();
                 }
                 method.getBody().acceptVisitor(Renderer.this);
+            } catch (IOException e) {
+                throw new RenderingException("IO error occured", e);
+            }
+        }
+
+        @Override
+        public void visit(AsyncMethodNode methodNode) {
+            try {
+                Renderer.this.async = true;
+                MethodReference ref = methodNode.getReference();
+                for (int i = 0; i < methodNode.getParameterDebugNames().size(); ++i) {
+                    debugEmitter.emitVariable(methodNode.getParameterDebugNames().get(i).toArray(new String[0]),
+                            variableName(i));
+                }
+                int variableCount = 0;
+                for (int var : methodNode.getVariables()) {
+                    variableCount = Math.max(variableCount, var + 1);
+                }
+                List<String> variableNames = new ArrayList<>();
+                for (int i = ref.parameterCount() + 1; i < variableCount; ++i) {
+                    variableNames.add(variableName(i));
+                }
+                if (!variableNames.isEmpty()) {
+                    writer.append("var ");
+                    for (int i = 0; i < variableNames.size(); ++i) {
+                        if (i > 0) {
+                            writer.append(",").ws();
+                        }
+                        writer.append(variableNames.get(i));
+                    }
+                    writer.append(";").softNewLine();
+                }
+                for (int i = 0; i < methodNode.getBody().size(); ++i) {
+                    writer.append("function $part_").append(i).append("($input,").ws().append("$return,").ws()
+                            .append("$throw)").ws().append('{').indent().softNewLine();
+                    AsyncMethodPart part = methodNode.getBody().get(i);
+                    if (part.getInputVariable() != null) {
+                        writer.append(variableName(part.getInputVariable())).ws().append('=').ws().append("$input;")
+                                .softNewLine();
+                    }
+                    part.getStatement().acceptVisitor(Renderer.this);
+                    writer.outdent().append('}').softNewLine();
+                }
+                writer.append("return $part_0;").softNewLine();
             } catch (IOException e) {
                 throw new RenderingException("IO error occured", e);
             }
@@ -832,11 +878,17 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 pushLocation(statement.getLocation());
             }
             writer.append("return");
+            if (async) {
+                writer.append(" $return(");
+            }
             if (statement.getResult() != null) {
                 writer.append(' ');
                 prevCallSite = debugEmitter.emitCallSite();
                 statement.getResult().acceptVisitor(this);
                 debugEmitter.emitCallSite();
+            }
+            if (async) {
+                writer.append(')');
             }
             writer.append(";").softNewLine();
             if (statement.getLocation() != null) {
@@ -854,7 +906,11 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             if (statement.getLocation() != null) {
                 pushLocation(statement.getLocation());
             }
-            writer.append("$rt_throw(");
+            if (!async) {
+                writer.append("$rt_throw(");
+            } else {
+                writer.append("return $throw(");
+            }
             prevCallSite = debugEmitter.emitCallSite();
             statement.getException().acceptVisitor(this);
             writer.append(");").softNewLine();
@@ -1336,6 +1392,9 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             if (injector != null) {
                 injector.generate(new InjectorContextImpl(expr.getArguments()), expr.getMethod());
             } else {
+                if (expr.getAsyncTarget() != null) {
+                    writer.append("return ");
+                }
                 if (expr.getType() == InvocationType.DYNAMIC) {
                     expr.getArguments().get(0).acceptVisitor(this);
                 }
@@ -1358,7 +1417,6 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                             }
                             expr.getArguments().get(i).acceptVisitor(this);
                         }
-                        writer.append(')');
                         break;
                     case SPECIAL:
                         writer.append(fullName).append("(");
@@ -1368,7 +1426,6 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                             writer.append(",").ws();
                             expr.getArguments().get(i).acceptVisitor(this);
                         }
-                        writer.append(")");
                         break;
                     case DYNAMIC:
                         writer.append(".").append(name).append("(");
@@ -1379,7 +1436,6 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                             }
                             expr.getArguments().get(i).acceptVisitor(this);
                         }
-                        writer.append(')');
                         virtual = true;
                         break;
                     case CONSTRUCTOR:
@@ -1391,9 +1447,12 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                             }
                             expr.getArguments().get(i).acceptVisitor(this);
                         }
-                        writer.append(')');
                         break;
                 }
+                if (expr.getAsyncTarget() != null) {
+                    writer.append(',').ws().append("$part_").append(expr.getAsyncTarget());
+                }
+                writer.append(')');
                 if (lastCallSite != null) {
                     if (virtual) {
                         lastCallSite.setVirtualMethod(expr.getMethod());
