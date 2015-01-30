@@ -16,6 +16,7 @@
 package org.teavm.model.util;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
@@ -33,15 +34,21 @@ public class MissingItemsProcessor {
     private List<Instruction> instructionsToAdd = new ArrayList<>();
     private MethodHolder methodHolder;
     private Program program;
+    private Collection<String> achievableClasses;
+    private Collection<MethodReference> achievableMethods;
+    private Collection<FieldReference> achievableFields;
 
     public MissingItemsProcessor(DependencyInfo dependencyInfo, Diagnostics diagnostics) {
         this.dependencyInfo = dependencyInfo;
         this.diagnostics = diagnostics;
+        achievableClasses = dependencyInfo.getAchievableClasses();
+        achievableMethods = dependencyInfo.getAchievableMethods();
+        achievableFields = dependencyInfo.getAchievableFields();
     }
 
     public void processClass(ClassHolder cls) {
         for (MethodHolder method : cls.getMethods()) {
-            if (dependencyInfo.getAchievableMethods().contains(method.getReference()) && method.getProgram() != null) {
+            if (achievableMethods.contains(method.getReference()) && method.getProgram() != null) {
                 processMethod(method);
             }
         }
@@ -50,6 +57,7 @@ public class MissingItemsProcessor {
     public void processMethod(MethodHolder method) {
         this.methodHolder = method;
         this.program = method.getProgram();
+        boolean wasModified = false;
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
             instructionsToAdd.clear();
@@ -57,12 +65,15 @@ public class MissingItemsProcessor {
                 Instruction insn = block.getInstructions().get(j);
                 insn.acceptVisitor(instructionProcessor);
                 if (!instructionsToAdd.isEmpty()) {
+                    wasModified = true;
                     truncateBlock(block, j);
                     break;
                 }
             }
         }
-        new UnreachableBasicBlockEliminator().optimize(program);
+        if (wasModified) {
+            new UnreachableBasicBlockEliminator().optimize(program);
+        }
     }
 
     private void truncateBlock(BasicBlock block, int index) {
@@ -108,8 +119,7 @@ public class MissingItemsProcessor {
     }
 
     private boolean checkClass(InstructionLocation location, String className) {
-        if (!dependencyInfo.getAchievableClasses().contains(className) ||
-                !dependencyInfo.getClass(className).isMissing()) {
+        if (!achievableClasses.contains(className) || !dependencyInfo.getClass(className).isMissing()) {
             return true;
         }
         diagnostics.error(new CallLocation(methodHolder.getReference(), location), "Class {{c0}} was not found",
@@ -132,7 +142,7 @@ public class MissingItemsProcessor {
         if (!checkClass(location, method.getClassName())) {
             return false;
         }
-        if (!dependencyInfo.getAchievableMethods().contains(method) || !dependencyInfo.getMethod(method).isMissing()) {
+        if (!achievableMethods.contains(method) || !dependencyInfo.getMethod(method).isMissing()) {
             return true;
         }
         diagnostics.error(new CallLocation(methodHolder.getReference(), location), "Method {{m0}} was not found",
@@ -145,7 +155,7 @@ public class MissingItemsProcessor {
         if (!checkClass(location, field.getClassName())) {
             return false;
         }
-        if (!dependencyInfo.getAchievableFields().contains(field) || !dependencyInfo.getField(field).isMissing()) {
+        if (!achievableFields.contains(field) || !dependencyInfo.getField(field).isMissing()) {
             return true;
         }
         diagnostics.error(new CallLocation(methodHolder.getReference(), location), "Field {{f0}} was not found",
