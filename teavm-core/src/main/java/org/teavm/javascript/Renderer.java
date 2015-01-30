@@ -370,6 +370,11 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             for (MethodNode method : nonInitMethods) {
                 renderBody(method, false);
             }
+            for (MethodNode method : cls.getAsyncMethods()) {
+                writer.append("/*").softNewLine();
+                renderBody(method, false);
+                writer.append("*/").softNewLine();
+            }
             renderVirtualDeclarations(cls.getName(), virtualMethods);
         } catch (NamingException e) {
             throw new RenderingException("Error rendering class " + cls.getName() + ". See a cause for details", e);

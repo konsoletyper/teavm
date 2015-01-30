@@ -527,7 +527,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
     private List<ClassNode> modelToAst(ListableClassHolderSource classes) {
         progressListener.phaseStarted(TeaVMPhase.DECOMPILATION, classes.getClassNames().size());
-        Decompiler decompiler = new Decompiler(classes, classLoader);
+        Decompiler decompiler = new Decompiler(classes, classLoader, new HashSet<MethodReference>());
         decompiler.setRegularMethodCache(incremental ? astCache : null);
 
         for (Map.Entry<MethodReference, Generator> entry : methodGenerators.entrySet()) {

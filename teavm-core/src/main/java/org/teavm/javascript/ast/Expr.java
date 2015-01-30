@@ -119,7 +119,7 @@ public abstract class Expr implements Cloneable {
         return expr;
     }
 
-    public static Expr invoke(MethodReference method, Expr target, Expr[] arguments) {
+    public static InvocationExpr invoke(MethodReference method, Expr target, Expr[] arguments) {
         InvocationExpr expr = new InvocationExpr();
         expr.setMethod(method);
         expr.setType(InvocationType.DYNAMIC);
@@ -128,7 +128,7 @@ public abstract class Expr implements Cloneable {
         return expr;
     }
 
-    public static Expr invokeSpecial(MethodReference method, Expr target, Expr[] arguments) {
+    public static InvocationExpr invokeSpecial(MethodReference method, Expr target, Expr[] arguments) {
         InvocationExpr expr = new InvocationExpr();
         expr.setMethod(method);
         expr.setType(InvocationType.SPECIAL);
@@ -137,7 +137,7 @@ public abstract class Expr implements Cloneable {
         return expr;
     }
 
-    public static Expr invokeStatic(MethodReference method, Expr[] arguments) {
+    public static InvocationExpr invokeStatic(MethodReference method, Expr[] arguments) {
         InvocationExpr expr = new InvocationExpr();
         expr.setMethod(method);
         expr.setType(InvocationType.STATIC);

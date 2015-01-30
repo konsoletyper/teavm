@@ -24,6 +24,7 @@ import org.teavm.javascript.ni.InjectedBy;
 import org.teavm.javascript.ni.PreserveOriginalName;
 import org.teavm.model.*;
 import org.teavm.model.util.AsyncProgramSplitter;
+import org.teavm.model.util.ProgramUtils;
 
 /**
  *
@@ -45,10 +46,12 @@ public class Decompiler {
     private Map<MethodReference, Generator> generators = new HashMap<>();
     private Set<MethodReference> methodsToPass = new HashSet<>();
     private RegularMethodNodeCache regularMethodCache;
+    private Set<MethodReference> asyncMethods;
 
-    public Decompiler(ClassHolderSource classSource, ClassLoader classLoader) {
+    public Decompiler(ClassHolderSource classSource, ClassLoader classLoader, Set<MethodReference> asyncMethods) {
         this.classSource = classSource;
         this.classLoader = classLoader;
+        this.asyncMethods = asyncMethods;
     }
 
     public RegularMethodNodeCache getRegularMethodCache() {
@@ -146,6 +149,7 @@ public class Decompiler {
             if (method.getAnnotations().get(PreserveOriginalName.class.getName()) != null) {
                 methodNode.setOriginalNamePreserved(true);
             }
+            clsNode.getAsyncMethods().add(decompileAsync(method));
         }
         clsNode.getInterfaces().addAll(cls.getInterfaces());
         clsNode.getModifiers().addAll(mapModifiers(cls.getModifiers()));
@@ -159,7 +163,7 @@ public class Decompiler {
 
     public MethodNode decompileAsync(MethodHolder method) {
         return method.getModifiers().contains(ElementModifier.NATIVE) ? decompileNative(method, true) :
-                decompileAsync(method);
+                decompileRegularAsync(method);
     }
 
     public NativeMethodNode decompileNative(MethodHolder method, boolean async) {
@@ -189,7 +193,6 @@ public class Decompiler {
     }
 
     public RegularMethodNode decompileRegular(MethodHolder method) {
-        // TODO: add caching in case of incremental build
         if (regularMethodCache == null) {
             return decompileRegularCacheMiss(method);
         }
@@ -198,24 +201,18 @@ public class Decompiler {
             node = decompileRegularCacheMiss(method);
             regularMethodCache.store(method.getReference(), node);
         }
-        // TODO: add optimization
-        node.getModifiers().addAll(mapModifiers(method.getModifiers()));
-        int paramCount = Math.min(method.getSignature().length, method.getProgram().variableCount());
-        for (int i = 0; i < paramCount; ++i) {
-            Variable var = method.getProgram().variableAt(i);
-            node.getParameterDebugNames().add(new HashSet<>(var.getDebugNames()));
-        }
         return node;
     }
 
     public AsyncMethodNode decompileRegularAsync(MethodHolder method) {
         AsyncMethodNode node = new AsyncMethodNode(method.getReference());
-        AsyncProgramSplitter splitter = new AsyncProgramSplitter();
+        AsyncProgramSplitter splitter = new AsyncProgramSplitter(asyncMethods);
         splitter.split(method.getProgram());
         for (int i = 0; i < splitter.size(); ++i) {
             AsyncMethodPart part = new AsyncMethodPart();
             part.setInputVariable(splitter.getInput(i));
-            part.setStatement(getRegularMethodStatement(splitter.getProgram(i)));
+            part.setStatement(getRegularMethodStatement(splitter.getProgram(i), i, splitter.getBlockSuccessors(i)));
+            node.getBody().add(part);
         }
         return node;
     }
@@ -223,7 +220,7 @@ public class Decompiler {
     public RegularMethodNode decompileRegularCacheMiss(MethodHolder method) {
         RegularMethodNode methodNode = new RegularMethodNode(method.getReference());
         Program program = method.getProgram();
-        methodNode.setBody(getRegularMethodStatement(program));
+        methodNode.setBody(getRegularMethodStatement(program, 0, new int[program.basicBlockCount()]));
         for (int i = 0; i < program.variableCount(); ++i) {
             methodNode.getVariables().add(program.variableAt(i).getRegister());
         }
@@ -238,8 +235,9 @@ public class Decompiler {
         return methodNode;
     }
 
-    private Statement getRegularMethodStatement(Program program) {
+    private Statement getRegularMethodStatement(Program program, int currentPart, int[] targetBlocks) {
         lastBlockId = 1;
+        graph = ProgramUtils.buildControlFlowGraph(program);
         indexer = new GraphIndexer(graph);
         graph = indexer.getGraph();
         loopGraph = new LoopGraph(this.graph);
@@ -289,15 +287,21 @@ public class Decompiler {
                 int tmp = indexer.nodeAt(next);
                 generator.nextBlock = tmp >= 0 && next < indexer.size() ? program.basicBlockAt(tmp) : null;
                 generator.statements.clear();
+                generator.asyncTarget = null;
                 InstructionLocation lastLocation = null;
                 NodeLocation nodeLocation = null;
-                for (Instruction insn : generator.currentBlock.getInstructions()) {
+                List<Instruction> instructions = generator.currentBlock.getInstructions();
+                for (int j = 0; j < instructions.size(); ++j) {
+                    Instruction insn = generator.currentBlock.getInstructions().get(j);
                     if (insn.getLocation() != null && lastLocation != insn.getLocation()) {
                         lastLocation = insn.getLocation();
                         nodeLocation = new NodeLocation(lastLocation.getFileName(), lastLocation.getLine());
                     }
                     if (insn.getLocation() != null) {
                         generator.setCurrentLocation(nodeLocation);
+                    }
+                    if (targetBlocks[i] != currentPart && j == instructions.size() - 1) {
+                        generator.asyncTarget = targetBlocks[i];
                     }
                     insn.acceptVisitor(generator);
                 }
