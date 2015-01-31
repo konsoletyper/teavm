@@ -1455,7 +1455,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                         break;
                 }
                 if (expr.getAsyncTarget() != null) {
-                    writer.append(',').ws().append("$part_").append(expr.getAsyncTarget());
+                    writer.append(',').ws().append("$rt_continue($part_").append(expr.getAsyncTarget()).append(')');
                 }
                 writer.append(')');
                 if (lastCallSite != null) {

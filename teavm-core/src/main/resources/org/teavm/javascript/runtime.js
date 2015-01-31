@@ -402,6 +402,19 @@ function $rt_stringPool(strings) {
 function $rt_s(index) {
     return $rt_stringPool_instance[index];
 }
+var $rt_continueCounter = 0;
+function $rt_continue(f) {
+   if ($rt_continueCounter++ == 10) {
+       $rt_continueCounter = 0;
+       var self = f;
+       var args = arguments;
+       setTimeout(function() {
+           f.apply(self, args);
+       }, 0);
+   } else {
+       return f;
+   }
+}
 
 function $dbg_repr(obj) {
     return obj.toString ? obj.toString() : "";

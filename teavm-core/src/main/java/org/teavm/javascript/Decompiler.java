@@ -214,6 +214,18 @@ public class Decompiler {
             part.setStatement(getRegularMethodStatement(splitter.getProgram(i), i, splitter.getBlockSuccessors(i)));
             node.getBody().add(part);
         }
+        Program program = method.getProgram();
+        for (int i = 0; i < program.variableCount(); ++i) {
+            node.getVariables().add(program.variableAt(i).getRegister());
+        }
+        Optimizer optimizer = new Optimizer();
+        optimizer.optimize(node, method.getProgram());
+        node.getModifiers().addAll(mapModifiers(method.getModifiers()));
+        int paramCount = Math.min(method.getSignature().length, program.variableCount());
+        for (int i = 0; i < paramCount; ++i) {
+            Variable var = program.variableAt(i);
+            node.getParameterDebugNames().add(new HashSet<>(var.getDebugNames()));
+        }
         return node;
     }
 

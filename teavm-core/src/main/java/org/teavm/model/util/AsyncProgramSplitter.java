@@ -57,6 +57,7 @@ public class AsyncProgramSplitter {
             int end = step.sourceIndex;
             boolean asyncOccured = false;
             for (int i = step.sourceIndex; i < sourceBlock.getInstructions().size(); ++i) {
+                end = i;
                 Instruction insn = sourceBlock.getInstructions().get(i);
                 if (insn instanceof InvokeInstruction) {
                     InvokeInstruction invoke = (InvokeInstruction)insn;
