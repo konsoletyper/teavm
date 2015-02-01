@@ -149,7 +149,6 @@ public class Decompiler {
             if (method.getAnnotations().get(PreserveOriginalName.class.getName()) != null) {
                 methodNode.setOriginalNamePreserved(true);
             }
-            clsNode.getAsyncMethods().add(decompileAsync(method));
         }
         clsNode.getInterfaces().addAll(cls.getInterfaces());
         clsNode.getModifiers().addAll(mapModifiers(cls.getModifiers()));
@@ -158,12 +157,7 @@ public class Decompiler {
 
     public MethodNode decompile(MethodHolder method) {
         return method.getModifiers().contains(ElementModifier.NATIVE) ? decompileNative(method, false) :
-                decompileRegular(method);
-    }
-
-    public MethodNode decompileAsync(MethodHolder method) {
-        return method.getModifiers().contains(ElementModifier.NATIVE) ? decompileNative(method, true) :
-                decompileRegularAsync(method);
+                !asyncMethods.contains(method.getReference()) ? decompileRegular(method) : decompileAsync(method);
     }
 
     public NativeMethodNode decompileNative(MethodHolder method, boolean async) {
@@ -204,7 +198,7 @@ public class Decompiler {
         return node;
     }
 
-    public AsyncMethodNode decompileRegularAsync(MethodHolder method) {
+    public AsyncMethodNode decompileAsync(MethodHolder method) {
         AsyncMethodNode node = new AsyncMethodNode(method.getReference());
         AsyncProgramSplitter splitter = new AsyncProgramSplitter(asyncMethods);
         splitter.split(method.getProgram());

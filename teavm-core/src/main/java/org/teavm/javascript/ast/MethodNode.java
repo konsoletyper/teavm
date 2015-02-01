@@ -50,4 +50,6 @@ public abstract class MethodNode {
     }
 
     public abstract void acceptVisitor(MethodNodeVisitor visitor);
+
+    public abstract boolean isAsync();
 }

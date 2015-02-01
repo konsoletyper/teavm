@@ -38,6 +38,7 @@ public class NativeMethodNode extends MethodNode {
         this.generator = generator;
     }
 
+    @Override
     public boolean isAsync() {
         return async;
     }

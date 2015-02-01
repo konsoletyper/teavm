@@ -1,5 +1,5 @@
 /*
- *  Copyright 2011 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,23 +13,18 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.codegen;
+package org.teavm.runtime;
 
-import org.teavm.model.FieldReference;
-import org.teavm.model.MethodReference;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface NamingStrategy {
-    String getNameFor(String cls) throws NamingException;
-
-    String getNameFor(MethodReference method) throws NamingException;
-
-    String getNameForAsync(MethodReference method) throws NamingException;
-
-    String getFullNameFor(MethodReference method) throws NamingException;
-
-    String getNameFor(FieldReference field) throws NamingException;
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface Sync {
 }

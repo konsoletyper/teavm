@@ -16,9 +16,7 @@
 package org.teavm.model.instructions;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import org.teavm.model.Instruction;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Variable;
@@ -32,8 +30,6 @@ public class InvokeInstruction extends Instruction {
     private MethodReference method;
     private Variable instance;
     private List<Variable> arguments = new ArrayList<>();
-    private Set<MethodReference> implemenetations = new HashSet<MethodReference>();
-    private boolean resolved;
     private Variable receiver;
 
     public InvocationType getType() {
@@ -70,18 +66,6 @@ public class InvokeInstruction extends Instruction {
 
     public void setReceiver(Variable receiver) {
         this.receiver = receiver;
-    }
-
-    public Set<MethodReference> getImplemenetations() {
-        return implemenetations;
-    }
-
-    public boolean isResolved() {
-        return resolved;
-    }
-
-    public void setResolved(boolean resolved) {
-        this.resolved = resolved;
     }
 
     @Override

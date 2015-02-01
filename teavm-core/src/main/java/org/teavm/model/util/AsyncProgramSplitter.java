@@ -61,7 +61,7 @@ public class AsyncProgramSplitter {
                 Instruction insn = sourceBlock.getInstructions().get(i);
                 if (insn instanceof InvokeInstruction) {
                     InvokeInstruction invoke = (InvokeInstruction)insn;
-                    if (true) { //asyncMethods.contains(invoke)) {
+                    if (asyncMethods.contains(invoke.getMethod())) {
                         asyncOccured = true;
                         long key = ((long)step.source << 32) | i;
                         if (partMap.containsKey(key)) {

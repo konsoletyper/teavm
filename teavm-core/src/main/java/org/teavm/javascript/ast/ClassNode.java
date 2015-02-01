@@ -30,7 +30,6 @@ public class ClassNode {
     private Set<NodeModifier> modifiers = EnumSet.noneOf(NodeModifier.class);
     private List<FieldNode> fields = new ArrayList<>();
     private List<MethodNode> methods = new ArrayList<>();
-    private List<MethodNode> asyncMethods = new ArrayList<>();
     private List<String> interfaces = new ArrayList<>();
 
     public ClassNode(String name, String parentName) {
@@ -52,10 +51,6 @@ public class ClassNode {
 
     public List<MethodNode> getMethods() {
         return methods;
-    }
-
-    public List<MethodNode> getAsyncMethods() {
-        return asyncMethods;
     }
 
     public List<String> getInterfaces() {

@@ -392,6 +392,20 @@ function $rt_virtualMethods(cls) {
         }
     }
 }
+function $rt_asyncAdapter(f) {
+    return function() {
+        var e;
+        var args = Array.prototype.slice.apply(arguments);
+        var $throw = args.pop();
+        var $return args.pop();
+        try {
+            var result = f.apply(this, args);
+        } catch (e) {
+            return $throw(e);
+        }
+        return $return(result);
+    }
+}
 var $rt_stringPool_instance;
 function $rt_stringPool(strings) {
     $rt_stringPool_instance = new Array(strings.length);

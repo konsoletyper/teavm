@@ -15,6 +15,9 @@
  */
 package org.teavm.classlib.java.lang;
 
+import org.teavm.javascript.ni.GeneratedBy;
+import org.teavm.runtime.Async;
+
 /**
  *
  * @author Alexey Andreev
@@ -56,8 +59,9 @@ public class TThread extends TObject implements TRunnable {
         return name;
     }
 
-    public static void yield() {
-    }
+    @Async
+    @GeneratedBy(ThreadNativeGenerator.class)
+    public static native void yield();
 
     public void interrupt() {
     }
@@ -81,4 +85,12 @@ public class TThread extends TObject implements TRunnable {
     public static boolean holdsLock(@SuppressWarnings("unused") TObject obj) {
         return true;
     }
+
+    public static void sleep(long millis) throws TInterruptedException {
+        sleep((double)millis);
+    }
+
+    @Async
+    @GeneratedBy(ThreadNativeGenerator.class)
+    private static native void sleep(double millis) throws TInterruptedException;
 }

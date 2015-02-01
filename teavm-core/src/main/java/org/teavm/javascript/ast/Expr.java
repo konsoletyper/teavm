@@ -104,7 +104,7 @@ public abstract class Expr implements Cloneable {
         return expr;
     }
 
-    public static Expr constructObject(MethodReference method, Expr[] arguments) {
+    public static InvocationExpr constructObject(MethodReference method, Expr[] arguments) {
         InvocationExpr expr = new InvocationExpr();
         expr.setMethod(method);
         expr.setType(InvocationType.CONSTRUCTOR);

@@ -370,11 +370,6 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             for (MethodNode method : nonInitMethods) {
                 renderBody(method, false);
             }
-            for (MethodNode method : cls.getAsyncMethods()) {
-                writer.append("/*").softNewLine();
-                renderBody(method, false);
-                writer.append("*/").softNewLine();
-            }
             renderVirtualDeclarations(cls.getName(), virtualMethods);
         } catch (NamingException e) {
             throw new RenderingException("Error rendering class " + cls.getName() + ". See a cause for details", e);
@@ -475,6 +470,12 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             }
             writer.append(");").ws().append("}");
             debugEmitter.emitMethod(null);
+
+            if (!method.isAsync()) {
+                writer.append(",").newLine();
+                writer.append("\"").append(naming.getNameForAsync(ref)).append("\",").ws();
+                writer.append("$rt_asyncAdapter(").appendMethodBody(ref).append(')');
+            }
         }
         writer.append(");").newLine().outdent();
     }
@@ -524,6 +525,9 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             }
             writer.append(variableName(i));
         }
+        if (method.isAsync()) {
+            writer.append(',').ws().append("$return,").ws().append("$throw");
+        }
         writer.append(")").ws().append("{").softNewLine().indent();
         method.acceptVisitor(new MethodBodyRenderer());
         writer.outdent().append("}").newLine();
@@ -531,9 +535,13 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     }
 
     private class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
+        private boolean async;
+
         @Override
         public void visit(NativeMethodNode methodNode) {
             try {
+                this.async = methodNode.isAsync();
+                Renderer.this.async = methodNode.isAsync();
                 methodNode.getGenerator().generate(this, writer, methodNode.getReference());
             } catch (IOException e) {
                 throw new RenderingException("IO error occured", e);
@@ -544,6 +552,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         public void visit(RegularMethodNode method) {
             try {
                 Renderer.this.async = false;
+                this.async = false;
                 MethodReference ref = method.getReference();
                 for (int i = 0; i < method.getParameterDebugNames().size(); ++i) {
                     debugEmitter.emitVariable(method.getParameterDebugNames().get(i).toArray(new String[0]),
@@ -583,6 +592,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         public void visit(AsyncMethodNode methodNode) {
             try {
                 Renderer.this.async = true;
+                this.async = true;
                 MethodReference ref = methodNode.getReference();
                 for (int i = 0; i < methodNode.getParameterDebugNames().size(); ++i) {
                     debugEmitter.emitVariable(methodNode.getParameterDebugNames().get(i).toArray(new String[0]),
@@ -607,8 +617,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     writer.append(";").softNewLine();
                 }
                 for (int i = 0; i < methodNode.getBody().size(); ++i) {
-                    writer.append("function $part_").append(i).append("($input,").ws().append("$return,").ws()
-                            .append("$throw)").ws().append('{').indent().softNewLine();
+                    writer.append("function $part_").append(i).append("($input)").ws().append('{')
+                            .indent().softNewLine();
                     AsyncMethodPart part = methodNode.getBody().get(i);
                     if (part.getInputVariable() != null) {
                         writer.append(variableName(part.getInputVariable())).ws().append('=').ws().append("$input;")
@@ -617,7 +627,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     part.getStatement().acceptVisitor(Renderer.this);
                     writer.outdent().append('}').softNewLine();
                 }
-                writer.append("return $part_0;").softNewLine();
+                writer.append("return $part_0();").softNewLine();
             } catch (IOException e) {
                 throw new RenderingException("IO error occured", e);
             }
@@ -646,6 +656,21 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         @Override
         public <T> T getService(Class<T> type) {
             return services.getService(type);
+        }
+
+        @Override
+        public boolean isAsync() {
+            return async;
+        }
+
+        @Override
+        public String getErrorContinuation() {
+            return "$throw";
+        }
+
+        @Override
+        public String getCompleteContinuation() {
+            return "$return";
         }
     }
 
@@ -1404,7 +1429,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     expr.getArguments().get(0).acceptVisitor(this);
                 }
                 String className = naming.getNameFor(expr.getMethod().getClassName());
-                String name = naming.getNameFor(expr.getMethod());
+                String name = expr.getAsyncTarget() == null ? naming.getNameFor(expr.getMethod()) :
+                        naming.getNameForAsync(expr.getMethod());
                 String fullName = naming.getFullNameFor(expr.getMethod());
                 DeferredCallSite callSite = prevCallSite;
                 boolean shouldEraseCallSite = lastCallSite == null;

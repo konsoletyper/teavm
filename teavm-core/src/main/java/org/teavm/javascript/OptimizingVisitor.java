@@ -180,7 +180,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     }
 
     private boolean tryApplyConstructor(InvocationExpr expr) {
-        if (!expr.getMethod().getName().equals("<init>")) {
+        if (expr.getAsyncTarget() != null || !expr.getMethod().getName().equals("<init>")) {
             return false;
         }
         if (resultSequence == null || resultSequence.isEmpty()) {
@@ -211,7 +211,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         }
         Expr[] args = expr.getArguments().toArray(new Expr[0]);
         args = Arrays.copyOfRange(args, 1, args.length);
-        Expr constructrExpr = Expr.constructObject(expr.getMethod(), args);
+        InvocationExpr constructrExpr = Expr.constructObject(expr.getMethod(), args);
         constructrExpr.setLocation(expr.getLocation());
         assignment.setRightValue(constructrExpr);
         stats.reads[var.getIndex()]--;
