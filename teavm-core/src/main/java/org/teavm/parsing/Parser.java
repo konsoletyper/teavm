@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.JSRInlinerAdapter;
 import org.objectweb.asm.tree.*;
 import org.teavm.model.*;
 import org.teavm.optimization.UnreachableBasicBlockEliminator;
@@ -32,6 +33,12 @@ public final class Parser {
     }
 
     public static MethodHolder parseMethod(MethodNode node, String className, String fileName) {
+        MethodNode nodeWithoutJsr = new MethodNode(Opcodes.ASM5, node.access, node.name, node.desc, node.signature,
+                node.exceptions.toArray(new String[0]));
+        JSRInlinerAdapter adapter = new JSRInlinerAdapter(nodeWithoutJsr, node.access, node.name, node.desc,
+                node.signature, node.exceptions.toArray(new String[0]));
+        node.accept(adapter);
+        node = nodeWithoutJsr;
         ValueType[] signature = MethodDescriptor.parseSignature(node.desc);
         MethodHolder method = new MethodHolder(node.name, signature);
         parseModifiers(node.access, method);
@@ -59,8 +66,8 @@ public final class Parser {
             cls.setParent(null);
         }
         if (node.interfaces != null) {
-            for (Object obj : node.interfaces) {
-                cls.getInterfaces().add(((String)obj).replace('/', '.'));
+            for (String iface : node.interfaces) {
+                cls.getInterfaces().add(iface.replace('/', '.'));
             }
         }
         for (Object obj : node.fields) {
@@ -68,8 +75,7 @@ public final class Parser {
             cls.addField(parseField(fieldNode));
         }
         String fullFileName = node.name.substring(0, node.name.lastIndexOf('/') + 1) + node.sourceFile;
-        for (Object obj : node.methods) {
-            MethodNode methodNode = (MethodNode)obj;
+        for (MethodNode methodNode : node.methods) {
             cls.addMethod(parseMethod(methodNode, node.name, fullFileName));
         }
         if (node.outerClass != null) {
