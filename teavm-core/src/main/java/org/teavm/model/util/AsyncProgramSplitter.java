@@ -39,6 +39,7 @@ public class AsyncProgramSplitter {
         Part initialPart = new Part();
         initialPart.program = initialProgram;
         initialPart.blockSuccessors = new int[program.basicBlockCount()];
+        Arrays.fill(initialPart.blockSuccessors, -1);
         parts.add(initialPart);
         partMap.put(0L, 0);
         Step initialStep = new Step();
@@ -47,79 +48,80 @@ public class AsyncProgramSplitter {
         Queue<Step> queue = new ArrayDeque<>();
         queue.add(initialStep);
 
-        while (!queue.isEmpty()) {
+        taskLoop: while (!queue.isEmpty()) {
             Step step = queue.remove();
             BasicBlock targetBlock = step.targetPart.program.basicBlockAt(step.source);
             if (targetBlock.instructionCount() > 0) {
                 continue;
             }
             BasicBlock sourceBlock = program.basicBlockAt(step.source);
-            int end = step.sourceIndex;
-            boolean asyncOccured = false;
-            for (int i = step.sourceIndex; i < sourceBlock.getInstructions().size(); ++i) {
-                end = i;
+            int last = 0;
+            for (int i = 0; i < sourceBlock.getInstructions().size(); ++i) {
                 Instruction insn = sourceBlock.getInstructions().get(i);
                 if (insn instanceof InvokeInstruction) {
                     InvokeInstruction invoke = (InvokeInstruction)insn;
-                    if (asyncMethods.contains(invoke.getMethod())) {
-                        asyncOccured = true;
-                        long key = ((long)step.source << 32) | i;
-                        if (partMap.containsKey(key)) {
-                            step.targetPart.blockSuccessors[step.sourceIndex] = partMap.get(key);
-                            break;
-                        }
-                        Program nextProgram = createStubCopy(program);
-                        BasicBlock nextBlock = nextProgram.basicBlockAt(step.source);
-                        if (step.source > 0) {
-                            JumpInstruction jumpToNextBlock = new JumpInstruction();
-                            jumpToNextBlock.setTarget(nextBlock);
-                            nextProgram.basicBlockAt(0).getInstructions().add(jumpToNextBlock);
-                        }
-                        Part part = new Part();
-                        part.input = invoke.getReceiver() != null ? invoke.getReceiver().getIndex() : null;
-                        part.program = nextProgram;
-                        int partId = parts.size();
-                        part.blockSuccessors = new int[program.basicBlockCount()];
-                        Arrays.fill(part.blockSuccessors, partId);
-                        partMap.put(key, partId);
-                        step.targetPart.blockSuccessors[step.source] = partId;
-                        parts.add(part);
-                        Step next = new Step();
-                        next.source = step.source;
-                        next.sourceIndex = i + 1;
-                        next.targetPart = part;
-                        queue.add(next);
-                        break;
+                    if (!asyncMethods.contains(invoke.getMethod())) {
+                        continue;
                     }
+
+                    // If we met asynchronous invocation...
+                    // Copy portion of current block from last occurence (or from start) to i'th instruction.
+                    targetBlock.getInstructions().addAll(ProgramUtils.copyInstructions(sourceBlock,
+                            last, i + 1, targetBlock.getProgram()));
+                    ProgramUtils.copyTryCatches(sourceBlock, targetBlock.getProgram());
+                    last = i + 1;
+
+                    // If this instruction already separates program, end with current block and refer to the
+                    // existing part
+                    long key = ((long)step.source << 32) | i;
+                    if (partMap.containsKey(key)) {
+                        step.targetPart.blockSuccessors[targetBlock.getIndex()] = partMap.get(key);
+                        continue taskLoop;
+                    }
+
+                    // Create a new part
+                    Program nextProgram = createStubCopy(program);
+                    Part part = new Part();
+                    part.input = invoke.getReceiver() != null ? invoke.getReceiver().getIndex() : null;
+                    part.program = nextProgram;
+                    int partId = parts.size();
+                    parts.add(part);
+                    part.blockSuccessors = new int[program.basicBlockCount() + 1];
+                    Arrays.fill(part.blockSuccessors, -1);
+
+                    // Mark current instruction as a separator and remember which part is in charge.
+                    partMap.put(key, partId);
+                    step.targetPart.blockSuccessors[targetBlock.getIndex()] = partId;
+
+                    // Continue with a new block in the new part
+                    targetBlock = nextProgram.createBasicBlock();
+                    if (step.source > 0) {
+                        JumpInstruction jumpToNextBlock = new JumpInstruction();
+                        jumpToNextBlock.setTarget(targetBlock);
+                        nextProgram.basicBlockAt(0).getInstructions().add(jumpToNextBlock);
+                    }
+                    step.targetPart = part;
                 }
             }
-            targetBlock.getInstructions().addAll(ProgramUtils.copyInstructions(sourceBlock, step.sourceIndex, end + 1,
-                    targetBlock.getProgram()));
-            if (step.sourceIndex == 0) {
-                targetBlock.getPhis().addAll(ProgramUtils.copyPhis(sourceBlock, targetBlock.getProgram()));
-            }
-            ProgramUtils.copyTryCatches(sourceBlock, targetBlock.getProgram());
+            targetBlock.getInstructions().addAll(ProgramUtils.copyInstructions(sourceBlock,
+                    last, sourceBlock.getInstructions().size(), targetBlock.getProgram()));
             for (TryCatchBlock tryCatch : targetBlock.getTryCatchBlocks()) {
                 if (tryCatch.getHandler() != null) {
                     Step next = new Step();
                     next.source = tryCatch.getHandler().getIndex();
-                    next.sourceIndex = 0;
                     next.targetPart = step.targetPart;
                     queue.add(next);
                 }
             }
-            if (!asyncOccured) {
-                InstructionTransitionExtractor successorExtractor = new InstructionTransitionExtractor();
-                sourceBlock.getLastInstruction().acceptVisitor(successorExtractor);
-                for (BasicBlock successor : successorExtractor.getTargets()) {
-                    BasicBlock targetSuccessor = targetBlock.getProgram().basicBlockAt(successor.getIndex());
-                    if (targetSuccessor.instructionCount() == 0) {
-                        Step next = new Step();
-                        next.source = successor.getIndex();
-                        next.sourceIndex = 0;
-                        next.targetPart = step.targetPart;
-                        queue.add(next);
-                    }
+            InstructionTransitionExtractor successorExtractor = new InstructionTransitionExtractor();
+            sourceBlock.getLastInstruction().acceptVisitor(successorExtractor);
+            for (BasicBlock successor : successorExtractor.getTargets()) {
+                BasicBlock targetSuccessor = targetBlock.getProgram().basicBlockAt(successor.getIndex());
+                if (targetSuccessor.instructionCount() == 0) {
+                    Step next = new Step();
+                    next.source = successor.getIndex();
+                    next.targetPart = step.targetPart;
+                    queue.add(next);
                 }
             }
         }
@@ -164,6 +166,5 @@ public class AsyncProgramSplitter {
     private static class Step {
         Part targetPart;
         int source;
-        int sourceIndex;
     }
 }

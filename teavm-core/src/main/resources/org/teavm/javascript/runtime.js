@@ -397,7 +397,7 @@ function $rt_asyncAdapter(f) {
         var e;
         var args = Array.prototype.slice.apply(arguments);
         var $throw = args.pop();
-        var $return args.pop();
+        var $return = args.pop();
         try {
             var result = f.apply(this, args);
         } catch (e) {

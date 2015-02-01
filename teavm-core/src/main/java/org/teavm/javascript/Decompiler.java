@@ -205,7 +205,7 @@ public class Decompiler {
         for (int i = 0; i < splitter.size(); ++i) {
             AsyncMethodPart part = new AsyncMethodPart();
             part.setInputVariable(splitter.getInput(i));
-            part.setStatement(getRegularMethodStatement(splitter.getProgram(i), i, splitter.getBlockSuccessors(i)));
+            part.setStatement(getRegularMethodStatement(splitter.getProgram(i), splitter.getBlockSuccessors(i)));
             node.getBody().add(part);
         }
         Program program = method.getProgram();
@@ -226,7 +226,7 @@ public class Decompiler {
     public RegularMethodNode decompileRegularCacheMiss(MethodHolder method) {
         RegularMethodNode methodNode = new RegularMethodNode(method.getReference());
         Program program = method.getProgram();
-        methodNode.setBody(getRegularMethodStatement(program, 0, new int[program.basicBlockCount()]));
+        methodNode.setBody(getRegularMethodStatement(program, new int[program.basicBlockCount()]));
         for (int i = 0; i < program.variableCount(); ++i) {
             methodNode.getVariables().add(program.variableAt(i).getRegister());
         }
@@ -241,7 +241,7 @@ public class Decompiler {
         return methodNode;
     }
 
-    private Statement getRegularMethodStatement(Program program, int currentPart, int[] targetBlocks) {
+    private Statement getRegularMethodStatement(Program program, int[] targetBlocks) {
         lastBlockId = 1;
         graph = ProgramUtils.buildControlFlowGraph(program);
         indexer = new GraphIndexer(graph);
@@ -306,8 +306,8 @@ public class Decompiler {
                     if (insn.getLocation() != null) {
                         generator.setCurrentLocation(nodeLocation);
                     }
-                    if (targetBlocks[i] != currentPart && j == instructions.size() - 1) {
-                        generator.asyncTarget = targetBlocks[i];
+                    if (targetBlocks[node] >= 0 && j == instructions.size() - 1) {
+                        generator.asyncTarget = targetBlocks[node];
                     }
                     insn.acceptVisitor(generator);
                 }
