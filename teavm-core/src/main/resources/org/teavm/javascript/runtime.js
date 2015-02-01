@@ -406,6 +406,14 @@ function $rt_asyncAdapter(f) {
         return $return(result);
     }
 }
+function $rt_rootInvocationAdapter(f) {
+    return function() {
+        var args = Array.prototype.slice.apply(arguments);
+        args.push(function() {});
+        args.push(function() {});
+        return f.apply(this, args);
+    }
+}
 var $rt_stringPool_instance;
 function $rt_stringPool(strings) {
     $rt_stringPool_instance = new Array(strings.length);
@@ -420,11 +428,13 @@ var $rt_continueCounter = 0;
 function $rt_continue(f) {
    if ($rt_continueCounter++ == 10) {
        $rt_continueCounter = 0;
-       var self = f;
-       var args = arguments;
-       setTimeout(function() {
-           f.apply(self, args);
-       }, 0);
+       return function() {
+           var self = this;
+           var args = arguments;
+           setTimeout(function() {
+               f.apply(self, args);
+           }, 0);
+       };
    } else {
        return f;
    }

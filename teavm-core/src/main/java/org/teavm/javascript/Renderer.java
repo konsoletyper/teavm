@@ -526,7 +526,10 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             writer.append(variableName(i));
         }
         if (method.isAsync()) {
-            writer.append(',').ws().append("$return,").ws().append("$throw");
+            if (startParam < ref.parameterCount() + 1) {
+                writer.append(',').ws();
+            }
+            writer.append("$return,").ws().append("$throw");
         }
         writer.append(")").ws().append("{").softNewLine().indent();
         method.acceptVisitor(new MethodBodyRenderer());
@@ -1438,6 +1441,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     lastCallSite = callSite;
                 }
                 boolean virtual = false;
+                boolean hasParams = false;
                 switch (expr.getType()) {
                     case STATIC:
                         writer.append(fullName).append("(");
@@ -1447,12 +1451,14 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                                 writer.append(",").ws();
                             }
                             expr.getArguments().get(i).acceptVisitor(this);
+                            hasParams = true;
                         }
                         break;
                     case SPECIAL:
                         writer.append(fullName).append("(");
                         prevCallSite = debugEmitter.emitCallSite();
                         expr.getArguments().get(0).acceptVisitor(this);
+                        hasParams = true;
                         for (int i = 1; i < expr.getArguments().size(); ++i) {
                             writer.append(",").ws();
                             expr.getArguments().get(i).acceptVisitor(this);
@@ -1465,6 +1471,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                             if (i > 1) {
                                 writer.append(",").ws();
                             }
+                            hasParams = true;
                             expr.getArguments().get(i).acceptVisitor(this);
                         }
                         virtual = true;
@@ -1476,12 +1483,16 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                             if (i > 0) {
                                 writer.append(",").ws();
                             }
+                            hasParams = true;
                             expr.getArguments().get(i).acceptVisitor(this);
                         }
                         break;
                 }
                 if (expr.getAsyncTarget() != null) {
-                    writer.append(',').ws().append("$rt_continue($part_").append(expr.getAsyncTarget()).append(')');
+                    if (hasParams) {
+                        writer.append(',').ws();
+                    }
+                    writer.append("$rt_continue($part_").append(expr.getAsyncTarget()).append(')');
                 }
                 writer.append(')');
                 if (lastCallSite != null) {

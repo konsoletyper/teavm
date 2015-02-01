@@ -436,7 +436,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             renderer.renderStringPool();
             for (Map.Entry<String, TeaVMEntryPoint> entry : entryPoints.entrySet()) {
                 sourceWriter.append("var ").append(entry.getKey()).ws().append("=").ws()
-                        .appendMethodBody(entry.getValue().reference).append(";").softNewLine();
+                        .append("$rt_rootInvocationAdapter(")
+                        .appendMethodBody(entry.getValue().reference).append(");").softNewLine();
             }
             for (Map.Entry<String, String> entry : exportedClasses.entrySet()) {
                 sourceWriter.append("var ").append(entry.getKey()).ws().append("=").ws()

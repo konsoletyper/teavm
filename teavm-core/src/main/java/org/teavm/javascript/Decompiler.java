@@ -156,11 +156,11 @@ public class Decompiler {
     }
 
     public MethodNode decompile(MethodHolder method) {
-        return method.getModifiers().contains(ElementModifier.NATIVE) ? decompileNative(method, false) :
+        return method.getModifiers().contains(ElementModifier.NATIVE) ? decompileNative(method) :
                 !asyncMethods.contains(method.getReference()) ? decompileRegular(method) : decompileAsync(method);
     }
 
-    public NativeMethodNode decompileNative(MethodHolder method, boolean async) {
+    public NativeMethodNode decompileNative(MethodHolder method) {
         Generator generator = generators.get(method.getReference());
         if (generator == null) {
             AnnotationHolder annotHolder = method.getAnnotations().get(GeneratedBy.class.getName());
@@ -182,7 +182,7 @@ public class Decompiler {
                 method.getDescriptor()));
         methodNode.getModifiers().addAll(mapModifiers(method.getModifiers()));
         methodNode.setGenerator(generator);
-        methodNode.setAsync(async);
+        methodNode.setAsync(asyncMethods.contains(method.getReference()));
         return methodNode;
     }
 
