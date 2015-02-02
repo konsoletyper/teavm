@@ -392,6 +392,28 @@ function $rt_virtualMethods(cls) {
         }
     }
 }
+function $rt_asyncAdapter(f) {
+    return function() {
+        var e;
+        var args = Array.prototype.slice.apply(arguments);
+        var $throw = args.pop();
+        var $return = args.pop();
+        try {
+            var result = f.apply(this, args);
+        } catch (e) {
+            return $throw(e);
+        }
+        return $return(result);
+    }
+}
+function $rt_rootInvocationAdapter(f) {
+    return function() {
+        var args = Array.prototype.slice.apply(arguments);
+        args.push(function() {});
+        args.push(function() {});
+        return f.apply(this, args);
+    }
+}
 var $rt_stringPool_instance;
 function $rt_stringPool(strings) {
     $rt_stringPool_instance = new Array(strings.length);
@@ -401,6 +423,21 @@ function $rt_stringPool(strings) {
 }
 function $rt_s(index) {
     return $rt_stringPool_instance[index];
+}
+var $rt_continueCounter = 0;
+function $rt_continue(f) {
+   if ($rt_continueCounter++ == 10) {
+       $rt_continueCounter = 0;
+       return function() {
+           var self = this;
+           var args = arguments;
+           setTimeout(function() {
+               f.apply(self, args);
+           }, 0);
+       };
+   } else {
+       return f;
+   }
 }
 
 function $dbg_repr(obj) {

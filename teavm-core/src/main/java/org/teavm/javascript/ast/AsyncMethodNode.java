@@ -1,5 +1,5 @@
 /*
- *  Copyright 2013 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,23 +22,19 @@ import org.teavm.model.MethodReference;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-public class RegularMethodNode extends MethodNode {
-    private Statement body;
+public class AsyncMethodNode extends MethodNode {
+    private List<AsyncMethodPart> body = new ArrayList<>();
     private List<Integer> variables = new ArrayList<>();
     private List<Set<String>> parameterDebugNames = new ArrayList<>();
 
-    public RegularMethodNode(MethodReference reference) {
+    public AsyncMethodNode(MethodReference reference) {
         super(reference);
     }
 
-    public Statement getBody() {
+    public List<AsyncMethodPart> getBody() {
         return body;
-    }
-
-    public void setBody(Statement body) {
-        this.body = body;
     }
 
     public List<Integer> getVariables() {
@@ -56,6 +52,6 @@ public class RegularMethodNode extends MethodNode {
 
     @Override
     public boolean isAsync() {
-        return false;
+        return true;
     }
 }

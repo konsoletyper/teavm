@@ -15,6 +15,8 @@
  */
 package org.teavm.javascript;
 
+import org.teavm.javascript.ast.AsyncMethodNode;
+import org.teavm.javascript.ast.AsyncMethodPart;
 import org.teavm.javascript.ast.RegularMethodNode;
 import org.teavm.model.Program;
 
@@ -36,6 +38,29 @@ public class Optimizer {
         method.getVariables().subList(unusedEliminator.lastIndex, method.getVariables().size()).clear();
         RedundantLabelEliminator labelEliminator = new RedundantLabelEliminator();
         method.getBody().acceptVisitor(labelEliminator);
+        for (int i = 0; i < method.getVariables().size(); ++i) {
+            method.getVariables().set(i, i);
+        }
+    }
+
+    public void optimize(AsyncMethodNode method, Program program) {
+        ReadWriteStatsBuilder stats = new ReadWriteStatsBuilder(method.getVariables().size());
+        stats.analyze(program);
+        OptimizingVisitor optimizer = new OptimizingVisitor(stats);
+        for (AsyncMethodPart part : method.getBody()) {
+            part.getStatement().acceptVisitor(optimizer);
+            part.setStatement(optimizer.resultStmt);
+        }
+        int paramCount = method.getReference().parameterCount();
+        UnusedVariableEliminator unusedEliminator = new UnusedVariableEliminator(paramCount, method.getVariables());
+        for (AsyncMethodPart part : method.getBody()) {
+            part.getStatement().acceptVisitor(unusedEliminator);
+        }
+        method.getVariables().subList(unusedEliminator.lastIndex, method.getVariables().size()).clear();
+        RedundantLabelEliminator labelEliminator = new RedundantLabelEliminator();
+        for (AsyncMethodPart part : method.getBody()) {
+            part.getStatement().acceptVisitor(labelEliminator);
+        }
         for (int i = 0; i < method.getVariables().size(); ++i) {
             method.getVariables().set(i, i);
         }

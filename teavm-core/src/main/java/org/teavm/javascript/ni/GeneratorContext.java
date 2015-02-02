@@ -31,4 +31,10 @@ public interface GeneratorContext extends ServiceRepository {
     ClassLoader getClassLoader();
 
     Properties getProperties();
+
+    boolean isAsync();
+
+    String getErrorContinuation();
+
+    String getCompleteContinuation();
 }

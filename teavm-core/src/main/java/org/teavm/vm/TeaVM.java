@@ -436,7 +436,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             renderer.renderStringPool();
             for (Map.Entry<String, TeaVMEntryPoint> entry : entryPoints.entrySet()) {
                 sourceWriter.append("var ").append(entry.getKey()).ws().append("=").ws()
-                        .appendMethodBody(entry.getValue().reference).append(";").softNewLine();
+                        .append("$rt_rootInvocationAdapter(")
+                        .appendMethodBody(entry.getValue().reference).append(");").softNewLine();
             }
             for (Map.Entry<String, String> entry : exportedClasses.entrySet()) {
                 sourceWriter.append("var ").append(entry.getKey()).ws().append("=").ws()
@@ -526,8 +527,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     }
 
     private List<ClassNode> modelToAst(ListableClassHolderSource classes) {
+        AsyncMethodFinder asyncFinder = new AsyncMethodFinder(dependencyChecker.getCallGraph(), diagnostics);
+        asyncFinder.find(classes);
+
         progressListener.phaseStarted(TeaVMPhase.DECOMPILATION, classes.getClassNames().size());
-        Decompiler decompiler = new Decompiler(classes, classLoader);
+        Decompiler decompiler = new Decompiler(classes, classLoader, asyncFinder.getAsyncMethods());
         decompiler.setRegularMethodCache(incremental ? astCache : null);
 
         for (Map.Entry<MethodReference, Generator> entry : methodGenerators.entrySet()) {

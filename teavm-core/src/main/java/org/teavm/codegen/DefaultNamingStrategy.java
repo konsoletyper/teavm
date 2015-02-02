@@ -57,6 +57,15 @@ public class DefaultNamingStrategy implements NamingStrategy {
 
     @Override
     public String getNameFor(MethodReference method) {
+        return getNameFor(method, false);
+    }
+
+    @Override
+    public String getNameForAsync(MethodReference method) throws NamingException {
+        return getNameFor(method, true);
+    }
+
+    private String getNameFor(MethodReference method, boolean async) {
         MethodReference origMethod = method;
         method = getRealMethod(method);
         if (method == null) {
@@ -67,7 +76,7 @@ public class DefaultNamingStrategy implements NamingStrategy {
         if (methodHolder.hasModifier(ElementModifier.STATIC) ||
                 method.getDescriptor().getName().equals("<init>") ||
                 methodHolder.getLevel() == AccessLevel.PRIVATE) {
-            String key = method.toString();
+            String key = (async ? "A" : "S") + method.toString();
             String alias = privateAliases.get(key);
             if (alias == null) {
                 alias = aliasProvider.getAlias(method);
@@ -75,7 +84,7 @@ public class DefaultNamingStrategy implements NamingStrategy {
             }
             return alias;
         } else {
-            String key = method.getDescriptor().toString();
+            String key = (async ? "A" : "S") + method.getDescriptor().toString();
             String alias = aliases.get(key);
             if (alias == null) {
                 alias = aliasProvider.getAlias(method);

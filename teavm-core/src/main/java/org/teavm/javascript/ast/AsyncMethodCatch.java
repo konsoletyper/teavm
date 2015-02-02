@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -22,16 +22,10 @@ import java.util.List;
  *
  * @author Alexey Andreev
  */
-public class TryCatchStatement extends Statement {
-    private List<Statement> protectedBody = new ArrayList<>();
+public class AsyncMethodCatch {
     private List<Statement> handler = new ArrayList<>();
     private String exceptionType;
     private Integer exceptionVariable;
-    private boolean async;
-
-    public List<Statement> getProtectedBody() {
-        return protectedBody;
-    }
 
     public List<Statement> getHandler() {
         return handler;
@@ -51,18 +45,5 @@ public class TryCatchStatement extends Statement {
 
     public void setExceptionVariable(Integer exceptionVariable) {
         this.exceptionVariable = exceptionVariable;
-    }
-
-    public boolean isAsync() {
-        return async;
-    }
-
-    public void setAsync(boolean async) {
-        this.async = async;
-    }
-
-    @Override
-    public void acceptVisitor(StatementVisitor visitor) {
-        visitor.visit(this);
     }
 }

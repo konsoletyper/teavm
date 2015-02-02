@@ -37,6 +37,7 @@ class StatementGenerator implements InstructionVisitor {
     Program program;
     ClassHolderSource classSource;
     private NodeLocation currentLocation;
+    Integer asyncTarget;
 
     public void setCurrentLocation(NodeLocation currentLocation) {
         this.currentLocation = currentLocation;
@@ -546,7 +547,7 @@ class StatementGenerator implements InstructionVisitor {
         for (int i = 0; i < insn.getArguments().size(); ++i) {
             exprArgs[i] = Expr.var(insn.getArguments().get(i).getIndex());
         }
-        Expr invocationExpr;
+        InvocationExpr invocationExpr;
         if (insn.getInstance() != null) {
             if (insn.getType() == InvocationType.VIRTUAL) {
                 invocationExpr = Expr.invoke(insn.getMethod(), Expr.var(insn.getInstance().getIndex()), exprArgs);
@@ -557,8 +558,15 @@ class StatementGenerator implements InstructionVisitor {
         } else {
             invocationExpr = Expr.invokeStatic(insn.getMethod(), exprArgs);
         }
-        if (insn.getReceiver() != null) {
-            assign(invocationExpr, insn.getReceiver());
+        invocationExpr.setAsyncTarget(asyncTarget);
+        if (asyncTarget == null) {
+            if (insn.getReceiver() != null) {
+                assign(invocationExpr, insn.getReceiver());
+            } else {
+                AssignmentStatement stmt = Statement.assign(null, invocationExpr);
+                stmt.setLocation(currentLocation);
+                statements.add(stmt);
+            }
         } else {
             AssignmentStatement stmt = Statement.assign(null, invocationExpr);
             stmt.setLocation(currentLocation);

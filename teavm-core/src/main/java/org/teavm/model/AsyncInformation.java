@@ -1,5 +1,5 @@
 /*
- *  Copyright 2013 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,16 +13,24 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript.ast;
+package org.teavm.model;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-public interface MethodNodeVisitor {
-    void visit(RegularMethodNode methodNode);
+public class AsyncInformation {
+    private Set<MethodReference> syncMethods = new HashSet<>();
+    private Set<MethodReference> asyncMethods = new HashSet<>();
 
-    void visit(AsyncMethodNode methodNode);
+    public Set<MethodReference> getSyncMethods() {
+        return syncMethods;
+    }
 
-    void visit(NativeMethodNode methodNode);
+    public Set<MethodReference> getAsyncMethods() {
+        return asyncMethods;
+    }
 }
