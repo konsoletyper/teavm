@@ -15,11 +15,13 @@
  */
 package org.teavm.classlib.java.lang;
 
+
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.javascript.ni.GeneratedBy;
 import org.teavm.javascript.ni.InjectedBy;
 import org.teavm.javascript.ni.Rename;
 import org.teavm.javascript.ni.Superclass;
+import org.teavm.runtime.Async;
 
 /**
  *
@@ -62,26 +64,37 @@ public class TObject {
     @Override
     protected native Object clone() throws TCloneNotSupportedException;
 
+    @GeneratedBy(ObjectNativeGenerator.class)
     @Rename("notify")
-    public final void notify0() {
-    }
+    public native final void notify0();
 
+    
+    @GeneratedBy(ObjectNativeGenerator.class)
     @Rename("notifyAll")
-    public final void notifyAll0() {
-    }
-
-    @SuppressWarnings("unused")
+    public native final void notifyAll0();
+    
+    
     @Rename("wait")
-    public final void wait0(long timeout) throws TInterruptedException {
+    public final void wait0(long timeout) throws TInterruptedException{
+        try {
+            wait(timeout, 0);
+        } catch ( InterruptedException ex){
+            throw new TInterruptedException();
+        }
     }
-
-    @SuppressWarnings("unused")
+    
+    @Async
+    @GeneratedBy(ObjectNativeGenerator.class)
     @Rename("wait")
-    public final void wait0(long timeout, int nanos) throws TInterruptedException {
-    }
+    public native final void wait0(long timeout, int nanos) throws TInterruptedException;
 
     @Rename("wait")
     public final void wait0() throws TInterruptedException {
+        try {
+            wait(0l);
+        } catch (InterruptedException ex) {
+            throw new TInterruptedException();
+        }
     }
 
     @Override

@@ -15,6 +15,7 @@
  */
 package org.teavm.samples.async;
 
+
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
@@ -27,8 +28,44 @@ public final class AsyncProgram {
         withoutAsync();
         System.out.println();
         withAsync();
+        
+        System.out.println();
+        
+       
+        
+        final Object lock = new Object();
+        
+        Thread t = new Thread(new Runnable(){
+
+            @Override
+            public void run() {
+                try {
+                    doRun(lock);
+                } catch (InterruptedException ex){
+                    System.out.println(ex.getMessage());
+                }
+            }
+            
+        });
+        t.start();
+                
+        System.out.println("Now trying wait...");
+        
+        lock.wait(20000);
+        System.out.println("Finished waiting");
+        
     }
 
+    private static void doRun(Object lock) throws InterruptedException {
+        System.out.println("Executing timer task");
+        Thread.sleep(2000);
+        System.out.println("Calling lock.notify()");
+        lock.notify();
+        System.out.println("Finished calling lock.notify()");
+        Thread.sleep(5000);
+        System.out.println("Finished another 5 second sleep");
+    }
+    
     private static void withoutAsync() {
         System.out.println("Start sync");
         for (int i = 0; i < 20; ++i) {
@@ -54,6 +91,9 @@ public final class AsyncProgram {
                 Thread.sleep(1000);
             }
         }
+        System.out.println("2nd Thread.sleep in same method");
+        Thread.sleep(1000);
+        
         System.out.println("Complete async");
     }
 }

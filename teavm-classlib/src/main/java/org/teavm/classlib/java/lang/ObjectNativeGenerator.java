@@ -43,6 +43,15 @@ public class ObjectNativeGenerator implements Generator, Injector, DependencyPlu
             case "clone":
                 generateClone(context, writer);
                 break;
+            case "wait":
+                generateWait(context, writer);
+                break;
+            case "notify":
+                generateNotify(context, writer);
+                break;
+            case "notifyAll":
+                generateNotifyAll(context, writer);
+                break;
         }
     }
 
@@ -70,6 +79,10 @@ public class ObjectNativeGenerator implements Generator, Injector, DependencyPlu
             case "wrap":
                 method.getVariable(1).connect(method.getResult());
                 break;
+            //case "wait":
+            //    method.getVariable(0).connect(method.getResult());
+            //    break;
+                
         }
     }
 
@@ -107,4 +120,66 @@ public class ObjectNativeGenerator implements Generator, Injector, DependencyPlu
     private void generateWrap(InjectorContext context) throws IOException {
         context.writeExpr(context.getArgument(0));
     }
+    
+    private void generateWait(GeneratorContext context, SourceWriter writer) throws IOException {
+        String pname = context.getParameterName(1);
+        String obj = context.getParameterName(0);
+        writer.append("(function(){").indent().softNewLine();
+        writer.append("var completed = false;").softNewLine();
+        writer.append("var retCallback = ").append(context.getCompleteContinuation()).append(";").softNewLine();
+        writer.append("console.log(retCallback);").softNewLine();
+        writer.append("var callback = function(){").indent().softNewLine();
+        writer.append("if (completed){return;} completed=true;").softNewLine();
+        writer.append("retCallback();").softNewLine();
+        writer.outdent().append("};").softNewLine();
+        writer.append("if (").append(pname).append(">0){").indent().softNewLine();
+        writer.append("setTimeout(callback, ").append(pname).append(");").softNewLine();
+        writer.outdent().append("}").softNewLine();
+        addNotifyListener(context, writer, "callback");
+        writer.outdent().append("})();").softNewLine();
+        
+        
+        
+    }
+    
+    private void generateNotify(GeneratorContext context, SourceWriter writer) throws IOException {
+        sendNotify(context, writer);
+    }
+    
+    private void generateNotifyAll(GeneratorContext context, SourceWriter writer) throws IOException {
+        sendNotifyAll(context, writer);
+    }
+    
+    private String getNotifyListeners(GeneratorContext context){
+        return context.getParameterName(0)+".__notifyListeners";
+    }
+    
+    private void addNotifyListener(GeneratorContext context, SourceWriter writer, String callback) throws IOException {
+        String lArr = getNotifyListeners(context);
+        writer.append(lArr).append("=").append(lArr).append("||[];").softNewLine();
+        writer.append(lArr).append(".push(").append(callback).append(");").softNewLine();
+    }
+    
+    private void sendNotify(GeneratorContext context, SourceWriter writer) throws IOException {
+        String lArr = getNotifyListeners(context);
+        writer.append("setTimeout(function(){").indent().softNewLine();
+        writer.append("if (!").append(lArr).append(" || ").append(lArr).append(".length===0){return;}").softNewLine();
+        writer.append("var m = ").append(lArr).append(".shift();").softNewLine();
+        writer.append("console.log('Notify callback : '+m);").softNewLine();
+        writer.append("m.apply(null);").softNewLine();
+        writer.outdent().append("}, 0);").softNewLine();
+    }
+    
+    private void sendNotifyAll(GeneratorContext context, SourceWriter writer) throws IOException {
+        String obj = context.getParameterName(0);
+        String lArr = getNotifyListeners(context);
+        writer.append("setTimeout(function(){").indent().softNewLine();
+        writer.append("if (!").append(lArr).append("){return;}").softNewLine();
+        writer.append("while (").append(lArr).append(".length>0){").indent().softNewLine();
+        writer.append(lArr).append(".shift().call(null);").softNewLine();
+        writer.outdent().append("}");
+        writer.outdent().append("}, 0);").softNewLine();
+        
+    }
+    
 }

@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
+import org.teavm.dependency.PluggableDependency;
 import org.teavm.javascript.ni.GeneratedBy;
 import org.teavm.runtime.Async;
 
@@ -44,6 +45,11 @@ public class TThread extends TObject implements TRunnable {
         this.target = target;
     }
 
+    @PluggableDependency(ThreadNativeGenerator.class)
+    @GeneratedBy(ThreadNativeGenerator.class)
+    public native void start();
+        
+    
     @Override
     public void run() {
         if (target != null) {
