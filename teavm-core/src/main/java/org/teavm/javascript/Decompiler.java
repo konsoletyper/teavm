@@ -203,9 +203,8 @@ public class Decompiler {
         AsyncProgramSplitter splitter = new AsyncProgramSplitter(asyncMethods);
         splitter.split(method.getProgram());
         for (int i = 0; i < splitter.size(); ++i) {
-            AsyncMethodPart part = new AsyncMethodPart();
+            AsyncMethodPart part = getRegularMethodStatement(splitter.getProgram(i), splitter.getBlockSuccessors(i));
             part.setInputVariable(splitter.getInput(i));
-            part.setStatement(getRegularMethodStatement(splitter.getProgram(i), splitter.getBlockSuccessors(i)));
             node.getBody().add(part);
         }
         Program program = method.getProgram();
@@ -226,7 +225,9 @@ public class Decompiler {
     public RegularMethodNode decompileRegularCacheMiss(MethodHolder method) {
         RegularMethodNode methodNode = new RegularMethodNode(method.getReference());
         Program program = method.getProgram();
-        methodNode.setBody(getRegularMethodStatement(program, new int[program.basicBlockCount()]));
+        int[] targetBlocks = new int[program.basicBlockCount()];
+        Arrays.fill(targetBlocks, -1);
+        methodNode.setBody(getRegularMethodStatement(program, targetBlocks).getStatement());
         for (int i = 0; i < program.variableCount(); ++i) {
             methodNode.getVariables().add(program.variableAt(i).getRegister());
         }
@@ -241,7 +242,8 @@ public class Decompiler {
         return methodNode;
     }
 
-    private Statement getRegularMethodStatement(Program program, int[] targetBlocks) {
+    private AsyncMethodPart getRegularMethodStatement(Program program, int[] targetBlocks) {
+        AsyncMethodPart result = new AsyncMethodPart();
         lastBlockId = 1;
         graph = ProgramUtils.buildControlFlowGraph(program);
         indexer = new GraphIndexer(graph);
@@ -297,6 +299,7 @@ public class Decompiler {
                 InstructionLocation lastLocation = null;
                 NodeLocation nodeLocation = null;
                 List<Instruction> instructions = generator.currentBlock.getInstructions();
+                boolean asyncInvocation = false;
                 for (int j = 0; j < instructions.size(); ++j) {
                     Instruction insn = generator.currentBlock.getInstructions().get(j);
                     if (insn.getLocation() != null && lastLocation != insn.getLocation()) {
@@ -308,26 +311,48 @@ public class Decompiler {
                     }
                     if (targetBlocks[node] >= 0 && j == instructions.size() - 1) {
                         generator.asyncTarget = targetBlocks[node];
+                        asyncInvocation = true;
                     }
                     insn.acceptVisitor(generator);
                 }
+                boolean hasAsyncCatch = false;
                 for (TryCatchBlock tryCatch : generator.currentBlock.getTryCatchBlocks()) {
-                    TryCatchStatement tryCatchStmt = new TryCatchStatement();
-                    tryCatchStmt.setExceptionType(tryCatch.getExceptionType());
-                    tryCatchStmt.setExceptionVariable(tryCatch.getExceptionVariable().getIndex());
-                    tryCatchStmt.getProtectedBody().addAll(generator.statements);
-                    generator.statements.clear();
-                    generator.statements.add(tryCatchStmt);
-                    Statement handlerStmt = generator.generateJumpStatement(tryCatch.getHandler());
-                    if (handlerStmt != null) {
-                        tryCatchStmt.getHandler().add(handlerStmt);
+                    if (asyncInvocation) {
+                        TryCatchStatement tryCatchStmt = new TryCatchStatement();
+                        tryCatchStmt.setExceptionType(tryCatch.getExceptionType());
+                        tryCatchStmt.setExceptionVariable(tryCatch.getExceptionVariable().getIndex());
+                        tryCatchStmt.getProtectedBody().addAll(generator.statements);
+                        generator.statements.clear();
+                        generator.statements.add(tryCatchStmt);
+                        Statement handlerStmt = generator.generateJumpStatement(tryCatch.getHandler());
+                        if (handlerStmt != null) {
+                            tryCatchStmt.getHandler().add(handlerStmt);
+                        }
+                    } else {
+                        AsyncMethodCatch asyncCatch = new AsyncMethodCatch();
+                        asyncCatch.setExceptionType(tryCatch.getExceptionType());
+                        asyncCatch.setExceptionVariable(tryCatch.getExceptionVariable().getIndex());
+                        Statement handlerStmt = generator.generateJumpStatement(tryCatch.getHandler());
+                        if (handlerStmt != null) {
+                            asyncCatch.getHandler().add(handlerStmt);
+                        }
+                        result.getCatches().add(asyncCatch);
+                        hasAsyncCatch = true;
                     }
+                }
+                if (hasAsyncCatch) {
+                    TryCatchStatement guardTryCatch = new TryCatchStatement();
+                    guardTryCatch.setAsync(true);
+                    guardTryCatch.getProtectedBody().addAll(generator.statements);
+                    generator.statements.clear();
+                    generator.statements.add(guardTryCatch);
                 }
                 block.body.addAll(generator.statements);
             }
         }
-        SequentialStatement result = new SequentialStatement();
-        result.getSequence().addAll(rootStmt.getBody());
+        SequentialStatement resultBody = new SequentialStatement();
+        resultBody.getSequence().addAll(rootStmt.getBody());
+        result.setStatement(resultBody);
         return result;
     }
 

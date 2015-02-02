@@ -69,6 +69,14 @@ public class AsyncProgramSplitter {
                     targetBlock.getInstructions().addAll(ProgramUtils.copyInstructions(sourceBlock,
                             last, i + 1, targetBlock.getProgram()));
                     ProgramUtils.copyTryCatches(sourceBlock, targetBlock.getProgram());
+                    for (TryCatchBlock tryCatch : targetBlock.getTryCatchBlocks()) {
+                        if (tryCatch.getHandler() != null) {
+                            Step next = new Step();
+                            next.source = tryCatch.getHandler().getIndex();
+                            next.targetPart = step.targetPart;
+                            queue.add(next);
+                        }
+                    }
                     last = i + 1;
 
                     // If this instruction already separates program, end with current block and refer to the

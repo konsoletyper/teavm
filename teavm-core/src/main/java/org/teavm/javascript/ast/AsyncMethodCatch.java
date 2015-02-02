@@ -22,28 +22,28 @@ import java.util.List;
  *
  * @author Alexey Andreev
  */
-public class AsyncMethodPart {
-    private Statement statement;
-    private Integer inputVariable;
-    private List<AsyncMethodCatch> catches = new ArrayList<>();
+public class AsyncMethodCatch {
+    private List<Statement> handler = new ArrayList<>();
+    private String exceptionType;
+    private Integer exceptionVariable;
 
-    public Statement getStatement() {
-        return statement;
+    public List<Statement> getHandler() {
+        return handler;
     }
 
-    public void setStatement(Statement statement) {
-        this.statement = statement;
+    public String getExceptionType() {
+        return exceptionType;
     }
 
-    public Integer getInputVariable() {
-        return inputVariable;
+    public void setExceptionType(String exceptionType) {
+        this.exceptionType = exceptionType;
     }
 
-    public void setInputVariable(Integer inputVariable) {
-        this.inputVariable = inputVariable;
+    public Integer getExceptionVariable() {
+        return exceptionVariable;
     }
 
-    public List<AsyncMethodCatch> getCatches() {
-        return catches;
+    public void setExceptionVariable(Integer exceptionVariable) {
+        this.exceptionVariable = exceptionVariable;
     }
 }

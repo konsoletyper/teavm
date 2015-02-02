@@ -939,11 +939,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             if (statement.getLocation() != null) {
                 pushLocation(statement.getLocation());
             }
-            if (!async) {
-                writer.append("$rt_throw(");
-            } else {
-                writer.append("return $throw(");
-            }
+            writer.append("$rt_throw(");
             prevCallSite = debugEmitter.emitCallSite();
             statement.getException().acceptVisitor(this);
             writer.append(");").softNewLine();
