@@ -15,6 +15,7 @@
  */
 package org.teavm.javascript;
 
+import java.util.List;
 import org.teavm.javascript.ast.AsyncMethodNode;
 import org.teavm.javascript.ast.AsyncMethodPart;
 import org.teavm.javascript.ast.RegularMethodNode;
@@ -43,9 +44,11 @@ public class Optimizer {
         }
     }
 
-    public void optimize(AsyncMethodNode method, Program program) {
+    public void optimize(AsyncMethodNode method, List<Program> programs) {
         ReadWriteStatsBuilder stats = new ReadWriteStatsBuilder(method.getVariables().size());
-        stats.analyze(program);
+        for (Program program : programs) {
+            stats.analyze(program);
+        }
         OptimizingVisitor optimizer = new OptimizingVisitor(stats);
         for (AsyncMethodPart part : method.getBody()) {
             part.getStatement().acceptVisitor(optimizer);
