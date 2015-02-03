@@ -30,10 +30,10 @@ import org.teavm.model.MethodReference;
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public class ThreadNativeGenerator  implements Generator, DependencyPlugin {
-    
-    private static final MethodReference runRef = new MethodReference(Thread.class,
-            "run", void.class);
-    
+
+    private static final MethodReference launchRef = new MethodReference(Thread.class,
+            "launch", Thread.class, void.class);
+
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
         if (methodRef.getName().equals("sleep")) {
@@ -45,17 +45,18 @@ public class ThreadNativeGenerator  implements Generator, DependencyPlugin {
         }
     }
 
-    
-    
+    @Override
     public void methodAchieved(DependencyAgent agent, MethodDependency method, CallLocation location) {
         switch (method.getReference().getName()) {
             case "start": {
-                MethodDependency performMethod = agent.linkMethod(runRef, null);
+                MethodDependency performMethod = agent.linkMethod(launchRef, null);
+                method.getVariable(0).connect(performMethod.getVariable(1));
                 performMethod.use();
                 break;
             }
         }
     }
+
     private void generateSleep(GeneratorContext context, SourceWriter writer) throws IOException {
         writer.append("setTimeout(function() {").indent().softNewLine();
         writer.append(context.getCompleteContinuation()).append("();").softNewLine();
@@ -67,10 +68,11 @@ public class ThreadNativeGenerator  implements Generator, DependencyPlugin {
         writer.append(context.getCompleteContinuation()).append("();").softNewLine();
         writer.outdent().append("},").ws().append("0);").softNewLine();
     }
-    
+
     private void generateStart(GeneratorContext context, SourceWriter writer) throws IOException {
         String obj = context.getParameterName(0);
-        
-        writer.append("setTimeout(function() {").append(obj).append(".").appendMethod(runRef).append("();},0);").softNewLine();
+
+        writer.append("setTimeout(function() { $rt_rootInvocationAdapter(").appendMethodBody(launchRef).append(")(")
+                .append(obj).append(");},0);").softNewLine();
     }
 }

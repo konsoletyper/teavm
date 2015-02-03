@@ -48,8 +48,11 @@ public class TThread extends TObject implements TRunnable {
     @PluggableDependency(ThreadNativeGenerator.class)
     @GeneratedBy(ThreadNativeGenerator.class)
     public native void start();
-        
-    
+
+    private static void launch(TThread thread) {
+        thread.run();
+    }
+
     @Override
     public void run() {
         if (target != null) {
