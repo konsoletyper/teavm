@@ -24,7 +24,11 @@ import org.teavm.runtime.Async;
  * @author Alexey Andreev
  */
 public class TThread extends TObject implements TRunnable {
-    private static TThread currentThread = new TThread(TString.wrap("main"));
+    private static TThread mainThread = new TThread(TString.wrap("main"));
+    private static TThread currentThread = mainThread;
+    private static long nextId = 1;
+    private static int activeCount = 1;
+    private long id;
     private TString name;
     private TRunnable target;
 
@@ -33,16 +37,17 @@ public class TThread extends TObject implements TRunnable {
     }
 
     public TThread(TString name) {
-        this(name, null);
+        this(null, name);
     }
 
     public TThread(TRunnable target) {
-        this(null, target);
+        this(target, null );
     }
 
-    public TThread(TString name, TRunnable target) {
+    public TThread(TRunnable target, TString name ) {
         this.name = name;
         this.target = target;
+        id=nextId++;
     }
 
     @PluggableDependency(ThreadNativeGenerator.class)
@@ -50,7 +55,23 @@ public class TThread extends TObject implements TRunnable {
     public native void start();
 
     private static void launch(TThread thread) {
-        thread.run();
+        try {
+            activeCount++;
+            setCurrentThread(thread);
+            thread.run();
+        } finally {
+            activeCount--;
+            setCurrentThread(mainThread);
+        }
+        
+        
+    }
+    
+    private static void setCurrentThread(TThread thread){
+        currentThread = thread;
+    }
+    private static TThread getMainThread(){
+        return mainThread;
     }
 
     @Override
@@ -84,11 +105,11 @@ public class TThread extends TObject implements TRunnable {
     }
 
     public static int activeCount() {
-        return 1;
+        return activeCount;
     }
 
     public long getId() {
-        return 1;
+        return id;
     }
 
     public static boolean holdsLock(@SuppressWarnings("unused") TObject obj) {

@@ -71,7 +71,6 @@ public class ThreadNativeGenerator  implements Generator, DependencyPlugin {
 
     private void generateStart(GeneratorContext context, SourceWriter writer) throws IOException {
         String obj = context.getParameterName(0);
-
         writer.append("setTimeout(function() { $rt_rootInvocationAdapter(").appendMethodBody(launchRef).append(")(")
                 .append(obj).append(");},0);").softNewLine();
     }

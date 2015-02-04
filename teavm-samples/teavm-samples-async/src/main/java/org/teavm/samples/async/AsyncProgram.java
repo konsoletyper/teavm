@@ -46,9 +46,9 @@ public final class AsyncProgram {
                 }
             }
             
-        });
+        }, "Test Thread");
         t.start();
-                
+        System.out.println("Should be main -> Current thread is "+Thread.currentThread().getName());   
         System.out.println("Now trying wait...");
         
         lock.wait(20000);
@@ -57,12 +57,16 @@ public final class AsyncProgram {
     }
 
     private static void doRun(Object lock) throws InterruptedException {
+        System.out.println("Current thread is "+Thread.currentThread().getName());
         System.out.println("Executing timer task");
         Thread.sleep(2000);
+        System.out.println("Current thread is "+Thread.currentThread().getName());
         System.out.println("Calling lock.notify()");
         lock.notify();
+        System.out.println("Current thread is "+Thread.currentThread().getName());
         System.out.println("Finished calling lock.notify()");
         Thread.sleep(5000);
+        System.out.println("Current thread is "+Thread.currentThread().getName());
         System.out.println("Finished another 5 second sleep");
     }
     
