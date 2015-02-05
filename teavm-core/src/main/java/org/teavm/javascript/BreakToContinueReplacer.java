@@ -112,4 +112,8 @@ class BreakToContinueReplacer implements StatementVisitor {
         visitSequence(statement.getProtectedBody());
         visitSequence(statement.getHandler());
     }
+
+    @Override
+    public void visit(RestoreAsyncStatement statement) {
+    }
 }

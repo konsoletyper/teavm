@@ -15,17 +15,12 @@
  */
 package org.teavm.javascript.ast;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  *
  * @author Alexey Andreev
  */
 public class AsyncMethodPart {
     private Statement statement;
-    private Integer inputVariable;
-    private List<AsyncMethodCatch> catches = new ArrayList<>();
 
     public Statement getStatement() {
         return statement;
@@ -33,17 +28,5 @@ public class AsyncMethodPart {
 
     public void setStatement(Statement statement) {
         this.statement = statement;
-    }
-
-    public Integer getInputVariable() {
-        return inputVariable;
-    }
-
-    public void setInputVariable(Integer inputVariable) {
-        this.inputVariable = inputVariable;
-    }
-
-    public List<AsyncMethodCatch> getCatches() {
-        return catches;
     }
 }

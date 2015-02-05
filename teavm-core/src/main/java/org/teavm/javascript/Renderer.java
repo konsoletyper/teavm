@@ -529,7 +529,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             if (startParam < ref.parameterCount() + 1) {
                 writer.append(',').ws();
             }
-            writer.append("$return,").ws().append("$throw");
+            writer.append("$return");
         }
         writer.append(")").ws().append("{").softNewLine().indent();
         method.acceptVisitor(new MethodBodyRenderer());
@@ -609,6 +609,16 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 for (int i = ref.parameterCount() + 1; i < variableCount; ++i) {
                     variableNames.add(variableName(i));
                 }
+                TryCatchFinder tryCatchFinder = new TryCatchFinder();
+                for (AsyncMethodPart part :  methodNode.getBody()) {
+                    if (!tryCatchFinder.tryCatchFound) {
+                        part.getStatement().acceptVisitor(tryCatchFinder);
+                    }
+                }
+                boolean hasTryCatch = tryCatchFinder.tryCatchFound;
+                if (hasTryCatch) {
+                    variableNames.add("$je");
+                }
                 if (!variableNames.isEmpty()) {
                     writer.append("var ");
                     for (int i = 0; i < variableNames.size(); ++i) {
@@ -620,15 +630,18 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     writer.append(";").softNewLine();
                 }
                 for (int i = 0; i < methodNode.getBody().size(); ++i) {
-                    writer.append("function $part_").append(i).append("($input)").ws().append('{')
-                            .indent().softNewLine();
-                    AsyncMethodPart part = methodNode.getBody().get(i);
-                    if (part.getInputVariable() != null) {
-                        writer.append(variableName(part.getInputVariable())).ws().append('=').ws().append("$input;")
-                                .softNewLine();
+                    writer.append("function $part_").append(i).append("(");
+                    if (i > 0) {
+                        writer.append("$restore");
                     }
+                    writer.append(")").ws().append('{').indent().softNewLine();
+                    writer.append("try {").indent().softNewLine();
+                    AsyncMethodPart part = methodNode.getBody().get(i);
                     part.getStatement().acceptVisitor(Renderer.this);
-                    writer.outdent().append('}').softNewLine();
+                    writer.outdent().append("} catch ($guard) {").indent().softNewLine();
+                    writer.append("return $return($rt_asyncError($guard));").softNewLine();
+                    writer.outdent().append("}").softNewLine();
+                    writer.outdent().append("}").softNewLine();
                 }
                 writer.append("return $part_0();").softNewLine();
             } catch (IOException e) {
@@ -664,11 +677,6 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         @Override
         public boolean isAsync() {
             return async;
-        }
-
-        @Override
-        public String getErrorContinuation() {
-            return "$throw";
         }
 
         @Override
@@ -912,7 +920,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             }
             writer.append("return");
             if (async) {
-                writer.append(" $return(");
+                writer.append(" $return($rt_asyncResult(");
             }
             if (statement.getResult() != null) {
                 writer.append(' ');
@@ -921,7 +929,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 debugEmitter.emitCallSite();
             }
             if (async) {
-                writer.append(')');
+                writer.append("))");
             }
             writer.append(";").softNewLine();
             if (statement.getLocation() != null) {
@@ -1749,6 +1757,18 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             writer.append("throw $e;").softNewLine();
             writer.outdent().append("}").softNewLine();
             writer.outdent().append("}").softNewLine();
+        } catch (IOException e) {
+            throw new RenderingException("IO error occured", e);
+        }
+    }
+
+    @Override
+    public void visit(RestoreAsyncStatement statement) {
+        try {
+            if (statement.getReceiver() != null) {
+                writer.append(variableName(statement.getReceiver())).ws().append('=').ws();
+            }
+            writer.append("$restore();").softNewLine();
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
         }

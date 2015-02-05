@@ -577,4 +577,9 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         statement.getHandler().addAll(statements);
         resultStmt = statement;
     }
+
+    @Override
+    public void visit(RestoreAsyncStatement statement) {
+        resultStmt = statement;
+    }
 }

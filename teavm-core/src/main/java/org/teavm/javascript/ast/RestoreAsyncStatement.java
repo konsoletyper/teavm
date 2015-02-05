@@ -15,35 +15,23 @@
  */
 package org.teavm.javascript.ast;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  *
  * @author Alexey Andreev
  */
-public class AsyncMethodCatch {
-    private List<Statement> handler = new ArrayList<>();
-    private String exceptionType;
-    private Integer exceptionVariable;
+public class RestoreAsyncStatement extends Statement {
+    private Integer receiver;
 
-    public List<Statement> getHandler() {
-        return handler;
+    public Integer getReceiver() {
+        return receiver;
     }
 
-    public String getExceptionType() {
-        return exceptionType;
+    public void setReceiver(Integer receiver) {
+        this.receiver = receiver;
     }
 
-    public void setExceptionType(String exceptionType) {
-        this.exceptionType = exceptionType;
-    }
-
-    public Integer getExceptionVariable() {
-        return exceptionVariable;
-    }
-
-    public void setExceptionVariable(Integer exceptionVariable) {
-        this.exceptionVariable = exceptionVariable;
+    @Override
+    public void acceptVisitor(StatementVisitor visitor) {
+        visitor.visit(this);
     }
 }

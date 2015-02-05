@@ -257,6 +257,10 @@ public class DiskRegularMethodNodeCache implements RegularMethodNodeCache {
         @Override
         public void visit(StaticClassExpr expr) {
         }
+
+        @Override
+        public void visit(RestoreAsyncStatement statement) {
+        }
     }
 
     static class Item {

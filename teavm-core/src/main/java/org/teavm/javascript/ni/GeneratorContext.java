@@ -34,7 +34,5 @@ public interface GeneratorContext extends ServiceRepository {
 
     boolean isAsync();
 
-    String getErrorContinuation();
-
     String getCompleteContinuation();
 }

@@ -224,4 +224,8 @@ class UnusedVariableEliminator implements ExprVisitor, StatementVisitor {
             }
         }
     }
+
+    @Override
+    public void visit(RestoreAsyncStatement statement) {
+    }
 }

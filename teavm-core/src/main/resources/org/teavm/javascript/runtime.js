@@ -392,25 +392,41 @@ function $rt_virtualMethods(cls) {
         }
     }
 }
+function $rt_asyncResult(value) {
+    return function() {
+        return value;
+    }
+}
+function $rt_asyncError(e) {
+    return function() {
+        throw e;
+    }
+}
 function $rt_asyncAdapter(f) {
     return function() {
         var e;
+        var result;
         var args = Array.prototype.slice.apply(arguments);
-        var $throw = args.pop();
         var $return = args.pop();
         try {
-            var result = f.apply(this, args);
+            result = f.apply(this, args);
         } catch (e) {
-            return $throw(e);
+            return $rt_asyncError(e);
         }
-        return $return(result);
+        return $rt_asyncResult(result);
     }
 }
-function $rt_rootInvocationAdapter(f) {
+function $rt_rootInvocationAdapter(f, extraArgs) {
     return function() {
         var args = Array.prototype.slice.apply(arguments);
-        args.push(function() {});
-        args.push(function() {});
+        if (extraArgs) {
+            for (var i = 0; i < extraArts.length; ++i) {
+                args.push(extraArgs[i]);
+            }
+        }
+        args.push(function(result) {
+            result();
+        });
         return f.apply(this, args);
     }
 }

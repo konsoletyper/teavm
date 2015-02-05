@@ -43,4 +43,6 @@ public interface StatementVisitor {
     void visit(InitClassStatement statement);
 
     void visit(TryCatchStatement statement);
+
+    void visit(RestoreAsyncStatement statement);
 }

@@ -107,4 +107,8 @@ class CertainBlockCountVisitor implements StatementVisitor {
         visit(statement.getProtectedBody());
         visit(statement.getHandler());
     }
+
+    @Override
+    public void visit(RestoreAsyncStatement statement) {
+    }
 }
