@@ -533,7 +533,11 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         }
         writer.append(")").ws().append("{").softNewLine().indent();
         method.acceptVisitor(new MethodBodyRenderer());
-        writer.outdent().append("}").newLine();
+        writer.outdent().append("}");
+        if (inner) {
+            writer.append(';');
+        }
+        writer.newLine();
         debugEmitter.emitMethod(null);
     }
 
@@ -630,18 +634,15 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     writer.append(";").softNewLine();
                 }
                 for (int i = 0; i < methodNode.getBody().size(); ++i) {
-                    writer.append("function $part_").append(i).append("(");
+                    writer.append("var $part_").append(i).ws().append("=").ws().append("$rt_guardAsync(function(");
                     if (i > 0) {
                         writer.append("$restore");
                     }
-                    writer.append(")").ws().append('{').indent().softNewLine();
-                    writer.append("try {").indent().softNewLine();
+                    writer.append(")").ws().append("{").indent().softNewLine();
                     AsyncMethodPart part = methodNode.getBody().get(i);
                     part.getStatement().acceptVisitor(Renderer.this);
-                    writer.outdent().append("} catch ($guard) {").indent().softNewLine();
                     writer.append("return $return($rt_asyncError($guard));").softNewLine();
-                    writer.outdent().append("}").softNewLine();
-                    writer.outdent().append("}").softNewLine();
+                    writer.outdent().append("},").ws().append("$return);").softNewLine();
                 }
                 writer.append("return $part_0();").softNewLine();
             } catch (IOException e) {

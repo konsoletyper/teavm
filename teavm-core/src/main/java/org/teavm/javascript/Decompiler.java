@@ -202,7 +202,6 @@ public class Decompiler {
         AsyncMethodNode node = new AsyncMethodNode(method.getReference());
         AsyncProgramSplitter splitter = new AsyncProgramSplitter(asyncMethods);
         splitter.split(method.getProgram());
-        List<Program> partPrograms = new ArrayList<>();
         for (int i = 0; i < splitter.size(); ++i) {
             Integer input = null;
             if (i > 0) {
@@ -214,14 +213,13 @@ public class Decompiler {
             AsyncMethodPart part = getRegularMethodStatement(splitter.getProgram(i), splitter.getBlockSuccessors(i),
                     input);
             node.getBody().add(part);
-            partPrograms.add(splitter.getProgram(i));
         }
         Program program = method.getProgram();
         for (int i = 0; i < program.variableCount(); ++i) {
             node.getVariables().add(program.variableAt(i).getRegister());
         }
         Optimizer optimizer = new Optimizer();
-        optimizer.optimize(node, partPrograms);
+        optimizer.optimize(node, program, splitter);
         node.getModifiers().addAll(mapModifiers(method.getModifiers()));
         int paramCount = Math.min(method.getSignature().length, program.variableCount());
         for (int i = 0; i < paramCount; ++i) {

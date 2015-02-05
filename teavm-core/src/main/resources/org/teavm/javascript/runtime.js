@@ -455,6 +455,15 @@ function $rt_continue(f) {
        return f;
    }
 }
+function $rt_guardAsync(f, continuation) {
+    return function() {
+        try {
+            return f.apply(this, arguments);
+        } catch (e) {
+            return continuation($rt_asyncError(e));
+        }
+    }
+}
 
 function $dbg_repr(obj) {
     return obj.toString ? obj.toString() : "";
