@@ -641,7 +641,6 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     writer.append(")").ws().append("{").indent().softNewLine();
                     AsyncMethodPart part = methodNode.getBody().get(i);
                     part.getStatement().acceptVisitor(Renderer.this);
-                    writer.append("return $return($rt_asyncError($guard));").softNewLine();
                     writer.outdent().append("},").ws().append("$return);").softNewLine();
                 }
                 writer.append("return $part_0();").softNewLine();
