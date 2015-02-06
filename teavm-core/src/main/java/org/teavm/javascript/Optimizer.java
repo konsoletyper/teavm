@@ -15,12 +15,11 @@
  */
 package org.teavm.javascript;
 
-import java.util.List;
 import org.teavm.javascript.ast.AsyncMethodNode;
 import org.teavm.javascript.ast.AsyncMethodPart;
 import org.teavm.javascript.ast.RegularMethodNode;
 import org.teavm.model.Program;
-
+import org.teavm.model.util.AsyncProgramSplitter;
 
 /**
  *
@@ -44,13 +43,17 @@ public class Optimizer {
         }
     }
 
-    public void optimize(AsyncMethodNode method, List<Program> programs) {
+    public void optimize(AsyncMethodNode method, Program program, AsyncProgramSplitter splitter) {
         ReadWriteStatsBuilder stats = new ReadWriteStatsBuilder(method.getVariables().size());
-        for (Program program : programs) {
-            stats.analyze(program);
+        stats.analyze(program);
+        for (int i = 0; i < splitter.size(); ++i) {
+            Integer var = splitter.getInput(i);
+            if (var != null) {
+                stats.reads[var]++;
+            }
         }
-        OptimizingVisitor optimizer = new OptimizingVisitor(stats);
         for (AsyncMethodPart part : method.getBody()) {
+            OptimizingVisitor optimizer = new OptimizingVisitor(stats.copy());
             part.getStatement().acceptVisitor(optimizer);
             part.setStatement(optimizer.resultStmt);
         }

@@ -289,6 +289,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         List<Statement> backup = resultSequence;
         resultSequence = new ArrayList<>();
         processSequenceImpl(statements);
+        wieldTryCatch(resultSequence);
         List<Statement> result = new ArrayList<>();
         for (Statement part : resultSequence) {
             if (part != null) {
@@ -322,6 +323,41 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
             }
         }
         return true;
+    }
+
+    private void wieldTryCatch(List<Statement> statements) {
+        for (int i = 0; i < statements.size() - 1; ++i) {
+            if (statements.get(i) instanceof TryCatchStatement && statements.get(i + 1) instanceof TryCatchStatement) {
+                TryCatchStatement first = (TryCatchStatement)statements.get(i);
+                TryCatchStatement second = (TryCatchStatement)statements.get(i + 1);
+                if (Objects.equals(first.getExceptionType(), second.getExceptionType()) &&
+                        Objects.equals(first.getExceptionVariable(), second.getExceptionVariable()) &&
+                        briefStatementComparison(first.getHandler(), second.getHandler())) {
+                    first.getProtectedBody().addAll(second.getProtectedBody());
+                    statements.remove(i + 1);
+                    wieldTryCatch(first.getProtectedBody());
+                    --i;
+                    continue;
+                }
+            }
+        }
+    }
+
+    private boolean briefStatementComparison(List<Statement> firstSeq, List<Statement> secondSeq) {
+        if (firstSeq.isEmpty() && secondSeq.isEmpty()) {
+            return true;
+        }
+        if (firstSeq.size() != 1 || secondSeq.size() != 1) {
+            return false;
+        }
+        Statement first = firstSeq.get(0);
+        Statement second = secondSeq.get(0);
+        if (first instanceof BreakStatement && second instanceof BreakStatement) {
+            BreakStatement firstBreak = (BreakStatement)first;
+            BreakStatement secondBreak = (BreakStatement)second;
+            return firstBreak.getTarget() == secondBreak.getTarget();
+        }
+        return false;
     }
 
     private void eliminateRedundantBreaks(List<Statement> statements, IdentifiedStatement exit) {
@@ -575,6 +611,11 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         statements = processSequence(statement.getHandler());
         statement.getHandler().clear();
         statement.getHandler().addAll(statements);
+        resultStmt = statement;
+    }
+
+    @Override
+    public void visit(RestoreAsyncStatement statement) {
         resultStmt = statement;
     }
 }

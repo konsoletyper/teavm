@@ -307,6 +307,16 @@ public class AstIO {
         }
 
         @Override
+        public void visit(RestoreAsyncStatement statement) {
+            try {
+                output.writeByte(17);
+                output.writeShort(statement.getReceiver() != null ? statement.getReceiver() : -1);
+            } catch (IOException e) {
+                throw new IOExceptionWrapper(e);
+            }
+        }
+
+        @Override
         public void visit(BinaryExpr expr) {
             try {
                 output.writeByte(0);
@@ -649,6 +659,12 @@ public class AstIO {
                     stmt.setExceptionVariable(exceptionVarIndex);
                 }
                 readSequence(input, stmt.getHandler());
+                return stmt;
+            }
+            case 17: {
+                short var = input.readShort();
+                RestoreAsyncStatement stmt = new RestoreAsyncStatement();
+                stmt.setReceiver(var >= 0 ? (int)var : null);
                 return stmt;
             }
             default:

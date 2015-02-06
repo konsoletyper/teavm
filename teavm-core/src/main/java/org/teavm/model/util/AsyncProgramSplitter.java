@@ -68,7 +68,8 @@ public class AsyncProgramSplitter {
                     // Copy portion of current block from last occurence (or from start) to i'th instruction.
                     targetBlock.getInstructions().addAll(ProgramUtils.copyInstructions(sourceBlock,
                             last, i + 1, targetBlock.getProgram()));
-                    ProgramUtils.copyTryCatches(sourceBlock, targetBlock.getProgram());
+                    targetBlock.getTryCatchBlocks().addAll(ProgramUtils.copyTryCatches(sourceBlock,
+                            targetBlock.getProgram()));
                     for (TryCatchBlock tryCatch : targetBlock.getTryCatchBlocks()) {
                         if (tryCatch.getHandler() != null) {
                             Step next = new Step();
@@ -107,12 +108,15 @@ public class AsyncProgramSplitter {
                         JumpInstruction jumpToNextBlock = new JumpInstruction();
                         jumpToNextBlock.setTarget(targetBlock);
                         nextProgram.basicBlockAt(0).getInstructions().add(jumpToNextBlock);
+                        nextProgram.basicBlockAt(0).getTryCatchBlocks().addAll(ProgramUtils.copyTryCatches(sourceBlock,
+                                nextProgram));
                     }
                     step.targetPart = part;
                 }
             }
             targetBlock.getInstructions().addAll(ProgramUtils.copyInstructions(sourceBlock,
                     last, sourceBlock.getInstructions().size(), targetBlock.getProgram()));
+            targetBlock.getTryCatchBlocks().addAll(ProgramUtils.copyTryCatches(sourceBlock, targetBlock.getProgram()));
             for (TryCatchBlock tryCatch : targetBlock.getTryCatchBlocks()) {
                 if (tryCatch.getHandler() != null) {
                     Step next = new Step();

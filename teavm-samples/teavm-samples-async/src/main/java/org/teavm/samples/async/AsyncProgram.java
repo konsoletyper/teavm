@@ -99,5 +99,18 @@ public final class AsyncProgram {
         Thread.sleep(1000);
         
         System.out.println("Complete async");
+
+        System.out.println("Throwing exception");
+        try {
+            throwException();
+        } catch (IllegalStateException e) {
+            System.out.println("Exception caught");
+        }
+    }
+
+    private static void throwException() {
+        Thread.yield();
+        System.out.println("Thread.yield called");
+        throw new IllegalStateException();
     }
 }

@@ -21,6 +21,7 @@ import org.objectweb.asm.tree.*;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 import org.teavm.model.util.InstructionTransitionExtractor;
+import org.teavm.model.util.ProgramUtils;
 
 /**
  *
@@ -112,6 +113,8 @@ public class ProgramParser implements VariableDebugInformation {
         while (program.variableCount() <= signatureVars) {
             program.createVariable();
         }
+        program.basicBlockAt(0).getTryCatchBlocks().addAll(ProgramUtils.copyTryCatches(
+                program.basicBlockAt(1), program));
         return program;
     }
 

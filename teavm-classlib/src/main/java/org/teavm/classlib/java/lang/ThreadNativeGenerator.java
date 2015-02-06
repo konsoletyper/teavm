@@ -59,13 +59,13 @@ public class ThreadNativeGenerator  implements Generator, DependencyPlugin {
 
     private void generateSleep(GeneratorContext context, SourceWriter writer) throws IOException {
         writer.append("setTimeout(function() {").indent().softNewLine();
-        writer.append(context.getCompleteContinuation()).append("();").softNewLine();
+        writer.append(context.getCompleteContinuation()).append("($rt_asyncResult(null));").softNewLine();
         writer.outdent().append("},").ws().append(context.getParameterName(1)).append(");").softNewLine();
     }
 
     private void generateYield(GeneratorContext context, SourceWriter writer) throws IOException {
         writer.append("setTimeout(function() {").indent().softNewLine();
-        writer.append(context.getCompleteContinuation()).append("();").softNewLine();
+        writer.append(context.getCompleteContinuation()).append("($rt_asyncResult(null));").softNewLine();
         writer.outdent().append("},").ws().append("0);").softNewLine();
     }
 

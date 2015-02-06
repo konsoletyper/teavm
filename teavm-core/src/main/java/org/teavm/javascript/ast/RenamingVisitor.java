@@ -191,4 +191,11 @@ public class RenamingVisitor implements StatementVisitor, ExprVisitor {
         }
         statement.setExceptionVariable(varNames[statement.getExceptionVariable()]);
     }
+
+    @Override
+    public void visit(RestoreAsyncStatement statement) {
+        if (statement.getReceiver() != null) {
+            statement.setReceiver(varNames[statement.getReceiver()]);
+        }
+    }
 }

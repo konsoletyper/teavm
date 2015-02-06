@@ -361,7 +361,7 @@ public class TeaVMTestTool {
             MethodReference exceptionMsg = new MethodReference(ExceptionHelper.class, "showException",
                     Throwable.class, String.class);
             vm.entryPoint("initInstance", cons);
-            vm.entryPoint("runTest", methodRef).withValue(0, cons.getClassName());
+            vm.entryPoint("runTest", methodRef).withValue(0, cons.getClassName()).async();
             vm.entryPoint("extractException", exceptionMsg);
             vm.exportType("TestClass", cons.getClassName());
             vm.setDebugEmitter(debugInfoBuilder);
