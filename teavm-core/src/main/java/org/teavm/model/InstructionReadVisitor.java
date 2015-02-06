@@ -201,4 +201,14 @@ class InstructionReadVisitor implements InstructionVisitor {
     public void visit(NullCheckInstruction insn) {
         reader.nullCheck(insn.getReceiver(), insn.getValue());
     }
+
+    @Override
+    public void visit(MonitorEnterInstruction insn) {
+        
+    }
+
+    @Override
+    public void visit(MonitorExitInstruction insn) {
+        
+    }
 }

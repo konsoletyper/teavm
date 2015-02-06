@@ -418,5 +418,15 @@ public class GlobalValueNumbering implements MethodOptimization {
             insn.setValue(program.variableAt(val));
             bind(insn.getReceiver().getIndex(), "nullCheck @" + val);
         }
+
+        @Override
+        public void visit(MonitorEnterInstruction insn) {
+            
+        }
+
+        @Override
+        public void visit(MonitorExitInstruction insn) {
+            
+        }
     };
 }

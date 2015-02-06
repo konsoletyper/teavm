@@ -594,6 +594,16 @@ public class ProgramIO {
                 throw new IOExceptionWrapper(e);
             }
         }
+
+        @Override
+        public void visit(MonitorEnterInstruction insn) {
+            
+        }
+
+        @Override
+        public void visit(MonitorExitInstruction insn) {
+            
+        }
     }
 
     private static class IOExceptionWrapper extends RuntimeException {

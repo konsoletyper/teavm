@@ -447,5 +447,15 @@ public class SSATransformer {
             insn.setValue(use(insn.getValue()));
             insn.setReceiver(define(insn.getReceiver()));
         }
+
+        @Override
+        public void visit(MonitorEnterInstruction insn) {
+            
+        }
+
+        @Override
+        public void visit(MonitorExitInstruction insn) {
+            
+        }
     };
 }

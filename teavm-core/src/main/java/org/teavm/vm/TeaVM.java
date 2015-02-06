@@ -430,8 +430,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             
             
             // Keep track of current running thread by overriding setTimeout
-            sourceWriter.append("self.old_setTimeout=self.setTimeout;").softNewLine();
-            sourceWriter.append("self.setTimeout=function(f,interval){").indent().softNewLine();
+            sourceWriter.append("function $rt_setTimeout(f,interval){").indent().softNewLine();
             MethodReference currentThreadRef = new MethodReference(
                     Thread.class, "currentThread", Thread.class);
             MethodReference setCurrentThreadRef = new MethodReference(
@@ -445,7 +444,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             sourceWriter.appendMethodBody(setCurrentThreadRef).append("(").
                     appendMethodBody(getMainThreadRef).append("());}").softNewLine();
             sourceWriter.outdent().append("};").softNewLine();
-            sourceWriter.append("self.old_setTimeout(callback, interval);").softNewLine();
+            sourceWriter.append("setTimeout(callback, interval);").softNewLine();
             sourceWriter.outdent().append("};").softNewLine();
             
             // END Thread stuff

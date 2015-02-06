@@ -127,13 +127,12 @@ public class ObjectNativeGenerator implements Generator, Injector, DependencyPlu
         writer.append("(function(){").indent().softNewLine();
         writer.append("var completed = false;").softNewLine();
         writer.append("var retCallback = ").append(context.getCompleteContinuation()).append(";").softNewLine();
-        writer.append("console.log(retCallback);").softNewLine();
         writer.append("var callback = function(){").indent().softNewLine();
         writer.append("if (completed){return;} completed=true;").softNewLine();
-        writer.append("retCallback();").softNewLine();
+        writer.append("retCallback($rt_asyncResult(null));").softNewLine();
         writer.outdent().append("};").softNewLine();
         writer.append("if (").append(pname).append(">0){").indent().softNewLine();
-        writer.append("setTimeout(callback, ").append(pname).append(");").softNewLine();
+        writer.append("$rt_setTimeout(callback, ").append(pname).append(");").softNewLine();
         writer.outdent().append("}").softNewLine();
         addNotifyListener(context, writer, "callback");
         writer.outdent().append("})();").softNewLine();
@@ -162,18 +161,16 @@ public class ObjectNativeGenerator implements Generator, Injector, DependencyPlu
     
     private void sendNotify(GeneratorContext context, SourceWriter writer) throws IOException {
         String lArr = getNotifyListeners(context);
-        writer.append("setTimeout(function(){").indent().softNewLine();
+        writer.append("$rt_setTimeout(function(){").indent().softNewLine();
         writer.append("if (!").append(lArr).append(" || ").append(lArr).append(".length===0){return;}").softNewLine();
-        writer.append("var m = ").append(lArr).append(".shift();").softNewLine();
-        writer.append("console.log('Notify callback : '+m);").softNewLine();
-        writer.append("m.apply(null);").softNewLine();
+        writer.append(lArr).append(".shift().apply(null);").softNewLine();
         writer.outdent().append("}, 0);").softNewLine();
     }
     
     private void sendNotifyAll(GeneratorContext context, SourceWriter writer) throws IOException {
         String obj = context.getParameterName(0);
         String lArr = getNotifyListeners(context);
-        writer.append("setTimeout(function(){").indent().softNewLine();
+        writer.append("$rt_setTimeout(function(){").indent().softNewLine();
         writer.append("if (!").append(lArr).append("){return;}").softNewLine();
         writer.append("while (").append(lArr).append(".length>0){").indent().softNewLine();
         writer.append(lArr).append(".shift().call(null);").softNewLine();
