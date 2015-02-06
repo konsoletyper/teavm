@@ -72,6 +72,7 @@ public class TeaVMEntryPoint {
     private String publicName;
     MethodReference reference;
     private MethodDependency method;
+    private boolean async;
 
     TeaVMEntryPoint(String publicName, MethodReference reference, MethodDependency method) {
         this.publicName = publicName;
@@ -84,11 +85,20 @@ public class TeaVMEntryPoint {
         return publicName;
     }
 
+    boolean isAsync() {
+        return async;
+    }
+
     public TeaVMEntryPoint withValue(int argument, String type) {
         if (argument > reference.parameterCount()) {
             throw new IllegalArgumentException("Illegal argument #" + argument + " of " + reference.parameterCount());
         }
         method.getVariable(argument).propagate(method.getDependencyAgent().getType(type));
+        return this;
+    }
+
+    public TeaVMEntryPoint async() {
+        this.async = true;
         return this;
     }
 }

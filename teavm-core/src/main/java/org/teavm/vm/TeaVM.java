@@ -89,6 +89,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     private TeaVMProgressListener progressListener;
     private boolean cancelled;
     private ListableClassHolderSource writtenClasses;
+    private Set<MethodReference> asyncMethods = new HashSet<>();
 
     TeaVM(ClassReaderSource classSource, ClassLoader classLoader) {
         this.classSource = classSource;
@@ -435,9 +436,16 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             }
             renderer.renderStringPool();
             for (Map.Entry<String, TeaVMEntryPoint> entry : entryPoints.entrySet()) {
-                sourceWriter.append("var ").append(entry.getKey()).ws().append("=").ws()
-                        .append("$rt_rootInvocationAdapter(")
-                        .appendMethodBody(entry.getValue().reference).append(");").softNewLine();
+                sourceWriter.append("var ").append(entry.getKey()).ws().append("=").ws();
+                boolean wrapAsync = !asyncMethods.contains(entry.getValue().reference) && entry.getValue().isAsync();
+                if (wrapAsync) {
+                    sourceWriter.append("$rt_asyncAdapter(");
+                }
+                sourceWriter.appendMethodBody(entry.getValue().reference);
+                if (wrapAsync) {
+                    sourceWriter.append(")");
+                }
+                sourceWriter.append(";").softNewLine();
             }
             for (Map.Entry<String, String> entry : exportedClasses.entrySet()) {
                 sourceWriter.append("var ").append(entry.getKey()).ws().append("=").ws()
@@ -529,6 +537,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     private List<ClassNode> modelToAst(ListableClassHolderSource classes) {
         AsyncMethodFinder asyncFinder = new AsyncMethodFinder(dependencyChecker.getCallGraph(), diagnostics);
         asyncFinder.find(classes);
+        asyncMethods.addAll(asyncMethods);
 
         progressListener.phaseStarted(TeaVMPhase.DECOMPILATION, classes.getClassNames().size());
         Decompiler decompiler = new Decompiler(classes, classLoader, asyncFinder.getAsyncMethods());

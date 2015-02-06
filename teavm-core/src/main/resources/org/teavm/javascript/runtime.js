@@ -411,12 +411,12 @@ function $rt_asyncAdapter(f) {
         try {
             result = f.apply(this, args);
         } catch (e) {
-            return $rt_asyncError(e);
+            return $return($rt_asyncError(e));
         }
-        return $rt_asyncResult(result);
+        return $return($rt_asyncResult(result));
     }
 }
-function $rt_rootInvocationAdapter(f, extraArgs) {
+function $rt_rootInvocationAdapter(f) {
     return function() {
         var args = Array.prototype.slice.apply(arguments);
         if (extraArgs) {
