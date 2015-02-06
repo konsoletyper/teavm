@@ -537,7 +537,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     private List<ClassNode> modelToAst(ListableClassHolderSource classes) {
         AsyncMethodFinder asyncFinder = new AsyncMethodFinder(dependencyChecker.getCallGraph(), diagnostics);
         asyncFinder.find(classes);
-        asyncMethods.addAll(asyncMethods);
+        asyncMethods.addAll(asyncFinder.getAsyncMethods());
 
         progressListener.phaseStarted(TeaVMPhase.DECOMPILATION, classes.getClassNames().size());
         Decompiler decompiler = new Decompiler(classes, classLoader, asyncFinder.getAsyncMethods());

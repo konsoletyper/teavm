@@ -16,6 +16,8 @@
 package org.teavm.classlib.java.lang;
 
 import static org.junit.Assert.*;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.Test;
 
 /**
@@ -28,7 +30,7 @@ public class ThreadTest {
         long start = System.currentTimeMillis();
         Thread.sleep(100);
         long duration = System.currentTimeMillis() - start;
-        assertTrue("Thread.sleed did not wait enogh", duration < 100);
+        assertTrue("Thread.sleed did not wait enogh", duration >= 100);
     }
 
     @Test
@@ -41,8 +43,34 @@ public class ThreadTest {
         }
     }
 
+
     private void throwException() {
         Thread.yield();
         throw new IllegalStateException();
+    }
+
+    @Test
+    public void asyncVirtualCallsSupported() {
+        List<A> alist = new ArrayList<>();
+        alist.add(new A() {
+            @Override int foo() {
+                return 3;
+            }
+        });
+        alist.add(new A() {
+            @Override int foo() {
+                Thread.yield();
+                return 5;
+            }
+        });
+        int sum = 0;
+        for (A a : alist) {
+            sum += a.foo();
+        }
+        assertEquals(8, sum);
+    }
+
+    abstract class A {
+        abstract int foo();
     }
 }

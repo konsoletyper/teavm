@@ -923,7 +923,9 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 writer.append(" $return($rt_asyncResult(");
             }
             if (statement.getResult() != null) {
-                writer.append(' ');
+                if (!async) {
+                    writer.append(' ');
+                }
                 prevCallSite = debugEmitter.emitCallSite();
                 statement.getResult().acceptVisitor(this);
                 debugEmitter.emitCallSite();
