@@ -289,6 +289,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         List<Statement> backup = resultSequence;
         resultSequence = new ArrayList<>();
         processSequenceImpl(statements);
+        wieldTryCatch(resultSequence);
         List<Statement> result = new ArrayList<>();
         for (Statement part : resultSequence) {
             if (part != null) {
@@ -321,7 +322,6 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                 return false;
             }
         }
-        wieldTryCatch(statements);
         return true;
     }
 
