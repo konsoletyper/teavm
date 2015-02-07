@@ -63,7 +63,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                         Object.class, "monitorEnter", Object.class, void.class);
                 
                 writer.appendMethodBody(monitorEnterRef).append("(");
-                statement.acceptVisitor(this);
+                statement.getObjectRef().acceptVisitor(this);
                 writer.append(");").softNewLine();
                 
             } catch (IOException ex){
@@ -80,7 +80,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                         Object.class, "monitorExit", Object.class, void.class);
 
                 writer.appendMethodBody(monitorExitRef).append("(");
-                statement.acceptVisitor(this);
+                statement.getObjectRef().acceptVisitor(this);
                 writer.append(");").softNewLine();
             } catch (IOException ex){
                 throw new RenderingException("IO error occured", ex);

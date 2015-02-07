@@ -204,11 +204,11 @@ class InstructionReadVisitor implements InstructionVisitor {
 
     @Override
     public void visit(MonitorEnterInstruction insn) {
-        
+        reader.monitorEnter(insn.getObjectRef());
     }
 
     @Override
     public void visit(MonitorExitInstruction insn) {
-        
+        reader.monitorExit(insn.getObjectRef());
     }
 }
