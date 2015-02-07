@@ -495,5 +495,21 @@ public final class ProgramUtils {
             copy = insnCopy;
             copy.setLocation(location);
         }
+
+        @Override
+        public void monitorEnter(VariableReader objectRef) {
+            MonitorEnterInstruction insnCopy = new MonitorEnterInstruction();
+            insnCopy.setObjectRef(copyVar(objectRef));
+            copy = insnCopy;
+            copy.setLocation(location);
+        }
+
+        @Override
+        public void monitorExit(VariableReader objectRef) {
+            MonitorExitInstruction insnCopy = new MonitorExitInstruction();
+            insnCopy.setObjectRef(copyVar(objectRef));
+            copy = insnCopy;
+            copy.setLocation(location);
+        }
     }
 }

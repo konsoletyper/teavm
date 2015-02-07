@@ -597,12 +597,24 @@ public class ProgramIO {
 
         @Override
         public void visit(MonitorEnterInstruction insn) {
-            
+            try {
+                output.writeByte(39);
+                output.writeShort(insn.getObjectRef().getIndex());
+                
+            } catch (IOException e) {
+                throw new IOExceptionWrapper(e);
+            }
         }
 
         @Override
         public void visit(MonitorExitInstruction insn) {
-            
+            try {
+                output.writeByte(40);
+                output.writeShort(insn.getObjectRef().getIndex());
+                
+            } catch (IOException e) {
+                throw new IOExceptionWrapper(e);
+            }
         }
     }
 
@@ -906,6 +918,16 @@ public class ProgramIO {
                 NullCheckInstruction insn = new NullCheckInstruction();
                 insn.setReceiver(program.variableAt(input.readShort()));
                 insn.setValue(program.variableAt(input.readShort()));
+                return insn;
+            }
+            case 39: {
+                MonitorEnterInstruction insn = new MonitorEnterInstruction();
+                insn.setObjectRef(program.variableAt(input.readShort()));
+                return insn;
+            }
+            case 40: {
+                MonitorExitInstruction insn = new MonitorExitInstruction();
+                insn.setObjectRef(program.variableAt(input.readShort()));
                 return insn;
             }
             default:

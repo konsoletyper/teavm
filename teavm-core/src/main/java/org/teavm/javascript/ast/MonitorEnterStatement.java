@@ -22,7 +22,7 @@ package org.teavm.javascript.ast;
 public class MonitorEnterStatement extends Statement {
     
     private NodeLocation location;
-    private VariableExpr objectRef;
+    private Expr objectRef;
 
     @Override
     public void acceptVisitor(StatementVisitor visitor) {
@@ -46,14 +46,14 @@ public class MonitorEnterStatement extends Statement {
     /**
      * @return the objectRef
      */
-    public VariableExpr getObjectRef() {
+    public Expr getObjectRef() {
         return objectRef;
     }
 
     /**
      * @param objectRef the objectRef to set
      */
-    public void setObjectRef(VariableExpr objectRef) {
+    public void setObjectRef(Expr objectRef) {
         this.objectRef = objectRef;
     }
     

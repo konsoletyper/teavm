@@ -352,4 +352,14 @@ public class InstructionStringifier implements InstructionReader {
     public void nullCheck(VariableReader receiver, VariableReader value) {
         sb.append("@").append(receiver.getIndex()).append(" := nullCheck @").append(value.getIndex());
     }
+
+    @Override
+    public void monitorEnter(VariableReader objectRef) {
+        sb.append("monitorenter @").append(objectRef.getIndex());
+    }
+
+    @Override
+    public void monitorExit(VariableReader objectRef) {
+        sb.append("monitorexit @").append(objectRef.getIndex());
+    }
 }

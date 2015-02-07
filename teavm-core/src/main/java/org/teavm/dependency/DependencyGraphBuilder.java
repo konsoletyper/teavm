@@ -490,5 +490,19 @@ class DependencyGraphBuilder {
                     new CallLocation(caller.getMethod(), currentLocation)).use();
             currentExceptionConsumer.consume(dependencyChecker.getType("java.lang.NullPointerException"));
         }
+
+        @Override
+        public void monitorEnter(VariableReader objectRef) {
+            dependencyChecker.linkMethod(
+                    new MethodReference(Object.class, "monitorEnter", Object.class, void.class), 
+                    new CallLocation(caller.getMethod(), currentLocation)).use();
+        }
+
+        @Override
+        public void monitorExit(VariableReader objectRef) {
+            dependencyChecker.linkMethod(
+                    new MethodReference(Object.class, "monitorExit", Object.class, void.class), 
+                    new CallLocation(caller.getMethod(), currentLocation)).use();
+        }
     };
 }
