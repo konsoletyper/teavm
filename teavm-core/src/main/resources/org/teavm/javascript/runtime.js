@@ -377,7 +377,7 @@ function $rt_declClass(cls, data) {
     cls.$meta.binaryName = "L" + data.name + ";";
     cls.$meta.enum = data.enum;
     cls.prototype.constructor = cls;
-    cls.$clinit = data.clinit;
+    cls.$clinit = data.clinit ? data.clinit : function() {};
 }
 function $rt_virtualMethods(cls) {
     for (var i = 1; i < arguments.length; i += 2) {
