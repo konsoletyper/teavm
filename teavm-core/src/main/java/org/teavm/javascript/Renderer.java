@@ -55,6 +55,40 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     private DeferredCallSite prevCallSite;
     private boolean async;
 
+    @Override
+    public void visit(MonitorEnterStatement statement) {
+        if (async){
+            try {
+                MethodReference monitorEnterRef = new MethodReference(
+                        Object.class, "monitorEnter", Object.class, void.class);
+                
+                writer.appendMethodBody(monitorEnterRef).append("(");
+                statement.acceptVisitor(this);
+                writer.append(");").softNewLine();
+                
+            } catch (IOException ex){
+                throw new RenderingException("IO error occured", ex);
+            }
+        }
+    }
+
+    @Override
+    public void visit(MonitorExitStatement statement) {
+        if (async){
+            try {
+                MethodReference monitorExitRef = new MethodReference(
+                        Object.class, "monitorExit", Object.class, void.class);
+
+                writer.appendMethodBody(monitorExitRef).append("(");
+                statement.acceptVisitor(this);
+                writer.append(");").softNewLine();
+            } catch (IOException ex){
+                throw new RenderingException("IO error occured", ex);
+            }
+                
+        }
+    }
+
     private static class InjectorHolder {
         public final Injector injector;
 

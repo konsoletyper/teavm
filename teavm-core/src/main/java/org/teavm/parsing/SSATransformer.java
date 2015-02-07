@@ -450,12 +450,12 @@ public class SSATransformer {
 
         @Override
         public void visit(MonitorEnterInstruction insn) {
-            
+            insn.setObjectRef(use(insn.getObjectRef()));
         }
 
         @Override
         public void visit(MonitorExitInstruction insn) {
-            
+            insn.setObjectRef(use(insn.getObjectRef()));
         }
     };
 }

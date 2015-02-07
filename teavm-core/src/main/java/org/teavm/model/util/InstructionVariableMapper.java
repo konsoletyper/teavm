@@ -231,12 +231,12 @@ public abstract class InstructionVariableMapper implements InstructionVisitor {
 
     @Override
     public void visit(MonitorEnterInstruction insn) {
-        
+        insn.setObjectRef(map(insn.getObjectRef()));
     }
 
     @Override
     public void visit(MonitorExitInstruction insn) {
-        
+        insn.setObjectRef(map(insn.getObjectRef()));
     }
     
     

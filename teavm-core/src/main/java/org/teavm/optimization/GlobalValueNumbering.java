@@ -421,12 +421,14 @@ public class GlobalValueNumbering implements MethodOptimization {
 
         @Override
         public void visit(MonitorEnterInstruction insn) {
-            
+            int val = map[insn.getObjectRef().getIndex()];
+            insn.setObjectRef(program.variableAt(val));
         }
 
         @Override
         public void visit(MonitorExitInstruction insn) {
-            
+            int val = map[insn.getObjectRef().getIndex()];
+            insn.setObjectRef(program.variableAt(val));
         }
     };
 }

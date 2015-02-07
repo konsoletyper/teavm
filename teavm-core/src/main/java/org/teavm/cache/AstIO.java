@@ -508,6 +508,16 @@ public class AstIO {
                 throw new IOExceptionWrapper(e);
             }
         }
+
+        @Override
+        public void visit(MonitorEnterStatement statement) {
+            
+        }
+
+        @Override
+        public void visit(MonitorExitStatement statement) {
+            
+        }
     }
 
     private NodeLocation readLocation(DataInput input) throws IOException {

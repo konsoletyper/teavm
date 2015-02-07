@@ -29,6 +29,39 @@ import org.teavm.runtime.Async;
  */
 @Superclass("")
 public class TObject {
+    
+    private TThread owner;
+    private TObject monitorLock;
+    private int monitorCount=0;
+    
+    static void monitorEnter(TObject o){
+        if ( o.monitorLock == null ){
+            o.monitorLock = new TObject();
+        }
+        while (o.owner != null && o.owner != TThread.currentThread() ){
+            try {
+                o.monitorLock.wait();
+            } catch (InterruptedException ex) {
+                
+            }
+        }
+        o.owner = TThread.currentThread();
+        o.monitorCount++;
+        
+    }
+    
+    static void monitorExit(TObject o){
+        o.owner = null;
+        o.monitorCount--;
+        if ( o.monitorLock != null ){
+            o.monitorLock.notifyAll();
+        }
+    }
+    
+    static boolean holdsLock(TObject o){
+        return o.owner == TThread.currentThread();
+    }
+    
     @Rename("fakeInit")
     public TObject() {
     }

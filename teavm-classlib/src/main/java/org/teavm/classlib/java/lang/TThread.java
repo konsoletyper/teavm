@@ -112,8 +112,8 @@ public class TThread extends TObject implements TRunnable {
         return id;
     }
 
-    public static boolean holdsLock(@SuppressWarnings("unused") TObject obj) {
-        return true;
+    public static boolean holdsLock(TObject obj) {
+        return TObject.holdsLock(obj);
     }
 
     public static void sleep(long millis) throws TInterruptedException {
@@ -123,4 +123,6 @@ public class TThread extends TObject implements TRunnable {
     @Async
     @GeneratedBy(ThreadNativeGenerator.class)
     private static native void sleep(double millis) throws TInterruptedException;
+    
+    
 }

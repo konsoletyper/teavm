@@ -618,4 +618,14 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     public void visit(RestoreAsyncStatement statement) {
         resultStmt = statement;
     }
+
+    @Override
+    public void visit(MonitorEnterStatement statement) {
+        resultStmt = statement;
+    }
+
+    @Override
+    public void visit(MonitorExitStatement statement) {
+        resultStmt = statement;
+    }
 }
