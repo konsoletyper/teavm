@@ -51,10 +51,13 @@ public class TObject {
     }
     
     static void monitorExit(TObject o){
-        o.owner = null;
+        
         o.monitorCount--;
-        if ( o.monitorLock != null ){
-            o.monitorLock.notifyAll();
+        if ( o.monitorCount == 0 ){
+            if ( o.monitorLock != null ){
+                o.owner = null;
+                o.monitorLock.notifyAll();
+            }
         }
     }
     
