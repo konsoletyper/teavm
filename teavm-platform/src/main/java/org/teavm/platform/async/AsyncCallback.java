@@ -1,5 +1,5 @@
 /*
- *  Copyright 2013 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,26 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript.ni;
-
-import java.util.Properties;
-import org.teavm.common.ServiceRepository;
-import org.teavm.model.ListableClassReaderSource;
+package org.teavm.platform.async;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface GeneratorContext extends ServiceRepository {
-    String getParameterName(int index);
+public interface AsyncCallback<T> {
+    void complete(T result);
 
-    ListableClassReaderSource getClassSource();
-
-    ClassLoader getClassLoader();
-
-    Properties getProperties();
-
-    boolean isAsync();
-
-    String getCompleteContinuation();
+    void error(Throwable e);
 }

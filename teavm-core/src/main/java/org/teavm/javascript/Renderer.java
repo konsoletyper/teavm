@@ -27,10 +27,10 @@ import org.teavm.debugging.information.DebugInformationEmitter;
 import org.teavm.debugging.information.DeferredCallSite;
 import org.teavm.debugging.information.DummyDebugInformationEmitter;
 import org.teavm.javascript.ast.*;
-import org.teavm.javascript.ni.GeneratorContext;
-import org.teavm.javascript.ni.InjectedBy;
-import org.teavm.javascript.ni.Injector;
-import org.teavm.javascript.ni.InjectorContext;
+import org.teavm.javascript.spi.GeneratorContext;
+import org.teavm.javascript.spi.InjectedBy;
+import org.teavm.javascript.spi.Injector;
+import org.teavm.javascript.spi.InjectorContext;
 import org.teavm.model.*;
 
 /**
@@ -53,6 +53,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     private Deque<LocationStackEntry> locationStack = new ArrayDeque<>();
     private DeferredCallSite lastCallSite;
     private DeferredCallSite prevCallSite;
+    private Set<MethodReference> asyncMethods;
     private boolean async;
 
     private static class InjectorHolder {
@@ -76,12 +77,13 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     }
 
     public Renderer(SourceWriter writer, ListableClassHolderSource classSource, ClassLoader classLoader,
-            ServiceRepository services) {
+            ServiceRepository services, Set<MethodReference> asyncMethods) {
         this.naming = writer.getNaming();
         this.writer = writer;
         this.classSource = classSource;
         this.classLoader = classLoader;
         this.services = services;
+        this.asyncMethods = new HashSet<>(asyncMethods);
     }
 
     @Override
@@ -693,6 +695,11 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         @Override
         public boolean isAsync() {
             return async;
+        }
+
+        @Override
+        public boolean isAsync(MethodReference method) {
+            return asyncMethods.contains(method);
         }
 
         @Override

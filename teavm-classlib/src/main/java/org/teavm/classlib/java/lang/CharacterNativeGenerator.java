@@ -22,8 +22,8 @@ import org.teavm.codegen.SourceWriter;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
-import org.teavm.javascript.ni.Generator;
-import org.teavm.javascript.ni.GeneratorContext;
+import org.teavm.javascript.spi.Generator;
+import org.teavm.javascript.spi.GeneratorContext;
 import org.teavm.model.CallLocation;
 import org.teavm.model.MethodReference;
 

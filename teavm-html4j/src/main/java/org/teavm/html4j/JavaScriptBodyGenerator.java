@@ -21,8 +21,8 @@ import net.java.html.js.JavaScriptBody;
 import org.teavm.codegen.NamingStrategy;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.javascript.Renderer;
-import org.teavm.javascript.ni.Generator;
-import org.teavm.javascript.ni.GeneratorContext;
+import org.teavm.javascript.spi.Generator;
+import org.teavm.javascript.spi.GeneratorContext;
 import org.teavm.model.*;
 
 /**

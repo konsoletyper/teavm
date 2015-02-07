@@ -17,7 +17,7 @@ package org.teavm.jso;
 
 import java.util.Iterator;
 import org.teavm.dependency.PluggableDependency;
-import org.teavm.javascript.ni.InjectedBy;
+import org.teavm.javascript.spi.InjectedBy;
 import org.teavm.jso.plugin.JSNativeGenerator;
 
 /**
@@ -100,6 +100,9 @@ public final class JS {
 
     @InjectedBy(JSNativeGenerator.class)
     public static native JSObject wrap(short num);
+
+    @InjectedBy(JSNativeGenerator.class)
+    public static native JSObject pass(Object obj);
 
     public static <T extends JSObject> JSArray<T> wrap(T[] array) {
         JSArray<T> result = createArray(array.length);

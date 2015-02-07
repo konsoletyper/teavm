@@ -16,8 +16,8 @@
 package org.teavm.classlib.java.lang;
 
 import org.teavm.dependency.PluggableDependency;
-import org.teavm.javascript.ni.GeneratedBy;
-import org.teavm.javascript.ni.InjectedBy;
+import org.teavm.javascript.spi.GeneratedBy;
+import org.teavm.javascript.spi.InjectedBy;
 
 /**
  *

@@ -18,7 +18,7 @@ package org.teavm.classlib.java.lang;
 import org.teavm.classlib.impl.charset.UTF16Helper;
 import org.teavm.classlib.impl.unicode.UnicodeHelper;
 import org.teavm.dependency.PluggableDependency;
-import org.teavm.javascript.ni.GeneratedBy;
+import org.teavm.javascript.spi.GeneratedBy;
 
 /**
  *

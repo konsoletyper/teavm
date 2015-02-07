@@ -21,10 +21,10 @@ import org.teavm.callgraph.CallGraph;
 import org.teavm.callgraph.CallGraphNode;
 import org.teavm.callgraph.CallSite;
 import org.teavm.diagnostics.Diagnostics;
-import org.teavm.javascript.ni.InjectedBy;
+import org.teavm.javascript.spi.Async;
+import org.teavm.javascript.spi.InjectedBy;
+import org.teavm.javascript.spi.Sync;
 import org.teavm.model.*;
-import org.teavm.runtime.Async;
-import org.teavm.runtime.Sync;
 
 /**
  *

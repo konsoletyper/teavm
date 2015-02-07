@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2013 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,21 +13,29 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.java.util;
+package org.teavm.javascript.spi;
 
-import java.io.IOException;
-import org.teavm.codegen.SourceWriter;
-import org.teavm.javascript.spi.Generator;
-import org.teavm.javascript.spi.GeneratorContext;
+import java.util.Properties;
+import org.teavm.common.ServiceRepository;
+import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodReference;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class RandomNativeGenerator implements Generator {
-    @Override
-    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
-        writer.append("return Math.random();").softNewLine();
-    }
+public interface GeneratorContext extends ServiceRepository {
+    String getParameterName(int index);
+
+    ListableClassReaderSource getClassSource();
+
+    ClassLoader getClassLoader();
+
+    Properties getProperties();
+
+    boolean isAsync();
+
+    String getCompleteContinuation();
+
+    boolean isAsync(MethodReference method);
 }

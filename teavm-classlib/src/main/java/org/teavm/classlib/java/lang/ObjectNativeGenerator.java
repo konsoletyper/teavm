@@ -18,10 +18,10 @@ package org.teavm.classlib.java.lang;
 import java.io.IOException;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.dependency.*;
-import org.teavm.javascript.ni.Generator;
-import org.teavm.javascript.ni.GeneratorContext;
-import org.teavm.javascript.ni.Injector;
-import org.teavm.javascript.ni.InjectorContext;
+import org.teavm.javascript.spi.Generator;
+import org.teavm.javascript.spi.GeneratorContext;
+import org.teavm.javascript.spi.Injector;
+import org.teavm.javascript.spi.InjectorContext;
 import org.teavm.model.CallLocation;
 import org.teavm.model.MethodReference;
 

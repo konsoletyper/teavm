@@ -26,10 +26,10 @@ import org.teavm.diagnostics.AccumulationDiagnostics;
 import org.teavm.diagnostics.ProblemProvider;
 import org.teavm.javascript.*;
 import org.teavm.javascript.ast.ClassNode;
-import org.teavm.javascript.ni.GeneratedBy;
-import org.teavm.javascript.ni.Generator;
-import org.teavm.javascript.ni.InjectedBy;
-import org.teavm.javascript.ni.Injector;
+import org.teavm.javascript.spi.GeneratedBy;
+import org.teavm.javascript.spi.Generator;
+import org.teavm.javascript.spi.InjectedBy;
+import org.teavm.javascript.spi.Injector;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 import org.teavm.model.util.*;
@@ -396,7 +396,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         SourceWriterBuilder builder = new SourceWriterBuilder(naming);
         builder.setMinified(minifying);
         SourceWriter sourceWriter = builder.build(writer);
-        Renderer renderer = new Renderer(sourceWriter, classSet, classLoader, this);
+        Renderer renderer = new Renderer(sourceWriter, classSet, classLoader, this, asyncMethods);
         renderer.setProperties(properties);
         if (debugEmitter != null) {
             int classIndex = 0;

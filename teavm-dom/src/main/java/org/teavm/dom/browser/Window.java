@@ -29,7 +29,7 @@ import org.teavm.jso.JSProperty;
  *
  * @author Alexey Andreev
  */
-public interface Window extends JSGlobal, EventTarget, StorageProvider {
+public interface Window extends JSGlobal, EventTarget, StorageProvider, TypedArrayFactory {
     @JSProperty
     HTMLDocument getDocument();
 
@@ -42,9 +42,13 @@ public interface Window extends JSGlobal, EventTarget, StorageProvider {
 
     int setTimeout(TimerHandler handler, int delay);
 
+    int setTimeout(TimerHandler handler, double delay);
+
     void clearTimeout(int timeoutId);
 
     int setInterval(TimerHandler handler, int delay);
+
+    int setInterval(TimerHandler handler, double delay);
 
     void clearInterval(int timeoutId);
 
@@ -53,79 +57,4 @@ public interface Window extends JSGlobal, EventTarget, StorageProvider {
 
     @JSConstructor("XMLHttpRequest")
     XMLHttpRequest createXMLHttpRequest();
-
-    @JSConstructor("ArrayBuffer")
-    ArrayBuffer createArrayBuffer(int length);
-
-    @JSConstructor("Int8Array")
-    Int8Array createInt8Array(int length);
-
-    @JSConstructor("Int8Array")
-    Int8Array createInt8Array(ArrayBuffer buffer);
-
-    @JSConstructor("Int8Array")
-    Int8Array createInt8Array(ArrayBuffer buffer, int offset, int length);
-
-    @JSConstructor("Uint8Array")
-    Uint8Array createUint8Array(int length);
-
-    @JSConstructor("Uint8Array")
-    Uint8Array createUint8Array(ArrayBuffer buffer);
-
-    @JSConstructor("Uint8Array")
-    Uint8Array createUint8Array(ArrayBuffer buffer, int offset, int length);
-
-    @JSConstructor("Uint8ClampedArray")
-    Uint8ClampedArray createUint8ClampedArray(int length);
-
-    @JSConstructor("Uint8ClampedArray")
-    Uint8ClampedArray createUint8ClampedArray(ArrayBuffer buffer);
-
-    @JSConstructor("Uint8ClampedArray")
-    Uint8ClampedArray createUintClamped8Array(ArrayBuffer buffer, int offset, int length);
-
-    @JSConstructor("Int16Array")
-    Int16Array createInt16Array(int length);
-
-    @JSConstructor("Int16Array")
-    Int16Array createInt16Array(ArrayBuffer buffer);
-
-    @JSConstructor("Int16Array")
-    Int16Array createInt16Array(ArrayBuffer buffer, int offset, int length);
-
-    @JSConstructor("Uint16Array")
-    Uint16Array createUint16Array(int length);
-
-    @JSConstructor("Uint16Array")
-    Uint16Array createUint16Array(ArrayBuffer buffer);
-
-    @JSConstructor("Uint16Array")
-    Uint16Array createUint16Array(ArrayBuffer buffer, int offset, int length);
-
-    @JSConstructor("Int32Array")
-    Int32Array createInt32Array(int length);
-
-    @JSConstructor("Int32Array")
-    Int32Array createInt32Array(ArrayBuffer buffer);
-
-    @JSConstructor("Int32Array")
-    Int32Array createInt32Array(ArrayBuffer buffer, int offset, int length);
-
-    @JSConstructor("Float32Array")
-    Float32Array createFloat32Array(int length);
-
-    @JSConstructor("Float32Array")
-    Float32Array createFloat32Array(ArrayBuffer buffer);
-
-    @JSConstructor("Float32Array")
-    Float32Array createFloat32Array(ArrayBuffer buffer, int offset, int length);
-
-    @JSConstructor("Float64Array")
-    Float64Array createFloat64Array(int length);
-
-    @JSConstructor("Float64Array")
-    Float64Array createFloat64Array(ArrayBuffer buffer);
-
-    @JSConstructor("Float64Array")
-    Float64Array createFloat64Array(ArrayBuffer buffer, int offset, int length);
 }

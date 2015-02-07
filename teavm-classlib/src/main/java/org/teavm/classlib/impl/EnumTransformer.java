@@ -16,7 +16,7 @@
 package org.teavm.classlib.impl;
 
 import org.teavm.diagnostics.Diagnostics;
-import org.teavm.javascript.ni.PreserveOriginalName;
+import org.teavm.javascript.spi.PreserveOriginalName;
 import org.teavm.model.*;
 
 /**

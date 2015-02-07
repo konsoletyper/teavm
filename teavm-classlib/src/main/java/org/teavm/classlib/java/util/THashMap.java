@@ -39,7 +39,7 @@ import org.teavm.classlib.java.lang.TCloneNotSupportedException;
 import org.teavm.classlib.java.lang.TIllegalArgumentException;
 import org.teavm.classlib.java.lang.TIllegalStateException;
 import org.teavm.classlib.java.lang.TObject;
-import org.teavm.javascript.ni.Rename;
+import org.teavm.javascript.spi.Rename;
 
 public class THashMap<K, V> extends TAbstractMap<K, V> implements TSerializable {
     transient int elementCount;

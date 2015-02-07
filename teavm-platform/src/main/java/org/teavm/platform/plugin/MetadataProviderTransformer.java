@@ -16,7 +16,7 @@
 package org.teavm.platform.plugin;
 
 import org.teavm.diagnostics.Diagnostics;
-import org.teavm.javascript.ni.GeneratedBy;
+import org.teavm.javascript.spi.GeneratedBy;
 import org.teavm.model.*;
 import org.teavm.platform.metadata.MetadataProvider;
 

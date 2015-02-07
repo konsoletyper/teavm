@@ -17,8 +17,8 @@ package org.teavm.html4j;
 
 import java.io.IOException;
 import org.teavm.codegen.SourceWriter;
-import org.teavm.javascript.ni.Generator;
-import org.teavm.javascript.ni.GeneratorContext;
+import org.teavm.javascript.spi.Generator;
+import org.teavm.javascript.spi.GeneratorContext;
 import org.teavm.model.*;
 
 /**

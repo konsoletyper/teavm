@@ -17,7 +17,7 @@ package org.teavm.classlib.java.lang;
 
 import org.teavm.classlib.java.io.TIOException;
 import org.teavm.classlib.java.io.TOutputStream;
-import org.teavm.javascript.ni.GeneratedBy;
+import org.teavm.javascript.spi.GeneratedBy;
 
 /**
  *

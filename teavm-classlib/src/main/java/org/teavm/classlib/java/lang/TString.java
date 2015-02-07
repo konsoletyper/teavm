@@ -24,7 +24,7 @@ import org.teavm.classlib.java.util.THashMap;
 import org.teavm.classlib.java.util.TMap;
 import org.teavm.classlib.java.util.regex.TPattern;
 import org.teavm.dependency.PluggableDependency;
-import org.teavm.javascript.ni.InjectedBy;
+import org.teavm.javascript.spi.InjectedBy;
 
 /**
  *

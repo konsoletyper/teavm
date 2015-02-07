@@ -18,7 +18,7 @@ package org.teavm.classlib.java.util;
 import java.util.Arrays;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.*;
-import org.teavm.javascript.ni.Rename;
+import org.teavm.javascript.spi.Rename;
 
 /**
  *

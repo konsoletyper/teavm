@@ -1,5 +1,5 @@
 /*
- *  Copyright 2013 Alexey Andreev.
+ *  Copyright 2014 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,16 +13,33 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript.ni;
+package org.teavm.javascript.spi;
 
 import java.io.IOException;
+import java.util.Properties;
 import org.teavm.codegen.SourceWriter;
-import org.teavm.model.MethodReference;
+import org.teavm.common.ServiceRepository;
+import org.teavm.javascript.ast.Expr;
+import org.teavm.model.ValueType;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface Generator {
-    void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException;
+public interface InjectorContext extends ServiceRepository {
+    Expr getArgument(int index);
+
+    int argumentCount();
+
+    boolean isMinifying();
+
+    SourceWriter getWriter();
+
+    Properties getProperties();
+
+    void writeEscaped(String str) throws IOException;
+
+    void writeType(ValueType type) throws IOException;
+
+    void writeExpr(Expr expr) throws IOException;
 }

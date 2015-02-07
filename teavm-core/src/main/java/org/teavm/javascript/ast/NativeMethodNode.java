@@ -15,7 +15,7 @@
  */
 package org.teavm.javascript.ast;
 
-import org.teavm.javascript.ni.Generator;
+import org.teavm.javascript.spi.Generator;
 import org.teavm.model.MethodReference;
 
 /**
