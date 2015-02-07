@@ -227,5 +227,8 @@ class UnusedVariableEliminator implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(RestoreAsyncStatement statement) {
+        if (statement.getReceiver() != null) {
+            statement.setReceiver(renumber(statement.getReceiver()));
+        }
     }
 }

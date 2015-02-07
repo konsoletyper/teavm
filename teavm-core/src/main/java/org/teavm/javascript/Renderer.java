@@ -446,11 +446,12 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             debugEmitter.emitMethod(method.getReference().getDescriptor());
             MethodReference ref = method.getReference();
             writer.append(",").newLine();
+            String methodName = method.isAsync() ? naming.getNameForAsync(ref) : naming.getNameFor(ref);
             if (method.isOriginalNamePreserved()) {
-                writer.append("[\"").appendMethod(ref).append("\",").ws().append("\"").append(ref.getName())
+                writer.append("[\"").append(methodName).append("\",").ws().append("\"").append(ref.getName())
                         .append("\"]");
             } else {
-                writer.append("\"").appendMethod(ref).append("\"");
+                writer.append("\"").append(methodName).append("\"");
             }
             writer.append(",").ws().append("function(");
             for (int i = 1; i <= ref.parameterCount(); ++i) {

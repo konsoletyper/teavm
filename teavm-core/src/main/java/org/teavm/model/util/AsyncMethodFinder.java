@@ -85,5 +85,38 @@ public class AsyncMethodFinder {
         for (CallSite callSite : node.getCallerCallSites()) {
             add(callSite.getCaller().getMethod());
         }
+        Set<MethodReference> visited = new HashSet<>();
+        Set<MethodReference> overriden = new HashSet<>();
+        if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
+            findOverridenMethods(new MethodReference(cls.getParent(), methodRef.getDescriptor()), overriden, visited);
+        }
+        for (String iface : cls.getInterfaces()) {
+            findOverridenMethods(new MethodReference(iface, methodRef.getDescriptor()), overriden, visited);
+        }
+        for (MethodReference overridenMethod : overriden) {
+            add(overridenMethod);
+        }
+    }
+
+    private void findOverridenMethods(MethodReference methodRef, Set<MethodReference> result,
+            Set<MethodReference> visited) {
+        if (!visited.add(methodRef)) {
+            return;
+        }
+        ClassReader cls = classSource.get(methodRef.getClassName());
+        if (cls == null) {
+            return;
+        }
+        MethodReader method = cls.getMethod(methodRef.getDescriptor());
+        if (method != null) {
+            result.add(methodRef);
+        } else {
+            if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
+                findOverridenMethods(new MethodReference(cls.getParent(), methodRef.getDescriptor()), result, visited);
+            }
+            for (String iface : cls.getInterfaces()) {
+                findOverridenMethods(new MethodReference(iface, methodRef.getDescriptor()), result, visited);
+            }
+        }
     }
 }
