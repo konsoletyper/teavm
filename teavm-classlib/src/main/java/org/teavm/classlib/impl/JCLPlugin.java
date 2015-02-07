@@ -31,7 +31,6 @@ public class JCLPlugin implements TeaVMPlugin {
         host.add(new EnumDependencySupport());
         host.add(new EnumTransformer());
         host.add(new ClassLookupDependencySupport());
-        host.add(new NewInstanceDependencySupport());
         host.add(new ObjectEnrichRenderer());
         ServiceLoaderSupport serviceLoaderSupp = new ServiceLoaderSupport(host.getClassLoader());
         host.add(serviceLoaderSupp);

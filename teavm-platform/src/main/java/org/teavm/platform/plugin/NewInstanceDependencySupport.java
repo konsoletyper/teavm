@@ -13,10 +13,11 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.impl;
+package org.teavm.platform.plugin;
 
 import org.teavm.dependency.*;
 import org.teavm.model.*;
+import org.teavm.platform.Platform;
 
 /**
  *
@@ -39,7 +40,7 @@ public class NewInstanceDependencySupport implements DependencyListener {
         if (cls.hasModifier(ElementModifier.ABSTRACT) || cls.hasModifier(ElementModifier.INTERFACE)) {
             return;
         }
-        MethodReader method = cls.getMethod(new MethodDescriptor("<init>", ValueType.VOID));
+        MethodReader method = cls.getMethod(new MethodDescriptor("<init>", void.class));
         if (method != null) {
             allClassesNode.propagate(agent.getType(className));
         }
@@ -48,7 +49,7 @@ public class NewInstanceDependencySupport implements DependencyListener {
     @Override
     public void methodAchieved(final DependencyAgent agent, MethodDependency method, final CallLocation location) {
         MethodReader reader = method.getMethod();
-        if (reader.getOwnerName().equals("java.lang.Class") && reader.getName().equals("newInstance")) {
+        if (reader.getOwnerName().equals(Platform.class.getName()) && reader.getName().equals("newInstance")) {
             allClassesNode.connect(method.getResult());
             method.getResult().addConsumer(new DependencyConsumer() {
                 @Override public void consume(DependencyAgentType type) {
@@ -59,8 +60,10 @@ public class NewInstanceDependencySupport implements DependencyListener {
     }
 
     private void attachConstructor(DependencyAgent checker, String type, CallLocation location) {
-        MethodReference ref = new MethodReference(type, new MethodDescriptor("<init>", ValueType.VOID));
-        checker.linkMethod(ref, location).use();
+        MethodReference ref = new MethodReference(type, "<init>", ValueType.VOID);
+        MethodDependency methodDep = checker.linkMethod(ref, location);
+        methodDep.getVariable(0).propagate(checker.getType(type));
+        methodDep.use();
     }
 
     @Override

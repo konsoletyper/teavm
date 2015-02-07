@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,21 +15,27 @@
  */
 package org.teavm.platform.plugin;
 
-import org.teavm.vm.spi.TeaVMHost;
-import org.teavm.vm.spi.TeaVMPlugin;
+import java.io.IOException;
+import org.teavm.codegen.SourceWriter;
+import org.teavm.platform.metadata.ClassResource;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class PlatformPlugin implements TeaVMPlugin {
+class BuildTimeClassResource implements ClassResource, ResourceWriter {
+    private String className;
+
+    public BuildTimeClassResource(String className) {
+        this.className = className;
+    }
+
+    public String getClassName() {
+        return className;
+    }
+
     @Override
-    public void install(TeaVMHost host) {
-        host.add(new MetadataProviderTransformer());
-        host.add(new ResourceTransformer());
-        host.add(new ResourceAccessorTransformer(host));
-        host.add(new ResourceAccessorDependencyListener());
-        host.add(new AsyncMethodProcessor());
-        host.add(new NewInstanceDependencySupport());
+    public void write(SourceWriter writer) throws IOException {
+        writer.appendClass(className);
     }
 }

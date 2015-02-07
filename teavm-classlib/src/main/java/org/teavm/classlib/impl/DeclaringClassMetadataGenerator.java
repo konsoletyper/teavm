@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,23 +13,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.platform.plugin;
+package org.teavm.classlib.impl;
 
-import org.teavm.vm.spi.TeaVMHost;
-import org.teavm.vm.spi.TeaVMPlugin;
+import org.teavm.model.MethodReference;
+import org.teavm.platform.metadata.MetadataGenerator;
+import org.teavm.platform.metadata.MetadataGeneratorContext;
+import org.teavm.platform.metadata.Resource;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class PlatformPlugin implements TeaVMPlugin {
+public class DeclaringClassMetadataGenerator implements MetadataGenerator {
     @Override
-    public void install(TeaVMHost host) {
-        host.add(new MetadataProviderTransformer());
-        host.add(new ResourceTransformer());
-        host.add(new ResourceAccessorTransformer(host));
-        host.add(new ResourceAccessorDependencyListener());
-        host.add(new AsyncMethodProcessor());
-        host.add(new NewInstanceDependencySupport());
+    public Resource generateMetadata(MetadataGeneratorContext context, MethodReference method) {
+        return null;
     }
 }

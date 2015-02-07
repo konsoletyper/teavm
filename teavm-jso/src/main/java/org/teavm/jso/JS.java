@@ -102,7 +102,7 @@ public final class JS {
     public static native JSObject wrap(short num);
 
     @InjectedBy(JSNativeGenerator.class)
-    public static native JSObject pass(Object obj);
+    public static native JSObject marshall(Object obj);
 
     public static <T extends JSObject> JSArray<T> wrap(T[] array) {
         JSArray<T> result = createArray(array.length);

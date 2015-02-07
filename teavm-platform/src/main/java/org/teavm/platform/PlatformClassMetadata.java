@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,23 +13,34 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.platform.plugin;
+package org.teavm.platform;
 
-import org.teavm.vm.spi.TeaVMHost;
-import org.teavm.vm.spi.TeaVMPlugin;
+import org.teavm.jso.JSObject;
+import org.teavm.jso.JSProperty;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class PlatformPlugin implements TeaVMPlugin {
-    @Override
-    public void install(TeaVMHost host) {
-        host.add(new MetadataProviderTransformer());
-        host.add(new ResourceTransformer());
-        host.add(new ResourceAccessorTransformer(host));
-        host.add(new ResourceAccessorDependencyListener());
-        host.add(new AsyncMethodProcessor());
-        host.add(new NewInstanceDependencySupport());
-    }
+public interface PlatformClassMetadata extends JSObject {
+    @JSProperty("item")
+    PlatformClass getArrayItem();
+
+    @JSProperty
+    PlatformSequence<PlatformClass> getSupertypes();
+
+    @JSProperty
+    PlatformClass getSuperclass();
+
+    @JSProperty
+    String getName();
+
+    @JSProperty
+    boolean isPrimitive();
+
+    @JSProperty
+    boolean isArray();
+
+    @JSProperty
+    boolean isEnum();
 }

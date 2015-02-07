@@ -19,10 +19,7 @@ import java.lang.reflect.Proxy;
 import java.util.Properties;
 import org.teavm.common.ServiceRepository;
 import org.teavm.model.ListableClassReaderSource;
-import org.teavm.platform.metadata.MetadataGeneratorContext;
-import org.teavm.platform.metadata.Resource;
-import org.teavm.platform.metadata.ResourceArray;
-import org.teavm.platform.metadata.ResourceMap;
+import org.teavm.platform.metadata.*;
 
 /**
  *
@@ -68,6 +65,11 @@ class DefaultMetadataGeneratorContext implements MetadataGeneratorContext {
     @Override
     public <T extends Resource> ResourceArray<T> createResourceArray() {
         return new BuildTimeResourceArray<>();
+    }
+
+    @Override
+    public ClassResource createClassResource(String className) {
+        return new BuildTimeClassResource(className);
     }
 
     @Override
