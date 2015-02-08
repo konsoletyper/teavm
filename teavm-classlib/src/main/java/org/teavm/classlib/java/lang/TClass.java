@@ -19,7 +19,8 @@ import org.teavm.classlib.impl.DeclaringClassMetadataGenerator;
 import org.teavm.javascript.spi.InjectedBy;
 import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformClass;
-import org.teavm.platform.metadata.MetadataProvider;
+import org.teavm.platform.metadata.ClassResource;
+import org.teavm.platform.metadata.ClassScopedMetadataProvider;
 
 /**
  *
@@ -36,7 +37,7 @@ public class TClass<T> extends TObject {
         platformClass.setJavaClass(Platform.getPlatformObject(this));
     }
 
-    static TClass<?> getClass(PlatformClass cls) {
+    public static TClass<?> getClass(PlatformClass cls) {
         if (cls == null) {
             return null;
         }
@@ -47,7 +48,7 @@ public class TClass<T> extends TObject {
         return result;
     }
 
-    PlatformClass getPlatformClass() {
+    public PlatformClass getPlatformClass() {
         return platformClass;
     }
 
@@ -71,7 +72,7 @@ public class TClass<T> extends TObject {
     }
 
     public boolean isArray() {
-        return platformClass.getMetadata().isArray();
+        return platformClass.getMetadata().getArrayItem() != null;
     }
 
     public boolean isEnum() {
@@ -141,12 +142,13 @@ public class TClass<T> extends TObject {
         return (TClass<? super T>)getClass(platformClass.getMetadata().getSuperclass());
     }
 
+    @SuppressWarnings("unchecked")
     public T[] getEnumConstants() {
-        return isEnum() ? getEnumConstantsImpl() : null;
+        return isEnum() ? (T[])getEnumConstantsImpl(platformClass) : null;
     }
 
     @InjectedBy(ClassNativeGenerator.class)
-    public native T[] getEnumConstantsImpl();
+    private static native Object[] getEnumConstantsImpl(PlatformClass cls);
 
     @SuppressWarnings("unchecked")
     public T cast(TObject obj) {
@@ -175,12 +177,22 @@ public class TClass<T> extends TObject {
         return forName(name);
     }
 
+    @SuppressWarnings("unchecked")
     public T newInstance() throws TInstantiationException, TIllegalAccessException {
-        return Platform.newInstance(platformClass);
+        Object instance = Platform.newInstance(platformClass);
+        if (instance == null) {
+            throw new TInstantiationException();
+        }
+        return (T)instance;
     }
 
-    @MetadataProvider(DeclaringClassMetadataGenerator.class)
-    public native TClass<?> getDeclaringClass();
+    public TClass<?> getDeclaringClass() {
+        ClassResource res = getDeclaringClass(platformClass);
+        return res != null ? getClass(Platform.classFromResource(res)) : null;
+    }
+
+    @ClassScopedMetadataProvider(DeclaringClassMetadataGenerator.class)
+    private static native ClassResource getDeclaringClass(PlatformClass cls);
 
     @SuppressWarnings("unchecked")
     public <U> TClass<? extends U> asSubclass(TClass<U> clazz) {

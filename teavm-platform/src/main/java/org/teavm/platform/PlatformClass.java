@@ -17,13 +17,12 @@ package org.teavm.platform;
 
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
-import org.teavm.platform.metadata.Resource;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface PlatformClass extends JSObject, Resource {
+public interface PlatformClass extends JSObject {
     @JSProperty("$meta")
     PlatformClassMetadata getMetadata();
 

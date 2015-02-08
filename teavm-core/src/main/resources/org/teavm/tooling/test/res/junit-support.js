@@ -370,11 +370,11 @@ var JUnitClient = {};
 JUnitClient.run = function() {
     var handler = window.addEventListener("message", function() {
         window.removeEventListener("message", handler);
+        var message = {};
         try {
             var instance = new TestClass();
             initInstance(instance);
             runTest(instance, function(restore) {
-                var message = {};
                 try {
                     var result = restore();
                     message.status = "ok";

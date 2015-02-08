@@ -88,7 +88,7 @@ public class JSNativeGenerator implements Injector, DependencyPlugin {
                 }
                 writer.append("))");
                 break;
-            case "pass":
+            case "marshall":
                 context.writeExpr(context.getArgument(0));
                 break;
             case "wrap":

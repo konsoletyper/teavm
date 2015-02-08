@@ -13,20 +13,22 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.platform;
+package org.teavm.platform.metadata;
 
-import org.teavm.jso.JSIndexer;
-import org.teavm.jso.JSObject;
-import org.teavm.jso.JSProperty;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
+ * <p>Binds a {@link ClassScopedMetadataGenerator} to a native method.</p>
+ *
+ * @see MetadataProvider
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface PlatformSequence<T extends JSObject> extends JSObject {
-    @JSProperty
-    int getLength();
-
-    @JSIndexer
-    T get(int index);
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface ClassScopedMetadataProvider {
+    Class<? extends ClassScopedMetadataGenerator> value();
 }

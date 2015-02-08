@@ -25,7 +25,6 @@ import org.teavm.javascript.spi.GeneratorContext;
 import org.teavm.javascript.spi.Injector;
 import org.teavm.javascript.spi.InjectorContext;
 import org.teavm.model.*;
-import org.teavm.platform.Platform;
 
 /**
  *
@@ -45,6 +44,7 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
     public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
         switch (methodRef.getName()) {
             case "asJavaClass":
+            case "classFromResource":
                 context.writeExpr(context.getArgument(0));
                 return;
         }
@@ -54,34 +54,45 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
         switch (methodRef.getName()) {
             case "newInstance":
-                generateNewInstance(context, writer);
+                generateNewInstance(context, writer, methodRef);
+                break;
+            case "lookupClass":
+                generateLookup(context, writer);
+                break;
         }
     }
 
-    private void generateNewInstance(GeneratorContext context, SourceWriter writer) throws IOException {
-        String self = context.getParameterName(0);
-        writer.append("if").ws().append("(!").appendClass(Platform.class).append(".$$constructors$$)").ws()
-                .append("{").indent().softNewLine();
-        writer.appendClass(Platform.class).append(".$$constructors$$").ws().append("=").append("true;").softNewLine();
+    private void generateNewInstance(GeneratorContext context, SourceWriter writer, MethodReference methodRef)
+            throws IOException {
+        writer.append("var c").ws().append("=").ws().append("'$$constructor$$';").softNewLine();
         for (String clsName : context.getClassSource().getClassNames()) {
             ClassReader cls = context.getClassSource().get(clsName);
             MethodReader method = cls.getMethod(new MethodDescriptor("<init>", void.class));
             if (method != null) {
-                writer.appendClass(clsName).append(".$$constructor$$").ws().append("=").ws()
-                        .appendMethodBody(method.getReference()).append(";").softNewLine();
+                writer.appendClass(clsName).append("[c]").ws().append("=").ws()
+                        .append(writer.getNaming().getNameForInit(method.getReference()))
+                        .append(";").softNewLine();
             }
         }
+        writer.appendMethodBody(methodRef).ws().append("=").ws().append("function(cls)").ws().append("{")
+                .softNewLine().indent();
+        writer.append("if").ws().append("(!cls.hasOwnProperty(c))").ws().append("{").indent().softNewLine();
+        writer.append("return null;").softNewLine();
         writer.outdent().append("}").softNewLine();
-        writer.append("var cls = " + self + ".$data;").softNewLine();
-        writer.append("var ctor = cls.$$constructor$$;").softNewLine();
-        writer.append("if (!ctor) {").indent().softNewLine();
-        writer.append("var ex = new ").appendClass(InstantiationException.class.getName()).append("();").softNewLine();
-        writer.appendMethodBody(new MethodReference(InstantiationException.class, "<init>", void.class))
-                .append("(ex);").softNewLine();
-        writer.append("$rt_throw(ex);").softNewLine();
+        writer.append("return cls[c]();").softNewLine();
         writer.outdent().append("}").softNewLine();
-        writer.append("var instance = new cls();").softNewLine();
-        writer.append("ctor(instance);").softNewLine();
-        writer.append("return instance;").softNewLine();
+        writer.append("return ").appendMethodBody(methodRef).append("(")
+                .append(context.getParameterName(1)).append(");").softNewLine();
+    }
+
+    private void generateLookup(GeneratorContext context, SourceWriter writer) throws IOException {
+        String param = context.getParameterName(1);
+        writer.append("switch ($rt_ustr(" + param + ")) {").softNewLine().indent();
+        for (String name : context.getClassSource().getClassNames()) {
+            writer.append("case \"" + name + "\": ").appendClass(name).append(".$clinit(); ")
+                    .append("return ").appendClass(name).append(";").softNewLine();
+        }
+        writer.append("default: return null;").softNewLine();
+        writer.outdent().append("}").softNewLine();
     }
 }

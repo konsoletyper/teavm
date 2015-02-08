@@ -18,6 +18,7 @@ package org.teavm.classlib.java.lang.reflect;
 import org.teavm.classlib.java.lang.*;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.javascript.spi.GeneratedBy;
+import org.teavm.platform.PlatformClass;
 
 /**
  *
@@ -38,12 +39,12 @@ public final class TArray extends TObject {
         if (length < 0) {
             throw new TNegativeArraySizeException();
         }
-        return newInstanceImpl(componentType, length);
+        return newInstanceImpl(componentType.getPlatformClass(), length);
     }
 
     @GeneratedBy(ArrayNativeGenerator.class)
     @PluggableDependency(ArrayNativeGenerator.class)
-    private static native TObject newInstanceImpl(TClass<?> componentType, int length);
+    private static native TObject newInstanceImpl(PlatformClass componentType, int length);
 
     public static TObject get(TObject array, int index) throws TIllegalArgumentException,
             TArrayIndexOutOfBoundsException {

@@ -334,7 +334,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                 return progressListener.progressReached(0) == TeaVMProgressFeedback.CONTINUE;
             }
         });
-        dependencyChecker.linkMethod(new MethodReference(Class.class, "createNew", Class.class), null).use();
+        dependencyChecker.linkMethod(new MethodReference(Class.class.getName(), "getClass",
+                ValueType.object("org.teavm.platform.PlatformClass"), ValueType.parse(Class.class)), null).use();
         dependencyChecker.linkMethod(new MethodReference(String.class, "<init>", char[].class, void.class),
                 null).use();
         dependencyChecker.linkMethod(new MethodReference(String.class, "getChars", int.class, int.class, char[].class,
@@ -396,7 +397,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         SourceWriterBuilder builder = new SourceWriterBuilder(naming);
         builder.setMinified(minifying);
         SourceWriter sourceWriter = builder.build(writer);
-        Renderer renderer = new Renderer(sourceWriter, classSet, classLoader, this, asyncMethods);
+        Renderer renderer = new Renderer(sourceWriter, classSet, classLoader, this, asyncMethods, diagnostics);
         renderer.setProperties(properties);
         if (debugEmitter != null) {
             int classIndex = 0;

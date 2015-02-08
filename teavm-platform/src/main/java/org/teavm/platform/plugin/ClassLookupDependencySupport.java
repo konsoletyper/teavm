@@ -13,10 +13,11 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.impl;
+package org.teavm.platform.plugin;
 
 import org.teavm.dependency.*;
 import org.teavm.model.*;
+import org.teavm.platform.Platform;
 
 /**
  *
@@ -38,14 +39,14 @@ public class ClassLookupDependencySupport implements DependencyListener {
     @Override
     public void methodAchieved(final DependencyAgent agent, MethodDependency method, final CallLocation location) {
         MethodReference ref = method.getReference();
-        if (ref.getClassName().equals("java.lang.Class") && ref.getName().equals("forNameImpl")) {
+        if (ref.getClassName().equals(Platform.class.getName()) && ref.getName().equals("lookupClass")) {
             allClasses.addConsumer(new DependencyConsumer() {
                 @Override public void consume(DependencyAgentType type) {
                     ClassReader cls = agent.getClassSource().get(type.getName());
                     if (cls == null) {
                         return;
                     }
-                    MethodReader initMethod = cls.getMethod(new MethodDescriptor("<clinit>", ValueType.VOID));
+                    MethodReader initMethod = cls.getMethod(new MethodDescriptor("<clinit>", void.class));
                     if (initMethod != null) {
                         agent.linkMethod(initMethod.getReference(), location).use();
                     }

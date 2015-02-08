@@ -102,8 +102,8 @@ class BuildTimeResourceProxyBuilder {
 
         private void scanIface(Class<?> iface) {
             if (!Resource.class.isAssignableFrom(iface)) {
-                throw new IllegalArgumentException("Error creating a new resource of type " + iface.getName() +
-                        ". This type does not implement the " + Resource.class.getName() + " interface");
+                throw new IllegalArgumentException("Error creating a new resource of type " + iface.getName() + "." +
+                        " This type does not implement the " + Resource.class.getName() + " interface");
             }
 
             // Scan methods

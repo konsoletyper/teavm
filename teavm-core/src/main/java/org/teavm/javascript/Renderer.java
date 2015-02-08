@@ -26,6 +26,7 @@ import org.teavm.common.ServiceRepository;
 import org.teavm.debugging.information.DebugInformationEmitter;
 import org.teavm.debugging.information.DeferredCallSite;
 import org.teavm.debugging.information.DummyDebugInformationEmitter;
+import org.teavm.diagnostics.Diagnostics;
 import org.teavm.javascript.ast.*;
 import org.teavm.javascript.spi.GeneratorContext;
 import org.teavm.javascript.spi.InjectedBy;
@@ -54,6 +55,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     private DeferredCallSite lastCallSite;
     private DeferredCallSite prevCallSite;
     private Set<MethodReference> asyncMethods;
+    private Diagnostics diagnostics;
     private boolean async;
 
     private static class InjectorHolder {
@@ -77,13 +79,14 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     }
 
     public Renderer(SourceWriter writer, ListableClassHolderSource classSource, ClassLoader classLoader,
-            ServiceRepository services, Set<MethodReference> asyncMethods) {
+            ServiceRepository services, Set<MethodReference> asyncMethods, Diagnostics diagnostics) {
         this.naming = writer.getNaming();
         this.writer = writer;
         this.classSource = classSource;
         this.classLoader = classLoader;
         this.services = services;
         this.asyncMethods = new HashSet<>(asyncMethods);
+        this.diagnostics = diagnostics;
     }
 
     @Override
@@ -167,43 +170,11 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     }
 
     private void renderRuntimeCls() throws IOException {
-        writer.append("function $rt_cls").ws().append("(clsProto)").ws().append("{")
-                .indent().softNewLine();
-        String classClass = "java.lang.Class";
-        writer.append("var cls").ws().append("=").ws().append("clsProto.classObject;").softNewLine();
-        writer.append("if").ws().append("(typeof cls").ws().append("===").ws().append("'undefined')").ws()
-                .append("{").softNewLine().indent();
-        MethodReference createMethodRef = new MethodReference(classClass, "createNew", ValueType.object(classClass));
-        writer.append("cls").ws().append("=").ws().appendMethodBody(createMethodRef).append("();").softNewLine();
-        writer.append("cls.$data = clsProto;").softNewLine();
-        if (classSource.get(classClass).getField("name") != null) {
-            writer.append("cls.").appendField(new FieldReference(classClass, "name")).ws().append("=").ws()
-                    .append("clsProto.$meta.name").ws().append("!==").ws().append("undefined").ws().append("?").ws()
-                    .append("$rt_str(clsProto.$meta.name)").ws().append(":").ws().append("null;").softNewLine();
-        }
-        if (classSource.get(classClass).getField("name") != null) {
-            writer.append("cls.").appendField(new FieldReference(classClass, "binaryName")).ws().append("=").ws()
-                    .append("clsProto.$meta.binaryName").ws().append("!==").ws().append("undefined").ws()
-                    .append("?").ws()
-                    .append("$rt_str(clsProto.$meta.binaryName)").ws().append(":").ws().append("null;").softNewLine();
-        }
-        if (classSource.get(classClass).getField("primitive") != null) {
-            writer.append("cls.").appendField(new FieldReference(classClass, "primitive"))
-                    .append(" = clsProto.$meta.primitive ? 1 : 0;").newLine();
-        }
-        if (classSource.get(classClass).getField("array") != null) {
-            writer.append("cls.").appendField(new FieldReference(classClass, "array")).ws()
-                    .append("=").ws().append("clsProto.$meta.item").ws().append("?").ws()
-                    .append("1").ws().append(":").ws().append("0;").softNewLine();
-        }
-        if (classSource.get(classClass).getField("isEnum") != null) {
-            writer.append("cls.").appendField(new FieldReference(classClass, "isEnum")).ws()
-                    .append("=").ws().append("clsProto.$meta.enum").ws().append("?").ws()
-                    .append("1").ws().append(":").ws().append("0;").softNewLine();
-        }
-        writer.append("clsProto.classObject").ws().append("=").ws().append("cls;").softNewLine();
-        writer.outdent().append("}").softNewLine();
-        writer.append("return cls;").softNewLine();
+        writer.append("function $rt_cls(cls)").ws().append("{").softNewLine().indent();
+        writer.append("return ").appendMethodBody("java.lang.Class", "getClass",
+                ValueType.object("org.teavm.platform.PlatformClass"),
+                ValueType.object("java.lang.Class")).append("(cls);")
+                .softNewLine();
         writer.outdent().append("}").newLine();
     }
 
@@ -705,6 +676,11 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         @Override
         public String getCompleteContinuation() {
             return "$return";
+        }
+
+        @Override
+        public Diagnostics getDiagnostics() {
+            return diagnostics;
         }
     }
 

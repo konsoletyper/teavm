@@ -45,6 +45,34 @@ final class ResourceWriterHelper {
         }
     }
 
+    public static void writeIdentifier(SourceWriter writer, String id) throws IOException {
+        if (id.isEmpty() || !isIdentifierStart(id.charAt(0))) {
+            writeString(writer, id);
+            return;
+        }
+        for (int i = 1; i < id.length(); ++i) {
+            if (isIdentifierPart(id.charAt(i))) {
+                writeString(writer, id);
+                return;
+            }
+        }
+        writer.append(id);
+    }
+
+    private static boolean isIdentifierStart(char c) {
+        if (c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z') {
+            return true;
+        }
+        return c == '$' || c == '_';
+    }
+
+    private static boolean isIdentifierPart(char c) {
+        if (isIdentifierStart(c)) {
+            return true;
+        }
+        return c >= '0' && c <= '9';
+    }
+
     public static void writeString(SourceWriter writer, String s) throws IOException {
         writer.append('"');
         for (int i = 0; i < s.length(); ++i) {

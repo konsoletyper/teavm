@@ -72,7 +72,7 @@ public final class Platform {
     @PluggableDependency(PlatformGenerator.class)
     public static native void initClass(PlatformClass cls);
 
-    @GeneratedBy(PlatformGenerator.class)
+    @InjectedBy(PlatformGenerator.class)
     @PluggableDependency(PlatformGenerator.class)
     public static native PlatformClass classFromResource(ClassResource resource);
 }

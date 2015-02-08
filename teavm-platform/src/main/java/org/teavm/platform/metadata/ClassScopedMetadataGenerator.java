@@ -13,28 +13,23 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.impl;
+package org.teavm.platform.metadata;
 
-import java.util.HashMap;
 import java.util.Map;
-import org.teavm.model.ClassReader;
 import org.teavm.model.MethodReference;
-import org.teavm.platform.metadata.*;
+import org.teavm.platform.PlatformClass;
 
 /**
+ * <p>Behaviour of this class is similar to {@link MetadataGenerator}. The difference is that method, marked with
+ * {@link ClassScopedMetadataProvider} must take one argument of type {@link PlatformClass}. It will
+ * return different resource for each given class, corresponding to map entries, produced by
+ * {@link #generateMetadata(MetadataGeneratorContext, MethodReference)}.
+ *
+ * @see ClassScopedMetadataProvider
+ * @see MetadataGenerator
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public class DeclaringClassMetadataGenerator implements ClassScopedMetadataGenerator {
-    @Override
-    public Map<String, Resource> generateMetadata(MetadataGeneratorContext context, MethodReference method) {
-        Map<String, Resource> result = new HashMap<>();
-        for (String clsName : context.getClassSource().getClassNames()) {
-            ClassReader cls = context.getClassSource().get(clsName);
-            if (cls.getOwnerName() != null) {
-                result.put(clsName, context.createClassResource(cls.getOwnerName()));
-            }
-        }
-        return result;
-    }
+public interface ClassScopedMetadataGenerator {
+    Map<String, Resource> generateMetadata(MetadataGeneratorContext context, MethodReference method);
 }

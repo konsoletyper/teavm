@@ -39,8 +39,5 @@ public interface PlatformClassMetadata extends JSObject {
     boolean isPrimitive();
 
     @JSProperty
-    boolean isArray();
-
-    @JSProperty
     boolean isEnum();
 }

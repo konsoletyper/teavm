@@ -17,6 +17,7 @@ package org.teavm.javascript.spi;
 
 import java.util.Properties;
 import org.teavm.common.ServiceRepository;
+import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodReference;
 
@@ -38,4 +39,6 @@ public interface GeneratorContext extends ServiceRepository {
     String getCompleteContinuation();
 
     boolean isAsync(MethodReference method);
+
+    Diagnostics getDiagnostics();
 }

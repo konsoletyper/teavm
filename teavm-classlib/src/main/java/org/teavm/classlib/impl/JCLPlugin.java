@@ -18,6 +18,7 @@ package org.teavm.classlib.impl;
 import java.util.ServiceLoader;
 import org.teavm.classlib.impl.unicode.CLDRReader;
 import org.teavm.model.MethodReference;
+import org.teavm.platform.PlatformClass;
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
 
@@ -30,12 +31,11 @@ public class JCLPlugin implements TeaVMPlugin {
     public void install(TeaVMHost host) {
         host.add(new EnumDependencySupport());
         host.add(new EnumTransformer());
-        host.add(new ClassLookupDependencySupport());
         host.add(new ObjectEnrichRenderer());
         ServiceLoaderSupport serviceLoaderSupp = new ServiceLoaderSupport(host.getClassLoader());
         host.add(serviceLoaderSupp);
         MethodReference loadServicesMethod = new MethodReference(ServiceLoader.class, "loadServices",
-                Class.class, Object[].class);
+                PlatformClass.class, Object[].class);
         host.add(loadServicesMethod, serviceLoaderSupp);
         JavacSupport javacSupport = new JavacSupport();
         host.add(javacSupport);

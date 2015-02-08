@@ -130,15 +130,18 @@ function $rt_arraycls(cls) {
         }
         var name = "[" + cls.$meta.binaryName;
         arraycls.$meta = { item : cls, supertypes : [$rt_objcls()], primitive : false, superclass : $rt_objcls(),
-                name : name, binaryName : name };
+                name : name, binaryName : name, enum : false };
+        arraycls.classObject = null;
         cls.$array = arraycls;
     }
     return cls.$array;
 }
 function $rt_createcls() {
     return {
+        classObject : null,
         $meta : {
-            supertypes : []
+            supertypes : [],
+            superclass : null
         }
     };
 }
@@ -147,6 +150,8 @@ function $rt_createPrimitiveCls(name, binaryName) {
     cls.$meta.primitive = true;
     cls.$meta.name = name;
     cls.$meta.binaryName = binaryName;
+    cls.$meta.enum = false;
+    cls.$meta.item = null;
     return cls;
 }
 var $rt_booleanclsCache = null;
@@ -365,18 +370,21 @@ function $rt_putStderr(ch) {
 }
 function $rt_declClass(cls, data) {
     cls.$meta = {};
-    cls.$meta.superclass = data.superclass;
-    cls.$meta.supertypes = data.interfaces ? data.interfaces.slice() : [];
+    var m = cls.$meta
+    m.superclass = typeof(data.superclass) !== 'undefined' ? data.superclass : null;
+    m.supertypes = data.interfaces ? data.interfaces.slice() : [];
     if (data.superclass) {
-        cls.$meta.supertypes.push(data.superclass);
+        m.supertypes.push(data.superclass);
         cls.prototype = new data.superclass();
     } else {
         cls.prototype = new Object();
     }
-    cls.$meta.name = data.name;
-    cls.$meta.binaryName = "L" + data.name + ";";
-    cls.$meta.enum = data.enum;
+    m.name = data.name;
+    m.binaryName = "L" + data.name + ";";
+    m.enum = data.enum;
+    m.item = null;
     cls.prototype.constructor = cls;
+    cls.classObject = null;
     cls.$clinit = data.clinit ? data.clinit : function() {};
 }
 function $rt_virtualMethods(cls) {

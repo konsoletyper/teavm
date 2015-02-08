@@ -65,7 +65,7 @@ public class ServiceLoaderSupport implements Generator, DependencyListener {
         }
         writer.outdent().append("}").softNewLine();
         String param = context.getParameterName(1);
-        writer.append("var cls = " + param + ".$data;").softNewLine();
+        writer.append("var cls = " + param + ";").softNewLine();
         writer.append("if (!cls.$$serviceList$$) {").indent().softNewLine();
         writer.append("return $rt_createArray($rt_objcls(), 0);").softNewLine();
         writer.outdent().append("}").softNewLine();

@@ -50,6 +50,8 @@ import org.teavm.model.MethodReference;
  *
  * <p>All other types are not considered to be resources and therefore are not accepted.</p>
  *
+ * @see ClassScopedMetadataGenerator
+ *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public interface MetadataGenerator {

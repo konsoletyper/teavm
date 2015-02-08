@@ -15,38 +15,38 @@
  */
 package org.teavm.platform;
 
+import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSObject;
-import org.teavm.jso.JSProperty;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public interface PlatformPrimitives extends JSObject {
-    @JSProperty("$rt_voidcls")
+    @JSMethod("$rt_voidcls")
     PlatformClass getVoidClass();
 
-    @JSProperty("$rt_booleancls")
+    @JSMethod("$rt_booleancls")
     PlatformClass getBooleanClass();
 
-    @JSProperty("$rt_bytecls")
+    @JSMethod("$rt_bytecls")
     PlatformClass getByteClass();
 
-    @JSProperty("$rt_shortcls")
+    @JSMethod("$rt_shortcls")
     PlatformClass getShortClass();
 
-    @JSProperty("$rt_charcls")
+    @JSMethod("$rt_charcls")
     PlatformClass getCharClass();
 
-    @JSProperty("$rt_intcls")
+    @JSMethod("$rt_intcls")
     PlatformClass getIntClass();
 
-    @JSProperty("$rt_longcls")
+    @JSMethod("$rt_longcls")
     PlatformClass getLongClass();
 
-    @JSProperty("$rt_floatcls")
+    @JSMethod("$rt_floatcls")
     PlatformClass getFloatClass();
 
-    @JSProperty("$rt_doublecls")
+    @JSMethod("$rt_doublecls")
     PlatformClass getDoubleClass();
 }
