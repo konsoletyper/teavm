@@ -426,11 +426,6 @@ function $rt_asyncAdapter(f) {
 function $rt_rootInvocationAdapter(f) {
     return function() {
         var args = Array.prototype.slice.apply(arguments);
-        if (extraArgs) {
-            for (var i = 0; i < extraArts.length; ++i) {
-                args.push(extraArgs[i]);
-            }
-        }
         args.push(function(result) {
             result();
         });
