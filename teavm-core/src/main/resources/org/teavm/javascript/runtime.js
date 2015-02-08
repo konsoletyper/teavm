@@ -412,7 +412,6 @@ function $rt_asyncError(e) {
 }
 function $rt_asyncAdapter(f) {
     return function() {
-        var e;
         var result;
         var args = Array.prototype.slice.apply(arguments);
         var $return = args.pop();

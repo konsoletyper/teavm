@@ -90,6 +90,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     private boolean cancelled;
     private ListableClassHolderSource writtenClasses;
     private Set<MethodReference> asyncMethods = new HashSet<>();
+    private Set<MethodReference> asyncFamilyMethods = new HashSet<>();
 
     TeaVM(ClassReaderSource classSource, ClassLoader classLoader) {
         this.classSource = classSource;
@@ -397,7 +398,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         SourceWriterBuilder builder = new SourceWriterBuilder(naming);
         builder.setMinified(minifying);
         SourceWriter sourceWriter = builder.build(writer);
-        Renderer renderer = new Renderer(sourceWriter, classSet, classLoader, this, asyncMethods, diagnostics);
+        Renderer renderer = new Renderer(sourceWriter, classSet, classLoader, this, asyncMethods, asyncFamilyMethods,
+                diagnostics);
         renderer.setProperties(properties);
         if (debugEmitter != null) {
             int classIndex = 0;
@@ -539,6 +541,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         AsyncMethodFinder asyncFinder = new AsyncMethodFinder(dependencyChecker.getCallGraph(), diagnostics);
         asyncFinder.find(classes);
         asyncMethods.addAll(asyncFinder.getAsyncMethods());
+        asyncFamilyMethods.addAll(asyncFinder.getAsyncFamilyMethods());
 
         progressListener.phaseStarted(TeaVMPhase.DECOMPILATION, classes.getClassNames().size());
         Decompiler decompiler = new Decompiler(classes, classLoader, asyncFinder.getAsyncMethods());

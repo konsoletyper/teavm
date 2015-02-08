@@ -55,6 +55,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     private DeferredCallSite lastCallSite;
     private DeferredCallSite prevCallSite;
     private Set<MethodReference> asyncMethods;
+    private Set<MethodReference> asyncFamilyMethods;
     private Diagnostics diagnostics;
     private boolean async;
 
@@ -79,13 +80,15 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     }
 
     public Renderer(SourceWriter writer, ListableClassHolderSource classSource, ClassLoader classLoader,
-            ServiceRepository services, Set<MethodReference> asyncMethods, Diagnostics diagnostics) {
+            ServiceRepository services, Set<MethodReference> asyncMethods, Set<MethodReference> asyncFamilyMethods,
+            Diagnostics diagnostics) {
         this.naming = writer.getNaming();
         this.writer = writer;
         this.classSource = classSource;
         this.classLoader = classLoader;
         this.services = services;
         this.asyncMethods = new HashSet<>(asyncMethods);
+        this.asyncFamilyMethods = new HashSet<>(asyncFamilyMethods);
         this.diagnostics = diagnostics;
     }
 
@@ -460,7 +463,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             writer.append(");").ws().append("}");
             debugEmitter.emitMethod(null);
 
-            if (!method.isAsync()) {
+            if (!method.isAsync() && asyncFamilyMethods.contains(method.getReference())) {
                 writer.append(",").newLine();
                 writer.append("\"").append(naming.getNameForAsync(ref)).append("\",").ws();
                 writer.append("$rt_asyncAdapter(").appendMethodBody(ref).append(')');
