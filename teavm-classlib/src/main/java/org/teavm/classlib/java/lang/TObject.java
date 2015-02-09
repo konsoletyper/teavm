@@ -64,8 +64,9 @@ public class TObject {
                 .getPlatformClass().getMetadata().getArrayItem() == null) {
             throw new TCloneNotSupportedException();
         }
-        Platform.getPlatformObject(this).setId(Platform.nextObjectId());
-        return Platform.clone(this);
+        Object result = Platform.clone(this);
+        Platform.getPlatformObject(result).setId(Platform.nextObjectId());
+        return result;
     }
 
     @Rename("notify")

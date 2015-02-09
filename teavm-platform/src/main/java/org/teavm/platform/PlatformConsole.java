@@ -23,9 +23,9 @@ import org.teavm.jso.JSObject;
  * @author Alexey Andreev
  */
 public interface PlatformConsole extends JSObject {
-    @JSMethod("rt_putStdout")
+    @JSMethod("$rt_putStdout")
     void output(int b);
 
-    @JSMethod("rt_putStderr")
+    @JSMethod("$rt_putStderr")
     void error(int b);
 }

@@ -109,7 +109,7 @@ class TDecomposedCharSet extends TJointSet {
              * Read testString until we met a decomposed char boundary and
              * decompose obtained portion of testString
              */
-            while ((readCodePoints < TLexer.MAX_DECOMPOSITION_LENGTH) && !TLexer.isDecomposedCharBoundary(curChar)) {
+            while ((readCodePoints < TLexer.MAX_DECOMPOSITION_LENGTH)) {
 
                 if (TLexer.hasDecompositionNonNullCanClass(curChar)) {
 
@@ -144,30 +144,6 @@ class TDecomposedCharSet extends TJointSet {
                     break;
                 }
             }
-        }
-
-        /*
-         * Some optimization since length of decomposed char is <= 3 usually
-         */
-        switch (readCodePoints) {
-            case 0:
-            case 1:
-            case 2:
-                break;
-
-            case 3:
-                int i1 = TLexer.getCanonicalClass(decCodePoint[1]);
-                int i2 = TLexer.getCanonicalClass(decCodePoint[2]);
-
-                if ((i2 != 0) && (i1 > i2)) {
-                    i1 = decCodePoint[1];
-                    decCodePoint[1] = decCodePoint[2];
-                    decCodePoint[2] = i1;
-                }
-                break;
-
-            default:
-                decCodePoint = TLexer.getCanonicalOrder(decCodePoint, readCodePoints);
         }
 
         /*

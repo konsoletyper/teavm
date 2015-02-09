@@ -35,13 +35,10 @@ package org.teavm.classlib.java.util;
 import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import org.teavm.classlib.java.io.TSerializable;
-import org.teavm.classlib.java.lang.TCloneNotSupportedException;
-import org.teavm.classlib.java.lang.TIllegalArgumentException;
-import org.teavm.classlib.java.lang.TIllegalStateException;
-import org.teavm.classlib.java.lang.TObject;
+import org.teavm.classlib.java.lang.*;
 import org.teavm.javascript.spi.Rename;
 
-public class THashMap<K, V> extends TAbstractMap<K, V> implements TSerializable {
+public class THashMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TSerializable {
     transient int elementCount;
     transient HashEntry<K, V>[] elementData;
     transient int modCount = 0;

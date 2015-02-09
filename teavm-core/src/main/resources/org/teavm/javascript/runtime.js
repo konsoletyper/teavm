@@ -383,6 +383,7 @@ function $rt_declClass(cls, data) {
     m.binaryName = "L" + data.name + ";";
     m.enum = data.enum;
     m.item = null;
+    m.primitive = false;
     cls.prototype.constructor = cls;
     cls.classObject = null;
     cls.$clinit = data.clinit ? data.clinit : function() {};

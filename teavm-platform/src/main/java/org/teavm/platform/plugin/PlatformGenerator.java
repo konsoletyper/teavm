@@ -38,7 +38,7 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
                 method.getResult().propagate(agent.getType("java.lang.Class"));
                 return;
             case "clone":
-                method.getVariable(0).connect(method.getResult());
+                method.getVariable(1).connect(method.getResult());
                 break;
         }
     }
