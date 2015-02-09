@@ -100,4 +100,8 @@ public interface InstructionReader {
     void initClass(String className);
 
     void nullCheck(VariableReader receiver, VariableReader value);
+    
+    void monitorEnter(VariableReader objectRef);
+    
+    void monitorExit(VariableReader objectRef);
 }

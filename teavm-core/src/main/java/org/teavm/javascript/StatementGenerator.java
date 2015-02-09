@@ -666,4 +666,23 @@ class StatementGenerator implements InstructionVisitor {
     public void visit(NullCheckInstruction insn) {
         assign(Expr.unary(UnaryOperation.NULL_CHECK, Expr.var(insn.getValue().getIndex())), insn.getReceiver());
     }
+
+    @Override
+    public void visit(MonitorEnterInstruction insn) {
+        
+        MonitorEnterStatement stmt = new MonitorEnterStatement();
+        stmt.setLocation(currentLocation);
+        
+        stmt.setObjectRef(Expr.var(insn.getObjectRef().getIndex()));
+        statements.add(stmt);
+    }
+
+    @Override
+    public void visit(MonitorExitInstruction insn) {
+        MonitorExitStatement stmt = new MonitorExitStatement();
+        stmt.setLocation(currentLocation);
+        
+        stmt.setObjectRef(Expr.var(insn.getObjectRef().getIndex()));
+        statements.add(stmt);
+    }
 }

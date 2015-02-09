@@ -15,6 +15,7 @@
  */
 package org.teavm.samples.async;
 
+
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
@@ -27,8 +28,68 @@ public final class AsyncProgram {
         withoutAsync();
         System.out.println();
         withAsync();
+        
+        System.out.println();
+        
+       
+        
+        final Object lock = new Object();
+        
+        Thread t = new Thread(new Runnable(){
+
+            @Override
+            public void run() {
+                try {
+                    doRun(lock);
+                } catch (InterruptedException ex){
+                    System.out.println(ex.getMessage());
+                }
+            }
+            
+        }, "Test Thread");
+        t.start();
+        
+        Thread t2 = new Thread(new Runnable(){
+
+            @Override
+            public void run() {
+                try {
+                    doRun(lock);
+                } catch (InterruptedException ex){
+                    System.out.println(ex.getMessage());
+                }
+            }
+            
+        }, "Test Thread 2");
+        t2.start();
+        System.out.println("Should be main -> Current thread is "+Thread.currentThread().getName());   
+        System.out.println("Now trying wait...");
+        
+        lock.wait(20000);
+        System.out.println("Finished waiting");
+        
     }
 
+    private static void doRun(Object lock) throws InterruptedException {
+        System.out.println("Current thread is "+Thread.currentThread().getName());
+        System.out.println("Executing timer task");
+        Thread.sleep(2000);
+        System.out.println("Current thread is "+Thread.currentThread().getName());
+        System.out.println("Calling lock.notify()");
+        lock.notify();
+        System.out.println("Current thread is "+Thread.currentThread().getName());
+        System.out.println("Finished calling lock.notify()");
+        Thread.sleep(5000);
+        System.out.println("Current thread is "+Thread.currentThread().getName());
+        System.out.println("Finished another 5 second sleep");
+        
+        synchronized(lock){
+            System.out.println("Inside locked section of thread "+Thread.currentThread().getName());
+            Thread.sleep(2000);
+            System.out.println("Finished locked section of thread "+Thread.currentThread().getName());
+        }
+    }
+    
     private static void withoutAsync() {
         System.out.println("Start sync");
         for (int i = 0; i < 20; ++i) {
@@ -54,6 +115,9 @@ public final class AsyncProgram {
                 Thread.sleep(1000);
             }
         }
+        System.out.println("2nd Thread.sleep in same method");
+        Thread.sleep(1000);
+        
         System.out.println("Complete async");
 
         System.out.println("Throwing exception");
@@ -69,4 +133,6 @@ public final class AsyncProgram {
         System.out.println("Thread.yield called");
         throw new IllegalStateException();
     }
+    
+    
 }

@@ -204,5 +204,15 @@ public final class VariableEscapeAnalyzer {
         @Override
         public void visit(NullCheckInstruction insn) {
         }
+
+        @Override
+        public void visit(MonitorEnterInstruction insn) {
+            
+        }
+
+        @Override
+        public void visit(MonitorExitInstruction insn) {
+            
+        }
     }
 }

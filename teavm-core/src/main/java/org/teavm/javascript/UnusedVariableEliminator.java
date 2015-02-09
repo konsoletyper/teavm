@@ -231,4 +231,14 @@ class UnusedVariableEliminator implements ExprVisitor, StatementVisitor {
             statement.setReceiver(renumber(statement.getReceiver()));
         }
     }
+
+    @Override
+    public void visit(MonitorEnterStatement statement) {
+        
+    }
+
+    @Override
+    public void visit(MonitorExitStatement statement) {
+        
+    }
 }

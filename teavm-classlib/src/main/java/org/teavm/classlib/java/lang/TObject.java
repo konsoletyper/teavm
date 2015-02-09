@@ -15,9 +15,18 @@
  */
 package org.teavm.classlib.java.lang;
 
+import org.teavm.dom.browser.Window;
+import org.teavm.javascript.spi.Async;
+
 import org.teavm.javascript.spi.Rename;
 import org.teavm.javascript.spi.Superclass;
+import org.teavm.jso.JS;
+import org.teavm.jso.JSArray;
+import org.teavm.jso.JSFunctor;
+import org.teavm.jso.JSObject;
 import org.teavm.platform.Platform;
+import org.teavm.platform.async.AsyncCallback;
+
 
 /**
  *
@@ -25,6 +34,47 @@ import org.teavm.platform.Platform;
  */
 @Superclass("")
 public class TObject {
+    
+    private TThread owner;
+    private TObject monitorLock;
+    private int monitorCount=0;
+    private JSArray<NotifyListener> notifyListeners;
+    private final Window window = (Window)JS.getGlobal();
+    
+    @JSFunctor
+    private static interface NotifyListener extends JSObject{
+        void handleNotify();
+    }
+    
+    static void monitorEnter(TObject o){
+        if ( o.monitorLock == null ){
+            o.monitorLock = new TObject();
+        }
+        while (o.owner != null && o.owner != TThread.currentThread() ){
+            try {
+                o.monitorLock.wait();
+            } catch (InterruptedException ex) {
+                
+            }
+        }
+        o.owner = TThread.currentThread();
+        o.monitorCount++;
+        
+    }
+    
+    static void monitorExit(TObject o){
+        
+        o.monitorCount--;
+        if ( o.monitorCount == 0 && o.monitorLock != null){
+            o.owner = null;
+            o.monitorLock.notifyAll();
+        }
+    }
+    
+    static boolean holdsLock(TObject o){
+        return o.owner == TThread.currentThread();
+    }
+    
     @Rename("fakeInit")
     public TObject() {
     }
@@ -70,25 +120,71 @@ public class TObject {
     }
 
     @Rename("notify")
-    public final void notify0() {
+    public final void notify0(){
+        if (notifyListeners != null && notifyListeners.getLength() > 0){
+            notifyListeners.shift().handleNotify();
+        }
     }
 
+    
     @Rename("notifyAll")
-    public final void notifyAll0() {
+    public final void notifyAll0(){
+        if (notifyListeners != null){
+            JSArray<NotifyListener> listeners = window.newArray();
+            while (notifyListeners.getLength() > 0 ){
+                listeners.push(notifyListeners.shift());
+            }
+            while ( listeners.getLength() > 0 ){
+                listeners.shift().handleNotify();
+            }
+        }
+        
     }
-
-    @SuppressWarnings("unused")
+    
+    
     @Rename("wait")
-    public final void wait0(long timeout) throws TInterruptedException {
+    public final void wait0(long timeout) throws TInterruptedException{
+        try {
+            wait(timeout, 0);
+        } catch ( InterruptedException ex){
+            throw new TInterruptedException();
+        }
     }
-
-    @SuppressWarnings("unused")
+    
+    @Async
     @Rename("wait")
-    public final void wait0(long timeout, int nanos) throws TInterruptedException {
-    }
+    public native final void wait0(long timeout, int nanos) throws TInterruptedException;
 
+    
+    @Rename("wait")
+    public final void wait0(long timeout, int nanos, final AsyncCallback<Void> callback){
+        if ( notifyListeners == null ){
+            notifyListeners = window.newArray(); 
+        }
+        final TThread currentThread = TThread.currentThread();
+        notifyListeners.push(new NotifyListener(){
+
+            @Override
+            public void handleNotify() {
+                TThread.setCurrentThread(currentThread);
+                try {
+                    callback.complete(null);
+                } finally {
+                    TThread.setCurrentThread(TThread.getMainThread());
+                }
+
+            }
+
+        });
+    }
+    
     @Rename("wait")
     public final void wait0() throws TInterruptedException {
+        try {
+            wait(0l);
+        } catch ( InterruptedException ex){
+            throw new TInterruptedException();
+        }
     }
 
     @Override

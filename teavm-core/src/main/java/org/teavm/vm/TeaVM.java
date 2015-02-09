@@ -347,6 +347,10 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         internDep.use();
         dependencyChecker.linkMethod(new MethodReference(String.class, "length", int.class), null).use();
         dependencyChecker.linkMethod(new MethodReference(Object.class, "clone", Object.class), null).use();
+        dependencyChecker.linkMethod(new MethodReference(Thread.class, "currentThread", Thread.class), null).use();
+        dependencyChecker.linkMethod(new MethodReference(Thread.class, "getMainThread", Thread.class), null).use();
+        dependencyChecker.linkMethod(
+                new MethodReference(Thread.class, "setCurrentThread", Thread.class, void.class), null).use();
         MethodDependency exceptionCons = dependencyChecker.linkMethod(new MethodReference(
                 NoClassDefFoundError.class, "<init>", String.class, void.class), null);
         exceptionCons.use();
@@ -426,6 +430,28 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                 listener.begin(renderer, target);
             }
             sourceWriter.append("\"use strict\";").newLine();
+            
+            
+            // Keep track of current running thread by overriding setTimeout
+            sourceWriter.append("function $rt_setTimeout(f,interval){").indent().softNewLine();
+            MethodReference currentThreadRef = new MethodReference(
+                    Thread.class, "currentThread", Thread.class);
+            MethodReference setCurrentThreadRef = new MethodReference(
+                    Thread.class, "setCurrentThread", Thread.class, void.class);
+            MethodReference getMainThreadRef = new MethodReference(Thread.class, "getMainThread", Thread.class);
+            
+            sourceWriter.append("var currThread = ").appendMethodBody(currentThreadRef).append("();").softNewLine();
+            sourceWriter.append("var callback = function(){").indent().softNewLine();
+            sourceWriter.appendMethodBody(setCurrentThreadRef).append("(currThread);").softNewLine();
+            sourceWriter.append("try{f();} finally {").softNewLine();
+            sourceWriter.appendMethodBody(setCurrentThreadRef).append("(").
+                    appendMethodBody(getMainThreadRef).append("());}").softNewLine();
+            sourceWriter.outdent().append("};").softNewLine();
+            sourceWriter.append("setTimeout(callback, interval);").softNewLine();
+            sourceWriter.outdent().append("};").softNewLine();
+            
+            // END Thread stuff
+            
             renderer.renderRuntime();
             for (ClassNode clsNode : clsNodes) {
                 ClassReader cls = classSet.get(clsNode.getName());

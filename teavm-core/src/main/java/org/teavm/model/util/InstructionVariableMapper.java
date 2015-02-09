@@ -228,4 +228,18 @@ public abstract class InstructionVariableMapper implements InstructionVisitor {
         insn.setReceiver(map(insn.getReceiver()));
         insn.setValue(map(insn.getValue()));
     }
+
+    @Override
+    public void visit(MonitorEnterInstruction insn) {
+        insn.setObjectRef(map(insn.getObjectRef()));
+    }
+
+    @Override
+    public void visit(MonitorExitInstruction insn) {
+        insn.setObjectRef(map(insn.getObjectRef()));
+    }
+    
+    
+    
+    
 }

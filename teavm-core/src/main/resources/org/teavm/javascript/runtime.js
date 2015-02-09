@@ -424,7 +424,7 @@ function $rt_asyncAdapter(f) {
         return $return($rt_asyncResult(result));
     }
 }
-function $rt_rootInvocationAdapter(f) {
+function $rt_rootInvocationAdapter(f, extraArgs) {
     return function() {
         var args = Array.prototype.slice.apply(arguments);
         args.push(function(result) {

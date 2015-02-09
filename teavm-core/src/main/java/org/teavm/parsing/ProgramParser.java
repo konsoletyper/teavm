@@ -1556,10 +1556,19 @@ public class ProgramParser implements VariableDebugInformation {
                     nextIndexes = new int[0];
                     return;
                 }
-                case Opcodes.MONITORENTER:
-                case Opcodes.MONITOREXIT:
-                    popSingle();
+                case Opcodes.MONITORENTER: {
+                    MonitorEnterInstruction insn = new MonitorEnterInstruction();
+                    insn.setObjectRef(getVariable(popSingle()));
+                    addInstruction(insn);
                     break;
+                }
+                case Opcodes.MONITOREXIT: {
+                    MonitorExitInstruction insn = new MonitorExitInstruction();
+                    insn.setObjectRef(getVariable(popSingle()));
+                    addInstruction(insn);
+                    break;
+                }
+                    
             }
         }
 

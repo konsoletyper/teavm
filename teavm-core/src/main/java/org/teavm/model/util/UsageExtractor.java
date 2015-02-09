@@ -206,4 +206,14 @@ public class UsageExtractor implements InstructionVisitor {
     public void visit(NullCheckInstruction insn) {
         usedVariables = new Variable[] { insn.getValue() };
     }
+
+    @Override
+    public void visit(MonitorEnterInstruction insn) {
+        usedVariables = new Variable[] {insn.getObjectRef() };
+    }
+
+    @Override
+    public void visit(MonitorExitInstruction insn) {
+        usedVariables = new Variable[] {insn.getObjectRef()};
+    }
 }

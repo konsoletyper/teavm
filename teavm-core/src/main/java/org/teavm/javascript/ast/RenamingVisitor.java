@@ -198,4 +198,14 @@ public class RenamingVisitor implements StatementVisitor, ExprVisitor {
             statement.setReceiver(varNames[statement.getReceiver()]);
         }
     }
+
+    @Override
+    public void visit(MonitorEnterStatement statement) {
+        
+    }
+
+    @Override
+    public void visit(MonitorExitStatement statement) {
+        
+    }
 }
