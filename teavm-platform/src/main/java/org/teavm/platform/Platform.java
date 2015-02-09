@@ -34,6 +34,10 @@ public final class Platform {
         return (PlatformObject)JS.marshall(obj);
     }
 
+    @GeneratedBy(PlatformGenerator.class)
+    @PluggableDependency(PlatformGenerator.class)
+    public static native Object clone(Object obj);
+
     public static boolean isInstance(PlatformObject obj, PlatformClass cls) {
         return obj != null && !JS.isUndefined(obj.getPlatformClass().getMetadata()) &&
                 isAssignable(obj.getPlatformClass(), cls);
@@ -60,6 +64,14 @@ public final class Platform {
         return (PlatformPrimitives)JS.getGlobal();
     }
 
+    public static PlatformConsole getConsole() {
+        return (PlatformConsole)JS.getGlobal();
+    }
+
+    public static int nextObjectId() {
+        return ((PlatformHelper)JS.getGlobal()).nextId();
+    }
+
     @GeneratedBy(PlatformGenerator.class)
     @PluggableDependency(PlatformGenerator.class)
     public static native <T> T newInstance(PlatformClass cls);
@@ -75,4 +87,12 @@ public final class Platform {
     @InjectedBy(PlatformGenerator.class)
     @PluggableDependency(PlatformGenerator.class)
     public static native PlatformClass classFromResource(ClassResource resource);
+
+    @InjectedBy(PlatformGenerator.class)
+    @PluggableDependency(PlatformGenerator.class)
+    public static native Enum<?>[] getEnumConstants(PlatformClass cls);
+
+    public static PlatformString stringFromCharCode(int charCode) {
+        return ((PlatformHelper)JS.getGlobal()).getStringClass().fromCharCode(charCode);
+    }
 }

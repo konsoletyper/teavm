@@ -25,4 +25,10 @@ import org.teavm.jso.JSProperty;
 public interface PlatformObject extends JSObject {
     @JSProperty("constructor")
     PlatformClass getPlatformClass();
+
+    @JSProperty("$id")
+    int getId();
+
+    @JSProperty("$id")
+    void setId(int id);
 }

@@ -16,7 +16,6 @@
 package org.teavm.classlib.java.lang;
 
 import org.teavm.classlib.impl.DeclaringClassMetadataGenerator;
-import org.teavm.javascript.spi.InjectedBy;
 import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformClass;
 import org.teavm.platform.metadata.ClassResource;
@@ -144,11 +143,8 @@ public class TClass<T> extends TObject {
 
     @SuppressWarnings("unchecked")
     public T[] getEnumConstants() {
-        return isEnum() ? (T[])getEnumConstantsImpl(platformClass) : null;
+        return isEnum() ? (T[])Platform.getEnumConstants(platformClass) : null;
     }
-
-    @InjectedBy(ClassNativeGenerator.class)
-    private static native Object[] getEnumConstantsImpl(PlatformClass cls);
 
     @SuppressWarnings("unchecked")
     public T cast(TObject obj) {

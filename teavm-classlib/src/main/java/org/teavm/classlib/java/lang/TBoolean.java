@@ -16,7 +16,6 @@
 package org.teavm.classlib.java.lang;
 
 import org.teavm.classlib.java.io.TSerializable;
-import org.teavm.javascript.spi.GeneratedBy;
 
 /**
  *
@@ -80,7 +79,6 @@ public class TBoolean extends TObject implements TSerializable, TComparable<TBoo
     }
 
     @Override
-    @GeneratedBy(ObjectNativeGenerator.class)
     public int hashCode() {
         return value ? 1231 : 1237;
     }

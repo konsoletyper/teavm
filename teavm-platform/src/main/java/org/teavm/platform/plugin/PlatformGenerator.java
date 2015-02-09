@@ -37,6 +37,9 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
             case "asJavaClass":
                 method.getResult().propagate(agent.getType("java.lang.Class"));
                 return;
+            case "clone":
+                method.getVariable(0).connect(method.getResult());
+                break;
         }
     }
 
@@ -47,6 +50,10 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
             case "classFromResource":
                 context.writeExpr(context.getArgument(0));
                 return;
+            case "getEnumConstants":
+                context.writeExpr(context.getArgument(0));
+                context.getWriter().append(".values()");
+                break;
         }
     }
 
@@ -58,6 +65,9 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
                 break;
             case "lookupClass":
                 generateLookup(context, writer);
+                break;
+            case "clone":
+                generateClone(context, writer);
                 break;
         }
     }
@@ -94,5 +104,17 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
         }
         writer.append("default: return null;").softNewLine();
         writer.outdent().append("}").softNewLine();
+    }
+
+    private void generateClone(GeneratorContext context, SourceWriter writer) throws IOException {
+        String obj = context.getParameterName(1);
+        writer.append("var copy").ws().append("=").ws().append("new ").append(obj).append(".constructor();")
+                .softNewLine();
+        writer.append("for").ws().append("(var field in " + obj + ")").ws().append("{").softNewLine().indent();
+        writer.append("if").ws().append("(!" + obj + ".hasOwnProperty(field))").ws().append("{").softNewLine().indent();
+        writer.append("continue;").softNewLine().outdent().append("}").softNewLine();
+        writer.append("copy[field]").ws().append("=").ws().append(obj).append("[field];")
+                .softNewLine().outdent().append("}").softNewLine();
+        writer.append("return copy;").softNewLine();
     }
 }

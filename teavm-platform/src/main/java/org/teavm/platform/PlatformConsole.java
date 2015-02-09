@@ -1,5 +1,5 @@
 /*
- *  Copyright 2013 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,19 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.java.lang;
+package org.teavm.platform;
 
-import org.teavm.classlib.java.io.TIOException;
-import org.teavm.classlib.java.io.TOutputStream;
-import org.teavm.platform.Platform;
+import org.teavm.jso.JSMethod;
+import org.teavm.jso.JSObject;
 
 /**
  *
  * @author Alexey Andreev
  */
-class TConsoleOutputStream_stderr extends TOutputStream {
-    @Override
-    public void write(int b) throws TIOException {
-        Platform.getConsole().error(b);
-    }
+public interface PlatformConsole extends JSObject {
+    @JSMethod("rt_putStdout")
+    void output(int b);
+
+    @JSMethod("rt_putStderr")
+    void error(int b);
 }

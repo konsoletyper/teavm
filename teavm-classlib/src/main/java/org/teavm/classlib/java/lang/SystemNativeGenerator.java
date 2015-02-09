@@ -48,9 +48,6 @@ public class SystemNativeGenerator implements Generator, DependencyPlugin {
                         .appendField(new FieldReference("java.lang.System", "err"))
                         .ws().append('=').ws().append(context.getParameterName(1)).append(";").softNewLine();
                 break;
-            case "identityHashCode":
-                writer.append("return ").append(context.getParameterName(1)).append(".$id;").softNewLine();
-                break;
         }
     }
 

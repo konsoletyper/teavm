@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.impl;
+package org.teavm.platform.plugin;
 
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.javascript.spi.PreserveOriginalName;

@@ -15,11 +15,9 @@
  */
 package org.teavm.classlib.java.lang;
 
-import org.teavm.dependency.PluggableDependency;
-import org.teavm.javascript.spi.GeneratedBy;
-import org.teavm.javascript.spi.InjectedBy;
 import org.teavm.javascript.spi.Rename;
 import org.teavm.javascript.spi.Superclass;
+import org.teavm.platform.Platform;
 
 /**
  *
@@ -31,18 +29,20 @@ public class TObject {
     public TObject() {
     }
 
-    @GeneratedBy(ObjectNativeGenerator.class)
     @Rename("<init>")
-    private native void init();
+    private void init() {
+        Platform.getPlatformObject(this).setId(Platform.nextObjectId());
+    }
 
-    @InjectedBy(ObjectNativeGenerator.class)
     @Rename("getClass")
-    @PluggableDependency(ObjectNativeGenerator.class)
-    public native final TClass<?> getClass0();
+    public final TClass<?> getClass0() {
+        return TClass.getClass(Platform.getPlatformObject(this).getPlatformClass());
+    }
 
     @Override
-    @GeneratedBy(ObjectNativeGenerator.class)
-    public native int hashCode();
+    public int hashCode() {
+        return identity();
+    }
 
     @Rename("equals")
     public boolean equals0(TObject other) {
@@ -54,13 +54,19 @@ public class TObject {
         return getClass().getName() + "@" + TInteger.toHexString(identity());
     }
 
-    @GeneratedBy(ObjectNativeGenerator.class)
-    native int identity();
+    int identity() {
+        return Platform.getPlatformObject(this).getId();
+    }
 
-    @GeneratedBy(ObjectNativeGenerator.class)
-    @PluggableDependency(ObjectNativeGenerator.class)
     @Override
-    protected native Object clone() throws TCloneNotSupportedException;
+    protected Object clone() throws TCloneNotSupportedException {
+        if (!(this instanceof TCloneable) && Platform.getPlatformObject(this)
+                .getPlatformClass().getMetadata().getArrayItem() == null) {
+            throw new TCloneNotSupportedException();
+        }
+        Platform.getPlatformObject(this).setId(Platform.nextObjectId());
+        return Platform.clone(this);
+    }
 
     @Rename("notify")
     public final void notify0() {
@@ -88,7 +94,7 @@ public class TObject {
     protected void finalize() throws TThrowable {
     }
 
-    @InjectedBy(ObjectNativeGenerator.class)
-    @PluggableDependency(ObjectNativeGenerator.class)
-    public static native TObject wrap(Object obj);
+    public static TObject wrap(Object obj) {
+        return (TObject)obj;
+    }
 }

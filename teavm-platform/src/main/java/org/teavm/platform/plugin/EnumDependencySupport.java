@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.impl;
+package org.teavm.platform.plugin;
 
 import org.teavm.dependency.*;
 import org.teavm.model.CallLocation;
@@ -21,6 +21,7 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
 import org.teavm.model.ValueType;
+import org.teavm.platform.Platform;
 
 /**
  *
@@ -53,8 +54,8 @@ public class EnumDependencySupport implements DependencyListener {
 
     @Override
     public void methodAchieved(DependencyAgent agent, MethodDependency method, CallLocation location) {
-        if (method.getReference().getClassName().equals("java.lang.Class") &&
-                method.getReference().getName().equals("getEnumConstantsImpl")) {
+        if (method.getReference().getClassName().equals(Platform.class.getName()) &&
+                method.getReference().getName().equals("getEnumConstants")) {
             unlocked = true;
             allEnums.connect(method.getResult().getArrayItem());
             method.getResult().propagate(agent.getType("[java.lang.Enum"));

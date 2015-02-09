@@ -29,8 +29,6 @@ import org.teavm.vm.spi.TeaVMPlugin;
 public class JCLPlugin implements TeaVMPlugin {
     @Override
     public void install(TeaVMHost host) {
-        host.add(new EnumDependencySupport());
-        host.add(new EnumTransformer());
         host.add(new ObjectEnrichRenderer());
         ServiceLoaderSupport serviceLoaderSupp = new ServiceLoaderSupport(host.getClassLoader());
         host.add(serviceLoaderSupp);
