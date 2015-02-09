@@ -15,19 +15,18 @@
  */
 package org.teavm.classlib.java.lang;
 
-<<<<<<< HEAD
+import org.teavm.dom.browser.Window;
+import org.teavm.javascript.spi.Async;
 
-import org.teavm.dependency.PluggableDependency;
-import org.teavm.javascript.ni.GeneratedBy;
-import org.teavm.javascript.ni.InjectedBy;
-import org.teavm.javascript.ni.Rename;
-import org.teavm.javascript.ni.Superclass;
-import org.teavm.runtime.Async;
-=======
 import org.teavm.javascript.spi.Rename;
 import org.teavm.javascript.spi.Superclass;
+import org.teavm.jso.JS;
+import org.teavm.jso.JSArray;
+import org.teavm.jso.JSFunctor;
+import org.teavm.jso.JSObject;
 import org.teavm.platform.Platform;
->>>>>>> dd25ae4759716d735fe6f93a54c8bfab2e7fc7bf
+import org.teavm.platform.async.AsyncCallback;
+
 
 /**
  *
@@ -39,6 +38,13 @@ public class TObject {
     private TThread owner;
     private TObject monitorLock;
     private int monitorCount=0;
+    private JSArray<NotifyListener> notifyListeners;
+    private final Window window = (Window)JS.getGlobal();
+    
+    @JSFunctor
+    private static interface NotifyListener extends JSObject{
+        void handleNotify();
+    }
     
     static void monitorEnter(TObject o){
         if ( o.monitorLock == null ){
@@ -59,11 +65,9 @@ public class TObject {
     static void monitorExit(TObject o){
         
         o.monitorCount--;
-        if ( o.monitorCount == 0 ){
-            if ( o.monitorLock != null ){
-                o.owner = null;
-                o.monitorLock.notifyAll();
-            }
+        if ( o.monitorCount == 0 && o.monitorLock != null){
+            o.owner = null;
+            o.monitorLock.notifyAll();
         }
     }
     
@@ -114,14 +118,27 @@ public class TObject {
         return Platform.clone(this);
     }
 
-    @GeneratedBy(ObjectNativeGenerator.class)
     @Rename("notify")
-    public native final void notify0();
+    public final void notify0(){
+        if (notifyListeners != null && notifyListeners.getLength() > 0){
+            notifyListeners.shift().handleNotify();
+        }
+    }
 
     
-    @GeneratedBy(ObjectNativeGenerator.class)
     @Rename("notifyAll")
-    public native final void notifyAll0();
+    public final void notifyAll0(){
+        if (notifyListeners != null){
+            JSArray<NotifyListener> listeners = window.newArray();
+            while (notifyListeners.getLength() > 0 ){
+                listeners.push(notifyListeners.shift());
+            }
+            while ( listeners.getLength() > 0 ){
+                listeners.shift().handleNotify();
+            }
+        }
+        
+    }
     
     
     @Rename("wait")
@@ -134,15 +151,37 @@ public class TObject {
     }
     
     @Async
-    @GeneratedBy(ObjectNativeGenerator.class)
     @Rename("wait")
     public native final void wait0(long timeout, int nanos) throws TInterruptedException;
 
+    
+    @Rename("wait")
+    public final void wait0(long timeout, int nanos, final AsyncCallback<Void> callback){
+        if ( notifyListeners == null ){
+            notifyListeners = window.newArray(); 
+        }
+        final TThread currentThread = TThread.currentThread();
+        notifyListeners.push(new NotifyListener(){
+
+            @Override
+            public void handleNotify() {
+                TThread.setCurrentThread(currentThread);
+                try {
+                    callback.complete(null);
+                } finally {
+                    TThread.setCurrentThread(TThread.getMainThread());
+                }
+
+            }
+
+        });
+    }
+    
     @Rename("wait")
     public final void wait0() throws TInterruptedException {
         try {
             wait(0l);
-        } catch (InterruptedException ex) {
+        } catch ( InterruptedException ex){
             throw new TInterruptedException();
         }
     }
