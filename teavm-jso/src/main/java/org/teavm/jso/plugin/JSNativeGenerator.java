@@ -21,8 +21,8 @@ import org.teavm.dependency.*;
 import org.teavm.javascript.ast.ConstantExpr;
 import org.teavm.javascript.ast.Expr;
 import org.teavm.javascript.ast.InvocationExpr;
-import org.teavm.javascript.ni.Injector;
-import org.teavm.javascript.ni.InjectorContext;
+import org.teavm.javascript.spi.Injector;
+import org.teavm.javascript.spi.InjectorContext;
 import org.teavm.jso.JS;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReader;
@@ -87,6 +87,9 @@ public class JSNativeGenerator implements Injector, DependencyPlugin {
                     context.writeExpr(context.getArgument(i));
                 }
                 writer.append("))");
+                break;
+            case "marshall":
+                context.writeExpr(context.getArgument(0));
                 break;
             case "wrap":
                 if (methodRef.getDescriptor().parameterType(0).isObject("java.lang.String")) {

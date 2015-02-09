@@ -50,6 +50,16 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.teavm</groupId>
+      <artifactId>teavm-jso</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.teavm</groupId>
+      <artifactId>teavm-dom</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
       <version>2.2.4</version>
@@ -73,34 +83,6 @@
             <Bundle-SymbolicName>teavm-classlib</Bundle-SymbolicName>
           </instructions>
         </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.teavm</groupId>
-        <artifactId>teavm-maven-plugin</artifactId>
-        <version>${project.version}</version>
-        <dependencies>
-          <dependency>
-            <groupId>org.teavm</groupId>
-            <artifactId>teavm-platform</artifactId>
-            <version>${project.version}</version>
-          </dependency>
-        </dependencies>
-        <executions>
-          <execution>
-            <id>generate-javascript-tests</id>
-            <goals>
-              <goal>build-test-javascript</goal>
-            </goals>
-            <phase>process-test-classes</phase>
-            <configuration>
-              <minifying>false</minifying>
-              <properties>
-                <java.util.Locale.available>en, en_US, en_GB, ru, ru_RU</java.util.Locale.available>
-              </properties>
-              <incremental>${teavm.classlib.test.incremental}</incremental>
-            </configuration>
-          </execution>
-        </executions>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
@@ -133,15 +115,6 @@
             <argument>-output</argument>
             <argument>${project.build.directory}/jcl-report</argument>
           </arguments>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <excludes>
-            <exclude>org/teavm/platform/metadata/*.java</exclude>
-          </excludes>
         </configuration>
       </plugin>
       <plugin>

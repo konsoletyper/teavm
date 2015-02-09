@@ -15,20 +15,33 @@
  */
 package org.teavm.classlib.java.lang;
 
+<<<<<<< HEAD
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.javascript.ni.GeneratedBy;
 import org.teavm.runtime.Async;
+=======
+import org.teavm.dom.browser.TimerHandler;
+import org.teavm.dom.browser.Window;
+import org.teavm.javascript.spi.Async;
+import org.teavm.jso.JS;
+import org.teavm.platform.async.AsyncCallback;
+>>>>>>> dd25ae4759716d735fe6f93a54c8bfab2e7fc7bf
 
 /**
  *
  * @author Alexey Andreev
  */
 public class TThread extends TObject implements TRunnable {
+<<<<<<< HEAD
     private static TThread mainThread = new TThread(TString.wrap("main"));
     private static TThread currentThread = mainThread;
     private static long nextId = 1;
     private static int activeCount = 1;
     private long id;
+=======
+    private static Window window = (Window)JS.getGlobal();
+    private static TThread currentThread = new TThread(TString.wrap("main"));
+>>>>>>> dd25ae4759716d735fe6f93a54c8bfab2e7fc7bf
     private TString name;
     private TRunnable target;
 
@@ -90,8 +103,15 @@ public class TThread extends TObject implements TRunnable {
     }
 
     @Async
-    @GeneratedBy(ThreadNativeGenerator.class)
     public static native void yield();
+
+    private static void yield(final AsyncCallback<Void> callback) {
+        window.setTimeout(new TimerHandler() {
+            @Override public void onTimer() {
+                callback.complete(null);
+            }
+        }, 0);
+    }
 
     public void interrupt() {
     }
@@ -116,13 +136,21 @@ public class TThread extends TObject implements TRunnable {
         return TObject.holdsLock(obj);
     }
 
-    public static void sleep(long millis) throws TInterruptedException {
-        sleep((double)millis);
-    }
-
     @Async
+<<<<<<< HEAD
     @GeneratedBy(ThreadNativeGenerator.class)
     private static native void sleep(double millis) throws TInterruptedException;
     
     
+=======
+    public static native void sleep(long millis) throws TInterruptedException;
+
+    private static void sleep(long millis, final AsyncCallback<Void> callback) {
+        window.setTimeout(new TimerHandler() {
+            @Override public void onTimer() {
+                callback.complete(null);
+            }
+        }, millis);
+    }
+>>>>>>> dd25ae4759716d735fe6f93a54c8bfab2e7fc7bf
 }

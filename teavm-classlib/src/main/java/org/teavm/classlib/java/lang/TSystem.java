@@ -18,7 +18,7 @@ package org.teavm.classlib.java.lang;
 import org.teavm.classlib.java.io.TPrintStream;
 import org.teavm.classlib.java.lang.reflect.TArray;
 import org.teavm.dependency.PluggableDependency;
-import org.teavm.javascript.ni.GeneratedBy;
+import org.teavm.javascript.spi.GeneratedBy;
 
 /**
  *
@@ -93,9 +93,9 @@ public final class TSystem extends TObject {
         return currentTimeMillis() * 10000000;
     }
 
-    @GeneratedBy(SystemNativeGenerator.class)
-    @PluggableDependency(SystemNativeGenerator.class)
-    public static native int identityHashCode(Object x);
+    public static int identityHashCode(Object x) {
+        return ((TObject)x).identity();
+    }
 
     public static TString lineSeparator() {
         return TString.wrap("\n");

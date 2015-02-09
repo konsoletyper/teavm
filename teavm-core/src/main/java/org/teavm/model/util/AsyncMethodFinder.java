@@ -15,16 +15,15 @@
  */
 package org.teavm.model.util;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.callgraph.CallGraphNode;
 import org.teavm.callgraph.CallSite;
 import org.teavm.diagnostics.Diagnostics;
-import org.teavm.javascript.ni.InjectedBy;
+import org.teavm.javascript.spi.Async;
+import org.teavm.javascript.spi.InjectedBy;
+import org.teavm.javascript.spi.Sync;
 import org.teavm.model.*;
-import org.teavm.runtime.Async;
-import org.teavm.runtime.Sync;
 
 /**
  *
@@ -32,6 +31,9 @@ import org.teavm.runtime.Sync;
  */
 public class AsyncMethodFinder {
     private Set<MethodReference> asyncMethods = new HashSet<>();
+    private Map<MethodReference, Boolean> asyncFamilyMethods = new HashMap<>();
+    private Set<MethodReference> readonlyAsyncMethods = Collections.unmodifiableSet(asyncMethods);
+    private Set<MethodReference> readonlyAsyncFamilyMethods = Collections.unmodifiableSet(asyncFamilyMethods.keySet());
     private CallGraph callGraph;
     private Diagnostics diagnostics;
     private ListableClassReaderSource classSource;
@@ -42,7 +44,11 @@ public class AsyncMethodFinder {
     }
 
     public Set<MethodReference> getAsyncMethods() {
-        return asyncMethods;
+        return readonlyAsyncMethods;
+    }
+
+    public Set<MethodReference> getAsyncFamilyMethods() {
+        return readonlyAsyncFamilyMethods;
     }
 
     public void find(ListableClassReaderSource classSource) {
@@ -56,6 +62,17 @@ public class AsyncMethodFinder {
                 if (method.getAnnotations().get(Async.class.getName()) != null) {
                     add(method.getReference());
                 }
+            }
+        }
+        for (String clsName : classSource.getClassNames()) {
+            ClassReader cls = classSource.get(clsName);
+            for (MethodReader method : cls.getMethods()) {
+                addToFamily(method.getReference());
+            }
+        }
+        for (Map.Entry<MethodReference, Boolean> entry : new ArrayList<>(asyncFamilyMethods.entrySet())) {
+            if (!entry.getValue()) {
+                asyncFamilyMethods.remove(entry.getKey());
             }
         }
     }
@@ -84,6 +101,77 @@ public class AsyncMethodFinder {
         }
         for (CallSite callSite : node.getCallerCallSites()) {
             add(callSite.getCaller().getMethod());
+        }
+        Set<MethodReference> visited = new HashSet<>();
+        Set<MethodReference> overriden = new HashSet<>();
+        if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
+            findOverridenMethods(new MethodReference(cls.getParent(), methodRef.getDescriptor()), overriden, visited);
+        }
+        for (String iface : cls.getInterfaces()) {
+            findOverridenMethods(new MethodReference(iface, methodRef.getDescriptor()), overriden, visited);
+        }
+        for (MethodReference overridenMethod : overriden) {
+            add(overridenMethod);
+        }
+    }
+
+    private boolean addToFamily(MethodReference methodRef) {
+        Boolean cachedResult = asyncFamilyMethods.get(methodRef);
+        if (cachedResult != null) {
+            return cachedResult;
+        }
+        boolean result = addToFamilyCacheMiss(methodRef);
+        asyncFamilyMethods.put(methodRef, result);
+        return result;
+    }
+
+    private boolean addToFamilyCacheMiss(MethodReference methodRef) {
+        if (asyncMethods.contains(methodRef)) {
+            return true;
+        }
+        ClassReader cls = classSource.get(methodRef.getClassName());
+        if (cls == null) {
+            return false;
+        }
+        List<String> parents = new ArrayList<>();
+        if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
+            parents.add(cls.getParent());
+        }
+        parents.addAll(cls.getInterfaces());
+
+        Set<MethodReference> visited = new HashSet<>();
+        Set<MethodReference> overriden = new HashSet<>();
+        for (String parent : parents) {
+            findOverridenMethods(new MethodReference(parent, methodRef.getDescriptor()), overriden, visited);
+        }
+
+        for (MethodReference overridenMethod : overriden) {
+            if (addToFamily(overridenMethod)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void findOverridenMethods(MethodReference methodRef, Set<MethodReference> result,
+            Set<MethodReference> visited) {
+        if (!visited.add(methodRef)) {
+            return;
+        }
+        ClassReader cls = classSource.get(methodRef.getClassName());
+        if (cls == null) {
+            return;
+        }
+        MethodReader method = cls.getMethod(methodRef.getDescriptor());
+        if (method != null) {
+            result.add(methodRef);
+        } else {
+            if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
+                findOverridenMethods(new MethodReference(cls.getParent(), methodRef.getDescriptor()), result, visited);
+            }
+            for (String iface : cls.getInterfaces()) {
+                findOverridenMethods(new MethodReference(iface, methodRef.getDescriptor()), result, visited);
+            }
         }
     }
 }

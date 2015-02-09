@@ -18,7 +18,7 @@ package org.teavm.classlib.java.util;
 import org.teavm.classlib.java.lang.TComparable;
 import org.teavm.classlib.java.lang.TSystem;
 import org.teavm.dependency.PluggableDependency;
-import org.teavm.javascript.ni.GeneratedBy;
+import org.teavm.javascript.spi.GeneratedBy;
 
 /**
  *

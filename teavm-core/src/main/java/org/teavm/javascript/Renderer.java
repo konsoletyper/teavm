@@ -26,11 +26,12 @@ import org.teavm.common.ServiceRepository;
 import org.teavm.debugging.information.DebugInformationEmitter;
 import org.teavm.debugging.information.DeferredCallSite;
 import org.teavm.debugging.information.DummyDebugInformationEmitter;
+import org.teavm.diagnostics.Diagnostics;
 import org.teavm.javascript.ast.*;
-import org.teavm.javascript.ni.GeneratorContext;
-import org.teavm.javascript.ni.InjectedBy;
-import org.teavm.javascript.ni.Injector;
-import org.teavm.javascript.ni.InjectorContext;
+import org.teavm.javascript.spi.GeneratorContext;
+import org.teavm.javascript.spi.InjectedBy;
+import org.teavm.javascript.spi.Injector;
+import org.teavm.javascript.spi.InjectorContext;
 import org.teavm.model.*;
 
 /**
@@ -53,6 +54,9 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     private Deque<LocationStackEntry> locationStack = new ArrayDeque<>();
     private DeferredCallSite lastCallSite;
     private DeferredCallSite prevCallSite;
+    private Set<MethodReference> asyncMethods;
+    private Set<MethodReference> asyncFamilyMethods;
+    private Diagnostics diagnostics;
     private boolean async;
 
     @Override
@@ -110,12 +114,16 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     }
 
     public Renderer(SourceWriter writer, ListableClassHolderSource classSource, ClassLoader classLoader,
-            ServiceRepository services) {
+            ServiceRepository services, Set<MethodReference> asyncMethods, Set<MethodReference> asyncFamilyMethods,
+            Diagnostics diagnostics) {
         this.naming = writer.getNaming();
         this.writer = writer;
         this.classSource = classSource;
         this.classLoader = classLoader;
         this.services = services;
+        this.asyncMethods = new HashSet<>(asyncMethods);
+        this.asyncFamilyMethods = new HashSet<>(asyncFamilyMethods);
+        this.diagnostics = diagnostics;
     }
 
     @Override
@@ -199,43 +207,11 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     }
 
     private void renderRuntimeCls() throws IOException {
-        writer.append("function $rt_cls").ws().append("(clsProto)").ws().append("{")
-                .indent().softNewLine();
-        String classClass = "java.lang.Class";
-        writer.append("var cls").ws().append("=").ws().append("clsProto.classObject;").softNewLine();
-        writer.append("if").ws().append("(typeof cls").ws().append("===").ws().append("'undefined')").ws()
-                .append("{").softNewLine().indent();
-        MethodReference createMethodRef = new MethodReference(classClass, "createNew", ValueType.object(classClass));
-        writer.append("cls").ws().append("=").ws().appendMethodBody(createMethodRef).append("();").softNewLine();
-        writer.append("cls.$data = clsProto;").softNewLine();
-        if (classSource.get(classClass).getField("name") != null) {
-            writer.append("cls.").appendField(new FieldReference(classClass, "name")).ws().append("=").ws()
-                    .append("clsProto.$meta.name").ws().append("!==").ws().append("undefined").ws().append("?").ws()
-                    .append("$rt_str(clsProto.$meta.name)").ws().append(":").ws().append("null;").softNewLine();
-        }
-        if (classSource.get(classClass).getField("name") != null) {
-            writer.append("cls.").appendField(new FieldReference(classClass, "binaryName")).ws().append("=").ws()
-                    .append("clsProto.$meta.binaryName").ws().append("!==").ws().append("undefined").ws()
-                    .append("?").ws()
-                    .append("$rt_str(clsProto.$meta.binaryName)").ws().append(":").ws().append("null;").softNewLine();
-        }
-        if (classSource.get(classClass).getField("primitive") != null) {
-            writer.append("cls.").appendField(new FieldReference(classClass, "primitive"))
-                    .append(" = clsProto.$meta.primitive ? 1 : 0;").newLine();
-        }
-        if (classSource.get(classClass).getField("array") != null) {
-            writer.append("cls.").appendField(new FieldReference(classClass, "array")).ws()
-                    .append("=").ws().append("clsProto.$meta.item").ws().append("?").ws()
-                    .append("1").ws().append(":").ws().append("0;").softNewLine();
-        }
-        if (classSource.get(classClass).getField("isEnum") != null) {
-            writer.append("cls.").appendField(new FieldReference(classClass, "isEnum")).ws()
-                    .append("=").ws().append("clsProto.$meta.enum").ws().append("?").ws()
-                    .append("1").ws().append(":").ws().append("0;").softNewLine();
-        }
-        writer.append("clsProto.classObject").ws().append("=").ws().append("cls;").softNewLine();
-        writer.outdent().append("}").softNewLine();
-        writer.append("return cls;").softNewLine();
+        writer.append("function $rt_cls(cls)").ws().append("{").softNewLine().indent();
+        writer.append("return ").appendMethodBody("java.lang.Class", "getClass",
+                ValueType.object("org.teavm.platform.PlatformClass"),
+                ValueType.object("java.lang.Class")).append("(cls);")
+                .softNewLine();
         writer.outdent().append("}").newLine();
     }
 
@@ -247,8 +223,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         writer.append("for (var i = 0; i < str.length; i = (i + 1) | 0) {").indent().softNewLine();
         writer.append("charsBuffer[i] = str.charCodeAt(i) & 0xFFFF;").softNewLine();
         writer.outdent().append("}").softNewLine();
-        writer.append("return ").appendClass("java.lang.String").append(".")
-                .appendMethod(stringCons).append("(characters);").softNewLine();
+        writer.append("return ").append(naming.getNameForInit(stringCons)).append("(characters);").softNewLine();
         writer.outdent().append("}").newLine();
     }
 
@@ -269,11 +244,10 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     }
 
     private void renderRuntimeNullCheck() throws IOException {
-        String npe = "java.lang.NullPointerException";
         writer.append("function $rt_nullCheck(val) {").indent().softNewLine();
         writer.append("if (val === null) {").indent().softNewLine();
-        writer.append("$rt_throw(").appendClass(npe).append('.').appendMethod(npe, "<init>", ValueType.VOID)
-                .append("());").softNewLine();
+        writer.append("$rt_throw(").append(naming.getNameForInit(new MethodReference(NullPointerException.class,
+                "<init>", void.class))).append("());").softNewLine();
         writer.outdent().append("}").softNewLine();
         writer.append("return val;").softNewLine();
         writer.outdent().append("}").newLine();
@@ -327,6 +301,23 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                         .append(constantToString(value)).append(";").softNewLine();
             }
 
+            List<MethodNode> nonInitMethods = new ArrayList<>();
+            List<MethodNode> virtualMethods = new ArrayList<>();
+            MethodHolder clinit = classSource.get(cls.getName()).getMethod(
+                    new MethodDescriptor("<clinit>", ValueType.VOID));
+            List<String> stubNames = new ArrayList<>();
+            List<MethodNode> clinitMethods = new ArrayList<>();
+            for (MethodNode method : cls.getMethods()) {
+                if (!method.getModifiers().contains(NodeModifier.STATIC) &&
+                        !method.getReference().getName().equals("<init>")) {
+                    nonInitMethods.add(method);
+                } else {
+                    clinitMethods.add(method);
+                    stubNames.add(naming.getFullNameFor(method.getReference()));
+                }
+            }
+            boolean needsClinit = clinit != null || !clinitMethods.isEmpty();
+
             writer.append("$rt_declClass(").appendClass(cls.getName()).append(",").ws().append("{")
                     .indent().softNewLine();
             writer.append("name").ws().append(":").ws().append("\"").append(escapeString(cls.getName()))
@@ -349,41 +340,36 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 writer.append(",").softNewLine();
                 writer.append("superclass").ws().append(":").ws().appendClass(cls.getParentName());
             }
-            if (!cls.getModifiers().contains(NodeModifier.INTERFACE)) {
+            if (!cls.getModifiers().contains(NodeModifier.INTERFACE) && needsClinit) {
                 writer.append(",").softNewLine().append("clinit").ws().append(":").ws()
                         .append("function()").ws().append("{").ws()
                         .appendClass(cls.getName()).append("_$clinit();").ws().append("}");
             }
             writer.ws().append("});").newLine().outdent();
-            List<MethodNode> nonInitMethods = new ArrayList<>();
-            List<MethodNode> virtualMethods = new ArrayList<>();
 
-            writer.append("function ").appendClass(cls.getName()).append("_$clinit()").ws()
-                    .append("{").softNewLine().indent();
-            writer.appendClass(cls.getName()).append("_$clinit").ws().append("=").ws()
-                    .append("function(){};").newLine();
-            List<String> stubNames = new ArrayList<>();
-            for (MethodNode method : cls.getMethods()) {
-                if (!method.getModifiers().contains(NodeModifier.STATIC) &&
-                        !method.getReference().getName().equals("<init>")) {
-                    nonInitMethods.add(method);
-                } else {
+            if (needsClinit) {
+                writer.append("function ").appendClass(cls.getName()).append("_$clinit()").ws()
+                        .append("{").softNewLine().indent();
+                writer.appendClass(cls.getName()).append("_$clinit").ws().append("=").ws()
+                        .append("function(){};").newLine();
+                for (MethodNode method : clinitMethods) {
                     renderBody(method, true);
-                    stubNames.add(naming.getFullNameFor(method.getReference()));
                 }
+                if (clinit != null) {
+                    writer.appendMethodBody(new MethodReference(cls.getName(), clinit.getDescriptor()))
+                            .append("();").softNewLine();
+                }
+                writer.outdent().append("}").newLine();
             }
-            MethodHolder methodHolder = classSource.get(cls.getName()).getMethod(
-                    new MethodDescriptor("<clinit>", ValueType.VOID));
-            if (methodHolder != null) {
-                writer.appendMethodBody(new MethodReference(cls.getName(), methodHolder.getDescriptor()))
-                        .append("();").softNewLine();
-            }
-            writer.outdent().append("}").newLine();
             if (!cls.getModifiers().contains(NodeModifier.INTERFACE)) {
                 for (MethodNode method : cls.getMethods()) {
                     cls.getMethods();
                     if (!method.getModifiers().contains(NodeModifier.STATIC)) {
-                        virtualMethods.add(method);
+                        if (method.getReference().getName().equals("<init>")) {
+                            renderInitializer(method);
+                        } else {
+                            virtualMethods.add(method);
+                        }
                     } else if (method.isOriginalNamePreserved()) {
                         renderStaticDeclaration(method);
                     }
@@ -441,7 +427,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     private void renderInitializer(MethodNode method) throws IOException {
         MethodReference ref = method.getReference();
         debugEmitter.emitMethod(ref.getDescriptor());
-        writer.appendClass(ref.getClassName()).append(".").appendMethod(ref).ws().append("=").ws().append("function(");
+        writer.append("function ").append(naming.getNameForInit(ref)).append("(");
         for (int i = 1; i <= ref.parameterCount(); ++i) {
             if (i > 1) {
                 writer.append(",").ws();
@@ -451,11 +437,9 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         writer.append(")").ws().append("{").newLine().indent();
         writer.append("var result").ws().append("=").ws().append("new ").appendClass(
                 ref.getClassName()).append("();").softNewLine();
-        writer.append("result.").appendMethod(ref).append("(");
+        writer.append(naming.getFullNameFor(ref)).append("(result");
         for (int i = 1; i <= ref.parameterCount(); ++i) {
-            if (i > 1) {
-                writer.append(",").ws();
-            }
+            writer.append(",").ws();
             writer.append(variableName(i));
         }
         writer.append(");").softNewLine();
@@ -480,18 +464,26 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             debugEmitter.emitMethod(method.getReference().getDescriptor());
             MethodReference ref = method.getReference();
             writer.append(",").newLine();
+            String methodName = method.isAsync() ? naming.getNameForAsync(ref) : naming.getNameFor(ref);
             if (method.isOriginalNamePreserved()) {
-                writer.append("[\"").appendMethod(ref).append("\",").ws().append("\"").append(ref.getName())
+                writer.append("[\"").append(methodName).append("\",").ws().append("\"").append(ref.getName())
                         .append("\"]");
             } else {
-                writer.append("\"").appendMethod(ref).append("\"");
+                writer.append("\"").append(methodName).append("\"");
             }
             writer.append(",").ws().append("function(");
+            List<String> args = new ArrayList<>();
             for (int i = 1; i <= ref.parameterCount(); ++i) {
-                if (i > 1) {
+                args.add(variableName(i));
+            }
+            if (method.isAsync()) {
+                args.add("$return");
+            }
+            for (int i = 0; i < args.size(); ++i) {
+                if (i > 0) {
                     writer.append(",").ws();
                 }
-                writer.append(variableName(i));
+                writer.append(args.get(i));
             }
             writer.append(")").ws().append("{").ws();
             if (ref.getDescriptor().getResultType() != ValueType.VOID) {
@@ -499,13 +491,13 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             }
             writer.appendMethodBody(ref).append("(");
             writer.append("this");
-            for (int i = 1; i <= ref.parameterCount(); ++i) {
-                writer.append(",").ws().append(variableName(i));
+            for (int i = 0; i < args.size(); ++i) {
+                writer.append(",").ws().append(args.get(i));
             }
             writer.append(");").ws().append("}");
             debugEmitter.emitMethod(null);
 
-            if (!method.isAsync()) {
+            if (!method.isAsync() && asyncFamilyMethods.contains(method.getReference())) {
                 writer.append(",").newLine();
                 writer.append("\"").append(naming.getNameForAsync(ref)).append("\",").ws();
                 writer.append("$rt_asyncAdapter(").appendMethodBody(ref).append(')');
@@ -714,8 +706,18 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         }
 
         @Override
+        public boolean isAsync(MethodReference method) {
+            return asyncMethods.contains(method);
+        }
+
+        @Override
         public String getCompleteContinuation() {
             return "$return";
+        }
+
+        @Override
+        public Diagnostics getDiagnostics() {
+            return diagnostics;
         }
     }
 
@@ -1471,7 +1473,6 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 if (expr.getType() == InvocationType.DYNAMIC) {
                     expr.getArguments().get(0).acceptVisitor(this);
                 }
-                String className = naming.getNameFor(expr.getMethod().getClassName());
                 String name = expr.getAsyncTarget() == null ? naming.getNameFor(expr.getMethod()) :
                         naming.getNameForAsync(expr.getMethod());
                 String fullName = naming.getFullNameFor(expr.getMethod());
@@ -1517,7 +1518,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                         virtual = true;
                         break;
                     case CONSTRUCTOR:
-                        writer.append(className).append(".").append(name).append("(");
+                        writer.append(naming.getNameForInit(expr.getMethod())).append("(");
                         prevCallSite = debugEmitter.emitCallSite();
                         for (int i = 0; i < expr.getArguments().size(); ++i) {
                             if (i > 0) {

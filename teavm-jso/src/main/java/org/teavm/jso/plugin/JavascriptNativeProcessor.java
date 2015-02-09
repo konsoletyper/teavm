@@ -17,8 +17,8 @@ package org.teavm.jso.plugin;
 
 import java.util.*;
 import org.teavm.diagnostics.Diagnostics;
-import org.teavm.javascript.ni.GeneratedBy;
-import org.teavm.javascript.ni.PreserveOriginalName;
+import org.teavm.javascript.spi.GeneratedBy;
+import org.teavm.javascript.spi.PreserveOriginalName;
 import org.teavm.jso.*;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;

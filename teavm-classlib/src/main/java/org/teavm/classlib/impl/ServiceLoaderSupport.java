@@ -23,8 +23,8 @@ import java.net.URL;
 import java.util.*;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.dependency.*;
-import org.teavm.javascript.ni.Generator;
-import org.teavm.javascript.ni.GeneratorContext;
+import org.teavm.javascript.spi.Generator;
+import org.teavm.javascript.spi.GeneratorContext;
 import org.teavm.model.CallLocation;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
@@ -65,7 +65,7 @@ public class ServiceLoaderSupport implements Generator, DependencyListener {
         }
         writer.outdent().append("}").softNewLine();
         String param = context.getParameterName(1);
-        writer.append("var cls = " + param + ".$data;").softNewLine();
+        writer.append("var cls = " + param + ";").softNewLine();
         writer.append("if (!cls.$$serviceList$$) {").indent().softNewLine();
         writer.append("return $rt_createArray($rt_objcls(), 0);").softNewLine();
         writer.outdent().append("}").softNewLine();

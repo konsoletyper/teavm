@@ -16,7 +16,7 @@
 package org.teavm.classlib.java.util;
 
 import org.teavm.classlib.java.lang.*;
-import org.teavm.javascript.ni.Rename;
+import org.teavm.javascript.spi.Rename;
 
 /**
  *

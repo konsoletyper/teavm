@@ -19,8 +19,8 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import org.teavm.codegen.SourceWriter;
-import org.teavm.javascript.ni.Generator;
-import org.teavm.javascript.ni.GeneratorContext;
+import org.teavm.javascript.spi.Generator;
+import org.teavm.javascript.spi.GeneratorContext;
 import org.teavm.model.*;
 import org.teavm.platform.metadata.MetadataGenerator;
 import org.teavm.platform.metadata.MetadataProvider;
@@ -41,8 +41,9 @@ public class MetadataProviderNativeGenerator implements Generator {
             return;
         }
         if (!method.hasModifier(ElementModifier.NATIVE)) {
-            throw new IllegalStateException("Method " + method.getReference() + " was marked with " +
-                    MetadataProvider.class.getName() + " but it is not native");
+            context.getDiagnostics().error(new CallLocation(methodRef), "Method {{m0}} is marked with " +
+                    "{{c1}} annotation, but it is not native", methodRef, MetadataProvider.class.getName());
+            return;
         }
 
         // Find and instantiate metadata generator
@@ -52,23 +53,25 @@ public class MetadataProviderNativeGenerator implements Generator {
         try {
             generatorClass = Class.forName(generatorClassName, true, context.getClassLoader());
         } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Can't find metadata generator class: " + generatorClassName, e);
+            context.getDiagnostics().error(new CallLocation(methodRef), "Can't find metadata provider class {{c0}}",
+                    generatorClassName);
+            return;
         }
         Constructor<?> cons;
         try {
             cons = generatorClass.getConstructor();
         } catch (NoSuchMethodException e) {
-            throw new RuntimeException("Metadata generator " + generatorClassName + " does not have a public " +
-                    "no-arg constructor", e);
+            context.getDiagnostics().error(new CallLocation(methodRef), "Metadata generator {{c0}} does not have " +
+                    "a public no-arg constructor", generatorClassName);
+            return;
         }
         MetadataGenerator generator;
         try {
             generator = (MetadataGenerator)cons.newInstance();
-        } catch (IllegalAccessException | InstantiationException e) {
-            throw new RuntimeException("Error instantiating metadata generator " + generatorClassName, e);
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException("Error instantiating metadata generator " + generatorClassName,
-                    e.getTargetException());
+        } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
+            context.getDiagnostics().error(new CallLocation(methodRef), "Error instantiating metadata " +
+                    "generator {{c0}}", generatorClassName);
+            return;
         }
         DefaultMetadataGeneratorContext metadataContext = new DefaultMetadataGeneratorContext(context.getClassSource(),
                 context.getClassLoader(), context.getProperties(), context);

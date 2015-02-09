@@ -15,9 +15,11 @@
  */
 package org.teavm.classlib.java.lang;
 
-import org.teavm.dependency.PluggableDependency;
-import org.teavm.javascript.ni.GeneratedBy;
-import org.teavm.javascript.ni.InjectedBy;
+import org.teavm.classlib.impl.DeclaringClassMetadataGenerator;
+import org.teavm.platform.Platform;
+import org.teavm.platform.PlatformClass;
+import org.teavm.platform.metadata.ClassResource;
+import org.teavm.platform.metadata.ClassScopedMetadataProvider;
 
 /**
  *
@@ -25,113 +27,130 @@ import org.teavm.javascript.ni.InjectedBy;
  */
 public class TClass<T> extends TObject {
     TString name;
-    TString binaryName;
-    boolean primitive;
-    boolean array;
-    boolean isEnum;
     private TClass<?> componentType;
     private boolean componentTypeDirty = true;
+    private PlatformClass platformClass;
 
-    static TClass<?> createNew() {
-        return new TClass<>();
+    private TClass(PlatformClass platformClass) {
+        this.platformClass = platformClass;
+        platformClass.setJavaClass(Platform.getPlatformObject(this));
     }
 
-    @InjectedBy(ClassNativeGenerator.class)
-    public native boolean isInstance(TObject obj);
+    public static TClass<?> getClass(PlatformClass cls) {
+        if (cls == null) {
+            return null;
+        }
+        TClass<?> result = (TClass<?>)(Object)Platform.asJavaClass(cls.getJavaClass());
+        if (result == null) {
+            result = new TClass<>(cls);
+        }
+        return result;
+    }
 
-    @InjectedBy(ClassNativeGenerator.class)
-    public native boolean isAssignableFrom(TClass<?> obj);
+    public PlatformClass getPlatformClass() {
+        return platformClass;
+    }
 
-    @PluggableDependency(ClassNativeGenerator.class)
+    public boolean isInstance(TObject obj) {
+        return Platform.isInstance(Platform.getPlatformObject(obj), platformClass);
+    }
+
+    public boolean isAssignableFrom(TClass<?> obj) {
+        return Platform.isAssignable(obj.getPlatformClass(), platformClass);
+    }
+
     public TString getName() {
+        if (name == null) {
+            name = TString.wrap(platformClass.getMetadata().getName());
+        }
         return name;
     }
 
     public boolean isPrimitive() {
-        return primitive;
+        return platformClass.getMetadata().isPrimitive();
     }
 
     public boolean isArray() {
-        return array;
+        return platformClass.getMetadata().getArrayItem() != null;
     }
 
     public boolean isEnum() {
-        return isEnum;
+        return platformClass.getMetadata().isEnum();
     }
 
     public TClass<?> getComponentType() {
         if (componentTypeDirty) {
-            componentType = getComponentType0();
+            PlatformClass arrayItem = platformClass.getMetadata().getArrayItem();
+            componentType = arrayItem != null ? getClass(arrayItem) : null;
             componentTypeDirty = false;
         }
         return componentType;
     }
 
-    @GeneratedBy(ClassNativeGenerator.class)
-    @PluggableDependency(ClassNativeGenerator.class)
-    private native TClass<?> getComponentType0();
+    @SuppressWarnings("unchecked")
+    static TClass<TVoid> voidClass() {
+        return (TClass<TVoid>)getClass(Platform.getPrimitives().getVoidClass());
+    }
 
-    @InjectedBy(ClassNativeGenerator.class)
-    @PluggableDependency(ClassNativeGenerator.class)
-    static native TClass<TVoid> voidClass();
+    @SuppressWarnings("unchecked")
+    static TClass<TBoolean> booleanClass() {
+        return (TClass<TBoolean>)getClass(Platform.getPrimitives().getBooleanClass());
+    }
 
-    @InjectedBy(ClassNativeGenerator.class)
-    @PluggableDependency(ClassNativeGenerator.class)
-    static native TClass<TBoolean> booleanClass();
+    @SuppressWarnings("unchecked")
+    static TClass<TCharacter> charClass() {
+        return (TClass<TCharacter>)getClass(Platform.getPrimitives().getCharClass());
+    }
 
-    @InjectedBy(ClassNativeGenerator.class)
-    @PluggableDependency(ClassNativeGenerator.class)
-    static native TClass<TCharacter> charClass();
+    @SuppressWarnings("unchecked")
+    static TClass<TByte> byteClass() {
+        return (TClass<TByte>)getClass(Platform.getPrimitives().getByteClass());
+    }
 
-    @InjectedBy(ClassNativeGenerator.class)
-    @PluggableDependency(ClassNativeGenerator.class)
-    static native TClass<TByte> byteClass();
+    @SuppressWarnings("unchecked")
+    static TClass<TShort> shortClass() {
+        return (TClass<TShort>)getClass(Platform.getPrimitives().getShortClass());
+    }
 
-    @InjectedBy(ClassNativeGenerator.class)
-    @PluggableDependency(ClassNativeGenerator.class)
-    static native TClass<TShort> shortClass();
+    @SuppressWarnings("unchecked")
+    static TClass<TInteger> intClass() {
+        return (TClass<TInteger>)getClass(Platform.getPrimitives().getIntClass());
+    }
 
-    @InjectedBy(ClassNativeGenerator.class)
-    @PluggableDependency(ClassNativeGenerator.class)
-    static native TClass<TInteger> intClass();
+    @SuppressWarnings("unchecked")
+    static TClass<TLong> longClass() {
+        return (TClass<TLong>)getClass(Platform.getPrimitives().getLongClass());
+    }
 
-    @InjectedBy(ClassNativeGenerator.class)
-    @PluggableDependency(ClassNativeGenerator.class)
-    static native TClass<TLong> longClass();
+    @SuppressWarnings("unchecked")
+    static TClass<TFloat> floatClass() {
+        return (TClass<TFloat>)getClass(Platform.getPrimitives().getFloatClass());
+    }
 
-    @InjectedBy(ClassNativeGenerator.class)
-    @PluggableDependency(ClassNativeGenerator.class)
-    static native TClass<TFloat> floatClass();
-
-    @InjectedBy(ClassNativeGenerator.class)
-    @PluggableDependency(ClassNativeGenerator.class)
-    static native TClass<TDouble> doubleClass();
-
-    @InjectedBy(ClassNativeGenerator.class)
-    @PluggableDependency(ClassNativeGenerator.class)
-    public static native <S extends TObject> TClass<S> wrapClass(Class<S> cls);
+    @SuppressWarnings("unchecked")
+    static TClass<TDouble> doubleClass() {
+        return (TClass<TDouble>)getClass(Platform.getPrimitives().getDoubleClass());
+    }
 
     public boolean desiredAssertionStatus() {
         return true;
     }
 
-    @GeneratedBy(ClassNativeGenerator.class)
-    @PluggableDependency(ClassNativeGenerator.class)
-    public native TClass<? super T> getSuperclass();
-
-    public T[] getEnumConstants() {
-        return isEnum ? getEnumConstantsImpl() : null;
+    @SuppressWarnings("unchecked")
+    public TClass<? super T> getSuperclass() {
+        return (TClass<? super T>)getClass(platformClass.getMetadata().getSuperclass());
     }
 
-    @InjectedBy(ClassNativeGenerator.class)
-    public native T[] getEnumConstantsImpl();
+    @SuppressWarnings("unchecked")
+    public T[] getEnumConstants() {
+        return isEnum() ? (T[])Platform.getEnumConstants(platformClass) : null;
+    }
 
     @SuppressWarnings("unchecked")
     public T cast(TObject obj) {
-        if (obj != null && !isAssignableFrom(TClass.wrapClass(obj.getClass()))) {
-            throw new TClassCastException(TString.wrap(new TStringBuilder()
-                    .append(TClass.wrapClass(obj.getClass()).getName())
-                    .append(TString.wrap(" is not subtype of ")).append(name).toString()));
+        if (obj != null && !isAssignableFrom((TClass<?>)(Object)obj.getClass())) {
+            throw new TClassCastException(TString.wrap(obj.getClass().getName() +
+                    " is not subtype of " + name));
         }
         return (T)obj;
     }
@@ -140,31 +159,36 @@ public class TClass<T> extends TObject {
         return TClassLoader.getSystemClassLoader();
     }
 
-    @GeneratedBy(ClassNativeGenerator.class)
-    @PluggableDependency(ClassNativeGenerator.class)
-    private static native TClass<?> forNameImpl(TString name);
-
     public static TClass<?> forName(TString name) throws TClassNotFoundException {
-        TClass<?> result = forNameImpl(name);
-        if (result == null) {
+        PlatformClass cls = Platform.lookupClass(name.toString());
+        if (cls == null) {
             throw new TClassNotFoundException();
         }
-        return result;
+        return getClass(cls);
     }
 
     @SuppressWarnings("unused")
     public static TClass<?> forName(TString name, boolean initialize, TClassLoader loader)
-                     throws TClassNotFoundException {
+            throws TClassNotFoundException {
         return forName(name);
     }
 
-    @GeneratedBy(ClassNativeGenerator.class)
-    @PluggableDependency(ClassNativeGenerator.class)
-    public native T newInstance() throws TInstantiationException, TIllegalAccessException;
+    @SuppressWarnings("unchecked")
+    public T newInstance() throws TInstantiationException, TIllegalAccessException {
+        Object instance = Platform.newInstance(platformClass);
+        if (instance == null) {
+            throw new TInstantiationException();
+        }
+        return (T)instance;
+    }
 
-    @GeneratedBy(ClassNativeGenerator.class)
-    @PluggableDependency(ClassNativeGenerator.class)
-    public native TClass<?> getDeclaringClass();
+    public TClass<?> getDeclaringClass() {
+        ClassResource res = getDeclaringClass(platformClass);
+        return res != null ? getClass(Platform.classFromResource(res)) : null;
+    }
+
+    @ClassScopedMetadataProvider(DeclaringClassMetadataGenerator.class)
+    private static native ClassResource getDeclaringClass(PlatformClass cls);
 
     @SuppressWarnings("unchecked")
     public <U> TClass<? extends U> asSubclass(TClass<U> clazz) {
