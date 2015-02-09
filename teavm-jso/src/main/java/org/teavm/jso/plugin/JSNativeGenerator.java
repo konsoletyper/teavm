@@ -126,7 +126,7 @@ public class JSNativeGenerator implements Injector, DependencyPlugin {
                 for (int i = 0; i < method.getReference().parameterCount(); ++i) {
                     method.getVariable(i).addConsumer(new DependencyConsumer() {
                         @Override public void consume(DependencyAgentType type) {
-                            achieveFunctorMethods(agent, type.getName(), method, location);
+                            achieveFunctorMethods(agent, type.getName(), method);
                         }
                     });
                 }
@@ -137,15 +137,14 @@ public class JSNativeGenerator implements Injector, DependencyPlugin {
         }
     }
 
-    private void achieveFunctorMethods(DependencyAgent agent, String type, MethodDependency caller,
-            CallLocation location) {
+    private void achieveFunctorMethods(DependencyAgent agent, String type, MethodDependency caller) {
         if (caller.isMissing()) {
             return;
         }
         ClassReader cls = agent.getClassSource().get(type);
         if (cls != null) {
             for (MethodReader method : cls.getMethods()) {
-                agent.linkMethod(method.getReference(), location).use();
+                agent.linkMethod(method.getReference(), null).use();
             }
         }
     }
