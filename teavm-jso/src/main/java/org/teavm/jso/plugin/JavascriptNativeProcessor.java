@@ -18,7 +18,6 @@ package org.teavm.jso.plugin;
 import java.util.*;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.javascript.spi.GeneratedBy;
-import org.teavm.javascript.spi.PreserveOriginalName;
 import org.teavm.jso.*;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
@@ -49,12 +48,6 @@ class JavascriptNativeProcessor {
         for (String iface : cls.getInterfaces()) {
             if (nativeRepos.isJavaScriptClass(iface)) {
                 addPreservedMethods(iface, preservedMethods);
-            }
-        }
-        for (MethodHolder method : cls.getMethods()) {
-            if (preservedMethods.contains(method.getDescriptor()) &&
-                    method.getAnnotations().get(PreserveOriginalName.class.getName()) == null) {
-                method.getAnnotations().add(new AnnotationHolder(PreserveOriginalName.class.getName()));
             }
         }
     }

@@ -22,9 +22,13 @@ import org.teavm.vm.spi.TeaVMPlugin;
  *
  * @author Alexey Andreev
  */
-public class JSObjectBuilderPlugin implements TeaVMPlugin {
+public class JSOPlugin implements TeaVMPlugin {
     @Override
     public void install(TeaVMHost host) {
         host.add(new JSObjectClassTransformer());
+        JSODependencyListener dependencyListener = new JSODependencyListener();
+        JSOAliasRenderer aliasRenderer = new JSOAliasRenderer(dependencyListener);
+        host.add(dependencyListener);
+        host.add(aliasRenderer);
     }
 }

@@ -18,6 +18,8 @@ package org.teavm.jso.test;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.teavm.jso.JS;
+import org.teavm.jso.JSBody;
+import org.teavm.jso.JSObject;
 
 /**
  *
@@ -33,4 +35,21 @@ public class JSOTest {
     private static Window getWindow() {
         return (Window)JS.getGlobal();
     }
+
+    @Test
+    public void externalMethodsResolved() {
+        int r = jsMethod(new Callback() {
+            @Override public int call() {
+                return 23;
+            }
+        });
+        assertEquals(23, r);
+    }
+
+    interface Callback extends JSObject {
+        int call();
+    }
+
+    @JSBody(params = "cb", script = "return cb.call();")
+    private static native int jsMethod(Callback cb);
 }
