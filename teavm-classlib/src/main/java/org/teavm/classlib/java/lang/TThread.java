@@ -27,7 +27,6 @@ import org.teavm.platform.async.AsyncCallback;
  * @author Alexey Andreev
  */
 public class TThread extends TObject implements TRunnable {
-
     private static Window window = (Window)JS.getGlobal();
     private static TThread mainThread = new TThread(TString.wrap("main"));
     private static TThread currentThread = mainThread;
@@ -73,10 +72,8 @@ public class TThread extends TObject implements TRunnable {
             activeCount--;
             setCurrentThread(mainThread);
         }
-        
-        
     }
-    
+
     static void setCurrentThread(TThread thread){
         currentThread = thread;
     }
@@ -136,13 +133,11 @@ public class TThread extends TObject implements TRunnable {
         return TObject.holdsLock(obj);
     }
 
-
     @Async
     public static native void sleep(long millis) throws TInterruptedException;
 
     private static void sleep(long millis, final AsyncCallback<Void> callback) {
         final TThread current = currentThread();
-        
         window.setTimeout(new TimerHandler() {
             @Override public void onTimer() {
                 setCurrentThread(current);

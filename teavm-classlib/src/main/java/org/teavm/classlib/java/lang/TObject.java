@@ -17,16 +17,13 @@ package org.teavm.classlib.java.lang;
 
 import org.teavm.dom.browser.Window;
 import org.teavm.javascript.spi.Async;
-
 import org.teavm.javascript.spi.Rename;
 import org.teavm.javascript.spi.Superclass;
 import org.teavm.jso.JS;
 import org.teavm.jso.JSArray;
-import org.teavm.jso.JSFunctor;
 import org.teavm.jso.JSObject;
 import org.teavm.platform.Platform;
 import org.teavm.platform.async.AsyncCallback;
-
 
 /**
  *
@@ -34,47 +31,43 @@ import org.teavm.platform.async.AsyncCallback;
  */
 @Superclass("")
 public class TObject {
-    
+    private static final Window window = (Window)JS.getGlobal();
     private TThread owner;
     private TObject monitorLock;
-    private int monitorCount=0;
+    private int monitorCount;
     private JSArray<NotifyListener> notifyListeners;
-    private final Window window = (Window)JS.getGlobal();
-    
-    @JSFunctor
-    private static interface NotifyListener extends JSObject{
+
+    interface NotifyListener extends JSObject {
         void handleNotify();
     }
-    
+
     static void monitorEnter(TObject o){
-        if ( o.monitorLock == null ){
+        if (o.monitorLock == null ){
             o.monitorLock = new TObject();
         }
-        while (o.owner != null && o.owner != TThread.currentThread() ){
+        while (o.owner != null && o.owner != TThread.currentThread()) {
             try {
                 o.monitorLock.wait();
             } catch (InterruptedException ex) {
-                
+
             }
         }
         o.owner = TThread.currentThread();
         o.monitorCount++;
-        
     }
-    
+
     static void monitorExit(TObject o){
-        
         o.monitorCount--;
-        if ( o.monitorCount == 0 && o.monitorLock != null){
+        if (o.monitorCount == 0 && o.monitorLock != null) {
             o.owner = null;
             o.monitorLock.notifyAll();
         }
     }
-    
+
     static boolean holdsLock(TObject o){
         return o.owner == TThread.currentThread();
     }
-    
+
     @Rename("fakeInit")
     public TObject() {
     }
@@ -126,44 +119,40 @@ public class TObject {
         }
     }
 
-    
+
     @Rename("notifyAll")
     public final void notifyAll0(){
         if (notifyListeners != null){
             JSArray<NotifyListener> listeners = window.newArray();
-            while (notifyListeners.getLength() > 0 ){
+            while (notifyListeners.getLength() > 0) {
                 listeners.push(notifyListeners.shift());
             }
-            while ( listeners.getLength() > 0 ){
+            while (listeners.getLength() > 0) {
                 listeners.shift().handleNotify();
             }
         }
-        
     }
-    
-    
+
     @Rename("wait")
     public final void wait0(long timeout) throws TInterruptedException{
         try {
             wait(timeout, 0);
-        } catch ( InterruptedException ex){
+        } catch (InterruptedException ex) {
             throw new TInterruptedException();
         }
     }
-    
+
     @Async
     @Rename("wait")
     public native final void wait0(long timeout, int nanos) throws TInterruptedException;
 
-    
     @Rename("wait")
-    public final void wait0(long timeout, int nanos, final AsyncCallback<Void> callback){
-        if ( notifyListeners == null ){
-            notifyListeners = window.newArray(); 
+    public final void wait0(long timeout, int nanos, final AsyncCallback<Void> callback) {
+        if (notifyListeners == null) {
+            notifyListeners = window.newArray();
         }
         final TThread currentThread = TThread.currentThread();
-        notifyListeners.push(new NotifyListener(){
-
+        notifyListeners.push(new NotifyListener() {
             @Override
             public void handleNotify() {
                 TThread.setCurrentThread(currentThread);
@@ -172,12 +161,10 @@ public class TObject {
                 } finally {
                     TThread.setCurrentThread(TThread.getMainThread());
                 }
-
             }
-
         });
     }
-    
+
     @Rename("wait")
     public final void wait0() throws TInterruptedException {
         try {
