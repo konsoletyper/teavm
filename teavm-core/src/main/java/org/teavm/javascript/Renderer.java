@@ -58,6 +58,16 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     private Set<MethodReference> asyncFamilyMethods;
     private Diagnostics diagnostics;
     private boolean async;
+    private Priority priority;
+    private Associativity associativity;
+    private boolean wasGrouped;
+    private Deque<OperatorPrecedence> precedenceStack = new ArrayDeque<>();
+
+    private static class OperatorPrecedence {
+        Priority priority;
+        Associativity associativity;
+        boolean wasGrouped;
+    }
 
     @Override
     public void visit(MonitorEnterStatement statement) {
@@ -65,11 +75,9 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             try {
                 MethodReference monitorEnterRef = new MethodReference(
                         Object.class, "monitorEnter", Object.class, void.class);
-                
                 writer.appendMethodBody(monitorEnterRef).append("(");
                 statement.getObjectRef().acceptVisitor(this);
                 writer.append(");").softNewLine();
-                
             } catch (IOException ex){
                 throw new RenderingException("IO error occured", ex);
             }
@@ -82,14 +90,12 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             try {
                 MethodReference monitorExitRef = new MethodReference(
                         Object.class, "monitorExit", Object.class, void.class);
-
                 writer.appendMethodBody(monitorExitRef).append("(");
                 statement.getObjectRef().acceptVisitor(this);
                 writer.append(");").softNewLine();
             } catch (IOException ex){
                 throw new RenderingException("IO error occured", ex);
             }
-                
         }
     }
 
@@ -756,9 +762,13 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             }
             prevCallSite = debugEmitter.emitCallSite();
             if (statement.getLeftValue() != null) {
+                priority = Priority.COMMA;
+                associativity = Associativity.NONE;
                 statement.getLeftValue().acceptVisitor(this);
                 writer.ws().append("=").ws();
             }
+            priority = Priority.COMMA;
+            associativity = Associativity.NONE;
             statement.getRightValue().acceptVisitor(this);
             debugEmitter.emitCallSite();
             writer.append(";").softNewLine();
@@ -792,6 +802,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 }
                 prevCallSite = debugEmitter.emitCallSite();
                 writer.append("if").ws().append("(");
+                priority = Priority.COMMA;
+                associativity = Associativity.NONE;
                 statement.getCondition().acceptVisitor(this);
                 if (statement.getCondition().getLocation() != null) {
                     popLocation();
@@ -834,6 +846,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             }
             prevCallSite = debugEmitter.emitCallSite();
             writer.append("switch").ws().append("(");
+            priority = Priority.COMMA;
+            associativity = Associativity.NONE;
             statement.getValue().acceptVisitor(this);
             if (statement.getValue().getLocation() != null) {
                 popLocation();
@@ -876,6 +890,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             writer.append("while").ws().append("(");
             if (statement.getCondition() != null) {
                 prevCallSite = debugEmitter.emitCallSite();
+                priority = Priority.COMMA;
+                associativity = Associativity.NONE;
                 statement.getCondition().acceptVisitor(this);
                 debugEmitter.emitCallSite();
                 if (statement.getCondition().getLocation() != null) {
@@ -963,6 +979,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     writer.append(' ');
                 }
                 prevCallSite = debugEmitter.emitCallSite();
+                priority = Priority.COMMA;
+                associativity = Associativity.NONE;
                 statement.getResult().acceptVisitor(this);
                 debugEmitter.emitCallSite();
             }
@@ -987,6 +1005,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             }
             writer.append("$rt_throw(");
             prevCallSite = debugEmitter.emitCallSite();
+            priority = Priority.COMMA;
+            associativity = Associativity.NONE;
             statement.getException().acceptVisitor(this);
             writer.append(");").softNewLine();
             debugEmitter.emitCallSite();
@@ -1027,16 +1047,17 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         }
     }
 
-    private void visitBinary(BinaryExpr expr, String op) {
+    private void visitBinary(BinaryExpr expr, String op, Priority priority, Associativity associativity) {
         try {
             if (expr.getLocation() != null) {
                 pushLocation(expr.getLocation());
             }
-            writer.append('(');
+            enterPriority(priority, associativity == Associativity.LEFT ? associativity : Associativity.NONE, true);
             expr.getFirstOperand().acceptVisitor(this);
             writer.ws().append(op).ws();
+            this.associativity = associativity == Associativity.RIGHT ? associativity : Associativity.NONE;
             expr.getSecondOperand().acceptVisitor(this);
-            writer.append(')');
+            exitPriority();
             if (expr.getLocation() != null) {
                 popLocation();
             }
@@ -1045,17 +1066,46 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         }
     }
 
+    private void enterPriority(Priority priority, Associativity associativity, boolean autoGroup) throws IOException {
+        OperatorPrecedence precedence = new OperatorPrecedence();
+        precedence.wasGrouped = this.wasGrouped;
+        precedence.priority = this.priority;
+        precedence.associativity = this.associativity;
+        precedenceStack.push(precedence);
+        wasGrouped = false;
+        if (autoGroup && (priority.ordinal() < this.priority.ordinal() ||
+                priority.ordinal() == this.priority.ordinal() &&
+                (associativity != this.associativity || associativity == Associativity.NONE))) {
+            wasGrouped = true;
+            writer.append('(');
+        }
+        this.priority = priority;
+        this.associativity = associativity;
+    }
+
+    private void exitPriority() throws IOException {
+        if (wasGrouped) {
+            writer.append(')');
+        }
+        OperatorPrecedence precedence = precedenceStack.pop();
+        this.priority = precedence.priority;
+        this.associativity = precedence.associativity;
+        this.wasGrouped = precedence.wasGrouped;
+    }
+
     private void visitBinaryFunction(BinaryExpr expr, String function) {
         try {
             if (expr.getLocation() != null) {
                 pushLocation(expr.getLocation());
             }
+            enterPriority(Priority.COMMA, Associativity.NONE, false);
             writer.append(function);
             writer.append('(');
             expr.getFirstOperand().acceptVisitor(this);
             writer.append(",").ws();
             expr.getSecondOperand().acceptVisitor(this);
             writer.append(')');
+            exitPriority();
             if (expr.getLocation() != null) {
                 popLocation();
             }
@@ -1068,58 +1118,58 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     public void visit(BinaryExpr expr) {
         switch (expr.getOperation()) {
             case ADD:
-                visitBinary(expr, "+");
+                visitBinary(expr, "+", Priority.ADDITION, Associativity.LEFT);
                 break;
             case ADD_LONG:
                 visitBinaryFunction(expr, "Long_add");
                 break;
             case SUBTRACT:
-                visitBinary(expr, "-");
+                visitBinary(expr, "-", Priority.ADDITION, Associativity.LEFT);
                 break;
             case SUBTRACT_LONG:
                 visitBinaryFunction(expr, "Long_sub");
                 break;
             case MULTIPLY:
-                visitBinary(expr, "*");
+                visitBinary(expr, "*", Priority.MULTIPLICATION, Associativity.LEFT);
                 break;
             case MULTIPLY_LONG:
                 visitBinaryFunction(expr, "Long_mul");
                 break;
             case DIVIDE:
-                visitBinary(expr, "/");
+                visitBinary(expr, "/", Priority.MULTIPLICATION, Associativity.LEFT);
                 break;
             case DIVIDE_LONG:
                 visitBinaryFunction(expr, "Long_div");
                 break;
             case MODULO:
-                visitBinary(expr, "%");
+                visitBinary(expr, "%", Priority.MULTIPLICATION, Associativity.LEFT);
                 break;
             case MODULO_LONG:
                 visitBinaryFunction(expr, "Long_rem");
                 break;
             case EQUALS:
-                visitBinary(expr, "==");
+                visitBinary(expr, "==", Priority.EQUALITY, Associativity.LEFT);
                 break;
             case NOT_EQUALS:
-                visitBinary(expr, "!=");
+                visitBinary(expr, "!=", Priority.EQUALITY, Associativity.LEFT);
                 break;
             case GREATER:
-                visitBinary(expr, ">");
+                visitBinary(expr, ">", Priority.COMPARISON, Associativity.LEFT);
                 break;
             case GREATER_OR_EQUALS:
-                visitBinary(expr, ">=");
+                visitBinary(expr, ">=", Priority.COMPARISON, Associativity.LEFT);
                 break;
             case LESS:
-                visitBinary(expr, "<");
+                visitBinary(expr, "<", Priority.COMPARISON, Associativity.LEFT);
                 break;
             case LESS_OR_EQUALS:
-                visitBinary(expr, "<=");
+                visitBinary(expr, "<=", Priority.COMPARISON, Associativity.LEFT);
                 break;
             case STRICT_EQUALS:
-                visitBinary(expr, "===");
+                visitBinary(expr, "===", Priority.COMPARISON, Associativity.LEFT);
                 break;
             case STRICT_NOT_EQUALS:
-                visitBinary(expr, "!==");
+                visitBinary(expr, "!==", Priority.COMPARISON, Associativity.LEFT);
                 break;
             case COMPARE:
                 visitBinaryFunction(expr, "$rt_compare");
@@ -1128,43 +1178,43 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 visitBinaryFunction(expr, "Long_compare");
                 break;
             case OR:
-                visitBinary(expr, "||");
+                visitBinary(expr, "||", Priority.LOGICAL_OR, Associativity.LEFT);
                 break;
             case AND:
-                visitBinary(expr, "&&");
+                visitBinary(expr, "&&", Priority.LOGICAL_AND, Associativity.LEFT);
                 break;
             case BITWISE_OR:
-                visitBinary(expr, "|");
+                visitBinary(expr, "|", Priority.BITWISE_OR, Associativity.LEFT);
                 break;
             case BITWISE_OR_LONG:
                 visitBinaryFunction(expr, "Long_or");
                 break;
             case BITWISE_AND:
-                visitBinary(expr, "&");
+                visitBinary(expr, "&", Priority.BITWISE_AND, Associativity.LEFT);
                 break;
             case BITWISE_AND_LONG:
                 visitBinaryFunction(expr, "Long_and");
                 break;
             case BITWISE_XOR:
-                visitBinary(expr, "^");
+                visitBinary(expr, "^", Priority.BITWISE_XOR, Associativity.LEFT);
                 break;
             case BITWISE_XOR_LONG:
                 visitBinaryFunction(expr, "Long_xor");
                 break;
             case LEFT_SHIFT:
-                visitBinary(expr, "<<");
+                visitBinary(expr, "<<", Priority.BITWISE_SHIFT, Associativity.LEFT);
                 break;
             case LEFT_SHIFT_LONG:
                 visitBinaryFunction(expr, "Long_shl");
                 break;
             case RIGHT_SHIFT:
-                visitBinary(expr, ">>");
+                visitBinary(expr, ">>", Priority.BITWISE_SHIFT, Associativity.LEFT);
                 break;
             case RIGHT_SHIFT_LONG:
                 visitBinaryFunction(expr, "Long_shr");
                 break;
             case UNSIGNED_RIGHT_SHIFT:
-                visitBinary(expr, ">>>");
+                visitBinary(expr, ">>>", Priority.BITWISE_SHIFT, Associativity.LEFT);
                 break;
             case UNSIGNED_RIGHT_SHIFT_LONG:
                 visitBinaryFunction(expr, "Long_shru");
@@ -1180,62 +1230,84 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             }
             switch (expr.getOperation()) {
                 case NOT:
-                    writer.append("(!");
+                    enterPriority(Priority.UNARY, Associativity.RIGHT, true);
+                    writer.append("!");
                     expr.getOperand().acceptVisitor(this);
-                    writer.append(')');
+                    exitPriority();
                     break;
                 case NEGATE:
-                    writer.append("(-");
+                    enterPriority(Priority.UNARY, Associativity.RIGHT, true);
+                    writer.append("-");
                     expr.getOperand().acceptVisitor(this);
-                    writer.append(')');
+                    exitPriority();
                     break;
                 case LENGTH:
+                    enterPriority(Priority.MEMBER_ACCESS, Associativity.LEFT, true);
                     expr.getOperand().acceptVisitor(this);
+                    exitPriority();
                     writer.append(".length");
                     break;
                 case INT_TO_LONG:
+                    enterPriority(Priority.COMMA, Associativity.NONE, false);
                     writer.append("Long_fromInt(");
                     expr.getOperand().acceptVisitor(this);
                     writer.append(')');
+                    exitPriority();
                     break;
                 case NUM_TO_LONG:
+                    enterPriority(Priority.COMMA, Associativity.NONE, false);
                     writer.append("Long_fromNumber(");
                     expr.getOperand().acceptVisitor(this);
                     writer.append(')');
+                    exitPriority();
                     break;
                 case LONG_TO_NUM:
+                    enterPriority(Priority.COMMA, Associativity.NONE, false);
                     writer.append("Long_toNumber(");
                     expr.getOperand().acceptVisitor(this);
                     writer.append(')');
+                    exitPriority();
                     break;
                 case LONG_TO_INT:
+                    enterPriority(Priority.MEMBER_ACCESS, Associativity.LEFT, false);
                     expr.getOperand().acceptVisitor(this);
+                    exitPriority();
                     writer.append(".lo");
                     break;
                 case NEGATE_LONG:
+                    enterPriority(Priority.COMMA, Associativity.NONE, false);
                     writer.append("Long_neg(");
                     expr.getOperand().acceptVisitor(this);
                     writer.append(')');
+                    exitPriority();
                     break;
                 case NOT_LONG:
+                    enterPriority(Priority.COMMA, Associativity.NONE, false);
                     writer.append("Long_not(");
                     expr.getOperand().acceptVisitor(this);
                     writer.append(')');
+                    exitPriority();
                     break;
                 case BYTE_TO_INT:
-                    writer.append("((");
+                    enterPriority(Priority.BITWISE_SHIFT, Associativity.LEFT, true);
+                    writer.append("(");
                     expr.getOperand().acceptVisitor(this);
-                    writer.ws().append("<<").ws().append("24)").ws().append(">>").ws().append("24)");
+                    writer.ws().append("<<").ws().append("24)").ws().append(">>").ws().append("24");
+                    exitPriority();
                     break;
                 case SHORT_TO_INT:
-                    writer.append("((");
+                    enterPriority(Priority.BITWISE_SHIFT, Associativity.LEFT, true);
+                    writer.append("(");
                     expr.getOperand().acceptVisitor(this);
-                    writer.ws().append("<<").ws().append("16)").ws().append(">>").ws().append("16)");
+                    writer.ws().append("<<").ws().append("16)").ws().append(">>").ws().append("16");
+                    exitPriority();
                     break;
                 case NULL_CHECK:
+                    enterPriority(Priority.COMMA, Associativity.NONE, false);
                     writer.append("$rt_nullCheck(");
                     expr.getOperand().acceptVisitor(this);
                     writer.append(')');
+                    exitPriority();
                     break;
             }
             if (expr.getLocation() != null) {
@@ -1252,13 +1324,13 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             if (expr.getLocation() != null) {
                 pushLocation(expr.getLocation());
             }
-            writer.append('(');
+            enterPriority(priority, Associativity.RIGHT, async);
             expr.getCondition().acceptVisitor(this);
             writer.ws().append("?").ws();
             expr.getConsequent().acceptVisitor(this);
             writer.ws().append(":").ws();
             expr.getAlternative().acceptVisitor(this);
-            writer.append(')');
+            exitPriority();
             if (expr.getLocation() != null) {
                 popLocation();
             }
@@ -1429,10 +1501,14 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             if (expr.getLocation() != null) {
                 pushLocation(expr.getLocation());
             }
+            enterPriority(Priority.MEMBER_ACCESS, Associativity.LEFT, true);
             expr.getArray().acceptVisitor(this);
             writer.append('[');
+            enterPriority(Priority.COMMA, Associativity.NONE, false);
             expr.getIndex().acceptVisitor(this);
+            exitPriority();
             writer.append(']');
+            exitPriority();
             if (expr.getLocation() != null) {
                 popLocation();
             }
@@ -1447,11 +1523,13 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             if (expr.getLocation() != null) {
                 pushLocation(expr.getLocation());
             }
+            enterPriority(Priority.MEMBER_ACCESS, Associativity.LEFT, true);
             expr.getArray().acceptVisitor(this);
             writer.append(".data");
             if (expr.getLocation() != null) {
                 popLocation();
             }
+            exitPriority();
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
         }
@@ -1483,6 +1561,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 }
                 boolean virtual = false;
                 boolean hasParams = false;
+                enterPriority(Priority.COMMA, Associativity.NONE, false);
                 switch (expr.getType()) {
                     case STATIC:
                         writer.append(fullName).append("(");
@@ -1536,6 +1615,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     writer.append("$rt_continue($part_").append(expr.getAsyncTarget()).append(')');
                 }
                 writer.append(')');
+                exitPriority();
                 if (lastCallSite != null) {
                     if (virtual) {
                         lastCallSite.setVirtualMethod(expr.getMethod());
@@ -1562,11 +1642,13 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             if (expr.getLocation() != null) {
                 pushLocation(expr.getLocation());
             }
+            enterPriority(Priority.MEMBER_ACCESS, Associativity.LEFT, true);
             expr.getQualified().acceptVisitor(this);
             writer.append('.').appendField(expr.getField());
             if (expr.getLocation() != null) {
                 popLocation();
             }
+            exitPriority();
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
         }
@@ -1578,7 +1660,9 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             if (expr.getLocation() != null) {
                 pushLocation(expr.getLocation());
             }
-            writer.append("new ").append(naming.getNameFor(expr.getConstructedClass())).append("()");
+            enterPriority(Priority.FUNCTION_CALL, Associativity.RIGHT, true);
+            writer.append("new ").append(naming.getNameFor(expr.getConstructedClass()));
+            exitPriority();
             if (expr.getLocation() != null) {
                 popLocation();
             }
@@ -1594,6 +1678,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 pushLocation(expr.getLocation());
             }
             ValueType type = expr.getType();
+            enterPriority(Priority.COMMA, Associativity.NONE, false);
             if (type instanceof ValueType.Primitive) {
                 switch (((ValueType.Primitive)type).getKind()) {
                     case BOOLEAN:
@@ -1642,6 +1727,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 expr.getLength().acceptVisitor(this);
                 writer.append(")");
             }
+            exitPriority();
             if (expr.getLocation() != null) {
                 popLocation();
             }
@@ -1660,6 +1746,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             for (int i = 0; i < expr.getDimensions().size(); ++i) {
                 type = ((ValueType.Array)type).getItemType();
             }
+            enterPriority(Priority.COMMA, Associativity.NONE, false);
             if (type instanceof ValueType.Primitive) {
                 switch (((ValueType.Primitive)type).getKind()) {
                     case BOOLEAN:
@@ -1703,6 +1790,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 dimension.acceptVisitor(this);
             }
             writer.append("])");
+            exitPriority();
             if (expr.getLocation() != null) {
                 popLocation();
             }
@@ -1721,18 +1809,21 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 String clsName = ((ValueType.Object)expr.getType()).getClassName();
                 ClassHolder cls = classSource.get(clsName);
                 if (cls != null && !cls.getModifiers().contains(ElementModifier.INTERFACE)) {
-                    writer.append("(");
+                    enterPriority(Priority.COMPARISON, Associativity.LEFT, true);
                     expr.getExpr().acceptVisitor(this);
-                    writer.append(" instanceof ").appendClass(clsName).append(")");
+                    writer.append(" instanceof ").appendClass(clsName);
+                    exitPriority();
                     if (expr.getLocation() != null) {
                         popLocation();
                     }
                     return;
                 }
             }
+            enterPriority(Priority.COMMA, Associativity.NONE, false);
             writer.append("$rt_isInstance(");
             expr.getExpr().acceptVisitor(this);
             writer.append(",").ws().append(typeToClsString(naming, expr.getType())).append(")");
+            exitPriority();
             if (expr.getLocation() != null) {
                 popLocation();
             }

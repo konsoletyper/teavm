@@ -405,6 +405,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         Renderer renderer = new Renderer(sourceWriter, classSet, classLoader, this, asyncMethods, asyncFamilyMethods,
                 diagnostics);
         renderer.setProperties(properties);
+        renderer.setMinifying(minifying);
         if (debugEmitter != null) {
             int classIndex = 0;
             for (String className : classSet.getClassNames()) {
@@ -430,8 +431,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                 listener.begin(renderer, target);
             }
             sourceWriter.append("\"use strict\";").newLine();
-            
-            
+
+
             // Keep track of current running thread by overriding setTimeout
             sourceWriter.append("function $rt_setTimeout(f,interval){").indent().softNewLine();
             MethodReference currentThreadRef = new MethodReference(
@@ -439,7 +440,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             MethodReference setCurrentThreadRef = new MethodReference(
                     Thread.class, "setCurrentThread", Thread.class, void.class);
             MethodReference getMainThreadRef = new MethodReference(Thread.class, "getMainThread", Thread.class);
-            
+
             sourceWriter.append("var currThread = ").appendMethodBody(currentThreadRef).append("();").softNewLine();
             sourceWriter.append("var callback = function(){").indent().softNewLine();
             sourceWriter.appendMethodBody(setCurrentThreadRef).append("(currThread);").softNewLine();
@@ -449,9 +450,9 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             sourceWriter.outdent().append("};").softNewLine();
             sourceWriter.append("setTimeout(callback, interval);").softNewLine();
             sourceWriter.outdent().append("};").softNewLine();
-            
+
             // END Thread stuff
-            
+
             renderer.renderRuntime();
             for (ClassNode clsNode : clsNodes) {
                 ClassReader cls = classSet.get(clsNode.getName());
