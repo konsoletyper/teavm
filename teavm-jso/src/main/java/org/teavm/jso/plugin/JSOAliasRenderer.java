@@ -63,7 +63,7 @@ class JSOAliasRenderer implements RendererListener {
             if (entry.getValue().methods.isEmpty()) {
                 continue;
             }
-            writer.append("c").ws().append("=").ws().appendClass(entry.getKey()).append(".prototype").softNewLine();
+            writer.append("c").ws().append("=").ws().appendClass(entry.getKey()).append(".prototype;").softNewLine();
             for (Map.Entry<MethodDescriptor, String> aliasEntry : entry.getValue().methods.entrySet()) {
                 writer.append("c.").append(aliasEntry.getValue()).ws().append("=").ws().append("c.")
                         .appendMethod(new MethodReference(entry.getKey(), aliasEntry.getKey()))
