@@ -36,27 +36,18 @@ public class ObjectEnrichRenderer implements RendererListener {
     }
 
     @Override
-    public void beforeClass(ClassReader cls) throws IOException {
-    }
-
-    @Override
-    public void afterClass(ClassReader cls) throws IOException {
-        if (cls.getName().equals("java.lang.Object")) {
-            MethodReader toString = cls.getMethod(new MethodDescriptor("toString", String.class));
-            if (toString != null) {
-                String clsName = context.getNaming().getNameFor(cls.getName());
-                String toStringName = context.getNaming().getNameFor(toString.getReference());
-                context.getWriter().append(clsName).append(".prototype.toString").ws().append('=').ws()
-                        .append("function()").ws().append('{').indent().softNewLine();
-                context.getWriter().append("return this.").append(toStringName).ws().append('?').ws()
-                        .append("$rt_ustr(this.").append(toStringName).append("())").ws().append(':')
-                        .append("Object.prototype.toString.call(this);").softNewLine();
-                context.getWriter().outdent().append("}").newLine();
-            }
-        }
-    }
-
-    @Override
     public void complete() throws IOException {
+        ClassReader cls = context.getClassSource().get("java.lang.Object");
+        MethodReader toString = cls.getMethod(new MethodDescriptor("toString", String.class));
+        if (toString != null) {
+            String clsName = context.getNaming().getNameFor(cls.getName());
+            String toStringName = context.getNaming().getNameFor(toString.getReference());
+            context.getWriter().append(clsName).append(".prototype.toString").ws().append('=').ws()
+                    .append("function()").ws().append('{').indent().softNewLine();
+            context.getWriter().append("return this.").append(toStringName).ws().append('?').ws()
+                    .append("$rt_ustr(this.").append(toStringName).append("())").ws().append(':')
+                    .append("Object.prototype.toString.call(this);").softNewLine();
+            context.getWriter().outdent().append("}").newLine();
+        }
     }
 }

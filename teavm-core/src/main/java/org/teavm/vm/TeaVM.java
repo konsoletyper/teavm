@@ -454,16 +454,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             // END Thread stuff
 
             renderer.renderRuntime();
-            for (ClassNode clsNode : clsNodes) {
-                ClassReader cls = classSet.get(clsNode.getName());
-                for (RendererListener listener : rendererListeners) {
-                    listener.beforeClass(cls);
-                }
-                renderer.render(clsNode);
-                for (RendererListener listener : rendererListeners) {
-                    listener.afterClass(cls);
-                }
-            }
+            renderer.render(clsNodes);
             renderer.renderStringPool();
             for (Map.Entry<String, TeaVMEntryPoint> entry : entryPoints.entrySet()) {
                 sourceWriter.append("var ").append(entry.getKey()).ws().append("=").ws();

@@ -20,7 +20,6 @@ import java.util.Map;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.javascript.RenderingContext;
 import org.teavm.jso.plugin.JSODependencyListener.ExposedClass;
-import org.teavm.model.ClassReader;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.vm.BuildTarget;
@@ -41,14 +40,6 @@ class JSOAliasRenderer implements RendererListener {
     @Override
     public void begin(RenderingContext context, BuildTarget buildTarget) throws IOException {
         writer = context.getWriter();
-    }
-
-    @Override
-    public void beforeClass(ClassReader cls) throws IOException {
-    }
-
-    @Override
-    public void afterClass(ClassReader cls) throws IOException {
     }
 
     @Override

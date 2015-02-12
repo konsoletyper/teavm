@@ -270,8 +270,18 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         writer.append("function $rt_objcls() { return ").appendClass("java.lang.Object").append("; }").newLine();
     }
 
-    public void render(ClassNode cls) throws RenderingException {
-        debugEmitter.emitClass(cls.getName());
+    public void render(List<ClassNode> classes) throws RenderingException {
+        for (ClassNode cls : classes) {
+            renderDeclaration(cls);
+        }
+        for (ClassNode cls : classes) {
+            renderMethodBodies(cls);
+        }
+        renderClassMetadata(classes);
+        renderMethodStubs(classes);
+    }
+
+    private void renderDeclaration(ClassNode cls) throws RenderingException {
         debugEmitter.addClass(cls.getName(), cls.getParentName());
         try {
             writer.append("function ").appendClass(cls.getName()).append("()").ws().append("{")
@@ -306,52 +316,30 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 writer.appendClass(cls.getName()).append('.').appendField(fieldRef).ws().append("=").ws()
                         .append(constantToString(value)).append(";").softNewLine();
             }
+        } catch (NamingException e) {
+            throw new RenderingException("Error rendering class " + cls.getName() + ". See a cause for details", e);
+        } catch (IOException e) {
+            throw new RenderingException("IO error occured", e);
+        }
+    }
 
+    private void renderMethodBodies(ClassNode cls) throws RenderingException {
+        debugEmitter.emitClass(cls.getName());
+        try {
             List<MethodNode> nonInitMethods = new ArrayList<>();
             List<MethodNode> virtualMethods = new ArrayList<>();
             MethodHolder clinit = classSource.get(cls.getName()).getMethod(
                     new MethodDescriptor("<clinit>", ValueType.VOID));
-            List<String> stubNames = new ArrayList<>();
             List<MethodNode> clinitMethods = new ArrayList<>();
             for (MethodNode method : cls.getMethods()) {
-                if (!method.getModifiers().contains(NodeModifier.STATIC) &&
-                        !method.getReference().getName().equals("<init>")) {
+                if (clinit == null || (!method.getModifiers().contains(NodeModifier.STATIC) &&
+                        !method.getReference().getName().equals("<init>"))) {
                     nonInitMethods.add(method);
                 } else {
                     clinitMethods.add(method);
-                    stubNames.add(naming.getFullNameFor(method.getReference()));
                 }
             }
-            boolean needsClinit = clinit != null || !clinitMethods.isEmpty();
-
-            writer.append("$rt_declClass(").appendClass(cls.getName()).append(",").ws().append("{")
-                    .indent().softNewLine();
-            writer.append("name").ws().append(":").ws().append("\"").append(escapeString(cls.getName()))
-                    .append("\"");
-            if (cls.getModifiers().contains(NodeModifier.ENUM)) {
-                writer.append(",").softNewLine().append("enum").ws().append(":").ws().append("true");
-            }
-            if (!cls.getInterfaces().isEmpty()) {
-                writer.append(",").softNewLine().append("interfaces").ws().append(":").ws().append("[");
-                for (int i = 0; i < cls.getInterfaces().size(); ++i) {
-                    String iface = cls.getInterfaces().get(i);
-                    if (i > 0) {
-                        writer.append(",").ws();
-                    }
-                    writer.appendClass(iface);
-                }
-                writer.append("]");
-            }
-            if (cls.getParentName() != null) {
-                writer.append(",").softNewLine();
-                writer.append("superclass").ws().append(":").ws().appendClass(cls.getParentName());
-            }
-            if (!cls.getModifiers().contains(NodeModifier.INTERFACE) && needsClinit) {
-                writer.append(",").softNewLine().append("clinit").ws().append(":").ws()
-                        .append("function()").ws().append("{").ws()
-                        .appendClass(cls.getName()).append("_$clinit();").ws().append("}");
-            }
-            writer.ws().append("});").newLine().outdent();
+            boolean needsClinit = clinit != null;
 
             if (needsClinit) {
                 writer.append("function ").appendClass(cls.getName()).append("_$clinit()").ws()
@@ -380,29 +368,139 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                         renderStaticDeclaration(method);
                     }
                 }
-                if (stubNames.size() > 0) {
-                    writer.append("$rt_methodStubs(").appendClass(cls.getName()).append("_$clinit")
-                            .append(",").ws().append("[");
-                    for (int i = 0; i < stubNames.size(); ++i) {
-                        if (i > 0) {
-                            writer.append(",").ws();
-                        }
-                        writer.append("'").append(stubNames.get(i)).append("'");
-                    }
-                    writer.append("]);").newLine();
-                }
             }
 
             for (MethodNode method : nonInitMethods) {
                 renderBody(method, false);
             }
-            renderVirtualDeclarations(cls.getName(), virtualMethods);
         } catch (NamingException e) {
             throw new RenderingException("Error rendering class " + cls.getName() + ". See a cause for details", e);
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
         }
         debugEmitter.emitClass(null);
+    }
+
+    private void renderMethodStubs(List<ClassNode> classes) {
+        try {
+            boolean first = true;
+            writer.append("$rt_methodStubs([");
+            for (int i = 0; i < classes.size(); ++i) {
+                ClassNode cls = classes.get(i);
+                MethodHolder clinit = classSource.get(cls.getName()).getMethod(
+                        new MethodDescriptor("<clinit>", ValueType.VOID));
+                if (clinit == null) {
+                    continue;
+                }
+                List<String> stubNames = new ArrayList<>();
+                for (MethodNode method : cls.getMethods()) {
+                    if (method.getModifiers().contains(NodeModifier.STATIC) ||
+                            method.getReference().getName().equals("<init>")) {
+                        stubNames.add(naming.getFullNameFor(method.getReference()));
+                    }
+                }
+                if (stubNames.isEmpty()) {
+                    continue;
+                }
+                if (!first) {
+                    writer.append(',').softNewLine();
+                }
+                first = false;
+                writer.appendClass(cls.getName()).append("_$clinit").append(",").ws();
+                if (stubNames.size() == 1) {
+                    writer.append("'").append(stubNames.get(0)).append("'");
+                } else {
+                    writer.append('[');
+                    for (int j = 0; j < stubNames.size(); ++j) {
+                        if (j > 0) {
+                            writer.append(",").ws();
+                        }
+                        writer.append("'").append(stubNames.get(j)).append("'");
+                    }
+                    writer.append(']');
+                }
+            }
+            writer.append("]);").newLine();
+        } catch (NamingException e) {
+            throw new RenderingException("Error rendering method stubs. See a cause for details", e);
+        } catch (IOException e) {
+            throw new RenderingException("IO error occured", e);
+        }
+    }
+
+    private void renderClassMetadata(List<ClassNode> classes) {
+        try {
+            writer.append("$rt_declClasses([");
+            boolean first = true;
+            for (ClassNode cls : classes) {
+                if (!first) {
+                    writer.append(',').softNewLine();
+                }
+                first = false;
+                writer.appendClass(cls.getName()).append(",").ws();
+                writer.append("\"").append(escapeString(cls.getName())).append("\",").ws();
+                if (cls.getParentName() != null) {
+                    writer.appendClass(cls.getParentName());
+                } else {
+                    writer.append("0");
+                }
+                writer.append(',').ws();
+                writer.append("[");
+                for (int i = 0; i < cls.getInterfaces().size(); ++i) {
+                    String iface = cls.getInterfaces().get(i);
+                    if (i > 0) {
+                        writer.append(",").ws();
+                    }
+                    writer.appendClass(iface);
+                }
+                writer.append("],").ws();
+                int flags = 0;
+                if (cls.getModifiers().contains(NodeModifier.ENUM)) {
+                    flags &= 1;
+                }
+                writer.append(flags).append(',').ws();
+                MethodHolder clinit = classSource.get(cls.getName()).getMethod(
+                        new MethodDescriptor("<clinit>", ValueType.VOID));
+                if (clinit != null) {
+                    writer.appendClass(cls.getName()).append("_$clinit");
+                } else {
+                    writer.append('0');
+                }
+                writer.append(',').ws();
+
+                List<String> stubNames = new ArrayList<>();
+                List<MethodNode> virtualMethods = new ArrayList<>();
+                for (MethodNode method : cls.getMethods()) {
+                    if (clinit != null && (method.getModifiers().contains(NodeModifier.STATIC) ||
+                            method.getReference().getName().equals("<init>"))) {
+                        stubNames.add(naming.getFullNameFor(method.getReference()));
+                    }
+                    if (!method.getModifiers().contains(NodeModifier.STATIC)) {
+                        virtualMethods.add(method);
+                    }
+                }
+                if (stubNames.size() == 1) {
+                    writer.append("'").append(stubNames.get(0)).append("'");
+                } else {
+                    writer.append('[');
+                    for (int j = 0; j < stubNames.size(); ++j) {
+                        if (j > 0) {
+                            writer.append(",").ws();
+                        }
+                        writer.append("'").append(stubNames.get(j)).append("'");
+                    }
+                    writer.append(']');
+                }
+                writer.append(',').ws();
+
+                renderVirtualDeclarations(virtualMethods);
+            }
+            writer.append("]);").newLine();
+        } catch (NamingException e) {
+            throw new RenderingException("Error rendering class metadata. See a cause for details", e);
+        } catch (IOException e) {
+            throw new RenderingException("IO error occured", e);
+        }
     }
 
     private static Object getDefaultValue(ValueType type) {
@@ -454,22 +552,16 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         debugEmitter.emitMethod(null);
     }
 
-    private void renderVirtualDeclarations(String className, List<MethodNode> methods)
-            throws NamingException, IOException {
-        if (methods.isEmpty()) {
-            return;
-        }
-        for (MethodNode method : methods) {
-            MethodReference ref = method.getReference();
-            if (ref.getDescriptor().getName().equals("<init>")) {
-                renderInitializer(method);
-            }
-        }
-        writer.append("$rt_virtualMethods(").appendClass(className).indent();
+    private void renderVirtualDeclarations(List<MethodNode> methods) throws NamingException, IOException {
+        writer.append("[");
+        boolean first = true;
         for (MethodNode method : methods) {
             debugEmitter.emitMethod(method.getReference().getDescriptor());
             MethodReference ref = method.getReference();
-            writer.append(",").newLine();
+            if (!first) {
+                writer.append(",").ws();
+            }
+            first = false;
             String methodName = method.isAsync() ? naming.getNameForAsync(ref) : naming.getNameFor(ref);
             if (method.isOriginalNamePreserved()) {
                 writer.append("[\"").append(methodName).append("\",").ws().append("\"").append(ref.getName())
@@ -509,7 +601,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 writer.append("$rt_asyncAdapter(").appendMethodBody(ref).append(')');
             }
         }
-        writer.append(");").newLine().outdent();
+        writer.append("]");
     }
 
     private void renderStaticDeclaration(MethodNode method) throws NamingException, IOException {

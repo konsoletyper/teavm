@@ -349,6 +349,7 @@ class DependencyGraphBuilder {
 
         @Override
         public void create(VariableReader receiver, String type) {
+            dependencyChecker.linkClass(type, new CallLocation(caller.getMethod(), currentLocation));
             nodes[receiver.getIndex()].propagate(dependencyChecker.getType(type));
         }
 
@@ -427,8 +428,9 @@ class DependencyGraphBuilder {
 
         private void invokeSpecial(VariableReader receiver, VariableReader instance, MethodReference method,
                 List<? extends VariableReader> arguments) {
-            MethodDependency methodDep = dependencyChecker.linkMethod(method,
-                    new CallLocation(caller.getMethod(), currentLocation));
+            CallLocation callLocation = new CallLocation(caller.getMethod(), currentLocation);
+            dependencyChecker.linkClass(method.getClassName(), callLocation).initClass(callLocation);
+            MethodDependency methodDep = dependencyChecker.linkMethod(method, callLocation);
             if (methodDep.isMissing()) {
                 return;
             }
@@ -494,14 +496,14 @@ class DependencyGraphBuilder {
         @Override
         public void monitorEnter(VariableReader objectRef) {
             dependencyChecker.linkMethod(
-                    new MethodReference(Object.class, "monitorEnter", Object.class, void.class), 
+                    new MethodReference(Object.class, "monitorEnter", Object.class, void.class),
                     new CallLocation(caller.getMethod(), currentLocation)).use();
         }
 
         @Override
         public void monitorExit(VariableReader objectRef) {
             dependencyChecker.linkMethod(
-                    new MethodReference(Object.class, "monitorExit", Object.class, void.class), 
+                    new MethodReference(Object.class, "monitorExit", Object.class, void.class),
                     new CallLocation(caller.getMethod(), currentLocation)).use();
         }
     };

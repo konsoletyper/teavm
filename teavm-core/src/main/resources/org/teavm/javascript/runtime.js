@@ -336,14 +336,21 @@ function $rt_assertNotNaN(value) {
     }
     return value;
 }
-function $rt_methodStubs(clinit, names) {
-    for (var i = 0; i < names.length; i = (i + 1) | 0) {
-        window[names[i]] = (function(name) {
-            return function() {
-                clinit();
-                return window[name].apply(window, arguments);
-            }
-        })(names[i]);
+function $rt_methodStubs(data) {
+    for (var i = 0; i < data.length; i += 2) {
+        var clinit = data[i + 0];
+        var names = data[i + 1];
+        if (!(names instanceof Array)) {
+            names = [names];
+        }
+        for (var j = 0; j < names.length; j = (j + 1) | 0) {
+            window[names[j]] = (function(name, clinit) {
+                return function() {
+                    clinit();
+                    return window[name].apply(window, arguments);
+                }
+            })(names[j], clinit);
+        }
     }
 }
 var $rt_stdoutBuffer = "";
@@ -368,25 +375,58 @@ function $rt_putStderr(ch) {
         $rt_stderrBuffer += String.fromCharCode(ch);
     }
 }
-function $rt_declClass(cls, data) {
-    cls.$meta = {};
-    var m = cls.$meta
-    m.superclass = typeof(data.superclass) !== 'undefined' ? data.superclass : null;
-    m.supertypes = data.interfaces ? data.interfaces.slice() : [];
-    if (data.superclass) {
-        m.supertypes.push(data.superclass);
-        cls.prototype = new data.superclass();
-    } else {
-        cls.prototype = new Object();
+function $rt_metadata(data) {
+    for (var i = 0; i < data.length; i += 8) {
+        var cls = data[i + 0];
+        cls.$meta = {};
+        var m = cls.$meta;
+        m.name = data[i + 1];
+        m.binaryName = "L" + m.name + ";";
+        var superclass = data[i + 2];
+        m.superclass = superclass !== 0 ? superclass : null;
+        m.supertypes = data[i + 3];
+        if (m.superclass) {
+            m.supertypes.push(m.superclass);
+            cls.prototype = new m.superclass();
+        } else {
+            cls.prototype = new Object();
+        }
+        var flags = data[i + 4];
+        m.enum = (flags & 1) != 0;
+        m.primitive = false;
+        m.item = null;
+        cls.prototype.constructor = cls;
+        cls.classObject = null;
+        var clinit = data[i + 5];
+        cls.$clinit = clinit !== 0 ? clinit : function() {};
+
+        var names = data[i + 6];
+        if (!(names instanceof Array)) {
+            names = [names];
+        }
+        for (var j = 0; j < names.length; j = (j + 1) | 0) {
+            window[names[j]] = (function(cls, name) {
+                return function() {
+                    var clinit = cls.$clinit;
+                    cls.$clinit = function() {};
+                    cls.$clinit();
+                    return window[name].apply(window, arguments);
+                }
+            })(cls, names[j]);
+        }
+
+        var virtualMethods = data[i + 7];
+        for (var j = 0; j < virtualMethods.length; j += 2) {
+            name = virtualMethods[j + 0];
+            var func = virtualMethods[j + 1];
+            if (typeof name === 'string') {
+                name = [name];
+            }
+            for (var k = 0; k < name.length; ++k) {
+                cls.prototype[name[k]] = func;
+            }
+        }
     }
-    m.name = data.name;
-    m.binaryName = "L" + data.name + ";";
-    m.enum = data.enum;
-    m.item = null;
-    m.primitive = false;
-    cls.prototype.constructor = cls;
-    cls.classObject = null;
-    cls.$clinit = data.clinit ? data.clinit : function() {};
 }
 function $rt_virtualMethods(cls) {
     for (var i = 1; i < arguments.length; i += 2) {
@@ -397,6 +437,22 @@ function $rt_virtualMethods(cls) {
         } else {
             for (var j = 0; j < name.length; ++j) {
                 cls.prototype[name[j]] = func;
+            }
+        }
+    }
+}
+function $rt_virtualMethods(data) {
+    for (var i = 0; i < data.length; i += 2) {
+        var cls = data[i + 0];
+        var methods = data[i + 1];
+        for (var j = 0; j < methods.length; j += 2) {
+            var name = methods[j + 0];
+            var func = methods[j + 1];
+            if (typeof name === 'string') {
+                name = [name];
+            }
+            for (var k = 0; k < name.length; ++k) {
+                cls.prototype[name[k]] = func;
             }
         }
     }

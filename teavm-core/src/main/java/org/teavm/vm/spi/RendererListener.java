@@ -17,7 +17,6 @@ package org.teavm.vm.spi;
 
 import java.io.IOException;
 import org.teavm.javascript.RenderingContext;
-import org.teavm.model.ClassReader;
 import org.teavm.vm.BuildTarget;
 
 /**
@@ -26,10 +25,6 @@ import org.teavm.vm.BuildTarget;
  */
 public interface RendererListener {
     void begin(RenderingContext context, BuildTarget buildTarget) throws IOException;
-
-    void beforeClass(ClassReader cls) throws IOException;
-
-    void afterClass(ClassReader cls) throws IOException;
 
     void complete() throws IOException;
 }
