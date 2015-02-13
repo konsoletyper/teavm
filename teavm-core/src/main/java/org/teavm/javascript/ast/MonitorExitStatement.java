@@ -22,7 +22,6 @@ package org.teavm.javascript.ast;
 public class MonitorExitStatement extends Statement {
     private NodeLocation location;
     private Expr objectRef;
-    private Integer asyncTarget;
 
     @Override
     public void acceptVisitor(StatementVisitor visitor) {
