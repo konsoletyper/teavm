@@ -92,6 +92,14 @@ public final class Platform {
     @PluggableDependency(PlatformGenerator.class)
     public static native Enum<?>[] getEnumConstants(PlatformClass cls);
 
+    @GeneratedBy(PlatformGenerator.class)
+    @PluggableDependency(PlatformGenerator.class)
+    public static native void startThread(Runnable runnable);
+
+    private static void launchThread(Runnable runnable) {
+        runnable.run();
+    }
+
     public static PlatformString stringFromCharCode(int charCode) {
         return ((PlatformHelper)JS.getGlobal()).getStringClass().fromCharCode(charCode);
     }

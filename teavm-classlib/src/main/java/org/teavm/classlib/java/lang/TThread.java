@@ -19,6 +19,7 @@ import org.teavm.dom.browser.TimerHandler;
 import org.teavm.dom.browser.Window;
 import org.teavm.javascript.spi.Async;
 import org.teavm.jso.JS;
+import org.teavm.platform.Platform;
 import org.teavm.platform.async.AsyncCallback;
 
 
@@ -56,22 +57,19 @@ public class TThread extends TObject implements TRunnable {
     }
 
     public void start(){
-        window.setTimeout(new TimerHandler() {
-            @Override public void onTimer() {
-                launch(TThread.this);
+        Platform.startThread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    activeCount++;
+                    setCurrentThread(TThread.this);
+                    target.run();
+                } finally {
+                    activeCount--;
+                    setCurrentThread(mainThread);
+                }
             }
-        }, 0);
-    }
-
-    private static void launch(TThread thread) {
-        try {
-            activeCount++;
-            setCurrentThread(thread);
-            thread.run();
-        } finally {
-            activeCount--;
-            setCurrentThread(mainThread);
-        }
+        });
     }
 
     static void setCurrentThread(TThread thread){

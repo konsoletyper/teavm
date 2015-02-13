@@ -25,6 +25,7 @@ import org.teavm.javascript.spi.GeneratorContext;
 import org.teavm.javascript.spi.Injector;
 import org.teavm.javascript.spi.InjectorContext;
 import org.teavm.model.*;
+import org.teavm.platform.Platform;
 
 /**
  *
@@ -40,6 +41,13 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
             case "clone":
                 method.getVariable(1).connect(method.getResult());
                 break;
+            case "startThread": {
+                MethodDependency launchMethod = agent.linkMethod(new MethodReference(Platform.class,
+                        "launchThread", Runnable.class, void.class), null);
+                method.getVariable(1).connect(launchMethod.getVariable(1));
+                launchMethod.use();
+                break;
+            }
         }
     }
 
@@ -68,6 +76,9 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
                 break;
             case "clone":
                 generateClone(context, writer);
+                break;
+            case "startThread":
+                generateStartThread(context, writer);
                 break;
         }
     }
@@ -116,5 +127,13 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
         writer.append("copy[field]").ws().append("=").ws().append(obj).append("[field];")
                 .softNewLine().outdent().append("}").softNewLine();
         writer.append("return copy;").softNewLine();
+    }
+
+    private void generateStartThread(GeneratorContext context, SourceWriter writer) throws IOException {
+        String runnable = context.getParameterName(1);
+        writer.append("window.setTimeout(function()").ws().append("{").indent().softNewLine();
+        writer.appendMethodBody(Platform.class, "launchThread", Runnable.class, void.class).append("(")
+                .append(runnable).append(");").softNewLine();
+        writer.outdent().append("},").ws().append("0);").softNewLine();
     }
 }

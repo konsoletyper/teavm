@@ -38,7 +38,7 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin {
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
         MethodReference asyncRef = getAsyncReference(methodRef);
-        writer.append("var callback").ws().append("=").ws().append("function()").ws().append("{}").softNewLine();
+        writer.append("var callback").ws().append("=").ws().append("function()").ws().append("{};").softNewLine();
         writer.append("callback.").appendMethod(completeMethod).ws().append("=").ws().append("function($this,").ws()
                 .append("val)").ws().append("{").indent().softNewLine();
         writer.append("return $return($rt_asyncResult(val));").softNewLine();
