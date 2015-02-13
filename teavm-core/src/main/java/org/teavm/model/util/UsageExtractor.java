@@ -214,6 +214,6 @@ public class UsageExtractor implements InstructionVisitor {
 
     @Override
     public void visit(MonitorExitInstruction insn) {
-        usedVariables = new Variable[] {insn.getObjectRef()};
+        usedVariables = new Variable[] {insn.getObjectRef() };
     }
 }

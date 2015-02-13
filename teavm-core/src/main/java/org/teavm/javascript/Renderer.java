@@ -73,31 +73,29 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
 
     @Override
     public void visit(MonitorEnterStatement statement) {
-        if (async){
-            try {
-                MethodReference monitorEnterRef = new MethodReference(
-                        Object.class, "monitorEnter", Object.class, void.class);
-                writer.appendMethodBody(monitorEnterRef).append("(");
-                statement.getObjectRef().acceptVisitor(this);
-                writer.append(");").softNewLine();
-            } catch (IOException ex){
-                throw new RenderingException("IO error occured", ex);
-            }
+        try {
+            MethodReference monitorEnterRef = new MethodReference(
+                    Object.class, "monitorEnter", Object.class, void.class);
+            writer.appendMethodBody(monitorEnterRef).append("(");
+            statement.getObjectRef().acceptVisitor(this);
+            writer.append(",").ws();
+            writer.append("$rt_continue($part_").append(statement.getAsyncTarget()).append(')');
+            writer.append(");").softNewLine();
+        } catch (IOException ex){
+            throw new RenderingException("IO error occured", ex);
         }
     }
 
     @Override
     public void visit(MonitorExitStatement statement) {
-        if (async){
-            try {
-                MethodReference monitorExitRef = new MethodReference(
-                        Object.class, "monitorExit", Object.class, void.class);
-                writer.appendMethodBody(monitorExitRef).append("(");
-                statement.getObjectRef().acceptVisitor(this);
-                writer.append(");").softNewLine();
-            } catch (IOException ex){
-                throw new RenderingException("IO error occured", ex);
-            }
+        try {
+            MethodReference monitorExitRef = new MethodReference(
+                    Object.class, "monitorExit", Object.class, void.class);
+            writer.appendMethodBody(monitorExitRef).append("(");
+            statement.getObjectRef().acceptVisitor(this);
+            writer.append(");").softNewLine();
+        } catch (IOException ex){
+            throw new RenderingException("IO error occured", ex);
         }
     }
 
@@ -938,7 +936,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             StringBuilder sb = new StringBuilder();
             int index = blockIdMap.size();
             do {
-                sb.append(variablePartNames.charAt(index % variableNames.length()));
+                sb.append(variablePartNames.charAt(index % variablePartNames.length()));
                 index /= variablePartNames.length();
             } while (index > 0);
             name = "$b" + sb;

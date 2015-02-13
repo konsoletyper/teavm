@@ -669,11 +669,10 @@ class StatementGenerator implements InstructionVisitor {
 
     @Override
     public void visit(MonitorEnterInstruction insn) {
-        
         MonitorEnterStatement stmt = new MonitorEnterStatement();
         stmt.setLocation(currentLocation);
-        
         stmt.setObjectRef(Expr.var(insn.getObjectRef().getIndex()));
+        stmt.setAsyncTarget(asyncTarget);
         statements.add(stmt);
     }
 
@@ -681,7 +680,6 @@ class StatementGenerator implements InstructionVisitor {
     public void visit(MonitorExitInstruction insn) {
         MonitorExitStatement stmt = new MonitorExitStatement();
         stmt.setLocation(currentLocation);
-        
         stmt.setObjectRef(Expr.var(insn.getObjectRef().getIndex()));
         statements.add(stmt);
     }

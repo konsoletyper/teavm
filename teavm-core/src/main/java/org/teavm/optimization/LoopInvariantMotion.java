@@ -382,12 +382,12 @@ public class LoopInvariantMotion implements MethodOptimization {
 
         @Override
         public void visit(MonitorEnterInstruction insn) {
-            
+
         }
 
         @Override
         public void visit(MonitorExitInstruction insn) {
-            
+
         }
     }
 
@@ -574,12 +574,10 @@ public class LoopInvariantMotion implements MethodOptimization {
 
         @Override
         public void visit(MonitorEnterInstruction insn) {
-            
         }
 
         @Override
         public void visit(MonitorExitInstruction insn) {
-            
         }
     }
 }

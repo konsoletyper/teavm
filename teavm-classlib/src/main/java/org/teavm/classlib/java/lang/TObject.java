@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
+import org.teavm.dom.browser.TimerHandler;
 import org.teavm.dom.browser.Window;
 import org.teavm.javascript.spi.Async;
 import org.teavm.javascript.spi.Rename;
@@ -32,40 +33,50 @@ import org.teavm.platform.async.AsyncCallback;
 @Superclass("")
 public class TObject {
     private static final Window window = (Window)JS.getGlobal();
-    private TThread owner;
-    private TObject monitorLock;
-    private int monitorCount;
     private JSArray<NotifyListener> notifyListeners;
+    private Lock lock;
 
-    interface NotifyListener extends JSObject {
-        void handleNotify();
+    private static class Lock {
+        TThread owner;
+        int count;
+
+        public Lock() {
+            this.owner = TThread.currentThread();
+            count = 1;
+        }
     }
 
-    static void monitorEnter(TObject o){
-        if (o.monitorLock == null ){
-            o.monitorLock = new TObject();
-        }
-        while (o.owner != null && o.owner != TThread.currentThread()) {
-            try {
-                o.monitorLock.wait();
-            } catch (InterruptedException ex) {
+    interface NotifyListener extends JSObject {
+        boolean handleNotify();
+    }
 
-            }
+    static void monitorEnter(TObject o) {
+        if (o.lock == null) {
+            o.lock = new Lock();
+            return;
         }
-        o.owner = TThread.currentThread();
-        o.monitorCount++;
+        if (o.lock.owner != TThread.currentThread()) {
+            while (o.lock != null) {
+                try {
+                    o.lock.wait();
+                } catch (InterruptedException ex) {
+                }
+            }
+            o.lock = new Lock();
+        } else {
+            o.lock.count++;
+        }
     }
 
     static void monitorExit(TObject o){
-        o.monitorCount--;
-        if (o.monitorCount == 0 && o.monitorLock != null) {
-            o.owner = null;
-            o.monitorLock.notifyAll();
+        if (o.lock != null && o.lock.count-- == 0) {
+            o.lock.notifyAll();
+            o.lock = null;
         }
     }
 
     static boolean holdsLock(TObject o){
-        return o.owner == TThread.currentThread();
+        return o.lock != null && o.lock.owner == TThread.currentThread();
     }
 
     @Rename("fakeInit")
@@ -114,11 +125,15 @@ public class TObject {
 
     @Rename("notify")
     public final void notify0(){
-        if (notifyListeners != null && notifyListeners.getLength() > 0){
-            notifyListeners.shift().handleNotify();
+        if (notifyListeners != null) {
+            while (notifyListeners.getLength() > 0 && notifyListeners.shift().handleNotify()) {
+                // repeat loop
+            }
+            if (notifyListeners.getLength() == 0) {
+                notifyListeners = null;
+            }
         }
     }
-
 
     @Rename("notifyAll")
     public final void notifyAll0(){
@@ -127,6 +142,7 @@ public class TObject {
             while (notifyListeners.getLength() > 0) {
                 listeners.push(notifyListeners.shift());
             }
+            notifyListeners = null;
             while (listeners.getLength() > 0) {
                 listeners.shift().handleNotify();
             }
@@ -144,7 +160,7 @@ public class TObject {
 
     @Async
     @Rename("wait")
-    public native final void wait0(long timeout, int nanos) throws TInterruptedException;
+    private native final void wait0(long timeout, int nanos) throws TInterruptedException;
 
     @Rename("wait")
     public final void wait0(long timeout, int nanos, final AsyncCallback<Void> callback) {
@@ -152,24 +168,55 @@ public class TObject {
             notifyListeners = window.newArray();
         }
         final TThread currentThread = TThread.currentThread();
-        notifyListeners.push(new NotifyListener() {
-            @Override
-            public void handleNotify() {
-                TThread.setCurrentThread(currentThread);
-                try {
-                    callback.complete(null);
-                } finally {
-                    TThread.setCurrentThread(TThread.getMainThread());
-                }
+        final NotifyListenerImpl listener = new NotifyListenerImpl(callback, currentThread);
+        notifyListeners.push(listener);
+        if (timeout == 0 && nanos == 0) {
+            return;
+        }
+        listener.timerId = window.setTimeout(listener, timeout);
+    }
+
+    private static class NotifyListenerImpl implements NotifyListener, TimerHandler {
+        final AsyncCallback<Void> callback;
+        final TThread currentThread;
+        int timerId = -1;
+        boolean finished;
+
+        public NotifyListenerImpl(AsyncCallback<Void> callback, TThread currentThread) {
+            this.callback = callback;
+            this.currentThread = currentThread;
+        }
+
+        @Override
+        public boolean handleNotify() {
+            if (finished) {
+                return false;
             }
-        });
+            TThread.setCurrentThread(currentThread);
+            if (timerId >= 0) {
+                window.clearTimeout(timerId);
+                timerId = -1;
+            }
+            finished = true;
+            try {
+                callback.complete(null);
+            } finally {
+                TThread.setCurrentThread(TThread.getMainThread());
+            }
+            return true;
+        }
+
+        @Override
+        public void onTimer() {
+            handleNotify();
+        }
     }
 
     @Rename("wait")
     public final void wait0() throws TInterruptedException {
         try {
             wait(0l);
-        } catch ( InterruptedException ex){
+        } catch (InterruptedException ex) {
             throw new TInterruptedException();
         }
     }

@@ -207,12 +207,12 @@ public final class VariableEscapeAnalyzer {
 
         @Override
         public void visit(MonitorEnterInstruction insn) {
-            
+            escaping[insn.getObjectRef().getIndex()] = true;
         }
 
         @Override
         public void visit(MonitorExitInstruction insn) {
-            
+            escaping[insn.getObjectRef().getIndex()] = true;
         }
     }
 }
