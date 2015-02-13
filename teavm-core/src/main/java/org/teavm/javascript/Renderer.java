@@ -278,7 +278,6 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             renderMethodBodies(cls);
         }
         renderClassMetadata(classes);
-        renderMethodStubs(classes);
     }
 
     private void renderDeclaration(ClassNode cls) throws RenderingException {
@@ -364,8 +363,6 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                         } else {
                             virtualMethods.add(method);
                         }
-                    } else if (method.isOriginalNamePreserved()) {
-                        renderStaticDeclaration(method);
                     }
                 }
             }
@@ -381,56 +378,9 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         debugEmitter.emitClass(null);
     }
 
-    private void renderMethodStubs(List<ClassNode> classes) {
-        try {
-            boolean first = true;
-            writer.append("$rt_methodStubs([");
-            for (int i = 0; i < classes.size(); ++i) {
-                ClassNode cls = classes.get(i);
-                MethodHolder clinit = classSource.get(cls.getName()).getMethod(
-                        new MethodDescriptor("<clinit>", ValueType.VOID));
-                if (clinit == null) {
-                    continue;
-                }
-                List<String> stubNames = new ArrayList<>();
-                for (MethodNode method : cls.getMethods()) {
-                    if (method.getModifiers().contains(NodeModifier.STATIC) ||
-                            method.getReference().getName().equals("<init>")) {
-                        stubNames.add(naming.getFullNameFor(method.getReference()));
-                    }
-                }
-                if (stubNames.isEmpty()) {
-                    continue;
-                }
-                if (!first) {
-                    writer.append(',').softNewLine();
-                }
-                first = false;
-                writer.appendClass(cls.getName()).append("_$clinit").append(",").ws();
-                if (stubNames.size() == 1) {
-                    writer.append("'").append(stubNames.get(0)).append("'");
-                } else {
-                    writer.append('[');
-                    for (int j = 0; j < stubNames.size(); ++j) {
-                        if (j > 0) {
-                            writer.append(",").ws();
-                        }
-                        writer.append("'").append(stubNames.get(j)).append("'");
-                    }
-                    writer.append(']');
-                }
-            }
-            writer.append("]);").newLine();
-        } catch (NamingException e) {
-            throw new RenderingException("Error rendering method stubs. See a cause for details", e);
-        } catch (IOException e) {
-            throw new RenderingException("IO error occured", e);
-        }
-    }
-
     private void renderClassMetadata(List<ClassNode> classes) {
         try {
-            writer.append("$rt_declClasses([");
+            writer.append("$rt_metadata([");
             boolean first = true;
             for (ClassNode cls : classes) {
                 if (!first) {
@@ -538,7 +488,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             }
             writer.append(variableName(i));
         }
-        writer.append(")").ws().append("{").newLine().indent();
+        writer.append(")").ws().append("{").softNewLine().indent();
         writer.append("var result").ws().append("=").ws().append("new ").appendClass(
                 ref.getClassName()).append("();").softNewLine();
         writer.append(naming.getFullNameFor(ref)).append("(result");
@@ -563,12 +513,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             }
             first = false;
             String methodName = method.isAsync() ? naming.getNameForAsync(ref) : naming.getNameFor(ref);
-            if (method.isOriginalNamePreserved()) {
-                writer.append("[\"").append(methodName).append("\",").ws().append("\"").append(ref.getName())
-                        .append("\"]");
-            } else {
-                writer.append("\"").append(methodName).append("\"");
-            }
+            writer.append("\"").append(methodName).append("\"");
             writer.append(",").ws().append("function(");
             List<String> args = new ArrayList<>();
             for (int i = 1; i <= ref.parameterCount(); ++i) {
@@ -602,33 +547,6 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             }
         }
         writer.append("]");
-    }
-
-    private void renderStaticDeclaration(MethodNode method) throws NamingException, IOException {
-        MethodReference ref = method.getReference();
-        debugEmitter.emitMethod(ref.getDescriptor());
-        if (ref.getDescriptor().getName().equals("<init>")) {
-            renderInitializer(method);
-        }
-        writer.appendClass(ref.getClassName()).append(".").appendMethod(ref).ws().append("=").ws().append("function(");
-        for (int i = 0; i < ref.parameterCount(); ++i) {
-            if (i > 0) {
-                writer.append(", ");
-            }
-            writer.append(variableName(i + 1));
-        }
-        writer.append(")").ws().append("{").softNewLine().indent();
-        writer.append("return ").appendMethodBody(ref).append("(");
-        for (int i = 0; i < ref.parameterCount(); ++i) {
-            writer.append(",").ws().append(variableName(i + 1));
-        }
-        writer.append(");").softNewLine();
-        writer.outdent().append("}").newLine();
-        if (method.isOriginalNamePreserved()) {
-            writer.appendClass(ref.getClassName()).append(".").append(ref.getName()).ws().append("=")
-                    .ws().appendClass(ref.getClassName()).append(".").appendMethod(ref).append(';').newLine();
-        }
-        debugEmitter.emitMethod(null);
     }
 
     public void renderBody(MethodNode method, boolean inner) throws IOException {

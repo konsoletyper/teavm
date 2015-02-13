@@ -26,7 +26,6 @@ import org.teavm.model.MethodReference;
 public abstract class MethodNode {
     private MethodReference reference;
     private Set<NodeModifier> modifiers = EnumSet.noneOf(NodeModifier.class);
-    private boolean originalNamePreserved;
 
     public MethodNode(MethodReference reference) {
         this.reference = reference;
@@ -39,14 +38,6 @@ public abstract class MethodNode {
 
     public Set<NodeModifier> getModifiers() {
         return modifiers;
-    }
-
-    public boolean isOriginalNamePreserved() {
-        return originalNamePreserved;
-    }
-
-    public void setOriginalNamePreserved(boolean originalNamePreserved) {
-        this.originalNamePreserved = originalNamePreserved;
     }
 
     public abstract void acceptVisitor(MethodNodeVisitor visitor);

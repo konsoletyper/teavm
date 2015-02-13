@@ -59,7 +59,6 @@ public class AstIO {
                 }
             }
         }
-        output.writeBoolean(method.isOriginalNamePreserved());
         try {
             method.getBody().acceptVisitor(new NodeWriter(output));
         } catch (IOExceptionWrapper e) {
@@ -83,7 +82,6 @@ public class AstIO {
             }
             node.getParameterDebugNames().add(debugNames);
         }
-        node.setOriginalNamePreserved(input.readBoolean());
         node.setBody(readStatement(input));
         return node;
     }
@@ -511,12 +509,12 @@ public class AstIO {
 
         @Override
         public void visit(MonitorEnterStatement statement) {
-            
+
         }
 
         @Override
         public void visit(MonitorExitStatement statement) {
-            
+
         }
     }
 

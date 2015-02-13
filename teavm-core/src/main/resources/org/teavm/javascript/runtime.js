@@ -217,14 +217,6 @@ function $rt_voidcls() {
     }
     return $rt_voidclsCache;
 }
-function $rt_clinit(cls) {
-    if (cls.$clinit) {
-        var f = cls.$clinit;
-        delete cls.$clinit;
-        f();
-    }
-    return cls;
-}
 function $rt_init(cls, constructor, args) {
     var obj = new cls();
     cls.prototype[constructor].apply(obj, args);
@@ -409,7 +401,7 @@ function $rt_metadata(data) {
                 return function() {
                     var clinit = cls.$clinit;
                     cls.$clinit = function() {};
-                    cls.$clinit();
+                    clinit();
                     return window[name].apply(window, arguments);
                 }
             })(cls, names[j]);
@@ -417,7 +409,7 @@ function $rt_metadata(data) {
 
         var virtualMethods = data[i + 7];
         for (var j = 0; j < virtualMethods.length; j += 2) {
-            name = virtualMethods[j + 0];
+            var name = virtualMethods[j + 0];
             var func = virtualMethods[j + 1];
             if (typeof name === 'string') {
                 name = [name];

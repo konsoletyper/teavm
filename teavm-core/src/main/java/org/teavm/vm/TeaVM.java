@@ -466,11 +466,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                 if (wrapAsync) {
                     sourceWriter.append(")");
                 }
-                sourceWriter.append(";").softNewLine();
+                sourceWriter.append(";").newLine();
             }
             for (Map.Entry<String, String> entry : exportedClasses.entrySet()) {
                 sourceWriter.append("var ").append(entry.getKey()).ws().append("=").ws()
-                        .appendClass(entry.getValue()).append(";").softNewLine();
+                        .appendClass(entry.getValue()).append(";").newLine();
             }
             for (RendererListener listener : rendererListeners) {
                 listener.complete();
