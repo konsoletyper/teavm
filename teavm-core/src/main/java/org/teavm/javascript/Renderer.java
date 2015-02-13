@@ -40,6 +40,7 @@ import org.teavm.model.*;
  */
 public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext {
     private static final String variableNames = "abcdefghijkmnopqrstuvwxyz";
+    private static final String variablePartNames = "abcdefghijkmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private NamingStrategy naming;
     private SourceWriter writer;
     private ListableClassHolderSource classSource;
@@ -62,6 +63,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     private Associativity associativity;
     private boolean wasGrouped;
     private Deque<OperatorPrecedence> precedenceStack = new ArrayDeque<>();
+    private Map<String, String> blockIdMap = new HashMap<>();
 
     private static class OperatorPrecedence {
         Priority priority;
@@ -285,28 +287,37 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         try {
             writer.append("function ").appendClass(cls.getName()).append("()").ws().append("{")
                     .indent().softNewLine();
-            if (cls.getParentName() != null) {
-                writer.appendClass(cls.getParentName()).append(".call(this);").softNewLine();
-            }
+            boolean thisAliased = false;
+            List<FieldNode> nonStaticFields = new ArrayList<>();
+            List<FieldNode> staticFields = new ArrayList<>();
             for (FieldNode field : cls.getFields()) {
                 if (field.getModifiers().contains(NodeModifier.STATIC)) {
-                    continue;
+                    staticFields.add(field);
+                } else {
+                    nonStaticFields.add(field);
                 }
+            }
+            if (nonStaticFields.size() > 1) {
+                thisAliased = true;
+                writer.append("var a").ws().append("=").ws().append("this;").ws();
+            }
+            if (cls.getParentName() != null) {
+                writer.appendClass(cls.getParentName()).append(".call(").append(thisAliased ? "a" : "this")
+                        .append(");").softNewLine();
+            }
+            for (FieldNode field : nonStaticFields) {
                 Object value = field.getInitialValue();
                 if (value == null) {
                     value = getDefaultValue(field.getType());
                 }
                 FieldReference fieldRef = new FieldReference(cls.getName(), field.getName());
-                writer.append("this.").appendField(fieldRef).ws().append("=").ws().append(constantToString(value))
-                        .append(";").softNewLine();
+                writer.append(thisAliased ? "a" : "this").append(".").appendField(fieldRef).ws()
+                        .append("=").ws().append(constantToString(value)).append(";").softNewLine();
                 debugEmitter.addField(field.getName(), naming.getNameFor(fieldRef));
             }
             writer.outdent().append("}").newLine();
 
-            for (FieldNode field : cls.getFields()) {
-                if (!field.getModifiers().contains(NodeModifier.STATIC)) {
-                    continue;
-                }
+            for (FieldNode field : staticFields) {
                 Object value = field.getInitialValue();
                 if (value == null) {
                     value = getDefaultValue(field.getType());
@@ -489,15 +500,15 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             writer.append(variableName(i));
         }
         writer.append(")").ws().append("{").softNewLine().indent();
-        writer.append("var result").ws().append("=").ws().append("new ").appendClass(
+        writer.append("var $r").ws().append("=").ws().append("new ").appendClass(
                 ref.getClassName()).append("();").softNewLine();
-        writer.append(naming.getFullNameFor(ref)).append("(result");
+        writer.append(naming.getFullNameFor(ref)).append("($r");
         for (int i = 1; i <= ref.parameterCount(); ++i) {
             writer.append(",").ws();
             writer.append(variableName(i));
         }
         writer.append(");").softNewLine();
-        writer.append("return result;").softNewLine();
+        writer.append("return $r;").softNewLine();
         writer.outdent().append("}").newLine();
         debugEmitter.emitMethod(null);
     }
@@ -550,6 +561,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     }
 
     public void renderBody(MethodNode method, boolean inner) throws IOException {
+        blockIdMap.clear();
         MethodReference ref = method.getReference();
         debugEmitter.emitMethod(ref.getDescriptor());
         if (inner) {
@@ -852,7 +864,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 pushLocation(statement.getValue().getLocation());
             }
             if (statement.getId() != null) {
-                writer.append(statement.getId()).append(": ");
+                writer.append(mapBlockId(statement.getId())).append(":").ws();
             }
             prevCallSite = debugEmitter.emitCallSite();
             writer.append("switch").ws().append("(");
@@ -895,7 +907,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 pushLocation(statement.getCondition().getLocation());
             }
             if (statement.getId() != null) {
-                writer.append(statement.getId()).append(":").ws();
+                writer.append(mapBlockId(statement.getId())).append(":").ws();
             }
             writer.append("while").ws().append("(");
             if (statement.getCondition() != null) {
@@ -920,10 +932,25 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         }
     }
 
+    private String mapBlockId(String id) {
+        String name = blockIdMap.get(id);
+        if (name == null) {
+            StringBuilder sb = new StringBuilder();
+            int index = blockIdMap.size();
+            do {
+                sb.append(variablePartNames.charAt(index % variableNames.length()));
+                index /= variablePartNames.length();
+            } while (index > 0);
+            name = "$b" + sb;
+            blockIdMap.put(id, name);
+        }
+        return name;
+    }
+
     @Override
     public void visit(BlockStatement statement) {
         try {
-            writer.append(statement.getId()).append(":").ws().append("{").softNewLine().indent();
+            writer.append(mapBlockId(statement.getId())).append(":").ws().append("{").softNewLine().indent();
             for (Statement part : statement.getBody()) {
                 part.acceptVisitor(this);
             }
@@ -942,7 +969,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             }
             writer.append("break");
             if (statement.getTarget() != null) {
-                writer.append(' ').append(statement.getTarget().getId());
+                writer.append(' ').append(mapBlockId(statement.getTarget().getId()));
             }
             writer.append(";").softNewLine();
             if (statement.getLocation() != null) {
@@ -962,7 +989,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             }
             writer.append("continue");
             if (statement.getTarget() != null) {
-                writer.append(' ').append(statement.getTarget().getId());
+                writer.append(' ').append(mapBlockId(statement.getTarget().getId()));
             }
             writer.append(";").softNewLine();
             if (statement.getLocation() != null) {

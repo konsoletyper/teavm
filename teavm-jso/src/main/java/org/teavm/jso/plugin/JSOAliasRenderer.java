@@ -61,6 +61,6 @@ class JSOAliasRenderer implements RendererListener {
                         .append(";").softNewLine();
             }
         }
-        writer.outdent().append("})();").softNewLine();
+        writer.outdent().append("})();").newLine();
     }
 }
