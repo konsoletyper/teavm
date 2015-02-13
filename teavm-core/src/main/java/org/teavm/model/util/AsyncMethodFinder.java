@@ -76,6 +76,9 @@ public class AsyncMethodFinder {
                 }
             }
         }
+        for (MethodReference method : asyncMethods) {
+            addOverridenToFamily(method);
+        }
         for (String clsName : classSource.getClassNames()) {
             ClassReader cls = classSource.get(clsName);
             for (MethodReader method : cls.getMethods()) {
@@ -114,16 +117,16 @@ public class AsyncMethodFinder {
         for (CallSite callSite : node.getCallerCallSites()) {
             add(callSite.getCaller().getMethod());
         }
-        Set<MethodReference> visited = new HashSet<>();
-        Set<MethodReference> overriden = new HashSet<>();
-        if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
-            findOverridenMethods(new MethodReference(cls.getParent(), methodRef.getDescriptor()), overriden, visited);
+    }
+
+    private void addOverridenToFamily(MethodReference methodRef) {
+        asyncFamilyMethods.put(methodRef, true);
+        ClassReader cls = classSource.get(methodRef.getClassName());
+        if (cls == null) {
+            return;
         }
-        for (String iface : cls.getInterfaces()) {
-            findOverridenMethods(new MethodReference(iface, methodRef.getDescriptor()), overriden, visited);
-        }
-        for (MethodReference overridenMethod : overriden) {
-            add(overridenMethod);
+        for (MethodReference overridenMethod : findOverridenMethods(cls, methodRef)) {
+            addOverridenToFamily(overridenMethod);
         }
     }
 
@@ -145,6 +148,15 @@ public class AsyncMethodFinder {
         if (cls == null) {
             return false;
         }
+        for (MethodReference overridenMethod : findOverridenMethods(cls, methodRef)) {
+            if (addToFamily(overridenMethod)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Set<MethodReference> findOverridenMethods(ClassReader cls, MethodReference methodRef) {
         List<String> parents = new ArrayList<>();
         if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
             parents.add(cls.getParent());
@@ -156,13 +168,7 @@ public class AsyncMethodFinder {
         for (String parent : parents) {
             findOverridenMethods(new MethodReference(parent, methodRef.getDescriptor()), overriden, visited);
         }
-
-        for (MethodReference overridenMethod : overriden) {
-            if (addToFamily(overridenMethod)) {
-                return true;
-            }
-        }
-        return false;
+        return overriden;
     }
 
     private void findOverridenMethods(MethodReference methodRef, Set<MethodReference> result,

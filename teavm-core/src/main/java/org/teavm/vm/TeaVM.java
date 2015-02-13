@@ -562,7 +562,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         asyncFamilyMethods.addAll(asyncFinder.getAsyncFamilyMethods());
 
         progressListener.phaseStarted(TeaVMPhase.DECOMPILATION, classes.getClassNames().size());
-        Decompiler decompiler = new Decompiler(classes, classLoader, asyncFinder.getAsyncMethods());
+        Decompiler decompiler = new Decompiler(classes, classLoader, asyncMethods, asyncFamilyMethods);
         decompiler.setRegularMethodCache(incremental ? astCache : null);
 
         for (Map.Entry<MethodReference, Generator> entry : methodGenerators.entrySet()) {

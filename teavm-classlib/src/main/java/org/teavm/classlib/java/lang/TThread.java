@@ -36,7 +36,7 @@ public class TThread extends TObject implements TRunnable {
     private long id;
 
     private TString name;
-    private TRunnable target;
+    TRunnable target;
 
     public TThread() {
         this(null, null);

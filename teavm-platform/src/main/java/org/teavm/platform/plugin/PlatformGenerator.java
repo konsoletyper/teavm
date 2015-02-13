@@ -132,8 +132,8 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
     private void generateStartThread(GeneratorContext context, SourceWriter writer) throws IOException {
         String runnable = context.getParameterName(1);
         writer.append("window.setTimeout(function()").ws().append("{").indent().softNewLine();
-        writer.appendMethodBody(Platform.class, "launchThread", Runnable.class, void.class).append("(")
-                .append(runnable).append(");").softNewLine();
+        writer.append("$rt_rootInvocationAdapter(").appendMethodBody(Platform.class, "launchThread", Runnable.class,
+                void.class).append(")(").append(runnable).append(");").softNewLine();
         writer.outdent().append("},").ws().append("0);").softNewLine();
     }
 }

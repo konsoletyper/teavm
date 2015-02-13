@@ -46,11 +46,14 @@ public class Decompiler {
     private Set<MethodReference> methodsToPass = new HashSet<>();
     private RegularMethodNodeCache regularMethodCache;
     private Set<MethodReference> asyncMethods;
+    private Set<MethodReference> asyncFamilyMethods;
 
-    public Decompiler(ClassHolderSource classSource, ClassLoader classLoader, Set<MethodReference> asyncMethods) {
+    public Decompiler(ClassHolderSource classSource, ClassLoader classLoader, Set<MethodReference> asyncMethods,
+            Set<MethodReference> asyncFamilyMethods) {
         this.classSource = classSource;
         this.classLoader = classLoader;
         this.asyncMethods = asyncMethods;
+        this.asyncFamilyMethods = asyncFamilyMethods;
     }
 
     public RegularMethodNodeCache getRegularMethodCache() {
@@ -196,7 +199,10 @@ public class Decompiler {
 
     public AsyncMethodNode decompileAsync(MethodHolder method) {
         AsyncMethodNode node = new AsyncMethodNode(method.getReference());
-        AsyncProgramSplitter splitter = new AsyncProgramSplitter(asyncMethods);
+        Set<MethodReference> splitMethods = new HashSet<>();
+        splitMethods.addAll(asyncMethods);
+        splitMethods.addAll(asyncFamilyMethods);
+        AsyncProgramSplitter splitter = new AsyncProgramSplitter(splitMethods);
         splitter.split(method.getProgram());
         for (int i = 0; i < splitter.size(); ++i) {
             Integer input = null;
