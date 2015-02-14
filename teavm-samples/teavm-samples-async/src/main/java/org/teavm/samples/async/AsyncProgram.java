@@ -15,20 +15,25 @@
  */
 package org.teavm.samples.async;
 
+import java.util.Arrays;
+
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public final class AsyncProgram {
+    private static long start = System.currentTimeMillis();
+
     private AsyncProgram() {
     }
 
     public static void main(String[] args) throws InterruptedException {
+        report(Arrays.toString(args));
         withoutAsync();
-        System.out.println();
+        report("");
         withAsync();
 
-        System.out.println();
+        report("");
         final Object lock = new Object();
         Thread t = new Thread(new Runnable() {
             @Override
@@ -36,7 +41,7 @@ public final class AsyncProgram {
                 try {
                     doRun(lock);
                 } catch (InterruptedException ex) {
-                    System.out.println(ex.getMessage());
+                    report("Exception caught: " + ex.getMessage());
                 }
             }
 
@@ -49,82 +54,87 @@ public final class AsyncProgram {
                 try {
                     doRun(lock);
                 } catch (InterruptedException ex) {
-                    System.out.println(ex.getMessage());
+                    report("Exception caught: " + ex.getMessage());
                 }
             }
         }, "Test Thread 2");
         t2.start();
 
-        System.out.println("Should be main -> Current thread is " + Thread.currentThread().getName());
-        System.out.println("Now trying wait...");
+        report("Should be main");
+        report("Now trying wait...");
 
-        lock.wait(20000);
-        System.out.println("Finished waiting");
+        synchronized (lock) {
+            lock.wait(20000);
+        }
+        report("Finished main thread");
+    }
 
+    private static void report(String message) {
+        long current = System.currentTimeMillis() - start;
+        System.out.println("[" + Thread.currentThread().getName() + "]/" + current + ": " + message);
     }
 
     private static void doRun(Object lock) throws InterruptedException {
-        System.out.println("Current thread is " + Thread.currentThread().getName());
-        System.out.println("Executing timer task");
+        report("Executing timer task");
         Thread.sleep(2000);
-        System.out.println("Current thread is " + Thread.currentThread().getName());
-        System.out.println("Calling lock.notify()");
-        lock.notify();
-        System.out.println("Current thread is " + Thread.currentThread().getName());
-        System.out.println("Finished calling lock.notify()");
+        report("Calling lock.notify()");
+        synchronized (lock) {
+            lock.notify();
+        }
+        report("Finished calling lock.notify()");
+        report("Waiting 5 seconds");
         Thread.sleep(5000);
-        System.out.println("Current thread is " + Thread.currentThread().getName());
-        System.out.println("Finished another 5 second sleep");
+        report("Finished another 5 second sleep");
 
         synchronized (lock) {
-            System.out.println("Inside locked section of thread " + Thread.currentThread().getName());
+            report("Sleep inside locked section");
             Thread.sleep(2000);
-            System.out.println("Finished locked section of thread " + Thread.currentThread().getName());
+            report("Finished locked section");
         }
     }
 
     private static void withoutAsync() {
-        System.out.println("Start sync");
+        report("Start sync");
         for (int i = 0; i < 20; ++i) {
+            StringBuilder sb = new StringBuilder();
             for (int j = 0; j <= i; ++j) {
-                System.out.print(j);
-                System.out.print(' ');
+                sb.append(j);
+                sb.append(' ');
             }
-            System.out.println();
+            report(sb.toString());
         }
-        System.out.println("Complete sync");
+        report("Complete sync");
     }
 
     private static void withAsync() throws InterruptedException {
-        System.out.println("Start async");
+        report("Start async");
         for (int i = 0; i < 20; ++i) {
+            StringBuilder sb = new StringBuilder();
             for (int j = 0; j <= i; ++j) {
-                System.out.print(j);
-                System.out.print(' ');
+                sb.append(j);
+                sb.append(' ');
             }
-            System.out.println();
+            report(sb.toString());
             if (i % 3 == 0) {
-                System.out.println("Suspend for a second");
+                report("Suspend for a second");
                 Thread.sleep(1000);
             }
         }
-        System.out.println("2nd Thread.sleep in same method");
+        report("2nd Thread.sleep in same method");
         Thread.sleep(1000);
 
-        System.out.println("Complete async");
-
-        System.out.println("Throwing exception");
+        report("Throwing exception");
         try {
             throwException();
         } catch (IllegalStateException e) {
-            System.out.println("Exception caught");
+            report("Exception caught");
         }
+        report("Complete async");
     }
 
     private static void throwException() {
         Thread.yield();
-        System.out.println("Thread.yield called");
+        report("Thread.yield called");
         throw new IllegalStateException();
     }
-
 }

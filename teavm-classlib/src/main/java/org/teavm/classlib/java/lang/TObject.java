@@ -124,7 +124,8 @@ public class TObject {
     }
 
     @Rename("notify")
-    public final void notify0(){
+    public final void notify0() {
+        TThread thread = TThread.currentThread();
         if (notifyListeners != null) {
             while (notifyListeners.getLength() > 0 && notifyListeners.shift().handleNotify()) {
                 // repeat loop
@@ -133,6 +134,7 @@ public class TObject {
                 notifyListeners = null;
             }
         }
+        TThread.setCurrentThread(thread);
     }
 
     @Rename("notifyAll")
@@ -167,8 +169,7 @@ public class TObject {
         if (notifyListeners == null) {
             notifyListeners = window.newArray();
         }
-        final TThread currentThread = TThread.currentThread();
-        final NotifyListenerImpl listener = new NotifyListenerImpl(callback, currentThread);
+        final NotifyListenerImpl listener = new NotifyListenerImpl(callback);
         notifyListeners.push(listener);
         if (timeout == 0 && nanos == 0) {
             return;
@@ -178,13 +179,12 @@ public class TObject {
 
     private static class NotifyListenerImpl implements NotifyListener, TimerHandler {
         final AsyncCallback<Void> callback;
-        final TThread currentThread;
+        final TThread currentThread = TThread.currentThread();
         int timerId = -1;
         boolean finished;
 
-        public NotifyListenerImpl(AsyncCallback<Void> callback, TThread currentThread) {
+        public NotifyListenerImpl(AsyncCallback<Void> callback) {
             this.callback = callback;
-            this.currentThread = currentThread;
         }
 
         @Override

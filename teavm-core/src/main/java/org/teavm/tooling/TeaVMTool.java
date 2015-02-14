@@ -264,7 +264,9 @@ public class TeaVMTool {
             if (mainClass != null) {
                 MethodDescriptor mainMethodDesc = new MethodDescriptor("main", String[].class, void.class);
                 vm.entryPoint("main", new MethodReference(mainClass, mainMethodDesc))
-                        .withValue(1, "java.lang.String").async();
+                        .withValue(1, "[java.lang.String")
+                        .withArrayValue(1, "java.lang.String")
+                        .async();
             }
             for (ClassAlias alias : classAliases) {
                 vm.exportType(alias.getAlias(), alias.getClassName());
@@ -300,7 +302,7 @@ public class TeaVMTool {
                     return;
                 }
                 if (mainClass != null) {
-                    writer.append("main = $rt_rootInvocationAdapter(main);\n");
+                    writer.append("main = $rt_mainWrapper(main);\n");
                 }
                 ProblemProvider problemProvider = vm.getProblemProvider();
                 if (problemProvider.getProblems().isEmpty()) {

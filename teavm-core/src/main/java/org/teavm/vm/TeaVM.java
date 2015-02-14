@@ -431,28 +431,6 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                 listener.begin(renderer, target);
             }
             sourceWriter.append("\"use strict\";").newLine();
-
-
-            // Keep track of current running thread by overriding setTimeout
-            sourceWriter.append("function $rt_setTimeout(f,interval){").indent().softNewLine();
-            MethodReference currentThreadRef = new MethodReference(
-                    Thread.class, "currentThread", Thread.class);
-            MethodReference setCurrentThreadRef = new MethodReference(
-                    Thread.class, "setCurrentThread", Thread.class, void.class);
-            MethodReference getMainThreadRef = new MethodReference(Thread.class, "getMainThread", Thread.class);
-
-            sourceWriter.append("var currThread = ").appendMethodBody(currentThreadRef).append("();").softNewLine();
-            sourceWriter.append("var callback = function(){").indent().softNewLine();
-            sourceWriter.appendMethodBody(setCurrentThreadRef).append("(currThread);").softNewLine();
-            sourceWriter.append("try{f();} finally {").softNewLine();
-            sourceWriter.appendMethodBody(setCurrentThreadRef).append("(").
-                    appendMethodBody(getMainThreadRef).append("());}").softNewLine();
-            sourceWriter.outdent().append("};").softNewLine();
-            sourceWriter.append("setTimeout(callback, interval);").softNewLine();
-            sourceWriter.outdent().append("};").softNewLine();
-
-            // END Thread stuff
-
             renderer.renderRuntime();
             renderer.render(clsNodes);
             renderer.renderStringPool();

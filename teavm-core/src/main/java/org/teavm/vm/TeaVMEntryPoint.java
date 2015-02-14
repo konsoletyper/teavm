@@ -97,6 +97,14 @@ public class TeaVMEntryPoint {
         return this;
     }
 
+    public TeaVMEntryPoint withArrayValue(int argument, String type) {
+        if (argument > reference.parameterCount()) {
+            throw new IllegalArgumentException("Illegal argument #" + argument + " of " + reference.parameterCount());
+        }
+        method.getVariable(argument).getArrayItem().propagate(method.getDependencyAgent().getType(type));
+        return this;
+    }
+
     public TeaVMEntryPoint async() {
         this.async = true;
         return this;

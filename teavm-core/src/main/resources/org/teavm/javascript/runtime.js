@@ -481,6 +481,18 @@ function $rt_rootInvocationAdapter(f) {
         return f.apply(this, args);
     }
 }
+function $rt_mainWrapper(f) {
+    return function(args) {
+        if (!args) {
+            args = [];
+        }
+        var javaArgs = $rt_createArray($rt_objcls(), args.length);
+        for (var i = 0; i < args.length; ++i) {
+            javaArgs.data[i] = $rt_str(args[i]);
+        }
+        $rt_rootInvocationAdapter(f)(javaArgs);
+    };
+}
 var $rt_stringPool_instance;
 function $rt_stringPool(strings) {
     $rt_stringPool_instance = new Array(strings.length);
