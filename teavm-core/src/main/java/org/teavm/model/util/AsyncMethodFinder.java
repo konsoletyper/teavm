@@ -176,13 +176,18 @@ public class AsyncMethodFinder {
         if (!visited.add(methodRef)) {
             return;
         }
+        if (methodRef.getName().equals("<init>") || methodRef.getName().equals("<clinit>")) {
+            return;
+        }
         ClassReader cls = classSource.get(methodRef.getClassName());
         if (cls == null) {
             return;
         }
         MethodReader method = cls.getMethod(methodRef.getDescriptor());
         if (method != null) {
-            result.add(methodRef);
+            if (!method.hasModifier(ElementModifier.STATIC) && !method.hasModifier(ElementModifier.FINAL)) {
+                result.add(methodRef);
+            }
         } else {
             if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
                 findOverridenMethods(new MethodReference(cls.getParent(), methodRef.getDescriptor()), result, visited);
