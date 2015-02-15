@@ -46,7 +46,7 @@ class NativeJavascriptClassRepository {
 
     private boolean figureOutIfJavaScriptClass(String className) {
         ClassReader cls = classSource.get(className);
-        if (cls == null || !cls.hasModifier(ElementModifier.INTERFACE)) {
+        if (cls == null || !(cls.hasModifier(ElementModifier.INTERFACE) || cls.hasModifier(ElementModifier.ABSTRACT))) {
             return false;
         }
         for (String iface : cls.getInterfaces()) {

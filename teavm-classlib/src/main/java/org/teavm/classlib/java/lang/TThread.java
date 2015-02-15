@@ -20,6 +20,7 @@ import org.teavm.dom.browser.Window;
 import org.teavm.javascript.spi.Async;
 import org.teavm.jso.JS;
 import org.teavm.platform.Platform;
+import org.teavm.platform.PlatformRunnable;
 import org.teavm.platform.async.AsyncCallback;
 
 
@@ -57,7 +58,7 @@ public class TThread extends TObject implements TRunnable {
     }
 
     public void start(){
-        Platform.startThread(new Runnable() {
+        Platform.startThread(new PlatformRunnable() {
             @Override
             public void run() {
                 try {
@@ -98,14 +99,7 @@ public class TThread extends TObject implements TRunnable {
     public static native void yield();
 
     private static void yield(final AsyncCallback<Void> callback) {
-        final TThread current = currentThread();
-        window.setTimeout(new TimerHandler() {
-            @Override public void onTimer() {
-                setCurrentThread(current);
-                callback.complete(null);
-                setCurrentThread(mainThread);
-            }
-        }, 0);
+        callback.complete(null);
     }
 
     public void interrupt() {
@@ -140,7 +134,6 @@ public class TThread extends TObject implements TRunnable {
             @Override public void onTimer() {
                 setCurrentThread(current);
                 callback.complete(null);
-                setCurrentThread(mainThread);
             }
         }, millis);
     }

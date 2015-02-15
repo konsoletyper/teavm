@@ -15,6 +15,7 @@
  */
 package org.teavm.platform;
 
+import org.teavm.jso.JSConstructor;
 import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
@@ -29,4 +30,10 @@ interface PlatformHelper extends JSObject {
 
     @JSProperty("String")
     PlatformStringClass getStringClass();
+
+    @JSConstructor("Array")
+    <T> PlatformQueue<T> newQueue();
+
+    @JSMethod("clearTimeout")
+    void killSchedule(int scheduleId);
 }

@@ -21,6 +21,8 @@ import org.teavm.javascript.spi.GeneratedBy;
 import org.teavm.jso.*;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
+import org.teavm.model.util.InstructionVariableMapper;
+import org.teavm.model.util.ProgramUtils;
 
 /**
  *
@@ -37,6 +39,10 @@ class JavascriptNativeProcessor {
     public JavascriptNativeProcessor(ClassReaderSource classSource) {
         this.classSource = classSource;
         nativeRepos = new NativeJavascriptClassRepository(classSource);
+    }
+
+    public boolean isNative(String className) {
+        return nativeRepos.isJavaScriptClass(className);
     }
 
     public void setDiagnostics(Diagnostics diagnostics) {
@@ -62,6 +68,47 @@ class JavascriptNativeProcessor {
         }
     }
 
+    public void processFinalMethods(ClassHolder cls) {
+        // TODO: don't allow final methods to override anything
+        for (MethodHolder method : cls.getMethods().toArray(new MethodHolder[0])) {
+            if (method.hasModifier(ElementModifier.FINAL) && method.getProgram() != null) {
+                ValueType[] staticSignature = getStaticSignature(method.getReference());
+                MethodHolder callerMethod = new MethodHolder(new MethodDescriptor(method.getName() + "$static",
+                        staticSignature));
+                callerMethod.getModifiers().add(ElementModifier.STATIC);
+                final Program program = ProgramUtils.copy(method.getProgram());
+                program.createVariable();
+                InstructionVariableMapper variableMapper = new InstructionVariableMapper() {
+                    @Override protected Variable map(Variable var) {
+                        return program.variableAt(var.getIndex() + 1);
+                    }
+                };
+                for (int i = program.variableCount() - 1; i > 0; --i) {
+                    program.variableAt(i).getDebugNames().addAll(program.variableAt(i - 1).getDebugNames());
+                    program.variableAt(i - 1).getDebugNames().clear();
+                }
+                for (int i = 0; i < program.basicBlockCount(); ++i) {
+                    BasicBlock block = program.basicBlockAt(i);
+                    for (Instruction insn : block.getInstructions()) {
+                        insn.acceptVisitor(variableMapper);
+                    }
+                }
+                callerMethod.setProgram(program);
+                cls.addMethod(callerMethod);
+            }
+        }
+    }
+
+    private static ValueType[] getStaticSignature(MethodReference method) {
+        ValueType[] signature = method.getSignature();
+        ValueType[] staticSignature = new ValueType[signature.length + 1];
+        for (int i = 0; i < signature.length; ++i) {
+            staticSignature[i + 1] = signature[i];
+        }
+        staticSignature[0] = ValueType.object(method.getClassName());
+        return staticSignature;
+    }
+
     public void processProgram(MethodHolder methodToProcess) {
         program = methodToProcess.getProgram();
         for (int i = 0; i < program.basicBlockCount(); ++i) {
@@ -78,6 +125,17 @@ class JavascriptNativeProcessor {
                 }
                 replacement.clear();
                 MethodReader method = getMethod(invoke.getMethod());
+                if (method.hasModifier(ElementModifier.STATIC)) {
+                    continue;
+                }
+                if (method.hasModifier(ElementModifier.FINAL)) {
+                    invoke.setMethod(new MethodReference(method.getOwnerName(), method.getName() + "$static",
+                            getStaticSignature(method.getReference())));
+                    invoke.setType(InvocationType.SPECIAL);
+                    invoke.getArguments().add(0, invoke.getInstance());
+                    invoke.setInstance(null);
+                    continue;
+                }
                 CallLocation callLocation = new CallLocation(methodToProcess.getReference(), insn.getLocation());
                 if (method.getAnnotations().get(JSProperty.class.getName()) != null) {
                     if (isProperGetter(method.getDescriptor())) {

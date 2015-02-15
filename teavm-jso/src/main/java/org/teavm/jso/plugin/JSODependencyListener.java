@@ -132,7 +132,7 @@ class JSODependencyListener implements DependencyListener {
     }
 
     @Override
-    public void methodAchieved(DependencyAgent agent, MethodDependency method, CallLocation location) {
+    public void methodAchieved(DependencyAgent agent, MethodDependency methodDep, CallLocation location) {
     }
 
     @Override

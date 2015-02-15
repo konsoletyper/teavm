@@ -205,6 +205,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             renderRuntimeObjcls();
             renderRuntimeNullCheck();
             renderRuntimeIntern();
+            renderRuntimeThreads();
         } catch (NamingException e) {
             throw new RenderingException("Error rendering runtime methods. See a cause for details", e);
         } catch (IOException e) {
@@ -268,6 +269,18 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
 
     private void renderRuntimeObjcls() throws IOException {
         writer.append("function $rt_objcls() { return ").appendClass("java.lang.Object").append("; }").newLine();
+    }
+
+    private void renderRuntimeThreads() throws IOException {
+        writer.append("function $rt_getThread()").ws().append("{").indent().softNewLine();
+        writer.append("return ").appendMethodBody(Thread.class, "currentThread", Thread.class).append("();")
+                .softNewLine();
+        writer.outdent().append("}").newLine();
+
+        writer.append("function $rt_setThread(t)").ws().append("{").indent().softNewLine();
+        writer.append("return ").appendMethodBody(Thread.class, "setCurrentThread", Thread.class, void.class)
+                .append("(t);").softNewLine();
+        writer.outdent().append("}").newLine();
     }
 
     public void render(List<ClassNode> classes) throws RenderingException {

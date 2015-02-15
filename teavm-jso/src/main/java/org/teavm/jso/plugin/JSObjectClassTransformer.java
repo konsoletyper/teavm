@@ -31,6 +31,9 @@ public class JSObjectClassTransformer implements ClassHolderTransformer {
         processor = new JavascriptNativeProcessor(innerSource);
         processor.setDiagnostics(diagnostics);
         processor.processClass(cls);
+        if (processor.isNative(cls.getName())) {
+            processor.processFinalMethods(cls);
+        }
         for (MethodHolder method : cls.getMethods().toArray(new MethodHolder[0])) {
             if (method.getAnnotations().get(JSBody.class.getName()) != null) {
                 processor.processJSBody(cls, method);

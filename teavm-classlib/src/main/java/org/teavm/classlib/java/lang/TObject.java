@@ -16,14 +16,13 @@
 package org.teavm.classlib.java.lang;
 
 import org.teavm.dom.browser.TimerHandler;
-import org.teavm.dom.browser.Window;
 import org.teavm.javascript.spi.Async;
 import org.teavm.javascript.spi.Rename;
 import org.teavm.javascript.spi.Superclass;
-import org.teavm.jso.JS;
-import org.teavm.jso.JSArray;
-import org.teavm.jso.JSObject;
+import org.teavm.javascript.spi.Sync;
 import org.teavm.platform.Platform;
+import org.teavm.platform.PlatformQueue;
+import org.teavm.platform.PlatformRunnable;
 import org.teavm.platform.async.AsyncCallback;
 
 /**
@@ -32,51 +31,97 @@ import org.teavm.platform.async.AsyncCallback;
  */
 @Superclass("")
 public class TObject {
-    private static final Window window = (Window)JS.getGlobal();
-    private JSArray<NotifyListener> notifyListeners;
-    private Lock lock;
+    Monitor monitor;
 
-    private static class Lock {
+    static class Monitor {
+        PlatformQueue<PlatformRunnable> enteringThreads;
+        PlatformQueue<NotifyListener> notifyListeners;
         TThread owner;
         int count;
 
-        public Lock() {
+        public Monitor() {
             this.owner = TThread.currentThread();
-            count = 1;
+            enteringThreads = Platform.createQueue();
+            notifyListeners = Platform.createQueue();
         }
     }
 
-    interface NotifyListener extends JSObject {
-        boolean handleNotify();
+    interface NotifyListener extends PlatformRunnable {
+        boolean expired();
     }
 
     static void monitorEnter(TObject o) {
-        if (o.lock == null) {
-            o.lock = new Lock();
+        monitorEnter(o, 1);
+    }
+
+    @Async
+    static native void monitorEnter(TObject o, int count);
+
+    static void monitorEnter(final TObject o, final int count, final AsyncCallback<Void> callback) {
+        if (o.monitor == null) {
+            o.monitor = new Monitor();
+        }
+        if (o.monitor.owner == null) {
+            o.monitor.owner = TThread.currentThread();
+        }
+        if (o.monitor.owner != TThread.currentThread()) {
+            final TThread thread = TThread.currentThread();
+            o.monitor.enteringThreads.add(new PlatformRunnable() {
+                @Override public void run() {
+                    TThread.setCurrentThread(thread);
+                    o.monitor.owner = thread;
+                    o.monitor.count += count;
+                    callback.complete(null);
+                };
+            });
+        } else {
+            o.monitor.count += count;
+            callback.complete(null);
+        }
+    }
+
+    @Sync
+    static void monitorExit(final TObject o) {
+        monitorExit(o, 1);
+    }
+
+    @Sync
+    static void monitorExit(final TObject o, int count) {
+        if (o.isEmptyMonitor() || o.monitor.owner != TThread.currentThread()) {
+            throw new TIllegalMonitorStateException();
+        }
+        o.monitor.count -= count;
+        if (o.monitor.count > 0) {
             return;
         }
-        if (o.lock.owner != TThread.currentThread()) {
-            while (o.lock != null) {
-                try {
-                    o.lock.wait();
-                } catch (InterruptedException ex) {
+
+        o.monitor.owner = null;
+        Platform.startThread(new PlatformRunnable() {
+            @Override public void run() {
+                if (o.isEmptyMonitor() || o.monitor.owner != null) {
+                    return;
+                }
+                if (!o.monitor.enteringThreads.isEmpty()) {
+                    o.monitor.enteringThreads.remove().run();
                 }
             }
-            o.lock = new Lock();
+        });
+    }
+
+    boolean isEmptyMonitor() {
+        if (monitor == null) {
+            return true;
+        }
+        if (monitor.owner == null && monitor.enteringThreads.isEmpty() && monitor.notifyListeners.isEmpty()) {
+            monitor = null;
+            return true;
         } else {
-            o.lock.count++;
+            return false;
         }
     }
 
-    static void monitorExit(TObject o){
-        if (o.lock != null && o.lock.count-- == 0) {
-            o.lock.notifyAll();
-            o.lock = null;
-        }
-    }
-
-    static boolean holdsLock(TObject o){
-        return o.lock != null && o.lock.owner == TThread.currentThread();
+    static boolean holdsLock(TObject o) {
+        return o.monitor != null && o.monitor.owner == TThread.currentThread();
     }
 
     @Rename("fakeInit")
@@ -123,30 +168,35 @@ public class TObject {
         return result;
     }
 
+    @Sync
     @Rename("notify")
     public final void notify0() {
+        if (!holdsLock(this)) {
+            throw new TIllegalMonitorStateException();
+        }
         TThread thread = TThread.currentThread();
-        if (notifyListeners != null) {
-            while (notifyListeners.getLength() > 0 && notifyListeners.shift().handleNotify()) {
-                // repeat loop
-            }
-            if (notifyListeners.getLength() == 0) {
-                notifyListeners = null;
+        PlatformQueue<NotifyListener> listeners = monitor.notifyListeners;
+        while (!listeners.isEmpty()) {
+            NotifyListener listener = listeners.remove();
+            if (!listener.expired()) {
+                Platform.startThread(listener);
+                break;
             }
         }
         TThread.setCurrentThread(thread);
     }
 
+    @Sync
     @Rename("notifyAll")
-    public final void notifyAll0(){
-        if (notifyListeners != null){
-            JSArray<NotifyListener> listeners = window.newArray();
-            while (notifyListeners.getLength() > 0) {
-                listeners.push(notifyListeners.shift());
-            }
-            notifyListeners = null;
-            while (listeners.getLength() > 0) {
-                listeners.shift().handleNotify();
+    public final void notifyAll0() {
+        if (!holdsLock(this)) {
+            throw new TIllegalMonitorStateException();
+        }
+        PlatformQueue<NotifyListener> listeners = monitor.notifyListeners;
+        while (!listeners.isEmpty()) {
+            NotifyListener listener = listeners.remove();
+            if (!listener.expired()) {
+                Platform.startThread(listener);
             }
         }
     }
@@ -166,49 +216,51 @@ public class TObject {
 
     @Rename("wait")
     public final void wait0(long timeout, int nanos, final AsyncCallback<Void> callback) {
-        if (notifyListeners == null) {
-            notifyListeners = window.newArray();
+        final NotifyListenerImpl listener = new NotifyListenerImpl(this, callback, monitor.count);
+        monitor.notifyListeners.add(listener);
+        if (timeout > 0 || nanos > 0) {
+            listener.timerId = Platform.schedule(listener, timeout >= Integer.MAX_VALUE ? Integer.MAX_VALUE :
+                    (int)timeout);
         }
-        final NotifyListenerImpl listener = new NotifyListenerImpl(callback);
-        notifyListeners.push(listener);
-        if (timeout == 0 && nanos == 0) {
-            return;
-        }
-        listener.timerId = window.setTimeout(listener, timeout);
+        monitorExit(this, monitor.count);
     }
 
-    private static class NotifyListenerImpl implements NotifyListener, TimerHandler {
+    private static class NotifyListenerImpl implements NotifyListener, TimerHandler, PlatformRunnable {
+        final TObject obj;
         final AsyncCallback<Void> callback;
         final TThread currentThread = TThread.currentThread();
         int timerId = -1;
-        boolean finished;
+        boolean expired;
+        int lockCount;
 
-        public NotifyListenerImpl(AsyncCallback<Void> callback) {
+        public NotifyListenerImpl(TObject obj, AsyncCallback<Void> callback, int lockCount) {
+            this.obj = obj;
             this.callback = callback;
+            this.lockCount = lockCount;
         }
 
         @Override
-        public boolean handleNotify() {
-            if (finished) {
-                return false;
-            }
-            TThread.setCurrentThread(currentThread);
-            if (timerId >= 0) {
-                window.clearTimeout(timerId);
-                timerId = -1;
-            }
-            finished = true;
-            try {
-                callback.complete(null);
-            } finally {
-                TThread.setCurrentThread(TThread.getMainThread());
-            }
-            return true;
+        public boolean expired() {
+            boolean result = expired;
+            expired = true;
+            return result;
         }
 
         @Override
         public void onTimer() {
-            handleNotify();
+            if (!expired()) {
+                Platform.startThread(this);
+            }
+        }
+
+        @Override
+        public void run() {
+            if (timerId >= 0) {
+                Platform.killSchedule(timerId);
+                timerId = -1;
+            }
+            TThread.setCurrentThread(currentThread);
+            monitorEnter(obj, lockCount, callback);
         }
     }
 

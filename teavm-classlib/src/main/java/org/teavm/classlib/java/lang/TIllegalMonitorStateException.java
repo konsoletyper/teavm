@@ -13,16 +13,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript.spi;
-
-import java.lang.annotation.*;
+package org.teavm.classlib.java.lang;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-@Inherited
-public @interface Sync {
+public class TIllegalMonitorStateException extends TRuntimeException {
+    private static final long serialVersionUID = 7694307746228488658L;
+
+    public TIllegalMonitorStateException() {
+        super();
+    }
+
+    public TIllegalMonitorStateException(TString message) {
+        super(message);
+    }
 }

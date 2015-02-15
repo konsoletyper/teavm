@@ -35,6 +35,9 @@ public class AsyncProgramSplitter {
     }
 
     public void split(Program program) {
+        System.out.println("Splitting program");
+        System.out.println(new ListingBuilder().buildListing(program, "    "));
+
         parts.clear();
         Program initialProgram = createStubCopy(program);
         Part initialPart = new Part();
@@ -144,6 +147,13 @@ public class AsyncProgramSplitter {
                 }
             }
         }
+
+        for (int i = 0; i < parts.size(); ++i) {
+            Program part = parts.get(i).program;
+            System.out.println("Part " + i);
+            System.out.println(new ListingBuilder().buildListing(part, "    "));
+        }
+        System.out.println();
 
         partMap.clear();
     }

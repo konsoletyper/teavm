@@ -94,10 +94,22 @@ public final class Platform {
 
     @GeneratedBy(PlatformGenerator.class)
     @PluggableDependency(PlatformGenerator.class)
-    public static native void startThread(Runnable runnable);
+    public static native void startThread(PlatformRunnable runnable);
 
-    private static void launchThread(Runnable runnable) {
+    private static void launchThread(PlatformRunnable runnable) {
         runnable.run();
+    }
+
+    @GeneratedBy(PlatformGenerator.class)
+    @PluggableDependency(PlatformGenerator.class)
+    public static native int schedule(PlatformRunnable runnable, int timeout);
+
+    public static void killSchedule(int id) {
+        ((PlatformHelper)JS.getGlobal()).killSchedule(id);
+    }
+
+    public static <T> PlatformQueue<T> createQueue() {
+        return ((PlatformHelper)JS.getGlobal()).newQueue();
     }
 
     public static PlatformString stringFromCharCode(int charCode) {

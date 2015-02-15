@@ -29,6 +29,7 @@ public final class AsyncProgram {
 
     public static void main(String[] args) throws InterruptedException {
         report(Arrays.toString(args));
+        findPrimes();
         withoutAsync();
         report("");
         withAsync();
@@ -64,9 +65,34 @@ public final class AsyncProgram {
         report("Now trying wait...");
 
         synchronized (lock) {
+            report("Lock acquired");
             lock.wait(20000);
         }
         report("Finished main thread");
+    }
+
+    private static void findPrimes() {
+        report("Finding primes");
+        boolean[] prime = new boolean[1000];
+        prime[2] = true;
+        prime[3] = true;
+        nextPrime: for (int i = 5; i < prime.length; i += 2) {
+            int maxPrime = (int)Math.sqrt(i);
+            for (int j = 3; j <= maxPrime; j += 2) {
+                Thread.yield();
+                if (prime[j] && i % j == 0) {
+                    continue nextPrime;
+                }
+            }
+            prime[i] = true;
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 100; ++i) {
+            if (prime[i]) {
+                sb.append(i).append(' ');
+            }
+        }
+        report(sb.toString());
     }
 
     private static void report(String message) {

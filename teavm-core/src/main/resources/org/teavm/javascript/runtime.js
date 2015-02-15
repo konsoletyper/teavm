@@ -464,8 +464,9 @@ function $rt_asyncAdapter(f) {
         var result;
         var args = Array.prototype.slice.apply(arguments);
         var $return = args.pop();
+        args.unshift(this);
         try {
-            result = f.apply(this, args);
+            result = f.apply(null, args);
         } catch (e) {
             return $return($rt_asyncError(e));
         }
@@ -510,7 +511,9 @@ function $rt_continue(f) {
        return function() {
            var self = this;
            var args = arguments;
+           var thread = $rt_getThread();
            setTimeout(function() {
+               $rt_setThread(thread);
                f.apply(self, args);
            }, 0);
        };
