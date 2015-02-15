@@ -92,6 +92,18 @@ class JavascriptNativeProcessor {
                     for (Instruction insn : block.getInstructions()) {
                         insn.acceptVisitor(variableMapper);
                     }
+                    for (Phi phi : block.getPhis()) {
+                        phi.setReceiver(program.variableAt(phi.getReceiver().getIndex() + 1));
+                        for (Incoming incoming : phi.getIncomings()) {
+                            incoming.setValue(program.variableAt(incoming.getValue().getIndex() + 1));
+                        }
+                    }
+                    for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                        if (tryCatch.getExceptionVariable() != null) {
+                            tryCatch.setExceptionVariable(program.variableAt(
+                                    tryCatch.getExceptionVariable().getIndex() + 1));
+                        }
+                    }
                 }
                 callerMethod.setProgram(program);
                 cls.addMethod(callerMethod);
