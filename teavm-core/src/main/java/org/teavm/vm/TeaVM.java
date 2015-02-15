@@ -438,7 +438,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                 sourceWriter.append("var ").append(entry.getKey()).ws().append("=").ws();
                 boolean wrapAsync = !asyncMethods.contains(entry.getValue().reference) && entry.getValue().isAsync();
                 if (wrapAsync) {
-                    sourceWriter.append("$rt_asyncAdapter(");
+                    sourceWriter.append("$rt_staticAsyncAdapter(");
                 }
                 sourceWriter.appendMethodBody(entry.getValue().reference);
                 if (wrapAsync) {

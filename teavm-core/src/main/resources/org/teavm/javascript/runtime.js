@@ -459,6 +459,19 @@ function $rt_asyncError(e) {
         throw e;
     }
 }
+function $rt_staticAsyncAdapter(f) {
+    return function() {
+        var result;
+        var args = Array.prototype.slice.apply(arguments);
+        var $return = args.pop();
+        try {
+            result = f.apply(this, args);
+        } catch (e) {
+            return $return($rt_asyncError(e));
+        }
+        return $return($rt_asyncResult(result));
+    }
+}
 function $rt_asyncAdapter(f) {
     return function() {
         var result;
