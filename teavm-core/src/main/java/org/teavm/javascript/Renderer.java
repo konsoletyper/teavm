@@ -225,6 +225,9 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     private void renderRuntimeString() throws IOException {
         MethodReference stringCons = new MethodReference(String.class, "<init>", char[].class, void.class);
         writer.append("function $rt_str(str) {").indent().softNewLine();
+        writer.append("if (str===null){").indent().softNewLine();
+        writer.append("return null;").softNewLine();
+        writer.outdent().append("}").softNewLine();
         writer.append("var characters = $rt_createCharArray(str.length);").softNewLine();
         writer.append("var charsBuffer = characters.data;").softNewLine();
         writer.append("for (var i = 0; i < str.length; i = (i + 1) | 0) {").indent().softNewLine();
