@@ -35,6 +35,7 @@ public class TThread extends TObject implements TRunnable {
     private static long nextId = 1;
     private static int activeCount = 1;
     private long id;
+    private int priority = 0;
 
     private TString name;
     TRunnable target;
@@ -64,7 +65,7 @@ public class TThread extends TObject implements TRunnable {
                 try {
                     activeCount++;
                     setCurrentThread(TThread.this);
-                    target.run();
+                    TThread.this.run();
                 } finally {
                     activeCount--;
                     setCurrentThread(mainThread);
@@ -136,6 +137,14 @@ public class TThread extends TObject implements TRunnable {
                 callback.complete(null);
             }
         }, millis);
+    }
+    
+    public final void setPriority(int newPriority){
+        this.priority = newPriority;
+    }
+    
+    public final int getPriority(){
+        return this.priority;
     }
 
 }
