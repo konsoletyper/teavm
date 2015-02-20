@@ -456,7 +456,7 @@ function $rt_asyncResult(value) {
 }
 function $rt_asyncError(e) {
     return function() {
-        throw e;
+        throw new TeaVMAsyncError(e);
     }
 }
 function $rt_staticAsyncAdapter(f) {
@@ -490,7 +490,19 @@ function $rt_rootInvocationAdapter(f) {
     return function() {
         var args = Array.prototype.slice.apply(arguments);
         args.push(function(result) {
-            result();
+            try {
+                result();
+            } catch (e) {
+                var prefix = "Exception occured %s at %o";
+                var hasWrappers = false;
+                while (e instanceof TeaVMAsyncError) {
+                    console.error(prefix, e.message, e.stack);
+                    e = e.cause;
+                    prefix = "Caused by %s at %o";
+                    hasWrappers = true;
+                }
+                console.error(!hasWrappers ? prefix : "Root cause is %s at %o", e.message, e.stack);
+            }
         });
         return f.apply(this, args);
     }
@@ -543,6 +555,12 @@ function $rt_guardAsync(f, continuation) {
         }
     }
 }
+function TeaVMAsyncError(cause) {
+    this.message = "Async error occured";
+    this.cause = cause;
+}
+TeaVMAsyncError.prototype = new Error();
+TeaVMAsyncError.prototype.constructor = TeaVMAsyncError;
 
 function $dbg_repr(obj) {
     return obj.toString ? obj.toString() : "";
