@@ -72,7 +72,7 @@ public class TObject {
                     o.monitor.owner = thread;
                     o.monitor.count += count;
                     callback.complete(null);
-                };
+                }
             });
         } else {
             o.monitor.count += count;
