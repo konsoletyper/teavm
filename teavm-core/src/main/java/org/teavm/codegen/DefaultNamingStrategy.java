@@ -66,32 +66,13 @@ public class DefaultNamingStrategy implements NamingStrategy {
     }
 
     private String getNameFor(MethodReference method, char classifier) {
-        MethodReference origMethod = method;
-        method = getRealMethod(method);
-        if (method == null) {
-            throw new NamingException("Can't provide name for method as it was not found: " + origMethod);
+        String key = classifier + method.getDescriptor().toString();
+        String alias = aliases.get(key);
+        if (alias == null) {
+            alias = aliasProvider.getAlias(method);
+            aliases.put(key, alias);
         }
-        ClassReader clsHolder = classSource.get(method.getClassName());
-        MethodReader methodHolder = clsHolder.getMethod(method.getDescriptor());
-        if (methodHolder.hasModifier(ElementModifier.STATIC) ||
-                method.getDescriptor().getName().equals("<init>") ||
-                methodHolder.getLevel() == AccessLevel.PRIVATE) {
-            String key = classifier + method.toString();
-            String alias = privateAliases.get(key);
-            if (alias == null) {
-                alias = aliasProvider.getAlias(method);
-                privateAliases.put(key, alias);
-            }
-            return alias;
-        } else {
-            String key = classifier + method.getDescriptor().toString();
-            String alias = aliases.get(key);
-            if (alias == null) {
-                alias = aliasProvider.getAlias(method);
-                aliases.put(key, alias);
-            }
-            return alias;
-        }
+        return alias;
     }
 
     @Override
@@ -106,12 +87,12 @@ public class DefaultNamingStrategy implements NamingStrategy {
 
     private String getFullNameFor(MethodReference method, char classifier) throws NamingException {
         MethodReference originalMethod = method;
-        if (!minifying) {
-            return getNameFor(method.getClassName()) + "_" + getNameFor(method, classifier);
-        }
         method = getRealMethod(method);
         if (method == null) {
             throw new NamingException("Can't provide name for method as it was not found: " + originalMethod);
+        }
+        if (!minifying) {
+            return getNameFor(method.getClassName()) + "_" + getNameFor(method, classifier);
         }
         String key = classifier + method.toString();
         String alias = privateAliases.get(key);

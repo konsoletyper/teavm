@@ -1604,7 +1604,6 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 }
                 String name = expr.getAsyncTarget() == null ? naming.getNameFor(expr.getMethod()) :
                         naming.getNameForAsync(expr.getMethod());
-                String fullName = naming.getFullNameFor(expr.getMethod());
                 DeferredCallSite callSite = prevCallSite;
                 boolean shouldEraseCallSite = lastCallSite == null;
                 if (lastCallSite == null) {
@@ -1615,7 +1614,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 enterPriority(Priority.COMMA, Associativity.NONE, false);
                 switch (expr.getType()) {
                     case STATIC:
-                        writer.append(fullName).append("(");
+                        writer.appendMethodBody(expr.getMethod()).append("(");
                         prevCallSite = debugEmitter.emitCallSite();
                         for (int i = 0; i < expr.getArguments().size(); ++i) {
                             if (i > 0) {
@@ -1626,7 +1625,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                         }
                         break;
                     case SPECIAL:
-                        writer.append(fullName).append("(");
+                        writer.appendMethodBody(expr.getMethod()).append("(");
                         prevCallSite = debugEmitter.emitCallSite();
                         expr.getArguments().get(0).acceptVisitor(this);
                         hasParams = true;
