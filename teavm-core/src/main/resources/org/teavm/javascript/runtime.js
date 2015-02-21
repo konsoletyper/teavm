@@ -558,6 +558,9 @@ function $rt_guardAsync(f, continuation) {
 function TeaVMAsyncError(cause) {
     this.message = "Async error occured";
     this.cause = cause;
+    if (cause) {
+       this.$javaException = cause.$javaException;
+    }
 }
 TeaVMAsyncError.prototype = new Error();
 TeaVMAsyncError.prototype.constructor = TeaVMAsyncError;

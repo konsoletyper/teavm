@@ -74,7 +74,8 @@ public class Devirtualization {
             if (cls == null || !isAssignable(ref.getClassName(), cls)) {
                 continue;
             }
-            MethodDependencyInfo methodDep = dependency.getMethod(new MethodReference(className, ref.getDescriptor()));
+            MethodDependencyInfo methodDep = dependency.getMethodImplementation(new MethodReference(
+                    className, ref.getDescriptor()));
             if (methodDep != null) {
                 methods.add(methodDep.getReference());
             }

@@ -252,6 +252,10 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         if (methodRef == null) {
             throw new IllegalArgumentException();
         }
+        MethodReader methodReader = methodReaderCache.map(methodRef);
+        if (methodReader != null) {
+            methodRef = methodReader.getReference();
+        }
         callGraph.getNode(methodRef);
         boolean added = true;
         if (callLocation != null && callLocation.getMethod() != null) {
@@ -470,6 +474,12 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     @Override
     public MethodDependency getMethod(MethodReference methodRef) {
         return methodCache.getKnown(methodRef);
+    }
+
+    @Override
+    public MethodDependency getMethodImplementation(MethodReference methodRef) {
+        MethodReader method = methodReaderCache.map(methodRef);
+        return method != null ? methodCache.getKnown(method.getReference()) : null;
     }
 
     public void processDependencies() {

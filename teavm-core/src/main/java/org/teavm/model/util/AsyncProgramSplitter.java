@@ -28,9 +28,11 @@ import org.teavm.model.instructions.MonitorEnterInstruction;
 public class AsyncProgramSplitter {
     private List<Part> parts = new ArrayList<>();
     private Map<Long, Integer> partMap = new HashMap<>();
+    private ClassReaderSource classSource;
     private Set<MethodReference> asyncMethods = new HashSet<>();
 
-    public AsyncProgramSplitter(Set<MethodReference> asyncMethods) {
+    public AsyncProgramSplitter(ClassReaderSource classSource, Set<MethodReference> asyncMethods) {
+        this.classSource = classSource;
         this.asyncMethods = asyncMethods;
     }
 
@@ -62,7 +64,7 @@ public class AsyncProgramSplitter {
                 Integer receiver;
                 if (insn instanceof InvokeInstruction) {
                     InvokeInstruction invoke = (InvokeInstruction)insn;
-                    if (!asyncMethods.contains(invoke.getMethod())) {
+                    if (!asyncMethods.contains(findRealMethod(invoke.getMethod()))) {
                         continue;
                     }
                     receiver = invoke.getReceiver() != null ? invoke.getReceiver().getIndex() : null;
@@ -146,6 +148,25 @@ public class AsyncProgramSplitter {
         }
 
         partMap.clear();
+    }
+
+    private MethodReference findRealMethod(MethodReference method) {
+        String clsName = method.getClassName();
+        while (clsName != null) {
+            ClassReader cls = classSource.get(clsName);
+            if (cls == null) {
+                break;
+            }
+            MethodReader methodReader = cls.getMethod(method.getDescriptor());
+            if (methodReader != null) {
+                return new MethodReference(clsName, method.getDescriptor());
+            }
+            clsName = cls.getParent();
+            if (clsName != null && clsName.equals(cls.getName())) {
+                break;
+            }
+        }
+        return method;
     }
 
     private Program createStubCopy(Program program) {
