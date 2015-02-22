@@ -144,12 +144,12 @@ public class UnicodeSupport {
         int j = 0;
         int t = 0;
         while (true) {
-            if (i == a.length) {
+            if (j == b.length) {
                 while (i < a.length) {
                     result[t++] = a[i++];
                 }
                 break;
-            } else if (j == b.length) {
+            } else if (i == a.length) {
                 while (j < b.length) {
                     result[t++] = b[j++];
                 }
