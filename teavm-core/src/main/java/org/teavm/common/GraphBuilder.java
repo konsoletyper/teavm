@@ -86,7 +86,7 @@ public class GraphBuilder {
             int[][] incomingEdgeList = new int[sz][];
             for (int i = 0; i < sz; ++i) {
                 incomingEdgeList[i] = incomingEdges[i].toArray();
-                Arrays.sort(incomingEdgeList);
+                Arrays.sort(incomingEdgeList[i]);
             }
             builtGraph = new GraphImpl(incomingEdgeList, outgoingEdgeList);
         }
