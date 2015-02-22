@@ -15,6 +15,10 @@
  */
 package org.teavm.common;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
@@ -22,39 +26,57 @@ package org.teavm.common;
 public class DJGraph {
     private DominatorTree domTree;
     private Graph graph;
-    private Graph backEdges;
+    private LCATree spanningTree;
+    private int[] spanningTreeNode;
+    private int[] spanningTreeIndex;
+    private int[][] levelContent;
 
     public DJGraph(Graph src) {
         domTree = GraphUtils.buildDominatorTree(src);
         buildGraph(src);
+        buildLevels();
         dfs();
     }
 
     private void buildGraph(Graph graph) {
         GraphBuilder builder = new GraphBuilder(graph.size());
+
+        // Add join edges
         for (int i = 0; i < graph.size(); ++i) {
             for (int j : graph.outgoingEdges(i)) {
                 builder.addEdge(i, j);
             }
         }
+
+        // Add dom edges
         for (int i = 1; i < graph.size(); ++i) {
             int j = domTree.immediateDominatorOf(i);
-            boolean needsDomEdge = true;
-            for (int k : graph.incomingEdges(i)) {
-                if (k == j) {
-                    needsDomEdge = false;
-                    break;
-                }
-            }
-            if (needsDomEdge) {
-                builder.addEdge(j, i);
-            }
+            builder.addEdge(j, i);
         }
+
         graph = builder.build();
     }
 
+    private void buildLevels() {
+        List<IntegerArray> builder = new ArrayList<>();
+        for (int i = 0; i < graph.size(); ++i) {
+            int level = domTree.levelOf(i);
+            while (level >= builder.size()) {
+                builder.add(new IntegerArray(1));
+            }
+            builder.get(level).add(i);
+        }
+        levelContent = new int[builder.size()][];
+        for (int i = 0; i < builder.size(); ++i) {
+            levelContent[i] = builder.get(i).getAll();
+        }
+    }
+
     private void dfs() {
-        GraphBuilder builder = new GraphBuilder();
+        spanningTreeNode = new int[graph.size()];
+        spanningTreeIndex = new int[graph.size()];
+        Arrays.fill(spanningTreeIndex, -1);
+        Arrays.fill(spanningTreeNode, -1);
         boolean[] visited = new boolean[graph.size()];
         IntegerStack stack = new IntegerStack(graph.size() * 2);
         stack.push(0);
@@ -63,16 +85,17 @@ public class DJGraph {
             int node = stack.pop();
             int source = stack.pop();
             if (visited[node]) {
-                builder.addEdge(node, source);
                 continue;
             }
+            int index = spanningTree.addNode(spanningTreeIndex[source]);
+            spanningTreeNode[index] = node;
+            spanningTreeIndex[node] = index;
             visited[node] = true;
             for (int succ : graph.outgoingEdges(node)) {
                 stack.push(node);
                 stack.push(succ);
             }
         }
-        backEdges = builder.build();
     }
 
     public DominatorTree getDomTree() {
@@ -83,7 +106,50 @@ public class DJGraph {
         return graph;
     }
 
-    public int[] getSpanningTreeBackEdges(int node) {
-        return backEdges.outgoingEdges(node);
+    public boolean isAncestorInSpanningTree(int anc, int node) {
+        anc = spanningTreeIndex[anc];
+        node = spanningTreeIndex[node];
+        if (anc < 0 || node < 0) {
+            return false;
+        }
+        return spanningTree.lcaOf(anc, node) == anc;
+    }
+
+    public boolean isDomEdge(int i, int j) {
+        return domTree.immediateDominatorOf(j) == i;
+    }
+
+    public boolean isJoinEdge(int i, int j) {
+        return !isDomEdge(i, j);
+    }
+
+    public boolean isBackJoin(int i, int j) {
+        return isJoinEdge(i, j) && !domTree.dominates(j, i);
+    }
+
+    public boolean isCrossJoin(int i, int j) {
+        return isJoinEdge(i, j) && domTree.dominates(j, i);
+    }
+
+    public boolean isSpanningBack(int i, int j) {
+        return spanningTree.lcaOf(i, j) == j;
+    }
+
+    public boolean isSpanningCross(int i, int j) {
+        int c = spanningTree.lcaOf(i, j);
+        return c != i && c != j;
+    }
+
+    public int levelOf(int node) {
+        return domTree.levelOf(node);
+    }
+
+    public int[] level(int level) {
+        int[] result = levelContent[level];
+        return Arrays.copyOf(result, result.length);
+    }
+
+    public int levelCount() {
+        return levelContent.length;
     }
 }

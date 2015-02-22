@@ -15,6 +15,8 @@
  */
 package org.teavm.common;
 
+import com.carrotsearch.hppc.IntOpenHashSet;
+import com.carrotsearch.hppc.IntSet;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -26,14 +28,14 @@ import java.util.List;
  */
 public class GraphBuilder {
     private GraphImpl builtGraph;
-    private List<IntegerArray> addedEdges = new ArrayList<>();
+    private List<IntSet> addedEdges = new ArrayList<>();
     private int sz;
 
     public GraphBuilder() {
     }
 
     public GraphBuilder(int sz) {
-        addedEdges.addAll(Collections.<IntegerArray>nCopies(sz, null));
+        addedEdges.addAll(Collections.<IntSet>nCopies(sz, null));
         this.sz = sz;
     }
 
@@ -49,14 +51,14 @@ public class GraphBuilder {
         sz = Math.max(sz, Math.max(from, to) + 1);
         builtGraph = null;
         if (addedEdges.size() == from) {
-            addedEdges.add(IntegerArray.of(to));
+            addedEdges.add(IntOpenHashSet.from(to));
         } else if (addedEdges.size() <= from) {
-            addedEdges.addAll(Collections.<IntegerArray>nCopies(from - addedEdges.size(), null));
-            addedEdges.add(IntegerArray.of(to));
+            addedEdges.addAll(Collections.<IntSet>nCopies(from - addedEdges.size(), null));
+            addedEdges.add(IntOpenHashSet.from(to));
         } else {
-            IntegerArray set = addedEdges.get(from);
+            IntSet set = addedEdges.get(from);
             if (set == null) {
-                addedEdges.set(from, IntegerArray.of(to));
+                addedEdges.set(from, IntOpenHashSet.from(to));
             } else {
                 set.add(to);
             }
@@ -65,14 +67,15 @@ public class GraphBuilder {
 
     public Graph build() {
         if (builtGraph == null) {
-            IntegerArray[] incomingEdges = new IntegerArray[sz];
+            IntSet[] incomingEdges = new IntSet[sz];
             for (int i = 0; i < sz; ++i) {
-                incomingEdges[i] = new IntegerArray(1);
+                incomingEdges[i] = new IntOpenHashSet();
             }
             int[][] outgoingEdgeList = new int[sz][];
             for (int i = 0; i < addedEdges.size(); ++i) {
-                IntegerArray edgeList = addedEdges.get(i);
-                outgoingEdgeList[i] = edgeList != null ? edgeList.getAll() : new int[0];
+                IntSet edgeList = addedEdges.get(i);
+                outgoingEdgeList[i] = edgeList != null ? edgeList.toArray() : new int[0];
+                Arrays.sort(outgoingEdgeList[i]);
                 for (int j : outgoingEdgeList[i]) {
                     incomingEdges[j].add(i);
                 }
@@ -82,7 +85,8 @@ public class GraphBuilder {
             }
             int[][] incomingEdgeList = new int[sz][];
             for (int i = 0; i < sz; ++i) {
-                incomingEdgeList[i] = incomingEdges[i].getAll();
+                incomingEdgeList[i] = incomingEdges[i].toArray();
+                Arrays.sort(incomingEdgeList);
             }
             builtGraph = new GraphImpl(incomingEdgeList, outgoingEdgeList);
         }

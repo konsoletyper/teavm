@@ -1,5 +1,5 @@
 /*
- *  Copyright 2011 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,20 +13,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.common;
+package org.teavm.model.util;
 
 /**
  *
- * @author Alexey Andreev
+ * @author Alexey Andreev <konsoletyper@gmail.com>
  */
-public interface DominatorTree {
-    boolean directlyDominates(int a, int b);
-
-    int commonDominatorOf(int a, int b);
-
-    boolean dominates(int a, int b);
-
-    int immediateDominatorOf(int a);
-
-    int levelOf(int a);
+public interface GraphSplittingBackend {
+    int[] split(int[] nodes);
 }

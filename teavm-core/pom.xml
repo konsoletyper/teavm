@@ -40,6 +40,11 @@
       <groupId>org.ow2.asm</groupId>
       <artifactId>asm-debug-all</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.carrotsearch</groupId>
+      <artifactId>hppc</artifactId>
+      <version>0.6.1</version>
+    </dependency>
   </dependencies>
 
   <name>TeaVM core</name>

@@ -61,6 +61,10 @@ public class LCATree {
         return path.length > 0 ? path[0] : -1;
     }
 
+    public int depthOf(int node) {
+        return depths[node];
+    }
+
     public int lcaOf(int a, int b) {
         if (a == b) {
             return a;
