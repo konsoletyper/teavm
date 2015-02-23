@@ -57,6 +57,17 @@ public class MutableDirectedGraph implements Graph {
         predecessors.get(to).add(from);
     }
 
+    public void detachNode(int node) {
+        for (IntCursor succ : successors.get(node)) {
+            predecessors.get(succ.value).removeAllOccurrences(node);
+        }
+        for (IntCursor pred : predecessors.get(node)) {
+            successors.get(pred.value).removeAllOccurrences(node);
+        }
+        predecessors.get(node).clear();
+        successors.get(node).clear();
+    }
+
     @Override
     public int[] incomingEdges(int node) {
         return predecessors.get(node).toArray();

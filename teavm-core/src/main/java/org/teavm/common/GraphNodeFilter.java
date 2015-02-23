@@ -13,12 +13,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.model.util;
+package org.teavm.common;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-public interface GraphSplittingBackend {
-    int[] split(int[] nodes);
+public interface GraphNodeFilter {
+    boolean match(int node);
 }

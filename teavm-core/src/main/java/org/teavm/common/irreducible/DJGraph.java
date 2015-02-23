@@ -13,11 +13,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.common;
+package org.teavm.common.irreducible;
 
+import com.carrotsearch.hppc.IntOpenHashSet;
+import com.carrotsearch.hppc.IntSet;
+import com.carrotsearch.hppc.cursors.IntCursor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.teavm.common.*;
 
 /**
  *
@@ -25,36 +29,44 @@ import java.util.List;
  */
 public class DJGraph {
     private DominatorTree domTree;
-    private Graph graph;
+    private MutableDirectedGraph cfg;
+    private MutableDirectedGraph graph;
     private LCATree spanningTree;
     private int[] spanningTreeNode;
     private int[] spanningTreeIndex;
     private int[][] levelContent;
+    private int[] mergeRoot;
+    private IntegerArray[] mergeClasses;
 
-    public DJGraph(Graph src) {
-        domTree = GraphUtils.buildDominatorTree(src);
+    public DJGraph(Graph src, int top) {
+        this.cfg = new MutableDirectedGraph(src);
+        domTree = GraphUtils.buildDominatorTree(src, top);
         buildGraph(src);
         buildLevels();
         dfs();
+        mergeRoot = new int[src.size()];
+        mergeClasses = new IntegerArray[src.size()];
+        for (int i = 0; i < mergeRoot.length; ++i) {
+            mergeRoot[i] = i;
+            mergeClasses[i] = IntegerArray.of(i);
+        }
     }
 
-    private void buildGraph(Graph graph) {
-        GraphBuilder builder = new GraphBuilder(graph.size());
+    private void buildGraph(Graph src) {
+        graph = new MutableDirectedGraph();
 
         // Add join edges
-        for (int i = 0; i < graph.size(); ++i) {
-            for (int j : graph.outgoingEdges(i)) {
-                builder.addEdge(i, j);
+        for (int i = 0; i < src.size(); ++i) {
+            for (int j : src.outgoingEdges(i)) {
+                graph.addEdge(i, j);
             }
         }
 
         // Add dom edges
         for (int i = 1; i < graph.size(); ++i) {
             int j = domTree.immediateDominatorOf(i);
-            builder.addEdge(j, i);
+            graph.addEdge(j, i);
         }
-
-        graph = builder.build();
     }
 
     private void buildLevels() {
@@ -102,13 +114,17 @@ public class DJGraph {
         return domTree;
     }
 
+    public MutableDirectedGraph getCfg() {
+        return cfg;
+    }
+
     public Graph getGraph() {
         return graph;
     }
 
     public boolean isAncestorInSpanningTree(int anc, int node) {
-        anc = spanningTreeIndex[anc];
-        node = spanningTreeIndex[node];
+        anc = spanningTreeIndex[mergeRoot[anc]];
+        node = spanningTreeIndex[mergeRoot[node]];
         if (anc < 0 || node < 0) {
             return false;
         }
@@ -116,7 +132,7 @@ public class DJGraph {
     }
 
     public boolean isDomEdge(int i, int j) {
-        return domTree.immediateDominatorOf(j) == i;
+        return domTree.immediateDominatorOf(mergeRoot[j]) == mergeRoot[i];
     }
 
     public boolean isJoinEdge(int i, int j) {
@@ -124,24 +140,28 @@ public class DJGraph {
     }
 
     public boolean isBackJoin(int i, int j) {
-        return isJoinEdge(i, j) && !domTree.dominates(j, i);
+        return isJoinEdge(i, j) && !domTree.dominates(mergeRoot[j], mergeRoot[i]);
     }
 
     public boolean isCrossJoin(int i, int j) {
-        return isJoinEdge(i, j) && domTree.dominates(j, i);
+        return isJoinEdge(i, j) && domTree.dominates(mergeRoot[j], mergeRoot[i]);
     }
 
     public boolean isSpanningBack(int i, int j) {
+        i = spanningTreeIndex[mergeRoot[i]];
+        j = spanningTreeIndex[mergeRoot[j]];
         return spanningTree.lcaOf(i, j) == j;
     }
 
     public boolean isSpanningCross(int i, int j) {
+        i = spanningTreeIndex[mergeRoot[i]];
+        j = spanningTreeIndex[mergeRoot[j]];
         int c = spanningTree.lcaOf(i, j);
         return c != i && c != j;
     }
 
     public int levelOf(int node) {
-        return domTree.levelOf(node);
+        return domTree.levelOf(mergeRoot[node]);
     }
 
     public int[] level(int level) {
@@ -151,5 +171,58 @@ public class DJGraph {
 
     public int levelCount() {
         return levelContent.length;
+    }
+
+    public int[] classRepresentatives(int node) {
+        return mergeClasses[node].getAll();
+    }
+
+    public int classOf(int node) {
+        return mergeRoot[node];
+    }
+
+    public void collapse(int[] nodes) {
+        // Replace nodes with their classes and find common dominator among them
+        IntSet set = new IntOpenHashSet();
+        int top = nodes[0];
+        for (int node : nodes) {
+            node = mergeRoot[node];
+            top = domTree.commonDominatorOf(top, node);
+            set.add(node);
+        }
+        if (!set.contains(top)) {
+            throw new IllegalArgumentException("All nodes must have one common dominator");
+        }
+
+        // Alter classes
+        IntegerArray cls = mergeClasses[top];
+        for (IntCursor node : set) {
+            mergeRoot[node.value] = top;
+            if (node.value != top) {
+                cls.addAll(mergeClasses[node.value].getAll());
+                mergeClasses[node.value].clear();
+            }
+        }
+
+        // Alter graphs
+        for (IntCursor node : set) {
+            if (node.value != top) {
+                for (int succ : graph.outgoingEdges(node.value)) {
+                    graph.addEdge(top, succ);
+                }
+                for (int pred : graph.incomingEdges(node.value)) {
+                    graph.addEdge(top, pred);
+                }
+                graph.detachNode(node.value);
+
+                for (int succ : cfg.outgoingEdges(node.value)) {
+                    cfg.addEdge(top, succ);
+                }
+                for (int pred : cfg.incomingEdges(node.value)) {
+                    cfg.addEdge(top, pred);
+                }
+                cfg.detachNode(node.value);
+            }
+        }
     }
 }
