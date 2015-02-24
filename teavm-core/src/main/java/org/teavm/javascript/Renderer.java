@@ -1955,13 +1955,16 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     private Injector getInjector(MethodReference ref) {
         InjectorHolder holder = injectorMap.get(ref);
         if (holder == null) {
-            MethodHolder method = classSource.get(ref.getClassName()).getMethod(ref.getDescriptor());
             holder = new InjectorHolder(null);
-            if (method != null) {
-                AnnotationHolder injectedByAnnot = method.getAnnotations().get(InjectedBy.class.getName());
-                if (injectedByAnnot != null) {
-                    ValueType type = injectedByAnnot.getValues().get("value").getJavaClass();
-                    holder = new InjectorHolder(instantiateInjector(((ValueType.Object)type).getClassName()));
+            ClassHolder cls = classSource.get(ref.getClassName());
+            if (cls != null) {
+                MethodHolder method = cls.getMethod(ref.getDescriptor());
+                if (method != null) {
+                    AnnotationHolder injectedByAnnot = method.getAnnotations().get(InjectedBy.class.getName());
+                    if (injectedByAnnot != null) {
+                        ValueType type = injectedByAnnot.getValues().get("value").getJavaClass();
+                        holder = new InjectorHolder(instantiateInjector(((ValueType.Object)type).getClassName()));
+                    }
                 }
             }
             injectorMap.put(ref, holder);
