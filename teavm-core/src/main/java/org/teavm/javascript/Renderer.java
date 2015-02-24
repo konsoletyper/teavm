@@ -76,7 +76,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         try {
             MethodReference monitorEnterRef = new MethodReference(
                     Object.class, "monitorEnter", Object.class, void.class);
-            writer.appendMethodBody(monitorEnterRef).append("(");
+            writer.append("return ").appendMethodBody(monitorEnterRef).append("(");
             statement.getObjectRef().acceptVisitor(this);
             writer.append(",").ws();
             writer.append("$rt_continue($part_").append(statement.getAsyncTarget()).append(')');

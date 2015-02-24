@@ -216,6 +216,9 @@ public class TObject {
 
     @Rename("wait")
     public final void wait0(long timeout, int nanos, final AsyncCallback<Void> callback) {
+        if (!holdsLock(this)) {
+            throw new TIllegalMonitorStateException();
+        }
         final NotifyListenerImpl listener = new NotifyListenerImpl(this, callback, monitor.count);
         monitor.notifyListeners.add(listener);
         if (timeout > 0 || nanos > 0) {
