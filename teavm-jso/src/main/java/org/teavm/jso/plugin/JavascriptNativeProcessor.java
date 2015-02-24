@@ -18,6 +18,7 @@ package org.teavm.jso.plugin;
 import java.util.*;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.javascript.spi.GeneratedBy;
+import org.teavm.javascript.spi.Sync;
 import org.teavm.jso.*;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
@@ -41,8 +42,16 @@ class JavascriptNativeProcessor {
         nativeRepos = new NativeJavascriptClassRepository(classSource);
     }
 
+    public ClassReaderSource getClassSource() {
+        return classSource;
+    }
+
     public boolean isNative(String className) {
         return nativeRepos.isJavaScriptClass(className);
+    }
+
+    public boolean isNativeImplementation(String className) {
+        return nativeRepos.isJavaScriptImplementation(className);
     }
 
     public void setDiagnostics(Diagnostics diagnostics) {
@@ -107,6 +116,44 @@ class JavascriptNativeProcessor {
                 }
                 callerMethod.setProgram(program);
                 cls.addMethod(callerMethod);
+            }
+        }
+    }
+
+    public void makeSync(ClassHolder cls) {
+        Set<MethodDescriptor> methods = new HashSet<>();
+        findInheritedMethods(cls, methods, new HashSet<String>());
+        for (MethodHolder method : cls.getMethods()) {
+            if (methods.contains(method.getDescriptor()) && method.getAnnotations().get(Sync.class.getName()) == null) {
+                AnnotationHolder annot = new AnnotationHolder(Sync.class.getName());
+                method.getAnnotations().add(annot);
+            }
+        }
+    }
+
+    private void findInheritedMethods(ClassReader cls, Set<MethodDescriptor> methods, Set<String> visited) {
+        if (!visited.add(cls.getName())) {
+            return;
+        }
+        if (isNative(cls.getName())) {
+            for (MethodReader method : cls.getMethods()) {
+                if (!method.hasModifier(ElementModifier.STATIC) && !method.hasModifier(ElementModifier.FINAL) &&
+                        method.getLevel() != AccessLevel.PRIVATE) {
+                    methods.add(method.getDescriptor());
+                }
+            }
+        } else if (isNativeImplementation(cls.getName())) {
+            if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
+                ClassReader parentCls = classSource.get(cls.getParent());
+                if (parentCls != null) {
+                    findInheritedMethods(parentCls, methods, visited);
+                }
+            }
+            for (String iface : cls.getInterfaces()) {
+                ClassReader parentCls = classSource.get(iface);
+                if (parentCls != null) {
+                    findInheritedMethods(parentCls, methods, visited);
+                }
             }
         }
     }
