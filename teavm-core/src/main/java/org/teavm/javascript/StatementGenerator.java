@@ -304,25 +304,15 @@ class StatementGenerator implements InstructionVisitor {
             case FROM_INTEGER:
                 switch (insn.getTargetType()) {
                     case BYTE:
-                        value = Expr.binary(BinaryOperation.BITWISE_AND, value, Expr.constant(0xFF));
+                        value = Expr.unary(UnaryOperation.INT_TO_BYTE, value);
                         break;
                     case SHORT:
                     case CHARACTER:
-                        value = Expr.binary(BinaryOperation.BITWISE_AND, value, Expr.constant(0xFFFF));
+                        value = Expr.unary(UnaryOperation.INT_TO_SHORT, value);
                         break;
                 }
                 break;
             case TO_INTEGER:
-                switch (insn.getTargetType()) {
-                    case BYTE:
-                        value = Expr.unary(UnaryOperation.BYTE_TO_INT, value);
-                        break;
-                    case SHORT:
-                        value = Expr.unary(UnaryOperation.SHORT_TO_INT, value);
-                        break;
-                    case CHARACTER:
-                        break;
-                }
                 break;
         }
         assign(value, insn.getReceiver());

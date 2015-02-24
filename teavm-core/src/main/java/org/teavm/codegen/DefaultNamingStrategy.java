@@ -81,6 +81,11 @@ public class DefaultNamingStrategy implements NamingStrategy {
     }
 
     @Override
+    public String getFullNameForAsync(MethodReference method) throws NamingException {
+        return getFullNameFor(method, 'A');
+    }
+
+    @Override
     public String getNameForInit(MethodReference method) throws NamingException {
         return getFullNameFor(method, 'I');
     }

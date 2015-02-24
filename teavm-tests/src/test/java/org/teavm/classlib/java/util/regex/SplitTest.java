@@ -130,47 +130,4 @@ public class SplitTest {
         assertTrue(tokens[1].equals(""));
         assertEquals("dle z", tokens[2]);
     }
-
-    @Test
-    public void testSplit2() {
-        Pattern p = Pattern.compile("");
-        String s[];
-        s = p.split("a", -1);
-        assertEquals(3, s.length);
-        assertEquals("", s[0]);
-        assertEquals("a", s[1]);
-        assertEquals("", s[2]);
-
-        s = p.split("", -1);
-        assertEquals(1, s.length);
-        assertEquals("", s[0]);
-
-        s = p.split("abcd", -1);
-        assertEquals(6, s.length);
-        assertEquals("", s[0]);
-        assertEquals("a", s[1]);
-        assertEquals("b", s[2]);
-        assertEquals("c", s[3]);
-        assertEquals("d", s[4]);
-        assertEquals("", s[5]);
-    }
-
-    @Test
-    public void testSplitSupplementaryWithEmptyString() {
-
-        /*
-         * See http://www.unicode.org/reports/tr18/#Supplementary_Characters We
-         * have to treat text as code points not code units.
-         */
-        Pattern p = Pattern.compile("");
-        String s[];
-        s = p.split("a\ud869\uded6b", -1);
-        assertEquals(6, s.length);
-        assertEquals("", s[0]);
-        assertEquals("a", s[1]);
-        assertEquals("\ud869", s[2]);
-        assertEquals("\uded6", s[3]);
-        assertEquals("b", s[4]);
-        assertEquals("", s[5]);
-    }
 }

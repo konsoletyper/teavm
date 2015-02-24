@@ -123,13 +123,18 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
                     writer.append(writer.getNaming().getNameForInit(method.getReference()));
                 } else {
                     String function = context.isAsync(method.getReference()) ? "async" : "sync";
+                    String methodName = context.isAsync(method.getReference()) ?
+                            writer.getNaming().getFullNameForAsync(method.getReference()) :
+                            writer.getNaming().getFullNameFor(method.getReference());
                     writer.append(function).append("(").appendClass(clsName).append(',').ws()
-                            .appendMethodBody(method.getReference()).append(")");
+                            .append(methodName).append(")");
                 }
                 writer.append(";").softNewLine();
             }
         }
-        writer.appendMethodBody(methodRef).ws().append("=").ws().append("function(cls");
+        String selfName = context.isAsync() ? writer.getNaming().getFullNameForAsync(methodRef) :
+                writer.getNaming().getFullNameFor(methodRef);
+        writer.append(selfName).ws().append("=").ws().append("function(cls");
         if (context.isAsync()) {
             writer.append(',').ws().append("$return");
         }
@@ -148,7 +153,7 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
         }
         writer.outdent().append("}").softNewLine();
 
-        writer.append("return ").appendMethodBody(methodRef).append("(").append(context.getParameterName(1));
+        writer.append("return ").append(selfName).append("(").append(context.getParameterName(1));
         if (context.isAsync()) {
             writer.append(',').ws().append("$return");
         }
@@ -181,8 +186,10 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
     private void generateSchedule(GeneratorContext context, SourceWriter writer, boolean timeout) throws IOException {
         String runnable = context.getParameterName(1);
         writer.append("return window.setTimeout(function()").ws().append("{").indent().softNewLine();
-        writer.append("$rt_rootInvocationAdapter(").appendMethodBody(Platform.class, "launchThread",
-                PlatformRunnable.class, void.class).append(")(").append(runnable).append(");").softNewLine();
+        String methodName = writer.getNaming().getFullNameForAsync(new MethodReference(Platform.class, "launchThread",
+                PlatformRunnable.class, void.class));
+        writer.append("$rt_rootInvocationAdapter(").append(methodName).append(")(").append(runnable).append(");")
+                .softNewLine();
         writer.outdent().append("},").ws().append(timeout ? context.getParameterName(2) : "0")
                 .append(");").softNewLine();
     }
