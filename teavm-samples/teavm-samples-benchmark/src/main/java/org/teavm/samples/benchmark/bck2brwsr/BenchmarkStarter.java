@@ -15,13 +15,98 @@
  */
 package org.teavm.samples.benchmark.bck2brwsr;
 
+import com.dukescript.api.canvas.GraphicsContext2D;
+import com.dukescript.api.canvas.Style;
+import com.dukescript.canvas.html.HTML5Graphics;
+import java.util.Timer;
+import java.util.TimerTask;
+import org.jbox2d.collision.shapes.CircleShape;
+import org.jbox2d.collision.shapes.PolygonShape;
+import org.jbox2d.collision.shapes.Shape;
+import org.jbox2d.collision.shapes.ShapeType;
+import org.jbox2d.common.Vec2;
+import org.jbox2d.dynamics.Body;
+import org.jbox2d.dynamics.Fixture;
 import org.teavm.samples.benchmark.Scene;
 
 public class BenchmarkStarter {
-    private static Scene s = new Scene();
+    private static final Timer TIMER = new Timer("Make Step");
+    private static final Scene scene = new Scene();
+    private static double startMillisecond;
+    private static int currentSecond;
+    private static double timeSpentCalculating;
     
-    public static void main(String... args) {
-        s.calculate();
-        throw new IllegalStateException("Success!");
+    public static void main(String[] args) {
+        startMillisecond = System.currentTimeMillis();
+        makeStep();
+    }
+
+    private static void makeStep() {
+        double start = System.currentTimeMillis();
+        scene.calculate();
+        double end = System.currentTimeMillis();
+        int second = (int)((System.currentTimeMillis() - startMillisecond) / 1000);
+        if (second > currentSecond) {
+            /*
+            HTMLElement row = document.createElement("tr");
+            resultTableBody.appendChild(row);
+            HTMLElement secondCell = document.createElement("td");
+            row.appendChild(secondCell);
+            secondCell.appendChild(document.createTextNode(String.valueOf(second)));
+            HTMLElement timeCell = document.createElement("td");
+            row.appendChild(timeCell);
+            timeCell.appendChild(document.createTextNode(String.valueOf(timeSpentCalculating)));
+*/
+            timeSpentCalculating = 0;
+            currentSecond = second;
+        }
+        timeSpentCalculating += end - start;
+        render();
+        TIMER.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                makeStep();
+            }
+        }, scene.timeUntilNextStep());
+    }
+
+    private static void render() {
+        GraphicsContext2D context = HTML5Graphics.getOrCreate("benchmark-canvas");
+        context.setFillStyle(new Style.Color("white"));
+        context.setStrokeStyle(new Style.Color("grey"));
+        context.fillRect(0, 0, 600, 600);
+        context.save();
+        context.translate(0, 600);
+        context.scale(1, -1);
+        context.scale(100, 100);
+        context.setLineWidth(0.01);
+        for (Body body = scene.getWorld().getBodyList(); body != null; body = body.getNext()) {
+            Vec2 center = body.getPosition();
+            context.save();
+            context.translate(center.x, center.y);
+            context.rotate(body.getAngle());
+            for (Fixture fixture = body.getFixtureList(); fixture != null; fixture = fixture.getNext()) {
+                Shape shape = fixture.getShape();
+                if (shape.getType() == ShapeType.CIRCLE) {
+                    CircleShape circle = (CircleShape)shape;
+                    context.beginPath();
+                    context.arc(circle.m_p.x, circle.m_p.y, circle.getRadius(), 0, Math.PI * 2, true);
+                    context.closePath();
+                    context.stroke();
+                } else if (shape.getType() == ShapeType.POLYGON) {
+                    PolygonShape poly = (PolygonShape)shape;
+                    Vec2[] vertices = poly.getVertices();
+                    context.beginPath();
+                    context.moveTo(vertices[0].x, vertices[0].y);
+                    for (int i = 1; i < poly.getVertexCount(); ++i) {
+                        context.lineTo(vertices[i].x, vertices[i].y);
+                    }
+                    context.closePath();
+                    context.stroke();
+                }
+            }
+            context.restore();
+        }
+        context.restore();
     }
 }

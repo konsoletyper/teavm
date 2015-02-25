@@ -71,6 +71,11 @@
       <version>2.7.0</version>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>com.dukescript.canvas</groupId>
+      <artifactId>html5-canvas</artifactId>
+      <version>0.7.1</version>
+    </dependency>
   </dependencies>
 
   <build>
