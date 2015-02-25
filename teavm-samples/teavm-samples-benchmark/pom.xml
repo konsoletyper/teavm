@@ -33,16 +33,19 @@
       <groupId>org.teavm</groupId>
       <artifactId>teavm-classlib</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.teavm</groupId>
       <artifactId>teavm-jso</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.teavm</groupId>
       <artifactId>teavm-dom</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.jbox2d</groupId>
@@ -54,6 +57,13 @@
       <artifactId>jbox2d-library</artifactId>
       <version>2.2.1.1</version>
       <classifier>sources</classifier>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apidesign.bck2brwsr</groupId>
+      <artifactId>emul</artifactId>
+      <version>1.0-SNAPSHOT</version>
+      <classifier>rt</classifier>
     </dependency>
     <dependency>
       <groupId>com.google.gwt</groupId>
@@ -77,44 +87,96 @@
         </configuration>
       </plugin>
       <plugin>
-        <groupId>org.teavm</groupId>
-        <artifactId>teavm-maven-plugin</artifactId>
-        <version>${project.version}</version>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>2.5</version>
         <executions>
-          <execution>
-            <id>web-client</id>
-            <phase>prepare-package</phase>
-            <goals>
-              <goal>build-javascript</goal>
-            </goals>
-            <configuration>
-              <targetDirectory>${project.build.directory}/generated/js/teavm</targetDirectory>
-              <mainClass>org.teavm.samples.benchmark.teavm.BenchmarkStarter</mainClass>
-              <runtime>SEPARATE</runtime>
-              <minifying>false</minifying>
-              <debugInformationGenerated>true</debugInformationGenerated>
-            </configuration>
-          </execution>
+            <execution>
+                <phase>prepare-package</phase>
+                <goals>
+                    <goal>jar</goal>
+                </goals>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>org.teamvm.samples.benchmark.bck2brwsr.BenchmarkStarter</mainClass>
+                            <addClasspath>true</addClasspath>
+                            <classpathPrefix>lib/</classpathPrefix>
+                            <useUniqueVersions>false</useUniqueVersions>
+                        </manifest>
+                    </archive>
+                    <excludes>
+                        <exclude>**/gwt/*</exclude>
+                        <exclude>**/teavm/*</exclude>
+                    </excludes>
+                </configuration>
+            </execution>
         </executions>
       </plugin>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>gwt-maven-plugin</artifactId>
-        <version>2.7.0</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-            <configuration>
-             <optimizationLevel>9</optimizationLevel>
-             <compileSourcesArtifacts>
-               <item>org.jbox2d:jbox2d-library</item>
-             </compileSourcesArtifacts>
-            </configuration>
-          </execution>
-        </executions>
+          <groupId>org.teavm</groupId>
+          <artifactId>teavm-maven-plugin</artifactId>
+          <version>${project.version}</version>
+          <executions>
+              <execution>
+                  <id>web-client</id>
+                  <phase>prepare-package</phase>
+                  <goals>
+                      <goal>build-javascript</goal>
+                  </goals>
+                  <configuration>
+                      <targetDirectory>${project.build.directory}/generated/js/teavm</targetDirectory>
+                      <mainClass>org.teavm.samples.benchmark.teavm.BenchmarkStarter</mainClass>
+                      <runtime>SEPARATE</runtime>
+                      <minifying>false</minifying>
+                      <debugInformationGenerated>true</debugInformationGenerated>
+                  </configuration>
+              </execution>
+          </executions>
       </plugin>
+      <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>gwt-maven-plugin</artifactId>
+          <version>2.7.0</version>
+          <executions>
+              <execution>
+                  <goals>
+                      <goal>compile</goal>
+                  </goals>
+                  <configuration>
+                      <optimizationLevel>9</optimizationLevel>
+                      <compileSourcesArtifacts>
+                          <item>org.jbox2d:jbox2d-library</item>
+                      </compileSourcesArtifacts>
+                  </configuration>
+              </execution>
+          </executions>
+      </plugin>
+        <plugin>
+            <groupId>org.apidesign.bck2brwsr</groupId>
+            <artifactId>bck2brwsr-maven-plugin</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <executions>
+                <execution>
+                    <phase>prepare-package</phase>
+                    <goals>
+                        <goal>aot</goal>
+                    </goals>
+                </execution>
+            </executions>
+            <configuration>
+                <obfuscation>NONE</obfuscation>
+                <classPathPrefix>lib</classPathPrefix>
+                <mainJavaScript>${project.build.directory}/generated/js/b2b-benchmark.js</mainJavaScript>
+                <vm>${project.build.directory}/generated/js/bck2brwsr.js</vm>
+                <exports>
+                    <export>org.teavm.samples.benchmark.bck2brwsr.BenchmarkStarter</export>
+                    <export>org/jbox2d/collision/shapes/</export>
+                    <export>org/jbox2d/common/</export>
+                    <export>org/jbox2d/dynamics/</export>
+                    <export>org/jbox2d/dynamics/joints/</export>
+                </exports>
+            </configuration>
+        </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
