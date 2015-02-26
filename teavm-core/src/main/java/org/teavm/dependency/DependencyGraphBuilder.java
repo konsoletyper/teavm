@@ -496,8 +496,7 @@ class DependencyGraphBuilder {
         @Override
         public void monitorEnter(VariableReader objectRef) {
              MethodDependency methodDep = dependencyChecker.linkMethod(
-                        new MethodReference(Object.class, "monitorEnter", Object.class, void.class),
-                        new CallLocation(caller.getMethod(), currentLocation));
+                        new MethodReference(Object.class, "monitorEnter", Object.class, void.class), null);
              nodes[objectRef.getIndex()].connect(methodDep.getVariable(1));
              methodDep.use();
         }
@@ -505,8 +504,7 @@ class DependencyGraphBuilder {
         @Override
         public void monitorExit(VariableReader objectRef) {
             MethodDependency methodDep = dependencyChecker.linkMethod(
-                    new MethodReference(Object.class, "monitorExit", Object.class, void.class),
-                    new CallLocation(caller.getMethod(), currentLocation));
+                    new MethodReference(Object.class, "monitorExit", Object.class, void.class), null);
             nodes[objectRef.getIndex()].connect(methodDep.getVariable(1));
             methodDep.use();
         }

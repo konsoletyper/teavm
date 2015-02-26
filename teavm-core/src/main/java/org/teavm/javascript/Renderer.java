@@ -71,34 +71,6 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         boolean wasGrouped;
     }
 
-    @Override
-    public void visit(MonitorEnterStatement statement) {
-        try {
-            MethodReference monitorEnterRef = new MethodReference(
-                    Object.class, "monitorEnter", Object.class, void.class);
-            writer.append("return ").append(naming.getFullNameForAsync(monitorEnterRef)).append("(");
-            statement.getObjectRef().acceptVisitor(this);
-            writer.append(",").ws();
-            writer.append("$rt_continue($part_").append(statement.getAsyncTarget()).append(')');
-            writer.append(");").softNewLine();
-        } catch (IOException ex){
-            throw new RenderingException("IO error occured", ex);
-        }
-    }
-
-    @Override
-    public void visit(MonitorExitStatement statement) {
-        try {
-            MethodReference monitorExitRef = new MethodReference(
-                    Object.class, "monitorExit", Object.class, void.class);
-            writer.appendMethodBody(monitorExitRef).append("(");
-            statement.getObjectRef().acceptVisitor(this);
-            writer.append(");").softNewLine();
-        } catch (IOException ex){
-            throw new RenderingException("IO error occured", ex);
-        }
-    }
-
     private static class InjectorHolder {
         public final Injector injector;
 
@@ -796,6 +768,11 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         @Override
         public boolean isAsync(MethodReference method) {
             return asyncMethods.contains(method);
+        }
+
+        @Override
+        public boolean isAsyncFamily(MethodReference method) {
+            return asyncFamilyMethods.contains(method);
         }
 
         @Override
@@ -2006,6 +1983,41 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             throw new RenderingException("IO error occured", e);
         }
     }
+
+    @Override
+    public void visit(MonitorEnterStatement statement) {
+        if (!async) {
+            return;
+        }
+        try {
+            MethodReference monitorEnterRef = new MethodReference(
+                    Object.class, "monitorEnter", Object.class, void.class);
+            writer.append("return ").append(naming.getFullNameForAsync(monitorEnterRef)).append("(");
+            statement.getObjectRef().acceptVisitor(this);
+            writer.append(",").ws();
+            writer.append("$rt_continue($part_").append(statement.getAsyncTarget()).append(')');
+            writer.append(");").softNewLine();
+        } catch (IOException ex){
+            throw new RenderingException("IO error occured", ex);
+        }
+    }
+
+    @Override
+    public void visit(MonitorExitStatement statement) {
+        if (!async) {
+            return;
+        }
+        try {
+            MethodReference monitorExitRef = new MethodReference(
+                    Object.class, "monitorExit", Object.class, void.class);
+            writer.appendMethodBody(monitorExitRef).append("(");
+            statement.getObjectRef().acceptVisitor(this);
+            writer.append(");").softNewLine();
+        } catch (IOException ex){
+            throw new RenderingException("IO error occured", ex);
+        }
+    }
+
 
     private Injector getInjector(MethodReference ref) {
         InjectorHolder holder = injectorMap.get(ref);
