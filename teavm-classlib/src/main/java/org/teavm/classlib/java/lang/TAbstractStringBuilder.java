@@ -249,7 +249,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
             exp = 0;
             float digit = 1;
             for (int i = powersOfTen.length - 1; i >= 0; --i) {
-                if ((exp | bit) <= FLOAT_MAX_EXPONENT && powersOfTen[i] * digit  < value) {
+                if ((exp | bit) <= FLOAT_MAX_EXPONENT && powersOfTen[i] * digit <= value) {
                     digit *= powersOfTen[i];
                     exp |= bit;
                 }
@@ -290,7 +290,6 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
                 exp = 0;
             }
         }
-        sz += digits;
 
         // Extend buffer to store exponent
         if (exp != 0) {
@@ -302,6 +301,11 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
                 ++sz;
             }
         }
+
+        if (exp != 0 && digits == intPart) {
+            digits++;
+        }
+        sz += digits;
 
         // Print mantissa
         insertSpace(target, target + sz);
@@ -399,7 +403,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
             exp = 0;
             double digit = 1;
             for (int i = doublePowersOfTen.length - 1; i >= 0; --i) {
-                if ((exp | bit) <= DOUBLE_MAX_EXPONENT && doublePowersOfTen[i] * digit  < value) {
+                if ((exp | bit) <= DOUBLE_MAX_EXPONENT && doublePowersOfTen[i] * digit <= value) {
                     digit *= doublePowersOfTen[i];
                     exp |= bit;
                 }
@@ -440,7 +444,6 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
                 exp = 0;
             }
         }
-        sz += digits;
 
         // Extend buffer to store exponent
         if (exp != 0) {
@@ -455,6 +458,11 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
                 ++sz;
             }
         }
+
+        if (exp != 0 && digits == intPart) {
+            digits++;
+        }
+        sz += digits;
 
         // Print mantissa
         insertSpace(target, target + sz);

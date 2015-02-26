@@ -444,10 +444,6 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                 } else {
                     sourceWriter.append(asyncMethod ? naming.getFullNameForAsync(ref) : naming.getFullNameFor(ref));
                 }
-
-                if (wrapAsync) {
-                    sourceWriter.append(")");
-                }
                 sourceWriter.append(";").newLine();
             }
             for (Map.Entry<String, String> entry : exportedClasses.entrySet()) {

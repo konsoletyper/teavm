@@ -226,6 +226,37 @@ public class StringBuilderTest {
     }
 
     @Test
+    public void powTenDoubleAppended() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(10.0);
+        assertEquals("10.0", sb.toString());
+        sb.setLength(0);
+        sb.append(20.0);
+        assertEquals("20.0", sb.toString());
+        sb.setLength(0);
+        sb.append(100.0);
+        assertEquals("100.0", sb.toString());
+        sb.setLength(0);
+        sb.append(1000.0);
+        assertEquals("1000.0", sb.toString());
+        sb.setLength(0);
+        sb.append(0.1);
+        assertEquals("0.1", sb.toString());
+        sb.setLength(0);
+        sb.append(0.01);
+        assertEquals("0.01", sb.toString());
+        sb.setLength(0);
+        sb.append(1e20);
+        assertEquals("1.0E20", sb.toString());
+        sb.setLength(0);
+        sb.append(2e20);
+        assertEquals("2.0E20", sb.toString());
+        sb.setLength(0);
+        sb.append(1e-12);
+        assertEquals("1.0E-12", sb.toString());
+    }
+
+    @Test
     public void negativeDoubleAppended() {
         StringBuilder sb = new StringBuilder();
         sb.append(-1.23456789E150);
