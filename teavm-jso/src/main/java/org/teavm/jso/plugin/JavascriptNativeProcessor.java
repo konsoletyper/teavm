@@ -184,7 +184,7 @@ class JavascriptNativeProcessor {
                 }
                 replacement.clear();
                 MethodReader method = getMethod(invoke.getMethod());
-                if (method.hasModifier(ElementModifier.STATIC)) {
+                if (method == null || method.hasModifier(ElementModifier.STATIC)) {
                     continue;
                 }
                 if (method.hasModifier(ElementModifier.FINAL)) {

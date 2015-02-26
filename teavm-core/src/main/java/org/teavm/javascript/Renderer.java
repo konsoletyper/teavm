@@ -1094,6 +1094,14 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
 
     @Override
     public void visit(InitClassStatement statement) {
+        ClassReader cls = classSource.get(statement.getClassName());
+        if (cls == null) {
+            return;
+        }
+        MethodReader method = cls.getMethod(new MethodDescriptor("<clinit>", void.class));
+        if (method == null) {
+            return;
+        }
         try {
             debugEmitter.emitStatementStart();
             if (statement.getLocation() != null) {
@@ -1310,7 +1318,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     exitPriority();
                     break;
                 case NEGATE:
-                    enterPriority(Priority.UNARY, Associativity.RIGHT, true);
+                    enterPriority(Priority.MULTIPLICATION, Associativity.RIGHT, true);
                     writer.append("-");
                     expr.getOperand().acceptVisitor(this);
                     exitPriority();
@@ -1425,7 +1433,14 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             if (expr.getLocation() != null) {
                 pushLocation(expr.getLocation());
             }
-            writer.append(constantToString(expr.getValue()));
+            String str = constantToString(expr.getValue());
+            if (str.startsWith("-")) {
+                enterPriority(Priority.MULTIPLICATION, Associativity.RIGHT, true);
+            }
+            writer.append(str);
+            if (str.startsWith("-")) {
+                exitPriority();
+            }
             if (expr.getLocation() != null) {
                 popLocation();
             }
