@@ -21,8 +21,8 @@ import org.teavm.dependency.*;
 import org.teavm.javascript.ast.ConstantExpr;
 import org.teavm.javascript.ast.Expr;
 import org.teavm.javascript.ast.InvocationExpr;
-import org.teavm.javascript.ni.Injector;
-import org.teavm.javascript.ni.InjectorContext;
+import org.teavm.javascript.spi.Injector;
+import org.teavm.javascript.spi.InjectorContext;
 import org.teavm.jso.JS;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReader;
@@ -88,6 +88,9 @@ public class JSNativeGenerator implements Injector, DependencyPlugin {
                 }
                 writer.append("))");
                 break;
+            case "marshall":
+                context.writeExpr(context.getArgument(0));
+                break;
             case "wrap":
                 if (methodRef.getDescriptor().parameterType(0).isObject("java.lang.String")) {
                     writer.append("$rt_ustr(");
@@ -123,7 +126,7 @@ public class JSNativeGenerator implements Injector, DependencyPlugin {
                 for (int i = 0; i < method.getReference().parameterCount(); ++i) {
                     method.getVariable(i).addConsumer(new DependencyConsumer() {
                         @Override public void consume(DependencyAgentType type) {
-                            achieveFunctorMethods(agent, type.getName(), method, location);
+                            achieveFunctorMethods(agent, type.getName(), method);
                         }
                     });
                 }
@@ -134,15 +137,14 @@ public class JSNativeGenerator implements Injector, DependencyPlugin {
         }
     }
 
-    private void achieveFunctorMethods(DependencyAgent agent, String type, MethodDependency caller,
-            CallLocation location) {
+    private void achieveFunctorMethods(DependencyAgent agent, String type, MethodDependency caller) {
         if (caller.isMissing()) {
             return;
         }
         ClassReader cls = agent.getClassSource().get(type);
         if (cls != null) {
             for (MethodReader method : cls.getMethods()) {
-                agent.linkMethod(method.getReference(), location).use();
+                agent.linkMethod(method.getReference(), null).use();
             }
         }
     }

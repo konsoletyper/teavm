@@ -17,11 +17,13 @@ package org.teavm.jso.plugin;
 
 import java.util.*;
 import org.teavm.diagnostics.Diagnostics;
-import org.teavm.javascript.ni.GeneratedBy;
-import org.teavm.javascript.ni.PreserveOriginalName;
+import org.teavm.javascript.spi.GeneratedBy;
+import org.teavm.javascript.spi.Sync;
 import org.teavm.jso.*;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
+import org.teavm.model.util.InstructionVariableMapper;
+import org.teavm.model.util.ProgramUtils;
 
 /**
  *
@@ -40,6 +42,18 @@ class JavascriptNativeProcessor {
         nativeRepos = new NativeJavascriptClassRepository(classSource);
     }
 
+    public ClassReaderSource getClassSource() {
+        return classSource;
+    }
+
+    public boolean isNative(String className) {
+        return nativeRepos.isJavaScriptClass(className);
+    }
+
+    public boolean isNativeImplementation(String className) {
+        return nativeRepos.isJavaScriptImplementation(className);
+    }
+
     public void setDiagnostics(Diagnostics diagnostics) {
         this.diagnostics = diagnostics;
     }
@@ -49,12 +63,6 @@ class JavascriptNativeProcessor {
         for (String iface : cls.getInterfaces()) {
             if (nativeRepos.isJavaScriptClass(iface)) {
                 addPreservedMethods(iface, preservedMethods);
-            }
-        }
-        for (MethodHolder method : cls.getMethods()) {
-            if (preservedMethods.contains(method.getDescriptor()) &&
-                    method.getAnnotations().get(PreserveOriginalName.class.getName()) == null) {
-                method.getAnnotations().add(new AnnotationHolder(PreserveOriginalName.class.getName()));
             }
         }
     }
@@ -67,6 +75,97 @@ class JavascriptNativeProcessor {
         for (String superIfaceName : iface.getInterfaces()) {
             addPreservedMethods(superIfaceName, methods);
         }
+    }
+
+    public void processFinalMethods(ClassHolder cls) {
+        // TODO: don't allow final methods to override anything
+        for (MethodHolder method : cls.getMethods().toArray(new MethodHolder[0])) {
+            if (method.hasModifier(ElementModifier.FINAL) && method.getProgram() != null) {
+                ValueType[] staticSignature = getStaticSignature(method.getReference());
+                MethodHolder callerMethod = new MethodHolder(new MethodDescriptor(method.getName() + "$static",
+                        staticSignature));
+                callerMethod.getModifiers().add(ElementModifier.STATIC);
+                final Program program = ProgramUtils.copy(method.getProgram());
+                program.createVariable();
+                InstructionVariableMapper variableMapper = new InstructionVariableMapper() {
+                    @Override protected Variable map(Variable var) {
+                        return program.variableAt(var.getIndex() + 1);
+                    }
+                };
+                for (int i = program.variableCount() - 1; i > 0; --i) {
+                    program.variableAt(i).getDebugNames().addAll(program.variableAt(i - 1).getDebugNames());
+                    program.variableAt(i - 1).getDebugNames().clear();
+                }
+                for (int i = 0; i < program.basicBlockCount(); ++i) {
+                    BasicBlock block = program.basicBlockAt(i);
+                    for (Instruction insn : block.getInstructions()) {
+                        insn.acceptVisitor(variableMapper);
+                    }
+                    for (Phi phi : block.getPhis()) {
+                        phi.setReceiver(program.variableAt(phi.getReceiver().getIndex() + 1));
+                        for (Incoming incoming : phi.getIncomings()) {
+                            incoming.setValue(program.variableAt(incoming.getValue().getIndex() + 1));
+                        }
+                    }
+                    for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                        if (tryCatch.getExceptionVariable() != null) {
+                            tryCatch.setExceptionVariable(program.variableAt(
+                                    tryCatch.getExceptionVariable().getIndex() + 1));
+                        }
+                    }
+                }
+                callerMethod.setProgram(program);
+                cls.addMethod(callerMethod);
+            }
+        }
+    }
+
+    public void makeSync(ClassHolder cls) {
+        Set<MethodDescriptor> methods = new HashSet<>();
+        findInheritedMethods(cls, methods, new HashSet<String>());
+        for (MethodHolder method : cls.getMethods()) {
+            if (methods.contains(method.getDescriptor()) && method.getAnnotations().get(Sync.class.getName()) == null) {
+                AnnotationHolder annot = new AnnotationHolder(Sync.class.getName());
+                method.getAnnotations().add(annot);
+            }
+        }
+    }
+
+    private void findInheritedMethods(ClassReader cls, Set<MethodDescriptor> methods, Set<String> visited) {
+        if (!visited.add(cls.getName())) {
+            return;
+        }
+        if (isNative(cls.getName())) {
+            for (MethodReader method : cls.getMethods()) {
+                if (!method.hasModifier(ElementModifier.STATIC) && !method.hasModifier(ElementModifier.FINAL) &&
+                        method.getLevel() != AccessLevel.PRIVATE) {
+                    methods.add(method.getDescriptor());
+                }
+            }
+        } else if (isNativeImplementation(cls.getName())) {
+            if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
+                ClassReader parentCls = classSource.get(cls.getParent());
+                if (parentCls != null) {
+                    findInheritedMethods(parentCls, methods, visited);
+                }
+            }
+            for (String iface : cls.getInterfaces()) {
+                ClassReader parentCls = classSource.get(iface);
+                if (parentCls != null) {
+                    findInheritedMethods(parentCls, methods, visited);
+                }
+            }
+        }
+    }
+
+    private static ValueType[] getStaticSignature(MethodReference method) {
+        ValueType[] signature = method.getSignature();
+        ValueType[] staticSignature = new ValueType[signature.length + 1];
+        for (int i = 0; i < signature.length; ++i) {
+            staticSignature[i + 1] = signature[i];
+        }
+        staticSignature[0] = ValueType.object(method.getClassName());
+        return staticSignature;
     }
 
     public void processProgram(MethodHolder methodToProcess) {
@@ -85,6 +184,17 @@ class JavascriptNativeProcessor {
                 }
                 replacement.clear();
                 MethodReader method = getMethod(invoke.getMethod());
+                if (method == null || method.hasModifier(ElementModifier.STATIC)) {
+                    continue;
+                }
+                if (method.hasModifier(ElementModifier.FINAL)) {
+                    invoke.setMethod(new MethodReference(method.getOwnerName(), method.getName() + "$static",
+                            getStaticSignature(method.getReference())));
+                    invoke.setType(InvocationType.SPECIAL);
+                    invoke.getArguments().add(0, invoke.getInstance());
+                    invoke.setInstance(null);
+                    continue;
+                }
                 CallLocation callLocation = new CallLocation(methodToProcess.getReference(), insn.getLocation());
                 if (method.getAnnotations().get(JSProperty.class.getName()) != null) {
                     if (isProperGetter(method.getDescriptor())) {

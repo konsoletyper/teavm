@@ -16,7 +16,7 @@
 package org.teavm.classlib.java.lang;
 
 import org.teavm.classlib.java.io.TSerializable;
-import org.teavm.javascript.ni.Rename;
+import org.teavm.javascript.spi.Rename;
 
 /**
  *
@@ -61,7 +61,7 @@ public abstract class TEnum<E extends TEnum<E>> extends TObject implements TComp
 
     @SuppressWarnings("unchecked")
     public final TClass<E> getDeclaringClass() {
-        return (TClass<E>)TClass.wrapClass(getClass());
+        return (TClass<E>)(Object)getClass();
     }
 
     @Override

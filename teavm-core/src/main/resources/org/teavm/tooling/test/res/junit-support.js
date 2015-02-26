@@ -13,7 +13,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-JUnitServer = function() {
+"use strict";
+function JUnitServer() {
     this.tree = new Tree(document.getElementById("test-tree"));
     this.totalTimeSpent = 0;
     this.expectedExceptions = [];
@@ -113,11 +114,10 @@ JUnitServer.prototype.runTest = function(node, callback) {
         this.currentTestNode = node;
         var self = this;
         this.loadCode(node.testCase.script, node.testCase.additionalScripts, function() {
-            messageHandler = function(event) {
+            function messageHandler(event) {
                 window.removeEventListener("message", messageHandler);
                 var timeSpent = new Date().getTime() - startTime;
-                node.timeIndicator.appendChild(document.createTextNode(
-                        "(" + (timeSpent / 1000).toFixed(3) + ")"));
+                node.timeIndicator.appendChild(document.createTextNode("(" + (timeSpent / 1000).toFixed(3) + ")"));
                 self.handleEvent(JSON.parse(event.data), callback);
             };
             window.addEventListener("message", messageHandler);
@@ -134,8 +134,7 @@ JUnitServer.prototype.runTest = function(node, callback) {
                     break;
                 }
             }
-            node.indicator.className = "complete-indicator " +
-                    (node.success ? "successfull" : "failed");
+            node.indicator.className = "complete-indicator " + (node.success ? "successfull" : "failed");
             if (!node.success) {
                 node.open();
             }
@@ -253,7 +252,7 @@ JUnitServer.prototype.cleanupNode = function(node) {
     }
 }
 
-Tree = function(container) {
+function Tree(container) {
     this.container = container;
     this.nodes = [];
     this.selectedNode = null;
@@ -288,7 +287,7 @@ Tree.prototype.getNodes = function() {
 Tree.prototype.addSelectionListener = function(listener) {
     this.selectionListeners.push(listener);
 }
-TreeNode = function(elem, content, button, children, tree) {
+function TreeNode(elem, content, button, children, tree) {
     this.elem = elem;
     this.content = content;
     this.button = button;
@@ -367,7 +366,7 @@ TreeNode.prototype.select = function() {
     }
 }
 
-JUnitClient = {};
+var JUnitClient = {};
 JUnitClient.run = function() {
     var handler = window.addEventListener("message", function() {
         window.removeEventListener("message", handler);
@@ -375,22 +374,37 @@ JUnitClient.run = function() {
         try {
             var instance = new TestClass();
             initInstance(instance);
-            runTest(instance);
-            message.status = "ok";
+            runTest(instance, function(restore) {
+                try {
+                    var result = restore();
+                    message.status = "ok";
+                } catch (e) {
+                    JUnitClient.makeErrorMessage(message, e);
+                }
+                window.parent.postMessage(JSON.stringify(message), "*");
+            });
         } catch (e) {
-            message.status = "exception";
-            if (e.$javaException && e.$javaException.constructor.$meta) {
-                message.exception = e.$javaException.constructor.$meta.name;
-                message.stack = e.$javaException.constructor.$meta.name + ": ";
-                var exceptionMessage = extractException(e.$javaException);
-                message.stack += exceptionMessage ? $rt_ustr(exceptionMessage) : "";
-                message.stack += "\n" + e.stack;
-            } else {
-                message.stack = e.stack;
-            }
+            JUnitClient.makeErrorMessage(message, e);
+            window.parent.postMessage(JSON.stringify(message), "*");
         }
-        window.parent.postMessage(JSON.stringify(message), "*");
     });
+}
+JUnitClient.makeErrorMessage = function(message, e) {
+    message.status = "exception";
+    var stack = "";
+    while (e instanceof TeaVMAsyncError) {
+        stack += e.message + "\n" + e.stack + "\n";
+        e = e.cause;
+    }
+    if (e.$javaException && e.$javaException.constructor.$meta) {
+        message.exception = e.$javaException.constructor.$meta.name;
+        message.stack = e.$javaException.constructor.$meta.name + ": ";
+        var exceptionMessage = extractException(e.$javaException);
+        message.stack += exceptionMessage ? $rt_ustr(exceptionMessage) : "";
+        message.stack += e.stack + "\n" + stack;
+    } else {
+        message.stack = stack;
+    }
 }
 JUnitClient.reportError = function(error) {
     var handler = window.addEventListener("message", function() {

@@ -21,7 +21,7 @@ import org.teavm.classlib.java.lang.TException;
 import org.teavm.classlib.java.lang.TIllegalArgumentException;
 import org.teavm.classlib.java.lang.TNullPointerException;
 import org.teavm.classlib.java.lang.TString;
-import org.teavm.javascript.ni.Rename;
+import org.teavm.javascript.spi.Rename;
 
 /**
  * A {@code URISyntaxException} will be thrown if some information could not be parsed

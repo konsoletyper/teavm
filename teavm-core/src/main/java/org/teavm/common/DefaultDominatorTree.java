@@ -21,42 +21,42 @@ package org.teavm.common;
  */
 class DefaultDominatorTree implements DominatorTree {
     private LCATree lcaTree;
+    private int[] indexes;
     private int[] nodes;
-    private int[] unodes;
 
     public DefaultDominatorTree(int[] dominators, int[] vertices) {
         lcaTree = new LCATree(dominators.length + 1);
+        indexes = new int[dominators.length + 1];
         nodes = new int[dominators.length + 1];
-        unodes = new int[dominators.length + 1];
-        nodes[0] = -1;
+        indexes[0] = -1;
         for (int i = 0; i < dominators.length; ++i) {
             int v = vertices[i];
             if (v < 0) {
                 continue;
             }
-            int dom = nodes[dominators[v] + 1];
+            int dom = indexes[dominators[v] + 1];
             int node = lcaTree.addNode(dom);
-            nodes[v + 1] = node;
-            unodes[node] = v;
+            indexes[v + 1] = node;
+            nodes[node] = v;
         }
     }
 
     @Override
     public boolean directlyDominates(int a, int b) {
-        a = nodes[a + 1];
-        b = nodes[b + 1];
+        a = indexes[a + 1];
+        b = indexes[b + 1];
         return lcaTree.lcaOf(a, b) == a;
     }
 
     @Override
     public int commonDominatorOf(int a, int b) {
-        return unodes[lcaTree.lcaOf(nodes[a + 1], nodes[b + 1])];
+        return nodes[lcaTree.lcaOf(indexes[a + 1], indexes[b + 1])];
     }
 
     @Override
     public boolean dominates(int a, int b) {
-        a = nodes[a + 1];
-        b = nodes[b + 1];
+        a = indexes[a + 1];
+        b = indexes[b + 1];
         return lcaTree.lcaOf(a, b) == a;
     }
 
@@ -65,7 +65,13 @@ class DefaultDominatorTree implements DominatorTree {
         if (a == 0) {
             return -1;
         }
-        int result = lcaTree.parentOf(nodes[a + 1]);
-        return result >= 0 ? unodes[result] : -1;
+        int result = lcaTree.parentOf(indexes[a + 1]);
+        return result >= 0 ? nodes[result] : -1;
+    }
+
+    @Override
+    public int levelOf(int a) {
+        int index = indexes[a];
+        return lcaTree.depthOf(index);
     }
 }

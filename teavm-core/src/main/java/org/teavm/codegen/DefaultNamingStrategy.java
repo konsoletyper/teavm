@@ -57,45 +57,49 @@ public class DefaultNamingStrategy implements NamingStrategy {
 
     @Override
     public String getNameFor(MethodReference method) {
-        MethodReference origMethod = method;
-        method = getRealMethod(method);
-        if (method == null) {
-            throw new NamingException("Can't provide name for method as it was not found: " + origMethod);
+        return getNameFor(method, 'S');
+    }
+
+    @Override
+    public String getNameForAsync(MethodReference method) throws NamingException {
+        return getNameFor(method, 'A');
+    }
+
+    private String getNameFor(MethodReference method, char classifier) {
+        String key = classifier + method.getDescriptor().toString();
+        String alias = aliases.get(key);
+        if (alias == null) {
+            alias = aliasProvider.getAlias(method);
+            aliases.put(key, alias);
         }
-        ClassReader clsHolder = classSource.get(method.getClassName());
-        MethodReader methodHolder = clsHolder.getMethod(method.getDescriptor());
-        if (methodHolder.hasModifier(ElementModifier.STATIC) ||
-                method.getDescriptor().getName().equals("<init>") ||
-                methodHolder.getLevel() == AccessLevel.PRIVATE) {
-            String key = method.toString();
-            String alias = privateAliases.get(key);
-            if (alias == null) {
-                alias = aliasProvider.getAlias(method);
-                privateAliases.put(key, alias);
-            }
-            return alias;
-        } else {
-            String key = method.getDescriptor().toString();
-            String alias = aliases.get(key);
-            if (alias == null) {
-                alias = aliasProvider.getAlias(method);
-                aliases.put(key, alias);
-            }
-            return alias;
-        }
+        return alias;
     }
 
     @Override
     public String getFullNameFor(MethodReference method) throws NamingException {
+        return getFullNameFor(method, 'S');
+    }
+
+    @Override
+    public String getFullNameForAsync(MethodReference method) throws NamingException {
+        return getFullNameFor(method, 'A');
+    }
+
+    @Override
+    public String getNameForInit(MethodReference method) throws NamingException {
+        return getFullNameFor(method, 'I');
+    }
+
+    private String getFullNameFor(MethodReference method, char classifier) throws NamingException {
         MethodReference originalMethod = method;
-        if (!minifying) {
-            return getNameFor(method.getClassName()) + "_" + getNameFor(method);
-        }
         method = getRealMethod(method);
         if (method == null) {
             throw new NamingException("Can't provide name for method as it was not found: " + originalMethod);
         }
-        String key = method.toString();
+        if (!minifying) {
+            return getNameFor(method.getClassName()) + "_" + getNameFor(method, classifier);
+        }
+        String key = classifier + method.toString();
         String alias = privateAliases.get(key);
         if (alias == null) {
             alias = aliasProvider.getAlias(method);

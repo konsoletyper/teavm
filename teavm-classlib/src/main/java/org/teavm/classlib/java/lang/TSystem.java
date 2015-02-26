@@ -18,7 +18,7 @@ package org.teavm.classlib.java.lang;
 import org.teavm.classlib.java.io.TPrintStream;
 import org.teavm.classlib.java.lang.reflect.TArray;
 import org.teavm.dependency.PluggableDependency;
-import org.teavm.javascript.ni.GeneratedBy;
+import org.teavm.javascript.spi.GeneratedBy;
 
 /**
  *
@@ -47,6 +47,15 @@ public final class TSystem extends TObject {
             }
             if (srcType != targetType) {
                 if (!srcType.isPrimitive() && !targetType.isPrimitive()) {
+                    Object[] srcArray = (Object[])(Object)src;
+                    int pos = srcPos;
+                    for (int i = 0; i < length; ++i) {
+                        Object elem = srcArray[pos++];
+                        if (!targetType.isInstance(elem)) {
+                            doArrayCopy(src, srcPos, dest, destPos, i);
+                            throw new TArrayStoreException();
+                        }
+                    }
                     doArrayCopy(src, srcPos, dest, destPos, length);
                     return;
                 } else if (!srcType.isPrimitive() || !targetType.isPrimitive()) {
@@ -93,9 +102,9 @@ public final class TSystem extends TObject {
         return currentTimeMillis() * 10000000;
     }
 
-    @GeneratedBy(SystemNativeGenerator.class)
-    @PluggableDependency(SystemNativeGenerator.class)
-    public static native int identityHashCode(Object x);
+    public static int identityHashCode(Object x) {
+        return ((TObject)x).identity();
+    }
 
     public static TString lineSeparator() {
         return TString.wrap("\n");

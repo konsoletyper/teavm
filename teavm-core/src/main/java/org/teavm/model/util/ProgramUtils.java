@@ -92,21 +92,8 @@ public final class ProgramUtils {
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlockReader block = program.basicBlockAt(i);
             BasicBlock blockCopy = copy.basicBlockAt(i);
-            for (int j = 0; j < block.instructionCount(); ++j) {
-                block.readInstruction(j, insnCopier);
-                blockCopy.getInstructions().add(insnCopier.copy);
-            }
-            for (PhiReader phi : block.readPhis()) {
-                Phi phiCopy = new Phi();
-                phiCopy.setReceiver(copy.variableAt(phi.getReceiver().getIndex()));
-                for (IncomingReader incoming : phi.readIncomings()) {
-                    Incoming incomingCopy = new Incoming();
-                    incomingCopy.setSource(copy.basicBlockAt(incoming.getSource().getIndex()));
-                    incomingCopy.setValue(copy.variableAt(incoming.getValue().getIndex()));
-                    phiCopy.getIncomings().add(incomingCopy);
-                }
-                blockCopy.getPhis().add(phiCopy);
-            }
+            blockCopy.getInstructions().addAll(copyInstructions(block, 0, block.instructionCount(), copy));
+            blockCopy.getPhis().addAll(copyPhis(block, copy));
             for (TryCatchBlockReader tryCatch : block.readTryCatchBlocks()) {
                 TryCatchBlock tryCatchCopy = new TryCatchBlock();
                 tryCatchCopy.setExceptionType(tryCatch.getExceptionType());
@@ -116,6 +103,46 @@ public final class ProgramUtils {
             }
         }
         return copy;
+    }
+
+    public static List<Instruction> copyInstructions(BasicBlockReader block, int from, int to, Program target) {
+        List<Instruction> result = new ArrayList<>();
+        InstructionCopyReader copyReader = new InstructionCopyReader();
+        copyReader.programCopy = target;
+        for (int i = from; i < to; ++i) {
+            block.readInstruction(i, copyReader);
+            copyReader.copy.setLocation(copyReader.location);
+            result.add(copyReader.copy);
+        }
+        return result;
+    }
+
+    public static List<Phi> copyPhis(BasicBlockReader block, Program target) {
+        List<Phi> result = new ArrayList<>();
+        for (PhiReader phi : block.readPhis()) {
+            Phi phiCopy = new Phi();
+            phiCopy.setReceiver(target.variableAt(phi.getReceiver().getIndex()));
+            for (IncomingReader incoming : phi.readIncomings()) {
+                Incoming incomingCopy = new Incoming();
+                incomingCopy.setSource(target.basicBlockAt(incoming.getSource().getIndex()));
+                incomingCopy.setValue(target.variableAt(incoming.getValue().getIndex()));
+                phiCopy.getIncomings().add(incomingCopy);
+            }
+            result.add(phiCopy);
+        }
+        return result;
+    }
+
+    public static List<TryCatchBlock> copyTryCatches(BasicBlockReader block, Program target) {
+        List<TryCatchBlock> result = new ArrayList<>();
+        for (TryCatchBlockReader tryCatch : block.readTryCatchBlocks()) {
+            TryCatchBlock tryCatchCopy = new TryCatchBlock();
+            tryCatchCopy.setExceptionType(tryCatch.getExceptionType());
+            tryCatchCopy.setExceptionVariable(target.variableAt(tryCatch.getExceptionVariable().getIndex()));
+            tryCatchCopy.setHandler(target.basicBlockAt(tryCatch.getHandler().getIndex()));
+            result.add(tryCatchCopy);
+        }
+        return result;
     }
 
     private static class InstructionCopyReader implements InstructionReader {
@@ -465,6 +492,22 @@ public final class ProgramUtils {
             NullCheckInstruction insnCopy = new NullCheckInstruction();
             insnCopy.setReceiver(copyVar(receiver));
             insnCopy.setValue(copyVar(value));
+            copy = insnCopy;
+            copy.setLocation(location);
+        }
+
+        @Override
+        public void monitorEnter(VariableReader objectRef) {
+            MonitorEnterInstruction insnCopy = new MonitorEnterInstruction();
+            insnCopy.setObjectRef(copyVar(objectRef));
+            copy = insnCopy;
+            copy.setLocation(location);
+        }
+
+        @Override
+        public void monitorExit(VariableReader objectRef) {
+            MonitorExitInstruction insnCopy = new MonitorExitInstruction();
+            insnCopy.setObjectRef(copyVar(objectRef));
             copy = insnCopy;
             copy.setLocation(location);
         }

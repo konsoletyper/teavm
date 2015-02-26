@@ -310,5 +310,13 @@ public class MissingItemsProcessor {
         @Override
         public void visit(EmptyInstruction insn) {
         }
+
+        @Override
+        public void visit(MonitorEnterInstruction insn) {
+        }
+
+        @Override
+        public void visit(MonitorExitInstruction insn) {
+        }
     };
 }

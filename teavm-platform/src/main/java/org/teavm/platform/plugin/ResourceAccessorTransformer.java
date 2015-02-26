@@ -35,7 +35,9 @@ class ResourceAccessorTransformer implements ClassHolderTransformer {
         if (cls.getName().equals(ResourceAccessor.class.getName())) {
             ResourceAccessorGenerator generator = new ResourceAccessorGenerator();
             for (MethodHolder method : cls.getMethods()) {
-                vm.add(method.getReference(), generator);
+                if (!method.getName().equals("<init>")) {
+                    vm.add(method.getReference(), generator);
+                }
             }
         }
     }

@@ -16,6 +16,7 @@
 package org.teavm.model;
 
 import java.util.*;
+import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.InstructionReader;
 
 /**
@@ -66,7 +67,19 @@ public class BasicBlock implements BasicBlockReader {
         @Override
         public void add(int index, Instruction e) {
             if (e.getBasicBlock() != null) {
-                throw new IllegalArgumentException("This instruction is in some basic block");
+                if (e instanceof AssignInstruction){
+                    AssignInstruction ae = (AssignInstruction)e;
+                    System.out.println("Assignment "+ae.getReceiver()+" -> "+ae.getAssignee());
+                    System.out.println(ae.getReceiver().getDebugNames());
+                    System.out.println(ae.getReceiver().getIndex());
+                    System.out.println(ae.getReceiver().getProgram());
+                    System.out.println(ae.getAssignee().getDebugNames());
+                    System.out.println(ae.getAssignee().getIndex());
+                    System.out.println(ae.getAssignee().getProgram());
+                    
+                    System.out.println(ae.getBasicBlock().getInstructions());
+                }
+                throw new IllegalArgumentException("This instruction is in some basic block "+e+", "+e.getLocation());
             }
             e.setBasicBlock(BasicBlock.this);
             instructions.add(index, e);

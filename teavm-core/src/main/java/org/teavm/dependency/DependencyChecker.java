@@ -205,7 +205,9 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         boolean added = true;
         if (callLocation != null && callLocation.getMethod() != null) {
             DefaultCallGraphNode callGraphNode = callGraph.getNode(callLocation.getMethod());
-            added = addClassAccess(callGraphNode, className, callLocation.getSourceLocation());
+            if (!addClassAccess(callGraphNode, className, callLocation.getSourceLocation())) {
+                added = false;
+            }
         }
         if (!dep.isMissing() && added) {
             for (DependencyListener listener : listeners) {
@@ -222,13 +224,13 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         ClassReader cls = classSource.get(className);
         if (cls != null) {
             if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
-                return addClassAccess(node, cls.getParent(), loc);
+                addClassAccess(node, cls.getParent(), loc);
             }
             for (String iface : cls.getInterfaces()) {
-                return addClassAccess(node, iface, loc);
+                addClassAccess(node, iface, loc);
             }
         }
-        return false;
+        return true;
     }
 
     private ClassDependency createClassDependency(String className) {
@@ -249,6 +251,10 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     public MethodDependency linkMethod(MethodReference methodRef, CallLocation callLocation) {
         if (methodRef == null) {
             throw new IllegalArgumentException();
+        }
+        MethodReader methodReader = methodReaderCache.map(methodRef);
+        if (methodReader != null) {
+            methodRef = methodReader.getReference();
         }
         callGraph.getNode(methodRef);
         boolean added = true;
@@ -468,6 +474,12 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     @Override
     public MethodDependency getMethod(MethodReference methodRef) {
         return methodCache.getKnown(methodRef);
+    }
+
+    @Override
+    public MethodDependency getMethodImplementation(MethodReference methodRef) {
+        MethodReader method = methodReaderCache.map(methodRef);
+        return method != null ? methodCache.getKnown(method.getReference()) : null;
     }
 
     public void processDependencies() {

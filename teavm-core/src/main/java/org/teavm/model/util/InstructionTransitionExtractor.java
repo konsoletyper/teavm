@@ -204,4 +204,14 @@ public class InstructionTransitionExtractor implements InstructionVisitor {
     public void visit(NullCheckInstruction insn) {
         targets = null;
     }
+
+    @Override
+    public void visit(MonitorEnterInstruction insn) {
+        targets = null;
+    }
+
+    @Override
+    public void visit(MonitorExitInstruction insn) {
+        targets = null;
+    }
 }

@@ -36,7 +36,7 @@ class BuildTimeResourceWriterMethod implements BuildTimeResourceMethod {
             if (i > 0) {
                 writer.append(',').ws();
             }
-            ResourceWriterHelper.writeString(writer, propertyNames[i]);
+            ResourceWriterHelper.writeIdentifier(writer, propertyNames[i]);
             writer.ws().append(':').ws();
             ResourceWriterHelper.write(writer, proxy.data[i]);
         }

@@ -18,8 +18,8 @@ package org.teavm.classlib.java.lang.reflect;
 import java.io.IOException;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.dependency.*;
-import org.teavm.javascript.ni.Generator;
-import org.teavm.javascript.ni.GeneratorContext;
+import org.teavm.javascript.spi.Generator;
+import org.teavm.javascript.spi.GeneratorContext;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReader;
 import org.teavm.model.MethodDescriptor;
@@ -93,15 +93,14 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
     private void generateNewInstance(GeneratorContext context, SourceWriter writer) throws IOException {
         String type = context.getParameterName(1);
         String length = context.getParameterName(2);
-        writer.append("var cls = " + type + ".$data;").softNewLine();
-        writer.append("if (cls.primitive) {").softNewLine().indent();
+        writer.append("if (").append(type).append(".$meta.primitive) {").softNewLine().indent();
         for (String primitive : primitives) {
-            writer.append("if (cls == $rt_" + primitive.toLowerCase() + "cls()) {").indent().softNewLine();
+            writer.append("if (" + type + " == $rt_" + primitive.toLowerCase() + "cls()) {").indent().softNewLine();
             writer.append("return $rt_create" + primitive + "Array(" + length + ");").softNewLine();
             writer.outdent().append("}").softNewLine();
         }
         writer.outdent().append("} else {").indent().softNewLine();
-        writer.append("return $rt_createArray(cls, " + length + ")").softNewLine();
+        writer.append("return $rt_createArray(" + type + ", " + length + ")").softNewLine();
         writer.outdent().append("}").softNewLine();
     }
 

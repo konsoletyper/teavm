@@ -40,6 +40,8 @@ public interface DependencyInfo {
 
     MethodDependencyInfo getMethod(MethodReference methodRef);
 
+    MethodDependencyInfo getMethodImplementation(MethodReference methodRef);
+
     ClassDependencyInfo getClass(String className);
 
     CallGraph getCallGraph();

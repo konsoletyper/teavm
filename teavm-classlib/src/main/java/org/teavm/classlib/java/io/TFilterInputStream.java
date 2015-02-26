@@ -34,7 +34,7 @@ public class TFilterInputStream extends TInputStream {
     }
 
     @Override
-    public synchronized void mark(int readlimit) {
+    public void mark(int readlimit) {
         in.mark(readlimit);
     }
 

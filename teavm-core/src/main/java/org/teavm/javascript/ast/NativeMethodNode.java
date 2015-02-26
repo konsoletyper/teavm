@@ -15,7 +15,7 @@
  */
 package org.teavm.javascript.ast;
 
-import org.teavm.javascript.ni.Generator;
+import org.teavm.javascript.spi.Generator;
 import org.teavm.model.MethodReference;
 
 /**
@@ -24,6 +24,7 @@ import org.teavm.model.MethodReference;
  */
 public class NativeMethodNode extends MethodNode {
     private Generator generator;
+    private boolean async;
 
     public NativeMethodNode(MethodReference reference) {
         super(reference);
@@ -35,6 +36,15 @@ public class NativeMethodNode extends MethodNode {
 
     public void setGenerator(Generator generator) {
         this.generator = generator;
+    }
+
+    @Override
+    public boolean isAsync() {
+        return async;
+    }
+
+    public void setAsync(boolean async) {
+        this.async = async;
     }
 
     @Override

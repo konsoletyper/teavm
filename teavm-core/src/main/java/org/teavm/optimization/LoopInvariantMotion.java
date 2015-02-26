@@ -379,6 +379,16 @@ public class LoopInvariantMotion implements MethodOptimization {
         public void visit(NullCheckInstruction insn) {
             canMove = true;
         }
+
+        @Override
+        public void visit(MonitorEnterInstruction insn) {
+
+        }
+
+        @Override
+        public void visit(MonitorExitInstruction insn) {
+
+        }
     }
 
     private class CopyConstantVisitor implements InstructionVisitor {
@@ -560,6 +570,14 @@ public class LoopInvariantMotion implements MethodOptimization {
 
         @Override
         public void visit(NullCheckInstruction insn) {
+        }
+
+        @Override
+        public void visit(MonitorEnterInstruction insn) {
+        }
+
+        @Override
+        public void visit(MonitorExitInstruction insn) {
         }
     }
 }

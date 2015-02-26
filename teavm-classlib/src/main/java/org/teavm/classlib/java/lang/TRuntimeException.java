@@ -15,7 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
-import org.teavm.javascript.ni.Superclass;
+import org.teavm.javascript.spi.Superclass;
 
 /**
  *

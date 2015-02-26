@@ -130,15 +130,18 @@ function $rt_arraycls(cls) {
         }
         var name = "[" + cls.$meta.binaryName;
         arraycls.$meta = { item : cls, supertypes : [$rt_objcls()], primitive : false, superclass : $rt_objcls(),
-                name : name, binaryName : name };
+                name : name, binaryName : name, enum : false };
+        arraycls.classObject = null;
         cls.$array = arraycls;
     }
     return cls.$array;
 }
 function $rt_createcls() {
     return {
+        classObject : null,
         $meta : {
-            supertypes : []
+            supertypes : [],
+            superclass : null
         }
     };
 }
@@ -147,6 +150,8 @@ function $rt_createPrimitiveCls(name, binaryName) {
     cls.$meta.primitive = true;
     cls.$meta.name = name;
     cls.$meta.binaryName = binaryName;
+    cls.$meta.enum = false;
+    cls.$meta.item = null;
     return cls;
 }
 var $rt_booleanclsCache = null;
@@ -211,14 +216,6 @@ function $rt_voidcls() {
         $rt_voidclsCache = $rt_createPrimitiveCls("void", "V");
     }
     return $rt_voidclsCache;
-}
-function $rt_clinit(cls) {
-    if (cls.$clinit) {
-        var f = cls.$clinit;
-        delete cls.$clinit;
-        f();
-    }
-    return cls;
 }
 function $rt_init(cls, constructor, args) {
     var obj = new cls();
@@ -331,16 +328,6 @@ function $rt_assertNotNaN(value) {
     }
     return value;
 }
-function $rt_methodStubs(clinit, names) {
-    for (var i = 0; i < names.length; i = (i + 1) | 0) {
-        window[names[i]] = (function(name) {
-            return function() {
-                clinit();
-                return window[name].apply(window, arguments);
-            }
-        })(names[i]);
-    }
-}
 var $rt_stdoutBuffer = "";
 function $rt_putStdout(ch) {
     if (ch == 0xA) {
@@ -363,34 +350,128 @@ function $rt_putStderr(ch) {
         $rt_stderrBuffer += String.fromCharCode(ch);
     }
 }
-function $rt_declClass(cls, data) {
-    cls.$meta = {};
-    cls.$meta.superclass = data.superclass;
-    cls.$meta.supertypes = data.interfaces ? data.interfaces.slice() : [];
-    if (data.superclass) {
-        cls.$meta.supertypes.push(data.superclass);
-        cls.prototype = new data.superclass();
-    } else {
-        cls.prototype = new Object();
-    }
-    cls.$meta.name = data.name;
-    cls.$meta.binaryName = "L" + data.name + ";";
-    cls.$meta.enum = data.enum;
-    cls.prototype.constructor = cls;
-    cls.$clinit = data.clinit;
-}
-function $rt_virtualMethods(cls) {
-    for (var i = 1; i < arguments.length; i += 2) {
-        var name = arguments[i];
-        var func = arguments[i + 1];
-        if (typeof name === 'string') {
-            cls.prototype[name] = func;
+function $rt_metadata(data) {
+    for (var i = 0; i < data.length; i += 8) {
+        var cls = data[i + 0];
+        cls.$meta = {};
+        var m = cls.$meta;
+        m.name = data[i + 1];
+        m.binaryName = "L" + m.name + ";";
+        var superclass = data[i + 2];
+        m.superclass = superclass !== 0 ? superclass : null;
+        m.supertypes = data[i + 3];
+        if (m.superclass) {
+            m.supertypes.push(m.superclass);
+            cls.prototype = new m.superclass();
         } else {
-            for (var j = 0; j < name.length; ++j) {
-                cls.prototype[name[j]] = func;
+            cls.prototype = new Object();
+        }
+        var flags = data[i + 4];
+        m.enum = (flags & 1) != 0;
+        m.primitive = false;
+        m.item = null;
+        cls.prototype.constructor = cls;
+        cls.classObject = null;
+        var clinit = data[i + 5];
+        cls.$clinit = clinit !== 0 ? clinit : function() {};
+
+        var names = data[i + 6];
+        if (!(names instanceof Array)) {
+            names = [names];
+        }
+        for (var j = 0; j < names.length; j = (j + 1) | 0) {
+            window[names[j]] = (function(cls, name) {
+                return function() {
+                    var clinit = cls.$clinit;
+                    cls.$clinit = function() {};
+                    clinit();
+                    return window[name].apply(window, arguments);
+                }
+            })(cls, names[j]);
+        }
+
+        var virtualMethods = data[i + 7];
+        for (var j = 0; j < virtualMethods.length; j += 2) {
+            var name = virtualMethods[j + 0];
+            var func = virtualMethods[j + 1];
+            if (typeof name === 'string') {
+                name = [name];
+            }
+            for (var k = 0; k < name.length; ++k) {
+                cls.prototype[name[k]] = func;
             }
         }
     }
+}
+function $rt_asyncResult(value) {
+    return function() {
+        return value;
+    }
+}
+function $rt_asyncError(e) {
+    return function() {
+        throw new TeaVMAsyncError(e);
+    }
+}
+function $rt_staticAsyncAdapter(f) {
+    return function() {
+        var result;
+        var args = Array.prototype.slice.apply(arguments);
+        var $return = args.pop();
+        try {
+            result = f.apply(this, args);
+        } catch (e) {
+            return $return($rt_asyncError(e));
+        }
+        return $return($rt_asyncResult(result));
+    }
+}
+function $rt_asyncAdapter(f) {
+    return function() {
+        var result;
+        var args = Array.prototype.slice.apply(arguments);
+        var $return = args.pop();
+        args.unshift(this);
+        try {
+            result = f.apply(null, args);
+        } catch (e) {
+            return $return($rt_asyncError(e));
+        }
+        return $return($rt_asyncResult(result));
+    }
+}
+function $rt_rootInvocationAdapter(f) {
+    return function() {
+        var args = Array.prototype.slice.apply(arguments);
+        args.push(function(result) {
+            try {
+                result();
+            } catch (e) {
+                var prefix = "Exception occured %s at %o";
+                var hasWrappers = false;
+                while (e instanceof TeaVMAsyncError) {
+                    console.error(prefix, e.message, e.stack);
+                    e = e.cause;
+                    prefix = "Caused by %s at %o";
+                    hasWrappers = true;
+                }
+                console.error(!hasWrappers ? prefix : "Root cause is %s at %o", e.message, e.stack);
+            }
+        });
+        return f.apply(this, args);
+    }
+}
+function $rt_mainWrapper(f) {
+    return function(args) {
+        if (!args) {
+            args = [];
+        }
+        var javaArgs = $rt_createArray($rt_objcls(), args.length);
+        for (var i = 0; i < args.length; ++i) {
+            javaArgs.data[i] = $rt_str(args[i]);
+        }
+        $rt_rootInvocationAdapter(f)(javaArgs);
+    };
 }
 var $rt_stringPool_instance;
 function $rt_stringPool(strings) {
@@ -402,6 +483,41 @@ function $rt_stringPool(strings) {
 function $rt_s(index) {
     return $rt_stringPool_instance[index];
 }
+var $rt_continueCounter = 0;
+function $rt_continue(f) {
+   if ($rt_continueCounter++ == 10) {
+       $rt_continueCounter = 0;
+       return function() {
+           var self = this;
+           var args = arguments;
+           var thread = $rt_getThread();
+           setTimeout(function() {
+               $rt_setThread(thread);
+               f.apply(self, args);
+           }, 0);
+       };
+   } else {
+       return f;
+   }
+}
+function $rt_guardAsync(f, continuation) {
+    return function() {
+        try {
+            return f.apply(this, arguments);
+        } catch (e) {
+            return continuation($rt_asyncError(e));
+        }
+    }
+}
+function TeaVMAsyncError(cause) {
+    this.message = "Async error occured";
+    this.cause = cause;
+    if (cause) {
+       this.$javaException = cause.$javaException;
+    }
+}
+TeaVMAsyncError.prototype = new Error();
+TeaVMAsyncError.prototype.constructor = TeaVMAsyncError;
 
 function $dbg_repr(obj) {
     return obj.toString ? obj.toString() : "";

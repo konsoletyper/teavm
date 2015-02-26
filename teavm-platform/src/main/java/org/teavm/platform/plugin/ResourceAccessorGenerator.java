@@ -18,8 +18,8 @@ package org.teavm.platform.plugin;
 import java.io.IOException;
 import org.teavm.javascript.ast.ConstantExpr;
 import org.teavm.javascript.ast.Expr;
-import org.teavm.javascript.ni.Injector;
-import org.teavm.javascript.ni.InjectorContext;
+import org.teavm.javascript.spi.Injector;
+import org.teavm.javascript.spi.InjectorContext;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 

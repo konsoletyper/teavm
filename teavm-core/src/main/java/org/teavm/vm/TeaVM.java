@@ -26,10 +26,10 @@ import org.teavm.diagnostics.AccumulationDiagnostics;
 import org.teavm.diagnostics.ProblemProvider;
 import org.teavm.javascript.*;
 import org.teavm.javascript.ast.ClassNode;
-import org.teavm.javascript.ni.GeneratedBy;
-import org.teavm.javascript.ni.Generator;
-import org.teavm.javascript.ni.InjectedBy;
-import org.teavm.javascript.ni.Injector;
+import org.teavm.javascript.spi.GeneratedBy;
+import org.teavm.javascript.spi.Generator;
+import org.teavm.javascript.spi.InjectedBy;
+import org.teavm.javascript.spi.Injector;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 import org.teavm.model.util.*;
@@ -89,6 +89,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     private TeaVMProgressListener progressListener;
     private boolean cancelled;
     private ListableClassHolderSource writtenClasses;
+    private Set<MethodReference> asyncMethods = new HashSet<>();
+    private Set<MethodReference> asyncFamilyMethods = new HashSet<>();
 
     TeaVM(ClassReaderSource classSource, ClassLoader classLoader) {
         this.classSource = classSource;
@@ -333,7 +335,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                 return progressListener.progressReached(0) == TeaVMProgressFeedback.CONTINUE;
             }
         });
-        dependencyChecker.linkMethod(new MethodReference(Class.class, "createNew", Class.class), null).use();
+        dependencyChecker.linkMethod(new MethodReference(Class.class.getName(), "getClass",
+                ValueType.object("org.teavm.platform.PlatformClass"), ValueType.parse(Class.class)), null).use();
         dependencyChecker.linkMethod(new MethodReference(String.class, "<init>", char[].class, void.class),
                 null).use();
         dependencyChecker.linkMethod(new MethodReference(String.class, "getChars", int.class, int.class, char[].class,
@@ -344,6 +347,10 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         internDep.use();
         dependencyChecker.linkMethod(new MethodReference(String.class, "length", int.class), null).use();
         dependencyChecker.linkMethod(new MethodReference(Object.class, "clone", Object.class), null).use();
+        dependencyChecker.linkMethod(new MethodReference(Thread.class, "currentThread", Thread.class), null).use();
+        dependencyChecker.linkMethod(new MethodReference(Thread.class, "getMainThread", Thread.class), null).use();
+        dependencyChecker.linkMethod(
+                new MethodReference(Thread.class, "setCurrentThread", Thread.class, void.class), null).use();
         MethodDependency exceptionCons = dependencyChecker.linkMethod(new MethodReference(
                 NoClassDefFoundError.class, "<init>", String.class, void.class), null);
         exceptionCons.use();
@@ -395,8 +402,10 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         SourceWriterBuilder builder = new SourceWriterBuilder(naming);
         builder.setMinified(minifying);
         SourceWriter sourceWriter = builder.build(writer);
-        Renderer renderer = new Renderer(sourceWriter, classSet, classLoader, this);
+        Renderer renderer = new Renderer(sourceWriter, classSet, classLoader, this, asyncMethods, asyncFamilyMethods,
+                diagnostics);
         renderer.setProperties(properties);
+        renderer.setMinifying(minifying);
         if (debugEmitter != null) {
             int classIndex = 0;
             for (String className : classSet.getClassNames()) {
@@ -423,24 +432,23 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             }
             sourceWriter.append("\"use strict\";").newLine();
             renderer.renderRuntime();
-            for (ClassNode clsNode : clsNodes) {
-                ClassReader cls = classSet.get(clsNode.getName());
-                for (RendererListener listener : rendererListeners) {
-                    listener.beforeClass(cls);
-                }
-                renderer.render(clsNode);
-                for (RendererListener listener : rendererListeners) {
-                    listener.afterClass(cls);
-                }
-            }
+            renderer.render(clsNodes);
             renderer.renderStringPool();
             for (Map.Entry<String, TeaVMEntryPoint> entry : entryPoints.entrySet()) {
-                sourceWriter.append("var ").append(entry.getKey()).ws().append("=").ws()
-                        .appendMethodBody(entry.getValue().reference).append(";").softNewLine();
+                sourceWriter.append("var ").append(entry.getKey()).ws().append("=").ws();
+                MethodReference ref = entry.getValue().reference;
+                boolean asyncMethod = asyncMethods.contains(ref);
+                boolean wrapAsync = !asyncMethod && entry.getValue().isAsync();
+                if (wrapAsync) {
+                    sourceWriter.append("$rt_staticAsyncAdapter(").appendMethodBody(ref).append(')');
+                } else {
+                    sourceWriter.append(asyncMethod ? naming.getFullNameForAsync(ref) : naming.getFullNameFor(ref));
+                }
+                sourceWriter.append(";").newLine();
             }
             for (Map.Entry<String, String> entry : exportedClasses.entrySet()) {
                 sourceWriter.append("var ").append(entry.getKey()).ws().append("=").ws()
-                        .appendClass(entry.getValue()).append(";").softNewLine();
+                        .appendClass(entry.getValue()).append(";").newLine();
             }
             for (RendererListener listener : rendererListeners) {
                 listener.complete();
@@ -526,8 +534,13 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     }
 
     private List<ClassNode> modelToAst(ListableClassHolderSource classes) {
+        AsyncMethodFinder asyncFinder = new AsyncMethodFinder(dependencyChecker.getCallGraph(), diagnostics);
+        asyncFinder.find(classes);
+        asyncMethods.addAll(asyncFinder.getAsyncMethods());
+        asyncFamilyMethods.addAll(asyncFinder.getAsyncFamilyMethods());
+
         progressListener.phaseStarted(TeaVMPhase.DECOMPILATION, classes.getClassNames().size());
-        Decompiler decompiler = new Decompiler(classes, classLoader);
+        Decompiler decompiler = new Decompiler(classes, classLoader, asyncMethods, asyncFamilyMethods);
         decompiler.setRegularMethodCache(incremental ? astCache : null);
 
         for (Map.Entry<MethodReference, Generator> entry : methodGenerators.entrySet()) {

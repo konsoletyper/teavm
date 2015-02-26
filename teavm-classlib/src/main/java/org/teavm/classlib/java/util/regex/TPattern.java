@@ -561,8 +561,7 @@ public final class TPattern implements Serializable {
         } else {
             readCodePoints++;
 
-            while ((readCodePoints < TLexer.MAX_DECOMPOSITION_LENGTH) && !lexemes.isEmpty() && lexemes.isLetter() &&
-                    !TLexer.isDecomposedCharBoundary(lexemes.peek())) {
+            while ((readCodePoints < TLexer.MAX_DECOMPOSITION_LENGTH) && !lexemes.isEmpty() && lexemes.isLetter()) {
                 codePoints[readCodePoints++] = lexemes.next();
             }
 
