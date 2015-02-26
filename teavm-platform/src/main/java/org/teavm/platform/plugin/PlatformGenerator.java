@@ -26,6 +26,7 @@ import org.teavm.javascript.spi.Injector;
 import org.teavm.javascript.spi.InjectorContext;
 import org.teavm.model.*;
 import org.teavm.platform.Platform;
+import org.teavm.platform.PlatformClass;
 import org.teavm.platform.PlatformRunnable;
 
 /**
@@ -58,12 +59,9 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
         switch (methodRef.getName()) {
             case "asJavaClass":
             case "classFromResource":
+            case "objectFromResource":
                 context.writeExpr(context.getArgument(0));
                 return;
-            case "getEnumConstants":
-                context.writeExpr(context.getArgument(0));
-                context.getWriter().append(".values()");
-                break;
         }
     }
 
@@ -84,6 +82,9 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
                 break;
             case "schedule":
                 generateSchedule(context, writer, true);
+                break;
+            case "getEnumConstants":
+                generateEnumConstants(context, writer);
                 break;
         }
     }
@@ -201,6 +202,32 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
         writer.append("(").append(runnable).append(");")
                 .softNewLine();
         writer.outdent().append("},").ws().append(timeout ? context.getParameterName(2) : "0")
+                .append(");").softNewLine();
+    }
+
+    private void generateEnumConstants(GeneratorContext context, SourceWriter writer) throws IOException {
+        writer.append("var c").ws().append("=").ws().append("'$$enumConstants$$';").softNewLine();
+        for (String clsName : context.getClassSource().getClassNames()) {
+            ClassReader cls = context.getClassSource().get(clsName);
+            MethodReader method = cls.getMethod(new MethodDescriptor("values",
+                    ValueType.arrayOf(ValueType.object(clsName))));
+            if (method != null) {
+                writer.appendClass(clsName).append("[c]").ws().append("=").ws();
+                writer.appendMethodBody(method.getReference());
+                writer.append(";").softNewLine();
+            }
+        }
+
+        String selfName = writer.getNaming().getFullNameFor(new MethodReference(Platform.class, "getEnumConstants",
+                PlatformClass.class, Enum[].class));
+        writer.append(selfName).ws().append("=").ws().append("function(cls)").ws().append("{").softNewLine().indent();
+        writer.append("if").ws().append("(!cls.hasOwnProperty(c))").ws().append("{").indent().softNewLine();
+        writer.append("return null;").softNewLine();
+        writer.outdent().append("}").softNewLine();
+        writer.append("return cls[c]();").softNewLine();
+        writer.outdent().append("}").softNewLine();
+
+        writer.append("return ").append(selfName).append("(").append(context.getParameterName(1))
                 .append(");").softNewLine();
     }
 }

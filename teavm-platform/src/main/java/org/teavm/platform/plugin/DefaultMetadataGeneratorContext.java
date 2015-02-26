@@ -18,6 +18,7 @@ package org.teavm.platform.plugin;
 import java.lang.reflect.Proxy;
 import java.util.Properties;
 import org.teavm.common.ServiceRepository;
+import org.teavm.model.FieldReference;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.platform.metadata.*;
 
@@ -70,6 +71,11 @@ class DefaultMetadataGeneratorContext implements MetadataGeneratorContext {
     @Override
     public ClassResource createClassResource(String className) {
         return new BuildTimeClassResource(className);
+    }
+
+    @Override
+    public StaticFieldResource createFieldResource(FieldReference field) {
+        return new BuildTimeStaticFieldResource(field);
     }
 
     @Override

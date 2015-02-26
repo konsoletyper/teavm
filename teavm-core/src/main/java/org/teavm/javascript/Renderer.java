@@ -403,7 +403,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 writer.append("],").ws();
                 int flags = 0;
                 if (cls.getModifiers().contains(NodeModifier.ENUM)) {
-                    flags &= 1;
+                    flags |= 1;
                 }
                 writer.append(flags).append(',').ws();
                 MethodHolder clinit = classSource.get(cls.getName()).getMethod(
