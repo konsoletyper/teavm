@@ -20,6 +20,8 @@ import com.dukescript.api.canvas.Style;
 import com.dukescript.canvas.html.HTML5Graphics;
 import java.util.Timer;
 import java.util.TimerTask;
+import net.java.html.BrwsrCtx;
+import net.java.html.js.JavaScriptBody;
 import org.jbox2d.collision.shapes.CircleShape;
 import org.jbox2d.collision.shapes.PolygonShape;
 import org.jbox2d.collision.shapes.Shape;
@@ -35,28 +37,30 @@ public class BenchmarkStarter {
     private static double startMillisecond;
     private static int currentSecond;
     private static double timeSpentCalculating;
+    private static BrwsrCtx ctx;
     
     public static void main(String[] args) {
         startMillisecond = System.currentTimeMillis();
+        ctx = BrwsrCtx.findDefault(BenchmarkStarter.class);
         makeStep();
     }
+    
+    static void makeStep() {
+        ctx.execute(new Runnable() {
+            @Override
+            public void run() {
+                makeStep0();
+            }
+        });
+    }
 
-    private static void makeStep() {
+    private static void makeStep0() {
         double start = System.currentTimeMillis();
         scene.calculate();
         double end = System.currentTimeMillis();
         int second = (int)((System.currentTimeMillis() - startMillisecond) / 1000);
         if (second > currentSecond) {
-            /*
-            HTMLElement row = document.createElement("tr");
-            resultTableBody.appendChild(row);
-            HTMLElement secondCell = document.createElement("td");
-            row.appendChild(secondCell);
-            secondCell.appendChild(document.createTextNode(String.valueOf(second)));
-            HTMLElement timeCell = document.createElement("td");
-            row.appendChild(timeCell);
-            timeCell.appendChild(document.createTextNode(String.valueOf(timeSpentCalculating)));
-*/
+            publishResults(second, timeSpentCalculating);
             timeSpentCalculating = 0;
             currentSecond = second;
         }
@@ -109,4 +113,17 @@ public class BenchmarkStarter {
         }
         context.restore();
     }
+    
+    @JavaScriptBody(args = { "second", "timeSpentCalculating" }, body = 
+        "var resultTableBody = document.getElementById('result-table-body');\n" +
+        "var row = document.createElement(\"tr\");\n" +
+        "resultTableBody.appendChild(row);\n" +
+        "var secondCell = document.createElement(\"td\");\n" +
+        "row.appendChild(secondCell);\n" +
+        "secondCell.appendChild(document.createTextNode(second));\n" +
+        "var timeCell = document.createElement(\"td\");\n" +
+        "row.appendChild(timeCell);\n" +
+        "timeCell.appendChild(document.createTextNode(timeSpentCalculating));\n"
+    )
+    private static native void publishResults(int second, double time);
 }
