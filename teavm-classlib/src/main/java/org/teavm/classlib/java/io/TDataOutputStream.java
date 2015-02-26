@@ -17,6 +17,7 @@
 
 package org.teavm.classlib.java.io;
 import org.teavm.classlib.java.lang.*;
+
 /**
  * A data output stream lets an application write primitive Java data types to an output stream in a portable way. An application can then use a data input stream to read the data back in.
  * Since: JDK1.0, CLDC 1.0 See Also:DataInputStream
@@ -33,7 +34,7 @@ public class TDataOutputStream extends TFilterOutputStream implements TDataOutpu
      * {@code out}. Note that data written by this stream is not in a human
      * readable form but can be reconstructed by using a {@link DataInputStream}
      * on the resulting output.
-     * 
+     *
      * @param out
      *            the target stream for writing.
      */
@@ -45,7 +46,7 @@ public class TDataOutputStream extends TFilterOutputStream implements TDataOutpu
     /**
      * Flushes this stream to ensure all pending data is sent out to the target
      * stream. This implementation then also flushes the target stream.
-     * 
+     *
      * @throws IOException
      *             if an error occurs attempting to flush this stream.
      */
@@ -56,7 +57,7 @@ public class TDataOutputStream extends TFilterOutputStream implements TDataOutpu
 
     /**
      * Returns the total number of bytes written to the target stream so far.
-     * 
+     *
      * @return the number of bytes written to the target stream.
      */
     public final int size() {
@@ -69,7 +70,7 @@ public class TDataOutputStream extends TFilterOutputStream implements TDataOutpu
     /**
      * Writes {@code count} bytes from the byte array {@code buffer} starting at
      * {@code offset} to the target stream.
-     * 
+     *
      * @param buffer
      *            the buffer to write to the target stream.
      * @param offset
@@ -95,7 +96,7 @@ public class TDataOutputStream extends TFilterOutputStream implements TDataOutpu
     /**
      * Writes a byte to the target stream. Only the least significant byte of
      * the integer {@code oneByte} is written.
-     * 
+     *
      * @param oneByte
      *            the byte to write to the target stream.
      * @throws IOException
@@ -110,13 +111,14 @@ public class TDataOutputStream extends TFilterOutputStream implements TDataOutpu
 
     /**
      * Writes a boolean to the target stream.
-     * 
+     *
      * @param val
      *            the boolean value to write to the target stream.
      * @throws IOException
      *             if an error occurs while writing to the target stream.
      * @see DataInputStream#readBoolean()
      */
+    @Override
     public final void writeBoolean(boolean val) throws TIOException {
         out.write(val ? 1 : 0);
         written++;
@@ -125,7 +127,7 @@ public class TDataOutputStream extends TFilterOutputStream implements TDataOutpu
     /**
      * Writes an 8-bit byte to the target stream. Only the least significant
      * byte of the integer {@code val} is written.
-     * 
+     *
      * @param val
      *            the byte value to write to the target stream.
      * @throws IOException
@@ -133,6 +135,7 @@ public class TDataOutputStream extends TFilterOutputStream implements TDataOutpu
      * @see DataInputStream#readByte()
      * @see DataInputStream#readUnsignedByte()
      */
+    @Override
     public final void writeByte(int val) throws TIOException {
         out.write(val);
         written++;
@@ -140,7 +143,7 @@ public class TDataOutputStream extends TFilterOutputStream implements TDataOutpu
 
     /**
      * Writes the low order bytes from a string to the target stream.
-     * 
+     *
      * @param str
      *            the string containing the bytes to write to the target stream.
      * @throws IOException
@@ -164,13 +167,14 @@ public class TDataOutputStream extends TFilterOutputStream implements TDataOutpu
      * Writes a 16-bit character to the target stream. Only the two lower bytes
      * of the integer {@code val} are written, with the higher one written
      * first. This corresponds to the Unicode value of {@code val}.
-     * 
+     *
      * @param val
      *            the character to write to the target stream
      * @throws IOException
      *             if an error occurs while writing to the target stream.
      * @see DataInputStream#readChar()
      */
+    @Override
     public final void writeChar(int val) throws TIOException {
         buff[0] = (byte) (val >> 8);
         buff[1] = (byte) val;
@@ -181,7 +185,7 @@ public class TDataOutputStream extends TFilterOutputStream implements TDataOutpu
     /**
      * Writes the 16-bit characters contained in {@code str} to the target
      * stream.
-     * 
+     *
      * @param str
      *            the string that contains the characters to write to this
      *            stream.
@@ -189,6 +193,7 @@ public class TDataOutputStream extends TFilterOutputStream implements TDataOutpu
      *             if an error occurs while writing to the target stream.
      * @see DataInputStream#readChar()
      */
+    @Override
     public final void writeChars(TString str) throws TIOException {
         byte newBytes[] = new byte[str.length() * 2];
         for (int index = 0; index < str.length(); index++) {
@@ -203,13 +208,14 @@ public class TDataOutputStream extends TFilterOutputStream implements TDataOutpu
     /**
      * Writes a 64-bit double to the target stream. The resulting output is the
      * eight bytes resulting from calling Double.doubleToLongBits().
-     * 
+     *
      * @param val
      *            the double to write to the target stream.
      * @throws IOException
      *             if an error occurs while writing to the target stream.
      * @see DataInputStream#readDouble()
      */
+    @Override
     public final void writeDouble(double val) throws TIOException {
         writeLong(TDouble.doubleToLongBits(val));
     }
@@ -217,13 +223,14 @@ public class TDataOutputStream extends TFilterOutputStream implements TDataOutpu
     /**
      * Writes a 32-bit float to the target stream. The resulting output is the
      * four bytes resulting from calling Float.floatToIntBits().
-     * 
+     *
      * @param val
      *            the float to write to the target stream.
      * @throws IOException
      *             if an error occurs while writing to the target stream.
      * @see DataInputStream#readFloat()
      */
+    @Override
     public final void writeFloat(float val) throws TIOException {
         writeInt(TFloat.floatToIntBits(val));
     }
@@ -231,13 +238,14 @@ public class TDataOutputStream extends TFilterOutputStream implements TDataOutpu
     /**
      * Writes a 32-bit int to the target stream. The resulting output is the
      * four bytes, highest order first, of {@code val}.
-     * 
+     *
      * @param val
      *            the int to write to the target stream.
      * @throws IOException
      *             if an error occurs while writing to the target stream.
      * @see DataInputStream#readInt()
      */
+    @Override
     public final void writeInt(int val) throws TIOException {
         buff[0] = (byte) (val >> 24);
         buff[1] = (byte) (val >> 16);
@@ -250,13 +258,14 @@ public class TDataOutputStream extends TFilterOutputStream implements TDataOutpu
     /**
      * Writes a 64-bit long to the target stream. The resulting output is the
      * eight bytes, highest order first, of {@code val}.
-     * 
+     *
      * @param val
      *            the long to write to the target stream.
      * @throws IOException
      *             if an error occurs while writing to the target stream.
      * @see DataInputStream#readLong()
      */
+    @Override
     public final void writeLong(long val) throws TIOException {
         buff[0] = (byte) (val >> 56);
         buff[1] = (byte) (val >> 48);
@@ -287,7 +296,7 @@ public class TDataOutputStream extends TFilterOutputStream implements TDataOutpu
      * Writes the specified 16-bit short to the target stream. Only the lower
      * two bytes of the integer {@code val} are written, with the higher one
      * written first.
-     * 
+     *
      * @param val
      *            the short to write to the target stream.
      * @throws IOException
@@ -295,6 +304,7 @@ public class TDataOutputStream extends TFilterOutputStream implements TDataOutpu
      * @see DataInputStream#readShort()
      * @see DataInputStream#readUnsignedShort()
      */
+    @Override
     public final void writeShort(int val) throws TIOException {
         buff[0] = (byte) (val >> 8);
         buff[1] = (byte) val;
@@ -312,7 +322,7 @@ public class TDataOutputStream extends TFilterOutputStream implements TDataOutpu
     /**
      * Writes the specified encoded in {@link DataInput modified UTF-8} to this
      * stream.
-     * 
+     *
      * @param str
      *            the string to write to the target stream encoded in
      *            {@link DataInput modified UTF-8}.
@@ -322,15 +332,16 @@ public class TDataOutputStream extends TFilterOutputStream implements TDataOutpu
      *             if the encoded string is longer than 65535 bytes.
      * @see DataInputStream#readUTF()
      */
+    @Override
     public final void writeUTF(TString str) throws TIOException {
         long utfCount = countUTFBytes(str);
         if (utfCount > 65535) {
-            throw new TIOException(TString.wrap("UTF Error")); 
+            throw new TIOException(TString.wrap("UTF Error"));
         }
         byte[] buffer = new byte[(int)utfCount + 2];
         int offset = 0;
         offset = writeShortToBuffer((int) utfCount, buffer, offset);
-        offset = writeUTFBytesToBuffer(str, (int) utfCount, buffer, offset);
+        offset = writeUTFBytesToBuffer(str, buffer, offset);
         write(buffer, 0, offset);
     }
 
@@ -349,8 +360,7 @@ public class TDataOutputStream extends TFilterOutputStream implements TDataOutpu
         return utfCount;
     }
 
-    int writeUTFBytesToBuffer(TString str, long count,
-                              byte[] buffer, int offset) throws TIOException {
+    int writeUTFBytesToBuffer(TString str, byte[] buffer, int offset) throws TIOException {
         int length = str.length();
         for (int i = 0; i < length; i++) {
             int charValue = str.charAt(i);

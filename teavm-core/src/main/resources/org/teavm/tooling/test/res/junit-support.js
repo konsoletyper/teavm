@@ -391,14 +391,19 @@ JUnitClient.run = function() {
 }
 JUnitClient.makeErrorMessage = function(message, e) {
     message.status = "exception";
+    var stack = "";
+    while (e instanceof TeaVMAsyncError) {
+        stack += e.message + "\n" + e.stack + "\n";
+        e = e.cause;
+    }
     if (e.$javaException && e.$javaException.constructor.$meta) {
         message.exception = e.$javaException.constructor.$meta.name;
         message.stack = e.$javaException.constructor.$meta.name + ": ";
         var exceptionMessage = extractException(e.$javaException);
         message.stack += exceptionMessage ? $rt_ustr(exceptionMessage) : "";
-        message.stack += "\n" + e.stack;
+        message.stack += e.stack + "\n" + stack;
     } else {
-        message.stack = e.stack;
+        message.stack = stack;
     }
 }
 JUnitClient.reportError = function(error) {

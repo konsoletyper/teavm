@@ -307,8 +307,10 @@ class StatementGenerator implements InstructionVisitor {
                         value = Expr.unary(UnaryOperation.INT_TO_BYTE, value);
                         break;
                     case SHORT:
-                    case CHARACTER:
                         value = Expr.unary(UnaryOperation.INT_TO_SHORT, value);
+                        break;
+                    case CHARACTER:
+                        value = Expr.unary(UnaryOperation.INT_TO_CHAR, value);
                         break;
                 }
                 break;

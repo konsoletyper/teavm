@@ -1399,6 +1399,12 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     writer.ws().append("<<").ws().append("16)").ws().append(">>").ws().append("16");
                     exitPriority();
                     break;
+                case INT_TO_CHAR:
+                    enterPriority(Priority.BITWISE_AND, Associativity.LEFT, true);
+                    expr.getOperand().acceptVisitor(this);
+                    writer.ws().append("&").ws().append("65535");
+                    exitPriority();
+                    break;
                 case NULL_CHECK:
                     enterPriority(Priority.COMMA, Associativity.NONE, false);
                     writer.append("$rt_nullCheck(");

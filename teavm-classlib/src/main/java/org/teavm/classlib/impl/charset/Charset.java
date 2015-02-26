@@ -25,7 +25,7 @@ public abstract class Charset {
     public abstract void decode(ByteBuffer source, CharBuffer dest);
 
     public static Charset get(String name) {
-        if (name.equals("UTF-8")) {
+        if (name.toUpperCase().equals("UTF-8")) {
             return new UTF8Charset();
         }
         return null;

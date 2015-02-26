@@ -39,7 +39,7 @@ public class TBufferedInputStream extends TFilterInputStream {
     }
 
     @Override
-    public synchronized int available() throws TIOException {
+    public int available() throws TIOException {
         TInputStream localIn = in;
         if (buf == null || localIn == null) {
             throw new TIOException(TString.wrap("Stream is closed"));

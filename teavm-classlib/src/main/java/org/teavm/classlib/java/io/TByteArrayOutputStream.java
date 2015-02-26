@@ -51,7 +51,7 @@ public class TByteArrayOutputStream extends TOutputStream {
 
     private void ensureCapacity(int capacity) {
         if (buf.length < capacity) {
-            capacity = TMath.min(capacity, buf.length * 3 / 2);
+            capacity = TMath.max(capacity, buf.length * 3 / 2);
             buf = TArrays.copyOf(buf, capacity);
         }
     }

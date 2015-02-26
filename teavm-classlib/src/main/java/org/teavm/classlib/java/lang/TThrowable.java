@@ -101,7 +101,7 @@ public class TThrowable extends RuntimeException {
     }
 
     @Override
-    public synchronized Throwable fillInStackTrace() {
+    public Throwable fillInStackTrace() {
         return this;
     }
 
@@ -116,7 +116,7 @@ public class TThrowable extends RuntimeException {
     }
 
     @Override
-    public synchronized TThrowable getCause() {
+    public TThrowable getCause() {
         return cause != this ? cause : null;
     }
 
@@ -126,7 +126,7 @@ public class TThrowable extends RuntimeException {
     @Remove
     public native TString toString0();
 
-    public synchronized TThrowable initCause(TThrowable cause) {
+    public TThrowable initCause(TThrowable cause) {
         if (this.cause != this && this.cause != null) {
             throw new TIllegalStateException(TString.wrap("Cause already set"));
         }

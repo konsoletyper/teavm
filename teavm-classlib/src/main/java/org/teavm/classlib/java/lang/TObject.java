@@ -96,16 +96,20 @@ public class TObject {
         }
 
         o.monitor.owner = null;
-        Platform.startThread(new PlatformRunnable() {
-            @Override public void run() {
-                if (o.isEmptyMonitor() || o.monitor.owner != null) {
-                    return;
+        if (!o.monitor.enteringThreads.isEmpty()) {
+            Platform.startThread(new PlatformRunnable() {
+                @Override public void run() {
+                    if (o.isEmptyMonitor() || o.monitor.owner != null) {
+                        return;
+                    }
+                    if (!o.monitor.enteringThreads.isEmpty()) {
+                        o.monitor.enteringThreads.remove().run();
+                    }
                 }
-                if (!o.monitor.enteringThreads.isEmpty()) {
-                    o.monitor.enteringThreads.remove().run();
-                }
-            }
-        });
+            });
+        } else {
+            o.isEmptyMonitor();
+        }
     }
 
     boolean isEmptyMonitor() {

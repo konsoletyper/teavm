@@ -186,7 +186,7 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
     private void generateSchedule(GeneratorContext context, SourceWriter writer, boolean timeout) throws IOException {
         String runnable = context.getParameterName(1);
         writer.append("return window.setTimeout(function()").ws().append("{").indent().softNewLine();
-        String methodName = writer.getNaming().getFullNameForAsync(new MethodReference(Platform.class, "launchThread",
+        String methodName = writer.getNaming().getFullNameFor(new MethodReference(Platform.class, "launchThread",
                 PlatformRunnable.class, void.class));
         writer.append("$rt_rootInvocationAdapter(").append(methodName).append(")(").append(runnable).append(");")
                 .softNewLine();
