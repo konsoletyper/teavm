@@ -74,7 +74,7 @@
     <dependency>
       <groupId>com.dukescript.canvas</groupId>
       <artifactId>html5-canvas</artifactId>
-      <version>0.7.1</version>
+      <version>0.7.2</version>
     </dependency>
     <dependency>
       <groupId>org.netbeans.html</groupId>
