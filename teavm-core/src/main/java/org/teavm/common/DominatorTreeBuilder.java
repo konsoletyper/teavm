@@ -45,12 +45,12 @@ class DominatorTreeBuilder {
         bucket = new IntegerArray[graph.size()];
     }
 
-    public void build(int[] start) {
+    public void build() {
         for (int i = 0; i < labels.length; ++i) {
             labels[i] = i;
         }
         Arrays.fill(ancestors, -1);
-        dfs(start);
+        dfs();
         for (int i = effectiveSize - 1; i >= 0; --i) {
             int w = vertices[i];
             if (parents[w] < 0) {
@@ -120,13 +120,15 @@ class DominatorTreeBuilder {
         return labels[v];
     }
 
-    private void dfs(int[] start) {
+    private void dfs() {
         Arrays.fill(semidominators, -1);
         Arrays.fill(vertices, -1);
         IntegerStack stack = new IntegerStack(graph.size());
-        for (int node : start) {
-            stack.push(node);
-            parents[node] = -1;
+        for (int i = graph.size() - 1; i >= 0; --i) {
+            if (graph.incomingEdgesCount(i) == 0) {
+                stack.push(i);
+                parents[i] = -1;
+            }
         }
         int i = 0;
         while (!stack.isEmpty()) {

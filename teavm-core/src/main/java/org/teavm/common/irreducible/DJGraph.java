@@ -38,9 +38,9 @@ public class DJGraph {
     private int[] mergeRoot;
     private IntegerArray[] mergeClasses;
 
-    public DJGraph(Graph src, int top) {
+    public DJGraph(Graph src) {
         this.cfg = new MutableDirectedGraph(src);
-        domTree = GraphUtils.buildDominatorTree(src, top);
+        domTree = GraphUtils.buildDominatorTree(src);
         buildGraph(src);
         buildLevels();
         dfs();

@@ -161,12 +161,8 @@ public final class GraphUtils {
     }
 
     public static DominatorTree buildDominatorTree(Graph graph) {
-        return buildDominatorTree(graph, 0);
-    }
-
-    public static DominatorTree buildDominatorTree(Graph graph, int... start) {
         DominatorTreeBuilder builder = new DominatorTreeBuilder(graph);
-        builder.build(start);
+        builder.build();
         return new DefaultDominatorTree(builder.dominators, builder.vertices);
     }
 

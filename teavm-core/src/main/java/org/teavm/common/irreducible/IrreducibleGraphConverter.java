@@ -32,7 +32,7 @@ public class IrreducibleGraphConverter {
 
     public void convertToReducible(Graph cfg, GraphSplittingBackend backend) {
         this.backend = backend;
-        handleLoops(new DJGraph(cfg, 0));
+        handleLoops(new DJGraph(cfg));
         this.backend = null;
     }
 
