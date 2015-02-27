@@ -1,5 +1,5 @@
 /*
- *  Copyright 2011 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,27 +13,30 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.codegen;
+package org.teavm.platform.plugin;
 
+import java.io.IOException;
+import org.teavm.codegen.SourceWriter;
 import org.teavm.model.FieldReference;
-import org.teavm.model.MethodReference;
+import org.teavm.platform.metadata.StaticFieldResource;
 
 /**
  *
  * @author Alexey Andreev
  */
-public interface NamingStrategy {
-    String getNameFor(String cls) throws NamingException;
+class BuildTimeStaticFieldResource implements StaticFieldResource, ResourceWriter {
+    private FieldReference field;
 
-    String getNameFor(MethodReference method) throws NamingException;
+    public BuildTimeStaticFieldResource(FieldReference field) {
+        this.field = field;
+    }
 
-    String getNameForAsync(MethodReference method) throws NamingException;
+    public FieldReference getField() {
+        return field;
+    }
 
-    String getNameForInit(MethodReference method) throws NamingException;
-
-    String getFullNameFor(MethodReference method) throws NamingException;
-
-    String getFullNameForAsync(MethodReference method) throws NamingException;
-
-    String getNameFor(FieldReference field) throws NamingException;
+    @Override
+    public void write(SourceWriter writer) throws IOException {
+        writer.appendField(field);
+    }
 }

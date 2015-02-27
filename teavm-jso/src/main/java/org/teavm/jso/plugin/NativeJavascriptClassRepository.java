@@ -29,6 +29,7 @@ import org.teavm.model.ElementModifier;
 class NativeJavascriptClassRepository {
     private ClassReaderSource classSource;
     private Map<String, Boolean> knownJavaScriptClasses = new HashMap<>();
+    private Map<String, Boolean> knownJavaScriptImplementations = new HashMap<>();
 
     public NativeJavascriptClassRepository(ClassReaderSource classSource) {
         this.classSource = classSource;
@@ -38,16 +39,46 @@ class NativeJavascriptClassRepository {
     public boolean isJavaScriptClass(String className) {
         Boolean known = knownJavaScriptClasses.get(className);
         if (known == null) {
-            known = figureOutIfJavaScriptClass(className);
+            known = examineIfJavaScriptClass(className);
             knownJavaScriptClasses.put(className, known);
         }
         return known;
     }
 
-    private boolean figureOutIfJavaScriptClass(String className) {
+    public boolean isJavaScriptImplementation(String className) {
+        Boolean known = knownJavaScriptImplementations.get(className);
+        if (known == null) {
+            known = examineIfJavaScriptImplementation(className);
+            knownJavaScriptImplementations.put(className, known);
+        }
+        return known;
+    }
+
+    private boolean examineIfJavaScriptClass(String className) {
         ClassReader cls = classSource.get(className);
         if (cls == null || !(cls.hasModifier(ElementModifier.INTERFACE) || cls.hasModifier(ElementModifier.ABSTRACT))) {
             return false;
+        }
+        for (String iface : cls.getInterfaces()) {
+            if (isJavaScriptClass(iface)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean examineIfJavaScriptImplementation(String className) {
+        if (isJavaScriptClass(className)) {
+            return false;
+        }
+        ClassReader cls = classSource.get(className);
+        if (cls == null) {
+            return false;
+        }
+        if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
+            if (isJavaScriptClass(cls.getParent())) {
+                return true;
+            }
         }
         for (String iface : cls.getInterfaces()) {
             if (isJavaScriptClass(iface)) {

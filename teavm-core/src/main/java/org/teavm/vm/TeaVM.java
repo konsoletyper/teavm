@@ -436,13 +436,13 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             renderer.renderStringPool();
             for (Map.Entry<String, TeaVMEntryPoint> entry : entryPoints.entrySet()) {
                 sourceWriter.append("var ").append(entry.getKey()).ws().append("=").ws();
-                boolean wrapAsync = !asyncMethods.contains(entry.getValue().reference) && entry.getValue().isAsync();
+                MethodReference ref = entry.getValue().reference;
+                boolean asyncMethod = asyncMethods.contains(ref);
+                boolean wrapAsync = !asyncMethod && entry.getValue().isAsync();
                 if (wrapAsync) {
-                    sourceWriter.append("$rt_staticAsyncAdapter(");
-                }
-                sourceWriter.appendMethodBody(entry.getValue().reference);
-                if (wrapAsync) {
-                    sourceWriter.append(")");
+                    sourceWriter.append("$rt_staticAsyncAdapter(").appendMethodBody(ref).append(')');
+                } else {
+                    sourceWriter.append(asyncMethod ? naming.getFullNameForAsync(ref) : naming.getFullNameFor(ref));
                 }
                 sourceWriter.append(";").newLine();
             }

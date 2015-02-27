@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,33 +15,35 @@
  */
 package org.teavm.platform.plugin;
 
-import org.teavm.dependency.DependencyAgent;
-import org.teavm.dependency.DependencyListener;
-import org.teavm.dependency.FieldDependency;
-import org.teavm.dependency.MethodDependency;
+import org.teavm.dependency.*;
 import org.teavm.model.CallLocation;
+import org.teavm.platform.Platform;
 
 /**
  *
  * @author Alexey Andreev
  */
-class ResourceAccessorDependencyListener implements DependencyListener {
+public class PlatformDependencyListener implements DependencyListener {
+    private DependencyNode allClasses;
+
     @Override
     public void started(DependencyAgent agent) {
+        allClasses = agent.createNode();
     }
 
     @Override
     public void classAchieved(DependencyAgent agent, String className, CallLocation location) {
+        allClasses.propagate(agent.getType(className));
     }
 
     @Override
-    public void methodAchieved(DependencyAgent agent, MethodDependency method, CallLocation location) {
-        if (!method.getReference().getClassName().equals(ResourceAccessor.class.getName())) {
+    public void methodAchieved(final DependencyAgent agent, MethodDependency method, CallLocation location) {
+        if (!method.getReference().getClassName().equals(Platform.class.getName())) {
             return;
         }
         switch (method.getReference().getName()) {
-            case "castToString":
-                method.getResult().propagate(agent.getType("java.lang.String"));
+            case "objectFromResource":
+                allClasses.connect(method.getResult());
                 break;
         }
     }

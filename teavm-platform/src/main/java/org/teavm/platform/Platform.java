@@ -20,6 +20,7 @@ import org.teavm.javascript.spi.GeneratedBy;
 import org.teavm.javascript.spi.InjectedBy;
 import org.teavm.jso.JS;
 import org.teavm.platform.metadata.ClassResource;
+import org.teavm.platform.metadata.StaticFieldResource;
 import org.teavm.platform.plugin.PlatformGenerator;
 
 /**
@@ -89,6 +90,10 @@ public final class Platform {
     public static native PlatformClass classFromResource(ClassResource resource);
 
     @InjectedBy(PlatformGenerator.class)
+    @PluggableDependency(PlatformGenerator.class)
+    public static native Object objectFromResource(StaticFieldResource resource);
+
+    @GeneratedBy(PlatformGenerator.class)
     @PluggableDependency(PlatformGenerator.class)
     public static native Enum<?>[] getEnumConstants(PlatformClass cls);
 

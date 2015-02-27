@@ -1,5 +1,5 @@
 /*
- *  Copyright 2012 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,24 +13,11 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript.ast;
+package org.teavm.platform.metadata;
 
 /**
  *
  * @author Alexey Andreev
  */
-public enum UnaryOperation {
-    NOT,
-    NOT_LONG,
-    NEGATE,
-    NEGATE_LONG,
-    LENGTH,
-    LONG_TO_NUM,
-    LONG_TO_INT,
-    NUM_TO_LONG,
-    INT_TO_LONG,
-    INT_TO_BYTE,
-    INT_TO_SHORT,
-    INT_TO_CHAR,
-    NULL_CHECK
+public interface StaticFieldResource extends Resource {
 }

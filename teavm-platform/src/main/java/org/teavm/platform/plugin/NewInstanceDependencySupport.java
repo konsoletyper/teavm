@@ -47,13 +47,14 @@ public class NewInstanceDependencySupport implements DependencyListener {
     }
 
     @Override
-    public void methodAchieved(final DependencyAgent agent, MethodDependency method, final CallLocation location) {
+    public void methodAchieved(final DependencyAgent agent, MethodDependency method, CallLocation location) {
         MethodReader reader = method.getMethod();
         if (reader.getOwnerName().equals(Platform.class.getName()) && reader.getName().equals("newInstance")) {
             allClassesNode.connect(method.getResult());
+            final MethodReference methodRef = reader.getReference();
             method.getResult().addConsumer(new DependencyConsumer() {
                 @Override public void consume(DependencyAgentType type) {
-                    attachConstructor(agent, type.getName(), location);
+                    attachConstructor(agent, type.getName(), new CallLocation(methodRef));
                 }
             });
         }

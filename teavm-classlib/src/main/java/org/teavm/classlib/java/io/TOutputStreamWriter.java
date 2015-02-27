@@ -1,92 +1,125 @@
 /*
- * Copyright (c) 2012, Codename One and/or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Codename One designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *  
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- * 
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- * 
- * Please contact Codename One through http://www.codenameone.com/ if you 
- * need additional information or have any questions.
+ *  Copyright 2015 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
-
 package org.teavm.classlib.java.io;
-import org.teavm.classlib.java.lang.*;
-/**
- * An OutputStreamWriter is a bridge from character streams to byte streams: Characters written to it are translated into bytes. The encoding that it uses may be specified by name, or the platform's default encoding may be accepted.
- * Each invocation of a write() method causes the encoding converter to be invoked on the given character(s). The resulting bytes are accumulated in a buffer before being written to the underlying output stream. The size of this buffer may be specified, but by default it is large enough for most purposes. Note that the characters passed to the write() methods are not buffered.
- * Since: CLDC 1.0 See Also:Writer, UnsupportedEncodingException
- */
-public class TOutputStreamWriter extends TWriter{
-    private TOutputStream os;
-    private TString enc;
-    
-    /**
-     * Create an OutputStreamWriter that uses the default character encoding.
-     * os - An OutputStream
-     */
-    public TOutputStreamWriter(TOutputStream os){
-         this.os = os;
-         enc = TString.wrap("UTF-8");
+
+import org.teavm.classlib.impl.charset.ByteBuffer;
+import org.teavm.classlib.impl.charset.CharBuffer;
+import org.teavm.classlib.impl.charset.Charset;
+import org.teavm.classlib.java.lang.TString;
+
+public class TOutputStreamWriter extends TWriter {
+    private TOutputStream out;
+    private String encoding;
+    private Charset charset;
+    private byte[] bufferData = new byte[512];
+    private ByteBuffer buffer = new ByteBuffer(bufferData);
+
+    public TOutputStreamWriter(TOutputStream out) {
+        this(out, "UTF-8");
     }
 
-    /**
-     * Create an OutputStreamWriter that uses the named character encoding.
-     * os - An OutputStreamenc - The name of a supported
-     * - If the named encoding is not supported
-     */
-    public TOutputStreamWriter(TOutputStream os, TString enc) throws TUnsupportedEncodingException{
-         this.os = os;
-         this.enc = enc;
-    }
-
-    /**
-     * Close the stream.
-     */
-    public void close() throws TIOException{
-        os.close();
-    }
-
-    /**
-     * Flush the stream.
-     */
-    public void flush() throws TIOException{
-        os.flush();
-    }
-
-    /**
-     * Write a portion of an array of characters.
-     */
-    public void write(char[] cbuf, int off, int len) throws TIOException{
-        write(new TString(cbuf, off, len));
-    }
-
-    /**
-     * Write a single character.
-     */
-    public void write(int c) throws TIOException{
-        write(new TString(new char[] {(char)c}));
-    }
-
-    /**
-     * Write a portion of a string.
-     */
-    public void write(TString str, int off, int len) throws TIOException{
-        if(off > 0 || len != str.length()) {
-            str = str.substring(off, len);
+    public TOutputStreamWriter(TOutputStream out, final String enc) throws TUnsupportedEncodingException {
+        super(out);
+        if (enc == null) {
+            throw new NullPointerException();
         }
-        os.write(str.getBytes(enc));
+        this.out = out;
+        charset = Charset.get(enc);
+        if (charset == null) {
+            throw new TUnsupportedEncodingException(TString.wrap(enc));
+        }
+        encoding = enc;
     }
 
+    @Override
+    public void close() throws TIOException {
+        if (charset != null) {
+            flush();
+            charset = null;
+            out.flush();
+            out.close();
+        }
+    }
+
+    @Override
+    public void flush() throws TIOException {
+        checkStatus();
+        if (buffer.position() > 0) {
+            out.write(bufferData, 0, buffer.position());
+            buffer.rewind(0);
+        }
+        out.flush();
+    }
+
+    private void checkStatus() throws TIOException {
+        if (charset == null) {
+            throw new TIOException(TString.wrap("Writer already closed"));
+        }
+    }
+
+    public String getEncoding() {
+        return encoding;
+    }
+
+    @Override
+    public void write(char[] buf, int offset, int count) throws TIOException {
+        synchronized (lock) {
+            checkStatus();
+            if (buf == null) {
+                throw new NullPointerException();
+            }
+            if (offset < 0 || offset > buf.length - count || count < 0) {
+                throw new IndexOutOfBoundsException();
+            }
+            CharBuffer input = new CharBuffer(buf, offset, offset + count);
+            while (!input.end()) {
+                if (buffer.available() < 6) {
+                    out.write(bufferData, 0, buffer.position());
+                    buffer.rewind(0);
+                }
+                charset.encode(input, buffer);
+            }
+        }
+    }
+
+    @Override
+    public void write(int oneChar) throws TIOException {
+        synchronized (lock) {
+            checkStatus();
+            CharBuffer input = new CharBuffer(new char[] { (char)oneChar }, 0, 1);
+            while (!input.end()) {
+                if (buffer.available() < 6) {
+                    out.write(bufferData, 0, buffer.position());
+                    buffer.rewind(0);
+                }
+                charset.encode(input, buffer);
+            }
+        }
+    }
+
+    @Override
+    public void write(String str, int offset, int count) throws TIOException {
+        if (str == null) {
+            throw new NullPointerException();
+        }
+        if (count < 0) {
+            throw new IndexOutOfBoundsException("Negative count: " + count);
+        }
+        char[] chars = new char[count];
+        str.getChars(offset, offset + count, chars, 0);
+        write(chars);
+    }
 }

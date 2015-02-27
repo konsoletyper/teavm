@@ -328,23 +328,6 @@ function $rt_assertNotNaN(value) {
     }
     return value;
 }
-function $rt_methodStubs(data) {
-    for (var i = 0; i < data.length; i += 2) {
-        var clinit = data[i + 0];
-        var names = data[i + 1];
-        if (!(names instanceof Array)) {
-            names = [names];
-        }
-        for (var j = 0; j < names.length; j = (j + 1) | 0) {
-            window[names[j]] = (function(name, clinit) {
-                return function() {
-                    clinit();
-                    return window[name].apply(window, arguments);
-                }
-            })(names[j], clinit);
-        }
-    }
-}
 var $rt_stdoutBuffer = "";
 function $rt_putStdout(ch) {
     if (ch == 0xA) {
@@ -411,35 +394,6 @@ function $rt_metadata(data) {
         for (var j = 0; j < virtualMethods.length; j += 2) {
             var name = virtualMethods[j + 0];
             var func = virtualMethods[j + 1];
-            if (typeof name === 'string') {
-                name = [name];
-            }
-            for (var k = 0; k < name.length; ++k) {
-                cls.prototype[name[k]] = func;
-            }
-        }
-    }
-}
-function $rt_virtualMethods(cls) {
-    for (var i = 1; i < arguments.length; i += 2) {
-        var name = arguments[i];
-        var func = arguments[i + 1];
-        if (typeof name === 'string') {
-            cls.prototype[name] = func;
-        } else {
-            for (var j = 0; j < name.length; ++j) {
-                cls.prototype[name[j]] = func;
-            }
-        }
-    }
-}
-function $rt_virtualMethods(data) {
-    for (var i = 0; i < data.length; i += 2) {
-        var cls = data[i + 0];
-        var methods = data[i + 1];
-        for (var j = 0; j < methods.length; j += 2) {
-            var name = methods[j + 0];
-            var func = methods[j + 1];
             if (typeof name === 'string') {
                 name = [name];
             }

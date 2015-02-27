@@ -40,5 +40,7 @@ public interface GeneratorContext extends ServiceRepository {
 
     boolean isAsync(MethodReference method);
 
+    boolean isAsyncFamily(MethodReference method);
+
     Diagnostics getDiagnostics();
 }

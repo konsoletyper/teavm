@@ -96,16 +96,20 @@ public class TObject {
         }
 
         o.monitor.owner = null;
-        Platform.startThread(new PlatformRunnable() {
-            @Override public void run() {
-                if (o.isEmptyMonitor() || o.monitor.owner != null) {
-                    return;
+        if (!o.monitor.enteringThreads.isEmpty()) {
+            Platform.startThread(new PlatformRunnable() {
+                @Override public void run() {
+                    if (o.isEmptyMonitor() || o.monitor.owner != null) {
+                        return;
+                    }
+                    if (!o.monitor.enteringThreads.isEmpty()) {
+                        o.monitor.enteringThreads.remove().run();
+                    }
                 }
-                if (!o.monitor.enteringThreads.isEmpty()) {
-                    o.monitor.enteringThreads.remove().run();
-                }
-            }
-        });
+            });
+        } else {
+            o.isEmptyMonitor();
+        }
     }
 
     boolean isEmptyMonitor() {
@@ -216,6 +220,9 @@ public class TObject {
 
     @Rename("wait")
     public final void wait0(long timeout, int nanos, final AsyncCallback<Void> callback) {
+        if (!holdsLock(this)) {
+            throw new TIllegalMonitorStateException();
+        }
         final NotifyListenerImpl listener = new NotifyListenerImpl(this, callback, monitor.count);
         monitor.notifyListeners.add(listener);
         if (timeout > 0 || nanos > 0) {

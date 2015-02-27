@@ -17,6 +17,7 @@ package org.teavm.platform.metadata;
 
 import java.util.Properties;
 import org.teavm.common.ServiceRepository;
+import org.teavm.model.FieldReference;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.platform.Platform;
 import org.teavm.vm.TeaVM;
@@ -54,6 +55,12 @@ public interface MetadataGeneratorContext extends ServiceRepository {
      * {@link Platform#classFromResource(ClassResource)} to get actual class.
      */
     ClassResource createClassResource(String className);
+
+    /**
+     * Creates a new resource that represents static field. Client code then may use
+     * {@link Platform#objectFromResource(StaticFieldResource)} to get actual field value.
+     */
+    StaticFieldResource createFieldResource(FieldReference field);
 
     /**
      * Creates a new resource array.

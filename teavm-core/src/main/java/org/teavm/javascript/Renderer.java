@@ -71,34 +71,6 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         boolean wasGrouped;
     }
 
-    @Override
-    public void visit(MonitorEnterStatement statement) {
-        try {
-            MethodReference monitorEnterRef = new MethodReference(
-                    Object.class, "monitorEnter", Object.class, void.class);
-            writer.appendMethodBody(monitorEnterRef).append("(");
-            statement.getObjectRef().acceptVisitor(this);
-            writer.append(",").ws();
-            writer.append("$rt_continue($part_").append(statement.getAsyncTarget()).append(')');
-            writer.append(");").softNewLine();
-        } catch (IOException ex){
-            throw new RenderingException("IO error occured", ex);
-        }
-    }
-
-    @Override
-    public void visit(MonitorExitStatement statement) {
-        try {
-            MethodReference monitorExitRef = new MethodReference(
-                    Object.class, "monitorExit", Object.class, void.class);
-            writer.appendMethodBody(monitorExitRef).append("(");
-            statement.getObjectRef().acceptVisitor(this);
-            writer.append(");").softNewLine();
-        } catch (IOException ex){
-            throw new RenderingException("IO error occured", ex);
-        }
-    }
-
     private static class InjectorHolder {
         public final Injector injector;
 
@@ -431,7 +403,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 writer.append("],").ws();
                 int flags = 0;
                 if (cls.getModifiers().contains(NodeModifier.ENUM)) {
-                    flags &= 1;
+                    flags |= 1;
                 }
                 writer.append(flags).append(',').ws();
                 MethodHolder clinit = classSource.get(cls.getName()).getMethod(
@@ -448,7 +420,12 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 for (MethodNode method : cls.getMethods()) {
                     if (clinit != null && (method.getModifiers().contains(NodeModifier.STATIC) ||
                             method.getReference().getName().equals("<init>"))) {
-                        stubNames.add(naming.getFullNameFor(method.getReference()));
+                        if (!method.isAsync()) {
+                            stubNames.add(naming.getFullNameFor(method.getReference()));
+                        }
+                        if (asyncFamilyMethods.contains(method.getReference())) {
+                            stubNames.add(naming.getFullNameForAsync(method.getReference()));
+                        }
                     }
                     if (!method.getModifiers().contains(NodeModifier.STATIC)) {
                         virtualMethods.add(method);
@@ -537,51 +514,58 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 writer.append(",").ws();
             }
             first = false;
-            String methodName = method.isAsync() ? naming.getNameForAsync(ref) : naming.getNameFor(ref);
-            writer.append("\"").append(methodName).append("\"");
-            writer.append(",").ws().append("function(");
-            List<String> args = new ArrayList<>();
-            for (int i = 1; i <= ref.parameterCount(); ++i) {
-                args.add(variableName(i));
-            }
             if (method.isAsync()) {
-                args.add("$return");
-            }
-            for (int i = 0; i < args.size(); ++i) {
-                if (i > 0) {
+                emitVirtualDeclaration(ref, true);
+            } else {
+                emitVirtualDeclaration(ref, false);
+                if (asyncFamilyMethods.contains(ref)) {
                     writer.append(",").ws();
+                    emitVirtualDeclaration(ref, true);
                 }
-                writer.append(args.get(i));
             }
-            writer.append(")").ws().append("{").ws();
-            if (ref.getDescriptor().getResultType() != ValueType.VOID) {
-                writer.append("return ");
-            }
-            writer.appendMethodBody(ref).append("(");
-            writer.append("this");
-            for (int i = 0; i < args.size(); ++i) {
-                writer.append(",").ws().append(args.get(i));
-            }
-            writer.append(");").ws().append("}");
             debugEmitter.emitMethod(null);
-
-            if (!method.isAsync() && asyncFamilyMethods.contains(method.getReference())) {
-                writer.append(",").newLine();
-                writer.append("\"").append(naming.getNameForAsync(ref)).append("\",").ws();
-                writer.append("$rt_asyncAdapter(").appendMethodBody(ref).append(')');
-            }
         }
         writer.append("]");
+    }
+
+    private void emitVirtualDeclaration(MethodReference ref, boolean async) throws IOException {
+        String methodName = async ? naming.getNameForAsync(ref) : naming.getNameFor(ref);
+        writer.append("\"").append(methodName).append("\"");
+        writer.append(",").ws().append("function(");
+        List<String> args = new ArrayList<>();
+        for (int i = 1; i <= ref.parameterCount(); ++i) {
+            args.add(variableName(i));
+        }
+        if (async) {
+            args.add("$return");
+        }
+        for (int i = 0; i < args.size(); ++i) {
+            if (i > 0) {
+                writer.append(",").ws();
+            }
+            writer.append(args.get(i));
+        }
+        writer.append(")").ws().append("{").ws();
+        if (ref.getDescriptor().getResultType() != ValueType.VOID) {
+            writer.append("return ");
+        }
+        writer.append(async ? naming.getFullNameForAsync(ref) : naming.getFullNameFor(ref)).append("(");
+        writer.append("this");
+        for (int i = 0; i < args.size(); ++i) {
+            writer.append(",").ws().append(args.get(i));
+        }
+        writer.append(");").ws().append("}");
     }
 
     public void renderBody(MethodNode method, boolean inner) throws IOException {
         blockIdMap.clear();
         MethodReference ref = method.getReference();
         debugEmitter.emitMethod(ref.getDescriptor());
+        String name = method.isAsync() ? naming.getFullNameForAsync(ref) : naming.getFullNameFor(ref);
         if (inner) {
-            writer.appendMethodBody(ref).ws().append("=").ws().append("function(");
+            writer.append(name).ws().append("=").ws().append("function(");
         } else {
-            writer.append("function ").appendMethodBody(ref).append("(");
+            writer.append("function ").append(name).append("(");
         }
         int startParam = 0;
         if (method.getModifiers().contains(NodeModifier.STATIC)) {
@@ -606,6 +590,40 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             writer.append(';');
         }
         writer.newLine();
+
+        if (!method.isAsync() && asyncFamilyMethods.contains(method.getReference())) {
+            if (inner) {
+                writer.append(naming.getFullNameForAsync(ref)).ws().append("=").ws().append("function(");
+            } else {
+                writer.append("function ").append(naming.getFullNameForAsync(ref)).append("(");
+            }
+            for (int i = startParam; i <= ref.parameterCount(); ++i) {
+                writer.append(variableName(i));
+                writer.append(",").ws();
+            }
+            writer.append("$return)").ws().append("{").softNewLine().indent();
+
+            writer.append("var $r;").softNewLine();
+            writer.append("try").ws().append('{').indent().softNewLine();
+            writer.append("$r").ws().append("=").ws().appendMethodBody(ref).append('(');
+            for (int i = startParam; i <= ref.parameterCount(); ++i) {
+                if (i > startParam) {
+                    writer.append(",").ws();
+                }
+                writer.append(variableName(i));
+            }
+            writer.append(");").softNewLine();
+            writer.outdent().append("}").ws().append("catch").ws().append("($e)").ws()
+                    .append("{").indent().softNewLine();
+            writer.append("return $return($rt_asyncError($e));").softNewLine();
+            writer.outdent().append("}");
+            writer.append("$return($rt_asyncResult($r));").softNewLine();
+            writer.outdent().append("}");
+            if (inner) {
+                writer.append(';');
+            }
+            writer.newLine();
+        }
         debugEmitter.emitMethod(null);
     }
 
@@ -750,6 +768,11 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         @Override
         public boolean isAsync(MethodReference method) {
             return asyncMethods.contains(method);
+        }
+
+        @Override
+        public boolean isAsyncFamily(MethodReference method) {
+            return asyncFamilyMethods.contains(method);
         }
 
         @Override
@@ -1071,6 +1094,14 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
 
     @Override
     public void visit(InitClassStatement statement) {
+        ClassReader cls = classSource.get(statement.getClassName());
+        if (cls == null) {
+            return;
+        }
+        MethodReader method = cls.getMethod(new MethodDescriptor("<clinit>", void.class));
+        if (method == null) {
+            return;
+        }
         try {
             debugEmitter.emitStatementStart();
             if (statement.getLocation() != null) {
@@ -1287,7 +1318,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     exitPriority();
                     break;
                 case NEGATE:
-                    enterPriority(Priority.UNARY, Associativity.RIGHT, true);
+                    enterPriority(Priority.MULTIPLICATION, Associativity.RIGHT, true);
                     writer.append("-");
                     expr.getOperand().acceptVisitor(this);
                     exitPriority();
@@ -1339,18 +1370,24 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     writer.append(')');
                     exitPriority();
                     break;
-                case BYTE_TO_INT:
+                case INT_TO_BYTE:
                     enterPriority(Priority.BITWISE_SHIFT, Associativity.LEFT, true);
                     writer.append("(");
                     expr.getOperand().acceptVisitor(this);
                     writer.ws().append("<<").ws().append("24)").ws().append(">>").ws().append("24");
                     exitPriority();
                     break;
-                case SHORT_TO_INT:
+                case INT_TO_SHORT:
                     enterPriority(Priority.BITWISE_SHIFT, Associativity.LEFT, true);
                     writer.append("(");
                     expr.getOperand().acceptVisitor(this);
                     writer.ws().append("<<").ws().append("16)").ws().append(">>").ws().append("16");
+                    exitPriority();
+                    break;
+                case INT_TO_CHAR:
+                    enterPriority(Priority.BITWISE_AND, Associativity.LEFT, true);
+                    expr.getOperand().acceptVisitor(this);
+                    writer.ws().append("&").ws().append("65535");
                     exitPriority();
                     break;
                 case NULL_CHECK:
@@ -1396,7 +1433,14 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             if (expr.getLocation() != null) {
                 pushLocation(expr.getLocation());
             }
-            writer.append(constantToString(expr.getValue()));
+            String str = constantToString(expr.getValue());
+            if (str.startsWith("-")) {
+                enterPriority(Priority.MULTIPLICATION, Associativity.RIGHT, true);
+            }
+            writer.append(str);
+            if (str.startsWith("-")) {
+                exitPriority();
+            }
             if (expr.getLocation() != null) {
                 popLocation();
             }
@@ -1596,14 +1640,15 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             if (injector != null) {
                 injector.generate(new InjectorContextImpl(expr.getArguments()), expr.getMethod());
             } else {
-                if (expr.getAsyncTarget() != null) {
+                boolean asyncCall = expr.getAsyncTarget() != null;
+                if (asyncCall) {
                     writer.append("return ");
                 }
                 if (expr.getType() == InvocationType.DYNAMIC) {
                     expr.getArguments().get(0).acceptVisitor(this);
                 }
-                String name = expr.getAsyncTarget() == null ? naming.getNameFor(expr.getMethod()) :
-                        naming.getNameForAsync(expr.getMethod());
+                MethodReference method = expr.getMethod();
+                String name = asyncCall ? naming.getNameForAsync(method) : naming.getNameFor(method);
                 DeferredCallSite callSite = prevCallSite;
                 boolean shouldEraseCallSite = lastCallSite == null;
                 if (lastCallSite == null) {
@@ -1614,7 +1659,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 enterPriority(Priority.COMMA, Associativity.NONE, false);
                 switch (expr.getType()) {
                     case STATIC:
-                        writer.appendMethodBody(expr.getMethod()).append("(");
+                        writer.append(asyncCall ? naming.getFullNameForAsync(method) :
+                                naming.getFullNameFor(method)).append("(");
                         prevCallSite = debugEmitter.emitCallSite();
                         for (int i = 0; i < expr.getArguments().size(); ++i) {
                             if (i > 0) {
@@ -1625,7 +1671,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                         }
                         break;
                     case SPECIAL:
-                        writer.appendMethodBody(expr.getMethod()).append("(");
+                        writer.append(asyncCall ? naming.getFullNameForAsync(method) :
+                            naming.getFullNameFor(method)).append("(");
                         prevCallSite = debugEmitter.emitCallSite();
                         expr.getArguments().get(0).acceptVisitor(this);
                         hasParams = true;
@@ -1952,16 +1999,54 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         }
     }
 
+    @Override
+    public void visit(MonitorEnterStatement statement) {
+        if (!async) {
+            return;
+        }
+        try {
+            MethodReference monitorEnterRef = new MethodReference(
+                    Object.class, "monitorEnter", Object.class, void.class);
+            writer.append("return ").append(naming.getFullNameForAsync(monitorEnterRef)).append("(");
+            statement.getObjectRef().acceptVisitor(this);
+            writer.append(",").ws();
+            writer.append("$rt_continue($part_").append(statement.getAsyncTarget()).append(')');
+            writer.append(");").softNewLine();
+        } catch (IOException ex){
+            throw new RenderingException("IO error occured", ex);
+        }
+    }
+
+    @Override
+    public void visit(MonitorExitStatement statement) {
+        if (!async) {
+            return;
+        }
+        try {
+            MethodReference monitorExitRef = new MethodReference(
+                    Object.class, "monitorExit", Object.class, void.class);
+            writer.appendMethodBody(monitorExitRef).append("(");
+            statement.getObjectRef().acceptVisitor(this);
+            writer.append(");").softNewLine();
+        } catch (IOException ex){
+            throw new RenderingException("IO error occured", ex);
+        }
+    }
+
+
     private Injector getInjector(MethodReference ref) {
         InjectorHolder holder = injectorMap.get(ref);
         if (holder == null) {
-            MethodHolder method = classSource.get(ref.getClassName()).getMethod(ref.getDescriptor());
             holder = new InjectorHolder(null);
-            if (method != null) {
-                AnnotationHolder injectedByAnnot = method.getAnnotations().get(InjectedBy.class.getName());
-                if (injectedByAnnot != null) {
-                    ValueType type = injectedByAnnot.getValues().get("value").getJavaClass();
-                    holder = new InjectorHolder(instantiateInjector(((ValueType.Object)type).getClassName()));
+            ClassHolder cls = classSource.get(ref.getClassName());
+            if (cls != null) {
+                MethodHolder method = cls.getMethod(ref.getDescriptor());
+                if (method != null) {
+                    AnnotationHolder injectedByAnnot = method.getAnnotations().get(InjectedBy.class.getName());
+                    if (injectedByAnnot != null) {
+                        ValueType type = injectedByAnnot.getValues().get("value").getJavaClass();
+                        holder = new InjectorHolder(instantiateInjector(((ValueType.Object)type).getClassName()));
+                    }
                 }
             }
             injectorMap.put(ref, holder);

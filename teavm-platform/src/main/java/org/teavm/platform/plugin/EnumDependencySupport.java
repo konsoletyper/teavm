@@ -16,11 +16,7 @@
 package org.teavm.platform.plugin;
 
 import org.teavm.dependency.*;
-import org.teavm.model.CallLocation;
-import org.teavm.model.ClassReader;
-import org.teavm.model.MethodDescriptor;
-import org.teavm.model.MethodReader;
-import org.teavm.model.ValueType;
+import org.teavm.model.*;
 import org.teavm.platform.Platform;
 
 /**
@@ -29,7 +25,6 @@ import org.teavm.platform.Platform;
  */
 public class EnumDependencySupport implements DependencyListener {
     private DependencyNode allEnums;
-    private boolean unlocked;
 
     @Override
     public void started(DependencyAgent agent) {
@@ -43,21 +38,25 @@ public class EnumDependencySupport implements DependencyListener {
             return;
         }
         allEnums.propagate(agent.getType(className));
-        if (unlocked) {
-            MethodReader method = cls.getMethod(new MethodDescriptor("values",
-                    ValueType.arrayOf(ValueType.object(cls.getName()))));
-            if (method != null) {
-                agent.linkMethod(method.getReference(), location).use();
-            }
-        }
+
     }
 
     @Override
-    public void methodAchieved(DependencyAgent agent, MethodDependency method, CallLocation location) {
+    public void methodAchieved(final DependencyAgent agent, MethodDependency method, CallLocation location) {
         if (method.getReference().getClassName().equals(Platform.class.getName()) &&
                 method.getReference().getName().equals("getEnumConstants")) {
-            unlocked = true;
             allEnums.connect(method.getResult().getArrayItem());
+            final MethodReference ref = method.getReference();
+            allEnums.addConsumer(new DependencyConsumer() {
+                @Override public void consume(DependencyAgentType type) {
+                    ClassReader cls = agent.getClassSource().get(type.getName());
+                    MethodReader method = cls.getMethod(new MethodDescriptor("values",
+                            ValueType.arrayOf(ValueType.object(cls.getName()))));
+                    if (method != null) {
+                        agent.linkMethod(method.getReference(), new CallLocation(ref)).use();
+                    }
+                }
+            });
             method.getResult().propagate(agent.getType("[java.lang.Enum"));
             for (String cls : agent.getAchievableClasses()) {
                 classAchieved(agent, cls, location);

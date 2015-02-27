@@ -293,7 +293,7 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
         return value;
     }
 
-    public static synchronized TLocale[] getAvailableLocales() {
+    public static TLocale[] getAvailableLocales() {
         return TLocale.getAvailableLocales();
     }
 
@@ -303,11 +303,11 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
 
     abstract public int getGreatestMinimum(int field);
 
-    public static synchronized TCalendar getInstance() {
+    public static TCalendar getInstance() {
         return new TGregorianCalendar();
     }
 
-    public static synchronized TCalendar getInstance(TLocale locale) {
+    public static TCalendar getInstance(TLocale locale) {
         return new TGregorianCalendar(locale);
     }
 
