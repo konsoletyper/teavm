@@ -36,9 +36,14 @@ public class DJGraph {
     private int[] spanningTreeIndex;
     private int[][] levelContent;
     private int[] mergeRoot;
+    private int[] weight;
     private IntegerArray[] mergeClasses;
 
-    public DJGraph(Graph src) {
+    public DJGraph(Graph src, int[] weight) {
+        if (src.size() != weight.length) {
+            throw new IllegalArgumentException("Node count " + src.size() + " is not equal to weight array " +
+                    weight.length);
+        }
         this.cfg = new MutableDirectedGraph(src);
         domTree = GraphUtils.buildDominatorTree(src);
         buildGraph(src);
@@ -50,6 +55,7 @@ public class DJGraph {
             mergeRoot[i] = i;
             mergeClasses[i] = IntegerArray.of(i);
         }
+        weight = Arrays.copyOf(weight, weight.length);
     }
 
     private void buildGraph(Graph src) {
@@ -160,6 +166,18 @@ public class DJGraph {
         return c != i && c != j;
     }
 
+    public int weightOf(int node) {
+        return weight[node];
+    }
+
+    public int weightOf(int... nodes) {
+        int result = 0;
+        for (int node : nodes) {
+            result += weight[node];
+        }
+        return result;
+    }
+
     public int levelOf(int node) {
         return domTree.levelOf(mergeRoot[node]);
     }
@@ -202,6 +220,7 @@ public class DJGraph {
                 cls.addAll(mergeClasses[node.value].getAll());
                 mergeClasses[node.value].clear();
             }
+            weight[top] += weight[node.value];
         }
 
         // Alter graphs

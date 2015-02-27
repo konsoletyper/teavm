@@ -15,10 +15,9 @@
  */
 package org.teavm.common.irreducible;
 
+import org.teavm.common.*;
+import com.carrotsearch.hppc.IntOpenHashSet;
 import com.carrotsearch.hppc.IntSet;
-import org.teavm.common.Graph;
-import org.teavm.common.GraphNodeFilter;
-import org.teavm.common.GraphUtils;
 
 /**
  * <p>Converts irreducible graph to reducible one using node splitting algorithm described at
@@ -28,15 +27,21 @@ import org.teavm.common.GraphUtils;
  * @author Alexey Andreev
  */
 public class IrreducibleGraphConverter {
+    private Graph cfg;
     private GraphSplittingBackend backend;
 
-    public void convertToReducible(Graph cfg, GraphSplittingBackend backend) {
+    public void convertToReducible(Graph cfg, int[] weight, GraphSplittingBackend backend) {
         this.backend = backend;
-        handleLoops(new DJGraph(cfg));
+        int[] identityNodeMap = new int[cfg.size()];
+        for (int i = 0; i < identityNodeMap.length; ++i) {
+            identityNodeMap[i] = i;
+        }
+        this.cfg = cfg;
+        handleLoops(new DJGraph(cfg, weight), identityNodeMap);
         this.backend = null;
     }
 
-    private void handleLoops(DJGraph djGraph) {
+    private void handleLoops(DJGraph djGraph, int[] nodeMap) {
         for (int level = djGraph.levelCount() - 1; level >= 0; --level) {
             boolean irreducible = false;
             for (int node : djGraph.level(level)) {
@@ -52,12 +57,99 @@ public class IrreducibleGraphConverter {
             }
             DJGraphNodeFilter filter = new DJGraphNodeFilter(djGraph, level, null);
             int[][] sccs = GraphUtils.findStronglyConnectedComponents(djGraph.getGraph(), djGraph.level(level), filter);
+            for (int[] scc : sccs) {
+                handleStronglyConnectedComponent(djGraph, scc, nodeMap);
+                djGraph.collapse(scc);
+            }
         }
     }
 
     private int[] reachUnder(DJGraph djGraph, int top) {
         // TODO: implement
         return null;
+    }
+
+    private void handleStronglyConnectedComponent(DJGraph djGraph, int[] scc, int[] nodeMap) {
+        // Find shared dominator
+        int sharedDom = scc[0];
+        for (int i = 1; i < scc.length; ++i) {
+            sharedDom = djGraph.getDomTree().commonDominatorOf(sharedDom, scc[i]);
+        }
+
+        // Partition SCC into domains
+        DisjointSet partitions = new DisjointSet();
+        for (int i = 0; i < scc.length; ++i) {
+            partitions.create();
+        }
+        for (int i = 0; i < scc.length; ++i) {
+            int node = scc[i];
+            int idom = djGraph.getDomTree().immediateDominatorOf(node);
+            if (idom != sharedDom) {
+                partitions.union(node, idom);
+            }
+        }
+        int[] domains = partitions.pack(scc.length);
+        int domainCount = 0;
+        for (int domain : domains) {
+            domainCount = Math.max(domainCount, domain + 1);
+        }
+
+        // For each domain calculate its weight
+        int[] domainWeight = new int [domainCount];
+        for (int i = 0; i < scc.length; ++i) {
+            int node = scc[i];
+            domainWeight[domains[node]] += djGraph.weightOf(node);
+        }
+
+        // Find domain to split around
+        int domain = 0;
+        int maxWeight = domainWeight[0];
+        for (int i = 1; i < domainWeight.length; ++i) {
+            if (domainWeight[i] > maxWeight) {
+                domain = i;
+                maxWeight = domainWeight[i];
+            }
+        }
+
+        // Find header of this domain
+        IntSet domainNodes = new IntOpenHashSet(scc.length);
+        for (int i = 0; i < scc.length; ++i) {
+            int node = scc[i];
+            if (domains[node] == domain) {
+                domainNodes.add(node);
+            }
+        }
+
+        // Split
+        int[] newNodes = splitStronglyConnectedComponent(domainNodes, scc, nodeMap);
+
+        // Construct DJ-subgraph
+        int[] newNodeMap = new int[1 + scc.length + newNodes.length];
+        for (int i = 0; i < scc.length; ++i) {
+            newNodeMap[i + 1] = nodeMap[scc[i]];
+        }
+        for (int i = 0; i < newNodes.length; ++i) {
+            newNodeMap[i + 1 + scc.length] = newNodes[i];
+        }
+        GraphBuilder builder = new GraphBuilder(newNodeMap.length);
+
+        for (int i = 0; i < scc.length; ++i) {
+
+        }
+    }
+
+    private int[] splitStronglyConnectedComponent(IntSet domain, int[] scc, int[] nodeMap) {
+        IntegerArray nonDomain = new IntegerArray(scc.length);
+        for (int node : scc) {
+            if (!domain.contains(node)) {
+                nonDomain.add(node);
+            }
+        }
+        int[] mappedNonDomain = new int[nonDomain.size()];
+        for (int i = 0; i < nonDomain.size(); ++i) {
+            mappedNonDomain[i] = nodeMap[nonDomain.get(i)];
+        }
+        return backend.split(mappedNonDomain);
     }
 
     static class DJGraphNodeFilter implements GraphNodeFilter {
