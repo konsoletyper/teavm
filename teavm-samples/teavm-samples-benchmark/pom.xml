@@ -108,7 +108,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>org.teamvm.samples.benchmark.bck2brwsr.BenchmarkStarter</mainClass>
+                            <mainClass>org.teamvm.samples.benchmark.htmljava.BenchmarkStarter</mainClass>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>lib/</classpathPrefix>
                             <useUniqueVersions>false</useUniqueVersions>
@@ -179,7 +179,7 @@
                 <mainJavaScript>${project.build.directory}/generated/js/b2b-benchmark.js</mainJavaScript>
                 <vm>${project.build.directory}/generated/js/bck2brwsr.js</vm>
                 <exports>
-                    <export>org.teavm.samples.benchmark.bck2brwsr.BenchmarkStarter</export>
+                    <export>org.teavm.samples.benchmark.htmljava.BenchmarkStarter</export>
                     <export>org/jbox2d/collision/shapes/</export>
                     <export>org/jbox2d/common/</export>
                     <export>org/jbox2d/dynamics/</export>
@@ -235,7 +235,7 @@
                       <artifactId>exec-maven-plugin</artifactId>
                       <version>1.3.2</version>
                       <configuration>
-                          <mainClass>org.teavm.samples.benchmark.bck2brwsr.BenchmarkFX</mainClass>
+                          <mainClass>org.teavm.samples.benchmark.htmljava.BenchmarkFX</mainClass>
                       </configuration>
                   </plugin>
               </plugins>

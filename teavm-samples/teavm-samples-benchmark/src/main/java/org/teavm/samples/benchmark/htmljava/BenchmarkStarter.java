@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.teavm.samples.benchmark.bck2brwsr;
+package org.teavm.samples.benchmark.htmljava;
 
 import com.dukescript.api.canvas.GraphicsContext2D;
 import com.dukescript.api.canvas.Style;
