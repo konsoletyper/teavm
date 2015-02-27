@@ -27,6 +27,7 @@ public class TryCatchStatement extends Statement {
     private List<Statement> handler = new ArrayList<>();
     private String exceptionType;
     private Integer exceptionVariable;
+    private boolean async;
 
     public List<Statement> getProtectedBody() {
         return protectedBody;
@@ -50,6 +51,14 @@ public class TryCatchStatement extends Statement {
 
     public void setExceptionVariable(Integer exceptionVariable) {
         this.exceptionVariable = exceptionVariable;
+    }
+
+    public boolean isAsync() {
+        return async;
+    }
+
+    public void setAsync(boolean async) {
+        this.async = async;
     }
 
     @Override

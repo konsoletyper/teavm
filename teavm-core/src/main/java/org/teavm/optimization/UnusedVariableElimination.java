@@ -248,5 +248,15 @@ public class UnusedVariableElimination implements MethodOptimization {
         public void visit(NullCheckInstruction insn) {
             requestUsage(insn.getReceiver());
         }
+
+        @Override
+        public void visit(MonitorEnterInstruction insn) {
+            
+        }
+
+        @Override
+        public void visit(MonitorExitInstruction insn) {
+            
+        }
     }
 }

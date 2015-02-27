@@ -17,8 +17,9 @@ package org.teavm.classlib.java.lang;
 
 import org.teavm.classlib.impl.charset.UTF16Helper;
 import org.teavm.classlib.impl.unicode.UnicodeHelper;
-import org.teavm.dependency.PluggableDependency;
-import org.teavm.javascript.ni.GeneratedBy;
+import org.teavm.platform.Platform;
+import org.teavm.platform.metadata.MetadataProvider;
+import org.teavm.platform.metadata.StringResource;
 
 /**
  *
@@ -222,18 +223,21 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
         return UTF16Helper.lowSurrogate(codePoint);
     }
 
-    // TODO: implement toLowerCase/toUpperCase/toTitleCase using UnicodeData.txt instead of built-in JS
-    @GeneratedBy(CharacterNativeGenerator.class)
-    public static native char toLowerCase(char ch);
+    public static char toLowerCase(char ch) {
+        return (char)toLowerCase((int)ch);
+    }
 
-    @GeneratedBy(CharacterNativeGenerator.class)
-    public static native int toLowerCase(int ch);
+    public static int toLowerCase(int ch) {
+        return Platform.stringFromCharCode(ch).toLowerCase().charCodeAt(0);
+    }
 
-    @GeneratedBy(CharacterNativeGenerator.class)
-    public static native char toUpperCase(char ch);
+    public static char toUpperCase(char ch) {
+        return (char)toUpperCase((int)ch);
+    }
 
-    @GeneratedBy(CharacterNativeGenerator.class)
-    public static native int toUpperCase(int codePoint);
+    public static int toUpperCase(int codePoint) {
+        return Platform.stringFromCharCode(codePoint).toUpperCase().charCodeAt(0);
+    }
 
     public static int digit(char ch, int radix) {
         return digit((int)ch, radix);
@@ -286,25 +290,23 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
 
     private static int[] getDigitMapping() {
         if (digitMapping == null) {
-            digitMapping = UnicodeHelper.decodeIntByte(obtainDigitMapping());
+            digitMapping = UnicodeHelper.decodeIntByte(obtainDigitMapping().getValue());
         }
         return digitMapping;
     }
 
-    @GeneratedBy(CharacterNativeGenerator.class)
-    @PluggableDependency(CharacterNativeGenerator.class)
-    private static native String obtainDigitMapping();
+    @MetadataProvider(CharacterMetadataGenerator.class)
+    private static native StringResource obtainDigitMapping();
 
     private static UnicodeHelper.Range[] getClasses() {
         if (classMapping == null) {
-            classMapping = UnicodeHelper.extractRle(obtainClasses());
+            classMapping = UnicodeHelper.extractRle(obtainClasses().getValue());
         }
         return classMapping;
     }
 
-    @GeneratedBy(CharacterNativeGenerator.class)
-    @PluggableDependency(CharacterNativeGenerator.class)
-    private static native String obtainClasses();
+    @MetadataProvider(CharacterMetadataGenerator.class)
+    private static native StringResource obtainClasses();
 
     public static int toChars(int codePoint, char[] dst, int dstIndex) {
         if (codePoint >= UTF16Helper.SUPPLEMENTARY_PLANE) {

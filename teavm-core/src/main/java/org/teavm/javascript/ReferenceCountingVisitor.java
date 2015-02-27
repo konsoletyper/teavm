@@ -111,4 +111,18 @@ class ReferenceCountingVisitor implements StatementVisitor {
             part.acceptVisitor(this);
         }
     }
+
+    @Override
+    public void visit(RestoreAsyncStatement statement) {
+    }
+
+    @Override
+    public void visit(MonitorEnterStatement statement) {
+        
+    }
+
+    @Override
+    public void visit(MonitorExitStatement statement) {
+        
+    }
 }

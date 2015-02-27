@@ -28,9 +28,17 @@ public class JSObjectClassTransformer implements ClassHolderTransformer {
 
     @Override
     public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
-        processor = new JavascriptNativeProcessor(innerSource);
+        if (processor == null || processor.getClassSource() != innerSource) {
+            processor = new JavascriptNativeProcessor(innerSource);
+        }
         processor.setDiagnostics(diagnostics);
         processor.processClass(cls);
+        if (processor.isNative(cls.getName())) {
+            processor.processFinalMethods(cls);
+        }
+        if (processor.isNativeImplementation(cls.getName())) {
+            processor.makeSync(cls);
+        }
         for (MethodHolder method : cls.getMethods().toArray(new MethodHolder[0])) {
             if (method.getAnnotations().get(JSBody.class.getName()) != null) {
                 processor.processJSBody(cls, method);

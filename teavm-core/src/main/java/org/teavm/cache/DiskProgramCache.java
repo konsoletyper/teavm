@@ -153,5 +153,15 @@ public class DiskProgramCache implements ProgramCache {
         @Override public void visit(IsInstanceInstruction insn) { }
         @Override public void visit(InitClassInstruction insn) { }
         @Override public void visit(NullCheckInstruction insn) { }
+
+        @Override
+        public void visit(MonitorEnterInstruction insn) {
+            
+        }
+
+        @Override
+        public void visit(MonitorExitInstruction insn) {
+            
+        }
     }
 }

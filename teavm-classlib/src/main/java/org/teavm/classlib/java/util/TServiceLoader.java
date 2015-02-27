@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.util;
 
 import org.teavm.classlib.java.lang.*;
+import org.teavm.platform.PlatformClass;
 
 /**
  *
@@ -48,7 +49,7 @@ public final class TServiceLoader<S> extends TObject implements TIterable<S> {
     }
 
     public static <S> TServiceLoader<S> load(TClass<S> service) {
-        return new TServiceLoader<>(loadServices(service));
+        return new TServiceLoader<>(loadServices(service.getPlatformClass()));
     }
 
     public static <S> TServiceLoader<S> load(TClass<S> service, @SuppressWarnings("unused") TClassLoader loader) {
@@ -59,7 +60,7 @@ public final class TServiceLoader<S> extends TObject implements TIterable<S> {
         return load(service);
     }
 
-    private static native <T> T[] loadServices(TClass<T> serviceType);
+    private static native <T> T[] loadServices(PlatformClass cls);
 
     public void reload() {
         // Do nothing, services are bound at build time

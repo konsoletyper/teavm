@@ -17,9 +17,9 @@ package org.teavm.parsing;
 
 import java.util.Map;
 import org.teavm.common.Mapper;
-import org.teavm.javascript.ni.Remove;
-import org.teavm.javascript.ni.Rename;
-import org.teavm.javascript.ni.Superclass;
+import org.teavm.javascript.spi.Remove;
+import org.teavm.javascript.spi.Rename;
+import org.teavm.javascript.spi.Superclass;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 import org.teavm.model.util.ModelUtils;
@@ -283,5 +283,15 @@ public class ClassRefsRenamer implements InstructionVisitor {
 
     @Override
     public void visit(NullCheckInstruction insn) {
+    }
+
+    @Override
+    public void visit(MonitorEnterInstruction insn) {
+        
+    }
+
+    @Override
+    public void visit(MonitorExitInstruction insn) {
+        
     }
 }

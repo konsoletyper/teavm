@@ -146,12 +146,6 @@ class TLexer {
 
     // table that contains canonical decomposition mappings
     private static TIntArrHash decompTable = null;
-
-    // table that contains canonical combining classes
-    private static TIntHash canonClassesTable = null;
-
-    private static int canonClassesTableSize;
-
     /*
      * Table that contains information about Unicode codepoints with single
      * codepoint decomposition
@@ -330,51 +324,6 @@ class TLexer {
         return input;
     }
 
-    /**
-     * Rearrange codepoints according to canonical order.
-     *
-     * @param inputInts
-     *            - array that contains Unicode codepoints
-     * @param length
-     *            - index of last Unicode codepoint plus 1
-     *
-     * @return array that contains rearranged codepoints.
-     */
-    static int[] getCanonicalOrder(int[] inputInts, int length) {
-        int inputLength = (length < inputInts.length) ? length : inputInts.length;
-
-        /*
-         * Simple bubble-sort algorithm. Note that many codepoints have 0
-         * canonical class, so this algorithm works almost lineary in
-         * overwhelming majority of cases. This is due to specific of Unicode
-         * combining classes and codepoints.
-         */
-        for (int i = 1; i < inputLength; i++) {
-            int j = i - 1;
-            int iCanonicalClass = getCanonicalClass(inputInts[i]);
-            int ch;
-
-            if (iCanonicalClass == 0) {
-                continue;
-            }
-
-            while (j > -1) {
-                if (getCanonicalClass(inputInts[j]) > iCanonicalClass) {
-                    j = j - 1;
-                } else {
-                    break;
-                }
-            }
-
-            ch = inputInts[i];
-            for (int k = i; k > j + 1; k--) {
-                inputInts[k] = inputInts[k - 1];
-            }
-            inputInts[j + 1] = ch;
-        }
-
-        return inputInts;
-    }
 
     /**
      * Reread current character, may be require if previous token changes mode
@@ -1063,20 +1012,6 @@ class TLexer {
     }
 
     /**
-     * Gets canonical class for given codepoint from decomposition mappings
-     * table.
-     *
-     * @param - ch Unicode codepoint
-     * @return canonical class for given Unicode codepoint that is represented
-     *         by ch.
-     */
-    static int getCanonicalClass(int ch) {
-        int canClass = canonClassesTable.get(ch);
-
-        return (canClass == canonClassesTableSize) ? 0 : canClass;
-    }
-
-    /**
      * Tests if given codepoint is a canonical decomposition of another
      * codepoint.
      *
@@ -1124,23 +1059,6 @@ class TLexer {
         }
 
         return high;
-    }
-
-    /**
-     * Tests Unicode codepoint if it is a boundary of decomposed Unicode
-     * codepoint.
-     *
-     * @param ch
-     *            - Unicode codepoint to test
-     * @return true if given codepoint is a boundary.
-     */
-    static boolean isDecomposedCharBoundary(int ch) {
-        int canClass = canonClassesTable.get(ch);
-
-        // Lexer.getCanonicalClass(ch) == 0
-        boolean isBoundary = (canClass == canonClassesTableSize);
-
-        return isBoundary;
     }
 
     /**

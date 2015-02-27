@@ -29,7 +29,8 @@ public enum UnaryOperation {
     LONG_TO_INT,
     NUM_TO_LONG,
     INT_TO_LONG,
-    BYTE_TO_INT,
-    SHORT_TO_INT,
+    INT_TO_BYTE,
+    INT_TO_SHORT,
+    INT_TO_CHAR,
     NULL_CHECK
 }

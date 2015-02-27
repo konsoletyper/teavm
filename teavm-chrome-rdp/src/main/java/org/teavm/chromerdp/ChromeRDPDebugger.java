@@ -465,18 +465,22 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
             for (PropertyDescriptorDTO property : properties) {
                 RemoteObjectDTO remoteValue = property.getValue();
                 RDPValue value;
-                switch (remoteValue.getType()) {
-                    case "undefined":
-                        value = new RDPValue(this, "undefined", "undefined", null, false);
-                        break;
-                    case "object":
-                    case "function":
-                        value = new RDPValue(this, null, remoteValue.getType(), remoteValue.getObjectId(), true);
-                        break;
-                    default:
-                        value = new RDPValue(this, remoteValue.getValue().asText(), remoteValue.getType(),
-                                remoteValue.getObjectId(), false);
-                        break;
+                if (remoteValue != null && remoteValue.getType() != null) {
+                    switch (remoteValue.getType()) {
+                        case "undefined":
+                            value = new RDPValue(this, "undefined", "undefined", null, false);
+                            break;
+                        case "object":
+                        case "function":
+                            value = new RDPValue(this, null, remoteValue.getType(), remoteValue.getObjectId(), true);
+                            break;
+                        default:
+                            value = new RDPValue(this, remoteValue.getValue().asText(), remoteValue.getType(),
+                                    remoteValue.getObjectId(), false);
+                            break;
+                    }
+                } else {
+                    value = new RDPValue(this, "null", "null", "null", false);
                 }
 
                 RDPLocalVariable var = new RDPLocalVariable(property.getName(), value);

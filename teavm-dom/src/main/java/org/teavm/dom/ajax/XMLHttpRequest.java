@@ -63,10 +63,19 @@ public interface XMLHttpRequest extends JSObject {
 
     @JSProperty
     Document getResponseXML();
+    
+    @JSProperty
+    JSObject getResponse();
 
     @JSProperty
     int getStatus();
 
     @JSProperty
     String getStatusText();
+    
+    @JSProperty
+    void setResponseType(String type);
+    
+    @JSProperty
+    String getResponseType();
 }

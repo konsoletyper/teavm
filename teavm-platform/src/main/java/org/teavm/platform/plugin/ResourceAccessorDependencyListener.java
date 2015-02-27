@@ -36,6 +36,9 @@ class ResourceAccessorDependencyListener implements DependencyListener {
 
     @Override
     public void methodAchieved(DependencyAgent agent, MethodDependency method, CallLocation location) {
+        if (!method.getReference().getClassName().equals(ResourceAccessor.class.getName())) {
+            return;
+        }
         switch (method.getReference().getName()) {
             case "castToString":
                 method.getResult().propagate(agent.getType("java.lang.String"));

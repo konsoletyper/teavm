@@ -17,7 +17,9 @@ package org.teavm.model.instructions;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.teavm.model.*;
+import org.teavm.model.Instruction;
+import org.teavm.model.MethodReference;
+import org.teavm.model.Variable;
 
 /**
  *

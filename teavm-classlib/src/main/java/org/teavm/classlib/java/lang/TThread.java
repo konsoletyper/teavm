@@ -15,30 +15,70 @@
  */
 package org.teavm.classlib.java.lang;
 
+import org.teavm.dom.browser.TimerHandler;
+import org.teavm.dom.browser.Window;
+import org.teavm.javascript.spi.Async;
+import org.teavm.jso.JS;
+import org.teavm.platform.Platform;
+import org.teavm.platform.PlatformRunnable;
+import org.teavm.platform.async.AsyncCallback;
+
+
 /**
  *
  * @author Alexey Andreev
  */
 public class TThread extends TObject implements TRunnable {
-    private static TThread currentThread = new TThread(TString.wrap("main"));
+    private static Window window = (Window)JS.getGlobal();
+    private static TThread mainThread = new TThread(TString.wrap("main"));
+    private static TThread currentThread = mainThread;
+    private static long nextId = 1;
+    private static int activeCount = 1;
+    private long id;
+    private int priority = 0;
+
     private TString name;
-    private TRunnable target;
+    TRunnable target;
 
     public TThread() {
         this(null, null);
     }
 
     public TThread(TString name) {
-        this(name, null);
+        this(null, name);
     }
 
     public TThread(TRunnable target) {
-        this(null, target);
+        this(target, null );
     }
 
-    public TThread(TString name, TRunnable target) {
+    public TThread(TRunnable target, TString name ) {
         this.name = name;
         this.target = target;
+        id=nextId++;
+    }
+
+    public void start(){
+        Platform.startThread(new PlatformRunnable() {
+            @Override
+            public void run() {
+                try {
+                    activeCount++;
+                    setCurrentThread(TThread.this);
+                    TThread.this.run();
+                } finally {
+                    activeCount--;
+                    setCurrentThread(mainThread);
+                }
+            }
+        });
+    }
+
+    static void setCurrentThread(TThread thread){
+        currentThread = thread;
+    }
+    static TThread getMainThread(){
+        return mainThread;
     }
 
     @Override
@@ -56,7 +96,11 @@ public class TThread extends TObject implements TRunnable {
         return name;
     }
 
-    public static void yield() {
+    @Async
+    public static native void yield();
+
+    private static void yield(final AsyncCallback<Void> callback) {
+        callback.complete(null);
     }
 
     public void interrupt() {
@@ -71,14 +115,36 @@ public class TThread extends TObject implements TRunnable {
     }
 
     public static int activeCount() {
-        return 1;
+        return activeCount;
     }
 
     public long getId() {
-        return 1;
+        return id;
     }
 
-    public static boolean holdsLock(@SuppressWarnings("unused") TObject obj) {
-        return true;
+    public static boolean holdsLock(TObject obj) {
+        return TObject.holdsLock(obj);
     }
+
+    @Async
+    public static native void sleep(long millis) throws TInterruptedException;
+
+    private static void sleep(long millis, final AsyncCallback<Void> callback) {
+        final TThread current = currentThread();
+        window.setTimeout(new TimerHandler() {
+            @Override public void onTimer() {
+                setCurrentThread(current);
+                callback.complete(null);
+            }
+        }, millis);
+    }
+    
+    public final void setPriority(int newPriority){
+        this.priority = newPriority;
+    }
+    
+    public final int getPriority(){
+        return this.priority;
+    }
+
 }

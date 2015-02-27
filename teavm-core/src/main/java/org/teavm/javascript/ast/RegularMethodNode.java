@@ -53,4 +53,9 @@ public class RegularMethodNode extends MethodNode {
     public void acceptVisitor(MethodNodeVisitor visitor) {
         visitor.visit(this);
     }
+
+    @Override
+    public boolean isAsync() {
+        return false;
+    }
 }

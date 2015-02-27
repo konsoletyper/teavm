@@ -103,6 +103,10 @@ public class SourceWriter implements Appendable, LocationProvider {
         return append(naming.getNameFor(cls));
     }
 
+    public SourceWriter appendClass(Class<?> cls) throws NamingException, IOException {
+        return append(naming.getNameFor(cls.getName()));
+    }
+
     public SourceWriter appendField(FieldReference field) throws NamingException, IOException {
         return append(naming.getNameFor(field));
     }
@@ -113,7 +117,12 @@ public class SourceWriter implements Appendable, LocationProvider {
 
     public SourceWriter appendMethod(String className, String name, ValueType... params)
             throws NamingException, IOException {
-        return append(naming.getNameFor(new MethodReference(className, new MethodDescriptor(name, params))));
+        return append(naming.getNameFor(new MethodReference(className, name, params)));
+    }
+
+    public SourceWriter appendMethod(Class<?> cls, String name, Class<?>... params)
+            throws NamingException, IOException {
+        return append(naming.getNameFor(new MethodReference(cls, name, params)));
     }
 
     public SourceWriter appendMethodBody(MethodReference method) throws NamingException, IOException {
@@ -123,6 +132,11 @@ public class SourceWriter implements Appendable, LocationProvider {
     public SourceWriter appendMethodBody(String className, String name, ValueType... params)
             throws NamingException, IOException {
         return append(naming.getFullNameFor(new MethodReference(className, new MethodDescriptor(name, params))));
+    }
+
+    public SourceWriter appendMethodBody(Class<?> cls, String name, Class<?>... params)
+            throws NamingException, IOException {
+        return append(naming.getFullNameFor(new MethodReference(cls, name, params)));
     }
 
     private void appendIndent() throws IOException {

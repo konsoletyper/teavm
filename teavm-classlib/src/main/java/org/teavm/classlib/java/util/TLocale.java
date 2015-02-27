@@ -244,11 +244,11 @@ public final class TLocale implements TCloneable, TSerializable {
     }
 
     @Override
-    public synchronized int hashCode() {
+    public int hashCode() {
         return countryCode.hashCode() + languageCode.hashCode() + variantCode.hashCode();
     }
 
-    public synchronized static void setDefault(TLocale locale) {
+    public static void setDefault(TLocale locale) {
         if (locale != null) {
             defaultLocale = locale;
         } else {

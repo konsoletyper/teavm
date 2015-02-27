@@ -110,4 +110,18 @@ class TryCatchFinder implements StatementVisitor {
     public void visit(TryCatchStatement statement) {
         tryCatchFound = true;
     }
+
+    @Override
+    public void visit(RestoreAsyncStatement statement) {
+    }
+
+    @Override
+    public void visit(MonitorEnterStatement statement) {
+        
+    }
+
+    @Override
+    public void visit(MonitorExitStatement statement) {
+        
+    }
 }

@@ -23,8 +23,6 @@ import org.teavm.classlib.java.util.TComparator;
 import org.teavm.classlib.java.util.THashMap;
 import org.teavm.classlib.java.util.TMap;
 import org.teavm.classlib.java.util.regex.TPattern;
-import org.teavm.dependency.PluggableDependency;
-import org.teavm.javascript.ni.InjectedBy;
 
 /**
  *
@@ -592,9 +590,9 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         return hashCode;
     }
 
-    @InjectedBy(StringNativeGenerator.class)
-    @PluggableDependency(StringNativeGenerator.class)
-    public static native TString wrap(String str);
+    public static TString wrap(String str) {
+        return (TString)(Object)str;
+    }
 
     public TString toLowerCase() {
         if (isEmpty()) {

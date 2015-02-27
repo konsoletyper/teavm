@@ -37,6 +37,7 @@ class StatementGenerator implements InstructionVisitor {
     Program program;
     ClassHolderSource classSource;
     private NodeLocation currentLocation;
+    Integer asyncTarget;
 
     public void setCurrentLocation(NodeLocation currentLocation) {
         this.currentLocation = currentLocation;
@@ -303,25 +304,17 @@ class StatementGenerator implements InstructionVisitor {
             case FROM_INTEGER:
                 switch (insn.getTargetType()) {
                     case BYTE:
-                        value = Expr.binary(BinaryOperation.BITWISE_AND, value, Expr.constant(0xFF));
+                        value = Expr.unary(UnaryOperation.INT_TO_BYTE, value);
                         break;
                     case SHORT:
+                        value = Expr.unary(UnaryOperation.INT_TO_SHORT, value);
+                        break;
                     case CHARACTER:
-                        value = Expr.binary(BinaryOperation.BITWISE_AND, value, Expr.constant(0xFFFF));
+                        value = Expr.unary(UnaryOperation.INT_TO_CHAR, value);
                         break;
                 }
                 break;
             case TO_INTEGER:
-                switch (insn.getTargetType()) {
-                    case BYTE:
-                        value = Expr.unary(UnaryOperation.BYTE_TO_INT, value);
-                        break;
-                    case SHORT:
-                        value = Expr.unary(UnaryOperation.SHORT_TO_INT, value);
-                        break;
-                    case CHARACTER:
-                        break;
-                }
                 break;
         }
         assign(value, insn.getReceiver());
@@ -546,7 +539,7 @@ class StatementGenerator implements InstructionVisitor {
         for (int i = 0; i < insn.getArguments().size(); ++i) {
             exprArgs[i] = Expr.var(insn.getArguments().get(i).getIndex());
         }
-        Expr invocationExpr;
+        InvocationExpr invocationExpr;
         if (insn.getInstance() != null) {
             if (insn.getType() == InvocationType.VIRTUAL) {
                 invocationExpr = Expr.invoke(insn.getMethod(), Expr.var(insn.getInstance().getIndex()), exprArgs);
@@ -557,8 +550,15 @@ class StatementGenerator implements InstructionVisitor {
         } else {
             invocationExpr = Expr.invokeStatic(insn.getMethod(), exprArgs);
         }
-        if (insn.getReceiver() != null) {
-            assign(invocationExpr, insn.getReceiver());
+        invocationExpr.setAsyncTarget(asyncTarget);
+        if (asyncTarget == null) {
+            if (insn.getReceiver() != null) {
+                assign(invocationExpr, insn.getReceiver());
+            } else {
+                AssignmentStatement stmt = Statement.assign(null, invocationExpr);
+                stmt.setLocation(currentLocation);
+                statements.add(stmt);
+            }
         } else {
             AssignmentStatement stmt = Statement.assign(null, invocationExpr);
             stmt.setLocation(currentLocation);
@@ -657,5 +657,22 @@ class StatementGenerator implements InstructionVisitor {
     @Override
     public void visit(NullCheckInstruction insn) {
         assign(Expr.unary(UnaryOperation.NULL_CHECK, Expr.var(insn.getValue().getIndex())), insn.getReceiver());
+    }
+
+    @Override
+    public void visit(MonitorEnterInstruction insn) {
+        MonitorEnterStatement stmt = new MonitorEnterStatement();
+        stmt.setLocation(currentLocation);
+        stmt.setObjectRef(Expr.var(insn.getObjectRef().getIndex()));
+        stmt.setAsyncTarget(asyncTarget);
+        statements.add(stmt);
+    }
+
+    @Override
+    public void visit(MonitorExitInstruction insn) {
+        MonitorExitStatement stmt = new MonitorExitStatement();
+        stmt.setLocation(currentLocation);
+        stmt.setObjectRef(Expr.var(insn.getObjectRef().getIndex()));
+        statements.add(stmt);
     }
 }

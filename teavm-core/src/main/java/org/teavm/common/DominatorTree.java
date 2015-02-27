@@ -27,4 +27,6 @@ public interface DominatorTree {
     boolean dominates(int a, int b);
 
     int immediateDominatorOf(int a);
+
+    int levelOf(int a);
 }
