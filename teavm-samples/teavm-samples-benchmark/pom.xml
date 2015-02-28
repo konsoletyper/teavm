@@ -27,6 +27,10 @@
 
   <name>TeaVM performance benchmark</name>
   <description>Compares performance of the JavaScript code produced by TeaVM and GWT</description>
+  
+  <properties>
+      <bck2brwsr.version>0.14</bck2brwsr.version>
+  </properties>
 
   <dependencies>
     <dependency>
@@ -62,7 +66,7 @@
     <dependency>
       <groupId>org.apidesign.bck2brwsr</groupId>
       <artifactId>emul</artifactId>
-      <version>1.0-SNAPSHOT</version>
+      <version>${bck2brwsr.version}</version>
       <classifier>rt</classifier>
     </dependency>
     <dependency>
@@ -164,7 +168,7 @@
         <plugin>
             <groupId>org.apidesign.bck2brwsr</groupId>
             <artifactId>bck2brwsr-maven-plugin</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${bck2brwsr.version}</version>
             <executions>
                 <execution>
                     <phase>prepare-package</phase>
