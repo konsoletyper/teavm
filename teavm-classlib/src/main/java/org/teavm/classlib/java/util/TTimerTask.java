@@ -34,11 +34,11 @@ public abstract class TTimerTask extends TObject implements TRunnable {
         return true;
     }
 
-    void performOnce() {
-        if (timer != null) {
-            run();
-            timer.tasks.remove(this);
-            timer = null;
+    static void performOnce(TTimerTask task) {
+        if (task.timer != null) {
+            task.run();
+            task.timer.tasks.remove(task);
+            task.timer = null;
         }
     }
 }

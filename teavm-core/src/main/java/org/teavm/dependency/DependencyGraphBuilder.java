@@ -499,12 +499,22 @@ class DependencyGraphBuilder {
                         new MethodReference(Object.class, "monitorEnter", Object.class, void.class), null);
              nodes[objectRef.getIndex()].connect(methodDep.getVariable(1));
              methodDep.use();
+
+             methodDep = dependencyChecker.linkMethod(
+                     new MethodReference(Object.class, "monitorEnterSync", Object.class, void.class), null);
+             nodes[objectRef.getIndex()].connect(methodDep.getVariable(1));
+             methodDep.use();
         }
 
         @Override
         public void monitorExit(VariableReader objectRef) {
             MethodDependency methodDep = dependencyChecker.linkMethod(
                     new MethodReference(Object.class, "monitorExit", Object.class, void.class), null);
+            nodes[objectRef.getIndex()].connect(methodDep.getVariable(1));
+            methodDep.use();
+
+            methodDep = dependencyChecker.linkMethod(
+                    new MethodReference(Object.class, "monitorExitSync", Object.class, void.class), null);
             nodes[objectRef.getIndex()].connect(methodDep.getVariable(1));
             methodDep.use();
         }
