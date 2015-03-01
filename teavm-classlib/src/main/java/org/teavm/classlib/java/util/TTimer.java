@@ -18,8 +18,8 @@ package org.teavm.classlib.java.util;
 import org.teavm.classlib.java.lang.TIllegalStateException;
 import org.teavm.classlib.java.lang.TObject;
 import org.teavm.classlib.java.lang.TString;
-import org.teavm.dependency.PluggableDependency;
-import org.teavm.javascript.spi.GeneratedBy;
+import org.teavm.platform.Platform;
+import org.teavm.platform.PlatformRunnable;
 
 /**
  *
@@ -53,7 +53,11 @@ public class TTimer extends TObject {
         task.nativeTimerId = scheduleOnce(task, (int)delay);
     }
 
-    @GeneratedBy(TimerNativeGenerator.class)
-    @PluggableDependency(TimerNativeGenerator.class)
-    private static native int scheduleOnce(TTimerTask task, int delay);
+    private static int scheduleOnce(final TTimerTask task, int delay) {
+        return Platform.schedule(new PlatformRunnable() {
+            @Override public void run() {
+                TTimerTask.performOnce(task);
+            }
+        }, delay);
+    }
 }

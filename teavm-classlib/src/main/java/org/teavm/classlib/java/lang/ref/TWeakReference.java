@@ -26,6 +26,10 @@ public class TWeakReference<T> extends TReference<T> {
         this.value = value;
     }
 
+    public TWeakReference(T value, @SuppressWarnings("unused") TReferenceQueue<T> queue) {
+        this.value = value;
+    }
+
     @Override
     public T get() {
         return value;
