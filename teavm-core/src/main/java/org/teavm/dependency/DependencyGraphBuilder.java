@@ -338,9 +338,20 @@ class DependencyGraphBuilder {
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < dimensions.size(); ++i) {
                 sb.append('[');
+                itemType = ((ValueType.Array)itemType).getItemType();
             }
-            sb.append(itemType);
-            nodes[receiver.getIndex()].propagate(dependencyChecker.getType(sb.toString()));
+            String itemTypeStr;
+            if (itemType instanceof ValueType.Object) {
+                itemTypeStr = ((ValueType.Object)itemType).getClassName();
+            } else {
+                itemTypeStr = itemType.toString();
+            }
+            sb.append(itemTypeStr);
+            DependencyNode node = nodes[receiver.getIndex()];
+            for (int i = 0; i < dimensions.size(); ++i) {
+                node.propagate(dependencyChecker.getType(sb.substring(i, sb.length())));
+                node = node.getArrayItem();
+            }
             String className = extractClassName(itemType);
             if (className != null) {
                 dependencyChecker.linkClass(className, new CallLocation(caller.getMethod(), currentLocation));
