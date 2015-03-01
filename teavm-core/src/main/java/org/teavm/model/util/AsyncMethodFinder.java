@@ -24,6 +24,7 @@ import org.teavm.javascript.spi.Async;
 import org.teavm.javascript.spi.InjectedBy;
 import org.teavm.javascript.spi.Sync;
 import org.teavm.model.*;
+import org.teavm.model.instructions.*;
 
 /**
  *
@@ -64,6 +65,25 @@ public class AsyncMethodFinder {
                 }
             }
         }
+        if (hasAsyncMethods()) {
+            for (String clsName : classSource.getClassNames()) {
+                ClassReader cls = classSource.get(clsName);
+                for (MethodReader method : cls.getMethods()) {
+                    if (asyncMethods.contains(method.getReference()) || method.getProgram() == null) {
+                        continue;
+                    }
+                    ProgramReader program = method.getProgram();
+                    AsyncInstructionReader insnReader = new AsyncInstructionReader();
+                    for (int i = 0; i < program.basicBlockCount(); ++i) {
+                        program.basicBlockAt(i).readAllInstructions(insnReader);
+                        if (insnReader.async) {
+                            add(method.getReference());
+                            break;
+                        }
+                    }
+                }
+            }
+        }
         for (MethodReference method : asyncMethods) {
             addOverridenToFamily(method);
         }
@@ -78,6 +98,18 @@ public class AsyncMethodFinder {
                 asyncFamilyMethods.remove(entry.getKey());
             }
         }
+    }
+
+    private boolean hasAsyncMethods() {
+        int count = asyncMethods.size();
+        if (asyncMethods.contains(new MethodReference(Object.class, "monitorEnter", Object.class, void.class))) {
+            --count;
+        }
+        if (asyncMethods.contains(new MethodReference(Object.class, "monitorEnter", Object.class,
+                int.class, void.class))) {
+            --count;
+        }
+        return count > 0;
     }
 
     private void add(MethodReference methodRef) {
@@ -183,6 +215,168 @@ public class AsyncMethodFinder {
             for (String iface : cls.getInterfaces()) {
                 findOverridenMethods(new MethodReference(iface, methodRef.getDescriptor()), result, visited);
             }
+        }
+    }
+
+    class AsyncInstructionReader implements InstructionReader {
+        boolean async;
+
+        @Override
+        public void location(InstructionLocation location) {
+        }
+
+        @Override
+        public void nop() {
+        }
+
+        @Override
+        public void classConstant(VariableReader receiver, ValueType cst) {
+        }
+
+        @Override
+        public void nullConstant(VariableReader receiver) {
+        }
+
+        @Override
+        public void integerConstant(VariableReader receiver, int cst) {
+        }
+
+        @Override
+        public void longConstant(VariableReader receiver, long cst) {
+        }
+
+        @Override
+        public void floatConstant(VariableReader receiver, float cst) {
+        }
+
+        @Override
+        public void doubleConstant(VariableReader receiver, double cst) {
+        }
+
+        @Override
+        public void stringConstant(VariableReader receiver, String cst) {
+        }
+
+        @Override
+        public void binary(BinaryOperation op, VariableReader receiver, VariableReader first, VariableReader second,
+                NumericOperandType type) {
+        }
+
+        @Override
+        public void negate(VariableReader receiver, VariableReader operand, NumericOperandType type) {
+        }
+
+        @Override
+        public void assign(VariableReader receiver, VariableReader assignee) {
+        }
+
+        @Override
+        public void cast(VariableReader receiver, VariableReader value, ValueType targetType) {
+        }
+
+        @Override
+        public void cast(VariableReader receiver, VariableReader value, NumericOperandType sourceType,
+                NumericOperandType targetType) {
+        }
+
+        @Override
+        public void cast(VariableReader receiver, VariableReader value, IntegerSubtype type,
+                CastIntegerDirection targetType) {
+        }
+
+        @Override
+        public void jumpIf(BranchingCondition cond, VariableReader operand, BasicBlockReader consequent,
+                BasicBlockReader alternative) {
+        }
+
+        @Override
+        public void jumpIf(BinaryBranchingCondition cond, VariableReader first, VariableReader second,
+                BasicBlockReader consequent, BasicBlockReader alternative) {
+        }
+
+        @Override
+        public void jump(BasicBlockReader target) {
+        }
+
+        @Override
+        public void choose(VariableReader condition, List<? extends SwitchTableEntryReader> table,
+                BasicBlockReader defaultTarget) {
+        }
+
+        @Override
+        public void exit(VariableReader valueToReturn) {
+        }
+
+        @Override
+        public void raise(VariableReader exception) {
+        }
+
+        @Override
+        public void createArray(VariableReader receiver, ValueType itemType, VariableReader size) {
+        }
+
+        @Override
+        public void createArray(VariableReader receiver, ValueType itemType,
+                List<? extends VariableReader> dimensions) {
+        }
+
+        @Override
+        public void create(VariableReader receiver, String type) {
+        }
+
+        @Override
+        public void getField(VariableReader receiver, VariableReader instance, FieldReference field,
+                ValueType fieldType) {
+        }
+
+        @Override
+        public void putField(VariableReader instance, FieldReference field, VariableReader value) {
+        }
+
+        @Override
+        public void arrayLength(VariableReader receiver, VariableReader array) {
+        }
+
+        @Override
+        public void cloneArray(VariableReader receiver, VariableReader array) {
+        }
+
+        @Override
+        public void unwrapArray(VariableReader receiver, VariableReader array, ArrayElementType elementType) {
+        }
+
+        @Override
+        public void getElement(VariableReader receiver, VariableReader array, VariableReader index) {
+        }
+
+        @Override
+        public void putElement(VariableReader array, VariableReader index, VariableReader value) {
+        }
+
+        @Override
+        public void invoke(VariableReader receiver, VariableReader instance, MethodReference method,
+                List<? extends VariableReader> arguments, InvocationType type) {
+        }
+
+        @Override
+        public void isInstance(VariableReader receiver, VariableReader value, ValueType type) {
+        }
+
+        @Override
+        public void initClass(String className) {
+        }
+
+        @Override
+        public void nullCheck(VariableReader receiver, VariableReader value) {
+        }
+
+        @Override
+        public void monitorEnter(VariableReader objectRef) {
+            async = true;
+        }
+
+        @Override
+        public void monitorExit(VariableReader objectRef) {
         }
     }
 }
