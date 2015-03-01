@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,24 +19,8 @@ package org.teavm.classlib.java.lang.ref;
  *
  * @author Alexey Andreev
  */
-public class TWeakReference<T> extends TReference<T> {
-    private T value;
-
-    public TWeakReference(T value) {
-        this.value = value;
-    }
-
-    public TWeakReference(T value, @SuppressWarnings("unused") TReferenceQueue<T> queue) {
-        this.value = value;
-    }
-
-    @Override
-    public T get() {
-        return value;
-    }
-
-    @Override
-    public void clear() {
-        value = null;
+public class TReferenceQueue<T> {
+    public TReference<T> poll() {
+        return null;
     }
 }
