@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,32 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.java.util;
-
-import org.teavm.classlib.java.lang.TObject;
-import org.teavm.classlib.java.lang.TRunnable;
+package org.teavm.classlib.java.lang.ref;
 
 /**
  *
  * @author Alexey Andreev
  */
-public abstract class TTimerTask extends TObject implements TRunnable {
-    TTimer timer;
-    int nativeTimerId = -1;
-
-    public boolean cancel() {
-        if (timer == null) {
-            return false;
-        }
-        timer = null;
-        return true;
-    }
-
-    static void performOnce(TTimerTask task) {
-        if (task.timer != null) {
-            task.run();
-            task.timer.tasks.remove(task);
-            task.timer = null;
-        }
+public class TReferenceQueue<T> {
+    public TReference<T> poll() {
+        return null;
     }
 }

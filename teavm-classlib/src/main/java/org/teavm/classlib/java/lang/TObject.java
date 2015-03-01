@@ -50,6 +50,24 @@ public class TObject {
         boolean expired();
     }
 
+    static void monitorEnterSync(TObject o) {
+        if (o.monitor == null) {
+            o.monitor = new Monitor();
+        }
+        if (o.monitor.owner == null) {
+            o.monitor.owner = TThread.currentThread();
+        }
+        o.monitor.count++;
+    }
+
+    static void monitorExitSync(TObject o) {
+        if (o.isEmptyMonitor() || o.monitor.owner != TThread.currentThread()) {
+            throw new TIllegalMonitorStateException();
+        }
+        --o.monitor.count;
+        o.isEmptyMonitor();
+    }
+
     static void monitorEnter(TObject o) {
         monitorEnter(o, 1);
     }

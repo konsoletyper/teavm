@@ -84,7 +84,9 @@ class JSODependencyListener implements DependencyListener {
         for (MethodReader method : cls.getMethods()) {
             if (exposedCls.inheritedMethods.containsKey(method.getDescriptor()) ||
                     exposedCls.methods.containsKey(method.getDescriptor())) {
-                agent.linkMethod(method.getReference(), null).use();
+                MethodDependency methodDep = agent.linkMethod(method.getReference(), null);
+                methodDep.getVariable(0).propagate(agent.getType(name));
+                methodDep.use();
             }
         }
         return exposedCls;
