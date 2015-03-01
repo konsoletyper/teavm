@@ -55,7 +55,7 @@ public class IrreducibleGraphConverter {
                             irreducible = true;
                         }
                     } else if (djGraph.isBackJoin(node, pred)) {
-                        djGraph.collapse(reachUnder(djGraph, pred));
+                        djGraph.collapse(reachUnder(djGraph, pred, node));
                     }
                 }
             }
@@ -68,9 +68,20 @@ public class IrreducibleGraphConverter {
         }
     }
 
-    private int[] reachUnder(DJGraph djGraph, int top) {
-        // TODO: implement
-        return null;
+    private int[] reachUnder(DJGraph djGraph, int back, int header) {
+        IntSet naturalLoop = IntOpenHashSet.from(header);
+        IntegerStack stack = new IntegerStack(djGraph.getGraph().size());
+        stack.push(back);
+        while (!stack.isEmpty()) {
+            int node = stack.pop();
+            if (!naturalLoop.add(node)) {
+                continue;
+            }
+            for (int pred : djGraph.getGraph().incomingEdges(node)) {
+                stack.push(pred);
+            }
+        }
+        return naturalLoop.toArray();
     }
 
     private void handleStronglyConnectedComponent(DJGraph djGraph, int[] scc, int[] nodeMap) {
@@ -126,6 +137,9 @@ public class IrreducibleGraphConverter {
 
         // Split
         splitStronglyConnectedComponent(domainNodes, sharedDom, scc, nodeMap);
+
+        // Collapse
+        djGraph.collapse(scc);
     }
 
     private void splitStronglyConnectedComponent(IntSet domain, int sharedDom, int[] scc, int[] nodeMap) {

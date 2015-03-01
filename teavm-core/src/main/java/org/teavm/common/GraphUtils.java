@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-
 /**
  *
  * @author Alexey Andreev
@@ -111,9 +110,7 @@ public final class GraphUtils {
      */
     public static int[][] findStronglyConnectedComponents(Graph graph, int[] start, GraphNodeFilter filter) {
         List<int[]> components = new ArrayList<>();
-        boolean[] done = new boolean[graph.size()];
         int[] visitIndex = new int[graph.size()];
-        Arrays.fill(visitIndex, -1);
         int[] headerIndex = new int[graph.size()];
         int lastIndex = 0;
         IntegerStack stack = new IntegerStack(graph.size());
@@ -124,36 +121,32 @@ public final class GraphUtils {
         IntegerArray currentComponent = new IntegerArray(1);
         while (!stack.isEmpty()) {
             int node = stack.pop();
-            if (visitIndex[node] == 0) {
-                if (done[node]) {
-                    currentComponent.add(node);
-                    int hdr = node;
-                    for (int successor : graph.outgoingEdges(node)) {
-                        if (!filter.match(successor)) {
-                            continue;
-                        }
-                        if (!done[successor]) {
-                            hdr = Math.min(hdr, visitIndex[successor]);
-                        } else {
-                            hdr = Math.min(hdr, headerIndex[successor]);
-                        }
-                    }
-                    if (hdr == node) {
-                        components.add(currentComponent.getAll());
-                        currentComponent.clear();
-                    }
-                    headerIndex[node] = hdr;
-                } else {
-                    done[node] = true;
-                }
-            } else {
-                visitIndex[node] = ++lastIndex;
-                stack.push(node);
+            if (visitIndex[node] > 0) {
+                currentComponent.add(node);
+                int hdr = visitIndex[node];
                 for (int successor : graph.outgoingEdges(node)) {
                     if (!filter.match(successor)) {
                         continue;
                     }
-                    stack.push(node);
+                    if (headerIndex[successor] == 0) {
+                        hdr = Math.min(hdr, visitIndex[successor]);
+                    } else {
+                        hdr = Math.min(hdr, headerIndex[successor]);
+                    }
+                }
+                if (hdr == visitIndex[node]) {
+                    components.add(currentComponent.getAll());
+                    currentComponent.clear();
+                }
+                headerIndex[node] = hdr;
+            } else {
+                visitIndex[node] = ++lastIndex;
+                stack.push(node);
+                for (int successor : graph.outgoingEdges(node)) {
+                    if (!filter.match(successor) || visitIndex[successor] > 0) {
+                        continue;
+                    }
+                    stack.push(successor);
                 }
             }
         }
@@ -242,7 +235,6 @@ public final class GraphUtils {
 
         return domFrontiers;
     }
-
 
     private static int[] makeSet(IntegerArray array) {
         int[] items = array.getAll();
