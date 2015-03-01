@@ -15,9 +15,11 @@
  */
 package org.teavm.common.irreducible;
 
+import java.util.Arrays;
 import org.teavm.common.*;
 import com.carrotsearch.hppc.IntOpenHashSet;
 import com.carrotsearch.hppc.IntSet;
+import com.carrotsearch.hppc.cursors.IntCursor;
 
 /**
  * <p>Converts irreducible graph to reducible one using node splitting algorithm described at
@@ -28,6 +30,7 @@ import com.carrotsearch.hppc.IntSet;
  */
 public class IrreducibleGraphConverter {
     private Graph cfg;
+    private int[] cfgWeight;
     private GraphSplittingBackend backend;
 
     public void convertToReducible(Graph cfg, int[] weight, GraphSplittingBackend backend) {
@@ -37,6 +40,7 @@ public class IrreducibleGraphConverter {
             identityNodeMap[i] = i;
         }
         this.cfg = cfg;
+        this.cfgWeight = weight;
         handleLoops(new DJGraph(cfg, weight), identityNodeMap);
         this.backend = null;
     }
@@ -121,35 +125,83 @@ public class IrreducibleGraphConverter {
         }
 
         // Split
-        int[] newNodes = splitStronglyConnectedComponent(domainNodes, scc, nodeMap);
-
-        // Construct DJ-subgraph
-        int[] newNodeMap = new int[1 + scc.length + newNodes.length];
-        for (int i = 0; i < scc.length; ++i) {
-            newNodeMap[i + 1] = nodeMap[scc[i]];
-        }
-        for (int i = 0; i < newNodes.length; ++i) {
-            newNodeMap[i + 1 + scc.length] = newNodes[i];
-        }
-        GraphBuilder builder = new GraphBuilder(newNodeMap.length);
-
-        for (int i = 0; i < scc.length; ++i) {
-
-        }
+        splitStronglyConnectedComponent(domainNodes, sharedDom, scc, nodeMap);
     }
 
-    private int[] splitStronglyConnectedComponent(IntSet domain, int[] scc, int[] nodeMap) {
-        IntegerArray nonDomain = new IntegerArray(scc.length);
+    private void splitStronglyConnectedComponent(IntSet domain, int sharedDom, int[] scc, int[] nodeMap) {
+        // Find SCC \ domain
+        int[] mappedNonDomain = new int[scc.length - domain.size()];
+        int index = 0;
         for (int node : scc) {
             if (!domain.contains(node)) {
-                nonDomain.add(node);
+                mappedNonDomain[index++] = nodeMap[node];
             }
         }
-        int[] mappedNonDomain = new int[nonDomain.size()];
-        for (int i = 0; i < nonDomain.size(); ++i) {
-            mappedNonDomain[i] = nodeMap[nonDomain.get(i)];
+        int[] mappedDomain = new int[domain.size()];
+        index = 0;
+        for (IntCursor cursor : domain) {
+            mappedDomain[index++] = cursor.value;
         }
-        return backend.split(mappedNonDomain);
+
+        // Delegate splitting to domain
+        int[] newNodes = backend.split(mappedDomain, mappedNonDomain);
+
+        // Calculate mappings
+        int[] newNodeMap = new int[1 + scc.length + newNodes.length];
+        int[] newNodeBackMap = new int[cfg.size()];
+        Arrays.fill(newNodeBackMap, -1);
+        newNodeMap[0] = nodeMap[sharedDom];
+        newNodeBackMap[sharedDom] = 0;
+        index = 1;
+        for (int i = 0; i < mappedDomain.length; ++i) {
+            newNodeMap[index] = mappedDomain[i];
+            newNodeBackMap[mappedDomain[i]] = index;
+            ++index;
+        }
+        for (int i = 0; i < mappedNonDomain.length; ++i) {
+            newNodeMap[index] = mappedNonDomain[i];
+            newNodeBackMap[mappedNonDomain[i]] = index;
+            ++index;
+        }
+
+        // Build subgraph with new nodes
+        GraphBuilder builder = new GraphBuilder(newNodeMap.length);
+        int[] mappedWeight = new int[newNodeMap.length];
+        mappedWeight[0] = cfgWeight[newNodeMap[0]];
+        for (int succ : cfg.outgoingEdges(sharedDom)) {
+            int j = newNodeBackMap[succ];
+            if (j >= 0) {
+                builder.addEdge(0, j);
+            }
+        }
+        for (int i = 1; i <= mappedDomain.length; ++i) {
+            mappedWeight[i] = cfgWeight[newNodeMap[i]];
+            for (int succ : cfg.outgoingEdges(mappedDomain[i])) {
+                int j = newNodeBackMap[succ];
+                if (j > mappedDomain.length) {
+                    builder.addEdge(i, j);
+                } else if (j >= 0) {
+                    builder.addEdge(i, j + mappedNonDomain.length);
+                }
+            }
+        }
+        for (int i = mappedDomain.length + 1; i <= scc.length; ++i) {
+            mappedWeight[i] = cfgWeight[newNodeMap[i]];
+            mappedWeight[i + mappedNonDomain.length] = cfgWeight[newNodeMap[i]];
+            for (int succ : cfg.outgoingEdges(mappedNonDomain[i])) {
+                int j = newNodeBackMap[succ];
+                if (j >= 0) {
+                    builder.addEdge(i, j);
+                    if (j > mappedDomain.length) {
+                        builder.addEdge(i + mappedNonDomain.length, j);
+                    } else {
+                        builder.addEdge(i + mappedNonDomain.length, j + mappedNonDomain.length);
+                    }
+                }
+            }
+        }
+
+        handleLoops(new DJGraph(builder.build(), mappedWeight), newNodeMap);
     }
 
     static class DJGraphNodeFilter implements GraphNodeFilter {

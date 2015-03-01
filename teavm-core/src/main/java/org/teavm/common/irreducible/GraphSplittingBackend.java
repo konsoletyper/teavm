@@ -20,5 +20,5 @@ package org.teavm.common.irreducible;
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public interface GraphSplittingBackend {
-    int[] split(int[] nodes);
+    int[] split(int[] domain, int[] nodes);
 }
