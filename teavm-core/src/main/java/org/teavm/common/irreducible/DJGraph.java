@@ -48,6 +48,7 @@ public class DJGraph {
         domTree = GraphUtils.buildDominatorTree(src);
         buildGraph(src);
         buildLevels();
+        spanningTree = new LCATree(src.size());
         dfs();
         mergeRoot = new int[src.size()];
         mergeClasses = new IntegerArray[src.size()];
@@ -55,7 +56,7 @@ public class DJGraph {
             mergeRoot[i] = i;
             mergeClasses[i] = IntegerArray.of(i);
         }
-        weight = Arrays.copyOf(weight, weight.length);
+        this.weight = Arrays.copyOf(weight, weight.length);
     }
 
     private void buildGraph(Graph src) {
@@ -84,9 +85,9 @@ public class DJGraph {
             }
             builder.get(level).add(i);
         }
-        levelContent = new int[builder.size()][];
-        for (int i = 0; i < builder.size(); ++i) {
-            levelContent[i] = builder.get(i).getAll();
+        levelContent = new int[builder.size() - 1][];
+        for (int i = 1; i < builder.size(); ++i) {
+            levelContent[i - 1] = builder.get(i).getAll();
         }
     }
 
@@ -97,15 +98,15 @@ public class DJGraph {
         Arrays.fill(spanningTreeNode, -1);
         boolean[] visited = new boolean[graph.size()];
         IntegerStack stack = new IntegerStack(graph.size() * 2);
-        stack.push(0);
         stack.push(-1);
+        stack.push(0);
         while (!stack.isEmpty()) {
             int node = stack.pop();
             int source = stack.pop();
             if (visited[node]) {
                 continue;
             }
-            int index = spanningTree.addNode(spanningTreeIndex[source]);
+            int index = source >= 0 ? spanningTree.addNode(spanningTreeIndex[source]) : 0;
             spanningTreeNode[index] = node;
             spanningTreeIndex[node] = index;
             visited[node] = true;
@@ -179,7 +180,7 @@ public class DJGraph {
     }
 
     public int levelOf(int node) {
-        return domTree.levelOf(mergeRoot[node]);
+        return domTree.levelOf(mergeRoot[node]) - 1;
     }
 
     public int[] level(int level) {

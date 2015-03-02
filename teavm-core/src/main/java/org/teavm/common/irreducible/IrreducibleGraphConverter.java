@@ -15,11 +15,11 @@
  */
 package org.teavm.common.irreducible;
 
-import java.util.Arrays;
-import org.teavm.common.*;
 import com.carrotsearch.hppc.IntOpenHashSet;
 import com.carrotsearch.hppc.IntSet;
 import com.carrotsearch.hppc.cursors.IntCursor;
+import java.util.Arrays;
+import org.teavm.common.*;
 
 /**
  * <p>Converts irreducible graph to reducible one using node splitting algorithm described at
@@ -30,22 +30,20 @@ import com.carrotsearch.hppc.cursors.IntCursor;
  */
 public class IrreducibleGraphConverter {
     private Graph cfg;
-    private int[] cfgWeight;
     private GraphSplittingBackend backend;
 
     public void convertToReducible(Graph cfg, int[] weight, GraphSplittingBackend backend) {
         this.backend = backend;
-        int[] identityNodeMap = new int[cfg.size()];
+        int[][] identityNodeMap = new int[cfg.size()][];
         for (int i = 0; i < identityNodeMap.length; ++i) {
-            identityNodeMap[i] = i;
+            identityNodeMap[i] = new int[] { i };
         }
         this.cfg = cfg;
-        this.cfgWeight = weight;
         handleLoops(new DJGraph(cfg, weight), identityNodeMap);
         this.backend = null;
     }
 
-    private void handleLoops(DJGraph djGraph, int[] nodeMap) {
+    private void handleLoops(DJGraph djGraph, int[][] nodeMap) {
         for (int level = djGraph.levelCount() - 1; level >= 0; --level) {
             boolean irreducible = false;
             for (int node : djGraph.level(level)) {
@@ -59,11 +57,13 @@ public class IrreducibleGraphConverter {
                     }
                 }
             }
-            DJGraphNodeFilter filter = new DJGraphNodeFilter(djGraph, level, null);
+            DJGraphNodeFilter filter = new DJGraphNodeFilter(djGraph, level);
             int[][] sccs = GraphUtils.findStronglyConnectedComponents(djGraph.getGraph(), djGraph.level(level), filter);
             for (int[] scc : sccs) {
-                handleStronglyConnectedComponent(djGraph, scc, nodeMap);
-                djGraph.collapse(scc);
+                if (scc.length > 1) {
+                    handleStronglyConnectedComponent(djGraph, scc, nodeMap);
+                    djGraph.collapse(scc);
+                }
             }
         }
     }
@@ -84,7 +84,7 @@ public class IrreducibleGraphConverter {
         return naturalLoop.toArray();
     }
 
-    private void handleStronglyConnectedComponent(DJGraph djGraph, int[] scc, int[] nodeMap) {
+    private void handleStronglyConnectedComponent(DJGraph djGraph, int[] scc, int[][] nodeMap) {
         // Find shared dominator
         int sharedDom = scc[0];
         for (int i = 1; i < scc.length; ++i) {
@@ -136,52 +136,66 @@ public class IrreducibleGraphConverter {
         }
 
         // Split
-        splitStronglyConnectedComponent(domainNodes, sharedDom, scc, nodeMap);
+        splitStronglyConnectedComponent(djGraph, domainNodes, sharedDom, scc, nodeMap);
 
         // Collapse
         djGraph.collapse(scc);
     }
 
-    private void splitStronglyConnectedComponent(IntSet domain, int sharedDom, int[] scc, int[] nodeMap) {
+    private void splitStronglyConnectedComponent(DJGraph djGraph, IntSet domain, int sharedDom,
+            int[] scc, int[][] nodeMap) {
         // Find SCC \ domain
-        int[] mappedNonDomain = new int[scc.length - domain.size()];
+        int[][] mappedNonDomain = new int[scc.length - domain.size()][];
+        int[] domainNodes = new int[domain.size()];
+        int[] nonDomainNodes = new int[mappedNonDomain.length];
         int index = 0;
         for (int node : scc) {
             if (!domain.contains(node)) {
-                mappedNonDomain[index++] = nodeMap[node];
+                mappedNonDomain[index] = nodeMap[node];
+                nonDomainNodes[index] = node;
+                ++index;
             }
         }
-        int[] mappedDomain = new int[domain.size()];
+        int[][] mappedDomain = new int[domain.size()][];
         index = 0;
         for (IntCursor cursor : domain) {
-            mappedDomain[index++] = cursor.value;
+            mappedDomain[index] = nodeMap[cursor.value];
+            domainNodes[index] = cursor.value;
+            ++index;
         }
 
         // Delegate splitting to domain
-        int[] newNodes = backend.split(mappedDomain, mappedNonDomain);
+        int[][] newNodes = backend.split(mappedDomain, mappedNonDomain);
 
         // Calculate mappings
-        int[] newNodeMap = new int[1 + scc.length + newNodes.length];
+        int[][] newNodeMap = new int[1 + scc.length + newNodes.length][];
         int[] newNodeBackMap = new int[cfg.size()];
+        int[] mappedWeight = new int[newNodeMap.length];
         Arrays.fill(newNodeBackMap, -1);
         newNodeMap[0] = nodeMap[sharedDom];
         newNodeBackMap[sharedDom] = 0;
+        mappedWeight[0] = djGraph.weightOf(sharedDom);
         index = 1;
         for (int i = 0; i < mappedDomain.length; ++i) {
             newNodeMap[index] = mappedDomain[i];
-            newNodeBackMap[mappedDomain[i]] = index;
+            newNodeBackMap[domainNodes[i]] = index;
+            mappedWeight[index] = djGraph.weightOf(domainNodes[i]);
             ++index;
         }
         for (int i = 0; i < mappedNonDomain.length; ++i) {
             newNodeMap[index] = mappedNonDomain[i];
-            newNodeBackMap[mappedNonDomain[i]] = index;
+            newNodeBackMap[nonDomainNodes[i]] = index;
+            mappedWeight[index] = djGraph.weightOf(nonDomainNodes[i]);
+            ++index;
+        }
+        for (int i = 0; i < mappedNonDomain.length; ++i) {
+            newNodeMap[index] = newNodes[i];
+            mappedWeight[index] = djGraph.weightOf(nonDomainNodes[i]);
             ++index;
         }
 
         // Build subgraph with new nodes
         GraphBuilder builder = new GraphBuilder(newNodeMap.length);
-        int[] mappedWeight = new int[newNodeMap.length];
-        mappedWeight[0] = cfgWeight[newNodeMap[0]];
         for (int succ : cfg.outgoingEdges(sharedDom)) {
             int j = newNodeBackMap[succ];
             if (j >= 0) {
@@ -189,8 +203,7 @@ public class IrreducibleGraphConverter {
             }
         }
         for (int i = 1; i <= mappedDomain.length; ++i) {
-            mappedWeight[i] = cfgWeight[newNodeMap[i]];
-            for (int succ : cfg.outgoingEdges(mappedDomain[i])) {
+            for (int succ : djGraph.getCfg().outgoingEdges(domainNodes[i])) {
                 int j = newNodeBackMap[succ];
                 if (j > mappedDomain.length) {
                     builder.addEdge(i, j);
@@ -199,10 +212,9 @@ public class IrreducibleGraphConverter {
                 }
             }
         }
+        index = 0;
         for (int i = mappedDomain.length + 1; i <= scc.length; ++i) {
-            mappedWeight[i] = cfgWeight[newNodeMap[i]];
-            mappedWeight[i + mappedNonDomain.length] = cfgWeight[newNodeMap[i]];
-            for (int succ : cfg.outgoingEdges(mappedNonDomain[i])) {
+            for (int succ : djGraph.getCfg().outgoingEdges(nonDomainNodes[index++])) {
                 int j = newNodeBackMap[succ];
                 if (j >= 0) {
                     builder.addEdge(i, j);
@@ -221,17 +233,15 @@ public class IrreducibleGraphConverter {
     static class DJGraphNodeFilter implements GraphNodeFilter {
         private DJGraph graph;
         private int level;
-        private IntSet nodes;
 
-        public DJGraphNodeFilter(DJGraph graph, int level, IntSet nodes) {
+        public DJGraphNodeFilter(DJGraph graph, int level) {
             this.graph = graph;
             this.level = level;
-            this.nodes = nodes;
         }
 
         @Override
         public boolean match(int node) {
-            return nodes.contains(node) && graph.levelOf(node) >= level;
+            return graph.levelOf(node) >= level;
         }
     }
 }
