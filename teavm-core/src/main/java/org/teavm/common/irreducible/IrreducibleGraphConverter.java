@@ -30,6 +30,7 @@ import org.teavm.common.*;
  */
 public class IrreducibleGraphConverter {
     private Graph cfg;
+    private int totalNodeCount;
     private GraphSplittingBackend backend;
 
     public void convertToReducible(Graph cfg, int[] weight, GraphSplittingBackend backend) {
@@ -39,6 +40,7 @@ public class IrreducibleGraphConverter {
             identityNodeMap[i] = new int[] { i };
         }
         this.cfg = cfg;
+        totalNodeCount = cfg.size();
         handleLoops(new DJGraph(cfg, weight), identityNodeMap);
         this.backend = null;
     }
@@ -46,23 +48,34 @@ public class IrreducibleGraphConverter {
     private void handleLoops(DJGraph djGraph, int[][] nodeMap) {
         for (int level = djGraph.levelCount() - 1; level >= 0; --level) {
             boolean irreducible = false;
+            levelScan:
             for (int node : djGraph.level(level)) {
                 for (int pred : djGraph.getGraph().incomingEdges(node)) {
-                    if (djGraph.isCrossJoin(pred, node)) {
-                        if (!irreducible && djGraph.isSpanningBack(node, pred)) {
-                            irreducible = true;
-                        }
-                    } else if (djGraph.isBackJoin(node, pred)) {
-                        djGraph.collapse(reachUnder(djGraph, pred, node));
+                    if (djGraph.isCrossJoin(pred, node) && djGraph.isSpanningBack(node, pred)) {
+                        irreducible = true;
+                        break levelScan;
                     }
                 }
             }
-            DJGraphNodeFilter filter = new DJGraphNodeFilter(djGraph, level);
-            int[][] sccs = GraphUtils.findStronglyConnectedComponents(djGraph.getGraph(), djGraph.level(level), filter);
-            for (int[] scc : sccs) {
-                if (scc.length > 1) {
-                    handleStronglyConnectedComponent(djGraph, scc, nodeMap);
-                    djGraph.collapse(scc);
+            if (irreducible) {
+                DJGraphNodeFilter filter = new DJGraphNodeFilter(djGraph, level);
+                int[][] sccs = GraphUtils.findStronglyConnectedComponents(djGraph.getGraph(),
+                        djGraph.level(level), filter);
+                for (int[] scc : sccs) {
+                    if (scc.length > 1) {
+                        handleStronglyConnectedComponent(djGraph, scc, nodeMap);
+                        int cls = djGraph.collapse(scc);
+                        IntegerArray nodes = new IntegerArray(djGraph.getGraph().size());
+                        for (int representative : djGraph.classRepresentatives(cls)) {
+                            for (int node : nodeMap[representative]) {
+                                nodes.add(node);
+                            }
+                        }
+                        for (int representative : djGraph.classRepresentatives(cls)) {
+                            nodeMap[representative] = new int[0];
+                        }
+                        nodeMap[cls] = nodes.getAll();
+                    }
                 }
             }
         }
@@ -93,14 +106,16 @@ public class IrreducibleGraphConverter {
 
         // Partition SCC into domains
         DisjointSet partitions = new DisjointSet();
+        int[] sccBack = new int[djGraph.getGraph().size()];
         for (int i = 0; i < scc.length; ++i) {
             partitions.create();
+            sccBack[scc[i]] = i;
         }
         for (int i = 0; i < scc.length; ++i) {
             int node = scc[i];
             int idom = djGraph.getDomTree().immediateDominatorOf(node);
             if (idom != sharedDom) {
-                partitions.union(node, idom);
+                partitions.union(i, sccBack[idom]);
             }
         }
         int[] domains = partitions.pack(scc.length);
@@ -110,10 +125,10 @@ public class IrreducibleGraphConverter {
         }
 
         // For each domain calculate its weight
-        int[] domainWeight = new int [domainCount];
+        int[] domainWeight = new int[domainCount];
         for (int i = 0; i < scc.length; ++i) {
             int node = scc[i];
-            domainWeight[domains[node]] += djGraph.weightOf(node);
+            domainWeight[domains[i]] += djGraph.weightOf(node);
         }
 
         // Find domain to split around
@@ -130,7 +145,7 @@ public class IrreducibleGraphConverter {
         IntSet domainNodes = new IntOpenHashSet(scc.length);
         for (int i = 0; i < scc.length; ++i) {
             int node = scc[i];
-            if (domains[node] == domain) {
+            if (domains[i] == domain) {
                 domainNodes.add(node);
             }
         }
@@ -144,6 +159,7 @@ public class IrreducibleGraphConverter {
 
     private void splitStronglyConnectedComponent(DJGraph djGraph, IntSet domain, int sharedDom,
             int[] scc, int[][] nodeMap) {
+        Arrays.sort(scc);
         // Find SCC \ domain
         int[][] mappedNonDomain = new int[scc.length - domain.size()][];
         int[] domainNodes = new int[domain.size()];
@@ -166,10 +182,13 @@ public class IrreducibleGraphConverter {
 
         // Delegate splitting to domain
         int[][] newNodes = backend.split(mappedDomain, mappedNonDomain);
+        for (int[] nodes : newNodes) {
+            totalNodeCount += nodes.length;
+        }
 
         // Calculate mappings
         int[][] newNodeMap = new int[1 + scc.length + newNodes.length][];
-        int[] newNodeBackMap = new int[cfg.size()];
+        int[] newNodeBackMap = new int[totalNodeCount];
         int[] mappedWeight = new int[newNodeMap.length];
         Arrays.fill(newNodeBackMap, -1);
         newNodeMap[0] = nodeMap[sharedDom];
@@ -203,12 +222,12 @@ public class IrreducibleGraphConverter {
             }
         }
         for (int i = 1; i <= mappedDomain.length; ++i) {
-            for (int succ : djGraph.getCfg().outgoingEdges(domainNodes[i])) {
+            for (int succ : djGraph.getCfg().outgoingEdges(domainNodes[i - 1])) {
                 int j = newNodeBackMap[succ];
                 if (j > mappedDomain.length) {
-                    builder.addEdge(i, j);
-                } else if (j >= 0) {
                     builder.addEdge(i, j + mappedNonDomain.length);
+                } else if (j >= 0) {
+                    builder.addEdge(i, j);
                 }
             }
         }
@@ -219,9 +238,9 @@ public class IrreducibleGraphConverter {
                 if (j >= 0) {
                     builder.addEdge(i, j);
                     if (j > mappedDomain.length) {
-                        builder.addEdge(i + mappedNonDomain.length, j);
-                    } else {
                         builder.addEdge(i + mappedNonDomain.length, j + mappedNonDomain.length);
+                    } else {
+                        builder.addEdge(i + mappedNonDomain.length, j);
                     }
                 }
             }

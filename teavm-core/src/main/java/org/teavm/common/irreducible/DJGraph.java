@@ -147,11 +147,11 @@ public class DJGraph {
     }
 
     public boolean isBackJoin(int i, int j) {
-        return isJoinEdge(i, j) && !domTree.dominates(mergeRoot[j], mergeRoot[i]);
+        return isJoinEdge(i, j) && domTree.dominates(mergeRoot[j], mergeRoot[i]);
     }
 
     public boolean isCrossJoin(int i, int j) {
-        return isJoinEdge(i, j) && domTree.dominates(mergeRoot[j], mergeRoot[i]);
+        return isJoinEdge(i, j) && !domTree.dominates(mergeRoot[j], mergeRoot[i]);
     }
 
     public boolean isSpanningBack(int i, int j) {
@@ -200,7 +200,7 @@ public class DJGraph {
         return mergeRoot[node];
     }
 
-    public void collapse(int[] nodes) {
+    public int collapse(int[] nodes) {
         // Replace nodes with their classes and find common dominator among them
         IntSet set = new IntOpenHashSet();
         int top = nodes[0];
@@ -244,5 +244,6 @@ public class DJGraph {
                 cfg.detachNode(node.value);
             }
         }
+        return top;
     }
 }

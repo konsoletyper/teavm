@@ -48,12 +48,51 @@ public class GraphTest {
         builder.addEdge(12, 13);
         Graph graph = builder.build();
 
-        int[][] sccs = GraphUtils.findStronglyConnectedComponents(graph, new int[] { 0 }, new GraphNodeFilter() {
+        int[][] sccs = GraphUtils.findStronglyConnectedComponents(graph, new int[] { 0 }, filter);
+        sortSccs(sccs);
+
+        assertThat(sccs.length, is(6));
+        assertThat(sccs[0], is(new int[] { 0 }));
+        assertThat(sccs[1], is(new int[] { 1, 2, 3, 4, 5, 6, 7, 8 }));
+        assertThat(sccs[2], is(new int[] { 9 }));
+        assertThat(sccs[3], is(new int[] { 10 }));
+        assertThat(sccs[4], is(new int[] { 11, 12 }));
+        assertThat(sccs[5], is(new int[] { 13 }));
+    }
+
+    @Test
+    public void stronglyConnectedComponentCalculated2() {
+        GraphBuilder builder = new GraphBuilder();
+        builder.addEdge(0, 1);
+        builder.addEdge(0, 2);
+        builder.addEdge(0, 3);
+        builder.addEdge(1, 2);
+        builder.addEdge(2, 1);
+        builder.addEdge(3, 2);
+        builder.addEdge(2, 4);
+        builder.addEdge(4, 5);
+        builder.addEdge(4, 1);
+        builder.addEdge(5, 3);
+        Graph graph = builder.build();
+
+        int[][] sccs = GraphUtils.findStronglyConnectedComponents(graph, new int[] { 1, 2, 3 }, new GraphNodeFilter() {
             @Override public boolean match(int node) {
-                return true;
+                return node != 0;
             }
         });
+        sortSccs(sccs);
 
+        assertThat(sccs.length, is(1));
+        assertThat(sccs[0], is(new int[] { 1, 2, 3, 4, 5 }));
+    }
+
+    private GraphNodeFilter filter = new GraphNodeFilter() {
+        @Override public boolean match(int node) {
+            return true;
+        }
+    };
+
+    private void sortSccs(int[][] sccs) {
         for (int i = 0; i < sccs.length; ++i) {
             Arrays.sort(sccs[i]);
         }
@@ -62,12 +101,5 @@ public class GraphTest {
                 return Integer.compare(o1[0], o2[0]);
             }
         });
-
-        assertThat(sccs[0], is(new int[] { 0 }));
-        assertThat(sccs[1], is(new int[] { 1, 2, 3, 4, 5, 6, 7, 8 }));
-        assertThat(sccs[2], is(new int[] { 9 }));
-        assertThat(sccs[3], is(new int[] { 10 }));
-        assertThat(sccs[4], is(new int[] { 11, 12 }));
-        assertThat(sccs[5], is(new int[] { 13 }));
     }
 }

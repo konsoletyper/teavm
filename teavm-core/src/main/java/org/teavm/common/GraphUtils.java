@@ -122,6 +122,9 @@ public final class GraphUtils {
         while (!stack.isEmpty()) {
             int node = stack.pop();
             if (visitIndex[node] > 0) {
+                if (headerIndex[node] > 0) {
+                    continue;
+                }
                 currentComponent.add(node);
                 int hdr = visitIndex[node];
                 for (int successor : graph.outgoingEdges(node)) {
