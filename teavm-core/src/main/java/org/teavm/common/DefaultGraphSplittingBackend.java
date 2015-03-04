@@ -37,7 +37,7 @@ public class DefaultGraphSplittingBackend implements GraphSplittingBackend {
         index = graph.size();
         for (int i = 0; i < graph.size(); ++i) {
             prototypeNodes.add(i);
-            copyIndexes.add(i);
+            copyIndexes.add(0);
         }
     }
 
@@ -59,7 +59,7 @@ public class DefaultGraphSplittingBackend implements GraphSplittingBackend {
         IntIntMap map = new IntIntOpenHashMap();
         for (int i = 0; i < nodes.length; ++i) {
             copies[i] = index++;
-            map.put(nodes[i], copies[i]);
+            map.put(nodes[i], copies[i] + 1);
             int proto = prototypeNodes.get(nodes[i]);
             prototypeNodes.add(proto);
             copyIndexes.add(++copyCount[proto]);
