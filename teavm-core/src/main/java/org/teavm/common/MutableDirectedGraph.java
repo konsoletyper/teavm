@@ -42,6 +42,16 @@ public class MutableDirectedGraph implements Graph {
         }
     }
 
+    public Graph copyToImmutable() {
+        GraphBuilder builder = new GraphBuilder(successors.size());
+        for (int i = 0; i < successors.size(); ++i) {
+            for (IntCursor cursor : successors.get(i)) {
+                builder.addEdge(i, cursor.value);
+            }
+        }
+        return builder.build();
+    }
+
     @Override
     public int size() {
         return successors.size();
@@ -55,6 +65,14 @@ public class MutableDirectedGraph implements Graph {
         }
         successors.get(from).add(to);
         predecessors.get(to).add(from);
+    }
+
+    public void deleteEdge(int from, int to) {
+        if (from >= successors.size() || to >= successors.size()) {
+            return;
+        }
+        successors.get(from).removeAllOccurrences(to);
+        predecessors.get(to).removeAllOccurrences(from);
     }
 
     public void detachNode(int node) {

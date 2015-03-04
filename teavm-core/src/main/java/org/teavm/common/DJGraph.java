@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.common.irreducible;
+package org.teavm.common;
 
 import com.carrotsearch.hppc.IntOpenHashSet;
 import com.carrotsearch.hppc.IntSet;
@@ -21,7 +21,6 @@ import com.carrotsearch.hppc.cursors.IntCursor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import org.teavm.common.*;
 
 /**
  *

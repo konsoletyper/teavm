@@ -13,12 +13,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.common.irreducible;
+package org.teavm.common;
 
 /**
  *
  * @author Alexey Andreev <konsoletyper@gmail.com>
  */
 public interface GraphSplittingBackend {
-    int[][] split(int[][] domain, int[][] nodes);
+    int[] split(int[] domain, int[] nodes);
 }

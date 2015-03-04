@@ -13,13 +13,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.common.irreducible;
+package org.teavm.common;
 
 import com.carrotsearch.hppc.IntOpenHashSet;
 import com.carrotsearch.hppc.IntSet;
 import com.carrotsearch.hppc.cursors.IntCursor;
 import java.util.Arrays;
-import org.teavm.common.*;
 
 /**
  * <p>Converts irreducible graph to reducible one using node splitting algorithm described at
@@ -28,7 +27,7 @@ import org.teavm.common.*;
  *
  * @author Alexey Andreev
  */
-public class IrreducibleGraphConverter {
+class IrreducibleGraphConverter {
     private Graph cfg;
     private int totalNodeCount;
     private GraphSplittingBackend backend;
@@ -174,7 +173,7 @@ public class IrreducibleGraphConverter {
         }
 
         // Delegate splitting to domain
-        int[][] newNodes = backend.split(mappedDomain, mappedNonDomain);
+        int[][] newNodes = unflatten(backend.split(flatten(mappedDomain), flatten(mappedNonDomain)), mappedNonDomain);
         for (int[] nodes : newNodes) {
             totalNodeCount += nodes.length;
         }
@@ -240,6 +239,35 @@ public class IrreducibleGraphConverter {
         }
 
         handleLoops(new DJGraph(builder.build(), mappedWeight), newNodeMap);
+    }
+
+    private static int[] flatten(int[][] array) {
+        int count = 0;
+        for (int i = 0; i < array.length; ++i) {
+            count += array[i].length;
+        }
+        int[] flat = new int[count];
+        int index = 0;
+        for (int i = 0; i < array.length; ++i) {
+            int[] part = array[i];
+            for (int j = 0; j < part.length; ++j) {
+                flat[index++] = part[j];
+            }
+        }
+        return flat;
+    }
+
+    private static int[][] unflatten(int[] flat, int[][] pattern) {
+        int[][] rough = new int[pattern.length][];
+        int index = 0;
+        for (int i = 0; i < rough.length; ++i) {
+            int[] part = new int[pattern[i].length];
+            for (int j = 0; j < part.length; ++j) {
+                part[j] = flat[index++];
+            }
+            rough[i] = part;
+        }
+        return rough;
     }
 
     static class DJGraphNodeFilter implements GraphNodeFilter {
