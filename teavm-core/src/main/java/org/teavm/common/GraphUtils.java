@@ -114,45 +114,51 @@ public final class GraphUtils {
         int[] headerIndex = new int[graph.size()];
         int lastIndex = 0;
         IntegerStack stack = new IntegerStack(graph.size());
+
         for (int startNode : start) {
             stack.push(startNode);
-        }
-
-        IntegerArray currentComponent = new IntegerArray(1);
-        while (!stack.isEmpty()) {
-            int node = stack.pop();
-            if (visitIndex[node] > 0) {
-                if (headerIndex[node] > 0) {
-                    continue;
-                }
-                currentComponent.add(node);
-                int hdr = visitIndex[node];
-                for (int successor : graph.outgoingEdges(node)) {
-                    if (!filter.match(successor)) {
+            IntegerArray currentComponent = new IntegerArray(1);
+            while (!stack.isEmpty()) {
+                int node = stack.pop();
+                if (visitIndex[node] > 0) {
+                    if (headerIndex[node] > 0) {
                         continue;
                     }
-                    if (headerIndex[successor] == 0) {
-                        hdr = Math.min(hdr, visitIndex[successor]);
-                    } else {
-                        hdr = Math.min(hdr, headerIndex[successor]);
+                    currentComponent.add(node);
+                    int hdr = visitIndex[node];
+                    for (int successor : graph.outgoingEdges(node)) {
+                        if (!filter.match(successor)) {
+                            continue;
+                        }
+                        if (headerIndex[successor] == 0) {
+                            hdr = Math.min(hdr, visitIndex[successor]);
+                        } else {
+                            hdr = Math.min(hdr, headerIndex[successor]);
+                        }
+                    }
+                    if (hdr == visitIndex[node]) {
+                        components.add(currentComponent.getAll());
+                        currentComponent.clear();
+                    }
+                    headerIndex[node] = hdr;
+                } else {
+                    visitIndex[node] = ++lastIndex;
+                    stack.push(node);
+                    for (int successor : graph.outgoingEdges(node)) {
+                        if (!filter.match(successor) || visitIndex[successor] > 0) {
+                            continue;
+                        }
+                        stack.push(successor);
                     }
                 }
-                if (hdr == visitIndex[node]) {
-                    components.add(currentComponent.getAll());
-                    currentComponent.clear();
-                }
-                headerIndex[node] = hdr;
-            } else {
-                visitIndex[node] = ++lastIndex;
-                stack.push(node);
-                for (int successor : graph.outgoingEdges(node)) {
-                    if (!filter.match(successor) || visitIndex[successor] > 0) {
-                        continue;
-                    }
-                    stack.push(successor);
+            }
+            for (int i = 0; i < headerIndex.length; ++i) {
+                if (visitIndex[i] > 0) {
+                    headerIndex[i] = graph.size() + 1;
                 }
             }
         }
+
         return components.toArray(new int[0][]);
     }
 

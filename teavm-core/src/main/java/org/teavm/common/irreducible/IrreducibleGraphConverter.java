@@ -81,27 +81,18 @@ public class IrreducibleGraphConverter {
         }
     }
 
-    private int[] reachUnder(DJGraph djGraph, int back, int header) {
-        IntSet naturalLoop = IntOpenHashSet.from(header);
-        IntegerStack stack = new IntegerStack(djGraph.getGraph().size());
-        stack.push(back);
-        while (!stack.isEmpty()) {
-            int node = stack.pop();
-            if (!naturalLoop.add(node)) {
-                continue;
-            }
-            for (int pred : djGraph.getGraph().incomingEdges(node)) {
-                stack.push(pred);
-            }
-        }
-        return naturalLoop.toArray();
-    }
-
     private void handleStronglyConnectedComponent(DJGraph djGraph, int[] scc, int[][] nodeMap) {
         // Find shared dominator
         int sharedDom = scc[0];
         for (int i = 1; i < scc.length; ++i) {
             sharedDom = djGraph.getDomTree().commonDominatorOf(sharedDom, scc[i]);
+        }
+
+        for (int i = 0; i < scc.length; ++i) {
+            if (scc[i] == sharedDom) {
+                djGraph.collapse(scc);
+                return;
+            }
         }
 
         // Partition SCC into domains
@@ -154,7 +145,9 @@ public class IrreducibleGraphConverter {
         splitStronglyConnectedComponent(djGraph, domainNodes, sharedDom, scc, nodeMap);
 
         // Collapse
-        djGraph.collapse(scc);
+        int[] sccAndTop = Arrays.copyOf(scc, scc.length + 1);
+        sccAndTop[scc.length] = sharedDom;
+        djGraph.collapse(sccAndTop);
     }
 
     private void splitStronglyConnectedComponent(DJGraph djGraph, IntSet domain, int sharedDom,
