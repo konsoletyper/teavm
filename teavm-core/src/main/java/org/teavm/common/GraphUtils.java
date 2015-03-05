@@ -83,7 +83,6 @@ public final class GraphUtils {
      * Tarjan's algorithm
      */
     public static int[][] findStronglyConnectedComponents(Graph graph, int[] start, GraphNodeFilter filter) {
-        // TODO: can show incorrect behaviour sometimes
         List<int[]> components = new ArrayList<>();
         int[] visitIndex = new int[graph.size()];
         int[] headerIndex = new int[graph.size()];
@@ -113,6 +112,9 @@ public final class GraphUtils {
                     }
                     if (hdr == visitIndex[node]) {
                         components.add(currentComponent.getAll());
+                        for (int componentMember : currentComponent.getAll()) {
+                            headerIndex[componentMember] = graph.size() + 1;
+                        }
                         currentComponent.clear();
                     }
                     headerIndex[node] = hdr;

@@ -15,7 +15,7 @@
  */
 package org.teavm.common;
 
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 import com.carrotsearch.hppc.IntOpenHashSet;
 import com.carrotsearch.hppc.IntSet;
@@ -86,6 +86,25 @@ public class GraphTest {
 
         assertThat(sccs.length, is(1));
         assertThat(sccs[0], is(new int[] { 1, 2, 3, 4, 5 }));
+    }
+
+    @Test
+    public void stronglyConnectedComponentCalculated3() {
+        GraphBuilder builder = new GraphBuilder();
+        builder.addEdge(0, 1);
+        builder.addEdge(0, 2);
+        builder.addEdge(1, 3);
+        builder.addEdge(3, 1);
+        builder.addEdge(2, 3);
+        Graph graph = builder.build();
+
+        int[][] sccs = GraphUtils.findStronglyConnectedComponents(graph, new int[] { 0 }, filter);
+        sortSccs(sccs);
+
+        assertThat(sccs.length, is(3));
+        assertThat(sccs[0], is(new int[] { 0 }));
+        assertThat(sccs[1], is(new int[] { 1, 3 }));
+        assertThat(sccs[2], is(new int[] { 2 }));
     }
 
     @Test
