@@ -69,9 +69,11 @@ public class DJGraph {
         }
 
         // Add dom edges
-        for (int i = 1; i < graph.size(); ++i) {
+        for (int i = 0; i < graph.size(); ++i) {
             int j = domTree.immediateDominatorOf(i);
-            graph.addEdge(j, i);
+            if (j >= 0) {
+                graph.addEdge(j, i);
+            }
         }
     }
 

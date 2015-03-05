@@ -91,14 +91,13 @@ public final class GraphUtils {
 
         for (int startNode : start) {
             stack.push(startNode);
-            IntegerArray currentComponent = new IntegerArray(1);
+            IntegerStack currentComponent = new IntegerStack(1);
             while (!stack.isEmpty()) {
                 int node = stack.pop();
                 if (visitIndex[node] > 0) {
                     if (headerIndex[node] > 0) {
                         continue;
                     }
-                    currentComponent.add(node);
                     int hdr = visitIndex[node];
                     for (int successor : graph.outgoingEdges(node)) {
                         if (!filter.match(successor)) {
@@ -111,15 +110,21 @@ public final class GraphUtils {
                         }
                     }
                     if (hdr == visitIndex[node]) {
-                        components.add(currentComponent.getAll());
-                        for (int componentMember : currentComponent.getAll()) {
+                        IntegerArray componentMembers = new IntegerArray(graph.size());
+                        while (true) {
+                            int componentMember = currentComponent.pop();
+                            componentMembers.add(componentMember);
                             headerIndex[componentMember] = graph.size() + 1;
+                            if (visitIndex[componentMember] == hdr) {
+                                break;
+                            }
                         }
-                        currentComponent.clear();
+                        components.add(componentMembers.getAll());
                     }
                     headerIndex[node] = hdr;
                 } else {
                     visitIndex[node] = ++lastIndex;
+                    currentComponent.push(node);
                     stack.push(node);
                     for (int successor : graph.outgoingEdges(node)) {
                         if (!filter.match(successor) || visitIndex[successor] > 0) {

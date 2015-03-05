@@ -108,6 +108,41 @@ public class GraphTest {
     }
 
     @Test
+    public void stronglyConnectedComponentCalculated4() {
+        GraphBuilder builder = new GraphBuilder();
+        builder.addEdge(0, 1);
+        builder.addEdge(0, 2);
+        builder.addEdge(1, 2);
+        builder.addEdge(1, 3);
+        builder.addEdge(1, 4);
+        builder.addEdge(2, 1);
+        builder.addEdge(2, 3);
+        builder.addEdge(3, 4);
+        builder.addEdge(4, 5);
+        builder.addEdge(4, 6);
+        builder.addEdge(5, 6);
+        builder.addEdge(6, 5);
+        builder.addEdge(6, 7);
+        builder.addEdge(7, 4);
+        builder.addEdge(7, 3);
+        builder.addEdge(7, 8);
+        builder.addEdge(8, 7);
+        Graph graph = builder.build();
+
+        int[][] sccs = GraphUtils.findStronglyConnectedComponents(graph, new int[] { 1, 2, 3, 4 },
+                new GraphNodeFilter() {
+            @Override public boolean match(int node) {
+                return node != 0;
+            }
+        });
+        sortSccs(sccs);
+
+        assertThat(sccs.length, is(2));
+        assertThat(sccs[0], is(new int[] { 1, 2 }));
+        assertThat(sccs[1], is(new int[] { 3, 4, 5, 6, 7, 8 }));
+    }
+
+    @Test
     public void irreducibleGraphSplit() {
         GraphBuilder builder = new GraphBuilder();
         builder.addEdge(0, 1);
@@ -139,6 +174,39 @@ public class GraphTest {
         builder.addEdge(0, 2);
         builder.addEdge(1, 2);
         builder.addEdge(2, 1);
+        Graph graph = builder.build();
+
+        DefaultGraphSplittingBackend backend = new DefaultGraphSplittingBackend(graph);
+        int[] weights = new int[graph.size()];
+        Arrays.fill(weights, 1);
+        GraphUtils.splitIrreducibleGraph(graph, weights, backend);
+        Graph result = backend.getGraph();
+
+        assertTrue("Should be irreducible", GraphUtils.isIrreducible(graph));
+        assertFalse("Should be reducible", GraphUtils.isIrreducible(result));
+        assertTrue("Should be equialent", isEquialent(backend, graph));
+    }
+
+    @Test
+    public void irreducibleGraphSplit3() {
+        GraphBuilder builder = new GraphBuilder();
+        builder.addEdge(0, 1);
+        builder.addEdge(0, 2);
+        builder.addEdge(1, 2);
+        builder.addEdge(1, 3);
+        builder.addEdge(1, 4);
+        builder.addEdge(2, 1);
+        builder.addEdge(2, 3);
+        builder.addEdge(3, 4);
+        builder.addEdge(4, 5);
+        builder.addEdge(4, 6);
+        builder.addEdge(5, 6);
+        builder.addEdge(6, 5);
+        builder.addEdge(6, 7);
+        builder.addEdge(7, 4);
+        builder.addEdge(7, 3);
+        builder.addEdge(7, 8);
+        builder.addEdge(8, 7);
         Graph graph = builder.build();
 
         DefaultGraphSplittingBackend backend = new DefaultGraphSplittingBackend(graph);

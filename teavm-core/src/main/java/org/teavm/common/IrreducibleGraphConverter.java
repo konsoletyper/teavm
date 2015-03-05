@@ -63,17 +63,6 @@ class IrreducibleGraphConverter {
                 for (int[] scc : sccs) {
                     if (scc.length > 1) {
                         handleStronglyConnectedComponent(djGraph, scc, nodeMap);
-                        int cls = djGraph.collapse(scc);
-                        IntegerArray nodes = new IntegerArray(djGraph.getGraph().size());
-                        for (int representative : djGraph.classRepresentatives(cls)) {
-                            for (int node : nodeMap[representative]) {
-                                nodes.add(node);
-                            }
-                        }
-                        for (int representative : djGraph.classRepresentatives(cls)) {
-                            nodeMap[representative] = new int[0];
-                        }
-                        nodeMap[cls] = nodes.getAll();
                     }
                 }
             }
@@ -89,7 +78,7 @@ class IrreducibleGraphConverter {
 
         for (int i = 0; i < scc.length; ++i) {
             if (scc[i] == sharedDom) {
-                djGraph.collapse(scc);
+                collapse(djGraph, scc, nodeMap);
                 return;
             }
         }
@@ -146,7 +135,7 @@ class IrreducibleGraphConverter {
         // Collapse
         int[] sccAndTop = Arrays.copyOf(scc, scc.length + 1);
         sccAndTop[scc.length] = sharedDom;
-        djGraph.collapse(sccAndTop);
+        collapse(djGraph, sccAndTop, nodeMap);
     }
 
     private void splitStronglyConnectedComponent(DJGraph djGraph, IntSet domain, int sharedDom,
@@ -239,6 +228,20 @@ class IrreducibleGraphConverter {
         }
 
         handleLoops(new DJGraph(builder.build(), mappedWeight), newNodeMap);
+    }
+
+    private void collapse(DJGraph djGraph, int[] scc, int[][] nodeMap) {
+        int cls = djGraph.collapse(scc);
+        IntegerArray nodes = new IntegerArray(djGraph.getGraph().size());
+        for (int representative : djGraph.classRepresentatives(cls)) {
+            for (int node : nodeMap[representative]) {
+                nodes.add(node);
+            }
+        }
+        for (int representative : djGraph.classRepresentatives(cls)) {
+            nodeMap[representative] = new int[0];
+        }
+        nodeMap[cls] = nodes.getAll();
     }
 
     private static int[] flatten(int[][] array) {
