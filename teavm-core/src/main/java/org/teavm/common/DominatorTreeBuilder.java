@@ -58,7 +58,9 @@ class DominatorTreeBuilder {
             }
             for (int v : graph.incomingEdges(w)) {
                 int u = eval(v);
-                semidominators[w] = Math.min(semidominators[w], semidominators[u]);
+                if (semidominators[u] >= 0) {
+                    semidominators[w] = Math.min(semidominators[w], semidominators[u]);
+                }
             }
             addToBucket(vertices[semidominators[w]], w);
             link(parents[w], w);

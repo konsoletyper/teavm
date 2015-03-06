@@ -16,6 +16,7 @@
 package org.teavm.model.util;
 
 import java.util.*;
+import org.teavm.common.*;
 import org.teavm.model.*;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.JumpInstruction;
@@ -147,6 +148,18 @@ public class AsyncProgramSplitter {
             }
         }
 
+        for (Part part : parts) {
+            IntegerArray blockSuccessors = IntegerArray.of(part.blockSuccessors);
+            AsyncProgramSplittingBackend splittingBackend = new AsyncProgramSplittingBackend(
+                    new ProgramNodeSplittingBackend(part.program), blockSuccessors);
+            Graph graph = ProgramUtils.buildControlFlowGraphWithTryCatch(part.program);
+            int[] weights = new int[graph.size()];
+            for (int i = 0; i < part.program.basicBlockCount(); ++i) {
+                weights[i] = part.program.basicBlockAt(i).getInstructions().size();
+            }
+            GraphUtils.splitIrreducibleGraph(graph, weights, splittingBackend);
+            part.blockSuccessors = splittingBackend.blockSuccessors.getAll();
+        }
         partMap.clear();
     }
 
@@ -206,5 +219,29 @@ public class AsyncProgramSplitter {
     private static class Step {
         Part targetPart;
         int source;
+    }
+
+    private static class AsyncProgramSplittingBackend implements GraphSplittingBackend {
+        private GraphSplittingBackend inner;
+        private IntegerArray blockSuccessors;
+
+        public AsyncProgramSplittingBackend(GraphSplittingBackend inner, IntegerArray blockSuccessors) {
+            this.inner = inner;
+            this.blockSuccessors = blockSuccessors;
+        }
+
+        @Override
+        public int[] split(int[] domain, int[] nodes) {
+            int[] copies = inner.split(domain, nodes);
+            for (int i = 0; i < copies.length; ++i) {
+                int copy = copies[i];
+                int node = nodes[i];
+                if (blockSuccessors.size() <= copy) {
+                    blockSuccessors.add(-1);
+                }
+                blockSuccessors.set(copy, blockSuccessors.get(node));
+            }
+            return copies;
+        }
     }
 }
