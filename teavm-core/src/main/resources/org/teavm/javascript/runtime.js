@@ -458,7 +458,13 @@ function $rt_rootInvocationAdapter(f) {
                 console.error(!hasWrappers ? prefix : "Root cause is %s at %o", e.message, e.stack);
             }
         });
-        return f.apply(this, args);
+        f.apply(this, args);
+        var thread = $rt_getThread();
+        while (thread.postponed) {
+            var postponed = thread.postponed;
+            thread.postponed = null;
+            postponed();
+        }
     }
 }
 function $rt_mainWrapper(f) {
@@ -485,16 +491,15 @@ function $rt_s(index) {
 }
 var $rt_continueCounter = 0;
 function $rt_continue(f) {
-   if ($rt_continueCounter++ == 10) {
+   if ($rt_continueCounter++ == 40) {
        $rt_continueCounter = 0;
        return function() {
            var self = this;
            var args = arguments;
            var thread = $rt_getThread();
-           setTimeout(function() {
-               $rt_setThread(thread);
+           thread.postponed = function() {
                f.apply(self, args);
-           }, 0);
+           };
        };
    } else {
        return f;

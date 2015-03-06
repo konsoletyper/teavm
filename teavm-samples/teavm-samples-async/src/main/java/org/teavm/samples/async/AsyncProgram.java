@@ -87,7 +87,7 @@ public final class AsyncProgram {
             prime[i] = true;
         }
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 100; ++i) {
+        for (int i = 0; i < 1000; ++i) {
             if (prime[i]) {
                 sb.append(i).append(' ');
             }
