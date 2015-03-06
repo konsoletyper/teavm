@@ -386,7 +386,7 @@ public class DebugInformation {
     }
 
     private int indexByKey(RecordArray mapping, GeneratedLocation location) {
-        int index = Collections.binarySearch(new LocationList(mapping), location);
+        int index = binarySearchLocation(mapping, location.getLine(), location.getColumn());
         return index >= 0 ? index : -index - 2;
     }
 
@@ -598,7 +598,33 @@ public class DebugInformation {
         return new GeneratedLocation(record.get(0), record.get(1));
     }
 
-    static class LocationList extends AbstractList<GeneratedLocation> {
+    private int binarySearchLocation(RecordArray array, int row, int column) {
+        int l = 0;
+        int u = array.size() - 1;
+        while (true) {
+            int i = (l + u) / 2;
+            RecordArray.Record e = array.get(i);
+            int cmp = Integer.compare(row, e.get(0));
+            if (cmp == 0) {
+                cmp = Integer.compare(column, e.get(1));
+            }
+            if (cmp == 0) {
+                return i;
+            } else if (cmp < 0) {
+                u = i - 1;
+                if (u < l) {
+                    return -i - 1;
+                }
+            } else {
+                l = i + 1;
+                if (l > u) {
+                    return -i - 2;
+                }
+            }
+        }
+    }
+
+    static class LocationList extends AbstractList<GeneratedLocation> implements RandomAccess {
         private RecordArray recordArray;
 
         public LocationList(RecordArray recordArray) {
