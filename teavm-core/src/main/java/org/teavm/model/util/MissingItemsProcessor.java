@@ -61,13 +61,20 @@ public class MissingItemsProcessor {
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
             instructionsToAdd.clear();
+            boolean missing = false;
             for (int j = 0; j < block.getInstructions().size(); ++j) {
                 Instruction insn = block.getInstructions().get(j);
                 insn.acceptVisitor(instructionProcessor);
                 if (!instructionsToAdd.isEmpty()) {
                     wasModified = true;
                     truncateBlock(block, j);
+                    missing = true;
                     break;
+                }
+            }
+            if (!missing) {
+                for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                    checkClass(null, tryCatch.getExceptionType());
                 }
             }
         }
