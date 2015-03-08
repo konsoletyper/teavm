@@ -196,7 +196,6 @@ public class TObject {
         if (!holdsLock(this)) {
             throw new TIllegalMonitorStateException();
         }
-        TThread thread = TThread.currentThread();
         PlatformQueue<NotifyListener> listeners = monitor.notifyListeners;
         while (!listeners.isEmpty()) {
             NotifyListener listener = listeners.remove();
@@ -205,7 +204,6 @@ public class TObject {
                 break;
             }
         }
-        TThread.setCurrentThread(thread);
     }
 
     @Sync
@@ -256,6 +254,7 @@ public class TObject {
         final TThread currentThread = TThread.currentThread();
         int timerId = -1;
         boolean expired;
+        boolean performed;
         int lockCount;
 
         public NotifyListenerImpl(TObject obj, AsyncCallback<Void> callback, int lockCount) {
@@ -280,6 +279,10 @@ public class TObject {
 
         @Override
         public void run() {
+            if (performed) {
+                return;
+            }
+            performed = true;
             if (timerId >= 0) {
                 Platform.killSchedule(timerId);
                 timerId = -1;

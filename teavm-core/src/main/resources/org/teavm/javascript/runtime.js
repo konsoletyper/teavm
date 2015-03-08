@@ -497,7 +497,11 @@ function $rt_continue(f) {
            var self = this;
            var args = arguments;
            var thread = $rt_getThread();
+           var oldPostponed = thread.postponed;
            thread.postponed = function() {
+               if (oldPostponed) {
+                   oldPostponed();
+               }
                f.apply(self, args);
            };
        };
