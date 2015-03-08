@@ -152,7 +152,7 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
         } else {
             writer.append("return cls[c]($return);").softNewLine();
         }
-        writer.outdent().append("}").softNewLine();
+        writer.outdent().append("};").softNewLine();
 
         writer.append("return ").append(selfName).append("(").append(context.getParameterName(1));
         if (context.isAsync()) {
@@ -225,7 +225,7 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
         writer.append("return null;").softNewLine();
         writer.outdent().append("}").softNewLine();
         writer.append("return cls[c]();").softNewLine();
-        writer.outdent().append("}").softNewLine();
+        writer.outdent().append("};").softNewLine();
 
         writer.append("return ").append(selfName).append("(").append(context.getParameterName(1))
                 .append(");").softNewLine();
