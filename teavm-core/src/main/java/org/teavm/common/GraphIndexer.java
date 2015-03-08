@@ -15,8 +15,10 @@
  */
 package org.teavm.common;
 
+import com.carrotsearch.hppc.IntOpenHashSet;
+import com.carrotsearch.hppc.IntSet;
+import com.carrotsearch.hppc.cursors.IntCursor;
 import java.util.Arrays;
-import java.util.Comparator;
 
 /**
  *
@@ -28,74 +30,21 @@ public class GraphIndexer {
     static final byte VISITED = 2;
     private int[] indexToNode;
     private int[] nodeToIndex;
+    private byte[] state;
     private Graph graph;
+    private DominatorTree domTree;
+    private int lastIndex;
 
     public GraphIndexer(Graph graph) {
-        sort(graph);
-    }
-
-    private static class LoopEntrance {
-        int head;
-        int follower;
-    }
-
-    private int sort(Graph graph) {
-        LoopGraph loopGraph = new LoopGraph(graph);
         int sz = graph.size();
-        int[] indexToNode = new int[sz + 1];
-        int[] nodeToIndex = new int[sz + 1];
-        int[] visitIndex = new int[sz + 1];
+        indexToNode = new int[sz + 1];
+        nodeToIndex = new int[sz + 1];
         Arrays.fill(nodeToIndex, -1);
         Arrays.fill(indexToNode, -1);
-        Arrays.fill(visitIndex, -1);
-        byte[] state = new byte[sz];
-        int lastIndex = 0;
-        int lastVisitIndex = 0;
-        IntegerStack stack = new IntegerStack(sz * 2);
-        stack.push(loopGraph.loopAt(0) != null ? loopGraph.loopAt(0).getHead() : 0);
-        while (!stack.isEmpty()) {
-            int node = stack.pop();
-            switch (state[node]) {
-                case VISITING: {
-                    state[node] = VISITED;
-                    nodeToIndex[node] = lastIndex++;
-                    break;
-                }
-                case NONE: {
-                    visitIndex[node] = lastVisitIndex++;
-                    state[node] = VISITING;
-                    stack.push(node);
-                    int[] successors = graph.outgoingEdges(node);
-                    LoopEntrance[] edges = new LoopEntrance[successors.length];
-                    for (int i = 0; i < edges.length; ++i) {
-                        int successor = successors[i];
-                        Loop successorLoop = loopGraph.loopAt(successor);
-                        LoopEntrance edge = new LoopEntrance();
-                        edge.head = successorLoop != null ?
-                                visitIndex[successorLoop.getHead()] : -1;
-                        edge.follower = successor;
-                        edges[i] = edge;
-                    }
-                    Arrays.sort(edges, new Comparator<LoopEntrance>() {
-                        @Override
-                        public int compare(LoopEntrance o1, LoopEntrance o2) {
-                            return Integer.compare(o2.head, o1.head);
-                        }
-                    });
-                    for (LoopEntrance edge : edges) {
-                        int next = edge.follower;
-                        switch (state[next]) {
-                            case NONE:
-                                stack.push(next);
-                                break;
-                            default:
-                                break;
-                        }
-                    }
-                    break;
-                }
-            }
-        }
+        state = new byte[sz];
+        this.graph = graph;
+        domTree = GraphUtils.buildDominatorTree(graph);
+        sort(graph);
         --lastIndex;
         for (int node = 0; node < sz; ++node) {
             int index = nodeToIndex[node];
@@ -115,9 +64,77 @@ public class GraphIndexer {
             }
         }
         this.graph = sorted.build();
-        this.indexToNode = indexToNode;
-        this.nodeToIndex = nodeToIndex;
-        return lastIndex + 1;
+    }
+
+    private void sort(Graph graph) {
+        int sz = graph.size();
+        IntegerStack stack = new IntegerStack(sz * 2);
+        stack.push(0);
+        while (!stack.isEmpty()) {
+            int node = stack.pop();
+            switch (state[node]) {
+                case VISITING: {
+                    state[node] = VISITED;
+                    nodeToIndex[node] = lastIndex++;
+                    break;
+                }
+                case NONE: {
+                    state[node] = VISITING;
+                    stack.push(node);
+                    IntegerArray terminalNodes = new IntegerArray(1);
+                    for (int pred : graph.incomingEdges(node)) {
+                        if (domTree.dominates(node, pred)) {
+                            terminalNodes.add(pred);
+                        }
+                    }
+                    int[] successors = graph.outgoingEdges(node);
+                    if (terminalNodes.size() > 0) {
+                        IntSet loopNodes = IntOpenHashSet.from(findNaturalLoop(node, terminalNodes.getAll()));
+                        IntegerArray orderedSuccessors = new IntegerArray(successors.length);
+                        for (int succ : successors) {
+                            if (loopNodes.contains(succ)) {
+                                orderedSuccessors.add(succ);
+                            }
+                        }
+                        IntSet outerSuccessors = new IntOpenHashSet(successors.length);
+                        for (IntCursor loopNode : loopNodes) {
+                            for (int succ : graph.outgoingEdges(loopNode.value)) {
+                                if (!loopNodes.contains(succ)) {
+                                    outerSuccessors.add(succ);
+                                }
+                            }
+                        }
+                        orderedSuccessors.addAll(outerSuccessors.toArray());
+                        successors = orderedSuccessors.getAll();
+                    }
+                    for (int succ : successors) {
+                        if (state[succ] == NONE) {
+                            stack.push(succ);
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    private int[] findNaturalLoop(int head, int[] terminals) {
+        IntSet loop = new IntOpenHashSet();
+        loop.add(head);
+        IntegerStack stack = new IntegerStack(1);
+        for (int pred : terminals) {
+            stack.push(pred);
+        }
+        while (!stack.isEmpty()) {
+            int node = stack.pop();
+            if (!loop.add(node)) {
+                continue;
+            }
+            for (int pred : graph.incomingEdges(node)) {
+                stack.push(pred);
+            }
+        }
+        return loop.toArray();
     }
 
     public int nodeAt(int index) {
