@@ -33,6 +33,7 @@
       <groupId>org.teavm</groupId>
       <artifactId>teavm-classlib</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
 

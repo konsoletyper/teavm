@@ -83,6 +83,7 @@
     <module>teavm-cli</module>
     <module>teavm-chrome-rdp</module>
     <module>teavm-tests</module>
+    <module>teavm-extras-slf4j</module>
   </modules>
 
   <dependencyManagement>
