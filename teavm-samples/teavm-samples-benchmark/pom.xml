@@ -33,16 +33,19 @@
       <groupId>org.teavm</groupId>
       <artifactId>teavm-classlib</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.teavm</groupId>
       <artifactId>teavm-jso</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.teavm</groupId>
       <artifactId>teavm-dom</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.jbox2d</groupId>
@@ -54,12 +57,23 @@
       <artifactId>jbox2d-library</artifactId>
       <version>2.2.1.1</version>
       <classifier>sources</classifier>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.google.gwt</groupId>
       <artifactId>gwt-user</artifactId>
       <version>2.7.0</version>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.dukescript.canvas</groupId>
+      <artifactId>html5-canvas</artifactId>
+      <version>0.7.2</version>
+    </dependency>
+    <dependency>
+      <groupId>org.netbeans.html</groupId>
+      <artifactId>net.java.html.boot</artifactId>
+      <version>1.1</version>
     </dependency>
   </dependencies>
 
@@ -77,43 +91,69 @@
         </configuration>
       </plugin>
       <plugin>
-        <groupId>org.teavm</groupId>
-        <artifactId>teavm-maven-plugin</artifactId>
-        <version>${project.version}</version>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>2.5</version>
         <executions>
-          <execution>
-            <id>web-client</id>
-            <phase>prepare-package</phase>
-            <goals>
-              <goal>build-javascript</goal>
-            </goals>
-            <configuration>
-              <targetDirectory>${project.build.directory}/generated/js/teavm</targetDirectory>
-              <mainClass>org.teavm.samples.benchmark.teavm.BenchmarkStarter</mainClass>
-              <runtime>SEPARATE</runtime>
-              <minifying>true</minifying>
-              <debugInformationGenerated>true</debugInformationGenerated>
-            </configuration>
-          </execution>
+            <execution>
+                <phase>prepare-package</phase>
+                <goals>
+                    <goal>jar</goal>
+                </goals>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>org.teamvm.samples.benchmark.htmljava.BenchmarkStarter</mainClass>
+                            <addClasspath>true</addClasspath>
+                            <classpathPrefix>lib/</classpathPrefix>
+                            <useUniqueVersions>false</useUniqueVersions>
+                        </manifest>
+                    </archive>
+                    <excludes>
+                        <exclude>**/gwt/*</exclude>
+                        <exclude>**/teavm/*</exclude>
+                    </excludes>
+                </configuration>
+            </execution>
         </executions>
       </plugin>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>gwt-maven-plugin</artifactId>
-        <version>2.7.0</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-            <configuration>
-             <optimizationLevel>9</optimizationLevel>
-             <compileSourcesArtifacts>
-               <item>org.jbox2d:jbox2d-library</item>
-             </compileSourcesArtifacts>
-            </configuration>
-          </execution>
-        </executions>
+          <groupId>org.teavm</groupId>
+          <artifactId>teavm-maven-plugin</artifactId>
+          <version>${project.version}</version>
+          <executions>
+              <execution>
+                  <id>web-client</id>
+                  <phase>prepare-package</phase>
+                  <goals>
+                      <goal>build-javascript</goal>
+                  </goals>
+                  <configuration>
+                      <targetDirectory>${project.build.directory}/generated/js/teavm</targetDirectory>
+                      <mainClass>org.teavm.samples.benchmark.teavm.BenchmarkStarter</mainClass>
+                      <runtime>SEPARATE</runtime>
+                      <minifying>false</minifying>
+                      <debugInformationGenerated>true</debugInformationGenerated>
+                  </configuration>
+              </execution>
+          </executions>
+      </plugin>
+      <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>gwt-maven-plugin</artifactId>
+          <version>2.7.0</version>
+          <executions>
+              <execution>
+                  <goals>
+                      <goal>compile</goal>
+                  </goals>
+                  <configuration>
+                      <optimizationLevel>9</optimizationLevel>
+                      <compileSourcesArtifacts>
+                          <item>org.jbox2d:jbox2d-library</item>
+                      </compileSourcesArtifacts>
+                  </configuration>
+              </execution>
+          </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -128,9 +168,46 @@
         <artifactId>maven-source-plugin</artifactId>
       </plugin>
       <plugin>
+        <groupId>org.netbeans.html</groupId>
+        <artifactId>html4j-maven-plugin</artifactId>
+        <version>1.1</version>
+        <executions>
+            <execution>
+                <goals>
+                    <goal>process-js-annotations</goal>
+                </goals>
+            </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
       </plugin>
     </plugins>
   </build>
+  <profiles>
+      <profile>
+          <id>fx</id>
+          <dependencies>
+              <dependency>
+                  <groupId>org.netbeans.html</groupId>
+                  <artifactId>net.java.html.boot.fx</artifactId>
+                  <version>1.1</version>
+                  <scope>runtime</scope>
+              </dependency>
+          </dependencies>
+          <build>
+              <plugins>
+                  <plugin>
+                      <groupId>org.codehaus.mojo</groupId>
+                      <artifactId>exec-maven-plugin</artifactId>
+                      <version>1.3.2</version>
+                      <configuration>
+                          <mainClass>org.teavm.samples.benchmark.htmljava.BenchmarkFX</mainClass>
+                      </configuration>
+                  </plugin>
+              </plugins>
+          </build>
+      </profile>
+  </profiles>
 </project>
