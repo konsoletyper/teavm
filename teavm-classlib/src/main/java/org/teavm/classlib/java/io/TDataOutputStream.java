@@ -18,10 +18,6 @@
 package org.teavm.classlib.java.io;
 import org.teavm.classlib.java.lang.*;
 
-/**
- * A data output stream lets an application write primitive Java data types to an output stream in a portable way. An application can then use a data input stream to read the data back in.
- * Since: JDK1.0, CLDC 1.0 See Also:DataInputStream
- */
 public class TDataOutputStream extends TFilterOutputStream implements TDataOutput{
     /**
      * The number of bytes written out so far.
@@ -73,6 +69,7 @@ public class TDataOutputStream extends TFilterOutputStream implements TDataOutpu
         written++;
     }
 
+    @Override
     public final void writeBytes(TString str) throws TIOException {
         if (str.length() == 0) {
             return;
