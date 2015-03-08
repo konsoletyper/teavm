@@ -23,7 +23,7 @@ import org.teavm.model.*;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class JavaScriptConvGenerator implements Generator {
     static final MethodReference intValueMethod = new MethodReference(Integer.class, "intValue", int.class);

@@ -26,7 +26,7 @@ import org.teavm.vm.TeaVM;
  * <p>Represents context with compile-time information, that is useful for {@link MetadataGenerator}.
  * This context is provided by the compiler infrastructure.</p>
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface MetadataGeneratorContext extends ServiceRepository {
     /**

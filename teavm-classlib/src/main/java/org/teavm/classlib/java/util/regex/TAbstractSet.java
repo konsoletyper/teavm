@@ -150,7 +150,6 @@ abstract class TAbstractSet {
      * method will return false;
      *
      * @param matchResult
-     * @return
      */
     public abstract boolean hasConsumed(TMatchResultImpl matchResult);
 
@@ -210,14 +209,6 @@ abstract class TAbstractSet {
         return true;
     }
 
-    /**
-     * This method is used for replacement backreferenced sets.
-     *
-     * @param prev
-     *            - node who references to this node
-     * @return null if current node need not to be replaced JointSet which is
-     *         replacement of current node otherwise
-     */
     public TJointSet processBackRefReplacement() {
         return null;
     }

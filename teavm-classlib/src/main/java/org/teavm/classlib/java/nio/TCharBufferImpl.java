@@ -17,7 +17,7 @@ package org.teavm.classlib.java.nio;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 abstract class TCharBufferImpl extends TCharBuffer {
     public TCharBufferImpl(int capacity, int position, int limit) {

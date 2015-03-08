@@ -39,7 +39,7 @@ import org.eclipse.jdt.launching.sourcelookup.containers.ClasspathContainerSourc
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TeaVMSourcePathComputerDelegate implements ISourcePathComputerDelegate {
     @Override

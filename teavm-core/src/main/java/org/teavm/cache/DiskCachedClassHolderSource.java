@@ -22,7 +22,7 @@ import org.teavm.parsing.ClassDateProvider;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class DiskCachedClassHolderSource implements ClassHolderSource {
     private static AccessLevel[] accessLevels = AccessLevel.values();

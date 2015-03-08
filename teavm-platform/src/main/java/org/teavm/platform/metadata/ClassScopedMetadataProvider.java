@@ -25,7 +25,7 @@ import java.lang.annotation.Target;
  *
  * @see MetadataProvider
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)

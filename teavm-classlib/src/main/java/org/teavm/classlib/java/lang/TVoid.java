@@ -17,7 +17,7 @@ package org.teavm.classlib.java.lang;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public final class TVoid extends TObject {
     public static final TClass<TVoid> TYPE = TClass.voidClass();

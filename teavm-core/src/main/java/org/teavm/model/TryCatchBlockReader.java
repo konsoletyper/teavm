@@ -17,7 +17,7 @@ package org.teavm.model;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface TryCatchBlockReader {
     BasicBlockReader getProtectedBlock();

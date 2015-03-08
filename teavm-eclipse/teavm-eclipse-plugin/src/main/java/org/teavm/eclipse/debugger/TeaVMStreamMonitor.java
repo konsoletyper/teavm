@@ -20,7 +20,7 @@ import org.eclipse.debug.core.model.IStreamMonitor;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TeaVMStreamMonitor implements IStreamMonitor {
     @Override

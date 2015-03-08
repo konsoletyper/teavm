@@ -35,7 +35,7 @@ import org.teavm.eclipse.TeaVMProjectSettings;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TeaVMProjectPropertyPage extends PropertyPage implements IWorkbenchPropertyPage {
     private Button natureButton;

@@ -22,7 +22,7 @@ import org.teavm.tooling.TeaVMTool;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public final class TeaVMRunner {
     private TeaVMRunner() {

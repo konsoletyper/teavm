@@ -25,7 +25,7 @@ import org.teavm.platform.plugin.PlatformGenerator;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public final class Platform {
     private Platform() {

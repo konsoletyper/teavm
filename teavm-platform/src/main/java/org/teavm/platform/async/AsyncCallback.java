@@ -17,7 +17,7 @@ package org.teavm.platform.async;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface AsyncCallback<T> {
     void complete(T result);

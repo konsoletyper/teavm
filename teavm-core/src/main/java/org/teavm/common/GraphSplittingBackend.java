@@ -17,7 +17,7 @@ package org.teavm.common;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface GraphSplittingBackend {
     int[] split(int[] domain, int[] nodes);

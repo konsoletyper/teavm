@@ -22,7 +22,7 @@ import java.util.Set;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class ClassNode {
     private String name;

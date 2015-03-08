@@ -41,7 +41,7 @@ import org.eclipse.ui.dialogs.FilteredItemsSelectionDialog;
 import org.teavm.eclipse.TeaVMEclipsePlugin;
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public abstract class ClassSelectionDialog extends FilteredItemsSelectionDialog {
     private IJavaProject javaProject;

@@ -31,7 +31,7 @@ import org.teavm.platform.PlatformRunnable;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class PlatformGenerator implements Generator, Injector, DependencyPlugin {
     @Override

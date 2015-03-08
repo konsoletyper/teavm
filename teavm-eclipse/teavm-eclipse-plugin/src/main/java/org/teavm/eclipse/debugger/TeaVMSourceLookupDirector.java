@@ -20,7 +20,7 @@ import org.eclipse.debug.core.sourcelookup.ISourceLookupParticipant;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TeaVMSourceLookupDirector extends AbstractSourceLookupDirector {
     @Override

@@ -36,7 +36,7 @@ import org.teavm.vm.TeaVMBuilder;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TeaVMTestTool {
     private Map<String, List<MethodReference>> groupedMethods = new HashMap<>();

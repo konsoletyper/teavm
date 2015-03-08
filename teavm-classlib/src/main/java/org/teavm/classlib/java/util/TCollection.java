@@ -19,7 +19,7 @@ import org.teavm.classlib.java.lang.TIterable;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface TCollection<E> extends TIterable<E> {
     int size();

@@ -17,7 +17,7 @@ package org.teavm.classlib.java.lang;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public abstract class TClassLoader extends TObject {
     private TClassLoader parent;

@@ -17,7 +17,7 @@ package org.teavm.jso;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 @JSFunctor
 public interface JSStringSortFunction extends JSObject {

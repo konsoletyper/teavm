@@ -23,7 +23,7 @@ import org.teavm.debugging.javascript.JavaScriptVariable;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class RDPValue implements JavaScriptValue {
     private AtomicReference<String> representation = new AtomicReference<>();

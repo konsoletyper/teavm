@@ -17,7 +17,7 @@ package org.teavm.classlib.java.lang;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TLinkageError extends TError {
     private static final long serialVersionUID = 9176544705010852435L;

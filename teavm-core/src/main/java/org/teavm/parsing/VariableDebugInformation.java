@@ -20,7 +20,7 @@ import org.teavm.model.Instruction;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface VariableDebugInformation {
     Map<Integer, String> getDebugNames(Instruction insn);

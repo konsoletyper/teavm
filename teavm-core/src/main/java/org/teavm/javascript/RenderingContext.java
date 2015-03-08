@@ -23,7 +23,7 @@ import org.teavm.model.ListableClassReaderSource;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface RenderingContext extends ServiceRepository {
     NamingStrategy getNaming();

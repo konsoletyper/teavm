@@ -22,7 +22,7 @@ import org.teavm.debugging.Debugger;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TeaVMJavaStackFrame extends TeaVMStackFrame {
     Debugger teavmDebugger;

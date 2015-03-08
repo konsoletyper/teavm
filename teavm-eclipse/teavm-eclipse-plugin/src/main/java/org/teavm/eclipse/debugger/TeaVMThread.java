@@ -20,7 +20,7 @@ import org.eclipse.debug.core.model.*;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public abstract class TeaVMThread extends TeaVMDebugElement implements IThread {
     TeaVMDebugTarget debugTarget;

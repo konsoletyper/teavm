@@ -19,7 +19,7 @@ import org.teavm.model.CallLocation;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface Diagnostics {
     void error(CallLocation location, String error, Object... params);

@@ -17,7 +17,7 @@ package org.teavm.classlib.impl.report;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 class JCLItem {
     public final JCLItemType type;

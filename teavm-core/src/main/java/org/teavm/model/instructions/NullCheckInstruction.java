@@ -20,7 +20,7 @@ import org.teavm.model.Variable;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class NullCheckInstruction extends Instruction {
     private Variable value;

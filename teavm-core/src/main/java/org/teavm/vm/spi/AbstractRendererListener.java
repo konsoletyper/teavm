@@ -21,7 +21,7 @@ import org.teavm.vm.BuildTarget;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public abstract class AbstractRendererListener implements RendererListener {
     @Override

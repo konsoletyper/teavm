@@ -25,7 +25,7 @@ import org.eclipse.debug.core.model.IStreamsProxy;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TeaVMDebugProcess extends PlatformObject implements IProcess {
     private TeaVMDebugTarget debugTarget;

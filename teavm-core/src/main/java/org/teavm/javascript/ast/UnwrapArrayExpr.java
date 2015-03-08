@@ -20,7 +20,7 @@ import org.teavm.model.instructions.ArrayElementType;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class UnwrapArrayExpr extends Expr {
     private ArrayElementType elementType;

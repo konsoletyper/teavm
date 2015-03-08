@@ -19,7 +19,7 @@ import java.util.Arrays;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public final class AsyncProgram {
     private static long start = System.currentTimeMillis();

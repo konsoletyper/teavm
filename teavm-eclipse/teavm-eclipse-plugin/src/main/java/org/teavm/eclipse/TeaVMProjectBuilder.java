@@ -40,7 +40,7 @@ import org.teavm.tooling.*;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
     private static final int TICKS_PER_PROFILE = 10000;

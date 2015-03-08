@@ -48,7 +48,7 @@ import org.teavm.eclipse.TeaVMRuntimeMode;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TeaVMProfileDialog extends Dialog {
     private static List<TeaVMRuntimeMode> runtimeModes = Arrays.asList(TeaVMRuntimeMode.SEPARATE,

@@ -17,7 +17,7 @@ package org.teavm.classlib.java.util;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface TList<E> extends TCollection<E> {
     boolean addAll(int index, TCollection<? extends E> c);

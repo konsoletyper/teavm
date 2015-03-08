@@ -19,7 +19,7 @@ import org.teavm.classlib.java.util.TIterator;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface TIterable<T> {
     TIterator<T> iterator();

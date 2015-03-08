@@ -27,7 +27,7 @@ import org.teavm.model.*;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class JavaScriptBodyGenerator implements Generator {
     @Override

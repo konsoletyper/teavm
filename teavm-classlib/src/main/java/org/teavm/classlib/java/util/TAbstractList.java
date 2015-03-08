@@ -20,7 +20,7 @@ import org.teavm.javascript.spi.Rename;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public abstract class TAbstractList<E> extends TAbstractCollection<E> implements TList<E> {
     protected transient int modCount;

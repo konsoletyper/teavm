@@ -20,7 +20,7 @@ import org.teavm.jso.JSProperty;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface MouseEvent extends Event {
     short LEFT_BUTTON = 0;

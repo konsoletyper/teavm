@@ -17,7 +17,7 @@ package org.teavm.jso;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface JSIntArrayReader extends JSObject {
     @JSProperty

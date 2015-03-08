@@ -20,7 +20,7 @@ import org.teavm.javascript.ast.*;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 class TryCatchFinder implements StatementVisitor {
     public boolean tryCatchFound;

@@ -19,7 +19,7 @@ import org.teavm.tooling.TeaVMToolLog;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 class ConsoleTeaVMToolLog implements TeaVMToolLog {
     @Override

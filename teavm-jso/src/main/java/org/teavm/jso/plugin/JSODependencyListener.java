@@ -29,7 +29,7 @@ import org.teavm.model.*;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 class JSODependencyListener implements DependencyListener {
     private Map<String, ExposedClass> exposedClasses = new HashMap<>();

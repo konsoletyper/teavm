@@ -317,7 +317,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
      * are specified. This method may fail if there are items (classes, methods and fields)
      * that are required by entry points, but weren't found in classpath. In this case no
      * actual generation happens and no exceptions thrown, but you can further call
-     * {@link #checkForViolations()} or {@link #hasMissingItems()} to learn the build state.</p>
+     * {@link #getProblemProvider()} to learn the build state.</p>
      *
      * @param writer where to generate JavaScript. Should not be null.
      * @param target where to generate additional resources. Can be null, but if there are

@@ -32,7 +32,7 @@ import org.teavm.model.ValueType;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class ServiceLoaderSupport implements Generator, DependencyListener {
     private Set<String> achievedClasses = new HashSet<>();

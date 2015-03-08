@@ -17,7 +17,7 @@ package org.teavm.javascript;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class DecompilationException extends RuntimeException {
     private static final long serialVersionUID = -1400142974526572669L;

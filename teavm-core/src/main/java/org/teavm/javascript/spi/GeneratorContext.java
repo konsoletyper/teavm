@@ -23,7 +23,7 @@ import org.teavm.model.MethodReference;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface GeneratorContext extends ServiceRepository {
     String getParameterName(int index);

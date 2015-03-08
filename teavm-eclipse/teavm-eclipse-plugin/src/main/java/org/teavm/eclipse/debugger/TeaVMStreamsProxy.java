@@ -21,7 +21,7 @@ import org.eclipse.debug.core.model.IStreamsProxy;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 // TODO: implement interaction with browser console
 public class TeaVMStreamsProxy implements IStreamsProxy {

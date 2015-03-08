@@ -27,7 +27,7 @@ import org.teavm.vm.spi.RendererListener;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 class JSOAliasRenderer implements RendererListener {
     private JSODependencyListener dependencyListener;

@@ -108,12 +108,6 @@ class TBackReferencedSingleSet extends TSingleSet {
         return res;
     }
 
-    /**
-     * This method is used for replacement backreferenced sets.
-     *
-     * @param prev
-     *            - node who references to this node
-     */
     @Override
     public TJointSet processBackRefReplacement() {
         return null;

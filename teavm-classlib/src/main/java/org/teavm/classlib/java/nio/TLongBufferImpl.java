@@ -17,7 +17,7 @@ package org.teavm.classlib.java.nio;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 abstract class TLongBufferImpl extends TLongBuffer {
     public TLongBufferImpl(int capacity, int position, int limit) {

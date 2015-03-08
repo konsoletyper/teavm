@@ -17,7 +17,7 @@ package org.teavm.platform.metadata;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface ResourceArray<T extends Resource> extends Resource {
     int size();

@@ -20,7 +20,7 @@ import org.teavm.classlib.java.lang.TReadable;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public abstract class TCharBuffer extends TBuffer implements Comparable<TCharBuffer>, Appendable,
         CharSequence, TReadable {

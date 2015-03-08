@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class RDPScope extends AbstractMap<String, RDPLocalVariable> {
     private AtomicReference<Map<String, RDPLocalVariable>> backingMap = new AtomicReference<>();

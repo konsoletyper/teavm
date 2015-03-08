@@ -24,7 +24,7 @@ import org.junit.Test;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class FloatBufferTest {
     @Test

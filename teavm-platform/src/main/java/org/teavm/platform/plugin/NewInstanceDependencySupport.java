@@ -21,7 +21,7 @@ import org.teavm.platform.Platform;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class NewInstanceDependencySupport implements DependencyListener {
     private DependencyNode allClassesNode;

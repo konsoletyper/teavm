@@ -20,7 +20,7 @@ import java.util.Map;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class AnnotationContainer implements AnnotationContainerReader {
     private Map<String, AnnotationHolder> annotations = new HashMap<>();

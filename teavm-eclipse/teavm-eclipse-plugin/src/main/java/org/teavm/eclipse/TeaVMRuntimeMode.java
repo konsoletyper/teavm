@@ -17,7 +17,7 @@ package org.teavm.eclipse;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public enum TeaVMRuntimeMode {
     SEPARATE,

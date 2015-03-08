@@ -17,7 +17,7 @@ package org.teavm.dom.html;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface HTMLHtmlElement extends HTMLElement {
 }

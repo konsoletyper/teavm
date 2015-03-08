@@ -19,7 +19,7 @@ import org.teavm.javascript.spi.GeneratedBy;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public final class JavaScriptConv {
     private JavaScriptConv() {

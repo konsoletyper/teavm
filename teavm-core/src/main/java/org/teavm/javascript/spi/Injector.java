@@ -20,7 +20,7 @@ import org.teavm.model.MethodReference;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface Injector {
     void generate(InjectorContext context, MethodReference methodRef) throws IOException;

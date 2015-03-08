@@ -20,7 +20,7 @@ import java.io.InputStream;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class ClasspathResourceReader implements ResourceReader {
     private ClassLoader classLoader;

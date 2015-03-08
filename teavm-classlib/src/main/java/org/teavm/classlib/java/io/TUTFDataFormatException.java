@@ -19,7 +19,7 @@ import org.teavm.classlib.java.lang.TString;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TUTFDataFormatException extends TIOException {
     private static final long serialVersionUID = -6383472574962319733L;

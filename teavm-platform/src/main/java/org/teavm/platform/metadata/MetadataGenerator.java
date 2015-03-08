@@ -52,7 +52,7 @@ import org.teavm.model.MethodReference;
  *
  * @see ClassScopedMetadataGenerator
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface MetadataGenerator {
     /**

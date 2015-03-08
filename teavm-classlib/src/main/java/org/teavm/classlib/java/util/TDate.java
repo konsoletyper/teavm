@@ -22,7 +22,7 @@ import org.teavm.javascript.spi.GeneratedBy;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TDate implements TComparable<TDate> {
     private long value;

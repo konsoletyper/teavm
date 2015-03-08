@@ -19,7 +19,7 @@ import org.teavm.jso.JSIndexer;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface Float32Array extends ArrayBufferView {
     @JSIndexer

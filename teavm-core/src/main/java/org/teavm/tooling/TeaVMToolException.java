@@ -17,7 +17,7 @@ package org.teavm.tooling;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TeaVMToolException extends Exception {
     private static final long serialVersionUID = 579149191624783241L;

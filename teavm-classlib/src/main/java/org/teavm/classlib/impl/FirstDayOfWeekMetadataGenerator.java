@@ -20,7 +20,7 @@ import org.teavm.classlib.impl.unicode.CLDRReader;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class FirstDayOfWeekMetadataGenerator extends WeekMetadataGenerator {
     @Override

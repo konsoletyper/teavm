@@ -5,7 +5,7 @@ import org.teavm.tooling.TeaVMToolLog;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class MavenTeaVMToolLog implements TeaVMToolLog {
     private Log log;

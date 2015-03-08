@@ -20,7 +20,7 @@ import org.teavm.jso.JSObject;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface TypedArrayFactory extends JSObject {
     @JSConstructor("ArrayBuffer")

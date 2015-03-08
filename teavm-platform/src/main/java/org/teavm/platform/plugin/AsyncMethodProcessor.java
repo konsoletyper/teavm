@@ -25,7 +25,7 @@ import org.teavm.platform.async.AsyncCallback;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class AsyncMethodProcessor implements ClassHolderTransformer {
     @Override

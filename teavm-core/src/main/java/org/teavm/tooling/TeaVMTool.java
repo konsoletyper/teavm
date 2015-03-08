@@ -34,7 +34,7 @@ import org.teavm.vm.spi.AbstractRendererListener;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TeaVMTool {
     private File targetDirectory = new File(".");

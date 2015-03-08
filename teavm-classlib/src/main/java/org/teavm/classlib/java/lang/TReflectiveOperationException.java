@@ -17,7 +17,7 @@ package org.teavm.classlib.java.lang;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TReflectiveOperationException extends TException {
     private static final long serialVersionUID = -455785869284249992L;

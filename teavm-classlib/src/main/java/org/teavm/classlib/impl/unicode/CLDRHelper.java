@@ -21,7 +21,7 @@ import org.teavm.platform.metadata.*;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class CLDRHelper {
     public static String getCode(String language, String country) {

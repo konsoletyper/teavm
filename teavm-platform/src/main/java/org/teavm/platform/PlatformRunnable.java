@@ -17,7 +17,7 @@ package org.teavm.platform;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface PlatformRunnable {
     void run();

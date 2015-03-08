@@ -17,7 +17,7 @@ package org.teavm.classlib.java.util;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface TMap<K, V> {
     public static interface Entry<K1, V1> {

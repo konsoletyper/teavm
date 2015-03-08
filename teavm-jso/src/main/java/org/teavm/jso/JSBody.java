@@ -27,7 +27,7 @@ import java.lang.annotation.Target;
  * Note that unless method is static, it must belong to class that implements {@link JSObject}.
  * If applied to non-native method, original Java body will be overwritten by JavaScript.</p>
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)

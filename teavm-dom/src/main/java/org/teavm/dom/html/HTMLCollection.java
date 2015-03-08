@@ -20,7 +20,7 @@ import org.teavm.jso.JSArrayReader;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface HTMLCollection extends JSArrayReader<Element> {
     Element item(int index);

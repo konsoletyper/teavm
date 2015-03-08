@@ -24,7 +24,7 @@ import org.teavm.debugging.javascript.JavaScriptDebuggerListener;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TeaVMJSThread extends TeaVMThread {
     private JavaScriptDebugger jsDebugger;

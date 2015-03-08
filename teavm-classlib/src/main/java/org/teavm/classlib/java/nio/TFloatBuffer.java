@@ -17,7 +17,7 @@ package org.teavm.classlib.java.nio;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public abstract class TFloatBuffer extends TBuffer implements Comparable<TFloatBuffer> {
     TFloatBuffer(int capacity, int position, int limit) {

@@ -30,7 +30,7 @@ import org.teavm.platform.metadata.Resource;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class ClassScopedMetadataProviderNativeGenerator implements Generator {
     @Override

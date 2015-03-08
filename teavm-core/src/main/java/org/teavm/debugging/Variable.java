@@ -17,7 +17,7 @@ package org.teavm.debugging;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class Variable {
     private String name;

@@ -20,7 +20,7 @@ import org.teavm.javascript.spi.Rename;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public abstract class TEnum<E extends TEnum<E>> extends TObject implements TComparable<E>, TSerializable {
     private TString name;

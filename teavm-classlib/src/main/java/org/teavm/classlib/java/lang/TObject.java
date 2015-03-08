@@ -27,7 +27,7 @@ import org.teavm.platform.async.AsyncCallback;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 @Superclass("")
 public class TObject {

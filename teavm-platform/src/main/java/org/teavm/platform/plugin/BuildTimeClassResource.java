@@ -21,7 +21,7 @@ import org.teavm.platform.metadata.ClassResource;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 class BuildTimeClassResource implements ClassResource, ResourceWriter {
     private String className;

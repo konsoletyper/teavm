@@ -17,7 +17,7 @@ package org.teavm.javascript.ast;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public enum NodeModifier {
     STATIC,

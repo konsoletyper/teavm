@@ -22,7 +22,7 @@ import org.teavm.javascript.spi.GeneratedBy;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TRandom extends TObject implements TSerializable {
     public TRandom() {

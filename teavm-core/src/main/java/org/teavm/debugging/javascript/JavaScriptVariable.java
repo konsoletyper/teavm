@@ -17,7 +17,7 @@ package org.teavm.debugging.javascript;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface JavaScriptVariable {
     String getName();

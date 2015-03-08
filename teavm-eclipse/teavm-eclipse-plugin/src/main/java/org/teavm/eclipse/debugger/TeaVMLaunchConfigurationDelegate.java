@@ -28,7 +28,7 @@ import org.teavm.debugging.information.URLDebugInformationProvider;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TeaVMLaunchConfigurationDelegate extends LaunchConfigurationDelegate {
     @Override

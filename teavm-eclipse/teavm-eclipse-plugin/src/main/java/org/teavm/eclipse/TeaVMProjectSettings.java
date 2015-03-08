@@ -19,7 +19,7 @@ import org.eclipse.core.runtime.CoreException;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface TeaVMProjectSettings {
     TeaVMProfile[] getProfiles();
