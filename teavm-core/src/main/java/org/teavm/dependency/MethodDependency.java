@@ -55,6 +55,10 @@ public class MethodDependency implements MethodDependencyInfo {
         return Arrays.copyOf(variableNodes, variableNodes.length);
     }
 
+    void setVariables(DependencyNode[] variables) {
+        this.variableNodes = variables;
+    }
+
     @Override
     public int getVariableCount() {
         return variableNodes.length;

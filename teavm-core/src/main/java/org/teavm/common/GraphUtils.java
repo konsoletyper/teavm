@@ -79,6 +79,14 @@ public final class GraphUtils {
         return false;
     }
 
+    public static int[][] findStronglyConnectedComponents(Graph graph, int[] start) {
+        return findStronglyConnectedComponents(graph, start, new GraphNodeFilter() {
+            @Override public boolean match(int node) {
+                return true;
+            }
+        });
+    }
+
     /*
      * Tarjan's algorithm
      */

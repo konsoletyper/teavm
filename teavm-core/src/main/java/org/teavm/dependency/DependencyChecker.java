@@ -15,13 +15,7 @@
  */
 package org.teavm.dependency;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.callgraph.DefaultCallGraph;
 import org.teavm.callgraph.DefaultCallGraphNode;
@@ -202,6 +196,8 @@ public class DependencyChecker implements DependencyInfo {
         });
     }
 
+    private Set<String> classesAddedByRoot = new HashSet<>();
+
     public ClassDependency linkClass(String className, CallLocation callLocation) {
         ClassDependency dep = classCache.map(className);
         boolean added = true;
@@ -210,6 +206,8 @@ public class DependencyChecker implements DependencyInfo {
             if (!addClassAccess(callGraphNode, className, callLocation.getSourceLocation())) {
                 added = false;
             }
+        } else {
+            added = classesAddedByRoot.add(className);
         }
         if (!dep.isMissing() && added) {
             for (DependencyListener listener : listeners) {
@@ -249,6 +247,8 @@ public class DependencyChecker implements DependencyInfo {
         return dependency;
     }
 
+    private Set<MethodReference> methodsAddedByRoot = new HashSet<>();
+
     public MethodDependency linkMethod(MethodReference methodRef, CallLocation callLocation) {
         if (methodRef == null) {
             throw new IllegalArgumentException();
@@ -262,6 +262,8 @@ public class DependencyChecker implements DependencyInfo {
         if (callLocation != null && callLocation.getMethod() != null) {
             added = callGraph.getNode(callLocation.getMethod()).addCallSite(methodRef,
                     callLocation.getSourceLocation());
+        } else {
+            added = methodsAddedByRoot.add(methodRef);
         }
         MethodDependency graph = methodCache.map(methodRef);
         if (!graph.isMissing() && added) {
@@ -393,10 +395,14 @@ public class DependencyChecker implements DependencyInfo {
         return classCache.getCachedPreimages();
     }
 
+    private Set<FieldReference> fieldsAddedByRoot = new HashSet<>();
+
     public FieldDependency linkField(final FieldReference fieldRef, final CallLocation location) {
         boolean added = true;
         if (location != null) {
             added = callGraph.getNode(location.getMethod()).addFieldAccess(fieldRef, location.getSourceLocation());
+        } else {
+            added = fieldsAddedByRoot.add(fieldRef);
         }
         FieldDependency dep = fieldCache.map(fieldRef);
         if (!dep.isMissing()) {

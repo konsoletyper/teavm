@@ -52,7 +52,15 @@ class DependencyGraphBuilder {
             System.out.println(new ListingBuilder().buildListing(program, "    "));
         }
         resultNode = dep.getResult();
-        nodes = dep.getVariables();
+
+        DependencyNode[] origNodes = dep.getVariables();
+        int[] nodeMapping = new DataFlowGraphBuilder().buildMapping(program, dep.getParameterCount());
+        nodes = new DependencyNode[origNodes.length];
+        for (int i = 0; i < nodes.length; ++i) {
+            nodes[i] = origNodes[nodeMapping[i]];
+        }
+        dep.setVariables(nodes);
+
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlockReader block = program.basicBlockAt(i);
             currentExceptionConsumer = createExceptionConsumer(dep, block);

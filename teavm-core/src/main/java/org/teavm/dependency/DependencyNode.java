@@ -24,7 +24,7 @@ import java.util.*;
 public class DependencyNode implements ValueDependencyInfo {
     private DependencyChecker dependencyChecker;
     private Set<DependencyConsumer> followers = new HashSet<>();
-    private BitSet types = new BitSet();
+    private BitSet types;
     private Map<DependencyNode, DependencyNodeToNodeTransition> transitions = new HashMap<>();
     private volatile String tag;
     private DependencyNode arrayItemNode;
@@ -46,6 +46,9 @@ public class DependencyNode implements ValueDependencyInfo {
         if (degree > 2) {
             return;
         }
+        if (types == null) {
+            types = new BitSet();
+        }
         if (!types.get(type.index)) {
             types.set(type.index);
             if (DependencyChecker.shouldLog) {
@@ -65,9 +68,12 @@ public class DependencyNode implements ValueDependencyInfo {
             if (type.getDependencyChecker() != dependencyChecker) {
                 throw new IllegalArgumentException("The given type does not belong to the same dependency checker");
             }
-            if (!this.types.get(type.index)) {
+            if (this.types == null || !this.types.get(type.index)) {
                 types[j++] = type;
             }
+        }
+        if (this.types == null) {
+            this.types = new BitSet();
         }
         for (int i = 0; i < j; ++i) {
             this.types.set(types[i].index);
@@ -81,7 +87,7 @@ public class DependencyNode implements ValueDependencyInfo {
     }
 
     public void addConsumer(DependencyConsumer consumer) {
-        if (followers.add(consumer)) {
+        if (followers.add(consumer) && this.types != null) {
             List<DependencyType> types = new ArrayList<>();
             for (int index = this.types.nextSetBit(0); index >= 0; index = this.types.nextSetBit(index + 1)) {
                 types.add(dependencyChecker.types.get(index));
@@ -91,6 +97,9 @@ public class DependencyNode implements ValueDependencyInfo {
     }
 
     public void connect(DependencyNode node, DependencyTypeFilter filter) {
+        if (this == node) {
+            return;
+        }
         DependencyNodeToNodeTransition transition = new DependencyNodeToNodeTransition(this, node, filter);
         if (!transitions.containsKey(node)) {
             transitions.put(node, transition);
@@ -123,11 +132,11 @@ public class DependencyNode implements ValueDependencyInfo {
 
     @Override
     public boolean hasArrayType() {
-        return arrayItemNode != null && arrayItemNode.types.isEmpty();
+        return arrayItemNode != null && arrayItemNode.types != null && !arrayItemNode.types.isEmpty();
     }
 
     public boolean hasType(DependencyType type) {
-        return type.getDependencyChecker() == dependencyChecker && types.get(type.index);
+        return types != null && type.getDependencyChecker() == dependencyChecker && types.get(type.index);
     }
 
     @Override
@@ -137,6 +146,9 @@ public class DependencyNode implements ValueDependencyInfo {
 
     @Override
     public String[] getTypes() {
+        if (types == null) {
+            return new String[0];
+        }
         List<String> result = new ArrayList<>();
         for (int index = types.nextSetBit(0); index >= 0; index = types.nextSetBit(index + 1)) {
             result.add(dependencyChecker.types.get(index).getName());
