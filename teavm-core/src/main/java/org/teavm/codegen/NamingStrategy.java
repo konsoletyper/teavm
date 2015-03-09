@@ -37,4 +37,6 @@ public interface NamingStrategy {
     String getFullNameForAsync(MethodReference method) throws NamingException;
 
     String getNameFor(FieldReference field) throws NamingException;
+
+    String getNameForFunction(String name) throws NamingException;
 }

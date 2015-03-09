@@ -139,6 +139,22 @@ public class NamingOrderer implements NameFrequencyConsumer {
         entry.frequency++;
     }
 
+    @Override
+    public void consumeFunction(final String name) {
+        String key = "n:" + name;
+        Entry entry = entries.get(key);
+        if (entry == null) {
+            entry = new Entry();
+            entry.operation = new NamingOperation() {
+                @Override public void perform(NamingStrategy naming) {
+                    naming.getNameForFunction(name);
+                }
+            };
+            entries.put(key, entry);
+        }
+        entry.frequency++;
+    }
+
     public void apply(NamingStrategy naming) {
         List<Entry> entryList = new ArrayList<>(entries.values());
         Collections.sort(entryList, new Comparator<Entry>() {

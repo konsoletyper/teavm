@@ -37,4 +37,6 @@ public interface NameFrequencyConsumer {
     void consume(String className);
 
     void consume(FieldReference field);
+
+    void consumeFunction(String name);
 }

@@ -30,6 +30,7 @@ public class DefaultNamingStrategy implements NamingStrategy {
     private Map<String, String> privateAliases = new HashMap<>();
     private Map<String, String> classAliases = new HashMap<>();
     private Map<String, String> fieldAliases = new HashMap<>();
+    private Map<String, String> functionAliases = new HashMap<>();
     private boolean minifying;
 
     public DefaultNamingStrategy(AliasProvider aliasProvider, ClassReaderSource classSource) {
@@ -124,6 +125,19 @@ public class DefaultNamingStrategy implements NamingStrategy {
             }
             return alias;
         }
+    }
+
+    @Override
+    public String getNameForFunction(String name) throws NamingException {
+        if (!minifying) {
+            return name;
+        }
+        String alias = functionAliases.get(name);
+        if (alias == null) {
+            alias = aliasProvider.getFunctionAlias(name);
+            functionAliases.put(name, alias);
+        }
+        return alias;
     }
 
     private MethodReference getRealMethod(MethodReference methodRef) {

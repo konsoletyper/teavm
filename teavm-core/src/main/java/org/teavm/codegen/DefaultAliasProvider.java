@@ -76,4 +76,9 @@ public class DefaultAliasProvider implements AliasProvider {
     public String getAlias(FieldReference field) {
         return field.getFieldName() + (lastSuffix++);
     }
+
+    @Override
+    public String getFunctionAlias(String name) {
+        return name;
+    }
 }

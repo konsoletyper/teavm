@@ -70,6 +70,8 @@ public class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, Me
                 if (asyncFamilyMethods.contains(method.getReference())) {
                     consumer.consume(method.getReference());
                     consumer.consumeAsync(method.getReference());
+                    consumer.consumeFunction("$rt_asyncError");
+                    consumer.consumeFunction("$rt_asyncResult");
                 }
             }
             if (clinit != null && (method.getModifiers().contains(NodeModifier.STATIC) ||
@@ -118,6 +120,7 @@ public class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, Me
         async = true;
         for (AsyncMethodPart part : methodNode.getBody()) {
             part.getStatement().acceptVisitor(this);
+            consumer.consumeFunction("$rt_guardAsync");
         }
     }
 
@@ -180,11 +183,15 @@ public class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, Me
         if (statement.getResult() != null) {
             statement.getResult().acceptVisitor(this);
         }
+        if (async) {
+            consumer.consumeFunction("$rt_asyncResult");
+        }
     }
 
     @Override
     public void visit(ThrowStatement statement) {
         statement.getException().acceptVisitor(this);
+        consumer.consumeFunction("$rt_throw");
     }
 
     @Override
@@ -235,11 +242,25 @@ public class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, Me
     public void visit(BinaryExpr expr) {
         expr.getFirstOperand().acceptVisitor(this);
         expr.getSecondOperand().acceptVisitor(this);
+        switch (expr.getOperation()) {
+            case COMPARE:
+                consumer.consumeFunction("$rt_compare");
+                break;
+            default:
+                break;
+        }
     }
 
     @Override
     public void visit(UnaryExpr expr) {
         expr.getOperand().acceptVisitor(this);
+        switch (expr.getOperation()) {
+            case NULL_CHECK:
+                consumer.consumeFunction("$rt_nullCheck");
+                break;
+            default:
+                break;
+        }
     }
 
     @Override
@@ -263,6 +284,7 @@ public class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, Me
         if (type instanceof ValueType.Object) {
             String clsName = ((ValueType.Object)type).getClassName();
             consumer.consume(clsName);
+            consumer.consumeFunction("$rt_cls");
         }
     }
 
@@ -307,6 +329,9 @@ public class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, Me
                 }
                 break;
         }
+        if (asyncCall) {
+            consumer.consumeFunction("$rt_continue");
+        }
     }
 
     @Override
@@ -324,6 +349,9 @@ public class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, Me
     public void visit(NewArrayExpr expr) {
         visitType(expr.getType());
         expr.getLength().acceptVisitor(this);
+        if (!(expr.getType() instanceof ValueType.Primitive)) {
+            consumer.consumeFunction("$rt_createArray");
+        }
     }
 
     @Override
@@ -338,6 +366,15 @@ public class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, Me
     public void visit(InstanceOfExpr expr) {
         expr.getExpr().acceptVisitor(this);
         visitType(expr.getType());
+        if (expr.getType() instanceof ValueType.Object) {
+            String clsName = ((ValueType.Object)expr.getType()).getClassName();
+            ClassReader cls = classSource.get(clsName);
+            if (cls == null || cls.hasModifier(ElementModifier.INTERFACE)) {
+                consumer.consumeFunction("$rt_isInstance");
+            }
+        } else {
+            consumer.consumeFunction("$rt_isInstance");
+        }
     }
 
     @Override

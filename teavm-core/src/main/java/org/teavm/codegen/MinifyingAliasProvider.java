@@ -50,6 +50,11 @@ public class MinifyingAliasProvider implements AliasProvider {
         return getNewAlias(lastSuffix++, startLetters);
     }
 
+    @Override
+    public String getFunctionAlias(String className) {
+        return getNewAlias(lastSuffix++, startLetters);
+    }
+
     private String getNewAlias(int index, String startLetters) {
         StringBuilder sb = new StringBuilder();
         sb.append(startLetters.charAt(index % startLetters.length()));

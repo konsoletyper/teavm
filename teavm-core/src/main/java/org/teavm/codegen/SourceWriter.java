@@ -137,6 +137,10 @@ public class SourceWriter implements Appendable, LocationProvider {
         return append(naming.getFullNameFor(new MethodReference(cls, name, params)));
     }
 
+    public SourceWriter appendFunction(String name) throws NamingException, IOException {
+        return append(naming.getNameForFunction(name));
+    }
+
     private void appendIndent() throws IOException {
         if (minified) {
             return;

@@ -31,4 +31,6 @@ public interface AliasProvider {
     String getAlias(MethodDescriptor method);
 
     String getAlias(String className);
+
+    String getFunctionAlias(String name);
 }

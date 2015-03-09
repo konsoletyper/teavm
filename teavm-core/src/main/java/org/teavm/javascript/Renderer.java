@@ -259,6 +259,20 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         writer.outdent().append("}").newLine();
     }
 
+    private void renderRuntimeAliases() throws IOException {
+        String[] names = { "$rt_asyncResult", "$rt_asyncError", "$rt_continue", "$rt_guardAsync", "$rt_throw",
+                "$rt_compare", "$rt_nullCheck", "$rt_cls", "$rt_createArray", "$rt_isInstance" };
+        boolean first = true;
+        for (String name : names) {
+            if (!first) {
+                writer.softNewLine();
+            }
+            first = false;
+            writer.append("var ").appendFunction(name).ws().append('=').ws().append(name).append(";").softNewLine();
+        }
+        writer.newLine();
+    }
+
     public void render(List<ClassNode> classes) throws RenderingException {
         if (minifying) {
             NamingOrderer orderer = new NamingOrderer();
@@ -268,6 +282,14 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 estimator.estimate(cls);
             }
             orderer.apply(naming);
+        }
+
+        if (minifying) {
+            try {
+                renderRuntimeAliases();
+            } catch (IOException e) {
+                throw new RenderingException(e);
+            }
         }
         for (ClassNode cls : classes) {
             renderDeclaration(cls);
@@ -638,9 +660,11 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             writer.append(");").softNewLine();
             writer.outdent().append("}").ws().append("catch").ws().append("($e)").ws()
                     .append("{").indent().softNewLine();
-            writer.append("return ").append(getReturnVariable()).append("($rt_asyncError($e));").softNewLine();
+            writer.append("return ").append(getReturnVariable()).append("(").appendFunction("$rt_asyncError")
+                    .append("($e));").softNewLine();
             writer.outdent().append("}");
-            writer.append(getReturnVariable()).append("($rt_asyncResult($x));").softNewLine();
+            writer.append(getReturnVariable()).append("(").appendFunction("$rt_asyncResult").append("($x));")
+                    .softNewLine();
             writer.outdent().append("}");
             if (inner) {
                 writer.append(';');
@@ -744,7 +768,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 }
                 for (int i = 0; i < methodNode.getBody().size(); ++i) {
                     writer.append("var ").append(getPartVariable(i)).ws().append("=").ws()
-                            .append("$rt_guardAsync(function(");
+                            .appendFunction("$rt_guardAsync").append("(function(");
                     if (i > 0) {
                         writer.append("$restore");
                     }
@@ -1074,7 +1098,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             }
             writer.append("return");
             if (async) {
-                writer.append(' ').append(getReturnVariable()).append("($rt_asyncResult(");
+                writer.append(' ').append(getReturnVariable()).append("(").appendFunction("$rt_asyncResult")
+                        .append("(");
             }
             if (statement.getResult() != null) {
                 if (!async) {
@@ -1105,7 +1130,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             if (statement.getLocation() != null) {
                 pushLocation(statement.getLocation());
             }
-            writer.append("$rt_throw(");
+            writer.appendFunction("$rt_throw").append("(");
             prevCallSite = debugEmitter.emitCallSite();
             priority = Priority.COMMA;
             associativity = Associativity.NONE;
@@ -1282,7 +1307,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 visitBinary(expr, "!==", Priority.COMPARISON, Associativity.LEFT);
                 break;
             case COMPARE:
-                visitBinaryFunction(expr, "$rt_compare");
+                visitBinaryFunction(expr, naming.getNameForFunction("$rt_compare"));
                 break;
             case COMPARE_LONG:
                 visitBinaryFunction(expr, "Long_compare");
@@ -1420,7 +1445,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     break;
                 case NULL_CHECK:
                     enterPriority(Priority.COMMA, Associativity.NONE, false);
-                    writer.append("$rt_nullCheck(");
+                    writer.appendFunction("$rt_nullCheck").append("(");
                     expr.getOperand().acceptVisitor(this);
                     writer.append(')');
                     exitPriority();
@@ -1483,7 +1508,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         }
         if (cst instanceof ValueType) {
             ValueType type = (ValueType)cst;
-            return "$rt_cls(" + typeToClsString(naming, type) + ")";
+            return naming.getNameForFunction("$rt_cls") + "(" + typeToClsString(naming, type) + ")";
         } else if (cst instanceof String) {
             String string = (String)cst;
             Integer index = stringPoolMap.get(string);
@@ -1738,7 +1763,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     if (hasParams) {
                         writer.append(',').ws();
                     }
-                    writer.append("$rt_continue(").append(getPartVariable(expr.getAsyncTarget())).append(')');
+                    writer.appendFunction("$rt_continue").append("(").append(getPartVariable(expr.getAsyncTarget()))
+                            .append(')');
                 }
                 writer.append(')');
                 exitPriority();
@@ -1849,7 +1875,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                         break;
                 }
             } else {
-                writer.append("$rt_createArray(").append(typeToClsString(naming, expr.getType())).append(",").ws();
+                writer.appendFunction("$rt_createArray").append("(").append(typeToClsString(naming, expr.getType()))
+                        .append(",").ws();
                 expr.getLength().acceptVisitor(this);
                 writer.append(")");
             }
@@ -1946,7 +1973,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 }
             }
             enterPriority(Priority.COMMA, Associativity.NONE, false);
-            writer.append("$rt_isInstance(");
+            writer.appendFunction("$rt_isInstance").append("(");
             expr.getExpr().acceptVisitor(this);
             writer.append(",").ws().append(typeToClsString(naming, expr.getType())).append(")");
             exitPriority();
@@ -2037,7 +2064,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 writer.append("return ").append(naming.getFullNameForAsync(monitorEnterRef)).append("(");
                 statement.getObjectRef().acceptVisitor(this);
                 writer.append(",").ws();
-                writer.append("$rt_continue(").append(getPartVariable(statement.getAsyncTarget())).append(')');
+                writer.appendFunction("$rt_continue").append("(").append(getPartVariable(statement.getAsyncTarget()))
+                        .append(')');
                 writer.append(");").softNewLine();
             } else {
                 MethodReference monitorEnterRef = new MethodReference(
