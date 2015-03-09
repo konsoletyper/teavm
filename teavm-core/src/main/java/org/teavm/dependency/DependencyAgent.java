@@ -15,6 +15,8 @@
  */
 package org.teavm.dependency;
 
+import java.util.Collection;
+import org.teavm.callgraph.CallGraph;
 import org.teavm.common.ServiceRepository;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.*;
@@ -23,20 +25,97 @@ import org.teavm.model.*;
  *
  * @author Alexey Andreev
  */
-public interface DependencyAgent extends DependencyInfo, ServiceRepository {
-    DependencyNode createNode();
+public class DependencyAgent implements DependencyInfo, ServiceRepository {
+    private DependencyChecker checker;
 
-    DependencyAgentType getType(String name);
+    DependencyAgent(DependencyChecker checker) {
+        this.checker = checker;
+    }
 
-    String generateClassName();
+    public DependencyNode createNode() {
+        return checker.createNode();
+    }
 
-    void submitClass(ClassHolder cls);
+    public DependencyType getType(String name) {
+        return checker.getType(name);
+    }
 
-    MethodDependency linkMethod(MethodReference methodRef, CallLocation callLocation);
+    public String generateClassName() {
+        return checker.generateClassName();
+    }
 
-    ClassDependency linkClass(String className, CallLocation callLocation);
+    public void submitClass(ClassHolder cls) {
+        checker.submitClass(cls);
+    }
 
-    FieldDependency linkField(FieldReference fieldRef, CallLocation callLocation);
+    public MethodDependency linkMethod(MethodReference methodRef, CallLocation callLocation) {
+        return checker.linkMethod(methodRef, callLocation);
+    }
 
-    Diagnostics getDiagnostics();
+    public ClassDependency linkClass(String className, CallLocation callLocation) {
+        return checker.linkClass(className, callLocation);
+    }
+
+    public FieldDependency linkField(FieldReference fieldRef, CallLocation callLocation) {
+        return checker.linkField(fieldRef, callLocation);
+    }
+
+    public Diagnostics getDiagnostics() {
+        return checker.getDiagnostics();
+    }
+
+    @Override
+    public <T> T getService(Class<T> type) {
+        return checker.getService(type);
+    }
+
+    @Override
+    public ClassReaderSource getClassSource() {
+        return checker.getClassSource();
+    }
+
+    @Override
+    public ClassLoader getClassLoader() {
+        return checker.getClassLoader();
+    }
+
+    @Override
+    public Collection<MethodReference> getAchievableMethods() {
+        return checker.getAchievableMethods();
+    }
+
+    @Override
+    public Collection<FieldReference> getAchievableFields() {
+        return checker.getAchievableFields();
+    }
+
+    @Override
+    public Collection<String> getAchievableClasses() {
+        return checker.getAchievableClasses();
+    }
+
+    @Override
+    public FieldDependencyInfo getField(FieldReference fieldRef) {
+        return checker.getField(fieldRef);
+    }
+
+    @Override
+    public MethodDependencyInfo getMethod(MethodReference methodRef) {
+        return checker.getMethod(methodRef);
+    }
+
+    @Override
+    public MethodDependencyInfo getMethodImplementation(MethodReference methodRef) {
+        return checker.getMethodImplementation(methodRef);
+    }
+
+    @Override
+    public ClassDependencyInfo getClass(String className) {
+        return checker.getClass(className);
+    }
+
+    @Override
+    public CallGraph getCallGraph() {
+        return checker.getCallGraph();
+    }
 }

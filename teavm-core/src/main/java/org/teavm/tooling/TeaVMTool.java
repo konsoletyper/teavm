@@ -240,7 +240,8 @@ public class TeaVMTool {
                 }
                 vmBuilder.setClassLoader(classLoader).setClassSource(cachedClassSource);
             } else {
-                vmBuilder.setClassLoader(classLoader).setClassSource(new ClasspathClassHolderSource(classLoader));
+                vmBuilder.setClassLoader(classLoader).setClassSource(new PreOptimizingClassHolderSource(
+                        new ClasspathClassHolderSource(classLoader)));
             }
             vm = vmBuilder.build();
             if (progressListener != null) {

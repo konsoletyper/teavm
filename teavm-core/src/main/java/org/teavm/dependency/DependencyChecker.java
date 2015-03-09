@@ -48,7 +48,7 @@ import org.teavm.model.util.ModelUtils;
  *
  * @author Alexey Andreev
  */
-public class DependencyChecker implements DependencyInfo, DependencyAgent {
+public class DependencyChecker implements DependencyInfo {
     static final boolean shouldLog = System.getProperty("org.teavm.logDependencies", "false").equals("true");
     private int classNameSuffix;
     private DependencyClassSource classSource;
@@ -67,6 +67,7 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     private boolean interrupted;
     private Diagnostics diagnostics;
     DefaultCallGraph callGraph = new DefaultCallGraph();
+    private DependencyAgent agent;
 
     public DependencyChecker(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services,
             Diagnostics diagnostics) {
@@ -108,6 +109,12 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
                 return createClassDependency(preimage);
             }
         });
+
+        agent = new DependencyAgent(this);
+    }
+
+    public DependencyAgent getAgent() {
+        return agent;
     }
 
     public DependencyCheckerInterruptor getInterruptor() {
@@ -122,7 +129,6 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         return interrupted;
     }
 
-    @Override
     public DependencyType getType(String name) {
         DependencyType type = typeMap.get(name);
         if (type == null) {
@@ -133,7 +139,6 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         return type;
     }
 
-    @Override
     public DependencyNode createNode() {
         return new DependencyNode(this);
     }
@@ -148,19 +153,17 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         return classLoader;
     }
 
-    @Override
     public String generateClassName() {
         return "$$teavm_generated_class$$" + classNameSuffix++;
     }
 
-    @Override
     public void submitClass(ClassHolder cls) {
         classSource.submit(ModelUtils.copyClass(cls));
     }
 
     public void addDependencyListener(DependencyListener listener) {
         listeners.add(listener);
-        listener.started(this);
+        listener.started(agent);
     }
 
     public void addClassTransformer(ClassHolderTransformer transformer) {
@@ -199,7 +202,6 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         });
     }
 
-    @Override
     public ClassDependency linkClass(String className, CallLocation callLocation) {
         ClassDependency dep = classCache.map(className);
         boolean added = true;
@@ -211,7 +213,7 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         }
         if (!dep.isMissing() && added) {
             for (DependencyListener listener : listeners) {
-                listener.classAchieved(DependencyChecker.this, className, callLocation);
+                listener.classAchieved(agent, className, callLocation);
             }
         }
         return dep;
@@ -247,7 +249,6 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         return dependency;
     }
 
-    @Override
     public MethodDependency linkMethod(MethodReference methodRef, CallLocation callLocation) {
         if (methodRef == null) {
             throw new IllegalArgumentException();
@@ -265,7 +266,7 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         MethodDependency graph = methodCache.map(methodRef);
         if (!graph.isMissing() && added) {
             for (DependencyListener listener : listeners) {
-                listener.methodAchieved(this, graph, callLocation);
+                listener.methodAchieved(agent, graph, callLocation);
             }
             activateDependencyPlugin(graph, callLocation);
         }
@@ -392,7 +393,6 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         return classCache.getCachedPreimages();
     }
 
-    @Override
     public FieldDependency linkField(final FieldReference fieldRef, final CallLocation location) {
         boolean added = true;
         if (location != null) {
@@ -408,7 +408,7 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         }
         if (!dep.isMissing() && added) {
             for (DependencyListener listener : listeners) {
-                listener.fieldAchieved(DependencyChecker.this, dep, location);
+                listener.fieldAchieved(agent, dep, location);
             }
         }
         return dep;
@@ -443,7 +443,7 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     private void activateDependencyPlugin(MethodDependency methodDep, CallLocation location) {
         attachDependencyPlugin(methodDep);
         if (methodDep.dependencyPlugin != null) {
-            methodDep.dependencyPlugin.methodAchieved(this, methodDep, location);
+            methodDep.dependencyPlugin.methodAchieved(agent, methodDep, location);
         }
     }
 
@@ -497,12 +497,10 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         }
     }
 
-    @Override
     public <T> T getService(Class<T> type) {
         return services.getService(type);
     }
 
-    @Override
     public Diagnostics getDiagnostics() {
         return diagnostics;
     }

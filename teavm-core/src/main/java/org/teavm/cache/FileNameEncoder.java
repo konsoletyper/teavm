@@ -71,7 +71,15 @@ public final class FileNameEncoder {
                     sb.append(c);
                     break;
             }
-
+        }
+        String str = sb.toString();
+        sb.setLength(0);
+        for (int i = 0; i < str.length(); i += 100) {
+            if (i > 0) {
+                sb.append('/');
+            }
+            int j = Math.min(i + 100, str.length());
+            sb.append(str.substring(i, j));
         }
         return sb.toString();
     }

@@ -81,7 +81,7 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
 
     private void achieveGetLength(final DependencyAgent agent, final MethodDependency method) {
         method.getVariable(1).addConsumer(new DependencyConsumer() {
-            @Override public void consume(DependencyAgentType type) {
+            @Override public void consume(DependencyType type) {
                 if (!type.getName().startsWith("[")) {
                     MethodReference cons = new MethodReference(IllegalArgumentException.class, "<init>", void.class);
                     agent.linkMethod(cons, null).use();
@@ -128,7 +128,7 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
     private void achieveGet(final DependencyAgent agent, final MethodDependency method) {
         method.getVariable(1).getArrayItem().connect(method.getResult());
         method.getVariable(1).addConsumer(new DependencyConsumer() {
-            @Override public void consume(DependencyAgentType type) {
+            @Override public void consume(DependencyType type) {
                 if (type.getName().startsWith("[")) {
                     String typeName = type.getName().substring(1);
                     for (int i = 0; i < primitiveTypes.length; ++i) {

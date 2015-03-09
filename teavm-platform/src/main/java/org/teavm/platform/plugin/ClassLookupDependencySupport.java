@@ -41,7 +41,7 @@ public class ClassLookupDependencySupport implements DependencyListener {
         MethodReference ref = method.getReference();
         if (ref.getClassName().equals(Platform.class.getName()) && ref.getName().equals("lookupClass")) {
             allClasses.addConsumer(new DependencyConsumer() {
-                @Override public void consume(DependencyAgentType type) {
+                @Override public void consume(DependencyType type) {
                     ClassReader cls = agent.getClassSource().get(type.getName());
                     if (cls == null) {
                         return;

@@ -99,7 +99,7 @@ class DependencyGraphBuilder {
         }
 
         @Override
-        public void consume(DependencyAgentType type) {
+        public void consume(DependencyType type) {
             for (int i = 0; i < exceptions.length; ++i) {
                 if (exceptions[i] == null || isAssignableFrom(checker.getClassSource(), exceptions[i],
                         type.getName())) {
@@ -139,7 +139,7 @@ class DependencyGraphBuilder {
         }
 
         @Override
-        public void consume(DependencyAgentType type) {
+        public void consume(DependencyType type) {
             String className = type.getName();
             if (DependencyChecker.shouldLog) {
                 System.out.println("Virtual call of " + methodDesc + " detected on " + node.getTag() + ". " +
@@ -262,7 +262,7 @@ class DependencyGraphBuilder {
                 final ClassReader targetClass = dependencyChecker.getClassSource().get(targetClsName);
                 if (targetClass != null) {
                     valueNode.connect(receiverNode, new DependencyTypeFilter() {
-                        @Override public boolean match(DependencyAgentType type) {
+                        @Override public boolean match(DependencyType type) {
                             if (targetClass.getName().equals("java.lang.Object")) {
                                 return true;
                             }
@@ -392,7 +392,7 @@ class DependencyGraphBuilder {
             DependencyNode arrayNode = nodes[array.getIndex()];
             final DependencyNode receiverNode = nodes[receiver.getIndex()];
             arrayNode.addConsumer(new DependencyConsumer() {
-                @Override public void consume(DependencyAgentType type) {
+                @Override public void consume(DependencyType type) {
                     receiverNode.propagate(type);
                 }
             });

@@ -19,7 +19,7 @@ package org.teavm.dependency;
  *
  * @author Alexey Andreev
  */
-public class DependencyType implements DependencyAgentType {
+public class DependencyType {
     private DependencyChecker dependencyChecker;
     private String name;
     int index;
@@ -30,17 +30,15 @@ public class DependencyType implements DependencyAgentType {
         this.index = index;
     }
 
-    public DependencyChecker getDependencyChecker() {
+    DependencyChecker getDependencyChecker() {
         return dependencyChecker;
     }
 
-    @Override
     public String getName() {
         return name;
     }
 
-    @Override
     public DependencyAgent getDependencyAgent() {
-        return dependencyChecker;
+        return dependencyChecker.getAgent();
     }
 }

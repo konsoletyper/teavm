@@ -20,5 +20,5 @@ package org.teavm.dependency;
  * @author Alexey Andreev
  */
 public interface DependencyConsumer {
-    void consume(DependencyAgentType type);
+    void consume(DependencyType type);
 }

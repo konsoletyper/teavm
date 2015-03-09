@@ -20,22 +20,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import net.java.html.js.JavaScriptBody;
-import org.teavm.dependency.DependencyAgent;
-import org.teavm.dependency.DependencyAgentType;
-import org.teavm.dependency.DependencyConsumer;
-import org.teavm.dependency.DependencyListener;
-import org.teavm.dependency.DependencyNode;
-import org.teavm.dependency.FieldDependency;
-import org.teavm.dependency.MethodDependency;
-import org.teavm.model.AnnotationReader;
-import org.teavm.model.AnnotationValue;
-import org.teavm.model.CallLocation;
-import org.teavm.model.ClassReader;
-import org.teavm.model.ClassReaderSource;
-import org.teavm.model.ElementModifier;
-import org.teavm.model.MethodDescriptor;
-import org.teavm.model.MethodReader;
-import org.teavm.model.MethodReference;
+import org.teavm.dependency.*;
+import org.teavm.model.*;
 
 /**
  *
@@ -56,7 +42,7 @@ public class JavaScriptBodyDependency implements DependencyListener {
         public OneDirectionalConnection(DependencyNode target) {
             this.target = target;
         }
-        @Override public void consume(DependencyAgentType type) {
+        @Override public void consume(DependencyType type) {
             target.propagate(type);
         }
     }
@@ -190,7 +176,7 @@ public class JavaScriptBodyDependency implements DependencyListener {
             this.caller = caller;
             this.superClass = agent.getClassSource().get(superMethod.getOwnerName());
         }
-        @Override public void consume(DependencyAgentType type) {
+        @Override public void consume(DependencyType type) {
             if (!isAssignableFrom(superClass, type.getName())) {
                 return;
             }

@@ -125,7 +125,7 @@ public class JSNativeGenerator implements Injector, DependencyPlugin {
             case "function":
                 for (int i = 0; i < method.getReference().parameterCount(); ++i) {
                     method.getVariable(i).addConsumer(new DependencyConsumer() {
-                        @Override public void consume(DependencyAgentType type) {
+                        @Override public void consume(DependencyType type) {
                             achieveFunctorMethods(agent, type.getName(), method);
                         }
                     });

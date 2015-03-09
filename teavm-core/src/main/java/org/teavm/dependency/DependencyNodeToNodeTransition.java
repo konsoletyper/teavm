@@ -32,7 +32,7 @@ class DependencyNodeToNodeTransition implements DependencyConsumer {
     }
 
     @Override
-    public void consume(DependencyAgentType type) {
+    public void consume(DependencyType type) {
         if (filter != null && !filter.match(type)) {
             return;
         }

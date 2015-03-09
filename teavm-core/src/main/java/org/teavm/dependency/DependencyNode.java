@@ -39,11 +39,7 @@ public class DependencyNode implements ValueDependencyInfo {
         this.degree = degree;
     }
 
-    public void propagate(DependencyAgentType agentType) {
-        if (!(agentType instanceof DependencyType)) {
-            throw new IllegalArgumentException("The given type does not belong to the same dependency checker");
-        }
-        DependencyType type = (DependencyType)agentType;
+    public void propagate(DependencyType type) {
         if (type.getDependencyChecker() != dependencyChecker) {
             throw new IllegalArgumentException("The given type does not belong to the same dependency checker");
         }
@@ -61,15 +57,11 @@ public class DependencyNode implements ValueDependencyInfo {
         }
     }
 
-    public void propagate(DependencyAgentType[] agentTypes) {
+    public void propagate(DependencyType[] agentTypes) {
         DependencyType[] types = new DependencyType[agentTypes.length];
         int j = 0;
         for (int i = 0; i < agentTypes.length; ++i) {
-            DependencyAgentType agentType = agentTypes[i];
-            if (!(agentType instanceof DependencyType)) {
-                throw new IllegalArgumentException("The given type does not belong to the same dependency checker");
-            }
-            DependencyType type = (DependencyType)agentType;
+            DependencyType type = agentTypes[i];
             if (type.getDependencyChecker() != dependencyChecker) {
                 throw new IllegalArgumentException("The given type does not belong to the same dependency checker");
             }
@@ -121,7 +113,7 @@ public class DependencyNode implements ValueDependencyInfo {
                 arrayItemNode.tag = tag + "[";
             }
             arrayItemNode.addConsumer(new DependencyConsumer() {
-                @Override public void consume(DependencyAgentType type) {
+                @Override public void consume(DependencyType type) {
                     DependencyNode.this.propagate(type);
                 }
             });
@@ -134,12 +126,8 @@ public class DependencyNode implements ValueDependencyInfo {
         return arrayItemNode != null && arrayItemNode.types.isEmpty();
     }
 
-    public boolean hasType(DependencyAgentType type) {
-        if (!(type instanceof DependencyType)) {
-            return false;
-        }
-        DependencyType typeImpl = (DependencyType)type;
-        return typeImpl.getDependencyChecker() == dependencyChecker && types.get(typeImpl.index);
+    public boolean hasType(DependencyType type) {
+        return type.getDependencyChecker() == dependencyChecker && types.get(type.index);
     }
 
     @Override

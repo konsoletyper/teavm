@@ -47,7 +47,7 @@ public class MethodDependency implements MethodDependencyInfo {
     }
 
     public DependencyAgent getDependencyAgent() {
-        return dependencyChecker;
+        return dependencyChecker.getAgent();
     }
 
     @Override

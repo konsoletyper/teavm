@@ -129,7 +129,7 @@ public class ServiceLoaderSupport implements Generator, DependencyListener {
             method.getResult().propagate(agent.getType("[java.lang.Object"));
             allClassesNode.connect(method.getResult().getArrayItem());
             method.getResult().getArrayItem().addConsumer(new DependencyConsumer() {
-                @Override public void consume(DependencyAgentType type) {
+                @Override public void consume(DependencyType type) {
                     initConstructor(agent, type.getName(), location);
                 }
             });

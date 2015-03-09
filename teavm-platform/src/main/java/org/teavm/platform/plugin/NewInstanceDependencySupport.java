@@ -53,7 +53,7 @@ public class NewInstanceDependencySupport implements DependencyListener {
             allClassesNode.connect(method.getResult());
             final MethodReference methodRef = reader.getReference();
             method.getResult().addConsumer(new DependencyConsumer() {
-                @Override public void consume(DependencyAgentType type) {
+                @Override public void consume(DependencyType type) {
                     attachConstructor(agent, type.getName(), new CallLocation(methodRef));
                 }
             });
