@@ -460,10 +460,10 @@ function $rt_rootInvocationAdapter(f) {
         });
         f.apply(this, args);
         var thread = $rt_getThread();
-        while (thread.postponed) {
-            var postponed = thread.postponed;
-            thread.postponed = null;
-            postponed();
+        if (thread.hasOwnProperty("postponed")) {
+            while (thread.postponed.length > 0) {
+                thread.postponed.shift()();
+            }
         }
     }
 }
@@ -491,23 +491,22 @@ function $rt_s(index) {
 }
 var $rt_continueCounter = 0;
 function $rt_continue(f) {
-   if ($rt_continueCounter++ == 5) {
-       $rt_continueCounter = 0;
-       return function() {
-           var self = this;
-           var args = arguments;
-           var thread = $rt_getThread();
-           var oldPostponed = thread.postponed;
-           thread.postponed = function() {
-               if (oldPostponed) {
-                   oldPostponed();
-               }
-               f.apply(self, args);
-           };
-       };
-   } else {
-       return f;
-   }
+    if ($rt_continueCounter++ == 5) {
+        $rt_continueCounter = 0;
+        return function() {
+            var self = this;
+            var args = arguments;
+            var thread = $rt_getThread();
+            if (!thread.hasOwnProperty("postponed")) {
+                thread.postponed = [];
+            }
+            thread.postponed.push(function() {
+                f.apply(self, args);
+            });
+        };
+    } else {
+        return f;
+    }
 }
 function $rt_guardAsync(f, continuation) {
     return function() {
