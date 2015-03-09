@@ -56,17 +56,17 @@ public class DefaultNamingStrategy implements NamingStrategy {
     }
 
     @Override
-    public String getNameFor(MethodReference method) {
+    public String getNameFor(MethodDescriptor method) {
         return getNameFor(method, 'S');
     }
 
     @Override
-    public String getNameForAsync(MethodReference method) throws NamingException {
+    public String getNameForAsync(MethodDescriptor method) throws NamingException {
         return getNameFor(method, 'A');
     }
 
-    private String getNameFor(MethodReference method, char classifier) {
-        String key = classifier + method.getDescriptor().toString();
+    private String getNameFor(MethodDescriptor method, char classifier) {
+        String key = classifier + method.toString();
         String alias = aliases.get(key);
         if (alias == null) {
             alias = aliasProvider.getAlias(method);
@@ -97,7 +97,7 @@ public class DefaultNamingStrategy implements NamingStrategy {
             throw new NamingException("Can't provide name for method as it was not found: " + originalMethod);
         }
         if (!minifying) {
-            return getNameFor(method.getClassName()) + "_" + getNameFor(method, classifier);
+            return getNameFor(method.getClassName()) + "_" + getNameFor(method.getDescriptor(), classifier);
         }
         String key = classifier + method.toString();
         String alias = privateAliases.get(key);

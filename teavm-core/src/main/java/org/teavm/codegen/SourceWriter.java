@@ -111,18 +111,16 @@ public class SourceWriter implements Appendable, LocationProvider {
         return append(naming.getNameFor(field));
     }
 
-    public SourceWriter appendMethod(MethodReference method) throws NamingException, IOException {
+    public SourceWriter appendMethod(MethodDescriptor method) throws NamingException, IOException {
         return append(naming.getNameFor(method));
     }
 
-    public SourceWriter appendMethod(String className, String name, ValueType... params)
-            throws NamingException, IOException {
-        return append(naming.getNameFor(new MethodReference(className, name, params)));
+    public SourceWriter appendMethod(String name, ValueType... params) throws NamingException, IOException {
+        return append(naming.getNameFor(new MethodDescriptor(name, params)));
     }
 
-    public SourceWriter appendMethod(Class<?> cls, String name, Class<?>... params)
-            throws NamingException, IOException {
-        return append(naming.getNameFor(new MethodReference(cls, name, params)));
+    public SourceWriter appendMethod(String name, Class<?>... params) throws NamingException, IOException {
+        return append(naming.getNameFor(new MethodDescriptor(name, params)));
     }
 
     public SourceWriter appendMethodBody(MethodReference method) throws NamingException, IOException {

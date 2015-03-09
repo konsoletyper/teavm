@@ -549,12 +549,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         for (MethodReference injectedMethod : methodInjectors.keySet()) {
             decompiler.addMethodToPass(injectedMethod);
         }
-        List<String> classOrder = decompiler.getClassOrdering(classes.getClassNames());
         List<ClassNode> classNodes = new ArrayList<>();
         int index = 0;
         try (PrintWriter bytecodeLogger = bytecodeLogging ?
                 new PrintWriter(new OutputStreamWriter(logStream, "UTF-8")) : null) {
-            for (String className : classOrder) {
+            for (String className : classes.getClassNames()) {
                 ClassHolder cls = classes.get(className);
                 for (MethodHolder method : cls.getMethods()) {
                     processMethod(method);

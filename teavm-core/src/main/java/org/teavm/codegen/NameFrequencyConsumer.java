@@ -1,5 +1,5 @@
 /*
- *  Copyright 2012 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,12 +23,18 @@ import org.teavm.model.MethodReference;
  *
  * @author Alexey Andreev
  */
-public interface AliasProvider {
-    String getAlias(FieldReference field);
+public interface NameFrequencyConsumer {
+    void consume(MethodReference method);
 
-    String getAlias(MethodReference method);
+    void consumeAsync(MethodReference method);
 
-    String getAlias(MethodDescriptor method);
+    void consumeInit(MethodReference method);
 
-    String getAlias(String className);
+    void consume(MethodDescriptor method);
+
+    void consumeAsync(MethodDescriptor method);
+
+    void consume(String className);
+
+    void consume(FieldReference field);
 }

@@ -99,7 +99,7 @@ public class JavaScriptBodyGenerator implements Generator {
             if (ident == null) {
                 sb.append(naming.getFullNameFor(reader.getReference()));
             } else {
-                sb.append("$this.").append(naming.getNameFor(reader.getReference()));
+                sb.append("$this.").append(naming.getNameFor(reader.getDescriptor()));
             }
             sb.append("(");
             for (int i = 0; i < reader.parameterCount(); ++i) {

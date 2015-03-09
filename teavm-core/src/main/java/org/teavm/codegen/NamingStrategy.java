@@ -16,6 +16,7 @@
 package org.teavm.codegen;
 
 import org.teavm.model.FieldReference;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 
 /**
@@ -25,9 +26,9 @@ import org.teavm.model.MethodReference;
 public interface NamingStrategy {
     String getNameFor(String cls) throws NamingException;
 
-    String getNameFor(MethodReference method) throws NamingException;
+    String getNameFor(MethodDescriptor method) throws NamingException;
 
-    String getNameForAsync(MethodReference method) throws NamingException;
+    String getNameForAsync(MethodDescriptor method) throws NamingException;
 
     String getNameForInit(MethodReference method) throws NamingException;
 

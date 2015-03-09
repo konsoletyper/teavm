@@ -20,6 +20,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import org.teavm.codegen.NamingException;
+import org.teavm.codegen.NamingOrderer;
 import org.teavm.codegen.NamingStrategy;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.common.ServiceRepository;
@@ -259,6 +260,15 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     }
 
     public void render(List<ClassNode> classes) throws RenderingException {
+        if (minifying) {
+            NamingOrderer orderer = new NamingOrderer();
+            NameFrequencyEstimator estimator = new NameFrequencyEstimator(orderer, classSource, asyncMethods,
+                    asyncFamilyMethods);
+            for (ClassNode cls : classes) {
+                estimator.estimate(cls);
+            }
+            orderer.apply(naming);
+        }
         for (ClassNode cls : classes) {
             renderDeclaration(cls);
         }
@@ -313,7 +323,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                         .append(constantToString(value)).append(";").softNewLine();
             }
         } catch (NamingException e) {
-            throw new RenderingException("Error rendering class " + cls.getName() + ". See a cause for details", e);
+            throw new RenderingException("Error rendering class " + cls.getName() + ". See cause for details", e);
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
         }
@@ -529,7 +539,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     }
 
     private void emitVirtualDeclaration(MethodReference ref, boolean async) throws IOException {
-        String methodName = async ? naming.getNameForAsync(ref) : naming.getNameFor(ref);
+        String methodName = async ? naming.getNameForAsync(ref.getDescriptor()) :
+                naming.getNameFor(ref.getDescriptor());
         writer.append("\"").append(methodName).append("\"");
         writer.append(",").ws().append("function(");
         List<String> args = new ArrayList<>();
@@ -1665,7 +1676,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     expr.getArguments().get(0).acceptVisitor(this);
                 }
                 MethodReference method = expr.getMethod();
-                String name = asyncCall ? naming.getNameForAsync(method) : naming.getNameFor(method);
+                String name = asyncCall ? naming.getNameForAsync(method.getDescriptor()) :
+                        naming.getNameFor(method.getDescriptor());
                 DeferredCallSite callSite = prevCallSite;
                 boolean shouldEraseCallSite = lastCallSite == null;
                 if (lastCallSite == null) {

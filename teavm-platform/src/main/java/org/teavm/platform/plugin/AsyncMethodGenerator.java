@@ -39,13 +39,13 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin {
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
         MethodReference asyncRef = getAsyncReference(methodRef);
         writer.append("var callback").ws().append("=").ws().append("function()").ws().append("{};").softNewLine();
-        writer.append("callback.").appendMethod(completeMethod).ws().append("=").ws().append("function(val)").ws()
-                .append("{").indent().softNewLine();
+        writer.append("callback.").appendMethod(completeMethod.getDescriptor()).ws().append("=").ws()
+                .append("function(val)").ws().append("{").indent().softNewLine();
         writer.append("return ").append(context.getCompleteContinuation()).append("($rt_asyncResult(val));")
                 .softNewLine();
         writer.outdent().append("};").softNewLine();
-        writer.append("callback.").appendMethod(errorMethod).ws().append("=").ws().append("function(e)").ws()
-                .append("{").indent().softNewLine();
+        writer.append("callback.").appendMethod(errorMethod.getDescriptor()).ws().append("=").ws()
+                .append("function(e)").ws().append("{").indent().softNewLine();
         writer.append("return ").append(context.getCompleteContinuation()).append("($rt_asyncError(e));")
                 .softNewLine();
         writer.outdent().append("};").softNewLine();
