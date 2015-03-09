@@ -491,7 +491,7 @@ function $rt_s(index) {
 }
 var $rt_continueCounter = 0;
 function $rt_continue(f) {
-   if ($rt_continueCounter++ == 40) {
+   if ($rt_continueCounter++ == 5) {
        $rt_continueCounter = 0;
        return function() {
            var self = this;

@@ -62,8 +62,11 @@ public class DataFlowGraphBuilder implements InstructionReader {
         }
         IntegerArray startNodes = new IntegerArray(graph.size());
         for (int i = paramCount; i < graph.size(); ++i) {
-            if (!importantNodes.contains(i) && graph.incomingEdgesCount(i) == 1) {
-                classes.union(graph.incomingEdges(i)[0], i);
+            if (importantNodes.contains(i)) {
+                continue;
+            }
+            for (int pred : graph.incomingEdges(i)) {
+                classes.union(pred, i);
             }
             if (graph.incomingEdgesCount(i) == 0) {
                 startNodes.add(i);
@@ -72,9 +75,12 @@ public class DataFlowGraphBuilder implements InstructionReader {
 
         int[][] sccs = GraphUtils.findStronglyConnectedComponents(graph, startNodes.getAll());
         for (int[] scc : sccs) {
-            int first = scc[0];
-            for (int i = 1; i < scc.length; ++i) {
-                classes.union(first, scc[i]);
+            int last = -1;
+            for (int node : scc) {
+                if (!importantNodes.contains(node)) {
+                    continue;
+                }
+                last = last < 0 ? node : classes.union(node, last);
             }
         }
         return classes.pack(program.variableCount());

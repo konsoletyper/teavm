@@ -752,7 +752,7 @@ public class AstIO {
             }
             case 9: {
                 ConstantExpr expr = new ConstantExpr();
-                expr.setValue(symbolTable.at(input.readInt()));
+                expr.setValue(ValueType.parse(symbolTable.at(input.readInt())));
                 return expr;
             }
             case 10: {
