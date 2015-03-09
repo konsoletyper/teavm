@@ -537,7 +537,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             args.add(variableName(i));
         }
         if (async) {
-            args.add("$return");
+            args.add(getReturnVariable());
         }
         for (int i = 0; i < args.size(); ++i) {
             if (i > 0) {
@@ -555,6 +555,18 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             writer.append(",").ws().append(args.get(i));
         }
         writer.append(");").ws().append("}");
+    }
+
+    private String getPartVariable(int index) {
+        if (minifying) {
+            return "$p" + indexToId(index);
+        } else {
+            return "$part_" + index;
+        }
+    }
+
+    private String getReturnVariable() {
+        return minifying ? "$r" : "$return";
     }
 
     public void renderBody(MethodNode method, boolean inner) throws IOException {
@@ -581,7 +593,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             if (startParam < ref.parameterCount() + 1) {
                 writer.append(',').ws();
             }
-            writer.append("$return");
+            writer.append(getReturnVariable());
         }
         writer.append(")").ws().append("{").softNewLine().indent();
         method.acceptVisitor(new MethodBodyRenderer());
@@ -601,11 +613,11 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 writer.append(variableName(i));
                 writer.append(",").ws();
             }
-            writer.append("$return)").ws().append("{").softNewLine().indent();
+            writer.append(getReturnVariable()).append(")").ws().append("{").softNewLine().indent();
 
-            writer.append("var $r;").softNewLine();
+            writer.append("var $x;").softNewLine();
             writer.append("try").ws().append('{').indent().softNewLine();
-            writer.append("$r").ws().append("=").ws().appendMethodBody(ref).append('(');
+            writer.append("$x").ws().append("=").ws().appendMethodBody(ref).append('(');
             for (int i = startParam; i <= ref.parameterCount(); ++i) {
                 if (i > startParam) {
                     writer.append(",").ws();
@@ -615,9 +627,9 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             writer.append(");").softNewLine();
             writer.outdent().append("}").ws().append("catch").ws().append("($e)").ws()
                     .append("{").indent().softNewLine();
-            writer.append("return $return($rt_asyncError($e));").softNewLine();
+            writer.append("return ").append(getReturnVariable()).append("($rt_asyncError($e));").softNewLine();
             writer.outdent().append("}");
-            writer.append("$return($rt_asyncResult($r));").softNewLine();
+            writer.append(getReturnVariable()).append("($rt_asyncResult($x));").softNewLine();
             writer.outdent().append("}");
             if (inner) {
                 writer.append(';');
@@ -720,16 +732,17 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     writer.append(";").softNewLine();
                 }
                 for (int i = 0; i < methodNode.getBody().size(); ++i) {
-                    writer.append("var $part_").append(i).ws().append("=").ws().append("$rt_guardAsync(function(");
+                    writer.append("var ").append(getPartVariable(i)).ws().append("=").ws()
+                            .append("$rt_guardAsync(function(");
                     if (i > 0) {
                         writer.append("$restore");
                     }
                     writer.append(")").ws().append("{").indent().softNewLine();
                     AsyncMethodPart part = methodNode.getBody().get(i);
                     part.getStatement().acceptVisitor(Renderer.this);
-                    writer.outdent().append("},").ws().append("$return);").softNewLine();
+                    writer.outdent().append("},").ws().append(getReturnVariable()).append(");").softNewLine();
                 }
-                writer.append("return $part_0();").softNewLine();
+                writer.append("return ").append(getPartVariable(0)).append("();").softNewLine();
             } catch (IOException e) {
                 throw new RenderingException("IO error occured", e);
             }
@@ -777,7 +790,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
 
         @Override
         public String getCompleteContinuation() {
-            return "$return";
+            return getReturnVariable();
         }
 
         @Override
@@ -972,16 +985,20 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     private String mapBlockId(String id) {
         String name = blockIdMap.get(id);
         if (name == null) {
-            StringBuilder sb = new StringBuilder();
             int index = blockIdMap.size();
-            do {
-                sb.append(variablePartNames.charAt(index % variablePartNames.length()));
-                index /= variablePartNames.length();
-            } while (index > 0);
-            name = "$b" + sb;
+            name = "$b" + indexToId(index);
             blockIdMap.put(id, name);
         }
         return name;
+    }
+
+    private String indexToId(int index) {
+        StringBuilder sb = new StringBuilder();
+        do {
+            sb.append(variablePartNames.charAt(index % variablePartNames.length()));
+            index /= variablePartNames.length();
+        } while (index > 0);
+        return sb.toString();
     }
 
     @Override
@@ -1046,7 +1063,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             }
             writer.append("return");
             if (async) {
-                writer.append(" $return($rt_asyncResult(");
+                writer.append(' ').append(getReturnVariable()).append("($rt_asyncResult(");
             }
             if (statement.getResult() != null) {
                 if (!async) {
@@ -1709,7 +1726,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     if (hasParams) {
                         writer.append(',').ws();
                     }
-                    writer.append("$rt_continue($part_").append(expr.getAsyncTarget()).append(')');
+                    writer.append("$rt_continue(").append(getPartVariable(expr.getAsyncTarget())).append(')');
                 }
                 writer.append(')');
                 exitPriority();
@@ -2008,7 +2025,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 writer.append("return ").append(naming.getFullNameForAsync(monitorEnterRef)).append("(");
                 statement.getObjectRef().acceptVisitor(this);
                 writer.append(",").ws();
-                writer.append("$rt_continue($part_").append(statement.getAsyncTarget()).append(')');
+                writer.append("$rt_continue(").append(getPartVariable(statement.getAsyncTarget())).append(')');
                 writer.append(");").softNewLine();
             } else {
                 MethodReference monitorEnterRef = new MethodReference(

@@ -156,7 +156,7 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
 
         writer.append("return ").append(selfName).append("(").append(context.getParameterName(1));
         if (context.isAsync()) {
-            writer.append(',').ws().append("$return");
+            writer.append(',').ws().append(context.getCompleteContinuation());
         }
         writer.append(");").softNewLine();
     }

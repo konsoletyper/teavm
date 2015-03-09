@@ -41,11 +41,13 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin {
         writer.append("var callback").ws().append("=").ws().append("function()").ws().append("{};").softNewLine();
         writer.append("callback.").appendMethod(completeMethod).ws().append("=").ws().append("function(val)").ws()
                 .append("{").indent().softNewLine();
-        writer.append("return $return($rt_asyncResult(val));").softNewLine();
+        writer.append("return ").append(context.getCompleteContinuation()).append("($rt_asyncResult(val));")
+                .softNewLine();
         writer.outdent().append("};").softNewLine();
         writer.append("callback.").appendMethod(errorMethod).ws().append("=").ws().append("function(e)").ws()
                 .append("{").indent().softNewLine();
-        writer.append("return $return($rt_asyncError(e));").softNewLine();
+        writer.append("return ").append(context.getCompleteContinuation()).append("($rt_asyncError(e));")
+                .softNewLine();
         writer.outdent().append("};").softNewLine();
         writer.append("try").ws().append("{").indent().softNewLine();
         writer.append("return ").appendMethodBody(asyncRef).append('(');
@@ -58,7 +60,8 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin {
         }
         writer.append("callback);").softNewLine();
         writer.outdent().append("}").ws().append("catch($e)").ws().append("{").indent().softNewLine();
-        writer.append("return $return($rt_asyncError($e));").softNewLine();
+        writer.append("return ").append(context.getCompleteContinuation()).append("($rt_asyncError($e));")
+                .softNewLine();
         writer.outdent().append("}").softNewLine();
     }
 
