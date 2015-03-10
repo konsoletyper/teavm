@@ -58,12 +58,7 @@ public class DefaultNamingStrategy implements NamingStrategy {
 
     @Override
     public String getNameFor(MethodDescriptor method) {
-        return getNameFor(method, 'S');
-    }
-
-    @Override
-    public String getNameForAsync(MethodDescriptor method) throws NamingException {
-        return getNameFor(method, 'A');
+        return getNameFor(method, 'M');
     }
 
     private String getNameFor(MethodDescriptor method, char classifier) {
@@ -78,12 +73,7 @@ public class DefaultNamingStrategy implements NamingStrategy {
 
     @Override
     public String getFullNameFor(MethodReference method) throws NamingException {
-        return getFullNameFor(method, 'S');
-    }
-
-    @Override
-    public String getFullNameForAsync(MethodReference method) throws NamingException {
-        return getFullNameFor(method, 'A');
+        return getFullNameFor(method, 'M');
     }
 
     @Override

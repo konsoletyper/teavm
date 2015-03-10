@@ -517,6 +517,57 @@ function $rt_guardAsync(f, continuation) {
         }
     }
 }
+function TeaVMThread(runner) {
+    this.status = 3;
+    this.stack = [];
+    this.suspendCallback = null;
+    this.runner = runner;
+}
+TeaVMThread.push = function(value) {
+    this.stack.push[value];
+}
+TeaVMThread.isResuming = function() {
+    return this.status == 1;
+}
+TeaVMThread.isSuspending = function() {
+    return this.status == 2;
+}
+TeaVMThread.suspend(callback) {
+    this.suspendCallback = callback;
+    this.status = 1;
+}
+TeaVMThread.start = function() {
+    if (this.status != 3) {
+        throw new Error("Thread already started");
+    }
+    this.status = 0;
+    this.run();
+}
+TeaVMThread.resume = function() {
+    this.status = 2;
+    this.run();
+}
+TeaVMThread.run = function() {
+    this.runner();
+    if (this.suspendCallback !== null) {
+        var self = this;
+        this.suspendCallback(function() {
+            self.resume();
+        });
+    }
+}
+function $rt_nativeThread(thread) {
+    if (!thread.hasNativeProperty("$teavm_thread")) {
+        thread.$teavm_thread = new TeaVMThread();
+    }
+}
+function $rt_suspending() {
+    return $rt_nativeThread($rt_getThread()).isSuspending();
+}
+function $rt_resuming() {
+    return $rt_nativeThread($rt_getThread()).isResuming();
+}
+
 function TeaVMAsyncError(cause) {
     this.message = "Async error occured";
     this.cause = cause;

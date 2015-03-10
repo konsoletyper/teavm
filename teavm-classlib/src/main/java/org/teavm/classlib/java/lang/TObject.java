@@ -72,10 +72,7 @@ public class TObject {
         monitorEnter(o, 1);
     }
 
-    @Async
-    static native void monitorEnter(TObject o, int count);
-
-    static void monitorEnter(final TObject o, final int count, final AsyncCallback<Void> callback) {
+    static void monitorEnter(TObject o, int count) {
         if (o.monitor == null) {
             o.monitor = new Monitor();
         }
@@ -83,19 +80,25 @@ public class TObject {
             o.monitor.owner = TThread.currentThread();
         }
         if (o.monitor.owner != TThread.currentThread()) {
-            final TThread thread = TThread.currentThread();
-            o.monitor.enteringThreads.add(new PlatformRunnable() {
-                @Override public void run() {
-                    TThread.setCurrentThread(thread);
-                    o.monitor.owner = thread;
-                    o.monitor.count += count;
-                    callback.complete(null);
-                }
-            });
+            monitorEnterWait(o, count);
         } else {
             o.monitor.count += count;
-            callback.complete(null);
         }
+    }
+
+    @Async
+    static native void monitorEnterWait(TObject o, int count);
+
+    static void monitorEnterWait(final TObject o, final int count, final AsyncCallback<Void> callback) {
+        final TThread thread = TThread.currentThread();
+        o.monitor.enteringThreads.add(new PlatformRunnable() {
+            @Override public void run() {
+                TThread.setCurrentThread(thread);
+                o.monitor.owner = thread;
+                o.monitor.count += count;
+                callback.complete(null);
+            }
+        });
     }
 
     @Sync
@@ -230,15 +233,18 @@ public class TObject {
         }
     }
 
-    @Async
     @Rename("wait")
-    private native final void wait0(long timeout, int nanos) throws TInterruptedException;
-
-    @Rename("wait")
-    public final void wait0(long timeout, int nanos, final AsyncCallback<Void> callback) {
+    private final void wait0(long timeout, int nanos) throws TInterruptedException {
         if (!holdsLock(this)) {
             throw new TIllegalMonitorStateException();
         }
+        waitImpl(timeout, nanos);
+    }
+
+    @Async
+    private native final void waitImpl(long timeout, int nanos) throws TInterruptedException;
+
+    public final void waitImpl(long timeout, int nanos, final AsyncCallback<Void> callback) {
         final NotifyListenerImpl listener = new NotifyListenerImpl(this, callback, monitor.count);
         monitor.notifyListeners.add(listener);
         if (timeout > 0 || nanos > 0) {
@@ -288,7 +294,7 @@ public class TObject {
                 timerId = -1;
             }
             TThread.setCurrentThread(currentThread);
-            monitorEnter(obj, lockCount, callback);
+            monitorEnterWait(obj, lockCount, callback);
         }
     }
 

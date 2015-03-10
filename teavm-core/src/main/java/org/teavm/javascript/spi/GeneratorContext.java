@@ -36,8 +36,6 @@ public interface GeneratorContext extends ServiceRepository {
 
     boolean isAsync();
 
-    String getCompleteContinuation();
-
     boolean isAsync(MethodReference method);
 
     boolean isAsyncFamily(MethodReference method);

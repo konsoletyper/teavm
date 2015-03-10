@@ -43,21 +43,6 @@ public class NamingOrderer implements NameFrequencyConsumer {
         entry.frequency++;
     }
 
-    @Override
-    public void consumeAsync(final MethodReference method) {
-        String key = "A:" + method;
-        Entry entry = entries.get(key);
-        if (entry == null) {
-            entry = new Entry();
-            entry.operation = new NamingOperation() {
-                @Override public void perform(NamingStrategy naming) {
-                    naming.getFullNameForAsync(method);
-                }
-            };
-            entries.put(key, entry);
-        }
-        entry.frequency++;
-    }
 
     @Override
     public void consumeInit(final MethodReference method) {
@@ -84,22 +69,6 @@ public class NamingOrderer implements NameFrequencyConsumer {
             entry.operation = new NamingOperation() {
                 @Override public void perform(NamingStrategy naming) {
                     naming.getNameFor(method);
-                }
-            };
-            entries.put(key, entry);
-        }
-        entry.frequency++;
-    }
-
-    @Override
-    public void consumeAsync(final MethodDescriptor method) {
-        String key = "a:" + method;
-        Entry entry = entries.get(key);
-        if (entry == null) {
-            entry = new Entry();
-            entry.operation = new NamingOperation() {
-                @Override public void perform(NamingStrategy naming) {
-                    naming.getNameForAsync(method);
                 }
             };
             entries.put(key, entry);

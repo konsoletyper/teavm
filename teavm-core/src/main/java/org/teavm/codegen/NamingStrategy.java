@@ -28,13 +28,9 @@ public interface NamingStrategy {
 
     String getNameFor(MethodDescriptor method) throws NamingException;
 
-    String getNameForAsync(MethodDescriptor method) throws NamingException;
-
     String getNameForInit(MethodReference method) throws NamingException;
 
     String getFullNameFor(MethodReference method) throws NamingException;
-
-    String getFullNameForAsync(MethodReference method) throws NamingException;
 
     String getNameFor(FieldReference field) throws NamingException;
 

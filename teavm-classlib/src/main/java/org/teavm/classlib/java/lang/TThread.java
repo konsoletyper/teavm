@@ -23,7 +23,6 @@ import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformRunnable;
 import org.teavm.platform.async.AsyncCallback;
 
-
 /**
  *
  * @author Alexey Andreev
@@ -36,6 +35,7 @@ public class TThread extends TObject implements TRunnable {
     private static int activeCount = 1;
     private long id;
     private int priority = 0;
+    private long timeSliceStart;
 
     private TString name;
     TRunnable target;
@@ -55,10 +55,10 @@ public class TThread extends TObject implements TRunnable {
     public TThread(TRunnable target, TString name ) {
         this.name = name;
         this.target = target;
-        id=nextId++;
+        id = nextId++;
     }
 
-    public void start(){
+    public void start() {
         Platform.startThread(new PlatformRunnable() {
             @Override
             public void run() {
@@ -74,8 +74,11 @@ public class TThread extends TObject implements TRunnable {
         });
     }
 
-    static void setCurrentThread(TThread thread){
-        currentThread = thread;
+    static void setCurrentThread(TThread thread) {
+        if (currentThread != thread) {
+            currentThread = thread;
+            currentThread.timeSliceStart = System.currentTimeMillis();
+        }
     }
     static TThread getMainThread(){
         return mainThread;
@@ -96,11 +99,26 @@ public class TThread extends TObject implements TRunnable {
         return name;
     }
 
-    @Async
-    public static native void yield();
+    public static void yield() {
+        if (currentThread.timeSliceStart + 100 < System.currentTimeMillis()) {
+            switchContext();
+        }
+    }
 
-    private static void yield(final AsyncCallback<Void> callback) {
-        callback.complete(null);
+    @Async
+    static native void switchContext();
+
+    private static void switchContext(final AsyncCallback<Void> callback) {
+        final TThread thread = currentThread();
+        Platform.startThread(new PlatformRunnable() {
+            @Override public void run() {
+                setCurrentThread(thread);
+                callback.complete(null);
+            }
+        });
+    }
+
+    private static void yieldImpl() {
     }
 
     public void interrupt() {
@@ -138,11 +156,11 @@ public class TThread extends TObject implements TRunnable {
             }
         }, millis);
     }
-    
+
     public final void setPriority(int newPriority){
         this.priority = newPriority;
     }
-    
+
     public final int getPriority(){
         return this.priority;
     }

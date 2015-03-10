@@ -63,38 +63,17 @@ public class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, Me
         MethodReader clinit = classSource.get(cls.getName()).getMethod(
                 new MethodDescriptor("<clinit>", ValueType.VOID));
         for (MethodNode method : cls.getMethods()) {
-            if (method.isAsync()) {
-                consumer.consumeAsync(method.getReference());
-            } else {
+            consumer.consume(method.getReference());
+            if (asyncFamilyMethods.contains(method.getReference())) {
                 consumer.consume(method.getReference());
-                if (asyncFamilyMethods.contains(method.getReference())) {
-                    consumer.consume(method.getReference());
-                    consumer.consumeAsync(method.getReference());
-                    consumer.consumeFunction("$rt_asyncError");
-                    consumer.consumeFunction("$rt_asyncResult");
-                }
             }
             if (clinit != null && (method.getModifiers().contains(NodeModifier.STATIC) ||
-                            method.getReference().getName().equals("<init>"))) {
-                if (!method.isAsync()) {
-                    consumer.consume(method.getReference());
-                }
-                if (asyncFamilyMethods.contains(method.getReference())) {
-                    consumer.consumeAsync(method.getReference());
-                }
+                    method.getReference().getName().equals("<init>"))) {
+                consumer.consume(method.getReference());
             }
             if (!method.getModifiers().contains(NodeModifier.STATIC)) {
-                if (method.isAsync()) {
-                    consumer.consumeAsync(method.getReference().getDescriptor());
-                    consumer.consumeAsync(method.getReference());
-                } else {
-                    consumer.consume(method.getReference().getDescriptor());
-                    consumer.consume(method.getReference());
-                    if (asyncFamilyMethods.contains(method.getReference())) {
-                        consumer.consumeAsync(method.getReference().getDescriptor());
-                        consumer.consumeAsync(method.getReference());
-                    }
-                }
+                consumer.consume(method.getReference().getDescriptor());
+                consumer.consume(method.getReference());
             }
         }
 
@@ -217,7 +196,7 @@ public class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, Me
         if (async) {
             MethodReference monitorEnterRef = new MethodReference(
                     Object.class, "monitorEnter", Object.class, void.class);
-            consumer.consumeAsync(monitorEnterRef);
+            consumer.consume(monitorEnterRef);
         } else {
             MethodReference monitorEnterRef = new MethodReference(
                     Object.class, "monitorEnterSync", Object.class, void.class);
@@ -230,7 +209,7 @@ public class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, Me
         if (async) {
             MethodReference monitorEnterRef = new MethodReference(
                     Object.class, "monitorExit", Object.class, void.class);
-            consumer.consumeAsync(monitorEnterRef);
+            consumer.consume(monitorEnterRef);
         } else {
             MethodReference monitorEnterRef = new MethodReference(
                     Object.class, "monitorExitSync", Object.class, void.class);
@@ -308,29 +287,17 @@ public class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, Me
         if (injectedMethods.contains(expr.getMethod())) {
             return;
         }
-        boolean asyncCall = expr.getAsyncTarget() != null;
         switch (expr.getType()) {
             case SPECIAL:
             case STATIC:
-                if (asyncCall) {
-                    consumer.consumeAsync(expr.getMethod());
-                } else {
-                    consumer.consume(expr.getMethod());
-                }
+                consumer.consume(expr.getMethod());
                 break;
             case CONSTRUCTOR:
                 consumer.consumeInit(expr.getMethod());
                 break;
             case DYNAMIC:
-                if (asyncCall) {
-                    consumer.consumeAsync(expr.getMethod().getDescriptor());
-                } else {
-                    consumer.consume(expr.getMethod().getDescriptor());
-                }
+                consumer.consume(expr.getMethod().getDescriptor());
                 break;
-        }
-        if (asyncCall) {
-            consumer.consumeFunction("$rt_continue");
         }
     }
 

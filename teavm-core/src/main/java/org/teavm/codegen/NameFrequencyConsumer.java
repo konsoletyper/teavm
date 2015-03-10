@@ -26,13 +26,9 @@ import org.teavm.model.MethodReference;
 public interface NameFrequencyConsumer {
     void consume(MethodReference method);
 
-    void consumeAsync(MethodReference method);
-
     void consumeInit(MethodReference method);
 
     void consume(MethodDescriptor method);
-
-    void consumeAsync(MethodDescriptor method);
 
     void consume(String className);
 
