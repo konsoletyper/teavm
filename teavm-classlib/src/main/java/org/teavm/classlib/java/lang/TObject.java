@@ -91,6 +91,13 @@ public class TObject {
 
     static void monitorEnterWait(final TObject o, final int count, final AsyncCallback<Void> callback) {
         final TThread thread = TThread.currentThread();
+        if (o.monitor == null) {
+            o.monitor = new Monitor();
+            TThread.setCurrentThread(thread);
+            o.monitor.count += count;
+            callback.complete(null);
+            return;
+        }
         o.monitor.enteringThreads.add(new PlatformRunnable() {
             @Override public void run() {
                 TThread.setCurrentThread(thread);
@@ -118,7 +125,7 @@ public class TObject {
 
         o.monitor.owner = null;
         if (!o.monitor.enteringThreads.isEmpty()) {
-            Platform.startThread(new PlatformRunnable() {
+            Platform.postpone(new PlatformRunnable() {
                 @Override public void run() {
                     if (o.isEmptyMonitor() || o.monitor.owner != null) {
                         return;
@@ -127,7 +134,7 @@ public class TObject {
                         o.monitor.enteringThreads.remove().run();
                     }
                 }
-            }, false);
+            });
         } else {
             o.isEmptyMonitor();
         }
@@ -203,7 +210,7 @@ public class TObject {
         while (!listeners.isEmpty()) {
             NotifyListener listener = listeners.remove();
             if (!listener.expired()) {
-                Platform.startThread(listener, false);
+                Platform.postpone(listener);
                 break;
             }
         }
@@ -219,7 +226,7 @@ public class TObject {
         while (!listeners.isEmpty()) {
             NotifyListener listener = listeners.remove();
             if (!listener.expired()) {
-                Platform.startThread(listener, false);
+                Platform.postpone(listener);
             }
         }
     }
@@ -279,7 +286,7 @@ public class TObject {
         @Override
         public void onTimer() {
             if (!expired()) {
-                Platform.startThread(this, false);
+                Platform.postpone(this);
             }
         }
 

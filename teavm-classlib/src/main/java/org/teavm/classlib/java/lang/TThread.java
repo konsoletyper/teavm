@@ -71,14 +71,14 @@ public class TThread extends TObject implements TRunnable {
                     setCurrentThread(mainThread);
                 }
             }
-        }, true);
+        });
     }
 
     static void setCurrentThread(TThread thread) {
         if (currentThread != thread) {
             currentThread = thread;
-            currentThread.timeSliceStart = System.currentTimeMillis();
         }
+        currentThread.timeSliceStart = System.currentTimeMillis();
     }
 
     static TThread getMainThread(){
@@ -102,24 +102,20 @@ public class TThread extends TObject implements TRunnable {
 
     public static void yield() {
         if (currentThread.timeSliceStart + 100 < System.currentTimeMillis()) {
-            switchContext();
+            switchContext(currentThread);
         }
     }
 
     @Async
-    static native void switchContext();
+    static native void switchContext(TThread thread);
 
-    private static void switchContext(final AsyncCallback<Void> callback) {
-        final TThread thread = currentThread();
-        Platform.startThread(new PlatformRunnable() {
+    private static void switchContext(final TThread thread, final AsyncCallback<Void> callback) {
+        Platform.postpone(new PlatformRunnable() {
             @Override public void run() {
                 setCurrentThread(thread);
                 callback.complete(null);
             }
-        }, false);
-    }
-
-    private static void yieldImpl() {
+        });
     }
 
     public void interrupt() {

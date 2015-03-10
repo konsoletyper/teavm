@@ -107,10 +107,14 @@ public final class Platform {
 
     @GeneratedBy(PlatformGenerator.class)
     @PluggableDependency(PlatformGenerator.class)
-    public static native void startThread(PlatformRunnable runnable, boolean newNativeThread);
+    public static native void startThread(PlatformRunnable runnable);
 
     private static void launchThread(PlatformRunnable runnable) {
         runnable.run();
+    }
+
+    public static void postpone(PlatformRunnable runnable) {
+        schedule(runnable, 0);
     }
 
     @GeneratedBy(PlatformGenerator.class)

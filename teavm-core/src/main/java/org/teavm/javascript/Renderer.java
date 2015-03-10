@@ -711,7 +711,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 writer.append("var $T").ws().append('=').ws().append("$rt_nativeThread();").softNewLine();
                 writer.append("$ptr").ws().append('=').ws().append("$T.pop();");
                 for (int i = variableCount - 1; i > ref.parameterCount(); --i) {
-                    writer.append(variableName(i)).ws().append('=').ws().append("T.pop();");
+                    writer.append(variableName(i)).ws().append('=').ws().append("$T.pop();");
                 }
                 writer.softNewLine();
                 writer.outdent().append("}").softNewLine();
@@ -724,6 +724,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     part.getStatement().acceptVisitor(Renderer.this);
                     writer.outdent();
                 }
+                writer.append("default:").ws().append("throw new Error('Invalid recorded state');").softNewLine();
                 writer.append("}").softNewLine();
                 writer.outdent().append("}").softNewLine();
             } catch (IOException e) {

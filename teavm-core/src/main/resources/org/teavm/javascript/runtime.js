@@ -444,17 +444,17 @@ function TeaVMThread(runner) {
     this.attribute = null;
 }
 TeaVMThread.prototype.push = function(value) {
-    this.stack.push[value];
+    this.stack.push(value);
     return this;
 }
 TeaVMThread.prototype.pop = function() {
     return this.stack.pop();
 }
 TeaVMThread.prototype.isResuming = function() {
-    return this.status == 1;
+    return this.status == 2;
 }
 TeaVMThread.prototype.isSuspending = function() {
-    return this.status == 2;
+    return this.status == 1;
 }
 TeaVMThread.prototype.suspend = function(callback) {
     this.suspendCallback = callback;
@@ -489,10 +489,12 @@ TeaVMThread.prototype.run = function() {
     }
 }
 function $rt_suspending() {
-    return $rt_nativeThread().isSuspending();
+    var thread = $rt_nativeThread();
+    return thread != null && thread.isSuspending();
 }
 function $rt_resuming() {
-    return $rt_nativeThread().isResuming();
+    var thread = $rt_nativeThread();
+    return thread != null && thread.isResuming();
 }
 function $rt_suspend(callback) {
     return $rt_nativeThread().suspend(callback);

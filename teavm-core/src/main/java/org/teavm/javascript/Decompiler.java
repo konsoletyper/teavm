@@ -204,7 +204,8 @@ public class Decompiler {
         AsyncProgramSplitter splitter = new AsyncProgramSplitter(classSource, splitMethods);
         splitter.split(method.getProgram());
         for (int i = 0; i < splitter.size(); ++i) {
-            AsyncMethodPart part = getRegularMethodStatement(splitter.getProgram(i), splitter.getBlockSuccessors(i));
+            AsyncMethodPart part = getRegularMethodStatement(splitter.getProgram(i), splitter.getBlockSuccessors(i),
+                    i > 0);
             node.getBody().add(part);
         }
         Program program = method.getProgram();
@@ -227,7 +228,7 @@ public class Decompiler {
         Program program = method.getProgram();
         int[] targetBlocks = new int[program.basicBlockCount()];
         Arrays.fill(targetBlocks, -1);
-        methodNode.setBody(getRegularMethodStatement(program, targetBlocks).getStatement());
+        methodNode.setBody(getRegularMethodStatement(program, targetBlocks, false).getStatement());
         for (int i = 0; i < program.variableCount(); ++i) {
             methodNode.getVariables().add(program.variableAt(i).getRegister());
         }
@@ -242,7 +243,7 @@ public class Decompiler {
         return methodNode;
     }
 
-    private AsyncMethodPart getRegularMethodStatement(Program program, int[] targetBlocks) {
+    private AsyncMethodPart getRegularMethodStatement(Program program, int[] targetBlocks, boolean async) {
         AsyncMethodPart result = new AsyncMethodPart();
         lastBlockId = 1;
         graph = ProgramUtils.buildControlFlowGraph(program);
@@ -290,6 +291,7 @@ public class Decompiler {
             if (head != -1 && loopSuccessors[head] == next) {
                 next = head;
             }
+            boolean saved = !async;
             if (node >= 0) {
                 generator.currentBlock = program.basicBlockAt(node);
                 int tmp = indexer.nodeAt(next);
@@ -308,8 +310,9 @@ public class Decompiler {
                         generator.setCurrentLocation(nodeLocation);
                     }
                     insn.acceptVisitor(generator);
-                    if (j == 0 && insn instanceof InvokeInstruction) {
+                    if (insn instanceof InvokeInstruction && !saved) {
                         generator.statements.add(new SaveStatement());
+                        saved = true;
                     }
                 }
                 if (targetBlocks[node] >= 0) {

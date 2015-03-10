@@ -40,6 +40,7 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin {
         MethodReference asyncRef = getAsyncReference(methodRef);
         writer.append("var thread").ws().append('=').ws().append("$rt_nativeThread();").softNewLine();
         writer.append("if").ws().append("(thread.isResuming())").ws().append("{").indent().softNewLine();
+        writer.append("thread.status").ws().append("=").ws().append("0;").softNewLine();
         writer.append("var result").ws().append("=").ws().append("thread.attribute;").softNewLine();
         writer.append("if").ws().append("(result instanceof Error)").ws().append("{").indent().softNewLine();
         writer.append("throw result;").softNewLine();

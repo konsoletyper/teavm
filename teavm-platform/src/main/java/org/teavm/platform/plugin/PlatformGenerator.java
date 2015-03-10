@@ -153,7 +153,11 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
                 PlatformRunnable.class, void.class);
         String runnable = context.getParameterName(1);
         writer.append("return window.setTimeout(function()").ws().append("{").indent().softNewLine();
-        writer.append("$rt_threadStarter(").appendMethodBody(launchRef).append(")");
+        if (timeout) {
+            writer.appendMethodBody(launchRef);
+        } else {
+            writer.append("$rt_threadStarter(").appendMethodBody(launchRef).append(")");
+        }
         writer.append("(").append(runnable).append(");").softNewLine();
         writer.outdent().append("},").ws().append(timeout ? context.getParameterName(2) : "0")
                 .append(");").softNewLine();
