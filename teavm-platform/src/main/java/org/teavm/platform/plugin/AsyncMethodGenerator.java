@@ -38,19 +38,29 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin {
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
         MethodReference asyncRef = getAsyncReference(methodRef);
+        writer.append("var thread").ws().append('=').ws().append("$rt_nativeThread();").softNewLine();
+        writer.append("if").ws().append("(thread.isResuming())").ws().append("{").indent().softNewLine();
+        writer.append("var result").ws().append("=").ws().append("thread.attribute;").softNewLine();
+        writer.append("if").ws().append("(result instanceof Error)").ws().append("{").indent().softNewLine();
+        writer.append("throw result;").softNewLine();
+        writer.outdent().append("}").softNewLine();
+        writer.append("return result;").softNewLine();
+        writer.outdent().append("}").softNewLine();
+
         writer.append("var callback").ws().append("=").ws().append("function()").ws().append("{};").softNewLine();
         writer.append("callback.").appendMethod(completeMethod.getDescriptor()).ws().append("=").ws()
                 .append("function(val)").ws().append("{").indent().softNewLine();
-        writer.append("return ").append(context.getCompleteContinuation()).append("($rt_asyncResult(val));")
-                .softNewLine();
+        writer.append("thread.attribute").ws().append('=').ws().append("val;").softNewLine();
+        writer.append("thread.resume();").softNewLine();
         writer.outdent().append("};").softNewLine();
         writer.append("callback.").appendMethod(errorMethod.getDescriptor()).ws().append("=").ws()
                 .append("function(e)").ws().append("{").indent().softNewLine();
-        writer.append("return ").append(context.getCompleteContinuation()).append("($rt_asyncError(e));")
-                .softNewLine();
+        writer.append("thread.attribute").ws().append('=').ws().append("$rt_exception(e);").softNewLine();
+        writer.append("thread.resume();").softNewLine();
         writer.outdent().append("};").softNewLine();
+        writer.append("return thread.suspend(function()").ws().append("{").indent().softNewLine();
         writer.append("try").ws().append("{").indent().softNewLine();
-        writer.append("return ").appendMethodBody(asyncRef).append('(');
+        writer.appendMethodBody(asyncRef).append('(');
         ClassReader cls = context.getClassSource().get(methodRef.getClassName());
         MethodReader method = cls.getMethod(methodRef.getDescriptor());
         int start = method.hasModifier(ElementModifier.STATIC) ? 1 : 0;
@@ -60,9 +70,10 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin {
         }
         writer.append("callback);").softNewLine();
         writer.outdent().append("}").ws().append("catch($e)").ws().append("{").indent().softNewLine();
-        writer.append("return ").append(context.getCompleteContinuation()).append("($rt_asyncError($e));")
+        writer.append("callback.").appendMethod(errorMethod.getDescriptor()).append("($rt_exception($e));")
                 .softNewLine();
         writer.outdent().append("}").softNewLine();
+        writer.outdent().append("});").softNewLine();
     }
 
     private MethodReference getAsyncReference(MethodReference methodRef) {

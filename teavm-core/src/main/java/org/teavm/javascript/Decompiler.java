@@ -203,15 +203,7 @@ public class Decompiler {
         AsyncProgramSplitter splitter = new AsyncProgramSplitter(classSource, splitMethods);
         splitter.split(method.getProgram());
         for (int i = 0; i < splitter.size(); ++i) {
-            Integer input = null;
-            if (i > 0) {
-                input = splitter.getInput(i);
-                if (input == null) {
-                    input = -1;
-                }
-            }
-            AsyncMethodPart part = getRegularMethodStatement(splitter.getProgram(i), splitter.getBlockSuccessors(i),
-                    input);
+            AsyncMethodPart part = getRegularMethodStatement(splitter.getProgram(i), splitter.getBlockSuccessors(i));
             node.getBody().add(part);
         }
         Program program = method.getProgram();
@@ -219,7 +211,7 @@ public class Decompiler {
             node.getVariables().add(program.variableAt(i).getRegister());
         }
         Optimizer optimizer = new Optimizer();
-        optimizer.optimize(node, program, splitter);
+        optimizer.optimize(node, program);
         node.getModifiers().addAll(mapModifiers(method.getModifiers()));
         int paramCount = Math.min(method.getSignature().length, program.variableCount());
         for (int i = 0; i < paramCount; ++i) {
@@ -234,7 +226,7 @@ public class Decompiler {
         Program program = method.getProgram();
         int[] targetBlocks = new int[program.basicBlockCount()];
         Arrays.fill(targetBlocks, -1);
-        methodNode.setBody(getRegularMethodStatement(program, targetBlocks, null).getStatement());
+        methodNode.setBody(getRegularMethodStatement(program, targetBlocks).getStatement());
         for (int i = 0; i < program.variableCount(); ++i) {
             methodNode.getVariables().add(program.variableAt(i).getRegister());
         }
@@ -249,7 +241,7 @@ public class Decompiler {
         return methodNode;
     }
 
-    private AsyncMethodPart getRegularMethodStatement(Program program, int[] targetBlocks, Integer inputVar) {
+    private AsyncMethodPart getRegularMethodStatement(Program program, int[] targetBlocks) {
         AsyncMethodPart result = new AsyncMethodPart();
         lastBlockId = 1;
         graph = ProgramUtils.buildControlFlowGraph(program);
@@ -302,11 +294,6 @@ public class Decompiler {
                 int tmp = indexer.nodeAt(next);
                 generator.nextBlock = tmp >= 0 && next < indexer.size() ? program.basicBlockAt(tmp) : null;
                 generator.statements.clear();
-                if (node == 0 && inputVar != null) {
-                    RestoreAsyncStatement restoreStmt = new RestoreAsyncStatement();
-                    restoreStmt.setReceiver(inputVar >= 0 ? inputVar : null);
-                    generator.statements.add(restoreStmt);
-                }
                 generator.asyncTarget = null;
                 InstructionLocation lastLocation = null;
                 NodeLocation nodeLocation = null;

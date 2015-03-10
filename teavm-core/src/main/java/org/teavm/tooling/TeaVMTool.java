@@ -303,7 +303,7 @@ public class TeaVMTool {
                     return;
                 }
                 if (mainClass != null) {
-                    writer.append("main = $rt_mainWrapper(main);\n");
+                    writer.append("main = $rt_mainStarter(main);\n");
                 }
                 ProblemProvider problemProvider = vm.getProblemProvider();
                 if (problemProvider.getProblems().isEmpty()) {

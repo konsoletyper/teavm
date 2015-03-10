@@ -550,19 +550,17 @@ class StatementGenerator implements InstructionVisitor {
         } else {
             invocationExpr = Expr.invokeStatic(insn.getMethod(), exprArgs);
         }
-        invocationExpr.setAsyncTarget(asyncTarget);
-        if (asyncTarget == null) {
-            if (insn.getReceiver() != null) {
-                assign(invocationExpr, insn.getReceiver());
-            } else {
-                AssignmentStatement stmt = Statement.assign(null, invocationExpr);
-                stmt.setLocation(currentLocation);
-                statements.add(stmt);
-            }
+        if (insn.getReceiver() != null) {
+            assign(invocationExpr, insn.getReceiver());
         } else {
             AssignmentStatement stmt = Statement.assign(null, invocationExpr);
             stmt.setLocation(currentLocation);
             statements.add(stmt);
+        }
+        if (asyncTarget != null) {
+            GotoPartStatement gotoStmt = new GotoPartStatement();
+            gotoStmt.setPart(asyncTarget);
+            statements.add(gotoStmt);
         }
     }
 

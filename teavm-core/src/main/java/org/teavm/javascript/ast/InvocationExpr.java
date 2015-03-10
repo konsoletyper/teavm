@@ -28,7 +28,6 @@ public class InvocationExpr extends Expr {
     private MethodReference method;
     private InvocationType type;
     private List<Expr> arguments = new ArrayList<>();
-    private Integer asyncTarget;
 
     public MethodReference getMethod() {
         return method;
@@ -50,14 +49,6 @@ public class InvocationExpr extends Expr {
         return arguments;
     }
 
-    public Integer getAsyncTarget() {
-        return asyncTarget;
-    }
-
-    public void setAsyncTarget(Integer asyncTarget) {
-        this.asyncTarget = asyncTarget;
-    }
-
     @Override
     public void acceptVisitor(ExprVisitor visitor) {
         visitor.visit(this);
@@ -72,7 +63,6 @@ public class InvocationExpr extends Expr {
         InvocationExpr copy = new InvocationExpr();
         cache.put(this, copy);
         copy.setMethod(method);
-        copy.setAsyncTarget(asyncTarget);
         for (Expr arg : arguments) {
             copy.getArguments().add(arg.clone(cache));
         }

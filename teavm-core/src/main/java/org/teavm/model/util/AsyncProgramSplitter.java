@@ -62,16 +62,12 @@ public class AsyncProgramSplitter {
             int last = 0;
             for (int i = 0; i < sourceBlock.getInstructions().size(); ++i) {
                 Instruction insn = sourceBlock.getInstructions().get(i);
-                Integer receiver;
                 if (insn instanceof InvokeInstruction) {
                     InvokeInstruction invoke = (InvokeInstruction)insn;
                     if (!asyncMethods.contains(findRealMethod(invoke.getMethod()))) {
                         continue;
                     }
-                    receiver = invoke.getReceiver() != null ? invoke.getReceiver().getIndex() : null;
-                } else if (insn instanceof MonitorEnterInstruction) {
-                    receiver = null;
-                } else {
+                } else if (!(insn instanceof MonitorEnterInstruction)) {
                     continue;
                 }
 
@@ -102,7 +98,6 @@ public class AsyncProgramSplitter {
                 // Create a new part
                 Program nextProgram = createStubCopy(program);
                 Part part = new Part();
-                part.input = receiver;
                 part.program = nextProgram;
                 int partId = parts.size();
                 parts.add(part);
@@ -201,10 +196,6 @@ public class AsyncProgramSplitter {
         return parts.get(index).program;
     }
 
-    public Integer getInput(int index) {
-        return parts.get(index).input;
-    }
-
     public int[] getBlockSuccessors(int index) {
         int[] result = parts.get(index).blockSuccessors;
         return Arrays.copyOf(result, result.length);
@@ -212,7 +203,6 @@ public class AsyncProgramSplitter {
 
     private static class Part {
         Program program;
-        Integer input;
         int[] blockSuccessors;
     }
 

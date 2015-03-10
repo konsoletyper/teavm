@@ -73,9 +73,17 @@ public final class Platform {
         return ((PlatformHelper)JS.getGlobal()).nextId();
     }
 
+    public static <T> T newInstance(PlatformClass cls) {
+        prepareNewInstance();
+        return newInstanceImpl(cls);
+    }
+
+    @GeneratedBy(PlatformGenerator.class)
+    private static native void prepareNewInstance();
+
     @GeneratedBy(PlatformGenerator.class)
     @PluggableDependency(PlatformGenerator.class)
-    public static native <T> T newInstance(PlatformClass cls);
+    private static native <T> T newInstanceImpl(PlatformClass cls);
 
     @GeneratedBy(PlatformGenerator.class)
     @PluggableDependency(PlatformGenerator.class)

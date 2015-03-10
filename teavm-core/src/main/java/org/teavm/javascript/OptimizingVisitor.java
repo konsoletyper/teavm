@@ -180,7 +180,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     }
 
     private boolean tryApplyConstructor(InvocationExpr expr) {
-        if (expr.getAsyncTarget() != null || !expr.getMethod().getName().equals("<init>")) {
+        if (!expr.getMethod().getName().equals("<init>")) {
             return false;
         }
         if (resultSequence == null || resultSequence.isEmpty()) {
@@ -615,17 +615,21 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     }
 
     @Override
-    public void visit(RestoreAsyncStatement statement) {
+    public void visit(GotoPartStatement statement) {
         resultStmt = statement;
     }
 
     @Override
     public void visit(MonitorEnterStatement statement) {
+        statement.getObjectRef().acceptVisitor(this);
+        statement.setObjectRef(resultExpr);
         resultStmt = statement;
     }
 
     @Override
     public void visit(MonitorExitStatement statement) {
+        statement.getObjectRef().acceptVisitor(this);
+        statement.setObjectRef(resultExpr);
         resultStmt = statement;
     }
 }

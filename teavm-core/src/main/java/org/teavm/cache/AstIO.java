@@ -305,10 +305,31 @@ public class AstIO {
         }
 
         @Override
-        public void visit(RestoreAsyncStatement statement) {
+        public void visit(GotoPartStatement statement) {
             try {
                 output.writeByte(17);
-                output.writeShort(statement.getReceiver() != null ? statement.getReceiver() : -1);
+                output.writeShort(statement.getPart());
+            } catch (IOException e) {
+                throw new IOExceptionWrapper(e);
+            }
+        }
+
+        @Override
+        public void visit(MonitorEnterStatement statement) {
+            try {
+                output.writeByte(18);
+                output.writeShort(statement.getAsyncTarget() != null ? 0 : statement.getAsyncTarget());
+                writeExpr(statement.getObjectRef());
+            } catch (IOException e) {
+                throw new IOExceptionWrapper(e);
+            }
+        }
+
+        @Override
+        public void visit(MonitorExitStatement statement) {
+            try {
+                output.writeByte(19);
+                writeExpr(statement.getObjectRef());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -506,16 +527,6 @@ public class AstIO {
                 throw new IOExceptionWrapper(e);
             }
         }
-
-        @Override
-        public void visit(MonitorEnterStatement statement) {
-
-        }
-
-        @Override
-        public void visit(MonitorExitStatement statement) {
-
-        }
     }
 
     private NodeLocation readLocation(DataInput input) throws IOException {
@@ -670,11 +681,11 @@ public class AstIO {
                 return stmt;
             }
             case 17: {
-                short var = input.readShort();
-                RestoreAsyncStatement stmt = new RestoreAsyncStatement();
-                stmt.setReceiver(var >= 0 ? (int)var : null);
+                GotoPartStatement stmt = new GotoPartStatement();
+                stmt.setPart(input.readShort());
                 return stmt;
             }
+            // TODO: MonitorEnter/MonitorExit
             default:
                 throw new RuntimeException("Unexpected statement type: " + type);
         }

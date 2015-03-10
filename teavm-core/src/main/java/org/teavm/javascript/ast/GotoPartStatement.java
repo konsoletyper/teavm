@@ -19,15 +19,15 @@ package org.teavm.javascript.ast;
  *
  * @author Alexey Andreev
  */
-public class RestoreAsyncStatement extends Statement {
-    private Integer receiver;
+public class GotoPartStatement extends Statement {
+    private int part;
 
-    public Integer getReceiver() {
-        return receiver;
+    public int getPart() {
+        return part;
     }
 
-    public void setReceiver(Integer receiver) {
-        this.receiver = receiver;
+    public void setPart(int part) {
+        this.part = part;
     }
 
     @Override

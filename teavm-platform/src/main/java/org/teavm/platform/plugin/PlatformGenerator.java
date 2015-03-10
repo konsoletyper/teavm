@@ -68,8 +68,11 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
         switch (methodRef.getName()) {
-            case "newInstance":
-                generateNewInstance(context, writer, methodRef);
+            case "newInstanceImpl":
+                generateNewInstance(writer);
+                break;
+            case "prepareNewInstance":
+                generatePrepareNewInstance(context, writer);
                 break;
             case "lookupClass":
                 generateLookup(context, writer);
@@ -89,76 +92,37 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
         }
     }
 
-    private void generateNewInstance(GeneratorContext context, SourceWriter writer, MethodReference methodRef)
+    private void generatePrepareNewInstance(GeneratorContext context, SourceWriter writer)
             throws IOException {
         writer.append("var c").ws().append("=").ws().append("'$$constructor$$';").softNewLine();
-        if (context.isAsync()) {
-            writer.append("function async(cls, init) {").indent().softNewLine();
-            writer.append("return function($return) {").indent().softNewLine();
-            writer.append("var r = new cls;").softNewLine();
-            writer.append("init(r, $rt_guardAsync(function($restore) {").indent().softNewLine();
-            writer.append("$restore();").softNewLine();
-            writer.append("$return($rt_asyncResult(r))").softNewLine();
-            writer.outdent().append("}));").softNewLine();
-            writer.outdent().append("};").softNewLine();
-            writer.outdent().append("}").softNewLine();
-
-            writer.append("function sync(cls, init) {").indent().softNewLine();
-            writer.append("return function($return) {").indent().softNewLine();
-            writer.append("var r = new cls;").softNewLine();
-            writer.append("try {").indent().softNewLine();
-            writer.append("init(r);").softNewLine();
-            writer.append("$return($rt_asyncResult(r));").softNewLine();
-            writer.outdent().append("} catch (e) {").indent().softNewLine();
-            writer.append("$return($rt_asyncError(e));").softNewLine();
-            writer.outdent().append("}").softNewLine();
-            writer.outdent().append("};").softNewLine();
-            writer.outdent().append("}").softNewLine();
-        }
         for (String clsName : context.getClassSource().getClassNames()) {
             ClassReader cls = context.getClassSource().get(clsName);
             MethodReader method = cls.getMethod(new MethodDescriptor("<init>", void.class));
             if (method != null) {
-                writer.appendClass(clsName).append("[c]").ws().append("=").ws();
-                if (!context.isAsync()) {
-                    writer.append(writer.getNaming().getNameForInit(method.getReference()));
-                } else {
-                    String function = context.isAsync(method.getReference()) ? "async" : "sync";
-                    String methodName = context.isAsync(method.getReference()) ?
-                            writer.getNaming().getFullNameForAsync(method.getReference()) :
-                            writer.getNaming().getFullNameFor(method.getReference());
-                    writer.append(function).append("(").appendClass(clsName).append(',').ws()
-                            .append(methodName).append(")");
-                }
-                writer.append(";").softNewLine();
+                writer.appendClass(clsName).append("[c]").ws().append("=").ws()
+                        .appendMethodBody(method.getReference()).append(")").append(";").softNewLine();
             }
         }
-        String selfName = context.isAsync() ? writer.getNaming().getFullNameForAsync(methodRef) :
-                writer.getNaming().getFullNameFor(methodRef);
-        writer.append(selfName).ws().append("=").ws().append("function(cls");
-        if (context.isAsync()) {
-            writer.append(',').ws().append("$return");
-        }
-        writer.append(")").ws().append("{").softNewLine().indent();
-        writer.append("if").ws().append("(!cls.hasOwnProperty(c))").ws().append("{").indent().softNewLine();
-        if (!context.isAsync()) {
-            writer.append("return null;").softNewLine();
-        } else {
-            writer.append("return $return($rt_asyncResult(null));").softNewLine();
-        }
-        writer.outdent().append("}").softNewLine();
-        if (!context.isAsync()) {
-            writer.append("return cls[c]();").softNewLine();
-        } else {
-            writer.append("return cls[c]($return);").softNewLine();
-        }
-        writer.outdent().append("};").softNewLine();
+        writer.appendMethodBody(Platform.class, "newInstance", PlatformClass.class, Object.class).ws().append('=').ws()
+                .appendMethodBody(Platform.class, "newInstanceImpl", PlatformClass.class, Object.class)
+                .append(";").softNewLine();
+    }
 
-        writer.append("return ").append(selfName).append("(").append(context.getParameterName(1));
-        if (context.isAsync()) {
-            writer.append(',').ws().append(context.getCompleteContinuation());
-        }
-        writer.append(");").softNewLine();
+    private void generateNewInstance(SourceWriter writer) throws IOException {
+        writer.append("if").ws().append("($rt_resuming())").ws().append("{").indent().softNewLine();
+        writer.append("return $rt_nativeThread().pop();").softNewLine();
+        writer.outdent().append("}").softNewLine();
+
+        writer.append("if").ws().append("(!cls.hasOwnProperty('$$constructor$$'))").ws().append("{")
+                .indent().softNewLine();
+        writer.append("return null;").softNewLine();
+        writer.outdent().append("}").softNewLine();
+
+        writer.append("var $r").ws().append('=').ws().append("cls.$$constructor$$();");
+        writer.append("if").ws().append("($rt_suspending())").ws().append("{").indent().softNewLine();
+        writer.append("return $rt_nativeThread().push($r);").softNewLine();
+        writer.outdent().append("}").softNewLine();
+        writer.append("return $r;").softNewLine();
     }
 
     private void generateLookup(GeneratorContext context, SourceWriter writer) throws IOException {
@@ -189,18 +153,8 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
                 PlatformRunnable.class, void.class);
         String runnable = context.getParameterName(1);
         writer.append("return window.setTimeout(function()").ws().append("{").indent().softNewLine();
-        boolean async = context.isAsyncFamily(launchRef);
-        String methodName = async ? writer.getNaming().getFullNameForAsync(launchRef) :
-                writer.getNaming().getFullNameFor(launchRef);
-        if (async) {
-            writer.append("$rt_rootInvocationAdapter(");
-        }
-        writer.append(methodName);
-        if (async) {
-            writer.append(")");
-        }
-        writer.append("(").append(runnable).append(");")
-                .softNewLine();
+        writer.append("$rt_threadStarter(").appendMethodBody(launchRef).append(")");
+        writer.append("(").append(runnable).append(");").softNewLine();
         writer.outdent().append("},").ws().append(timeout ? context.getParameterName(2) : "0")
                 .append(");").softNewLine();
     }

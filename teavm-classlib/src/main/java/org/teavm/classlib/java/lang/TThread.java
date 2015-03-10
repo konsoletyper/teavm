@@ -80,6 +80,7 @@ public class TThread extends TObject implements TRunnable {
             currentThread.timeSliceStart = System.currentTimeMillis();
         }
     }
+
     static TThread getMainThread(){
         return mainThread;
     }

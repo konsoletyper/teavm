@@ -193,19 +193,16 @@ public class RenamingVisitor implements StatementVisitor, ExprVisitor {
     }
 
     @Override
-    public void visit(RestoreAsyncStatement statement) {
-        if (statement.getReceiver() != null) {
-            statement.setReceiver(varNames[statement.getReceiver()]);
-        }
+    public void visit(GotoPartStatement statement) {
     }
 
     @Override
     public void visit(MonitorEnterStatement statement) {
-        
+
     }
 
     @Override
     public void visit(MonitorExitStatement statement) {
-        
+
     }
 }

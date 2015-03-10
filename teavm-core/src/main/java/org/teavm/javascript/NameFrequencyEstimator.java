@@ -188,7 +188,7 @@ public class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, Me
     }
 
     @Override
-    public void visit(RestoreAsyncStatement statement) {
+    public void visit(GotoPartStatement statement) {
     }
 
     @Override
