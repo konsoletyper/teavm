@@ -74,7 +74,7 @@ public class AsyncProgramSplitter {
                 // If we met asynchronous invocation...
                 // Copy portion of current block from last occurrence (or from start) to i'th instruction.
                 targetBlock.getInstructions().addAll(ProgramUtils.copyInstructions(sourceBlock,
-                        last, i + 1, targetBlock.getProgram()));
+                        last, i, targetBlock.getProgram()));
                 targetBlock.getTryCatchBlocks().addAll(ProgramUtils.copyTryCatches(sourceBlock,
                         targetBlock.getProgram()));
                 for (TryCatchBlock tryCatch : targetBlock.getTryCatchBlocks()) {
@@ -85,7 +85,7 @@ public class AsyncProgramSplitter {
                         queue.add(next);
                     }
                 }
-                last = i + 1;
+                last = i;
 
                 // If this instruction already separates program, end with current block and refer to the
                 // existing part

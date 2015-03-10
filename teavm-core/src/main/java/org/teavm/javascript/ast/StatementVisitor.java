@@ -49,4 +49,6 @@ public interface StatementVisitor {
     void visit(MonitorEnterStatement statement);
 
     void visit(MonitorExitStatement statement);
+
+    void visit(SaveStatement statement);
 }

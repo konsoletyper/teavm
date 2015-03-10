@@ -127,7 +127,7 @@ public class TObject {
                         o.monitor.enteringThreads.remove().run();
                     }
                 }
-            });
+            }, false);
         } else {
             o.isEmptyMonitor();
         }
@@ -203,7 +203,7 @@ public class TObject {
         while (!listeners.isEmpty()) {
             NotifyListener listener = listeners.remove();
             if (!listener.expired()) {
-                Platform.startThread(listener);
+                Platform.startThread(listener, false);
                 break;
             }
         }
@@ -219,7 +219,7 @@ public class TObject {
         while (!listeners.isEmpty()) {
             NotifyListener listener = listeners.remove();
             if (!listener.expired()) {
-                Platform.startThread(listener);
+                Platform.startThread(listener, false);
             }
         }
     }
@@ -279,7 +279,7 @@ public class TObject {
         @Override
         public void onTimer() {
             if (!expired()) {
-                Platform.startThread(this);
+                Platform.startThread(this, false);
             }
         }
 

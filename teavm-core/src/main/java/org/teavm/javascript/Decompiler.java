@@ -22,6 +22,7 @@ import org.teavm.javascript.spi.GeneratedBy;
 import org.teavm.javascript.spi.Generator;
 import org.teavm.javascript.spi.InjectedBy;
 import org.teavm.model.*;
+import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.util.AsyncProgramSplitter;
 import org.teavm.model.util.ProgramUtils;
 
@@ -294,7 +295,6 @@ public class Decompiler {
                 int tmp = indexer.nodeAt(next);
                 generator.nextBlock = tmp >= 0 && next < indexer.size() ? program.basicBlockAt(tmp) : null;
                 generator.statements.clear();
-                generator.asyncTarget = null;
                 InstructionLocation lastLocation = null;
                 NodeLocation nodeLocation = null;
                 List<Instruction> instructions = generator.currentBlock.getInstructions();
@@ -307,11 +307,17 @@ public class Decompiler {
                     if (insn.getLocation() != null) {
                         generator.setCurrentLocation(nodeLocation);
                     }
-                    if (targetBlocks[node] >= 0 && j == instructions.size() - 1) {
-                        generator.asyncTarget = targetBlocks[node];
-                    }
                     insn.acceptVisitor(generator);
+                    if (j == 0 && insn instanceof InvokeInstruction) {
+                        generator.statements.add(new SaveStatement());
+                    }
                 }
+                if (targetBlocks[node] >= 0) {
+                    GotoPartStatement stmt = new GotoPartStatement();
+                    stmt.setPart(targetBlocks[node]);
+                    generator.statements.add(stmt);
+                }
+
                 for (TryCatchBlock tryCatch : generator.currentBlock.getTryCatchBlocks()) {
                     TryCatchStatement tryCatchStmt = new TryCatchStatement();
                     tryCatchStmt.setExceptionType(tryCatch.getExceptionType());

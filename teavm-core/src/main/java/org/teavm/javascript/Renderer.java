@@ -716,6 +716,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 writer.softNewLine();
                 writer.outdent().append("}").softNewLine();
 
+                writer.append("while").ws().append("(true)").ws().append("{").indent().softNewLine();
                 writer.append("$main: switch").ws().append("($ptr)").ws().append('{').softNewLine();
                 for (int i = 0; i < methodNode.getBody().size(); ++i) {
                     writer.append("case ").append(i).append(":").indent().softNewLine();
@@ -724,6 +725,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     writer.outdent();
                 }
                 writer.append("}").softNewLine();
+                writer.outdent().append("}").softNewLine();
             } catch (IOException e) {
                 throw new RenderingException("IO error occured", e);
             }
@@ -1956,23 +1958,26 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         }
     }
 
-
     @Override
     public void visit(GotoPartStatement statement) {
         try {
-            gotoPart(statement.getPart());
+            writer.append("$ptr").ws().append("=").ws().append(statement.getPart()).append(";")
+                    .softNewLine();
+            writer.append("break $main;").softNewLine();
         } catch (IOException ex){
             throw new RenderingException("IO error occured", ex);
         }
     }
 
-    private void gotoPart(int part) throws IOException {
-        writer.append("$ptr").ws().append("=").ws().append(part).append(";")
-                .softNewLine();
-        writer.append("if").ws().append("($rt_suspending())").ws().append("{").indent().softNewLine();
-        writer.append("return $save();").softNewLine();
-        writer.outdent().append("}").softNewLine();
-        writer.append("break $main;").softNewLine();
+    @Override
+    public void visit(SaveStatement statement) {
+        try {
+            writer.append("if").ws().append("($rt_suspending())").ws().append("{").indent().softNewLine();
+            writer.append("return $save();").softNewLine();
+            writer.outdent().append("}").softNewLine();
+        } catch (IOException ex){
+            throw new RenderingException("IO error occured", ex);
+        }
     }
 
     @Override
@@ -1984,9 +1989,9 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 writer.appendMethodBody(monitorEnterRef).append("(");
                 statement.getObjectRef().acceptVisitor(this);
                 writer.append(");").softNewLine();
-                if (statement.getAsyncTarget() != null) {
-                    gotoPart(statement.getAsyncTarget());
-                }
+                writer.append("if").ws().append("($rt_suspending())").ws().append("{").indent().softNewLine();
+                writer.append("return $save();").softNewLine();
+                writer.outdent().append("}").softNewLine();
             } else {
                 MethodReference monitorEnterRef = new MethodReference(
                         Object.class, "monitorEnterSync", Object.class, void.class);

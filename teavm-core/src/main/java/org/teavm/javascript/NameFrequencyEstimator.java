@@ -192,6 +192,10 @@ public class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, Me
     }
 
     @Override
+    public void visit(SaveStatement statement) {
+    }
+
+    @Override
     public void visit(MonitorEnterStatement statement) {
         if (async) {
             MethodReference monitorEnterRef = new MethodReference(

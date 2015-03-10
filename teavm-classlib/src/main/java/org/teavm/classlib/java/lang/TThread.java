@@ -71,7 +71,7 @@ public class TThread extends TObject implements TRunnable {
                     setCurrentThread(mainThread);
                 }
             }
-        });
+        }, true);
     }
 
     static void setCurrentThread(TThread thread) {
@@ -116,7 +116,7 @@ public class TThread extends TObject implements TRunnable {
                 setCurrentThread(thread);
                 callback.complete(null);
             }
-        });
+        }, false);
     }
 
     private static void yieldImpl() {

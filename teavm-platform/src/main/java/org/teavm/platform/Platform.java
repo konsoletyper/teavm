@@ -107,7 +107,7 @@ public final class Platform {
 
     @GeneratedBy(PlatformGenerator.class)
     @PluggableDependency(PlatformGenerator.class)
-    public static native void startThread(PlatformRunnable runnable);
+    public static native void startThread(PlatformRunnable runnable, boolean newNativeThread);
 
     private static void launchThread(PlatformRunnable runnable) {
         runnable.run();

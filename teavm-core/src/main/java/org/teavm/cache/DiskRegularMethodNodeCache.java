@@ -263,6 +263,10 @@ public class DiskRegularMethodNodeCache implements RegularMethodNodeCache {
         }
 
         @Override
+        public void visit(SaveStatement statement) {
+        }
+
+        @Override
         public void visit(MonitorEnterStatement statement) {
 
         }

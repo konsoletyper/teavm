@@ -620,6 +620,11 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     }
 
     @Override
+    public void visit(SaveStatement statement) {
+        resultStmt = statement;
+    }
+
+    @Override
     public void visit(MonitorEnterStatement statement) {
         statement.getObjectRef().acceptVisitor(this);
         statement.setObjectRef(resultExpr);

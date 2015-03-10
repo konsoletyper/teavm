@@ -315,10 +315,18 @@ public class AstIO {
         }
 
         @Override
-        public void visit(MonitorEnterStatement statement) {
+        public void visit(SaveStatement statement) {
             try {
                 output.writeByte(18);
-                output.writeShort(statement.getAsyncTarget() != null ? 0 : statement.getAsyncTarget());
+            } catch (IOException e) {
+                throw new IOExceptionWrapper(e);
+            }
+        }
+
+        @Override
+        public void visit(MonitorEnterStatement statement) {
+            try {
+                output.writeByte(19);
                 writeExpr(statement.getObjectRef());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
@@ -328,7 +336,7 @@ public class AstIO {
         @Override
         public void visit(MonitorExitStatement statement) {
             try {
-                output.writeByte(19);
+                output.writeByte(20);
                 writeExpr(statement.getObjectRef());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);

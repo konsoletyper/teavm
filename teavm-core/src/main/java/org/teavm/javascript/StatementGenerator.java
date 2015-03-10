@@ -37,7 +37,6 @@ class StatementGenerator implements InstructionVisitor {
     Program program;
     ClassHolderSource classSource;
     private NodeLocation currentLocation;
-    Integer asyncTarget;
 
     public void setCurrentLocation(NodeLocation currentLocation) {
         this.currentLocation = currentLocation;
@@ -557,11 +556,6 @@ class StatementGenerator implements InstructionVisitor {
             stmt.setLocation(currentLocation);
             statements.add(stmt);
         }
-        if (asyncTarget != null) {
-            GotoPartStatement gotoStmt = new GotoPartStatement();
-            gotoStmt.setPart(asyncTarget);
-            statements.add(gotoStmt);
-        }
     }
 
     @Override
@@ -662,7 +656,6 @@ class StatementGenerator implements InstructionVisitor {
         MonitorEnterStatement stmt = new MonitorEnterStatement();
         stmt.setLocation(currentLocation);
         stmt.setObjectRef(Expr.var(insn.getObjectRef().getIndex()));
-        stmt.setAsyncTarget(asyncTarget);
         statements.add(stmt);
     }
 

@@ -197,12 +197,14 @@ public class RenamingVisitor implements StatementVisitor, ExprVisitor {
     }
 
     @Override
-    public void visit(MonitorEnterStatement statement) {
+    public void visit(SaveStatement statement) {
+    }
 
+    @Override
+    public void visit(MonitorEnterStatement statement) {
     }
 
     @Override
     public void visit(MonitorExitStatement statement) {
-
     }
 }

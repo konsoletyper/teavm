@@ -17,30 +17,11 @@ package org.teavm.javascript.ast;
 
 /**
  *
- * @author shannah
+ * @author Alexey Andreev
  */
-public class MonitorEnterStatement extends Statement {
-    private NodeLocation location;
-    private Expr objectRef;
-
+public class SaveStatement extends Statement {
     @Override
     public void acceptVisitor(StatementVisitor visitor) {
         visitor.visit(this);
-    }
-
-    public NodeLocation getLocation() {
-        return location;
-    }
-
-    public void setLocation(NodeLocation location) {
-        this.location = location;
-    }
-
-    public Expr getObjectRef() {
-        return objectRef;
-    }
-
-    public void setObjectRef(Expr objectRef) {
-        this.objectRef = objectRef;
     }
 }
