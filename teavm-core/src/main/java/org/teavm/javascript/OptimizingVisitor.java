@@ -132,6 +132,9 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
             return;
         }
         AssignmentStatement assignment = (AssignmentStatement)last;
+        if (assignment.isAsync()) {
+            return;
+        }
         if (!(assignment.getLeftValue() instanceof VariableExpr)) {
             return;
         }
