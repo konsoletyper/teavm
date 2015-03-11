@@ -23,6 +23,7 @@ import org.teavm.javascript.spi.Generator;
 import org.teavm.javascript.spi.InjectedBy;
 import org.teavm.model.*;
 import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.instructions.MonitorEnterInstruction;
 import org.teavm.model.util.AsyncProgramSplitter;
 import org.teavm.model.util.ProgramUtils;
 
@@ -310,7 +311,7 @@ public class Decompiler {
                         generator.setCurrentLocation(nodeLocation);
                     }
                     insn.acceptVisitor(generator);
-                    if (insn instanceof InvokeInstruction && !saved) {
+                    if (!saved && (insn instanceof InvokeInstruction || insn instanceof MonitorEnterInstruction)) {
                         generator.statements.add(new SaveStatement());
                         saved = true;
                     }
