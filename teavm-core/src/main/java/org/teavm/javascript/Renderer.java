@@ -686,6 +686,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     variableNames.add("$je");
                 }
                 variableNames.add("$ptr");
+                variableNames.add("$tmp");
                 if (!variableNames.isEmpty()) {
                     writer.append("var ");
                     for (int i = 0; i < variableNames.size(); ++i) {
@@ -817,9 +818,13 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             }
             prevCallSite = debugEmitter.emitCallSite();
             if (statement.getLeftValue() != null) {
-                priority = Priority.COMMA;
-                associativity = Associativity.NONE;
-                statement.getLeftValue().acceptVisitor(this);
+                if (statement.isAsync()) {
+                    writer.append("$tmp");
+                } else {
+                    priority = Priority.COMMA;
+                    associativity = Associativity.NONE;
+                    statement.getLeftValue().acceptVisitor(this);
+                }
                 writer.ws().append("=").ws();
             }
             priority = Priority.COMMA;
@@ -827,6 +832,15 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             statement.getRightValue().acceptVisitor(this);
             debugEmitter.emitCallSite();
             writer.append(";").softNewLine();
+            if (statement.isAsync()) {
+                emitSuspendChecker();
+                if (statement.getLeftValue() != null) {
+                    priority = Priority.COMMA;
+                    associativity = Associativity.NONE;
+                    statement.getLeftValue().acceptVisitor(this);
+                    writer.ws().append("=").ws().append("$tmp;").softNewLine();
+                }
+            }
             if (statement.getLocation() != null) {
                 popLocation();
             }
@@ -1975,17 +1989,6 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     }
 
     @Override
-    public void visit(SaveStatement statement) {
-        try {
-            writer.append("if").ws().append("($rt_suspending())").ws().append("{").indent().softNewLine();
-            writer.append("return $save();").softNewLine();
-            writer.outdent().append("}").softNewLine();
-        } catch (IOException ex){
-            throw new RenderingException("IO error occured", ex);
-        }
-    }
-
-    @Override
     public void visit(MonitorEnterStatement statement) {
         try {
             if (async) {
@@ -1994,6 +1997,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 writer.appendMethodBody(monitorEnterRef).append("(");
                 statement.getObjectRef().acceptVisitor(this);
                 writer.append(");").softNewLine();
+                emitSuspendChecker();
             } else {
                 MethodReference monitorEnterRef = new MethodReference(
                         Object.class, "monitorEnterSync", Object.class, void.class);
@@ -2004,6 +2008,12 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         } catch (IOException ex){
             throw new RenderingException("IO error occured", ex);
         }
+    }
+
+    private void emitSuspendChecker() throws IOException {
+        writer.append("if").ws().append("($rt_suspending())").ws().append("{").indent().softNewLine();
+        writer.append("return $save();").softNewLine();
+        writer.outdent().append("}").softNewLine();
     }
 
     @Override

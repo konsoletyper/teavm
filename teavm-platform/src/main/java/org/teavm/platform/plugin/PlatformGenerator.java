@@ -69,7 +69,7 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
         switch (methodRef.getName()) {
             case "newInstanceImpl":
-                generateNewInstance(writer);
+                generateNewInstance(context, writer);
                 break;
             case "prepareNewInstance":
                 generatePrepareNewInstance(context, writer);
@@ -100,7 +100,7 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
             MethodReader method = cls.getMethod(new MethodDescriptor("<init>", void.class));
             if (method != null) {
                 writer.appendClass(clsName).append("[c]").ws().append("=").ws()
-                        .appendMethodBody(method.getReference()).append(")").append(";").softNewLine();
+                        .appendMethodBody(method.getReference()).append(";").softNewLine();
             }
         }
         writer.appendMethodBody(Platform.class, "newInstance", PlatformClass.class, Object.class).ws().append('=').ws()
@@ -108,17 +108,19 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
                 .append(";").softNewLine();
     }
 
-    private void generateNewInstance(SourceWriter writer) throws IOException {
+    private void generateNewInstance(GeneratorContext context, SourceWriter writer) throws IOException {
         writer.append("if").ws().append("($rt_resuming())").ws().append("{").indent().softNewLine();
         writer.append("return $rt_nativeThread().pop();").softNewLine();
         writer.outdent().append("}").softNewLine();
 
-        writer.append("if").ws().append("(!cls.hasOwnProperty('$$constructor$$'))").ws().append("{")
-                .indent().softNewLine();
+        String cls = context.getParameterName(1);
+        writer.append("if").ws().append("(!").append(cls).append(".hasOwnProperty('$$constructor$$'))")
+                .ws().append("{").indent().softNewLine();
         writer.append("return null;").softNewLine();
         writer.outdent().append("}").softNewLine();
 
-        writer.append("var $r").ws().append('=').ws().append("cls.$$constructor$$();");
+        writer.append("var $r").ws().append('=').ws().append("new ").append(cls).append("();").softNewLine();
+        writer.append(cls).append(".$$constructor$$($r);").softNewLine();
         writer.append("if").ws().append("($rt_suspending())").ws().append("{").indent().softNewLine();
         writer.append("return $rt_nativeThread().push($r);").softNewLine();
         writer.outdent().append("}").softNewLine();

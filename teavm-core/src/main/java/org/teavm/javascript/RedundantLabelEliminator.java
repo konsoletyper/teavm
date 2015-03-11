@@ -123,10 +123,6 @@ class RedundantLabelEliminator implements StatementVisitor {
     }
 
     @Override
-    public void visit(SaveStatement statement) {
-    }
-
-    @Override
     public void visit(MonitorEnterStatement statement) {
     }
 

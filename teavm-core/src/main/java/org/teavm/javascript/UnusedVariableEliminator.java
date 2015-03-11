@@ -230,10 +230,6 @@ class UnusedVariableEliminator implements ExprVisitor, StatementVisitor {
     }
 
     @Override
-    public void visit(SaveStatement statement) {
-    }
-
-    @Override
     public void visit(MonitorEnterStatement statement) {
         statement.getObjectRef().acceptVisitor(this);
     }

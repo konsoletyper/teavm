@@ -15,7 +15,6 @@
  */
 package org.teavm.classlib.java.lang;
 
-import org.teavm.dom.browser.TimerHandler;
 import org.teavm.dom.browser.Window;
 import org.teavm.javascript.spi.Async;
 import org.teavm.jso.JS;
@@ -167,5 +166,4 @@ public class TThread extends TObject implements TRunnable {
     public final int getPriority(){
         return this.priority;
     }
-
 }
