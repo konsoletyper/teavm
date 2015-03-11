@@ -43,10 +43,10 @@ public class Optimizer {
         }
     }
 
-    public void optimize(AsyncMethodNode method, Program program, AsyncProgramSplitter splitter) {
+    public void optimize(AsyncMethodNode method, AsyncProgramSplitter splitter) {
         ReadWriteStatsBuilder stats = new ReadWriteStatsBuilder(method.getVariables().size());
-        stats.analyze(program);
         for (int i = 0; i < splitter.size(); ++i) {
+            stats.analyze(splitter.getProgram(i));
             Integer var = splitter.getInput(i);
             if (var != null) {
                 stats.reads[var]++;

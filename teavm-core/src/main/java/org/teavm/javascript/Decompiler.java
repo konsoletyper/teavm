@@ -219,7 +219,7 @@ public class Decompiler {
             node.getVariables().add(program.variableAt(i).getRegister());
         }
         Optimizer optimizer = new Optimizer();
-        optimizer.optimize(node, program, splitter);
+        optimizer.optimize(node, splitter);
         node.getModifiers().addAll(mapModifiers(method.getModifiers()));
         int paramCount = Math.min(method.getSignature().length, program.variableCount());
         for (int i = 0; i < paramCount; ++i) {
