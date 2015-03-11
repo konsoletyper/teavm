@@ -479,11 +479,16 @@ TeaVMThread.prototype.resume = function() {
 }
 TeaVMThread.prototype.run = function() {
     $rt_currentNativeThread = this;
-    this.runner();
-    $rt_currentNativeThread = null;
+    try {
+        this.runner();
+    } finally {
+        $rt_currentNativeThread = null;
+    }
     if (this.suspendCallback !== null) {
         var self = this;
-        this.suspendCallback(function() {
+        var callback = this.suspendCallback;
+        this.suspendCallback = null;
+        callback(function() {
             self.resume();
         });
     }

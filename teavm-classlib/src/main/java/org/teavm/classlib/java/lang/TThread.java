@@ -36,6 +36,7 @@ public class TThread extends TObject implements TRunnable {
     private long id;
     private int priority = 0;
     private long timeSliceStart;
+    private int yieldCount;
 
     private TString name;
     TRunnable target;
@@ -101,6 +102,10 @@ public class TThread extends TObject implements TRunnable {
     }
 
     public static void yield() {
+        if (++currentThread.yieldCount < 30) {
+            return;
+        }
+        currentThread.yieldCount = 0;
         if (currentThread.timeSliceStart + 100 < System.currentTimeMillis()) {
             switchContext(currentThread);
         }
@@ -146,12 +151,13 @@ public class TThread extends TObject implements TRunnable {
 
     private static void sleep(long millis, final AsyncCallback<Void> callback) {
         final TThread current = currentThread();
-        window.setTimeout(new TimerHandler() {
-            @Override public void onTimer() {
+        int intMillis = millis < Integer.MAX_VALUE ? (int)millis : Integer.MAX_VALUE;
+        Platform.schedule(new PlatformRunnable() {
+            @Override public void run() {
                 setCurrentThread(current);
                 callback.complete(null);
             }
-        }, millis);
+        }, intMillis);
     }
 
     public final void setPriority(int newPriority){

@@ -264,6 +264,7 @@ public class Decompiler {
         generator.indexer = indexer;
         parentNode = codeTree.getRoot();
         currentNode = parentNode.getFirstChild();
+        boolean saved = !async;
         for (int i = 0; i < this.graph.size(); ++i) {
             Block block = stack.peek();
             while (block.end == i) {
@@ -292,7 +293,6 @@ public class Decompiler {
             if (head != -1 && loopSuccessors[head] == next) {
                 next = head;
             }
-            boolean saved = !async;
             if (node >= 0) {
                 generator.currentBlock = program.basicBlockAt(node);
                 int tmp = indexer.nodeAt(next);

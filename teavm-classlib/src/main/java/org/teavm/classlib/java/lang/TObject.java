@@ -286,7 +286,7 @@ public class TObject {
         @Override
         public void onTimer() {
             if (!expired()) {
-                Platform.postpone(this);
+                run();
             }
         }
 

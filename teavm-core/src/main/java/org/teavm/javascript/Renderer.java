@@ -699,7 +699,11 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
 
                 writer.append("function $save()").ws().append("{").indent().softNewLine();
                 writer.append("$rt_nativeThread()");
-                for (int i = ref.parameterCount() + 1; i < variableCount; ++i) {
+                int firstToSave = 0;
+                if (methodNode.getModifiers().contains(NodeModifier.STATIC)) {
+                    firstToSave = 1;
+                }
+                for (int i = firstToSave; i < variableCount; ++i) {
                     writer.append(".push(").append(variableName(i)).append(")");
                 }
                 writer.append(".push($ptr);");
@@ -710,7 +714,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 writer.append("if").ws().append("($rt_resuming())").ws().append("{").indent().softNewLine();
                 writer.append("var $T").ws().append('=').ws().append("$rt_nativeThread();").softNewLine();
                 writer.append("$ptr").ws().append('=').ws().append("$T.pop();");
-                for (int i = variableCount - 1; i > ref.parameterCount(); --i) {
+                for (int i = variableCount - 1; i >= firstToSave; --i) {
                     writer.append(variableName(i)).ws().append('=').ws().append("$T.pop();");
                 }
                 writer.softNewLine();
@@ -1990,9 +1994,6 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 writer.appendMethodBody(monitorEnterRef).append("(");
                 statement.getObjectRef().acceptVisitor(this);
                 writer.append(");").softNewLine();
-                writer.append("if").ws().append("($rt_suspending())").ws().append("{").indent().softNewLine();
-                writer.append("return $save();").softNewLine();
-                writer.outdent().append("}").softNewLine();
             } else {
                 MethodReference monitorEnterRef = new MethodReference(
                         Object.class, "monitorEnterSync", Object.class, void.class);
