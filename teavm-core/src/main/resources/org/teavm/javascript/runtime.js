@@ -444,13 +444,17 @@ function TeaVMThread(runner) {
     this.attribute = null;
     this.completeCallback = null;
 }
-TeaVMThread.prototype.push = function(value) {
-    this.stack.push(value);
+TeaVMThread.prototype.push = function() {
+    for (var i = 0; i < arguments.length; ++i) {
+        this.stack.push(arguments[i]);
+    }
     return this;
 }
+TeaVMThread.prototype.s = TeaVMThread.prototype.push;
 TeaVMThread.prototype.pop = function() {
     return this.stack.pop();
 }
+TeaVMThread.prototype.l = TeaVMThread.prototype.pop;
 TeaVMThread.prototype.isResuming = function() {
     return this.status == 2;
 }
@@ -517,6 +521,9 @@ function $rt_startThread(runner, callback) {
 var $rt_currentNativeThread = null;
 function $rt_nativeThread() {
     return $rt_currentNativeThread;
+}
+function $rt_invalidPointer() {
+    throw new Error("Invalid recorded state");
 }
 
 function $dbg_repr(obj) {

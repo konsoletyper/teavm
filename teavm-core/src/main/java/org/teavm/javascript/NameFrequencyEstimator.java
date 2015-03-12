@@ -75,6 +75,12 @@ public class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, Me
                 consumer.consume(method.getReference().getDescriptor());
                 consumer.consume(method.getReference());
             }
+            if (method.isAsync()) {
+                consumer.consumeFunction("$rt_nativeThread");
+                consumer.consumeFunction("$rt_nativeThread");
+                consumer.consumeFunction("$rt_resuming");
+                consumer.consumeFunction("$rt_invalidPointer");
+            }
         }
 
         // Metadata
@@ -99,7 +105,6 @@ public class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, Me
         async = true;
         for (AsyncMethodPart part : methodNode.getBody()) {
             part.getStatement().acceptVisitor(this);
-            consumer.consumeFunction("$rt_guardAsync");
         }
     }
 
@@ -113,6 +118,9 @@ public class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, Me
             statement.getLeftValue().acceptVisitor(this);
         }
         statement.getRightValue().acceptVisitor(this);
+        if (statement.isAsync()) {
+            consumer.consumeFunction("$rt_suspending");
+        }
     }
 
     @Override
@@ -162,9 +170,6 @@ public class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, Me
         if (statement.getResult() != null) {
             statement.getResult().acceptVisitor(this);
         }
-        if (async) {
-            consumer.consumeFunction("$rt_asyncResult");
-        }
     }
 
     @Override
@@ -197,6 +202,7 @@ public class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, Me
             MethodReference monitorEnterRef = new MethodReference(
                     Object.class, "monitorEnter", Object.class, void.class);
             consumer.consume(monitorEnterRef);
+            consumer.consumeFunction("$rt_suspending");
         } else {
             MethodReference monitorEnterRef = new MethodReference(
                     Object.class, "monitorEnterSync", Object.class, void.class);

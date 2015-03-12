@@ -261,7 +261,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
 
     private void renderRuntimeAliases() throws IOException {
         String[] names = { "$rt_throw", "$rt_compare", "$rt_nullCheck", "$rt_cls", "$rt_createArray",
-                "$rt_isInstance" };
+                "$rt_isInstance", "$rt_nativeThread", "$rt_suspending", "$rt_resuming", "$rt_invalidPointer" };
         boolean first = true;
         for (String name : names) {
             if (!first) {
@@ -685,8 +685,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 if (hasTryCatch) {
                     variableNames.add("$je");
                 }
-                variableNames.add("$ptr");
-                variableNames.add("$tmp");
+                variableNames.add(pointerName());
+                variableNames.add(tempVarName());
                 if (!variableNames.isEmpty()) {
                     writer.append("var ");
                     for (int i = 0; i < variableNames.size(); ++i) {
@@ -703,31 +703,39 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     firstToSave = 1;
                 }
 
-                writer.append("$ptr").ws().append('=').ws().append("0;").softNewLine();
-                writer.append("if").ws().append("($rt_resuming())").ws().append("{").indent().softNewLine();
-                writer.append("var $T").ws().append('=').ws().append("$rt_nativeThread();").softNewLine();
-                writer.append("$ptr").ws().append('=').ws().append("$T.pop();");
+                String popName = minifying ? "l" : "pop";
+                String pushName = minifying ? "s" : "push";
+                writer.append(pointerName()).ws().append('=').ws().append("0;").softNewLine();
+                writer.append("if").ws().append("(").appendFunction("$rt_resuming").append("())").ws()
+                        .append("{").indent().softNewLine();
+                writer.append("var ").append(threadName()).ws().append('=').ws()
+                        .appendFunction("$rt_nativeThread").append("();").softNewLine();
+                writer.append(pointerName()).ws().append('=').ws().append(threadName()).append(".")
+                        .append(popName).append("();");
                 for (int i = variableCount - 1; i >= firstToSave; --i) {
-                    writer.append(variableName(i)).ws().append('=').ws().append("$T.pop();");
+                    writer.append(variableName(i)).ws().append('=').ws().append(threadName()).append(".")
+                            .append(popName).append("();");
                 }
                 writer.softNewLine();
                 writer.outdent().append("}").softNewLine();
 
-                writer.append("$main:").ws().append("while").ws().append("(true)").ws().append("{").ws();
-                writer.append("switch").ws().append("($ptr)").ws().append('{').softNewLine();
+                writer.append(mainLoopName()).append(":").ws().append("while").ws().append("(true)")
+                        .ws().append("{").ws();
+                writer.append("switch").ws().append("(").append(pointerName()).append(")").ws()
+                        .append('{').softNewLine();
                 for (int i = 0; i < methodNode.getBody().size(); ++i) {
                     writer.append("case ").append(i).append(":").indent().softNewLine();
                     AsyncMethodPart part = methodNode.getBody().get(i);
                     part.getStatement().acceptVisitor(Renderer.this);
                     writer.outdent();
                 }
-                writer.append("default:").ws().append("throw new Error('Invalid recorded state');").softNewLine();
+                writer.append("default:").ws().appendFunction("$rt_invalidPointer").append("();").softNewLine();
                 writer.append("}}").softNewLine();
-                writer.append("$rt_nativeThread()");
+                writer.appendFunction("$rt_nativeThread").append("().").append(pushName).append("(");
                 for (int i = firstToSave; i < variableCount; ++i) {
-                    writer.append(".push(").append(variableName(i)).append(")");
+                    writer.append(variableName(i)).append(',').ws();
                 }
-                writer.append(".push($ptr);");
+                writer.append(pointerName()).append(");");
                 writer.softNewLine();
             } catch (IOException e) {
                 throw new RenderingException("IO error occured", e);
@@ -816,7 +824,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             prevCallSite = debugEmitter.emitCallSite();
             if (statement.getLeftValue() != null) {
                 if (statement.isAsync()) {
-                    writer.append("$tmp");
+                    writer.append(tempVarName());
                 } else {
                     priority = Priority.COMMA;
                     associativity = Associativity.NONE;
@@ -835,7 +843,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     priority = Priority.COMMA;
                     associativity = Associativity.NONE;
                     statement.getLeftValue().acceptVisitor(this);
-                    writer.ws().append("=").ws().append("$tmp;").softNewLine();
+                    writer.ws().append("=").ws().append(tempVarName()).append(";").softNewLine();
                 }
             }
             if (statement.getLocation() != null) {
@@ -1130,6 +1138,22 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             return Character.toString(variableNames.charAt(index % variableNames.length())) +
                     index / variableNames.length();
         }
+    }
+
+    private String pointerName() {
+        return minifying ? "$p" : "$ptr";
+    }
+
+    private String mainLoopName() {
+        return minifying ? "$m" : "$main";
+    }
+
+    private String tempVarName() {
+        return minifying ? "$z" : "$tmp";
+    }
+
+    private String threadName() {
+        return minifying ? "$T" : "$thread";
     }
 
     private void visitBinary(BinaryExpr expr, String op, Priority priority, Associativity associativity) {
@@ -1977,9 +2001,9 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     @Override
     public void visit(GotoPartStatement statement) {
         try {
-            writer.append("$ptr").ws().append("=").ws().append(statement.getPart()).append(";")
+            writer.append(pointerName()).ws().append("=").ws().append(statement.getPart()).append(";")
                     .softNewLine();
-            writer.append("continue $main;").softNewLine();
+            writer.append("continue ").append(mainLoopName()).append(";").softNewLine();
         } catch (IOException ex){
             throw new RenderingException("IO error occured", ex);
         }
@@ -2008,8 +2032,9 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     }
 
     private void emitSuspendChecker() throws IOException {
-        writer.append("if").ws().append("($rt_suspending())").ws().append("{").indent().softNewLine();
-        writer.append("break $main;").softNewLine();
+        writer.append("if").ws().append("(").appendFunction("$rt_suspending").append("())").ws()
+                .append("{").indent().softNewLine();
+        writer.append("break ").append(mainLoopName()).append(";").softNewLine();
         writer.outdent().append("}").softNewLine();
     }
 
