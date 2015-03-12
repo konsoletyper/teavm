@@ -74,6 +74,9 @@ class JSODependencyListener implements DependencyListener {
     private ExposedClass createExposedClass(String name) {
         ClassReader cls = classSource.get(name);
         ExposedClass exposedCls = new ExposedClass();
+        if (cls == null) {
+            return exposedCls;
+        }
         if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
             ExposedClass parent = getExposedClass(cls.getParent());
             exposedCls.inheritedMethods.putAll(parent.inheritedMethods);

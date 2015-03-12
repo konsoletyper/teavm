@@ -120,7 +120,7 @@ public class Decompiler {
         }
         ClassHolder cls = classSource.get(className);
         if (cls == null) {
-            throw new IllegalArgumentException("Class not found: " + className);
+            return;
         }
         if (cls.getParent() != null) {
             orderClasses(cls.getParent(), visited, order);
