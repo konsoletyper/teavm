@@ -442,6 +442,7 @@ function TeaVMThread(runner) {
     this.suspendCallback = null;
     this.runner = runner;
     this.attribute = null;
+    this.completeCallback = null;
 }
 TeaVMThread.prototype.push = function(value) {
     this.stack.push(value);
@@ -460,7 +461,7 @@ TeaVMThread.prototype.suspend = function(callback) {
     this.suspendCallback = callback;
     this.status = 1;
 }
-TeaVMThread.prototype.start = function() {
+TeaVMThread.prototype.start = function(callback) {
     if (this.status != 3) {
         throw new Error("Thread already started");
     }
@@ -468,6 +469,7 @@ TeaVMThread.prototype.start = function() {
         throw new Error("Another thread is running");
     }
     this.status = 0;
+    this.completeCallback = callback ? callback : function() {};
     this.run();
 }
 TeaVMThread.prototype.resume = function() {
@@ -479,8 +481,11 @@ TeaVMThread.prototype.resume = function() {
 }
 TeaVMThread.prototype.run = function() {
     $rt_currentNativeThread = this;
+    var result;
     try {
-        this.runner();
+        result = this.runner();
+    } catch (e) {
+        result = e;
     } finally {
         $rt_currentNativeThread = null;
     }
@@ -491,6 +496,8 @@ TeaVMThread.prototype.run = function() {
         callback(function() {
             self.resume();
         });
+    } else if (this.status === 0) {
+        this.completeCallback(result);
     }
 }
 function $rt_suspending() {
@@ -504,8 +511,8 @@ function $rt_resuming() {
 function $rt_suspend(callback) {
     return $rt_nativeThread().suspend(callback);
 }
-function $rt_startThread(runner) {
-    new TeaVMThread(runner).start();
+function $rt_startThread(runner, callback) {
+    new TeaVMThread(runner).start(callback);
 }
 var $rt_currentNativeThread = null;
 function $rt_nativeThread() {

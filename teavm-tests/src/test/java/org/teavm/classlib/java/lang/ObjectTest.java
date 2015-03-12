@@ -67,4 +67,15 @@ public class ObjectTest {
         assertTrue(new Object[2].toString().startsWith("[Ljava.lang.Object;@"));
         assertTrue(new byte[3].toString().startsWith("[B@"));
     }
+
+    @Test
+    public void waitWorks() throws InterruptedException {
+        long start = System.currentTimeMillis();
+        final Object lock = new Object();
+        synchronized (lock) {
+            lock.wait(100);
+        }
+        long end = System.currentTimeMillis();
+        assertTrue(end - start > 100);
+    }
 }

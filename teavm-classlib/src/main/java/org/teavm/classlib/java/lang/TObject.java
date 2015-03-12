@@ -97,6 +97,12 @@ public class TObject {
             o.monitor.count += count;
             callback.complete(null);
             return;
+        } else if (o.monitor.owner == null) {
+            o.monitor.owner = thread;
+            TThread.setCurrentThread(thread);
+            o.monitor.count += count;
+            callback.complete(null);
+            return;
         }
         o.monitor.enteringThreads.add(new PlatformRunnable() {
             @Override public void run() {
