@@ -25,11 +25,13 @@ import org.teavm.javascript.ast.*;
 class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     public Expr resultExpr;
     public Statement resultStmt;
-    private ReadWriteStatsBuilder stats;
+    private boolean[] preservedVars;
+    private int[] readFrequencies;
     private List<Statement> resultSequence;
 
-    public OptimizingVisitor(ReadWriteStatsBuilder stats) {
-        this.stats = stats;
+    public OptimizingVisitor(boolean[] preservedVars, int[] readFreqencies) {
+        this.preservedVars = preservedVars;
+        this.readFrequencies = readFreqencies;
     }
 
     private static boolean isZero(Expr expr) {
@@ -121,7 +123,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     public void visit(VariableExpr expr) {
         int index = expr.getIndex();
         resultExpr = expr;
-        if (stats.reads[index] != 1 || stats.writes[index] != 1) {
+        if (readFrequencies[index] != 1 || preservedVars[index]) {
             return;
         }
         if (resultSequence.isEmpty()) {
@@ -217,7 +219,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         InvocationExpr constructrExpr = Expr.constructObject(expr.getMethod(), args);
         constructrExpr.setLocation(expr.getLocation());
         assignment.setRightValue(constructrExpr);
-        stats.reads[var.getIndex()]--;
+        readFrequencies[var.getIndex()]--;
         return true;
     }
 
