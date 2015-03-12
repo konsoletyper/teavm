@@ -698,18 +698,10 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     writer.append(";").softNewLine();
                 }
 
-                writer.append("function $save()").ws().append("{").indent().softNewLine();
-                writer.append("$rt_nativeThread()");
                 int firstToSave = 0;
                 if (methodNode.getModifiers().contains(NodeModifier.STATIC)) {
                     firstToSave = 1;
                 }
-                for (int i = firstToSave; i < variableCount; ++i) {
-                    writer.append(".push(").append(variableName(i)).append(")");
-                }
-                writer.append(".push($ptr);");
-                writer.softNewLine();
-                writer.outdent().append("}").softNewLine();
 
                 writer.append("$ptr").ws().append('=').ws().append("0;").softNewLine();
                 writer.append("if").ws().append("($rt_resuming())").ws().append("{").indent().softNewLine();
@@ -721,8 +713,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 writer.softNewLine();
                 writer.outdent().append("}").softNewLine();
 
-                writer.append("while").ws().append("(true)").ws().append("{").indent().softNewLine();
-                writer.append("$main: switch").ws().append("($ptr)").ws().append('{').softNewLine();
+                writer.append("$main:").ws().append("while").ws().append("(true)").ws().append("{").ws();
+                writer.append("switch").ws().append("($ptr)").ws().append('{').softNewLine();
                 for (int i = 0; i < methodNode.getBody().size(); ++i) {
                     writer.append("case ").append(i).append(":").indent().softNewLine();
                     AsyncMethodPart part = methodNode.getBody().get(i);
@@ -730,8 +722,13 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     writer.outdent();
                 }
                 writer.append("default:").ws().append("throw new Error('Invalid recorded state');").softNewLine();
-                writer.append("}").softNewLine();
-                writer.outdent().append("}").softNewLine();
+                writer.append("}}").softNewLine();
+                writer.append("$rt_nativeThread()");
+                for (int i = firstToSave; i < variableCount; ++i) {
+                    writer.append(".push(").append(variableName(i)).append(")");
+                }
+                writer.append(".push($ptr);");
+                writer.softNewLine();
             } catch (IOException e) {
                 throw new RenderingException("IO error occured", e);
             }
@@ -1982,7 +1979,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         try {
             writer.append("$ptr").ws().append("=").ws().append(statement.getPart()).append(";")
                     .softNewLine();
-            writer.append("break $main;").softNewLine();
+            writer.append("continue $main;").softNewLine();
         } catch (IOException ex){
             throw new RenderingException("IO error occured", ex);
         }
@@ -2012,7 +2009,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
 
     private void emitSuspendChecker() throws IOException {
         writer.append("if").ws().append("($rt_suspending())").ws().append("{").indent().softNewLine();
-        writer.append("return $save();").softNewLine();
+        writer.append("break $main;").softNewLine();
         writer.outdent().append("}").softNewLine();
     }
 
