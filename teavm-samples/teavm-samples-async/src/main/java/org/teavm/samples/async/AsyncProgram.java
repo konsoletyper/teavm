@@ -73,7 +73,7 @@ public final class AsyncProgram {
 
     private static void findPrimes() {
         report("Finding primes");
-        boolean[] prime = new boolean[1000000];
+        boolean[] prime = new boolean[1000];
         prime[2] = true;
         prime[3] = true;
         nextPrime: for (int i = 5; i < prime.length; i += 2) {

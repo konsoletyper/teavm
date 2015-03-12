@@ -73,7 +73,7 @@ public class ObjectTest {
         long start = System.currentTimeMillis();
         final Object lock = new Object();
         synchronized (lock) {
-            lock.wait(100);
+            lock.wait(110);
         }
         long end = System.currentTimeMillis();
         assertTrue(end - start > 100);
