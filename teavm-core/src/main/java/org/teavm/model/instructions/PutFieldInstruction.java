@@ -17,6 +17,7 @@ package org.teavm.model.instructions;
 
 import org.teavm.model.FieldReference;
 import org.teavm.model.Instruction;
+import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
 
 /**
@@ -27,6 +28,7 @@ public class PutFieldInstruction extends Instruction {
     private Variable instance;
     private FieldReference field;
     private Variable value;
+    private ValueType fieldType;
 
     public Variable getInstance() {
         return instance;
@@ -50,6 +52,14 @@ public class PutFieldInstruction extends Instruction {
 
     public void setValue(Variable value) {
         this.value = value;
+    }
+
+    public ValueType getFieldType() {
+        return fieldType;
+    }
+
+    public void setFieldType(ValueType fieldType) {
+        this.fieldType = fieldType;
     }
 
     @Override

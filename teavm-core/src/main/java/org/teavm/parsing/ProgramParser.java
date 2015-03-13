@@ -1568,7 +1568,7 @@ public class ProgramParser implements VariableDebugInformation {
                     addInstruction(insn);
                     break;
                 }
-                    
+
             }
         }
 
@@ -1611,6 +1611,7 @@ public class ProgramParser implements VariableDebugInformation {
                     insn.setInstance(getVariable(instance));
                     insn.setField(new FieldReference(ownerCls, name));
                     insn.setValue(getVariable(value));
+                    insn.setFieldType(ValueType.parse(desc));
                     addInstruction(insn);
                     break;
                 }

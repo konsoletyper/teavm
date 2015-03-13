@@ -20,8 +20,8 @@ package org.teavm.dependency;
  * @author Alexey Andreev
  */
 class DependencyNodeToNodeTransition implements DependencyConsumer {
-    private DependencyNode source;
-    private DependencyNode destination;
+    DependencyNode source;
+    DependencyNode destination;
     private DependencyTypeFilter filter;
 
     public DependencyNodeToNodeTransition(DependencyNode source, DependencyNode destination,

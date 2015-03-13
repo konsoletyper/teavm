@@ -77,7 +77,8 @@ class ProgramSourceAggregator implements InstructionReader {
     @Override public void create(VariableReader receiver, String type) { }
     @Override public void getField(VariableReader receiver, VariableReader instance, FieldReference field,
             ValueType fieldType) { }
-    @Override public void putField(VariableReader instance, FieldReference field, VariableReader value) { }
+    @Override public void putField(VariableReader instance, FieldReference field, VariableReader value,
+            ValueType fieldType) { }
     @Override public void arrayLength(VariableReader receiver, VariableReader array) { }
     @Override public void cloneArray(VariableReader receiver, VariableReader array) { }
     @Override public void unwrapArray(VariableReader receiver, VariableReader array, ArrayElementType elementType) { }
@@ -91,11 +92,11 @@ class ProgramSourceAggregator implements InstructionReader {
 
     @Override
     public void monitorEnter(VariableReader objectRef) {
-        
+
     }
 
     @Override
     public void monitorExit(VariableReader objectRef) {
-        
+
     }
 }

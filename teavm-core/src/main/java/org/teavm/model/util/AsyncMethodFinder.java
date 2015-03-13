@@ -330,7 +330,8 @@ public class AsyncMethodFinder {
         }
 
         @Override
-        public void putField(VariableReader instance, FieldReference field, VariableReader value) {
+        public void putField(VariableReader instance, FieldReference field, VariableReader value,
+                ValueType fieldType) {
         }
 
         @Override

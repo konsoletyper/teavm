@@ -23,19 +23,21 @@ import java.util.*;
  */
 public class DependencyNode implements ValueDependencyInfo {
     private DependencyChecker dependencyChecker;
-    private Set<DependencyConsumer> followers = new HashSet<>();
+    private List<DependencyConsumer> followers;
     private BitSet types;
-    private Map<DependencyNode, DependencyNodeToNodeTransition> transitions = new HashMap<>();
+    private List<DependencyNodeToNodeTransition> transitions;
     private volatile String tag;
     private DependencyNode arrayItemNode;
     private int degree;
+    int index;
 
-    DependencyNode(DependencyChecker dependencyChecker) {
-        this(dependencyChecker, 0);
+    DependencyNode(DependencyChecker dependencyChecker, int index) {
+        this(dependencyChecker, index, 0);
     }
 
-    DependencyNode(DependencyChecker dependencyChecker, int degree) {
+    DependencyNode(DependencyChecker dependencyChecker, int index, int degree) {
         this.dependencyChecker = dependencyChecker;
+        this.index = index;
         this.degree = degree;
     }
 
@@ -54,8 +56,10 @@ public class DependencyNode implements ValueDependencyInfo {
             if (DependencyChecker.shouldLog) {
                 System.out.println(tag + " -> " + type.getName());
             }
-            for (DependencyConsumer consumer : followers.toArray(new DependencyConsumer[followers.size()])) {
-                dependencyChecker.schedulePropagation(consumer, type);
+            if (followers != null) {
+                for (DependencyConsumer consumer : followers.toArray(new DependencyConsumer[followers.size()])) {
+                    dependencyChecker.schedulePropagation(consumer, type);
+                }
             }
         }
     }
@@ -81,13 +85,22 @@ public class DependencyNode implements ValueDependencyInfo {
                 System.out.println(tag + " -> " + types[i].getName());
             }
         }
-        for (DependencyConsumer consumer : followers.toArray(new DependencyConsumer[followers.size()])) {
-            dependencyChecker.schedulePropagation(consumer, Arrays.copyOf(types, j));
+        if (followers != null) {
+            for (DependencyConsumer consumer : followers.toArray(new DependencyConsumer[followers.size()])) {
+                dependencyChecker.schedulePropagation(consumer, Arrays.copyOf(types, j));
+            }
         }
     }
 
     public void addConsumer(DependencyConsumer consumer) {
-        if (followers.add(consumer) && this.types != null) {
+        if (followers == null) {
+            followers = new ArrayList<>();
+        }
+        if (followers.contains(consumer)) {
+            return;
+        }
+        followers.add(consumer);
+        if (this.types != null) {
             List<DependencyType> types = new ArrayList<>();
             for (int index = this.types.nextSetBit(0); index >= 0; index = this.types.nextSetBit(index + 1)) {
                 types.add(dependencyChecker.types.get(index));
@@ -100,14 +113,26 @@ public class DependencyNode implements ValueDependencyInfo {
         if (this == node) {
             return;
         }
-        DependencyNodeToNodeTransition transition = new DependencyNodeToNodeTransition(this, node, filter);
-        if (!transitions.containsKey(node)) {
-            transitions.put(node, transition);
-            if (DependencyChecker.shouldLog) {
-                System.out.println("Connecting " + tag + " to " + node.tag);
-            }
-            addConsumer(transition);
+        if (node == null) {
+            throw new IllegalArgumentException("Node must not be null");
         }
+        if (transitions != null) {
+            for (DependencyNodeToNodeTransition transition : transitions) {
+                if (transition.destination == node) {
+                    return;
+                }
+            }
+        }
+        DependencyNodeToNodeTransition transition = new DependencyNodeToNodeTransition(this, node, filter);
+        if (transitions == null) {
+            transitions = new ArrayList<>();
+        }
+
+        transitions.add(transition);
+        if (DependencyChecker.shouldLog) {
+            System.out.println("Connecting " + tag + " to " + node.tag);
+        }
+        addConsumer(transition);
     }
 
     public void connect(DependencyNode node) {
@@ -117,7 +142,8 @@ public class DependencyNode implements ValueDependencyInfo {
     @Override
     public DependencyNode getArrayItem() {
         if (arrayItemNode == null) {
-            arrayItemNode = new DependencyNode(dependencyChecker, degree + 1);
+            arrayItemNode = new DependencyNode(dependencyChecker, dependencyChecker.nodes.size(), degree + 1);
+            dependencyChecker.nodes.add(arrayItemNode);
             if (DependencyChecker.shouldLog) {
                 arrayItemNode.tag = tag + "[";
             }

@@ -62,6 +62,8 @@ public class DependencyChecker implements DependencyInfo {
     private Diagnostics diagnostics;
     DefaultCallGraph callGraph = new DefaultCallGraph();
     private DependencyAgent agent;
+    List<DependencyNode> nodes = new ArrayList<>();
+    List<BitSet> typeBitSets = new ArrayList<>();
 
     public DependencyChecker(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services,
             Diagnostics diagnostics) {
@@ -128,13 +130,16 @@ public class DependencyChecker implements DependencyInfo {
         if (type == null) {
             type = new DependencyType(this, name, types.size());
             types.add(type);
+            typeBitSets.add(new BitSet(nodes.size()));
             typeMap.put(name, type);
         }
         return type;
     }
 
     public DependencyNode createNode() {
-        return new DependencyNode(this);
+        DependencyNode node = new DependencyNode(this, nodes.size());
+        nodes.add(node);
+        return node;
     }
 
     @Override
@@ -336,11 +341,9 @@ public class DependencyChecker implements DependencyInfo {
     private MethodDependency createMethodDep(MethodReference methodRef, MethodReader method) {
         ValueType[] arguments = methodRef.getParameterTypes();
         int paramCount = arguments.length + 1;
-        int varCount = Math.max(paramCount, method != null && method.getProgram() != null ?
-                method.getProgram().variableCount() : 0);
-        DependencyNode[] parameterNodes = new DependencyNode[varCount];
-        for (int i = 0; i < varCount; ++i) {
-            parameterNodes[i] = new DependencyNode(this);
+        DependencyNode[] parameterNodes = new DependencyNode[arguments.length + 1];
+        for (int i = 0; i < parameterNodes.length; ++i) {
+            parameterNodes[i] = createNode();
             if (shouldLog) {
                 parameterNodes[i].setTag(methodRef + ":" + i);
             }
@@ -349,7 +352,7 @@ public class DependencyChecker implements DependencyInfo {
         if (methodRef.getDescriptor().getResultType() == ValueType.VOID) {
             resultNode = null;
         } else {
-            resultNode = new DependencyNode(this);
+            resultNode = createNode();
             if (shouldLog) {
                 resultNode.setTag(methodRef + ":RESULT");
             }
@@ -431,7 +434,7 @@ public class DependencyChecker implements DependencyInfo {
     }
 
     private FieldDependency createFieldNode(final FieldReference fieldRef, FieldReader field) {
-        DependencyNode node = new DependencyNode(this);
+        DependencyNode node = createNode();
         if (shouldLog) {
             node.setTag(fieldRef.getClassName() + "#" + fieldRef.getFieldName());
         }
@@ -501,6 +504,7 @@ public class DependencyChecker implements DependencyInfo {
                 index = 0;
             }
         }
+        return;
     }
 
     public <T> T getService(Class<T> type) {

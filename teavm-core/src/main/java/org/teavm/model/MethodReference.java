@@ -99,6 +99,10 @@ public class MethodReference {
         return Arrays.copyOf(signature, signature.length);
     }
 
+    public ValueType getReturnType() {
+        return signature[signature.length - 1];
+    }
+
     public String getName() {
         return name;
     }
