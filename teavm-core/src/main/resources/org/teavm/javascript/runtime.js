@@ -605,6 +605,9 @@ function Long_toNumber(val) {
     return 0x100000000 * hi + lo;
 }
 function Long_add(a, b) {
+    if (a.hi === a.lo >> 31 && b.hi === b.lo >> 31) {
+        return Long_fromNumber(a.lo + b.lo);
+    }
     var a_lolo = a.lo & 0xFFFF;
     var a_lohi = a.lo >>> 16;
     var a_hilo = a.hi & 0xFFFF;
@@ -640,6 +643,9 @@ function Long_neg(a) {
     return Long_inc(new Long(a.lo ^ 0xFFFFFFFF, a.hi ^ 0xFFFFFFFF));
 }
 function Long_sub(a, b) {
+    if (a.hi === 0 && a.lo >> 31 && b.hi === b.lo >> 31) {
+        return Long_fromNumber(a.lo - b.lo);
+    }
     var a_lolo = a.lo & 0xFFFF;
     var a_lohi = a.lo >>> 16;
     var a_hilo = a.hi & 0xFFFF;
@@ -711,9 +717,15 @@ function Long_mul(a, b) {
     return positive ? result : Long_neg(result);
 }
 function Long_div(a, b) {
+    if (a.hi === 0 && b.hi === 0) {
+        return Long_fromNumber(Long_toNumber(a) / Long_toNumber(b));
+    }
     return Long_divRem(a, b)[0];
 }
 function Long_rem(a, b) {
+    if (a.hi === 0 && b.hi === 0) {
+        return Long_fromNumber(Long_toNumber(a) % Long_toNumber(b));
+    }
     return Long_divRem(a, b)[1];
 }
 function Long_divRem(a, b) {
