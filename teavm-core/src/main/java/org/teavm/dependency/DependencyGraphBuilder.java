@@ -54,7 +54,11 @@ class DependencyGraphBuilder {
         resultNode = dep.getResult();
 
         DependencyNode[] origNodes = dep.getVariables();
-        int[] nodeMapping = new DataFlowGraphBuilder().buildMapping(program, dep.getParameterCount());
+        DataFlowGraphBuilder dfgBuilder = new DataFlowGraphBuilder();
+        for (int i = 0; i < dep.getParameterCount(); ++i) {
+            dfgBuilder.important(i);
+        }
+        int[] nodeMapping = dfgBuilder.buildMapping(program, dep.getParameterCount());
         nodes = new DependencyNode[origNodes.length];
         for (int i = 0; i < nodes.length; ++i) {
             nodes[i] = origNodes[nodeMapping[i]];
