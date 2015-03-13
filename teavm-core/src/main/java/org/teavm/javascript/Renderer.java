@@ -65,6 +65,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     private boolean wasGrouped;
     private Deque<OperatorPrecedence> precedenceStack = new ArrayDeque<>();
     private Map<String, String> blockIdMap = new HashMap<>();
+    private List<Set<String>> debugNames = new ArrayList<>();
+    private List<String> cachedVariableNames = new ArrayList<>();
 
     private static class OperatorPrecedence {
         Priority priority;
@@ -574,6 +576,9 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     }
 
     public void renderBody(MethodNode method, boolean inner) throws IOException {
+        debugNames.clear();
+        cachedVariableNames.clear();
+        debugNames.addAll(method.getParameterDebugNames());
         blockIdMap.clear();
         MethodReference ref = method.getReference();
         debugEmitter.emitMethod(ref.getDescriptor());
@@ -627,6 +632,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     debugEmitter.emitVariable(method.getParameterDebugNames().get(i).toArray(new String[0]),
                             variableName(i));
                 }
+
                 int variableCount = 0;
                 for (int var : method.getVariables()) {
                     variableCount = Math.max(variableCount, var + 1);
@@ -1128,15 +1134,39 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     }
 
     public String variableName(int index) {
+        while (index >= cachedVariableNames.size()) {
+            cachedVariableNames.add(null);
+        }
+        String name = cachedVariableNames.get(index);
+        if (name == null) {
+            name = generateVariableName(index);
+            cachedVariableNames.set(index, name);
+        }
+        return name;
+    }
+
+    private String generateVariableName(int index) {
         if (index == 0) {
             return minifying ? "$t" : "$this";
         }
-        --index;
-        if (index < variableNames.length()) {
-            return Character.toString(variableNames.charAt(index));
+
+        Set<String> names = index < debugNames.size() ? debugNames.get(index) : null;
+        if (minifying || names == null || names.isEmpty()) {
+            --index;
+            if (index < variableNames.length()) {
+                return Character.toString(variableNames.charAt(index));
+            } else {
+                return Character.toString(variableNames.charAt(index % variableNames.length())) +
+                        index / variableNames.length();
+            }
         } else {
-            return Character.toString(variableNames.charAt(index % variableNames.length())) +
-                    index / variableNames.length();
+            List<String> nameList = new ArrayList<>(names);
+            Collections.sort(nameList);
+            StringBuilder sb = new StringBuilder();
+            for (String name : nameList) {
+                sb.append('_').append(name);
+            }
+            return sb.toString();
         }
     }
 

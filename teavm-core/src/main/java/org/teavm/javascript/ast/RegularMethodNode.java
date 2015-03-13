@@ -45,6 +45,7 @@ public class RegularMethodNode extends MethodNode {
         return variables;
     }
 
+    @Override
     public List<Set<String>> getParameterDebugNames() {
         return parameterDebugNames;
     }

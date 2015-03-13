@@ -16,6 +16,7 @@
 package org.teavm.javascript.ast;
 
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
 import org.teavm.model.MethodReference;
 
@@ -43,4 +44,6 @@ public abstract class MethodNode {
     public abstract void acceptVisitor(MethodNodeVisitor visitor);
 
     public abstract boolean isAsync();
+
+    public abstract List<Set<String>> getParameterDebugNames();
 }
