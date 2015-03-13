@@ -246,7 +246,11 @@ public class Decompiler {
         AsyncMethodPart result = new AsyncMethodPart();
         lastBlockId = 1;
         graph = ProgramUtils.buildControlFlowGraph(program);
-        indexer = new GraphIndexer(graph);
+        int[] weights = new int[graph.size()];
+        for (int i = 0; i < weights.length; ++i) {
+            weights[i] = program.basicBlockAt(i).getInstructions().size();
+        }
+        indexer = new GraphIndexer(graph, weights);
         graph = indexer.getGraph();
         loopGraph = new LoopGraph(this.graph);
         unflatCode();

@@ -18,7 +18,10 @@ package org.teavm.common;
 import com.carrotsearch.hppc.IntOpenHashSet;
 import com.carrotsearch.hppc.IntSet;
 import com.carrotsearch.hppc.cursors.IntCursor;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  *
@@ -30,18 +33,19 @@ public class GraphIndexer {
     static final byte VISITED = 2;
     private int[] indexToNode;
     private int[] nodeToIndex;
-    private byte[] state;
     private Graph graph;
     private DominatorTree domTree;
     private int lastIndex;
+    private int[] weights;
 
-    public GraphIndexer(Graph graph) {
+    public GraphIndexer(Graph graph, int[] weights) {
         int sz = graph.size();
+        this.weights = weights;
+        propagateWeights(graph, weights);
         indexToNode = new int[sz + 1];
         nodeToIndex = new int[sz + 1];
         Arrays.fill(nodeToIndex, -1);
         Arrays.fill(indexToNode, -1);
-        state = new byte[sz];
         this.graph = graph;
         domTree = GraphUtils.buildDominatorTree(graph);
         sort(graph);
@@ -66,8 +70,38 @@ public class GraphIndexer {
         this.graph = sorted.build();
     }
 
+    private void propagateWeights(Graph graph, int[] weights) {
+        int sz = graph.size();
+        byte[] state = new byte[sz];
+        IntegerStack stack = new IntegerStack(sz * 2);
+        stack.push(0);
+        while (!stack.isEmpty()) {
+            int node = stack.pop();
+            switch (state[node]) {
+                case VISITING:
+                    state[node] = VISITED;
+                    for (int succ : graph.outgoingEdges(node)) {
+                        if (state[node] == VISITED) {
+                            weights[node] += weights[succ];
+                        }
+                    }
+                    break;
+                case NONE:
+                    state[node] = VISITING;
+                    stack.push(node);
+                    for (int succ : graph.outgoingEdges(node)) {
+                        if (state[succ] == NONE) {
+                            stack.push(succ);
+                        }
+                    }
+                    break;
+            }
+        }
+    }
+
     private void sort(Graph graph) {
         int sz = graph.size();
+        byte[] state = new byte[sz];
         IntegerStack stack = new IntegerStack(sz * 2);
         stack.push(0);
         while (!stack.isEmpty()) {
@@ -88,25 +122,45 @@ public class GraphIndexer {
                         }
                     }
                     int[] successors = graph.outgoingEdges(node);
+                    List<WeightedNode> succList = new ArrayList<>(successors.length);
+                    IntegerArray orderedSuccessors = new IntegerArray(successors.length);
                     if (terminalNodes.size() > 0) {
                         IntSet loopNodes = IntOpenHashSet.from(findNaturalLoop(node, terminalNodes.getAll()));
-                        IntegerArray orderedSuccessors = new IntegerArray(successors.length);
                         for (int succ : successors) {
                             if (loopNodes.contains(succ)) {
-                                orderedSuccessors.add(succ);
+                                succList.add(new WeightedNode(succ, weights[succ]));
                             }
                         }
+                        Collections.sort(succList);
+                        for (WeightedNode wnode : succList) {
+                            orderedSuccessors.add(wnode.index);
+                        }
+
                         IntSet outerSuccessors = new IntOpenHashSet(successors.length);
+                        succList.clear();
                         for (IntCursor loopNode : loopNodes) {
                             for (int succ : graph.outgoingEdges(loopNode.value)) {
                                 if (!loopNodes.contains(succ)) {
-                                    outerSuccessors.add(succ);
+                                    if (outerSuccessors.add(succ)) {
+                                        succList.add(new WeightedNode(succ, weights[succ]));
+                                    }
                                 }
                             }
                         }
-                        orderedSuccessors.addAll(outerSuccessors.toArray());
-                        successors = orderedSuccessors.getAll();
+                        Collections.sort(succList);
+                        for (WeightedNode wnode : succList) {
+                            orderedSuccessors.add(wnode.index);
+                        }
+                    } else {
+                        for (int succ : successors) {
+                            succList.add(new WeightedNode(succ, weights[succ]));
+                        }
+                        Collections.sort(succList);
+                        for (WeightedNode wnode : succList) {
+                            orderedSuccessors.add(wnode.index);
+                        }
                     }
+                    successors = orderedSuccessors.getAll();
                     for (int succ : successors) {
                         if (state[succ] == NONE) {
                             stack.push(succ);
@@ -151,5 +205,20 @@ public class GraphIndexer {
 
     public Graph getGraph() {
         return graph;
+    }
+
+    static class WeightedNode implements Comparable<WeightedNode> {
+        int index;
+        int weight;
+
+        public WeightedNode(int index, int weight) {
+            this.index = index;
+            this.weight = weight;
+        }
+
+        @Override
+        public int compareTo(WeightedNode o) {
+            return Integer.compare(weight, o.weight);
+        }
     }
 }
