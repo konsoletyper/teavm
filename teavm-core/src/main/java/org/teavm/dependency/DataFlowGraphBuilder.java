@@ -66,11 +66,13 @@ public class DataFlowGraphBuilder implements InstructionReader {
                 startNodes.add(i);
             }
             for (int pred : graph.incomingEdges(i)) {
-                if (importantNodes.contains(classes.find(pred)) && importantNodes.contains(classes.find(i))) {
+                boolean predImportant = importantNodes.contains(classes.find(pred));
+                boolean nodeImportant = importantNodes.contains(classes.find(i));
+                if (predImportant && nodeImportant) {
                     continue;
                 }
                 int newCls = classes.union(pred, i);
-                if (importantNodes.contains(pred)) {
+                if (nodeImportant || predImportant) {
                     importantNodes.add(newCls);
                 }
             }
