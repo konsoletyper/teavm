@@ -48,10 +48,6 @@ class DependencyGraphBuilder {
             return;
         }
         program = method.getProgram();
-        if (DependencyChecker.shouldLog) {
-            System.out.println("Method reached: " + method.getReference());
-            System.out.println(new ListingBuilder().buildListing(program, "    "));
-        }
         resultNode = dep.getResult();
 
         DataFlowGraphBuilder dfgBuilder = new DataFlowGraphBuilder();
@@ -60,6 +56,17 @@ class DependencyGraphBuilder {
         }
         int[] nodeMapping = dfgBuilder.buildMapping(program, dep.getParameterCount(),
                 !(method.getResultType() instanceof ValueType.Primitive) && method.getResultType() != ValueType.VOID);
+
+        if (DependencyChecker.shouldLog) {
+            System.out.println("Method reached: " + method.getReference());
+            System.out.print(new ListingBuilder().buildListing(program, "    "));
+            for (int i = 0; i < nodeMapping.length; ++i) {
+                System.out.print(i + ":" + nodeMapping[i] + " ");
+            }
+            System.out.println();
+            System.out.println();
+        }
+
         int nodeClassCount = 0;
         for (int i = 0; i < nodeMapping.length; ++i) {
             nodeClassCount = Math.max(nodeClassCount, nodeMapping[i] + 1);
@@ -67,6 +74,9 @@ class DependencyGraphBuilder {
         DependencyNode[] nodeClasses = Arrays.copyOf(dep.getVariables(), nodeClassCount);
         for (int i = dep.getVariableCount(); i < nodeClasses.length; ++i) {
             nodeClasses[i] = dependencyChecker.createNode();
+            if (DependencyChecker.shouldLog) {
+                nodeClasses[i].setTag(dep.getMethod().getReference() + ":" + i);
+            }
         }
         nodes = new DependencyNode[dep.getMethod().getProgram().variableCount()];
         for (int i = 0; i < nodes.length; ++i) {
@@ -415,9 +425,9 @@ class DependencyGraphBuilder {
         @Override
         public void getField(VariableReader receiver, VariableReader instance, FieldReference field,
                 ValueType fieldType) {
+            FieldDependency fieldDep = dependencyChecker.linkField(field,
+                    new CallLocation(caller.getMethod(), currentLocation));
             if (!(fieldType instanceof ValueType.Primitive)) {
-                FieldDependency fieldDep = dependencyChecker.linkField(field,
-                        new CallLocation(caller.getMethod(), currentLocation));
                 DependencyNode receiverNode = nodes[receiver.getIndex()];
                 if (receiverNode != null) {
                     fieldDep.getValue().connect(receiverNode);
@@ -429,9 +439,9 @@ class DependencyGraphBuilder {
         @Override
         public void putField(VariableReader instance, FieldReference field, VariableReader value,
                 ValueType fieldType) {
+            FieldDependency fieldDep = dependencyChecker.linkField(field,
+                    new CallLocation(caller.getMethod(), currentLocation));
             if (!(fieldType instanceof ValueType.Primitive)) {
-                FieldDependency fieldDep = dependencyChecker.linkField(field,
-                        new CallLocation(caller.getMethod(), currentLocation));
                 DependencyNode valueNode = nodes[value.getIndex()];
                 if (valueNode != null) {
                     valueNode.connect(fieldDep.getValue());

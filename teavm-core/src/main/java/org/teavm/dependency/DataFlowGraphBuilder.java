@@ -299,11 +299,13 @@ public class DataFlowGraphBuilder implements InstructionReader {
 
     @Override
     public void getElement(VariableReader receiver, VariableReader array, VariableReader index) {
+        important(array.getIndex());
         builder.addEdge(getArrayElementNode(array.getIndex()), receiver.getIndex());
     }
 
     @Override
     public void putElement(VariableReader array, VariableReader index, VariableReader value) {
+        important(array.getIndex());
         builder.addEdge(value.getIndex(), getArrayElementNode(array.getIndex()));
     }
 
