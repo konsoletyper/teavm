@@ -66,7 +66,7 @@ public class DataFlowGraphBuilder implements InstructionReader {
                 startNodes.add(i);
             }
             for (int pred : graph.incomingEdges(i)) {
-                if (importantNodes.contains(pred) && importantNodes.contains(i)) {
+                if (importantNodes.contains(classes.find(pred)) && importantNodes.contains(classes.find(i))) {
                     continue;
                 }
                 int newCls = classes.union(pred, i);
@@ -80,7 +80,7 @@ public class DataFlowGraphBuilder implements InstructionReader {
         for (int[] scc : sccs) {
             int last = -1;
             for (int node : scc) {
-                if (!importantNodes.contains(node)) {
+                if (!importantNodes.contains(classes.find(node))) {
                     continue;
                 }
                 last = last < 0 ? node : classes.union(node, last);

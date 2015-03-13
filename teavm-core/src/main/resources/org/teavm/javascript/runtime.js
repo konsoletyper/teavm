@@ -605,7 +605,7 @@ function Long_toNumber(val) {
     return 0x100000000 * hi + lo;
 }
 function Long_add(a, b) {
-    if (a.hi === a.lo >> 31 && b.hi === b.lo >> 31) {
+    if (a.hi === (a.lo >> 31) && b.hi === (b.lo >> 31)) {
         return Long_fromNumber(a.lo + b.lo);
     }
     var a_lolo = a.lo & 0xFFFF;
@@ -643,7 +643,7 @@ function Long_neg(a) {
     return Long_inc(new Long(a.lo ^ 0xFFFFFFFF, a.hi ^ 0xFFFFFFFF));
 }
 function Long_sub(a, b) {
-    if (a.hi === 0 && a.lo >> 31 && b.hi === b.lo >> 31) {
+    if (a.hi === (a.lo >> 31) && b.hi === (b.lo >> 31)) {
         return Long_fromNumber(a.lo - b.lo);
     }
     var a_lolo = a.lo & 0xFFFF;
