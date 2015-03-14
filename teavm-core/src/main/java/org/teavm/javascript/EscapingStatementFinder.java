@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,78 +16,83 @@
 package org.teavm.javascript;
 
 import java.util.List;
+import java.util.Set;
 import org.teavm.javascript.ast.*;
 
 /**
  *
  * @author Alexey Andreev
  */
-class CertainBlockCountVisitor implements StatementVisitor {
-    private BlockStatement blockToCount;
-    private int count;
+class EscapingStatementFinder implements StatementVisitor{
+    public boolean escaping;
+    private Set<IdentifiedStatement> outerStatements;
 
-    public CertainBlockCountVisitor(BlockStatement blockToCount) {
-        this.blockToCount = blockToCount;
+    public EscapingStatementFinder(Set<IdentifiedStatement> nestingStatements) {
+        this.outerStatements = nestingStatements;
     }
 
-    public int getCount() {
-        return count;
-    }
-
-    public void visit(List<Statement> statements) {
-        if (statements == null) {
-            return;
+    public boolean check(List<Statement> statements) {
+        if (!escaping) {
+            if (statements.isEmpty()) {
+                escaping = true;
+            } else {
+                statements.get(statements.size() - 1).acceptVisitor(this);
+            }
         }
-        for (Statement part : statements) {
-            part.acceptVisitor(this);
-        }
+        return escaping;
     }
 
     @Override
     public void visit(AssignmentStatement statement) {
+        escaping = true;
     }
 
     @Override
     public void visit(SequentialStatement statement) {
-        visit(statement.getSequence());
+        check(statement.getSequence());
     }
 
     @Override
     public void visit(ConditionalStatement statement) {
-        visit(statement.getConsequent());
-        visit(statement.getAlternative());
+        if (!check(statement.getConsequent())) {
+            check(statement.getAlternative());
+        }
     }
 
     @Override
     public void visit(SwitchStatement statement) {
+        outerStatements.add(statement);
         for (SwitchClause clause : statement.getClauses()) {
-            visit(clause.getBody());
+            if (check(clause.getBody())) {
+                break;
+            }
         }
-        visit(statement.getDefaultClause());
+        check(statement.getDefaultClause());
+        outerStatements.remove(statement);
     }
 
     @Override
     public void visit(WhileStatement statement) {
-        visit(statement.getBody());
+        outerStatements.add(statement);
+        check(statement.getBody());
+        outerStatements.remove(statement);
     }
 
     @Override
     public void visit(BlockStatement statement) {
-        visit(statement.getBody());
+        outerStatements.add(statement);
+        check(statement.getBody());
+        outerStatements.remove(statement);
     }
 
     @Override
     public void visit(BreakStatement statement) {
-        if (statement.getTarget() == blockToCount) {
-            ++count;
-        }
+        escaping = !outerStatements.contains(statement.getTarget());
     }
 
     @Override
     public void visit(ContinueStatement statement) {
-        if (statement.getTarget() == blockToCount) {
-            ++count;
-        }
+        escaping = !outerStatements.contains(statement.getTarget());
     }
 
     @Override
@@ -100,12 +105,13 @@ class CertainBlockCountVisitor implements StatementVisitor {
 
     @Override
     public void visit(InitClassStatement statement) {
+        escaping = true;
     }
 
     @Override
     public void visit(TryCatchStatement statement) {
-        visit(statement.getProtectedBody());
-        visit(statement.getHandler());
+        check(statement.getProtectedBody());
+        check(statement.getHandler());
     }
 
     @Override
@@ -114,9 +120,11 @@ class CertainBlockCountVisitor implements StatementVisitor {
 
     @Override
     public void visit(MonitorEnterStatement statement) {
+        escaping = true;
     }
 
     @Override
     public void visit(MonitorExitStatement statement) {
+        escaping = true;
     }
 }
