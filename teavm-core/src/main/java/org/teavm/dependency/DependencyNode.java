@@ -24,6 +24,7 @@ import java.util.*;
 public class DependencyNode implements ValueDependencyInfo {
     private DependencyChecker dependencyChecker;
     private List<DependencyConsumer> followers;
+    private int[] smallTypes;
     private BitSet types;
     private List<DependencyNodeToNodeTransition> transitions;
     private volatile String tag;
@@ -41,6 +42,38 @@ public class DependencyNode implements ValueDependencyInfo {
         this.degree = degree;
     }
 
+    private boolean addType(DependencyType type) {
+        if (types == null) {
+            if (smallTypes == null) {
+                smallTypes = new int[] { type.index };
+                return true;
+            }
+        }
+        if (smallTypes != null) {
+            for (int i = 0; i < smallTypes.length; ++i) {
+                if (smallTypes[i] == type.index) {
+                    return false;
+                }
+            }
+            if (smallTypes.length == 5) {
+                types = new BitSet();
+                for (int existingType : smallTypes) {
+                    types.set(existingType);
+                }
+                smallTypes = null;
+            } else {
+                smallTypes = Arrays.copyOf(smallTypes, smallTypes.length + 1);
+                smallTypes[smallTypes.length - 1] = type.index;
+                return true;
+            }
+        }
+        if (!types.get(type.index)) {
+            types.set(type.index);
+            return true;
+        }
+        return false;
+    }
+
     public void propagate(DependencyType type) {
         if (type.getDependencyChecker() != dependencyChecker) {
             throw new IllegalArgumentException("The given type does not belong to the same dependency checker");
@@ -48,11 +81,7 @@ public class DependencyNode implements ValueDependencyInfo {
         if (degree > 2) {
             return;
         }
-        if (types == null) {
-            types = new BitSet();
-        }
-        if (!types.get(type.index)) {
-            types.set(type.index);
+        if (addType(type)) {
             if (DependencyChecker.shouldLog) {
                 System.out.println(tag + " -> " + type.getName());
             }
@@ -64,30 +93,30 @@ public class DependencyNode implements ValueDependencyInfo {
         }
     }
 
-    public void propagate(DependencyType[] agentTypes) {
-        DependencyType[] types = new DependencyType[agentTypes.length];
+    public void propagate(DependencyType[] newTypes) {
+        DependencyType[] types = new DependencyType[newTypes.length];
         int j = 0;
-        for (int i = 0; i < agentTypes.length; ++i) {
-            DependencyType type = agentTypes[i];
+        for (int i = 0; i < newTypes.length; ++i) {
+            DependencyType type = newTypes[i];
             if (type.getDependencyChecker() != dependencyChecker) {
                 throw new IllegalArgumentException("The given type does not belong to the same dependency checker");
             }
-            if (this.types == null || !this.types.get(type.index)) {
+            if (addType(type)) {
                 types[j++] = type;
             }
         }
-        if (this.types == null) {
-            this.types = new BitSet();
+        if (j == 0) {
+            return;
         }
-        for (int i = 0; i < j; ++i) {
-            this.types.set(types[i].index);
-            if (DependencyChecker.shouldLog) {
+        if (DependencyChecker.shouldLog) {
+            for (int i = 0; i < j; ++i) {
                 System.out.println(tag + " -> " + types[i].getName());
             }
         }
         if (followers != null) {
+            types = Arrays.copyOf(types, j);
             for (DependencyConsumer consumer : followers.toArray(new DependencyConsumer[followers.size()])) {
-                dependencyChecker.schedulePropagation(consumer, Arrays.copyOf(types, j));
+                dependencyChecker.schedulePropagation(consumer, types);
             }
         }
     }
@@ -106,6 +135,12 @@ public class DependencyNode implements ValueDependencyInfo {
                 types.add(dependencyChecker.types.get(index));
             }
             dependencyChecker.schedulePropagation(consumer, types.toArray(new DependencyType[types.size()]));
+        } else if (this.smallTypes != null) {
+            DependencyType[] types = new DependencyType[smallTypes.length];
+            for (int i = 0; i < types.length; ++i) {
+                types[i] = dependencyChecker.types.get(smallTypes[i]);
+            }
+            dependencyChecker.schedulePropagation(consumer, types);
         }
     }
 
@@ -158,10 +193,18 @@ public class DependencyNode implements ValueDependencyInfo {
 
     @Override
     public boolean hasArrayType() {
-        return arrayItemNode != null && arrayItemNode.types != null && !arrayItemNode.types.isEmpty();
+        return arrayItemNode != null && (arrayItemNode.types != null || arrayItemNode.smallTypes != null);
     }
 
     public boolean hasType(DependencyType type) {
+        if (smallTypes != null) {
+            for (int i = 0; i < smallTypes.length; ++i) {
+                if (smallTypes[i] == type.index) {
+                    return true;
+                }
+            }
+            return false;
+        }
         return types != null && type.getDependencyChecker() == dependencyChecker && types.get(type.index);
     }
 
@@ -172,6 +215,13 @@ public class DependencyNode implements ValueDependencyInfo {
 
     @Override
     public String[] getTypes() {
+        if (smallTypes != null) {
+            String[] result = new String[smallTypes.length];
+            for (int i = 0; i < result.length; ++i) {
+                result[i] = dependencyChecker.types.get(smallTypes[i]).getName();
+            }
+            return result;
+        }
         if (types == null) {
             return new String[0];
         }

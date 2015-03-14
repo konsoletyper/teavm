@@ -51,10 +51,15 @@ class DependencyGraphBuilder {
         resultNode = dep.getResult();
 
         DataFlowGraphBuilder dfgBuilder = new DataFlowGraphBuilder();
-        for (int i = 0; i < dep.getParameterCount(); ++i) {
-            dfgBuilder.important(i);
+        boolean[] significantParams = new boolean[dep.getParameterCount()];
+        significantParams[0] = true;
+        for (int i = 1; i < dep.getParameterCount(); ++i) {
+            ValueType arg = method.parameterType(i - 1);
+            if (!(arg instanceof ValueType.Primitive)) {
+                significantParams[i] = true;
+            }
         }
-        int[] nodeMapping = dfgBuilder.buildMapping(program, dep.getParameterCount(),
+        int[] nodeMapping = dfgBuilder.buildMapping(program, significantParams,
                 !(method.getResultType() instanceof ValueType.Primitive) && method.getResultType() != ValueType.VOID);
 
         if (DependencyChecker.shouldLog) {
@@ -93,8 +98,8 @@ class DependencyGraphBuilder {
                 for (IncomingReader incoming : phi.readIncomings()) {
                     DependencyNode incomingNode = nodes[incoming.getValue().getIndex()];
                     DependencyNode receiverNode = nodes[phi.getReceiver().getIndex()];
-                    if (incomingNode != null || receiverNode != null) {
-                        nodes[incoming.getValue().getIndex()].connect(nodes[phi.getReceiver().getIndex()]);
+                    if (incomingNode != null && receiverNode != null) {
+                        incomingNode.connect(receiverNode);
                     }
                 }
             }
@@ -139,7 +144,9 @@ class DependencyGraphBuilder {
             for (int i = 0; i < exceptions.length; ++i) {
                 if (exceptions[i] == null || isAssignableFrom(checker.getClassSource(), exceptions[i],
                         type.getName())) {
-                    vars[i].propagate(type);
+                    if (vars[i] != null) {
+                        vars[i].propagate(type);
+                    }
                     return;
                 }
             }
@@ -193,7 +200,7 @@ class DependencyGraphBuilder {
                 methodDep.use();
                 DependencyNode[] targetParams = methodDep.getVariables();
                 for (int i = 0; i < parameters.length; ++i) {
-                    if (parameters[i] != null) {
+                    if (parameters[i] != null && targetParams[i] != null) {
                         parameters[i].connect(targetParams[i]);
                     }
                 }
@@ -307,18 +314,23 @@ class DependencyGraphBuilder {
                 String targetClsName = ((ValueType.Object)targetType).getClassName();
                 final ClassReader targetClass = dependencyChecker.getClassSource().get(targetClsName);
                 if (targetClass != null) {
-                    valueNode.connect(receiverNode, new DependencyTypeFilter() {
-                        @Override public boolean match(DependencyType type) {
-                            if (targetClass.getName().equals("java.lang.Object")) {
-                                return true;
+                    if (valueNode != null && receiverNode != null) {
+                        valueNode.connect(receiverNode, new DependencyTypeFilter() {
+                            @Override public boolean match(DependencyType type) {
+                                if (targetClass.getName().equals("java.lang.Object")) {
+                                    return true;
+                                }
+                                return isAssignableFrom(dependencyChecker.getClassSource(), targetClass,
+                                        type.getName());
                             }
-                            return isAssignableFrom(dependencyChecker.getClassSource(), targetClass, type.getName());
-                        }
-                    });
+                        });
+                    }
                     return;
                 }
             }
-            valueNode.connect(receiverNode);
+            if (valueNode != null && receiverNode != null) {
+                valueNode.connect(receiverNode);
+            }
         }
 
         @Override
@@ -481,7 +493,7 @@ class DependencyGraphBuilder {
         public void getElement(VariableReader receiver, VariableReader array, VariableReader index) {
             DependencyNode arrayNode = nodes[array.getIndex()];
             DependencyNode receiverNode = nodes[receiver.getIndex()];
-            if (arrayNode != null && receiverNode != null) {
+            if (arrayNode != null && receiverNode != null && receiverNode != arrayNode.getArrayItem()) {
                 arrayNode.getArrayItem().connect(receiverNode);
             }
         }
@@ -490,7 +502,7 @@ class DependencyGraphBuilder {
         public void putElement(VariableReader array, VariableReader index, VariableReader value) {
             DependencyNode valueNode = nodes[value.getIndex()];
             DependencyNode arrayNode = nodes[array.getIndex()];
-            if (valueNode != null && arrayNode != null) {
+            if (valueNode != null && arrayNode != null && valueNode != arrayNode.getArrayItem()) {
                 valueNode.connect(arrayNode.getArrayItem());
             }
         }

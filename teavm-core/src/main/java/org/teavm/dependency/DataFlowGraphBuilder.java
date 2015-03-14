@@ -19,6 +19,7 @@ import com.carrotsearch.hppc.IntOpenHashSet;
 import com.carrotsearch.hppc.IntSet;
 import com.carrotsearch.hppc.ObjectIntMap;
 import com.carrotsearch.hppc.ObjectIntOpenHashMap;
+import com.carrotsearch.hppc.cursors.IntCursor;
 import java.util.Arrays;
 import java.util.List;
 import org.teavm.common.*;
@@ -32,95 +33,62 @@ import org.teavm.model.instructions.*;
 public class DataFlowGraphBuilder implements InstructionReader {
     private int lastIndex;
     private GraphBuilder builder = new GraphBuilder();
-    private IntSet importantNodes = new IntOpenHashSet();
-    private ObjectIntMap<MethodReference> methodNodes = new ObjectIntOpenHashMap<>();
     private ObjectIntMap<FieldReference> fieldNodes = new ObjectIntOpenHashMap<>();
-    private int[] arrayNodes;
     private int returnIndex = -1;
     private int exceptionIndex;
+    private DisjointSet classes = new DisjointSet();
+    private int paramCount;
+    private IntSet escaping = new IntOpenHashSet();
 
-    public void important(int node) {
-        importantNodes.add(node);
+    private void join(int a, int b) {
+        if (a < paramCount || b < paramCount) {
+            return;
+        }
+        classes.union(a, b);
     }
 
-    public int[] buildMapping(ProgramReader program, int paramCount, boolean needsReturn) {
+    public int[] buildMapping(ProgramReader program, boolean[] significantParams, boolean needsReturn) {
         lastIndex = program.variableCount();
-        arrayNodes = new int[lastIndex];
+        this.paramCount = significantParams.length;
         if (needsReturn) {
             returnIndex = lastIndex++;
+            escaping.add(returnIndex);
         }
         exceptionIndex = lastIndex++;
-        Arrays.fill(arrayNodes, -1);
+        for (int i = 0; i < lastIndex; ++i) {
+            classes.create();
+        }
+
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlockReader block = program.basicBlockAt(i);
             for (PhiReader phi : block.readPhis()) {
                 for (IncomingReader incoming : phi.readIncomings()) {
-                    builder.addEdge(incoming.getValue().getIndex(), phi.getReceiver().getIndex());
-                }
-            }
-            for (TryCatchBlockReader tryCatch : block.readTryCatchBlocks()) {
-                if (tryCatch.getExceptionVariable() != null) {
-                    important(tryCatch.getExceptionVariable().getIndex());
+                    int from = incoming.getValue().getIndex();
+                    int to = phi.getReceiver().getIndex();
+                    builder.addEdge(from, to);
+                    join(from, to);
                 }
             }
             block.readAllInstructions(this);
         }
         Graph graph = builder.build();
-
-        DisjointSet classes = new DisjointSet();
-        for (int i = 0; i < lastIndex; ++i) {
-            classes.create();
-        }
-        IntegerArray startNodes = new IntegerArray(graph.size());
-        for (int i = paramCount; i < graph.size(); ++i) {
-            if (graph.incomingEdgesCount(i) == 0) {
-                startNodes.add(i);
-            }
-            for (int pred : graph.incomingEdges(i)) {
-                boolean predImportant = importantNodes.contains(classes.find(pred));
-                boolean nodeImportant = importantNodes.contains(classes.find(i));
-                if (predImportant && nodeImportant) {
-                    continue;
-                }
-                int newCls = classes.union(pred, i);
-                if (nodeImportant || predImportant) {
-                    importantNodes.add(newCls);
-                }
-            }
-            for (int succ : graph.outgoingEdges(i)) {
-                boolean succImportant = importantNodes.contains(classes.find(succ));
-                boolean nodeImportant = importantNodes.contains(classes.find(i));
-                if (succImportant && nodeImportant) {
-                    continue;
-                }
-                int newCls = classes.union(succ, i);
-                if (nodeImportant || succImportant) {
-                    importantNodes.add(newCls);
-                }
+        for (int i = 0; i < paramCount; ++i) {
+            if (significantParams[i]) {
+                escaping.add(i);
             }
         }
-
-        int[][] sccs = GraphUtils.findStronglyConnectedComponents(graph, startNodes.getAll());
-        for (int[] scc : sccs) {
-            int last = -1;
-            for (int node : scc) {
-                if (!importantNodes.contains(classes.find(node))) {
-                    continue;
-                }
-                last = last < 0 ? node : classes.union(node, last);
-            }
-        }
+        propagateEscaping(graph);
 
         int[] classMap = new int[classes.size()];
         Arrays.fill(classMap, -1);
         int[] result = new int[program.variableCount()];
         int classCount = 0;
         for (int i = 0; i < program.variableCount(); ++i) {
-            int cls = classes.find(i);
-            if (!importantNodes.contains(cls)) {
+            if (!escaping.contains(i) && i >= significantParams.length) {
                 result[i] = -1;
                 continue;
             }
+            int cls = classes.find(i);
             int packedCls = classMap[cls];
             if (packedCls < 0) {
                 packedCls = classCount++;
@@ -129,6 +97,32 @@ public class DataFlowGraphBuilder implements InstructionReader {
             result[i] = packedCls;
         }
         return result;
+    }
+
+    private void propagateEscaping(Graph graph) {
+        IntegerStack stack = new IntegerStack(graph.size());
+        for (IntCursor node : escaping) {
+            stack.push(node.value);
+        }
+        escaping.clear();
+        while (!stack.isEmpty()) {
+            int node = stack.pop();
+            if (!escaping.add(node)) {
+                continue;
+            }
+            if (node < graph.size()) {
+                for (int pred : graph.incomingEdges(node)) {
+                    if (!escaping.contains(pred)) {
+                        stack.push(pred);
+                    }
+                }
+                for (int succ : graph.outgoingEdges(node)) {
+                    if (!escaping.contains(succ)) {
+                        stack.push(succ);
+                    }
+                }
+            }
+        }
     }
 
     @Override
@@ -176,15 +170,19 @@ public class DataFlowGraphBuilder implements InstructionReader {
     public void negate(VariableReader receiver, VariableReader operand, NumericOperandType type) {
     }
 
+    private void connect(int a, int b) {
+        builder.addEdge(a, b);
+        join(a, b);
+    }
+
     @Override
     public void assign(VariableReader receiver, VariableReader assignee) {
-        builder.addEdge(assignee.getIndex(), receiver.getIndex());
+        connect(assignee.getIndex(), receiver.getIndex());
     }
 
     @Override
     public void cast(VariableReader receiver, VariableReader value, ValueType targetType) {
         builder.addEdge(value.getIndex(), receiver.getIndex());
-        important(receiver.getIndex());
     }
 
     @Override
@@ -219,15 +217,14 @@ public class DataFlowGraphBuilder implements InstructionReader {
     @Override
     public void exit(VariableReader valueToReturn) {
         if (valueToReturn != null && returnIndex >= 0) {
-            important(returnIndex);
-            builder.addEdge(valueToReturn.getIndex(), returnIndex);
+            connect(valueToReturn.getIndex(), returnIndex);
         }
     }
 
     @Override
     public void raise(VariableReader exception) {
         builder.addEdge(exception.getIndex(), exceptionIndex);
-        important(exceptionIndex);
+        escaping.add(exceptionIndex);
     }
 
     @Override
@@ -245,10 +242,10 @@ public class DataFlowGraphBuilder implements InstructionReader {
     private int getFieldNode(FieldReference field) {
         int fieldNode = fieldNodes.getOrDefault(field, -1);
         if (fieldNode < 0) {
-            fieldNode = lastIndex++;
+            fieldNode = classes.create();
             fieldNodes.put(field, fieldNode);
         }
-        important(fieldNode);
+        escaping.add(fieldNode);
         return fieldNode;
     }
 
@@ -257,8 +254,7 @@ public class DataFlowGraphBuilder implements InstructionReader {
         if (fieldType instanceof ValueType.Primitive) {
             return;
         }
-        int fieldNode = getFieldNode(field);
-        builder.addEdge(fieldNode, receiver.getIndex());
+        connect(getFieldNode(field), receiver.getIndex());
     }
 
     @Override
@@ -266,8 +262,7 @@ public class DataFlowGraphBuilder implements InstructionReader {
         if (fieldType instanceof ValueType.Primitive) {
             return;
         }
-        int fieldNode = getFieldNode(field);
-        builder.addEdge(value.getIndex(), fieldNode);
+        connect(value.getIndex(), getFieldNode(field));
     }
 
     @Override
@@ -276,65 +271,40 @@ public class DataFlowGraphBuilder implements InstructionReader {
 
     @Override
     public void cloneArray(VariableReader receiver, VariableReader array) {
-        important(receiver.getIndex());
         builder.addEdge(array.getIndex(), receiver.getIndex());
     }
 
     @Override
     public void unwrapArray(VariableReader receiver, VariableReader array, ArrayElementType elementType) {
         if (elementType == ArrayElementType.OBJECT) {
-            builder.addEdge(array.getIndex(), receiver.getIndex());
+            connect(array.getIndex(), receiver.getIndex());
         }
-    }
-
-    private int getArrayElementNode(int array) {
-        int node = arrayNodes[array];
-        if (node < 0) {
-            node = lastIndex++;
-            arrayNodes[array] = node;
-        }
-        important(node);
-        return node;
     }
 
     @Override
     public void getElement(VariableReader receiver, VariableReader array, VariableReader index) {
-        important(array.getIndex());
-        builder.addEdge(getArrayElementNode(array.getIndex()), receiver.getIndex());
+        builder.addEdge(array.getIndex(), receiver.getIndex());
     }
 
     @Override
     public void putElement(VariableReader array, VariableReader index, VariableReader value) {
-        important(array.getIndex());
-        builder.addEdge(value.getIndex(), getArrayElementNode(array.getIndex()));
-    }
-
-    private int getMethodNode(MethodReference method) {
-        int methodNode = methodNodes.getOrDefault(method, -1);
-        if (methodNode < 0) {
-            methodNode = lastIndex++;
-            methodNodes.put(method, methodNode);
-        }
-        important(methodNode);
-        return methodNode;
+        builder.addEdge(value.getIndex(), array.getIndex());
     }
 
     @Override
     public void invoke(VariableReader receiver, VariableReader instance, MethodReference method,
             List<? extends VariableReader> arguments, InvocationType type) {
-        if (receiver != null) {
-            if (!(method.getReturnType() instanceof ValueType.Primitive)) {
-                builder.addEdge(getMethodNode(method), receiver.getIndex());
-            }
-        }
         ValueType[] paramTypes = method.getParameterTypes();
         for (int i = 0; i < paramTypes.length; ++i) {
             if (!(paramTypes[i] instanceof ValueType.Primitive)) {
-                important(arguments.get(i).getIndex());
+                escaping.add(arguments.get(i).getIndex());
             }
         }
         if (instance != null) {
-            important(instance.getIndex());
+            escaping.add(instance.getIndex());
+        }
+        if (receiver != null && !(method.getReturnType() instanceof ValueType.Primitive)) {
+            escaping.add(receiver.getIndex());
         }
     }
 
@@ -348,16 +318,16 @@ public class DataFlowGraphBuilder implements InstructionReader {
 
     @Override
     public void nullCheck(VariableReader receiver, VariableReader value) {
-        builder.addEdge(value.getIndex(), receiver.getIndex());
+        connect(value.getIndex(), receiver.getIndex());
     }
 
     @Override
     public void monitorEnter(VariableReader objectRef) {
-        important(objectRef.getIndex());
+        escaping.add(objectRef.getIndex());
     }
 
     @Override
     public void monitorExit(VariableReader objectRef) {
-        important(objectRef.getIndex());
+        escaping.add(exceptionIndex);
     }
 }

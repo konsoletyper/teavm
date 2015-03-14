@@ -504,7 +504,6 @@ public class DependencyChecker implements DependencyInfo {
                 index = 0;
             }
         }
-        return;
     }
 
     public <T> T getService(Class<T> type) {
