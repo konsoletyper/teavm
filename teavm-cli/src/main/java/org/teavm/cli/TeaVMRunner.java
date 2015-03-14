@@ -16,6 +16,9 @@
 package org.teavm.cli;
 
 import java.io.*;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import org.apache.commons.cli.*;
 import org.teavm.tooling.RuntimeCopyOperation;
 import org.teavm.tooling.TeaVMTool;
@@ -32,6 +35,7 @@ public final class TeaVMRunner {
     private static long startTime;
     private static long phaseStartTime;
     private static TeaVMPhase currentPhase;
+    private static String[] classPath;
 
     private TeaVMRunner() {
     }
@@ -90,6 +94,12 @@ public final class TeaVMRunner {
                 .withDescription("Wait for command after compilation, in order to enable hot recompilation")
                 .withLongOpt("--wait")
                 .create('w'));
+        options.addOption(OptionBuilder
+                .withArgName("classpath")
+                .hasArgs()
+                .withDescription("Additional classpath that will be reloaded by TeaVM each time in wait mode")
+                .withLongOpt("--classpath")
+                .create('p'));
 
         if (args.length == 0) {
             printUsage(options);
@@ -151,6 +161,9 @@ public final class TeaVMRunner {
         } else {
             tool.setCacheDirectory(new File(tool.getTargetDirectory(), "teavm-cache"));
         }
+        if (commandLine.hasOption('p')) {
+            classPath = commandLine.getOptionValues('p');
+        }
         boolean interactive = commandLine.hasOption('w');
         args = commandLine.getArgs();
         if (args.length > 1) {
@@ -209,12 +222,31 @@ public final class TeaVMRunner {
     }
 
     private static void build(TeaVMTool tool) throws TeaVMToolException {
+        resetClassLoader(tool);
         currentPhase = null;
         startTime = System.currentTimeMillis();
         phaseStartTime = System.currentTimeMillis();
         tool.generate();
         reportPhaseComplete();
         System.out.println("Build complete for " + ((System.currentTimeMillis() - startTime) / 1000.0) + " seconds");
+    }
+
+    private static void resetClassLoader(TeaVMTool tool) {
+        if (classPath.length == 0) {
+            return;
+        }
+        URL[] urls = new URL[classPath.length];
+        for (int i = 0; i < classPath.length; ++i) {
+            try {
+                urls[i] = new File(classPath[i]).toURI().toURL();
+            } catch (MalformedURLException e) {
+                System.err.println("Illegal classpath entry: " + classPath[i]);
+                System.exit(-1);
+                return;
+            }
+        }
+
+        tool.setClassLoader(new URLClassLoader(urls, TeaVMRunner.class.getClassLoader()));
     }
 
     private static TeaVMProgressListener progressListener = new TeaVMProgressListener() {
