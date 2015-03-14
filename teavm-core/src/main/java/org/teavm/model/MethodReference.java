@@ -91,6 +91,13 @@ public class MethodReference {
         return signature.length - 1;
     }
 
+    public ValueType parameterType(int index) {
+        if (index >= signature.length + 1) {
+            throw new IndexOutOfBoundsException("Index " + index + " is greater than size " + (signature.length - 1));
+        }
+        return signature[index];
+    }
+
     public ValueType[] getParameterTypes() {
         return Arrays.copyOf(signature, signature.length - 1);
     }

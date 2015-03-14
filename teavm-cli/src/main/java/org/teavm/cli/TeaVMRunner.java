@@ -232,7 +232,7 @@ public final class TeaVMRunner {
     }
 
     private static void resetClassLoader(TeaVMTool tool) {
-        if (classPath.length == 0) {
+        if (classPath == null || classPath.length == 0) {
             return;
         }
         URL[] urls = new URL[classPath.length];
