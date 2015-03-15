@@ -370,13 +370,10 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
             return;
         }
         Statement last = statements.get(statements.size() - 1);
-        if (last instanceof BreakStatement) {
-            BreakStatement breakStmt = (BreakStatement)last;
-            if (exit != null) {
-                IdentifiedStatement target = breakStmt.getTarget();
-                if (exit == target) {
-                    statements.remove(statements.size() - 1);
-                }
+        if (last instanceof BreakStatement && exit != null) {
+            IdentifiedStatement target = ((BreakStatement)last).getTarget();
+            if (exit == target) {
+                statements.remove(statements.size() - 1);
             }
         }
         if (statements.isEmpty()) {
@@ -452,6 +449,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
             }
         }
     }
+
 
     private void normalizeConditional(ConditionalStatement stmt) {
         if (stmt.getConsequent().isEmpty()) {
@@ -566,7 +564,6 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     public void visit(BlockStatement statement) {
         List<Statement> statements = processSequence(statement.getBody());
         eliminateRedundantBreaks(statements, statement);
-        statements = processSequence(statements);
         BlockCountVisitor usageCounter = new BlockCountVisitor(statement);
         usageCounter.visit(statements);
         if (usageCounter.getCount() == 0) {

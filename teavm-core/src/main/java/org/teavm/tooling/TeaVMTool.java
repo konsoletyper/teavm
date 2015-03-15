@@ -292,7 +292,7 @@ public class TeaVMTool {
             }
             targetDirectory.mkdirs();
             try (Writer writer = new OutputStreamWriter(new BufferedOutputStream(
-                    new FileOutputStream(new File(targetDirectory, targetFileName))), "UTF-8")) {
+                    new FileOutputStream(new File(targetDirectory, targetFileName)), 65536), "UTF-8")) {
                 if (runtime == RuntimeCopyOperation.MERGED) {
                     vm.add(runtimeInjector);
                 }

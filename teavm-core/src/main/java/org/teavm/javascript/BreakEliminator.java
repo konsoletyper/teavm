@@ -28,6 +28,13 @@ class BreakEliminator implements StatementVisitor {
     private List<Statement> currentSequence;
     private boolean sequenceEscapes;
     private int currentIndex;
+    private AllBlocksCountVisitor usageCounter;
+
+    public void eliminate(Statement statement) {
+        usageCounter = new AllBlocksCountVisitor();
+        statement.acceptVisitor(usageCounter);
+        statement.acceptVisitor(this);
+    }
 
     private void processSequence(List<Statement> statements) {
         List<Statement> oldSequence = currentSequence;
@@ -97,10 +104,7 @@ class BreakEliminator implements StatementVisitor {
     @Override
     public void visit(BreakStatement statement) {
         if (blockSuccessors.containsKey(statement.getTarget())) {
-            BlockCountVisitor usageCounter = new BlockCountVisitor(
-                    (BlockStatement)statement.getTarget());
-            statement.getTarget().acceptVisitor(usageCounter);
-            if (usageCounter.getCount() == 1) {
+            if (usageCounter.getCount(statement.getTarget()) == 1) {
                 currentSequence.subList(currentIndex, currentSequence.size()).clear();
                 List<Statement> successors = blockSuccessors.remove(statement.getTarget());
                 currentSequence.addAll(successors);
