@@ -18,6 +18,7 @@ package org.teavm.jso;
 /**
  *
  * @author Alexey Andreev
+ * @param <T>
  */
 public interface JSArrayReader<T extends JSObject> extends JSObject {
     @JSProperty

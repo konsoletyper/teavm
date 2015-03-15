@@ -18,6 +18,8 @@ package org.teavm.classlib.java.util;
 /**
  *
  * @author Alexey Andreev
+ * @param <K>
+ * @param <V>
  */
 public interface TMap<K, V> {
     public static interface Entry<K1, V1> {

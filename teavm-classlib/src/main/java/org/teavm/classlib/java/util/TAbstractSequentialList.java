@@ -20,6 +20,7 @@ import org.teavm.classlib.java.lang.TIndexOutOfBoundsException;
 /**
  *
  * @author Alexey Andreev
+ * @param <E>
  */
 public abstract class TAbstractSequentialList<E> extends TAbstractList<E> {
     @Override

@@ -35,9 +35,6 @@ abstract class TQuantifierSet extends TAbstractSet {
         setType(type);
     }
 
-    /**
-     * Returns the innerSet.
-     */
     public TAbstractSet getInnerSet() {
         return innerSet;
     }

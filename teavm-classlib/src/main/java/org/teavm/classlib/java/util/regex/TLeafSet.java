@@ -38,10 +38,6 @@ abstract class TLeafSet extends TAbstractSet {
     public TLeafSet() {
     }
 
-    /**
-     * Returns "shift", the number of accepted chars commonly internal function,
-     * but called by quantifiers.
-     */
     public abstract int accepts(int stringIndex, CharSequence testString);
 
     /**

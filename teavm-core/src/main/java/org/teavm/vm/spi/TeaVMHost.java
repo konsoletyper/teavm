@@ -46,6 +46,7 @@ public interface TeaVMHost {
     /**
      * Gets class loaded that is used by TeaVM. This class loader is usually specified by
      * {@link TeaVMBuilder#setClassLoader(ClassLoader)}
+     * @return class loader that can be used by plugins.
      */
     ClassLoader getClassLoader();
 

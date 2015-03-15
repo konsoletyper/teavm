@@ -18,6 +18,8 @@ package org.teavm.classlib.java.util;
 /**
  *
  * @author Alexey Andreev
+ * @param <K>
+ * @param <V>
  */
 public interface TNavigableMap<K, V> extends TSortedMap<K, V> {
     Entry<K, V> lowerEntry(K key);

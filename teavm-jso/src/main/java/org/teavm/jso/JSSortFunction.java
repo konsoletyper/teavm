@@ -18,6 +18,7 @@ package org.teavm.jso;
 /**
  *
  * @author Alexey Andreev
+ * @param <T>
  */
 @JSFunctor
 public interface JSSortFunction<T extends JSObject> {

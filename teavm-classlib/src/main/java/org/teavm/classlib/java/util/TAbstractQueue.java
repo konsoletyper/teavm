@@ -20,6 +20,7 @@ import org.teavm.classlib.java.lang.TIllegalStateException;
 /**
  *
  * @author Alexey Andreev
+ * @param <E>
  */
 public abstract class TAbstractQueue<E> extends TAbstractCollection<E> implements TQueue<E> {
     @Override

@@ -68,12 +68,6 @@ abstract class TAbstractCharClass extends TSpecialToken {
      */
     protected boolean mayContainSupplCodepoints = false;
 
-    /**
-     * Returns true if this char class contains character specified;
-     *
-     * @param ch
-     *            character to check;
-     */
     abstract public boolean contains(int ch);
 
     /**

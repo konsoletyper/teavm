@@ -20,6 +20,7 @@ import org.teavm.classlib.java.lang.TObject;
 /**
  *
  * @author Alexey Andreev
+ * @param <T> type of an object to which this reference points.
  */
 public abstract class TReference<T> extends TObject {
     public T get() {

@@ -18,6 +18,8 @@ package org.teavm.common;
 /**
  *
  * @author Alexey Andreev
+ * @param <T> which type this mapper takes.
+ * @param <R> which type this mapper produces.
  */
 public interface Mapper<T, R> {
     R map(T preimage);

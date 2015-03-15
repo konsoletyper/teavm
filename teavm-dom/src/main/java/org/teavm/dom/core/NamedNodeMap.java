@@ -22,6 +22,7 @@ import org.teavm.jso.JSProperty;
 /**
  *
  * @author Alexey Andreev
+ * @param <T> type of nodes in this map.
  */
 public interface NamedNodeMap<T extends Node> extends JSObject, JSArrayReader<T> {
     T getNamedItem(String name);

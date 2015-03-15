@@ -18,6 +18,8 @@ package org.teavm.classlib.java.util;
 /**
  *
  * @author Alexey Andreev
+ * @param <K>
+ * @param <V>
  */
 public interface TSortedMap<K, V> extends TMap<K, V> {
     TComparator<? super K> comparator();

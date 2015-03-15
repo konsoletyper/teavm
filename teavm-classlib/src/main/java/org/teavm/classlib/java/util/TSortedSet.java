@@ -18,6 +18,7 @@ package org.teavm.classlib.java.util;
 /**
  *
  * @author Alexey Andreev
+ * @param <E>
  */
 public interface TSortedSet<E> extends TSet<E> {
     TComparator<? super E> comparator();

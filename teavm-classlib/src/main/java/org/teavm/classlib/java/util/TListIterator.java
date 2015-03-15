@@ -18,6 +18,7 @@ package org.teavm.classlib.java.util;
 /**
  *
  * @author Alexey Andreev
+ * @param <E>
  */
 public interface TListIterator<E> extends TIterator<E> {
     boolean hasPrevious();

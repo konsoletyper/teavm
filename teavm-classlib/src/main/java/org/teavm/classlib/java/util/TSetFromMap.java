@@ -20,6 +20,7 @@ import org.teavm.classlib.java.lang.TBoolean;
 /**
  *
  * @author Alexey Andreev
+ * @param <E>
  */
 public class TSetFromMap<E> extends TAbstractSet<E> {
     private TMap<E, TBoolean> map;

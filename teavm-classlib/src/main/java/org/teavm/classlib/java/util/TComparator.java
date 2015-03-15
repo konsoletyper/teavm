@@ -18,6 +18,7 @@ package org.teavm.classlib.java.util;
 /**
  *
  * @author Alexey Andreev
+ * @param <T>
  */
 public interface TComparator<T> {
     int compare(T o1, T o2);

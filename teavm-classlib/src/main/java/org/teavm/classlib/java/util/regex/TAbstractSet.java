@@ -143,14 +143,6 @@ abstract class TAbstractSet {
         return -1;
     }
 
-    /**
-     * Returns true, if this node has consumed any characters during positive
-     * match attempt, for example node representing character always consumes
-     * one character if it matches. If particular node matches empty sting this
-     * method will return false;
-     *
-     * @param matchResult
-     */
     public abstract boolean hasConsumed(TMatchResultImpl matchResult);
 
     /**
@@ -175,9 +167,6 @@ abstract class TAbstractSet {
         return getQualifiedName();
     }
 
-    /**
-     * Returns the next.
-     */
     public TAbstractSet getNext() {
         return next;
     }

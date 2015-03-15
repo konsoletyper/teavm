@@ -20,6 +20,9 @@ import java.util.*;
 /**
  *
  * @author Alexey Andreev
+ *
+ * @param <T> which type this mapper takes.
+ * @param <R> which type this mapper produces.
  */
 public class CachedMapper<T, R> implements Mapper<T, R> {
     private Mapper<T, R> innerMapper;

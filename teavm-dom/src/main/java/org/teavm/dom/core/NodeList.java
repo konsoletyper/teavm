@@ -21,6 +21,7 @@ import org.teavm.jso.JSProperty;
 /**
  *
  * @author Alexey Andreev
+ * @param <T> type of nodes in this list.
  */
 public interface NodeList<T extends Node> extends JSArrayReader<T> {
     T item(int index);

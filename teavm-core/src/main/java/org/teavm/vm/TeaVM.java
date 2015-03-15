@@ -140,6 +140,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
      * Reports whether this TeaVM instance uses obfuscation when generating the JavaScript code.
      *
      * @see #setMinifying(boolean)
+     * @return whether TeaVM produces obfuscated code.
      */
     public boolean isMinifying() {
         return minifying;
@@ -149,6 +150,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
      * Specifies whether this TeaVM instance uses obfuscation when generating the JavaScript code.
      *
      * @see #isMinifying()
+     * @param minifying whether TeaVM should obfuscate code.
      */
     public void setMinifying(boolean minifying) {
         this.minifying = minifying;
@@ -287,6 +289,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     /**
      * Gets a {@link ClassReaderSource} which is used by this TeaVM instance. It is exactly what was
      * passed to {@link TeaVMBuilder#setClassSource(ClassHolderSource)}.
+     *
+     * @return class source.
      */
     public ClassReaderSource getClassSource() {
         return classSource;
@@ -322,6 +326,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
      * @param writer where to generate JavaScript. Should not be null.
      * @param target where to generate additional resources. Can be null, but if there are
      * plugins or inteceptors that generate additional resources, the build process will fail.
+     *
+     * @throws RenderingException when something went wrong during rendering phase.
      */
     public void build(Appendable writer, BuildTarget target) throws RenderingException {
         // Check dependencies

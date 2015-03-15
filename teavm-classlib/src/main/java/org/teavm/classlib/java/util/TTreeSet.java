@@ -3,6 +3,7 @@ package org.teavm.classlib.java.util;
 /**
  *
  * @author Alexey Andreev
+ * @param <E>
  */
 public class TTreeSet<E> extends TAbstractSet<E> implements TNavigableSet<E> {
     private static final Object VALUE = new Object();

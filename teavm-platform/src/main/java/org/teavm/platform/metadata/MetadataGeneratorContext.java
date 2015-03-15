@@ -31,44 +31,62 @@ import org.teavm.vm.TeaVM;
 public interface MetadataGeneratorContext extends ServiceRepository {
     /**
      * Gets the collection of all classes that were achieved by the dependency checker.
+     *
+     * @return class source.
      */
     ListableClassReaderSource getClassSource();
 
     /**
      * Gets the class loader that is used by the compiler.
+     * @return class loader.
      */
     ClassLoader getClassLoader();
 
     /**
      * Gets properties that were specified to {@link TeaVM}.
+     *
+     * @return properties.
      */
     Properties getProperties();
 
     /**
      * Creates a new resource of the given type. The description of valid resources
      * is available in documentation for {@link Resource}.
+     *
+     * @param resourceType type of resource to create.
+     * @return a new resource
      */
     <T extends Resource> T createResource(Class<T> resourceType);
 
     /**
      * Creates a new resource that represents class literal. Client code then may use
      * {@link Platform#classFromResource(ClassResource)} to get actual class.
+     *
+     * @param className class to which resource is to point.
+     * @return a new resource.
      */
     ClassResource createClassResource(String className);
 
     /**
      * Creates a new resource that represents static field. Client code then may use
      * {@link Platform#objectFromResource(StaticFieldResource)} to get actual field value.
+     *
+     * @param field field for which to create resource.
+     * @return a new resource.
      */
     StaticFieldResource createFieldResource(FieldReference field);
 
     /**
      * Creates a new resource array.
+     *
+     * @return a new resource.
      */
     <T extends Resource> ResourceArray<T> createResourceArray();
 
     /**
      * Creates a new resource map.
+     *
+     * @return a new resource.
      */
     <T extends Resource> ResourceMap<T> createResourceMap();
 }

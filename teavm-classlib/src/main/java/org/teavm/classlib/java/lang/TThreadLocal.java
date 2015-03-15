@@ -18,6 +18,7 @@ package org.teavm.classlib.java.lang;
 /**
  *
  * @author Alexey Andreev
+ * @param <T> type of a value stored by thread local.
  */
 public class TThreadLocal<T> extends TObject {
     private boolean initialized;

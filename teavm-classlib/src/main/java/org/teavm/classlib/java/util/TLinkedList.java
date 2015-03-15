@@ -19,6 +19,7 @@ package org.teavm.classlib.java.util;
 /**
  *
  * @author Alexey Andreev
+ * @param <E>
  */
 public class TLinkedList<E> extends TAbstractSequentialList<E> implements TDeque<E> {
     static class Entry<E> {

@@ -21,6 +21,7 @@ import org.teavm.classlib.java.lang.TObject;
 /**
  *
  * @author Alexey Andreev
+ * @param <V>
  */
 public interface TCallable<V extends TObject> {
     V call() throws TException;

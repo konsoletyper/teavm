@@ -23,6 +23,8 @@ import org.teavm.classlib.java.lang.TUnsupportedOperationException;
 /**
  *
  * @author Alexey Andreev
+ * @param <K>
+ * @param <V>
  */
 public abstract class TAbstractMap<K, V> extends TObject implements TMap<K, V> {
     public static class SimpleEntry<K, V> implements TMap.Entry<K, V>, TSerializable {

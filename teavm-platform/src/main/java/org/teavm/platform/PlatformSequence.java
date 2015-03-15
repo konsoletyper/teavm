@@ -22,6 +22,7 @@ import org.teavm.jso.JSProperty;
 /**
  *
  * @author Alexey Andreev
+ * @param <T>
  */
 public interface PlatformSequence<T extends JSObject> extends JSObject {
     @JSProperty

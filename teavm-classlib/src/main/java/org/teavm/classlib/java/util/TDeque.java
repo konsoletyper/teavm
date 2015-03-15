@@ -18,6 +18,7 @@ package org.teavm.classlib.java.util;
 /**
  *
  * @author Alexey Andreev
+ * @param <E>
  */
 public interface TDeque<E> extends TQueue<E> {
     void addFirst(E e);

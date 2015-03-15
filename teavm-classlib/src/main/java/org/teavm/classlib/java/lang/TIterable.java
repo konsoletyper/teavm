@@ -20,6 +20,7 @@ import org.teavm.classlib.java.util.TIterator;
 /**
  *
  * @author Alexey Andreev
+ * @param <T> type this collection returns.
  */
 public interface TIterable<T> {
     TIterator<T> iterator();

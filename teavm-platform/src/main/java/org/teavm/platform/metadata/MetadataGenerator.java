@@ -60,6 +60,7 @@ public interface MetadataGenerator {
      *
      * @param context context that contains useful compile-time information.
      * @param method method which will be used to access the generated resources at run time.
+     * @return resource to be attached to method at run time.
      */
     Resource generateMetadata(MetadataGeneratorContext context, MethodReference method);
 }

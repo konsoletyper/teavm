@@ -23,23 +23,31 @@ import org.teavm.model.MethodReference;
  * @author Alexey Andreev
  */
 public interface CallGraphNode {
-    /*
+    /**
      * Returns reference to entire call graph.
+     *
+     * @return graph
      */
     CallGraph getGraph();
 
     /**
      * Returns the method that this node represents.
+     *
+     * @return method
      */
     MethodReference getMethod();
 
     /**
      * Returns immutable collection of all call sites that are in the method.
+     *
+     * @return call site
      */
     Collection<? extends CallSite> getCallSites();
 
     /**
      * Returns immutable collection of all call sites that call this method.
+     *
+     * @return call sites
      */
     Collection<? extends CallSite> getCallerCallSites();
 
