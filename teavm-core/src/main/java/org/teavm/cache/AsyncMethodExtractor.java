@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,17 +13,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript;
-
-import org.teavm.javascript.ast.RegularMethodNode;
-import org.teavm.model.MethodReference;
+package org.teavm.cache;
 
 /**
- *
+ * 
  * @author Alexey Andreev
  */
-public interface RegularMethodNodeCache {
-    RegularMethodNode get(MethodReference methodReference);
+public class AsyncMethodExtractor {
 
-    void store(MethodReference methodReference, RegularMethodNode node);
 }

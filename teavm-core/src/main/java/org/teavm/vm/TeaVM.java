@@ -84,7 +84,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     private Properties properties = new Properties();
     private DebugInformationEmitter debugEmitter;
     private ProgramCache programCache;
-    private RegularMethodNodeCache astCache = new EmptyRegularMethodNodeCache();
+    private MethodNodeCache astCache = new EmptyRegularMethodNodeCache();
     private boolean incremental;
     private TeaVMProgressListener progressListener;
     private boolean cancelled;
@@ -181,11 +181,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         return new Properties(properties);
     }
 
-    public RegularMethodNodeCache getAstCache() {
+    public MethodNodeCache getAstCache() {
         return astCache;
     }
 
-    public void setAstCache(RegularMethodNodeCache methodAstCache) {
+    public void setAstCache(MethodNodeCache methodAstCache) {
         this.astCache = methodAstCache;
     }
 

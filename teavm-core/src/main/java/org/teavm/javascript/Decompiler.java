@@ -44,7 +44,7 @@ public class Decompiler {
     private RangeTree.Node parentNode;
     private Map<MethodReference, Generator> generators = new HashMap<>();
     private Set<MethodReference> methodsToPass = new HashSet<>();
-    private RegularMethodNodeCache regularMethodCache;
+    private MethodNodeCache regularMethodCache;
     private Set<MethodReference> asyncMethods;
     private Set<MethodReference> splitMethods = new HashSet<>();
 
@@ -57,11 +57,11 @@ public class Decompiler {
         splitMethods.addAll(asyncFamilyMethods);
     }
 
-    public RegularMethodNodeCache getRegularMethodCache() {
+    public MethodNodeCache getRegularMethodCache() {
         return regularMethodCache;
     }
 
-    public void setRegularMethodCache(RegularMethodNodeCache regularMethodCache) {
+    public void setRegularMethodCache(MethodNodeCache regularMethodCache) {
         this.regularMethodCache = regularMethodCache;
     }
 
@@ -198,7 +198,58 @@ public class Decompiler {
         return node;
     }
 
+    public RegularMethodNode decompileRegularCacheMiss(MethodHolder method) {
+        RegularMethodNode methodNode = new RegularMethodNode(method.getReference());
+        Program program = method.getProgram();
+        int[] targetBlocks = new int[program.basicBlockCount()];
+        Arrays.fill(targetBlocks, -1);
+        methodNode.setBody(getRegularMethodStatement(program, targetBlocks, false).getStatement());
+        for (int i = 0; i < program.variableCount(); ++i) {
+            methodNode.getVariables().add(program.variableAt(i).getRegister());
+        }
+        Optimizer optimizer = new Optimizer();
+        optimizer.optimize(methodNode, method.getProgram());
+        methodNode.getModifiers().addAll(mapModifiers(method.getModifiers()));
+        int paramCount = Math.min(method.getSignature().length, program.variableCount());
+        for (int i = 0; i < paramCount; ++i) {
+            Variable var = program.variableAt(i);
+            methodNode.getParameterDebugNames().add(new HashSet<>(var.getDebugNames()));
+        }
+        return methodNode;
+    }
+
     public AsyncMethodNode decompileAsync(MethodHolder method) {
+        if (regularMethodCache == null) {
+            return decompileAsyncCacheMiss(method);
+        }
+        AsyncMethodNode node = regularMethodCache.getAsync(method.getReference());
+        if (node == null || !checkAsyncRelevant(node)) {
+            node = decompileAsyncCacheMiss(method);
+            regularMethodCache.storeAsync(method.getReference(), node);
+        }
+        return node;
+    }
+
+    private boolean checkAsyncRelevant(AsyncMethodNode node) {
+        AsyncCallsFinder asyncCallsFinder = new AsyncCallsFinder();
+        for (AsyncMethodPart part : node.getBody()) {
+            part.getStatement().acceptVisitor(asyncCallsFinder);
+        }
+        for (MethodReference asyncCall : asyncCallsFinder.asyncCalls) {
+            if (!splitMethods.contains(asyncCall)) {
+                return false;
+            }
+        }
+        asyncCallsFinder.allCalls.removeAll(asyncCallsFinder.asyncCalls);
+        for (MethodReference asyncCall : asyncCallsFinder.allCalls) {
+            if (splitMethods.contains(asyncCall)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public AsyncMethodNode decompileAsyncCacheMiss(MethodHolder method) {
         AsyncMethodNode node = new AsyncMethodNode(method.getReference());
         AsyncProgramSplitter splitter = new AsyncProgramSplitter(classSource, splitMethods);
         splitter.split(method.getProgram());
@@ -220,26 +271,6 @@ public class Decompiler {
             node.getParameterDebugNames().add(new HashSet<>(var.getDebugNames()));
         }
         return node;
-    }
-
-    public RegularMethodNode decompileRegularCacheMiss(MethodHolder method) {
-        RegularMethodNode methodNode = new RegularMethodNode(method.getReference());
-        Program program = method.getProgram();
-        int[] targetBlocks = new int[program.basicBlockCount()];
-        Arrays.fill(targetBlocks, -1);
-        methodNode.setBody(getRegularMethodStatement(program, targetBlocks, false).getStatement());
-        for (int i = 0; i < program.variableCount(); ++i) {
-            methodNode.getVariables().add(program.variableAt(i).getRegister());
-        }
-        Optimizer optimizer = new Optimizer();
-        optimizer.optimize(methodNode, method.getProgram());
-        methodNode.getModifiers().addAll(mapModifiers(method.getModifiers()));
-        int paramCount = Math.min(method.getSignature().length, program.variableCount());
-        for (int i = 0; i < paramCount; ++i) {
-            Variable var = program.variableAt(i);
-            methodNode.getParameterDebugNames().add(new HashSet<>(var.getDebugNames()));
-        }
-        return methodNode;
     }
 
     private AsyncMethodPart getRegularMethodStatement(Program program, int[] targetBlocks, boolean async) {

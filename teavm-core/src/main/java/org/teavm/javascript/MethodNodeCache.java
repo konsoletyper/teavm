@@ -15,8 +15,6 @@
  */
 package org.teavm.javascript;
 
-import java.util.HashMap;
-import java.util.Map;
 import org.teavm.javascript.ast.AsyncMethodNode;
 import org.teavm.javascript.ast.RegularMethodNode;
 import org.teavm.model.MethodReference;
@@ -25,27 +23,12 @@ import org.teavm.model.MethodReference;
  *
  * @author Alexey Andreev
  */
-public class InMemoryRegularMethodNodeCache implements MethodNodeCache {
-    private Map<MethodReference, RegularMethodNode> cache = new HashMap<>();
-    private Map<MethodReference, AsyncMethodNode> asyncCache = new HashMap<>();
+public interface MethodNodeCache {
+    RegularMethodNode get(MethodReference methodReference);
 
-    @Override
-    public RegularMethodNode get(MethodReference methodReference) {
-        return cache.get(methodReference);
-    }
+    void store(MethodReference methodReference, RegularMethodNode node);
 
-    @Override
-    public void store(MethodReference methodReference, RegularMethodNode node) {
-        cache.put(methodReference, node);
-    }
+    AsyncMethodNode getAsync(MethodReference methodReference);
 
-    @Override
-    public AsyncMethodNode getAsync(MethodReference methodReference) {
-        return null;
-    }
-
-    @Override
-    public void storeAsync(MethodReference methodReference, AsyncMethodNode node) {
-        asyncCache.put(methodReference, node);
-    }
+    void storeAsync(MethodReference methodReference, AsyncMethodNode node);
 }

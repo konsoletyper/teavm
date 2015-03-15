@@ -87,6 +87,7 @@ public final class TeaVMRunner {
                 .create('i'));
         options.addOption(OptionBuilder
                 .withArgName("directory")
+                .hasArg()
                 .withDescription("Incremental build cache directory")
                 .withLongOpt("cachedir")
                 .create('c'));
