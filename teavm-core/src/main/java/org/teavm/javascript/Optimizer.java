@@ -35,6 +35,8 @@ public class Optimizer {
                 preservedVars[i] = true;
             }
         }
+        BreakEliminator breakEliminator = new BreakEliminator();
+        method.getBody().acceptVisitor(breakEliminator);
         OptimizingVisitor optimizer = new OptimizingVisitor(preservedVars, stats.reads);
         method.getBody().acceptVisitor(optimizer);
         method.setBody(optimizer.resultStmt);
@@ -64,6 +66,8 @@ public class Optimizer {
         }
         for (int i = 0; i < splitter.size(); ++i) {
             AsyncMethodPart part = method.getBody().get(i);
+            BreakEliminator breakEliminator = new BreakEliminator();
+            part.getStatement().acceptVisitor(breakEliminator);
             OptimizingVisitor optimizer = new OptimizingVisitor(preservedVars, readFrequencies[i]);
             part.getStatement().acceptVisitor(optimizer);
             part.setStatement(optimizer.resultStmt);

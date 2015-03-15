@@ -73,9 +73,7 @@ class EscapingStatementFinder implements StatementVisitor{
 
     @Override
     public void visit(WhileStatement statement) {
-        outerStatements.add(statement);
-        check(statement.getBody());
-        outerStatements.remove(statement);
+        escaping = true;
     }
 
     @Override
