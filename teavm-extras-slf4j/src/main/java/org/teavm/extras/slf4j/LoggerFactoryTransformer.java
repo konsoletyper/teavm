@@ -17,6 +17,7 @@ package org.teavm.extras.slf4j;
 
 import org.slf4j.ILoggerFactory;
 import org.slf4j.LoggerFactory;
+import org.slf4j.helpers.SubstituteLoggerFactory;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
@@ -34,6 +35,7 @@ public class LoggerFactoryTransformer implements ClassHolderTransformer {
         addCacheField(cls);
         modifyClinit(cls);
         replaceGetFactory(cls);
+        cls.removeField(cls.getField("TEMP_FACTORY"));
     }
 
     private void addCacheField(ClassHolder cls) {
@@ -61,6 +63,25 @@ public class LoggerFactoryTransformer implements ClassHolderTransformer {
         put.setValue(factoryVar);
         put.setField(new FieldReference(LoggerFactory.class.getName(), "loggerFactoryCache"));
         clinitBlock.getInstructions().add(2, put);
+
+        Program program = clinit.getProgram();
+        for (int i = 0; i < program.basicBlockCount(); ++i) {
+            BasicBlock block = program.basicBlockAt(i);
+            for (int j = 0; j < block.getInstructions().size(); ++j) {
+                Instruction insn = block.getInstructions().get(j);
+                if (insn instanceof InvokeInstruction) {
+                    InvokeInstruction invoke = (InvokeInstruction)insn;
+                    if (invoke.getMethod().getClassName().equals(SubstituteLoggerFactory.class.getName())) {
+                        block.getInstructions().set(j, new EmptyInstruction());
+                    }
+                } else if (insn instanceof PutFieldInstruction) {
+                    PutFieldInstruction putField = (PutFieldInstruction)insn;
+                    if (putField.getField().getFieldName().equals("TEMP_FACTORY")) {
+                        block.getInstructions().set(j, new EmptyInstruction());
+                    }
+                }
+            }
+        }
     }
 
     private void replaceGetFactory(ClassHolder cls) {
