@@ -535,7 +535,7 @@ public class TreeMapTest {
                 !myTreeMap.containsValue(new Integer(0)));
     }
 
-    /**
+    /*
      * Tests entrySet().contains() method behaviour with respect to entries
      * with null values.
      * Regression test for HARMONY-5788.

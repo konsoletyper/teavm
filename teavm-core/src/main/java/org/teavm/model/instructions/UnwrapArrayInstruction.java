@@ -20,7 +20,7 @@ import org.teavm.model.Variable;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class UnwrapArrayInstruction extends Instruction {
     private Variable array;

@@ -4,7 +4,7 @@ import java.util.Comparator;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 abstract class PropertyNameComparator<T> implements Comparator<T> {
     abstract String getName(T value);

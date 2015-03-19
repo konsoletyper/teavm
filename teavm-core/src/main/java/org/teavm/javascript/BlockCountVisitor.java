@@ -22,11 +22,11 @@ import org.teavm.javascript.ast.*;
  *
  * @author Alexey Andreev
  */
-class CertainBlockCountVisitor implements StatementVisitor {
+class BlockCountVisitor implements StatementVisitor {
     private BlockStatement blockToCount;
     private int count;
 
-    public CertainBlockCountVisitor(BlockStatement blockToCount) {
+    public BlockCountVisitor(BlockStatement blockToCount) {
         this.blockToCount = blockToCount;
     }
 
@@ -109,16 +109,14 @@ class CertainBlockCountVisitor implements StatementVisitor {
     }
 
     @Override
-    public void visit(RestoreAsyncStatement statement) {
+    public void visit(GotoPartStatement statement) {
     }
 
     @Override
     public void visit(MonitorEnterStatement statement) {
-        
     }
 
     @Override
     public void visit(MonitorExitStatement statement) {
-        
     }
 }

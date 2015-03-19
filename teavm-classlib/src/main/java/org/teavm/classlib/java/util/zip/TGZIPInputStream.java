@@ -21,7 +21,7 @@ import java.io.InputStream;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TGZIPInputStream extends TInflaterInputStream {
     public TGZIPInputStream(InputStream in, int size) throws IOException {

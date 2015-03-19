@@ -33,6 +33,7 @@
       <groupId>org.teavm</groupId>
       <artifactId>teavm-classlib</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
 
@@ -64,7 +65,7 @@
               <targetDirectory>${project.build.directory}/generated/js/teavm</targetDirectory>
               <mainClass>org.teavm.samples.async.AsyncProgram</mainClass>
               <runtime>SEPARATE</runtime>
-              <minifying>false</minifying>
+              <minifying>true</minifying>
               <debugInformationGenerated>true</debugInformationGenerated>
               <sourceMapsGenerated>true</sourceMapsGenerated>
               <sourceFilesCopied>true</sourceFilesCopied>

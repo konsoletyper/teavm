@@ -166,6 +166,11 @@ public class TPrintStream extends TFilterOutputStream {
         printSB();
     }
 
+    public void println(double d) {
+        sb.append(d).append('\n');
+        printSB();
+    }
+
     public void print(TString s) {
         sb.append(s);
         printSB();

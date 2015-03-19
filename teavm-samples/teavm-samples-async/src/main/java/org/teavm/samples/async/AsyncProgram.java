@@ -19,7 +19,7 @@ import java.util.Arrays;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public final class AsyncProgram {
     private static long start = System.currentTimeMillis();
@@ -87,7 +87,7 @@ public final class AsyncProgram {
             prime[i] = true;
         }
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 100; ++i) {
+        for (int i = 0; i < 1000; ++i) {
             if (prime[i]) {
                 sb.append(i).append(' ');
             }

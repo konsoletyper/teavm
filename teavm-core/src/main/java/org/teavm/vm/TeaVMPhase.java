@@ -17,7 +17,7 @@ package org.teavm.vm;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public enum TeaVMPhase {
     DEPENDENCY_CHECKING,

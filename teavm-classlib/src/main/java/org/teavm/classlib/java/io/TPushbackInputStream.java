@@ -20,7 +20,7 @@ import org.teavm.classlib.java.lang.TString;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TPushbackInputStream extends TFilterInputStream {
     protected byte[] buf;

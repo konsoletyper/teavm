@@ -17,7 +17,7 @@ package org.teavm.classlib.java.lang;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TIllegalMonitorStateException extends TRuntimeException {
     private static final long serialVersionUID = 7694307746228488658L;

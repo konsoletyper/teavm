@@ -20,7 +20,7 @@ import org.teavm.jso.JSProperty;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface WebGLActiveInfo extends JSObject {
     @JSProperty

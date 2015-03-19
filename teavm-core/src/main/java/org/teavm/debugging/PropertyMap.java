@@ -23,7 +23,7 @@ import org.teavm.debugging.javascript.JavaScriptVariable;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 class PropertyMap extends AbstractMap<String, Variable> {
     private String className;

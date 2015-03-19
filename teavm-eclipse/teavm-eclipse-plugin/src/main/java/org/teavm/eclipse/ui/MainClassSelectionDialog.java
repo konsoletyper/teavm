@@ -27,7 +27,7 @@ import org.eclipse.swt.widgets.Shell;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class MainClassSelectionDialog extends ClassSelectionDialog {
     public MainClassSelectionDialog(Shell shell, IJavaProject javaProject) {

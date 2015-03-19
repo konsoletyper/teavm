@@ -25,7 +25,7 @@ import org.teavm.platform.plugin.PlatformGenerator;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public final class Platform {
     private Platform() {
@@ -73,9 +73,17 @@ public final class Platform {
         return ((PlatformHelper)JS.getGlobal()).nextId();
     }
 
+    public static <T> T newInstance(PlatformClass cls) {
+        prepareNewInstance();
+        return newInstanceImpl(cls);
+    }
+
+    @GeneratedBy(PlatformGenerator.class)
+    private static native void prepareNewInstance();
+
     @GeneratedBy(PlatformGenerator.class)
     @PluggableDependency(PlatformGenerator.class)
-    public static native <T> T newInstance(PlatformClass cls);
+    private static native <T> T newInstanceImpl(PlatformClass cls);
 
     @GeneratedBy(PlatformGenerator.class)
     @PluggableDependency(PlatformGenerator.class)
@@ -103,6 +111,10 @@ public final class Platform {
 
     private static void launchThread(PlatformRunnable runnable) {
         runnable.run();
+    }
+
+    public static void postpone(PlatformRunnable runnable) {
+        schedule(runnable, 0);
     }
 
     @GeneratedBy(PlatformGenerator.class)

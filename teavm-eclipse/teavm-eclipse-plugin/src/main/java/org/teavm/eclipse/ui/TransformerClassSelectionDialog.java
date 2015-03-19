@@ -27,7 +27,7 @@ import org.teavm.model.ClassHolderTransformer;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TransformerClassSelectionDialog extends ClassSelectionDialog {
     public TransformerClassSelectionDialog(Shell shell, IJavaProject javaProject) {

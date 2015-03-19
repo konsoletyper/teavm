@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public abstract class TeaVMVariablesHolder {
     private AtomicReference<TeaVMVariable[]> variables = new AtomicReference<>();

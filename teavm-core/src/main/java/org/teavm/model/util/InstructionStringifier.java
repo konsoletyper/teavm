@@ -280,7 +280,7 @@ public class InstructionStringifier implements InstructionReader {
     }
 
     @Override
-    public void putField(VariableReader instance, FieldReference field, VariableReader value) {
+    public void putField(VariableReader instance, FieldReference field, VariableReader value, ValueType fieldType) {
         if (instance != null) {
             sb.append("@").append(instance.getIndex());
         } else {

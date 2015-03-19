@@ -22,7 +22,7 @@ import java.lang.annotation.Target;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)

@@ -20,7 +20,7 @@ import org.teavm.classlib.java.nio.TCharBuffer;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface TReadable {
     int read(TCharBuffer cb) throws TIOException;

@@ -64,7 +64,7 @@ import org.teavm.model.MethodReference;
  *}</pre>
  *
  * <p>If you didn't call <code>.withValue(1, "java.util.HashMap")</code>, TeaVM could not know,
- * what implementation of <code>#entrySet</code> method to include.</p>
+ * what implementation of <code>entrySet</code> method to include.</p>
  *
  * @author Alexey Andreev
  */

@@ -874,8 +874,8 @@ class TDivision {
     /**
      * Performs the final reduction of the Montgomery algorithm.
      *
-     * @see monPro(BigInteger, BigInteger, BigInteger, long)
-     * @see monSquare(BigInteger, BigInteger, long)
+     * @see #monPro(TBigInteger, TBigInteger, TBigInteger, long)
+     * @see #monSquare(TBigInteger, TBigInteger, long)
      */
     static TBigInteger finalSubtraction(int res[], TBigInteger modulus) {
 

@@ -348,8 +348,7 @@ class TElementary {
 
     /**
      * Same as
-     *
-     * @link #inplaceSubtract(BigInteger, BigInteger), but without the
+     * {@link #inplaceSubtract(TBigInteger, TBigInteger)}, but without the
      *       restriction of non-positive values
      * @param op1
      *            should have enough space to save the result

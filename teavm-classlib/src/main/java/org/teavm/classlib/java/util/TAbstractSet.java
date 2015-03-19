@@ -17,7 +17,8 @@ package org.teavm.classlib.java.util;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
+ * @param <E>
  */
 public abstract class TAbstractSet<E> extends TAbstractCollection<E> implements TSet<E> {
     public TAbstractSet() {

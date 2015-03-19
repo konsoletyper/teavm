@@ -27,7 +27,7 @@ import org.teavm.platform.async.AsyncCallback;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 @Superclass("")
 public class TObject {
@@ -72,10 +72,7 @@ public class TObject {
         monitorEnter(o, 1);
     }
 
-    @Async
-    static native void monitorEnter(TObject o, int count);
-
-    static void monitorEnter(final TObject o, final int count, final AsyncCallback<Void> callback) {
+    static void monitorEnter(TObject o, int count) {
         if (o.monitor == null) {
             o.monitor = new Monitor();
         }
@@ -83,19 +80,38 @@ public class TObject {
             o.monitor.owner = TThread.currentThread();
         }
         if (o.monitor.owner != TThread.currentThread()) {
-            final TThread thread = TThread.currentThread();
-            o.monitor.enteringThreads.add(new PlatformRunnable() {
-                @Override public void run() {
-                    TThread.setCurrentThread(thread);
-                    o.monitor.owner = thread;
-                    o.monitor.count += count;
-                    callback.complete(null);
-                }
-            });
+            monitorEnterWait(o, count);
         } else {
             o.monitor.count += count;
-            callback.complete(null);
         }
+    }
+
+    @Async
+    static native void monitorEnterWait(TObject o, int count);
+
+    static void monitorEnterWait(final TObject o, final int count, final AsyncCallback<Void> callback) {
+        final TThread thread = TThread.currentThread();
+        if (o.monitor == null) {
+            o.monitor = new Monitor();
+            TThread.setCurrentThread(thread);
+            o.monitor.count += count;
+            callback.complete(null);
+            return;
+        } else if (o.monitor.owner == null) {
+            o.monitor.owner = thread;
+            TThread.setCurrentThread(thread);
+            o.monitor.count += count;
+            callback.complete(null);
+            return;
+        }
+        o.monitor.enteringThreads.add(new PlatformRunnable() {
+            @Override public void run() {
+                TThread.setCurrentThread(thread);
+                o.monitor.owner = thread;
+                o.monitor.count += count;
+                callback.complete(null);
+            }
+        });
     }
 
     @Sync
@@ -115,7 +131,7 @@ public class TObject {
 
         o.monitor.owner = null;
         if (!o.monitor.enteringThreads.isEmpty()) {
-            Platform.startThread(new PlatformRunnable() {
+            Platform.postpone(new PlatformRunnable() {
                 @Override public void run() {
                     if (o.isEmptyMonitor() || o.monitor.owner != null) {
                         return;
@@ -196,16 +212,14 @@ public class TObject {
         if (!holdsLock(this)) {
             throw new TIllegalMonitorStateException();
         }
-        TThread thread = TThread.currentThread();
         PlatformQueue<NotifyListener> listeners = monitor.notifyListeners;
         while (!listeners.isEmpty()) {
             NotifyListener listener = listeners.remove();
             if (!listener.expired()) {
-                Platform.startThread(listener);
+                Platform.postpone(listener);
                 break;
             }
         }
-        TThread.setCurrentThread(thread);
     }
 
     @Sync
@@ -218,7 +232,7 @@ public class TObject {
         while (!listeners.isEmpty()) {
             NotifyListener listener = listeners.remove();
             if (!listener.expired()) {
-                Platform.startThread(listener);
+                Platform.postpone(listener);
             }
         }
     }
@@ -232,15 +246,18 @@ public class TObject {
         }
     }
 
-    @Async
     @Rename("wait")
-    private native final void wait0(long timeout, int nanos) throws TInterruptedException;
-
-    @Rename("wait")
-    public final void wait0(long timeout, int nanos, final AsyncCallback<Void> callback) {
+    private final void wait0(long timeout, int nanos) throws TInterruptedException {
         if (!holdsLock(this)) {
             throw new TIllegalMonitorStateException();
         }
+        waitImpl(timeout, nanos);
+    }
+
+    @Async
+    private native final void waitImpl(long timeout, int nanos) throws TInterruptedException;
+
+    public final void waitImpl(long timeout, int nanos, final AsyncCallback<Void> callback) {
         final NotifyListenerImpl listener = new NotifyListenerImpl(this, callback, monitor.count);
         monitor.notifyListeners.add(listener);
         if (timeout > 0 || nanos > 0) {
@@ -256,6 +273,7 @@ public class TObject {
         final TThread currentThread = TThread.currentThread();
         int timerId = -1;
         boolean expired;
+        boolean performed;
         int lockCount;
 
         public NotifyListenerImpl(TObject obj, AsyncCallback<Void> callback, int lockCount) {
@@ -274,18 +292,22 @@ public class TObject {
         @Override
         public void onTimer() {
             if (!expired()) {
-                Platform.startThread(this);
+                run();
             }
         }
 
         @Override
         public void run() {
+            if (performed) {
+                return;
+            }
+            performed = true;
             if (timerId >= 0) {
                 Platform.killSchedule(timerId);
                 timerId = -1;
             }
             TThread.setCurrentThread(currentThread);
-            monitorEnter(obj, lockCount, callback);
+            monitorEnterWait(obj, lockCount, callback);
         }
     }
 

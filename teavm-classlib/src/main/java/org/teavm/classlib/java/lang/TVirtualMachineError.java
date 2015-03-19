@@ -13,12 +13,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.model.util;
+package org.teavm.classlib.java.lang;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-public interface GraphSplittingBackend {
-    int[] split(int[] nodes);
+public class TVirtualMachineError extends TError {
+    private static final long serialVersionUID = -4246822614122675559L;
+
+    public TVirtualMachineError() {
+        super();
+    }
+
+    public TVirtualMachineError(TString message) {
+        super(message);
+    }
 }

@@ -398,11 +398,13 @@ public final class ProgramUtils {
         }
 
         @Override
-        public void putField(VariableReader instance, FieldReference field, VariableReader value) {
+        public void putField(VariableReader instance, FieldReference field, VariableReader value,
+                ValueType fieldType) {
             PutFieldInstruction insnCopy = new PutFieldInstruction();
             insnCopy.setField(field);
             insnCopy.setInstance(instance != null ? copyVar(instance) : null);
             insnCopy.setValue(copyVar(value));
+            insnCopy.setFieldType(fieldType);
             copy = insnCopy;
             copy.setLocation(location);
         }

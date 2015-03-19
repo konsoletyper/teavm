@@ -37,7 +37,7 @@ class StatementGenerator implements InstructionVisitor {
     Program program;
     ClassHolderSource classSource;
     private NodeLocation currentLocation;
-    Integer asyncTarget;
+    boolean async;
 
     public void setCurrentLocation(NodeLocation currentLocation) {
         this.currentLocation = currentLocation;
@@ -550,20 +550,17 @@ class StatementGenerator implements InstructionVisitor {
         } else {
             invocationExpr = Expr.invokeStatic(insn.getMethod(), exprArgs);
         }
-        invocationExpr.setAsyncTarget(asyncTarget);
-        if (asyncTarget == null) {
-            if (insn.getReceiver() != null) {
-                assign(invocationExpr, insn.getReceiver());
-            } else {
-                AssignmentStatement stmt = Statement.assign(null, invocationExpr);
-                stmt.setLocation(currentLocation);
-                statements.add(stmt);
-            }
+        AssignmentStatement stmt;
+        if (insn.getReceiver() != null) {
+            stmt = Statement.assign(Expr.var(insn.getReceiver().getIndex()), invocationExpr);
+            stmt.getDebugNames().addAll(insn.getReceiver().getDebugNames());
         } else {
-            AssignmentStatement stmt = Statement.assign(null, invocationExpr);
-            stmt.setLocation(currentLocation);
-            statements.add(stmt);
+            stmt = Statement.assign(null, invocationExpr);
         }
+        stmt.setLocation(currentLocation);
+        stmt.setAsync(async);
+        async = false;
+        statements.add(stmt);
     }
 
     @Override
@@ -664,7 +661,7 @@ class StatementGenerator implements InstructionVisitor {
         MonitorEnterStatement stmt = new MonitorEnterStatement();
         stmt.setLocation(currentLocation);
         stmt.setObjectRef(Expr.var(insn.getObjectRef().getIndex()));
-        stmt.setAsyncTarget(asyncTarget);
+        async = false;
         statements.add(stmt);
     }
 

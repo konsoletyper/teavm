@@ -21,7 +21,7 @@ import org.teavm.model.instructions.*;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class UnusedVariableElimination implements MethodOptimization {
     @Override

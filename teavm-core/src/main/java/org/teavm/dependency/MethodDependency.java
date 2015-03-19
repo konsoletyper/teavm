@@ -47,12 +47,16 @@ public class MethodDependency implements MethodDependencyInfo {
     }
 
     public DependencyAgent getDependencyAgent() {
-        return dependencyChecker;
+        return dependencyChecker.getAgent();
     }
 
     @Override
     public DependencyNode[] getVariables() {
         return Arrays.copyOf(variableNodes, variableNodes.length);
+    }
+
+    void setVariables(DependencyNode[] variables) {
+        this.variableNodes = variables;
     }
 
     @Override

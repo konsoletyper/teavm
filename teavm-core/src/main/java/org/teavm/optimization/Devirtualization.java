@@ -26,7 +26,7 @@ import org.teavm.model.instructions.InvokeInstruction;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class Devirtualization {
     private DependencyInfo dependency;

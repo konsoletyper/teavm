@@ -21,7 +21,7 @@ import org.teavm.model.ValueType;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class FieldNode {
     private String name;

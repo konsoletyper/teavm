@@ -36,7 +36,7 @@ public abstract class TInputStream extends TObject implements TCloseable {
         for (int i = 0; i < len; ++i) {
             int bt = read();
             if (bt < 0) {
-                return i;
+                return i == 0 ? -1 : i;
             }
             b[off++] = (byte)bt;
         }

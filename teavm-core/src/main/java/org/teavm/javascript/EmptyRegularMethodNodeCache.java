@@ -15,6 +15,7 @@
  */
 package org.teavm.javascript;
 
+import org.teavm.javascript.ast.AsyncMethodNode;
 import org.teavm.javascript.ast.RegularMethodNode;
 import org.teavm.model.MethodReference;
 
@@ -22,7 +23,7 @@ import org.teavm.model.MethodReference;
  *
  * @author Alexey Andreev
  */
-public class EmptyRegularMethodNodeCache implements RegularMethodNodeCache {
+public class EmptyRegularMethodNodeCache implements MethodNodeCache {
     @Override
     public RegularMethodNode get(MethodReference methodReference) {
         return null;
@@ -30,5 +31,14 @@ public class EmptyRegularMethodNodeCache implements RegularMethodNodeCache {
 
     @Override
     public void store(MethodReference methodReference, RegularMethodNode node) {
+    }
+
+    @Override
+    public AsyncMethodNode getAsync(MethodReference methodReference) {
+        return null;
+    }
+
+    @Override
+    public void storeAsync(MethodReference methodReference, AsyncMethodNode node) {
     }
 }

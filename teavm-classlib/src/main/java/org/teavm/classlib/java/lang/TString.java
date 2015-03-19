@@ -26,7 +26,7 @@ import org.teavm.classlib.java.util.regex.TPattern;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TString extends TObject implements TSerializable, TComparable<TString>, TCharSequence {
     public static final TComparator<TString> CASE_INSENSITIVE_ORDER = new TComparator<TString>() {

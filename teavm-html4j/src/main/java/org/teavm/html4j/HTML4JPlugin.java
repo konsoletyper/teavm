@@ -22,7 +22,7 @@ import org.teavm.vm.spi.TeaVMPlugin;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class HTML4JPlugin implements TeaVMPlugin {
     @Override

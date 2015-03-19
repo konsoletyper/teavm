@@ -19,7 +19,7 @@ import org.teavm.jso.JSProperty;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface HTMLLinkElement extends HTMLElement {
     @JSProperty

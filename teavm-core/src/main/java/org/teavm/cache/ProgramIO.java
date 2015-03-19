@@ -600,7 +600,6 @@ public class ProgramIO {
             try {
                 output.writeByte(39);
                 output.writeShort(insn.getObjectRef().getIndex());
-                
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -611,7 +610,6 @@ public class ProgramIO {
             try {
                 output.writeByte(40);
                 output.writeShort(insn.getObjectRef().getIndex());
-                
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }

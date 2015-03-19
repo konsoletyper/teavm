@@ -46,16 +46,6 @@ class TCompositeGroupQuantifierSet extends TGroupQuantifierSet {
 
     int setCounter;
 
-    /**
-     * Constructs CompositeGroupQuantifierSet
-     *
-     * @param quant
-     *            - given composite quantifier
-     * @param innerSet
-     *            - given group
-     * @param next
-     *            - next set after the quantifier
-     */
     public TCompositeGroupQuantifierSet(TQuantifier quant, TAbstractSet innerSet, TAbstractSet next, int type,
             int setCounter) {
         super(innerSet, next, type);

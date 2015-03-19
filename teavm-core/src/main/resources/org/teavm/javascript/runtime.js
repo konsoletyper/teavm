@@ -223,13 +223,16 @@ function $rt_init(cls, constructor, args) {
     return obj;
 }
 function $rt_throw(ex) {
+    throw $rt_exception(ex);
+}
+function $rt_exception(ex) {
     var err = ex.$jsException;
     if (!err) {
         var err = new Error("Java exception thrown");
         err.$javaException = ex;
         ex.$jsException = err;
     }
-    throw err;
+    return err;
 }
 function $rt_createMultiArray(cls, dimensions) {
     var arrays = new Array($rt_primitiveArrayCount(dimensions));
@@ -403,65 +406,15 @@ function $rt_metadata(data) {
         }
     }
 }
-function $rt_asyncResult(value) {
-    return function() {
-        return value;
-    }
-}
-function $rt_asyncError(e) {
-    return function() {
-        throw new TeaVMAsyncError(e);
-    }
-}
-function $rt_staticAsyncAdapter(f) {
-    return function() {
-        var result;
-        var args = Array.prototype.slice.apply(arguments);
-        var $return = args.pop();
-        try {
-            result = f.apply(this, args);
-        } catch (e) {
-            return $return($rt_asyncError(e));
-        }
-        return $return($rt_asyncResult(result));
-    }
-}
-function $rt_asyncAdapter(f) {
-    return function() {
-        var result;
-        var args = Array.prototype.slice.apply(arguments);
-        var $return = args.pop();
-        args.unshift(this);
-        try {
-            result = f.apply(null, args);
-        } catch (e) {
-            return $return($rt_asyncError(e));
-        }
-        return $return($rt_asyncResult(result));
-    }
-}
-function $rt_rootInvocationAdapter(f) {
+function $rt_threadStarter(f) {
     return function() {
         var args = Array.prototype.slice.apply(arguments);
-        args.push(function(result) {
-            try {
-                result();
-            } catch (e) {
-                var prefix = "Exception occured %s at %o";
-                var hasWrappers = false;
-                while (e instanceof TeaVMAsyncError) {
-                    console.error(prefix, e.message, e.stack);
-                    e = e.cause;
-                    prefix = "Caused by %s at %o";
-                    hasWrappers = true;
-                }
-                console.error(!hasWrappers ? prefix : "Root cause is %s at %o", e.message, e.stack);
-            }
+        $rt_startThread(function() {
+            f.apply(this, args);
         });
-        return f.apply(this, args);
     }
 }
-function $rt_mainWrapper(f) {
+function $rt_mainStarter(f) {
     return function(args) {
         if (!args) {
             args = [];
@@ -470,7 +423,7 @@ function $rt_mainWrapper(f) {
         for (var i = 0; i < args.length; ++i) {
             javaArgs.data[i] = $rt_str(args[i]);
         }
-        $rt_rootInvocationAdapter(f)(javaArgs);
+        $rt_threadStarter(f)(javaArgs);
     };
 }
 var $rt_stringPool_instance;
@@ -483,41 +436,95 @@ function $rt_stringPool(strings) {
 function $rt_s(index) {
     return $rt_stringPool_instance[index];
 }
-var $rt_continueCounter = 0;
-function $rt_continue(f) {
-   if ($rt_continueCounter++ == 10) {
-       $rt_continueCounter = 0;
-       return function() {
-           var self = this;
-           var args = arguments;
-           var thread = $rt_getThread();
-           setTimeout(function() {
-               $rt_setThread(thread);
-               f.apply(self, args);
-           }, 0);
-       };
-   } else {
-       return f;
-   }
+function TeaVMThread(runner) {
+    this.status = 3;
+    this.stack = [];
+    this.suspendCallback = null;
+    this.runner = runner;
+    this.attribute = null;
+    this.completeCallback = null;
 }
-function $rt_guardAsync(f, continuation) {
-    return function() {
-        try {
-            return f.apply(this, arguments);
-        } catch (e) {
-            return continuation($rt_asyncError(e));
-        }
+TeaVMThread.prototype.push = function() {
+    for (var i = 0; i < arguments.length; ++i) {
+        this.stack.push(arguments[i]);
+    }
+    return this;
+}
+TeaVMThread.prototype.s = TeaVMThread.prototype.push;
+TeaVMThread.prototype.pop = function() {
+    return this.stack.pop();
+}
+TeaVMThread.prototype.l = TeaVMThread.prototype.pop;
+TeaVMThread.prototype.isResuming = function() {
+    return this.status == 2;
+}
+TeaVMThread.prototype.isSuspending = function() {
+    return this.status == 1;
+}
+TeaVMThread.prototype.suspend = function(callback) {
+    this.suspendCallback = callback;
+    this.status = 1;
+}
+TeaVMThread.prototype.start = function(callback) {
+    if (this.status != 3) {
+        throw new Error("Thread already started");
+    }
+    if ($rt_currentNativeThread !== null) {
+        throw new Error("Another thread is running");
+    }
+    this.status = 0;
+    this.completeCallback = callback ? callback : function() {};
+    this.run();
+}
+TeaVMThread.prototype.resume = function() {
+    if ($rt_currentNativeThread !== null) {
+        throw new Error("Another thread is running");
+    }
+    this.status = 2;
+    this.run();
+}
+TeaVMThread.prototype.run = function() {
+    $rt_currentNativeThread = this;
+    var result;
+    try {
+        result = this.runner();
+    } catch (e) {
+        result = e;
+    } finally {
+        $rt_currentNativeThread = null;
+    }
+    if (this.suspendCallback !== null) {
+        var self = this;
+        var callback = this.suspendCallback;
+        this.suspendCallback = null;
+        callback(function() {
+            self.resume();
+        });
+    } else if (this.status === 0) {
+        this.completeCallback(result);
     }
 }
-function TeaVMAsyncError(cause) {
-    this.message = "Async error occured";
-    this.cause = cause;
-    if (cause) {
-       this.$javaException = cause.$javaException;
-    }
+function $rt_suspending() {
+    var thread = $rt_nativeThread();
+    return thread != null && thread.isSuspending();
 }
-TeaVMAsyncError.prototype = new Error();
-TeaVMAsyncError.prototype.constructor = TeaVMAsyncError;
+function $rt_resuming() {
+    var thread = $rt_nativeThread();
+    return thread != null && thread.isResuming();
+}
+function $rt_suspend(callback) {
+    return $rt_nativeThread().suspend(callback);
+}
+function $rt_startThread(runner, callback) {
+    new TeaVMThread(runner).start(callback);
+}
+var $rt_currentNativeThread = null;
+function $rt_nativeThread() {
+    return $rt_currentNativeThread;
+}
+function $rt_invalidPointer() {
+    throw new Error("Invalid recorded state");
+}
 
 function $dbg_repr(obj) {
     return obj.toString ? obj.toString() : "";
@@ -598,6 +605,9 @@ function Long_toNumber(val) {
     return 0x100000000 * hi + lo;
 }
 function Long_add(a, b) {
+    if (a.hi === (a.lo >> 31) && b.hi === (b.lo >> 31)) {
+        return Long_fromNumber(a.lo + b.lo);
+    }
     var a_lolo = a.lo & 0xFFFF;
     var a_lohi = a.lo >>> 16;
     var a_hilo = a.hi & 0xFFFF;
@@ -633,6 +643,9 @@ function Long_neg(a) {
     return Long_inc(new Long(a.lo ^ 0xFFFFFFFF, a.hi ^ 0xFFFFFFFF));
 }
 function Long_sub(a, b) {
+    if (a.hi === (a.lo >> 31) && b.hi === (b.lo >> 31)) {
+        return Long_fromNumber(a.lo - b.lo);
+    }
     var a_lolo = a.lo & 0xFFFF;
     var a_lohi = a.lo >>> 16;
     var a_hilo = a.hi & 0xFFFF;
@@ -704,9 +717,15 @@ function Long_mul(a, b) {
     return positive ? result : Long_neg(result);
 }
 function Long_div(a, b) {
+    if (a.hi === 0 && b.hi === 0) {
+        return Long_fromNumber(Long_toNumber(a) / Long_toNumber(b));
+    }
     return Long_divRem(a, b)[0];
 }
 function Long_rem(a, b) {
+    if (a.hi === 0 && b.hi === 0) {
+        return Long_fromNumber(Long_toNumber(a) % Long_toNumber(b));
+    }
     return Long_divRem(a, b)[1];
 }
 function Long_divRem(a, b) {

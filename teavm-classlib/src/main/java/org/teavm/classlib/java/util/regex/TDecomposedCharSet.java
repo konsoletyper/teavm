@@ -185,17 +185,6 @@ class TDecomposedCharSet extends TJointSet {
         return "decomposed char:" + getDecomposedChar(); //$NON-NLS-1$
     }
 
-    /**
-     * Reads Unicode codepoint from input.
-     *
-     * @param strIndex
-     *            - index to read codepoint at
-     * @param testString
-     *            - input
-     * @param matchResult
-     *            - auxiliary object
-     * @return codepoint at given strIndex at testString and
-     */
     public int codePointAt(int strIndex, CharSequence testString, int rightBound) {
 
         /*

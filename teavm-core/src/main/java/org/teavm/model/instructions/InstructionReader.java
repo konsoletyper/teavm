@@ -79,7 +79,7 @@ public interface InstructionReader {
 
     void getField(VariableReader receiver, VariableReader instance, FieldReference field, ValueType fieldType);
 
-    void putField(VariableReader instance, FieldReference field, VariableReader value);
+    void putField(VariableReader instance, FieldReference field, VariableReader value, ValueType fieldType);
 
     void arrayLength(VariableReader receiver, VariableReader array);
 
@@ -100,8 +100,8 @@ public interface InstructionReader {
     void initClass(String className);
 
     void nullCheck(VariableReader receiver, VariableReader value);
-    
+
     void monitorEnter(VariableReader objectRef);
-    
+
     void monitorExit(VariableReader objectRef);
 }

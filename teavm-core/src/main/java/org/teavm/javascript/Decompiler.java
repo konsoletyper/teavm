@@ -44,7 +44,7 @@ public class Decompiler {
     private RangeTree.Node parentNode;
     private Map<MethodReference, Generator> generators = new HashMap<>();
     private Set<MethodReference> methodsToPass = new HashSet<>();
-    private RegularMethodNodeCache regularMethodCache;
+    private MethodNodeCache regularMethodCache;
     private Set<MethodReference> asyncMethods;
     private Set<MethodReference> splitMethods = new HashSet<>();
 
@@ -57,11 +57,11 @@ public class Decompiler {
         splitMethods.addAll(asyncFamilyMethods);
     }
 
-    public RegularMethodNodeCache getRegularMethodCache() {
+    public MethodNodeCache getRegularMethodCache() {
         return regularMethodCache;
     }
 
-    public void setRegularMethodCache(RegularMethodNodeCache regularMethodCache) {
+    public void setRegularMethodCache(MethodNodeCache regularMethodCache) {
         this.regularMethodCache = regularMethodCache;
     }
 
@@ -120,7 +120,7 @@ public class Decompiler {
         }
         ClassHolder cls = classSource.get(className);
         if (cls == null) {
-            throw new IllegalArgumentException("Class not found: " + className);
+            return;
         }
         if (cls.getParent() != null) {
             orderClasses(cls.getParent(), visited, order);
@@ -198,43 +198,12 @@ public class Decompiler {
         return node;
     }
 
-    public AsyncMethodNode decompileAsync(MethodHolder method) {
-        AsyncMethodNode node = new AsyncMethodNode(method.getReference());
-        AsyncProgramSplitter splitter = new AsyncProgramSplitter(classSource, splitMethods);
-        splitter.split(method.getProgram());
-        for (int i = 0; i < splitter.size(); ++i) {
-            Integer input = null;
-            if (i > 0) {
-                input = splitter.getInput(i);
-                if (input == null) {
-                    input = -1;
-                }
-            }
-            AsyncMethodPart part = getRegularMethodStatement(splitter.getProgram(i), splitter.getBlockSuccessors(i),
-                    input);
-            node.getBody().add(part);
-        }
-        Program program = method.getProgram();
-        for (int i = 0; i < program.variableCount(); ++i) {
-            node.getVariables().add(program.variableAt(i).getRegister());
-        }
-        Optimizer optimizer = new Optimizer();
-        optimizer.optimize(node, program, splitter);
-        node.getModifiers().addAll(mapModifiers(method.getModifiers()));
-        int paramCount = Math.min(method.getSignature().length, program.variableCount());
-        for (int i = 0; i < paramCount; ++i) {
-            Variable var = program.variableAt(i);
-            node.getParameterDebugNames().add(new HashSet<>(var.getDebugNames()));
-        }
-        return node;
-    }
-
     public RegularMethodNode decompileRegularCacheMiss(MethodHolder method) {
         RegularMethodNode methodNode = new RegularMethodNode(method.getReference());
         Program program = method.getProgram();
         int[] targetBlocks = new int[program.basicBlockCount()];
         Arrays.fill(targetBlocks, -1);
-        methodNode.setBody(getRegularMethodStatement(program, targetBlocks, null).getStatement());
+        methodNode.setBody(getRegularMethodStatement(program, targetBlocks, false).getStatement());
         for (int i = 0; i < program.variableCount(); ++i) {
             methodNode.getVariables().add(program.variableAt(i).getRegister());
         }
@@ -249,11 +218,70 @@ public class Decompiler {
         return methodNode;
     }
 
-    private AsyncMethodPart getRegularMethodStatement(Program program, int[] targetBlocks, Integer inputVar) {
+    public AsyncMethodNode decompileAsync(MethodHolder method) {
+        if (regularMethodCache == null) {
+            return decompileAsyncCacheMiss(method);
+        }
+        AsyncMethodNode node = regularMethodCache.getAsync(method.getReference());
+        if (node == null || !checkAsyncRelevant(node)) {
+            node = decompileAsyncCacheMiss(method);
+            regularMethodCache.storeAsync(method.getReference(), node);
+        }
+        return node;
+    }
+
+    private boolean checkAsyncRelevant(AsyncMethodNode node) {
+        AsyncCallsFinder asyncCallsFinder = new AsyncCallsFinder();
+        for (AsyncMethodPart part : node.getBody()) {
+            part.getStatement().acceptVisitor(asyncCallsFinder);
+        }
+        for (MethodReference asyncCall : asyncCallsFinder.asyncCalls) {
+            if (!splitMethods.contains(asyncCall)) {
+                return false;
+            }
+        }
+        asyncCallsFinder.allCalls.removeAll(asyncCallsFinder.asyncCalls);
+        for (MethodReference asyncCall : asyncCallsFinder.allCalls) {
+            if (splitMethods.contains(asyncCall)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public AsyncMethodNode decompileAsyncCacheMiss(MethodHolder method) {
+        AsyncMethodNode node = new AsyncMethodNode(method.getReference());
+        AsyncProgramSplitter splitter = new AsyncProgramSplitter(classSource, splitMethods);
+        splitter.split(method.getProgram());
+        for (int i = 0; i < splitter.size(); ++i) {
+            AsyncMethodPart part = getRegularMethodStatement(splitter.getProgram(i), splitter.getBlockSuccessors(i),
+                    i > 0);
+            node.getBody().add(part);
+        }
+        Program program = method.getProgram();
+        for (int i = 0; i < program.variableCount(); ++i) {
+            node.getVariables().add(program.variableAt(i).getRegister());
+        }
+        Optimizer optimizer = new Optimizer();
+        optimizer.optimize(node, splitter);
+        node.getModifiers().addAll(mapModifiers(method.getModifiers()));
+        int paramCount = Math.min(method.getSignature().length, program.variableCount());
+        for (int i = 0; i < paramCount; ++i) {
+            Variable var = program.variableAt(i);
+            node.getParameterDebugNames().add(new HashSet<>(var.getDebugNames()));
+        }
+        return node;
+    }
+
+    private AsyncMethodPart getRegularMethodStatement(Program program, int[] targetBlocks, boolean async) {
         AsyncMethodPart result = new AsyncMethodPart();
         lastBlockId = 1;
         graph = ProgramUtils.buildControlFlowGraph(program);
-        indexer = new GraphIndexer(graph);
+        int[] weights = new int[graph.size()];
+        for (int i = 0; i < weights.length; ++i) {
+            weights[i] = program.basicBlockAt(i).getInstructions().size();
+        }
+        indexer = new GraphIndexer(graph, weights);
         graph = indexer.getGraph();
         loopGraph = new LoopGraph(this.graph);
         unflatCode();
@@ -269,6 +297,7 @@ public class Decompiler {
         generator.indexer = indexer;
         parentNode = codeTree.getRoot();
         currentNode = parentNode.getFirstChild();
+        generator.async = async;
         for (int i = 0; i < this.graph.size(); ++i) {
             Block block = stack.peek();
             while (block.end == i) {
@@ -302,12 +331,6 @@ public class Decompiler {
                 int tmp = indexer.nodeAt(next);
                 generator.nextBlock = tmp >= 0 && next < indexer.size() ? program.basicBlockAt(tmp) : null;
                 generator.statements.clear();
-                if (node == 0 && inputVar != null) {
-                    RestoreAsyncStatement restoreStmt = new RestoreAsyncStatement();
-                    restoreStmt.setReceiver(inputVar >= 0 ? inputVar : null);
-                    generator.statements.add(restoreStmt);
-                }
-                generator.asyncTarget = null;
                 InstructionLocation lastLocation = null;
                 NodeLocation nodeLocation = null;
                 List<Instruction> instructions = generator.currentBlock.getInstructions();
@@ -320,11 +343,14 @@ public class Decompiler {
                     if (insn.getLocation() != null) {
                         generator.setCurrentLocation(nodeLocation);
                     }
-                    if (targetBlocks[node] >= 0 && j == instructions.size() - 1) {
-                        generator.asyncTarget = targetBlocks[node];
-                    }
                     insn.acceptVisitor(generator);
                 }
+                if (targetBlocks[node] >= 0) {
+                    GotoPartStatement stmt = new GotoPartStatement();
+                    stmt.setPart(targetBlocks[node]);
+                    generator.statements.add(stmt);
+                }
+
                 for (TryCatchBlock tryCatch : generator.currentBlock.getTryCatchBlocks()) {
                     TryCatchStatement tryCatchStmt = new TryCatchStatement();
                     tryCatchStmt.setExceptionType(tryCatch.getExceptionType());

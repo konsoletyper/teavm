@@ -17,7 +17,7 @@ package org.teavm.classlib.java.nio;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 class TDoubleBufferOverByteBuffer extends TDoubleBufferImpl {
     private TByteBufferImpl byteByffer;

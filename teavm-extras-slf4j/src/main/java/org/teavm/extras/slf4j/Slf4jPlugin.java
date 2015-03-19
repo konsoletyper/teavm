@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,14 +13,18 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.dependency;
+package org.teavm.extras.slf4j;
+
+import org.teavm.vm.spi.TeaVMHost;
+import org.teavm.vm.spi.TeaVMPlugin;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
-public interface DependencyAgentType {
-    String getName();
-
-    DependencyAgent getDependencyAgent();
+public class Slf4jPlugin implements TeaVMPlugin {
+    @Override
+    public void install(TeaVMHost host) {
+        host.add(new LoggerFactoryTransformer());
+    }
 }

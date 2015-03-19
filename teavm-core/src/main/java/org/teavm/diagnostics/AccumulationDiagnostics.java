@@ -22,7 +22,7 @@ import org.teavm.model.CallLocation;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class AccumulationDiagnostics implements Diagnostics, ProblemProvider {
     private List<Problem> problems = new ArrayList<>();

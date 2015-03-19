@@ -18,6 +18,7 @@ package org.teavm.classlib.java.lang;
 /**
  *
  * @author Alexey Andreev
+ * @param <T> type this object is comparable to.
  */
 public interface TComparable<T> {
     int compareTo(T other);

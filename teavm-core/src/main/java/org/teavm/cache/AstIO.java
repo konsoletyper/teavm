@@ -86,6 +86,56 @@ public class AstIO {
         return node;
     }
 
+    public void writeAsync(DataOutput output, AsyncMethodNode method) throws IOException {
+        output.writeInt(packModifiers(method.getModifiers()));
+        output.writeShort(method.getVariables().size());
+        for (int var : method.getVariables()) {
+            output.writeShort(var);
+        }
+        output.writeShort(method.getParameterDebugNames().size());
+        for (Set<String> debugNames : method.getParameterDebugNames()) {
+            output.writeShort(debugNames != null ? debugNames.size() : 0);
+            if (debugNames != null) {
+                for (String debugName : debugNames) {
+                    output.writeUTF(debugName);
+                }
+            }
+        }
+        try {
+             output.writeShort(method.getBody().size());
+             for (int i = 0; i < method.getBody().size(); ++i) {
+                 method.getBody().get(i).getStatement().acceptVisitor(new NodeWriter(output));
+             }
+        } catch (IOExceptionWrapper e) {
+            throw new IOException("Error writing method body", e.getCause());
+        }
+    }
+
+    public AsyncMethodNode readAsync(DataInput input, MethodReference method) throws IOException {
+        AsyncMethodNode node = new AsyncMethodNode(method);
+        node.getModifiers().addAll(unpackModifiers(input.readInt()));
+        int varCount = input.readShort();
+        for (int i = 0; i < varCount; ++i) {
+            node.getVariables().add((int)input.readShort());
+        }
+        int paramDebugNameCount = input.readShort();
+        for (int i = 0; i < paramDebugNameCount; ++i) {
+            int debugNameCount = input.readShort();
+            Set<String> debugNames = new HashSet<>();
+            for (int j = 0; j < debugNameCount; ++j) {
+                debugNames.add(input.readUTF());
+            }
+            node.getParameterDebugNames().add(debugNames);
+        }
+        int partCount = input.readShort();
+        for (int i = 0; i < partCount; ++i) {
+            AsyncMethodPart part = new AsyncMethodPart();
+            part.setStatement(readStatement(input));
+            node.getBody().add(part);
+        }
+        return node;
+    }
+
     private int packModifiers(Set<NodeModifier> modifiers) {
         int packed = 0;
         for (NodeModifier modifier : modifiers) {
@@ -155,6 +205,7 @@ public class AstIO {
                     writeExpr(statement.getLeftValue());
                 }
                 writeExpr(statement.getRightValue());
+                output.writeBoolean(statement.isAsync());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -305,10 +356,32 @@ public class AstIO {
         }
 
         @Override
-        public void visit(RestoreAsyncStatement statement) {
+        public void visit(GotoPartStatement statement) {
             try {
                 output.writeByte(17);
-                output.writeShort(statement.getReceiver() != null ? statement.getReceiver() : -1);
+                output.writeShort(statement.getPart());
+            } catch (IOException e) {
+                throw new IOExceptionWrapper(e);
+            }
+        }
+
+        @Override
+        public void visit(MonitorEnterStatement statement) {
+            try {
+                output.writeByte(18);
+                writeLocation(statement.getLocation());
+                writeExpr(statement.getObjectRef());
+            } catch (IOException e) {
+                throw new IOExceptionWrapper(e);
+            }
+        }
+
+        @Override
+        public void visit(MonitorExitStatement statement) {
+            try {
+                output.writeByte(19);
+                writeLocation(statement.getLocation());
+                writeExpr(statement.getObjectRef());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -506,16 +579,6 @@ public class AstIO {
                 throw new IOExceptionWrapper(e);
             }
         }
-
-        @Override
-        public void visit(MonitorEnterStatement statement) {
-
-        }
-
-        @Override
-        public void visit(MonitorExitStatement statement) {
-
-        }
     }
 
     private NodeLocation readLocation(DataInput input) throws IOException {
@@ -539,6 +602,7 @@ public class AstIO {
                 }
                 stmt.setLeftValue(readExpr(input));
                 stmt.setRightValue(readExpr(input));
+                stmt.setAsync(input.readBoolean());
                 return stmt;
             }
             case 1: {
@@ -549,6 +613,7 @@ public class AstIO {
                     stmt.getDebugNames().add(input.readUTF());
                 }
                 stmt.setRightValue(readExpr(input));
+                stmt.setAsync(input.readBoolean());
                 return stmt;
             }
             case 2: {
@@ -670,11 +735,23 @@ public class AstIO {
                 return stmt;
             }
             case 17: {
-                short var = input.readShort();
-                RestoreAsyncStatement stmt = new RestoreAsyncStatement();
-                stmt.setReceiver(var >= 0 ? (int)var : null);
+                GotoPartStatement stmt = new GotoPartStatement();
+                stmt.setPart(input.readShort());
                 return stmt;
             }
+            case 18: {
+                MonitorEnterStatement stmt = new MonitorEnterStatement();
+                stmt.setLocation(readLocation(input));
+                stmt.setObjectRef(readExpr(input));
+                return stmt;
+            }
+            case 19: {
+                MonitorExitStatement stmt = new MonitorExitStatement();
+                stmt.setLocation(readLocation(input));
+                stmt.setObjectRef(readExpr(input));
+                return stmt;
+            }
+            // TODO: MonitorEnter/MonitorExit
             default:
                 throw new RuntimeException("Unexpected statement type: " + type);
         }
@@ -752,7 +829,7 @@ public class AstIO {
             }
             case 9: {
                 ConstantExpr expr = new ConstantExpr();
-                expr.setValue(symbolTable.at(input.readInt()));
+                expr.setValue(ValueType.parse(symbolTable.at(input.readInt())));
                 return expr;
             }
             case 10: {

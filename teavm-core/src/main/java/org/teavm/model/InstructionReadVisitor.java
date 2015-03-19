@@ -153,7 +153,7 @@ class InstructionReadVisitor implements InstructionVisitor {
 
     @Override
     public void visit(PutFieldInstruction insn) {
-        reader.putField(insn.getInstance(), insn.getField(), insn.getValue());
+        reader.putField(insn.getInstance(), insn.getField(), insn.getValue(), insn.getFieldType());
     }
 
     @Override

@@ -21,13 +21,12 @@ import org.teavm.codegen.SourceWriter;
 import org.teavm.javascript.RenderingContext;
 import org.teavm.jso.plugin.JSODependencyListener.ExposedClass;
 import org.teavm.model.MethodDescriptor;
-import org.teavm.model.MethodReference;
 import org.teavm.vm.BuildTarget;
 import org.teavm.vm.spi.RendererListener;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 class JSOAliasRenderer implements RendererListener {
     private JSODependencyListener dependencyListener;
@@ -57,8 +56,7 @@ class JSOAliasRenderer implements RendererListener {
             writer.append("c").ws().append("=").ws().appendClass(entry.getKey()).append(".prototype;").softNewLine();
             for (Map.Entry<MethodDescriptor, String> aliasEntry : entry.getValue().methods.entrySet()) {
                 writer.append("c.").append(aliasEntry.getValue()).ws().append("=").ws().append("c.")
-                        .appendMethod(new MethodReference(entry.getKey(), aliasEntry.getKey()))
-                        .append(";").softNewLine();
+                        .appendMethod(aliasEntry.getKey()).append(";").softNewLine();
             }
         }
         writer.outdent().append("})();").newLine();

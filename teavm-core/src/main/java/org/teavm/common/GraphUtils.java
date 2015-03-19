@@ -15,8 +15,9 @@
  */
 package org.teavm.common;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-
+import java.util.List;
 
 /**
  *
@@ -30,37 +31,8 @@ public final class GraphUtils {
     private GraphUtils() {
     }
 
-    public static Graph invert(Graph graph) {
+    public static int[] findBackEdges(Graph graph) {
         int sz = graph.size();
-        GraphBuilder result = new GraphBuilder();
-        int[] sourceEdges = new int[sz];
-        for (int node = 0; node < sz; ++node) {
-            int sourceCount = graph.copyIncomingEdges(node, sourceEdges);
-            for (int i = 0; i < sourceCount; ++i) {
-                int source = sourceEdges[i];
-                result.addEdge(node, source);
-            }
-        }
-        return result.build();
-    }
-
-    public static Graph close(Graph graph) {
-        GraphBuilder result = new GraphBuilder();
-        for (int node = 0; node < graph.size(); ++node) {
-            int[] next = graph.outgoingEdges(node);
-            for (int target : next) {
-                result.addEdge(node, target);
-            }
-            if (next.length == 0) {
-                result.addEdge(node, graph.size());
-            }
-        }
-        return result.build();
-    }
-
-    public static Graph removeLoops(Graph graph) {
-        int sz = graph.size();
-        GraphBuilder result = new GraphBuilder();
         int[] stack = new int[sz * 2];
         int stackSize = 0;
         byte[] state = new byte[sz];
@@ -69,6 +41,7 @@ public final class GraphUtils {
                 stack[stackSize++] = i;
             }
         }
+        IntegerArray result = new IntegerArray(2);
         while (stackSize > 0) {
             int node = stack[--stackSize];
             switch (state[node]) {
@@ -78,11 +51,11 @@ public final class GraphUtils {
                     for (int next : graph.outgoingEdges(node)) {
                         switch (state[next]) {
                             case NONE:
-                                result.addEdge(node, next);
                                 stack[stackSize++] = next;
                                 break;
-                            case VISITED:
-                                result.addEdge(node, next);
+                            case VISITING:
+                                result.add(node);
+                                result.add(next);
                                 break;
                         }
                     }
@@ -92,16 +65,91 @@ public final class GraphUtils {
                     break;
             }
         }
-        return result.build();
+        return result.getAll();
     }
 
-    public static int edgeCount(Graph graph) {
-        int cnt = 0;
-        int sz = graph.size();
-        for (int node = 0; node < sz; ++node) {
-            cnt += graph.outgoingEdgesCount(node);
+    public static boolean isIrreducible(Graph graph) {
+        DominatorTree dom = buildDominatorTree(graph);
+        int[] backEdges = findBackEdges(graph);
+        for (int i = 0; i < backEdges.length; i += 2) {
+            if (!dom.dominates(backEdges[i + 1], backEdges[i])) {
+                return true;
+            }
         }
-        return cnt;
+        return false;
+    }
+
+    public static int[][] findStronglyConnectedComponents(Graph graph, int[] start) {
+        return findStronglyConnectedComponents(graph, start, new GraphNodeFilter() {
+            @Override public boolean match(int node) {
+                return true;
+            }
+        });
+    }
+
+    /*
+     * Tarjan's algorithm
+     */
+    public static int[][] findStronglyConnectedComponents(Graph graph, int[] start, GraphNodeFilter filter) {
+        List<int[]> components = new ArrayList<>();
+        int[] visitIndex = new int[graph.size()];
+        int[] headerIndex = new int[graph.size()];
+        int lastIndex = 0;
+        IntegerStack stack = new IntegerStack(graph.size());
+
+        for (int startNode : start) {
+            stack.push(startNode);
+            IntegerStack currentComponent = new IntegerStack(1);
+            while (!stack.isEmpty()) {
+                int node = stack.pop();
+                if (visitIndex[node] > 0) {
+                    if (headerIndex[node] > 0) {
+                        continue;
+                    }
+                    int hdr = visitIndex[node];
+                    for (int successor : graph.outgoingEdges(node)) {
+                        if (!filter.match(successor)) {
+                            continue;
+                        }
+                        if (headerIndex[successor] == 0) {
+                            hdr = Math.min(hdr, visitIndex[successor]);
+                        } else {
+                            hdr = Math.min(hdr, headerIndex[successor]);
+                        }
+                    }
+                    if (hdr == visitIndex[node]) {
+                        IntegerArray componentMembers = new IntegerArray(graph.size());
+                        while (true) {
+                            int componentMember = currentComponent.pop();
+                            componentMembers.add(componentMember);
+                            headerIndex[componentMember] = graph.size() + 1;
+                            if (visitIndex[componentMember] == hdr) {
+                                break;
+                            }
+                        }
+                        components.add(componentMembers.getAll());
+                    }
+                    headerIndex[node] = hdr;
+                } else {
+                    visitIndex[node] = ++lastIndex;
+                    currentComponent.push(node);
+                    stack.push(node);
+                    for (int successor : graph.outgoingEdges(node)) {
+                        if (!filter.match(successor) || visitIndex[successor] > 0) {
+                            continue;
+                        }
+                        stack.push(successor);
+                    }
+                }
+            }
+            for (int i = 0; i < headerIndex.length; ++i) {
+                if (visitIndex[i] > 0) {
+                    headerIndex[i] = graph.size() + 1;
+                }
+            }
+        }
+
+        return components.toArray(new int[0][]);
     }
 
     public static DominatorTree buildDominatorTree(Graph graph) {
@@ -119,6 +167,10 @@ public final class GraphUtils {
             }
         }
         return graph.build();
+    }
+
+    public static void splitIrreducibleGraph(Graph graph, int[] weights, GraphSplittingBackend backend) {
+        new IrreducibleGraphConverter().convertToReducible(graph, weights, backend);
     }
 
     public static int[][] findDominanceFrontiers(Graph cfg, DominatorTree domTree) {
@@ -186,7 +238,6 @@ public final class GraphUtils {
 
         return domFrontiers;
     }
-
 
     private static int[] makeSet(IntegerArray array) {
         int[] items = array.getAll();

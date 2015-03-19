@@ -24,7 +24,7 @@ import org.teavm.diagnostics.Problem;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface Violations {
     Set<MethodDependencyInfo> getMissingMethods();

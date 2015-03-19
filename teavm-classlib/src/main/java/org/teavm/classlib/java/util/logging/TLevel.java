@@ -21,7 +21,7 @@ import org.teavm.classlib.java.lang.TObject;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TLevel extends TObject implements TSerializable {
     public static final TLevel OFF = new TLevel("OFF", TInteger.MAX_VALUE);

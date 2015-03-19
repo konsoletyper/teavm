@@ -27,6 +27,7 @@ public class AssignmentStatement extends Statement {
     private Expr rightValue;
     private NodeLocation location;
     private Set<String> debugNames = new HashSet<>();
+    private boolean async;
 
     public Expr getLeftValue() {
         return leftValue;
@@ -54,6 +55,14 @@ public class AssignmentStatement extends Statement {
 
     public Set<String> getDebugNames() {
         return debugNames;
+    }
+
+    public boolean isAsync() {
+        return async;
+    }
+
+    public void setAsync(boolean async) {
+        this.async = async;
     }
 
     @Override

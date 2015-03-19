@@ -15,13 +15,7 @@
  */
 package org.teavm.dependency;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.callgraph.DefaultCallGraph;
 import org.teavm.callgraph.DefaultCallGraphNode;
@@ -48,7 +42,7 @@ import org.teavm.model.util.ModelUtils;
  *
  * @author Alexey Andreev
  */
-public class DependencyChecker implements DependencyInfo, DependencyAgent {
+public class DependencyChecker implements DependencyInfo {
     static final boolean shouldLog = System.getProperty("org.teavm.logDependencies", "false").equals("true");
     private int classNameSuffix;
     private DependencyClassSource classSource;
@@ -67,6 +61,9 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     private boolean interrupted;
     private Diagnostics diagnostics;
     DefaultCallGraph callGraph = new DefaultCallGraph();
+    private DependencyAgent agent;
+    List<DependencyNode> nodes = new ArrayList<>();
+    List<BitSet> typeBitSets = new ArrayList<>();
 
     public DependencyChecker(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services,
             Diagnostics diagnostics) {
@@ -108,6 +105,12 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
                 return createClassDependency(preimage);
             }
         });
+
+        agent = new DependencyAgent(this);
+    }
+
+    public DependencyAgent getAgent() {
+        return agent;
     }
 
     public DependencyCheckerInterruptor getInterruptor() {
@@ -122,20 +125,21 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         return interrupted;
     }
 
-    @Override
     public DependencyType getType(String name) {
         DependencyType type = typeMap.get(name);
         if (type == null) {
             type = new DependencyType(this, name, types.size());
             types.add(type);
+            typeBitSets.add(new BitSet(nodes.size()));
             typeMap.put(name, type);
         }
         return type;
     }
 
-    @Override
     public DependencyNode createNode() {
-        return new DependencyNode(this);
+        DependencyNode node = new DependencyNode(this, nodes.size());
+        nodes.add(node);
+        return node;
     }
 
     @Override
@@ -148,19 +152,17 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         return classLoader;
     }
 
-    @Override
     public String generateClassName() {
         return "$$teavm_generated_class$$" + classNameSuffix++;
     }
 
-    @Override
     public void submitClass(ClassHolder cls) {
         classSource.submit(ModelUtils.copyClass(cls));
     }
 
     public void addDependencyListener(DependencyListener listener) {
         listeners.add(listener);
-        listener.started(this);
+        listener.started(agent);
     }
 
     public void addClassTransformer(ClassHolderTransformer transformer) {
@@ -199,7 +201,8 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         });
     }
 
-    @Override
+    private Set<String> classesAddedByRoot = new HashSet<>();
+
     public ClassDependency linkClass(String className, CallLocation callLocation) {
         ClassDependency dep = classCache.map(className);
         boolean added = true;
@@ -208,10 +211,12 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
             if (!addClassAccess(callGraphNode, className, callLocation.getSourceLocation())) {
                 added = false;
             }
+        } else {
+            added = classesAddedByRoot.add(className);
         }
         if (!dep.isMissing() && added) {
             for (DependencyListener listener : listeners) {
-                listener.classAchieved(DependencyChecker.this, className, callLocation);
+                listener.classAchieved(agent, className, callLocation);
             }
         }
         return dep;
@@ -247,7 +252,8 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         return dependency;
     }
 
-    @Override
+    private Set<MethodReference> methodsAddedByRoot = new HashSet<>();
+
     public MethodDependency linkMethod(MethodReference methodRef, CallLocation callLocation) {
         if (methodRef == null) {
             throw new IllegalArgumentException();
@@ -261,11 +267,13 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         if (callLocation != null && callLocation.getMethod() != null) {
             added = callGraph.getNode(callLocation.getMethod()).addCallSite(methodRef,
                     callLocation.getSourceLocation());
+        } else {
+            added = methodsAddedByRoot.add(methodRef);
         }
         MethodDependency graph = methodCache.map(methodRef);
         if (!graph.isMissing() && added) {
             for (DependencyListener listener : listeners) {
-                listener.methodAchieved(this, graph, callLocation);
+                listener.methodAchieved(agent, graph, callLocation);
             }
             activateDependencyPlugin(graph, callLocation);
         }
@@ -333,11 +341,9 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     private MethodDependency createMethodDep(MethodReference methodRef, MethodReader method) {
         ValueType[] arguments = methodRef.getParameterTypes();
         int paramCount = arguments.length + 1;
-        int varCount = Math.max(paramCount, method != null && method.getProgram() != null ?
-                method.getProgram().variableCount() : 0);
-        DependencyNode[] parameterNodes = new DependencyNode[varCount];
-        for (int i = 0; i < varCount; ++i) {
-            parameterNodes[i] = new DependencyNode(this);
+        DependencyNode[] parameterNodes = new DependencyNode[arguments.length + 1];
+        for (int i = 0; i < parameterNodes.length; ++i) {
+            parameterNodes[i] = createNode();
             if (shouldLog) {
                 parameterNodes[i].setTag(methodRef + ":" + i);
             }
@@ -346,7 +352,7 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         if (methodRef.getDescriptor().getResultType() == ValueType.VOID) {
             resultNode = null;
         } else {
-            resultNode = new DependencyNode(this);
+            resultNode = createNode();
             if (shouldLog) {
                 resultNode.setTag(methodRef + ":RESULT");
             }
@@ -392,11 +398,14 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         return classCache.getCachedPreimages();
     }
 
-    @Override
+    private Set<FieldReference> fieldsAddedByRoot = new HashSet<>();
+
     public FieldDependency linkField(final FieldReference fieldRef, final CallLocation location) {
         boolean added = true;
         if (location != null) {
             added = callGraph.getNode(location.getMethod()).addFieldAccess(fieldRef, location.getSourceLocation());
+        } else {
+            added = fieldsAddedByRoot.add(fieldRef);
         }
         FieldDependency dep = fieldCache.map(fieldRef);
         if (!dep.isMissing()) {
@@ -408,7 +417,7 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         }
         if (!dep.isMissing() && added) {
             for (DependencyListener listener : listeners) {
-                listener.fieldAchieved(DependencyChecker.this, dep, location);
+                listener.fieldAchieved(agent, dep, location);
             }
         }
         return dep;
@@ -425,7 +434,7 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     }
 
     private FieldDependency createFieldNode(final FieldReference fieldRef, FieldReader field) {
-        DependencyNode node = new DependencyNode(this);
+        DependencyNode node = createNode();
         if (shouldLog) {
             node.setTag(fieldRef.getClassName() + "#" + fieldRef.getFieldName());
         }
@@ -443,7 +452,7 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
     private void activateDependencyPlugin(MethodDependency methodDep, CallLocation location) {
         attachDependencyPlugin(methodDep);
         if (methodDep.dependencyPlugin != null) {
-            methodDep.dependencyPlugin.methodAchieved(this, methodDep, location);
+            methodDep.dependencyPlugin.methodAchieved(agent, methodDep, location);
         }
     }
 
@@ -497,12 +506,10 @@ public class DependencyChecker implements DependencyInfo, DependencyAgent {
         }
     }
 
-    @Override
     public <T> T getService(Class<T> type) {
         return services.getService(type);
     }
 
-    @Override
     public Diagnostics getDiagnostics() {
         return diagnostics;
     }

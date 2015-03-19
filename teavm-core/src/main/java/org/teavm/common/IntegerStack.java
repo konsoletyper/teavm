@@ -31,7 +31,7 @@ public class IntegerStack {
 
     public void push(int value) {
         if (head == buffer.length) {
-            buffer = Arrays.copyOf(buffer, buffer.length * 2);
+            buffer = Arrays.copyOf(buffer, Math.max(buffer.length * 2, 1));
         }
         buffer[head++] = value;
     }

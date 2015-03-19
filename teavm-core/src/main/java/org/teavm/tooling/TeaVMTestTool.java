@@ -25,7 +25,7 @@ import org.teavm.debugging.information.DebugInformation;
 import org.teavm.debugging.information.DebugInformationBuilder;
 import org.teavm.javascript.EmptyRegularMethodNodeCache;
 import org.teavm.javascript.InMemoryRegularMethodNodeCache;
-import org.teavm.javascript.RegularMethodNodeCache;
+import org.teavm.javascript.MethodNodeCache;
 import org.teavm.model.*;
 import org.teavm.parsing.ClasspathClassHolderSource;
 import org.teavm.testing.JUnitTestAdapter;
@@ -36,7 +36,7 @@ import org.teavm.vm.TeaVMBuilder;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TeaVMTestTool {
     private Map<String, List<MethodReference>> groupedMethods = new HashMap<>();
@@ -58,7 +58,7 @@ public class TeaVMTestTool {
     private boolean sourceFilesCopied;
     private boolean incremental;
     private List<SourceFileProvider> sourceFileProviders = new ArrayList<>();
-    private RegularMethodNodeCache astCache;
+    private MethodNodeCache astCache;
     private ProgramCache programCache;
     private SourceFilesCopier sourceFilesCopier;
 

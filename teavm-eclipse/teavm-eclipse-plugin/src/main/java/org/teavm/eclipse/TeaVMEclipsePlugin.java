@@ -34,7 +34,7 @@ import org.osgi.service.prefs.BackingStoreException;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TeaVMEclipsePlugin extends AbstractUIPlugin {
     public static final String ID = "teavm-eclipse-plugin";

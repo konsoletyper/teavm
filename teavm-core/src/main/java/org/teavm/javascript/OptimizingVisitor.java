@@ -25,11 +25,13 @@ import org.teavm.javascript.ast.*;
 class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     public Expr resultExpr;
     public Statement resultStmt;
-    private ReadWriteStatsBuilder stats;
+    private boolean[] preservedVars;
+    private int[] readFrequencies;
     private List<Statement> resultSequence;
 
-    public OptimizingVisitor(ReadWriteStatsBuilder stats) {
-        this.stats = stats;
+    public OptimizingVisitor(boolean[] preservedVars, int[] readFreqencies) {
+        this.preservedVars = preservedVars;
+        this.readFrequencies = readFreqencies;
     }
 
     private static boolean isZero(Expr expr) {
@@ -121,7 +123,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     public void visit(VariableExpr expr) {
         int index = expr.getIndex();
         resultExpr = expr;
-        if (stats.reads[index] != 1 || stats.writes[index] != 1) {
+        if (readFrequencies[index] != 1 || preservedVars[index]) {
             return;
         }
         if (resultSequence.isEmpty()) {
@@ -132,6 +134,9 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
             return;
         }
         AssignmentStatement assignment = (AssignmentStatement)last;
+        if (assignment.isAsync()) {
+            return;
+        }
         if (!(assignment.getLeftValue() instanceof VariableExpr)) {
             return;
         }
@@ -180,7 +185,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     }
 
     private boolean tryApplyConstructor(InvocationExpr expr) {
-        if (expr.getAsyncTarget() != null || !expr.getMethod().getName().equals("<init>")) {
+        if (!expr.getMethod().getName().equals("<init>")) {
             return false;
         }
         if (resultSequence == null || resultSequence.isEmpty()) {
@@ -214,7 +219,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         InvocationExpr constructrExpr = Expr.constructObject(expr.getMethod(), args);
         constructrExpr.setLocation(expr.getLocation());
         assignment.setRightValue(constructrExpr);
-        stats.reads[var.getIndex()]--;
+        readFrequencies[var.getIndex()]--;
         return true;
     }
 
@@ -396,7 +401,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                     if (last instanceof BreakStatement) {
                         BreakStatement breakStmt = (BreakStatement)last;
                         if (exit != null && exit == breakStmt.getTarget()) {
-                            cond.getAlternative().remove(cond.getConsequent().size() - 1);
+                            cond.getAlternative().remove(cond.getAlternative().size() - 1);
                             List<Statement> remaining = statements.subList(i + 1, statements.size());
                             cond.getConsequent().addAll(remaining);
                             remaining.clear();
@@ -559,7 +564,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     public void visit(BlockStatement statement) {
         List<Statement> statements = processSequence(statement.getBody());
         eliminateRedundantBreaks(statements, statement);
-        CertainBlockCountVisitor usageCounter = new CertainBlockCountVisitor(statement);
+        BlockCountVisitor usageCounter = new BlockCountVisitor(statement);
         usageCounter.visit(statements);
         if (usageCounter.getCount() == 0) {
             SequentialStatement result = new SequentialStatement();
@@ -615,17 +620,21 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     }
 
     @Override
-    public void visit(RestoreAsyncStatement statement) {
+    public void visit(GotoPartStatement statement) {
         resultStmt = statement;
     }
 
     @Override
     public void visit(MonitorEnterStatement statement) {
+        statement.getObjectRef().acceptVisitor(this);
+        statement.setObjectRef(resultExpr);
         resultStmt = statement;
     }
 
     @Override
     public void visit(MonitorExitStatement statement) {
+        statement.getObjectRef().acceptVisitor(this);
+        statement.setObjectRef(resultExpr);
         resultStmt = statement;
     }
 }

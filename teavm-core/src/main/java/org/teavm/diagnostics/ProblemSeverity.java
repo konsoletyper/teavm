@@ -17,7 +17,7 @@ package org.teavm.diagnostics;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public enum ProblemSeverity {
     ERROR,

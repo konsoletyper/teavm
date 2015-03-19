@@ -25,7 +25,7 @@ import org.teavm.model.util.ProgramUtils;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class ClassSetOptimizer {
     private List<MethodOptimization> getOptimizations() {

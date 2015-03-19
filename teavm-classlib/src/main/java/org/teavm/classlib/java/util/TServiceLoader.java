@@ -20,7 +20,8 @@ import org.teavm.platform.PlatformClass;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
+ * @param <S>
  */
 public final class TServiceLoader<S> extends TObject implements TIterable<S> {
     private Object[] services;

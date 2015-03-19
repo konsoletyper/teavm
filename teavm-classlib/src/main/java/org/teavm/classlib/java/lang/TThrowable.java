@@ -23,7 +23,7 @@ import org.teavm.javascript.spi.Superclass;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 @Superclass("java.lang.Object")
 public class TThrowable extends RuntimeException {

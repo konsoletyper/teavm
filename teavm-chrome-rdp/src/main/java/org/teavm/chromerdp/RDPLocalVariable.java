@@ -20,7 +20,7 @@ import org.teavm.debugging.javascript.JavaScriptVariable;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class RDPLocalVariable implements JavaScriptVariable {
     private String name;

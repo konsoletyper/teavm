@@ -22,7 +22,8 @@ import org.teavm.javascript.spi.Rename;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
+ * @param <E>
  */
 public class TArrayList<E> extends TAbstractList<E> implements TCloneable, TSerializable {
     private E[] array;

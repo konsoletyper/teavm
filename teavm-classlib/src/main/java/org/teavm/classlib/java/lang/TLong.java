@@ -19,7 +19,7 @@ import org.teavm.javascript.spi.GeneratedBy;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TLong extends TNumber implements TComparable<TLong> {
     public static final long MIN_VALUE = -0x8000000000000000L;

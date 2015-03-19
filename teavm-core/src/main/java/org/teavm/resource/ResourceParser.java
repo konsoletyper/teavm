@@ -25,7 +25,7 @@ import org.teavm.parsing.Parser;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class ResourceParser implements Mapper<String, ClassHolder> {
     private ResourceReader resourceReader;

@@ -21,7 +21,7 @@ import org.teavm.javascript.spi.Rename;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TBitSet extends TObject implements TCloneable, TSerializable {
     private int[] data;

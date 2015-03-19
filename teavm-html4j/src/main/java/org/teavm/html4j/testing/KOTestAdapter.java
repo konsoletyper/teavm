@@ -24,7 +24,7 @@ import org.teavm.testing.TestAdapter;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class KOTestAdapter implements TestAdapter {
     @Override

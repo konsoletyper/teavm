@@ -84,7 +84,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     private Properties properties = new Properties();
     private DebugInformationEmitter debugEmitter;
     private ProgramCache programCache;
-    private RegularMethodNodeCache astCache = new EmptyRegularMethodNodeCache();
+    private MethodNodeCache astCache = new EmptyRegularMethodNodeCache();
     private boolean incremental;
     private TeaVMProgressListener progressListener;
     private boolean cancelled;
@@ -140,6 +140,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
      * Reports whether this TeaVM instance uses obfuscation when generating the JavaScript code.
      *
      * @see #setMinifying(boolean)
+     * @return whether TeaVM produces obfuscated code.
      */
     public boolean isMinifying() {
         return minifying;
@@ -149,6 +150,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
      * Specifies whether this TeaVM instance uses obfuscation when generating the JavaScript code.
      *
      * @see #isMinifying()
+     * @param minifying whether TeaVM should obfuscate code.
      */
     public void setMinifying(boolean minifying) {
         this.minifying = minifying;
@@ -181,11 +183,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         return new Properties(properties);
     }
 
-    public RegularMethodNodeCache getAstCache() {
+    public MethodNodeCache getAstCache() {
         return astCache;
     }
 
-    public void setAstCache(RegularMethodNodeCache methodAstCache) {
+    public void setAstCache(MethodNodeCache methodAstCache) {
         this.astCache = methodAstCache;
     }
 
@@ -287,6 +289,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     /**
      * Gets a {@link ClassReaderSource} which is used by this TeaVM instance. It is exactly what was
      * passed to {@link TeaVMBuilder#setClassSource(ClassHolderSource)}.
+     *
+     * @return class source.
      */
     public ClassReaderSource getClassSource() {
         return classSource;
@@ -317,11 +321,13 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
      * are specified. This method may fail if there are items (classes, methods and fields)
      * that are required by entry points, but weren't found in classpath. In this case no
      * actual generation happens and no exceptions thrown, but you can further call
-     * {@link #checkForViolations()} or {@link #hasMissingItems()} to learn the build state.</p>
+     * {@link #getProblemProvider()} to learn the build state.</p>
      *
      * @param writer where to generate JavaScript. Should not be null.
      * @param target where to generate additional resources. Can be null, but if there are
      * plugins or inteceptors that generate additional resources, the build process will fail.
+     *
+     * @throws RenderingException when something went wrong during rendering phase.
      */
     public void build(Appendable writer, BuildTarget target) throws RenderingException {
         // Check dependencies
@@ -437,13 +443,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             for (Map.Entry<String, TeaVMEntryPoint> entry : entryPoints.entrySet()) {
                 sourceWriter.append("var ").append(entry.getKey()).ws().append("=").ws();
                 MethodReference ref = entry.getValue().reference;
-                boolean asyncMethod = asyncMethods.contains(ref);
-                boolean wrapAsync = !asyncMethod && entry.getValue().isAsync();
-                if (wrapAsync) {
-                    sourceWriter.append("$rt_staticAsyncAdapter(").appendMethodBody(ref).append(')');
-                } else {
-                    sourceWriter.append(asyncMethod ? naming.getFullNameForAsync(ref) : naming.getFullNameFor(ref));
-                }
+                sourceWriter.append(naming.getFullNameFor(ref));
                 sourceWriter.append(";").newLine();
             }
             for (Map.Entry<String, String> entry : exportedClasses.entrySet()) {

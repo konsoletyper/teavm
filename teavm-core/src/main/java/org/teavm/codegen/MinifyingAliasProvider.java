@@ -16,6 +16,7 @@
 package org.teavm.codegen;
 
 import org.teavm.model.FieldReference;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 
 /**
@@ -25,25 +26,36 @@ import org.teavm.model.MethodReference;
 public class MinifyingAliasProvider implements AliasProvider {
     private static String startLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private static String letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    private static String startVirtualLetters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private int lastSuffix;
+    private int lastVirtual;
 
     @Override
     public String getAlias(FieldReference field) {
-        return getNewAlias();
+        return getNewAlias(lastVirtual++, startVirtualLetters);
     }
 
     @Override
     public String getAlias(MethodReference method) {
-        return getNewAlias();
+        return getNewAlias(lastSuffix++, startLetters);
+    }
+
+    @Override
+    public String getAlias(MethodDescriptor method) {
+        return getNewAlias(lastVirtual++, startVirtualLetters);
     }
 
     @Override
     public String getAlias(String className) {
-        return getNewAlias();
+        return getNewAlias(lastSuffix++, startLetters);
     }
 
-    private String getNewAlias() {
-        int index = lastSuffix++;
+    @Override
+    public String getFunctionAlias(String className) {
+        return getNewAlias(lastSuffix++, startLetters);
+    }
+
+    private String getNewAlias(int index, String startLetters) {
         StringBuilder sb = new StringBuilder();
         sb.append(startLetters.charAt(index % startLetters.length()));
         index /= startLetters.length();

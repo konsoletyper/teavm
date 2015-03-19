@@ -25,6 +25,7 @@ import org.teavm.javascript.spi.Rename;
 /**
  *
  * @author Alexey Andreev
+ * @param <E>
  */
 public class THashSet<E> extends TAbstractSet<E> implements TCloneable, TSerializable {
     transient THashMap<E, THashSet<E>> backingMap;

@@ -11,7 +11,7 @@ import org.teavm.eclipse.TeaVMEclipsePlugin;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class URLStorage extends PlatformObject implements IStorage {
     private URL url;

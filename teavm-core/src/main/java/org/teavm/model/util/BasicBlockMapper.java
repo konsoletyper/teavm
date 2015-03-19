@@ -27,16 +27,19 @@ public abstract class BasicBlockMapper implements InstructionVisitor {
 
     public void transform(Program program) {
         for (int i = 0; i < program.basicBlockCount(); ++i) {
-            BasicBlock block = program.basicBlockAt(i);
-            block.getLastInstruction().acceptVisitor(this);
-            for (Phi phi : block.getPhis()) {
-                for (Incoming incoming : phi.getIncomings()) {
-                    incoming.setSource(map(incoming.getSource()));
-                }
+            transform(program.basicBlockAt(i));
+        }
+    }
+
+    public void transform(BasicBlock block) {
+        block.getLastInstruction().acceptVisitor(this);
+        for (Phi phi : block.getPhis()) {
+            for (Incoming incoming : phi.getIncomings()) {
+                incoming.setSource(map(incoming.getSource()));
             }
-            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                tryCatch.setHandler(map(tryCatch.getHandler()));
-            }
+        }
+        for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+            tryCatch.setHandler(map(tryCatch.getHandler()));
         }
     }
 
@@ -187,15 +190,15 @@ public abstract class BasicBlockMapper implements InstructionVisitor {
 
     @Override
     public void visit(MonitorEnterInstruction insn) {
-        
+
     }
 
     @Override
     public void visit(MonitorExitInstruction insn) {
-        
+
     }
-    
-    
-    
-    
+
+
+
+
 }

@@ -17,7 +17,8 @@ package org.teavm.classlib.java.util;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
+ * @param <E>
  */
 public interface TIterator<E> {
     boolean hasNext();

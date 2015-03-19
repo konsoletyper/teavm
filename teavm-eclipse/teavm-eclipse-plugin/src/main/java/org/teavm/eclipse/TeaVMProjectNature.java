@@ -25,7 +25,7 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TeaVMProjectNature implements IProjectNature {
     private IProject project;

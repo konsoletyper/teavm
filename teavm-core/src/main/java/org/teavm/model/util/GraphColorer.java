@@ -17,6 +17,7 @@ package org.teavm.model.util;
 
 import java.util.BitSet;
 import java.util.List;
+import org.teavm.common.IntegerArray;
 import org.teavm.common.MutableGraphEdge;
 import org.teavm.common.MutableGraphNode;
 
@@ -26,6 +27,11 @@ import org.teavm.common.MutableGraphNode;
  */
 class GraphColorer {
     public void colorize(List<MutableGraphNode> graph, int[] colors) {
+        colorize(graph, colors, new int[graph.size()]);
+    }
+
+    public void colorize(List<MutableGraphNode> graph, int[] colors, int[] categories) {
+        IntegerArray colorCategories = new IntegerArray(graph.size());
         BitSet usedColors = new BitSet();
         for (int v : getOrdering(graph)) {
             if (colors[v] >= 0) {
@@ -39,7 +45,20 @@ class GraphColorer {
                     usedColors.set(colors[succ]);
                 }
             }
-            colors[v] = usedColors.nextClearBit(0);
+            int color = 0;
+            while (true) {
+                color = usedColors.nextClearBit(color);
+                while (colorCategories.size() <= color) {
+                    colorCategories.add(-1);
+                }
+                int category = colorCategories.get(color);
+                if (category < 0 || category == categories[v]) {
+                    colors[v] = color;
+                    colorCategories.set(color, categories[v]);
+                    break;
+                }
+                ++color;
+            }
         }
     }
 

@@ -20,7 +20,7 @@ import org.teavm.chromerdp.data.PropertyDescriptorDTO;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GetPropertiesResponse {

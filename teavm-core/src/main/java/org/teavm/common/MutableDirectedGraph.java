@@ -23,7 +23,7 @@ import java.util.List;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class MutableDirectedGraph implements Graph {
     private List<IntSet> successors = new ArrayList<>();
@@ -42,6 +42,16 @@ public class MutableDirectedGraph implements Graph {
         }
     }
 
+    public Graph copyToImmutable() {
+        GraphBuilder builder = new GraphBuilder(successors.size());
+        for (int i = 0; i < successors.size(); ++i) {
+            for (IntCursor cursor : successors.get(i)) {
+                builder.addEdge(i, cursor.value);
+            }
+        }
+        return builder.build();
+    }
+
     @Override
     public int size() {
         return successors.size();
@@ -55,6 +65,25 @@ public class MutableDirectedGraph implements Graph {
         }
         successors.get(from).add(to);
         predecessors.get(to).add(from);
+    }
+
+    public void deleteEdge(int from, int to) {
+        if (from >= successors.size() || to >= successors.size()) {
+            return;
+        }
+        successors.get(from).removeAllOccurrences(to);
+        predecessors.get(to).removeAllOccurrences(from);
+    }
+
+    public void detachNode(int node) {
+        for (IntCursor succ : successors.get(node)) {
+            predecessors.get(succ.value).removeAllOccurrences(node);
+        }
+        for (IntCursor pred : predecessors.get(node)) {
+            successors.get(pred.value).removeAllOccurrences(node);
+        }
+        predecessors.get(node).clear();
+        successors.get(node).clear();
     }
 
     @Override

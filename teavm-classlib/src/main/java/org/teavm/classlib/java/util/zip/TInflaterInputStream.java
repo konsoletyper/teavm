@@ -22,7 +22,7 @@ import java.io.InputStream;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TInflaterInputStream extends FilterInputStream {
     public TInflaterInputStream(InputStream in) throws IOException {

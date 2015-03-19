@@ -13,25 +13,26 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript.ast;
+package org.teavm.codegen;
+
+import org.teavm.model.FieldReference;
+import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodReference;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class RestoreAsyncStatement extends Statement {
-    private Integer receiver;
+public interface NameFrequencyConsumer {
+    void consume(MethodReference method);
 
-    public Integer getReceiver() {
-        return receiver;
-    }
+    void consumeInit(MethodReference method);
 
-    public void setReceiver(Integer receiver) {
-        this.receiver = receiver;
-    }
+    void consume(MethodDescriptor method);
 
-    @Override
-    public void acceptVisitor(StatementVisitor visitor) {
-        visitor.visit(this);
-    }
+    void consume(String className);
+
+    void consume(FieldReference field);
+
+    void consumeFunction(String name);
 }

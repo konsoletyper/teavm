@@ -30,6 +30,7 @@ public class DefaultNamingStrategy implements NamingStrategy {
     private Map<String, String> privateAliases = new HashMap<>();
     private Map<String, String> classAliases = new HashMap<>();
     private Map<String, String> fieldAliases = new HashMap<>();
+    private Map<String, String> functionAliases = new HashMap<>();
     private boolean minifying;
 
     public DefaultNamingStrategy(AliasProvider aliasProvider, ClassReaderSource classSource) {
@@ -56,17 +57,12 @@ public class DefaultNamingStrategy implements NamingStrategy {
     }
 
     @Override
-    public String getNameFor(MethodReference method) {
-        return getNameFor(method, 'S');
+    public String getNameFor(MethodDescriptor method) {
+        return getNameFor(method, 'M');
     }
 
-    @Override
-    public String getNameForAsync(MethodReference method) throws NamingException {
-        return getNameFor(method, 'A');
-    }
-
-    private String getNameFor(MethodReference method, char classifier) {
-        String key = classifier + method.getDescriptor().toString();
+    private String getNameFor(MethodDescriptor method, char classifier) {
+        String key = classifier + method.toString();
         String alias = aliases.get(key);
         if (alias == null) {
             alias = aliasProvider.getAlias(method);
@@ -77,12 +73,7 @@ public class DefaultNamingStrategy implements NamingStrategy {
 
     @Override
     public String getFullNameFor(MethodReference method) throws NamingException {
-        return getFullNameFor(method, 'S');
-    }
-
-    @Override
-    public String getFullNameForAsync(MethodReference method) throws NamingException {
-        return getFullNameFor(method, 'A');
+        return getFullNameFor(method, 'M');
     }
 
     @Override
@@ -97,7 +88,7 @@ public class DefaultNamingStrategy implements NamingStrategy {
             throw new NamingException("Can't provide name for method as it was not found: " + originalMethod);
         }
         if (!minifying) {
-            return getNameFor(method.getClassName()) + "_" + getNameFor(method, classifier);
+            return getNameFor(method.getClassName()) + "_" + getNameFor(method.getDescriptor(), classifier);
         }
         String key = classifier + method.toString();
         String alias = privateAliases.get(key);
@@ -124,6 +115,19 @@ public class DefaultNamingStrategy implements NamingStrategy {
             }
             return alias;
         }
+    }
+
+    @Override
+    public String getNameForFunction(String name) throws NamingException {
+        if (!minifying) {
+            return name;
+        }
+        String alias = functionAliases.get(name);
+        if (alias == null) {
+            alias = aliasProvider.getFunctionAlias(name);
+            functionAliases.put(name, alias);
+        }
+        return alias;
     }
 
     private MethodReference getRealMethod(MethodReference methodRef) {

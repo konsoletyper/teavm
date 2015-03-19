@@ -22,7 +22,7 @@ import java.util.Map;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 class BuildTimeResourceProxy implements InvocationHandler {
     private Map<Method, BuildTimeResourceMethod> methods;

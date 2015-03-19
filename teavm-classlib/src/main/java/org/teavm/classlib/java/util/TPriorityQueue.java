@@ -25,6 +25,7 @@ import org.teavm.classlib.java.lang.TNullPointerException;
 /**
  *
  * @author Alexey Andreev
+ * @param <E>
  */
 public class TPriorityQueue<E> extends TAbstractQueue<E> implements TSerializable {
     private Object[] data;

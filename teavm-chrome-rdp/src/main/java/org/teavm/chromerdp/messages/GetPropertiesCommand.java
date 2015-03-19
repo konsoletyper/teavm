@@ -19,7 +19,7 @@ import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GetPropertiesCommand {

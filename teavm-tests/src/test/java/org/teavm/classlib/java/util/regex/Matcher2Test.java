@@ -19,20 +19,22 @@ package org.teavm.classlib.java.util.regex;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-
-import junit.framework.TestCase;
+import org.junit.Test;
+import static org.junit.Assert.*;
 
 /**
  * Tests Matcher methods
  */
 @SuppressWarnings("nls")
-public class Matcher2Test extends TestCase {
+public class Matcher2Test {
+    @Test
     public void test_toString() {
         Pattern p = Pattern.compile("foo");
         Matcher m = p.matcher("bar");
         assertNotNull(m.toString());
     }
 
+    @Test
     public void testErrorConditions() throws PatternSyntaxException {
         // Test match cursors in absence of a match
         Pattern p = Pattern.compile("foo");
@@ -84,6 +86,7 @@ public class Matcher2Test extends TestCase {
         }
     }
 
+    @Test
     public void testErrorConditions2() throws PatternSyntaxException {
         // Test match cursors in absence of a match
         Pattern p = Pattern.compile("(foo[0-9])(bar[a-z])");
@@ -219,6 +222,7 @@ public class Matcher2Test extends TestCase {
     /*
      * Regression test for HARMONY-997
      */
+    @Test
     public void testReplacementBackSlash() {
         String str = "replace me";
         String replacedString = "me";
@@ -228,7 +232,7 @@ public class Matcher2Test extends TestCase {
         try {
             mat.replaceAll(substitutionString);
             fail("IndexOutOfBoundsException should be thrown");
-        } catch (IndexOutOfBoundsException e) {
+        } catch (IndexOutOfBoundsException | IllegalArgumentException e) {
         }
     }
 }

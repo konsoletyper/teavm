@@ -23,7 +23,7 @@ import java.lang.annotation.Target;
 /**
  * <p>Binds a {@link MetadataGenerator} to a native method.</p>
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)

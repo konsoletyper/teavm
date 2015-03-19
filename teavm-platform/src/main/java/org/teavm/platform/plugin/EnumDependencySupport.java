@@ -48,7 +48,7 @@ public class EnumDependencySupport implements DependencyListener {
             allEnums.connect(method.getResult().getArrayItem());
             final MethodReference ref = method.getReference();
             allEnums.addConsumer(new DependencyConsumer() {
-                @Override public void consume(DependencyAgentType type) {
+                @Override public void consume(DependencyType type) {
                     ClassReader cls = agent.getClassSource().get(type.getName());
                     MethodReader method = cls.getMethod(new MethodDescriptor("values",
                             ValueType.arrayOf(ValueType.object(cls.getName()))));

@@ -17,7 +17,7 @@ package org.teavm.classlib.java.lang;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TInstantiationException extends ReflectiveOperationException {
     private static final long serialVersionUID = 8771605296206833516L;

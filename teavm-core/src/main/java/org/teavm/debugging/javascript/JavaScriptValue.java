@@ -19,7 +19,7 @@ import java.util.Map;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface JavaScriptValue {
     String getRepresentation();

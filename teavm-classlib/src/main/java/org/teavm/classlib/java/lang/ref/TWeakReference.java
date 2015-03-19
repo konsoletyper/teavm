@@ -18,6 +18,7 @@ package org.teavm.classlib.java.lang.ref;
 /**
  *
  * @author Alexey Andreev
+ * @param <T>
  */
 public class TWeakReference<T> extends TReference<T> {
     private T value;

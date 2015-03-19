@@ -34,7 +34,7 @@ import org.teavm.vm.spi.AbstractRendererListener;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TeaVMTool {
     private File targetDirectory = new File(".");
@@ -240,7 +240,8 @@ public class TeaVMTool {
                 }
                 vmBuilder.setClassLoader(classLoader).setClassSource(cachedClassSource);
             } else {
-                vmBuilder.setClassLoader(classLoader).setClassSource(new ClasspathClassHolderSource(classLoader));
+                vmBuilder.setClassLoader(classLoader).setClassSource(new PreOptimizingClassHolderSource(
+                        new ClasspathClassHolderSource(classLoader)));
             }
             vm = vmBuilder.build();
             if (progressListener != null) {
@@ -291,7 +292,7 @@ public class TeaVMTool {
             }
             targetDirectory.mkdirs();
             try (Writer writer = new OutputStreamWriter(new BufferedOutputStream(
-                    new FileOutputStream(new File(targetDirectory, targetFileName))), "UTF-8")) {
+                    new FileOutputStream(new File(targetDirectory, targetFileName)), 65536), "UTF-8")) {
                 if (runtime == RuntimeCopyOperation.MERGED) {
                     vm.add(runtimeInjector);
                 }
@@ -302,7 +303,7 @@ public class TeaVMTool {
                     return;
                 }
                 if (mainClass != null) {
-                    writer.append("main = $rt_mainWrapper(main);\n");
+                    writer.append("main = $rt_mainStarter(main);\n");
                 }
                 ProblemProvider problemProvider = vm.getProblemProvider();
                 if (problemProvider.getProblems().isEmpty()) {

@@ -17,7 +17,7 @@ package org.teavm.dom.events;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface DocumentEvent {
     Event createEvent(String eventType);

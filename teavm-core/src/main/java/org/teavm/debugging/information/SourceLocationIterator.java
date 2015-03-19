@@ -19,7 +19,7 @@ import org.teavm.common.RecordArray;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class SourceLocationIterator {
     private DebugInformation debugInformation;

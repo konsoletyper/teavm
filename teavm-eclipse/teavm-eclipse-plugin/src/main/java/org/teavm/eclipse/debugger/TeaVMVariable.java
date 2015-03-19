@@ -23,7 +23,7 @@ import org.teavm.eclipse.TeaVMEclipsePlugin;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public abstract class TeaVMVariable extends TeaVMDebugElement implements IVariable {
     private String id;

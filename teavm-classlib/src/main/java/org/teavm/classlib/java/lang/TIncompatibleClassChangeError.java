@@ -17,7 +17,7 @@ package org.teavm.classlib.java.lang;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TIncompatibleClassChangeError extends TLinkageError {
     private static final long serialVersionUID = 366119408566298082L;

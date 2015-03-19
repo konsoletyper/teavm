@@ -21,7 +21,7 @@ import org.teavm.debugging.javascript.JavaScriptValue;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class Value {
     private Debugger debugger;

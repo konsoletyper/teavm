@@ -22,7 +22,7 @@ import org.teavm.debugging.javascript.JavaScriptDebugger;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TeaVMJSStackFrame extends TeaVMStackFrame {
     JavaScriptCallFrame callFrame;

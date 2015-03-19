@@ -28,7 +28,7 @@ import org.teavm.model.instructions.*;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class AsyncMethodFinder {
     private Set<MethodReference> asyncMethods = new HashSet<>();
@@ -109,7 +109,13 @@ public class AsyncMethodFinder {
                 int.class, void.class))) {
             --count;
         }
-        return count > 0;
+        if (asyncMethods.contains(new MethodReference(Object.class, "monitorEnterWait", Object.class,
+                int.class, void.class))) {
+            --count;
+        }
+        ClassReader cls = classSource.get("java.lang.Thread");
+        MethodReader method = cls != null ? cls.getMethod(new MethodDescriptor("start", void.class)) : null;
+        return count > 0 && method != null;
     }
 
     private void add(MethodReference methodRef) {
@@ -330,7 +336,8 @@ public class AsyncMethodFinder {
         }
 
         @Override
-        public void putField(VariableReader instance, FieldReference field, VariableReader value) {
+        public void putField(VariableReader instance, FieldReference field, VariableReader value,
+                ValueType fieldType) {
         }
 
         @Override

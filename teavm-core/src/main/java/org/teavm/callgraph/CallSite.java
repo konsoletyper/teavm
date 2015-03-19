@@ -31,11 +31,15 @@ public interface CallSite {
 
     /**
      * <p>Gets a method that this call site invokes.</p>
+     *
+     * @return a node that represent methods being called
      */
     CallGraphNode getCallee();
 
     /**
      * <p>Gets a method that contains this call site.</p>
+     *
+     * @return a node that represents methods's caller
      */
     CallGraphNode getCaller();
 }

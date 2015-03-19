@@ -16,8 +16,12 @@
 package org.teavm.javascript;
 
 import java.util.Arrays;
+import org.teavm.common.Graph;
+import org.teavm.common.GraphUtils;
+import org.teavm.common.IntegerStack;
 import org.teavm.model.*;
 import org.teavm.model.util.DefinitionExtractor;
+import org.teavm.model.util.ProgramUtils;
 import org.teavm.model.util.UsageExtractor;
 
 /**
@@ -27,6 +31,7 @@ import org.teavm.model.util.UsageExtractor;
 class ReadWriteStatsBuilder {
     public int[] reads;
     public int[] writes;
+    public boolean[] readUninitialized;
 
     private ReadWriteStatsBuilder() {
     }
@@ -34,6 +39,7 @@ class ReadWriteStatsBuilder {
     public ReadWriteStatsBuilder(int variableCount) {
         reads = new int[variableCount];
         writes = new int[variableCount];
+        readUninitialized = new boolean[variableCount];
     }
 
     public ReadWriteStatsBuilder copy() {
@@ -44,10 +50,15 @@ class ReadWriteStatsBuilder {
     }
 
     public void analyze(Program program) {
+        Graph cfg = ProgramUtils.buildControlFlowGraph(program);
+        Graph dom = GraphUtils.buildDominatorGraph(GraphUtils.buildDominatorTree(cfg), cfg.size());
         DefinitionExtractor defExtractor = new DefinitionExtractor();
         UsageExtractor useExtractor = new UsageExtractor();
-        for (int i = 0; i < program.basicBlockCount(); ++i) {
-            BasicBlock block = program.basicBlockAt(i);
+        IntegerStack stack = new IntegerStack(program.basicBlockCount());
+        stack.push(0);
+        while (!stack.isEmpty()) {
+            int node = stack.pop();
+            BasicBlock block = program.basicBlockAt(node);
             for (Instruction insn : block.getInstructions()) {
                 insn.acceptVisitor(defExtractor);
                 insn.acceptVisitor(useExtractor);
@@ -56,17 +67,26 @@ class ReadWriteStatsBuilder {
                 }
                 for (Variable var : useExtractor.getUsedVariables()) {
                     reads[var.getIndex()]++;
+                    if (writes[var.getIndex()] == 0) {
+                        readUninitialized[var.getIndex()] = true;
+                    }
                 }
             }
             for (Phi phi : block.getPhis()) {
                 writes[phi.getReceiver().getIndex()] += phi.getIncomings().size();
                 for (Incoming incoming : phi.getIncomings()) {
-                    reads[incoming.getValue().getIndex()]++;
+                    if (writes[incoming.getValue().getIndex()] == 0) {
+                        reads[incoming.getValue().getIndex()]++;
+                    }
                 }
             }
             for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
                 writes[tryCatch.getExceptionVariable().getIndex()]++;
                 reads[tryCatch.getExceptionVariable().getIndex()]++;
+            }
+
+            for (int succ : dom.outgoingEdges(node)) {
+                stack.push(succ);
             }
         }
     }

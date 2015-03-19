@@ -36,7 +36,7 @@ import org.teavm.debugging.javascript.*;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeConsumer {
     private static final Logger logger = LoggerFactory.getLogger(ChromeRDPDebugger.class);

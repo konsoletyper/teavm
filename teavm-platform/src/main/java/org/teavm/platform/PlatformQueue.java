@@ -23,7 +23,8 @@ import org.teavm.platform.plugin.PlatformQueueGenerator;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
+ * @param <T>
  */
 public abstract class PlatformQueue<T> implements JSObject {
     @JSProperty

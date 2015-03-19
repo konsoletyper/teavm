@@ -22,7 +22,7 @@ import org.teavm.model.ClassHolderSource;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class MapperClassHolderSource implements ClassHolderSource {
     private Mapper<String, ClassHolder> mapper;

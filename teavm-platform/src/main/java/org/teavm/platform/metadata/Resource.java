@@ -24,7 +24,7 @@ package org.teavm.platform.metadata;
  * @see ResourceArray
  * @see ResourceMap
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface Resource {
 }

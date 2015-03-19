@@ -18,6 +18,7 @@ package org.teavm.jso;
 /**
  *
  * @author Alexey Andreev
+ * @param <T>
  */
 public interface JSArray<T extends JSObject> extends JSArrayReader<T> {
     @JSIndexer

@@ -68,12 +68,6 @@ abstract class TAbstractCharClass extends TSpecialToken {
      */
     protected boolean mayContainSupplCodepoints = false;
 
-    /**
-     * Returns true if this char class contains character specified;
-     *
-     * @param ch
-     *            character to check;
-     */
     abstract public boolean contains(int ch);
 
     /**
@@ -156,18 +150,6 @@ abstract class TAbstractCharClass extends TSpecialToken {
         return false;
     }
 
-    /**
-     * Sets this CharClass to negative form, i.e. if they will add some
-     * characters and after that set this class to negative it will accept all
-     * the characters except previously set ones.
-     *
-     * Although this method will not alternate all the already set characters,
-     * just overall meaning of the class.
-     *
-     * @see #contains(int)
-     * @see #intersect(TCharClass)
-     * @see #union(TCharClass)
-     */
     public TAbstractCharClass setNegative(boolean value) {
         if (alt ^ value) {
             alt = !alt;

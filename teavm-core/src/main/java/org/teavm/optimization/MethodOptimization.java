@@ -20,7 +20,7 @@ import org.teavm.model.Program;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface MethodOptimization {
     void optimize(MethodReader method, Program program);

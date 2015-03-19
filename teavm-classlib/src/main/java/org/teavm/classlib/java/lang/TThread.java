@@ -15,14 +15,12 @@
  */
 package org.teavm.classlib.java.lang;
 
-import org.teavm.dom.browser.TimerHandler;
 import org.teavm.dom.browser.Window;
 import org.teavm.javascript.spi.Async;
 import org.teavm.jso.JS;
 import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformRunnable;
 import org.teavm.platform.async.AsyncCallback;
-
 
 /**
  *
@@ -36,6 +34,8 @@ public class TThread extends TObject implements TRunnable {
     private static int activeCount = 1;
     private long id;
     private int priority = 0;
+    private long timeSliceStart;
+    private int yieldCount;
 
     private TString name;
     TRunnable target;
@@ -55,10 +55,10 @@ public class TThread extends TObject implements TRunnable {
     public TThread(TRunnable target, TString name ) {
         this.name = name;
         this.target = target;
-        id=nextId++;
+        id = nextId++;
     }
 
-    public void start(){
+    public void start() {
         Platform.startThread(new PlatformRunnable() {
             @Override
             public void run() {
@@ -74,9 +74,13 @@ public class TThread extends TObject implements TRunnable {
         });
     }
 
-    static void setCurrentThread(TThread thread){
-        currentThread = thread;
+    static void setCurrentThread(TThread thread) {
+        if (currentThread != thread) {
+            currentThread = thread;
+        }
+        currentThread.timeSliceStart = System.currentTimeMillis();
     }
+
     static TThread getMainThread(){
         return mainThread;
     }
@@ -96,11 +100,26 @@ public class TThread extends TObject implements TRunnable {
         return name;
     }
 
-    @Async
-    public static native void yield();
+    public static void yield() {
+        if (++currentThread.yieldCount < 30) {
+            return;
+        }
+        currentThread.yieldCount = 0;
+        if (currentThread.timeSliceStart + 100 < System.currentTimeMillis()) {
+            switchContext(currentThread);
+        }
+    }
 
-    private static void yield(final AsyncCallback<Void> callback) {
-        callback.complete(null);
+    @Async
+    static native void switchContext(TThread thread);
+
+    private static void switchContext(final TThread thread, final AsyncCallback<Void> callback) {
+        Platform.postpone(new PlatformRunnable() {
+            @Override public void run() {
+                setCurrentThread(thread);
+                callback.complete(null);
+            }
+        });
     }
 
     public void interrupt() {
@@ -131,20 +150,20 @@ public class TThread extends TObject implements TRunnable {
 
     private static void sleep(long millis, final AsyncCallback<Void> callback) {
         final TThread current = currentThread();
-        window.setTimeout(new TimerHandler() {
-            @Override public void onTimer() {
+        int intMillis = millis < Integer.MAX_VALUE ? (int)millis : Integer.MAX_VALUE;
+        Platform.schedule(new PlatformRunnable() {
+            @Override public void run() {
                 setCurrentThread(current);
                 callback.complete(null);
             }
-        }, millis);
+        }, intMillis);
     }
-    
+
     public final void setPriority(int newPriority){
         this.priority = newPriority;
     }
-    
+
     public final int getPriority(){
         return this.priority;
     }
-
 }

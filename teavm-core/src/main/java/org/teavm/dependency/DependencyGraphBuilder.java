@@ -15,6 +15,7 @@
  */
 package org.teavm.dependency;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -47,19 +48,59 @@ class DependencyGraphBuilder {
             return;
         }
         program = method.getProgram();
-        if (DependencyChecker.shouldLog) {
-            System.out.println("Method achieved: " + method.getReference());
-            System.out.println(new ListingBuilder().buildListing(program, "    "));
-        }
         resultNode = dep.getResult();
-        nodes = dep.getVariables();
+
+        DataFlowGraphBuilder dfgBuilder = new DataFlowGraphBuilder();
+        boolean[] significantParams = new boolean[dep.getParameterCount()];
+        significantParams[0] = true;
+        for (int i = 1; i < dep.getParameterCount(); ++i) {
+            ValueType arg = method.parameterType(i - 1);
+            if (!(arg instanceof ValueType.Primitive)) {
+                significantParams[i] = true;
+            }
+        }
+        int[] nodeMapping = dfgBuilder.buildMapping(program, significantParams,
+                !(method.getResultType() instanceof ValueType.Primitive) && method.getResultType() != ValueType.VOID);
+
+        if (DependencyChecker.shouldLog) {
+            System.out.println("Method reached: " + method.getReference());
+            System.out.print(new ListingBuilder().buildListing(program, "    "));
+            for (int i = 0; i < nodeMapping.length; ++i) {
+                System.out.print(i + ":" + nodeMapping[i] + " ");
+            }
+            System.out.println();
+            System.out.println();
+        }
+
+        int nodeClassCount = 0;
+        for (int i = 0; i < nodeMapping.length; ++i) {
+            nodeClassCount = Math.max(nodeClassCount, nodeMapping[i] + 1);
+        }
+        DependencyNode[] nodeClasses = Arrays.copyOf(dep.getVariables(), nodeClassCount);
+        for (int i = dep.getVariableCount(); i < nodeClasses.length; ++i) {
+            nodeClasses[i] = dependencyChecker.createNode();
+            if (DependencyChecker.shouldLog) {
+                nodeClasses[i].setTag(dep.getMethod().getReference() + ":" + i);
+            }
+        }
+        nodes = new DependencyNode[dep.getMethod().getProgram().variableCount()];
+        for (int i = 0; i < nodes.length; ++i) {
+            int mappedNode = nodeMapping[i];
+            nodes[i] = mappedNode >= 0 ? nodeClasses[mappedNode] : null;
+        }
+        dep.setVariables(nodes);
+
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlockReader block = program.basicBlockAt(i);
             currentExceptionConsumer = createExceptionConsumer(dep, block);
             block.readAllInstructions(reader);
             for (PhiReader phi : block.readPhis()) {
                 for (IncomingReader incoming : phi.readIncomings()) {
-                    nodes[incoming.getValue().getIndex()].connect(nodes[phi.getReceiver().getIndex()]);
+                    DependencyNode incomingNode = nodes[incoming.getValue().getIndex()];
+                    DependencyNode receiverNode = nodes[phi.getReceiver().getIndex()];
+                    if (incomingNode != null && receiverNode != null) {
+                        incomingNode.connect(receiverNode);
+                    }
                 }
             }
             for (TryCatchBlockReader tryCatch : block.readTryCatchBlocks()) {
@@ -99,11 +140,13 @@ class DependencyGraphBuilder {
         }
 
         @Override
-        public void consume(DependencyAgentType type) {
+        public void consume(DependencyType type) {
             for (int i = 0; i < exceptions.length; ++i) {
                 if (exceptions[i] == null || isAssignableFrom(checker.getClassSource(), exceptions[i],
                         type.getName())) {
-                    vars[i].propagate(type);
+                    if (vars[i] != null) {
+                        vars[i].propagate(type);
+                    }
                     return;
                 }
             }
@@ -139,7 +182,7 @@ class DependencyGraphBuilder {
         }
 
         @Override
-        public void consume(DependencyAgentType type) {
+        public void consume(DependencyType type) {
             String className = type.getName();
             if (DependencyChecker.shouldLog) {
                 System.out.println("Virtual call of " + methodDesc + " detected on " + node.getTag() + ". " +
@@ -157,7 +200,9 @@ class DependencyGraphBuilder {
                 methodDep.use();
                 DependencyNode[] targetParams = methodDep.getVariables();
                 for (int i = 0; i < parameters.length; ++i) {
-                    parameters[i].connect(targetParams[i]);
+                    if (parameters[i] != null && targetParams[i] != null) {
+                        parameters[i].connect(targetParams[i]);
+                    }
                 }
                 if (result != null && methodDep.getResult() != null) {
                     methodDep.getResult().connect(result);
@@ -199,7 +244,10 @@ class DependencyGraphBuilder {
 
         @Override
         public void classConstant(VariableReader receiver, ValueType cst) {
-            nodes[receiver.getIndex()].propagate(dependencyChecker.getType("java.lang.Class"));
+            DependencyNode node = nodes[receiver.getIndex()];
+            if (node != null) {
+                node.propagate(dependencyChecker.getType("java.lang.Class"));
+            }
             while (cst instanceof ValueType.Array) {
                 cst = ((ValueType.Array)cst).getItemType();
             }
@@ -231,7 +279,10 @@ class DependencyGraphBuilder {
 
         @Override
         public void stringConstant(VariableReader receiver, String cst) {
-            nodes[receiver.getIndex()].propagate(dependencyChecker.getType("java.lang.String"));
+            DependencyNode node = nodes[receiver.getIndex()];
+            if (node != null) {
+                node.propagate(dependencyChecker.getType("java.lang.String"));
+            }
             MethodDependency method = dependencyChecker.linkMethod(new MethodReference(String.class,
                     "<init>", char[].class, void.class), new CallLocation(caller.getMethod(), currentLocation));
             method.use();
@@ -250,7 +301,9 @@ class DependencyGraphBuilder {
         public void assign(VariableReader receiver, VariableReader assignee) {
             DependencyNode valueNode = nodes[assignee.getIndex()];
             DependencyNode receiverNode = nodes[receiver.getIndex()];
-            valueNode.connect(receiverNode);
+            if (valueNode != null && receiverNode != null) {
+                valueNode.connect(receiverNode);
+            }
         }
 
         @Override
@@ -261,18 +314,23 @@ class DependencyGraphBuilder {
                 String targetClsName = ((ValueType.Object)targetType).getClassName();
                 final ClassReader targetClass = dependencyChecker.getClassSource().get(targetClsName);
                 if (targetClass != null) {
-                    valueNode.connect(receiverNode, new DependencyTypeFilter() {
-                        @Override public boolean match(DependencyAgentType type) {
-                            if (targetClass.getName().equals("java.lang.Object")) {
-                                return true;
+                    if (valueNode != null && receiverNode != null) {
+                        valueNode.connect(receiverNode, new DependencyTypeFilter() {
+                            @Override public boolean match(DependencyType type) {
+                                if (targetClass.getName().equals("java.lang.Object")) {
+                                    return true;
+                                }
+                                return isAssignableFrom(dependencyChecker.getClassSource(), targetClass,
+                                        type.getName());
                             }
-                            return isAssignableFrom(dependencyChecker.getClassSource(), targetClass, type.getName());
-                        }
-                    });
+                        });
+                    }
                     return;
                 }
             }
-            valueNode.connect(receiverNode);
+            if (valueNode != null && receiverNode != null) {
+                valueNode.connect(receiverNode);
+            }
         }
 
         @Override
@@ -307,7 +365,10 @@ class DependencyGraphBuilder {
         @Override
         public void exit(VariableReader valueToReturn) {
             if (valueToReturn != null) {
-                nodes[valueToReturn.getIndex()].connect(resultNode);
+                DependencyNode node = nodes[valueToReturn.getIndex()];
+                if (node != null) {
+                    node.connect(resultNode);
+                }
             }
         }
 
@@ -318,7 +379,10 @@ class DependencyGraphBuilder {
 
         @Override
         public void createArray(VariableReader receiver, ValueType itemType, VariableReader size) {
-            nodes[receiver.getIndex()].propagate(dependencyChecker.getType("[" + itemType));
+            DependencyNode node = nodes[receiver.getIndex()];
+            if (node != null) {
+                node.propagate(dependencyChecker.getType("[" + itemType));
+            }
             String className = extractClassName(itemType);
             if (className != null) {
                 dependencyChecker.linkClass(className, new CallLocation(caller.getMethod(), currentLocation));
@@ -349,6 +413,9 @@ class DependencyGraphBuilder {
             sb.append(itemTypeStr);
             DependencyNode node = nodes[receiver.getIndex()];
             for (int i = 0; i < dimensions.size(); ++i) {
+                if (node == null) {
+                    break;
+                }
                 node.propagate(dependencyChecker.getType(sb.substring(i, sb.length())));
                 node = node.getArrayItem();
             }
@@ -361,7 +428,10 @@ class DependencyGraphBuilder {
         @Override
         public void create(VariableReader receiver, String type) {
             dependencyChecker.linkClass(type, new CallLocation(caller.getMethod(), currentLocation));
-            nodes[receiver.getIndex()].propagate(dependencyChecker.getType(type));
+            DependencyNode node = nodes[receiver.getIndex()];
+            if (node != null) {
+                node.propagate(dependencyChecker.getType(type));
+            }
         }
 
         @Override
@@ -369,17 +439,26 @@ class DependencyGraphBuilder {
                 ValueType fieldType) {
             FieldDependency fieldDep = dependencyChecker.linkField(field,
                     new CallLocation(caller.getMethod(), currentLocation));
-            DependencyNode receiverNode = nodes[receiver.getIndex()];
-            fieldDep.getValue().connect(receiverNode);
+            if (!(fieldType instanceof ValueType.Primitive)) {
+                DependencyNode receiverNode = nodes[receiver.getIndex()];
+                if (receiverNode != null) {
+                    fieldDep.getValue().connect(receiverNode);
+                }
+            }
             initClass(field.getClassName());
         }
 
         @Override
-        public void putField(VariableReader instance, FieldReference field, VariableReader value) {
+        public void putField(VariableReader instance, FieldReference field, VariableReader value,
+                ValueType fieldType) {
             FieldDependency fieldDep = dependencyChecker.linkField(field,
                     new CallLocation(caller.getMethod(), currentLocation));
-            DependencyNode valueNode = nodes[value.getIndex()];
-            valueNode.connect(fieldDep.getValue());
+            if (!(fieldType instanceof ValueType.Primitive)) {
+                DependencyNode valueNode = nodes[value.getIndex()];
+                if (valueNode != null) {
+                    valueNode.connect(fieldDep.getValue());
+                }
+            }
             initClass(field.getClassName());
         }
 
@@ -391,33 +470,41 @@ class DependencyGraphBuilder {
         public void cloneArray(VariableReader receiver, VariableReader array) {
             DependencyNode arrayNode = nodes[array.getIndex()];
             final DependencyNode receiverNode = nodes[receiver.getIndex()];
-            arrayNode.addConsumer(new DependencyConsumer() {
-                @Override public void consume(DependencyAgentType type) {
-                    receiverNode.propagate(type);
-                }
-            });
-            arrayNode.getArrayItem().connect(receiverNode.getArrayItem());
+            if (arrayNode != null && receiverNode != null) {
+                arrayNode.addConsumer(new DependencyConsumer() {
+                    @Override public void consume(DependencyType type) {
+                        receiverNode.propagate(type);
+                    }
+                });
+                arrayNode.getArrayItem().connect(receiverNode.getArrayItem());
+            }
         }
 
         @Override
         public void unwrapArray(VariableReader receiver, VariableReader array, ArrayElementType elementType) {
             DependencyNode arrayNode = nodes[array.getIndex()];
             DependencyNode receiverNode = nodes[receiver.getIndex()];
-            arrayNode.connect(receiverNode);
+            if (arrayNode != null && receiverNode != null) {
+                arrayNode.connect(receiverNode);
+            }
         }
 
         @Override
         public void getElement(VariableReader receiver, VariableReader array, VariableReader index) {
             DependencyNode arrayNode = nodes[array.getIndex()];
             DependencyNode receiverNode = nodes[receiver.getIndex()];
-            arrayNode.getArrayItem().connect(receiverNode);
+            if (arrayNode != null && receiverNode != null && receiverNode != arrayNode.getArrayItem()) {
+                arrayNode.getArrayItem().connect(receiverNode);
+            }
         }
 
         @Override
         public void putElement(VariableReader array, VariableReader index, VariableReader value) {
             DependencyNode valueNode = nodes[value.getIndex()];
             DependencyNode arrayNode = nodes[array.getIndex()];
-            valueNode.connect(arrayNode.getArrayItem());
+            if (valueNode != null && arrayNode != null && valueNode != arrayNode.getArrayItem()) {
+                valueNode.connect(arrayNode.getArrayItem());
+            }
         }
 
         @Override
@@ -448,13 +535,20 @@ class DependencyGraphBuilder {
             methodDep.use();
             DependencyNode[] targetParams = methodDep.getVariables();
             for (int i = 0; i < arguments.size(); ++i) {
-                nodes[arguments.get(i).getIndex()].connect(targetParams[i + 1]);
+                DependencyNode value = nodes[arguments.get(i).getIndex()];
+                DependencyNode param = targetParams[i + 1];
+                if (value != null && param != null) {
+                    value.connect(param);
+                }
             }
             if (instance != null) {
                 nodes[instance.getIndex()].connect(targetParams[0]);
             }
             if (methodDep.getResult() != null && receiver != null) {
-                methodDep.getResult().connect(nodes[receiver.getIndex()]);
+                DependencyNode receiverNode = nodes[receiver.getIndex()];
+                if (methodDep.getResult() != null && receiverNode != null) {
+                    methodDep.getResult().connect(receiverNode);
+                }
             }
             methodDep.getThrown().addConsumer(currentExceptionConsumer);
             initClass(method.getClassName());

@@ -20,7 +20,7 @@ import java.util.List;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 class JCLPackage {
     public final String name;

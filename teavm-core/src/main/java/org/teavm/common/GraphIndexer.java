@@ -15,8 +15,13 @@
  */
 package org.teavm.common;
 
+import com.carrotsearch.hppc.IntOpenHashSet;
+import com.carrotsearch.hppc.IntSet;
+import com.carrotsearch.hppc.cursors.IntCursor;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
+import java.util.Collections;
+import java.util.List;
 
 /**
  *
@@ -29,73 +34,21 @@ public class GraphIndexer {
     private int[] indexToNode;
     private int[] nodeToIndex;
     private Graph graph;
+    private DominatorTree domTree;
+    private int lastIndex;
+    private int[] weights;
 
-    public GraphIndexer(Graph graph) {
-        sort(graph);
-    }
-
-    private static class LoopEntrance {
-        int head;
-        int follower;
-    }
-
-    private int sort(Graph graph) {
-        LoopGraph loopGraph = new LoopGraph(graph);
+    public GraphIndexer(Graph graph, int[] weights) {
         int sz = graph.size();
-        int[] indexToNode = new int[sz + 1];
-        int[] nodeToIndex = new int[sz + 1];
-        int[] visitIndex = new int[sz + 1];
+        this.weights = weights;
+        propagateWeights(graph, weights);
+        indexToNode = new int[sz + 1];
+        nodeToIndex = new int[sz + 1];
         Arrays.fill(nodeToIndex, -1);
         Arrays.fill(indexToNode, -1);
-        Arrays.fill(visitIndex, -1);
-        byte[] state = new byte[sz];
-        int lastIndex = 0;
-        int lastVisitIndex = 0;
-        IntegerStack stack = new IntegerStack(sz * 2);
-        stack.push(loopGraph.loopAt(0) != null ? loopGraph.loopAt(0).getHead() : 0);
-        while (!stack.isEmpty()) {
-            int node = stack.pop();
-            switch (state[node]) {
-                case VISITING: {
-                    state[node] = VISITED;
-                    nodeToIndex[node] = lastIndex++;
-                    break;
-                }
-                case NONE: {
-                    visitIndex[node] = lastVisitIndex++;
-                    state[node] = VISITING;
-                    stack.push(node);
-                    int[] successors = graph.outgoingEdges(node);
-                    LoopEntrance[] edges = new LoopEntrance[successors.length];
-                    for (int i = 0; i < edges.length; ++i) {
-                        int successor = successors[i];
-                        Loop successorLoop = loopGraph.loopAt(successor);
-                        LoopEntrance edge = new LoopEntrance();
-                        edge.head = successorLoop != null ?
-                                visitIndex[successorLoop.getHead()] : -1;
-                        edge.follower = successor;
-                        edges[i] = edge;
-                    }
-                    Arrays.sort(edges, new Comparator<LoopEntrance>() {
-                        @Override
-                        public int compare(LoopEntrance o1, LoopEntrance o2) {
-                            return Integer.compare(o2.head, o1.head);
-                        }
-                    });
-                    for (LoopEntrance edge : edges) {
-                        int next = edge.follower;
-                        switch (state[next]) {
-                            case NONE:
-                                stack.push(next);
-                                break;
-                            default:
-                                break;
-                        }
-                    }
-                    break;
-                }
-            }
-        }
+        this.graph = graph;
+        domTree = GraphUtils.buildDominatorTree(graph);
+        sort(graph);
         --lastIndex;
         for (int node = 0; node < sz; ++node) {
             int index = nodeToIndex[node];
@@ -115,9 +68,127 @@ public class GraphIndexer {
             }
         }
         this.graph = sorted.build();
-        this.indexToNode = indexToNode;
-        this.nodeToIndex = nodeToIndex;
-        return lastIndex + 1;
+    }
+
+    private void propagateWeights(Graph graph, int[] weights) {
+        int sz = graph.size();
+        byte[] state = new byte[sz];
+        IntegerStack stack = new IntegerStack(sz * 2);
+        stack.push(0);
+        while (!stack.isEmpty()) {
+            int node = stack.pop();
+            switch (state[node]) {
+                case VISITING:
+                    state[node] = VISITED;
+                    for (int succ : graph.outgoingEdges(node)) {
+                        if (state[node] == VISITED) {
+                            weights[node] += weights[succ];
+                        }
+                    }
+                    break;
+                case NONE:
+                    state[node] = VISITING;
+                    stack.push(node);
+                    for (int succ : graph.outgoingEdges(node)) {
+                        if (state[succ] == NONE) {
+                            stack.push(succ);
+                        }
+                    }
+                    break;
+            }
+        }
+    }
+
+    private void sort(Graph graph) {
+        int sz = graph.size();
+        byte[] state = new byte[sz];
+        IntegerStack stack = new IntegerStack(sz * 2);
+        stack.push(0);
+        while (!stack.isEmpty()) {
+            int node = stack.pop();
+            switch (state[node]) {
+                case VISITING: {
+                    state[node] = VISITED;
+                    nodeToIndex[node] = lastIndex++;
+                    break;
+                }
+                case NONE: {
+                    state[node] = VISITING;
+                    stack.push(node);
+                    IntegerArray terminalNodes = new IntegerArray(1);
+                    for (int pred : graph.incomingEdges(node)) {
+                        if (domTree.dominates(node, pred)) {
+                            terminalNodes.add(pred);
+                        }
+                    }
+                    int[] successors = graph.outgoingEdges(node);
+                    List<WeightedNode> succList = new ArrayList<>(successors.length);
+                    IntegerArray orderedSuccessors = new IntegerArray(successors.length);
+                    if (terminalNodes.size() > 0) {
+                        IntSet loopNodes = IntOpenHashSet.from(findNaturalLoop(node, terminalNodes.getAll()));
+                        for (int succ : successors) {
+                            if (loopNodes.contains(succ)) {
+                                succList.add(new WeightedNode(succ, weights[succ]));
+                            }
+                        }
+                        Collections.sort(succList);
+                        for (WeightedNode wnode : succList) {
+                            orderedSuccessors.add(wnode.index);
+                        }
+
+                        IntSet outerSuccessors = new IntOpenHashSet(successors.length);
+                        succList.clear();
+                        for (IntCursor loopNode : loopNodes) {
+                            for (int succ : graph.outgoingEdges(loopNode.value)) {
+                                if (!loopNodes.contains(succ)) {
+                                    if (outerSuccessors.add(succ)) {
+                                        succList.add(new WeightedNode(succ, weights[succ]));
+                                    }
+                                }
+                            }
+                        }
+                        Collections.sort(succList);
+                        for (WeightedNode wnode : succList) {
+                            orderedSuccessors.add(wnode.index);
+                        }
+                    } else {
+                        for (int succ : successors) {
+                            succList.add(new WeightedNode(succ, weights[succ]));
+                        }
+                        Collections.sort(succList);
+                        for (WeightedNode wnode : succList) {
+                            orderedSuccessors.add(wnode.index);
+                        }
+                    }
+                    successors = orderedSuccessors.getAll();
+                    for (int succ : successors) {
+                        if (state[succ] == NONE) {
+                            stack.push(succ);
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    private int[] findNaturalLoop(int head, int[] terminals) {
+        IntSet loop = new IntOpenHashSet();
+        loop.add(head);
+        IntegerStack stack = new IntegerStack(1);
+        for (int pred : terminals) {
+            stack.push(pred);
+        }
+        while (!stack.isEmpty()) {
+            int node = stack.pop();
+            if (!loop.add(node)) {
+                continue;
+            }
+            for (int pred : graph.incomingEdges(node)) {
+                stack.push(pred);
+            }
+        }
+        return loop.toArray();
     }
 
     public int nodeAt(int index) {
@@ -134,5 +205,20 @@ public class GraphIndexer {
 
     public Graph getGraph() {
         return graph;
+    }
+
+    static class WeightedNode implements Comparable<WeightedNode> {
+        int index;
+        int weight;
+
+        public WeightedNode(int index, int weight) {
+            this.index = index;
+            this.weight = weight;
+        }
+
+        @Override
+        public int compareTo(WeightedNode o) {
+            return Integer.compare(weight, o.weight);
+        }
     }
 }

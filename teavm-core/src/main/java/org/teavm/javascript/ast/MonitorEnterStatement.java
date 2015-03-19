@@ -22,7 +22,6 @@ package org.teavm.javascript.ast;
 public class MonitorEnterStatement extends Statement {
     private NodeLocation location;
     private Expr objectRef;
-    private Integer asyncTarget;
 
     @Override
     public void acceptVisitor(StatementVisitor visitor) {
@@ -43,13 +42,5 @@ public class MonitorEnterStatement extends Statement {
 
     public void setObjectRef(Expr objectRef) {
         this.objectRef = objectRef;
-    }
-
-    public Integer getAsyncTarget() {
-        return asyncTarget;
-    }
-
-    public void setAsyncTarget(Integer asyncTarget) {
-        this.asyncTarget = asyncTarget;
     }
 }

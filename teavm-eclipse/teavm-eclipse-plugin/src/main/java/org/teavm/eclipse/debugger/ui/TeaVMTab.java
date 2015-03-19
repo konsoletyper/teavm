@@ -29,7 +29,7 @@ import org.eclipse.swt.widgets.Text;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TeaVMTab extends AbstractLaunchConfigurationTab {
     private Text portField;

@@ -24,7 +24,7 @@ import org.teavm.debugging.DebuggerListener;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TeaVMJavaThread extends TeaVMThread {
     private Debugger teavmDebugger;

@@ -29,7 +29,15 @@ public class Optimizer {
     public void optimize(RegularMethodNode method, Program program) {
         ReadWriteStatsBuilder stats = new ReadWriteStatsBuilder(method.getVariables().size());
         stats.analyze(program);
-        OptimizingVisitor optimizer = new OptimizingVisitor(stats);
+        boolean[] preservedVars = new boolean[stats.writes.length];
+        for (int i = 0; i < preservedVars.length; ++i) {
+            if (stats.writes[i] != 1) {
+                preservedVars[i] = true;
+            }
+        }
+        BreakEliminator breakEliminator = new BreakEliminator();
+        breakEliminator.eliminate(method.getBody());
+        OptimizingVisitor optimizer = new OptimizingVisitor(preservedVars, stats.reads);
         method.getBody().acceptVisitor(optimizer);
         method.setBody(optimizer.resultStmt);
         int paramCount = method.getReference().parameterCount();
@@ -43,17 +51,24 @@ public class Optimizer {
         }
     }
 
-    public void optimize(AsyncMethodNode method, Program program, AsyncProgramSplitter splitter) {
-        ReadWriteStatsBuilder stats = new ReadWriteStatsBuilder(method.getVariables().size());
-        stats.analyze(program);
+    public void optimize(AsyncMethodNode method, AsyncProgramSplitter splitter) {
+        boolean[] preservedVars = new boolean[method.getVariables().size()];
+        int[][] readFrequencies = new int[splitter.size()][];
         for (int i = 0; i < splitter.size(); ++i) {
-            Integer var = splitter.getInput(i);
-            if (var != null) {
-                stats.reads[var]++;
+            ReadWriteStatsBuilder stats = new ReadWriteStatsBuilder(method.getVariables().size());
+            stats.analyze(splitter.getProgram(i));
+            readFrequencies[i] = stats.reads;
+            for (int j = 0; j < stats.writes.length; ++j) {
+                if (stats.readUninitialized[j] || stats.writes[j] != 1 && stats.reads[j] > 0) {
+                    preservedVars[j] = true;
+                }
             }
         }
-        for (AsyncMethodPart part : method.getBody()) {
-            OptimizingVisitor optimizer = new OptimizingVisitor(stats.copy());
+        for (int i = 0; i < splitter.size(); ++i) {
+            AsyncMethodPart part = method.getBody().get(i);
+            BreakEliminator breakEliminator = new BreakEliminator();
+            breakEliminator.eliminate(part.getStatement());
+            OptimizingVisitor optimizer = new OptimizingVisitor(preservedVars, readFrequencies[i]);
             part.getStatement().acceptVisitor(optimizer);
             part.setStatement(optimizer.resultStmt);
         }

@@ -16,6 +16,7 @@
 package org.teavm.model.util;
 
 import java.util.*;
+import org.teavm.common.*;
 import org.teavm.model.*;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.JumpInstruction;
@@ -61,23 +62,19 @@ public class AsyncProgramSplitter {
             int last = 0;
             for (int i = 0; i < sourceBlock.getInstructions().size(); ++i) {
                 Instruction insn = sourceBlock.getInstructions().get(i);
-                Integer receiver;
                 if (insn instanceof InvokeInstruction) {
                     InvokeInstruction invoke = (InvokeInstruction)insn;
                     if (!asyncMethods.contains(findRealMethod(invoke.getMethod()))) {
                         continue;
                     }
-                    receiver = invoke.getReceiver() != null ? invoke.getReceiver().getIndex() : null;
-                } else if (insn instanceof MonitorEnterInstruction) {
-                    receiver = null;
-                } else {
+                } else if (!(insn instanceof MonitorEnterInstruction)) {
                     continue;
                 }
 
                 // If we met asynchronous invocation...
                 // Copy portion of current block from last occurrence (or from start) to i'th instruction.
                 targetBlock.getInstructions().addAll(ProgramUtils.copyInstructions(sourceBlock,
-                        last, i + 1, targetBlock.getProgram()));
+                        last, i, targetBlock.getProgram()));
                 targetBlock.getTryCatchBlocks().addAll(ProgramUtils.copyTryCatches(sourceBlock,
                         targetBlock.getProgram()));
                 for (TryCatchBlock tryCatch : targetBlock.getTryCatchBlocks()) {
@@ -88,7 +85,7 @@ public class AsyncProgramSplitter {
                         queue.add(next);
                     }
                 }
-                last = i + 1;
+                last = i;
 
                 // If this instruction already separates program, end with current block and refer to the
                 // existing part
@@ -101,7 +98,6 @@ public class AsyncProgramSplitter {
                 // Create a new part
                 Program nextProgram = createStubCopy(program);
                 Part part = new Part();
-                part.input = receiver;
                 part.program = nextProgram;
                 int partId = parts.size();
                 parts.add(part);
@@ -147,6 +143,18 @@ public class AsyncProgramSplitter {
             }
         }
 
+        for (Part part : parts) {
+            IntegerArray blockSuccessors = IntegerArray.of(part.blockSuccessors);
+            AsyncProgramSplittingBackend splittingBackend = new AsyncProgramSplittingBackend(
+                    new ProgramNodeSplittingBackend(part.program), blockSuccessors);
+            Graph graph = ProgramUtils.buildControlFlowGraphWithTryCatch(part.program);
+            int[] weights = new int[graph.size()];
+            for (int i = 0; i < part.program.basicBlockCount(); ++i) {
+                weights[i] = part.program.basicBlockAt(i).getInstructions().size();
+            }
+            GraphUtils.splitIrreducibleGraph(graph, weights, splittingBackend);
+            part.blockSuccessors = splittingBackend.blockSuccessors.getAll();
+        }
         partMap.clear();
     }
 
@@ -188,10 +196,6 @@ public class AsyncProgramSplitter {
         return parts.get(index).program;
     }
 
-    public Integer getInput(int index) {
-        return parts.get(index).input;
-    }
-
     public int[] getBlockSuccessors(int index) {
         int[] result = parts.get(index).blockSuccessors;
         return Arrays.copyOf(result, result.length);
@@ -199,12 +203,35 @@ public class AsyncProgramSplitter {
 
     private static class Part {
         Program program;
-        Integer input;
         int[] blockSuccessors;
     }
 
     private static class Step {
         Part targetPart;
         int source;
+    }
+
+    private static class AsyncProgramSplittingBackend implements GraphSplittingBackend {
+        private GraphSplittingBackend inner;
+        private IntegerArray blockSuccessors;
+
+        public AsyncProgramSplittingBackend(GraphSplittingBackend inner, IntegerArray blockSuccessors) {
+            this.inner = inner;
+            this.blockSuccessors = blockSuccessors;
+        }
+
+        @Override
+        public int[] split(int[] domain, int[] nodes) {
+            int[] copies = inner.split(domain, nodes);
+            for (int i = 0; i < copies.length; ++i) {
+                int copy = copies[i];
+                int node = nodes[i];
+                if (blockSuccessors.size() <= copy) {
+                    blockSuccessors.add(-1);
+                }
+                blockSuccessors.set(copy, blockSuccessors.get(node));
+            }
+            return copies;
+        }
     }
 }

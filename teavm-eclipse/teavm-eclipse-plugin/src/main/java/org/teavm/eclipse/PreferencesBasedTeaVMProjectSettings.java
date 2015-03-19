@@ -27,7 +27,7 @@ import org.osgi.service.prefs.Preferences;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSettings {
     public static final String ENABLED = "enabled";

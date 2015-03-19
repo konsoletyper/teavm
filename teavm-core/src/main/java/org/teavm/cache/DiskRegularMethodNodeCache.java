@@ -17,7 +17,7 @@ package org.teavm.cache;
 
 import java.io.*;
 import java.util.*;
-import org.teavm.javascript.RegularMethodNodeCache;
+import org.teavm.javascript.MethodNodeCache;
 import org.teavm.javascript.ast.*;
 import org.teavm.model.MethodReference;
 import org.teavm.parsing.ClassDateProvider;
@@ -26,12 +26,14 @@ import org.teavm.parsing.ClassDateProvider;
  *
  * @author Alexey Andreev
  */
-public class DiskRegularMethodNodeCache implements RegularMethodNodeCache {
+public class DiskRegularMethodNodeCache implements MethodNodeCache {
     private File directory;
     private AstIO astIO;
     private ClassDateProvider classDateProvider;
     private Map<MethodReference, Item> cache = new HashMap<>();
+    private Map<MethodReference, AsyncItem> asyncCache = new HashMap<>();
     private Set<MethodReference> newMethods = new HashSet<>();
+    private Set<MethodReference> newAsyncMethods = new HashSet<>();
 
     public DiskRegularMethodNodeCache(File directory, SymbolTable symbolTable, SymbolTable fileTable,
             ClassDateProvider classDateProvider) {
@@ -46,7 +48,7 @@ public class DiskRegularMethodNodeCache implements RegularMethodNodeCache {
         if (item == null) {
             item = new Item();
             cache.put(methodReference, item);
-            File file = getMethodFile(methodReference);
+            File file = getMethodFile(methodReference, false);
             if (file.exists()) {
                 try (InputStream stream = new BufferedInputStream(new FileInputStream(file))) {
                     DataInput input = new DataInputStream(stream);
@@ -79,9 +81,48 @@ public class DiskRegularMethodNodeCache implements RegularMethodNodeCache {
         newMethods.add(methodReference);
     }
 
+    @Override
+    public AsyncMethodNode getAsync(MethodReference methodReference) {
+        AsyncItem item = asyncCache.get(methodReference);
+        if (item == null) {
+            item = new AsyncItem();
+            asyncCache.put(methodReference, item);
+            File file = getMethodFile(methodReference, true);
+            if (file.exists()) {
+                try (InputStream stream = new BufferedInputStream(new FileInputStream(file))) {
+                    DataInput input = new DataInputStream(stream);
+                    int depCount = input.readShort();
+                    boolean dependenciesChanged = false;
+                    for (int i = 0; i < depCount; ++i) {
+                        String depClass = input.readUTF();
+                        Date depDate = classDateProvider.getModificationDate(depClass);
+                        if (depDate == null || depDate.after(new Date(file.lastModified()))) {
+                            dependenciesChanged = true;
+                            break;
+                        }
+                    }
+                    if (!dependenciesChanged) {
+                        item.node = astIO.readAsync(input, methodReference);
+                    }
+                } catch (IOException e) {
+                    // we could not read program, just leave it empty
+                }
+            }
+        }
+        return item.node;
+    }
+
+    @Override
+    public void storeAsync(MethodReference methodReference, AsyncMethodNode node) {
+        AsyncItem item = new AsyncItem();
+        item.node = node;
+        asyncCache.put(methodReference, item);
+        newAsyncMethods.add(methodReference);
+    }
+
     public void flush() throws IOException {
         for (MethodReference method : newMethods) {
-            File file = getMethodFile(method);
+            File file = getMethodFile(method, true);
             AstDependencyAnalyzer analyzer = new AstDependencyAnalyzer();
             RegularMethodNode node = cache.get(method).node;
             node.getBody().acceptVisitor(analyzer);
@@ -94,11 +135,28 @@ public class DiskRegularMethodNodeCache implements RegularMethodNodeCache {
                 astIO.write(output, node);
             }
         }
+        for (MethodReference method : newAsyncMethods) {
+            File file = getMethodFile(method, true);
+            AstDependencyAnalyzer analyzer = new AstDependencyAnalyzer();
+            AsyncMethodNode node = asyncCache.get(method).node;
+            for (AsyncMethodPart part : node.getBody()) {
+                part.getStatement().acceptVisitor(analyzer);
+            }
+            analyzer.dependencies.add(method.getClassName());
+            try (DataOutputStream output = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file)))) {
+                output.writeShort(analyzer.dependencies.size());
+                for (String dependency : analyzer.dependencies) {
+                    output.writeUTF(dependency);
+                }
+                astIO.writeAsync(output, node);
+            }
+        }
     }
 
-    private File getMethodFile(MethodReference method) {
+    private File getMethodFile(MethodReference method, boolean async) {
         File dir = new File(directory, method.getClassName().replace('.', '/'));
-        return new File(dir, FileNameEncoder.encodeFileName(method.getDescriptor().toString()) + ".teavm-ast");
+        return new File(dir, FileNameEncoder.encodeFileName(method.getDescriptor().toString()) + ".teavm-ast" +
+                (async ? "-async" : ""));
     }
 
     static class AstDependencyAnalyzer implements StatementVisitor, ExprVisitor {
@@ -259,21 +317,24 @@ public class DiskRegularMethodNodeCache implements RegularMethodNodeCache {
         }
 
         @Override
-        public void visit(RestoreAsyncStatement statement) {
+        public void visit(GotoPartStatement statement) {
         }
 
         @Override
         public void visit(MonitorEnterStatement statement) {
-            
+
         }
 
         @Override
         public void visit(MonitorExitStatement statement) {
-            
         }
     }
 
     static class Item {
         RegularMethodNode node;
+    }
+
+    static class AsyncItem {
+        AsyncMethodNode node;
     }
 }

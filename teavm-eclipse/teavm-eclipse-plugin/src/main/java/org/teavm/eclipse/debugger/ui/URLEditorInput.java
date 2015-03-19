@@ -14,7 +14,7 @@ import org.eclipse.ui.PlatformUI;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class URLEditorInput extends PlatformObject implements IStorageEditorInput {
     private URL url;

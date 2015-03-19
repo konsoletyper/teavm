@@ -21,6 +21,7 @@ import org.teavm.classlib.java.lang.*;
 /**
  *
  * @author Alexey Andreev
+ * @param <E>
  */
 public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E> {
     private int version;

@@ -281,34 +281,21 @@ class TLexer {
         return lookAheadST != null;
     }
 
-    /**
-     * Returns current character and moves string index to the next one;
-     *
-     */
     public int next() {
         movePointer();
         return lookBack;
     }
 
-    /**
-     * Returns current special token and moves string index to the next one;
-     */
     public TSpecialToken nextSpecial() {
         TSpecialToken res = curST;
         movePointer();
         return res;
     }
 
-    /**
-     * Returns nest symbol read.
-     */
     public int lookAhead() {
         return lookAhead;
     }
 
-    /**
-     * Returns previous character.
-     */
     public int back() {
         return lookBack;
     }
@@ -780,9 +767,6 @@ class TLexer {
         return ch == 0 && lookAhead == 0 && index == patternFullLength && !isSpecial();
     }
 
-    /**
-     * Returns true if current character is plain token.
-     */
     public static boolean isLetter(int ch) {
 
         // all supplementary codepoints have integer value that is >= 0;
@@ -1061,9 +1045,6 @@ class TLexer {
         return high;
     }
 
-    /**
-     * Returns the curr. character index.
-     */
     public int getIndex() {
         return curToc;
     }

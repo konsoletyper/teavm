@@ -29,7 +29,7 @@ import org.teavm.vm.spi.AbstractRendererListener;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class JavaScriptResourceInterceptor extends AbstractRendererListener {
     @Override

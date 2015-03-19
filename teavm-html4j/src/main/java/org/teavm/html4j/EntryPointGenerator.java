@@ -28,7 +28,7 @@ import org.teavm.vm.spi.AbstractRendererListener;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class EntryPointGenerator extends AbstractRendererListener implements DependencyListener {
     private List<String> classesToLoad = new ArrayList<>();

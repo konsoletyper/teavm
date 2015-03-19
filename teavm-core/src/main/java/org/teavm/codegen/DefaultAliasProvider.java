@@ -16,6 +16,7 @@
 package org.teavm.codegen;
 
 import org.teavm.model.FieldReference;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 
 /**
@@ -24,6 +25,7 @@ import org.teavm.model.MethodReference;
  */
 public class DefaultAliasProvider implements AliasProvider {
     private int lastSuffix;
+    private int lastVirtualSuffix;
 
     @Override
     public String getAlias(String cls) {
@@ -49,6 +51,17 @@ public class DefaultAliasProvider implements AliasProvider {
     }
 
     @Override
+    public String getAlias(MethodDescriptor method) {
+        String alias = method.getName();
+        if (alias.equals("<init>")) {
+            alias = "$init";
+        } else if (alias.equals("<clinit>")) {
+            alias = "$clinit";
+        }
+        return alias + lastVirtualSuffix++;
+    }
+
+    @Override
     public String getAlias(MethodReference method) {
         String alias = method.getDescriptor().getName();
         if (alias.equals("<init>")) {
@@ -62,5 +75,10 @@ public class DefaultAliasProvider implements AliasProvider {
     @Override
     public String getAlias(FieldReference field) {
         return field.getFieldName() + (lastSuffix++);
+    }
+
+    @Override
+    public String getFunctionAlias(String name) {
+        return name;
     }
 }

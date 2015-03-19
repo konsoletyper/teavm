@@ -17,7 +17,7 @@ package org.teavm.model;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface ClassReaderSource {
     ClassReader get(String name);

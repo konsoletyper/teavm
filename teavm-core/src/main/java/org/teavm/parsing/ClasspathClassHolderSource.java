@@ -24,7 +24,7 @@ import org.teavm.resource.ResourceClassHolderMapper;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class ClasspathClassHolderSource implements ClassHolderSource, ClassDateProvider {
     private MapperClassHolderSource innerClassSource;

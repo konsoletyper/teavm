@@ -17,7 +17,7 @@ package org.teavm.dependency;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface ValueDependencyInfo {
     String[] getTypes();

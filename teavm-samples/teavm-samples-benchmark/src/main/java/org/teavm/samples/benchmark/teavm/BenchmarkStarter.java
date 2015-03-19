@@ -33,7 +33,7 @@ import org.teavm.samples.benchmark.Scene;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public final class BenchmarkStarter {
     private static Window window = (Window)JS.getGlobal();

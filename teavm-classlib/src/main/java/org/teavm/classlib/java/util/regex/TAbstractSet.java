@@ -143,15 +143,6 @@ abstract class TAbstractSet {
         return -1;
     }
 
-    /**
-     * Returns true, if this node has consumed any characters during positive
-     * match attempt, for example node representing character always consumes
-     * one character if it matches. If particular node matches empty sting this
-     * method will return false;
-     *
-     * @param matchResult
-     * @return
-     */
     public abstract boolean hasConsumed(TMatchResultImpl matchResult);
 
     /**
@@ -176,9 +167,6 @@ abstract class TAbstractSet {
         return getQualifiedName();
     }
 
-    /**
-     * Returns the next.
-     */
     public TAbstractSet getNext() {
         return next;
     }
@@ -210,14 +198,6 @@ abstract class TAbstractSet {
         return true;
     }
 
-    /**
-     * This method is used for replacement backreferenced sets.
-     *
-     * @param prev
-     *            - node who references to this node
-     * @return null if current node need not to be replaced JointSet which is
-     *         replacement of current node otherwise
-     */
     public TJointSet processBackRefReplacement() {
         return null;
     }

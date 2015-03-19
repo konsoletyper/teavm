@@ -23,7 +23,7 @@ import org.teavm.platform.metadata.*;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class DeclaringClassMetadataGenerator implements ClassScopedMetadataGenerator {
     @Override

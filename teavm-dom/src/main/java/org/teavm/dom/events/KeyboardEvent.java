@@ -19,7 +19,7 @@ import org.teavm.jso.JSProperty;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface KeyboardEvent extends Event {
     int DOM_KEY_LOCATION_STANDARD = 0x00;

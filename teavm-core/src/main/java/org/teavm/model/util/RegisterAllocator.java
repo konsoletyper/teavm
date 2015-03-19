@@ -46,10 +46,31 @@ public class RegisterAllocator {
         }
         renameInterferenceGraph(interferenceGraph, congruenceClasses, classArray);
         GraphColorer colorer = new GraphColorer();
-        colorer.colorize(interferenceGraph, colors);
+
+        int maxClass = 0;
+        for (int cls : classArray) {
+            maxClass = Math.max(maxClass, cls + 1);
+        }
+        int[] categories = getVariableCategories(program, method.getReference());
+        int[] classCategories = new int[maxClass];
+        for (int i = 0; i < categories.length; ++i) {
+            classCategories[classArray[i]] = categories[i];
+        }
+        colorer.colorize(interferenceGraph, colors, classCategories);
         for (int i = 0; i < colors.length; ++i) {
             program.variableAt(i).setRegister(colors[i]);
         }
+    }
+
+    private int[] getVariableCategories(ProgramReader program, MethodReference method) {
+        TypeInferer inferer = new TypeInferer();
+        inferer.inferTypes(program, method);
+        int[] categories = new int[program.variableCount()];
+        for (int i = 0; i < program.variableCount(); ++i) {
+            VariableType type = inferer.typeOf(i);
+            categories[i] = type != null ? type.ordinal() : 255;
+        }
+        return categories;
     }
 
     private static void joinClassNodes(List<MutableGraphNode> graph, DisjointSet classes) {

@@ -19,7 +19,7 @@ import org.teavm.model.MethodReference;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class DebuggerVirtualCallSite extends DebuggerCallSite {
     private MethodReference method;

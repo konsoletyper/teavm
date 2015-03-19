@@ -20,7 +20,7 @@ import org.teavm.debugging.javascript.JavaScriptValue;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TeaVMJSScope extends TeaVMVariable {
     private String name;

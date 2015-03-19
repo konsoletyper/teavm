@@ -21,7 +21,7 @@ import org.teavm.vm.BuildTarget;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface RendererListener {
     void begin(RenderingContext context, BuildTarget buildTarget) throws IOException;

@@ -15,6 +15,8 @@
  */
 package org.teavm.model;
 
+import java.util.Arrays;
+
 /**
  * <p>Specifies a fully qualified name of a method, including its name, class name, parameter types
  * and return value type. This class overloads <code>equals</code> and <code>hashCode</code>
@@ -28,11 +30,16 @@ package org.teavm.model;
  */
 public class MethodReference {
     private String className;
-    private MethodDescriptor descriptor;
+    private String name;
+    private ValueType[] signature;
+    private transient MethodDescriptor descriptor;
+    private transient String reprCache;
 
     public MethodReference(String className, MethodDescriptor descriptor) {
         this.className = className;
         this.descriptor = descriptor;
+        this.name = descriptor.getName();
+        this.signature = descriptor.getSignature();
     }
 
     /**
@@ -52,11 +59,21 @@ public class MethodReference {
      * a type of a returning value, and all the remaining elements are types of arguments.
      */
     public MethodReference(String className, String name, ValueType... signature) {
-        this(className, new MethodDescriptor(name, signature));
+        this.className = className;
+        this.name = name;
+        this.signature = Arrays.copyOf(signature, signature.length);
     }
 
     public MethodReference(Class<?> cls, String name, Class<?>... signature) {
-        this(cls.getName(), new MethodDescriptor(name, signature));
+        this(cls.getName(), name, convertSignature(signature));
+    }
+
+    private static ValueType[] convertSignature(Class<?>... signature) {
+        ValueType[] types = new ValueType[signature.length];
+        for (int i = 0; i < types.length; ++i) {
+            types[i] = ValueType.parse(signature[i]);
+        }
+        return types;
     }
 
     public String getClassName() {
@@ -64,44 +81,72 @@ public class MethodReference {
     }
 
     public MethodDescriptor getDescriptor() {
+        if (descriptor == null) {
+            descriptor = new MethodDescriptor(name, signature);
+        }
         return descriptor;
     }
 
     public int parameterCount() {
-        return descriptor.parameterCount();
+        return signature.length - 1;
+    }
+
+    public ValueType parameterType(int index) {
+        if (index >= signature.length + 1) {
+            throw new IndexOutOfBoundsException("Index " + index + " is greater than size " + (signature.length - 1));
+        }
+        return signature[index];
     }
 
     public ValueType[] getParameterTypes() {
-        return descriptor.getParameterTypes();
+        return Arrays.copyOf(signature, signature.length - 1);
     }
 
     public ValueType[] getSignature() {
-        return descriptor.getSignature();
+        return Arrays.copyOf(signature, signature.length);
+    }
+
+    public ValueType getReturnType() {
+        return signature[signature.length - 1];
     }
 
     public String getName() {
-        return descriptor.getName();
+        return name;
     }
 
     @Override
     public int hashCode() {
-        return className.hashCode() ^ descriptor.hashCode();
+        return toString().hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
-            return false;
+            return true;
         }
         if (!(obj instanceof MethodReference)) {
             return false;
         }
         MethodReference other = (MethodReference)obj;
-        return className.equals(other.className) && descriptor.equals(other.descriptor);
+        return toString().equals(other.toString());
     }
 
     @Override
     public String toString() {
-        return className + "." + descriptor;
+        if (reprCache == null) {
+            reprCache = className + "." + name + signatureToString();
+        }
+        return reprCache;
+    }
+
+    public String signatureToString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append('(');
+        for (int i = 0; i < signature.length - 1; ++i) {
+            sb.append(signature[i].toString());
+        }
+        sb.append(')');
+        sb.append(signature[signature.length - 1]);
+        return sb.toString();
     }
 }

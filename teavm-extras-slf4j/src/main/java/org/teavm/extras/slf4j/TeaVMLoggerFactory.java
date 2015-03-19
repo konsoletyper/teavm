@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,17 +13,27 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript;
+package org.teavm.extras.slf4j;
 
-import org.teavm.javascript.ast.RegularMethodNode;
-import org.teavm.model.MethodReference;
+import java.util.HashMap;
+import java.util.Map;
+import org.slf4j.ILoggerFactory;
+import org.slf4j.Logger;
 
 /**
  *
  * @author Alexey Andreev
  */
-public interface RegularMethodNodeCache {
-    RegularMethodNode get(MethodReference methodReference);
+public class TeaVMLoggerFactory implements ILoggerFactory {
+    private Map<String, TeaVMLogger> loggers = new HashMap<>();
 
-    void store(MethodReference methodReference, RegularMethodNode node);
+    @Override
+    public Logger getLogger(String name) {
+        TeaVMLogger logger = loggers.get(name);
+        if (logger == null) {
+            logger = new TeaVMLogger(name);
+            loggers.put(name, logger);
+        }
+        return logger;
+    }
 }

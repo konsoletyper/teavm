@@ -17,7 +17,7 @@ package org.teavm.javascript;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public enum Priority {
     COMMA,

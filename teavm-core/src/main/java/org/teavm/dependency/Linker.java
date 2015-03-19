@@ -53,7 +53,7 @@ public class Linker {
             for (Instruction insn : block.getInstructions()) {
                 if (insn instanceof InvokeInstruction) {
                     InvokeInstruction invoke = (InvokeInstruction)insn;
-                    MethodDependencyInfo linkedMethod = dependency.getMethod(invoke.getMethod());
+                    MethodDependencyInfo linkedMethod = dependency.getMethodImplementation(invoke.getMethod());
                     if (linkedMethod != null) {
                         invoke.setMethod(linkedMethod.getReference());
                     }

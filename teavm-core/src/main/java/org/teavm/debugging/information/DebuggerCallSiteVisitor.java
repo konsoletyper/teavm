@@ -17,7 +17,7 @@ package org.teavm.debugging.information;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface DebuggerCallSiteVisitor {
     void visit(DebuggerVirtualCallSite callSite);

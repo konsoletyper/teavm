@@ -20,5 +20,5 @@ package org.teavm.dependency;
  * @author Alexey Andreev
  */
 public interface DependencyTypeFilter {
-    boolean match(DependencyAgentType type);
+    boolean match(DependencyType type);
 }

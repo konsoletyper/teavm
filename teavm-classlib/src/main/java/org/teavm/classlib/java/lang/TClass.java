@@ -23,7 +23,8 @@ import org.teavm.platform.metadata.ClassScopedMetadataProvider;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
+ * @param <T> class type.
  */
 public class TClass<T> extends TObject {
     TString name;

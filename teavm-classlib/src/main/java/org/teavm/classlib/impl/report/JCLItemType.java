@@ -17,7 +17,7 @@ package org.teavm.classlib.impl.report;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 enum JCLItemType {
     FIELD,

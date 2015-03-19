@@ -19,7 +19,7 @@ import org.eclipse.debug.core.model.DebugElement;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public abstract class TeaVMDebugElement extends DebugElement {
     public TeaVMDebugElement(TeaVMDebugTarget target) {

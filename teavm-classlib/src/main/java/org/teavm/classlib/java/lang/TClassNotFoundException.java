@@ -17,7 +17,7 @@ package org.teavm.classlib.java.lang;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TClassNotFoundException extends TReflectiveOperationException {
     private static final long serialVersionUID = -1162632869775788325L;

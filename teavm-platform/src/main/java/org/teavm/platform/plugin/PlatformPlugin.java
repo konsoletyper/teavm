@@ -20,7 +20,7 @@ import org.teavm.vm.spi.TeaVMPlugin;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class PlatformPlugin implements TeaVMPlugin {
     @Override

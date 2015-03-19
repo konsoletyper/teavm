@@ -30,7 +30,7 @@ import org.teavm.platform.metadata.Resource;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class ClassScopedMetadataProviderNativeGenerator implements Generator {
     @Override
@@ -80,7 +80,7 @@ public class ClassScopedMetadataProviderNativeGenerator implements Generator {
 
         Map<String, Resource> resourceMap = generator.generateMetadata(metadataContext, methodRef);
         writer.append("var p").ws().append("=").ws().append("\"" + Renderer.escapeString("$$res_" +
-                writer.getNaming().getNameFor(methodRef)) + "\"").append(";").softNewLine();
+                writer.getNaming().getFullNameFor(methodRef)) + "\"").append(";").softNewLine();
         for (Map.Entry<String, Resource> entry : resourceMap.entrySet()) {
             writer.appendClass(entry.getKey()).append("[p]").ws().append("=").ws();
             ResourceWriterHelper.write(writer, entry.getValue());

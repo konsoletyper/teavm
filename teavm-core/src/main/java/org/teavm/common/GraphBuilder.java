@@ -65,6 +65,16 @@ public class GraphBuilder {
         }
     }
 
+    public void removeEdge(int from, int to) {
+        if (to < 0 || from < 0) {
+            throw new IllegalArgumentException();
+        }
+        if (from >= addedEdges.size() || to >= addedEdges.size()) {
+            return;
+        }
+        addedEdges.get(from).removeAllOccurrences(to);
+    }
+
     public Graph build() {
         if (builtGraph == null) {
             IntSet[] incomingEdges = new IntSet[sz];

@@ -20,7 +20,7 @@ import org.teavm.javascript.ast.*;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 class TryCatchFinder implements StatementVisitor {
     public boolean tryCatchFound;
@@ -112,16 +112,14 @@ class TryCatchFinder implements StatementVisitor {
     }
 
     @Override
-    public void visit(RestoreAsyncStatement statement) {
+    public void visit(GotoPartStatement statement) {
     }
 
     @Override
     public void visit(MonitorEnterStatement statement) {
-        
     }
 
     @Override
     public void visit(MonitorExitStatement statement) {
-        
     }
 }

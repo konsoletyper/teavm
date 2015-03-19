@@ -20,7 +20,7 @@ import org.teavm.classlib.java.lang.*;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TLogRecord extends TObject implements TSerializable {
     private static long sequenceNumberGenerator;

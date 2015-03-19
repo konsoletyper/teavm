@@ -23,7 +23,7 @@ import org.jbox2d.dynamics.joints.RevoluteJointDef;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class Scene {
     private World world;

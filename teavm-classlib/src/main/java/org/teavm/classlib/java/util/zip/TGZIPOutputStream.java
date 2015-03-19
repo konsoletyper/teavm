@@ -21,7 +21,7 @@ import java.io.OutputStream;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public class TGZIPOutputStream extends TDeflaterOutputStream {
     public TGZIPOutputStream(OutputStream out, int size, boolean syncFlush) throws IOException {

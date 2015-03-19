@@ -17,7 +17,7 @@ package org.teavm.model.instructions;
 
 /**
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public enum ArrayElementType {
     CHAR,

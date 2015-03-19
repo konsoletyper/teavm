@@ -28,7 +28,7 @@ import org.teavm.platform.PlatformClass;
  * @see ClassScopedMetadataProvider
  * @see MetadataGenerator
  *
- * @author Alexey Andreev <konsoletyper@gmail.com>
+ * @author Alexey Andreev
  */
 public interface ClassScopedMetadataGenerator {
     Map<String, Resource> generateMetadata(MetadataGeneratorContext context, MethodReference method);
