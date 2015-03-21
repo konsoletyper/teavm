@@ -18,6 +18,9 @@ package org.teavm.classlib.java.nio.charset;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import org.teavm.classlib.java.nio.TByteBuffer;
+import org.teavm.classlib.java.nio.TCharBuffer;
+import org.teavm.classlib.java.nio.charset.impl.UTF8Charset;
 
 /**
  *
@@ -29,12 +32,54 @@ public abstract class TCharset implements Comparable<TCharset> {
     private Set<String> aliasSet;
 
     protected TCharset(String canonicalName, String[] aliases) {
+        checkCanonicalName(canonicalName);
+        for (String alias : aliases) {
+            checkCanonicalName(alias);
+        }
         this.canonicalName = canonicalName;
         this.aliases = aliases.clone();
     }
 
+    private static void checkCanonicalName(String name) {
+        if (name.isEmpty()) {
+            throw new TIllegalCharsetNameException(name);
+        }
+        if (!isValidCharsetStart(name.charAt(0))) {
+            throw new TIllegalCharsetNameException(name);
+        }
+        for (int i = 1; i < name.length(); ++i) {
+            char c = name.charAt(i);
+            switch (c) {
+                case '-':
+                case '+':
+                case '.':
+                case ':':
+                case '_':
+                    break;
+                default:
+                    if (!isValidCharsetStart(c)) {
+                        throw new TIllegalCharsetNameException(name);
+                    }
+                    break;
+            }
+        }
+    }
+
+    private static boolean isValidCharsetStart(char c) {
+        return c >= '0' && c <= '9' || c >= 'a' && c <= 'z' || c >= 'A' || c <= 'Z';
+    }
+
     public static TCharset forName(String charsetName) {
-        return null;
+        if (charsetName == null) {
+            throw new IllegalArgumentException("charsetName is null");
+        }
+        checkCanonicalName(charsetName);
+        switch (charsetName.toUpperCase()) {
+            case "UTF-8":
+                return new UTF8Charset();
+            default:
+                throw new TUnsupportedCharsetException(charsetName);
+        }
     }
 
     public final String name() {
@@ -56,11 +101,44 @@ public abstract class TCharset implements Comparable<TCharset> {
         return canonicalName;
     }
 
+    public abstract boolean contains(TCharset cs);
+
     public abstract TCharsetDecoder newDecoder();
 
     public abstract TCharsetEncoder newEncoder();
 
     public boolean canEncode() {
         return true;
+    }
+
+    public final TCharBuffer decode(TByteBuffer bb) {
+        try {
+            return newDecoder()
+                    .onMalformedInput(TCodingErrorAction.REPLACE)
+                    .onUnmappableCharacter(TCodingErrorAction.REPLACE)
+                    .decode(bb);
+        } catch (TCharacterCodingException e) {
+            throw new AssertionError("Should never been thrown", e);
+        }
+    }
+
+    public final TByteBuffer encode(TCharBuffer cb) {
+        try {
+            return newEncoder()
+                    .onMalformedInput(TCodingErrorAction.REPLACE)
+                    .onUnmappableCharacter(TCodingErrorAction.REPLACE)
+                    .encode(cb);
+        } catch (TCharacterCodingException e) {
+            throw new AssertionError("Should never been thrown", e);
+        }
+    }
+
+    public final TByteBuffer encode(String str) {
+        return encode(TCharBuffer.wrap(str));
+    }
+
+    @Override
+    public final int compareTo(TCharset that) {
+        return canonicalName.compareToIgnoreCase(that.canonicalName);
     }
 }

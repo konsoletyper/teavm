@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.nio.charset;
 
+import java.util.Arrays;
 import org.teavm.classlib.java.nio.TByteBuffer;
 import org.teavm.classlib.java.nio.TCharBuffer;
 
@@ -23,11 +24,11 @@ import org.teavm.classlib.java.nio.TCharBuffer;
  * @author Alexey Andreev
  */
 public abstract class TCharsetEncoder {
-    private static final int READY = 0;
+    private static final int READY = 4;
     private static final int ONGOING = 1;
     private static final int END = 2;
     private static final int FLUSH = 3;
-    private static final int INIT = 4;
+    private static final int INIT = 0;
     private TCharset charset;
     private byte[] replacement;
     private float averageBytesPerChar;
@@ -35,7 +36,6 @@ public abstract class TCharsetEncoder {
     private TCodingErrorAction malformedAction = TCodingErrorAction.REPORT;
     private TCodingErrorAction unmappableAction = TCodingErrorAction.REPORT;
     private int status;
-    private boolean finished;
 
     protected TCharsetEncoder(TCharset cs, float averageBytesPerChar, float maxBytesPerChar, byte[] replacement) {
         checkReplacement(replacement);
@@ -43,7 +43,6 @@ public abstract class TCharsetEncoder {
         this.replacement = replacement.clone();
         this.averageBytesPerChar = averageBytesPerChar;
         this.maxBytesPerChar = maxBytesPerChar;
-        status = INIT;
     }
 
     protected TCharsetEncoder(TCharset cs, float averageBytesPerChar, float maxBytesPerChar) {
@@ -115,25 +114,19 @@ public abstract class TCharsetEncoder {
     }
 
     public final TCoderResult encode(TCharBuffer in, TByteBuffer out, boolean endOfInput) {
-        if (status == READY && finished && !endOfInput) {
-            throw new IllegalStateException();
-        }
-
         if (status == FLUSH || !endOfInput && status == END) {
             throw new IllegalStateException();
         }
 
+        status = endOfInput ? END : ONGOING;
         TCoderResult result;
         while (true) {
             try {
                 result = encodeLoop(in, out);
-            } catch (TBufferOverflowException e) {
-                throw new TCoderMalfunctionError(e);
-            } catch (TBufferUnderflowException e) {
+            } catch (RuntimeException e) {
                 throw new TCoderMalfunctionError(e);
             }
-            if (result == TCoderResult.UNDERFLOW) {
-                status = endOfInput ? END : ONGOING;
+            if (result.isUnderflow()) {
                 if (endOfInput) {
                     int remaining = in.remaining();
                     if (remaining > 0) {
@@ -144,14 +137,10 @@ public abstract class TCharsetEncoder {
                 } else {
                     return result;
                 }
-            } else if (result == TCoderResult.OVERFLOW) {
-                status = endOfInput ? END : ONGOING;
+            } else if (result.isOverflow()) {
                 return result;
             }
-            TCodingErrorAction action = malformedAction;
-            if (result.isUnmappable()) {
-                action = unmappableAction;
-            }
+            TCodingErrorAction action = result.isUnmappable() ? unmappableAction : malformedAction;
             if (action == TCodingErrorAction.REPLACE) {
                 if (out.remaining() < replacement.length) {
                     return TCoderResult.OVERFLOW;
@@ -171,9 +160,9 @@ public abstract class TCharsetEncoder {
             return TByteBuffer.allocate(0);
         }
         reset();
-        int length = (int)(in.remaining() * averageBytesPerChar);
-        TByteBuffer output = TByteBuffer.allocate(length);
-        TCoderResult result = null;
+        TByteBuffer output = TByteBuffer.allocate((int)(in.remaining() * averageBytesPerChar));
+
+        TCoderResult result;
         while (true) {
             result = encode(in, output, false);
             if (result == TCoderResult.UNDERFLOW) {
@@ -182,31 +171,25 @@ public abstract class TCharsetEncoder {
                 output = allocateMore(output);
                 continue;
             }
-            checkCoderResult(result);
+            if (result.isError()) {
+                result.throwException();
+            }
         }
+
         result = encode(in, output, true);
-        checkCoderResult(result);
+        if (result.isError()) {
+            result.throwException();
+        }
 
         while (true) {
             result = flush(output);
-            if (result == TCoderResult.UNDERFLOW) {
-                output.flip();
+            if (result.isUnderflow()) {
                 break;
-            } else if (result == TCoderResult.OVERFLOW) {
+            } else if (result.isOverflow()) {
                 output = allocateMore(output);
-                continue;
             }
-            checkCoderResult(result);
-            output.flip();
-            if (result.isMalformed()) {
-                throw new TMalformedInputException(result.length());
-            } else if (result.isUnmappable()) {
-                throw new TUnmappableCharacterException(result.length());
-            }
-            break;
         }
-        status = READY;
-        finished = true;
+        output.flip();
         return output;
     }
 
@@ -249,21 +232,11 @@ public abstract class TCharsetEncoder {
         return implCanEncode(cb);
     }
 
-    private void checkCoderResult(TCoderResult result) throws TCharacterCodingException {
-        if (malformedAction == TCodingErrorAction.REPORT && result.isMalformed()) {
-            throw new TMalformedInputException(result.length());
-        } else if (unmappableAction == TCodingErrorAction.REPORT && result.isUnmappable()) {
-            throw new TUnmappableCharacterException(result.length());
-        }
-    }
-
-    private TByteBuffer allocateMore(TByteBuffer output) {
-        if (output.capacity() == 0) {
-            return TByteBuffer.allocate(1);
-        }
-        TByteBuffer result = TByteBuffer.allocate(output.capacity() * 2);
-        output.flip();
-        result.put(output);
+    private TByteBuffer allocateMore(TByteBuffer buffer) {
+        byte[] array = buffer.array();
+        array = Arrays.copyOf(array, array.length * 2);
+        TByteBuffer result = TByteBuffer.wrap(array);
+        result.position(buffer.position());
         return result;
     }
 
