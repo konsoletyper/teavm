@@ -23,8 +23,8 @@ import org.teavm.classlib.java.nio.charset.TCharsetEncoder;
  *
  * @author Alexey Andreev
  */
-public class UTF8Charset extends TCharset {
-    public UTF8Charset() {
+public class TUTF8Charset extends TCharset {
+    public TUTF8Charset() {
         super("UTF-8", new String[0]);
     }
 
@@ -35,11 +35,11 @@ public class UTF8Charset extends TCharset {
 
     @Override
     public TCharsetDecoder newDecoder() {
-        return new UTF8Decoder(this);
+        return new TUTF8Decoder(this);
     }
 
     @Override
     public TCharsetEncoder newEncoder() {
-        return null;
+        return new TUTF8Encoder(this);
     }
 }

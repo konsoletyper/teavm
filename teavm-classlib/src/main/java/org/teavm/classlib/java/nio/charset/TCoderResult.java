@@ -78,4 +78,20 @@ public class TCoderResult {
                 throw new TUnmappableCharacterException(length);
         }
     }
+
+    @Override
+    public String toString() {
+        switch (kind) {
+            case 0:
+                return "UNDERFLOW";
+            case 1:
+                return "OVERFLOW";
+            case 2:
+                return "MALFORMED " + length;
+            case 3:
+                return "UNMAPPABLE " + length;
+            default:
+                throw new AssertionError();
+        }
+    }
 }

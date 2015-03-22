@@ -15,12 +15,10 @@
  */
 package org.teavm.classlib.java.nio.charset;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import org.teavm.classlib.java.nio.TByteBuffer;
 import org.teavm.classlib.java.nio.TCharBuffer;
-import org.teavm.classlib.java.nio.charset.impl.UTF8Charset;
+import org.teavm.classlib.java.nio.charset.impl.TUTF8Charset;
 
 /**
  *
@@ -30,6 +28,11 @@ public abstract class TCharset implements Comparable<TCharset> {
     private String canonicalName;
     private String[] aliases;
     private Set<String> aliasSet;
+    private static final Map<String, TCharset> charsets = new HashMap<>();
+
+    static {
+        charsets.put("UTF-8", new TUTF8Charset());
+    }
 
     protected TCharset(String canonicalName, String[] aliases) {
         checkCanonicalName(canonicalName);
@@ -74,12 +77,11 @@ public abstract class TCharset implements Comparable<TCharset> {
             throw new IllegalArgumentException("charsetName is null");
         }
         checkCanonicalName(charsetName);
-        switch (charsetName.toUpperCase()) {
-            case "UTF-8":
-                return new UTF8Charset();
-            default:
-                throw new TUnsupportedCharsetException(charsetName);
+        TCharset charset = charsets.get(charsetName.toUpperCase());
+        if (charset == null) {
+            throw new TUnsupportedCharsetException(charsetName);
         }
+        return charset;
     }
 
     public final String name() {

@@ -27,7 +27,7 @@ public abstract class TCharsetDecoder {
     private static final int INIT = 0;
     private static final int IN_PROGRESS = 1;
     private static final int END = 2;
-    private static final int FLUSH = 2;
+    private static final int FLUSH = 3;
     private TCharset charset;
     private float averageCharsPerByte;
     private float maxCharsPerByte;
@@ -125,7 +125,7 @@ public abstract class TCharsetDecoder {
             if (result.isOverflow()) {
                 return result;
             } else if (result.isUnderflow()) {
-                if (endOfInput) {
+                if (endOfInput && in.hasRemaining()) {
                     state = END;
                     return TCoderResult.malformedForLength(in.remaining());
                 }
