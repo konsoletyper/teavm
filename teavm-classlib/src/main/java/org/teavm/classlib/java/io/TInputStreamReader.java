@@ -21,6 +21,7 @@ import org.teavm.classlib.java.nio.TCharBuffer;
 import org.teavm.classlib.java.nio.charset.TCharset;
 import org.teavm.classlib.java.nio.charset.TCharsetDecoder;
 import org.teavm.classlib.java.nio.charset.TCodingErrorAction;
+import org.teavm.classlib.java.nio.charset.TUnsupportedCharsetException;
 import org.teavm.classlib.java.nio.charset.impl.TUTF8Charset;
 
 /**
@@ -29,8 +30,7 @@ import org.teavm.classlib.java.nio.charset.impl.TUTF8Charset;
  */
 public class TInputStreamReader extends TReader {
     private TInputStream stream;
-    private TCharset charset;
-    private TString charsetName;
+    private TCharsetDecoder decoder;
     private byte[] inData = new byte[8192];
     private TByteBuffer inBuffer = TByteBuffer.wrap(inData);
     private char[] outData = new char[1024];
@@ -38,25 +38,37 @@ public class TInputStreamReader extends TReader {
     private boolean streamEof;
     private boolean eof;
 
-    public TInputStreamReader(TInputStream in, TString charsetName) {
-        this(in, TCharset.forName(charsetName.toString()));
-        this.charsetName = charsetName;
+    public TInputStreamReader(TInputStream in, TString charsetName) throws TUnsupportedEncodingException {
+        this(in, getCharset(charsetName));
+    }
+
+    public TInputStreamReader(TInputStream in, TCharset charset) {
+        this(in, charset.newDecoder()
+                .onMalformedInput(TCodingErrorAction.REPLACE)
+                .onUnmappableCharacter(TCodingErrorAction.REPLACE));
     }
 
     public TInputStreamReader(TInputStream in) {
         this(in, new TUTF8Charset());
-        charsetName = TString.wrap("UTF-8");
     }
 
-    public TInputStreamReader(TInputStream in, TCharset charset) {
+    public TInputStreamReader(TInputStream in, TCharsetDecoder decoder) {
         this.stream = in;
-        this.charset = charset;
+        this.decoder = decoder;
         outBuffer.position(outBuffer.limit());
         inBuffer.position(inBuffer.limit());
     }
 
+    private static TCharset getCharset(TString charsetName) throws TUnsupportedEncodingException  {
+        try {
+            return TCharset.forName(charsetName.toString());
+        } catch (TUnsupportedCharsetException e) {
+            throw new TUnsupportedEncodingException(charsetName);
+        }
+    }
+
     public TString getEncoding() {
-        return charsetName;
+        return TString.wrap(decoder.charset().name());
     }
 
     @Override
@@ -98,17 +110,16 @@ public class TInputStreamReader extends TReader {
             return false;
         }
         outBuffer.compact();
-        TCharsetDecoder decoder = charset.newDecoder()
-                .onMalformedInput(TCodingErrorAction.REPLACE)
-                .onUnmappableCharacter(TCodingErrorAction.IGNORE);
         while (true) {
             if (!inBuffer.hasRemaining() && !fillReadBuffer()) {
-                eof = true;
                 break;
             }
-            if (decoder.decode(inBuffer, outBuffer, eof).isOverflow()) {
+            if (decoder.decode(inBuffer, outBuffer, streamEof).isOverflow()) {
                 break;
             }
+        }
+        if (!inBuffer.hasRemaining() && streamEof && decoder.flush(outBuffer).isUnderflow()) {
+            eof = true;
         }
         outBuffer.flip();
         return true;

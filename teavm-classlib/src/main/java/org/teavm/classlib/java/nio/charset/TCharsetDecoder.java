@@ -191,7 +191,7 @@ public abstract class TCharsetDecoder {
             reset();
         }
 
-        TCharBuffer out = TCharBuffer.allocate((int)(averageCharsPerByte * in.remaining()));
+        TCharBuffer out = TCharBuffer.allocate(Math.max(8, (int)(in.remaining() * averageCharsPerByte)));
         TCoderResult result;
         while (true) {
             result = decode(in, out, false);
@@ -237,7 +237,7 @@ public abstract class TCharsetDecoder {
 
     private TCharBuffer expand(TCharBuffer buffer) {
         char[] array = buffer.array();
-        array = Arrays.copyOf(array, array.length * 2);
+        array = Arrays.copyOf(array, Math.max(8, array.length * 2));
         TCharBuffer result = TCharBuffer.wrap(array);
         result.position(buffer.position());
         return result;

@@ -15,40 +15,61 @@
  */
 package org.teavm.classlib.java.io;
 
-import org.teavm.classlib.impl.charset.ByteBuffer;
-import org.teavm.classlib.impl.charset.CharBuffer;
-import org.teavm.classlib.impl.charset.Charset;
 import org.teavm.classlib.java.lang.TString;
+import org.teavm.classlib.java.nio.TByteBuffer;
+import org.teavm.classlib.java.nio.TCharBuffer;
+import org.teavm.classlib.java.nio.charset.*;
+import org.teavm.classlib.java.nio.charset.impl.TUTF8Charset;
 
 public class TOutputStreamWriter extends TWriter {
     private TOutputStream out;
-    private String encoding;
-    private Charset charset;
+    private TCharsetEncoder encoder;
     private byte[] bufferData = new byte[512];
-    private ByteBuffer buffer = new ByteBuffer(bufferData);
+    private TByteBuffer buffer = TByteBuffer.wrap(bufferData);
+    private boolean closed;
 
     public TOutputStreamWriter(TOutputStream out) {
-        this(out, "UTF-8");
+        this(nullCheck(out), new TUTF8Charset());
     }
 
     public TOutputStreamWriter(TOutputStream out, final String enc) throws TUnsupportedEncodingException {
-        super(out);
-        if (enc == null) {
+        this(nullCheck(out), getCharset(enc));
+    }
+
+    public TOutputStreamWriter(TOutputStream out, TCharset charset) {
+        this(nullCheck(out), charset.newEncoder()
+                .onMalformedInput(TCodingErrorAction.REPLACE)
+                .onUnmappableCharacter(TCodingErrorAction.REPLACE));
+    }
+
+    public TOutputStreamWriter(TOutputStream out, TCharsetEncoder encoder) {
+        this.out = nullCheck(out);
+        this.encoder = encoder;
+    }
+
+    private static TOutputStream nullCheck(TOutputStream stream) {
+        if (stream == null) {
             throw new NullPointerException();
         }
-        this.out = out;
-        charset = Charset.get(enc);
-        if (charset == null) {
-            throw new TUnsupportedEncodingException(TString.wrap(enc));
+        return stream;
+    }
+
+    private static TCharset getCharset(String charsetName) throws TUnsupportedEncodingException  {
+        if (charsetName == null) {
+            throw new NullPointerException();
         }
-        encoding = enc;
+        try {
+            return TCharset.forName(charsetName);
+        } catch (TUnsupportedCharsetException | TIllegalCharsetNameException e) {
+            throw new TUnsupportedEncodingException(TString.wrap(charsetName));
+        }
     }
 
     @Override
     public void close() throws TIOException {
-        if (charset != null) {
+        if (!closed) {
             flush();
-            charset = null;
+            closed = true;
             out.flush();
             out.close();
         }
@@ -59,19 +80,19 @@ public class TOutputStreamWriter extends TWriter {
         checkStatus();
         if (buffer.position() > 0) {
             out.write(bufferData, 0, buffer.position());
-            buffer.rewind(0);
+            buffer.clear();
         }
         out.flush();
     }
 
     private void checkStatus() throws TIOException {
-        if (charset == null) {
+        if (closed) {
             throw new TIOException(TString.wrap("Writer already closed"));
         }
     }
 
     public String getEncoding() {
-        return encoding;
+        return encoder.charset().name();
     }
 
     @Override
@@ -84,30 +105,20 @@ public class TOutputStreamWriter extends TWriter {
             if (offset < 0 || offset > buf.length - count || count < 0) {
                 throw new IndexOutOfBoundsException();
             }
-            CharBuffer input = new CharBuffer(buf, offset, offset + count);
-            while (!input.end()) {
-                if (buffer.available() < 6) {
+            TCharBuffer input = TCharBuffer.wrap(buf, offset, count);
+            while (input.hasRemaining()) {
+                if (encoder.encode(input, buffer, false).isOverflow()) {
                     out.write(bufferData, 0, buffer.position());
-                    buffer.rewind(0);
+                    buffer.clear();
                 }
-                charset.encode(input, buffer);
             }
         }
     }
 
     @Override
     public void write(int oneChar) throws TIOException {
-        synchronized (lock) {
-            checkStatus();
-            CharBuffer input = new CharBuffer(new char[] { (char)oneChar }, 0, 1);
-            while (!input.end()) {
-                if (buffer.available() < 6) {
-                    out.write(bufferData, 0, buffer.position());
-                    buffer.rewind(0);
-                }
-                charset.encode(input, buffer);
-            }
-        }
+        char[] array = { (char)oneChar };
+        write(array, 0, array.length);
     }
 
     @Override

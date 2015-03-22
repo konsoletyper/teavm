@@ -65,6 +65,17 @@ public class UTF8Test {
     }
 
     @Test
+    public void encodeSupplementary() {
+        Charset charset = Charset.forName("UTF-8");
+        StringBuilder sb = new StringBuilder();
+        sb.appendCodePoint(0xfedcb);
+        ByteBuffer buffer = charset.encode(sb.toString());
+        byte[] result = new byte[buffer.remaining()];
+        buffer.get(result);
+        assertArrayEquals(new byte[] { -13, -66, -73, -117 }, result);
+    }
+
+    @Test
     public void replaceMalformedFirstByte() {
         Charset charset = Charset.forName("UTF-8");
         CharBuffer buffer = charset.decode(ByteBuffer.wrap(new byte[] { 97, (byte)0xFF, 98 }));

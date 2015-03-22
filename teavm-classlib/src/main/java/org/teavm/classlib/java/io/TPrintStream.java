@@ -15,13 +15,14 @@
  */
 package org.teavm.classlib.java.io;
 
-import org.teavm.classlib.impl.charset.ByteBuffer;
-import org.teavm.classlib.impl.charset.CharBuffer;
-import org.teavm.classlib.impl.charset.Charset;
 import org.teavm.classlib.java.lang.TMath;
 import org.teavm.classlib.java.lang.TObject;
 import org.teavm.classlib.java.lang.TString;
 import org.teavm.classlib.java.lang.TStringBuilder;
+import org.teavm.classlib.java.nio.TByteBuffer;
+import org.teavm.classlib.java.nio.TCharBuffer;
+import org.teavm.classlib.java.nio.charset.*;
+import org.teavm.classlib.java.nio.charset.impl.TUTF8Charset;
 
 /**
  *
@@ -32,21 +33,22 @@ public class TPrintStream extends TFilterOutputStream {
     private boolean errorState;
     private TStringBuilder sb = new TStringBuilder();
     private char[] buffer = new char[32];
-    private Charset charset;
+    private TCharset charset;
 
     public TPrintStream(TOutputStream out, boolean autoFlush, TString encoding) throws TUnsupportedEncodingException {
         super(out);
         this.autoFlush = autoFlush;
-        charset = Charset.get(encoding.toString());
-        if (charset == null) {
-            throw new TUnsupportedEncodingException(TString.wrap("Unsupported encoding: ").concat(encoding));
+        try {
+            charset = TCharset.forName(encoding.toString());
+        } catch (TUnsupportedCharsetException | TIllegalCharsetNameException e) {
+            throw new TUnsupportedEncodingException(encoding);
         }
     }
 
     public TPrintStream(TOutputStream out, boolean autoFlush) {
         super(out);
         this.autoFlush = autoFlush;
-        this.charset = Charset.get("UTF-8");
+        this.charset = new TUTF8Charset();
     }
 
     public TPrintStream(TOutputStream out) {
@@ -131,13 +133,27 @@ public class TPrintStream extends TFilterOutputStream {
     }
 
     private void print(char[] s, int begin, int end) {
-        CharBuffer src = new CharBuffer(s, begin, end);
+        TCharBuffer src = TCharBuffer.wrap(s, begin, end - begin);
         byte[] destBytes = new byte[TMath.max(16, TMath.min(s.length, 1024))];
-        ByteBuffer dest = new ByteBuffer(destBytes);
-        while (!src.end()) {
-            charset.encode(src, dest);
+        TByteBuffer dest = TByteBuffer.wrap(destBytes);
+        TCharsetEncoder encoder = charset.newEncoder()
+                .onMalformedInput(TCodingErrorAction.REPLACE)
+                .onUnmappableCharacter(TCodingErrorAction.REPLACE);
+        while (true) {
+            boolean overflow = encoder.encode(src, dest, true).isOverflow();
             write(destBytes, 0, dest.position());
-            dest.rewind(0);
+            dest.clear();
+            if (!overflow) {
+                break;
+            }
+        }
+        while (true) {
+            boolean overflow = encoder.flush(dest).isOverflow();
+            write(destBytes, 0, dest.position());
+            dest.clear();
+            if (!overflow) {
+                break;
+            }
         }
     }
 
