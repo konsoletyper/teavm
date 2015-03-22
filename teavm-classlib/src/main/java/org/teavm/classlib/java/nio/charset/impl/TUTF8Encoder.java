@@ -15,7 +15,6 @@
  */
 package org.teavm.classlib.java.nio.charset.impl;
 
-import org.teavm.classlib.impl.charset.UTF16Helper;
 import org.teavm.classlib.java.nio.charset.TCharset;
 import org.teavm.classlib.java.nio.charset.TCoderResult;
 
@@ -57,7 +56,7 @@ public class TUTF8Encoder extends TBufferedEncoder {
                 outArray[outPos++] = (byte)(0xE0 | (ch >> 12));
                 outArray[outPos++] = (byte)(0x80 | ((ch >> 6) & 0x3F));
                 outArray[outPos++] = (byte)(0x80 | (ch & 0x3F));
-            } else if (UTF16Helper.isHighSurrogate(ch)) {
+            } else if (Character.isHighSurrogate(ch)) {
                 if (inPos >= inSize) {
                     if (!controller.hasMoreInput()) {
                         result = TCoderResult.UNDERFLOW;
@@ -65,9 +64,9 @@ public class TUTF8Encoder extends TBufferedEncoder {
                     break;
                 }
                 char low = inArray[inPos++];
-                if (!UTF16Helper.isLowSurrogate(low)) {
+                if (!Character.isLowSurrogate(low)) {
                     inPos -= 2;
-                    result = TCoderResult.malformedForLength(2);
+                    result = TCoderResult.malformedForLength(1);
                     break;
                 }
                 if (outPos + 4 > outSize) {
@@ -77,7 +76,7 @@ public class TUTF8Encoder extends TBufferedEncoder {
                     }
                     break;
                 }
-                int codePoint = UTF16Helper.buildCodePoint(ch, low);
+                int codePoint = Character.toCodePoint(ch, low);
                 outArray[outPos++] = (byte)(0xF0 | (codePoint >> 18));
                 outArray[outPos++] = (byte)(0x80 | ((codePoint >> 12) & 0x3F));
                 outArray[outPos++] = (byte)(0x80 | ((codePoint >> 6) & 0x3F));

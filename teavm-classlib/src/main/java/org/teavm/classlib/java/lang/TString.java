@@ -15,9 +15,12 @@
  */
 package org.teavm.classlib.java.lang;
 
-import org.teavm.classlib.impl.charset.*;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.io.TUnsupportedEncodingException;
+import org.teavm.classlib.java.nio.TByteBuffer;
+import org.teavm.classlib.java.nio.TCharBuffer;
+import org.teavm.classlib.java.nio.charset.TCharset;
+import org.teavm.classlib.java.nio.charset.impl.TUTF8Charset;
 import org.teavm.classlib.java.util.TArrays;
 import org.teavm.classlib.java.util.TComparator;
 import org.teavm.classlib.java.util.THashMap;
@@ -61,15 +64,15 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public TString(byte[] bytes, int offset, int length, TString charsetName) throws TUnsupportedEncodingException {
-        Charset charset = Charset.get(charsetName.toString());
-        if (charset == null) {
-            throw new TUnsupportedEncodingException(TString.wrap("Unknown encoding:" + charsetName));
-        }
+        this(bytes, offset, length, TCharset.forName(charsetName.toString()));
+    }
+
+    public TString(byte[] bytes, int offset, int length, TCharset charset) {
         initWithBytes(bytes, offset, length, charset);
     }
 
     public TString(byte[] bytes, int offset, int length) {
-        initWithBytes(bytes, offset, length, new UTF8Charset());
+        initWithBytes(bytes, offset, length, new TUTF8Charset());
     }
 
     public TString(byte[] bytes) {
@@ -80,14 +83,18 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         this(bytes, 0, bytes.length, charsetName);
     }
 
+    public TString(byte[] bytes, TCharset charset) {
+        this(bytes, 0, bytes.length, charset);
+    }
+
     public TString(int[] codePoints, int offset, int count) {
         characters = new char[count * 2];
         int charCount = 0;
         for (int i = 0; i < count; ++i) {
             int codePoint = codePoints[offset++];
-            if (codePoint >= UTF16Helper.SUPPLEMENTARY_PLANE) {
-                characters[charCount++] = UTF16Helper.highSurrogate(codePoint);
-                characters[charCount++] = UTF16Helper.lowSurrogate(codePoint);
+            if (codePoint >= TCharacter.MIN_SUPPLEMENTARY_CODE_POINT) {
+                characters[charCount++] = TCharacter.highSurrogate(codePoint);
+                characters[charCount++] = TCharacter.lowSurrogate(codePoint);
             } else {
                 characters[charCount++] = (char)codePoint;
             }
@@ -97,19 +104,14 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         }
     }
 
-    private void initWithBytes(byte[] bytes, int offset, int length, Charset charset) {
-        TStringBuilder sb = new TStringBuilder(bytes.length * 2);
-        this.characters = new char[sb.length()];
-        ByteBuffer source = new ByteBuffer(bytes, offset, offset + length);
-        char[] destChars = new char[TMath.max(8, TMath.min(length * 2, 1024))];
-        CharBuffer dest = new CharBuffer(destChars, 0, destChars.length);
-        while (!source.end()) {
-            charset.decode(source, dest);
-            sb.append(destChars, 0, dest.position());
-            dest.rewind(0);
+    private void initWithBytes(byte[] bytes, int offset, int length, TCharset charset) {
+        TCharBuffer buffer = charset.decode(TByteBuffer.wrap(bytes, offset, length));
+        if (buffer.hasArray() && buffer.position() == 0 && buffer.limit() == buffer.capacity()) {
+            characters = buffer.array();
+        } else {
+            characters = new char[buffer.remaining()];
+            buffer.get(characters);
         }
-        characters = new char[sb.length()];
-        sb.getChars(0, sb.length(), characters, 0);
     }
 
     public TString(TStringBuilder sb) {
@@ -283,7 +285,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public int indexOf(int ch, int fromIndex) {
-        if (ch < UTF16Helper.SUPPLEMENTARY_PLANE) {
+        if (ch < TCharacter.MIN_SUPPLEMENTARY_CODE_POINT) {
             char bmpChar = (char)ch;
             for (int i = fromIndex; i < characters.length; ++i) {
                 if (characters[i] == bmpChar) {
@@ -292,8 +294,8 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
             }
             return -1;
         } else {
-            char hi = UTF16Helper.highSurrogate(ch);
-            char lo = UTF16Helper.lowSurrogate(ch);
+            char hi = TCharacter.highSurrogate(ch);
+            char lo = TCharacter.lowSurrogate(ch);
             for (int i = fromIndex; i < characters.length - 1; ++i) {
                 if (characters[i] == hi && characters[i + 1] == lo) {
                     return i;
@@ -308,7 +310,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public int lastIndexOf(int ch, int fromIndex) {
-        if (ch < UTF16Helper.SUPPLEMENTARY_PLANE) {
+        if (ch < TCharacter.MIN_SUPPLEMENTARY_CODE_POINT) {
             char bmpChar = (char)ch;
             for (int i = fromIndex; i >= 0; --i) {
                 if (characters[i] == bmpChar) {
@@ -317,8 +319,8 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
             }
             return -1;
         } else {
-            char hi = UTF16Helper.highSurrogate(ch);
-            char lo = UTF16Helper.lowSurrogate(ch);
+            char hi = TCharacter.highSurrogate(ch);
+            char lo = TCharacter.lowSurrogate(ch);
             for (int i = fromIndex; i >= 1; --i) {
                 if (characters[i] == lo && characters[i - 1] == hi) {
                     return i - 1;
@@ -550,34 +552,22 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public byte[] getBytes(TString charsetName) throws TUnsupportedEncodingException {
-        Charset charset = Charset.get(charsetName.toString());
-        if (charset == null) {
-            throw new TUnsupportedEncodingException(TString.wrap("Unsupported encoding: " + charsetName));
-        }
-        return getBytes(charset);
+        return getBytes(TCharset.forName(charsetName.toString()));
     }
 
     public byte[] getBytes() {
-        return getBytes(new UTF8Charset());
+        return getBytes(new TUTF8Charset());
     }
 
-    private byte[] getBytes(Charset charset) {
-        byte[] result = new byte[length() * 2];
-        int resultLength = 0;
-        byte[] destArray = new byte[TMath.max(16, TMath.min(length() * 2, 4096))];
-        ByteBuffer dest = new ByteBuffer(destArray);
-        CharBuffer src = new CharBuffer(characters);
-        while (!src.end()) {
-            charset.encode(src, dest);
-            if (resultLength + dest.position() > result.length) {
-                result = TArrays.copyOf(result, result.length * 2);
-            }
-            for (int i = 0; i < dest.position(); ++i) {
-                result[resultLength++] = destArray[i];
-            }
-            dest.rewind(0);
+    public byte[] getBytes(TCharset charset) {
+        TByteBuffer buffer = charset.encode(TCharBuffer.wrap(characters));
+        if (buffer.hasArray() && buffer.position() == 0 && buffer.limit() == buffer.capacity()) {
+            return buffer.array();
+        } else {
+            byte[] result = new byte[buffer.remaining()];
+            buffer.get(result);
+            return result;
         }
-        return TArrays.copyOf(result, resultLength);
     }
 
     @Override
@@ -601,11 +591,11 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         int[] codePoints = new int[characters.length];
         int codePointCount = 0;
         for (int i = 0; i < characters.length; ++i) {
-            if (i == characters.length - 1 || !UTF16Helper.isHighSurrogate(characters[i]) ||
-                    !UTF16Helper.isLowSurrogate(characters[i + 1])) {
+            if (i == characters.length - 1 || !TCharacter.isHighSurrogate(characters[i]) ||
+                    !TCharacter.isLowSurrogate(characters[i + 1])) {
                 codePoints[codePointCount++] = TCharacter.toLowerCase(characters[i]);
             } else {
-                codePoints[codePointCount++] = TCharacter.toLowerCase(UTF16Helper.buildCodePoint(
+                codePoints[codePointCount++] = TCharacter.toLowerCase(TCharacter.toCodePoint(
                         characters[i], characters[i + 1]));
                 ++i;
             }
@@ -620,11 +610,11 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         int[] codePoints = new int[characters.length];
         int codePointCount = 0;
         for (int i = 0; i < characters.length; ++i) {
-            if (i == characters.length - 1 || !UTF16Helper.isHighSurrogate(characters[i]) ||
-                    !UTF16Helper.isLowSurrogate(characters[i + 1])) {
+            if (i == characters.length - 1 || !TCharacter.isHighSurrogate(characters[i]) ||
+                    !TCharacter.isLowSurrogate(characters[i + 1])) {
                 codePoints[codePointCount++] = TCharacter.toUpperCase(characters[i]);
             } else {
-                codePoints[codePointCount++] = TCharacter.toUpperCase(UTF16Helper.buildCodePoint(
+                codePoints[codePointCount++] = TCharacter.toUpperCase(TCharacter.toCodePoint(
                         characters[i], characters[i + 1]));
                 ++i;
             }

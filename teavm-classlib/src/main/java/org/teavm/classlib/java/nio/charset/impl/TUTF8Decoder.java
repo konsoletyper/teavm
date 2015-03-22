@@ -15,7 +15,6 @@
  */
 package org.teavm.classlib.java.nio.charset.impl;
 
-import org.teavm.classlib.impl.charset.UTF16Helper;
 import org.teavm.classlib.java.nio.charset.TCharset;
 import org.teavm.classlib.java.nio.charset.TCoderResult;
 
@@ -44,7 +43,13 @@ public class TUTF8Decoder extends TBufferedDecoder {
                     }
                     break;
                 }
-                outArray[outPos++] = (char)(((b & 0x1F) << 6) | (inArray[inPos++] & 0x3F));
+                byte b2 = inArray[inPos++];
+                if (!checkMidByte(b2)) {
+                    inPos -= 2;
+                    result = TCoderResult.malformedForLength(1);
+                    break;
+                }
+                outArray[outPos++] = (char)(((b & 0x1F) << 6) | (b2 & 0x3F));
             } else if ((b & 0xF0) == 0xE0) {
                 if (inPos + 2 > inSize) {
                     --inPos;
@@ -55,6 +60,11 @@ public class TUTF8Decoder extends TBufferedDecoder {
                 }
                 byte b2 = inArray[inPos++];
                 byte b3 = inArray[inPos++];
+                if (!checkMidByte(b2) || !checkMidByte(b3)) {
+                    inPos -= 3;
+                    result = TCoderResult.malformedForLength(1);
+                    break;
+                }
                 char c = (char)(((b & 0x0F) << 12) | ((b2 & 0x3f) << 6) | (b3 & 0x3F));
                 if (Character.isSurrogate(c)) {
                     inPos -= 3;
@@ -72,7 +82,7 @@ public class TUTF8Decoder extends TBufferedDecoder {
                 }
                 if (outPos + 2 > outSize) {
                     --inPos;
-                    if (!controller.hasMoreOutput()) {
+                    if (!controller.hasMoreOutput(2)) {
                         result = TCoderResult.OVERFLOW;
                     }
                     break;
@@ -80,14 +90,27 @@ public class TUTF8Decoder extends TBufferedDecoder {
                 byte b2 = inArray[inPos++];
                 byte b3 = inArray[inPos++];
                 byte b4 = inArray[inPos++];
+                if (!checkMidByte(b2) || !checkMidByte(b3) || !checkMidByte(b4)) {
+                    inPos -= 3;
+                    result = TCoderResult.malformedForLength(1);
+                    break;
+                }
                 int code = ((b & 0x07) << 18) | ((b2 & 0x3f) << 12) | ((b3 & 0x3F) << 6) | (b4 & 0x3F);
-                outArray[outPos++] = UTF16Helper.highSurrogate(code);
-                outArray[outPos++] = UTF16Helper.lowSurrogate(code);
+                outArray[outPos++] = Character.highSurrogate(code);
+                outArray[outPos++] = Character.lowSurrogate(code);
+            } else {
+                --inPos;
+                result = TCoderResult.malformedForLength(1);
+                break;
             }
         }
 
         controller.setInPosition(inPos);
         controller.setOutPosition(outPos);
         return result;
+    }
+
+    private boolean checkMidByte(byte b) {
+        return (b & 0xC0) == 0x80;
     }
 }

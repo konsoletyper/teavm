@@ -31,7 +31,7 @@ public abstract class TCharsetDecoder {
     private TCharset charset;
     private float averageCharsPerByte;
     private float maxCharsPerByte;
-    private String replacement = "?";
+    private String replacement = "\uFFFD";
     private TCodingErrorAction malformedAction = TCodingErrorAction.REPORT;
     private TCodingErrorAction unmappableAction = TCodingErrorAction.REPORT;
     private int state;
@@ -126,8 +126,18 @@ public abstract class TCharsetDecoder {
                 return result;
             } else if (result.isUnderflow()) {
                 if (endOfInput && in.hasRemaining()) {
-                    state = END;
-                    return TCoderResult.malformedForLength(in.remaining());
+                    if (malformedAction == TCodingErrorAction.REPORT) {
+                        return TCoderResult.malformedForLength(in.remaining());
+                    } else {
+                        if (out.remaining() > replacement.length()) {
+                            in.position(in.position() + in.remaining());
+                            if (malformedAction == TCodingErrorAction.REPLACE) {
+                                out.put(replacement);
+                            }
+                        } else {
+                            return TCoderResult.OVERFLOW;
+                        }
+                    }
                 }
                 return result;
             } else if (result.isMalformed()) {

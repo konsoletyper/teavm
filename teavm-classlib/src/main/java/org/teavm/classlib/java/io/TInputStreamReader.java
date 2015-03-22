@@ -15,11 +15,13 @@
  */
 package org.teavm.classlib.java.io;
 
-import org.teavm.classlib.impl.charset.ByteBuffer;
-import org.teavm.classlib.impl.charset.CharBuffer;
-import org.teavm.classlib.impl.charset.Charset;
-import org.teavm.classlib.impl.charset.UTF8Charset;
 import org.teavm.classlib.java.lang.TString;
+import org.teavm.classlib.java.nio.TByteBuffer;
+import org.teavm.classlib.java.nio.TCharBuffer;
+import org.teavm.classlib.java.nio.charset.TCharset;
+import org.teavm.classlib.java.nio.charset.TCharsetDecoder;
+import org.teavm.classlib.java.nio.charset.TCodingErrorAction;
+import org.teavm.classlib.java.nio.charset.impl.TUTF8Charset;
 
 /**
  *
@@ -27,30 +29,30 @@ import org.teavm.classlib.java.lang.TString;
  */
 public class TInputStreamReader extends TReader {
     private TInputStream stream;
-    private Charset charset;
+    private TCharset charset;
     private TString charsetName;
     private byte[] inData = new byte[8192];
-    private ByteBuffer inBuffer = new ByteBuffer(inData);
+    private TByteBuffer inBuffer = TByteBuffer.wrap(inData);
     private char[] outData = new char[1024];
-    private CharBuffer outBuffer = new CharBuffer(outData);
+    private TCharBuffer outBuffer = TCharBuffer.wrap(outData);
     private boolean streamEof;
     private boolean eof;
 
     public TInputStreamReader(TInputStream in, TString charsetName) {
-        this(in, Charset.get(charsetName.toString()));
+        this(in, TCharset.forName(charsetName.toString()));
         this.charsetName = charsetName;
     }
 
     public TInputStreamReader(TInputStream in) {
-        this(in, new UTF8Charset());
+        this(in, new TUTF8Charset());
         charsetName = TString.wrap("UTF-8");
     }
 
-    private TInputStreamReader(TInputStream in, Charset charset) {
+    public TInputStreamReader(TInputStream in, TCharset charset) {
         this.stream = in;
         this.charset = charset;
-        outBuffer.skip(outBuffer.available());
-        inBuffer.skip(inBuffer.available());
+        outBuffer.position(outBuffer.limit());
+        inBuffer.position(inBuffer.limit());
     }
 
     public TString getEncoding() {
@@ -64,10 +66,10 @@ public class TInputStreamReader extends TReader {
 
     @Override
     public int read() throws TIOException {
-        if (eof && outBuffer.end()) {
+        if (eof && !outBuffer.hasRemaining()) {
             return -1;
         }
-        if (!outBuffer.end()) {
+        if (outBuffer.hasRemaining()) {
             return outBuffer.get();
         }
         return fillBuffer() ? outBuffer.get() : -1;
@@ -75,37 +77,40 @@ public class TInputStreamReader extends TReader {
 
     @Override
     public int read(char[] cbuf, int off, int len) throws TIOException {
-        if (eof && outBuffer.end()) {
+        if (eof && !outBuffer.hasRemaining()) {
             return -1;
         }
-        CharBuffer wrapBuffer = new CharBuffer(cbuf, off, off + len);
-        while (!wrapBuffer.end()) {
-            wrapBuffer.put(outBuffer);
-            if (outBuffer.end() && !fillBuffer()) {
+        int bytesRead = 0;
+        while (len > 0) {
+            int sz = Math.min(len, outBuffer.remaining());
+            outBuffer.get(cbuf, off + bytesRead, sz);
+            len -= sz;
+            bytesRead += sz;
+            if (!outBuffer.hasRemaining() && !fillBuffer()) {
                 break;
             }
         }
-        return wrapBuffer.position() - off;
+        return bytesRead;
     }
 
     private boolean fillBuffer() throws TIOException {
         if (eof) {
             return false;
         }
-        CharBuffer newBuffer = new CharBuffer(outData);
-        newBuffer.put(outBuffer);
+        outBuffer.compact();
+        TCharsetDecoder decoder = charset.newDecoder()
+                .onMalformedInput(TCodingErrorAction.REPLACE)
+                .onUnmappableCharacter(TCodingErrorAction.IGNORE);
         while (true) {
-            if (inBuffer.end() && !fillReadBuffer()) {
+            if (!inBuffer.hasRemaining() && !fillReadBuffer()) {
                 eof = true;
                 break;
             }
-            int oldAvail = newBuffer.available();
-            charset.decode(inBuffer, newBuffer);
-            if (oldAvail == newBuffer.available()) {
+            if (decoder.decode(inBuffer, outBuffer, eof).isOverflow()) {
                 break;
             }
         }
-        outBuffer = new CharBuffer(outData, 0, newBuffer.position());
+        outBuffer.flip();
         return true;
     }
 
@@ -113,30 +118,25 @@ public class TInputStreamReader extends TReader {
         if (streamEof) {
             return false;
         }
-        int off = 0;
-        while (!inBuffer.end()) {
-            inData[off] = inBuffer.get();
-        }
-        inBuffer.rewind(0);
-        while (off < inData.length) {
-            int bytesRead = stream.read(inData, off, inData.length - off);
+        inBuffer.compact();
+        while (inBuffer.hasRemaining()) {
+            int bytesRead = stream.read(inBuffer.array(), inBuffer.position(), inBuffer.remaining());
             if (bytesRead == -1) {
                 streamEof = true;
-                inBuffer = new ByteBuffer(inData, 0, inBuffer.position());
                 break;
             } else {
-                off += bytesRead;
+                inBuffer.position(inBuffer.position() + bytesRead);
                 if (bytesRead == 0) {
                     break;
                 }
             }
         }
-        inBuffer = new ByteBuffer(inData, 0, off);
+        inBuffer.flip();
         return true;
     }
 
     @Override
     public boolean ready() throws TIOException {
-        return !outBuffer.end() || inBuffer.end();
+        return outBuffer.hasRemaining() || inBuffer.hasRemaining();
     }
 }

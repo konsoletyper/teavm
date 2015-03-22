@@ -29,17 +29,17 @@ public class UTF8Charset extends Charset {
             } else if (ch < 0x400) {
                 dest.put((byte)(0xC0 | (ch >> 6)));
                 dest.put((byte)(0x80 | (ch & 0x3F)));
-            } else if (!UTF16Helper.isSurrogate(ch)) {
+            } else if (!Character.isSurrogate(ch)) {
                 dest.put((byte)(0xE0 | (ch >> 12)));
                 dest.put((byte)(0x80 | ((ch >> 6) & 0x3F)));
                 dest.put((byte)(0x80 | (ch & 0x3F)));
-            } else if (UTF16Helper.isHighSurrogate(ch)) {
+            } else if (Character.isHighSurrogate(ch)) {
                 char low = source.get();
-                if (!UTF16Helper.isLowSurrogate(low)) {
+                if (!Character.isLowSurrogate(low)) {
                     source.back(1);
                     dest.put((byte)'?');
                 } else {
-                    int codePoint = UTF16Helper.buildCodePoint(ch, low);
+                    int codePoint = Character.toCodePoint(ch, low);
                     dest.put((byte)(0xF0 | (codePoint >> 18)));
                     dest.put((byte)(0x80 | ((codePoint >> 12) & 0x3F)));
                     dest.put((byte)(0x80 | ((codePoint >> 6) & 0x3F)));
@@ -72,7 +72,7 @@ public class UTF8Charset extends Charset {
                 byte b2 = source.get();
                 byte b3 = source.get();
                 char c = (char)(((b & 0x0F) << 12) | ((b2 & 0x3f) << 6) | (b3 & 0x3F));
-                dest.put(!UTF16Helper.isHighSurrogate(c) ? c : '?');
+                dest.put(!Character.isHighSurrogate(c) ? c : '?');
             } else if ((b & 0xF8) == 0xF0) {
                 if (source.available() < 3) {
                     source.skip(source.available());
@@ -83,8 +83,8 @@ public class UTF8Charset extends Charset {
                 byte b3 = source.get();
                 byte b4 = source.get();
                 int code = ((b & 0x07) << 18) | ((b2 & 0x3f) << 12) | ((b3 & 0x3F) << 6) | (b4 & 0x3F);
-                dest.put(UTF16Helper.highSurrogate(code));
-                dest.put(UTF16Helper.lowSurrogate(code));
+                dest.put(Character.highSurrogate(code));
+                dest.put(Character.lowSurrogate(code));
             }
         }
     }

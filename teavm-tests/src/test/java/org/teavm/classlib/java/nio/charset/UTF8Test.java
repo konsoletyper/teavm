@@ -1,7 +1,7 @@
 package org.teavm.classlib.java.nio.charset;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -44,6 +44,76 @@ public class UTF8Test {
     @Test
     public void decode3() {
         runDecode(100, 600);
+    }
+
+    @Test
+    public void replaceMalformedSurrogatePair() {
+        Charset charset = Charset.forName("UTF-8");
+        ByteBuffer buffer = charset.encode("a\uD800\uD800b");
+        byte[] result = new byte[buffer.remaining()];
+        buffer.get(result);
+        assertArrayEquals(new byte[] { 97, 63, 63, 98 }, result);
+    }
+
+    @Test
+    public void encodeSurrogate() {
+        Charset charset = Charset.forName("UTF-8");
+        ByteBuffer buffer = charset.encode("a\uD800\uDC00b");
+        byte[] result = new byte[buffer.remaining()];
+        buffer.get(result);
+        assertArrayEquals(new byte[] { 97, -16, -112, -128, -128, 98 }, result);
+    }
+
+    @Test
+    public void replaceMalformedFirstByte() {
+        Charset charset = Charset.forName("UTF-8");
+        CharBuffer buffer = charset.decode(ByteBuffer.wrap(new byte[] { 97, (byte)0xFF, 98 }));
+        char[] result = new char[buffer.remaining()];
+        buffer.get(result);
+        assertEquals("a\uFFFDb", new String(result));
+    }
+
+    @Test
+    public void replaceMalformedMidByte() {
+        Charset charset = Charset.forName("UTF-8");
+        CharBuffer buffer = charset.decode(ByteBuffer.wrap(new byte[] { 97, (byte)0xC0, 98, 98 }));
+        char[] result = new char[buffer.remaining()];
+        buffer.get(result);
+        assertEquals("a\uFFFDbb", new String(result));
+    }
+
+    @Test
+    public void replaceDecodedSurrogate() {
+        Charset charset = Charset.forName("UTF-8");
+        CharBuffer buffer = charset.decode(ByteBuffer.wrap(new byte[] { 97, (byte)0xED, (byte)0xA0, (byte)0x80, 98 }));
+        char[] result = new char[buffer.remaining()];
+        buffer.get(result);
+        assertEquals("a\uFFFDb", new String(result));
+    }
+
+    @Test
+    public void replaceDecodedSurrogatePair() {
+        Charset charset = Charset.forName("UTF-8");
+        CharBuffer buffer = charset.decode(ByteBuffer.wrap(new byte[] { 97, (byte)0xED, (byte)0xA0, (byte)0x80,
+                (byte)0xED, (byte)0xBF, (byte)0xBF, 98 }));
+        char[] result = new char[buffer.remaining()];
+        buffer.get(result);
+        assertEquals("a\uFFFD\uFFFDb", new String(result));
+    }
+
+    @Test
+    public void decodeLongUTF8ByteArray() throws UnsupportedEncodingException {
+        byte[] bytes = new byte[16384];
+        for (int i = 0; i < bytes.length;) {
+             bytes[i++] = -16;
+             bytes[i++] = -66;
+             bytes[i++] = -78;
+             bytes[i++] = -69;
+        }
+        Charset charset = Charset.forName("UTF-8");
+        CharBuffer buffer = charset.decode(ByteBuffer.wrap(bytes));
+        assertEquals('\uD8BB', buffer.get(8190));
+        assertEquals('\uDCBB', buffer.get(8191));
     }
 
     private void runEncode(int inSize, int outSize) {

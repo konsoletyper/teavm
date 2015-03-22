@@ -15,7 +15,6 @@
  */
 package org.teavm.classlib.java.lang;
 
-import org.teavm.classlib.impl.charset.UTF16Helper;
 import org.teavm.classlib.impl.unicode.UnicodeHelper;
 import org.teavm.platform.Platform;
 import org.teavm.platform.metadata.MetadataProvider;
@@ -96,6 +95,13 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     private static UnicodeHelper.Range[] classMapping;
     private char value;
     private static TCharacter[] characterCache = new TCharacter[128];
+    private static final int SURROGATE_NEUTRAL_BIT_MASK = 0xF800;
+    private static final int SURROGATE_BITS = 0xD800;
+    private static final int SURROGATE_BIT_MASK = 0xFC00;
+    private static final int SURROGATE_BIT_INV_MASK = 0x03FF;
+    private static final int HIGH_SURROGATE_BITS = 0xD800;
+    private static final int LOW_SURROGATE_BITS = 0xDC00;
+    private static final int MEANINGFUL_SURROGATE_BITS = 10;
 
     public TCharacter(char value) {
         this.value = value;
@@ -152,11 +158,11 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static boolean isHighSurrogate(char ch) {
-        return UTF16Helper.isHighSurrogate(ch);
+        return (ch & SURROGATE_BIT_MASK) == HIGH_SURROGATE_BITS;
     }
 
     public static boolean isLowSurrogate(char ch) {
-        return UTF16Helper.isLowSurrogate(ch);
+        return (ch & SURROGATE_BIT_MASK) == LOW_SURROGATE_BITS;
     }
 
     public static boolean isSurrogate(char ch) {
@@ -172,7 +178,8 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static int toCodePoint(char high, char low) {
-        return UTF16Helper.buildCodePoint(high, low);
+        return (((high & SURROGATE_BIT_INV_MASK) << MEANINGFUL_SURROGATE_BITS) | (low & SURROGATE_BIT_INV_MASK)) +
+                MIN_SUPPLEMENTARY_CODE_POINT;
     }
 
     public static int codePointAt(TCharSequence seq, int index) {
@@ -216,11 +223,12 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static char highSurrogate(int codePoint) {
-        return UTF16Helper.highSurrogate(codePoint);
+        codePoint -= MIN_SUPPLEMENTARY_CODE_POINT;
+        return (char)(HIGH_SURROGATE_BITS | (codePoint >> MEANINGFUL_SURROGATE_BITS) & SURROGATE_BIT_INV_MASK);
     }
 
     public static char lowSurrogate(int codePoint) {
-        return UTF16Helper.lowSurrogate(codePoint);
+        return (char)(LOW_SURROGATE_BITS | codePoint & SURROGATE_BIT_INV_MASK);
     }
 
     public static char toLowerCase(char ch) {
@@ -309,9 +317,9 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     private static native StringResource obtainClasses();
 
     public static int toChars(int codePoint, char[] dst, int dstIndex) {
-        if (codePoint >= UTF16Helper.SUPPLEMENTARY_PLANE) {
-            dst[dstIndex] = UTF16Helper.highSurrogate(codePoint);
-            dst[dstIndex + 1] = UTF16Helper.lowSurrogate(codePoint);
+        if (codePoint >= MIN_SUPPLEMENTARY_CODE_POINT) {
+            dst[dstIndex] = highSurrogate(codePoint);
+            dst[dstIndex + 1] = lowSurrogate(codePoint);
             return 2;
         } else {
             dst[dstIndex] = (char)codePoint;
@@ -320,8 +328,8 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static char[] toChars(int codePoint) {
-        if (codePoint >= UTF16Helper.SUPPLEMENTARY_PLANE) {
-            return new char[] { UTF16Helper.highSurrogate(codePoint), UTF16Helper.lowSurrogate(codePoint) };
+        if (codePoint >= MIN_SUPPLEMENTARY_CODE_POINT) {
+            return new char[] { highSurrogate(codePoint), lowSurrogate(codePoint) };
         } else {
             return new char[] { (char)codePoint };
         }
@@ -331,7 +339,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
         int count = endIndex - beginIndex;
         --endIndex;
         for (int i = beginIndex; i < endIndex; ++i) {
-            if (UTF16Helper.isHighSurrogate(seq.charAt(i)) && UTF16Helper.isLowSurrogate(seq.charAt(i + 1))) {
+            if (isHighSurrogate(seq.charAt(i)) && isLowSurrogate(seq.charAt(i + 1))) {
                 --count;
                 ++i;
             }
@@ -343,7 +351,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
         int r = count;
         --count;
         for (int i = 0; i < count; ++i) {
-            if (UTF16Helper.isHighSurrogate(a[offset]) && UTF16Helper.isLowSurrogate(a[offset + i + 1])) {
+            if (isHighSurrogate(a[offset]) && isLowSurrogate(a[offset + i + 1])) {
                 --r;
                 ++i;
             }
@@ -353,8 +361,8 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
 
     public static int offsetByCodePoints(TCharSequence seq, int index, int codePointOffset) {
         for (int i = 0; i < codePointOffset; ++i) {
-            if (index < seq.length() - 1 && UTF16Helper.isHighSurrogate(seq.charAt(index)) &&
-                    UTF16Helper.isLowSurrogate(seq.charAt(index + 1))) {
+            if (index < seq.length() - 1 && isHighSurrogate(seq.charAt(index)) &&
+                    isLowSurrogate(seq.charAt(index + 1))) {
                 index += 2;
             } else {
                 index++;
@@ -365,8 +373,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
 
     public static int offsetByCodePoints(char[] a, int start, int count, int index, int codePointOffset) {
         for (int i = 0; i < codePointOffset; ++i) {
-            if (index < count - 1 && UTF16Helper.isHighSurrogate(a[index + start]) &&
-                    UTF16Helper.isLowSurrogate(a[index + start + 1])) {
+            if (index < count - 1 && isHighSurrogate(a[index + start]) && isLowSurrogate(a[index + start + 1])) {
                 index += 2;
             } else {
                 index++;

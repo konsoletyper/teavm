@@ -15,7 +15,6 @@
  */
 package org.teavm.classlib.java.lang;
 
-import org.teavm.classlib.impl.charset.UTF16Helper;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.util.TArrays;
 
@@ -553,12 +552,12 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
     }
 
     protected TAbstractStringBuilder appendCodePoint(int codePoint) {
-        if (codePoint < UTF16Helper.SUPPLEMENTARY_PLANE) {
+        if (codePoint < TCharacter.MIN_SUPPLEMENTARY_CODE_POINT) {
             return append((char)codePoint);
         }
         ensureCapacity(length + 2);
-        buffer[length++] = UTF16Helper.highSurrogate(codePoint);
-        buffer[length++] = UTF16Helper.lowSurrogate(codePoint);
+        buffer[length++] = TCharacter.highSurrogate(codePoint);
+        buffer[length++] = TCharacter.lowSurrogate(codePoint);
         return this;
     }
 
