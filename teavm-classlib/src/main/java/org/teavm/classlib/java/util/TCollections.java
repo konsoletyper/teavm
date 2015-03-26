@@ -291,7 +291,7 @@ public class TCollections extends TObject {
 
     private static void shuffleRandomAccess(TList<?> list, TRandom rnd) {
         for (int i = list.size() - 1; i > 0; --i) {
-            int j = rnd.next(i + 1);
+            int j = rnd.nextInt(i + 1);
             swap(list, i, j);
         }
     }
