@@ -283,7 +283,7 @@ public class TCollections extends TObject {
             shuffleRandomAccess(list, rnd);
         } else {
             TList<Object> randomAccess = new TArrayList<>(list);
-            shuffleRandomAccess(list, rnd);
+            shuffleRandomAccess(randomAccess, rnd);
             list.clear();
             ((TList<Object>)list).addAll(randomAccess);
         }
