@@ -205,11 +205,11 @@ public class DefinitionExtractor implements InstructionVisitor {
 
     @Override
     public void visit(MonitorEnterInstruction insn) {
-        
+        definedVariables = new Variable[0];
     }
 
     @Override
     public void visit(MonitorExitInstruction insn) {
-        
+        definedVariables = new Variable[0];
     }
 }

@@ -31,6 +31,7 @@ public class AsyncProgramSplitter {
     private Map<Long, Integer> partMap = new HashMap<>();
     private ClassReaderSource classSource;
     private Set<MethodReference> asyncMethods = new HashSet<>();
+    private Program program;
 
     public AsyncProgramSplitter(ClassReaderSource classSource, Set<MethodReference> asyncMethods) {
         this.classSource = classSource;
@@ -38,12 +39,15 @@ public class AsyncProgramSplitter {
     }
 
     public void split(Program program) {
+        this.program = program;
         parts.clear();
         Program initialProgram = createStubCopy(program);
         Part initialPart = new Part();
         initialPart.program = initialProgram;
         initialPart.blockSuccessors = new int[program.basicBlockCount()];
         Arrays.fill(initialPart.blockSuccessors, -1);
+        initialPart.splitPoints = new int[program.basicBlockCount()];
+        Arrays.fill(initialPart.splitPoints, -1);
         parts.add(initialPart);
         partMap.put(0L, 0);
         Step initialStep = new Step();
@@ -87,6 +91,8 @@ public class AsyncProgramSplitter {
                 }
                 last = i;
 
+                step.targetPart.splitPoints[step.source] = i;
+
                 // If this instruction already separates program, end with current block and refer to the
                 // existing part
                 long key = ((long)step.source << 32) | i;
@@ -103,6 +109,8 @@ public class AsyncProgramSplitter {
                 parts.add(part);
                 part.blockSuccessors = new int[program.basicBlockCount() + 1];
                 Arrays.fill(part.blockSuccessors, -1);
+                part.splitPoints = new int[program.basicBlockCount() + 1];
+                Arrays.fill(part.splitPoints, -1);
 
                 // Mark current instruction as a separator and remember which part is in charge.
                 partMap.put(key, partId);
@@ -192,6 +200,10 @@ public class AsyncProgramSplitter {
         return parts.size();
     }
 
+    public Program getOriginalProgram() {
+        return program;
+    }
+
     public Program getProgram(int index) {
         return parts.get(index).program;
     }
@@ -201,9 +213,18 @@ public class AsyncProgramSplitter {
         return Arrays.copyOf(result, result.length);
     }
 
+    public int getBlockSuccessor(int index, int blockIndex) {
+        return parts.get(index).blockSuccessors[blockIndex];
+    }
+
+    public int[] getSplitPoints(int index) {
+        return parts.get(index).splitPoints.clone();
+    }
+
     private static class Part {
         Program program;
         int[] blockSuccessors;
+        int[] splitPoints;
     }
 
     private static class Step {

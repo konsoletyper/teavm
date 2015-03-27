@@ -31,7 +31,6 @@ import org.teavm.model.util.UsageExtractor;
 class ReadWriteStatsBuilder {
     public int[] reads;
     public int[] writes;
-    public boolean[] readUninitialized;
 
     private ReadWriteStatsBuilder() {
     }
@@ -39,7 +38,6 @@ class ReadWriteStatsBuilder {
     public ReadWriteStatsBuilder(int variableCount) {
         reads = new int[variableCount];
         writes = new int[variableCount];
-        readUninitialized = new boolean[variableCount];
     }
 
     public ReadWriteStatsBuilder copy() {
@@ -67,9 +65,6 @@ class ReadWriteStatsBuilder {
                 }
                 for (Variable var : useExtractor.getUsedVariables()) {
                     reads[var.getIndex()]++;
-                    if (writes[var.getIndex()] == 0) {
-                        readUninitialized[var.getIndex()] = true;
-                    }
                 }
             }
             for (Phi phi : block.getPhis()) {
