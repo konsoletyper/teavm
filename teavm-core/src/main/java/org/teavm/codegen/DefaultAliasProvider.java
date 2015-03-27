@@ -15,6 +15,8 @@
  */
 package org.teavm.codegen;
 
+import java.util.HashSet;
+import java.util.Set;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
@@ -26,6 +28,7 @@ import org.teavm.model.MethodReference;
 public class DefaultAliasProvider implements AliasProvider {
     private int lastSuffix;
     private int lastVirtualSuffix;
+    private Set<String> usedAliases = new HashSet<>();
 
     @Override
     public String getAlias(String cls) {
@@ -58,7 +61,11 @@ public class DefaultAliasProvider implements AliasProvider {
         } else if (alias.equals("<clinit>")) {
             alias = "$clinit";
         }
-        return alias + lastVirtualSuffix++;
+        String result;
+        do {
+            result = alias + lastVirtualSuffix++;
+        } while (!usedAliases.add(result));
+        return result;
     }
 
     @Override
@@ -74,7 +81,11 @@ public class DefaultAliasProvider implements AliasProvider {
 
     @Override
     public String getAlias(FieldReference field) {
-        return field.getFieldName() + (lastSuffix++);
+        String result;
+        do {
+            result = field.getFieldName() + lastSuffix++;
+        } while (!usedAliases.add(result));
+        return result;
     }
 
     @Override

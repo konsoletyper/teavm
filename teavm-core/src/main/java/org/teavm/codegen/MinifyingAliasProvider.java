@@ -15,6 +15,8 @@
  */
 package org.teavm.codegen;
 
+import java.util.HashSet;
+import java.util.Set;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
@@ -29,10 +31,15 @@ public class MinifyingAliasProvider implements AliasProvider {
     private static String startVirtualLetters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private int lastSuffix;
     private int lastVirtual;
+    private Set<String> usedAliases = new HashSet<>();
 
     @Override
     public String getAlias(FieldReference field) {
-        return getNewAlias(lastVirtual++, startVirtualLetters);
+        String result;
+        do {
+            result = getNewAlias(lastVirtual++, startVirtualLetters);
+        } while (!usedAliases.add(result));
+        return result;
     }
 
     @Override
@@ -42,7 +49,11 @@ public class MinifyingAliasProvider implements AliasProvider {
 
     @Override
     public String getAlias(MethodDescriptor method) {
-        return getNewAlias(lastVirtual++, startVirtualLetters);
+        String result;
+        do {
+            result = getNewAlias(lastVirtual++, startVirtualLetters);
+        } while (!usedAliases.add(result));
+        return result;
     }
 
     @Override

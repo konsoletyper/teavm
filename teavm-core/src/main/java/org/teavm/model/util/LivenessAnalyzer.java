@@ -19,7 +19,6 @@ import java.util.ArrayDeque;
 import java.util.BitSet;
 import java.util.Deque;
 import org.teavm.common.Graph;
-import org.teavm.common.GraphUtils;
 import org.teavm.model.*;
 
 /**
@@ -28,8 +27,6 @@ import org.teavm.model.*;
  */
 public class LivenessAnalyzer {
     private BitSet[] liveVars;
-    private int[] domLeft;
-    private int[] domRight;
 
     public boolean liveIn(int block, int var) {
         return liveVars[block].get(var);
@@ -41,7 +38,6 @@ public class LivenessAnalyzer {
 
     public void analyze(Program program) {
         Graph cfg = ProgramUtils.buildControlFlowGraph(program);
-        computeDomLeftRight(GraphUtils.buildDominatorGraph(GraphUtils.buildDominatorTree(cfg), cfg.size()));
         liveVars = new BitSet[cfg.size()];
         for (int i = 0; i < liveVars.length; ++i) {
             liveVars[i] = new BitSet(program.basicBlockCount());
@@ -84,7 +80,7 @@ public class LivenessAnalyzer {
 
         while (!stack.isEmpty()) {
             Task task = stack.pop();
-            if (liveVars[task.block].get(task.var) || !dominates(definitions[task.var], task.block)) {
+            if (liveVars[task.block].get(task.var) || definitions[task.var] == task.block) {
                 continue;
             }
             liveVars[task.block].set(task.var, true);
@@ -95,35 +91,6 @@ public class LivenessAnalyzer {
                 stack.push(nextTask);
             }
         }
-    }
-
-    private void computeDomLeftRight(Graph domGraph) {
-        domLeft = new int[domGraph.size()];
-        domRight = new int[domGraph.size()];
-        int index = 1;
-        int[] stack = new int[domGraph.size() * 2];
-        int top = 0;
-        for (int i = domGraph.size() - 1; i >= 0; --i) {
-            if (domGraph.incomingEdgesCount(i) == 0) {
-                stack[top++] = i;
-            }
-        }
-        while (top > 0) {
-            int v = stack[--top];
-            if (domLeft[v] == 0) {
-                domLeft[v] = index++;
-                stack[top++] = v;
-                for (int succ : domGraph.outgoingEdges(v)) {
-                    stack[top++] = succ;
-                }
-            } else if (domRight[v] == 0) {
-                domRight[v] = index++;
-            }
-        }
-    }
-
-    private boolean dominates(int a, int b) {
-        return domLeft[a] < domLeft[b] && domRight[a] > domRight[b];
     }
 
     private static class Task {

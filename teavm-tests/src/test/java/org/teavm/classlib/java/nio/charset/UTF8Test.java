@@ -94,25 +94,6 @@ public class UTF8Test {
     }
 
     @Test
-    public void replaceDecodedSurrogate() {
-        Charset charset = Charset.forName("UTF-8");
-        CharBuffer buffer = charset.decode(ByteBuffer.wrap(new byte[] { 97, (byte)0xED, (byte)0xA0, (byte)0x80, 98 }));
-        char[] result = new char[buffer.remaining()];
-        buffer.get(result);
-        assertEquals("a\uFFFDb", new String(result));
-    }
-
-    @Test
-    public void replaceDecodedSurrogatePair() {
-        Charset charset = Charset.forName("UTF-8");
-        CharBuffer buffer = charset.decode(ByteBuffer.wrap(new byte[] { 97, (byte)0xED, (byte)0xA0, (byte)0x80,
-                (byte)0xED, (byte)0xBF, (byte)0xBF, 98 }));
-        char[] result = new char[buffer.remaining()];
-        buffer.get(result);
-        assertEquals("a\uFFFD\uFFFDb", new String(result));
-    }
-
-    @Test
     public void decodeLongUTF8ByteArray() throws UnsupportedEncodingException {
         byte[] bytes = new byte[16384];
         for (int i = 0; i < bytes.length;) {
