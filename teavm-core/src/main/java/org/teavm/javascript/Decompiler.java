@@ -383,6 +383,9 @@ public class Decompiler {
         if (modifiers.contains(ElementModifier.ENUM)) {
             result.add(NodeModifier.ENUM);
         }
+        if (modifiers.contains(ElementModifier.SYNCHRONIZED)) {
+            result.add(NodeModifier.SYNCHRONIZED);
+        }
         return result;
     }
 
