@@ -15,7 +15,8 @@
  */
 package org.teavm.javascript;
 
-import java.util.*;
+import java.util.BitSet;
+import java.util.List;
 import org.teavm.common.Graph;
 import org.teavm.javascript.ast.AsyncMethodNode;
 import org.teavm.javascript.ast.AsyncMethodPart;
@@ -23,7 +24,11 @@ import org.teavm.javascript.ast.RegularMethodNode;
 import org.teavm.model.Instruction;
 import org.teavm.model.Program;
 import org.teavm.model.Variable;
-import org.teavm.model.util.*;
+import org.teavm.model.util.AsyncProgramSplitter;
+import org.teavm.model.util.DefinitionExtractor;
+import org.teavm.model.util.LivenessAnalyzer;
+import org.teavm.model.util.ProgramUtils;
+import org.teavm.model.util.UsageExtractor;
 
 /**
  *
@@ -59,26 +64,23 @@ public class Optimizer {
         LivenessAnalyzer liveness = new LivenessAnalyzer();
         liveness.analyze(splitter.getOriginalProgram());
 
-        boolean[] preservedVars = new boolean[method.getVariables().size()];
-        int[][] readFrequencies = new int[splitter.size()][];
+        Graph cfg = ProgramUtils.buildControlFlowGraph(splitter.getOriginalProgram());
+
         for (int i = 0; i < splitter.size(); ++i) {
+            boolean[] preservedVars = new boolean[method.getVariables().size()];
             ReadWriteStatsBuilder stats = new ReadWriteStatsBuilder(method.getVariables().size());
             stats.analyze(splitter.getProgram(i));
-            readFrequencies[i] = stats.reads;
             for (int j = 0; j < stats.writes.length; ++j) {
                 if (stats.writes[j] != 1 && stats.reads[j] > 0) {
                     preservedVars[j] = true;
                 }
             }
-        }
 
-        for (int i = 0; i < splitter.size(); ++i) {
-            boolean[] partPreservedVars = preservedVars.clone();
             AsyncMethodPart part = method.getBody().get(i);
             BreakEliminator breakEliminator = new BreakEliminator();
             breakEliminator.eliminate(part.getStatement());
-            findEscapingLiveVars(liveness, splitter, i, partPreservedVars);
-            OptimizingVisitor optimizer = new OptimizingVisitor(partPreservedVars, readFrequencies[i]);
+            findEscapingLiveVars(liveness, cfg, splitter, i, preservedVars);
+            OptimizingVisitor optimizer = new OptimizingVisitor(preservedVars, stats.reads);
             part.getStatement().acceptVisitor(optimizer);
             part.setStatement(optimizer.resultStmt);
         }
@@ -97,37 +99,38 @@ public class Optimizer {
         }
     }
 
-    private void findEscapingLiveVars(LivenessAnalyzer liveness, AsyncProgramSplitter splitter, int partIndex,
-            boolean[] output) {
+    private void findEscapingLiveVars(LivenessAnalyzer liveness, Graph cfg, AsyncProgramSplitter splitter,
+            int partIndex, boolean[] output) {
         Program originalProgram = splitter.getOriginalProgram();
-        Graph cfg = ProgramUtils.buildControlFlowGraph(originalProgram);
+        Program program = splitter.getProgram(partIndex);
         int[] successors = splitter.getBlockSuccessors(partIndex);
         int[] splitPoints = splitter.getSplitPoints(partIndex);
+        int[] originalBlocks = splitter.getOriginalBlocks(partIndex);
 
-        for (int i = 0; i < originalProgram.basicBlockCount(); ++i) {
-            if (successors[i] < 0) {
+        for (int i = 0; i < program.basicBlockCount(); ++i) {
+            if (successors[i] < 0 || originalBlocks[i] < 0) {
                 continue;
             }
 
             // Determine live-out vars
             BitSet liveVars = new BitSet();
-            for (int succ : cfg.outgoingEdges(i)) {
+            for (int succ : cfg.outgoingEdges(originalBlocks[i])) {
                 liveVars.or(liveness.liveIn(succ));
             }
 
             // Remove from live set all variables that are defined in these blocks
             DefinitionExtractor defExtractor = new DefinitionExtractor();
             UsageExtractor useExtractor = new UsageExtractor();
-            List<Instruction> instructions = originalProgram.basicBlockAt(i).getInstructions();
+            List<Instruction> instructions = originalProgram.basicBlockAt(originalBlocks[i]).getInstructions();
             int splitPoint = splitPoints[i];
             for (int j = instructions.size() - 1; j >= splitPoint; --j) {
-                instructions.get(j).acceptVisitor(useExtractor);
                 instructions.get(j).acceptVisitor(defExtractor);
-                for (Variable var : useExtractor.getUsedVariables()) {
-                    liveVars.set(var.getIndex());
-                }
+                instructions.get(j).acceptVisitor(useExtractor);
                 for (Variable var : defExtractor.getDefinedVariables()) {
                     liveVars.clear(var.getIndex());
+                }
+                for (Variable var : useExtractor.getUsedVariables()) {
+                    liveVars.set(var.getIndex());
                 }
             }
 

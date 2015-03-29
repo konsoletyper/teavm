@@ -42,12 +42,8 @@ public class AsyncProgramSplitter {
         this.program = program;
         parts.clear();
         Program initialProgram = createStubCopy(program);
-        Part initialPart = new Part();
+        Part initialPart = new Part(program.basicBlockCount());
         initialPart.program = initialProgram;
-        initialPart.blockSuccessors = new int[program.basicBlockCount()];
-        Arrays.fill(initialPart.blockSuccessors, -1);
-        initialPart.splitPoints = new int[program.basicBlockCount()];
-        Arrays.fill(initialPart.splitPoints, -1);
         parts.add(initialPart);
         partMap.put(0L, 0);
         Step initialStep = new Step();
@@ -63,6 +59,7 @@ public class AsyncProgramSplitter {
                 continue;
             }
             BasicBlock sourceBlock = program.basicBlockAt(step.source);
+            step.targetPart.originalBlocks[step.source] = step.source;
             int last = 0;
             for (int i = 0; i < sourceBlock.getInstructions().size(); ++i) {
                 Instruction insn = sourceBlock.getInstructions().get(i);
@@ -91,7 +88,7 @@ public class AsyncProgramSplitter {
                 }
                 last = i;
 
-                step.targetPart.splitPoints[step.source] = i;
+                step.targetPart.splitPoints[targetBlock.getIndex()] = i;
 
                 // If this instruction already separates program, end with current block and refer to the
                 // existing part
@@ -103,14 +100,10 @@ public class AsyncProgramSplitter {
 
                 // Create a new part
                 Program nextProgram = createStubCopy(program);
-                Part part = new Part();
+                Part part = new Part(program.basicBlockCount() + 1);
                 part.program = nextProgram;
                 int partId = parts.size();
                 parts.add(part);
-                part.blockSuccessors = new int[program.basicBlockCount() + 1];
-                Arrays.fill(part.blockSuccessors, -1);
-                part.splitPoints = new int[program.basicBlockCount() + 1];
-                Arrays.fill(part.splitPoints, -1);
 
                 // Mark current instruction as a separator and remember which part is in charge.
                 partMap.put(key, partId);
@@ -126,6 +119,7 @@ public class AsyncProgramSplitter {
                             nextProgram));
                 }
                 step.targetPart = part;
+                part.originalBlocks[targetBlock.getIndex()] = step.source;
             }
             targetBlock.getInstructions().addAll(ProgramUtils.copyInstructions(sourceBlock,
                     last, sourceBlock.getInstructions().size(), targetBlock.getProgram()));
@@ -153,8 +147,10 @@ public class AsyncProgramSplitter {
 
         for (Part part : parts) {
             IntegerArray blockSuccessors = IntegerArray.of(part.blockSuccessors);
+            IntegerArray originalBlocks = IntegerArray.of(part.originalBlocks);
+            IntegerArray splitPoints = IntegerArray.of(part.splitPoints);
             AsyncProgramSplittingBackend splittingBackend = new AsyncProgramSplittingBackend(
-                    new ProgramNodeSplittingBackend(part.program), blockSuccessors);
+                    new ProgramNodeSplittingBackend(part.program), blockSuccessors, originalBlocks, splitPoints);
             Graph graph = ProgramUtils.buildControlFlowGraphWithTryCatch(part.program);
             int[] weights = new int[graph.size()];
             for (int i = 0; i < part.program.basicBlockCount(); ++i) {
@@ -162,6 +158,8 @@ public class AsyncProgramSplitter {
             }
             GraphUtils.splitIrreducibleGraph(graph, weights, splittingBackend);
             part.blockSuccessors = splittingBackend.blockSuccessors.getAll();
+            part.originalBlocks = splittingBackend.originalBlocks.getAll();
+            part.splitPoints = splittingBackend.splitPoints.getAll();
         }
         partMap.clear();
     }
@@ -221,10 +219,24 @@ public class AsyncProgramSplitter {
         return parts.get(index).splitPoints.clone();
     }
 
-    private static class Part {
+    public int[] getOriginalBlocks(int index) {
+        return parts.get(index).originalBlocks.clone();
+    }
+
+    static class Part {
         Program program;
         int[] blockSuccessors;
         int[] splitPoints;
+        int[] originalBlocks;
+
+        public Part(int blockCount) {
+            blockSuccessors = new int[blockCount];
+            Arrays.fill(blockSuccessors, -1);
+            splitPoints = new int[blockCount];
+            Arrays.fill(splitPoints, -1);
+            originalBlocks = new int[blockCount];
+            Arrays.fill(originalBlocks, -1);
+        }
     }
 
     private static class Step {
@@ -235,10 +247,15 @@ public class AsyncProgramSplitter {
     private static class AsyncProgramSplittingBackend implements GraphSplittingBackend {
         private GraphSplittingBackend inner;
         private IntegerArray blockSuccessors;
+        private IntegerArray originalBlocks;
+        private IntegerArray splitPoints;
 
-        public AsyncProgramSplittingBackend(GraphSplittingBackend inner, IntegerArray blockSuccessors) {
+        public AsyncProgramSplittingBackend(GraphSplittingBackend inner, IntegerArray blockSuccessors,
+                IntegerArray originalBlocks, IntegerArray splitPoints) {
             this.inner = inner;
             this.blockSuccessors = blockSuccessors;
+            this.originalBlocks = originalBlocks;
+            this.splitPoints = splitPoints;
         }
 
         @Override
@@ -249,8 +266,12 @@ public class AsyncProgramSplitter {
                 int node = nodes[i];
                 if (blockSuccessors.size() <= copy) {
                     blockSuccessors.add(-1);
+                    splitPoints.add(-1);
+                    originalBlocks.add(-1);
                 }
                 blockSuccessors.set(copy, blockSuccessors.get(node));
+                originalBlocks.set(copy, originalBlocks.get(node));
+                splitPoints.set(copy, splitPoints.get(node));
             }
             return copies;
         }

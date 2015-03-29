@@ -15,6 +15,7 @@
  */
 package org.teavm.codegen;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import org.teavm.model.FieldReference;
@@ -26,6 +27,8 @@ import org.teavm.model.MethodReference;
  * @author Alexey Andreev
  */
 public class MinifyingAliasProvider implements AliasProvider {
+    private static Set<String> keywords = new HashSet<>(Arrays.asList("do", "if", "else", "for", "case",
+            "goto", "in", "let", "new", "this", "try", "var", "void", "with"));
     private static String startLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private static String letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     private static String startVirtualLetters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -38,7 +41,7 @@ public class MinifyingAliasProvider implements AliasProvider {
         String result;
         do {
             result = getNewAlias(lastVirtual++, startVirtualLetters);
-        } while (!usedAliases.add(result));
+        } while (!usedAliases.add(result) || keywords.contains(result));
         return result;
     }
 
@@ -52,7 +55,7 @@ public class MinifyingAliasProvider implements AliasProvider {
         String result;
         do {
             result = getNewAlias(lastVirtual++, startVirtualLetters);
-        } while (!usedAliases.add(result));
+        } while (!usedAliases.add(result) || keywords.contains(result));
         return result;
     }
 

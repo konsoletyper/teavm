@@ -60,6 +60,10 @@ public class RegisterAllocator {
         for (int i = 0; i < colors.length; ++i) {
             program.variableAt(i).setRegister(colors[i]);
         }
+
+        for (int i = 0; i < program.basicBlockCount(); ++i) {
+            program.basicBlockAt(i).getPhis().clear();
+        }
     }
 
     private int[] getVariableCategories(ProgramReader program, MethodReference method) {

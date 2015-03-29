@@ -249,7 +249,7 @@ public class Decompiler {
         return true;
     }
 
-    public AsyncMethodNode decompileAsyncCacheMiss(MethodHolder method) {
+    private AsyncMethodNode decompileAsyncCacheMiss(MethodHolder method) {
         AsyncMethodNode node = new AsyncMethodNode(method.getReference());
         AsyncProgramSplitter splitter = new AsyncProgramSplitter(classSource, splitMethods);
         splitter.split(method.getProgram());
