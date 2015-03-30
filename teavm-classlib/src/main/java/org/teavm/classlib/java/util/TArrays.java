@@ -1358,9 +1358,9 @@ public class TArrays extends TObject {
         if (a == null) {
             return 0;
         }
-        int hash = 0xA5A537FC;
+        int hash = 1;
         for (int i = 0; i < a.length; ++i) {
-            hash = TInteger.rotateLeft(a[i], 4) ^ TInteger.rotateRight(a[i], 7) ^ TInteger.rotateLeft(hash, 13);
+            hash = 31 * hash + a[i];
         }
         return hash;
     }
@@ -1369,9 +1369,9 @@ public class TArrays extends TObject {
         if (a == null) {
             return 0;
         }
-        int hash = 0xA5A537FC;
+        int hash = 1;
         for (int i = 0; i < a.length; ++i) {
-            hash = TInteger.rotateLeft(a[i], 4) ^ TInteger.rotateRight(a[i], 7) ^ TInteger.rotateLeft(hash, 13);
+            hash = 31 * hash + a[i];
         }
         return hash;
     }
@@ -1380,9 +1380,9 @@ public class TArrays extends TObject {
         if (a == null) {
             return 0;
         }
-        int hash = 0xA5A537FC;
+        int hash = 1;
         for (int i = 0; i < a.length; ++i) {
-            hash = TInteger.rotateLeft(a[i], 4) ^ TInteger.rotateRight(a[i], 7) ^ TInteger.rotateLeft(hash, 13);
+            hash = 31 * hash + a[i];
         }
         return hash;
     }
@@ -1391,9 +1391,9 @@ public class TArrays extends TObject {
         if (a == null) {
             return 0;
         }
-        int hash = 0xA5A537FC;
+        int hash = 1;
         for (int i = 0; i < a.length; ++i) {
-            hash = TInteger.rotateLeft(a[i], 4) ^ TInteger.rotateRight(a[i], 7) ^ TInteger.rotateLeft(hash, 13);
+            hash = 31 * hash + a[i];
         }
         return hash;
     }
