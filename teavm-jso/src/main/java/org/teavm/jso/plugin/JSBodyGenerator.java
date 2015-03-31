@@ -35,7 +35,7 @@ public class JSBodyGenerator implements Generator {
         boolean isStatic = annot.getValue("isStatic").getBoolean();
         List<AnnotationValue> paramNames = annot.getValue("params").getList();
 
-        int bodyParamCount = method.parameterCount();
+        int bodyParamCount = isStatic ? method.parameterCount() : method.parameterCount() - 1;
         int offset = isStatic ? 1 : 0;
 
         writer.append("if (!").appendMethodBody(methodRef).append(".$native)").ws().append('{').indent().newLine();

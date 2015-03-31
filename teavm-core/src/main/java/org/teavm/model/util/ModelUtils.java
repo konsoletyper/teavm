@@ -65,7 +65,7 @@ public final class ModelUtils {
         return copy;
     }
 
-    private static void copyAnnotations(AnnotationContainerReader src, AnnotationContainer dst) {
+    public static void copyAnnotations(AnnotationContainerReader src, AnnotationContainer dst) {
         for (AnnotationReader annot : src.all()) {
             dst.add(copyAnnotation(annot));
         }

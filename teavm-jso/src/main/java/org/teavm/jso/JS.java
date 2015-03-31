@@ -479,7 +479,7 @@ public final class JS {
         };
     }
 
-    public static <T extends JSObject> Iterable<String> iterate(final JSStringArrayReader array) {
+    public static Iterable<String> iterate(final JSStringArrayReader array) {
         return new Iterable<String>() {
             @Override public Iterator<String> iterator() {
                 return new Iterator<String>() {
