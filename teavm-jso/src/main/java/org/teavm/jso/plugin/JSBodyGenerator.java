@@ -36,16 +36,15 @@ public class JSBodyGenerator implements Generator {
         List<AnnotationValue> paramNames = annot.getValue("params").getList();
 
         int bodyParamCount = isStatic ? method.parameterCount() : method.parameterCount() - 1;
-        int offset = isStatic ? 1 : 0;
 
         writer.append("if (!").appendMethodBody(methodRef).append(".$native)").ws().append('{').indent().newLine();
         writer.appendMethodBody(methodRef).append(".$native").ws().append('=').ws().append("function(");
-        int count = method.parameterCount() + (isStatic ? 0 : 1);
+        int count = method.parameterCount();
         for (int i = 0; i < count; ++i) {
             if (i > 0) {
                 writer.append(',').ws();
             }
-            writer.append('_').append(context.getParameterName(i + offset));
+            writer.append('_').append(context.getParameterName(i + 1));
         }
         writer.append(')').ws().append('{').softNewLine().indent();
 
@@ -68,7 +67,7 @@ public class JSBodyGenerator implements Generator {
             if (i > 0) {
                 writer.append(',').ws();
             }
-            writer.append('_').append(context.getParameterName(i + offset));
+            writer.append('_').append(context.getParameterName(i + 1));
         }
         writer.append(");").softNewLine();
         writer.outdent().append("};").softNewLine();
@@ -81,7 +80,7 @@ public class JSBodyGenerator implements Generator {
             if (i > 0) {
                 writer.append(',').ws();
             }
-            writer.append(context.getParameterName(i + offset));
+            writer.append(context.getParameterName(i + 1));
         }
         writer.append(");").softNewLine();
     }
