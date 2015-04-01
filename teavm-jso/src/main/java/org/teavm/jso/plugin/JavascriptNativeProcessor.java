@@ -23,6 +23,7 @@ import org.teavm.jso.*;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 import org.teavm.model.util.InstructionVariableMapper;
+import org.teavm.model.util.ModelUtils;
 import org.teavm.model.util.ProgramUtils;
 
 /**
@@ -80,7 +81,11 @@ class JavascriptNativeProcessor {
     public void processFinalMethods(ClassHolder cls) {
         // TODO: don't allow final methods to override anything
         for (MethodHolder method : cls.getMethods().toArray(new MethodHolder[0])) {
-            if (method.hasModifier(ElementModifier.FINAL) && method.getProgram() != null) {
+            if (method.hasModifier(ElementModifier.STATIC)) {
+                continue;
+            }
+            if (method.hasModifier(ElementModifier.FINAL) && method.getProgram() != null &&
+                    method.getProgram().basicBlockCount() > 0) {
                 ValueType[] staticSignature = getStaticSignature(method.getReference());
                 MethodHolder callerMethod = new MethodHolder(new MethodDescriptor(method.getName() + "$static",
                         staticSignature));
@@ -115,6 +120,7 @@ class JavascriptNativeProcessor {
                     }
                 }
                 callerMethod.setProgram(program);
+                ModelUtils.copyAnnotations(method.getAnnotations(), callerMethod.getAnnotations());
                 cls.addMethod(callerMethod);
             }
         }
@@ -188,11 +194,13 @@ class JavascriptNativeProcessor {
                     continue;
                 }
                 if (method.hasModifier(ElementModifier.FINAL)) {
-                    invoke.setMethod(new MethodReference(method.getOwnerName(), method.getName() + "$static",
-                            getStaticSignature(method.getReference())));
+                    if (method.getProgram() != null && method.getProgram().basicBlockCount() > 0) {
+                        invoke.setMethod(new MethodReference(method.getOwnerName(), method.getName() + "$static",
+                                getStaticSignature(method.getReference())));
+                        invoke.getArguments().add(0, invoke.getInstance());
+                        invoke.setInstance(null);
+                    }
                     invoke.setType(InvocationType.SPECIAL);
-                    invoke.getArguments().add(0, invoke.getInstance());
-                    invoke.setInstance(null);
                     continue;
                 }
                 CallLocation callLocation = new CallLocation(methodToProcess.getReference(), insn.getLocation());
@@ -390,6 +398,9 @@ class JavascriptNativeProcessor {
         for (int i = 0; i < paramCount; ++i) {
             params.add(program.createVariable());
         }
+        if (isStatic) {
+            program.createVariable();
+        }
         methodToProcess.setProgram(program);
 
         // Generate invoke instruction
@@ -398,7 +409,7 @@ class JavascriptNativeProcessor {
         invoke.setType(InvocationType.SPECIAL);
         invoke.setMethod(proxyMethod.getReference());
         for (int i = 0; i < paramCount; ++i) {
-            Variable var = program.createVariable();
+            Variable var = program.variableAt(isStatic ? i + 1 : i);
             invoke.getArguments().add(wrapArgument(location, var, paramTypes[i]));
         }
         block.getInstructions().addAll(replacement);
@@ -580,13 +591,28 @@ class JavascriptNativeProcessor {
         }
         Variable result = program.createVariable();
         InvokeInstruction insn = new InvokeInstruction();
-        insn.setMethod(new MethodReference(JS.class.getName(), "wrap", type, getWrapperType(type)));
+        insn.setMethod(new MethodReference(JS.class.getName(), "wrap", getWrappedType(type), getWrapperType(type)));
         insn.getArguments().add(var);
         insn.setReceiver(result);
         insn.setType(InvocationType.SPECIAL);
         insn.setLocation(location);
         replacement.add(insn);
         return result;
+    }
+
+    private ValueType getWrappedType(ValueType type) {
+        if (type instanceof ValueType.Array) {
+            ValueType itemType = ((ValueType.Array)type).getItemType();
+            return ValueType.arrayOf(getWrappedType(itemType));
+        } else if (type instanceof ValueType.Object) {
+            if (type.isObject("java.lang.String")) {
+                return type;
+            } else {
+                return ValueType.parse(JSObject.class);
+            }
+        } else {
+            return type;
+        }
     }
 
     private ValueType getWrapperType(ValueType type) {

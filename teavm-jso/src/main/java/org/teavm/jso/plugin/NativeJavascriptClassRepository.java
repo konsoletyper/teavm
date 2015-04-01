@@ -64,6 +64,11 @@ class NativeJavascriptClassRepository {
                 return true;
             }
         }
+        if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
+            if (isJavaScriptClass(cls.getParent())) {
+                return true;
+            }
+        }
         return false;
     }
 
