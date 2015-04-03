@@ -67,7 +67,7 @@
     </module>
     <module name="NoWhitespaceBefore">
       <property name="allowLineBreaks" value="true"/>
-      <property name="tokens" value="BNOT,DEC,DOT,INC,LNOT,UNARY_MINUS,UNARY_PLUS,TYPECAST"/>
+      <property name="tokens" value="SEMI,POST_DEC,POST_INC"/>
     </module>
     <module name="OperatorWrap">
       <property name="option" value="eol"/>
