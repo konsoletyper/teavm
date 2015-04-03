@@ -15,12 +15,34 @@
  */
 package org.teavm.dom.indexeddb;
 
+import org.teavm.dom.events.EventTarget;
 import org.teavm.jso.JSObject;
+import org.teavm.jso.JSProperty;
 
 /**
  *
  * @author Alexey Andreev
  */
-public interface IDBTransaction extends JSObject {
+public interface IDBTransaction extends JSObject, EventTarget {
+    @JSProperty
+    String getMode();
 
+    @JSProperty
+    IDBDatabase getDb();
+
+    @JSProperty
+    IDBError getError();
+
+    IDBObjectStore objectStore(String name);
+
+    void abort();
+
+    @JSProperty("onabort")
+    void setOnAbort(EventHandler handler);
+
+    @JSProperty("oncomplete")
+    void setOnComplete(EventHandler handler);
+
+    @JSProperty("onerror")
+    void setOnError(EventHandler handler);
 }

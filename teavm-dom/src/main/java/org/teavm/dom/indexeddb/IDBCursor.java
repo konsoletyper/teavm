@@ -15,12 +15,44 @@
  */
 package org.teavm.dom.indexeddb;
 
+import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSObject;
+import org.teavm.jso.JSProperty;
 
 /**
  *
  * @author Alexey Andreev
  */
 public interface IDBCursor extends JSObject {
+    String DIRECTION_NEXT = "next";
 
+    String DIRECTION_NEXT_UNIQUE = "nextunique";
+
+    String DIRECTION_PREVIOUS = "prev";
+
+    String DIRECTION_PREVIOUS_UNIQUE = "prevunique";
+
+    @JSProperty
+    IDBCursorSource getSource();
+
+    @JSProperty
+    String getDirection();
+
+    @JSProperty
+    JSObject getKey();
+
+    @JSProperty
+    JSObject getValue();
+
+    @JSProperty
+    JSObject getPrimaryKey();
+
+    IDBRequest update(JSObject value);
+
+    void advance(int count);
+
+    @JSMethod("continue")
+    void doContinue();
+
+    IDBRequest delete();
 }

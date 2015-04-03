@@ -21,7 +21,7 @@ import org.teavm.jso.*;
  *
  * @author Alexey Andreev
  */
-public abstract class IDBObjectStore implements JSObject {
+public abstract class IDBObjectStore implements JSObject, IDBCursorSource {
     @JSProperty
     public abstract String getName();
 
@@ -58,6 +58,8 @@ public abstract class IDBObjectStore implements JSObject {
     public abstract IDBRequest clear();
 
     public abstract IDBCursorRequest openCursor();
+
+    public abstract IDBCursorRequest openCursor(IDBKeyRange range);
 
     public abstract IDBIndex createIndex(String name, String key);
 

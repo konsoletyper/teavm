@@ -15,12 +15,49 @@
  */
 package org.teavm.dom.indexeddb;
 
+import org.teavm.jso.JS;
 import org.teavm.jso.JSObject;
+import org.teavm.jso.JSProperty;
+import org.teavm.jso.JSStringArray;
+import org.teavm.jso.JSType;
 
 /**
  *
  * @author Alexey Andreev
  */
-public interface IDBIndex extends JSObject {
+public abstract class IDBIndex implements JSObject, IDBCursorSource {
+    @JSProperty
+    public abstract String getName();
 
+    @JSProperty("keyPath")
+    abstract JSObject getKeyPathImpl();
+
+    public final String[] getKeyPath() {
+        JSObject result = getKeyPathImpl();
+        if (JS.getType(result) == JSType.STRING) {
+            return new String[] { JS.unwrapString(result) };
+        } else {
+            return JS.unwrapArray((JSStringArray)result);
+        }
+    }
+
+    @JSProperty
+    public abstract boolean isMultiEntry();
+
+    @JSProperty
+    public abstract boolean isUnique();
+
+    public abstract IDBCursorRequest openCursor();
+
+    public abstract IDBCursorRequest openCursor(IDBKeyRange range);
+
+    public abstract IDBCursorRequest openKeyCursor();
+
+    public abstract IDBGetRequest get(JSObject key);
+
+    public abstract IDBGetRequest getKey(JSObject key);
+
+    public abstract IDBCountRequest count(JSObject key);
+
+    public abstract IDBCountRequest count();
 }

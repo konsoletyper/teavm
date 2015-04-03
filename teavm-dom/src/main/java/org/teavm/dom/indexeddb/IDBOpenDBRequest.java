@@ -24,6 +24,9 @@ import org.teavm.jso.JSProperty;
  */
 public interface IDBOpenDBRequest extends IDBRequest {
     @JSProperty
+    IDBDatabase getResult();
+
+    @JSProperty
     void setOnBlocked(EventHandler handler);
 
     @JSProperty("onupgradeneeded")
