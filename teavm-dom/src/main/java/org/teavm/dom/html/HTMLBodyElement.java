@@ -15,6 +15,7 @@
  */
 package org.teavm.dom.html;
 
+import org.teavm.dom.events.Event;
 import org.teavm.dom.events.EventListener;
 import org.teavm.jso.JSProperty;
 
@@ -24,24 +25,24 @@ import org.teavm.jso.JSProperty;
  */
 public interface HTMLBodyElement extends HTMLElement {
     @JSProperty("onbeforeunload")
-    void setOnBeforeUnload(EventListener listener);
+    void setOnBeforeUnload(EventListener<Event> listener);
 
     @JSProperty("onerror")
-    void setOnError(EventListener listener);
+    void setOnError(EventListener<Event> listener);
 
     @JSProperty("onload")
-    void setOnLoad(EventListener listener);
+    void setOnLoad(EventListener<Event> listener);
 
     @JSProperty("onmessage")
-    void setOnMessage(EventListener listener);
+    void setOnMessage(EventListener<Event> listener);
 
     @JSProperty("onoffline")
-    void setOnOffline(EventListener listener);
+    void setOnOffline(EventListener<Event> listener);
 
     @JSProperty("ononline")
-    void setOnOnline(EventListener listener);
+    void setOnOnline(EventListener<Event> listener);
 
     @JSProperty("ononunload")
-    void setOnUnload(EventListener listener);
+    void setOnUnload(EventListener<Event> listener);
 }
 

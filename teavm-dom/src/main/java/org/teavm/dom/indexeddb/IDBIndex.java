@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,16 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.dom.events;
+package org.teavm.dom.indexeddb;
 
-import org.teavm.jso.JSFunctor;
 import org.teavm.jso.JSObject;
 
 /**
  *
  * @author Alexey Andreev
  */
-@JSFunctor
-public interface EventListener<E extends Event> extends JSObject {
-    void handleEvent(E evt);
+public interface IDBIndex extends JSObject {
+
 }
