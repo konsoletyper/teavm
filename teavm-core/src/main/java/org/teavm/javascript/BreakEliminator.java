@@ -138,8 +138,14 @@ class BreakEliminator implements StatementVisitor {
 
     @Override
     public void visit(TryCatchStatement statement) {
+        Map<BlockStatement, List<Statement>> oldBlockSuccessors = blockSuccessors;
+        Set<IdentifiedStatement> oldOuterStatements = outerStatements;
+        outerStatements = new HashSet<>();
+        blockSuccessors = new HashMap<>();
         processSequence(statement.getProtectedBody());
         processSequence(statement.getHandler());
+        outerStatements = oldOuterStatements;
+        blockSuccessors = oldBlockSuccessors;
     }
 
     @Override
