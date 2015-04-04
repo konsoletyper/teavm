@@ -37,7 +37,7 @@ public abstract class IDBIndex implements JSObject, IDBCursorSource {
         if (JS.getType(result) == JSType.STRING) {
             return new String[] { JS.unwrapString(result) };
         } else {
-            return JS.unwrapArray((JSStringArray)result);
+            return JS.unwrapStringArray((JSStringArray)result);
         }
     }
 

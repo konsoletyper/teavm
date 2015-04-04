@@ -473,7 +473,11 @@ TeaVMThread.prototype.start = function(callback) {
         throw new Error("Another thread is running");
     }
     this.status = 0;
-    this.completeCallback = callback ? callback : function() {};
+    this.completeCallback = callback ? callback : function(result) {
+        if (result instanceof Error) {
+            throw result;
+        }
+    };
     this.run();
 }
 TeaVMThread.prototype.resume = function() {

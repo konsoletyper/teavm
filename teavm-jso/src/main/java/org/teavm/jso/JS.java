@@ -376,7 +376,7 @@ public final class JS {
         return result;
     }
 
-    public static String[] unwrapArray(JSStringArray array) {
+    public static String[] unwrapStringArray(JSStringArray array) {
         String[] result = new String[array.getLength()];
         for (int i = 0; i < result.length; ++i) {
             result[i] = array.get(i);
@@ -384,18 +384,18 @@ public final class JS {
         return result;
     }
 
-    public static String[][] unwrapArray2(JSArray<JSStringArray> array) {
+    public static String[][] unwrapStringArray2(JSArray<JSStringArray> array) {
         String[][] result = new String[array.getLength()][];
         for (int i = 0; i < result.length; ++i) {
-            result[i] = unwrapArray(array.get(i));
+            result[i] = unwrapStringArray(array.get(i));
         }
         return result;
     }
 
-    public static String[][][] unwrapArray3(JSArray<JSArray<JSStringArray>> array) {
+    public static String[][][] unwrapStringArray3(JSArray<JSArray<JSStringArray>> array) {
         String[][][] result = new String[array.getLength()][][];
         for (int i = 0; i < result.length; ++i) {
-            result[i] = unwrapArray2(array.get(i));
+            result[i] = unwrapStringArray2(array.get(i));
         }
         return result;
     }

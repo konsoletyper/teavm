@@ -502,19 +502,26 @@ class JavascriptNativeProcessor {
         if (type instanceof ValueType.Primitive) {
             switch (((ValueType.Primitive)type).getKind()) {
                 case BOOLEAN:
-                    return unwrap(var, "unwrapBoolean", ValueType.BOOLEAN, location.getSourceLocation());
+                    return unwrap(var, "unwrapBoolean", ValueType.parse(JSObject.class), ValueType.BOOLEAN,
+                            location.getSourceLocation());
                 case BYTE:
-                    return unwrap(var, "unwrapByte", ValueType.BYTE, location.getSourceLocation());
+                    return unwrap(var, "unwrapByte", ValueType.parse(JSObject.class), ValueType.BYTE,
+                            location.getSourceLocation());
                 case SHORT:
-                    return unwrap(var, "unwrapShort", ValueType.SHORT, location.getSourceLocation());
+                    return unwrap(var, "unwrapShort", ValueType.parse(JSObject.class), ValueType.SHORT,
+                            location.getSourceLocation());
                 case INTEGER:
-                    return unwrap(var, "unwrapInt", ValueType.INTEGER, location.getSourceLocation());
+                    return unwrap(var, "unwrapInt", ValueType.parse(JSObject.class), ValueType.INTEGER,
+                            location.getSourceLocation());
                 case CHARACTER:
-                    return unwrap(var, "unwrapCharacter", ValueType.CHARACTER, location.getSourceLocation());
+                    return unwrap(var, "unwrapCharacter", ValueType.parse(JSObject.class), ValueType.CHARACTER,
+                            location.getSourceLocation());
                 case DOUBLE:
-                    return unwrap(var, "unwrapDouble", ValueType.DOUBLE, location.getSourceLocation());
+                    return unwrap(var, "unwrapDouble", ValueType.parse(JSObject.class), ValueType.DOUBLE,
+                            location.getSourceLocation());
                 case FLOAT:
-                    return unwrap(var, "unwrapFloat", ValueType.FLOAT, location.getSourceLocation());
+                    return unwrap(var, "unwrapFloat", ValueType.parse(JSObject.class), ValueType.FLOAT,
+                            location.getSourceLocation());
                 case LONG:
                     break;
             }
@@ -523,8 +530,9 @@ class JavascriptNativeProcessor {
             if (className.equals(JSObject.class.getName())) {
                 return var;
             } else if (className.equals("java.lang.String")) {
-                return unwrap(var, "unwrapString", ValueType.object("java.lang.String"), location.getSourceLocation());
-            } else {
+                return unwrap(var, "unwrapString", ValueType.parse(JSObject.class), ValueType.parse(String.class),
+                        location.getSourceLocation());
+            } else if (isNative(className)) {
                 Variable result = program.createVariable();
                 CastInstruction castInsn = new CastInstruction();
                 castInsn.setReceiver(result);
@@ -534,22 +542,115 @@ class JavascriptNativeProcessor {
                 replacement.add(castInsn);
                 return result;
             }
+        } else if (type instanceof ValueType.Array) {
+            return unwrapArray(location, var, (ValueType.Array)type);
         }
         diagnostics.error(location, "Unsupported type: {{t0}}", type);
         return var;
     }
 
-    private Variable unwrap(Variable var, String methodName, ValueType resultType, InstructionLocation location) {
+    private Variable unwrapArray(CallLocation location, Variable var, ValueType.Array type) {
+        ValueType itemType = type;
+        int degree = 0;
+        while (itemType instanceof ValueType.Array) {
+            ++degree;
+            itemType = ((ValueType.Array)itemType).getItemType();
+        }
+        if (degree > 3) {
+            diagnostics.error(location, "Unsupported type: {{t0}}", type);
+            return var;
+        }
+
+        if (itemType instanceof ValueType.Object) {
+            String className = ((ValueType.Object)itemType).getClassName();
+            if (className.equals("java.lang.String")) {
+                String methodName = "unwrapStringArray";
+                if (degree > 1) {
+                    methodName += degree;
+                }
+                ValueType argType = degree == 1 ? ValueType.parse(JSStringArray.class) :
+                        ValueType.parse(JSArray.class);
+                return unwrap(var, methodName, argType, type, location.getSourceLocation());
+            } else if (isNative(className)) {
+                return unwrapObjectArray(location, var, degree, itemType, type);
+            }
+        }
+        diagnostics.error(location, "Unsupported type: {{t0}}", type);
+        return var;
+    }
+
+    private Variable unwrap(Variable var, String methodName, ValueType argType, ValueType resultType,
+            InstructionLocation location) {
+        if (!argType.isObject(JSObject.class.getName())) {
+            Variable castValue = program.createVariable();
+            CastInstruction castInsn = new CastInstruction();
+            castInsn.setValue(var);
+            castInsn.setReceiver(castValue);
+            castInsn.setLocation(location);
+            castInsn.setTargetType(argType);
+            replacement.add(castInsn);
+            var = castValue;
+        }
         Variable result = program.createVariable();
         InvokeInstruction insn = new InvokeInstruction();
-        insn.setMethod(new MethodReference(JS.class.getName(), methodName, ValueType.object(JSObject.class.getName()),
-                resultType));
+        insn.setMethod(new MethodReference(JS.class.getName(), methodName, argType, resultType));
         insn.getArguments().add(var);
         insn.setReceiver(result);
         insn.setType(InvocationType.SPECIAL);
         insn.setLocation(location);
         replacement.add(insn);
         return result;
+    }
+
+    private Variable unwrapObjectArray(CallLocation location, Variable var, int degree, ValueType itemType,
+            ValueType expectedType) {
+        String methodName = "unwrapArray";
+        if (degree > 1) {
+            methodName += degree;
+        }
+        ValueType resultType = ValueType.parse(JSObject.class);
+        for (int i = 0; i < degree; ++i) {
+            resultType = ValueType.arrayOf(resultType);
+        }
+
+        Variable classVar = program.createVariable();
+        ClassConstantInstruction classInsn = new ClassConstantInstruction();
+        classInsn.setConstant(itemType);
+        classInsn.setReceiver(classVar);
+        classInsn.setLocation(location.getSourceLocation());
+        replacement.add(classInsn);
+
+        Variable castValue = program.createVariable();
+        CastInstruction castInsn = new CastInstruction();
+        castInsn.setValue(var);
+        castInsn.setReceiver(castValue);
+        castInsn.setLocation(location.getSourceLocation());
+        castInsn.setTargetType(ValueType.parse(JSArray.class));
+        replacement.add(castInsn);
+        var = castValue;
+
+        Variable result = program.createVariable();
+        InvokeInstruction insn = new InvokeInstruction();
+        insn.setMethod(new MethodReference(JS.class.getName(), methodName, ValueType.parse(Class.class),
+                ValueType.parse(JSArray.class), resultType));
+        insn.getArguments().add(classVar);
+        insn.getArguments().add(var);
+        insn.setReceiver(result);
+        insn.setType(InvocationType.SPECIAL);
+        insn.setLocation(location.getSourceLocation());
+        replacement.add(insn);
+        var = result;
+
+        Variable castResult = program.createVariable();
+        castInsn = new CastInstruction();
+        castInsn.setValue(var);
+        castInsn.setReceiver(castResult);
+        castInsn.setLocation(location.getSourceLocation());
+        castInsn.setTargetType(expectedType);
+        replacement.add(castInsn);
+        var = castResult;
+
+        return var;
     }
 
     private Variable wrapArgument(CallLocation location, Variable var, ValueType type) {
