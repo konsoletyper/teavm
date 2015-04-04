@@ -22,5 +22,6 @@ package org.teavm.javascript.ast;
 public enum NodeModifier {
     STATIC,
     INTERFACE,
-    ENUM
+    ENUM,
+    SYNCHRONIZED
 }

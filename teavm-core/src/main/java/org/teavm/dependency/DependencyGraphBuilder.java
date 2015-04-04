@@ -15,6 +15,7 @@
  */
 package org.teavm.dependency;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -106,6 +107,40 @@ class DependencyGraphBuilder {
             for (TryCatchBlockReader tryCatch : block.readTryCatchBlocks()) {
                 if (tryCatch.getExceptionType() != null) {
                     dependencyChecker.linkClass(tryCatch.getExceptionType(), new CallLocation(caller.getMethod()));
+                }
+            }
+        }
+
+        if (method.hasModifier(ElementModifier.SYNCHRONIZED)) {
+            List<DependencyNode> syncNodes = new ArrayList<>();
+
+            MethodDependency methodDep = dependencyChecker.linkMethod(
+                        new MethodReference(Object.class, "monitorEnter", Object.class, void.class), null);
+            syncNodes.add(methodDep.getVariable(1));
+            methodDep.use();
+
+            methodDep = dependencyChecker.linkMethod(
+                    new MethodReference(Object.class, "monitorEnterSync", Object.class, void.class), null);
+            syncNodes.add(methodDep.getVariable(1));
+            methodDep.use();
+
+            methodDep = dependencyChecker.linkMethod(
+                    new MethodReference(Object.class, "monitorExit", Object.class, void.class), null);
+            syncNodes.add(methodDep.getVariable(1));
+            methodDep.use();
+
+            methodDep = dependencyChecker.linkMethod(
+                    new MethodReference(Object.class, "monitorExitSync", Object.class, void.class), null);
+            syncNodes.add(methodDep.getVariable(1));
+            methodDep.use();
+
+            if (method.hasModifier(ElementModifier.STATIC)) {
+                for (DependencyNode node : syncNodes) {
+                    node.propagate(dependencyChecker.getType("java.lang.Class"));
+                }
+            } else {
+                for (DependencyNode node : syncNodes) {
+                    nodes[0].connect(node);
                 }
             }
         }

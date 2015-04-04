@@ -15,6 +15,8 @@
  */
 package org.teavm.model.util;
 
+import com.carrotsearch.hppc.IntOpenHashSet;
+import com.carrotsearch.hppc.IntSet;
 import java.util.ArrayDeque;
 import java.util.BitSet;
 import java.util.Deque;
@@ -51,15 +53,19 @@ public class LivenessAnalyzer {
             BasicBlock block = program.basicBlockAt(i);
             for (Instruction insn : block.getInstructions()) {
                 insn.acceptVisitor(usageExtractor);
+                IntSet usedVars = new IntOpenHashSet();
                 for (Variable var : usageExtractor.getUsedVariables()) {
                     Task task = new Task();
                     task.block = i;
                     task.var = var.getIndex();
                     stack.push(task);
+                    usedVars.add(var.getIndex());
                 }
                 insn.acceptVisitor(defExtractor);
                 for (Variable var : defExtractor.getDefinedVariables()) {
-                    definitions[var.getIndex()] = i;
+                    if (!usedVars.contains(var.getIndex())) {
+                        definitions[var.getIndex()] = i;
+                    }
                 }
             }
             for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
