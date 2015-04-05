@@ -101,10 +101,11 @@ public class TThread extends TObject implements TRunnable {
     }
 
     public static void yield() {
+        TThread currentThread = currentThread();
         if (++currentThread.yieldCount < 30) {
             return;
         }
-        currentThread.yieldCount = 0;
+        currentThread().yieldCount = 0;
         if (currentThread.timeSliceStart + 100 < System.currentTimeMillis()) {
             switchContext(currentThread);
         }

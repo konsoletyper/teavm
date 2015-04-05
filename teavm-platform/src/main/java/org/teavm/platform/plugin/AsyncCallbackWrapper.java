@@ -21,12 +21,24 @@ import org.teavm.platform.async.AsyncCallback;
  *
  * @author Alexey Andreev
  */
-class FakeAsyncCallback implements AsyncCallback<Object> {
+class AsyncCallbackWrapper<T> implements AsyncCallback<T> {
+    private AsyncCallback<T> realAsyncCallback;
+
+    AsyncCallbackWrapper(AsyncCallback<T> realAsyncCallback) {
+        this.realAsyncCallback = realAsyncCallback;
+    }
+
+    public static <S> AsyncCallbackWrapper<S> create(AsyncCallback<S> realAsyncCallback) {
+        return new AsyncCallbackWrapper<>(realAsyncCallback);
+    }
+
     @Override
-    public void complete(Object result) {
+    public void complete(T result) {
+        realAsyncCallback.complete(result);
     }
 
     @Override
     public void error(Throwable e) {
+        realAsyncCallback.error(e);
     }
 }
