@@ -38,7 +38,6 @@ public class EnumDependencySupport implements DependencyListener {
             return;
         }
         allEnums.propagate(agent.getType(className));
-
     }
 
     @Override

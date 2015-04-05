@@ -19,6 +19,8 @@ import java.io.IOException;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyPlugin;
+import org.teavm.dependency.DependencyType;
+import org.teavm.dependency.DependencyTypeFilter;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.javascript.spi.Generator;
 import org.teavm.javascript.spi.GeneratorContext;
@@ -88,13 +90,61 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin {
     }
 
     @Override
-    public void methodAchieved(DependencyAgent checker, MethodDependency method, CallLocation location) {
+    public void methodAchieved(final DependencyAgent checker, final MethodDependency method, CallLocation location) {
         MethodReference asyncRef = getAsyncReference(method.getReference());
         MethodDependency asyncMethod = checker.linkMethod(asyncRef, location);
         int paramCount = method.getReference().parameterCount();
         for (int i = 0; i <= paramCount; ++i) {
             method.getVariable(i).connect(asyncMethod.getVariable(i));
         }
+        asyncMethod.getVariable(paramCount + 1).propagate(checker.getType(FakeAsyncCallback.class.getName()));
+
+        if (method.getResult() != null) {
+            MethodDependency completeMethod = checker.linkMethod(
+                    new MethodReference(FakeAsyncCallback.class, "complete", Object.class, void.class), null);
+            completeMethod.getVariable(1).connect(method.getResult(), new DependencyTypeFilter() {
+                @Override
+                public boolean match(DependencyType type) {
+                    return isSubtype(checker.getClassSource(), type.getName(), method.getReference().getReturnType());
+                }
+            });
+        }
+
+        MethodDependency errorMethod = checker.linkMethod(new MethodReference(FakeAsyncCallback.class, "error",
+                Throwable.class, void.class), null);
+        errorMethod.getVariable(1).connect(method.getThrown());
+
         asyncMethod.use();
+    }
+
+    private boolean isSubtype(ClassReaderSource classSource, String className, ValueType returnType) {
+        if (returnType instanceof ValueType.Primitive) {
+            return false;
+        } else if (returnType instanceof ValueType.Array) {
+            return className.startsWith("[");
+        } else {
+            return isSubclass(classSource, className, ((ValueType.Object)returnType).getClassName());
+        }
+    }
+
+    private boolean isSubclass(ClassReaderSource classSource, String className, String baseClass) {
+        if (className.equals(baseClass)) {
+            return true;
+        }
+        ClassReader cls = classSource.get(className);
+        if (cls == null) {
+            return false;
+        }
+        if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
+            if (isSubclass(classSource, cls.getParent(), baseClass)) {
+                return true;
+            }
+        }
+        for (String iface : cls.getInterfaces()) {
+            if (isSubclass(classSource, iface, baseClass)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
