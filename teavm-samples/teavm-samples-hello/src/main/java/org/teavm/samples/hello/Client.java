@@ -18,8 +18,8 @@ package org.teavm.samples.hello;
 import org.teavm.dom.ajax.ReadyStateChangeHandler;
 import org.teavm.dom.ajax.XMLHttpRequest;
 import org.teavm.dom.browser.Window;
-import org.teavm.dom.events.Event;
 import org.teavm.dom.events.EventListener;
+import org.teavm.dom.events.MouseEvent;
 import org.teavm.dom.html.HTMLButtonElement;
 import org.teavm.dom.html.HTMLDocument;
 import org.teavm.dom.html.HTMLElement;
@@ -36,8 +36,8 @@ public final class Client {
     }
 
     public static void main(String[] args) {
-        helloButton.addEventListener("click", new EventListener() {
-            @Override public void handleEvent(Event evt) {
+        helloButton.addEventListener("click", new EventListener<MouseEvent>() {
+            @Override public void handleEvent(MouseEvent evt) {
                 sayHello();
             }
         });

@@ -15,6 +15,7 @@
  */
 package org.teavm.jso;
 
+import java.lang.reflect.Array;
 import java.util.Iterator;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.javascript.spi.InjectedBy;
@@ -346,6 +347,58 @@ public final class JS {
 
     @InjectedBy(JSNativeGenerator.class)
     public static native char unwrapCharacter(JSObject obj);
+
+    public static <T extends JSObject> T[] unwrapArray(Class<T> type, JSArray<T> array) {
+        @SuppressWarnings("unchecked")
+        T[] result = (T[])Array.newInstance(type, array.getLength());
+        for (int i = 0; i < result.length; ++i) {
+            result[i] = array.get(i);
+        }
+        return result;
+    }
+
+    public static <T extends JSObject> T[][] unwrapArray2(Class<T> type, JSArray<JSArray<T>> array) {
+        @SuppressWarnings("unchecked")
+        T[][] result = (T[][])Array.newInstance(Array.newInstance(type, 0).getClass(), array.getLength());
+        for (int i = 0; i < result.length; ++i) {
+            result[i] = unwrapArray(type, array.get(i));
+        }
+        return result;
+    }
+
+    public static <T extends JSObject> T[][][] unwrapArray3(Class<T> type, JSArray<JSArray<JSArray<T>>> array) {
+        Class<?> baseType = Array.newInstance(type, 0).getClass();
+        @SuppressWarnings("unchecked")
+        T[][][] result = (T[][][])Array.newInstance(Array.newInstance(baseType, 0).getClass(), array.getLength());
+        for (int i = 0; i < result.length; ++i) {
+            result[i] = unwrapArray2(type, array.get(i));
+        }
+        return result;
+    }
+
+    public static String[] unwrapStringArray(JSStringArray array) {
+        String[] result = new String[array.getLength()];
+        for (int i = 0; i < result.length; ++i) {
+            result[i] = array.get(i);
+        }
+        return result;
+    }
+
+    public static String[][] unwrapStringArray2(JSArray<JSStringArray> array) {
+        String[][] result = new String[array.getLength()][];
+        for (int i = 0; i < result.length; ++i) {
+            result[i] = unwrapStringArray(array.get(i));
+        }
+        return result;
+    }
+
+    public static String[][][] unwrapStringArray3(JSArray<JSArray<JSStringArray>> array) {
+        String[][][] result = new String[array.getLength()][][];
+        for (int i = 0; i < result.length; ++i) {
+            result[i] = unwrapStringArray2(array.get(i));
+        }
+        return result;
+    }
 
     @InjectedBy(JSNativeGenerator.class)
     public static native boolean isUndefined(JSObject obj);

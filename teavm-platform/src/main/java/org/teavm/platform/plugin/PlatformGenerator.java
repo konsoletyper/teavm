@@ -51,6 +51,9 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
                 launchMethod.use();
                 break;
             }
+            case "getCurrentThread":
+                method.getResult().propagate(agent.getType("java.lang.Thread"));
+                break;
         }
     }
 

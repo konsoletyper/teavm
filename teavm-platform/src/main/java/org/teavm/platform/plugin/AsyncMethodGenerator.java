@@ -19,6 +19,8 @@ import java.io.IOException;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyPlugin;
+import org.teavm.dependency.DependencyType;
+import org.teavm.dependency.DependencyTypeFilter;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.javascript.spi.Generator;
 import org.teavm.javascript.spi.GeneratorContext;
@@ -39,6 +41,7 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin {
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
         MethodReference asyncRef = getAsyncReference(methodRef);
         writer.append("var thread").ws().append('=').ws().append("$rt_nativeThread();").softNewLine();
+        writer.append("var javaThread").ws().append('=').ws().append("$rt_getThread();").softNewLine();
         writer.append("if").ws().append("(thread.isResuming())").ws().append("{").indent().softNewLine();
         writer.append("thread.status").ws().append("=").ws().append("0;").softNewLine();
         writer.append("var result").ws().append("=").ws().append("thread.attribute;").softNewLine();
@@ -52,13 +55,17 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin {
         writer.append("callback.").appendMethod(completeMethod.getDescriptor()).ws().append("=").ws()
                 .append("function(val)").ws().append("{").indent().softNewLine();
         writer.append("thread.attribute").ws().append('=').ws().append("val;").softNewLine();
+        writer.append("$rt_setThread(javaThread);").softNewLine();
         writer.append("thread.resume();").softNewLine();
         writer.outdent().append("};").softNewLine();
         writer.append("callback.").appendMethod(errorMethod.getDescriptor()).ws().append("=").ws()
                 .append("function(e)").ws().append("{").indent().softNewLine();
         writer.append("thread.attribute").ws().append('=').ws().append("$rt_exception(e);").softNewLine();
+        writer.append("$rt_setThread(javaThread);").softNewLine();
         writer.append("thread.resume();").softNewLine();
         writer.outdent().append("};").softNewLine();
+        writer.append("callback").ws().append("=").ws().appendMethodBody(AsyncCallbackWrapper.class, "create",
+                AsyncCallback.class, AsyncCallbackWrapper.class).append("(callback);").softNewLine();
         writer.append("return thread.suspend(function()").ws().append("{").indent().softNewLine();
         writer.append("try").ws().append("{").indent().softNewLine();
         writer.appendMethodBody(asyncRef).append('(');
@@ -88,13 +95,66 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin {
     }
 
     @Override
-    public void methodAchieved(DependencyAgent checker, MethodDependency method, CallLocation location) {
+    public void methodAchieved(final DependencyAgent checker, final MethodDependency method, CallLocation location) {
         MethodReference asyncRef = getAsyncReference(method.getReference());
         MethodDependency asyncMethod = checker.linkMethod(asyncRef, location);
         int paramCount = method.getReference().parameterCount();
         for (int i = 0; i <= paramCount; ++i) {
             method.getVariable(i).connect(asyncMethod.getVariable(i));
         }
+        asyncMethod.getVariable(paramCount + 1).propagate(checker.getType(AsyncCallbackWrapper.class.getName()));
+
+        MethodDependency completeMethod = checker.linkMethod(
+                new MethodReference(AsyncCallbackWrapper.class, "complete", Object.class, void.class), null);
+        if (method.getResult() != null) {
+            completeMethod.getVariable(1).connect(method.getResult(), new DependencyTypeFilter() {
+                @Override
+                public boolean match(DependencyType type) {
+                    return isSubtype(checker.getClassSource(), type.getName(), method.getReference().getReturnType());
+                }
+            });
+        }
+        completeMethod.use();
+
+        MethodDependency errorMethod = checker.linkMethod(new MethodReference(AsyncCallbackWrapper.class, "error",
+                Throwable.class, void.class), null);
+        errorMethod.getVariable(1).connect(method.getThrown());
+        errorMethod.use();
+
+        checker.linkMethod(new MethodReference(AsyncCallbackWrapper.class, "create",
+                AsyncCallback.class, AsyncCallbackWrapper.class), null).use();
+
         asyncMethod.use();
+    }
+
+    private boolean isSubtype(ClassReaderSource classSource, String className, ValueType returnType) {
+        if (returnType instanceof ValueType.Primitive) {
+            return false;
+        } else if (returnType instanceof ValueType.Array) {
+            return className.startsWith("[");
+        } else {
+            return isSubclass(classSource, className, ((ValueType.Object)returnType).getClassName());
+        }
+    }
+
+    private boolean isSubclass(ClassReaderSource classSource, String className, String baseClass) {
+        if (className.equals(baseClass)) {
+            return true;
+        }
+        ClassReader cls = classSource.get(className);
+        if (cls == null) {
+            return false;
+        }
+        if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
+            if (isSubclass(classSource, cls.getParent(), baseClass)) {
+                return true;
+            }
+        }
+        for (String iface : cls.getInterfaces()) {
+            if (isSubclass(classSource, iface, baseClass)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
