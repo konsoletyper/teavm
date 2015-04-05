@@ -725,18 +725,43 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 writer.softNewLine();
                 writer.outdent().append("}").softNewLine();
 
+                if (methodNode.getModifiers().contains(NodeModifier.SYNCHRONIZED)) {
+                    writer.append("try").ws().append('{').indent().softNewLine();
+                }
                 writer.append(mainLoopName()).append(":").ws().append("while").ws().append("(true)")
                         .ws().append("{").ws();
                 writer.append("switch").ws().append("(").append(pointerName()).append(")").ws()
                         .append('{').softNewLine();
                 for (int i = 0; i < methodNode.getBody().size(); ++i) {
                     writer.append("case ").append(i).append(":").indent().softNewLine();
+                    if (i == 0 && methodNode.getModifiers().contains(NodeModifier.SYNCHRONIZED)) {
+                        writer.appendMethodBody(new MethodReference(Object.class, "monitorEnter",
+                                Object.class, void.class));
+                        writer.append("(");
+                        appendMonitor(methodNode);
+                        writer.append(");").softNewLine();
+                        emitSuspendChecker();
+                    }
                     AsyncMethodPart part = methodNode.getBody().get(i);
                     part.getStatement().acceptVisitor(Renderer.this);
                     writer.outdent();
                 }
                 writer.append("default:").ws().appendFunction("$rt_invalidPointer").append("();").softNewLine();
                 writer.append("}}").softNewLine();
+
+                if (methodNode.getModifiers().contains(NodeModifier.SYNCHRONIZED)) {
+                    writer.outdent().append("}").ws().append("finally").ws().append('{').indent().softNewLine();
+                    writer.append("if").ws().append("(!").appendFunction("$rt_suspending").append("())")
+                            .ws().append("{").indent().softNewLine();
+                    writer.appendMethodBody(new MethodReference(Object.class, "monitorExit",
+                            Object.class, void.class));
+                    writer.append("(");
+                    appendMonitor(methodNode);
+                    writer.append(");").softNewLine();
+                    writer.outdent().append('}').softNewLine();
+                    writer.outdent().append('}').softNewLine();
+                }
+
                 writer.appendFunction("$rt_nativeThread").append("().").append(pushName).append("(");
                 for (int i = firstToSave; i < variableCount; ++i) {
                     writer.append(variableName(i)).append(',').ws();
@@ -791,6 +816,15 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         @Override
         public Diagnostics getDiagnostics() {
             return diagnostics;
+        }
+    }
+
+    private void appendMonitor(MethodNode methodNode) throws IOException {
+        if (methodNode.getModifiers().contains(NodeModifier.STATIC)) {
+            writer.appendFunction("$rt_cls").append("(")
+                    .appendClass(methodNode.getReference().getClassName()).append(")");
+        } else {
+            writer.append(variableName(0));
         }
     }
 

@@ -72,6 +72,10 @@ public class AsyncMethodFinder {
                     if (asyncMethods.contains(method.getReference()) || method.getProgram() == null) {
                         continue;
                     }
+                    if (method.hasModifier(ElementModifier.SYNCHRONIZED)) {
+                        add(method.getReference());
+                        continue;
+                    }
                     ProgramReader program = method.getProgram();
                     AsyncInstructionReader insnReader = new AsyncInstructionReader();
                     for (int i = 0; i < program.basicBlockCount(); ++i) {
