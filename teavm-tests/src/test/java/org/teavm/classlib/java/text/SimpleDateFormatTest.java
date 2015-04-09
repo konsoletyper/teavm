@@ -137,12 +137,13 @@ public class SimpleDateFormatTest {
         Calendar calendar = new GregorianCalendar(Locale.ENGLISH);
         calendar.setTimeInMillis(milliseconds);
         milliseconds -= calendar.get(Calendar.ZONE_OFFSET);
+        milliseconds -= calendar.get(Calendar.DST_OFFSET);
         return new Date(milliseconds);
     }
 
     private long getTimeWithoutZoneOffset(Date date) {
         Calendar calendar = new GregorianCalendar(Locale.ENGLISH);
         calendar.setTime(date);
-        return calendar.getTimeInMillis() + calendar.get(Calendar.ZONE_OFFSET);
+        return calendar.getTimeInMillis() + calendar.get(Calendar.ZONE_OFFSET) + calendar.get(Calendar.DST_OFFSET);
     }
 }

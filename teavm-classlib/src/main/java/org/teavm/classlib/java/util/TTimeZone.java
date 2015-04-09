@@ -15,6 +15,8 @@
  */
 package org.teavm.classlib.java.util;
 
+import org.teavm.jso.JSBody;
+
 /**
  * TimeZone represents a time zone offset, and also figures out daylight savings.
  * Typically, you get a TimeZone using getDefault which creates a TimeZone based on the time zone where the program is running. For example, for a program running in Japan, getDefault creates a TimeZone object based on Japanese Standard Time.
@@ -62,10 +64,20 @@ public abstract class TTimeZone {
             return new String[] {"GMT", i};
         }
     }
-
+    @JSBody(params={}, 
+            script="return $rt_getTimezoneId(name,year,month,day,timeOfDayMillis)"
+            )
     private static native String getTimezoneId();
+    
+    @JSBody(params={"name","year","month","day","timeOfDayMillis"},
+            script="return $rt_getTimezoneOffset(name,year,month,day,timeOfDayMillis)")
     private static native int getTimezoneOffset(String name, int year, int month, int day, int timeOfDayMillis);
+    
+    @JSBody(params="name",
+            script="return $rt_getTimezoneRawOffset(name)")
     private static native int getTimezoneRawOffset(String name);
+    
+    @JSBody(params={"name","millis"}, script="return $rt_isTimezoneDST(name,millis)")
     private static native boolean isTimezoneDST(String name, long millis);
 
     /**
