@@ -321,6 +321,10 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
     public static TCalendar getInstance(TTimeZone zone){
         return new TGregorianCalendar(zone);
     }
+    
+    public static TCalendar getInstance(TTimeZone zone, TLocale locale){
+        return new TGregorianCalendar(zone, locale);
+    }
 
     abstract public int getLeastMaximum(int field);
 
@@ -392,6 +396,8 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
             lastTimeFieldSet = HOUR;
         }
     }
+    
+   
 
     public final void set(int year, int month, int day) {
         set(YEAR, year);

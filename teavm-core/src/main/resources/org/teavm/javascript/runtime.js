@@ -529,49 +529,6 @@ function $rt_nativeThread() {
 function $rt_invalidPointer() {
     throw new Error("Invalid recorded state");
 }
-function $rt_getTimezoneId(){
-    return "LOCAL";
-}
-function $rt_getTimezoneOffset(name, year, month, day, timeOfDayMillis){
-    if ($rt_getTimezoneId()===name){
-        var hours = Math.floor(timeOfDayMillis/1000/60/60);
-        var minutes = Math.floor(timeOfDayMillis/1000/60)%60;
-        var seconds = Math.floor(timeOfDayMillis/1000)%60;
-        var millis = timeOfDayMillis % 1000;
-        return -(new Date(year, month, day, hours, minutes, seconds, millis).getTimezoneOffset()*1000*60);
-    } else if ("UTC"===name || "GMT"===name){
-        return 0;
-    } else {
-        throw new Error("Unsupported Timezone: "+name);
-    }
-}
-function $rt_getTimezoneRawOffset(name){
-    if ($rt_getTimezoneId()===name){
-        var millis = new Date().getTime();
-        var i=0;
-        var addDays = 1000 * 60 *60 * 24 * 200; // Check 200 days later
-        while ($rt_isTimezoneDST(name, millis) && i++<4){
-            millis += addDays;
-        }
-        return -(new Date(millis).getTimezoneOffset()*1000*60);
-    } else if (name==='GMT' || name==='UTC'){
-        return 0;
-    } else {
-        throw new Error("Unsupported Timezone: "+name);
-    }
-}
-function $rt_isTimezoneDST(name, millis){
-    if ($rt_getTimezoneId()===name){
-        var jan = new Date(this.getFullYear(), 0, 1);
-        var jul = new Date(this.getFullYear(), 6, 1);
-        var maxOff = Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset());
-        return new Date(millis).getTimezoneOffset()<maxOff;
-    } else if (name==='GMT' || name=='UTC'){
-        return false;
-    } else {
-        throw new Error("Unsupported Timezone: "+name);
-    }
-}
 function $dbg_repr(obj) {
     return obj.toString ? obj.toString() : "";
 }

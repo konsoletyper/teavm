@@ -83,6 +83,11 @@ public class TGregorianCalendar extends TCalendar {
         super(locale);
         setTimeInMillis(System.currentTimeMillis());
     }
+    
+    public TGregorianCalendar(TTimeZone zone, TLocale locale){
+        this(locale);
+        setTimeZone(zone);
+    }
 
     TGregorianCalendar(@SuppressWarnings("unused") boolean ignored) {
         setFirstDayOfWeek(SUNDAY);

@@ -15,7 +15,11 @@
  */
 package org.teavm.classlib.java.util;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 import org.teavm.jso.JSBody;
+import org.teavm.platform.PlatformTimezone;
 
 /**
  * TimeZone represents a time zone offset, and also figures out daylight savings.
@@ -28,6 +32,76 @@ import org.teavm.jso.JSBody;
  */
 public abstract class TTimeZone {
 
+    
+    public static class GMT extends PlatformTimezone {
+
+        @Override
+        public String getTimezoneId() {
+            return "GMT";
+        }
+
+        @Override
+        public int getTimezoneOffset(int year, int month, int day, int timeOfDayMillis) {
+            return 0;
+        }
+
+        @Override
+        public int getTimezoneRawOffset() {
+            return 0;
+        }
+
+        @Override
+        public boolean isTimezoneDST(long millis) {
+            return false;
+        }
+        
+    }
+    
+    public static class Local extends PlatformTimezone {
+
+        @Override
+        public String getTimezoneId() {
+            return "Local";
+        }
+
+        @Override
+        public int getTimezoneOffset(int year, int month, int day, int timeOfDayMillis) {
+            int hours = (int)Math.floor(timeOfDayMillis/1000/60/60);
+            int minutes = (int)Math.floor(timeOfDayMillis/1000/60)%60;
+            int seconds = (int)Math.floor(timeOfDayMillis/1000)%60;
+            TDate d = new TDate(year, month, day, hours, minutes, seconds);
+            return -TDate.getTimezoneOffset(d.getTime()) * 1000 * 60;
+        }
+
+        @Override
+        public int getTimezoneRawOffset() {
+            TDate now = new TDate();
+            TDate jan = new TDate(now.getYear(), 0, 1);
+            TDate jul = new TDate(now.getYear(), 6, 1);
+            if (isTimezoneDST(jan.getTime())){
+                return jul.getTimezoneOffset();
+            } else {
+                return jan.getTimezoneOffset();
+            }
+        }
+
+        @Override
+        public boolean isTimezoneDST(long millis) {
+            
+            TDate now = new TDate();
+            TDate jan = new TDate(now.getYear(), 0, 1);
+            TDate jul = new TDate(now.getYear(), 6, 1);
+            int maxOffset = Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset());
+            return new Date(millis).getTimezoneOffset()<maxOffset;
+        }
+        
+    }
+    
+    static {
+        PlatformTimezone.addTimezone("GMT", new GMT());
+        PlatformTimezone.addTimezone("Local", new Local());
+        PlatformTimezone.setPlatformTimezoneId("Local");
+    }
     /**
      * The short display name style, such as {@code PDT}. Requests for this
      * style may yield GMT offsets like {@code GMT-08:00}.
@@ -57,28 +131,47 @@ public abstract class TTimeZone {
      * Gets all the available IDs supported.
      */
     public static java.lang.String[] getAvailableIDs(){
-        String i = getTimezoneId();
-        if(i.equals("GMT")) {
-            return new String[] {"GMT"};//ZoneInfoDB.getAvailableIDs();
-        } else {
-            return new String[] {"GMT", i};
-        }
+        return PlatformTimezone.getAvailableIds();
     }
-    @JSBody(params={}, 
-            script="return $rt_getTimezoneId(name,year,month,day,timeOfDayMillis)"
-            )
-    private static native String getTimezoneId();
     
-    @JSBody(params={"name","year","month","day","timeOfDayMillis"},
-            script="return $rt_getTimezoneOffset(name,year,month,day,timeOfDayMillis)")
-    private static native int getTimezoneOffset(String name, int year, int month, int day, int timeOfDayMillis);
+    public static java.lang.String[] getAvailableIDs(int rawOffset){
+        List<String> out = new ArrayList<String>();
+        for (String id : getAvailableIDs()){
+            PlatformTimezone tz = PlatformTimezone.getTimezone(id);
+            if (tz.getTimezoneRawOffset()==rawOffset){
+                out.add(id);
+            }
+        }
+        return out.toArray(new String[out.size()]);
+    }
+    private static String getTimezoneId(){
+        return PlatformTimezone.getPlatformTimezoneId();
+    }
     
-    @JSBody(params="name",
-            script="return $rt_getTimezoneRawOffset(name)")
-    private static native int getTimezoneRawOffset(String name);
     
-    @JSBody(params={"name","millis"}, script="return $rt_isTimezoneDST(name,millis)")
-    private static native boolean isTimezoneDST(String name, long millis);
+    private static int getTimezoneOffset(String name, int year, int month, int day, int timeOfDayMillis){
+        PlatformTimezone tz = PlatformTimezone.getTimezone(name);
+        if (tz==null){
+            throw new RuntimeException("Timezone not found: "+name);
+        }
+        return tz.getTimezoneOffset(year, month, day, timeOfDayMillis);
+    }
+    
+    private static int getTimezoneRawOffset(String name){
+        PlatformTimezone tz = PlatformTimezone.getTimezone(name);
+        if (tz==null){
+            throw new RuntimeException("Timezone not found: "+name);
+        }
+        return tz.getTimezoneRawOffset();
+    }
+    
+    private static boolean isTimezoneDST(String name, long millis){
+        PlatformTimezone tz = PlatformTimezone.getTimezone(name);
+        if (tz==null){
+            throw new RuntimeException("Timezone not found: "+name);
+        }
+        return tz.isTimezoneDST(millis);
+    }
 
     /**
      * Gets the default TimeZone for this host. The source of the default TimeZone may vary with implementation.
@@ -110,6 +203,10 @@ public abstract class TTimeZone {
         }
         return defaultTimeZone;
     }
+    
+    public void setDefault(TTimeZone tz){
+        defaultTimeZone=tz;
+    }
 
     int getDSTSavings() {
         return useDaylightTime() ? 3600000 : 0;
@@ -127,6 +224,15 @@ public abstract class TTimeZone {
         return ID;
     }
 
+    public int getOffset(long millis){
+        Date d = new Date(millis);
+        d.setHours(0);
+        d.setMinutes(0);
+        d.setSeconds(0);
+        
+        return getOffset(0, d.getYear(), d.getMonth(), d.getDate(), d.getDay(), (int)(millis-d.getTime()));
+    }
+    
     /**
      * Gets offset, for current date, modified in case of daylight savings. This is the offset to add *to* GMT to get local time. Gets the time zone offset, for current date, modified in case of daylight savings. This is the offset to add *to* GMT to get local time. Assume that the start and end month are distinct. This method may return incorrect results for rules that start at the end of February (e.g., last Sunday in February) or the beginning of March (e.g., March 1).
      */
