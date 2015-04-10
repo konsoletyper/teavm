@@ -18,6 +18,7 @@
 package org.teavm.classlib.java.util;
 
 public class TGregorianCalendar extends TCalendar {
+    
     public static final int BC = 0;
 
     public static final int AD = 1;
@@ -84,7 +85,7 @@ public class TGregorianCalendar extends TCalendar {
         setTimeInMillis(System.currentTimeMillis());
     }
     
-    public TGregorianCalendar(TTimeZone zone, TLocale locale){
+    public TGregorianCalendar(TTimeZone zone, TLocale locale) {
         this(locale);
         setTimeZone(zone);
     }

@@ -30,7 +30,7 @@ import org.teavm.platform.PlatformTimezone;
 public class CalendarTest extends junit.framework.TestCase {
 
     static {
-        if (PlatformTimezone.getTimezone("EST")==null){
+        if (PlatformTimezone.getTimezone("EST")==null) {
             PlatformTimezone.addTimezone("EST", new TimeZoneTest.EST());
         }
     }

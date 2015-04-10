@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 shannah.
+ * Copyright 2015 Steve Hannah.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,15 +31,6 @@ package org.teavm.classlib.java.util;
  */
 public class TSimpleTimeZone extends TTimeZone {
        
-    // BEGIN android-removed
-    // private static com.ibm.icu.util.TimeZone getICUTimeZone(final String name){
-    //     return AccessController.doPrivileged(new PrivilegedAction<com.ibm.icu.util.TimeZone>(){
-    //         public com.ibm.icu.util.TimeZone run() {
-    //             return com.ibm.icu.util.TimeZone.getTimeZone(name);
-    //         }
-    //     });
-    // }
-    // END android-removed
     
     private int rawOffset;
     
@@ -127,16 +118,7 @@ public class TSimpleTimeZone extends TTimeZone {
     public TSimpleTimeZone(int offset, final String name) {
         setID(name);
         rawOffset = offset;
-        // BEGIN android-removed
-        // icuTZ = getICUTimeZone(name);
-        // if (icuTZ instanceof com.ibm.icu.util.SimpleTimeZone) {
-        //     isSimple = true;
-        //     icuTZ.setRawOffset(offset);
-        // } else {
-        //     isSimple = false;
-        // }
-        // useDaylight = icuTZ.useDaylightTime();
-        // END android-removed
+        
     }
     
     /**
@@ -260,20 +242,6 @@ public class TSimpleTimeZone extends TTimeZone {
     public TSimpleTimeZone(int offset, String name, int startMonth,
                           int startDay, int startDayOfWeek, int startTime, int endMonth,
                           int endDay, int endDayOfWeek, int endTime, int daylightSavings) {
-        // BEGIN android-changed
-        // icuTZ = getICUTimeZone(name);
-        // if (icuTZ instanceof com.ibm.icu.util.SimpleTimeZone) {
-        //     isSimple = true;
-        //     com.ibm.icu.util.SimpleTimeZone tz = (com.ibm.icu.util.SimpleTimeZone)icuTZ;
-        //     tz.setRawOffset(offset);
-        //     tz.setStartRule(startMonth, startDay, startDayOfWeek, startTime);
-        //     tz.setEndRule(endMonth, endDay, endDayOfWeek, endTime);
-        //     tz.setDSTSavings(daylightSavings);
-        // } else {
-        //     isSimple = false;
-        // }
-        // setID(name);
-        // rawOffset = offset;
         this(offset, name);
         // END android-changed
         if (daylightSavings <= 0) {
@@ -283,10 +251,6 @@ public class TSimpleTimeZone extends TTimeZone {
         
         setStartRule(startMonth, startDay, startDayOfWeek, startTime);
         setEndRule(endMonth, endDay, endDayOfWeek, endTime);
-        
-        // BEGIN android-removed
-        // useDaylight = daylightSavings > 0 || icuTZ.useDaylightTime();
-        // END android-removed
     }
     
     /**
@@ -747,12 +711,6 @@ public class TSimpleTimeZone extends TTimeZone {
         endDayOfWeek = 0; // Initialize this value for hasSameRules()
         endTime = time;
         setEndMode();
-        // BEGIN android-removed
-        // if (isSimple) {
-        //     ((com.ibm.icu.util.SimpleTimeZone) icuTZ).setEndRule(month,
-        //             dayOfMonth, time);
-        // }
-        // END android-removed
     }
     
     /**
@@ -776,12 +734,6 @@ public class TSimpleTimeZone extends TTimeZone {
         endDayOfWeek = dayOfWeek;
         endTime = time;
         setEndMode();
-        // BEGIN android-removed
-        // if (isSimple) {
-        //     ((com.ibm.icu.util.SimpleTimeZone) icuTZ).setEndRule(month, day,
-        //             dayOfWeek, time);
-        // }
-        // END android-removed
     }
     
     /**
@@ -906,12 +858,6 @@ public class TSimpleTimeZone extends TTimeZone {
         startDayOfWeek = dayOfWeek;
         startTime = time;
         setStartMode();
-        // BEGIN android-removed
-        // if (isSimple) {
-        //     ((com.ibm.icu.util.SimpleTimeZone) icuTZ).setStartRule(month, day,
-        //             dayOfWeek, time);
-        // }
-        // END android-removed
     }
     
     /**
@@ -937,12 +883,6 @@ public class TSimpleTimeZone extends TTimeZone {
         startDayOfWeek = -dayOfWeek;
         startTime = time;
         setStartMode();
-        // BEGIN android-removed
-        // if (isSimple) {
-        //     ((com.ibm.icu.util.SimpleTimeZone) icuTZ).setStartRule(month, day,
-        //             dayOfWeek, time, after);
-        // }
-        // END android-removed
     }
     
     /**
