@@ -30,8 +30,7 @@ package org.teavm.classlib.java.util;
  * @see TimeZone
  */
 public class TSimpleTimeZone extends TTimeZone {
-       
-    
+     
     private int rawOffset;
     
     private int startYear, startMonth, startDay, startDayOfWeek, startTime;
@@ -66,7 +65,6 @@ public class TSimpleTimeZone extends TTimeZone {
     
     private int dstSavings = 3600000;
 
-    
     private static final int MILLIS_PER_SECOND = 1000;
     private static final int MILLIS_PER_MINUTE = 60*MILLIS_PER_SECOND;
     private static final int MILLIS_PER_HOUR = 60*MILLIS_PER_MINUTE;
@@ -96,13 +94,6 @@ public class TSimpleTimeZone extends TTimeZone {
         return MONTH_LENGTH[month + (isLeapYear(year) ? 12 : 0)];
     }
     
-    
-    // BEGIN android-removed
-    // private final transient com.ibm.icu.util.TimeZone icuTZ;
-    //
-    // private final transient boolean isSimple;
-    // END android-removed
-    
     /**
      * Constructs a {@code SimpleTimeZone} with the given base time zone offset from GMT
      * and time zone ID. Timezone IDs can be obtained from
@@ -118,7 +109,6 @@ public class TSimpleTimeZone extends TTimeZone {
     public TSimpleTimeZone(int offset, final String name) {
         setID(name);
         rawOffset = offset;
-        
     }
     
     /**

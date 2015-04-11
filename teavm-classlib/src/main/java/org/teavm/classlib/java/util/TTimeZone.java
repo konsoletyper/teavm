@@ -370,7 +370,6 @@ public abstract class TTimeZone {
         } else {
             return "";
         }
-        
     }
     
     /**
@@ -451,5 +450,3 @@ public abstract class TTimeZone {
      */
     public abstract boolean useDaylightTime();
 }
-
-

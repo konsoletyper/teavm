@@ -397,8 +397,6 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
         }
     }
     
-   
-
     public final void set(int year, int month, int day) {
         set(YEAR, year);
         set(MONTH, month);
