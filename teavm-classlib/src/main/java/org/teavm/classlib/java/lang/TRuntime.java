@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 shannah.
+ * Copyright 2015 Steve Hannah.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,5 +61,4 @@ public class TRuntime {
     public long totalMemory(){
         return Integer.MAX_VALUE;
     }
-
 }
