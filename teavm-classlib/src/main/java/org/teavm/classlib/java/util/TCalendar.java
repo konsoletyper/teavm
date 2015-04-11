@@ -318,11 +318,11 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
     /**
      * Gets a calendar using the specified time zone.
      */
-    public static TCalendar getInstance(TTimeZone zone){
+    public static TCalendar getInstance(TTimeZone zone) {
         return new TGregorianCalendar(zone);
     }
     
-    public static TCalendar getInstance(TTimeZone zone, TLocale locale){
+    public static TCalendar getInstance(TTimeZone zone, TLocale locale) {
         return new TGregorianCalendar(zone, locale);
     }
 
@@ -351,7 +351,7 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
     /**
      * Gets the time zone.
      */
-    public TTimeZone getTimeZone(){
+    public TTimeZone getTimeZone() {
         return zone;
     }
 
@@ -435,7 +435,7 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
     /**
      * Sets the time zone with the given time zone value.
      */
-    public void setTimeZone(TTimeZone value){
+    public void setTimeZone(TTimeZone value) {
         zone = value;
         areFieldsSet = false;
     }
