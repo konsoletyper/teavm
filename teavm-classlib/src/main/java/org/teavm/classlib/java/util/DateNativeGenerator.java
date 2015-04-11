@@ -94,7 +94,7 @@ public class DateNativeGenerator implements Generator, DependencyPlugin {
     }
 
     private void generateBuildNumericUTC(GeneratorContext context, SourceWriter writer) throws IOException {
-        writer.append("Date.UTC(").append(context.getParameterName(1));
+        writer.append("return Date.UTC(").append(context.getParameterName(1));
         for (int i = 2; i <= 6; ++i) {
             writer.append(',').ws().append(context.getParameterName(i));
         }
