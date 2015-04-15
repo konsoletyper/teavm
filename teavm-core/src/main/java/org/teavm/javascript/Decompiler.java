@@ -289,7 +289,7 @@ public class Decompiler {
     private AsyncMethodPart getRegularMethodStatement(Program program, int[] targetBlocks, boolean async) {
         AsyncMethodPart result = new AsyncMethodPart();
         lastBlockId = 1;
-        graph = ProgramUtils.buildControlFlowGraph(program);
+        graph = ProgramUtils.buildControlFlowGraphWithTryCatch(program);
         int[] weights = new int[graph.size()];
         for (int i = 0; i < weights.length; ++i) {
             weights[i] = program.basicBlockAt(i).getInstructions().size();
@@ -349,7 +349,9 @@ public class Decompiler {
                     List<Statement> blockPart = oldBlock.body.subList(bookmark.offset, oldBlock.body.size());
                     tryCatchStmt.getProtectedBody().addAll(blockPart);
                     blockPart.clear();
-                    blockPart.add(tryCatchStmt);
+                    if (!tryCatchStmt.getProtectedBody().isEmpty()) {
+                        blockPart.add(tryCatchStmt);
+                    }
                     inheritedBookmarks.add(bookmark);
                 }
                 oldBlock.tryCatches.clear();
@@ -439,7 +441,9 @@ public class Decompiler {
                         program.basicBlockAt(bookmark.exceptionHandler)));
                 tryCatchStmt.getProtectedBody().addAll(block.body);
                 block.body.clear();
-                block.body.add(tryCatchStmt);
+                if (!tryCatchStmt.getProtectedBody().isEmpty()) {
+                    block.body.add(tryCatchStmt);
+                }
                 block = block.parent;
             }
 
@@ -451,10 +455,14 @@ public class Decompiler {
             List<Statement> blockPart = block.body.subList(bookmark.offset, block.body.size());
             tryCatchStmt.getProtectedBody().addAll(blockPart);
             blockPart.clear();
-            blockPart.add(tryCatchStmt);
+            if (!tryCatchStmt.getProtectedBody().isEmpty()) {
+                blockPart.add(tryCatchStmt);
+            }
 
             bookmark.block.tryCatches.remove(bookmark);
         }
+
+        tryCatchBookmarks.subList(start, tryCatchBookmarks.size()).clear();
 
         // Add new bookmarks
         for (int i = start; i < tryCatchBlocks.size(); ++i) {

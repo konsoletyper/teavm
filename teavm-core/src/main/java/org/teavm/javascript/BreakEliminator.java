@@ -143,9 +143,9 @@ class BreakEliminator implements StatementVisitor {
         outerStatements = new HashSet<>();
         blockSuccessors = new HashMap<>();
         processSequence(statement.getProtectedBody());
-        processSequence(statement.getHandler());
         outerStatements = oldOuterStatements;
         blockSuccessors = oldBlockSuccessors;
+        processSequence(statement.getHandler());
     }
 
     @Override
