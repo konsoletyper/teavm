@@ -343,7 +343,7 @@ public class Decompiler {
                     TryCatchBookmark bookmark = oldBlock.tryCatches.get(j);
                     TryCatchStatement tryCatchStmt = new TryCatchStatement();
                     tryCatchStmt.setExceptionType(bookmark.exceptionType);
-                    tryCatchStmt.setExceptionVariable(tryCatchStmt.getExceptionVariable());
+                    tryCatchStmt.setExceptionVariable(bookmark.exceptionVariable);
                     tryCatchStmt.getHandler().add(generator.generateJumpStatement(
                             program.basicBlockAt(bookmark.exceptionHandler)));
                     List<Statement> blockPart = oldBlock.body.subList(bookmark.offset, oldBlock.body.size());
@@ -436,7 +436,7 @@ public class Decompiler {
             while (block != bookmark.block) {
                 TryCatchStatement tryCatchStmt = new TryCatchStatement();
                 tryCatchStmt.setExceptionType(bookmark.exceptionType);
-                tryCatchStmt.setExceptionVariable(tryCatchStmt.getExceptionVariable());
+                tryCatchStmt.setExceptionVariable(bookmark.exceptionVariable);
                 tryCatchStmt.getHandler().add(generator.generateJumpStatement(
                         program.basicBlockAt(bookmark.exceptionHandler)));
                 tryCatchStmt.getProtectedBody().addAll(block.body);
@@ -449,7 +449,7 @@ public class Decompiler {
 
             TryCatchStatement tryCatchStmt = new TryCatchStatement();
             tryCatchStmt.setExceptionType(bookmark.exceptionType);
-            tryCatchStmt.setExceptionVariable(tryCatchStmt.getExceptionVariable());
+            tryCatchStmt.setExceptionVariable(bookmark.exceptionVariable);
             tryCatchStmt.getHandler().add(generator.generateJumpStatement(
                     program.basicBlockAt(bookmark.exceptionHandler)));
             List<Statement> blockPart = block.body.subList(bookmark.offset, block.body.size());
