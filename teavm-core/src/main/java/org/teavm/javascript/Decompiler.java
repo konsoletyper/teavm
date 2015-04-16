@@ -15,13 +15,56 @@
  */
 package org.teavm.javascript;
 
-import java.util.*;
-import org.teavm.common.*;
-import org.teavm.javascript.ast.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import org.teavm.common.Graph;
+import org.teavm.common.GraphIndexer;
+import org.teavm.common.Loop;
+import org.teavm.common.LoopGraph;
+import org.teavm.common.RangeTree;
+import org.teavm.javascript.ast.AsyncMethodNode;
+import org.teavm.javascript.ast.AsyncMethodPart;
+import org.teavm.javascript.ast.BlockStatement;
+import org.teavm.javascript.ast.ClassNode;
+import org.teavm.javascript.ast.FieldNode;
+import org.teavm.javascript.ast.GotoPartStatement;
+import org.teavm.javascript.ast.IdentifiedStatement;
+import org.teavm.javascript.ast.MethodNode;
+import org.teavm.javascript.ast.NativeMethodNode;
+import org.teavm.javascript.ast.NodeLocation;
+import org.teavm.javascript.ast.NodeModifier;
+import org.teavm.javascript.ast.RegularMethodNode;
+import org.teavm.javascript.ast.SequentialStatement;
+import org.teavm.javascript.ast.Statement;
+import org.teavm.javascript.ast.TryCatchStatement;
+import org.teavm.javascript.ast.WhileStatement;
 import org.teavm.javascript.spi.GeneratedBy;
 import org.teavm.javascript.spi.Generator;
 import org.teavm.javascript.spi.InjectedBy;
-import org.teavm.model.*;
+import org.teavm.model.AnnotationHolder;
+import org.teavm.model.ClassHolder;
+import org.teavm.model.ClassHolderSource;
+import org.teavm.model.ElementModifier;
+import org.teavm.model.FieldHolder;
+import org.teavm.model.Instruction;
+import org.teavm.model.InstructionLocation;
+import org.teavm.model.MethodHolder;
+import org.teavm.model.MethodReference;
+import org.teavm.model.Program;
+import org.teavm.model.TryCatchBlock;
+import org.teavm.model.ValueType;
+import org.teavm.model.Variable;
 import org.teavm.model.util.AsyncProgramSplitter;
 import org.teavm.model.util.ProgramUtils;
 
@@ -74,6 +117,7 @@ public class Decompiler {
 
     static class Block {
         public Block parent;
+        public int parentOffset;
         public final IdentifiedStatement statement;
         public final List<Statement> body;
         public final int end;
@@ -371,9 +415,12 @@ public class Decompiler {
             for (Block newBlock : createBlocks(i)) {
                 block.body.add(newBlock.statement);
                 newBlock.parent = block;
+                newBlock.parentOffset = block.body.size();
                 stack.push(newBlock);
                 block = newBlock;
             }
+
+            updateTryCatchBookmarks(generator, generator.currentBlock.getTryCatchBlocks());
 
             if (node >= 0) {
                 generator.statements.clear();
@@ -397,7 +444,6 @@ public class Decompiler {
                     generator.statements.add(stmt);
                 }
 
-                updateTryCatchBookmarks(generator, generator.currentBlock.getTryCatchBlocks());
                 block.body.addAll(generator.statements);
             }
         }
@@ -424,7 +470,7 @@ public class Decompiler {
                 break;
             }
             if (tryCatch.getExceptionVariable() != null && bookmark.exceptionVariable != null &&
-                    tryCatch.getExceptionVariable().getIndex() != bookmark.exceptionVariable.intValue()) {
+                    tryCatch.getExceptionVariable().getRegister() != bookmark.exceptionVariable.intValue()) {
                 break;
             }
         }
@@ -473,7 +519,7 @@ public class Decompiler {
             bookmark.exceptionHandler = tryCatch.getHandler().getIndex();
             bookmark.exceptionType = tryCatch.getExceptionType();
             bookmark.exceptionVariable = tryCatch.getExceptionVariable() != null ?
-                    tryCatch.getExceptionVariable().getIndex() : null;
+                    tryCatch.getExceptionVariable().getRegister() : null;
             bookmark.block.tryCatches.add(bookmark);
             tryCatchBookmarks.add(bookmark);
         }
