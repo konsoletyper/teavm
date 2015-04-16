@@ -370,6 +370,8 @@ public class Decompiler {
                 generator.nextBlock = tmp >= 0 && next < indexer.size() ? program.basicBlockAt(tmp) : null;
             }
 
+            closeExpiredBookmarks(generator, generator.currentBlock.getTryCatchBlocks());
+
             List<TryCatchBookmark> inheritedBookmarks = new ArrayList<>();
             Block block = stack.peek();
             while (block.end == i) {
@@ -419,8 +421,7 @@ public class Decompiler {
                 stack.push(newBlock);
                 block = newBlock;
             }
-
-            updateTryCatchBookmarks(generator, generator.currentBlock.getTryCatchBlocks());
+            createNewBookmarks(generator.currentBlock.getTryCatchBlocks());
 
             if (node >= 0) {
                 generator.statements.clear();
@@ -453,7 +454,7 @@ public class Decompiler {
         return result;
     }
 
-    private void updateTryCatchBookmarks(StatementGenerator generator, List<TryCatchBlock> tryCatchBlocks) {
+    private void closeExpiredBookmarks(StatementGenerator generator, List<TryCatchBlock> tryCatchBlocks) {
         tryCatchBlocks = new ArrayList<>(tryCatchBlocks);
         Collections.reverse(tryCatchBlocks);
 
@@ -510,8 +511,11 @@ public class Decompiler {
 
         tryCatchBookmarks.subList(start, tryCatchBookmarks.size()).clear();
 
+    }
+
+    private void createNewBookmarks(List<TryCatchBlock> tryCatchBlocks) {
         // Add new bookmarks
-        for (int i = start; i < tryCatchBlocks.size(); ++i) {
+        for (int i = tryCatchBookmarks.size(); i < tryCatchBlocks.size(); ++i) {
             TryCatchBlock tryCatch = tryCatchBlocks.get(i);
             TryCatchBookmark bookmark = new TryCatchBookmark();
             bookmark.block = stack.peek();
