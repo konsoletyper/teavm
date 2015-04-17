@@ -15,6 +15,7 @@
  */
 package org.teavm.javascript;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.teavm.javascript.ast.*;
@@ -23,28 +24,38 @@ import org.teavm.javascript.ast.*;
  *
  * @author Alexey Andreev
  */
-class EscapingStatementFinder implements StatementVisitor{
+class EscapingStatementFinder implements StatementVisitor {
     public boolean escaping;
-    private Set<IdentifiedStatement> outerStatements;
-
-    public EscapingStatementFinder(Set<IdentifiedStatement> nestingStatements) {
-        this.outerStatements = nestingStatements;
-    }
+    private boolean last = true;
+    private Set<IdentifiedStatement> outerStatements = new HashSet<>();
 
     public boolean check(List<Statement> statements) {
-        if (!escaping) {
-            if (statements.isEmpty()) {
-                escaping = true;
-            } else {
-                statements.get(statements.size() - 1).acceptVisitor(this);
+        if (escaping) {
+            return true;
+        }
+        if (statements.isEmpty()) {
+            escaping = last;
+            return true;
+        }
+        boolean oldLast = last;
+        for (int i = 0; i < statements.size(); ++i) {
+            last = false;
+            statements.get(i).acceptVisitor(this);
+            if (escaping) {
+                break;
             }
         }
+        last = oldLast;
+        if (!escaping) {
+            statements.get(statements.size() - 1).acceptVisitor(this);
+        }
+        last = oldLast;
         return escaping;
     }
 
     @Override
     public void visit(AssignmentStatement statement) {
-        escaping = true;
+        escaping |= last;
     }
 
     @Override
@@ -73,7 +84,11 @@ class EscapingStatementFinder implements StatementVisitor{
 
     @Override
     public void visit(WhileStatement statement) {
-        escaping = true;
+        outerStatements.add(statement);
+        if (!check(statement.getBody()) && statement.getCondition() != null) {
+            escaping |= last;
+        }
+        outerStatements.remove(statement);
     }
 
     @Override
@@ -85,12 +100,12 @@ class EscapingStatementFinder implements StatementVisitor{
 
     @Override
     public void visit(BreakStatement statement) {
-        escaping = !outerStatements.contains(statement.getTarget());
+        escaping |= !outerStatements.contains(statement.getTarget());
     }
 
     @Override
     public void visit(ContinueStatement statement) {
-        escaping = !outerStatements.contains(statement.getTarget());
+        escaping |= !outerStatements.contains(statement.getTarget());
     }
 
     @Override
@@ -103,7 +118,7 @@ class EscapingStatementFinder implements StatementVisitor{
 
     @Override
     public void visit(InitClassStatement statement) {
-        escaping = true;
+        escaping |= last;
     }
 
     @Override
@@ -118,11 +133,11 @@ class EscapingStatementFinder implements StatementVisitor{
 
     @Override
     public void visit(MonitorEnterStatement statement) {
-        escaping = true;
+        escaping |= last;
     }
 
     @Override
     public void visit(MonitorExitStatement statement) {
-        escaping = true;
+        escaping |= last;
     }
 }

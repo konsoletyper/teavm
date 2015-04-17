@@ -161,6 +161,6 @@ class BreakEliminator implements StatementVisitor {
     }
 
     private boolean escapes(List<Statement> statements) {
-        return new EscapingStatementFinder(outerStatements).check(statements);
+        return new EscapingStatementFinder().check(statements);
     }
 }
