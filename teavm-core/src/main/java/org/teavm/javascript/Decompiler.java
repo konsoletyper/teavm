@@ -470,10 +470,6 @@ public class Decompiler {
             if (!Objects.equals(tryCatch.getExceptionType(), bookmark.exceptionType)) {
                 break;
             }
-            if (tryCatch.getExceptionVariable() != null && bookmark.exceptionVariable != null &&
-                    tryCatch.getExceptionVariable().getRegister() != bookmark.exceptionVariable.intValue()) {
-                break;
-            }
         }
 
         // Close old bookmarks
@@ -523,7 +519,7 @@ public class Decompiler {
             bookmark.exceptionHandler = tryCatch.getHandler().getIndex();
             bookmark.exceptionType = tryCatch.getExceptionType();
             bookmark.exceptionVariable = tryCatch.getExceptionVariable() != null ?
-                    tryCatch.getExceptionVariable().getRegister() : null;
+                    tryCatch.getExceptionVariable().getIndex() : null;
             bookmark.block.tryCatches.add(bookmark);
             tryCatchBookmarks.add(bookmark);
         }
