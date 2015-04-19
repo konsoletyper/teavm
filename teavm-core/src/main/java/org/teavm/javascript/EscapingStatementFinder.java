@@ -28,6 +28,8 @@ class EscapingStatementFinder implements StatementVisitor {
     public boolean escaping;
     private boolean last = true;
     private Set<IdentifiedStatement> outerStatements = new HashSet<>();
+    private Set<IdentifiedStatement> breakTargets = new HashSet<>();
+    private IdentifiedStatement currentBlock;
 
     public boolean check(List<Statement> statements) {
         if (escaping) {
@@ -72,6 +74,8 @@ class EscapingStatementFinder implements StatementVisitor {
 
     @Override
     public void visit(SwitchStatement statement) {
+        IdentifiedStatement oldCurrentBlock = currentBlock;
+        currentBlock = statement;
         outerStatements.add(statement);
         for (SwitchClause clause : statement.getClauses()) {
             if (check(clause.getBody())) {
@@ -80,32 +84,50 @@ class EscapingStatementFinder implements StatementVisitor {
         }
         check(statement.getDefaultClause());
         outerStatements.remove(statement);
+        currentBlock = oldCurrentBlock;
+        if (breakTargets.contains(statement)) {
+            escaping |= last;
+        }
     }
 
     @Override
     public void visit(WhileStatement statement) {
+        IdentifiedStatement oldCurrentBlock = currentBlock;
+        currentBlock = statement;
         outerStatements.add(statement);
         if (!check(statement.getBody()) && statement.getCondition() != null) {
             escaping |= last;
         }
         outerStatements.remove(statement);
+        currentBlock = oldCurrentBlock;
+        if (breakTargets.contains(statement)) {
+            escaping |= last;
+        }
     }
 
     @Override
     public void visit(BlockStatement statement) {
+        IdentifiedStatement oldCurrentBlock = currentBlock;
+        currentBlock = statement;
         outerStatements.add(statement);
         check(statement.getBody());
         outerStatements.remove(statement);
+        currentBlock = oldCurrentBlock;
+        if (breakTargets.contains(statement)) {
+            escaping |= last;
+        }
     }
 
     @Override
     public void visit(BreakStatement statement) {
-        escaping |= !outerStatements.contains(statement.getTarget());
+        IdentifiedStatement target = statement.getTarget() != null ? statement.getTarget() : currentBlock;
+        if (target != null) {
+            breakTargets.add(target);
+        }
     }
 
     @Override
     public void visit(ContinueStatement statement) {
-        escaping |= !outerStatements.contains(statement.getTarget());
     }
 
     @Override

@@ -27,14 +27,24 @@ import org.teavm.javascript.ast.*;
 class AllBlocksCountVisitor implements StatementVisitor {
     private Map<IdentifiedStatement, Integer> blocksCount = new HashMap<>();
     private IdentifiedStatement currentBlock;
+    private boolean last = true;
 
     public void visit(List<Statement> statements) {
         if (statements == null) {
             return;
         }
-        for (Statement part : statements) {
-            part.acceptVisitor(this);
+        if (statements.isEmpty()) {
+            incrementCurrentBlock();
+            return;
         }
+        boolean oldLast = last;
+        for (int i = 0; i < statements.size() - 1; ++i) {
+            last = false;
+            statements.get(i).acceptVisitor(this);
+        }
+        last = true;
+        statements.get(statements.size() - 1).acceptVisitor(this);
+        last = oldLast;
     }
 
     public int getCount(IdentifiedStatement statement) {
@@ -44,6 +54,9 @@ class AllBlocksCountVisitor implements StatementVisitor {
 
     @Override
     public void visit(AssignmentStatement statement) {
+        if (last) {
+            incrementCurrentBlock();
+        }
     }
 
     @Override
@@ -66,6 +79,9 @@ class AllBlocksCountVisitor implements StatementVisitor {
         }
         visit(statement.getDefaultClause());
         currentBlock = oldCurrentBlock;
+        if (last && blocksCount.containsKey(statement)) {
+            incrementCurrentBlock();
+        }
     }
 
     @Override
@@ -74,6 +90,9 @@ class AllBlocksCountVisitor implements StatementVisitor {
         currentBlock = statement;
         visit(statement.getBody());
         currentBlock = oldCurrentBlock;
+        if (last && (statement.getCondition() != null || blocksCount.containsKey(statement))) {
+            incrementCurrentBlock();
+        }
     }
 
     @Override
@@ -82,6 +101,9 @@ class AllBlocksCountVisitor implements StatementVisitor {
         currentBlock = statement;
         visit(statement.getBody());
         currentBlock = oldCurrentBlock;
+        if (last && blocksCount.containsKey(statement)) {
+            incrementCurrentBlock();
+        }
     }
 
     @Override
@@ -90,7 +112,7 @@ class AllBlocksCountVisitor implements StatementVisitor {
         if (target == null) {
             target = currentBlock;
         }
-        blocksCount.put(target, getCount(target) + 1);
+        incrementBlock(target);
     }
 
     @Override
@@ -99,7 +121,17 @@ class AllBlocksCountVisitor implements StatementVisitor {
         if (target == null) {
             target = currentBlock;
         }
-        blocksCount.put(target, getCount(target) + 1);
+        incrementBlock(target);
+    }
+
+    private void incrementBlock(IdentifiedStatement statement) {
+        blocksCount.put(statement, getCount(statement) + 1);
+    }
+
+    private void incrementCurrentBlock() {
+        if (currentBlock != null) {
+            incrementBlock(currentBlock);
+        }
     }
 
     @Override
@@ -126,9 +158,15 @@ class AllBlocksCountVisitor implements StatementVisitor {
 
     @Override
     public void visit(MonitorEnterStatement statement) {
+        if (last) {
+            incrementCurrentBlock();
+        }
     }
 
     @Override
     public void visit(MonitorExitStatement statement) {
+        if (last) {
+            incrementCurrentBlock();
+        }
     }
 }
