@@ -367,7 +367,7 @@ public class ProgramParser implements VariableDebugInformation {
     }
 
     // TODO: invokedynamic support (a great task, involving not only parser, but every layer of TeaVM)
-    private MethodVisitor methodVisitor = new MethodVisitor(Opcodes.ASM4) {
+    private MethodVisitor methodVisitor = new MethodVisitor(Opcodes.ASM5) {
         @Override
         public void visitVarInsn(int opcode, int local) {
             switch (opcode) {
