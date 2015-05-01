@@ -93,7 +93,7 @@ public final class TMath extends TObject {
     public static native double atan2(double y, double x);
 
     public static int round(float a) {
-        return (int)(a + 1.5f);
+        return (int)(a + 0.5f);
     }
 
     public static long round(double a) {
