@@ -2079,8 +2079,10 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     @Override
     public void visit(GotoPartStatement statement) {
         try {
-            writer.append(pointerName()).ws().append("=").ws().append(statement.getPart()).append(";")
-                    .softNewLine();
+            if (statement.getPart() != currentPart) {
+                writer.append(pointerName()).ws().append("=").ws().append(statement.getPart()).append(";")
+                        .softNewLine();
+            }
             if (!end || statement.getPart() != currentPart + 1) {
                 writer.append("continue ").append(mainLoopName()).append(";").softNewLine();
             }

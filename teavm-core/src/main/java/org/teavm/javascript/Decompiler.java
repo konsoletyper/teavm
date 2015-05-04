@@ -338,7 +338,13 @@ public class Decompiler {
         for (int i = 0; i < weights.length; ++i) {
             weights[i] = program.basicBlockAt(i).getInstructions().size();
         }
-        indexer = new GraphIndexer(graph, weights);
+        int[] priorities = new int[graph.size()];
+        for (int i = 0; i < targetBlocks.length; ++i) {
+            if (targetBlocks[i] >= 0) {
+                priorities[i] = 1;
+            }
+        }
+        indexer = new GraphIndexer(graph, weights, priorities);
         graph = indexer.getGraph();
         loopGraph = new LoopGraph(this.graph);
         unflatCode();
