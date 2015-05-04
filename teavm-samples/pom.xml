@@ -35,5 +35,6 @@
     <module>teavm-samples-storage</module>
     <module>teavm-samples-video</module>
     <module>teavm-samples-async</module>
+    <module>teavm-samples-kotlin</module>
   </modules>
 </project>

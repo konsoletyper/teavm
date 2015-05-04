@@ -67,6 +67,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     private Map<String, String> blockIdMap = new HashMap<>();
     private List<Set<String>> debugNames = new ArrayList<>();
     private List<String> cachedVariableNames = new ArrayList<>();
+    private boolean end;
+    private int currentPart;
 
     private static class OperatorPrecedence {
         Priority priority;
@@ -657,6 +659,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     }
                     writer.append(";").softNewLine();
                 }
+                end = true;
+                currentPart = 0;
                 method.getBody().acceptVisitor(Renderer.this);
             } catch (IOException e) {
                 throw new RenderingException("IO error occured", e);
@@ -743,6 +747,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                         emitSuspendChecker();
                     }
                     AsyncMethodPart part = methodNode.getBody().get(i);
+                    end = true;
+                    currentPart = i;
                     part.getStatement().acceptVisitor(Renderer.this);
                     writer.outdent();
                 }
@@ -901,9 +907,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
 
     @Override
     public void visit(SequentialStatement statement) {
-        for (Statement part : statement.getSequence()) {
-            part.acceptVisitor(this);
-        }
+        visitStatements(statement.getSequence());
     }
 
     @Override
@@ -924,9 +928,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 }
                 debugEmitter.emitCallSite();
                 writer.append(")").ws().append("{").softNewLine().indent();
-                for (Statement part : statement.getConsequent()) {
-                    part.acceptVisitor(this);
-                }
+                visitStatements(statement.getConsequent());
                 if (!statement.getAlternative().isEmpty()) {
                     writer.outdent().append("}").ws();
                     if (statement.getAlternative().size() == 1 &&
@@ -936,9 +938,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                         continue;
                     }
                     writer.append("else").ws().append("{").indent().softNewLine();
-                    for (Statement part : statement.getAlternative()) {
-                        part.acceptVisitor(this);
-                    }
+                    visitStatements(statement.getAlternative());
                 }
                 break;
             }
@@ -973,16 +973,22 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     writer.append("case ").append(condition).append(":").softNewLine();
                 }
                 writer.indent();
+                boolean oldEnd = end;
                 for (Statement part : clause.getBody()) {
+                    end = false;
                     part.acceptVisitor(this);
                 }
+                end = oldEnd;
                 writer.outdent();
             }
             if (statement.getDefaultClause() != null) {
                 writer.append("default:").softNewLine().indent();
+                boolean oldEnd = end;
                 for (Statement part : statement.getDefaultClause()) {
+                    end = false;
                     part.acceptVisitor(this);
                 }
+                end = oldEnd;
                 writer.outdent();
             }
             writer.outdent().append("}").softNewLine();
@@ -1015,9 +1021,12 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 writer.append("true");
             }
             writer.append(")").ws().append("{").softNewLine().indent();
+            boolean oldEnd = end;
             for (Statement part : statement.getBody()) {
+                end = false;
                 part.acceptVisitor(this);
             }
+            end = oldEnd;
             writer.outdent().append("}").softNewLine();
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
@@ -1047,9 +1056,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     public void visit(BlockStatement statement) {
         try {
             writer.append(mapBlockId(statement.getId())).append(":").ws().append("{").softNewLine().indent();
-            for (Statement part : statement.getBody()) {
-                part.acceptVisitor(this);
-            }
+            visitStatements(statement.getBody());
             writer.outdent().append("}").softNewLine();
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
@@ -2019,6 +2026,17 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         }
     }
 
+    private void visitStatements(List<Statement> statements) {
+        boolean oldEnd = end;
+        for (int i = 0; i < statements.size() - 1; ++i) {
+            end = false;
+            statements.get(i).acceptVisitor(this);
+        }
+        end = oldEnd;
+        statements.get(statements.size() - 1).acceptVisitor(this);
+        end = oldEnd;
+    }
+
     @Override
     public void visit(TryCatchStatement statement) {
         try {
@@ -2031,9 +2049,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 sequence.add(nextStatement);
                 protectedBody = nextStatement.getProtectedBody();
             }
-            for (Statement part : protectedBody) {
-                part.acceptVisitor(this);
-            }
+            visitStatements(protectedBody);
             writer.outdent().append("}").ws().append("catch").ws().append("($e)")
                     .ws().append("{").indent().softNewLine();
             writer.append("$je").ws().append("=").ws().append("$e.$javaException;").softNewLine();
@@ -2048,9 +2064,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     writer.append(variableName(catchClause.getExceptionVariable())).ws().append("=").ws()
                             .append("$je;").softNewLine();
                 }
-                for (Statement part : catchClause.getHandler()) {
-                    part.acceptVisitor(this);
-                }
+                visitStatements(catchClause.getHandler());
                 writer.outdent().append("}").ws().append("else ");
             }
             writer.append("{").indent().softNewLine();
@@ -2065,9 +2079,13 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     @Override
     public void visit(GotoPartStatement statement) {
         try {
-            writer.append(pointerName()).ws().append("=").ws().append(statement.getPart()).append(";")
-                    .softNewLine();
-            writer.append("continue ").append(mainLoopName()).append(";").softNewLine();
+            if (statement.getPart() != currentPart) {
+                writer.append(pointerName()).ws().append("=").ws().append(statement.getPart()).append(";")
+                        .softNewLine();
+            }
+            if (!end || statement.getPart() != currentPart + 1) {
+                writer.append("continue ").append(mainLoopName()).append(";").softNewLine();
+            }
         } catch (IOException ex){
             throw new RenderingException("IO error occured", ex);
         }

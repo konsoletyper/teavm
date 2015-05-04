@@ -250,6 +250,14 @@ function $rt_createByteMultiArray(dimensions) {
     }
     return $rt_createMultiArrayImpl($rt_bytecls(), arrays, dimensions);
 }
+function $rt_createCharMultiArray(dimensions) {
+    var arrays = new Array($rt_primitiveArrayCount(dimensions));
+    var firstDim = dimensions[0] | 0;
+    for (var i = 0 | 0; i < arrays.length; i = (i + 1) | 0) {
+        arrays[i] = $rt_createCharArray(firstDim);
+    }
+    return $rt_createMultiArrayImpl($rt_charcls(), arrays, dimensions);
+}
 function $rt_createBooleanMultiArray(dimensions) {
     var arrays = new Array($rt_primitiveArrayCount(dimensions));
     var firstDim = dimensions[0] | 0;

@@ -37,11 +37,14 @@ public class GraphIndexer {
     private DominatorTree domTree;
     private int lastIndex;
     private int[] weights;
+    private int[] priorities;
 
-    public GraphIndexer(Graph graph, int[] weights) {
+    public GraphIndexer(Graph graph, int[] weights, int[] priorities) {
         int sz = graph.size();
-        this.weights = weights;
-        propagateWeights(graph, weights);
+        this.weights = weights.clone();
+        propagateWeights(graph, this.weights);
+        this.priorities = priorities.clone();
+        propagatePriorities(graph, this.priorities);
         indexToNode = new int[sz + 1];
         nodeToIndex = new int[sz + 1];
         Arrays.fill(nodeToIndex, -1);
@@ -99,6 +102,39 @@ public class GraphIndexer {
         }
     }
 
+    private void propagatePriorities(Graph graph, int[] priorities) {
+        boolean allZero = true;
+        for (int i = 0; i < priorities.length; ++i) {
+            if (priorities[i] != 0) {
+                allZero = false;
+                break;
+            }
+        }
+        if (allZero) {
+            return;
+        }
+
+        DominatorTree domTree = GraphUtils.buildDominatorTree(graph);
+        Graph domGraph = GraphUtils.buildDominatorGraph(domTree, graph.size());
+        IntegerStack stack = new IntegerStack(graph.size() * 2);
+        for (int i = 0; i < domGraph.size(); ++i) {
+            if (domGraph.outgoingEdgesCount(i) == 0) {
+                stack.push(i);
+            }
+        }
+        while (!stack.isEmpty()) {
+            int node = stack.pop();
+            int parent = domTree.immediateDominatorOf(node);
+            if (parent < 0) {
+                continue;
+            }
+            if (priorities[parent] < priorities[node]) {
+                priorities[parent] = priorities[node];
+                stack.push(parent);
+            }
+        }
+    }
+
     private void sort(Graph graph) {
         int sz = graph.size();
         byte[] state = new byte[sz];
@@ -128,7 +164,7 @@ public class GraphIndexer {
                         IntSet loopNodes = IntOpenHashSet.from(findNaturalLoop(node, terminalNodes.getAll()));
                         for (int succ : successors) {
                             if (loopNodes.contains(succ)) {
-                                succList.add(new WeightedNode(succ, weights[succ]));
+                                succList.add(new WeightedNode(succ, priorities[succ], weights[succ]));
                             }
                         }
                         Collections.sort(succList);
@@ -142,7 +178,7 @@ public class GraphIndexer {
                             for (int succ : graph.outgoingEdges(loopNode.value)) {
                                 if (!loopNodes.contains(succ)) {
                                     if (outerSuccessors.add(succ)) {
-                                        succList.add(new WeightedNode(succ, weights[succ]));
+                                        succList.add(new WeightedNode(succ, priorities[succ], weights[succ]));
                                     }
                                 }
                             }
@@ -153,7 +189,7 @@ public class GraphIndexer {
                         }
                     } else {
                         for (int succ : successors) {
-                            succList.add(new WeightedNode(succ, weights[succ]));
+                            succList.add(new WeightedNode(succ, priorities[succ], weights[succ]));
                         }
                         Collections.sort(succList);
                         for (WeightedNode wnode : succList) {
@@ -209,15 +245,21 @@ public class GraphIndexer {
 
     static class WeightedNode implements Comparable<WeightedNode> {
         int index;
+        int priority;
         int weight;
 
-        public WeightedNode(int index, int weight) {
+        public WeightedNode(int index, int priority, int weight) {
             this.index = index;
+            this.priority = priority;
             this.weight = weight;
         }
 
         @Override
         public int compareTo(WeightedNode o) {
+            int r = Integer.compare(priority, o.priority);
+            if (r != 0) {
+                return r;
+            }
             return Integer.compare(weight, o.weight);
         }
     }

@@ -367,7 +367,7 @@ public class ProgramParser implements VariableDebugInformation {
     }
 
     // TODO: invokedynamic support (a great task, involving not only parser, but every layer of TeaVM)
-    private MethodVisitor methodVisitor = new MethodVisitor(Opcodes.ASM4) {
+    private MethodVisitor methodVisitor = new MethodVisitor(Opcodes.ASM5) {
         @Override
         public void visitVarInsn(int opcode, int local) {
             switch (opcode) {
@@ -485,7 +485,12 @@ public class ProgramParser implements VariableDebugInformation {
         }
 
         @Override
-        public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+        public void visitInvokeDynamicInsn(String name, String desc, Handle bsm, Object... bsmArgs) {
+            throw new IllegalStateException("InvokeDynamic is not supported in TeaVM");
+        }
+
+        @Override
+        public void visitMethodInsn(int opcode, String owner, String name, String desc, boolean itf) {
             switch (opcode) {
                 case Opcodes.INVOKEINTERFACE:
                 case Opcodes.INVOKEVIRTUAL:
