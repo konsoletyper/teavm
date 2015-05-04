@@ -60,7 +60,7 @@ public class TGregorianCalendar extends TCalendar {
     }
     
     public TGregorianCalendar(TTimeZone zone) {
-        setTimeZone(zone);
+        this(zone, TLocale.getDefault());
     }
 
     public TGregorianCalendar(int year, int month, int day) {
