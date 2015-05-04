@@ -146,6 +146,15 @@ public class TThrowable extends RuntimeException {
         stream.println(TString.wrap(getClass().getName() + ": " + getMessage()));
     }
 
+    @Rename("getStackTrace")
+    public TStackTraceElement[] getStackTrace0() {
+        return new TStackTraceElement[0];
+    }
+
+    public void setStackTrace(@SuppressWarnings("unused") TStackTraceElement[] stackTrace) {
+        // do nothing
+    }
+
     @Rename("getSuppressed")
     public final TThrowable[] getSuppressed0() {
         return TArrays.copyOf(suppressed, suppressed.length);

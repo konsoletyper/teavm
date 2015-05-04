@@ -93,13 +93,13 @@ public final class TeaVMRunner {
                 .create('c'));
         options.addOption(OptionBuilder
                 .withDescription("Wait for command after compilation, in order to enable hot recompilation")
-                .withLongOpt("--wait")
+                .withLongOpt("wait")
                 .create('w'));
         options.addOption(OptionBuilder
                 .withArgName("classpath")
                 .hasArgs()
                 .withDescription("Additional classpath that will be reloaded by TeaVM each time in wait mode")
-                .withLongOpt("--classpath")
+                .withLongOpt("classpath")
                 .create('p'));
 
         if (args.length == 0) {

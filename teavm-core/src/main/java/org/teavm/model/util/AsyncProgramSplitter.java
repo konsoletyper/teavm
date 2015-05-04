@@ -189,7 +189,11 @@ public class AsyncProgramSplitter {
             copy.createBasicBlock();
         }
         for (int i = 0; i < program.variableCount(); ++i) {
+            Variable var = program.variableAt(i);
             copy.createVariable();
+            Variable varCopy = copy.variableAt(i);
+            varCopy.setRegister(var.getRegister());
+            varCopy.getDebugNames().addAll(var.getDebugNames());
         }
         return copy;
     }

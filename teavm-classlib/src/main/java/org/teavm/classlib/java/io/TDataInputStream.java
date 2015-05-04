@@ -240,13 +240,14 @@ public class TDataInputStream extends TFilterInputStream implements TDataInput {
         int a;
         while (count < utfSize) {
             char ch = (char)buf[offset + count++];
+            out[s] = ch;
             if (ch < '\u0080') {
-                out[s++] = ch;
+                s++;
             } else if (((a = out[s]) & 0xe0) == 0xc0) {
                 if (count >= utfSize) {
                     throw new TUTFDataFormatException(TString.wrap("End of stream reached"));
                 }
-                int b = buf[count++];
+                int b = buf[offset + count++];
                 if ((b & 0xC0) != 0x80) {
                     throw new TUTFDataFormatException(TString.wrap("Malformed UTF-8 sequence"));
                 }
@@ -255,8 +256,8 @@ public class TDataInputStream extends TFilterInputStream implements TDataInput {
                 if (count + 1 >= utfSize) {
                     throw new TUTFDataFormatException(TString.wrap("Malformed UTF-8 sequence"));
                 }
-                int b = buf[count++];
-                int c = buf[count++];
+                int b = buf[offset + count++];
+                int c = buf[offset + count++];
                 if (((b & 0xC0) != 0x80) || ((c & 0xC0) != 0x80)) {
                     throw new TUTFDataFormatException(TString.wrap("Malformed UTF-8 sequence"));
                 }

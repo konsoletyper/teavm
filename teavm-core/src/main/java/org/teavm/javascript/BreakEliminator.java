@@ -26,7 +26,6 @@ class BreakEliminator implements StatementVisitor {
     private Map<BlockStatement, List<Statement>> blockSuccessors = new HashMap<>();
     private Set<IdentifiedStatement> outerStatements = new HashSet<>();
     private List<Statement> currentSequence;
-    private boolean sequenceEscapes;
     private int currentIndex;
     private AllBlocksCountVisitor usageCounter;
 
@@ -39,15 +38,12 @@ class BreakEliminator implements StatementVisitor {
     private void processSequence(List<Statement> statements) {
         List<Statement> oldSequence = currentSequence;
         int oldIndex = currentIndex;
-        boolean oldEscapes = sequenceEscapes;
 
-        sequenceEscapes = escapes(statements);
         currentSequence = statements;
         for (currentIndex = 0; currentIndex < currentSequence.size(); ++currentIndex) {
             statements.get(currentIndex).acceptVisitor(this);
         }
 
-        sequenceEscapes = oldEscapes;
         currentIndex = oldIndex;
         currentSequence = oldSequence;
     }
@@ -93,7 +89,7 @@ class BreakEliminator implements StatementVisitor {
     @Override
     public void visit(BlockStatement statement) {
         outerStatements.add(statement);
-        if (!sequenceEscapes && !escapes(statement.getBody())) {
+        if (!escapes(currentSequence.subList(currentIndex + 1, currentSequence.size()))) {
             blockSuccessors.put(statement, currentSequence.subList(currentIndex + 1, currentSequence.size()));
         }
         processSequence(statement.getBody());
@@ -110,7 +106,6 @@ class BreakEliminator implements StatementVisitor {
                 currentSequence.addAll(successors);
                 successors.clear();
                 --currentIndex;
-                sequenceEscapes = escapes(currentSequence);
                 return;
             }
         }
@@ -143,9 +138,9 @@ class BreakEliminator implements StatementVisitor {
         outerStatements = new HashSet<>();
         blockSuccessors = new HashMap<>();
         processSequence(statement.getProtectedBody());
-        processSequence(statement.getHandler());
         outerStatements = oldOuterStatements;
         blockSuccessors = oldBlockSuccessors;
+        processSequence(statement.getHandler());
     }
 
     @Override
@@ -161,6 +156,6 @@ class BreakEliminator implements StatementVisitor {
     }
 
     private boolean escapes(List<Statement> statements) {
-        return new EscapingStatementFinder(outerStatements).check(statements);
+        return new EscapingStatementFinder(usageCounter).check(statements);
     }
 }
