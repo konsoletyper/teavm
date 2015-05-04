@@ -167,4 +167,8 @@ public class TThread extends TObject implements TRunnable {
     public final int getPriority(){
         return this.priority;
     }
+
+    public TStackTraceElement[] getStackTrace() {
+        return new TStackTraceElement[0];
+    }
 }
