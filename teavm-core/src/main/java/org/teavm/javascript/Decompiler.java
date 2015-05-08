@@ -66,6 +66,7 @@ import org.teavm.model.TryCatchBlock;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
 import org.teavm.model.util.AsyncProgramSplitter;
+import org.teavm.model.util.ListingBuilder;
 import org.teavm.model.util.ProgramUtils;
 
 /**
@@ -260,7 +261,13 @@ public class Decompiler {
         Program program = method.getProgram();
         int[] targetBlocks = new int[program.basicBlockCount()];
         Arrays.fill(targetBlocks, -1);
-        methodNode.setBody(getRegularMethodStatement(program, targetBlocks, false).getStatement());
+        try {
+            methodNode.setBody(getRegularMethodStatement(program, targetBlocks, false).getStatement());
+        } catch (RuntimeException e) {
+            StringBuilder sb = new StringBuilder("Error decompiling method " + method.getReference() + ":\n");
+            sb.append(new ListingBuilder().buildListing(program, "  "));
+            throw new DecompilationException(sb.toString(), e);
+        }
         for (int i = 0; i < program.variableCount(); ++i) {
             methodNode.getVariables().add(program.variableAt(i).getRegister());
         }
@@ -311,8 +318,15 @@ public class Decompiler {
         AsyncProgramSplitter splitter = new AsyncProgramSplitter(classSource, splitMethods);
         splitter.split(method.getProgram());
         for (int i = 0; i < splitter.size(); ++i) {
-            AsyncMethodPart part = getRegularMethodStatement(splitter.getProgram(i), splitter.getBlockSuccessors(i),
-                    i > 0);
+            AsyncMethodPart part;
+            try {
+                part = getRegularMethodStatement(splitter.getProgram(i), splitter.getBlockSuccessors(i), i > 0);
+            } catch (RuntimeException e) {
+                StringBuilder sb = new StringBuilder("Error decompiling method " + method.getReference() +
+                        " part " + i + ":\n");
+                sb.append(new ListingBuilder().buildListing(splitter.getProgram(i), "  "));
+                throw new DecompilationException(sb.toString(), e);
+            }
             node.getBody().add(part);
         }
         Program program = method.getProgram();
