@@ -18,6 +18,7 @@ package org.teavm.jso.plugin;
 import java.io.IOException;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.dependency.*;
+import org.teavm.javascript.Renderer;
 import org.teavm.javascript.ast.ConstantExpr;
 import org.teavm.javascript.ast.Expr;
 import org.teavm.javascript.ast.InvocationExpr;
@@ -127,6 +128,13 @@ public class JSNativeGenerator implements Injector, DependencyPlugin, Generator 
                 break;
             case "wrap":
                 if (methodRef.getDescriptor().parameterType(0).isObject("java.lang.String")) {
+                    if (context.getArgument(0) instanceof ConstantExpr) {
+                        ConstantExpr constant = (ConstantExpr)context.getArgument(0);
+                        if (constant.getValue() instanceof String) {
+                            writer.append('"').append(Renderer.escapeString((String)constant.getValue())).append('"');
+                            break;
+                        }
+                    }
                     writer.append("$rt_ustr(");
                     context.writeExpr(context.getArgument(0));
                     writer.append(")");
