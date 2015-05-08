@@ -120,7 +120,7 @@
               <targetDirectory>${project.build.directory}/generated/js/teavm</targetDirectory>
               <mainClass>org.teavm.samples.benchmark.teavm.BenchmarkStarter</mainClass>
               <runtime>SEPARATE</runtime>
-              <minifying>true</minifying>
+              <minifying>false</minifying>
               <debugInformationGenerated>true</debugInformationGenerated>
             </configuration>
           </execution>

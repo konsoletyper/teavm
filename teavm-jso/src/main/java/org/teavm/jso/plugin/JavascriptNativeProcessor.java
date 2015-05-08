@@ -59,6 +59,48 @@ class JavascriptNativeProcessor {
         this.diagnostics = diagnostics;
     }
 
+    public MethodReference isFunctor(String className) {
+        if (!nativeRepos.isJavaScriptImplementation(className)) {
+            return null;
+        }
+        ClassReader cls = classSource.get(className);
+        if (cls == null) {
+            return null;
+        }
+        Map<MethodDescriptor, MethodReference> methods = new HashMap<>();
+        getFunctorMethods(className, new HashSet<String>(), methods);
+        if (methods.size() == 1) {
+            return methods.values().iterator().next();
+        }
+        return null;
+    }
+
+    private void getFunctorMethods(String className, Set<String> visited,
+            Map<MethodDescriptor, MethodReference> methods) {
+        if (!visited.add(className)) {
+            return;
+        }
+
+        ClassReader cls = classSource.get(className);
+        if (cls == null) {
+            return;
+        }
+
+        if (cls.getAnnotations().get(JSFunctor.class.getName()) != null && isProperFunctor(cls)) {
+            MethodReference method = cls.getMethods().iterator().next().getReference();
+            if (!methods.containsKey(method.getDescriptor())) {
+                methods.put(method.getDescriptor(), method);
+            }
+        }
+
+        if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
+            getFunctorMethods(cls.getParent(), visited, methods);
+        }
+        for (String iface : cls.getInterfaces()) {
+            getFunctorMethods(iface, visited, methods);
+        }
+    }
+
     public void processClass(ClassHolder cls) {
         Set<MethodDescriptor> preservedMethods = new HashSet<>();
         for (String iface : cls.getInterfaces()) {
@@ -124,6 +166,17 @@ class JavascriptNativeProcessor {
                 cls.addMethod(callerMethod);
             }
         }
+    }
+
+    public void addFunctorField(ClassHolder cls, MethodReference method) {
+        FieldHolder field = new FieldHolder("$$jso_functor$$");
+        field.setLevel(AccessLevel.PUBLIC);
+        field.setType(ValueType.parse(JSObject.class));
+        cls.addField(field);
+
+        AnnotationHolder annot = new AnnotationHolder(FunctorImpl.class.getName());
+        annot.getValues().put("value", new AnnotationValue(method.getDescriptor().toString()));
+        cls.getAnnotations().add(annot);
     }
 
     public void makeSync(ClassHolder cls) {
@@ -664,8 +717,12 @@ class JavascriptNativeProcessor {
         return wrap(var, type, location.getSourceLocation());
     }
 
+    private boolean isProperFunctor(ClassReader type) {
+        return type.hasModifier(ElementModifier.INTERFACE) && type.getMethods().size() == 1;
+    }
+
     private Variable wrapFunctor(CallLocation location, Variable var, ClassReader type) {
-        if (!type.hasModifier(ElementModifier.INTERFACE) || type.getMethods().size() != 1) {
+        if (!isProperFunctor(type)) {
             diagnostics.error(location, "Wrong functor: {{c0}}", type.getName());
             return var;
         }
