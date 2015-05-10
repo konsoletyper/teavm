@@ -177,7 +177,7 @@ class DependencyGraphBuilder {
         @Override
         public void consume(DependencyType type) {
             for (int i = 0; i < exceptions.length; ++i) {
-                if (exceptions[i] == null || isAssignableFrom(checker.getClassSource(), exceptions[i],
+                if (exceptions[i] == null || isAssignableFrom(checker.getClassSource(), exceptions[i].getName(),
                         type.getName())) {
                     if (vars[i] != null) {
                         vars[i].propagate(type);
@@ -226,15 +226,24 @@ class DependencyGraphBuilder {
             if (className.startsWith("[")) {
                 className = "java.lang.Object";
             }
-            if (!isAssignableFrom(checker.getClassSource(), filterClass, className)) {
+            if (!isAssignableFrom(checker.getClassSource(), filterClass.getName(), className)) {
                 return;
             }
             MethodReference methodRef = new MethodReference(className, methodDesc);
-            MethodDependency methodDep = checker.linkMethod(methodRef, new CallLocation(caller.getMethod(), location));
+            final MethodDependency methodDep = checker.linkMethod(methodRef,
+                    new CallLocation(caller.getMethod(), location));
             if (!methodDep.isMissing() && knownMethods.add(methodRef)) {
                 methodDep.use();
                 DependencyNode[] targetParams = methodDep.getVariables();
-                for (int i = 0; i < parameters.length; ++i) {
+                if (parameters[0] != null && targetParams[0] != null) {
+                    parameters[0].connect(targetParams[0], new DependencyTypeFilter() {
+                        @Override public boolean match(DependencyType thisType) {
+                            return isAssignableFrom(checker.getClassSource(), methodDep.getMethod().getOwnerName(),
+                                    thisType.getName());
+                        }
+                    });
+                }
+                for (int i = 1; i < parameters.length; ++i) {
                     if (parameters[i] != null && targetParams[i] != null) {
                         parameters[i].connect(targetParams[i]);
                     }
@@ -247,9 +256,8 @@ class DependencyGraphBuilder {
         }
     }
 
-    private static boolean isAssignableFrom(ClassReaderSource classSource, ClassReader supertype,
-            String subtypeName) {
-        if (supertype.getName().equals(subtypeName)) {
+    private static boolean isAssignableFrom(ClassReaderSource classSource, String supertype, String subtypeName) {
+        if (supertype.equals(subtypeName)) {
             return true;
         }
         ClassReader subtype = classSource.get(subtypeName);
@@ -355,7 +363,7 @@ class DependencyGraphBuilder {
                                 if (targetClass.getName().equals("java.lang.Object")) {
                                     return true;
                                 }
-                                return isAssignableFrom(dependencyChecker.getClassSource(), targetClass,
+                                return isAssignableFrom(dependencyChecker.getClassSource(), targetClass.getName(),
                                         type.getName());
                             }
                         });
