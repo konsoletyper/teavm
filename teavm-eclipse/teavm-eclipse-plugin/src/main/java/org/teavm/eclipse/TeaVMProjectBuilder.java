@@ -50,6 +50,7 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
     private SourceFileProvider[] sourceProviders;
     private Set<IProject> usedProjects = new HashSet<>();
     private static Map<TeaVMProfile, Set<String>> profileClasses = new WeakHashMap<>();
+    private static Map<TeaVMProfile, Set<String>> profileClassNames = new WeakHashMap<>();
     private static Pattern newLinePattern = Pattern.compile("\\r|\\n|\\r\\n");
 
     @Override
@@ -58,6 +59,8 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
         projectSettings.load();
         TeaVMProfile profiles[] = getEnabledProfiles(projectSettings);
         monitor.beginTask("Running TeaVM", profiles.length * TICKS_PER_PROFILE);
+        usedProjects = new HashSet<>();
+        Set<IProject> localUsedProjects = usedProjects;
         try {
             prepareClassPath();
             ClassLoader classLoader = new URLClassLoader(classPath, TeaVMProjectBuilder.class.getClassLoader());
@@ -65,14 +68,15 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
                 SubProgressMonitor subMonitor = new SubProgressMonitor(monitor, TICKS_PER_PROFILE);
                 buildProfile(kind, subMonitor, profile, classLoader);
             }
+            localUsedProjects.addAll(usedProjects);
         } finally {
             monitor.done();
             sourceContainers = null;
             classFileContainers = null;
             classPath = null;
-            usedProjects.clear();
+            usedProjects = null;
         }
-        return !usedProjects.isEmpty() ? usedProjects.toArray(new IProject[0]) : null;
+        return !localUsedProjects.isEmpty() ? localUsedProjects.toArray(new IProject[0]) : null;
     }
 
     private TeaVMProfile[] getEnabledProfiles(TeaVMProjectSettings settings) {
@@ -129,7 +133,9 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
                 removeMarkers(profile);
                 putMarkers(tool.getDependencyInfo().getCallGraph(), tool.getProblemProvider().getProblems(),
                         profile);
-                setClasses(profile, classesToResources(tool.getClasses()));
+                Set<String> classNames = new HashSet<String>(tool.getClasses());
+                profileClassNames.put(profile, classNames);
+                setClasses(profile, classesToResources(classNames));
                 refreshTarget(tool.getTargetDirectory());
             }
             if (!monitor.isCanceled()) {
@@ -197,6 +203,10 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
             if (delta != null && shouldBuild(classes, delta)) {
                 return true;
             }
+        }
+        Set<String> classNames = profileClassNames.get(profile);
+        if (classNames != null) {
+            classesToResources(classNames);
         }
         return false;
     }
@@ -493,7 +503,7 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
             }
             projects.add(project);
             IJavaProject javaProject = JavaCore.create(project);
-            for (IClasspathEntry entry : javaProject.getRawClasspath()) {
+            for (IClasspathEntry entry : javaProject.getResolvedClasspath(true)) {
                 if (entry.getEntryKind() == IClasspathEntry.CPE_PROJECT) {
                     project = (IProject)root.findMember(entry.getPath());
                     queue.add(project);
