@@ -115,7 +115,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
             } else {
                 insertSpace(target, target + 1);
             }
-            buffer[target++] = (char)('0' + value);
+            buffer[target++] = TCharacter.forDigit(value, radix);
         } else {
             int pos = 1;
             int sz = 1;
