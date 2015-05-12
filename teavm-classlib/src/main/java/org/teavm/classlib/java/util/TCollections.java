@@ -253,6 +253,9 @@ public class TCollections extends TObject {
         }
         int l = 0;
         int u = list.size() - 1;
+        if (u < 0) {
+            return -1;
+        }
         while (true) {
             int i = (l + u) / 2;
             T e = list.get(i);
