@@ -691,7 +691,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         public EntryIterator(TTreeMap<K, V> owner, TreeNode<K, V>[] path, TreeNode<K, V> to, boolean reverse) {
             this.owner = owner;
             modCount = owner.modCount;
-            this.path = TArrays.copyOf(path, owner.root.height);
+            this.path = TArrays.copyOf(path, owner.root == null ? 0 : owner.root.height);
             depth = path.length;
             this.to = to;
             this.reverse = reverse;
