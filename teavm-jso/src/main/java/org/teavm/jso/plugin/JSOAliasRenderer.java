@@ -29,6 +29,7 @@ import org.teavm.vm.spi.RendererListener;
  * @author Alexey Andreev
  */
 class JSOAliasRenderer implements RendererListener {
+    private static String variableChars = "abcdefghijklmnopqrstuvwxyz";
     private JSODependencyListener dependencyListener;
     private SourceWriter writer;
 
@@ -50,15 +51,64 @@ class JSOAliasRenderer implements RendererListener {
         writer.append("(function()").ws().append("{").softNewLine().indent();
         writer.append("var c;").softNewLine();
         for (Map.Entry<String, ExposedClass> entry : dependencyListener.getExposedClasses().entrySet()) {
-            if (entry.getValue().methods.isEmpty()) {
+            ExposedClass cls = entry.getValue();
+            if (cls.methods.isEmpty()) {
                 continue;
             }
             writer.append("c").ws().append("=").ws().appendClass(entry.getKey()).append(".prototype;").softNewLine();
-            for (Map.Entry<MethodDescriptor, String> aliasEntry : entry.getValue().methods.entrySet()) {
+            for (Map.Entry<MethodDescriptor, String> aliasEntry : cls.methods.entrySet()) {
                 writer.append("c.").append(aliasEntry.getValue()).ws().append("=").ws().append("c.")
                         .appendMethod(aliasEntry.getKey()).append(";").softNewLine();
             }
+
+            if (cls.functorField != null) {
+                writeFunctor(cls);
+            }
         }
         writer.outdent().append("})();").newLine();
+    }
+
+    private void writeFunctor(ExposedClass cls) throws IOException {
+        String alias = cls.methods.get(cls.functorMethod);
+        if (alias == null) {
+            return;
+        }
+
+        writer.append("c.jso$functor$").append(alias).ws().append("=").ws().append("function()").ws().append("{")
+                .indent().softNewLine();
+        writer.append("if").ws().append("(!this.").appendField(cls.functorField).append(")").ws().append("{")
+                .indent().softNewLine();
+        writer.append("var self").ws().append('=').ws().append("this;").softNewLine();
+
+        writer.append("this.").appendField(cls.functorField).ws().append('=').ws().append("function(");
+        appendArguments(cls.functorMethod.parameterCount());
+        writer.append(")").ws().append('{').indent().softNewLine();
+        writer.append("return self.").appendMethod(cls.functorMethod).append('(');
+        appendArguments(cls.functorMethod.parameterCount());
+        writer.append(");").softNewLine();
+        writer.outdent().append("};").softNewLine();
+
+        writer.outdent().append("}").softNewLine();
+        writer.append("return this.").appendField(cls.functorField).append(';').softNewLine();
+        writer.outdent().append("};").softNewLine();
+    }
+
+    private void appendArguments(int count) throws IOException {
+        for (int i = 0; i < count; ++i) {
+            if (i > 0) {
+                writer.append(',').ws();
+            }
+            writer.append(variableName(i));
+        }
+    }
+
+    private String variableName(int index) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(variableChars.charAt(index % variableChars.length()));
+        index /= variableChars.length();
+        if (index > 0) {
+            sb.append(index);
+        }
+        return sb.toString();
     }
 }

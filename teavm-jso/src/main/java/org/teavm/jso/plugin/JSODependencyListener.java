@@ -60,6 +60,8 @@ class JSODependencyListener implements DependencyListener {
         Map<MethodDescriptor, String> inheritedMethods = new HashMap<>();
         Map<MethodDescriptor, String> methods = new HashMap<>();
         Set<String> implementedInterfaces = new HashSet<>();
+        FieldReference functorField;
+        MethodDescriptor functorMethod;
     }
 
     private ExposedClass getExposedClass(String name) {
@@ -90,6 +92,14 @@ class JSODependencyListener implements DependencyListener {
                 MethodDependency methodDep = agent.linkMethod(method.getReference(), null);
                 methodDep.getVariable(0).propagate(agent.getType(name));
                 methodDep.use();
+            }
+        }
+        if (exposedCls.functorField == null) {
+            FieldReader functorField = cls.getField("$$jso_functor$$");
+            if (functorField != null) {
+                exposedCls.functorField = functorField.getReference();
+                AnnotationReader annot = cls.getAnnotations().get(FunctorImpl.class.getName());
+                exposedCls.functorMethod = MethodDescriptor.parse(annot.getValue("value").getString());
             }
         }
         return exposedCls;

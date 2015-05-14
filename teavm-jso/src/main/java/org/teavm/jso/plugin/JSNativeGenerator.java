@@ -18,9 +18,12 @@ package org.teavm.jso.plugin;
 import java.io.IOException;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.dependency.*;
+import org.teavm.javascript.Renderer;
 import org.teavm.javascript.ast.ConstantExpr;
 import org.teavm.javascript.ast.Expr;
 import org.teavm.javascript.ast.InvocationExpr;
+import org.teavm.javascript.spi.Generator;
+import org.teavm.javascript.spi.GeneratorContext;
 import org.teavm.javascript.spi.Injector;
 import org.teavm.javascript.spi.InjectorContext;
 import org.teavm.jso.JS;
@@ -33,7 +36,39 @@ import org.teavm.model.MethodReference;
  *
  * @author Alexey Andreev
  */
-public class JSNativeGenerator implements Injector, DependencyPlugin {
+public class JSNativeGenerator implements Injector, DependencyPlugin, Generator {
+    @Override
+    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef)
+            throws IOException {
+        switch (methodRef.getName()) {
+            case "function":
+                writeFunction(context, writer);
+                break;
+        }
+    }
+
+    private void writeFunction(GeneratorContext context, SourceWriter writer) throws IOException {
+        String thisName = context.getParameterName(1);
+        String methodName = context.getParameterName(2);
+        writer.append("var name").ws().append('=').ws().append("'jso$functor$'").ws().append('+').ws()
+                .append(methodName).append(';').softNewLine();
+        writer.append("if").ws().append("(!").append(thisName).append("[name])").ws().append('{')
+                .indent().softNewLine();
+
+        writer.append("var fn").ws().append('=').ws().append("function()").ws().append('{')
+                .indent().softNewLine();
+        writer.append("return ").append(thisName).append('[').append(methodName).append(']')
+                .append(".apply(").append(thisName).append(',').ws().append("arguments);").softNewLine();
+        writer.outdent().append("};").softNewLine();
+        writer.append(thisName).append("[name]").ws().append('=').ws().append("function()").ws().append('{')
+                .indent().softNewLine();
+        writer.append("return fn;").softNewLine();
+        writer.outdent().append("};").softNewLine();
+
+        writer.outdent().append('}').softNewLine();
+        writer.append("return ").append(thisName).append("[name]();").softNewLine();
+    }
+
     @Override
     public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
         SourceWriter writer = context.getWriter();
@@ -93,6 +128,13 @@ public class JSNativeGenerator implements Injector, DependencyPlugin {
                 break;
             case "wrap":
                 if (methodRef.getDescriptor().parameterType(0).isObject("java.lang.String")) {
+                    if (context.getArgument(0) instanceof ConstantExpr) {
+                        ConstantExpr constant = (ConstantExpr)context.getArgument(0);
+                        if (constant.getValue() instanceof String) {
+                            writer.append('"').append(Renderer.escapeString((String)constant.getValue())).append('"');
+                            break;
+                        }
+                    }
                     writer.append("$rt_ustr(");
                     context.writeExpr(context.getArgument(0));
                     writer.append(")");

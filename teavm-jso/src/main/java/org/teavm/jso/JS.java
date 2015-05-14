@@ -18,6 +18,7 @@ package org.teavm.jso;
 import java.lang.reflect.Array;
 import java.util.Iterator;
 import org.teavm.dependency.PluggableDependency;
+import org.teavm.javascript.spi.GeneratedBy;
 import org.teavm.javascript.spi.InjectedBy;
 import org.teavm.jso.plugin.JSNativeGenerator;
 
@@ -557,7 +558,7 @@ public final class JS {
     @InjectedBy(JSNativeGenerator.class)
     public static native void set(JSObject instance, JSObject index, JSObject obj);
 
-    @InjectedBy(JSNativeGenerator.class)
+    @GeneratedBy(JSNativeGenerator.class)
     @PluggableDependency(JSNativeGenerator.class)
     public static native JSObject function(JSObject instance, JSObject property);
 }
