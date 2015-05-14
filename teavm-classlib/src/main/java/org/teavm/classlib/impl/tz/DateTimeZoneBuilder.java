@@ -341,7 +341,7 @@ public class DateTimeZoneBuilder {
             Calendar calendar = Calendar.getInstance();
             calendar.setTimeInMillis(0);
             calendar.set(Calendar.YEAR, year);
-            calendar.set(Calendar.MONTH, iMonthOfYear);
+            calendar.set(Calendar.MONTH, iMonthOfYear - 1);
             calendar.add(Calendar.MILLISECOND, iMillisOfDay);
             setDayOfMonth(calendar);
 
@@ -371,7 +371,8 @@ public class DateTimeZoneBuilder {
 
             GregorianCalendar calendar = new GregorianCalendar();
             calendar.setTimeInMillis(instant);
-            calendar.set(Calendar.MONTH, iMonthOfYear);
+            calendar.set(Calendar.MONTH, iMonthOfYear - 1);
+            calendar.set(Calendar.DATE, 1);
             calendar.set(Calendar.HOUR_OF_DAY, 0);
             calendar.set(Calendar.MINUTE, 0);
             calendar.set(Calendar.SECOND, 0);
@@ -388,7 +389,7 @@ public class DateTimeZoneBuilder {
                 setDayOfWeek(calendar);
                 if (calendar.getTimeInMillis() <= instant) {
                     calendar.add(Calendar.YEAR, 1);
-                    calendar.set(Calendar.MONTH, iMonthOfYear);
+                    calendar.set(Calendar.MONTH, iMonthOfYear - 1);
                     setDayOfMonthNext(calendar);
                     setDayOfWeek(calendar);
                 }
@@ -416,7 +417,8 @@ public class DateTimeZoneBuilder {
 
             GregorianCalendar calendar = new GregorianCalendar();
             calendar.setTimeInMillis(instant);
-            calendar.set(Calendar.MONTH, iMonthOfYear);
+            calendar.set(Calendar.MONTH, iMonthOfYear - 1);
+            calendar.set(Calendar.DATE, 1);
             // Be lenient with millisOfDay.
             calendar.set(Calendar.HOUR_OF_DAY, 0);
             calendar.set(Calendar.MINUTE, 0);
@@ -434,7 +436,7 @@ public class DateTimeZoneBuilder {
                 setDayOfWeek(calendar);
                 if (calendar.getTimeInMillis() >= instant) {
                     calendar.add(Calendar.YEAR, -1);
-                    calendar.set(Calendar.MONTH, iMonthOfYear);
+                    calendar.set(Calendar.MONTH, iMonthOfYear - 1);
                     setDayOfMonthPrevious(calendar);
                     setDayOfWeek(calendar);
                 }
@@ -478,7 +480,7 @@ public class DateTimeZoneBuilder {
 
         private void setDayOfWeek(Calendar calendar) {
             int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
-            int daysToAdd = iDayOfWeek - dayOfWeek;
+            int daysToAdd = (iDayOfWeek == 7 ? 1 : dayOfWeek + 1) - dayOfWeek;
             if (daysToAdd != 0) {
                 if (iAdvance) {
                     if (daysToAdd < 0) {
@@ -489,7 +491,7 @@ public class DateTimeZoneBuilder {
                         daysToAdd -= 7;
                     }
                 }
-                calendar.add(Calendar.DAY_OF_WEEK, daysToAdd);
+                calendar.add(Calendar.DATE, daysToAdd);
             }
         }
     }
@@ -1094,24 +1096,26 @@ public class DateTimeZoneBuilder {
 
         @Override
         public void write(StringBuilder sb) {
+            int start = 0;
+            while (start + 1 < iTransitions.length && iTransitions[start + 1] < 0) {
+                ++start;
+            }
+
             Base46.encodeUnsigned(sb, PRECALCULATED);
-            Base46.encodeUnsigned(sb, iTransitions.length);
+            Base46.encodeUnsigned(sb, iTransitions.length - start);
 
             long[] transitions = iTransitions.clone();
             for (int i = 0; i < transitions.length; ++i) {
                 transitions[i] = (transitions[i] / 60_000) * 60_000;
             }
-            writeTime(sb, transitions[0]);
-            for (int i = 1; i < transitions.length; ++i) {
-                writeUnsignedTime(sb, transitions[i] - transitions[i - 1]);
+
+            writeTime(sb, transitions[start]);
+            for (int i = start + 1; i < transitions.length; ++i) {
+                writeTime(sb, transitions[i] - transitions[i - 1] - (365 * 3600 * 1000));
             }
 
-            for (int i = 0; i < iWallOffsets.length; ++i) {
-                writeTime(sb, iWallOffsets[i]);
-            }
-            for (int i = 0; i < iStandardOffsets.length; ++i) {
-                writeTime(sb, iStandardOffsets[i]);
-            }
+            writeTimeArray(sb, Arrays.copyOfRange(iWallOffsets, start, transitions.length));
+            writeTimeArray(sb, Arrays.copyOfRange(iStandardOffsets, start, transitions.length));
 
             if (iTailZone != null) {
                 sb.append('y');

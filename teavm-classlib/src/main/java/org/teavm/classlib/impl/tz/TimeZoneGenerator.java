@@ -58,10 +58,10 @@ public class TimeZoneGenerator implements MetadataGenerator {
                         case "southamerica":
                             compiler.parseDataFile(new BufferedReader(new InputStreamReader(zip, "UTF-8")), false);
                             break;
-                        /*case "backward":
+                        case "backward":
                         case "backzone":
                             compiler.parseDataFile(new BufferedReader(new InputStreamReader(zip, "UTF-8")), true);
-                            break;*/
+                            break;
                     }
                 }
             }
@@ -85,7 +85,6 @@ public class TimeZoneGenerator implements MetadataGenerator {
 
             StorableDateTimeZone tz = zoneMap.get(id);
             TimeZoneResource tzRes = context.createResource(TimeZoneResource.class);
-            tzRes.setAbbreviation(locationName);
             StringBuilder data = new StringBuilder();
             tz.write(data);
             tzRes.setData(data.toString());

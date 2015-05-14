@@ -22,10 +22,6 @@ import org.teavm.platform.metadata.Resource;
  * @author Alexey Andreev
  */
 public interface TimeZoneResource extends Resource {
-    String getAbbreviation();
-
-    void setAbbreviation(String abbreviation);
-
     String getData();
 
     void setData(String data);

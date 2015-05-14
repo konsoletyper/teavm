@@ -48,4 +48,34 @@ public abstract class StorableDateTimeZone extends DateTimeZone {
             Base46.encodeUnsigned(sb, (int)(((time / 60_000) << 1) | 1));
         }
     }
+
+    public static void writeTimeArray(StringBuilder sb, int[] timeArray) {
+        int last = 0;
+        for (int i = 1; i < timeArray.length; ++i) {
+            int j;
+            for (j = i + 1; j < timeArray.length; ++j) {
+                if (timeArray[i] != timeArray[j]) {
+                    break;
+                }
+            }
+            if (j - i >= 3) {
+                if (i > last) {
+                    Base46.encode(sb, ~(i - last));
+                    while (last < i) {
+                        writeTime(sb, timeArray[last++]);
+                    }
+                }
+                Base46.encode(sb, j - i);
+                writeTime(sb, timeArray[i]);
+                last = j;
+                i = j;
+            }
+        }
+        if (timeArray.length > last) {
+            Base46.encode(sb, ~(timeArray.length - last));
+            while (last < timeArray.length) {
+                writeTime(sb, timeArray[last++]);
+            }
+        }
+    }
 }
