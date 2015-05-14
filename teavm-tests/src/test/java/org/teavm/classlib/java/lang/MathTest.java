@@ -54,4 +54,12 @@ public class MathTest {
     public void getExponentComputed() {
         assertEquals(6, Math.getExponent(123.456));
     }
+
+    @Test
+    public void roundWorks() {
+        assertEquals(1, Math.round(1.3));
+        assertEquals(2, Math.round(1.8));
+        assertEquals(-1, Math.round(-1.3));
+        assertEquals(-2, Math.round(-1.8));
+    }
 }

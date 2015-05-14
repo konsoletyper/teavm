@@ -59,6 +59,11 @@ public class IntegerTest {
     }
 
     @Test
+    public void writesSingleDigitInteger() {
+        assertEquals("a", Integer.toString(10, 16));
+    }
+
+    @Test
     public void decodes() {
         assertEquals(Integer.valueOf(123), Integer.decode("123"));
         assertEquals(Integer.valueOf(83), Integer.decode("0123"));
