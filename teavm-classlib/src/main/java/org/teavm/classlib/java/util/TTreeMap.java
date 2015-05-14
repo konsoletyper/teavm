@@ -363,8 +363,8 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
             while (minDepth > 0) {
                 TreeNode<K, V> node = pathToMin[--minDepth];
                 node.left = right;
-                node.fix();
                 node = node.balance();
+                node.fix();
                 right = node;
             }
             min.right = right;
@@ -372,6 +372,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
             root = min;
             root.fix();
         }
+        root.fix();
         return root.balance();
     }
 
