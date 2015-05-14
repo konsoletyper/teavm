@@ -645,13 +645,16 @@ public class TreeMapTest {
         TreeMap<Integer, Integer> tm = new TreeMap<>();
         for (int i = 0; i <= 100; ++i) {
             tm.put(i, i);
+            assertEquals(i + 1, tm.size());
         }
         for (int i = 0; i <= 100; ++i) {
             Integer removed = tm.remove(i);
             assertEquals(Integer.valueOf(i), removed);
+            assertEquals(100, tm.size());
             tm.put(i, i + 1);
             assertTrue("13 is expected to be in the map: " + i, tm.containsKey(13));
             assertTrue("99 is expected to be in the map: " + i, tm.containsKey(99));
+            assertEquals(101, tm.size());
         }
     }
 }
