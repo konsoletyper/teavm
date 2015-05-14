@@ -54,6 +54,11 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         }
         expr.getSecondOperand().acceptVisitor(this);
         Expr b = resultExpr;
+        if (b instanceof ConstantExpr && expr.getOperation() == BinaryOperation.SUBTRACT) {
+            if (tryMakePositive((ConstantExpr)b)) {
+                expr.setOperation(BinaryOperation.ADD);
+            }
+        }
         expr.getFirstOperand().acceptVisitor(this);
         Expr a = resultExpr;
         Expr p = a;
@@ -96,8 +101,39 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     public void visit(UnaryExpr expr) {
         expr.getOperand().acceptVisitor(this);
         Expr operand = resultExpr;
+        if (expr.getOperation() == UnaryOperation.NEGATE && operand instanceof ConstantExpr) {
+            ConstantExpr constantExpr = (ConstantExpr)operand;
+            if (tryMakePositive(constantExpr)) {
+                resultExpr = expr;
+                return;
+            }
+        }
         expr.setOperand(operand);
         resultExpr = expr;
+    }
+
+    private boolean tryMakePositive(ConstantExpr constantExpr) {
+        Object value = constantExpr.getValue();
+        if (value instanceof Integer && (Integer)value < 0) {
+            constantExpr.setValue(-(Integer)value);
+            return true;
+        } else if (value instanceof Float && (Float)value < 0) {
+            constantExpr.setValue(-(Float)value);
+            return true;
+        } else if (value instanceof Byte && (Byte)value < 0) {
+            constantExpr.setValue(-(Byte)value);
+            return true;
+        } else if (value instanceof Short && (Short)value < 0) {
+            constantExpr.setValue(-(Short)value);
+            return true;
+        } else if (value instanceof Long && (Long)value < 0) {
+            constantExpr.setValue(-(Long)value);
+            return true;
+        } else if (value instanceof Double && (Double)value < 0) {
+            constantExpr.setValue(-(Double)value);
+            return true;
+        }
+        return false;
     }
 
     @Override

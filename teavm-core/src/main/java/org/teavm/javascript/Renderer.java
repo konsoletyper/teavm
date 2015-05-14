@@ -1532,7 +1532,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             }
             String str = constantToString(expr.getValue());
             if (str.startsWith("-")) {
-                enterPriority(Priority.MULTIPLICATION, Associativity.RIGHT, true);
+                enterPriority(Priority.MULTIPLICATION, Associativity.NONE, true);
             }
             writer.append(str);
             if (str.startsWith("-")) {
