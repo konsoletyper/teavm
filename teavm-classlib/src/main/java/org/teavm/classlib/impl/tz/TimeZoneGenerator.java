@@ -15,8 +15,13 @@
  */
 package org.teavm.classlib.impl.tz;
 
-import org.joda.time.DateTimeZone;
-import org.teavm.classlib.impl.Base46;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.metadata.MetadataGenerator;
 import org.teavm.platform.metadata.MetadataGeneratorContext;
@@ -27,19 +32,49 @@ import org.teavm.platform.metadata.ResourceMap;
  * @author Alexey Andreev
  */
 public class TimeZoneGenerator implements MetadataGenerator {
-    private static int[] divisors = { 60_000, 300_000, 1800_000, 3600_000 };
-    public static int RESOLUTION_MINUTE = 0;
-    public static int RESOLUTION_5_MINUTES = 1;
-    public static int RESOLUTION_HALF_HOUR = 2;
-    public static int RESOLUTION_HOUR = 3;
-
+    private static final String tzPath = "org/teavm/classlib/impl/tz/tzdata2015d.zip";
 
     @Override
     public ResourceMap<ResourceMap<TimeZoneResource>> generateMetadata(
             MetadataGeneratorContext context, MethodReference method) {
         ResourceMap<ResourceMap<TimeZoneResource>> result = context.createResourceMap();
-        for (String id : DateTimeZone.getAvailableIDs()) {
+        ZoneInfoCompiler compiler = new ZoneInfoCompiler();
+        try (InputStream input = context.getClassLoader().getResourceAsStream(tzPath)) {
+            try (ZipInputStream zip = new ZipInputStream(input)) {
+                while (true) {
+                    ZipEntry entry = zip.getNextEntry();
+                    if (entry == null) {
+                        break;
+                    }
+                    switch (entry.getName().substring("tzdata2015d/".length())) {
+                        case "africa":
+                        case "antarctica":
+                        case "asia":
+                        case "australasia":
+                        case "etcetera":
+                        case "europe":
+                        case "northamerica":
+                        case "pacificnew":
+                        case "southamerica":
+                            compiler.parseDataFile(new BufferedReader(new InputStreamReader(zip, "UTF-8")), false);
+                            break;
+                        /*case "backward":
+                        case "backzone":
+                            compiler.parseDataFile(new BufferedReader(new InputStreamReader(zip, "UTF-8")), true);
+                            break;*/
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Error generating TimeZones", e);
+        }
+
+        Map<String, StorableDateTimeZone> zoneMap = compiler.compile();
+        for (String id : zoneMap.keySet()) {
             int sepIndex = id.indexOf('/');
+            if (sepIndex < 0) {
+                continue;
+            }
             String areaName = id.substring(0, sepIndex);
             String locationName = id.substring(sepIndex + 1);
             ResourceMap<TimeZoneResource> area = result.get(areaName);
@@ -48,78 +83,15 @@ public class TimeZoneGenerator implements MetadataGenerator {
                 result.put(areaName, area);
             }
 
-            DateTimeZone tz = DateTimeZone.forID(id);
+            StorableDateTimeZone tz = zoneMap.get(id);
             TimeZoneResource tzRes = context.createResource(TimeZoneResource.class);
             tzRes.setAbbreviation(locationName);
-            tzRes.setData(encodeData(tz));
+            StringBuilder data = new StringBuilder();
+            tz.write(data);
+            tzRes.setData(data.toString());
             area.put(locationName, tzRes);
         }
 
         return result;
-    }
-
-    public String encodeData(DateTimeZone tz) {
-        // Find resolution
-        int resolution = RESOLUTION_HOUR;
-        long current = 0;
-        long offset = tz.getOffset(0);
-        while (true) {
-            long next = tz.nextTransition(current);
-            if (next == current) {
-                break;
-            }
-            current = next;
-
-            int nextOffset = tz.getOffset(next);
-            if (nextOffset == offset) {
-                continue;
-            }
-
-            offset = nextOffset;
-            resolution = getResolution(resolution, current);
-            resolution = getResolution(resolution, offset);
-            if (resolution == 0) {
-                break;
-            }
-        }
-
-        StringBuilder sb = new StringBuilder();
-        Base46.encode(sb, resolution);
-
-        current = 0;
-        offset = tz.getOffset(0);
-        int divisor = divisors[resolution];
-        long last = 0;
-        long lastOffset = offset / divisor;
-        Base46.encode(sb, lastOffset);
-        while (true) {
-            long next = tz.nextTransition(current);
-            if (next == current) {
-                break;
-            }
-            current = next;
-
-            int nextOffset = tz.getOffset(next);
-            if (nextOffset == offset) {
-                continue;
-            }
-
-            offset = nextOffset;
-            long newTime = current / divisor;
-            long newOffset = offset / divisor;
-            Base46.encodeUnsigned(sb, newTime - last);
-            Base46.encode(sb, newOffset - lastOffset);
-            last = newTime;
-            lastOffset = newOffset;
-        }
-
-        return sb.toString();
-    }
-
-    private int getResolution(int currentResolution, long value) {
-        while (currentResolution > 0 && value % divisors[currentResolution] != 0) {
-            --currentResolution;
-        }
-        return currentResolution;
     }
 }

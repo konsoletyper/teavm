@@ -237,8 +237,8 @@ public class ZoneInfoCompiler {
             String alias = iGoodLinks.get(i + 1);
             Zone sourceZone = sourceMap.get(baseId);
             if (sourceZone == null) {
-                throw new RuntimeException("Cannot find source zone '" + baseId + "' to link alias '" +
-                        alias + "' to");
+                /*throw new RuntimeException("Cannot find source zone '" + baseId + "' to link alias '" +
+                        alias + "' to");*/
             } else {
                 DateTimeZoneBuilder builder = new DateTimeZoneBuilder();
                 sourceZone.addToBuilder(builder, iRuleSets);
@@ -257,10 +257,10 @@ public class ZoneInfoCompiler {
                 String alias = iBackLinks.get(i + 1);
                 StorableDateTimeZone tz = map.get(id);
                 if (tz == null) {
-                    if (pass > 0) {
+                    /*if (pass > 0) {
                         throw new RuntimeException("Cannot find time zone '" + id + "' to link alias '" +
                                 alias + "' to");
-                    }
+                    }*/
                 } else {
                     map.put(alias, tz);
                 }

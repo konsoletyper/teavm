@@ -29,7 +29,6 @@ public class Base46Test {
         for (int i = -65536; i <= 65536; ++i) {
             sb.setLength(0);
             Base46.encode(sb, i);
-            System.out.println(i + " - " + sb);
             CharFlow flow = new CharFlow(sb.toString().toCharArray());
             int num = Base46.decode(flow);
             assertEquals(i, num);
