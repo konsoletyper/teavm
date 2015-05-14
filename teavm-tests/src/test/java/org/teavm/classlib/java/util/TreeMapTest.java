@@ -639,4 +639,19 @@ public class TreeMapTest {
         }
         return treeMap;
     }
+
+    @Test
+    public void deletesProperly() {
+        TreeMap<Integer, Integer> tm = new TreeMap<>();
+        for (int i = 0; i <= 100; ++i) {
+            tm.put(i, i);
+        }
+        for (int i = 0; i <= 100; ++i) {
+            Integer removed = tm.remove(i);
+            assertEquals(Integer.valueOf(i), removed);
+            tm.put(i, i + 1);
+            assertTrue("13 is expected to be in the map: " + i, tm.containsKey(13));
+            assertTrue("99 is expected to be in the map: " + i, tm.containsKey(99));
+        }
+    }
 }
