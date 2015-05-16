@@ -79,7 +79,7 @@ public class DateTimeZoneProvider {
         for (String id : getIds()) {
             DateTimeZone tz = getTimeZone(id);
             int tzOffset = tz.getOffset(time) / 60_000;
-            if (Math.abs(tzOffset - offset) > 120) {
+            if (Math.abs(tzOffset - offset) > 120 || tz.previousTransition(time) == time) {
                 continue;
             }
             zones.add(new Score(tz));
