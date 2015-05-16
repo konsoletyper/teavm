@@ -30,7 +30,7 @@ public class LongNativeGenerator implements Generator {
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
         switch (methodRef.getName()) {
             case "compare":
-                writer.append("Long_compare(").append(context.getParameterName(1)).append(", ")
+                writer.append("return Long_compare(").append(context.getParameterName(1)).append(", ")
                         .append(context.getParameterName(2)).append(");").softNewLine();
                 break;
             case "hashCode":

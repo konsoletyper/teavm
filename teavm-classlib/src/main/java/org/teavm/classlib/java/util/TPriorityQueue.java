@@ -205,7 +205,6 @@ public class TPriorityQueue<E> extends TAbstractQueue<E> implements TSerializabl
     private void removeAt(int index) {
         ++version;
         Object item = data[size - 1];
-        data[--size] = null;
         while (true) {
             int left = index * 2 + 1;
             int right = left + 1;
@@ -224,6 +223,7 @@ public class TPriorityQueue<E> extends TAbstractQueue<E> implements TSerializabl
             index = next;
         }
         data[index] = item;
+        data[--size] = null;
     }
 
     private void ensureCapacity(int capacity) {

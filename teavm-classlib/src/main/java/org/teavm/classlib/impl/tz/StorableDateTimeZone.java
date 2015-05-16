@@ -120,7 +120,7 @@ public abstract class StorableDateTimeZone extends DateTimeZone {
 
     public static StorableDateTimeZone read(String id, String text) {
         CharFlow flow = new CharFlow(text.toCharArray());
-        int type = Base46.decode(flow);
+        int type = Base46.decodeUnsigned(flow);
         switch (type) {
             case PRECALCULATED:
                 return PrecalculatedZone.readZone(id, flow);

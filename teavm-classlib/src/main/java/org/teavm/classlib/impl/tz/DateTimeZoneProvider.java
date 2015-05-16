@@ -16,11 +16,16 @@
 package org.teavm.classlib.impl.tz;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
+import java.util.Set;
 import org.teavm.classlib.impl.Base46;
 import org.teavm.classlib.impl.CharFlow;
+import org.teavm.jso.JSBody;
 import org.teavm.platform.metadata.MetadataProvider;
 import org.teavm.platform.metadata.ResourceMap;
 
@@ -67,6 +72,96 @@ public class DateTimeZoneProvider {
         return ids.toArray(new String[ids.size()]);
     }
 
+    public static DateTimeZone detectTimezone() {
+        List<Score> zones = new ArrayList<>();
+        long time = System.currentTimeMillis();
+        int offset = -getNativeOffset(System.currentTimeMillis());
+        for (String id : getIds()) {
+            DateTimeZone tz = getTimeZone(id);
+            int tzOffset = tz.getOffset(time) / 60_000;
+            if (Math.abs(tzOffset - offset) > 120) {
+                continue;
+            }
+            zones.add(new Score(tz));
+        }
+
+        List<Score> scoreTable = new ArrayList<>();
+        scoreTable.addAll(zones);
+        Map<Long, List<Score>> zoneMap = new HashMap<>();
+        PriorityQueue<Long> queue = new PriorityQueue<>(zones.size(), new Comparator<Long>() {
+            @Override public int compare(Long o1, Long o2) {
+                return o2.compareTo(o1);
+            }
+        });
+        Set<Long> timeInQueue = new HashSet<>();
+        long last = time;
+        queue.add(time);
+        zoneMap.put(time, new ArrayList<>(zones));
+
+        while (!queue.isEmpty() && scoreTable.size() > 1) {
+            time = queue.remove();
+            timeInQueue.remove(time);
+            zones = zoneMap.remove(time);
+            offset = -getNativeOffset(time);
+
+            for (Score score : zones) {
+                long prev = score.tz.previousTransition(time);
+                if (prev == time) {
+                    if (scoreTable.get(0) == score) {
+                        return score.tz;
+                    }
+                    scoreTable.remove(score);
+                } else {
+                    int tzOffset = score.tz.getOffset(time) / 60_000;
+                    if (Math.abs(tzOffset - offset) > 120) {
+                        scoreTable.remove(score);
+                        continue;
+                    }
+                    List<Score> prevZones = zoneMap.get(prev);
+                    if (prevZones == null) {
+                        prevZones = new ArrayList<>();
+                        zoneMap.put(prev, prevZones);
+                    }
+                    prevZones.add(score);
+                    if (timeInQueue.add(prev)) {
+                        queue.add(prev);
+                    }
+                }
+            }
+
+            if (scoreTable.get(0).tz.previousTransition(time) == time) {
+                return scoreTable.get(0).tz;
+            }
+
+            for (int i = scoreTable.size() - 1; i >= 0; --i) {
+                Score score = scoreTable.get(i);
+                int tzOffset = score.tz.getOffset(time) / 60_000;
+                if (tzOffset != offset) {
+                    score.value += (int)((last - time) / 60_000) * (Math.abs(tzOffset - offset)) / 30;
+                }
+                int j = i + 1;
+                while (j < scoreTable.size() && score.value > scoreTable.get(j).value) {
+                    scoreTable.set(j - 1, scoreTable.get(j));
+                    ++j;
+                }
+                scoreTable.set(j - 1, score);
+            }
+
+            last = time;
+        }
+
+        return scoreTable.get(0).tz;
+    }
+
+    static class Score {
+        DateTimeZone tz;
+        int value;
+
+        public Score(DateTimeZone tz) {
+            this.tz = tz;
+        }
+    }
+
     private static TimeZoneResource getTimeZoneResource(String id) {
         String areaName;
         String locationName;
@@ -84,6 +179,9 @@ public class DateTimeZoneProvider {
         }
         return area.get(locationName);
     }
+
+    @JSBody(params = "instant", script = "return new Date(instant).getTimezoneOffset();")
+    private static native int getNativeOffset(double instant);
 
     @MetadataProvider(TimeZoneGenerator.class)
     private static native ResourceMap<ResourceMap<TimeZoneResource>> getResource();

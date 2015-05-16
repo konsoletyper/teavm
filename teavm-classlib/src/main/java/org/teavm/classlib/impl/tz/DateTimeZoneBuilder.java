@@ -1169,6 +1169,7 @@ public class DateTimeZoneBuilder {
 
             DSTZone tailZone;
             if (flow.characters[flow.pointer++] == 'y') {
+                flow.pointer++;
                 tailZone = DSTZone.readZone(id, flow);
             } else {
                 tailZone = null;
