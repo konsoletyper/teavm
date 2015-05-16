@@ -64,6 +64,9 @@ class ResourceProgramTransformer {
         MethodReference method = insn.getMethod();
         if (method.getClassName().equals(ResourceArray.class.getName()) ||
                 method.getClassName().equals(ResourceMap.class.getName())) {
+            if (method.getName().equals("keys")) {
+                return transformKeys(insn);
+            }
             InvokeInstruction accessInsn = new InvokeInstruction();
             accessInsn.setType(InvocationType.SPECIAL);
             ValueType[] types = new ValueType[method.getDescriptor().parameterCount() + 2];
@@ -94,6 +97,25 @@ class ResourceProgramTransformer {
             }
         }
         return null;
+    }
+
+    private List<Instruction> transformKeys(InvokeInstruction insn) {
+        Variable tmp = program.createVariable();
+
+        InvokeInstruction keysInsn = new InvokeInstruction();
+        keysInsn.setType(InvocationType.SPECIAL);
+        keysInsn.setMethod(new MethodReference(ResourceAccessor.class, "keys", Object.class, Object.class));
+        keysInsn.getArguments().add(insn.getInstance());
+        keysInsn.setReceiver(tmp);
+
+        InvokeInstruction transformInsn = new InvokeInstruction();
+        transformInsn.setType(InvocationType.SPECIAL);
+        transformInsn.setMethod(new MethodReference(ResourceAccessor.class, "keysToStrings",
+                Object.class, String[].class));
+        transformInsn.getArguments().add(tmp);
+        transformInsn.setReceiver(insn.getReceiver());
+
+        return Arrays.<Instruction>asList(keysInsn, transformInsn);
     }
 
     private boolean isSubclass(ClassReader cls, String superClass) {

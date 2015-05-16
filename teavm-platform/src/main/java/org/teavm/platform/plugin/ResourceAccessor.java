@@ -29,6 +29,17 @@ final class ResourceAccessor {
 
     public static native Resource get(Object obj, String propertyName);
 
+    public static native Object keys(Object obj);
+
+    public static String[] keysToStrings(Object keys) {
+        int sz = size(keys);
+        String[] result = new String[sz];
+        for (int i = 0; i < sz; ++i) {
+            result[i] = castToString(get(keys, i));
+        }
+        return result;
+    }
+
     public static native void put(Object obj, String propertyName, Object elem);
 
     public static native Resource get(Object obj, int index);

@@ -174,7 +174,7 @@ public class TClass<T> extends TObject {
         return forName(name);
     }
 
-    @SuppressWarnings({ "unchecked" })
+    @SuppressWarnings({ "unchecked", "unused" })
     public T newInstance() throws TInstantiationException, TIllegalAccessException {
         Object instance = Platform.newInstance(platformClass);
         if (instance == null) {

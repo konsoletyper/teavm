@@ -33,10 +33,14 @@ class ResourceAccessorTransformer implements ClassHolderTransformer {
     @Override
     public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
         if (cls.getName().equals(ResourceAccessor.class.getName())) {
-            ResourceAccessorGenerator generator = new ResourceAccessorGenerator();
+            ResourceAccessorInjector injector = new ResourceAccessorInjector();
             for (MethodHolder method : cls.getMethods()) {
-                if (!method.getName().equals("<init>")) {
-                    vm.add(method.getReference(), generator);
+                if (method.hasModifier(ElementModifier.NATIVE)) {
+                    if (method.getName().equals("keys")) {
+                        vm.add(method.getReference(), new ResourceAccessorGenerator());
+                    } else {
+                        vm.add(method.getReference(), injector);
+                    }
                 }
             }
         }

@@ -59,4 +59,9 @@ class BuildTimeResourceMap<T extends Resource> implements ResourceMap<T>, Resour
         }
         writer.append('}').tokenBoundary();
     }
+
+    @Override
+    public String[] keys() {
+        return data.keySet().toArray(new String[data.size()]);
+    }
 }

@@ -16,16 +16,19 @@
 package org.teavm.classlib.impl.tz;
 
 import org.teavm.classlib.impl.Base46;
+import org.teavm.classlib.impl.CharFlow;
+import org.teavm.classlib.impl.tz.DateTimeZoneBuilder.DSTZone;
+import org.teavm.classlib.impl.tz.DateTimeZoneBuilder.PrecalculatedZone;
 
 /**
  *
  * @author Alexey Andreev
  */
 public abstract class StorableDateTimeZone extends DateTimeZone {
-    public static int PRECALCULATED = 0;
-    public static int FIXED = 1;
-    public static int CACHED = 2;
-    public static int DST = 3;
+    public static final int PRECALCULATED = 0;
+    public static final int FIXED = 1;
+    public static final int DST = 3;
+    public static final int ALIAS = 4;
 
     public StorableDateTimeZone(String id) {
         super(id);
@@ -41,11 +44,29 @@ public abstract class StorableDateTimeZone extends DateTimeZone {
         }
     }
 
+    public static long readTime(CharFlow flow) {
+        long value = Base46.decodeLong(flow);
+        if ((value & 1) == 0) {
+            return (value >> 1) * 1800_000;
+        } else {
+            return (value >> 1) * 60_000;
+        }
+    }
+
     public static void writeUnsignedTime(StringBuilder sb, long time) {
         if (time % 1800_000 == 0) {
             Base46.encodeUnsigned(sb, (int)((time / 1800_000) << 1));
         } else {
             Base46.encodeUnsigned(sb, (int)(((time / 60_000) << 1) | 1));
+        }
+    }
+
+    public static long readUnsignedTime(CharFlow flow) {
+        long value = Base46.decodeUnsignedLong(flow);
+        if ((value & 1) == 0) {
+            return (value >>> 1) * 1800_000;
+        } else {
+            return (value >>> 1) * 60_000;
         }
     }
 
@@ -76,6 +97,39 @@ public abstract class StorableDateTimeZone extends DateTimeZone {
             while (last < timeArray.length) {
                 writeTime(sb, timeArray[last++]);
             }
+        }
+    }
+
+    public static void readTimeArray(CharFlow flow, int[] array) {
+        int index = 0;
+        while (index < array.length) {
+            int count = Base46.decode(flow);
+            if (count >= 0) {
+                int t = (int)readTime(flow);
+                while (count-- > 0) {
+                    array[index++] = t;
+                }
+            } else {
+                count = ~count;
+                while (count-- > 0) {
+                    array[index++] = (int)readTime(flow);
+                }
+            }
+        }
+    }
+
+    public static StorableDateTimeZone read(String id, String text) {
+        CharFlow flow = new CharFlow(text.toCharArray());
+        int type = Base46.decode(flow);
+        switch (type) {
+            case PRECALCULATED:
+                return PrecalculatedZone.readZone(id, flow);
+            case DST:
+                return DSTZone.readZone(id, flow);
+            case FIXED:
+                return FixedDateTimeZone.readZone(id, flow);
+            default:
+                throw new IllegalArgumentException("Unknown zone type: " + type);
         }
     }
 }

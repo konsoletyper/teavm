@@ -1,7 +1,6 @@
 package org.teavm.classlib.java.nio.charset;
 
 import static org.junit.Assert.*;
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -94,7 +93,7 @@ public class UTF8Test {
     }
 
     @Test
-    public void decodeLongUTF8ByteArray() throws UnsupportedEncodingException {
+    public void decodeLongUTF8ByteArray() {
         byte[] bytes = new byte[16384];
         for (int i = 0; i < bytes.length;) {
              bytes[i++] = -16;

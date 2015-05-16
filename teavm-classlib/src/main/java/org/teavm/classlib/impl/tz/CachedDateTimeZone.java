@@ -15,8 +15,6 @@
  */
 package org.teavm.classlib.impl.tz;
 
-import org.teavm.classlib.impl.Base46;
-
 /**
  * Improves the performance of requesting time zone offsets and name keys by
  * caching the results. Time zones that have simple rules or are fixed should
@@ -64,7 +62,6 @@ public class CachedDateTimeZone extends StorableDateTimeZone {
 
     @Override
     public void write(StringBuilder sb) {
-        Base46.encodeUnsigned(sb, CACHED);
         iZone.write(sb);
     }
 

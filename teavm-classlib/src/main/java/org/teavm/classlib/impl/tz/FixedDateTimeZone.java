@@ -16,6 +16,7 @@
 package org.teavm.classlib.impl.tz;
 
 import org.teavm.classlib.impl.Base46;
+import org.teavm.classlib.impl.CharFlow;
 
 /**
  * Basic DateTimeZone implementation that has a fixed name key and offsets.
@@ -70,5 +71,11 @@ public final class FixedDateTimeZone extends StorableDateTimeZone {
         Base46.encodeUnsigned(sb, FIXED);
         writeTime(sb, iWallOffset);
         writeTime(sb, iStandardOffset);
+    }
+
+    public static FixedDateTimeZone readZone(String id, CharFlow flow) {
+        int wallOffset = (int)readTime(flow);
+        int standardOffset = (int)readTime(flow);
+        return new FixedDateTimeZone(id, wallOffset, standardOffset);
     }
 }

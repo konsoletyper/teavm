@@ -21,6 +21,7 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.Iterator;
 import org.teavm.classlib.impl.Base46;
+import org.teavm.classlib.impl.CharFlow;
 
 /**
  * DateTimeZoneBuilder allows complex DateTimeZones to be constructed. Since
@@ -287,7 +288,7 @@ public class DateTimeZoneBuilder {
     /**
      * Supports setting fields of year and moving between transitions.
      */
-    private static final class OfYear {
+    static final class OfYear {
         // Is 'u', 'w', or 's'.
         final char iMode;
 
@@ -317,12 +318,21 @@ public class DateTimeZoneBuilder {
 
         public void write(StringBuilder sb) {
             sb.append(iMode);
-            Base46.encodeUnsigned(sb, iDayOfMonth);
             Base46.encodeUnsigned(sb, iMonthOfYear);
-            Base46.encode(sb, iDayOfMonth);
+            Base46.encodeUnsigned(sb, iDayOfMonth);
             Base46.encode(sb, iDayOfWeek);
             sb.append(iAdvance ? 'y' : 'n');
             StorableDateTimeZone.writeUnsignedTime(sb, iMillisOfDay);
+        }
+
+        public static OfYear read(CharFlow flow) {
+            char mode = flow.characters[flow.pointer++];
+            int monthOfYear = Base46.decodeUnsigned(flow);
+            int dayOfMonth = Base46.decodeUnsigned(flow);
+            int dayOfWeek = Base46.decode(flow);
+            boolean advance = flow.characters[flow.pointer++] == 'y';
+            int millisOfDay = (int)StorableDateTimeZone.readUnsignedTime(flow);
+            return new OfYear(mode, monthOfYear, dayOfMonth, dayOfWeek, advance, millisOfDay);
         }
 
         /**
@@ -342,6 +352,10 @@ public class DateTimeZoneBuilder {
             calendar.setTimeInMillis(0);
             calendar.set(Calendar.YEAR, year);
             calendar.set(Calendar.MONTH, iMonthOfYear - 1);
+            calendar.set(Calendar.HOUR, 0);
+            calendar.set(Calendar.MINUTE, 0);
+            calendar.set(Calendar.SECOND, 0);
+            calendar.set(Calendar.MILLISECOND, 0);
             calendar.add(Calendar.MILLISECOND, iMillisOfDay);
             setDayOfMonth(calendar);
 
@@ -350,7 +364,7 @@ public class DateTimeZoneBuilder {
             }
 
             // Convert from local time to UTC.
-            return calendar.getTimeInMillis() - offset;
+            return calendar.getTimeInMillis()  + calendar.get(Calendar.ZONE_OFFSET) - offset;
         }
 
         /**
@@ -381,13 +395,13 @@ public class DateTimeZoneBuilder {
             setDayOfMonthNext(calendar);
 
             if (iDayOfWeek == 0) {
-                if (calendar.getTimeInMillis() <= instant) {
+                if (calendar.getTimeInMillis() + calendar.get(Calendar.ZONE_OFFSET) <= instant) {
                     calendar.add(Calendar.YEAR, 1);
                     setDayOfMonthNext(calendar);
                 }
             } else {
                 setDayOfWeek(calendar);
-                if (calendar.getTimeInMillis() <= instant) {
+                if (calendar.getTimeInMillis() + calendar.get(Calendar.ZONE_OFFSET) <= instant) {
                     calendar.add(Calendar.YEAR, 1);
                     calendar.set(Calendar.MONTH, iMonthOfYear - 1);
                     setDayOfMonthNext(calendar);
@@ -396,7 +410,7 @@ public class DateTimeZoneBuilder {
             }
 
             // Convert from local time to UTC.
-            return calendar.getTimeInMillis() - offset;
+            return calendar.getTimeInMillis() + calendar.get(Calendar.ZONE_OFFSET) - offset;
         }
 
         /**
@@ -428,13 +442,13 @@ public class DateTimeZoneBuilder {
             setDayOfMonthPrevious(calendar);
 
             if (iDayOfWeek == 0) {
-                if (calendar.getTimeInMillis() >= instant) {
+                if (calendar.getTimeInMillis() + calendar.get(Calendar.ZONE_OFFSET) >= instant) {
                     calendar.add(Calendar.YEAR, -1);
                     setDayOfMonthPrevious(calendar);
                 }
             } else {
                 setDayOfWeek(calendar);
-                if (calendar.getTimeInMillis() >= instant) {
+                if (calendar.getTimeInMillis() + calendar.get(Calendar.ZONE_OFFSET) >= instant) {
                     calendar.add(Calendar.YEAR, -1);
                     calendar.set(Calendar.MONTH, iMonthOfYear - 1);
                     setDayOfMonthPrevious(calendar);
@@ -443,7 +457,7 @@ public class DateTimeZoneBuilder {
             }
 
             // Convert from local time to UTC.
-            return calendar.getTimeInMillis() - offset;
+            return calendar.getTimeInMillis() + calendar.get(Calendar.ZONE_OFFSET) - offset;
         }
 
         /**
@@ -455,6 +469,7 @@ public class DateTimeZoneBuilder {
                     calendar.add(Calendar.YEAR, 1);
                 }
             }
+            setDayOfMonth(calendar);
         }
 
         /**
@@ -466,6 +481,7 @@ public class DateTimeZoneBuilder {
                     calendar.add(Calendar.YEAR, -1);
                 }
             }
+            setDayOfMonth(calendar);
         }
 
         private void setDayOfMonth(Calendar calendar) {
@@ -499,7 +515,7 @@ public class DateTimeZoneBuilder {
     /**
      * Extends OfYear with a nameKey and savings.
      */
-    private static final class Recurrence {
+    static final class Recurrence {
         final OfYear iOfYear;
         final int iSaveMillis;
 
@@ -533,6 +549,12 @@ public class DateTimeZoneBuilder {
         public void write(StringBuilder sb) {
             iOfYear.write(sb);
             StorableDateTimeZone.writeTime(sb, iSaveMillis);
+        }
+
+        public static Recurrence read(CharFlow flow) {
+            OfYear ofYear = OfYear.read(flow);
+            int saveMillis = (int)StorableDateTimeZone.readTime(flow);
+            return new Recurrence(ofYear, saveMillis);
         }
     }
 
@@ -585,7 +607,7 @@ public class DateTimeZoneBuilder {
                 calendar.setTimeInMillis(0);
                 calendar.set(Calendar.YEAR, iFromYear);
                 // First advance instant to start of from year.
-                testInstant = calendar.getTimeInMillis() - wallOffset;
+                testInstant = calendar.getTimeInMillis()  + calendar.get(Calendar.ZONE_OFFSET) - wallOffset;
                 // Back off one millisecond to account for next recurrence
                 // being exactly at the beginning of the year.
                 testInstant -= 1;
@@ -878,13 +900,12 @@ public class DateTimeZoneBuilder {
         }
     }
 
-    private static final class DSTZone extends StorableDateTimeZone {
+    static final class DSTZone extends StorableDateTimeZone {
         final int iStandardOffset;
         final Recurrence iStartRecurrence;
         final Recurrence iEndRecurrence;
 
-        DSTZone(String id, int standardOffset,
-                Recurrence startRecurrence, Recurrence endRecurrence) {
+        DSTZone(String id, int standardOffset, Recurrence startRecurrence, Recurrence endRecurrence) {
             super(id);
             iStandardOffset = standardOffset;
             iStartRecurrence = startRecurrence;
@@ -989,7 +1010,7 @@ public class DateTimeZoneBuilder {
                 end = instant;
             }
 
-            return ((start > end) ? start : end) - 1;
+            return (start > end ? start : end) - 1;
         }
 
         private Recurrence findMatchingRecurrence(long instant) {
@@ -1031,9 +1052,16 @@ public class DateTimeZoneBuilder {
             iStartRecurrence.write(sb);
             iEndRecurrence.write(sb);
         }
+
+        public static DSTZone readZone(String id, CharFlow flow) {
+            int standardOffset = (int)readTime(flow);
+            Recurrence startRecurrence = Recurrence.read(flow);
+            Recurrence endRecurrence = Recurrence.read(flow);
+            return new DSTZone(id, standardOffset, startRecurrence, endRecurrence);
+        }
     }
 
-    private static final class PrecalculatedZone extends StorableDateTimeZone {
+    static final class PrecalculatedZone extends StorableDateTimeZone {
         /**
          * Factory to create instance from builder.
          *
@@ -1097,7 +1125,7 @@ public class DateTimeZoneBuilder {
         @Override
         public void write(StringBuilder sb) {
             int start = 0;
-            while (start + 1 < iTransitions.length && iTransitions[start + 1] < 0) {
+            while (start + 1 < iTransitions.length && iTransitions[start + 1] < 631170000000L) {
                 ++start;
             }
 
@@ -1111,7 +1139,7 @@ public class DateTimeZoneBuilder {
 
             writeTime(sb, transitions[start]);
             for (int i = start + 1; i < transitions.length; ++i) {
-                writeTime(sb, transitions[i] - transitions[i - 1] - (365 * 3600 * 1000));
+                writeTime(sb, transitions[i] - transitions[i - 1] - (365 * 3600 * 1000 / 2));
             }
 
             writeTimeArray(sb, Arrays.copyOfRange(iWallOffsets, start, transitions.length));
@@ -1123,6 +1151,31 @@ public class DateTimeZoneBuilder {
             } else {
                 sb.append('n');
             }
+        }
+
+        public static StorableDateTimeZone readZone(String id, CharFlow flow) {
+            int length = Base46.decodeUnsigned(flow);
+            long[] transitions = new long[length];
+            int[] wallOffsets = new int[length];
+            int[] standardOffsets = new int[length];
+
+            transitions[0] = readTime(flow);
+            for (int i = 1; i < length; ++i) {
+                transitions[i] = transitions[i - 1] + readTime(flow) + 365 * 3600 * 1000 / 2;
+            }
+
+            readTimeArray(flow, wallOffsets);
+            readTimeArray(flow, standardOffsets);
+
+            DSTZone tailZone;
+            if (flow.characters[flow.pointer++] == 'y') {
+                tailZone = DSTZone.readZone(id, flow);
+            } else {
+                tailZone = null;
+            }
+
+            PrecalculatedZone result = new PrecalculatedZone(id, transitions, wallOffsets, standardOffsets, tailZone);
+            return result.isCachable() ? CachedDateTimeZone.forZone(result) : result;
         }
 
         @Override
