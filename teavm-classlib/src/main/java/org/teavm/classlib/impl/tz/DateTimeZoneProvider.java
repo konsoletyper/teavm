@@ -52,7 +52,7 @@ public class DateTimeZoneProvider {
         CharFlow flow = new CharFlow(data.toCharArray());
         if (Base46.decode(flow) == StorableDateTimeZone.ALIAS) {
             String aliasId = data.substring(flow.pointer);
-            return getTimeZone(aliasId);
+            return new AliasDateTimeZone(id, getTimeZone(aliasId));
         } else {
             return StorableDateTimeZone.read(id, data);
         }
@@ -173,11 +173,11 @@ public class DateTimeZoneProvider {
             areaName = "";
             locationName = id;
         }
-        ResourceMap<TimeZoneResource> area = getResource().get(areaName);
-        if (area == null) {
+        if (!getResource().has(areaName)) {
             return null;
         }
-        return area.get(locationName);
+        ResourceMap<TimeZoneResource> area = getResource().get(areaName);
+        return area.has(locationName) ? area.get(locationName) : null;
     }
 
     @JSBody(params = "instant", script = "return new Date(instant).getTimezoneOffset();")

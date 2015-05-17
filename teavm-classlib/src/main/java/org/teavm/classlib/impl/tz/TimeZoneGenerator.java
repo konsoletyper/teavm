@@ -19,11 +19,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-import org.teavm.classlib.impl.Base46;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.metadata.MetadataGenerator;
 import org.teavm.platform.metadata.MetadataGeneratorContext;
@@ -72,7 +70,6 @@ public class TimeZoneGenerator implements MetadataGenerator {
         }
 
         Map<String, StorableDateTimeZone> zoneMap = compiler.compile();
-        Map<StorableDateTimeZone, String> zones = new HashMap<>();
         for (String id : zoneMap.keySet()) {
             int sepIndex = id.indexOf('/');
             String areaName;
@@ -93,14 +90,7 @@ public class TimeZoneGenerator implements MetadataGenerator {
             StorableDateTimeZone tz = zoneMap.get(id);
             TimeZoneResource tzRes = context.createResource(TimeZoneResource.class);
             StringBuilder data = new StringBuilder();
-            String knownId = zones.get(tz);
-            if (knownId == null) {
-                tz.write(data);
-                zones.put(tz, id);
-            } else {
-                Base46.encode(data, StorableDateTimeZone.ALIAS);
-                data.append(knownId);
-            }
+            tz.write(data);
             tzRes.setData(data.toString());
             area.put(locationName, tzRes);
         }

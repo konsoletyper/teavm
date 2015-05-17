@@ -262,7 +262,7 @@ public class ZoneInfoCompiler {
                                 alias + "' to");
                     }*/
                 } else {
-                    map.put(alias, tz);
+                    map.put(alias, new AliasDateTimeZone(alias, tz));
                 }
             }
         }
