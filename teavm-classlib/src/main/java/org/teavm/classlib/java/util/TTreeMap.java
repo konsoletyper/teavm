@@ -346,7 +346,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
             root.left = deleteNode(root.left, key);
         } else if (cmp > 0) {
             root.right = deleteNode(root.right, key);
-        } else  if (root.right == null) {
+        } else if (root.right == null) {
             return root.left;
         } else {
             TreeNode<K, V> left = root.left;
@@ -363,13 +363,16 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
             while (minDepth > 0) {
                 TreeNode<K, V> node = pathToMin[--minDepth];
                 node.left = right;
+                node.fix();
+                node = node.balance();
                 right = node;
-                node.balance();
             }
             min.right = right;
             min.left = left;
             root = min;
+            root.fix();
         }
+        root.fix();
         return root.balance();
     }
 
@@ -480,7 +483,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
     public Entry<K, V> pollFirstEntry() {
         TreeNode<K, V> node = firstNode(false);
         if (node != null) {
-            deleteNode(root, node.getKey());
+            root = deleteNode(root, node.getKey());
         }
         return node;
     }
@@ -489,7 +492,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
     public Entry<K, V> pollLastEntry() {
         TreeNode<K, V> node = firstNode(true);
         if (node != null) {
-            deleteNode(root, node.getKey());
+            root = deleteNode(root, node.getKey());
         }
         return node;
     }

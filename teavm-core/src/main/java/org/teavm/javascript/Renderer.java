@@ -1192,23 +1192,22 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         }
 
         Set<String> names = index < debugNames.size() ? debugNames.get(index) : null;
-        if (minifying || names == null || names.isEmpty()) {
-            --index;
-            if (index < variableNames.length()) {
-                return Character.toString(variableNames.charAt(index));
-            } else {
-                return Character.toString(variableNames.charAt(index % variableNames.length())) +
-                        index / variableNames.length();
-            }
+        StringBuilder sb = new StringBuilder();
+        --index;
+        if (index < variableNames.length()) {
+            sb.append(Character.toString(variableNames.charAt(index)));
         } else {
+            sb.append(Character.toString(variableNames.charAt(index % variableNames.length())) +
+                    index / variableNames.length());
+        }
+        if (!minifying && names != null && !names.isEmpty()) {
             List<String> nameList = new ArrayList<>(names);
             Collections.sort(nameList);
-            StringBuilder sb = new StringBuilder();
             for (String name : nameList) {
                 sb.append('_').append(name);
             }
-            return sb.toString();
         }
+        return sb.toString();
     }
 
     private String pointerName() {
@@ -1533,7 +1532,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             }
             String str = constantToString(expr.getValue());
             if (str.startsWith("-")) {
-                enterPriority(Priority.MULTIPLICATION, Associativity.RIGHT, true);
+                enterPriority(Priority.MULTIPLICATION, Associativity.NONE, true);
             }
             writer.append(str);
             if (str.startsWith("-")) {

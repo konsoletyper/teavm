@@ -85,6 +85,13 @@ public class VMTest {
     }
 
     @Test
+    public void subtractingNegativeWorks() {
+        int a = 23;
+        int b = a - 0xFFFFFFFF;
+        assertEquals(24, b);
+    }
+
+    @Test
     public void separatesExceptionAndVariable() {
         int n = foo();
         try {

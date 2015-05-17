@@ -39,6 +39,12 @@ public class JSObjectClassTransformer implements ClassHolderTransformer {
         if (processor.isNativeImplementation(cls.getName())) {
             processor.makeSync(cls);
         }
+        MethodReference functorMethod = processor.isFunctor(cls.getName());
+        if (functorMethod != null) {
+            if (processor.isFunctor(cls.getParent()) == null) {
+                processor.addFunctorField(cls, functorMethod);
+            }
+        }
         for (MethodHolder method : cls.getMethods().toArray(new MethodHolder[0])) {
             if (method.getAnnotations().get(JSBody.class.getName()) != null) {
                 processor.processJSBody(cls, method);
