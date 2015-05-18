@@ -24,7 +24,6 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
 import org.junit.Test;
-import org.teavm.classlib.impl.tz.DateTimeZoneProvider;
 
 /**
  *
@@ -36,9 +35,6 @@ public class TimeZoneTest {
     @Test
     public void test_getDefault() {
         assertNotSame("returns identical", TimeZone.getDefault(), TimeZone.getDefault());
-        for (int i = 0; i < 30; ++i) {
-            DateTimeZoneProvider.detectTimezone();
-        }
     }
 
     @Test

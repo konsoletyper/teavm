@@ -598,6 +598,7 @@ Long.prototype.toString = function() {
     return positive ? result : "-" + result;
 }
 var Long_ZERO = new Long(0, 0);
+var Long_MAX_NORMAL = 1 << 18;
 function Long_fromInt(val) {
     return val >= 0 ? new Long(val, 0) : new Long(val, -1);
 }
@@ -619,6 +620,8 @@ function Long_toNumber(val) {
 function Long_add(a, b) {
     if (a.hi === (a.lo >> 31) && b.hi === (b.lo >> 31)) {
         return Long_fromNumber(a.lo + b.lo);
+    } else if (Math.abs(a.hi) < Long_MAX_NORMAL && Math.abs(b.hi) < Long_MAX_NORMAL) {
+        return Long_fromNumber(Long_toNumber(a) + Long_toNumber(b));
     }
     var a_lolo = a.lo & 0xFFFF;
     var a_lohi = a.lo >>> 16;
@@ -729,13 +732,13 @@ function Long_mul(a, b) {
     return positive ? result : Long_neg(result);
 }
 function Long_div(a, b) {
-    if (a.hi === 0 && b.hi === 0) {
+    if (Math.abs(a.hi) < Long_MAX_NORMAL && Math.abs(b.hi) < Long_MAX_NORMAL) {
         return Long_fromNumber(Long_toNumber(a) / Long_toNumber(b));
     }
     return Long_divRem(a, b)[0];
 }
 function Long_rem(a, b) {
-    if (a.hi === 0 && b.hi === 0) {
+    if (Math.abs(a.hi) < Long_MAX_NORMAL && Math.abs(b.hi) < Long_MAX_NORMAL) {
         return Long_fromNumber(Long_toNumber(a) % Long_toNumber(b));
     }
     return Long_divRem(a, b)[1];

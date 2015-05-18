@@ -146,6 +146,10 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
             "DAY_OF_MONTH=", "DAY_OF_YEAR=", "DAY_OF_WEEK=", "DAY_OF_WEEK_IN_MONTH=", "AM_PM=", "HOUR=", "HOUR_OF_DAY",
             "MINUTE=", "SECOND=", "MILLISECOND=", "ZONE_OFFSET=", "DST_OFFSET=" };
 
+    private static int firstDayOfWeekCache = -1;
+    private static int minimalDaysInFirstWeekCache = -1;
+    private static TLocale cacheFor;
+
     protected TCalendar() {
         this(TLocale.getDefault());
     }
@@ -157,6 +161,7 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
         setLenient(true);
         setFirstDayOfWeek(resolveFirstDayOfWeek(locale));
         setMinimalDaysInFirstWeek(resolveMinimalDaysInFirstWeek(locale));
+        cacheFor = locale;
     }
 
     private static String resolveCountry(TLocale locale) {
@@ -170,15 +175,24 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
     }
 
     private static int resolveFirstDayOfWeek(TLocale locale) {
+        if (locale == cacheFor && firstDayOfWeekCache >= 0) {
+            return firstDayOfWeekCache;
+        }
         String country = resolveCountry(locale);
         ResourceMap<IntResource> dayMap = CLDRHelper.getFirstDayOfWeek();
-        return dayMap.has(country) ? dayMap.get(country).getValue() : dayMap.get("001").getValue();
+        firstDayOfWeekCache = dayMap.has(country) ? dayMap.get(country).getValue() : dayMap.get("001").getValue();
+        return firstDayOfWeekCache;
     }
 
     private static int resolveMinimalDaysInFirstWeek(TLocale locale) {
+        if (locale == cacheFor && minimalDaysInFirstWeekCache >= 0) {
+            return minimalDaysInFirstWeekCache;
+        }
         String country = resolveCountry(locale);
         ResourceMap<IntResource> dayMap = CLDRHelper.getMinimalDaysInFirstWeek();
-        return dayMap.has(country) ? dayMap.get(country).getValue() : dayMap.get("001").getValue();
+        minimalDaysInFirstWeekCache = dayMap.has(country) ? dayMap.get(country).getValue() :
+                dayMap.get("001").getValue();
+        return minimalDaysInFirstWeekCache;
     }
 
     abstract public void add(int field, int value);
