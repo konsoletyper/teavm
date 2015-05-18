@@ -22,4 +22,14 @@ import org.teavm.jso.JSObject;
  * @author Alexey Andreev
  */
 public interface CanvasGradient extends JSObject {
+    
+    /**
+     * The CanvasGradient.addColorStop() method adds a new stop, defined by an 
+     * offset and a color, to the gradient. If the offset is not between 0 and 1, 
+     * an INDEX_SIZE_ERR is raised, if the color can't be parsed as a CSS color, 
+     * a SYNTAX_ERR is raised.
+     * @param offset Offset between 0 and 1
+     * @param color A CSS parseable color.
+     */
+    void addColorStop(double offset, String color);
 }
