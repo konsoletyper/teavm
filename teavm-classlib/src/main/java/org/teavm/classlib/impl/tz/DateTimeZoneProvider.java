@@ -129,7 +129,9 @@ public class DateTimeZoneProvider {
                 }
             }
 
-            if (scoreTable.get(0).tz.previousTransition(time) == time) {
+            if (scoreTable.size() == 1 || scoreTable.get(0).tz.previousTransition(time) == time) {
+                return scoreTable.get(0).tz;
+            } else if (scoreTable.size() > 1 && scoreTable.get(0).value + 48 * 7 < scoreTable.get(1).value) {
                 return scoreTable.get(0).tz;
             }
 

@@ -22,6 +22,7 @@ import java.util.Arrays;
 import org.teavm.classlib.impl.tz.DateTimeZone;
 import org.teavm.classlib.impl.tz.DateTimeZoneProvider;
 import org.teavm.classlib.impl.tz.FixedDateTimeZone;
+import org.teavm.classlib.impl.unicode.CLDRHelper;
 
 /**
  * {@code TimeZone} represents a time zone offset, taking into account
@@ -84,11 +85,11 @@ public abstract class TTimeZone implements Serializable, Cloneable {
      */
     public static final int LONG = 1;
 
-    private static TTimeZone Default;
+    private static TTimeZone defaultTz;
 
     static TTimeZone GMT = new TIANATimeZone(new FixedDateTimeZone("GMT", 0, 0));
 
-    private String ID;
+    private String id;
 
     /**
      * Constructs a new instance of this class.
@@ -97,7 +98,7 @@ public abstract class TTimeZone implements Serializable, Cloneable {
     }
 
     TTimeZone(String id) {
-        this.ID = id;
+        this.id = id;
     }
 
     /**
@@ -155,10 +156,10 @@ public abstract class TTimeZone implements Serializable, Cloneable {
      * @return the default time zone.
      */
     public static TTimeZone getDefault() {
-        if (Default == null) {
-            Default = new TIANATimeZone(DateTimeZoneProvider.detectTimezone());
+        if (defaultTz == null) {
+            defaultTz = new TIANATimeZone(DateTimeZoneProvider.detectTimezone());
         }
-        return (TTimeZone) Default.clone();
+        return (TTimeZone) defaultTz.clone();
     }
 
     /**
@@ -216,8 +217,11 @@ public abstract class TTimeZone implements Serializable, Cloneable {
      * @return the {@code TimeZone} name.
      */
     public String getDisplayName(boolean daylightTime, int style, TLocale locale) {
-        // TODO: implement via CLDR
-        return null;
+        String name = CLDRHelper.getTimeZoneName(locale.getLanguage(), locale.getCountry(), id);
+        if (name == null) {
+            name = id;
+        }
+        return name;
     }
 
     /**
@@ -226,7 +230,7 @@ public abstract class TTimeZone implements Serializable, Cloneable {
      * @return the time zone ID string.
      */
     public String getID() {
-        return ID;
+        return id;
     }
 
     /**
@@ -416,7 +420,7 @@ public abstract class TTimeZone implements Serializable, Cloneable {
      *            a {@code TimeZone} object.
      */
     public static void setDefault(TTimeZone timezone) {
-        Default = timezone != null ? (TTimeZone)timezone.clone() : null;
+        defaultTz = timezone != null ? (TTimeZone)timezone.clone() : null;
     }
 
     /**
@@ -429,7 +433,7 @@ public abstract class TTimeZone implements Serializable, Cloneable {
         if (name == null) {
             throw new NullPointerException();
         }
-        ID = name;
+        id = name;
     }
 
     /**

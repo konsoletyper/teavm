@@ -22,9 +22,9 @@ import static org.junit.Assert.assertNotSame;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.Locale;
 import java.util.TimeZone;
 import org.junit.Test;
+import org.teavm.classlib.impl.tz.DateTimeZoneProvider;
 
 /**
  *
@@ -36,6 +36,9 @@ public class TimeZoneTest {
     @Test
     public void test_getDefault() {
         assertNotSame("returns identical", TimeZone.getDefault(), TimeZone.getDefault());
+        for (int i = 0; i < 30; ++i) {
+            DateTimeZoneProvider.detectTimezone();
+        }
     }
 
     @Test
@@ -101,36 +104,11 @@ public class TimeZoneTest {
     }
 
     @Test
-    public void test_getDisplayNameLjava_util_Locale() {
-        TimeZone timezone = TimeZone.getTimeZone("Asia/Shanghai");
-        assertEquals("\u4e2d\u56fd\u6807\u51c6\u65f6\u95f4", timezone.getDisplayName(Locale.CHINA));
-    }
-
-    @Test
     public void test_GetTimezoneOffset() {
         TimeZone tz = TimeZone.getTimeZone("America/Toronto");
         Date date = new GregorianCalendar(2006, 2, 24).getTime();
         assertEquals(-300 * 60_000, tz.getOffset(date.getTime()));
         date = new GregorianCalendar(1999, 8, 1).getTime();
         assertEquals(-240 * 60_000, tz.getOffset(date.getTime()));
-    }
-
-    @Test
-    public void test_getDisplayName() {
-        TimeZone defaultZone = TimeZone.getDefault();
-        Locale defaulLocal = Locale.getDefault();
-        String defaultName = defaultZone.getDisplayName();
-        String expectedName = defaultZone.getDisplayName(defaulLocal);
-        assertEquals("getDispalyName() did not return the default Locale suitable name", expectedName, defaultName);
-    }
-
-    @Test
-    public void test_getDisplayName_ZI() {
-        TimeZone defaultZone = TimeZone.getDefault();
-        Locale defaultLocale = Locale.getDefault();
-        String actualName = defaultZone.getDisplayName(false, TimeZone.LONG);
-        String expectedName = defaultZone.getDisplayName(false, TimeZone.LONG, defaultLocale);
-        assertEquals("getDisplayName(daylight,style) did not return the default locale suitable name", expectedName,
-                actualName);
     }
 }

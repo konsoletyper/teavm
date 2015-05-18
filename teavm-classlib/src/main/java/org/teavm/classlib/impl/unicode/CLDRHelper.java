@@ -90,6 +90,34 @@ public class CLDRHelper {
         return result;
     }
 
+    public static String getTimeZoneName(String language, String country, String id) {
+        String locale = getCode(language, country);
+        if (!getTimeZoneLocalizationMap().has(locale)) {
+            return null;
+        }
+        TimeZoneLocalization localization = getTimeZoneLocalizationMap().get(locale);
+
+        int separator = id.indexOf('/');
+        if (separator < 0) {
+            return null;
+        }
+
+        String area = id.substring(0, separator);
+        String territory = id.substring(separator + 1);
+        if (!localization.getTimeZones().has(area)) {
+            return null;
+        }
+        ResourceMap<StringResource> timeZones = localization.getTimeZones().get(area);
+
+        if (!timeZones.has(territory)) {
+            return null;
+        }
+        return timeZones.get(territory).getValue();
+    }
+
+    @MetadataProvider(TimeZoneLocalizationGenerator.class)
+    public static native ResourceMap<TimeZoneLocalization> getTimeZoneLocalizationMap();
+
     @MetadataProvider(LanguageMetadataGenerator.class)
     public static native ResourceMap<ResourceMap<StringResource>> getLanguagesMap();
 

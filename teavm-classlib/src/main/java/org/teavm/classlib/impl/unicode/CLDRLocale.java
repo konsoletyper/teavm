@@ -36,6 +36,7 @@ public class CLDRLocale {
     CLDRDateFormats dateFormats;
     CLDRDateFormats timeFormats;
     CLDRDateFormats dateTimeFormats;
+    CLDRTimeZone[] timeZones;
 
     public Map<String, String> getLanguages() {
         return Collections.unmodifiableMap(languages);
@@ -79,5 +80,9 @@ public class CLDRLocale {
 
     public CLDRDateFormats getDateTimeFormats() {
         return dateTimeFormats;
+    }
+
+    public CLDRTimeZone[] getTimeZones() {
+        return timeZones.clone();
     }
 }
