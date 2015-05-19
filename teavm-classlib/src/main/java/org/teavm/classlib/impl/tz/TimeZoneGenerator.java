@@ -19,7 +19,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.Map;
+import java.util.Collection;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import org.teavm.model.MethodReference;
@@ -32,21 +32,18 @@ import org.teavm.platform.metadata.ResourceMap;
  * @author Alexey Andreev
  */
 public class TimeZoneGenerator implements MetadataGenerator {
-    private static final String tzPath = "org/teavm/classlib/impl/tz/tzdata2015d.zip";
+    public static final String TIMEZONE_DB_VERSION = "2015d";
+    public static final String TIMEZONE_DB_PATH = "org/teavm/classlib/impl/tz/tzdata" + TIMEZONE_DB_VERSION + ".zip";
 
-    @Override
-    public ResourceMap<ResourceMap<TimeZoneResource>> generateMetadata(
-            MetadataGeneratorContext context, MethodReference method) {
-        ResourceMap<ResourceMap<TimeZoneResource>> result = context.createResourceMap();
-        ZoneInfoCompiler compiler = new ZoneInfoCompiler();
-        try (InputStream input = context.getClassLoader().getResourceAsStream(tzPath)) {
+    public static void compile(ZoneInfoCompiler compiler, ClassLoader classLoader) {
+        try (InputStream input = classLoader.getResourceAsStream(TIMEZONE_DB_PATH)) {
             try (ZipInputStream zip = new ZipInputStream(input)) {
                 while (true) {
                     ZipEntry entry = zip.getNextEntry();
                     if (entry == null) {
                         break;
                     }
-                    switch (entry.getName().substring("tzdata2015d/".length())) {
+                    switch (entry.getName().substring(("tzdata" + TIMEZONE_DB_VERSION + "/").length())) {
                         case "africa":
                         case "antarctica":
                         case "asia":
@@ -68,9 +65,27 @@ public class TimeZoneGenerator implements MetadataGenerator {
         } catch (IOException e) {
             throw new RuntimeException("Error generating time zones", e);
         }
+    }
 
-        Map<String, StorableDateTimeZone> zoneMap = compiler.compile();
-        for (String id : zoneMap.keySet()) {
+    @Override
+    public ResourceMap<ResourceMap<TimeZoneResource>> generateMetadata(
+            MetadataGeneratorContext context, MethodReference method) {
+        ResourceMap<ResourceMap<TimeZoneResource>> result = context.createResourceMap();
+        ZoneInfoCompiler compiler = new ZoneInfoCompiler();
+        Collection<StorableDateTimeZone> zones;
+        try (InputStream input = context.getClassLoader().getResourceAsStream("org/teavm/classlib/impl/tz/cache")) {
+            if (input != null) {
+                TimeZoneCache cache = new TimeZoneCache();
+                zones = cache.read(input).values();
+            } else {
+                compile(compiler, context.getClassLoader());
+                zones = compiler.compile().values();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Error generating time zones", e);
+        }
+        for (StorableDateTimeZone tz : zones) {
+            String id = tz.getID();
             int sepIndex = id.indexOf('/');
             String areaName;
             String locationName;
@@ -87,7 +102,6 @@ public class TimeZoneGenerator implements MetadataGenerator {
                 result.put(areaName, area);
             }
 
-            StorableDateTimeZone tz = zoneMap.get(id);
             TimeZoneResource tzRes = context.createResource(TimeZoneResource.class);
             StringBuilder data = new StringBuilder();
             tz.write(data);

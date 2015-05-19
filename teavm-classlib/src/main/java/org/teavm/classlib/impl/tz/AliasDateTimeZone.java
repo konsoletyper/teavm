@@ -56,7 +56,7 @@ public class AliasDateTimeZone extends StorableDateTimeZone {
 
     @Override
     public void write(StringBuilder sb) {
-        Base46.encode(sb, ALIAS);
+        Base46.encodeUnsigned(sb, ALIAS);
         sb.append(innerZone.getID());
     }
 }
