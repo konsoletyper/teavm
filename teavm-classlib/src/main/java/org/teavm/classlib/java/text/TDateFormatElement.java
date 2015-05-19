@@ -15,8 +15,17 @@
  */
 package org.teavm.classlib.java.text;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.teavm.classlib.java.util.TCalendar;
 import org.teavm.classlib.java.util.TGregorianCalendar;
+import org.teavm.classlib.java.util.TLocale;
+import org.teavm.classlib.java.util.TTimeZone;
 
 /**
  *
@@ -332,5 +341,171 @@ abstract class TDateFormatElement {
                 position.setErrorIndex(position.getIndex());
             }
         }
+    }
+
+    public static class GeneralTimezone extends TDateFormatElement {
+        private static Map<TLocale, GeneralTimezone> cache;
+        private TLocale locale;
+        private TrieNode searchTrie;
+
+        private GeneralTimezone(TLocale locale) {
+            this.locale = locale;
+        }
+
+        public static GeneralTimezone get(TLocale locale) {
+            if (cache == null) {
+                cache = new HashMap<>();
+            }
+            GeneralTimezone elem = cache.get(locale);
+            if (elem == null) {
+                elem = new GeneralTimezone(locale);
+                cache.put(locale, elem);
+            }
+            return elem;
+        }
+
+        @Override
+        public void format(TCalendar date, StringBuffer buffer) {
+            TTimeZone tz = date.getTimeZone();
+            if (tz.getID().startsWith("GMT")) {
+                int minutes = tz.getRawOffset() / 60_000;
+                buffer.append("GMT");
+                if (minutes > 0) {
+                    buffer.append('+');
+                } else {
+                    minutes = -minutes;
+                    buffer.append('-');
+                }
+                int hours = minutes / 60;
+                minutes %= 60;
+                buffer.append(hours / 10).append(hours % 10).append(':').append(minutes / 10).append(minutes % 10);
+            } else {
+                buffer.append(tz.getDisplayName(locale));
+            }
+        }
+
+        @Override
+        public void parse(String text, TCalendar date, TParsePosition position) {
+            if (position.getIndex() + 4 < text.length()) {
+                int signIndex = position.getIndex() + 3;
+                if (text.substring(position.getIndex(), signIndex).equals("GMT")) {
+                    char signChar = text.charAt(signIndex);
+                    if (signChar == '+' || signChar == '-') {
+                        parseHoursMinutes(text, date, position);
+                        return;
+                    }
+                }
+            }
+            if (position.getIndex() + 1 < text.length()) {
+
+            }
+            TTimeZone tz = match(text, position);
+            if (tz != null) {
+                date.setTimeZone(tz);
+            } else {
+                position.setErrorIndex(position.getIndex());
+            }
+        }
+
+        private void parseHoursMinutes(String text, TCalendar date, TParsePosition position) {
+
+        }
+
+        public TTimeZone match(String text, TParsePosition position) {
+            prepareTrie();
+            int start = position.getIndex();
+            int index = start;
+            TrieNode node = searchTrie;
+            int lastMatch = start;
+            TTimeZone tz = null;
+            while (node.childNodes.length > 0) {
+                if (node.tz != null) {
+                    lastMatch = index;
+                    tz = node.tz;
+                }
+                if (index >= text.length()) {
+                    break;
+                }
+                int next = Arrays.binarySearch(node.chars, text.charAt(index++));
+                if (next < 0) {
+                    return null;
+                }
+                node = node.childNodes[index];
+            }
+            position.setIndex(lastMatch);
+            return tz;
+        }
+
+        private void prepareTrie() {
+            if (searchTrie != null) {
+                return;
+            }
+            TrieBuilder builder = new TrieBuilder();
+            for (String tzId : TTimeZone.getAvailableIDs()) {
+                TTimeZone tz = TTimeZone.getTimeZone(tzId);
+                builder.add(tz.getDisplayName(locale), tz);
+            }
+        }
+    }
+
+    static class TrieNode {
+        char[] chars;
+        TrieNode[] childNodes;
+        TTimeZone tz;
+    }
+
+    static class TrieBuilder {
+        TrieNodeBuilder root = new TrieNodeBuilder();
+
+        public void add(String text, TTimeZone tz) {
+            int index = 0;
+            TrieNodeBuilder node = root;
+            while (index < text.length()) {
+                char c = text.charAt(index);
+                while (node.ch != c) {
+                    if (node.ch == '\0') {
+                        node.ch = c;
+                        node.sibling = new TrieNodeBuilder();
+                        break;
+                    }
+                    node = node.sibling;
+                }
+                if (node.next == null) {
+                    node.next = new TrieNodeBuilder();
+                }
+                node = node.next;
+            }
+            node.tz = tz;
+        }
+
+        public TrieNode build(TrieNodeBuilder builder) {
+            TrieNode node = new TrieNode();
+            node.tz = builder.tz;
+            List<TrieNodeBuilder> builders = new ArrayList<>();
+            TrieNodeBuilder tmp = builder;
+            while (tmp.ch != '\0') {
+                builders.add(builder);
+                builder = builder.sibling;
+            }
+            Collections.sort(builders, new Comparator<TrieNodeBuilder>() {
+                @Override public int compare(TrieNodeBuilder o1, TrieNodeBuilder o2) {
+                    return Character.compare(o1.ch, o2.ch);
+                }
+            });
+            node.chars = new char[builders.size()];
+            node.childNodes = new TrieNode[builders.size()];
+            for (int i = 0; i < node.chars.length; ++i) {
+                node.chars[i] = builders.get(i).ch;
+                node.childNodes[i] = build(builders.get(i));
+            }
+            return node;
+        }
+    }
+
+    static class TrieNodeBuilder {
+        char ch;
+        TrieNodeBuilder next;
+        TTimeZone tz;
+        TrieNodeBuilder sibling;
     }
 }
