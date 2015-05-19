@@ -141,6 +141,9 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
     public static final int AM = 0;
 
     public static final int PM = 1;
+    
+    
+    private TTimeZone zone;
 
     private static String[] fieldNames = { "ERA=", "YEAR=", "MONTH=", "WEEK_OF_YEAR=", "WEEK_OF_MONTH=",
             "DAY_OF_MONTH=", "DAY_OF_YEAR=", "DAY_OF_WEEK=", "DAY_OF_WEEK_IN_MONTH=", "AM_PM=", "HOUR=", "HOUR_OF_DAY",
@@ -151,6 +154,7 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
     }
 
     protected TCalendar(TLocale locale) {
+        zone = TTimeZone.getDefault();
         fields = new int[FIELD_COUNT];
         isSet = new boolean[FIELD_COUNT];
         areFieldsSet = isTimeSet = false;
@@ -310,6 +314,17 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
     public static TCalendar getInstance(TLocale locale) {
         return new TGregorianCalendar(locale);
     }
+    
+    /**
+     * Gets a calendar using the specified time zone.
+     */
+    public static TCalendar getInstance(TTimeZone zone) {
+        return new TGregorianCalendar(zone);
+    }
+    
+    public static TCalendar getInstance(TTimeZone zone, TLocale locale) {
+        return new TGregorianCalendar(zone, locale);
+    }
 
     abstract public int getLeastMaximum(int field);
 
@@ -331,6 +346,13 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
             isTimeSet = true;
         }
         return time;
+    }
+    
+    /**
+     * Gets the time zone.
+     */
+    public TTimeZone getTimeZone() {
+        return zone;
     }
 
     @Override
@@ -374,7 +396,7 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
             lastTimeFieldSet = HOUR;
         }
     }
-
+    
     public final void set(int year, int month, int day) {
         set(YEAR, year);
         set(MONTH, month);
@@ -406,6 +428,14 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
 
     public final void setTime(TDate date) {
         setTimeInMillis(date.getTime());
+    }
+    
+    /**
+     * Sets the time zone with the given time zone value.
+     */
+    public void setTimeZone(TTimeZone value) {
+        zone = value;
+        areFieldsSet = false;
     }
 
     public void setTimeInMillis(long milliseconds) {
