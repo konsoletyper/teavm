@@ -338,12 +338,12 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
         return new TGregorianCalendar(locale);
     }
 
-    public static TCalendar getInstance(TTimeZone timezone) {
-        return new TGregorianCalendar(timezone);
+    public static TCalendar getInstance(TTimeZone zone, TLocale locale) {
+        return new TGregorianCalendar(zone, locale);
     }
 
-    public static TCalendar getInstance(TTimeZone timezone, TLocale locale) {
-        return new TGregorianCalendar(timezone, locale);
+    public static TCalendar getInstance(TTimeZone timezone) {
+        return new TGregorianCalendar(timezone);
     }
 
     abstract public int getLeastMaximum(int field);
