@@ -62,7 +62,7 @@ class TIANATimeZone extends TTimeZone {
 
     @Override
     public boolean useDaylightTime() {
-        return true;
+        return underlyingZone.isFixed();
     }
 
     @Override

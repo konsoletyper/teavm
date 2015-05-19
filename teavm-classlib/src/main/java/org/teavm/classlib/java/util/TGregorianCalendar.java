@@ -76,11 +76,20 @@ public class TGregorianCalendar extends TCalendar {
     }
 
     public TGregorianCalendar(TLocale locale) {
-        super(locale);
+        this(TTimeZone.getDefault(), locale);
+    }
+
+    public TGregorianCalendar(TTimeZone timezone) {
+        this(timezone, TLocale.getDefault());
+    }
+
+    public TGregorianCalendar(TTimeZone timezone, TLocale locale) {
+        super(timezone, locale);
         setTimeInMillis(System.currentTimeMillis());
     }
 
     TGregorianCalendar(@SuppressWarnings("unused") boolean ignored) {
+        super(TTimeZone.getDefault());
         setFirstDayOfWeek(SUNDAY);
         setMinimalDaysInFirstWeek(1);
     }
@@ -302,8 +311,8 @@ public class TGregorianCalendar extends TCalendar {
         }
     }
 
-    private static int getTimeZoneOffset(double time) {
-        return -TDate.getTimezoneOffset(time) * 1000 * 60;
+    int getTimeZoneOffset(long localTime) {
+        return getTimeZone().getOffset(localTime);
     }
 
     @Override

@@ -146,15 +146,26 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
             "DAY_OF_MONTH=", "DAY_OF_YEAR=", "DAY_OF_WEEK=", "DAY_OF_WEEK_IN_MONTH=", "AM_PM=", "HOUR=", "HOUR_OF_DAY",
             "MINUTE=", "SECOND=", "MILLISECOND=", "ZONE_OFFSET=", "DST_OFFSET=" };
 
+    private TTimeZone zone;
+
     private static int firstDayOfWeekCache = -1;
     private static int minimalDaysInFirstWeekCache = -1;
     private static TLocale cacheFor;
 
     protected TCalendar() {
-        this(TLocale.getDefault());
+        this(TTimeZone.getDefault(), TLocale.getDefault());
     }
 
-    protected TCalendar(TLocale locale) {
+    TCalendar(TTimeZone timezone) {
+        fields = new int[FIELD_COUNT];
+        isSet = new boolean[FIELD_COUNT];
+        areFieldsSet = isTimeSet = false;
+        setLenient(true);
+        setTimeZone(timezone);
+    }
+
+    protected TCalendar(TTimeZone timezone, TLocale locale) {
+        this(timezone);
         fields = new int[FIELD_COUNT];
         isSet = new boolean[FIELD_COUNT];
         areFieldsSet = isTimeSet = false;
@@ -231,6 +242,7 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
             TCalendar clone = (TCalendar) super.clone();
             clone.fields = fields.clone();
             clone.isSet = isSet.clone();
+            clone.zone = (TTimeZone)zone.clone();
             return clone;
         } catch (CloneNotSupportedException e) {
             return null;
@@ -263,7 +275,8 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
         TCalendar cal = (TCalendar) object;
         return getTimeInMillis() == cal.getTimeInMillis() && isLenient() == cal.isLenient() &&
                 getFirstDayOfWeek() == cal.getFirstDayOfWeek() &&
-                getMinimalDaysInFirstWeek() == cal.getMinimalDaysInFirstWeek();
+                getMinimalDaysInFirstWeek() == cal.getMinimalDaysInFirstWeek() &&
+                zone.equals(cal.zone);
     }
 
     public int get(int field) {
@@ -325,6 +338,14 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
         return new TGregorianCalendar(locale);
     }
 
+    public static TCalendar getInstance(TTimeZone timezone) {
+        return new TGregorianCalendar(timezone);
+    }
+
+    public static TCalendar getInstance(TTimeZone timezone, TLocale locale) {
+        return new TGregorianCalendar(timezone, locale);
+    }
+
     abstract public int getLeastMaximum(int field);
 
     abstract public int getMaximum(int field);
@@ -345,6 +366,15 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
             isTimeSet = true;
         }
         return time;
+    }
+
+    public TTimeZone getTimeZone() {
+        return zone;
+    }
+
+    public void setTimeZone(TTimeZone timezone) {
+        zone = timezone;
+        areFieldsSet = false;
     }
 
     @Override

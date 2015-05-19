@@ -50,7 +50,7 @@ public class DateTimeZoneProvider {
         }
         String data = res.getData();
         CharFlow flow = new CharFlow(data.toCharArray());
-        if (Base46.decode(flow) == StorableDateTimeZone.ALIAS) {
+        if (Base46.decodeUnsigned(flow) == StorableDateTimeZone.ALIAS) {
             String aliasId = data.substring(flow.pointer);
             return new AliasDateTimeZone(id, getTimeZone(aliasId));
         } else {

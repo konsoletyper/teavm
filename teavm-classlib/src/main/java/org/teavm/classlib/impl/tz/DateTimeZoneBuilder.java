@@ -15,11 +15,7 @@
  */
 package org.teavm.classlib.impl.tz;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.Iterator;
+import java.util.*;
 import org.teavm.classlib.impl.Base46;
 import org.teavm.classlib.impl.CharFlow;
 
@@ -69,6 +65,8 @@ import org.teavm.classlib.impl.CharFlow;
  * @since 1.0
  */
 public class DateTimeZoneBuilder {
+    private static TimeZone GMT = TimeZone.getTimeZone("GMT+00:00");
+
     private static StorableDateTimeZone buildFixedZone(String id, int wallOffset, int standardOffset) {
         return new FixedDateTimeZone(id, wallOffset, standardOffset);
     }
@@ -348,7 +346,7 @@ public class DateTimeZoneBuilder {
                 offset = 0;
             }
 
-            Calendar calendar = Calendar.getInstance();
+            Calendar calendar = Calendar.getInstance(GMT);
             calendar.setTimeInMillis(0);
             calendar.set(Calendar.YEAR, year);
             calendar.set(Calendar.MONTH, iMonthOfYear - 1);
@@ -364,7 +362,7 @@ public class DateTimeZoneBuilder {
             }
 
             // Convert from local time to UTC.
-            return calendar.getTimeInMillis()  + calendar.get(Calendar.ZONE_OFFSET) - offset;
+            return calendar.getTimeInMillis() - offset;
         }
 
         /**
@@ -383,7 +381,7 @@ public class DateTimeZoneBuilder {
             // Convert from UTC to local time.
             instant += offset;
 
-            GregorianCalendar calendar = new GregorianCalendar();
+            GregorianCalendar calendar = new GregorianCalendar(GMT);
             calendar.setTimeInMillis(instant);
             calendar.set(Calendar.MONTH, iMonthOfYear - 1);
             calendar.set(Calendar.DATE, 1);
@@ -395,13 +393,13 @@ public class DateTimeZoneBuilder {
             setDayOfMonthNext(calendar);
 
             if (iDayOfWeek == 0) {
-                if (calendar.getTimeInMillis() + calendar.get(Calendar.ZONE_OFFSET) <= instant) {
+                if (calendar.getTimeInMillis() <= instant) {
                     calendar.add(Calendar.YEAR, 1);
                     setDayOfMonthNext(calendar);
                 }
             } else {
                 setDayOfWeek(calendar);
-                if (calendar.getTimeInMillis() + calendar.get(Calendar.ZONE_OFFSET) <= instant) {
+                if (calendar.getTimeInMillis() <= instant) {
                     calendar.add(Calendar.YEAR, 1);
                     calendar.set(Calendar.MONTH, iMonthOfYear - 1);
                     setDayOfMonthNext(calendar);
@@ -410,7 +408,7 @@ public class DateTimeZoneBuilder {
             }
 
             // Convert from local time to UTC.
-            return calendar.getTimeInMillis() + calendar.get(Calendar.ZONE_OFFSET) - offset;
+            return calendar.getTimeInMillis() - offset;
         }
 
         /**
@@ -429,7 +427,7 @@ public class DateTimeZoneBuilder {
             // Convert from UTC to local time.
             instant += offset;
 
-            GregorianCalendar calendar = new GregorianCalendar();
+            GregorianCalendar calendar = new GregorianCalendar(GMT);
             calendar.setTimeInMillis(instant);
             calendar.set(Calendar.MONTH, iMonthOfYear - 1);
             calendar.set(Calendar.DATE, 1);
@@ -442,13 +440,13 @@ public class DateTimeZoneBuilder {
             setDayOfMonthPrevious(calendar);
 
             if (iDayOfWeek == 0) {
-                if (calendar.getTimeInMillis() + calendar.get(Calendar.ZONE_OFFSET) >= instant) {
+                if (calendar.getTimeInMillis() >= instant) {
                     calendar.add(Calendar.YEAR, -1);
                     setDayOfMonthPrevious(calendar);
                 }
             } else {
                 setDayOfWeek(calendar);
-                if (calendar.getTimeInMillis() + calendar.get(Calendar.ZONE_OFFSET) >= instant) {
+                if (calendar.getTimeInMillis() >= instant) {
                     calendar.add(Calendar.YEAR, -1);
                     calendar.set(Calendar.MONTH, iMonthOfYear - 1);
                     setDayOfMonthPrevious(calendar);
@@ -457,7 +455,7 @@ public class DateTimeZoneBuilder {
             }
 
             // Convert from local time to UTC.
-            return calendar.getTimeInMillis() + calendar.get(Calendar.ZONE_OFFSET) - offset;
+            return calendar.getTimeInMillis() - offset;
         }
 
         /**
@@ -591,7 +589,7 @@ public class DateTimeZoneBuilder {
         }
 
         public long next(final long instant, int standardOffset, int saveMillis) {
-            Calendar calendar = Calendar.getInstance();
+            Calendar calendar = Calendar.getInstance(GMT);
             final int wallOffset = standardOffset + saveMillis;
             long testInstant = instant;
 
@@ -607,7 +605,7 @@ public class DateTimeZoneBuilder {
                 calendar.setTimeInMillis(0);
                 calendar.set(Calendar.YEAR, iFromYear);
                 // First advance instant to start of from year.
-                testInstant = calendar.getTimeInMillis()  + calendar.get(Calendar.ZONE_OFFSET) - wallOffset;
+                testInstant = calendar.getTimeInMillis() - wallOffset;
                 // Back off one millisecond to account for next recurrence
                 // being exactly at the beginning of the year.
                 testInstant -= 1;
@@ -846,7 +844,7 @@ public class DateTimeZoneBuilder {
             }
 
             // Stop precalculating if year reaches some arbitrary limit.
-            Calendar c = Calendar.getInstance();
+            Calendar c = Calendar.getInstance(GMT);
             c.setTimeInMillis(nextMillis);
             if (c.get(Calendar.YEAR) >= YEAR_LIMIT) {
                 return null;
