@@ -78,6 +78,9 @@ public class DateTimeZoneProvider {
         int offset = -getNativeOffset(System.currentTimeMillis());
         for (String id : getIds()) {
             DateTimeZone tz = getTimeZone(id);
+            if (tz instanceof AliasDateTimeZone) {
+                continue;
+            }
             int tzOffset = tz.getOffset(time) / 60_000;
             if (Math.abs(tzOffset - offset) > 120 || tz.previousTransition(time) == time) {
                 continue;

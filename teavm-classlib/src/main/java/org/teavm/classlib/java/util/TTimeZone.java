@@ -474,4 +474,21 @@ public abstract class TTimeZone implements Serializable, Cloneable {
      */
     private static native String getCustomTimeZone(int[] tzinfo,
             boolean[] isCustomTimeZone);
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || obj.getClass() != TTimeZone.class) {
+            return false;
+        }
+        TTimeZone other = (TTimeZone)obj;
+        return this.id.equals(other.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
+    }
 }

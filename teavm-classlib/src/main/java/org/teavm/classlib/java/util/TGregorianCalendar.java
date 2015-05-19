@@ -606,7 +606,7 @@ public class TGregorianCalendar extends TCalendar {
         if (year >= 1970) {
             long days = (year - 1970) * 365 + ((year - 1969) / 4);
             if (year > changeYear) {
-                days -= ((year - 1901) / 100) - ((year - 1601) / 400);
+                days -= (year - 1901) / 100 - (year - 1601) / 400;
             } else {
                 if (year == changeYear) {
                     days += currentYearSkew;

@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.util;
 
+import java.util.Objects;
 import org.teavm.classlib.impl.tz.DateTimeZone;
 
 /**
@@ -71,5 +72,22 @@ class TIANATimeZone extends TTimeZone {
         copy.rawOffset = rawOffset;
         copy.underlyingZone = underlyingZone;
         return copy;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof TIANATimeZone)) {
+            return false;
+        }
+        TIANATimeZone other = (TIANATimeZone)obj;
+        return rawOffset == other.rawOffset && underlyingZone.getID().equals(other.getID());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(rawOffset, underlyingZone.getID());
     }
 }
