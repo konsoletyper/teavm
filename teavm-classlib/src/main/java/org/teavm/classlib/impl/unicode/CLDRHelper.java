@@ -93,6 +93,9 @@ public class CLDRHelper {
     public static String getTimeZoneName(String language, String country, String id) {
         String locale = getCode(language, country);
         if (!getTimeZoneLocalizationMap().has(locale)) {
+            locale = language;
+        }
+        if (!getTimeZoneLocalizationMap().has(locale)) {
             return null;
         }
         TimeZoneLocalization localization = getTimeZoneLocalizationMap().get(locale);

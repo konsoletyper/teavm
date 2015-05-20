@@ -18,6 +18,7 @@ package org.teavm.classlib.java.text;
 import java.util.ArrayList;
 import java.util.List;
 import org.teavm.classlib.java.util.TCalendar;
+import org.teavm.classlib.java.util.TLocale;
 
 /**
  *
@@ -25,12 +26,14 @@ import org.teavm.classlib.java.util.TCalendar;
  */
 class TSimpleDatePatternParser {
     private TDateFormatSymbols symbols;
+    private TLocale locale;
     private List<TDateFormatElement> elements = new ArrayList<>();
     private int index;
     private String pattern;
 
-    public TSimpleDatePatternParser(TDateFormatSymbols symbols) {
+    public TSimpleDatePatternParser(TDateFormatSymbols symbols, TLocale locale) {
         this.symbols = symbols;
+        this.locale = locale;
     }
 
     public List<TDateFormatElement> getElements() {
@@ -146,6 +149,11 @@ class TSimpleDatePatternParser {
                 case 'S': {
                     int rep = parseRepetitions();
                     elements.add(new TDateFormatElement.Numeric(TCalendar.MILLISECOND, rep));
+                    break;
+                }
+                case 'z': {
+                    parseRepetitions();
+                    elements.add(TDateFormatElement.GeneralTimezone.get(locale));
                     break;
                 }
                 default:

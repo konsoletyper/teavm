@@ -69,7 +69,7 @@ public final class TLocale implements TCloneable, TSerializable {
     static {
         String localeName = CLDRHelper.getDefaultLocale().getValue();
         int countryIndex = localeName.indexOf('_');
-        defaultLocale = new TLocale(localeName.substring(0, countryIndex), localeName.substring(countryIndex) + 1, "");
+        defaultLocale = new TLocale(localeName.substring(0, countryIndex), localeName.substring(countryIndex + 1), "");
     }
 
     private transient String countryCode;

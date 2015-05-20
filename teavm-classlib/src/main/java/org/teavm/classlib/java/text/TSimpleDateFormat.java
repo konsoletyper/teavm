@@ -59,6 +59,7 @@ public class TSimpleDateFormat extends TDateFormat {
     public StringBuffer format(TDate date, StringBuffer buffer, TFieldPosition field) {
         TCalendar calendar = new TGregorianCalendar(locale);
         calendar.setTime(date);
+        calendar.setTimeZone(this.calendar.getTimeZone());
         for (TDateFormatElement element : elements) {
             element.format(calendar, buffer);
         }
@@ -71,7 +72,7 @@ public class TSimpleDateFormat extends TDateFormat {
     }
 
     private void reparsePattern() {
-        TSimpleDatePatternParser parser = new TSimpleDatePatternParser(dateFormatSymbols);
+        TSimpleDatePatternParser parser = new TSimpleDatePatternParser(dateFormatSymbols, locale);
         parser.parsePattern(pattern);
         elements = parser.getElements().toArray(new TDateFormatElement[0]);
     }

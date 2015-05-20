@@ -26,10 +26,13 @@ class TIANATimeZone extends TTimeZone {
     private static final long serialVersionUID = -8196006595542230951L;
     private DateTimeZone underlyingZone;
     private int rawOffset;
+    private int diff;
 
     public TIANATimeZone(DateTimeZone underlyingZone) {
         super(underlyingZone.getID());
         this.underlyingZone = underlyingZone;
+        rawOffset = underlyingZone.getStandardOffset(System.currentTimeMillis());
+        diff = -rawOffset;
     }
 
     @Override
@@ -43,7 +46,7 @@ class TIANATimeZone extends TTimeZone {
 
     @Override
     public int getOffset(long time) {
-        return rawOffset + underlyingZone.getOffset(time);
+        return rawOffset + diff + underlyingZone.getOffset(time);
     }
 
     @Override
@@ -63,7 +66,7 @@ class TIANATimeZone extends TTimeZone {
 
     @Override
     public boolean useDaylightTime() {
-        return underlyingZone.isFixed();
+        return !underlyingZone.isFixed();
     }
 
     @Override

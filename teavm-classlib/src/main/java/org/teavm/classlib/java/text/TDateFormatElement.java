@@ -345,6 +345,7 @@ abstract class TDateFormatElement {
 
     public static class GeneralTimezone extends TDateFormatElement {
         private static Map<TLocale, GeneralTimezone> cache;
+        private static TrieNode idSearchTrie;
         private TLocale locale;
         private TrieNode searchTrie;
 
@@ -370,7 +371,7 @@ abstract class TDateFormatElement {
             if (tz.getID().startsWith("GMT")) {
                 int minutes = tz.getRawOffset() / 60_000;
                 buffer.append("GMT");
-                if (minutes > 0) {
+                if (minutes >= 0) {
                     buffer.append('+');
                 } else {
                     minutes = -minutes;
@@ -399,23 +400,24 @@ abstract class TDateFormatElement {
             if (position.getIndex() + 1 < text.length()) {
 
             }
-            TTimeZone tz = match(text, position);
+            TTimeZone tz = match(searchTrie, text, position);
             if (tz != null) {
                 date.setTimeZone(tz);
             } else {
-                position.setErrorIndex(position.getIndex());
+                prepareIdTrie();
+                tz = match(idSearchTrie, text, position);
+                if (tz != null) {
+                    date.setTimeZone(tz);
+                } else {
+                    position.setErrorIndex(position.getIndex());
+                }
             }
         }
 
-        private void parseHoursMinutes(String text, TCalendar date, TParsePosition position) {
-
-        }
-
-        public TTimeZone match(String text, TParsePosition position) {
+        public TTimeZone match(TrieNode node, String text, TParsePosition position) {
             prepareTrie();
             int start = position.getIndex();
             int index = start;
-            TrieNode node = searchTrie;
             int lastMatch = start;
             TTimeZone tz = null;
             while (node.childNodes.length > 0) {
@@ -426,7 +428,7 @@ abstract class TDateFormatElement {
                 if (index >= text.length()) {
                     break;
                 }
-                int next = Arrays.binarySearch(node.chars, text.charAt(index++));
+                int next = Arrays.binarySearch(node.chars, Character.toLowerCase(text.charAt(index++)));
                 if (next < 0) {
                     return null;
                 }
@@ -445,7 +447,58 @@ abstract class TDateFormatElement {
                 TTimeZone tz = TTimeZone.getTimeZone(tzId);
                 builder.add(tz.getDisplayName(locale), tz);
             }
+            searchTrie = builder.build();
         }
+
+        private static void prepareIdTrie() {
+            if (idSearchTrie != null) {
+                return;
+            }
+            TrieBuilder builder = new TrieBuilder();
+            for (String tzId : TTimeZone.getAvailableIDs()) {
+                TTimeZone tz = TTimeZone.getTimeZone(tzId);
+                builder.add(tz.getID(), tz);
+            }
+        }
+    }
+
+    static void parseHoursMinutes(String text, TCalendar date, TParsePosition position) {
+        int index = position.getIndex() + 3;
+        int sign = text.charAt(index++) == '-' ? -1 : 1;
+        if (index >= text.length() || !Character.isDigit(text.charAt(index))) {
+            position.setErrorIndex(index);
+            return;
+        }
+        int hours = Character.digit(text.charAt(index++), 10);
+        if (index >= text.length()) {
+            position.setErrorIndex(index);
+            return;
+        }
+        if (text.charAt(index) != ':') {
+            if (!Character.isDigit(text.charAt(index))) {
+                position.setErrorIndex(index);
+                return;
+            }
+            hours = 10 * hours + Character.digit(text.charAt(index), 10);
+        }
+        if (index >= text.length() || text.charAt(index) != ':') {
+            position.setErrorIndex(index);
+            return;
+        }
+
+        if (index + 2 > text.length() || !Character.isDigit(text.charAt(index)) ||
+                !Character.isDigit(text.charAt(index + 1))) {
+            position.setErrorIndex(index);
+            return;
+        }
+        int minutes = Character.digit(text.charAt(index), 10) * 10 + Character.digit(text.charAt(index), 10);
+        position.setIndex(index + 2);
+        TTimeZone tz = getStaticTimeZone(sign * hours, minutes);
+        date.setTimeZone(tz);
+    }
+
+    static TTimeZone getStaticTimeZone(int hours, int minutes) {
+        return TTimeZone.getTimeZone("GMT" + (hours) + ":" + (minutes / 10) + (minutes % 10));
     }
 
     static class TrieNode {
@@ -461,7 +514,7 @@ abstract class TDateFormatElement {
             int index = 0;
             TrieNodeBuilder node = root;
             while (index < text.length()) {
-                char c = text.charAt(index);
+                char c = Character.toLowerCase(text.charAt(index));
                 while (node.ch != c) {
                     if (node.ch == '\0') {
                         node.ch = c;
@@ -478,7 +531,11 @@ abstract class TDateFormatElement {
             node.tz = tz;
         }
 
-        public TrieNode build(TrieNodeBuilder builder) {
+        public TrieNode build() {
+            return build(root);
+        }
+
+        TrieNode build(TrieNodeBuilder builder) {
             TrieNode node = new TrieNode();
             node.tz = builder.tz;
             List<TrieNodeBuilder> builders = new ArrayList<>();
