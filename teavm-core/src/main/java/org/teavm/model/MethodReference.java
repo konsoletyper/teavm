@@ -139,6 +139,12 @@ public class MethodReference {
         return reprCache;
     }
 
+    public static MethodReference parse(String string) {
+        int index = string.lastIndexOf('.');
+        String className = string.substring(0, index);
+        return new MethodReference(className, MethodDescriptor.parse(string.substring(index + 1)));
+    }
+
     public String signatureToString() {
         StringBuilder sb = new StringBuilder();
         sb.append('(');

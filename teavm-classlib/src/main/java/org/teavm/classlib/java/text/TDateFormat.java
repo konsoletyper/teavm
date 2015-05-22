@@ -230,8 +230,8 @@ public abstract class TDateFormat extends TFormat {
     public TDate parse(String string) throws TParseException {
         TParsePosition position = new TParsePosition(0);
         TDate date = parse(string, position);
-        if (position.getIndex() == 0) {
-            throw new TParseException("Unparseable date" + string, position.getErrorIndex());
+        if (position.getErrorIndex() > 0) {
+            throw new TParseException("Unparseable date: " + string, position.getErrorIndex());
         }
         return date;
     }

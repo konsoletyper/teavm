@@ -33,18 +33,12 @@ import org.teavm.platform.metadata.Resource;
 public class MetadataProviderNativeGenerator implements Generator {
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
-        // Validate method
         ClassReader cls = context.getClassSource().get(methodRef.getClassName());
         MethodReader method = cls.getMethod(methodRef.getDescriptor());
         AnnotationReader providerAnnot = method.getAnnotations().get(MetadataProvider.class.getName());
-        if (providerAnnot == null) {
-            return;
-        }
-        if (!method.hasModifier(ElementModifier.NATIVE)) {
-            context.getDiagnostics().error(new CallLocation(methodRef), "Method {{m0}} is marked with " +
-                    "{{c1}} annotation, but it is not native", methodRef, MetadataProvider.class.getName());
-            return;
-        }
+
+        AnnotationReader refAnnot = method.getAnnotations().get(MetadataProviderRef.class.getName());
+        methodRef = MethodReference.parse(refAnnot.getValue("value").getString());
 
         // Find and instantiate metadata generator
         ValueType generatorType = providerAnnot.getValue("value").getJavaClass();
@@ -78,12 +72,8 @@ public class MetadataProviderNativeGenerator implements Generator {
 
         // Generate resource loader
         Resource resource = generator.generateMetadata(metadataContext, methodRef);
-        writer.append("if (!window.hasOwnProperty(\"").appendMethodBody(methodRef).append("$$resource\")) {")
-                .indent().softNewLine();
-        writer.append("window.").appendMethodBody(methodRef).append("$$resource = ");
+        writer.append("return ");
         ResourceWriterHelper.write(writer, resource);
         writer.append(';').softNewLine();
-        writer.outdent().append('}').softNewLine();
-        writer.append("return ").appendMethodBody(methodRef).append("$$resource;").softNewLine();
     }
 }

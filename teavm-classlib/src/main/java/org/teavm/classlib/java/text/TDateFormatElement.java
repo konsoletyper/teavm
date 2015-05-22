@@ -400,6 +400,7 @@ abstract class TDateFormatElement {
             if (position.getIndex() + 1 < text.length()) {
 
             }
+            prepareTrie();
             TTimeZone tz = match(searchTrie, text, position);
             if (tz != null) {
                 date.setTimeZone(tz);
@@ -415,12 +416,11 @@ abstract class TDateFormatElement {
         }
 
         public TTimeZone match(TrieNode node, String text, TParsePosition position) {
-            prepareTrie();
             int start = position.getIndex();
             int index = start;
             int lastMatch = start;
             TTimeZone tz = null;
-            while (node.childNodes.length > 0) {
+            while (node.childNodes != null && node.childNodes.length > 0) {
                 if (node.tz != null) {
                     lastMatch = index;
                     tz = node.tz;
@@ -432,7 +432,11 @@ abstract class TDateFormatElement {
                 if (next < 0) {
                     return null;
                 }
-                node = node.childNodes[index];
+                node = node.childNodes[next];
+            }
+            if (node.tz != null) {
+                lastMatch = index;
+                tz = node.tz;
             }
             position.setIndex(lastMatch);
             return tz;
@@ -459,6 +463,7 @@ abstract class TDateFormatElement {
                 TTimeZone tz = TTimeZone.getTimeZone(tzId);
                 builder.add(tz.getID(), tz);
             }
+            idSearchTrie = builder.build();
         }
     }
 
@@ -485,6 +490,7 @@ abstract class TDateFormatElement {
             position.setErrorIndex(index);
             return;
         }
+        ++index;
 
         if (index + 2 > text.length() || !Character.isDigit(text.charAt(index)) ||
                 !Character.isDigit(text.charAt(index + 1))) {
@@ -511,10 +517,9 @@ abstract class TDateFormatElement {
         TrieNodeBuilder root = new TrieNodeBuilder();
 
         public void add(String text, TTimeZone tz) {
-            int index = 0;
             TrieNodeBuilder node = root;
-            while (index < text.length()) {
-                char c = Character.toLowerCase(text.charAt(index));
+            for (int i = 0; i < text.length(); ++i) {
+                char c = Character.toLowerCase(text.charAt(i));
                 while (node.ch != c) {
                     if (node.ch == '\0') {
                         node.ch = c;
@@ -537,12 +542,15 @@ abstract class TDateFormatElement {
 
         TrieNode build(TrieNodeBuilder builder) {
             TrieNode node = new TrieNode();
+            if (builder == null) {
+                return node;
+            }
             node.tz = builder.tz;
             List<TrieNodeBuilder> builders = new ArrayList<>();
             TrieNodeBuilder tmp = builder;
             while (tmp.ch != '\0') {
-                builders.add(builder);
-                builder = builder.sibling;
+                builders.add(tmp);
+                tmp = tmp.sibling;
             }
             Collections.sort(builders, new Comparator<TrieNodeBuilder>() {
                 @Override public int compare(TrieNodeBuilder o1, TrieNodeBuilder o2) {
@@ -553,7 +561,7 @@ abstract class TDateFormatElement {
             node.childNodes = new TrieNode[builders.size()];
             for (int i = 0; i < node.chars.length; ++i) {
                 node.chars[i] = builders.get(i).ch;
-                node.childNodes[i] = build(builders.get(i));
+                node.childNodes[i] = build(builders.get(i).next);
             }
             return node;
         }
