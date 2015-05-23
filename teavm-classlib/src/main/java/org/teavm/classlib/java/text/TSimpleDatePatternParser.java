@@ -153,7 +153,12 @@ class TSimpleDatePatternParser {
                 }
                 case 'z': {
                     parseRepetitions();
-                    elements.add(TDateFormatElement.GeneralTimezone.get(locale));
+                    elements.add(new TDateFormatElement.GeneralTimezone(locale));
+                    break;
+                }
+                case 'Z': {
+                    parseRepetitions();
+                    elements.add(new TDateFormatElement.Rfc822Timezone(locale));
                     break;
                 }
                 default:

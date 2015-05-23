@@ -343,62 +343,20 @@ abstract class TDateFormatElement {
         }
     }
 
-    public static class GeneralTimezone extends TDateFormatElement {
-        private static Map<TLocale, GeneralTimezone> cache;
+    public static abstract class BaseTimezone extends TDateFormatElement {
+        private static Map<TLocale, TrieNode> cache;
         private static TrieNode idSearchTrie;
-        private TLocale locale;
+        protected TLocale locale;
         private TrieNode searchTrie;
 
-        private GeneralTimezone(TLocale locale) {
+        public BaseTimezone(TLocale locale) {
             this.locale = locale;
-        }
-
-        public static GeneralTimezone get(TLocale locale) {
-            if (cache == null) {
-                cache = new HashMap<>();
-            }
-            GeneralTimezone elem = cache.get(locale);
-            if (elem == null) {
-                elem = new GeneralTimezone(locale);
-                cache.put(locale, elem);
-            }
-            return elem;
-        }
-
-        @Override
-        public void format(TCalendar date, StringBuffer buffer) {
-            TTimeZone tz = date.getTimeZone();
-            if (tz.getID().startsWith("GMT")) {
-                int minutes = tz.getRawOffset() / 60_000;
-                buffer.append("GMT");
-                if (minutes >= 0) {
-                    buffer.append('+');
-                } else {
-                    minutes = -minutes;
-                    buffer.append('-');
-                }
-                int hours = minutes / 60;
-                minutes %= 60;
-                buffer.append(hours / 10).append(hours % 10).append(':').append(minutes / 10).append(minutes % 10);
-            } else {
-                buffer.append(tz.getDisplayName(locale));
-            }
         }
 
         @Override
         public void parse(String text, TCalendar date, TParsePosition position) {
-            if (position.getIndex() + 4 < text.length()) {
-                int signIndex = position.getIndex() + 3;
-                if (text.substring(position.getIndex(), signIndex).equals("GMT")) {
-                    char signChar = text.charAt(signIndex);
-                    if (signChar == '+' || signChar == '-') {
-                        parseHoursMinutes(text, date, position);
-                        return;
-                    }
-                }
-            }
-            if (position.getIndex() + 1 < text.length()) {
-
+            if (tryParseFixedTimeZone(text, date, position)) {
+                return;
             }
             prepareTrie();
             TTimeZone tz = match(searchTrie, text, position);
@@ -446,12 +404,20 @@ abstract class TDateFormatElement {
             if (searchTrie != null) {
                 return;
             }
+            if (cache == null) {
+                cache = new HashMap<>();
+            }
+            searchTrie = cache.get(locale);
+            if (searchTrie != null) {
+                return;
+            }
             TrieBuilder builder = new TrieBuilder();
             for (String tzId : TTimeZone.getAvailableIDs()) {
                 TTimeZone tz = TTimeZone.getTimeZone(tzId);
                 builder.add(tz.getDisplayName(locale), tz);
             }
             searchTrie = builder.build();
+            cache.put(locale, searchTrie);
         }
 
         private static void prepareIdTrie() {
@@ -465,6 +431,88 @@ abstract class TDateFormatElement {
             }
             idSearchTrie = builder.build();
         }
+    }
+
+    public static class GeneralTimezone extends BaseTimezone {
+        public GeneralTimezone(TLocale locale) {
+            super(locale);
+        }
+
+        @Override
+        public void format(TCalendar date, StringBuffer buffer) {
+            TTimeZone tz = date.getTimeZone();
+            if (tz.getID().startsWith("GMT")) {
+                int minutes = tz.getRawOffset() / 60_000;
+                buffer.append("GMT");
+                if (minutes >= 0) {
+                    buffer.append('+');
+                } else {
+                    minutes = -minutes;
+                    buffer.append('-');
+                }
+                int hours = minutes / 60;
+                minutes %= 60;
+                buffer.append(hours / 10).append(hours % 10).append(':').append(minutes / 10).append(minutes % 10);
+            } else {
+                buffer.append(tz.getDisplayName(locale));
+            }
+        }
+    }
+
+    public static class Rfc822Timezone extends BaseTimezone {
+        public Rfc822Timezone(TLocale locale) {
+            super(locale);
+        }
+
+        @Override
+        public void format(TCalendar date, StringBuffer buffer) {
+            TTimeZone tz = date.getTimeZone();
+            int minutes = tz.getOffset(date.getTimeInMillis()) / 60_000;
+            if (minutes >= 0) {
+                buffer.append('+');
+            } else {
+                minutes = -minutes;
+                buffer.append('-');
+            }
+            int hours = minutes / 60;
+            minutes %= 60;
+            buffer.append(hours / 10).append(hours % 10).append(minutes / 10).append(minutes % 10);
+        }
+    }
+
+    static boolean tryParseFixedTimeZone(String text, TCalendar date, TParsePosition position) {
+        general: if (position.getIndex() + 4 < text.length()) {
+            int signIndex = position.getIndex() + 3;
+            if (!text.substring(position.getIndex(), signIndex).equals("GMT")) {
+                break general;
+            }
+            char signChar = text.charAt(signIndex);
+            if (signChar != '+' && signChar != '-') {
+                break general;
+            }
+            parseHoursMinutes(text, date, position);
+            return true;
+        }
+        rfc822: if (position.getIndex() + 5 <= text.length()) {
+            int index = position.getIndex();
+            char signChar = text.charAt(index++);
+            if (signChar != '+' && signChar != '-') {
+                break rfc822;
+            }
+            for (int i = 0; i < 4; ++i) {
+                if (!Character.isDigit(text.charAt(index + i))) {
+                    break rfc822;
+                }
+            }
+            int sign = signChar == '-' ? -1 : 1;
+            int hours = 10 * Character.digit(text.charAt(index), 10) +
+                    Character.digit(text.charAt(index + 1), 10);
+            int minutes = 10 * Character.digit(text.charAt(index + 2), 10) +
+                    Character.digit(text.charAt(index + 3), 10);
+            date.setTimeZone(getStaticTimeZone(sign * hours, minutes));
+            return true;
+        }
+        return false;
     }
 
     static void parseHoursMinutes(String text, TCalendar date, TParsePosition position) {
@@ -504,7 +552,8 @@ abstract class TDateFormatElement {
     }
 
     static TTimeZone getStaticTimeZone(int hours, int minutes) {
-        return TTimeZone.getTimeZone("GMT" + (hours) + ":" + (minutes / 10) + (minutes % 10));
+        return TTimeZone.getTimeZone("GMT" + (hours > 0 ? '+' : '-') + Math.abs(hours) +
+                ":" + (minutes / 10) + (minutes % 10));
     }
 
     static class TrieNode {
