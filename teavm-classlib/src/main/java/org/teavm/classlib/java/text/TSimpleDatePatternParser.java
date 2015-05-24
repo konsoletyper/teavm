@@ -161,6 +161,14 @@ class TSimpleDatePatternParser {
                     elements.add(new TDateFormatElement.Rfc822Timezone(locale));
                     break;
                 }
+                case 'X': {
+                    int rep = parseRepetitions();
+                    if (rep > 3) {
+                        throw new IllegalArgumentException("Wrong number of repetitions of X pattern at " + index);
+                    }
+                    elements.add(new TDateFormatElement.Iso8601Timezone(rep));
+                    break;
+                }
                 default:
                     if (isControl(c)) {
                         parseRepetitions();

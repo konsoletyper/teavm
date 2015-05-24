@@ -480,6 +480,89 @@ abstract class TDateFormatElement {
         }
     }
 
+    public static class Iso8601Timezone extends TDateFormatElement {
+        private int size;
+
+        public Iso8601Timezone(int size) {
+            this.size = size;
+        }
+
+        @Override
+        public void format(TCalendar date, StringBuffer buffer) {
+            int minutes = date.getTimeZone().getOffset(date.getTimeInMillis()) / 60_000;
+            if (minutes == 0) {
+                buffer.append('Z');
+                return;
+            } else if (minutes > 0) {
+                buffer.append('+');
+            } else {
+                minutes = -minutes;
+                buffer.append('-');
+            }
+            int hours = minutes / 60;
+            minutes %= 60;
+            buffer.append(hours / 10).append(hours % 10);
+            if (size >= 3) {
+                buffer.append(':');
+            }
+            if (size > 1) {
+                buffer.append(minutes / 10).append(minutes % 10);
+            }
+        }
+
+        @Override
+        public void parse(String text, TCalendar date, TParsePosition position) {
+            int index = position.getIndex();
+            char signChar = text.charAt(index++);
+            int sign;
+            if (signChar == '+') {
+                sign = 1;
+            } else if (signChar == '-') {
+                sign = -1;
+            } else if (signChar == 'Z') {
+                date.setTimeZone(TTimeZone.getTimeZone("GMT"));
+                return;
+            } else {
+                position.setErrorIndex(index);
+                return;
+            }
+
+            int expectedSize = 2;
+            if (size > 1) {
+                expectedSize += 2;
+            }
+            if (size >= 3) {
+                ++expectedSize;
+            }
+            if (index + expectedSize > text.length()) {
+                position.setErrorIndex(index);
+                return;
+            }
+
+            if (!Character.isDigit(text.charAt(index)) || !Character.isDigit(text.charAt(index + 1))) {
+                position.setErrorIndex(index);
+                return;
+            }
+            int hours = Character.digit(text.charAt(index++), 10) * 10 + Character.digit(text.charAt(index++), 10);
+            if (size >= 3) {
+                if (text.charAt(index++) != ':') {
+                    position.setErrorIndex(index);
+                    return;
+                }
+            }
+            int minutes = 0;
+            if (size > 1) {
+                if (!Character.isDigit(text.charAt(index)) || !Character.isDigit(text.charAt(index + 1))) {
+                    position.setErrorIndex(index);
+                    return;
+                }
+                minutes = Character.digit(text.charAt(index++), 10) * 10 + Character.digit(text.charAt(index++), 10);
+            }
+            position.setIndex(index);
+            date.setTimeZone(getStaticTimeZone(sign * hours, minutes));
+        }
+    }
+
     static boolean tryParseFixedTimeZone(String text, TCalendar date, TParsePosition position) {
         general: if (position.getIndex() + 4 < text.length()) {
             int signIndex = position.getIndex() + 3;
