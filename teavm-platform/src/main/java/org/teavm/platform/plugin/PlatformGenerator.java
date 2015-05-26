@@ -112,11 +112,14 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
     }
 
     private void generateNewInstance(GeneratorContext context, SourceWriter writer) throws IOException {
+        String cls = context.getParameterName(1);
+
         writer.append("if").ws().append("($rt_resuming())").ws().append("{").indent().softNewLine();
-        writer.append("return $rt_nativeThread().pop();").softNewLine();
+        writer.append("var $r = $rt_nativeThread().pop();").softNewLine();
+        writer.append(cls + ".$$constructor$$($r);").softNewLine();
+        writer.append("return $r;").softNewLine();
         writer.outdent().append("}").softNewLine();
 
-        String cls = context.getParameterName(1);
         writer.append("if").ws().append("(!").append(cls).append(".hasOwnProperty('$$constructor$$'))")
                 .ws().append("{").indent().softNewLine();
         writer.append("return null;").softNewLine();

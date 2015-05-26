@@ -65,8 +65,7 @@ import org.teavm.classlib.impl.CharFlow;
  * @since 1.0
  */
 public class DateTimeZoneBuilder {
-    private static TimeZone GMT = TimeZone.getTimeZone("GMT+00:00");
-
+    private static TimeZone gmtCache;
     private static StorableDateTimeZone buildFixedZone(String id, int wallOffset, int standardOffset) {
         return new FixedDateTimeZone(id, wallOffset, standardOffset);
     }
@@ -76,6 +75,13 @@ public class DateTimeZoneBuilder {
 
     public DateTimeZoneBuilder() {
         iRuleSets = new ArrayList<>(10);
+    }
+
+    private static TimeZone getGMT() {
+        if (gmtCache == null) {
+            gmtCache = TimeZone.getTimeZone("GMT+00:00");
+        }
+        return gmtCache;
     }
 
     /**
@@ -346,7 +352,7 @@ public class DateTimeZoneBuilder {
                 offset = 0;
             }
 
-            Calendar calendar = Calendar.getInstance(GMT);
+            Calendar calendar = Calendar.getInstance(getGMT());
             calendar.setTimeInMillis(0);
             calendar.set(Calendar.YEAR, year);
             calendar.set(Calendar.MONTH, iMonthOfYear - 1);
@@ -381,7 +387,7 @@ public class DateTimeZoneBuilder {
             // Convert from UTC to local time.
             instant += offset;
 
-            GregorianCalendar calendar = new GregorianCalendar(GMT);
+            GregorianCalendar calendar = new GregorianCalendar(getGMT());
             calendar.setTimeInMillis(instant);
             calendar.set(Calendar.MONTH, iMonthOfYear - 1);
             calendar.set(Calendar.DATE, 1);
@@ -427,7 +433,7 @@ public class DateTimeZoneBuilder {
             // Convert from UTC to local time.
             instant += offset;
 
-            GregorianCalendar calendar = new GregorianCalendar(GMT);
+            GregorianCalendar calendar = new GregorianCalendar(getGMT());
             calendar.setTimeInMillis(instant);
             calendar.set(Calendar.MONTH, iMonthOfYear - 1);
             calendar.set(Calendar.DATE, 1);
@@ -589,7 +595,7 @@ public class DateTimeZoneBuilder {
         }
 
         public long next(final long instant, int standardOffset, int saveMillis) {
-            Calendar calendar = Calendar.getInstance(GMT);
+            Calendar calendar = Calendar.getInstance(getGMT());
             final int wallOffset = standardOffset + saveMillis;
             long testInstant = instant;
 
@@ -844,7 +850,7 @@ public class DateTimeZoneBuilder {
             }
 
             // Stop precalculating if year reaches some arbitrary limit.
-            Calendar c = Calendar.getInstance(GMT);
+            Calendar c = Calendar.getInstance(getGMT());
             c.setTimeInMillis(nextMillis);
             if (c.get(Calendar.YEAR) >= YEAR_LIMIT) {
                 return null;
