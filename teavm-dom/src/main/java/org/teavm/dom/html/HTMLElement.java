@@ -102,4 +102,10 @@ public interface HTMLElement extends Element, ElementCSSInlineStyle, EventTarget
     @JSProperty
     @Override
     HTMLDocument getOwnerDocument();
+
+    @JSProperty
+    int getInnerHTML();
+
+    @JSProperty
+    void setInnerHTML(String content);
 }

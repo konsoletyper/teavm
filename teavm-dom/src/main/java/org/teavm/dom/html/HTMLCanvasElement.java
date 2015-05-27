@@ -16,6 +16,7 @@
 package org.teavm.dom.html;
 
 import org.teavm.dom.canvas.CanvasImageSource;
+import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
@@ -39,4 +40,7 @@ public interface HTMLCanvasElement extends HTMLElement, CanvasImageSource {
     JSObject getContext(String contextId);
 
     JSObject getContext(String contextId, JSObject attributes);
+
+    @JSMethod
+    String toDataURL(String type);
 }
