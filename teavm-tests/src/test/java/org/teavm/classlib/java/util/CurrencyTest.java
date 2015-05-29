@@ -17,6 +17,7 @@ package org.teavm.classlib.java.util;
 
 import static org.junit.Assert.*;
 import java.util.Currency;
+import java.util.Locale;
 import org.junit.Test;
 
 /**
@@ -30,6 +31,18 @@ public class CurrencyTest {
         assertEquals("RUB", currency.getCurrencyCode());
         assertEquals(2, currency.getDefaultFractionDigits());
         assertEquals(643, currency.getNumericCode());
+    }
+
+    @Test
+    public void findsByLocale() {
+        Currency currency = Currency.getInstance(new Locale("ru", "RU"));
+        assertEquals("RUB", currency.getCurrencyCode());
+
+        currency = Currency.getInstance(new Locale("en", "US"));
+        assertEquals("USD", currency.getCurrencyCode());
+
+        currency = Currency.getInstance(new Locale("en", "GB"));
+        assertEquals("GBP", currency.getCurrencyCode());
     }
 
     @Test(expected = IllegalArgumentException.class)

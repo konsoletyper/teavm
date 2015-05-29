@@ -17,6 +17,8 @@ package org.teavm.classlib.impl.currency;
 
 import org.teavm.platform.metadata.MetadataProvider;
 import org.teavm.platform.metadata.ResourceArray;
+import org.teavm.platform.metadata.ResourceMap;
+import org.teavm.platform.metadata.StringResource;
 
 /**
  *
@@ -25,4 +27,7 @@ import org.teavm.platform.metadata.ResourceArray;
 public final class CurrencyHelper {
     @MetadataProvider(CurrenciesGenerator.class)
     public static native ResourceArray<CurrencyResource> getCurrencies();
+
+    @MetadataProvider(CountriesGenerator.class)
+    public static native ResourceMap<StringResource> getCountryToCurrencyMap();
 }

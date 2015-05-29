@@ -21,8 +21,11 @@ import java.util.Map;
 import java.util.Set;
 import org.teavm.classlib.impl.currency.CurrencyHelper;
 import org.teavm.classlib.impl.currency.CurrencyResource;
+import org.teavm.classlib.impl.unicode.CLDRHelper;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.platform.metadata.ResourceArray;
+import org.teavm.platform.metadata.ResourceMap;
+import org.teavm.platform.metadata.StringResource;
 
 /**
  *
@@ -58,6 +61,18 @@ public final class TCurrency implements TSerializable {
             throw new IllegalArgumentException("Currency not found: " + currencyCode);
         }
         return currency;
+    }
+
+    public static TCurrency getInstance(TLocale locale) {
+        if (locale == null) {
+            throw new NullPointerException();
+        }
+        String coutry = CLDRHelper.resolveCountry(locale.getLanguage(), locale.getCountry());
+        ResourceMap<StringResource> countryMap = CurrencyHelper.getCountryToCurrencyMap();
+        if (!countryMap.has(coutry)) {
+            return null;
+        }
+        return getInstance(countryMap.get(coutry).getValue());
     }
 
     public static Set<TCurrency> getAvailableCurrencies() {
