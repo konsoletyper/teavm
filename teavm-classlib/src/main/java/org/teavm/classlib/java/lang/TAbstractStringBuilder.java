@@ -686,7 +686,6 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
         for (int i = index; i < length; ++i) {
             buffer[i] = buffer[i + 1];
         }
-        --length;
         return this;
     }
 
