@@ -18,6 +18,7 @@ package org.teavm.classlib.java.util;
 import static org.junit.Assert.*;
 import java.util.Currency;
 import java.util.Locale;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -43,6 +44,40 @@ public class CurrencyTest {
 
         currency = Currency.getInstance(new Locale("en", "GB"));
         assertEquals("GBP", currency.getCurrencyCode());
+    }
+
+    @Test
+    @Ignore
+    // It seems that JDK can't translate currency names into Russian
+    public void getsDisplayName() {
+        Locale russian = new Locale("ru");
+        Locale english = new Locale("en");
+
+        Currency currency = Currency.getInstance("USD");
+        assertEquals("US Dollar", currency.getDisplayName(english));
+        assertEquals("Доллар США", currency.getDisplayName(russian));
+
+        currency = Currency.getInstance("RUB");
+        assertEquals("Russian Ruble", currency.getDisplayName(english));
+        assertEquals("Российский рубль", currency.getDisplayName(russian));
+
+        assertEquals("CHF", Currency.getInstance("CHF").getDisplayName(new Locale("xx", "YY")));
+    }
+
+    @Test
+    @Ignore
+    // It seems that JDK does not know about currency symbols
+    public void getsSymbol() {
+        Locale russian = new Locale("ru");
+        Locale english = new Locale("en");
+
+        Currency currency = Currency.getInstance("USD");
+        assertEquals("$", currency.getSymbol(english));
+        assertEquals("$", currency.getSymbol(russian));
+
+        currency = Currency.getInstance("RUB");
+        assertEquals("RUB", currency.getSymbol(english));
+        assertEquals("руб.", currency.getSymbol(russian));
     }
 
     @Test(expected = IllegalArgumentException.class)

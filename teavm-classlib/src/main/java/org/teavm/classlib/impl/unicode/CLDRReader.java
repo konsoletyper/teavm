@@ -200,7 +200,9 @@ public class CLDRReader {
             JsonObject currencyJson = currencyEntry.getValue().getAsJsonObject();
             CLDRCurrency currency = new CLDRCurrency();
             currency.name = currencyJson.get("displayName").getAsString();
-            currency.symbol = currencyJson.get("symbol").getAsString();
+            if (currencyJson.has("symbol")) {
+                currency.symbol = currencyJson.get("symbol").getAsString();
+            }
             locale.currencies.put(currencyCode, currency);
         }
     }

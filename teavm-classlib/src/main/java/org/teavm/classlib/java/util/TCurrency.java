@@ -22,6 +22,7 @@ import java.util.Set;
 import org.teavm.classlib.impl.currency.CurrencyHelper;
 import org.teavm.classlib.impl.currency.CurrencyResource;
 import org.teavm.classlib.impl.unicode.CLDRHelper;
+import org.teavm.classlib.impl.unicode.CurrencyLocalization;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.platform.metadata.ResourceArray;
 import org.teavm.platform.metadata.ResourceMap;
@@ -84,12 +85,33 @@ public final class TCurrency implements TSerializable {
         return resource.getCode();
     }
 
+    public String getSymbol() {
+        return getSymbol(TLocale.getDefault());
+    }
+
+    public String getSymbol(TLocale locale) {
+        CurrencyLocalization localization = CLDRHelper.resolveCurrency(locale.getLanguage(), locale.getCountry(),
+                getCurrencyCode());
+        return localization != null && !localization.getSymbol().isEmpty() ?
+                localization.getSymbol() : getCurrencyCode();
+    }
+
     public int getDefaultFractionDigits() {
         return resource.getFractionDigits();
     }
 
     public int getNumericCode() {
         return resource.getNumericCode();
+    }
+
+    public String getDisplayName() {
+        return getDisplayName(TLocale.getDefault());
+    }
+
+    public String getDisplayName(TLocale locale) {
+        CurrencyLocalization localization = CLDRHelper.resolveCurrency(locale.getLanguage(), locale.getCountry(),
+                getCurrencyCode());
+        return localization != null ? localization.getName() : getCurrencyCode();
     }
 
     @Override
