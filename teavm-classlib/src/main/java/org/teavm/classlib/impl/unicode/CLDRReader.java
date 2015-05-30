@@ -127,6 +127,9 @@ public class CLDRReader {
                         readDateTimeFormats(localeName, localeInfo, root);
                         break;
                     }
+                    case "currencies.json": {
+                        readCurrencies(localeName, localeInfo, input);
+                    }
                 }
             }
         } catch (IOException e) {
@@ -186,6 +189,22 @@ public class CLDRReader {
             }
         }
         locale.timeZones = timeZones.toArray(new CLDRTimeZone[timeZones.size()]);
+    }
+
+    private void readCurrencies(String localeCode, CLDRLocale locale, InputStream input) {
+        JsonObject root = (JsonObject)new JsonParser().parse(new InputStreamReader(input));
+        JsonObject currenciesJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
+                .get("numbers").getAsJsonObject().get("currencies").getAsJsonObject();
+        for (Map.Entry<String, JsonElement> currencyEntry : currenciesJson.entrySet()) {
+            String currencyCode = currencyEntry.getKey();
+            JsonObject currencyJson = currencyEntry.getValue().getAsJsonObject();
+            CLDRCurrency currency = new CLDRCurrency();
+            currency.name = currencyJson.get("displayName").getAsString();
+            if (currencyJson.has("symbol")) {
+                currency.symbol = currencyJson.get("symbol").getAsString();
+            }
+            locale.currencies.put(currencyCode, currency);
+        }
     }
 
     private void readEras(String localeCode, CLDRLocale locale, JsonObject root) {

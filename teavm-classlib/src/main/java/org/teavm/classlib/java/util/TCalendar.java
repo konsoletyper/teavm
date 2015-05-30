@@ -175,21 +175,11 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
         cacheFor = locale;
     }
 
-    private static String resolveCountry(TLocale locale) {
-        String country = locale.getCountry();
-        if (country.isEmpty()) {
-            String subtags = CLDRHelper.getLikelySubtags(locale.getLanguage());
-            int index = subtags.lastIndexOf('_');
-            country = index > 0 ? subtags.substring(index + 1) : "";
-        }
-        return country;
-    }
-
     private static int resolveFirstDayOfWeek(TLocale locale) {
         if (locale == cacheFor && firstDayOfWeekCache >= 0) {
             return firstDayOfWeekCache;
         }
-        String country = resolveCountry(locale);
+        String country = CLDRHelper.resolveCountry(locale.getLanguage(), locale.getCountry());
         ResourceMap<IntResource> dayMap = CLDRHelper.getFirstDayOfWeek();
         firstDayOfWeekCache = dayMap.has(country) ? dayMap.get(country).getValue() : dayMap.get("001").getValue();
         return firstDayOfWeekCache;
@@ -199,7 +189,7 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
         if (locale == cacheFor && minimalDaysInFirstWeekCache >= 0) {
             return minimalDaysInFirstWeekCache;
         }
-        String country = resolveCountry(locale);
+        String country = CLDRHelper.resolveCountry(locale.getLanguage(), locale.getCountry());
         ResourceMap<IntResource> dayMap = CLDRHelper.getMinimalDaysInFirstWeek();
         minimalDaysInFirstWeekCache = dayMap.has(country) ? dayMap.get(country).getValue() :
                 dayMap.get("001").getValue();

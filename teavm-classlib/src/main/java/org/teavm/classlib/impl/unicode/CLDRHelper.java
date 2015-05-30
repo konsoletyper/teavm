@@ -33,6 +33,15 @@ public class CLDRHelper {
         return map.has(localeCode) ? map.get(localeCode).getValue() : localeCode;
     }
 
+    public static String resolveCountry(String language, String country) {
+        if (country.isEmpty()) {
+            String subtags = getLikelySubtags(language);
+            int index = subtags.lastIndexOf('_');
+            country = index > 0 ? subtags.substring(index + 1) : "";
+        }
+        return country;
+    }
+
     @MetadataProvider(LikelySubtagsMetadataGenerator.class)
     private static native ResourceMap<StringResource> getLikelySubtagsMap();
 
@@ -199,4 +208,25 @@ public class CLDRHelper {
     }
 
     private static native ResourceMap<CLDRDecimalData> getDecimalDataMap();
+
+    public static CurrencyLocalization resolveCurrency(String language, String country, String currency) {
+        String localeCode = getCode(language, country);
+        ResourceMap<ResourceMap<CurrencyLocalization>> map = getCurrencyMap();
+        if (map.has(localeCode)) {
+            ResourceMap<CurrencyLocalization> currencies = map.get(localeCode);
+            if (currencies.has(currency)) {
+                return currencies.get(currency);
+            }
+        }
+        if (map.has(language)) {
+            ResourceMap<CurrencyLocalization> currencies = map.get(language);
+            if (currencies.has(currency)) {
+                return currencies.get(currency);
+            }
+        }
+        return null;
+    }
+
+    @MetadataProvider(CurrencyLocalizationMetadataGenerator.class)
+    private static native ResourceMap<ResourceMap<CurrencyLocalization>> getCurrencyMap();
 }
