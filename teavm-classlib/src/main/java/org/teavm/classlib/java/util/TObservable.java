@@ -20,7 +20,7 @@ package org.teavm.classlib.java.util;
  * @author shannah
  */
 public class TObservable {
-    TList<TObserver> observers = new TArrayList<TObserver>();
+    TList<TObserver> observers = new TArrayList<>();
 
     boolean changed = false;
 
@@ -34,7 +34,7 @@ public class TObservable {
     /**
      * Adds the specified observer to the list of observers. If it is already
      * registered, it is not added a second time.
-     * 
+     *
      * @param observer
      *            the Observer to add.
      */
@@ -58,7 +58,7 @@ public class TObservable {
 
     /**
      * Returns the number of observers registered to this {@code Observable}.
-     * 
+     *
      * @return the number of observers.
      */
     public int countObservers() {
@@ -68,7 +68,7 @@ public class TObservable {
     /**
      * Removes the specified observer from the list of observers. Passing null
      * won't do anything.
-     * 
+     *
      * @param observer
      *            the observer to remove.
      */
@@ -85,7 +85,7 @@ public class TObservable {
 
     /**
      * Returns the changed flag for this {@code Observable}.
-     * 
+     *
      * @return {@code true} when the changed flag for this {@code Observable} is
      *         set, {@code false} otherwise.
      */
@@ -108,11 +108,10 @@ public class TObservable {
      * If {@code hasChanged()} returns {@code true}, calls the {@code update()}
      * method for every Observer in the list of observers using the specified
      * argument. Afterwards calls {@code clearChanged()}.
-     * 
+     *
      * @param data
      *            the argument passed to {@code update()}.
      */
-    @SuppressWarnings("unchecked")
     public void notifyObservers(Object data) {
         int size = 0;
         TObserver[] arrays = null;
