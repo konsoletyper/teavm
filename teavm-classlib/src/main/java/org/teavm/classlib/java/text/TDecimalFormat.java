@@ -16,7 +16,6 @@
 package org.teavm.classlib.java.text;
 
 import java.text.DecimalFormatSymbols;
-import org.teavm.classlib.impl.unicode.CLDRDecimalData;
 import org.teavm.classlib.impl.unicode.CLDRHelper;
 import org.teavm.classlib.java.util.TLocale;
 
@@ -46,14 +45,7 @@ public class TDecimalFormat extends TNumberFormat {
 
     public TDecimalFormat(String pattern, TDecimalFormatSymbols value) {
         symbols = (TDecimalFormatSymbols)value.clone();
-        TLocale locale = symbols.getLocale();
         applyPattern(pattern);
-
-        CLDRDecimalData decimalData = CLDRHelper.resolveDecimalData(locale.getLanguage(), locale.getCountry());
-        super.setMaximumFractionDigits(decimalData.getMaximumFractionDigits());
-        super.setMaximumIntegerDigits(decimalData.getMaximumIntegerDigits());
-        super.setMinimumFractionDigits(decimalData.getMinimumFractionDigits());
-        super.setMinimumIntegerDigits(decimalData.getMinimumIntegerDigits());
     }
 
     public void applyPattern(String pattern) {

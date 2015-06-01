@@ -68,7 +68,8 @@ class TDecimalFormatParser {
         format.setNegativeSuffix(negativeSuffix != null ? negativeSuffix : positiveSuffix);
         format.setGroupingSize(groupSize);
         format.setGroupingUsed(groupSize > 0);
-        format.setMinimumIntegerDigits(minimumIntLength);
+        format.setMinimumIntegerDigits(!decimalSeparatorRequired ? minimumIntLength :
+                Math.max(1, minimumIntLength));
         format.setMaximumIntegerDigits(intLength);
         format.setMinimumFractionDigits(minimumFracLength);
         format.setMaximumFractionDigits(fracLength);
@@ -135,6 +136,7 @@ class TDecimalFormatParser {
     }
 
     private void parseIntegerPart(boolean apply) {
+        int start = index;
         int lastGroup = index;
         boolean optionalDigits = true;
         int length = 0;
@@ -149,12 +151,13 @@ class TDecimalFormatParser {
                     ++length;
                     break;
                 case ',':
-                    if (lastGroup + 1 == index) {
-                        throw new IllegalArgumentException("Two commas at " + index + " in " + string);
+                    if (lastGroup == index) {
+                        throw new IllegalArgumentException("Two group separators at " + index + " in " + string);
                     }
                     if (apply) {
                         groupSize = index - lastGroup;
                     }
+                    lastGroup = index + 1;
                     break;
                 case '0':
                     optionalDigits = false;
@@ -169,6 +172,12 @@ class TDecimalFormatParser {
         if (length == 0) {
             throw new IllegalArgumentException("Pattern does not specify integer digits at " + index +
                     " in " + string);
+        }
+        if (lastGroup == index) {
+            throw new IllegalArgumentException("Group separator at the end of number at " + index + " in " + string);
+        }
+        if (apply && lastGroup > start) {
+            groupSize = index - lastGroup;
         }
         if (apply) {
             intLength = length;
@@ -190,7 +199,7 @@ class TDecimalFormatParser {
                     throw new IllegalArgumentException("Group separator found at fractional part at " + index +
                             " in " + string);
                 case '0':
-                    if (!optionalDigits) {
+                    if (optionalDigits) {
                         throw new IllegalArgumentException("Unexpected '0' at optional digit part at " + index +
                                 " in " + string);
                     }
@@ -208,7 +217,7 @@ class TDecimalFormatParser {
         if (apply) {
             fracLength = length;
             minimumFracLength = minimumLength;
-            decimalSeparatorRequired = true;
+            decimalSeparatorRequired = length == 0;
         }
     }
 

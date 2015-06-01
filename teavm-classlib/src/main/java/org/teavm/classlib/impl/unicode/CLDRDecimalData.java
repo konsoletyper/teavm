@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,62 +15,59 @@
  */
 package org.teavm.classlib.impl.unicode;
 
-import org.teavm.platform.metadata.Resource;
-
 /**
  *
  * @author Alexey Andreev
  */
-public interface CLDRDecimalData extends Resource {
-    int getMaximumFractionDigits();
+public class CLDRDecimalData {
+    int groupingSeparator;
+    int decimalSeparator;
+    int listSeparator;
+    int perMille;
+    int percent;
+    String NaN;
+    String infinity;
+    int minusSign;
+    int monetaryDecimalSeparator;
+    String exponentSeparator;
 
-    void setMaximumFractionDigits(int value);
+    public int getGroupingSeparator() {
+        return groupingSeparator;
+    }
 
-    int getMaximumIntegerDigits();
+    public int getDecimalSeparator() {
+        return decimalSeparator;
+    }
 
-    void setMaximumIntegerDigits(int value);
+    public int getListSeparator() {
+        return listSeparator;
+    }
 
-    int getMinimumFractionDigits();
+    public int getPerMille() {
+        return perMille;
+    }
 
-    void setMinimumFractionDigits(int value);
+    public int getPercent() {
+        return percent;
+    }
 
-    int getMinimumIntegerDigits();
+    public String getNaN() {
+        return NaN;
+    }
 
-    void setMinimumIntegerDigits(int value);
+    public String getInfinity() {
+        return infinity;
+    }
 
-    int getGroupingSeparator();
+    public int getMinusSign() {
+        return minusSign;
+    }
 
-    void setGroupingSeparator(int value);
+    public int getMonetaryDecimalSeparator() {
+        return monetaryDecimalSeparator;
+    }
 
-    int getDecimalSeparator();
-
-    void setDecimalSeparator(int value);
-
-    int getPerMill();
-
-    void setPerMill(int value);
-
-    int getPercent();
-
-    void setPercent(int value);
-
-    String getNaN();
-
-    void setNaN(String nan);
-
-    String getInfinity();
-
-    void setInfinity(String infinity);
-
-    int getMinusSign();
-
-    void setMinusSign(int value);
-
-    int getMonetaryDecimalSeparator();
-
-    void setMonetaryDecimalSeparator(int value);
-
-    String getExponentSeparator();
-
-    void setExponentSeparator(String value);
+    public String getExponentSeparator() {
+        return exponentSeparator;
+    }
 }
