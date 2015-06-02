@@ -36,7 +36,9 @@ public class TThread extends TObject implements TRunnable {
     private int priority = 0;
     private long timeSliceStart;
     private int yieldCount;
-
+    private final Object finishedLock = new Object();
+    
+    
     private TString name;
     TRunnable target;
 
@@ -90,6 +92,9 @@ public class TThread extends TObject implements TRunnable {
         if (target != null) {
             target.run();
         }
+        synchronized(finishedLock) {
+            finishedLock.notifyAll();
+        }
     }
 
     public static TThread currentThread() {
@@ -98,6 +103,23 @@ public class TThread extends TObject implements TRunnable {
 
     public TString getName() {
         return name;
+    }
+    
+    public final void join(long millis, int nanos) throws InterruptedException {
+        if (currentThread() == this) {
+            return;
+        }
+        synchronized(finishedLock) {
+            finishedLock.wait(millis, nanos);
+        }
+    }
+    
+    public final void join(long millis) throws InterruptedException {
+        join(millis, 0);
+    }
+    
+    public final void join() throws InterruptedException {
+        join(0);
     }
 
     public static void yield() {
