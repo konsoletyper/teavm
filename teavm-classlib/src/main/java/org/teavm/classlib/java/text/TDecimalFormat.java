@@ -17,6 +17,8 @@ package org.teavm.classlib.java.text;
 
 import java.text.DecimalFormatSymbols;
 import org.teavm.classlib.impl.unicode.CLDRHelper;
+import org.teavm.classlib.java.lang.TArithmeticException;
+import org.teavm.classlib.java.lang.TString;
 import org.teavm.classlib.java.util.TLocale;
 
 /**
@@ -24,6 +26,15 @@ import org.teavm.classlib.java.util.TLocale;
  * @author Alexey Andreev
  */
 public class TDecimalFormat extends TNumberFormat {
+    private static final long MANTISSA_PATTERN = 100_0000_0000_0000_0000L;
+    private static final int MANTISSA_LENGTH = 18;
+    private static final long[] POW10_ARRAY = { 1, 10, 100, 1000, 1_0000, 1_0_0000, 1_00_0000,
+            1_000_0000, 1_0000_0000, 1_0_0000_0000, 1_00_0000_0000L, 1_000_0000_0000L, 1_0000_0000_0000L,
+            1_0_0000_0000_0000L, 1_00_0000_0000_0000L, 1_000_0000_0000_0000L, 1_0000_0000_0000_0000L,
+            1_0_0000_0000_0000_0000L, 1_00_0000_0000_0000_0000L };
+    private static final double[] POW10_FRAC_ARRAY = { 1E1, 1E2, 1E4, 1E8, 1E16, 1E32, 1E64, 1E128, 1E256 };
+    private static final double[] POWM10_FRAC_ARRAY = { 1E-1, 1E-2, 1E-4, 1E-8, 1E-16, 1E-32, 1E-64, 1E-128, 1E-256 };
+    private static final int DOUBLE_MAX_EXPONENT = 308;
     TDecimalFormatSymbols symbols;
     private String positivePrefix;
     private String negativePrefix;
@@ -56,21 +67,6 @@ public class TDecimalFormat extends TNumberFormat {
 
     public DecimalFormatSymbols getDecimalFormatSymbols() {
         return (DecimalFormatSymbols)symbols.clone();
-    }
-
-    @Override
-    public StringBuffer format(long value, StringBuffer buffer, TFieldPosition field) {
-        return null;
-    }
-
-    @Override
-    public Number parse(String string, TParsePosition position) {
-        return null;
-    }
-
-    @Override
-    public StringBuffer format(double value, StringBuffer buffer, TFieldPosition field) {
-        return null;
     }
 
     public String getPositivePrefix() {
@@ -178,5 +174,279 @@ public class TDecimalFormat extends TNumberFormat {
         result = result * 31 + (parseBigDecimal ? 1 : 0);
         result = result * 31 + exponentDigits;
         return result;
+    }
+
+    @Override
+    public Number parse(String string, TParsePosition position) {
+        return null;
+    }
+
+    @Override
+    public StringBuffer format(long value, StringBuffer buffer, TFieldPosition field) {
+        if (exponentDigits > 0) {
+            formatExponent(value, buffer);
+        } else {
+            formatRegular(value, buffer);
+        }
+        return buffer;
+    }
+
+    @Override
+    public StringBuffer format(double value, StringBuffer buffer, TFieldPosition field) {
+        MantissaAndExponent me = getMantissaAndExponent(value);
+        if (exponentDigits > 0) {
+            formatExponent(me.mantissa, me.exponent, buffer);
+        } else {
+            formatRegular(me.mantissa, me.exponent, buffer);
+        }
+        return buffer;
+    }
+
+    private void formatExponent(long value, StringBuffer buffer) {
+        int exponent = fastLn10(Math.abs(value));
+        value = normalize(value);
+        formatExponent(value, exponent, buffer);
+    }
+
+    private void formatRegular(long value, StringBuffer buffer) {
+        int exponent = fastLn10(Math.abs(value));
+        value = normalize(value);
+        formatRegular(value, exponent, buffer);
+    }
+
+    private void formatExponent(long mantissa, int exponent, StringBuffer buffer) {
+    }
+
+    private void formatRegular(long mantissa, int exponent, StringBuffer buffer) {
+        // Make mantissa positive
+        boolean positive;
+        if (mantissa >= 0) {
+            positive = true;
+        } else {
+            positive = false;
+            mantissa = -mantissa;
+        }
+
+        ++exponent;
+
+        // Apply rounding if necessary
+        int roundingPos = exponent + getMinimumFractionDigits() - 1;
+        if (roundingPos < 0) {
+            mantissa = 0;
+        } else if (roundingPos < MANTISSA_LENGTH) {
+            mantissa = applyRounding(mantissa, roundingPos, positive);
+        }
+
+        // Append pattern prefix
+        buffer.append(positive ? positivePrefix : negativePrefix);
+
+        // Add insignificant integer zeroes
+        int digitPos = exponent;
+        int intLength = Math.max(0, exponent);
+        for (int i = getMinimumIntegerDigits() - 1; i >= intLength; --i) {
+            buffer.append('0');
+            if (groupingSize > 0 && digitPos % groupingSize == 0 && digitPos > 0) {
+                buffer.append(symbols.getGroupingSeparator());
+            }
+            --digitPos;
+        }
+
+        // Add significant integer digits
+        int significantIntDigits = Math.min(MANTISSA_LENGTH, intLength);
+        int mantissaDigit = MANTISSA_LENGTH;
+        for (int i = 0; i < significantIntDigits; ++i) {
+            long mantissaDigitMask = POW10_ARRAY[mantissaDigit];
+            buffer.append(Character.forDigit((int)(mantissa / mantissaDigitMask), 10));
+            mantissa %= mantissaDigitMask;
+            --mantissaDigit;
+            if (groupingSize > 0 && digitPos % groupingSize == 0 && digitPos > 0) {
+                buffer.append(symbols.getGroupingSeparator());
+            }
+            --digitPos;
+        }
+
+        // Add significant integer zeroes
+        intLength -= significantIntDigits;
+        for (int i = 0; i < intLength; ++i) {
+            buffer.append('0');
+            if (groupingSize > 0 && digitPos % groupingSize == 0 && digitPos > 0) {
+                buffer.append(symbols.getGroupingSeparator());
+            }
+            --digitPos;
+        }
+
+        if (digitPos == 0 && getMinimumFractionDigits() == 0) {
+            if (isDecimalSeparatorAlwaysShown()) {
+                buffer.append(symbols.getDecimalSeparator());
+            }
+        } else {
+            buffer.append(symbols.getDecimalSeparator());
+
+            // Add significant fractional digits
+            int significantFracDigits = Math.min(getMinimumFractionDigits(), MANTISSA_LENGTH - significantIntDigits);
+            digitPos = 0;
+            for (int i = 0; i < significantFracDigits; ++i) {
+                if (groupingSize > 0 && digitPos % groupingSize == 0 && digitPos > 0) {
+                    buffer.append(symbols.getGroupingSeparator());
+                }
+                ++digitPos;
+                long mantissaDigitMask = POW10_ARRAY[mantissaDigit];
+                buffer.append(Character.forDigit((int)(mantissa / mantissaDigitMask), 10));
+                mantissa %= mantissaDigitMask;
+                mantissaDigit--;
+            }
+
+            // Add insignificant integer zeroes
+            for (int i = significantFracDigits; i < getMinimumFractionDigits(); ++i) {
+                if (groupingSize > 0 && digitPos % groupingSize == 0 && digitPos > 0) {
+                    buffer.append(symbols.getGroupingSeparator());
+                }
+                ++digitPos;
+                buffer.append('0');
+            }
+        }
+
+        // Add suffix
+        if (positive) {
+            buffer.append(positiveSuffix != null ? positiveSuffix : "");
+        } else {
+            buffer.append(negativeSuffix != null ? negativeSuffix : positiveSuffix != null ? positiveSuffix : "");
+        }
+    }
+
+    private long applyRounding(long mantissa, int exponent, boolean positive) {
+        long rounding = POW10_ARRAY[MANTISSA_LENGTH - exponent];
+        switch (getRoundingMode()) {
+            case CEILING:
+                mantissa = (mantissa / rounding) * rounding;
+                if (positive) {
+                    mantissa += rounding;
+                }
+                break;
+            case FLOOR:
+                mantissa = (mantissa / rounding) * rounding;
+                if (!positive) {
+                    mantissa += rounding;
+                }
+                break;
+            case UP:
+                mantissa = (mantissa / rounding) * rounding + rounding;
+                break;
+            case DOWN:
+                mantissa = (mantissa / rounding) * rounding;
+                break;
+            case UNNECESSARY:
+                if (mantissa % rounding != 0) {
+                    throw new TArithmeticException(TString.wrap("Can't avoid rounding"));
+                }
+                break;
+            case HALF_DOWN:
+                mantissa = ((mantissa + rounding / 2 - 1) / rounding) * rounding;
+                break;
+            case HALF_UP:
+                mantissa = ((mantissa + rounding / 2 + 1) / rounding) * rounding;
+                break;
+            case HALF_EVEN: {
+                int digit = (int)((mantissa / rounding) % 10);
+                int delta = digit % 2 == 0 ? -1 : 1;
+                mantissa = ((mantissa + rounding / 2 + delta) / rounding) * rounding;
+                break;
+            }
+        }
+        return mantissa;
+    }
+
+    private int fastLn10(long value) {
+        int result = 0;
+        if (value >= 1_0000_0000_0000_0000L) {
+            result += 16;
+            value /= 1_0000_0000_0000_0000L;
+        }
+        if (value >= 1_0000_0000L) {
+            result += 8;
+            value /= 1_0000_0000L;
+        }
+        if (value >= 1_0000L) {
+            result += 4;
+            value /= 1_0000L;
+        }
+        if (value >= 100L) {
+            result += 2;
+            value /= 100L;
+        }
+        if (value >= 10L) {
+            result += 1;
+            value /= 10L;
+        }
+        return result;
+    }
+
+    private long normalize(long value) {
+        if (value < MANTISSA_PATTERN / 1_000_0000_0000_0000L) {
+            value *= 1_0000_0000_0000_0000L;
+        }
+        if (value < MANTISSA_PATTERN / 1_000_0000L) {
+            value *= 1_0000_0000L;
+        }
+        if (value < MANTISSA_PATTERN / 1000L) {
+            value *= 1_0000L;
+        }
+        if (value < MANTISSA_PATTERN / 10L) {
+            value *= 100L;
+        }
+        if (value < MANTISSA_PATTERN / 1L) {
+            value *= 10L;
+        }
+        return value;
+    }
+
+    private MantissaAndExponent getMantissaAndExponent(double value) {
+        int exp = 0;
+        long mantissa = 0;
+        boolean positive;
+        if (value >= 0) {
+            positive = true;
+        } else {
+            positive = false;
+            mantissa = -mantissa;
+        }
+        if (value >= 1) {
+            int bit = 256;
+            exp = 0;
+            double digit = 1;
+            for (int i = POW10_FRAC_ARRAY.length - 1; i >= 0; --i) {
+                if ((exp | bit) <= DOUBLE_MAX_EXPONENT && POW10_FRAC_ARRAY[i] * digit <= value) {
+                    digit *= POW10_FRAC_ARRAY[i];
+                    exp |= bit;
+                }
+                bit >>= 1;
+            }
+            mantissa = (long)(((value / digit) * MANTISSA_PATTERN) + 0.5);
+        } else {
+            int bit = 256;
+            exp = 0;
+            double digit = 1;
+            for (int i = POWM10_FRAC_ARRAY.length - 1; i >= 0; --i) {
+                if ((exp | bit) <= DOUBLE_MAX_EXPONENT && POWM10_FRAC_ARRAY[i] * digit * 10 > value) {
+                    digit *= POWM10_FRAC_ARRAY[i];
+                    exp |= bit;
+                }
+                bit >>= 1;
+            }
+            exp = -exp;
+            mantissa = (long)(((value * MANTISSA_PATTERN) / digit) + 0.5);
+        }
+        mantissa = ((mantissa + 500) / 1000) * 1000;
+        return new MantissaAndExponent(positive ? mantissa : -mantissa, exp);
+    }
+
+    static class MantissaAndExponent {
+        long mantissa;
+        int exponent;
+
+        public MantissaAndExponent(long mantissa, int exponent) {
+            this.mantissa = mantissa;
+            this.exponent = exponent;
+        }
     }
 }

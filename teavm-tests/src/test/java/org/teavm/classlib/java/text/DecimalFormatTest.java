@@ -11,9 +11,11 @@ import org.junit.Test;
  * @author Alexey Andreev
  */
 public class DecimalFormatTest {
+    private static DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.ENGLISH);
+
     @Test
     public void parsesIntegerPattern() {
-        DecimalFormat format = new DecimalFormat("00");
+        DecimalFormat format = createFormat("00");
         assertEquals(2, format.getMinimumIntegerDigits());
         assertFalse(format.isDecimalSeparatorAlwaysShown());
         assertFalse(format.isGroupingUsed());
@@ -21,7 +23,7 @@ public class DecimalFormatTest {
         assertEquals(0, format.getMinimumFractionDigits());
         assertEquals(0, format.getMaximumFractionDigits());
 
-        format = new DecimalFormat("##");
+        format = createFormat("##");
         assertEquals(0, format.getMinimumIntegerDigits());
         assertFalse(format.isDecimalSeparatorAlwaysShown());
         assertFalse(format.isGroupingUsed());
@@ -29,7 +31,7 @@ public class DecimalFormatTest {
         assertEquals(0, format.getMinimumFractionDigits());
         assertEquals(0, format.getMaximumFractionDigits());
 
-        format = new DecimalFormat("#,##0");
+        format = createFormat("#,##0");
         assertEquals(1, format.getMinimumIntegerDigits());
         assertFalse(format.isDecimalSeparatorAlwaysShown());
         assertTrue(format.isGroupingUsed());
@@ -48,14 +50,14 @@ public class DecimalFormatTest {
 
     @Test
     public void parsesPrefixAndSuffixInPattern() {
-        DecimalFormat format = new DecimalFormat("(00)", new DecimalFormatSymbols(Locale.ENGLISH));
+        DecimalFormat format = createFormat("(00)");
         assertEquals(2, format.getMinimumIntegerDigits());
         assertEquals("(", format.getPositivePrefix());
         assertEquals(")", format.getPositiveSuffix());
         assertEquals("-(", format.getNegativePrefix());
         assertEquals(")", format.getNegativeSuffix());
 
-        format = new DecimalFormat("+(00);-{#}", new DecimalFormatSymbols(Locale.ENGLISH));
+        format = createFormat("+(00);-{#}");
         assertEquals(2, format.getMinimumIntegerDigits());
         assertEquals("+(", format.getPositivePrefix());
         assertEquals(")", format.getPositiveSuffix());
@@ -64,7 +66,7 @@ public class DecimalFormatTest {
 
     @Test
     public void parsesFractionalPattern() {
-        DecimalFormat format = new DecimalFormat("#.");
+        DecimalFormat format = createFormat("#.");
         assertEquals(1, format.getMinimumIntegerDigits());
         assertTrue(format.isDecimalSeparatorAlwaysShown());
         assertFalse(format.isGroupingUsed());
@@ -72,28 +74,28 @@ public class DecimalFormatTest {
         assertEquals(0, format.getMinimumFractionDigits());
         assertEquals(0, format.getMaximumFractionDigits());
 
-        format = new DecimalFormat("#.00");
+        format = createFormat("#.00");
         assertEquals(0, format.getMinimumIntegerDigits());
         assertFalse(format.isGroupingUsed());
         assertEquals(0, format.getGroupingSize());
         assertEquals(2, format.getMinimumFractionDigits());
         assertEquals(2, format.getMaximumFractionDigits());
 
-        format = new DecimalFormat("#.00##");
+        format = createFormat("#.00##");
         assertEquals(0, format.getMinimumIntegerDigits());
         assertFalse(format.isGroupingUsed());
         assertEquals(0, format.getGroupingSize());
         assertEquals(2, format.getMinimumFractionDigits());
         assertEquals(4, format.getMaximumFractionDigits());
 
-        format = new DecimalFormat("#00.00##");
+        format = createFormat("#00.00##");
         assertEquals(2, format.getMinimumIntegerDigits());
         assertFalse(format.isGroupingUsed());
         assertEquals(0, format.getGroupingSize());
         assertEquals(2, format.getMinimumFractionDigits());
         assertEquals(4, format.getMaximumFractionDigits());
 
-        format = new DecimalFormat("#,#00.00##");
+        format = createFormat("#,#00.00##");
         assertEquals(2, format.getMinimumIntegerDigits());
         assertTrue(format.isGroupingUsed());
         assertEquals(3, format.getGroupingSize());
@@ -103,10 +105,36 @@ public class DecimalFormatTest {
 
     @Test
     public void parsesExponentialPattern() {
-        DecimalFormat format = new DecimalFormat("##0E00");
+        DecimalFormat format = createFormat("##0E00");
         assertEquals(1, format.getMinimumIntegerDigits());
         assertEquals(0, format.getGroupingSize());
         assertEquals(0, format.getMinimumFractionDigits());
         assertEquals(0, format.getMaximumFractionDigits());
+    }
+
+    @Test
+    public void formatsNumber() {
+        DecimalFormat format = createFormat("0.0");
+        assertEquals("23.0", format.format(23));
+        assertEquals("23.2", format.format(23.2));
+        assertEquals("23.2", format.format(23.23));
+        assertEquals("23.3", format.format(23.27));
+        assertEquals("0.0", format.format(0.0001));
+
+        format = createFormat("00000000000000000000000000.0");
+        assertEquals("00000000000000000000000023.0", format.format(23));
+        assertEquals("00002300000000000000000000.0", format.format(23E20));
+        assertEquals("23000000000000000000000000.0", format.format(23E24));
+
+        format = createFormat("0.00000000000000000000000000");
+        assertEquals("23.00000000000000000000000000", format.format(23));
+        assertEquals("0.23000000000000000000000000", format.format(0.23));
+        assertEquals("0.00000000000000000000230000", format.format(23E-22));
+        assertEquals("0.00000000000000000000000023", format.format(23E-26));
+    }
+
+
+    private DecimalFormat createFormat(String format) {
+        return new DecimalFormat(format, symbols);
     }
 }
