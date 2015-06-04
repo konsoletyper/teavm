@@ -26,8 +26,8 @@ import org.teavm.classlib.java.util.TLocale;
  * @author Alexey Andreev
  */
 public class TDecimalFormat extends TNumberFormat {
-    private static final long MANTISSA_PATTERN = 100_0000_0000_0000_0000L;
-    private static final int MANTISSA_LENGTH = 18;
+    private static final long MANTISSA_PATTERN = 10_0000_0000_0000_0000L;
+    private static final int MANTISSA_LENGTH = 17;
     private static final long[] POW10_ARRAY = { 1, 10, 100, 1000, 1_0000, 1_0_0000, 1_00_0000,
             1_000_0000, 1_0000_0000, 1_0_0000_0000, 1_00_0000_0000L, 1_000_0000_0000L, 1_0000_0000_0000L,
             1_0_0000_0000_0000L, 1_00_0000_0000_0000L, 1_000_0000_0000_0000L, 1_0000_0000_0000_0000L,
@@ -421,7 +421,7 @@ public class TDecimalFormat extends TNumberFormat {
             positive = true;
         } else {
             positive = false;
-            mantissa = -mantissa;
+            value = -value;
         }
         if (value >= 1) {
             int bit = 256;

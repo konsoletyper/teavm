@@ -1,6 +1,7 @@
 package org.teavm.classlib.java.text;
 
 import static org.junit.Assert.*;
+import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
@@ -134,6 +135,72 @@ public class DecimalFormatTest {
         assertEquals("0.00000000000000000000000023", format.format(23E-26));
     }
 
+    @Test
+    public void formatsFractionalPart() {
+        DecimalFormat format = createFormat("0.0000####");
+
+        assertEquals("0.00001235", format.format(0.0000123456));
+        assertEquals("0.00012346", format.format(0.000123456));
+        assertEquals("0.00123456", format.format(0.00123456));
+        assertEquals("0.0123456", format.format(0.0123456));
+        assertEquals("0.1200", format.format(0.12));
+        assertEquals("0.1230", format.format(0.123));
+        assertEquals("0.1234", format.format(0.1234));
+        assertEquals("0.12345", format.format(0.12345));
+    }
+
+    @Test
+    public void roundingWorks() {
+        DecimalFormat format = createFormat("0");
+
+        format.setRoundingMode(RoundingMode.UP);
+        assertEquals("3", format.format(2.3));
+        assertEquals("3", format.format(2.7));
+        assertEquals("-3", format.format(-2.3));
+        assertEquals("-3", format.format(-2.7));
+
+        format.setRoundingMode(RoundingMode.DOWN);
+        assertEquals("2", format.format(2.3));
+        assertEquals("2", format.format(2.7));
+        assertEquals("-2", format.format(-2.3));
+        assertEquals("-2", format.format(-2.7));
+
+        format.setRoundingMode(RoundingMode.FLOOR);
+        assertEquals("2", format.format(2.3));
+        assertEquals("2", format.format(2.7));
+        assertEquals("-3", format.format(-2.3));
+        assertEquals("-3", format.format(-2.7));
+
+        format.setRoundingMode(RoundingMode.CEILING);
+        assertEquals("3", format.format(2.3));
+        assertEquals("3", format.format(2.7));
+        assertEquals("-2", format.format(-2.3));
+        assertEquals("-2", format.format(-2.7));
+
+        format.setRoundingMode(RoundingMode.HALF_DOWN);
+        assertEquals("2", format.format(2.3));
+        assertEquals("3", format.format(2.7));
+        assertEquals("2", format.format(2.5));
+        assertEquals("3", format.format(3.5));
+        assertEquals("-2", format.format(-2.5));
+        assertEquals("-3", format.format(-3.5));
+
+        format.setRoundingMode(RoundingMode.HALF_UP);
+        assertEquals("2", format.format(2.3));
+        assertEquals("3", format.format(2.7));
+        assertEquals("3", format.format(2.5));
+        assertEquals("4", format.format(3.5));
+        assertEquals("-3", format.format(-2.5));
+        assertEquals("-4", format.format(-3.5));
+
+        format.setRoundingMode(RoundingMode.HALF_EVEN);
+        assertEquals("2", format.format(2.3));
+        assertEquals("3", format.format(2.7));
+        assertEquals("2", format.format(2.5));
+        assertEquals("4", format.format(3.5));
+        assertEquals("-2", format.format(-2.5));
+        assertEquals("-4", format.format(-3.5));
+    }
 
     private DecimalFormat createFormat(String format) {
         return new DecimalFormat(format, symbols);
