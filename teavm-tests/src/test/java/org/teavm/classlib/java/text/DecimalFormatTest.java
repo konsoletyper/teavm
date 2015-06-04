@@ -114,6 +114,15 @@ public class DecimalFormatTest {
     }
 
     @Test
+    public void formatsIntegerPart() {
+        DecimalFormat format = createFormat("00");
+        assertEquals("02", format.format(2));
+        assertEquals("23", format.format(23));
+        assertEquals("23", format.format(23.2));
+        assertEquals("24", format.format(23.7));
+    }
+
+    @Test
     public void formatsNumber() {
         DecimalFormat format = createFormat("0.0");
         assertEquals("23.0", format.format(23));
@@ -138,7 +147,6 @@ public class DecimalFormatTest {
     @Test
     public void formatsFractionalPart() {
         DecimalFormat format = createFormat("0.0000####");
-
         assertEquals("0.00001235", format.format(0.0000123456));
         assertEquals("0.00012346", format.format(0.000123456));
         assertEquals("0.00123456", format.format(0.00123456));
@@ -147,6 +155,12 @@ public class DecimalFormatTest {
         assertEquals("0.1230", format.format(0.123));
         assertEquals("0.1234", format.format(0.1234));
         assertEquals("0.12345", format.format(0.12345));
+
+        format = createFormat("0.##");
+        assertEquals("23", format.format(23));
+        assertEquals("2.3", format.format(2.3));
+        assertEquals("0.23", format.format(0.23));
+        assertEquals("0.02", format.format(0.023));
     }
 
     @Test
@@ -200,6 +214,24 @@ public class DecimalFormatTest {
         assertEquals("4", format.format(3.5));
         assertEquals("-2", format.format(-2.5));
         assertEquals("-4", format.format(-3.5));
+    }
+
+    @Test
+    public void formatsWithGroups() {
+        DecimalFormat format = createFormat("#,###.0");
+        assertEquals("23.0", format.format(23));
+        assertEquals("2,300.0", format.format(2300));
+        assertEquals("2,300,000,000,000,000,000,000.0", format.format(23E20));
+        assertEquals("23,000,000,000,000,000,000,000,000.0", format.format(23E24));
+
+        format = createFormat("000,000,000,000,000,000,000");
+        assertEquals("000,000,000,000,000,000,023", format.format(23));
+    }
+
+    @Test
+    public void formatsLargeValues() {
+        DecimalFormat format = createFormat("0");
+        assertEquals("9223372036854775807", format.format(9223372036854775807L));
     }
 
     private DecimalFormat createFormat(String format) {

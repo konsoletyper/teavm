@@ -241,8 +241,8 @@ public class TDecimalFormat extends TNumberFormat {
         buffer.append(positive ? positivePrefix : negativePrefix);
 
         // Add insignificant integer zeros
-        int digitPos = exponent;
         int intLength = Math.max(0, exponent);
+        int digitPos = Math.max(intLength, getMinimumIntegerDigits()) - 1;
         for (int i = getMinimumIntegerDigits() - 1; i >= intLength; --i) {
             buffer.append('0');
             if (groupingSize > 0 && digitPos % groupingSize == 0 && digitPos > 0) {
@@ -275,20 +275,24 @@ public class TDecimalFormat extends TNumberFormat {
             --digitPos;
         }
 
-        if (digitPos == 0 && getMinimumFractionDigits() == 0) {
-            if (isDecimalSeparatorAlwaysShown()) {
+        if (mantissa == 0) {
+            if (getMinimumFractionDigits() == 0) {
+                if (isDecimalSeparatorAlwaysShown()) {
+                    buffer.append(symbols.getDecimalSeparator());
+                }
+            } else {
                 buffer.append(symbols.getDecimalSeparator());
+                for (int i = 0; i < getMinimumFractionDigits(); ++i) {
+                    buffer.append('0');
+                }
             }
         } else {
             buffer.append(symbols.getDecimalSeparator());
 
             // Add significant fractional zeros
-            int fracZeros = Math.min(getMinimumFractionDigits(), Math.max(0, -exponent));
+            int fracZeros = Math.min(getMaximumFractionDigits(), Math.max(0, -exponent));
             digitPos = 0;
             for (int i = 0; i < fracZeros; ++i) {
-                if (groupingSize > 0 && digitPos % groupingSize == 0 && digitPos > 0) {
-                    buffer.append(symbols.getGroupingSeparator());
-                }
                 ++digitPos;
                 buffer.append('0');
             }
@@ -299,9 +303,6 @@ public class TDecimalFormat extends TNumberFormat {
                 if (mantissa == 0) {
                     break;
                 }
-                if (groupingSize > 0 && digitPos % groupingSize == 0 && digitPos > 0) {
-                    buffer.append(symbols.getGroupingSeparator());
-                }
                 ++digitPos;
                 long mantissaDigitMask = POW10_ARRAY[mantissaDigit];
                 buffer.append(Character.forDigit((int)(mantissa / mantissaDigitMask), 10));
@@ -311,9 +312,6 @@ public class TDecimalFormat extends TNumberFormat {
 
             // Add insignificant fractional zeros
             for (int i = digitPos; i < getMinimumFractionDigits(); ++i) {
-                if (groupingSize > 0 && digitPos % groupingSize == 0 && digitPos > 0) {
-                    buffer.append(symbols.getGroupingSeparator());
-                }
                 ++digitPos;
                 buffer.append('0');
             }
@@ -395,6 +393,9 @@ public class TDecimalFormat extends TNumberFormat {
     }
 
     private long normalize(long value) {
+        if (value >= MANTISSA_PATTERN * 10) {
+            value /= 10;
+        }
         if (value < MANTISSA_PATTERN / 1_000_0000_0000_0000L) {
             value *= 1_0000_0000_0000_0000L;
         }
