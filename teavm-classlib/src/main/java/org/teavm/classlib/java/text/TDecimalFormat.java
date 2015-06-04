@@ -230,7 +230,7 @@ public class TDecimalFormat extends TNumberFormat {
         ++exponent;
 
         // Apply rounding if necessary
-        int roundingPos = exponent + getMinimumFractionDigits() - 1;
+        int roundingPos = exponent + getMaximumFractionDigits() - 1;
         if (roundingPos < 0) {
             mantissa = 0;
         } else if (roundingPos < MANTISSA_LENGTH) {
@@ -240,7 +240,7 @@ public class TDecimalFormat extends TNumberFormat {
         // Append pattern prefix
         buffer.append(positive ? positivePrefix : negativePrefix);
 
-        // Add insignificant integer zeroes
+        // Add insignificant integer zeros
         int digitPos = exponent;
         int intLength = Math.max(0, exponent);
         for (int i = getMinimumIntegerDigits() - 1; i >= intLength; --i) {
@@ -282,10 +282,23 @@ public class TDecimalFormat extends TNumberFormat {
         } else {
             buffer.append(symbols.getDecimalSeparator());
 
-            // Add significant fractional digits
-            int significantFracDigits = Math.min(getMinimumFractionDigits(), MANTISSA_LENGTH - significantIntDigits);
+            // Add significant fractional zeros
+            int fracZeros = Math.min(getMinimumFractionDigits(), Math.max(0, -exponent));
             digitPos = 0;
+            for (int i = 0; i < fracZeros; ++i) {
+                if (groupingSize > 0 && digitPos % groupingSize == 0 && digitPos > 0) {
+                    buffer.append(symbols.getGroupingSeparator());
+                }
+                ++digitPos;
+                buffer.append('0');
+            }
+
+            // Add significant fractional digits
+            int significantFracDigits = Math.min(getMaximumFractionDigits() - digitPos, mantissaDigit);
             for (int i = 0; i < significantFracDigits; ++i) {
+                if (mantissa == 0) {
+                    break;
+                }
                 if (groupingSize > 0 && digitPos % groupingSize == 0 && digitPos > 0) {
                     buffer.append(symbols.getGroupingSeparator());
                 }
@@ -296,8 +309,8 @@ public class TDecimalFormat extends TNumberFormat {
                 mantissaDigit--;
             }
 
-            // Add insignificant integer zeroes
-            for (int i = significantFracDigits; i < getMinimumFractionDigits(); ++i) {
+            // Add insignificant fractional zeros
+            for (int i = digitPos; i < getMinimumFractionDigits(); ++i) {
                 if (groupingSize > 0 && digitPos % groupingSize == 0 && digitPos > 0) {
                     buffer.append(symbols.getGroupingSeparator());
                 }

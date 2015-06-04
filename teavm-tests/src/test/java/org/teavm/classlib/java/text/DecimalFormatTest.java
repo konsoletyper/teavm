@@ -129,6 +129,7 @@ public class DecimalFormatTest {
         format = createFormat("0.00000000000000000000000000");
         assertEquals("23.00000000000000000000000000", format.format(23));
         assertEquals("0.23000000000000000000000000", format.format(0.23));
+        assertEquals("0.00230000000000000000000000", format.format(0.0023));
         assertEquals("0.00000000000000000000230000", format.format(23E-22));
         assertEquals("0.00000000000000000000000023", format.format(23E-26));
     }
