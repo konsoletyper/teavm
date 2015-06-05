@@ -232,6 +232,7 @@ public class DecimalFormatTest {
     public void formatsLargeValues() {
         DecimalFormat format = createFormat("0");
         assertEquals("9223372036854775807", format.format(9223372036854775807L));
+        assertEquals("-9223372036854775808", format.format(-9223372036854775808L));
     }
 
     private DecimalFormat createFormat(String format) {

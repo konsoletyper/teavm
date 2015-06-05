@@ -26,8 +26,6 @@ import org.teavm.classlib.java.util.TLocale;
  * @author Alexey Andreev
  */
 public class TDecimalFormat extends TNumberFormat {
-    private static final long MANTISSA_PATTERN = 10_0000_0000_0000_0000L;
-    private static final int MANTISSA_LENGTH = 17;
     private static final long[] POW10_ARRAY = { 1, 10, 100, 1000, 1_0000, 1_0_0000, 1_00_0000,
             1_000_0000, 1_0000_0000, 1_0_0000_0000, 1_00_0000_0000L, 1_000_0000_0000L, 1_0000_0000_0000L,
             1_0_0000_0000_0000L, 1_00_0000_0000_0000L, 1_000_0000_0000_0000L, 1_0000_0000_0000_0000L,
@@ -204,17 +202,55 @@ public class TDecimalFormat extends TNumberFormat {
 
     private void formatExponent(long value, StringBuffer buffer) {
         int exponent = fastLn10(Math.abs(value));
-        value = normalize(value);
         formatExponent(value, exponent, buffer);
     }
 
     private void formatRegular(long value, StringBuffer buffer) {
         int exponent = fastLn10(Math.abs(value));
-        value = normalize(value);
         formatRegular(value, exponent, buffer);
     }
 
     private void formatExponent(long mantissa, int exponent, StringBuffer buffer) {
+        boolean positive;
+        if (mantissa >= 0) {
+            positive = true;
+        } else {
+            positive = false;
+            mantissa = -mantissa;
+        }
+
+        int visibleExponent = fastLn10(mantissa);
+        int mantissaLength = visibleExponent + 1;
+
+        int significantSize = getMinimumIntegerDigits() + getMaximumFractionDigits();
+        int exponentMultiplier = getMaximumIntegerDigits() - getMinimumIntegerDigits();
+        if (exponentMultiplier > 0) {
+            int delta = exponent - (exponent / exponentMultiplier) * exponentMultiplier;
+            exponent -= delta;
+            exponentMultiplier -= delta;
+        } else {
+            exponent -= getMinimumIntegerDigits();
+            visibleExponent -= getMinimumIntegerDigits();
+        }
+
+        int roundingPos = exponent + getMaximumFractionDigits();
+        if (roundingPos < 0) {
+            mantissa = 0;
+        } else if (roundingPos < mantissaLength) {
+            mantissa = applyRounding(mantissa, mantissaLength, roundingPos, positive);
+        }
+
+        int exponentPos = Math.max(visibleExponent, 0);
+        for (int i = mantissaLength - 1; i >= exponentPos; --i) {
+            long mantissaDigitMask = POW10_ARRAY[i];
+            buffer.append(Character.forDigit((int)(mantissa / mantissaDigitMask), 10));
+            mantissa %= mantissaDigitMask;
+        }
+        for (int i = exponentPos; i >= visibleExponent; --i) {
+            buffer.append('0');
+        }
+
+        significantSize -= visibleExponent;
     }
 
     private void formatRegular(long mantissa, int exponent, StringBuffer buffer) {
@@ -227,14 +263,15 @@ public class TDecimalFormat extends TNumberFormat {
             mantissa = -mantissa;
         }
 
+        int mantissaLength = fastLn10(mantissa) + 1;
         ++exponent;
 
         // Apply rounding if necessary
-        int roundingPos = exponent + getMaximumFractionDigits() - 1;
+        int roundingPos = exponent + getMaximumFractionDigits();
         if (roundingPos < 0) {
             mantissa = 0;
-        } else if (roundingPos < MANTISSA_LENGTH) {
-            mantissa = applyRounding(mantissa, roundingPos, positive);
+        } else if (roundingPos < mantissaLength) {
+            mantissa = applyRounding(mantissa, mantissaLength, roundingPos, positive);
         }
 
         // Append pattern prefix
@@ -252,13 +289,12 @@ public class TDecimalFormat extends TNumberFormat {
         }
 
         // Add significant integer digits
-        int significantIntDigits = Math.min(MANTISSA_LENGTH, intLength);
-        int mantissaDigit = MANTISSA_LENGTH;
+        int significantIntDigits = Math.min(mantissaLength, intLength);
+        int mantissaDigit = mantissaLength - 1;
         for (int i = 0; i < significantIntDigits; ++i) {
-            long mantissaDigitMask = POW10_ARRAY[mantissaDigit];
+            long mantissaDigitMask = POW10_ARRAY[mantissaDigit--];
             buffer.append(Character.forDigit((int)(mantissa / mantissaDigitMask), 10));
             mantissa %= mantissaDigitMask;
-            --mantissaDigit;
             if (groupingSize > 0 && digitPos % groupingSize == 0 && digitPos > 0) {
                 buffer.append(symbols.getGroupingSeparator());
             }
@@ -325,8 +361,8 @@ public class TDecimalFormat extends TNumberFormat {
         }
     }
 
-    private long applyRounding(long mantissa, int exponent, boolean positive) {
-        long rounding = POW10_ARRAY[MANTISSA_LENGTH - exponent];
+    private long applyRounding(long mantissa, int mantissaLength, int exponent, boolean positive) {
+        long rounding = POW10_ARRAY[mantissaLength - exponent];
         switch (getRoundingMode()) {
             case CEILING:
                 mantissa = (mantissa / rounding) * rounding;
@@ -392,29 +428,8 @@ public class TDecimalFormat extends TNumberFormat {
         return result;
     }
 
-    private long normalize(long value) {
-        if (value >= MANTISSA_PATTERN * 10) {
-            value /= 10;
-        }
-        if (value < MANTISSA_PATTERN / 1_000_0000_0000_0000L) {
-            value *= 1_0000_0000_0000_0000L;
-        }
-        if (value < MANTISSA_PATTERN / 1_000_0000L) {
-            value *= 1_0000_0000L;
-        }
-        if (value < MANTISSA_PATTERN / 1000L) {
-            value *= 1_0000L;
-        }
-        if (value < MANTISSA_PATTERN / 10L) {
-            value *= 100L;
-        }
-        if (value < MANTISSA_PATTERN / 1L) {
-            value *= 10L;
-        }
-        return value;
-    }
-
     private MantissaAndExponent getMantissaAndExponent(double value) {
+        long mantissaPattern = POW10_ARRAY[17];
         int exp = 0;
         long mantissa = 0;
         boolean positive;
@@ -435,7 +450,7 @@ public class TDecimalFormat extends TNumberFormat {
                 }
                 bit >>= 1;
             }
-            mantissa = (long)(((value / digit) * MANTISSA_PATTERN) + 0.5);
+            mantissa = (long)(((value / digit) * mantissaPattern) + 0.5);
         } else {
             int bit = 256;
             exp = 0;
@@ -448,7 +463,7 @@ public class TDecimalFormat extends TNumberFormat {
                 bit >>= 1;
             }
             exp = -exp;
-            mantissa = (long)(((value * MANTISSA_PATTERN) / digit) + 0.5);
+            mantissa = (long)(((value * mantissaPattern) / digit) + 0.5);
         }
         mantissa = ((mantissa + 500) / 1000) * 1000;
         return new MantissaAndExponent(positive ? mantissa : -mantissa, exp);
