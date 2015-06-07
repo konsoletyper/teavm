@@ -235,6 +235,34 @@ public class DecimalFormatTest {
         assertEquals("-9223372036854775808", format.format(-9223372036854775808L));
     }
 
+    @Test
+    public void formatsExponent() {
+        DecimalFormat format = createFormat("000E0");
+        assertEquals("230E-1", format.format(23));
+        assertEquals("230E0", format.format(230));
+        assertEquals("230E1", format.format(2300));
+        assertEquals("123E1", format.format(1234));
+
+        format = createFormat("0.00E0");
+        assertEquals("2.00E1", format.format(20));
+        assertEquals("2.30E1", format.format(23));
+        assertEquals("2.30E2", format.format(230));
+        assertEquals("1.23E3", format.format(1234));
+
+        format = createFormat("000000000000000000000.00E0");
+        assertEquals("230000000000000000000.00E-19", format.format(23));
+
+        format = createFormat("0.0000000000000000000000E0");
+        assertEquals("2.3000000000000000000000E1", format.format(23));
+
+        format = createFormat("0.0##E0");
+        assertEquals("1.0E0", format.format(1));
+        assertEquals("1.2E1", format.format(12));
+        assertEquals("1.23E2", format.format(123));
+        assertEquals("1.234E3", format.format(1234));
+        assertEquals("1.234E4", format.format(12345));
+    }
+
     private DecimalFormat createFormat(String format) {
         return new DecimalFormat(format, symbols);
     }

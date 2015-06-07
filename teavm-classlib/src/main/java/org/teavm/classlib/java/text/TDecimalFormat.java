@@ -30,6 +30,8 @@ public class TDecimalFormat extends TNumberFormat {
             1_000_0000, 1_0000_0000, 1_0_0000_0000, 1_00_0000_0000L, 1_000_0000_0000L, 1_0000_0000_0000L,
             1_0_0000_0000_0000L, 1_00_0000_0000_0000L, 1_000_0000_0000_0000L, 1_0000_0000_0000_0000L,
             1_0_0000_0000_0000_0000L, 1_00_0000_0000_0000_0000L };
+    private static final int[] POW10_INT_ARRAY = { 1, 10, 100, 1000, 1_0000, 1_0_0000, 1_00_0000,
+        1_000_0000, 1_0000_0000, 1_0_0000_0000 };
     private static final double[] POW10_FRAC_ARRAY = { 1E1, 1E2, 1E4, 1E8, 1E16, 1E32, 1E64, 1E128, 1E256 };
     private static final double[] POWM10_FRAC_ARRAY = { 1E-1, 1E-2, 1E-4, 1E-8, 1E-16, 1E-32, 1E-64, 1E-128, 1E-256 };
     private static final int DOUBLE_MAX_EXPONENT = 308;
@@ -250,7 +252,37 @@ public class TDecimalFormat extends TNumberFormat {
             buffer.append('0');
         }
 
-        significantSize -= visibleExponent;
+        significantSize -= mantissaLength - visibleExponent;
+        if (getMinimumIntegerDigits() > 0 || (mantissa != 0 && significantSize > 0)) {
+            buffer.append(symbols.getDecimalSeparator());
+
+            int limit = Math.max(0, visibleExponent - significantSize);
+            int count = 0;
+            for (int i = visibleExponent - 1; i >= limit; --i) {
+                long mantissaDigitMask = POW10_ARRAY[i];
+                buffer.append(Character.forDigit((int)(mantissa / mantissaDigitMask), 10));
+                mantissa %= mantissaDigitMask;
+                if (mantissa == 0) {
+                    break;
+                }
+                ++count;
+            }
+            while (count-- < getMinimumFractionDigits()) {
+                buffer.append('0');
+            }
+        }
+
+        buffer.append(symbols.getExponentSeparator());
+        if (exponent < 0) {
+            exponent = -exponent;
+            buffer.append(symbols.getMinusSign());
+        }
+        int exponentLength = Math.max(exponentDigits, fastLn10(exponent));
+        for (int i = exponentLength - 1; i >= 0; --i) {
+            int exponentDigit = POW10_INT_ARRAY[i];
+            buffer.append(Character.forDigit(exponent / exponentDigit, 10));
+            exponent %= exponentDigit;
+        }
     }
 
     private void formatRegular(long mantissa, int exponent, StringBuffer buffer) {
@@ -424,6 +456,27 @@ public class TDecimalFormat extends TNumberFormat {
         if (value >= 10L) {
             result += 1;
             value /= 10L;
+        }
+        return result;
+    }
+
+    private int fastLn10(int value) {
+        int result = 0;
+        if (value >= 1_0000_0000) {
+            result += 8;
+            value /= 1_0000_0000;
+        }
+        if (value >= 1_0000) {
+            result += 4;
+            value /= 1_0000;
+        }
+        if (value >= 100) {
+            result += 2;
+            value /= 100;
+        }
+        if (value >= 10L) {
+            result += 1;
+            value /= 10;
         }
         return result;
     }
