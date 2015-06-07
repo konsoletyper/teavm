@@ -263,6 +263,16 @@ public class DecimalFormatTest {
         assertEquals("1.234E4", format.format(12345));
     }
 
+    @Test
+    public void formatsExponentWithMultiplier() {
+        DecimalFormat format = createFormat("##0.00E0");
+        assertEquals("2.30E0", format.format(2.3));
+        assertEquals("23.0E0", format.format(23));
+        assertEquals("230E0", format.format(230));
+        assertEquals("2.30E3", format.format(2300));
+        assertEquals("23.0E3", format.format(23000));
+    }
+
     private DecimalFormat createFormat(String format) {
         return new DecimalFormat(format, symbols);
     }

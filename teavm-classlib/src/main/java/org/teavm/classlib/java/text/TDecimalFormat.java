@@ -225,21 +225,20 @@ public class TDecimalFormat extends TNumberFormat {
         int mantissaLength = visibleExponent + 1;
 
         int significantSize = getMinimumIntegerDigits() + getMaximumFractionDigits();
-        int exponentMultiplier = getMaximumIntegerDigits() - getMinimumIntegerDigits();
-        if (exponentMultiplier > 0) {
+        int exponentMultiplier = getMaximumIntegerDigits() - getMinimumIntegerDigits() + 1;
+        if (exponentMultiplier > 1) {
             int delta = exponent - (exponent / exponentMultiplier) * exponentMultiplier;
             exponent -= delta;
-            exponentMultiplier -= delta;
+            visibleExponent -= delta;
         } else {
-            exponent -= getMinimumIntegerDigits();
-            visibleExponent -= getMinimumIntegerDigits();
+            exponent -= getMinimumIntegerDigits() - 1;
+            visibleExponent -= getMinimumIntegerDigits() - 1;
         }
 
-        int roundingPos = exponent + getMaximumFractionDigits();
-        if (roundingPos < 0) {
+        if (significantSize < 0) {
             mantissa = 0;
-        } else if (roundingPos < mantissaLength) {
-            mantissa = applyRounding(mantissa, mantissaLength, roundingPos, positive);
+        } else if (significantSize < mantissaLength) {
+            mantissa = applyRounding(mantissa, mantissaLength, significantSize, positive);
         }
 
         int exponentPos = Math.max(visibleExponent, 0);
@@ -248,12 +247,13 @@ public class TDecimalFormat extends TNumberFormat {
             buffer.append(Character.forDigit((int)(mantissa / mantissaDigitMask), 10));
             mantissa %= mantissaDigitMask;
         }
-        for (int i = exponentPos; i >= visibleExponent; --i) {
+        for (int i = exponentPos - 1; i >= visibleExponent; --i) {
             buffer.append('0');
         }
 
         significantSize -= mantissaLength - visibleExponent;
-        if (getMinimumIntegerDigits() > 0 || (mantissa != 0 && significantSize > 0)) {
+        int requiredSize = significantSize - (getMaximumFractionDigits() - getMinimumFractionDigits());
+        if (requiredSize > 0 || (mantissa != 0 && significantSize > 0)) {
             buffer.append(symbols.getDecimalSeparator());
 
             int limit = Math.max(0, visibleExponent - significantSize);
@@ -262,12 +262,12 @@ public class TDecimalFormat extends TNumberFormat {
                 long mantissaDigitMask = POW10_ARRAY[i];
                 buffer.append(Character.forDigit((int)(mantissa / mantissaDigitMask), 10));
                 mantissa %= mantissaDigitMask;
+                ++count;
                 if (mantissa == 0) {
                     break;
                 }
-                ++count;
             }
-            while (count-- < getMinimumFractionDigits()) {
+            while (count++ < requiredSize) {
                 buffer.append('0');
             }
         }
@@ -277,11 +277,18 @@ public class TDecimalFormat extends TNumberFormat {
             exponent = -exponent;
             buffer.append(symbols.getMinusSign());
         }
-        int exponentLength = Math.max(exponentDigits, fastLn10(exponent));
+        int exponentLength = Math.max(exponentDigits, fastLn10(exponent) + 1);
         for (int i = exponentLength - 1; i >= 0; --i) {
             int exponentDigit = POW10_INT_ARRAY[i];
             buffer.append(Character.forDigit(exponent / exponentDigit, 10));
             exponent %= exponentDigit;
+        }
+
+        // Add suffix
+        if (positive) {
+            buffer.append(positiveSuffix != null ? positiveSuffix : "");
+        } else {
+            buffer.append(negativeSuffix != null ? negativeSuffix : positiveSuffix != null ? positiveSuffix : "");
         }
     }
 
@@ -420,15 +427,28 @@ public class TDecimalFormat extends TNumberFormat {
                 }
                 break;
             case HALF_DOWN:
-                mantissa = ((mantissa + rounding / 2 - 1) / rounding) * rounding;
+                if (mantissa % rounding == rounding / 2) {
+                    mantissa = (mantissa / rounding) * rounding;
+                } else {
+                    mantissa = ((mantissa + rounding / 2) / rounding) * rounding;
+                }
                 break;
             case HALF_UP:
-                mantissa = ((mantissa + rounding / 2 + 1) / rounding) * rounding;
+                if (mantissa % rounding == rounding / 2) {
+                    mantissa = (mantissa / rounding) * rounding + rounding;
+                } else {
+                    mantissa = ((mantissa + rounding / 2) / rounding) * rounding;
+                }
                 break;
             case HALF_EVEN: {
-                int digit = (int)((mantissa / rounding) % 10);
-                int delta = digit % 2 == 0 ? -1 : 1;
-                mantissa = ((mantissa + rounding / 2 + delta) / rounding) * rounding;
+                if (mantissa % rounding == rounding / 2) {
+                    mantissa = (mantissa / rounding) * rounding;
+                    if ((mantissa / rounding) % 2 != 0) {
+                        mantissa += rounding;
+                    }
+                } else {
+                    mantissa = ((mantissa + rounding / 2) / rounding) * rounding;
+                }
                 break;
             }
         }
@@ -474,7 +494,7 @@ public class TDecimalFormat extends TNumberFormat {
             result += 2;
             value /= 100;
         }
-        if (value >= 10L) {
+        if (value >= 10) {
             result += 1;
             value /= 10;
         }
