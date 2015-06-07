@@ -242,6 +242,7 @@ public class DecimalFormatTest {
         assertEquals("230E0", format.format(230));
         assertEquals("230E1", format.format(2300));
         assertEquals("123E1", format.format(1234));
+        assertEquals("-123E1", format.format(-1234));
 
         format = createFormat("0.00E0");
         assertEquals("2.00E1", format.format(20));
