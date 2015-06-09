@@ -15,6 +15,8 @@
  */
 package org.teavm.classlib.java.text;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.text.DecimalFormatSymbols;
 import org.teavm.classlib.impl.unicode.CLDRHelper;
 import org.teavm.classlib.java.lang.TArithmeticException;
@@ -36,11 +38,11 @@ public class TDecimalFormat extends TNumberFormat {
     private static final double[] POWM10_FRAC_ARRAY = { 1E-1, 1E-2, 1E-4, 1E-8, 1E-16, 1E-32, 1E-64, 1E-128, 1E-256 };
     private static final int DOUBLE_MAX_EXPONENT = 308;
     TDecimalFormatSymbols symbols;
-    private String positivePrefix;
-    private String negativePrefix;
-    private String positiveSuffix;
-    private String negativeSuffix;
-    private int multiplier;
+    private String positivePrefix = "";
+    private String negativePrefix = "-";
+    private String positiveSuffix = "";
+    private String negativeSuffix = "";
+    private int multiplier = 1;
     private int groupingSize;
     private boolean decimalSeparatorAlwaysShown;
     private boolean parseBigDecimal;
@@ -182,6 +184,31 @@ public class TDecimalFormat extends TNumberFormat {
     }
 
     @Override
+    public StringBuffer format(Object object, StringBuffer buffer, TFieldPosition field) {
+        if (object instanceof BigDecimal) {
+            return format((BigDecimal)object, buffer, field);
+        } else if (object instanceof BigInteger) {
+            return format((BigInteger)object, buffer, field);
+        } else {
+            return super.format(object, buffer, field);
+        }
+    }
+
+    private StringBuffer format(BigInteger value, StringBuffer buffer, TFieldPosition field) {
+        return format(new BigDecimal(value), buffer, field);
+    }
+
+    private StringBuffer format(BigDecimal value, StringBuffer buffer,
+            @SuppressWarnings("unused") TFieldPosition field) {
+        if (exponentDigits > 0) {
+            formatExponent(value, buffer);
+        } else {
+            formatRegular(value, buffer);
+        }
+        return buffer;
+    }
+
+    @Override
     public StringBuffer format(long value, StringBuffer buffer, TFieldPosition field) {
         if (exponentDigits > 0) {
             formatExponent(value, buffer);
@@ -193,11 +220,18 @@ public class TDecimalFormat extends TNumberFormat {
 
     @Override
     public StringBuffer format(double value, StringBuffer buffer, TFieldPosition field) {
-        MantissaAndExponent me = getMantissaAndExponent(value);
-        if (exponentDigits > 0) {
-            formatExponent(me.mantissa, me.exponent, buffer);
+        if (Double.isNaN(value)) {
+            buffer.append(positivePrefix).append(symbols.getNaN()).append(positiveSuffix);
+        } else if (Double.isInfinite(value)) {
+            buffer.append(value > 0 ? positivePrefix : negativePrefix).append(symbols.getInfinity())
+                    .append(value > 0 ? positiveSuffix : negativeSuffix);
         } else {
-            formatRegular(me.mantissa, me.exponent, buffer);
+            MantissaAndExponent me = getMantissaAndExponent(value);
+            if (exponentDigits > 0) {
+                formatExponent(me.mantissa, me.exponent, buffer);
+            } else {
+                formatRegular(me.mantissa, me.exponent, buffer);
+            }
         }
         return buffer;
     }
@@ -216,6 +250,22 @@ public class TDecimalFormat extends TNumberFormat {
         boolean positive = mantissa >= 0;
         int visibleExponent = fastLn10(mantissa);
         int mantissaLength = visibleExponent + 1;
+
+        if (multiplier != 1) {
+            int multiplierDigits = fastLn10(multiplier);
+            int tenMultiplier = POW10_INT_ARRAY[multiplierDigits];
+            if (tenMultiplier == multiplier) {
+                exponent += multiplierDigits;
+            } else if (mantissa >= Long.MAX_VALUE / multiplier || mantissa <= Long.MIN_VALUE / multiplier)  {
+                formatExponent(new BigDecimal(BigInteger.valueOf(mantissa), mantissaLength - exponent), buffer);
+                return;
+            } else {
+                mantissa *= multiplier;
+                positive = mantissa >= 0;
+                visibleExponent = fastLn10(mantissa);
+                mantissaLength = visibleExponent + 1;
+            }
+        }
 
         int significantSize = getMinimumIntegerDigits() + getMaximumFractionDigits();
         int exponentMultiplier = getMaximumIntegerDigits() - getMinimumIntegerDigits() + 1;
@@ -240,7 +290,7 @@ public class TDecimalFormat extends TNumberFormat {
         int exponentPos = Math.max(visibleExponent, 0);
         for (int i = mantissaLength - 1; i >= exponentPos; --i) {
             long mantissaDigitMask = POW10_ARRAY[i];
-            buffer.append(Character.forDigit(Math.abs((int)(mantissa / mantissaDigitMask)), 10));
+            buffer.append(forDigit(Math.abs((int)(mantissa / mantissaDigitMask))));
             mantissa %= mantissaDigitMask;
         }
         for (int i = exponentPos - 1; i >= visibleExponent; --i) {
@@ -256,7 +306,7 @@ public class TDecimalFormat extends TNumberFormat {
             int count = 0;
             for (int i = visibleExponent - 1; i >= limit; --i) {
                 long mantissaDigitMask = POW10_ARRAY[i];
-                buffer.append(Character.forDigit(Math.abs((int)(mantissa / mantissaDigitMask)), 10));
+                buffer.append(forDigit(Math.abs((int)(mantissa / mantissaDigitMask))));
                 mantissa %= mantissaDigitMask;
                 ++count;
                 if (mantissa == 0) {
@@ -276,7 +326,7 @@ public class TDecimalFormat extends TNumberFormat {
         int exponentLength = Math.max(exponentDigits, fastLn10(exponent) + 1);
         for (int i = exponentLength - 1; i >= 0; --i) {
             int exponentDigit = POW10_INT_ARRAY[i];
-            buffer.append(Character.forDigit(exponent / exponentDigit, 10));
+            buffer.append(forDigit(exponent / exponentDigit));
             exponent %= exponentDigit;
         }
 
@@ -292,6 +342,18 @@ public class TDecimalFormat extends TNumberFormat {
         boolean positive = mantissa >= 0;
         int mantissaLength = fastLn10(mantissa) + 1;
         ++exponent;
+
+        int multiplierDigits = fastLn10(multiplier);
+        int tenMultiplier = POW10_INT_ARRAY[multiplierDigits];
+        if (tenMultiplier == multiplier) {
+            exponent += multiplierDigits;
+        } else if (mantissa >= Long.MAX_VALUE / multiplier || mantissa <= Long.MIN_VALUE / multiplier)  {
+            formatRegular(new BigDecimal(BigInteger.valueOf(mantissa), mantissaLength - exponent), buffer);
+            return;
+        } else {
+            mantissa *= multiplier;
+            mantissaLength = fastLn10(mantissa) + 1;
+        }
 
         // Apply rounding if necessary
         int roundingPos = exponent + getMaximumFractionDigits();
@@ -320,7 +382,7 @@ public class TDecimalFormat extends TNumberFormat {
         int mantissaDigit = mantissaLength - 1;
         for (int i = 0; i < significantIntDigits; ++i) {
             long mantissaDigitMask = POW10_ARRAY[mantissaDigit--];
-            buffer.append(Character.forDigit(Math.abs((int)(mantissa / mantissaDigitMask)), 10));
+            buffer.append(forDigit(Math.abs((int)(mantissa / mantissaDigitMask))));
             mantissa %= mantissaDigitMask;
             if (groupingSize > 0 && digitPos % groupingSize == 0 && digitPos > 0) {
                 buffer.append(symbols.getGroupingSeparator());
@@ -368,9 +430,200 @@ public class TDecimalFormat extends TNumberFormat {
                 }
                 ++digitPos;
                 long mantissaDigitMask = POW10_ARRAY[mantissaDigit];
-                buffer.append(Character.forDigit(Math.abs((int)(mantissa / mantissaDigitMask)), 10));
+                buffer.append(forDigit(Math.abs((int)(mantissa / mantissaDigitMask))));
                 mantissa %= mantissaDigitMask;
                 mantissaDigit--;
+            }
+
+            // Add insignificant fractional zeros
+            for (int i = digitPos; i < getMinimumFractionDigits(); ++i) {
+                ++digitPos;
+                buffer.append('0');
+            }
+        }
+
+        // Add suffix
+        if (positive) {
+            buffer.append(positiveSuffix != null ? positiveSuffix : "");
+        } else {
+            buffer.append(negativeSuffix != null ? negativeSuffix : positiveSuffix != null ? positiveSuffix : "");
+        }
+    }
+
+    private void formatExponent(BigDecimal value, StringBuffer buffer) {
+        if (multiplier != 1) {
+            value = value.multiply(BigDecimal.valueOf(multiplier));
+        }
+        boolean positive = value.compareTo(BigDecimal.ZERO) >= 0;
+        int mantissaLength = value.precision();
+        int visibleExponent = mantissaLength - 1;
+        int exponent = visibleExponent - value.scale();
+        BigInteger mantissa = value.unscaledValue();
+
+        int significantSize = getMinimumIntegerDigits() + getMaximumFractionDigits();
+        int exponentMultiplier = getMaximumIntegerDigits() - getMinimumIntegerDigits() + 1;
+        if (exponentMultiplier > 1) {
+            int delta = exponent - (exponent / exponentMultiplier) * exponentMultiplier;
+            exponent -= delta;
+            visibleExponent -= delta;
+        } else {
+            exponent -= getMinimumIntegerDigits() - 1;
+            visibleExponent -= getMinimumIntegerDigits() - 1;
+        }
+
+        if (significantSize < 0) {
+            mantissa = BigInteger.ZERO;
+        } else if (significantSize < mantissaLength) {
+            mantissa = applyRounding(mantissa, mantissaLength, significantSize);
+        }
+
+        // Append pattern prefix
+        buffer.append(positive ? positivePrefix : negativePrefix);
+
+        int exponentPos = Math.max(visibleExponent, 0);
+        BigInteger mantissaDigitMask = pow10(BigInteger.ONE, mantissaLength - 1);
+        for (int i = mantissaLength - 1; i >= exponentPos; --i) {
+            BigInteger[] parts = mantissa.divideAndRemainder(mantissaDigitMask);
+            buffer.append(forDigit(Math.abs(parts[0].intValue())));
+            mantissa = parts[1];
+            mantissaDigitMask = mantissaDigitMask.divide(BigInteger.TEN);
+        }
+        for (int i = exponentPos - 1; i >= visibleExponent; --i) {
+            buffer.append('0');
+        }
+
+        significantSize -= mantissaLength - visibleExponent;
+        int requiredSize = significantSize - (getMaximumFractionDigits() - getMinimumFractionDigits());
+        if (requiredSize > 0 || (!mantissa.equals(BigInteger.ZERO) && significantSize > 0)) {
+            buffer.append(symbols.getDecimalSeparator());
+
+            int limit = Math.max(0, visibleExponent - significantSize);
+            int count = 0;
+            for (int i = visibleExponent - 1; i >= limit; --i) {
+                BigInteger[] parts = mantissa.divideAndRemainder(mantissaDigitMask);
+                buffer.append(forDigit(Math.abs(parts[0].intValue())));
+                mantissa = parts[1];
+                ++count;
+                if (mantissa.equals(BigInteger.ZERO)) {
+                    break;
+                }
+                mantissaDigitMask = mantissaDigitMask.divide(BigInteger.TEN);
+            }
+            while (count++ < requiredSize) {
+                buffer.append('0');
+            }
+        }
+
+        buffer.append(symbols.getExponentSeparator());
+        if (exponent < 0) {
+            exponent = -exponent;
+            buffer.append(symbols.getMinusSign());
+        }
+        int exponentLength = Math.max(exponentDigits, fastLn10(exponent) + 1);
+        for (int i = exponentLength - 1; i >= 0; --i) {
+            int exponentDigit = POW10_INT_ARRAY[i];
+            buffer.append(forDigit(exponent / exponentDigit));
+            exponent %= exponentDigit;
+        }
+
+        // Add suffix
+        if (positive) {
+            buffer.append(positiveSuffix != null ? positiveSuffix : "");
+        } else {
+            buffer.append(negativeSuffix != null ? negativeSuffix : positiveSuffix != null ? positiveSuffix : "");
+        }
+    }
+
+    private void formatRegular(BigDecimal value, StringBuffer buffer) {
+        if (multiplier != 1) {
+            value = value.multiply(BigDecimal.valueOf(multiplier));
+        }
+        BigInteger mantissa = value.unscaledValue();
+        boolean positive = mantissa.compareTo(BigInteger.ZERO) >= 0;
+        int mantissaLength = value.precision();
+        int exponent = value.precision() - value.scale();
+
+        // Apply rounding if necessary
+        int roundingPos = exponent + getMaximumFractionDigits();
+        if (roundingPos < 0) {
+            mantissa = BigInteger.ZERO;
+        } else if (roundingPos < mantissaLength) {
+            mantissa = applyRounding(mantissa, mantissaLength, roundingPos);
+        }
+
+        // Append pattern prefix
+        buffer.append(positive ? positivePrefix : negativePrefix);
+
+        // Add insignificant integer zeros
+        int intLength = Math.max(0, exponent);
+        int digitPos = Math.max(intLength, getMinimumIntegerDigits()) - 1;
+        for (int i = getMinimumIntegerDigits() - 1; i >= intLength; --i) {
+            buffer.append('0');
+            if (groupingSize > 0 && digitPos % groupingSize == 0 && digitPos > 0) {
+                buffer.append(symbols.getGroupingSeparator());
+            }
+            --digitPos;
+        }
+
+        // Add significant integer digits
+        int significantIntDigits = Math.min(mantissaLength, intLength);
+        BigInteger mantissaDigitMask = pow10(BigInteger.ONE, mantissaLength - 1);
+        for (int i = 0; i < significantIntDigits; ++i) {
+            BigInteger[] parts = mantissa.divideAndRemainder(mantissaDigitMask);
+            buffer.append(forDigit(Math.abs(parts[0].intValue())));
+            mantissa = parts[1];
+            if (groupingSize > 0 && digitPos % groupingSize == 0 && digitPos > 0) {
+                buffer.append(symbols.getGroupingSeparator());
+            }
+            --digitPos;
+            --mantissaLength;
+            mantissaDigitMask = mantissaDigitMask.divide(BigInteger.TEN);
+        }
+
+        // Add significant integer zeros
+        intLength -= significantIntDigits;
+        for (int i = 0; i < intLength; ++i) {
+            buffer.append('0');
+            if (groupingSize > 0 && digitPos % groupingSize == 0 && digitPos > 0) {
+                buffer.append(symbols.getGroupingSeparator());
+            }
+            --digitPos;
+        }
+
+        if (mantissa.equals(BigInteger.ZERO)) {
+            if (getMinimumFractionDigits() == 0) {
+                if (isDecimalSeparatorAlwaysShown()) {
+                    buffer.append(symbols.getDecimalSeparator());
+                }
+            } else {
+                buffer.append(symbols.getDecimalSeparator());
+                for (int i = 0; i < getMinimumFractionDigits(); ++i) {
+                    buffer.append('0');
+                }
+            }
+        } else {
+            buffer.append(symbols.getDecimalSeparator());
+
+            // Add significant fractional zeros
+            int fracZeros = Math.min(getMaximumFractionDigits(), Math.max(0, -exponent));
+            digitPos = 0;
+            for (int i = 0; i < fracZeros; ++i) {
+                ++digitPos;
+                buffer.append('0');
+            }
+
+            // Add significant fractional digits
+            int significantFracDigits = Math.min(getMaximumFractionDigits() - digitPos, mantissaLength);
+            for (int i = 0; i < significantFracDigits; ++i) {
+                if (mantissa.equals(BigInteger.ZERO)) {
+                    break;
+                }
+                ++digitPos;
+                BigInteger[] parts = mantissa.divideAndRemainder(mantissaDigitMask);
+                buffer.append(forDigit(Math.abs(parts[0].intValue())));
+                mantissa = parts[1];
+                --mantissaLength;
+                mantissaDigitMask = mantissaDigitMask.divide(BigInteger.TEN);
             }
 
             // Add insignificant fractional zeros
@@ -437,6 +690,65 @@ public class TDecimalFormat extends TNumberFormat {
                     }
                 } else {
                     mantissa = ((mantissa + signedRounding / 2) / rounding) * rounding;
+                }
+                break;
+            }
+        }
+        return mantissa;
+    }
+
+    private BigInteger applyRounding(BigInteger mantissa, int mantissaLength, int exponent) {
+        BigInteger rounding = pow10(BigInteger.ONE, mantissaLength - exponent);
+        BigInteger signedRounding = mantissa.compareTo(BigInteger.ZERO) >= 0 ? rounding : rounding.negate();
+        switch (getRoundingMode()) {
+            case CEILING:
+                mantissa = mantissa.divide(rounding).multiply(rounding);
+                if (mantissa.compareTo(BigInteger.ZERO) >= 0) {
+                    mantissa = mantissa.add(rounding);
+                }
+                break;
+            case FLOOR:
+                mantissa = mantissa.divide(rounding).multiply(rounding);
+                if (mantissa.compareTo(BigInteger.ZERO) <= 0) {
+                    mantissa = mantissa.subtract(rounding);
+                }
+                break;
+            case UP:
+                mantissa = mantissa.divide(rounding).multiply(rounding).add(signedRounding);
+                break;
+            case DOWN:
+                mantissa = mantissa.divide(rounding).multiply(rounding);
+                break;
+            case UNNECESSARY:
+                if (mantissa.remainder(rounding).equals(BigInteger.ZERO)) {
+                    throw new TArithmeticException(TString.wrap("Can't avoid rounding"));
+                }
+                break;
+            case HALF_DOWN:
+                if (mantissa.remainder(rounding).equals(signedRounding.divide(BigInteger.valueOf(2)))) {
+                    mantissa = mantissa.divide(rounding).multiply(rounding);
+                } else {
+                    mantissa = mantissa.add(signedRounding.divide(BigInteger.valueOf(2)))
+                            .divide(rounding).multiply(rounding);
+                }
+                break;
+            case HALF_UP:
+                if (mantissa.remainder(rounding).equals(signedRounding.divide(BigInteger.valueOf(2)))) {
+                    mantissa = mantissa.divide(rounding).multiply(rounding).add(signedRounding);
+                } else {
+                    mantissa = mantissa.add(signedRounding.divide(BigInteger.valueOf(2)))
+                            .divide(rounding).multiply(rounding);
+                }
+                break;
+            case HALF_EVEN: {
+                if (mantissa.remainder(rounding).equals(signedRounding.divide(BigInteger.valueOf(2)))) {
+                    mantissa = mantissa.divide(rounding).multiply(rounding);
+                    if (!mantissa.divide(rounding).remainder(BigInteger.valueOf(2)).equals(BigInteger.ZERO)) {
+                        mantissa = mantissa.add(signedRounding);
+                    }
+                } else {
+                    mantissa = mantissa.add(signedRounding.divide(BigInteger.valueOf(2)))
+                            .divide(rounding).multiply(rounding);
                 }
                 break;
             }
@@ -513,6 +825,18 @@ public class TDecimalFormat extends TNumberFormat {
         return result;
     }
 
+    private BigInteger pow10(BigInteger value, int power) {
+        BigInteger digit = BigInteger.TEN;
+        while (power != 0) {
+            if ((power & 1) != 0) {
+                value = value.multiply(digit);
+            }
+            digit = digit.multiply(digit);
+            power >>>= 1;
+        }
+        return value;
+    }
+
     private MantissaAndExponent getMantissaAndExponent(double value) {
         long mantissaPattern = POW10_ARRAY[17];
         int exp = 0;
@@ -552,6 +876,10 @@ public class TDecimalFormat extends TNumberFormat {
         }
         mantissa = ((mantissa + 500) / 1000) * 1000;
         return new MantissaAndExponent(positive ? mantissa : -mantissa, exp);
+    }
+
+    private char forDigit(int n) {
+        return (char)(symbols.getZeroDigit() + n);
     }
 
     static class MantissaAndExponent {

@@ -20,8 +20,8 @@ package org.teavm.classlib.java.text;
  * @author Alexey Andreev
  */
 class TDecimalFormatParser {
-    private String positivePrefix;
-    private String positiveSuffix;
+    private String positivePrefix = "";
+    private String positiveSuffix = "";
     private String negativePrefix;
     private String negativeSuffix;
     private int groupSize;
