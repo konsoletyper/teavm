@@ -15,15 +15,19 @@
  */
 package org.teavm.classlib.java.text;
 
+import java.util.ArrayList;
+import java.util.List;
+import org.teavm.classlib.java.text.TDecimalFormat.FormatField;
+
 /**
  *
  * @author Alexey Andreev
  */
 class TDecimalFormatParser {
-    private String positivePrefix = "";
-    private String positiveSuffix = "";
-    private String negativePrefix;
-    private String negativeSuffix;
+    private FormatField[] positivePrefix;
+    private FormatField[] positiveSuffix;
+    private FormatField[] negativePrefix;
+    private FormatField[] negativeSuffix;
     private int groupSize;
     private int minimumIntLength;
     private int intLength;
@@ -33,6 +37,7 @@ class TDecimalFormatParser {
     private boolean decimalSeparatorRequired;
     private String string;
     private int index;
+    private int multiplier;
 
     public void parse(String string) {
         groupSize = 0;
@@ -40,6 +45,7 @@ class TDecimalFormatParser {
         fracLength = 0;
         exponentLength = 0;
         decimalSeparatorRequired = false;
+        multiplier = 1;
         this.string = string;
         index = 0;
         positivePrefix = parseText(false, false);
@@ -47,6 +53,8 @@ class TDecimalFormatParser {
             throw new IllegalArgumentException("Positive number pattern not found in " + string);
         }
         parseNumber(true);
+        negativePrefix = null;
+        negativeSuffix = null;
         if (index < string.length() && string.charAt(index) != ';') {
             positiveSuffix = parseText(true, false);
         }
@@ -61,11 +69,16 @@ class TDecimalFormatParser {
     }
 
     public void apply(TDecimalFormat format) {
-        format.setPositivePrefix(positivePrefix);
-        format.setPositiveSuffix(positiveSuffix);
-        format.setNegativePrefix(negativePrefix != null ? negativePrefix :
-                format.symbols.getMinusSign() + positivePrefix);
-        format.setNegativeSuffix(negativeSuffix != null ? negativeSuffix : positiveSuffix);
+        format.positivePrefix = positivePrefix;
+        format.positiveSuffix = positiveSuffix;
+        if (negativePrefix != null) {
+            format.negativePrefix = negativePrefix;
+        } else {
+            format.negativePrefix = new FormatField[positivePrefix.length + 1];
+            System.arraycopy(positivePrefix, 0, format.negativePrefix, 1, positivePrefix.length);
+            format.negativePrefix[0] = new TDecimalFormat.MinusField();
+        }
+        format.negativeSuffix = negativeSuffix != null ? negativeSuffix : positiveSuffix;
         format.setGroupingSize(groupSize);
         format.setGroupingUsed(groupSize > 0);
         format.setMinimumIntegerDigits(!decimalSeparatorRequired ? minimumIntLength :
@@ -75,9 +88,11 @@ class TDecimalFormatParser {
         format.setMaximumFractionDigits(fracLength);
         format.setDecimalSeparatorAlwaysShown(decimalSeparatorRequired);
         format.exponentDigits = exponentLength;
+        format.setMultiplier(multiplier);
     }
 
-    private String parseText(boolean suffix, boolean end) {
+    FormatField[] parseText(boolean suffix, boolean end) {
+        List<FormatField> fields = new ArrayList<>();
         StringBuilder sb = new StringBuilder();
         loop: while (index < string.length()) {
             char c = string.charAt(index);
@@ -114,13 +129,52 @@ class TDecimalFormatParser {
                     index = next + 1;
                     break;
                 }
+                // Currency symbol ¤
+                case '\u00A4':
+                    if (sb.length() > 0) {
+                        fields.add(new TDecimalFormat.TextField(sb.toString()));
+                        sb.setLength(0);
+                    }
+                    fields.add(new TDecimalFormat.CurrencyField());
+                    ++index;
+                    break;
+                case '%':
+                    if (sb.length() > 0) {
+                        fields.add(new TDecimalFormat.TextField(sb.toString()));
+                        sb.setLength(0);
+                    }
+                    fields.add(new TDecimalFormat.PercentField());
+                    ++index;
+                    multiplier = 100;
+                    break;
+                // Per mill symbol
+                case '\u2030':
+                    if (sb.length() > 0) {
+                        fields.add(new TDecimalFormat.TextField(sb.toString()));
+                        sb.setLength(0);
+                    }
+                    fields.add(new TDecimalFormat.PerMillField());
+                    ++index;
+                    multiplier = 1000;
+                    break;
+                case '-':
+                    if (sb.length() > 0) {
+                        fields.add(new TDecimalFormat.TextField(sb.toString()));
+                        sb.setLength(0);
+                    }
+                    fields.add(new TDecimalFormat.MinusField());
+                    ++index;
+                    break;
                 default:
                     sb.append(c);
                     ++index;
                     break;
             }
         }
-        return sb.toString();
+        if (sb.length() > 0) {
+            fields.add(new TDecimalFormat.TextField(sb.toString()));
+        }
+        return fields.toArray(new FormatField[fields.size()]);
     }
 
     private void parseNumber(boolean apply) {

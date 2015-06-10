@@ -6,6 +6,7 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.util.Currency;
 import java.util.Locale;
 import org.junit.Test;
 
@@ -438,6 +439,19 @@ public class DecimalFormatTest {
         format.setMultiplier(100);
         assertEquals("23E2", format.format(23));
         assertEquals("23E2", format.format(BigInteger.valueOf(23)));
+    }
+
+    @Test
+    public void formatsSpecial() {
+        DecimalFormat format = createFormat("0%");
+        assertEquals("23%", format.format(0.23));
+
+        format = createFormat("0‰");
+        assertEquals("230‰", format.format(0.23));
+
+        format = createFormat("0.00 ¤");
+        format.setCurrency(Currency.getInstance("RUB"));
+        assertEquals("23.00 RUB", format.format(23));
     }
 
     private DecimalFormat createFormat(String format) {

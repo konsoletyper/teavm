@@ -38,10 +38,10 @@ public class TDecimalFormat extends TNumberFormat {
     private static final double[] POWM10_FRAC_ARRAY = { 1E-1, 1E-2, 1E-4, 1E-8, 1E-16, 1E-32, 1E-64, 1E-128, 1E-256 };
     private static final int DOUBLE_MAX_EXPONENT = 308;
     TDecimalFormatSymbols symbols;
-    private String positivePrefix = "";
-    private String negativePrefix = "-";
-    private String positiveSuffix = "";
-    private String negativeSuffix = "";
+    FormatField[] positivePrefix = {};
+    FormatField[] negativePrefix = { new TextField("-") };
+    FormatField[] positiveSuffix = {};
+    FormatField[] negativeSuffix = {};
     private int multiplier = 1;
     private int groupingSize;
     private boolean decimalSeparatorAlwaysShown;
@@ -71,36 +71,51 @@ public class TDecimalFormat extends TNumberFormat {
         return (DecimalFormatSymbols)symbols.clone();
     }
 
+    private StringBuffer fieldsToText(FormatField[] fields, StringBuffer buffer) {
+        for (FormatField field : fields) {
+            field.render(this, buffer);
+        }
+        return buffer;
+    }
+
+    private String fieldsToText(FormatField[] fields) {
+        return fieldsToText(fields, new StringBuffer()).toString();
+    }
+
+    private FormatField[] textToFields(String text) {
+        return new FormatField[] { new TextField(text) };
+    }
+
     public String getPositivePrefix() {
-        return positivePrefix;
+        return fieldsToText(positivePrefix);
     }
 
     public void setPositivePrefix(String newValue) {
-        positivePrefix = newValue;
+        positivePrefix = textToFields(newValue);
     }
 
     public String getNegativePrefix() {
-        return negativePrefix;
+        return fieldsToText(negativePrefix);
     }
 
     public void setNegativePrefix(String newValue) {
-        negativePrefix = newValue;
+        negativePrefix = textToFields(newValue);
     }
 
     public String getPositiveSuffix() {
-        return positiveSuffix;
+        return fieldsToText(positiveSuffix);
     }
 
     public void setPositiveSuffix(String newValue) {
-        positiveSuffix = newValue;
+        positiveSuffix = textToFields(newValue);
     }
 
     public String getNegativeSuffix() {
-        return negativeSuffix;
+        return fieldsToText(negativeSuffix);
     }
 
     public void setNegativeSuffix(String newValue) {
-        negativeSuffix = newValue;
+        negativeSuffix = textToFields(newValue);
     }
 
     public int getMultiplier() {
@@ -221,10 +236,11 @@ public class TDecimalFormat extends TNumberFormat {
     @Override
     public StringBuffer format(double value, StringBuffer buffer, TFieldPosition field) {
         if (Double.isNaN(value)) {
-            buffer.append(positivePrefix).append(symbols.getNaN()).append(positiveSuffix);
+            fieldsToText(positivePrefix, buffer).append(symbols.getNaN());
+            appendSuffix(true, buffer);
         } else if (Double.isInfinite(value)) {
-            buffer.append(value > 0 ? positivePrefix : negativePrefix).append(symbols.getInfinity())
-                    .append(value > 0 ? positiveSuffix : negativeSuffix);
+            fieldsToText(value > 0 ? positivePrefix : negativePrefix, buffer).append(symbols.getInfinity());
+            appendSuffix(value > 0, buffer);
         } else {
             MantissaAndExponent me = getMantissaAndExponent(value);
             if (exponentDigits > 0) {
@@ -257,7 +273,7 @@ public class TDecimalFormat extends TNumberFormat {
             if (tenMultiplier == multiplier) {
                 exponent += multiplierDigits;
             } else if (mantissa >= Long.MAX_VALUE / multiplier || mantissa <= Long.MIN_VALUE / multiplier)  {
-                formatExponent(new BigDecimal(BigInteger.valueOf(mantissa), mantissaLength - exponent), buffer);
+                formatExponent(new BigDecimal(BigInteger.valueOf(mantissa), visibleExponent - exponent), buffer);
                 return;
             } else {
                 mantissa *= multiplier;
@@ -285,7 +301,7 @@ public class TDecimalFormat extends TNumberFormat {
         }
 
         // Append pattern prefix
-        buffer.append(positive ? positivePrefix : negativePrefix);
+        fieldsToText(positive ? positivePrefix : negativePrefix, buffer);
 
         int exponentPos = Math.max(visibleExponent, 0);
         for (int i = mantissaLength - 1; i >= exponentPos; --i) {
@@ -331,11 +347,7 @@ public class TDecimalFormat extends TNumberFormat {
         }
 
         // Add suffix
-        if (positive) {
-            buffer.append(positiveSuffix != null ? positiveSuffix : "");
-        } else {
-            buffer.append(negativeSuffix != null ? negativeSuffix : positiveSuffix != null ? positiveSuffix : "");
-        }
+        appendSuffix(positive, buffer);
     }
 
     private void formatRegular(long mantissa, int exponent, StringBuffer buffer) {
@@ -366,7 +378,7 @@ public class TDecimalFormat extends TNumberFormat {
         }
 
         // Append pattern prefix
-        buffer.append(positive ? positivePrefix : negativePrefix);
+        fieldsToText(positive ? positivePrefix : negativePrefix, buffer);
 
         // Add insignificant integer zeros
         int intLength = Math.max(0, exponent);
@@ -445,11 +457,7 @@ public class TDecimalFormat extends TNumberFormat {
         }
 
         // Add suffix
-        if (positive) {
-            buffer.append(positiveSuffix != null ? positiveSuffix : "");
-        } else {
-            buffer.append(negativeSuffix != null ? negativeSuffix : positiveSuffix != null ? positiveSuffix : "");
-        }
+        appendSuffix(positive, buffer);
     }
 
     private void formatExponent(BigDecimal value, StringBuffer buffer) {
@@ -480,7 +488,7 @@ public class TDecimalFormat extends TNumberFormat {
         }
 
         // Append pattern prefix
-        buffer.append(positive ? positivePrefix : negativePrefix);
+        fieldsToText(positive ? positivePrefix : negativePrefix, buffer);
 
         int exponentPos = Math.max(visibleExponent, 0);
         BigInteger mantissaDigitMask = pow10(BigInteger.ONE, mantissaLength - 1);
@@ -529,10 +537,17 @@ public class TDecimalFormat extends TNumberFormat {
         }
 
         // Add suffix
+        appendSuffix(positive, buffer);
+    }
+
+    private void appendSuffix(boolean positive, StringBuffer buffer) {
         if (positive) {
-            buffer.append(positiveSuffix != null ? positiveSuffix : "");
+            if (positiveSuffix != null) {
+                fieldsToText(positiveSuffix, buffer);
+            }
         } else {
-            buffer.append(negativeSuffix != null ? negativeSuffix : positiveSuffix != null ? positiveSuffix : "");
+            fieldsToText(negativeSuffix != null ? negativeSuffix :
+                    positiveSuffix != null ? positiveSuffix : new FormatField[0], buffer);
         }
     }
 
@@ -554,7 +569,7 @@ public class TDecimalFormat extends TNumberFormat {
         }
 
         // Append pattern prefix
-        buffer.append(positive ? positivePrefix : negativePrefix);
+        fieldsToText(positive ? positivePrefix : negativePrefix, buffer);
 
         // Add insignificant integer zeros
         int intLength = Math.max(0, exponent);
@@ -636,11 +651,7 @@ public class TDecimalFormat extends TNumberFormat {
         }
 
         // Add suffix
-        if (positive) {
-            buffer.append(positiveSuffix != null ? positiveSuffix : "");
-        } else {
-            buffer.append(negativeSuffix != null ? negativeSuffix : positiveSuffix != null ? positiveSuffix : "");
-        }
+        appendSuffix(positive, buffer);
     }
 
     private long applyRounding(long mantissa, int mantissaLength, int exponent) {
@@ -891,6 +902,51 @@ public class TDecimalFormat extends TNumberFormat {
         public MantissaAndExponent(long mantissa, int exponent) {
             this.mantissa = mantissa;
             this.exponent = exponent;
+        }
+    }
+
+    interface FormatField {
+        void render(TDecimalFormat format, StringBuffer buffer);
+    }
+
+    static class TextField implements FormatField {
+        private String text;
+
+        public TextField(String text) {
+            this.text = text;
+        }
+
+        @Override
+        public void render(TDecimalFormat format, StringBuffer buffer) {
+            buffer.append(text);
+        }
+    }
+
+    static class CurrencyField implements FormatField {
+        @Override
+        public void render(TDecimalFormat format, StringBuffer buffer) {
+            buffer.append(format.getCurrency().getSymbol(format.symbols.getLocale()));
+        }
+    }
+
+    static class PercentField implements FormatField {
+        @Override
+        public void render(TDecimalFormat format, StringBuffer buffer) {
+            buffer.append(format.symbols.getPercent());
+        }
+    }
+
+    static class PerMillField implements FormatField {
+        @Override
+        public void render(TDecimalFormat format, StringBuffer buffer) {
+            buffer.append(format.symbols.getPerMill());
+        }
+    }
+
+    static class MinusField implements FormatField {
+        @Override
+        public void render(TDecimalFormat format, StringBuffer buffer) {
+            buffer.append(format.symbols.getMinusSign());
         }
     }
 }
