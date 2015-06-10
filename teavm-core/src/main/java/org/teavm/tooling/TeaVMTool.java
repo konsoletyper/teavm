@@ -236,7 +236,7 @@ public class TeaVMTool {
                     symbolTable.update();
                     fileTable.update();
                 } catch (IOException e) {
-                    log.info("Cache was not read");
+                    log.info("Cache is missing");
                 }
                 vmBuilder.setClassLoader(classLoader).setClassSource(cachedClassSource);
             } else {

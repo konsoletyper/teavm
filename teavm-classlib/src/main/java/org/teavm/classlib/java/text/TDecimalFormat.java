@@ -343,16 +343,18 @@ public class TDecimalFormat extends TNumberFormat {
         int mantissaLength = fastLn10(mantissa) + 1;
         ++exponent;
 
-        int multiplierDigits = fastLn10(multiplier);
-        int tenMultiplier = POW10_INT_ARRAY[multiplierDigits];
-        if (tenMultiplier == multiplier) {
-            exponent += multiplierDigits;
-        } else if (mantissa >= Long.MAX_VALUE / multiplier || mantissa <= Long.MIN_VALUE / multiplier)  {
-            formatRegular(new BigDecimal(BigInteger.valueOf(mantissa), mantissaLength - exponent), buffer);
-            return;
-        } else {
-            mantissa *= multiplier;
-            mantissaLength = fastLn10(mantissa) + 1;
+        if (multiplier != 1) {
+            int multiplierDigits = fastLn10(multiplier);
+            int tenMultiplier = POW10_INT_ARRAY[multiplierDigits];
+            if (tenMultiplier == multiplier) {
+                exponent += multiplierDigits;
+            } else if (mantissa >= Long.MAX_VALUE / multiplier || mantissa <= Long.MIN_VALUE / multiplier)  {
+                formatRegular(new BigDecimal(BigInteger.valueOf(mantissa), mantissaLength - exponent), buffer);
+                return;
+            } else {
+                mantissa *= multiplier;
+                mantissaLength = fastLn10(mantissa) + 1;
+            }
         }
 
         // Apply rounding if necessary
