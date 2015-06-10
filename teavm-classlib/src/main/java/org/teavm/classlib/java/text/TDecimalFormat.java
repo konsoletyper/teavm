@@ -20,6 +20,8 @@ import java.math.BigInteger;
 import java.text.DecimalFormatSymbols;
 import org.teavm.classlib.impl.unicode.CLDRHelper;
 import org.teavm.classlib.java.lang.TArithmeticException;
+import org.teavm.classlib.java.lang.TDouble;
+import org.teavm.classlib.java.lang.TIndexOutOfBoundsException;
 import org.teavm.classlib.java.lang.TString;
 import org.teavm.classlib.java.util.TLocale;
 
@@ -37,6 +39,7 @@ public class TDecimalFormat extends TNumberFormat {
     private static final double[] POW10_FRAC_ARRAY = { 1E1, 1E2, 1E4, 1E8, 1E16, 1E32, 1E64, 1E128, 1E256 };
     private static final double[] POWM10_FRAC_ARRAY = { 1E-1, 1E-2, 1E-4, 1E-8, 1E-16, 1E-32, 1E-64, 1E-128, 1E-256 };
     private static final int DOUBLE_MAX_EXPONENT = 308;
+    private static long MAX_LONG_DIV_10 = Long.MAX_VALUE / 10;
     TDecimalFormatSymbols symbols;
     FormatField[] positivePrefix = {};
     FormatField[] negativePrefix = { new TextField("-") };
@@ -195,7 +198,101 @@ public class TDecimalFormat extends TNumberFormat {
 
     @Override
     public Number parse(String string, TParsePosition position) {
+        return isParseBigDecimal() ? parseBigDecimal(string, position) : parseNumber(string, position);
+    }
+
+    private BigDecimal parseBigDecimal(String string, TParsePosition position) {
         return null;
+    }
+
+    private Number parseNumber(String string, TParsePosition position) {
+        long mantissa = 0;
+        int shift = 0;
+        int exponent = 0;
+        int index = position.getIndex();
+        boolean allowGroupSeparator = false;
+        String exponentSeparator = symbols.getExponentSeparator();
+        int intSize = 0;
+        int fracSize = 0;
+        boolean fractionalPart = false;
+        boolean positive = true;
+
+        String negPrefix = getNegativePrefix();
+        String posPrefix = getPositivePrefix();
+        if (string.regionMatches(index, negPrefix, 0, negPrefix.length())) {
+            positive = false;
+        } else if (string.regionMatches(index, posPrefix, 0, posPrefix.length())) {
+            position.setErrorIndex(index);
+            return null;
+        }
+
+        while (index < string.length()) {
+            char c = string.charAt(index);
+            int digit = c - symbols.getZeroDigit();
+            if (digit >= 0 && digit <= 9) {
+                if (!fractionalPart) {
+                    ++intSize;
+                    allowGroupSeparator = groupingSize > 1;
+                } else {
+                    ++fracSize;
+                }
+                if (mantissa > MAX_LONG_DIV_10) {
+                    ++shift;
+                } else {
+                    long next = mantissa * 10;
+                    if (next > Long.MAX_VALUE - digit) {
+                        ++shift;
+                    } else {
+                        mantissa = next + digit;
+                    }
+                }
+                ++index;
+            } else if (c == symbols.getDecimalSeparator()) {
+                if (fractionalPart) {
+                    break;
+                }
+                if (intSize < 1) {
+                    position.setErrorIndex(index);
+                    return null;
+                }
+                fractionalPart = true;
+                allowGroupSeparator = false;
+                ++index;
+            } else if (c == symbols.getGroupingSeparator()) {
+                if (!allowGroupSeparator) {
+                    break;
+                }
+                allowGroupSeparator = false;
+                ++index;
+            } else if (index + exponentSeparator.length() < string.length() &&
+                    string.substring(index, index + exponentSeparator.length()).equals(exponentSeparator)) {
+                if (exponentDigits == 0) {
+                    break;
+                }
+                index += exponentSeparator.length();
+            } else {
+                break;
+            }
+        }
+
+        if (fracSize == 0 && fractionalPart && !isDecimalSeparatorAlwaysShown()) {
+            position.setErrorIndex(index);
+            return null;
+        }
+
+        if (exponent < POW10_ARRAY.length) {
+            if (mantissa < Long.MAX_VALUE / POW10_ARRAY[exponent]) {
+                mantissa *= POW10_ARRAY[exponent];
+                exponent = 0;
+            }
+        }
+
+        if (shift == 0 && exponent == 0) {
+            return positive ? mantissa : -mantissa;
+        }
+
+        double result = TDouble.decimalExponent(exponent + shift);
+        return positive ? result : -result;
     }
 
     @Override
