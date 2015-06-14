@@ -44,6 +44,8 @@ public class DecimalFormatParseTest {
         DecimalFormat format = createFormat("#,#00.#");
         assertEquals(9223372036854775807L, format.parse("9223372036854775807"));
         assertEquals(99E18, format.parse("99000000000000000000"));
+        assertEquals(3.333333333333333E20, format.parse("333333333333333333456").doubleValue(), 1000000);
+        assertEquals(10E20, format.parse("999999999999999999999").doubleValue(), 1000000);
     }
 
     @Test
@@ -51,7 +53,27 @@ public class DecimalFormatParseTest {
         DecimalFormat format = createFormat("0.#E0");
         assertEquals(23L, format.parse("2.3E1"));
         assertEquals(23L, format.parse("2300E-2"));
+        assertEquals(0.23, format.parse("2300E-4").doubleValue(), 0.0001);
         assertEquals(99E18, format.parse("99E18"));
+    }
+
+    @Test
+    public void parsesPrefixSuffix() throws ParseException {
+        DecimalFormat format = createFormat("[0.#E0]");
+        assertEquals(23L, format.parse("[23]"));
+        assertEquals(-23L, format.parse("-[23]"));
+        try {
+            format.parse("23");
+            fail("Exception expected as there aren't neither prefix nor suffix");
+        } catch (ParseException e) {
+            assertEquals(0, e.getErrorOffset());
+        }
+        try {
+            format.parse("[23");
+            fail("Exception expected as there is no suffix");
+        } catch (ParseException e) {
+            assertEquals(3, e.getErrorOffset());
+        }
     }
 
     private DecimalFormat createFormat(String format) {

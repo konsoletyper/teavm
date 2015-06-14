@@ -81,6 +81,9 @@ public class TDecimalFormat extends TNumberFormat {
     }
 
     private String fieldsToText(FormatField[] fields) {
+        if (fields == null) {
+            return null;
+        }
         return fieldsToText(fields, new StringBuffer()).toString();
     }
 
@@ -220,7 +223,10 @@ public class TDecimalFormat extends TNumberFormat {
         String posPrefix = getPositivePrefix();
         if (string.regionMatches(index, negPrefix, 0, negPrefix.length())) {
             positive = false;
-        } else if (!string.regionMatches(index, posPrefix, 0, posPrefix.length())) {
+            index += negPrefix.length();
+        } else if (string.regionMatches(index, posPrefix, 0, posPrefix.length())) {
+            index += posPrefix.length();
+        } else {
             position.setErrorIndex(index);
             return null;
         }
@@ -236,6 +242,9 @@ public class TDecimalFormat extends TNumberFormat {
                     ++fracSize;
                 }
                 if (mantissa > MAX_LONG_DIV_10) {
+                    if (shift == 0 && digit > 5) {
+                        ++mantissa;
+                    }
                     ++shift;
                 } else {
                     long next = mantissa * 10;
@@ -301,6 +310,15 @@ public class TDecimalFormat extends TNumberFormat {
         }
 
         if (fracSize == 0 && fractionalPart && !isDecimalSeparatorAlwaysShown()) {
+            position.setErrorIndex(index);
+            return null;
+        }
+
+        String suffix = positive ? getPositiveSuffix() : getNegativeSuffix();
+        if (suffix == null) {
+            suffix = getPositiveSuffix();
+        }
+        if (suffix != null && !string.regionMatches(index, suffix, 0, suffix.length())) {
             position.setErrorIndex(index);
             return null;
         }
