@@ -219,6 +219,7 @@ public class TDecimalFormat extends TNumberFormat {
         boolean fractionalPart = false;
         boolean positive = true;
 
+        // Find prefix
         String negPrefix = getNegativePrefix();
         String posPrefix = getPositivePrefix();
         if (string.regionMatches(index, negPrefix, 0, negPrefix.length())) {
@@ -231,6 +232,23 @@ public class TDecimalFormat extends TNumberFormat {
             return null;
         }
 
+        // Find suffix
+        String suffix = positive ? getPositiveSuffix() : getNegativeSuffix();
+        if (suffix == null) {
+            suffix = getPositiveSuffix();
+        }
+
+        // Check for infinity
+        if (string.regionMatches(index, symbols.getInfinity(), 0, symbols.getInfinity().length())) {
+            index += symbols.getInfinity().length();
+            if (suffix != null && !string.regionMatches(index, suffix, 0, suffix.length())) {
+                position.setErrorIndex(index);
+                return null;
+            }
+            return positive ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
+        }
+
+        // Parse mantissa and exponent
         while (index < string.length()) {
             char c = string.charAt(index);
             int digit = c - symbols.getZeroDigit();
@@ -309,22 +327,32 @@ public class TDecimalFormat extends TNumberFormat {
             }
         }
 
+        // If decimal separator without fractional part is not allowed, report error
         if (fracSize == 0 && fractionalPart && !isDecimalSeparatorAlwaysShown()) {
             position.setErrorIndex(index);
             return null;
         }
 
-        String suffix = positive ? getPositiveSuffix() : getNegativeSuffix();
-        if (suffix == null) {
-            suffix = getPositiveSuffix();
-        }
+        // Check suffix
         if (suffix != null && !string.regionMatches(index, suffix, 0, suffix.length())) {
             position.setErrorIndex(index);
             return null;
         }
 
+        // Advance parse position
         position.setIndex(index);
 
+        // Apply multiplier
+        if (multiplier != 1) {
+            int multiplierDigits = fastLn10(multiplier);
+            if (POW10_INT_ARRAY[multiplierDigits] != multiplier) {
+                mantissa /= multiplier;
+            } else {
+                exponent -= multiplierDigits;
+            }
+        }
+
+        // Apply exponent
         exponent += shift - fracSize;
         if (exponent > 0 && exponent < POW10_ARRAY.length) {
             if (mantissa < Long.MAX_VALUE / POW10_ARRAY[exponent]) {
@@ -338,10 +366,13 @@ public class TDecimalFormat extends TNumberFormat {
             }
         }
 
+        // Expose result
+        if (mantissa == 0 && !positive) {
+            return -0.0;
+        }
         if (exponent == 0) {
             return positive ? mantissa : -mantissa;
         }
-
         double result = TDouble.decimalExponent(exponent) * mantissa;
         return positive ? result : -result;
     }

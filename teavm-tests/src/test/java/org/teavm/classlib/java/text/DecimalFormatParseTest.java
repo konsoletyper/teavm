@@ -76,6 +76,21 @@ public class DecimalFormatParseTest {
         }
     }
 
+    @Test
+    public void parsesPercent() throws ParseException {
+        DecimalFormat format = createFormat("0.#E0%");
+        assertEquals(0.23, format.parse("23%").doubleValue(), 0.001);
+        assertEquals(23L, format.parse("2300%"));
+    }
+
+    @Test
+    public void parsesSpecial() throws ParseException {
+        DecimalFormat format = createFormat("0.#E0");
+        assertEquals(Double.POSITIVE_INFINITY, format.parse("∞"));
+        assertEquals(Double.NEGATIVE_INFINITY, format.parse("-∞"));
+        assertEquals(-0.0, format.parse("-0"));
+    }
+
     private DecimalFormat createFormat(String format) {
         return new DecimalFormat(format, symbols);
     }
