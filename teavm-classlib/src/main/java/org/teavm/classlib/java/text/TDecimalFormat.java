@@ -21,7 +21,6 @@ import java.text.DecimalFormatSymbols;
 import org.teavm.classlib.impl.unicode.CLDRHelper;
 import org.teavm.classlib.java.lang.TArithmeticException;
 import org.teavm.classlib.java.lang.TDouble;
-import org.teavm.classlib.java.lang.TIndexOutOfBoundsException;
 import org.teavm.classlib.java.lang.TString;
 import org.teavm.classlib.java.util.TLocale;
 
@@ -221,7 +220,7 @@ public class TDecimalFormat extends TNumberFormat {
         String posPrefix = getPositivePrefix();
         if (string.regionMatches(index, negPrefix, 0, negPrefix.length())) {
             positive = false;
-        } else if (string.regionMatches(index, posPrefix, 0, posPrefix.length())) {
+        } else if (!string.regionMatches(index, posPrefix, 0, posPrefix.length())) {
             position.setErrorIndex(index);
             return null;
         }
@@ -264,12 +263,38 @@ public class TDecimalFormat extends TNumberFormat {
                 }
                 allowGroupSeparator = false;
                 ++index;
-            } else if (index + exponentSeparator.length() < string.length() &&
-                    string.substring(index, index + exponentSeparator.length()).equals(exponentSeparator)) {
+            } else if (string.regionMatches(index, exponentSeparator, 0, exponentSeparator.length())) {
                 if (exponentDigits == 0) {
                     break;
                 }
                 index += exponentSeparator.length();
+                if (index == string.length()) {
+                    position.setErrorIndex(index);
+                    return null;
+                }
+                boolean positiveExponent = true;
+                if (string.charAt(index) == symbols.getMinusSign()) {
+                    positiveExponent = false;
+                    ++index;
+                }
+                int exponentLength = 0;
+                while (index < string.length()) {
+                    digit = string.charAt(index) - symbols.getZeroDigit();
+                    if (digit < 0 || digit > 9) {
+                        break;
+                    }
+                    exponent = exponent * 10 + digit;
+                    ++exponentLength;
+                    ++index;
+                }
+                if (exponentLength == 0) {
+                    position.setErrorIndex(index);
+                    return null;
+                }
+                if (!positiveExponent) {
+                    exponent = -exponent;
+                }
+                break;
             } else {
                 break;
             }
@@ -280,18 +305,26 @@ public class TDecimalFormat extends TNumberFormat {
             return null;
         }
 
-        if (exponent < POW10_ARRAY.length) {
+        position.setIndex(index);
+
+        exponent += shift - fracSize;
+        if (exponent > 0 && exponent < POW10_ARRAY.length) {
             if (mantissa < Long.MAX_VALUE / POW10_ARRAY[exponent]) {
                 mantissa *= POW10_ARRAY[exponent];
                 exponent = 0;
             }
+        } else if (exponent < 0 && -exponent < POW10_ARRAY.length) {
+            if (mantissa % POW10_ARRAY[-exponent] == 0) {
+                mantissa /= POW10_ARRAY[-exponent];
+                exponent = 0;
+            }
         }
 
-        if (shift == 0 && exponent == 0) {
+        if (exponent == 0) {
             return positive ? mantissa : -mantissa;
         }
 
-        double result = TDouble.decimalExponent(exponent + shift);
+        double result = TDouble.decimalExponent(exponent) * mantissa;
         return positive ? result : -result;
     }
 
