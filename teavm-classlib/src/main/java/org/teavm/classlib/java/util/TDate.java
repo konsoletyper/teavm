@@ -105,7 +105,7 @@ public class TDate implements TComparable<TDate> {
 
     @Deprecated
     public void setDate(int date) {
-        this.value = (long)setMonth(value, date);
+        this.value = (long)setDate(value, date);
     }
 
     @Deprecated
