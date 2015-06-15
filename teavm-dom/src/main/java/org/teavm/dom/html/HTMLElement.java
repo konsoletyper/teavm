@@ -108,4 +108,6 @@ public interface HTMLElement extends Element, ElementCSSInlineStyle, EventTarget
 
     @JSProperty
     void setInnerHTML(String content);
+
+    TextRectangle getBoundingClientRect();
 }
