@@ -245,6 +245,7 @@ public class TDecimalFormat extends TNumberFormat {
                 position.setErrorIndex(index);
                 return null;
             }
+            position.setIndex(index);
             return positive ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
         }
 
