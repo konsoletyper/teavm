@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.text;
 
 import static org.junit.Assert.*;
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.ParseException;
@@ -40,6 +41,17 @@ public class DecimalFormatParseTest {
     }
 
     @Test
+    public void parsesBigNumber() throws ParseException {
+        DecimalFormat format = createFormat("#,#00.#");
+        format.setParseBigDecimal(true);
+        assertEquals(BigDecimal.valueOf(2), format.parse("2"));
+        assertEquals(BigDecimal.valueOf(23), format.parse("23"));
+        assertEquals(BigDecimal.valueOf(230, 1), format.parse("23.0"));
+        assertEquals(BigDecimal.valueOf(2300), format.parse("2,3,0,0"));
+        assertEquals(BigDecimal.valueOf(231, 1), format.parse("23.1"));
+    }
+
+    @Test
     public void parsesLargeValue() throws ParseException {
         DecimalFormat format = createFormat("#,#00.#");
         assertEquals(9223372036854775807L, format.parse("9223372036854775807"));
@@ -55,6 +67,16 @@ public class DecimalFormatParseTest {
         assertEquals(23L, format.parse("2300E-2"));
         assertEquals(0.23, format.parse("2300E-4").doubleValue(), 0.0001);
         assertEquals(99E18, format.parse("99E18"));
+    }
+
+    @Test
+    public void parsesBigExponential() throws ParseException {
+        DecimalFormat format = createFormat("0.#E0");
+        format.setParseBigDecimal(true);
+        assertEquals(BigDecimal.valueOf(23), format.parse("2.3E1"));
+        assertEquals(BigDecimal.valueOf(2300, 2), format.parse("2300E-2"));
+        assertEquals(BigDecimal.valueOf(2300, 4), format.parse("2300E-4"));
+        assertEquals(BigDecimal.valueOf(99, -18), format.parse("99E18"));
     }
 
     @Test
@@ -81,6 +103,14 @@ public class DecimalFormatParseTest {
         DecimalFormat format = createFormat("0.#E0%");
         assertEquals(0.23, format.parse("23%").doubleValue(), 0.001);
         assertEquals(23L, format.parse("2300%"));
+    }
+
+    @Test
+    public void parsesBigPercent() throws ParseException {
+        DecimalFormat format = createFormat("0.#E0%");
+        format.setParseBigDecimal(true);
+        assertEquals(BigDecimal.valueOf(23, 2), format.parse("23%"));
+        assertEquals(BigDecimal.valueOf(23, 0), format.parse("2300%"));
     }
 
     @Test

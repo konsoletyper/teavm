@@ -204,7 +204,129 @@ public class TDecimalFormat extends TNumberFormat {
     }
 
     private BigDecimal parseBigDecimal(String string, TParsePosition position) {
-        return null;
+        BigInteger mantissa = BigInteger.ZERO;
+        int exponent = 0;
+        int index = position.getIndex();
+        boolean allowGroupSeparator = false;
+        String exponentSeparator = symbols.getExponentSeparator();
+        int intSize = 0;
+        int fracSize = 0;
+        boolean fractionalPart = false;
+        boolean positive = true;
+
+        // Find prefix
+        String negPrefix = getNegativePrefix();
+        String posPrefix = getPositivePrefix();
+        if (string.regionMatches(index, negPrefix, 0, negPrefix.length())) {
+            positive = false;
+            index += negPrefix.length();
+        } else if (string.regionMatches(index, posPrefix, 0, posPrefix.length())) {
+            index += posPrefix.length();
+        } else {
+            position.setErrorIndex(index);
+            return null;
+        }
+
+        // Find suffix
+        String suffix = positive ? getPositiveSuffix() : getNegativeSuffix();
+        if (suffix == null) {
+            suffix = getPositiveSuffix();
+        }
+
+        // Parse mantissa and exponent
+        while (index < string.length()) {
+            char c = string.charAt(index);
+            int digit = c - symbols.getZeroDigit();
+            if (digit >= 0 && digit <= 9) {
+                if (!fractionalPart) {
+                    ++intSize;
+                    allowGroupSeparator = groupingSize > 1;
+                } else {
+                    ++fracSize;
+                }
+                mantissa = mantissa.multiply(BigInteger.TEN).add(BigInteger.valueOf(digit));
+                ++index;
+            } else if (c == symbols.getDecimalSeparator()) {
+                if (fractionalPart) {
+                    break;
+                }
+                if (intSize < 1) {
+                    position.setErrorIndex(index);
+                    return null;
+                }
+                fractionalPart = true;
+                allowGroupSeparator = false;
+                ++index;
+            } else if (c == symbols.getGroupingSeparator()) {
+                if (!allowGroupSeparator) {
+                    break;
+                }
+                allowGroupSeparator = false;
+                ++index;
+            } else if (string.regionMatches(index, exponentSeparator, 0, exponentSeparator.length())) {
+                if (exponentDigits == 0) {
+                    break;
+                }
+                index += exponentSeparator.length();
+                if (index == string.length()) {
+                    position.setErrorIndex(index);
+                    return null;
+                }
+                boolean positiveExponent = true;
+                if (string.charAt(index) == symbols.getMinusSign()) {
+                    positiveExponent = false;
+                    ++index;
+                }
+                int exponentLength = 0;
+                while (index < string.length()) {
+                    digit = string.charAt(index) - symbols.getZeroDigit();
+                    if (digit < 0 || digit > 9) {
+                        break;
+                    }
+                    exponent = exponent * 10 + digit;
+                    ++exponentLength;
+                    ++index;
+                }
+                if (exponentLength == 0) {
+                    position.setErrorIndex(index);
+                    return null;
+                }
+                if (!positiveExponent) {
+                    exponent = -exponent;
+                }
+                break;
+            } else {
+                break;
+            }
+        }
+
+        // If decimal separator without fractional part is not allowed, report error
+        if (fracSize == 0 && fractionalPart && !isDecimalSeparatorAlwaysShown()) {
+            position.setErrorIndex(index);
+            return null;
+        }
+
+        // Check suffix
+        if (suffix != null && !string.regionMatches(index, suffix, 0, suffix.length())) {
+            position.setErrorIndex(index);
+            return null;
+        }
+
+        // Advance parse position
+        position.setIndex(index);
+
+        // Apply exponent
+        exponent -= fracSize;
+
+        // Expose result
+        BigDecimal result = new BigDecimal(mantissa, -exponent);
+        if (multiplier != 1) {
+            result = result.divide(BigDecimal.valueOf(multiplier));
+        }
+        if (!positive) {
+            result = result.negate();
+        }
+        return result;
     }
 
     private Number parseNumber(String string, TParsePosition position) {
