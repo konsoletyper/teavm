@@ -15,6 +15,7 @@
  */
 package org.teavm.platform;
 
+import java.lang.annotation.Annotation;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.javascript.spi.GeneratedBy;
 import org.teavm.javascript.spi.InjectedBy;
@@ -104,6 +105,10 @@ public final class Platform {
     @GeneratedBy(PlatformGenerator.class)
     @PluggableDependency(PlatformGenerator.class)
     public static native Enum<?>[] getEnumConstants(PlatformClass cls);
+
+    @GeneratedBy(PlatformGenerator.class)
+    @PluggableDependency(PlatformGenerator.class)
+    public static native Annotation[] getAnnotations(PlatformClass cls);
 
     @GeneratedBy(PlatformGenerator.class)
     @PluggableDependency(PlatformGenerator.class)

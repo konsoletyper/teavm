@@ -16,6 +16,7 @@
 package org.teavm.platform.plugin;
 
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyPlugin;
@@ -24,7 +25,12 @@ import org.teavm.javascript.spi.Generator;
 import org.teavm.javascript.spi.GeneratorContext;
 import org.teavm.javascript.spi.Injector;
 import org.teavm.javascript.spi.InjectorContext;
-import org.teavm.model.*;
+import org.teavm.model.CallLocation;
+import org.teavm.model.ClassReader;
+import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodReader;
+import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformClass;
 import org.teavm.platform.PlatformRunnable;
@@ -54,6 +60,8 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
             case "getCurrentThread":
                 method.getResult().propagate(agent.getType("java.lang.Thread"));
                 break;
+            case "getAnnotations":
+                method.getResult();
         }
     }
 
@@ -91,6 +99,9 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
                 break;
             case "getEnumConstants":
                 generateEnumConstants(context, writer);
+                break;
+            case "getAnnotations":
+                generateAnnotations(context, writer);
                 break;
         }
     }
@@ -186,6 +197,32 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
 
         String selfName = writer.getNaming().getFullNameFor(new MethodReference(Platform.class, "getEnumConstants",
                 PlatformClass.class, Enum[].class));
+        writer.append(selfName).ws().append("=").ws().append("function(cls)").ws().append("{").softNewLine().indent();
+        writer.append("if").ws().append("(!cls.hasOwnProperty(c))").ws().append("{").indent().softNewLine();
+        writer.append("return null;").softNewLine();
+        writer.outdent().append("}").softNewLine();
+        writer.append("return cls[c]();").softNewLine();
+        writer.outdent().append("};").softNewLine();
+
+        writer.append("return ").append(selfName).append("(").append(context.getParameterName(1))
+                .append(");").softNewLine();
+    }
+
+    private void generateAnnotations(GeneratorContext context, SourceWriter writer) throws IOException {
+        writer.append("var c").ws().append("=").ws().append("'$$annotations$$';").softNewLine();
+        for (String clsName : context.getClassSource().getClassNames()) {
+            ClassReader cls = context.getClassSource().get(clsName);
+            MethodReader method = cls.getMethod(new MethodDescriptor("$$_readAnnotations_$$",
+                    ValueType.parse(Annotation[].class)));
+            if (method != null) {
+                writer.appendClass(clsName).append("[c]").ws().append("=").ws();
+                writer.appendMethodBody(method.getReference());
+                writer.append(";").softNewLine();
+            }
+        }
+
+        String selfName = writer.getNaming().getFullNameFor(new MethodReference(Platform.class, "getAnnotations",
+                PlatformClass.class, Annotation[].class));
         writer.append(selfName).ws().append("=").ws().append("function(cls)").ws().append("{").softNewLine().indent();
         writer.append("if").ws().append("(!cls.hasOwnProperty(c))").ws().append("{").indent().softNewLine();
         writer.append("return null;").softNewLine();
