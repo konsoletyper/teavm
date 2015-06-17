@@ -16,6 +16,8 @@
 package org.teavm.classlib.java.lang;
 
 import org.teavm.classlib.impl.DeclaringClassMetadataGenerator;
+import org.teavm.classlib.java.lang.annotation.TAnnotation;
+import org.teavm.classlib.java.lang.reflect.TAnnotatedElement;
 import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformClass;
 import org.teavm.platform.metadata.ClassResource;
@@ -26,7 +28,7 @@ import org.teavm.platform.metadata.ClassScopedMetadataProvider;
  * @author Alexey Andreev
  * @param <T> class type.
  */
-public class TClass<T> extends TObject {
+public class TClass<T> extends TObject implements TAnnotatedElement {
     TString name;
     private TClass<?> componentType;
     private boolean componentTypeDirty = true;
@@ -197,5 +199,25 @@ public class TClass<T> extends TObject {
             throw new TClassCastException();
         }
         return (TClass<? extends U>)this;
+    }
+
+    @Override
+    public boolean isAnnotationPresent(TClass<? extends TAnnotation> annotationClass) {
+        return false;
+    }
+
+    @Override
+    public <S extends TAnnotation> S getAnnotation(TClass<S> annotationClass) {
+        return null;
+    }
+
+    @Override
+    public TAnnotation[] getAnnotations() {
+        return null;
+    }
+
+    @Override
+    public TAnnotation[] getDeclaredAnnotations() {
+        return null;
     }
 }

@@ -33,6 +33,7 @@ import org.teavm.model.instructions.CastInstruction;
 import org.teavm.model.instructions.CastIntegerDirection;
 import org.teavm.model.instructions.CastIntegerInstruction;
 import org.teavm.model.instructions.CastNumberInstruction;
+import org.teavm.model.instructions.CloneArrayInstruction;
 import org.teavm.model.instructions.ExitInstruction;
 import org.teavm.model.instructions.GetElementInstruction;
 import org.teavm.model.instructions.GetFieldInstruction;
@@ -42,6 +43,7 @@ import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.IsInstanceInstruction;
 import org.teavm.model.instructions.NegateInstruction;
 import org.teavm.model.instructions.NumericOperandType;
+import org.teavm.model.instructions.PutElementInstruction;
 import org.teavm.model.instructions.PutFieldInstruction;
 
 /**
@@ -259,6 +261,22 @@ public class ValueEmitter {
         return pe.wrap(result);
     }
 
+    public ValueEmitter getElement(int index) {
+        return getElement(pe.constant(index));
+    }
+
+    public void setElement(ValueEmitter index, ValueEmitter value) {
+        PutElementInstruction insn = new PutElementInstruction();
+        insn.setArray(variable);
+        insn.setIndex(index.variable);
+        insn.setValue(value.variable);
+        pe.addInstruction(insn);
+    }
+
+    public void setElement(int index, ValueEmitter value) {
+        setElement(pe.constant(index), value);
+    }
+
     public ValueEmitter arrayLength() {
         Variable result = pe.getProgram().createVariable();
         ArrayLengthInstruction insn = new ArrayLengthInstruction();
@@ -274,6 +292,15 @@ public class ValueEmitter {
         insn.setValue(variable);
         insn.setReceiver(result);
         insn.setType(type);
+        pe.addInstruction(insn);
+        return pe.wrap(result);
+    }
+
+    public ValueEmitter cloneArray() {
+        Variable result = pe.getProgram().createVariable();
+        CloneArrayInstruction insn = new CloneArrayInstruction();
+        insn.setArray(variable);
+        insn.setReceiver(result);
         pe.addInstruction(insn);
         return pe.wrap(result);
     }

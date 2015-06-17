@@ -16,6 +16,8 @@
 package org.teavm.model.emit;
 
 import org.teavm.model.*;
+import org.teavm.model.instructions.ClassConstantInstruction;
+import org.teavm.model.instructions.ConstructArrayInstruction;
 import org.teavm.model.instructions.ConstructInstruction;
 import org.teavm.model.instructions.DoubleConstantInstruction;
 import org.teavm.model.instructions.ExitInstruction;
@@ -60,6 +62,19 @@ public final class ProgramEmitter {
         BasicBlock block = program.createBasicBlock();
         setBlock(block);
         return block;
+    }
+
+    public ValueEmitter constant(Class<?> cls) {
+        return constant(ValueType.parse(cls));
+    }
+
+    public ValueEmitter constant(ValueType value) {
+        Variable var = program.createVariable();
+        ClassConstantInstruction insn = new ClassConstantInstruction();
+        insn.setReceiver(var);
+        insn.setConstant(value);
+        addInstruction(insn);
+        return wrap(var);
     }
 
     public ValueEmitter constant(String value) {
@@ -164,6 +179,28 @@ public final class ProgramEmitter {
         ValueEmitter instance = wrap(var);
         instance.invokeSpecial(method, arguments);
         return instance;
+    }
+
+    public ValueEmitter constructArray(ValueType type, ValueEmitter size) {
+        Variable var = program.createVariable();
+        ConstructArrayInstruction insn = new ConstructArrayInstruction();
+        insn.setReceiver(var);
+        insn.setSize(size.getVariable());
+        insn.setItemType(type);
+        addInstruction(insn);
+        return wrap(var);
+    }
+
+    public ValueEmitter constructArray(ValueType type, int size) {
+        return constructArray(type, constant(size));
+    }
+
+    public ValueEmitter constructArray(Class<?> type, int size) {
+        return constructArray(ValueType.parse(type), size);
+    }
+
+    public ValueEmitter constructArray(Class<?> type, ValueEmitter size) {
+        return constructArray(ValueType.parse(type), size);
     }
 
     public ProgramEmitter jump(BasicBlock block) {
