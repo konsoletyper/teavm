@@ -169,7 +169,7 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
         return mantissa * decimalExponent(exp);
     }
 
-    private static double decimalExponent(int n) {
+    public static double decimalExponent(int n) {
         double d;
         if (n < 0) {
             d = 0.1;

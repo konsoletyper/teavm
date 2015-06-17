@@ -15,6 +15,7 @@
  */
 package org.teavm.platform.plugin;
 
+import org.teavm.cache.NoCache;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.javascript.spi.GeneratedBy;
 import org.teavm.model.*;
@@ -49,10 +50,14 @@ class MetadataProviderTransformer implements ClassHolderTransformer {
                             method.getReference(), ClassScopedMetadataProvider.class.getName(),
                             PlatformClass.class.getName());
                 }
+
                 AnnotationHolder genAnnot = new AnnotationHolder(GeneratedBy.class.getName());
                 genAnnot.getValues().put("value", new AnnotationValue(ValueType.object(
                         ClassScopedMetadataProviderNativeGenerator.class.getName())));
                 method.getAnnotations().add(genAnnot);
+
+                AnnotationHolder noCacheAnnot = new AnnotationHolder(NoCache.class.getName());
+                method.getAnnotations().add(noCacheAnnot);
             }
         }
     }
@@ -95,6 +100,9 @@ class MetadataProviderTransformer implements ClassHolderTransformer {
         fork.setElse(pe.createBlock());
         pe.setField(field.getReference(), field.getType(), pe.invoke(createMethod.getReference()));
         pe.jump(resourceFound);
+
+        AnnotationHolder noCacheAnnot = new AnnotationHolder(NoCache.class.getName());
+        method.getAnnotations().add(noCacheAnnot);
     }
 
     private boolean validate(MethodHolder method, Diagnostics diagnostics) {

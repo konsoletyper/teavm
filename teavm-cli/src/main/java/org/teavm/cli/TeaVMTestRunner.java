@@ -65,6 +65,10 @@ public final class TeaVMTestRunner {
                 .withDescription("qualified class names of transformers")
                 .withLongOpt("transformers")
                 .create("T"));
+        options.addOption(OptionBuilder
+                .withDescription("Incremental build")
+                .withLongOpt("incremental")
+                .create('i'));
 
         if (args.length == 0) {
             printUsage(options);
@@ -97,6 +101,10 @@ public final class TeaVMTestRunner {
                 tool.getTransformers().add(instantiateTransformer(transformerType));
             }
         }
+        if (commandLine.hasOption('i')) {
+            tool.setIncremental(true);
+        }
+
         args = commandLine.getArgs();
         if (args.length == 0) {
             System.err.println("You did not specify any test classes");

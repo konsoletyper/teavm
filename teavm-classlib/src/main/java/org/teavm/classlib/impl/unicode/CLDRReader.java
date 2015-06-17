@@ -127,9 +127,12 @@ public class CLDRReader {
                         readDateTimeFormats(localeName, localeInfo, root);
                         break;
                     }
-                    case "currencies.json": {
+                    case "currencies.json":
                         readCurrencies(localeName, localeInfo, input);
-                    }
+                        break;
+                    case "numbers.json":
+                        readNumbers(localeName, localeInfo, input);
+                        break;
                 }
             }
         } catch (IOException e) {
@@ -205,6 +208,23 @@ public class CLDRReader {
             }
             locale.currencies.put(currencyCode, currency);
         }
+    }
+
+    private void readNumbers(String localeCode, CLDRLocale locale, InputStream input) {
+        JsonObject root = (JsonObject)new JsonParser().parse(new InputStreamReader(input));
+        JsonObject numbersJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
+                .get("numbers").getAsJsonObject();
+        String numbering = numbersJson.get("defaultNumberingSystem").getAsString();
+        JsonObject symbolsJson = numbersJson.get("symbols-numberSystem-" + numbering).getAsJsonObject();
+        locale.decimalData.decimalSeparator = symbolsJson.get("decimal").getAsString().charAt(0);
+        locale.decimalData.groupingSeparator = symbolsJson.get("group").getAsString().charAt(0);
+        locale.decimalData.listSeparator = symbolsJson.get("list").getAsString().charAt(0);
+        locale.decimalData.percent = symbolsJson.get("percentSign").getAsString().charAt(0);
+        locale.decimalData.minusSign = symbolsJson.get("minusSign").getAsString().charAt(0);
+        locale.decimalData.exponentSeparator = symbolsJson.get("exponential").getAsString();
+        locale.decimalData.perMille = symbolsJson.get("perMille").getAsString().charAt(0);
+        locale.decimalData.infinity = symbolsJson.get("infinity").getAsString();
+        locale.decimalData.NaN = symbolsJson.get("nan").getAsString();
     }
 
     private void readEras(String localeCode, CLDRLocale locale, JsonObject root) {

@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import org.teavm.cache.NoCache;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphIndexer;
 import org.teavm.common.Loop;
@@ -245,7 +246,7 @@ public class Decompiler {
     }
 
     public RegularMethodNode decompileRegular(MethodHolder method) {
-        if (regularMethodCache == null) {
+        if (regularMethodCache == null || method.getAnnotations().get(NoCache.class.getName()) != null) {
             return decompileRegularCacheMiss(method);
         }
         RegularMethodNode node = regularMethodCache.get(method.getReference());
@@ -283,7 +284,7 @@ public class Decompiler {
     }
 
     public AsyncMethodNode decompileAsync(MethodHolder method) {
-        if (regularMethodCache == null) {
+        if (regularMethodCache == null || method.getAnnotations().get(NoCache.class.getName()) != null) {
             return decompileAsyncCacheMiss(method);
         }
         AsyncMethodNode node = regularMethodCache.getAsync(method.getReference());

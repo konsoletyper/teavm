@@ -15,7 +15,10 @@
  */
 package org.teavm.classlib.java.text;
 
+import java.util.Objects;
 import org.teavm.classlib.impl.unicode.CLDRHelper;
+import org.teavm.classlib.java.math.TRoundingMode;
+import org.teavm.classlib.java.util.TCurrency;
 import org.teavm.classlib.java.util.TLocale;
 
 /**
@@ -25,9 +28,11 @@ import org.teavm.classlib.java.util.TLocale;
 public abstract class TNumberFormat extends TFormat {
     public static final int INTEGER_FIELD = 0;
     public static final int FRACTION_FIELD = 1;
-    private boolean groupingUsed = true, parseIntegerOnly = false;
+    private boolean groupingUsed = true, parseIntegerOnly;
     private int maximumIntegerDigits = 40, minimumIntegerDigits = 1,
             maximumFractionDigits = 3, minimumFractionDigits = 0;
+    private TRoundingMode roundingMode = TRoundingMode.HALF_EVEN;
+    TCurrency currency = TCurrency.getInstance(TLocale.getDefault());
 
     public TNumberFormat() {
     }
@@ -35,6 +40,14 @@ public abstract class TNumberFormat extends TFormat {
     @Override
     public Object clone() {
         return super.clone();
+    }
+
+    public TCurrency getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(TCurrency currency) {
+        this.currency = currency;
     }
 
     @Override
@@ -51,7 +64,9 @@ public abstract class TNumberFormat extends TFormat {
                 && maximumFractionDigits == obj.maximumFractionDigits
                 && maximumIntegerDigits == obj.maximumIntegerDigits
                 && minimumFractionDigits == obj.minimumFractionDigits
-                && minimumIntegerDigits == obj.minimumIntegerDigits;
+                && minimumIntegerDigits == obj.minimumIntegerDigits
+                && roundingMode == obj.roundingMode
+                && currency == obj.currency;
     }
 
     public final String format(double value) {
@@ -140,7 +155,8 @@ public abstract class TNumberFormat extends TFormat {
     public int hashCode() {
         return (groupingUsed ? 1231 : 1237) + (parseIntegerOnly ? 1231 : 1237)
                 + maximumFractionDigits + maximumIntegerDigits
-                + minimumFractionDigits + minimumIntegerDigits;
+                + minimumFractionDigits + minimumIntegerDigits +
+                roundingMode.hashCode() + Objects.hashCode(currency);
     }
 
     public boolean isGroupingUsed() {
@@ -209,6 +225,14 @@ public abstract class TNumberFormat extends TFormat {
 
     public void setParseIntegerOnly(boolean value) {
         parseIntegerOnly = value;
+    }
+
+    public TRoundingMode getRoundingMode() {
+        return roundingMode;
+    }
+
+    public void setRoundingMode(TRoundingMode roundingMode) {
+        this.roundingMode = roundingMode;
     }
 
     public static class Field extends TFormat.Field {

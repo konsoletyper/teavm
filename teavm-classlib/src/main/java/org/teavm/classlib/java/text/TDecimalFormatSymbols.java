@@ -15,7 +15,7 @@
  */
 package org.teavm.classlib.java.text;
 
-import org.teavm.classlib.impl.unicode.CLDRDecimalData;
+import org.teavm.classlib.impl.unicode.DecimalData;
 import org.teavm.classlib.impl.unicode.CLDRHelper;
 import org.teavm.classlib.java.util.TLocale;
 
@@ -23,7 +23,7 @@ import org.teavm.classlib.java.util.TLocale;
  *
  * @author Alexey Andreev
  */
-public class TDecimalFormatSymbols {
+public class TDecimalFormatSymbols implements Cloneable {
     private TLocale locale;
     private char zeroDigit;
     private char groupingSeparator;
@@ -48,18 +48,18 @@ public class TDecimalFormatSymbols {
     }
 
     private void initData() {
-        CLDRDecimalData data = CLDRHelper.resolveDecimalData(locale.getLanguage(), locale.getCountry());
+        DecimalData data = CLDRHelper.resolveDecimalData(locale.getLanguage(), locale.getCountry());
         zeroDigit = '0';
         groupingSeparator = (char)data.getGroupingSeparator();
         decimalSeparator = (char)data.getDecimalSeparator();
-        perMill = (char)data.getPerMill();
+        perMill = (char)data.getPerMille();
         percent = (char)data.getPercent();
         digit = '#';
         patternSeparator = ';';
         NaN = data.getNaN();
         infinity = data.getInfinity();
         minusSign = (char)data.getMinusSign();
-        monetaryDecimalSeparator = (char)data.getMonetaryDecimalSeparator();
+        monetaryDecimalSeparator = (char)data.getDecimalSeparator();
         exponentSeparator = data.getExponentSeparator();
     }
 

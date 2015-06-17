@@ -17,6 +17,7 @@ package org.teavm.vm;
 
 import java.io.*;
 import java.util.*;
+import org.teavm.cache.NoCache;
 import org.teavm.codegen.*;
 import org.teavm.common.ServiceRepository;
 import org.teavm.debugging.information.DebugInformationEmitter;
@@ -616,7 +617,9 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         if (method.getProgram() == null) {
             return;
         }
-        Program optimizedProgram = incremental && programCache != null ?
+
+        boolean noCache = method.getAnnotations().get(NoCache.class.getName()) != null;
+        Program optimizedProgram = incremental && !noCache && programCache != null ?
                 programCache.get(method.getReference()) : null;
         if (optimizedProgram == null) {
             optimizedProgram = ProgramUtils.copy(method.getProgram());

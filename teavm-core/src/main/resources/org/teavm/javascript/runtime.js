@@ -744,6 +744,9 @@ function Long_rem(a, b) {
     return Long_divRem(a, b)[1];
 }
 function Long_divRem(a, b) {
+    if (b.lo == 0 && b.hi == 0) {
+        throw new Error("Division by zero");
+    }
     var positive = Long_isNegative(a) === Long_isNegative(b);
     if (Long_isNegative(a)) {
         a = Long_neg(a);

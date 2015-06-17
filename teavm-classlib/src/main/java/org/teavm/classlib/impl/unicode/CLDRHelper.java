@@ -200,14 +200,15 @@ public class CLDRHelper {
         return res.getValue();
     }
 
-    public static CLDRDecimalData resolveDecimalData(String language, String country) {
-        ResourceMap<CLDRDecimalData> map = getDecimalDataMap();
+    public static DecimalData resolveDecimalData(String language, String country) {
+        ResourceMap<DecimalData> map = getDecimalDataMap();
         String localeCode = getCode(language, country);
         return map.has(localeCode) ? map.get(localeCode) : map.has(language) ? map.get(language) :
                 map.get("root");
     }
 
-    private static native ResourceMap<CLDRDecimalData> getDecimalDataMap();
+    @MetadataProvider(DecimalMetadataGenerator.class)
+    private static native ResourceMap<DecimalData> getDecimalDataMap();
 
     public static CurrencyLocalization resolveCurrency(String language, String country, String currency) {
         String localeCode = getCode(language, country);

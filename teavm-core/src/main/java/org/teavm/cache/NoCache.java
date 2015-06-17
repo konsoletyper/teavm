@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,27 +13,18 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.model;
+package org.teavm.cache;
 
-import java.util.HashMap;
-import java.util.Map;
-import org.teavm.model.util.ProgramUtils;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class InMemoryProgramCache implements ProgramCache {
-    private Map<MethodReference, Program> cache = new HashMap<>();
-
-    @Override
-    public Program get(MethodReference method) {
-        Program program = cache.get(method);
-        return program != null ? ProgramUtils.copy(program) : null;
-    }
-
-    @Override
-    public void store(MethodReference method, Program program) {
-        cache.put(method, ProgramUtils.copy(program));
-    }
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface NoCache {
 }
