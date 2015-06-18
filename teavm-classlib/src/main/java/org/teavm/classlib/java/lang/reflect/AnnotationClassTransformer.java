@@ -34,6 +34,7 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.model.emit.ProgramEmitter;
 import org.teavm.model.emit.ValueEmitter;
+import org.teavm.model.instructions.ArrayElementType;
 
 /**
  *
@@ -42,7 +43,7 @@ import org.teavm.model.emit.ValueEmitter;
 public class AnnotationClassTransformer implements ClassHolderTransformer {
     @Override
     public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
-        MethodHolder readerMethod = new MethodHolder("$$_readAnnotations_$$", ValueType.parse(Annotation[].class));
+        MethodHolder readerMethod = new MethodHolder("$$__readAnnotations__$$", ValueType.parse(Annotation[].class));
         readerMethod.setLevel(AccessLevel.PUBLIC);
         readerMethod.getModifiers().add(ElementModifier.STATIC);
         ProgramEmitter pe = ProgramEmitter.create(readerMethod);
@@ -63,10 +64,13 @@ public class AnnotationClassTransformer implements ClassHolderTransformer {
 
         ValueEmitter array = pe.constructArray(Annotation.class, annotations.size());
         for (int i = 0; i < annotations.size(); ++i) {
-            array.setElement(i, generateAnnotationInstance(innerSource, pe, annotations.get(i)));
+            array.unwrapArray(ArrayElementType.OBJECT).setElement(i,
+                    generateAnnotationInstance(innerSource, pe, annotations.get(i)));
         }
 
         array.returnValue();
+
+        cls.addMethod(readerMethod);
     }
 
     private ValueEmitter generateAnnotationInstance(ClassReaderSource classSource, ProgramEmitter pe,
@@ -116,7 +120,8 @@ public class AnnotationClassTransformer implements ClassHolderTransformer {
                 ValueType itemType = ((ValueType.Array)type).getItemType();
                 ValueEmitter array = pe.constructArray(itemType, list.size());
                 for (int i = 0; i < list.size(); ++i) {
-                    array.setElement(i, generateAnnotationValue(classSource, pe, itemType, list.get(i)));
+                    array.unwrapArray(ArrayElementType.OBJECT).setElement(i,
+                            generateAnnotationValue(classSource, pe, itemType, list.get(i)));
                 }
                 return array;
             }

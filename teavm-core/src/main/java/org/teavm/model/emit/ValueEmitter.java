@@ -22,6 +22,7 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.Phi;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
+import org.teavm.model.instructions.ArrayElementType;
 import org.teavm.model.instructions.ArrayLengthInstruction;
 import org.teavm.model.instructions.BinaryBranchingCondition;
 import org.teavm.model.instructions.BinaryBranchingInstruction;
@@ -45,6 +46,7 @@ import org.teavm.model.instructions.NegateInstruction;
 import org.teavm.model.instructions.NumericOperandType;
 import org.teavm.model.instructions.PutElementInstruction;
 import org.teavm.model.instructions.PutFieldInstruction;
+import org.teavm.model.instructions.UnwrapArrayInstruction;
 
 /**
  *
@@ -275,6 +277,15 @@ public class ValueEmitter {
 
     public void setElement(int index, ValueEmitter value) {
         setElement(pe.constant(index), value);
+    }
+
+    public ValueEmitter unwrapArray(ArrayElementType elementType) {
+        Variable result = pe.getProgram().createVariable();
+        UnwrapArrayInstruction insn = new UnwrapArrayInstruction(elementType);
+        insn.setArray(variable);
+        insn.setReceiver(result);
+        pe.addInstruction(insn);
+        return pe.wrap(result);
     }
 
     public ValueEmitter arrayLength() {

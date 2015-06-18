@@ -212,7 +212,7 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
         writer.append("var c").ws().append("=").ws().append("'$$annotations$$';").softNewLine();
         for (String clsName : context.getClassSource().getClassNames()) {
             ClassReader cls = context.getClassSource().get(clsName);
-            MethodReader method = cls.getMethod(new MethodDescriptor("$$_readAnnotations_$$",
+            MethodReader method = cls.getMethod(new MethodDescriptor("$$__readAnnotations__$$",
                     ValueType.parse(Annotation[].class)));
             if (method != null) {
                 writer.appendClass(clsName).append("[c]").ws().append("=").ws();

@@ -43,7 +43,7 @@ import org.teavm.model.emit.ValueEmitter;
  */
 public class AnnotationDependencyListener implements DependencyListener {
     @Override
-    public void started(DependencyAgent agent) {
+    public void started(final DependencyAgent agent) {
     }
 
     @Override
@@ -85,6 +85,9 @@ public class AnnotationDependencyListener implements DependencyListener {
 
         List<ValueType> ctorSignature = new ArrayList<>();
         for (MethodReader methodDecl : annotation.getMethods()) {
+            if (methodDecl.hasModifier(ElementModifier.STATIC)) {
+                continue;
+            }
             FieldHolder field = new FieldHolder("$" + methodDecl.getName());
             field.setType(methodDecl.getResultType());
             field.setLevel(AccessLevel.PRIVATE);
@@ -109,6 +112,9 @@ public class AnnotationDependencyListener implements DependencyListener {
         ValueEmitter thisVal = pe.wrapNew();
         thisVal.invokeSpecial(new MethodReference(Object.class, "<init>", void.class));
         for (MethodReader methodDecl : annotation.getMethods()) {
+            if (methodDecl.hasModifier(ElementModifier.STATIC)) {
+                continue;
+            }
             ValueEmitter param = pe.wrapNew();
             FieldReference field = new FieldReference(implementorName, "$" + methodDecl.getName());
             thisVal.setField(field, methodDecl.getResultType(), param);

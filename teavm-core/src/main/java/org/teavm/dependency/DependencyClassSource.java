@@ -17,13 +17,16 @@ package org.teavm.dependency;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.Map;
 import org.teavm.common.CachedMapper;
 import org.teavm.common.Mapper;
 import org.teavm.diagnostics.Diagnostics;
-import org.teavm.model.*;
+import org.teavm.model.ClassHolder;
+import org.teavm.model.ClassHolderTransformer;
+import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.util.ModelUtils;
 
 /**
@@ -33,10 +36,9 @@ import org.teavm.model.util.ModelUtils;
 class DependencyClassSource implements ClassReaderSource {
     private ClassReaderSource innerSource;
     private Diagnostics diagnostics;
-    private ConcurrentMap<String, ClassHolder> generatedClasses = new ConcurrentHashMap<>();
+    private Map<String, ClassHolder> generatedClasses = new HashMap<>();
     private List<ClassHolderTransformer> transformers = new ArrayList<>();
-    private CachedMapper<String, ClassReader> cache = new CachedMapper<>(
-            new Mapper<String, ClassReader>() {
+    private CachedMapper<String, ClassReader> cache = new CachedMapper<>(new Mapper<String, ClassReader>() {
         @Override public ClassReader map(String preimage) {
             return findAndTransformClass(preimage);
         }
@@ -53,12 +55,11 @@ class DependencyClassSource implements ClassReaderSource {
     }
 
     public void submit(ClassHolder cls) {
-        if (innerSource.get(cls.getName()) != null) {
+        if (innerSource.get(cls.getName()) != null || generatedClasses.containsKey(cls.getName())) {
             throw new IllegalArgumentException("Class " + cls.getName() + " is already defined");
         }
-        if (generatedClasses.putIfAbsent(cls.getName(), cls) != null) {
-            throw new IllegalArgumentException("Class " + cls.getName() + " is already defined");
-        }
+        generatedClasses.put(cls.getName(), cls);
+        cache.invalidate(cls.getName());
     }
 
     private ClassReader findAndTransformClass(String name) {

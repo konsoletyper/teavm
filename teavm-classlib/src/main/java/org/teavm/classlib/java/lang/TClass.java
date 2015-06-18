@@ -15,6 +15,8 @@
  */
 package org.teavm.classlib.java.lang;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.teavm.classlib.impl.DeclaringClassMetadataGenerator;
 import org.teavm.classlib.java.lang.annotation.TAnnotation;
 import org.teavm.classlib.java.lang.reflect.TAnnotatedElement;
@@ -33,6 +35,8 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
     private TClass<?> componentType;
     private boolean componentTypeDirty = true;
     private PlatformClass platformClass;
+    private TAnnotation[] annotationsCache;
+    private Map<TClass<?>, TAnnotation> annotationsByType;
 
     private TClass(PlatformClass platformClass) {
         this.platformClass = platformClass;
@@ -203,21 +207,37 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
 
     @Override
     public boolean isAnnotationPresent(TClass<? extends TAnnotation> annotationClass) {
-        return false;
+        ensureAnnotationsByType();
+        return annotationsByType.containsKey(annotationClass);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public <S extends TAnnotation> S getAnnotation(TClass<S> annotationClass) {
-        return null;
+        ensureAnnotationsByType();
+        return (S)annotationsByType.get(annotationClass);
     }
 
     @Override
     public TAnnotation[] getAnnotations() {
-        return null;
+        if (annotationsCache == null) {
+            annotationsCache = (TAnnotation[])Platform.getAnnotations(getPlatformClass());
+        }
+        return annotationsCache.clone();
     }
 
     @Override
     public TAnnotation[] getDeclaredAnnotations() {
-        return null;
+        return getAnnotations();
+    }
+
+    private void ensureAnnotationsByType() {
+        if (annotationsByType != null) {
+            return;
+        }
+        annotationsByType = new HashMap<>();
+        for (TAnnotation annot : getAnnotations()) {
+            annotationsByType.put((TClass<?>)(Object)annot.getClass(), annot);
+        }
     }
 }

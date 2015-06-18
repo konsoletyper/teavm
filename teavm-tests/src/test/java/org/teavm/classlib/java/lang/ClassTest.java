@@ -15,7 +15,13 @@
  */
 package org.teavm.classlib.java.lang;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import java.lang.annotation.Annotation;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import org.junit.Test;
 
 /**
@@ -106,6 +112,18 @@ public class ClassTest {
         assertEquals(ClassTest.class, new A().getClass().getDeclaringClass());
     }
 
+    @Test
+    public void annotationsExposed() {
+        Annotation[] annotations = A.class.getAnnotations();
+        assertEquals(1, annotations.length);
+        assertTrue(TestAnnot.class.isAssignableFrom(annotations[0].getClass()));
+    }
+
+    @TestAnnot
     private static class A {
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    static @interface TestAnnot {
     }
 }

@@ -17,12 +17,15 @@ package org.teavm.platform.plugin;
 
 import java.lang.annotation.Annotation;
 import org.teavm.dependency.DependencyAgent;
+import org.teavm.dependency.DependencyConsumer;
 import org.teavm.dependency.DependencyListener;
 import org.teavm.dependency.DependencyNode;
+import org.teavm.dependency.DependencyType;
 import org.teavm.dependency.FieldDependency;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.model.CallLocation;
-import org.teavm.model.ElementModifier;
+import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 import org.teavm.platform.Platform;
 
 /**
@@ -30,26 +33,32 @@ import org.teavm.platform.Platform;
  * @author Alexey Andreev
  */
 public class AnnotationDependencySupport implements DependencyListener {
-    private DependencyNode allAnnotations;
+    private DependencyNode allClasses;
 
     @Override
     public void started(DependencyAgent agent) {
-        allAnnotations = agent.createNode();
+        allClasses = agent.createNode();
     }
 
     @Override
     public void classAchieved(DependencyAgent agent, String className, CallLocation location) {
+        allClasses.propagate(agent.getType(className));
     }
 
     @Override
-    public void methodAchieved(DependencyAgent agent, MethodDependency method, CallLocation location) {
-        if (method.getMethod().getName().equals("$$_readAnnotations_$$") &&
-                method.getMethod().hasModifier(ElementModifier.STATIC)) {
-            method.getResult().getArrayItem().connect(allAnnotations);
-        } else if (method.getReference().getClassName().equals(Platform.class.getName()) &&
+    public void methodAchieved(final DependencyAgent agent, final MethodDependency method,
+            final CallLocation location) {
+        if (method.getReference().getClassName().equals(Platform.class.getName()) &&
                 method.getReference().getName().equals("getAnnotations")) {
             method.getResult().propagate(agent.getType("[" + Annotation.class.getName()));
-            allAnnotations.connect(method.getResult().getArrayItem());
+            allClasses.addConsumer(new DependencyConsumer() {
+                @Override public void consume(DependencyType type) {
+                    MethodDependency readMethod = agent.linkMethod(new MethodReference(type.getName(),
+                            "$$__readAnnotations__$$", ValueType.parse(Annotation[].class)), location);
+                    readMethod.getResult().getArrayItem().connect(method.getResult().getArrayItem());
+                    readMethod.use();
+                }
+            });
         }
     }
 
