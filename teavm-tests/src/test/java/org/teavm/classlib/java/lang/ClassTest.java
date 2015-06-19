@@ -119,11 +119,32 @@ public class ClassTest {
         assertTrue(TestAnnot.class.isAssignableFrom(annotations[0].getClass()));
     }
 
+    @Test
+    public void annotationFieldsExposed() {
+        AnnotWithDefaultField annot = B.class.getAnnotation(AnnotWithDefaultField.class);
+        assertEquals(2, annot.x());
+        annot = C.class.getAnnotation(AnnotWithDefaultField.class);
+        assertEquals(3, annot.x());
+    }
+
     @TestAnnot
     private static class A {
     }
 
+    @AnnotWithDefaultField
+    private static class B {
+    }
+
+    @AnnotWithDefaultField(x = 3)
+    private static class C {
+    }
+
     @Retention(RetentionPolicy.RUNTIME)
     static @interface TestAnnot {
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    static @interface AnnotWithDefaultField {
+        int x() default 2;
     }
 }

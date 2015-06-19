@@ -237,7 +237,7 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
         }
         annotationsByType = new HashMap<>();
         for (TAnnotation annot : getAnnotations()) {
-            annotationsByType.put((TClass<?>)(Object)annot.getClass(), annot);
+            annotationsByType.put((TClass<?>)(Object)annot.annotationType(), annot);
         }
     }
 }

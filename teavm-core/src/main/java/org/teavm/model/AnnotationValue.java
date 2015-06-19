@@ -88,7 +88,7 @@ public class AnnotationValue {
         this.value = value;
     }
 
-    public AnnotationValue(AnnotationHolder value) {
+    public AnnotationValue(AnnotationReader value) {
         this.type = ANNOTATION;
         this.value = value;
     }
@@ -176,11 +176,11 @@ public class AnnotationValue {
         return (FieldReference)value;
     }
 
-    public AnnotationHolder getAnnotation() {
+    public AnnotationReader getAnnotation() {
         if (type != ANNOTATION) {
             throw new IllegalStateException("There is no annotation value");
         }
-        return (AnnotationHolder)value;
+        return (AnnotationReader)value;
     }
 
     public byte getType() {

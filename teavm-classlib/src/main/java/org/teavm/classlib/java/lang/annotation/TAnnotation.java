@@ -15,9 +15,13 @@
  */
 package org.teavm.classlib.java.lang.annotation;
 
+import org.teavm.javascript.spi.Rename;
+
 /**
  *
  * @author Alexey Andreev
  */
 public @interface TAnnotation {
+    @Rename("annotationType")
+    Class<?> annotationType0();
 }

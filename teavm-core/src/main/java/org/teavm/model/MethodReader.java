@@ -35,4 +35,6 @@ public interface MethodReader extends MemberReader {
     MethodReference getReference();
 
     ProgramReader getProgram();
+
+    AnnotationValue getAnnotationDefault();
 }

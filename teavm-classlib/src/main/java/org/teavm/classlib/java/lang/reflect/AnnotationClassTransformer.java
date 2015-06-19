@@ -85,9 +85,11 @@ public class AnnotationClassTransformer implements ClassHolderTransformer {
         List<ValueEmitter> params = new ArrayList<>();
         for (MethodReader methodDecl : annotationClass.getMethods()) {
             ctorSignature.add(methodDecl.getResultType());
-            AnnotationValue value = annotation.getValue(className);
-            params.add(value != null ? generateAnnotationValue(classSource, pe, methodDecl.getResultType(), value) :
-                    pe.constantNull());
+            AnnotationValue value = annotation.getValue(methodDecl.getName());
+            if (value == null) {
+                value = methodDecl.getAnnotationDefault();
+            }
+            params.add(generateAnnotationValue(classSource, pe, methodDecl.getResultType(), value));
         }
         ctorSignature.add(ValueType.VOID);
 

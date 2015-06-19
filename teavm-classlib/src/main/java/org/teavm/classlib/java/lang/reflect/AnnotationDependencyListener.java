@@ -122,6 +122,12 @@ public class AnnotationDependencyListener implements DependencyListener {
         pe.exit();
         implementor.addMethod(ctor);
 
+        MethodHolder annotTypeMethod = new MethodHolder("annotationType", ValueType.parse(Class.class));
+        pe = ProgramEmitter.create(annotTypeMethod);
+        pe.wrapNew();
+        pe.constant(ValueType.object(annotationType)).returnValue();
+        implementor.addMethod(annotTypeMethod);
+
         return implementor;
     }
 

@@ -239,12 +239,16 @@ public class DiskCachedClassHolderSource implements ClassHolderSource {
         }
     }
 
-    private void writeAnnotation(DataOutput output, AnnotationHolder annotation) throws IOException {
+    private void writeAnnotation(DataOutput output, AnnotationReader annotation) throws IOException {
         output.writeInt(symbolTable.lookup(annotation.getType()));
-        output.writeShort(annotation.getValues().size());
-        for (Map.Entry<String, AnnotationValue> entry : annotation.getValues().entrySet()) {
-            output.writeInt(symbolTable.lookup(entry.getKey()));
-            writeAnnotationValue(output, entry.getValue());
+        int fieldCount = 0;
+        for (@SuppressWarnings("unused") String field : annotation.getAvailableFields()) {
+            ++fieldCount;
+        }
+        output.writeShort(fieldCount);
+        for (String field : annotation.getAvailableFields()) {
+            output.writeInt(symbolTable.lookup(field));
+            writeAnnotationValue(output, annotation.getValue(field));
         }
     }
 

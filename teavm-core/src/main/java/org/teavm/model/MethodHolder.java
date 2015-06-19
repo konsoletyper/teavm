@@ -22,7 +22,8 @@ package org.teavm.model;
 public class MethodHolder extends MemberHolder implements MethodReader {
     private MethodDescriptor descriptor;
     private ClassHolder owner;
-    private volatile Program program;
+    private Program program;
+    private AnnotationValue annotationDefault;
 
     public MethodHolder(MethodDescriptor descriptor) {
         super(descriptor.getName());
@@ -94,5 +95,14 @@ public class MethodHolder extends MemberHolder implements MethodReader {
         if (this.program != null) {
             this.program.setMethod(this);
         }
+    }
+
+    @Override
+    public AnnotationValue getAnnotationDefault() {
+        return annotationDefault;
+    }
+
+    public void setAnnotationDefault(AnnotationValue annotationDefault) {
+        this.annotationDefault = annotationDefault;
     }
 }

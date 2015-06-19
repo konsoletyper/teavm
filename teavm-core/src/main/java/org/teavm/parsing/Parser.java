@@ -53,6 +53,9 @@ public final class Parser {
         while (program.variableCount() <= method.parameterCount()) {
             program.createVariable();
         }
+        if (node.annotationDefault != null) {
+            method.setAnnotationDefault(parseAnnotationValue(node.annotationDefault));
+        }
         return method;
     }
 

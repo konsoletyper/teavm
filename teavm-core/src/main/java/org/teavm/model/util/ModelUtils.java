@@ -52,6 +52,9 @@ public final class ModelUtils {
             copy.setProgram(ProgramUtils.copy(method.getProgram()));
         }
         copyAnnotations(method.getAnnotations(), copy.getAnnotations());
+        if (method.getAnnotationDefault() != null) {
+            copy.setAnnotationDefault(copyAnnotationValue(method.getAnnotationDefault()));
+        }
         return copy;
     }
 
