@@ -203,7 +203,7 @@ public class DependencyChecker implements DependencyInfo {
 
     private Set<String> classesAddedByRoot = new HashSet<>();
 
-    public ClassDependency linkClass(String className, CallLocation callLocation) {
+    public ClassDependency linkClass(final String className, final CallLocation callLocation) {
         ClassDependency dep = classCache.map(className);
         boolean added = true;
         if (callLocation != null && callLocation.getMethod() != null) {
@@ -215,9 +215,14 @@ public class DependencyChecker implements DependencyInfo {
             added = classesAddedByRoot.add(className);
         }
         if (!dep.isMissing() && added) {
-            for (DependencyListener listener : listeners) {
-                listener.classAchieved(agent, className, callLocation);
-            }
+            tasks.add(new Runnable() {
+                @Override
+                public void run() {
+                    for (DependencyListener listener : listeners) {
+                        listener.classAchieved(agent, className, callLocation);
+                    }
+                }
+            });
         }
         return dep;
     }

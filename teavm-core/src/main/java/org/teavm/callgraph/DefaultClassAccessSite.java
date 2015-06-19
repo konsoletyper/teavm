@@ -15,6 +15,7 @@
  */
 package org.teavm.callgraph;
 
+import java.util.Objects;
 import org.teavm.model.InstructionLocation;
 
 /**
@@ -45,5 +46,24 @@ public class DefaultClassAccessSite implements ClassAccessSite {
     @Override
     public String getClassName() {
         return className;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(location, callee, className);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof DefaultClassAccessSite)) {
+            return false;
+        }
+        DefaultClassAccessSite other = (DefaultClassAccessSite)obj;
+        return Objects.equals(location, other.location) &&
+                Objects.equals(callee, other.callee) &&
+                Objects.equals(className, other.className);
     }
 }

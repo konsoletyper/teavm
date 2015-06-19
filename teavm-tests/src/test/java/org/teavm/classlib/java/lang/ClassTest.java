@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -127,6 +128,26 @@ public class ClassTest {
         assertEquals(3, annot.x());
     }
 
+    @Test
+    public void annotationFieldTypesSupported() {
+        AnnotWithVariousFields annot = D.class.getAnnotation(AnnotWithVariousFields.class);
+        assertEquals(true, annot.a());
+        assertEquals((byte)2, annot.b());
+        assertEquals((short)3, annot.c());
+        assertEquals(4, annot.d());
+        assertEquals(5L, annot.e());
+        assertEquals(6.5, annot.f(), 0.01);
+        assertEquals(7.2, annot.g(), 0.01);
+        assertArrayEquals(new int[] { 2, 3 }, annot.h());
+        assertEquals(RetentionPolicy.CLASS, annot.i());
+        assertEquals(Retention.class, annot.j().annotationType());
+        assertEquals(1, annot.k().length);
+        assertEquals(RetentionPolicy.RUNTIME, annot.k()[0].value());
+        assertEquals("foo", annot.l());
+        assertArrayEquals(new String[] { "bar" }, annot.m());
+        assertEquals(Integer.class, annot.n());
+    }
+
     @TestAnnot
     private static class A {
     }
@@ -139,6 +160,12 @@ public class ClassTest {
     private static class C {
     }
 
+    @AnnotWithVariousFields(a = true, b = 2, c = 3, d = 4, e = 5, f = 6.5f, g = 7.2, h = { 2, 3 },
+            i = RetentionPolicy.CLASS, j = @Retention(RetentionPolicy.SOURCE),
+            k = { @Retention(RetentionPolicy.RUNTIME) }, l = "foo", m = "bar", n = Integer.class)
+    private static class D {
+    }
+
     @Retention(RetentionPolicy.RUNTIME)
     static @interface TestAnnot {
     }
@@ -146,5 +173,36 @@ public class ClassTest {
     @Retention(RetentionPolicy.RUNTIME)
     static @interface AnnotWithDefaultField {
         int x() default 2;
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    static @interface AnnotWithVariousFields {
+        boolean a();
+
+        byte b();
+
+        short c();
+
+        int d();
+
+        long e();
+
+        float f();
+
+        double g();
+
+        int[] h();
+
+        RetentionPolicy i();
+
+        Retention j();
+
+        Retention[] k();
+
+        String l();
+
+        String[] m();
+
+        Class<?> n();
     }
 }

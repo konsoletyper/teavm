@@ -23,6 +23,7 @@ import org.teavm.model.instructions.DoubleConstantInstruction;
 import org.teavm.model.instructions.ExitInstruction;
 import org.teavm.model.instructions.FloatConstantInstruction;
 import org.teavm.model.instructions.GetFieldInstruction;
+import org.teavm.model.instructions.InitClassInstruction;
 import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
@@ -201,6 +202,12 @@ public final class ProgramEmitter {
 
     public ValueEmitter constructArray(Class<?> type, ValueEmitter size) {
         return constructArray(ValueType.parse(type), size);
+    }
+
+    public void initClass(String className) {
+        InitClassInstruction insn = new InitClassInstruction();
+        insn.setClassName(className);
+        addInstruction(insn);
     }
 
     public ProgramEmitter jump(BasicBlock block) {

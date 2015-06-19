@@ -128,6 +128,7 @@ public class AnnotationClassTransformer implements ClassHolderTransformer {
                 return array;
             }
             case AnnotationValue.ENUM:
+                pe.initClass(value.getEnumValue().getClassName());
                 return pe.getField(value.getEnumValue(), type);
             case AnnotationValue.CLASS:
                 return pe.constant(value.getJavaClass());

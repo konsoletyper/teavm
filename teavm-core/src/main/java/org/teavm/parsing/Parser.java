@@ -15,6 +15,7 @@
  */
 package org.teavm.parsing;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 import org.objectweb.asm.Opcodes;
@@ -197,7 +198,8 @@ public final class Parser {
     private static AnnotationValue parseAnnotationValue(Object value) {
         if (value instanceof String[]) {
             String[] enumInfo = (String[])value;
-            return new AnnotationValue(new FieldReference(enumInfo[0], enumInfo[1]));
+            ValueType.Object object = (ValueType.Object)ValueType.parse(enumInfo[0]);
+            return new AnnotationValue(new FieldReference(object.getClassName(), enumInfo[1]));
         } else if (value instanceof Type) {
             Type cls = (Type)value;
             return new AnnotationValue(ValueType.parse(cls.getDescriptor()));
@@ -210,7 +212,8 @@ public final class Parser {
             return new AnnotationValue(resultList);
         } else if (value instanceof AnnotationNode) {
             AnnotationNode annotNode = (AnnotationNode)value;
-            AnnotationHolder annotation = new AnnotationHolder(annotNode.desc.replace('.', '/'));
+            ValueType.Object object = (ValueType.Object)ValueType.parse(annotNode.desc);
+            AnnotationHolder annotation = new AnnotationHolder(object.getClassName());
             parseAnnotationValues(annotation, annotNode.values);
             return new AnnotationValue(annotation);
         } else if (value instanceof String) {
@@ -229,6 +232,14 @@ public final class Parser {
             return new AnnotationValue((Float)value);
         } else if (value instanceof Double) {
             return new AnnotationValue((Double)value);
+        } else if (value.getClass().isArray()) {
+            List<AnnotationValue> resultList = new ArrayList<>();
+            int size = Array.getLength(value);
+            for (int i = 0; i < size; ++i) {
+                Object item = Array.get(value, i);
+                resultList.add(parseAnnotationValue(item));
+            }
+            return new AnnotationValue(resultList);
         } else {
             throw new AssertionError();
         }
