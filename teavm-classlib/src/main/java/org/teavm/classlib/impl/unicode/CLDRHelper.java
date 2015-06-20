@@ -173,19 +173,22 @@ public class CLDRHelper {
         return resolveFormatSymbols(getNumberFormatMap(), language, country);
     }
 
+    @MetadataProvider(NumberFormatMetadataGenerator.class)
     private static native ResourceMap<StringResource> getNumberFormatMap();
-
-    public static String resolveDecimalFormat(String language, String country) {
-        return resolveFormatSymbols(getDecimalFormatMap(), language, country);
-    }
-
-    private static native ResourceMap<StringResource> getDecimalFormatMap();
 
     public static String resolvePercentFormat(String language, String country) {
         return resolveFormatSymbols(getPercentFormatMap(), language, country);
     }
 
+    @MetadataProvider(NumberFormatMetadataGenerator.class)
     private static native ResourceMap<StringResource> getPercentFormatMap();
+
+    public static String resolveCurrencyFormat(String language, String country) {
+        return resolveFormatSymbols(getCurrencyFormatMap(), language, country);
+    }
+
+    @MetadataProvider(NumberFormatMetadataGenerator.class)
+    private static native ResourceMap<StringResource> getCurrencyFormatMap();
 
     private static DateFormatCollection resolveDateFormats(ResourceMap<DateFormatCollection> map,
             String language, String country) {

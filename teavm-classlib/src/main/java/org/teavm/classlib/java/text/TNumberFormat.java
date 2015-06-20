@@ -106,6 +106,9 @@ public abstract class TNumberFormat extends TFormat {
         String pattern = CLDRHelper.resolveNumberFormat(locale.getLanguage(), locale.getCountry());
         TDecimalFormat format = new TDecimalFormat(pattern, new TDecimalFormatSymbols(locale));
         format.setParseIntegerOnly(true);
+        format.setMinimumFractionDigits(0);
+        format.setMaximumFractionDigits(0);
+        format.setDecimalSeparatorAlwaysShown(false);
         return format;
     }
 
@@ -138,7 +141,7 @@ public abstract class TNumberFormat extends TFormat {
     }
 
     public static TNumberFormat getNumberInstance(TLocale locale) {
-        String pattern = CLDRHelper.resolveDecimalFormat(locale.getLanguage(), locale.getCountry());
+        String pattern = CLDRHelper.resolveNumberFormat(locale.getLanguage(), locale.getCountry());
         return new TDecimalFormat(pattern, new TDecimalFormatSymbols(locale));
     }
 
@@ -148,6 +151,15 @@ public abstract class TNumberFormat extends TFormat {
 
     public static TNumberFormat getPercentInstance(TLocale locale) {
         String pattern = CLDRHelper.resolvePercentFormat(locale.getLanguage(), locale.getCountry());
+        return new TDecimalFormat(pattern, new TDecimalFormatSymbols(locale));
+    }
+
+    public final static TNumberFormat getCurrencyInstance() {
+        return getCurrencyInstance(TLocale.getDefault());
+    }
+
+    public final static TNumberFormat getCurrencyInstance(TLocale locale) {
+        String pattern = CLDRHelper.resolveCurrencyFormat(locale.getLanguage(), locale.getCountry());
         return new TDecimalFormat(pattern, new TDecimalFormatSymbols(locale));
     }
 

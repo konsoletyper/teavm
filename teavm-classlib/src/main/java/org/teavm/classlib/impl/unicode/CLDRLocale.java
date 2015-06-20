@@ -39,6 +39,9 @@ public class CLDRLocale {
     CLDRDateFormats dateTimeFormats;
     CLDRTimeZone[] timeZones;
     CLDRDecimalData decimalData = new CLDRDecimalData();
+    String numberFormat;
+    String percentFormat;
+    String currencyFormat;
 
     public Map<String, String> getLanguages() {
         return Collections.unmodifiableMap(languages);
@@ -94,5 +97,17 @@ public class CLDRLocale {
 
     public CLDRDecimalData getDecimalData() {
         return decimalData;
+    }
+
+    public String getNumberFormat() {
+        return numberFormat;
+    }
+
+    public String getPercentFormat() {
+        return percentFormat;
+    }
+
+    public String getCurrencyFormat() {
+        return currencyFormat;
     }
 }

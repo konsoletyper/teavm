@@ -29,7 +29,7 @@ public class DefaultLocaleMetadataGenerator implements MetadataGenerator {
     @Override
     public Resource generateMetadata(MetadataGeneratorContext context, MethodReference method) {
         StringResource result = context.createResource(StringResource.class);
-        result.setValue(context.getProperties().getProperty("java.util.Locale.default", "en_EN"));
+        result.setValue(context.getProperties().getProperty("java.util.Locale.default", "en_GB"));
         return result;
     }
 }

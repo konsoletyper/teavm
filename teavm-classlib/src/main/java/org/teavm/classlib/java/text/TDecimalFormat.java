@@ -51,7 +51,7 @@ public class TDecimalFormat extends TNumberFormat {
     int exponentDigits;
 
     public TDecimalFormat() {
-        this(CLDRHelper.resolveDecimalFormat(TLocale.getDefault().getLanguage(), TLocale.getDefault().getCountry()));
+        this(CLDRHelper.resolveNumberFormat(TLocale.getDefault().getLanguage(), TLocale.getDefault().getCountry()));
     }
 
     public TDecimalFormat(String pattern) {
@@ -1227,7 +1227,11 @@ public class TDecimalFormat extends TNumberFormat {
     static class CurrencyField implements FormatField {
         @Override
         public void render(TDecimalFormat format, StringBuffer buffer) {
-            buffer.append(format.getCurrency().getSymbol(format.symbols.getLocale()));
+            if (format.getCurrency() == null) {
+                buffer.append('¤');
+            } else {
+                buffer.append(format.getCurrency().getSymbol(format.symbols.getLocale()));
+            }
         }
     }
 

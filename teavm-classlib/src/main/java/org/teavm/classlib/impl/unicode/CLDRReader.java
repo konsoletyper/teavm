@@ -225,6 +225,15 @@ public class CLDRReader {
         locale.decimalData.perMille = symbolsJson.get("perMille").getAsString().charAt(0);
         locale.decimalData.infinity = symbolsJson.get("infinity").getAsString();
         locale.decimalData.NaN = symbolsJson.get("nan").getAsString();
+
+        JsonObject numberJson = numbersJson.get("decimalFormats-numberSystem-" + numbering).getAsJsonObject();
+        locale.numberFormat = numberJson.get("standard").getAsString();
+
+        JsonObject percentJson = numbersJson.get("percentFormats-numberSystem-" + numbering).getAsJsonObject();
+        locale.percentFormat = percentJson.get("standard").getAsString();
+
+        JsonObject currencyJson = numbersJson.get("currencyFormats-numberSystem-" + numbering).getAsJsonObject();
+        locale.currencyFormat = currencyJson.get("standard").getAsString();
     }
 
     private void readEras(String localeCode, CLDRLocale locale, JsonObject root) {
