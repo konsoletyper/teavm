@@ -36,6 +36,7 @@
 package org.teavm.classlib.java.util.regex;
 
 import java.util.BitSet;
+import java.util.MissingResourceException;
 
 /**
  * This class represents character classes, i.e. sets of character either
@@ -871,7 +872,7 @@ abstract class TAbstractCharClass extends TSpecialToken {
                     return row[1];
                 }
             }
-            return null;
+            throw new MissingResourceException("", "", name);
         }
     }
 }

@@ -256,7 +256,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
             return -1;
         }
         int d = getNumericValue(codePoint);
-        return d <= radix ? d : -1;
+        return d < radix ? d : -1;
     }
 
     public static int getNumericValue(char ch) {
@@ -293,7 +293,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static boolean isDigit(int codePoint) {
-        return getNumericValue(codePoint) >= 0;
+        return getType(codePoint) == DECIMAL_DIGIT_NUMBER;
     }
 
     private static int[] getDigitMapping() {
