@@ -23,7 +23,7 @@ import org.teavm.platform.Platform;
  *
  * @author Alexey Andreev
  */
-public class NewInstanceDependencySupport implements DependencyListener {
+public class NewInstanceDependencySupport extends AbstractDependencyListener {
     private DependencyNode allClassesNode;
 
     @Override
@@ -32,7 +32,7 @@ public class NewInstanceDependencySupport implements DependencyListener {
     }
 
     @Override
-    public void classAchieved(DependencyAgent agent, String className, CallLocation location) {
+    public void classReached(DependencyAgent agent, String className, CallLocation location) {
         ClassReader cls = agent.getClassSource().get(className);
         if (cls == null) {
             return;
@@ -47,7 +47,7 @@ public class NewInstanceDependencySupport implements DependencyListener {
     }
 
     @Override
-    public void methodAchieved(final DependencyAgent agent, MethodDependency method, CallLocation location) {
+    public void methodReached(final DependencyAgent agent, MethodDependency method, CallLocation location) {
         MethodReader reader = method.getMethod();
         if (reader.getOwnerName().equals(Platform.class.getName()) && reader.getName().equals("newInstanceImpl")) {
             allClassesNode.connect(method.getResult());
@@ -65,9 +65,5 @@ public class NewInstanceDependencySupport implements DependencyListener {
         MethodDependency methodDep = checker.linkMethod(ref, location);
         methodDep.getVariable(0).propagate(checker.getType(type));
         methodDep.use();
-    }
-
-    @Override
-    public void fieldAchieved(DependencyAgent dependencyAgent, FieldDependency field, CallLocation location) {
     }
 }

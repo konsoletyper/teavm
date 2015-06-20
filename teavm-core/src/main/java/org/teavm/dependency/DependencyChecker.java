@@ -219,7 +219,7 @@ public class DependencyChecker implements DependencyInfo {
                 @Override
                 public void run() {
                     for (DependencyListener listener : listeners) {
-                        listener.classAchieved(agent, className, callLocation);
+                        listener.classReached(agent, className, callLocation);
                     }
                 }
             });
@@ -278,7 +278,7 @@ public class DependencyChecker implements DependencyInfo {
         MethodDependency graph = methodCache.map(methodRef);
         if (!graph.isMissing() && added) {
             for (DependencyListener listener : listeners) {
-                listener.methodAchieved(agent, graph, callLocation);
+                listener.methodReached(agent, graph, callLocation);
             }
             activateDependencyPlugin(graph, callLocation);
         }
@@ -422,7 +422,7 @@ public class DependencyChecker implements DependencyInfo {
         }
         if (!dep.isMissing() && added) {
             for (DependencyListener listener : listeners) {
-                listener.fieldAchieved(agent, dep, location);
+                listener.fieldReached(agent, dep, location);
             }
         }
         return dep;

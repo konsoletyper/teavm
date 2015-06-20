@@ -15,15 +15,25 @@
  */
 package org.teavm.platform.plugin;
 
-import org.teavm.dependency.*;
-import org.teavm.model.*;
+import org.teavm.dependency.AbstractDependencyListener;
+import org.teavm.dependency.DependencyAgent;
+import org.teavm.dependency.DependencyConsumer;
+import org.teavm.dependency.DependencyNode;
+import org.teavm.dependency.DependencyType;
+import org.teavm.dependency.MethodDependency;
+import org.teavm.model.CallLocation;
+import org.teavm.model.ClassReader;
+import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodReader;
+import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 import org.teavm.platform.Platform;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class EnumDependencySupport implements DependencyListener {
+public class EnumDependencySupport extends AbstractDependencyListener {
     private DependencyNode allEnums;
 
     @Override
@@ -32,7 +42,7 @@ public class EnumDependencySupport implements DependencyListener {
     }
 
     @Override
-    public void classAchieved(DependencyAgent agent, String className, CallLocation location) {
+    public void classReached(DependencyAgent agent, String className, CallLocation location) {
         ClassReader cls = agent.getClassSource().get(className);
         if (cls == null || cls.getParent() == null || !cls.getParent().equals("java.lang.Enum")) {
             return;
@@ -41,7 +51,7 @@ public class EnumDependencySupport implements DependencyListener {
     }
 
     @Override
-    public void methodAchieved(final DependencyAgent agent, MethodDependency method, CallLocation location) {
+    public void methodReached(final DependencyAgent agent, MethodDependency method, CallLocation location) {
         if (method.getReference().getClassName().equals(Platform.class.getName()) &&
                 method.getReference().getName().equals("getEnumConstants")) {
             allEnums.connect(method.getResult().getArrayItem());
@@ -58,12 +68,8 @@ public class EnumDependencySupport implements DependencyListener {
             });
             method.getResult().propagate(agent.getType("[java.lang.Enum"));
             for (String cls : agent.getAchievableClasses()) {
-                classAchieved(agent, cls, location);
+                classReached(agent, cls, location);
             }
         }
-    }
-
-    @Override
-    public void fieldAchieved(DependencyAgent agent, FieldDependency field, CallLocation location) {
     }
 }

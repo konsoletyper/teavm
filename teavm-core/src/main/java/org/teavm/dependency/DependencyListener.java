@@ -24,9 +24,9 @@ import org.teavm.model.CallLocation;
 public interface DependencyListener {
     void started(DependencyAgent agent);
 
-    void classAchieved(DependencyAgent agent, String className, CallLocation location);
+    void classReached(DependencyAgent agent, String className, CallLocation location);
 
-    void methodAchieved(DependencyAgent agent, MethodDependency method, CallLocation location);
+    void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location);
 
-    void fieldAchieved(DependencyAgent agent, FieldDependency field, CallLocation location);
+    void fieldReached(DependencyAgent agent, FieldDependency field, CallLocation location);
 }

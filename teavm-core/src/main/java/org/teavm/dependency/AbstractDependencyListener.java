@@ -13,41 +13,28 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.platform.plugin;
+package org.teavm.dependency;
 
-import org.teavm.dependency.AbstractDependencyListener;
-import org.teavm.dependency.DependencyAgent;
-import org.teavm.dependency.DependencyNode;
-import org.teavm.dependency.MethodDependency;
 import org.teavm.model.CallLocation;
-import org.teavm.platform.Platform;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class PlatformDependencyListener extends AbstractDependencyListener {
-    private DependencyNode allClasses;
-
+public abstract class AbstractDependencyListener implements DependencyListener {
     @Override
     public void started(DependencyAgent agent) {
-        allClasses = agent.createNode();
     }
 
     @Override
     public void classReached(DependencyAgent agent, String className, CallLocation location) {
-        allClasses.propagate(agent.getType(className));
     }
 
     @Override
-    public void methodReached(final DependencyAgent agent, MethodDependency method, CallLocation location) {
-        if (!method.getReference().getClassName().equals(Platform.class.getName())) {
-            return;
-        }
-        switch (method.getReference().getName()) {
-            case "objectFromResource":
-                allClasses.connect(method.getResult());
-                break;
-        }
+    public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
+    }
+
+    @Override
+    public void fieldReached(DependencyAgent agent, FieldDependency field, CallLocation location) {
     }
 }

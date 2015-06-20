@@ -23,7 +23,7 @@ import org.teavm.platform.Platform;
  *
  * @author Alexey Andreev
  */
-public class ClassLookupDependencySupport implements DependencyListener {
+public class ClassLookupDependencySupport extends AbstractDependencyListener {
     private DependencyNode allClasses;
 
     @Override
@@ -32,12 +32,12 @@ public class ClassLookupDependencySupport implements DependencyListener {
     }
 
     @Override
-    public void classAchieved(DependencyAgent agent, String className, CallLocation location) {
+    public void classReached(DependencyAgent agent, String className, CallLocation location) {
         allClasses.propagate(agent.getType(className));
     }
 
     @Override
-    public void methodAchieved(final DependencyAgent agent, MethodDependency method, final CallLocation location) {
+    public void methodReached(final DependencyAgent agent, MethodDependency method, final CallLocation location) {
         MethodReference ref = method.getReference();
         if (ref.getClassName().equals(Platform.class.getName()) && ref.getName().equals("lookupClass")) {
             allClasses.addConsumer(new DependencyConsumer() {
@@ -53,9 +53,5 @@ public class ClassLookupDependencySupport implements DependencyListener {
                 }
             });
         }
-    }
-
-    @Override
-    public void fieldAchieved(DependencyAgent dependencyChecker, FieldDependency field, CallLocation location) {
     }
 }

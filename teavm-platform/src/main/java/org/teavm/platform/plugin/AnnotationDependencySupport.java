@@ -16,12 +16,11 @@
 package org.teavm.platform.plugin;
 
 import java.lang.annotation.Annotation;
+import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyConsumer;
-import org.teavm.dependency.DependencyListener;
 import org.teavm.dependency.DependencyNode;
 import org.teavm.dependency.DependencyType;
-import org.teavm.dependency.FieldDependency;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.model.CallLocation;
 import org.teavm.model.MethodReference;
@@ -32,7 +31,7 @@ import org.teavm.platform.Platform;
  *
  * @author Alexey Andreev
  */
-public class AnnotationDependencySupport implements DependencyListener {
+public class AnnotationDependencySupport extends AbstractDependencyListener {
     private DependencyNode allClasses;
 
     @Override
@@ -41,12 +40,12 @@ public class AnnotationDependencySupport implements DependencyListener {
     }
 
     @Override
-    public void classAchieved(DependencyAgent agent, String className, CallLocation location) {
+    public void classReached(DependencyAgent agent, String className, CallLocation location) {
         allClasses.propagate(agent.getType(className));
     }
 
     @Override
-    public void methodAchieved(final DependencyAgent agent, final MethodDependency method,
+    public void methodReached(final DependencyAgent agent, final MethodDependency method,
             final CallLocation location) {
         if (method.getReference().getClassName().equals(Platform.class.getName()) &&
                 method.getReference().getName().equals("getAnnotations")) {
@@ -60,9 +59,5 @@ public class AnnotationDependencySupport implements DependencyListener {
                 }
             });
         }
-    }
-
-    @Override
-    public void fieldAchieved(DependencyAgent agent, FieldDependency field, CallLocation location) {
     }
 }

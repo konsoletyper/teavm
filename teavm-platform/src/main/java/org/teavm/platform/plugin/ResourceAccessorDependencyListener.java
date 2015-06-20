@@ -15,9 +15,8 @@
  */
 package org.teavm.platform.plugin;
 
+import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
-import org.teavm.dependency.DependencyListener;
-import org.teavm.dependency.FieldDependency;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.model.CallLocation;
 
@@ -25,17 +24,9 @@ import org.teavm.model.CallLocation;
  *
  * @author Alexey Andreev
  */
-class ResourceAccessorDependencyListener implements DependencyListener {
+class ResourceAccessorDependencyListener extends AbstractDependencyListener {
     @Override
-    public void started(DependencyAgent agent) {
-    }
-
-    @Override
-    public void classAchieved(DependencyAgent agent, String className, CallLocation location) {
-    }
-
-    @Override
-    public void methodAchieved(DependencyAgent agent, MethodDependency method, CallLocation location) {
+    public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
         if (!method.getReference().getClassName().equals(ResourceAccessor.class.getName())) {
             return;
         }
@@ -44,9 +35,5 @@ class ResourceAccessorDependencyListener implements DependencyListener {
                 method.getResult().propagate(agent.getType("java.lang.String"));
                 break;
         }
-    }
-
-    @Override
-    public void fieldAchieved(DependencyAgent agent, FieldDependency field, CallLocation location) {
     }
 }

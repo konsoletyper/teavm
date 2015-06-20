@@ -15,14 +15,21 @@
  */
 package org.teavm.maven;
 
-import org.teavm.dependency.*;
-import org.teavm.model.*;
+import org.teavm.dependency.AbstractDependencyListener;
+import org.teavm.dependency.DependencyAgent;
+import org.teavm.dependency.DependencyNode;
+import org.teavm.dependency.MethodDependency;
+import org.teavm.model.CallLocation;
+import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
+import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 
 /**
  *
  * @author Alexey Andreev
  */
-class TestExceptionDependency implements DependencyListener {
+class TestExceptionDependency extends AbstractDependencyListener {
     private MethodReference getMessageRef = new MethodReference("java.lang.Throwable", "getMessage",
             ValueType.object("java.lang.String"));
     private DependencyNode allClasses;
@@ -33,7 +40,7 @@ class TestExceptionDependency implements DependencyListener {
     }
 
     @Override
-    public void classAchieved(DependencyAgent agent, String className, CallLocation location) {
+    public void classReached(DependencyAgent agent, String className, CallLocation location) {
         if (isException(agent.getClassSource(), className)) {
             allClasses.propagate(agent.getType(className));
         }
@@ -54,13 +61,9 @@ class TestExceptionDependency implements DependencyListener {
     }
 
     @Override
-    public void methodAchieved(DependencyAgent agent, MethodDependency method, CallLocation location) {
+    public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
         if (method.getReference().equals(getMessageRef)) {
             allClasses.connect(method.getVariable(0));
         }
-    }
-
-    @Override
-    public void fieldAchieved(DependencyAgent agent, FieldDependency field, CallLocation location) {
     }
 }

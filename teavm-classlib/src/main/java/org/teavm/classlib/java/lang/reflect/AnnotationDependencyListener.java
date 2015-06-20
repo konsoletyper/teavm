@@ -17,9 +17,8 @@ package org.teavm.classlib.java.lang.reflect;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
-import org.teavm.dependency.DependencyListener;
-import org.teavm.dependency.FieldDependency;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.model.AccessLevel;
 import org.teavm.model.AnnotationReader;
@@ -41,13 +40,9 @@ import org.teavm.model.emit.ValueEmitter;
  *
  * @author Alexey Andreev
  */
-public class AnnotationDependencyListener implements DependencyListener {
+public class AnnotationDependencyListener extends AbstractDependencyListener {
     @Override
-    public void started(final DependencyAgent agent) {
-    }
-
-    @Override
-    public void classAchieved(DependencyAgent agent, String className, CallLocation location) {
+    public void classReached(DependencyAgent agent, String className, CallLocation location) {
         ClassReader cls = agent.getClassSource().get(className);
         if (cls == null) {
             return;
@@ -132,7 +127,7 @@ public class AnnotationDependencyListener implements DependencyListener {
     }
 
     @Override
-    public void methodAchieved(DependencyAgent agent, MethodDependency method, CallLocation location) {
+    public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
         ValueType type = method.getMethod().getResultType();
         while (type instanceof ValueType.Array) {
             type = ((ValueType.Array)type).getItemType();
@@ -144,9 +139,5 @@ public class AnnotationDependencyListener implements DependencyListener {
                 agent.linkClass(className, location);
             }
         }
-    }
-
-    @Override
-    public void fieldAchieved(DependencyAgent agent, FieldDependency field, CallLocation location) {
     }
 }

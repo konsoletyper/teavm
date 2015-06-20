@@ -75,14 +75,14 @@ public class EntryPointGenerator extends AbstractRendererListener implements Dep
     }
 
     @Override
-    public void classAchieved(DependencyAgent agent, String className, CallLocation location) {
+    public void classReached(DependencyAgent agent, String className, CallLocation location) {
     }
 
     @Override
-    public void methodAchieved(DependencyAgent agent, MethodDependency method, CallLocation location) {
+    public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
     }
 
     @Override
-    public void fieldAchieved(DependencyAgent agent, FieldDependency field,  CallLocation location) {
+    public void fieldReached(DependencyAgent agent, FieldDependency field,  CallLocation location) {
     }
 }

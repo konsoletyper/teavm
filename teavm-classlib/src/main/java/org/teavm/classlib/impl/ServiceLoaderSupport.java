@@ -20,9 +20,20 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.teavm.codegen.SourceWriter;
-import org.teavm.dependency.*;
+import org.teavm.dependency.AbstractDependencyListener;
+import org.teavm.dependency.DependencyAgent;
+import org.teavm.dependency.DependencyConsumer;
+import org.teavm.dependency.DependencyNode;
+import org.teavm.dependency.DependencyType;
+import org.teavm.dependency.MethodDependency;
 import org.teavm.javascript.spi.Generator;
 import org.teavm.javascript.spi.GeneratorContext;
 import org.teavm.model.CallLocation;
@@ -34,7 +45,7 @@ import org.teavm.model.ValueType;
  *
  * @author Alexey Andreev
  */
-public class ServiceLoaderSupport implements Generator, DependencyListener {
+public class ServiceLoaderSupport extends AbstractDependencyListener implements Generator {
     private Set<String> achievedClasses = new HashSet<>();
     private Map<String, List<String>> serviceMap = new HashMap<>();
     private DependencyNode allClassesNode;
@@ -84,7 +95,7 @@ public class ServiceLoaderSupport implements Generator, DependencyListener {
     }
 
     @Override
-    public void classAchieved(DependencyAgent agent, String className, CallLocation location) {
+    public void classReached(DependencyAgent agent, String className, CallLocation location) {
         if (!achievedClasses.add(className)) {
             return;
         }
@@ -123,7 +134,7 @@ public class ServiceLoaderSupport implements Generator, DependencyListener {
     }
 
     @Override
-    public void methodAchieved(final DependencyAgent agent, MethodDependency method, final CallLocation location) {
+    public void methodReached(final DependencyAgent agent, MethodDependency method, final CallLocation location) {
         MethodReference ref = method.getReference();
         if (ref.getClassName().equals("java.util.ServiceLoader") && ref.getName().equals("loadServices")) {
             method.getResult().propagate(agent.getType("[java.lang.Object"));
@@ -139,9 +150,5 @@ public class ServiceLoaderSupport implements Generator, DependencyListener {
     private void initConstructor(DependencyAgent agent, String type, CallLocation location) {
         MethodReference ctor = new MethodReference(type, new MethodDescriptor("<init>", ValueType.VOID));
         agent.linkMethod(ctor, location).use();
-    }
-
-    @Override
-    public void fieldAchieved(DependencyAgent agent, FieldDependency field, CallLocation location) {
     }
 }

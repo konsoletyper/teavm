@@ -19,19 +19,26 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
-import org.teavm.dependency.DependencyListener;
-import org.teavm.dependency.FieldDependency;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSObject;
-import org.teavm.model.*;
+import org.teavm.model.AnnotationReader;
+import org.teavm.model.AnnotationValue;
+import org.teavm.model.CallLocation;
+import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
+import org.teavm.model.FieldReader;
+import org.teavm.model.FieldReference;
+import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodReader;
 
 /**
  *
  * @author Alexey Andreev
  */
-class JSODependencyListener implements DependencyListener {
+class JSODependencyListener extends AbstractDependencyListener {
     private Map<String, ExposedClass> exposedClasses = new HashMap<>();
     private ClassReaderSource classSource;
     private DependencyAgent agent;
@@ -44,7 +51,7 @@ class JSODependencyListener implements DependencyListener {
     }
 
     @Override
-    public void classAchieved(DependencyAgent agent, String className, CallLocation location) {
+    public void classReached(DependencyAgent agent, String className, CallLocation location) {
         getExposedClass(className);
     }
 
@@ -144,13 +151,5 @@ class JSODependencyListener implements DependencyListener {
             return true;
         }
         return addInterfaces(exposedCls, cls);
-    }
-
-    @Override
-    public void methodAchieved(DependencyAgent agent, MethodDependency methodDep, CallLocation location) {
-    }
-
-    @Override
-    public void fieldAchieved(DependencyAgent agent, FieldDependency field, CallLocation location) {
     }
 }

@@ -20,14 +20,27 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import net.java.html.js.JavaScriptBody;
-import org.teavm.dependency.*;
-import org.teavm.model.*;
+import org.teavm.dependency.AbstractDependencyListener;
+import org.teavm.dependency.DependencyAgent;
+import org.teavm.dependency.DependencyConsumer;
+import org.teavm.dependency.DependencyNode;
+import org.teavm.dependency.DependencyType;
+import org.teavm.dependency.MethodDependency;
+import org.teavm.model.AnnotationReader;
+import org.teavm.model.AnnotationValue;
+import org.teavm.model.CallLocation;
+import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ElementModifier;
+import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodReader;
+import org.teavm.model.MethodReference;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class JavaScriptBodyDependency implements DependencyListener {
+public class JavaScriptBodyDependency extends AbstractDependencyListener {
     private DependencyNode allClassesNode;
     private Map<MethodReference, Set<MethodReference>> achievedMethods = new HashMap<>();
 
@@ -48,7 +61,7 @@ public class JavaScriptBodyDependency implements DependencyListener {
     }
 
     @Override
-    public void classAchieved(DependencyAgent agent, String className, CallLocation location) {
+    public void classReached(DependencyAgent agent, String className, CallLocation location) {
         ClassReader cls = agent.getClassSource().get(className);
         if (cls != null && !cls.hasModifier(ElementModifier.ABSTRACT) &&
                 !cls.hasModifier(ElementModifier.INTERFACE)) {
@@ -57,7 +70,7 @@ public class JavaScriptBodyDependency implements DependencyListener {
     }
 
     @Override
-    public void methodAchieved(DependencyAgent agent, MethodDependency method, CallLocation location) {
+    public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
         Set<MethodReference> methodsToAchieve = achievedMethods.get(method.getReference());
         if (methodsToAchieve != null) {
             for (MethodReference methodToAchieve : methodsToAchieve) {
@@ -103,10 +116,6 @@ public class JavaScriptBodyDependency implements DependencyListener {
         agent.linkMethod(JavaScriptConvGenerator.valueOfDoubleMethod, location).use();
         agent.linkMethod(JavaScriptConvGenerator.charValueMethod, location).use();
         agent.linkMethod(JavaScriptConvGenerator.valueOfCharMethod, location).use();
-    }
-
-    @Override
-    public void fieldAchieved(DependencyAgent agent, FieldDependency fieldDep, CallLocation location) {
     }
 
     private static MethodReader findMethod(ClassReaderSource classSource, String clsName, MethodDescriptor desc) {
