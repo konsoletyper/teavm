@@ -34,6 +34,29 @@ public class ThreadTest {
     }
 
     @Test
+    public void sleepInterrupted() {
+        long start = System.currentTimeMillis();
+        final Thread mainThread = Thread.currentThread();
+        new Thread() {
+            @Override public void run() {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                }
+                mainThread.interrupt();
+            }
+        }.start();
+        try {
+            Thread.sleep(300);
+            fail("Exception expected");
+        } catch (InterruptedException e) {
+            assertEquals(Thread.currentThread(), mainThread);
+            assertFalse(mainThread.isInterrupted());
+            assertTrue(System.currentTimeMillis() - start < 150);
+        }
+    }
+
+    @Test
     public void catchesAsyncException() {
         try {
             throwException();

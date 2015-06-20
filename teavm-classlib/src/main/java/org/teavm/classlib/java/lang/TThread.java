@@ -37,8 +37,9 @@ public class TThread extends TObject implements TRunnable {
     private long timeSliceStart;
     private int yieldCount;
     private final Object finishedLock = new Object();
-    
-    
+    private boolean interruptedFlag;
+    private TThreadInterruptHandler interruptHandler;
+
     private TString name;
     TRunnable target;
 
@@ -104,20 +105,20 @@ public class TThread extends TObject implements TRunnable {
     public TString getName() {
         return name;
     }
-    
+
     public final void join(long millis, int nanos) throws InterruptedException {
         if (currentThread() == this) {
             return;
         }
-        synchronized(finishedLock) {
+        synchronized (finishedLock) {
             finishedLock.wait(millis, nanos);
         }
     }
-    
+
     public final void join(long millis) throws InterruptedException {
         join(millis, 0);
     }
-    
+
     public final void join() throws InterruptedException {
         join(0);
     }
@@ -146,14 +147,22 @@ public class TThread extends TObject implements TRunnable {
     }
 
     public void interrupt() {
+        interruptedFlag = true;
+        if (interruptHandler != null) {
+            interruptHandler.interrupted();
+            interruptHandler = null;
+        }
     }
 
     public static boolean interrupted() {
-        return false;
+        TThread thread = currentThread();
+        boolean result = thread.interruptedFlag;
+        thread.interruptedFlag = false;
+        return result;
     }
 
     public boolean isInterrupted() {
-        return false;
+        return interruptedFlag;
     }
 
     public static int activeCount() {
@@ -174,12 +183,42 @@ public class TThread extends TObject implements TRunnable {
     private static void sleep(long millis, final AsyncCallback<Void> callback) {
         final TThread current = currentThread();
         int intMillis = millis < Integer.MAX_VALUE ? (int)millis : Integer.MAX_VALUE;
-        Platform.schedule(new PlatformRunnable() {
-            @Override public void run() {
-                setCurrentThread(current);
+        SleepHandler handler = new SleepHandler(current, callback);
+        handler.scheduleId = Platform.schedule(handler, intMillis);
+        current.interruptHandler = handler;
+    }
+
+    private static class SleepHandler implements PlatformRunnable, TThreadInterruptHandler {
+        private TThread thread;
+        private AsyncCallback<Void> callback;
+        private boolean isInterrupted;
+        int scheduleId;
+
+        public SleepHandler(TThread thread, AsyncCallback<Void> callback) {
+            this.thread = thread;
+            this.callback = callback;
+        }
+
+        @Override
+        public void interrupted() {
+            thread.interruptedFlag = false;
+            isInterrupted = true;
+            Platform.killSchedule(scheduleId);
+            Platform.postpone(new PlatformRunnable() {
+                @Override public void run() {
+                    callback.error(new TInterruptedException());
+                }
+            });
+        }
+
+        @Override
+        public void run() {
+            if (!isInterrupted) {
+                thread.interruptHandler = null;
+                setCurrentThread(thread);
                 callback.complete(null);
             }
-        }, intMillis);
+        }
     }
 
     public final void setPriority(int newPriority){

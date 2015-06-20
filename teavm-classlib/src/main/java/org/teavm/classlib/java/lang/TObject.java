@@ -267,7 +267,8 @@ public class TObject {
         monitorExit(this, monitor.count);
     }
 
-    private static class NotifyListenerImpl implements NotifyListener, TimerHandler, PlatformRunnable {
+    private static class NotifyListenerImpl implements NotifyListener, TimerHandler, PlatformRunnable,
+            TThreadInterruptHandler {
         final TObject obj;
         final AsyncCallback<Void> callback;
         final TThread currentThread = TThread.currentThread();
@@ -308,6 +309,23 @@ public class TObject {
             }
             TThread.setCurrentThread(currentThread);
             monitorEnterWait(obj, lockCount, callback);
+        }
+
+        @Override
+        public void interrupted() {
+            if (performed) {
+                return;
+            }
+            performed = true;
+            if (timerId >= 0) {
+                Platform.killSchedule(timerId);
+                timerId = -1;
+            }
+            Platform.postpone(new PlatformRunnable() {
+                @Override public void run() {
+                    callback.error(new TInterruptedException());
+                }
+            });
         }
     }
 
