@@ -395,6 +395,9 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static int getType(int codePoint) {
+        if (isBmpCodePoint(codePoint) && isSurrogate((char)codePoint)) {
+            return SURROGATE;
+        }
         UnicodeHelper.Range[] classes = getClasses();
         int l = 0;
         int u = classes.length - 1;
