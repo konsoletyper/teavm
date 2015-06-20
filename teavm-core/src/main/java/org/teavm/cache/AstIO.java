@@ -751,7 +751,6 @@ public class AstIO {
                 stmt.setObjectRef(readExpr(input));
                 return stmt;
             }
-            // TODO: MonitorEnter/MonitorExit
             default:
                 throw new RuntimeException("Unexpected statement type: " + type);
         }

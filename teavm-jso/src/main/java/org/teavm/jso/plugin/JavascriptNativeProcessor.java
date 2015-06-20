@@ -15,13 +15,59 @@
  */
 package org.teavm.jso.plugin;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.javascript.spi.GeneratedBy;
 import org.teavm.javascript.spi.Sync;
-import org.teavm.jso.*;
-import org.teavm.model.*;
-import org.teavm.model.instructions.*;
+import org.teavm.jso.JS;
+import org.teavm.jso.JSArray;
+import org.teavm.jso.JSBody;
+import org.teavm.jso.JSBooleanArray;
+import org.teavm.jso.JSConstructor;
+import org.teavm.jso.JSDoubleArray;
+import org.teavm.jso.JSFunctor;
+import org.teavm.jso.JSIndexer;
+import org.teavm.jso.JSIntArray;
+import org.teavm.jso.JSMethod;
+import org.teavm.jso.JSObject;
+import org.teavm.jso.JSProperty;
+import org.teavm.jso.JSStringArray;
+import org.teavm.model.AccessLevel;
+import org.teavm.model.AnnotationHolder;
+import org.teavm.model.AnnotationReader;
+import org.teavm.model.AnnotationValue;
+import org.teavm.model.BasicBlock;
+import org.teavm.model.CallLocation;
+import org.teavm.model.ClassHolder;
+import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ElementModifier;
+import org.teavm.model.FieldHolder;
+import org.teavm.model.Incoming;
+import org.teavm.model.Instruction;
+import org.teavm.model.InstructionLocation;
+import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodHolder;
+import org.teavm.model.MethodReader;
+import org.teavm.model.MethodReference;
+import org.teavm.model.Phi;
+import org.teavm.model.Program;
+import org.teavm.model.TryCatchBlock;
+import org.teavm.model.ValueType;
+import org.teavm.model.Variable;
+import org.teavm.model.instructions.AssignInstruction;
+import org.teavm.model.instructions.CastInstruction;
+import org.teavm.model.instructions.ClassConstantInstruction;
+import org.teavm.model.instructions.ExitInstruction;
+import org.teavm.model.instructions.InvocationType;
+import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.util.InstructionVariableMapper;
 import org.teavm.model.util.ModelUtils;
 import org.teavm.model.util.ProgramUtils;
@@ -37,6 +83,7 @@ class JavascriptNativeProcessor {
     private NativeJavascriptClassRepository nativeRepos;
     private Diagnostics diagnostics;
     private int methodIndexGenerator;
+    private Map<MethodReference, MethodReader> overridenMethodCache = new HashMap<>();
 
     public JavascriptNativeProcessor(ClassReaderSource classSource) {
         this.classSource = classSource;
@@ -121,7 +168,6 @@ class JavascriptNativeProcessor {
     }
 
     public void processFinalMethods(ClassHolder cls) {
-        // TODO: don't allow final methods to override anything
         for (MethodHolder method : cls.getMethods().toArray(new MethodHolder[0])) {
             if (method.hasModifier(ElementModifier.STATIC)) {
                 continue;
@@ -166,6 +212,42 @@ class JavascriptNativeProcessor {
                 cls.addMethod(callerMethod);
             }
         }
+    }
+
+    private MethodReader getOverridenMethod(MethodReader finalMethod) {
+        MethodReference ref = finalMethod.getReference();
+        if (!overridenMethodCache.containsKey(ref)) {
+            overridenMethodCache.put(ref, findOverridenMethod(finalMethod.getOwnerName(), finalMethod));
+        }
+        return overridenMethodCache.get(ref);
+    }
+
+    private MethodReader findOverridenMethod(String className, MethodReader finalMethod) {
+        ClassReader cls = classSource.get(className);
+        if (cls == null) {
+            return null;
+        }
+
+        MethodReader method = cls.getMethod(finalMethod.getDescriptor());
+        if (method != null && !method.getOwnerName().equals(finalMethod.getOwnerName())) {
+            return method;
+        }
+
+        if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
+            method = findOverridenMethod(cls.getParent(), finalMethod);
+            if (method != null) {
+                return method;
+            }
+        }
+
+        for (String iface : cls.getInterfaces()) {
+            method = findOverridenMethod(iface, finalMethod);
+            if (method != null) {
+                return method;
+            }
+        }
+
+        return null;
     }
 
     public void addFunctorField(ClassHolder cls, MethodReference method) {
@@ -242,11 +324,21 @@ class JavascriptNativeProcessor {
                     continue;
                 }
                 replacement.clear();
+
                 MethodReader method = getMethod(invoke.getMethod());
                 if (method == null || method.hasModifier(ElementModifier.STATIC)) {
                     continue;
                 }
+
                 if (method.hasModifier(ElementModifier.FINAL)) {
+                    MethodReader overriden = getOverridenMethod(method);
+                    if (overriden != null) {
+                        CallLocation callLocation = new CallLocation(methodToProcess.getReference(),
+                                insn.getLocation());
+                        diagnostics.error(callLocation, "JS final method {{m0}} overrides {{M1}}. " +
+                                "Overriding final method of overlay types is prohibited.",
+                                method.getReference(), overriden.getReference());
+                    }
                     if (method.getProgram() != null && method.getProgram().basicBlockCount() > 0) {
                         invoke.setMethod(new MethodReference(method.getOwnerName(), method.getName() + "$static",
                                 getStaticSignature(method.getReference())));
@@ -256,6 +348,7 @@ class JavascriptNativeProcessor {
                     invoke.setType(InvocationType.SPECIAL);
                     continue;
                 }
+
                 CallLocation callLocation = new CallLocation(methodToProcess.getReference(), insn.getLocation());
                 if (method.getAnnotations().get(JSProperty.class.getName()) != null) {
                     if (isProperGetter(method.getDescriptor())) {
