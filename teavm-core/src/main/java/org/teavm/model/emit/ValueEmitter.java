@@ -83,7 +83,7 @@ public class ValueEmitter {
         insn.setReceiver(var);
         insn.setInstance(variable);
         pe.addInstruction(insn);
-        return pe.wrap(var);
+        return pe.var(var);
     }
 
     public void setField(FieldReference field, ValueType type, ValueEmitter value) {
@@ -102,7 +102,7 @@ public class ValueEmitter {
         insn.setSecondOperand(other.variable);
         insn.setReceiver(var);
         pe.addInstruction(insn);
-        return pe.wrap(var);
+        return pe.var(var);
     }
 
     public ValueEmitter add(NumericOperandType type, ValueEmitter other) {
@@ -134,7 +134,7 @@ public class ValueEmitter {
         NegateInstruction insn = new NegateInstruction(type);
         insn.setOperand(variable);
         insn.setReceiver(var);
-        return pe.wrap(var);
+        return pe.var(var);
     }
 
     public ValueEmitter ineg() {
@@ -155,7 +155,7 @@ public class ValueEmitter {
             insn.getArguments().add(arg.variable);
         }
         pe.addInstruction(insn);
-        return result != null ? pe.wrap(result) : null;
+        return result != null ? pe.var(result) : null;
     }
 
     public ValueEmitter invokeSpecial(MethodReference method, ValueEmitter... arguments) {
@@ -224,7 +224,7 @@ public class ValueEmitter {
         insn.setReceiver(result);
         insn.setTargetType(type);
         pe.addInstruction(insn);
-        return pe.wrap(result);
+        return pe.var(result);
     }
 
     public ValueEmitter cast(NumericOperandType from, NumericOperandType to) {
@@ -233,7 +233,7 @@ public class ValueEmitter {
         insn.setValue(variable);
         insn.setReceiver(result);
         pe.addInstruction(insn);
-        return pe.wrap(result);
+        return pe.var(result);
     }
 
     public ValueEmitter cast(IntegerSubtype subtype, CastIntegerDirection dir) {
@@ -242,7 +242,7 @@ public class ValueEmitter {
         insn.setValue(variable);
         insn.setReceiver(result);
         pe.addInstruction(insn);
-        return pe.wrap(result);
+        return pe.var(result);
     }
 
     public ValueEmitter toInteger(IntegerSubtype from) {
@@ -260,7 +260,7 @@ public class ValueEmitter {
         insn.setIndex(index.variable);
         insn.setReceiver(variable);
         pe.addInstruction(insn);
-        return pe.wrap(result);
+        return pe.var(result);
     }
 
     public ValueEmitter getElement(int index) {
@@ -285,7 +285,7 @@ public class ValueEmitter {
         insn.setArray(variable);
         insn.setReceiver(result);
         pe.addInstruction(insn);
-        return pe.wrap(result);
+        return pe.var(result);
     }
 
     public ValueEmitter arrayLength() {
@@ -294,7 +294,7 @@ public class ValueEmitter {
         insn.setArray(variable);
         insn.setReceiver(result);
         pe.addInstruction(insn);
-        return pe.wrap(result);
+        return pe.var(result);
     }
 
     public ValueEmitter instanceOf(ValueType type) {
@@ -304,7 +304,7 @@ public class ValueEmitter {
         insn.setReceiver(result);
         insn.setType(type);
         pe.addInstruction(insn);
-        return pe.wrap(result);
+        return pe.var(result);
     }
 
     public ValueEmitter cloneArray() {
@@ -313,6 +313,6 @@ public class ValueEmitter {
         insn.setArray(variable);
         insn.setReceiver(result);
         pe.addInstruction(insn);
-        return pe.wrap(result);
+        return pe.var(result);
     }
 }

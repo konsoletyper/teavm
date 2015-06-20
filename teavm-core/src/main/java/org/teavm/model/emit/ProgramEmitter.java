@@ -75,7 +75,7 @@ public final class ProgramEmitter {
         insn.setReceiver(var);
         insn.setConstant(value);
         addInstruction(insn);
-        return wrap(var);
+        return var(var);
     }
 
     public ValueEmitter constant(String value) {
@@ -84,7 +84,7 @@ public final class ProgramEmitter {
         insn.setReceiver(var);
         insn.setConstant(value);
         addInstruction(insn);
-        return wrap(var);
+        return var(var);
     }
 
     public ValueEmitter constant(int value) {
@@ -93,7 +93,7 @@ public final class ProgramEmitter {
         insn.setReceiver(var);
         insn.setConstant(value);
         addInstruction(insn);
-        return wrap(var);
+        return var(var);
     }
 
     public ValueEmitter constant(long value) {
@@ -102,7 +102,7 @@ public final class ProgramEmitter {
         insn.setReceiver(var);
         insn.setConstant(value);
         addInstruction(insn);
-        return wrap(var);
+        return var(var);
     }
 
     public ValueEmitter constant(float value) {
@@ -111,7 +111,7 @@ public final class ProgramEmitter {
         insn.setReceiver(var);
         insn.setConstant(value);
         addInstruction(insn);
-        return wrap(var);
+        return var(var);
     }
 
     public ValueEmitter constant(double value) {
@@ -120,7 +120,7 @@ public final class ProgramEmitter {
         insn.setReceiver(var);
         insn.setConstant(value);
         addInstruction(insn);
-        return wrap(var);
+        return var(var);
     }
 
     public ValueEmitter constantNull() {
@@ -128,7 +128,7 @@ public final class ProgramEmitter {
         NullConstantInstruction insn = new NullConstantInstruction();
         insn.setReceiver(var);
         addInstruction(insn);
-        return wrap(var);
+        return var(var);
     }
 
     public ValueEmitter getField(FieldReference field, ValueType type) {
@@ -138,7 +138,7 @@ public final class ProgramEmitter {
         insn.setFieldType(type);
         insn.setReceiver(var);
         addInstruction(insn);
-        return wrap(var);
+        return var(var);
     }
 
     public ProgramEmitter setField(FieldReference field, ValueType type, ValueEmitter value) {
@@ -163,7 +163,7 @@ public final class ProgramEmitter {
             insn.getArguments().add(arg.variable);
         }
         addInstruction(insn);
-        return result != null ? wrap(result) : null;
+        return result != null ? var(result) : null;
     }
 
     public ProgramEmitter invokeAndIgnore(MethodReference method, ValueEmitter... arguments) {
@@ -177,7 +177,7 @@ public final class ProgramEmitter {
         insn.setReceiver(var);
         insn.setType(method.getClassName());
         addInstruction(insn);
-        ValueEmitter instance = wrap(var);
+        ValueEmitter instance = var(var);
         instance.invokeSpecial(method, arguments);
         return instance;
     }
@@ -189,7 +189,7 @@ public final class ProgramEmitter {
         insn.setSize(size.getVariable());
         insn.setItemType(type);
         addInstruction(insn);
-        return wrap(var);
+        return var(var);
     }
 
     public ValueEmitter constructArray(ValueType type, int size) {
@@ -223,12 +223,12 @@ public final class ProgramEmitter {
         addInstruction(insn);
     }
 
-    public ValueEmitter wrap(Variable var) {
+    public ValueEmitter var(Variable var) {
         return new ValueEmitter(this, block, var);
     }
 
-    public ValueEmitter wrapNew() {
-        return wrap(program.createVariable());
+    public ValueEmitter newVar() {
+        return var(program.createVariable());
     }
 
     public InstructionLocation getCurrentLocation() {

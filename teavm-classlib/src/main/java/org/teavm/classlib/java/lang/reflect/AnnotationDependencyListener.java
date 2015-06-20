@@ -95,7 +95,7 @@ public class AnnotationDependencyListener implements DependencyListener {
 
             MethodHolder accessor = new MethodHolder(methodDecl.getDescriptor());
             ProgramEmitter pe = ProgramEmitter.create(accessor);
-            ValueEmitter thisVal = pe.wrapNew();
+            ValueEmitter thisVal = pe.newVar();
             ValueEmitter result = thisVal.getField(field.getReference(), field.getType());
             if (field.getType() instanceof ValueType.Array) {
                 result = result.cloneArray();
@@ -109,13 +109,13 @@ public class AnnotationDependencyListener implements DependencyListener {
 
         MethodHolder ctor = new MethodHolder("<init>", ctorSignature.toArray(new ValueType[ctorSignature.size()]));
         ProgramEmitter pe = ProgramEmitter.create(ctor);
-        ValueEmitter thisVal = pe.wrapNew();
+        ValueEmitter thisVal = pe.newVar();
         thisVal.invokeSpecial(new MethodReference(Object.class, "<init>", void.class));
         for (MethodReader methodDecl : annotation.getMethods()) {
             if (methodDecl.hasModifier(ElementModifier.STATIC)) {
                 continue;
             }
-            ValueEmitter param = pe.wrapNew();
+            ValueEmitter param = pe.newVar();
             FieldReference field = new FieldReference(implementorName, "$" + methodDecl.getName());
             thisVal.setField(field, methodDecl.getResultType(), param);
         }
@@ -124,7 +124,7 @@ public class AnnotationDependencyListener implements DependencyListener {
 
         MethodHolder annotTypeMethod = new MethodHolder("annotationType", ValueType.parse(Class.class));
         pe = ProgramEmitter.create(annotTypeMethod);
-        pe.wrapNew();
+        pe.newVar();
         pe.constant(ValueType.object(annotationType)).returnValue();
         implementor.addMethod(annotTypeMethod);
 
