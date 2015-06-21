@@ -131,6 +131,9 @@ public final class TMatcher implements TMatchResult {
                 }
 
                 if (nextBackSlashed) {
+                    if (index >= repl.length) {
+                        throw new IndexOutOfBoundsException();
+                    }
                     res.append(repl[index]);
                     nextBackSlashed = false;
                 } else {
@@ -158,8 +161,6 @@ public final class TMatcher implements TMatchResult {
                             replacementPos += group.length();
                             res.append(group);
 
-                        } catch (IndexOutOfBoundsException iob) {
-                            throw iob;
                         } catch (Exception e) {
                             throw new IllegalArgumentException("");
                         }
@@ -316,10 +317,6 @@ public final class TMatcher implements TMatchResult {
      */
     @Override
     public String group(int group) {
-        if (group < 0 || group > matchResult.groupCount()) {
-            throw new IndexOutOfBoundsException("Index " + group + " if out of range [0; " +
-                    matchResult.groupCount() + ")");
-        }
         return matchResult.group(group);
     }
 

@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import org.junit.Test;
 
-public class PatternTest  {
+public class PatternTest {
     String[] testPatterns = {
             "(a|b)*abb",
             "(1*2*3*4*)*567",

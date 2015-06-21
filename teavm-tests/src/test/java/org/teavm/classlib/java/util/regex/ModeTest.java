@@ -16,17 +16,17 @@
 
 package org.teavm.classlib.java.util.regex;
 
+import static org.junit.Assert.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import org.junit.Test;
-import junit.framework.TestCase;
 
 /**
  * Tests Pattern compilation modes and modes triggered in pattern strings
  */
 @SuppressWarnings("nls")
-public class ModeTest extends TestCase {
+public class ModeTest {
     @Test
     public void testCase() throws PatternSyntaxException {
         Pattern p;

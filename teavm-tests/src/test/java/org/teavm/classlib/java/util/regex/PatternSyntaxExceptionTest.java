@@ -16,17 +16,17 @@
 
 package org.teavm.classlib.java.util.regex;
 
+import static org.junit.Assert.*;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import org.junit.Test;
-import junit.framework.TestCase;
 
 
 /**
  * TODO Type description
  */
 @SuppressWarnings("nls")
-public class PatternSyntaxExceptionTest extends TestCase {
+public class PatternSyntaxExceptionTest {
     @Test
     public void testCase() {
         String regex = "(";

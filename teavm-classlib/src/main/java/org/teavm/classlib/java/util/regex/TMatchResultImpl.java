@@ -183,7 +183,7 @@ class TMatchResultImpl implements TMatchResult {
             throw new IllegalStateException();
         }
 
-        if (group < 0 || group > groupCount) {
+        if (group < 0 || group >= groupCount) {
             throw new IndexOutOfBoundsException(String.valueOf(group));
         }
     }
