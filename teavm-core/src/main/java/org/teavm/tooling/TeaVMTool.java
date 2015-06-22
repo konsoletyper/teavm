@@ -213,6 +213,38 @@ public class TeaVMTool {
         return vm != null ? vm.getClasses() : Collections.<String>emptyList();
     }
 
+    public Collection<String> getUsedResources() {
+        if (vm == null) {
+            return Collections.<String>emptyList();
+        }
+
+        Set<String> resources = new HashSet<>();
+        ClassReaderSource classSource = vm.getDependencyClassSource();
+        InstructionLocationReader reader = new InstructionLocationReader(resources);
+        for (MethodReference methodRef : vm.getMethods()) {
+            ClassReader cls = classSource.get(methodRef.getClassName());
+            if (cls == null) {
+                continue;
+            }
+
+            MethodReader method = cls.getMethod(methodRef.getDescriptor());
+            if (method == null) {
+                continue;
+            }
+
+            ProgramReader program = method.getProgram();
+            if (program == null) {
+                continue;
+            }
+
+            for (int i = 0; i < program.basicBlockCount(); ++i) {
+                program.basicBlockAt(i).readAllInstructions(reader);
+            }
+        }
+
+        return resources;
+    }
+
     public void addSourceFileProvider(SourceFileProvider sourceFileProvider) {
         sourceFileProviders.add(sourceFileProvider);
     }

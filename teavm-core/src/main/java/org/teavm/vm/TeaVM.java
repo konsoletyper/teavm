@@ -297,8 +297,21 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         return classSource;
     }
 
+    /**
+     * Gets a {@link ClassReaderSource} which is similar to that of {@link #getClassSource()},
+     * except that it also contains classes with applied transformations together with
+     * classes, generated via {@link DependencyChecker#submitClass(ClassHolder)}.
+     */
+    public ClassReaderSource getDependencyClassSource() {
+        return dependencyChecker.getClassSource();
+    }
+
     public Collection<String> getClasses() {
         return dependencyChecker.getAchievableClasses();
+    }
+
+    public Collection<MethodReference> getMethods() {
+        return dependencyChecker.getAchievableMethods();
     }
 
     public DependencyInfo getDependencyInfo() {
