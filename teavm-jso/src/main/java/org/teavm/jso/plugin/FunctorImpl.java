@@ -24,7 +24,7 @@ import java.lang.annotation.Target;
  *
  * @author Alexey Andreev
  */
-@Retention(RetentionPolicy.RUNTIME)
+@Retention(RetentionPolicy.CLASS)
 @Target(ElementType.TYPE)
 @interface FunctorImpl {
     String value();

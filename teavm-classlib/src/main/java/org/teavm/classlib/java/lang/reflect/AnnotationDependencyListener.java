@@ -139,5 +139,15 @@ public class AnnotationDependencyListener extends AbstractDependencyListener {
                 agent.linkClass(className, location);
             }
         }
+
+        if (method.getMethod().hasModifier(ElementModifier.STATIC) &&
+                method.getMethod().getName().equals("$$__readAnnotations__$$")) {
+            ClassReader cls = agent.getClassSource().get(method.getReference().getClassName());
+            if (cls != null) {
+                for (AnnotationReader annotation : cls.getAnnotations().all()) {
+                    agent.linkClass(annotation.getType(), location);
+                }
+            }
+        }
     }
 }
