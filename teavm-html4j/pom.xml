@@ -101,6 +101,9 @@
               <debugInformationGenerated>true</debugInformationGenerated>
               <sourceMapsGenerated>true</sourceMapsGenerated>
               <sourceFilesCopied>true</sourceFilesCopied>
+              <excludeWildcards>
+                <wildcard>**.GC*Test</wildcard>
+              </excludeWildcards>
             </configuration>
           </execution>
         </executions>

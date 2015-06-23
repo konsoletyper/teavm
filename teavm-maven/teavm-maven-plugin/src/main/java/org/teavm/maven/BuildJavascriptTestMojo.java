@@ -84,6 +84,9 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
     private String[] wildcards = { "**.*Test", "**.*UnitTest" };
 
     @Parameter
+    private String[] excludeWildcards = new String[0];
+
+    @Parameter
     private boolean minifying = true;
 
     @Parameter
@@ -148,6 +151,10 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
 
     public void setWildcards(String[] wildcards) {
         this.wildcards = wildcards;
+    }
+
+    public void setExcludeWildcards(String[] excludeWildcards) {
+        this.excludeWildcards = excludeWildcards;
     }
 
     public String[] getTransformers() {
@@ -359,6 +366,13 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
         if (!matches) {
             return;
         }
+
+        for (String wildcard : excludeWildcards) {
+            if (FilenameUtils.wildcardMatch(simpleName, wildcard.replace('.', '/'))) {
+                return;
+            }
+        }
+
         try {
             Class<?> candidate = Class.forName(className, true, classLoader);
             if (tool.getAdapter().acceptClass(candidate)) {
