@@ -108,14 +108,26 @@ public class JavaScriptBodyDependency extends AbstractDependencyListener {
     private void includeDefaultDependencies(DependencyAgent agent, CallLocation location) {
         agent.linkMethod(JavaScriptConvGenerator.fromJsMethod, location).use();
         agent.linkMethod(JavaScriptConvGenerator.toJsMethod, location).use();
-        agent.linkMethod(JavaScriptConvGenerator.intValueMethod, location).use();
+
+        agent.linkMethod(JavaScriptConvGenerator.intValueMethod, location).propagate(0, Integer.class).use();
         agent.linkMethod(JavaScriptConvGenerator.valueOfIntMethod, location).use();
-        agent.linkMethod(JavaScriptConvGenerator.booleanValueMethod, location).use();
+
+        agent.linkMethod(JavaScriptConvGenerator.booleanValueMethod, location).propagate(0, Boolean.class).use();
         agent.linkMethod(JavaScriptConvGenerator.valueOfBooleanMethod, location).use();
-        agent.linkMethod(JavaScriptConvGenerator.doubleValueMethod, location).use();
+
+        agent.linkMethod(JavaScriptConvGenerator.doubleValueMethod, location).propagate(0, Double.class).use();
         agent.linkMethod(JavaScriptConvGenerator.valueOfDoubleMethod, location).use();
-        agent.linkMethod(JavaScriptConvGenerator.charValueMethod, location).use();
+
+        agent.linkMethod(JavaScriptConvGenerator.charValueMethod, location).propagate(0, Character.class).use();
         agent.linkMethod(JavaScriptConvGenerator.valueOfCharMethod, location).use();
+
+        agent.linkMethod(JavaScriptConvGenerator.byteValueMethod, location).propagate(0, Byte.class).use();
+        agent.linkMethod(JavaScriptConvGenerator.valueOfByteMethod, location).use();
+
+        agent.linkMethod(JavaScriptConvGenerator.shortValueMethod, location).propagate(0, Short.class).use();
+        agent.linkMethod(JavaScriptConvGenerator.valueOfShortMethod, location).use();
+
+        agent.linkMethod(JavaScriptConvGenerator.valueOfLongMethod, location).use();
     }
 
     private static MethodReader findMethod(ClassReaderSource classSource, String clsName, MethodDescriptor desc) {

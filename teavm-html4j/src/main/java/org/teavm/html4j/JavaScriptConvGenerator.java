@@ -28,10 +28,18 @@ import org.teavm.model.*;
 public class JavaScriptConvGenerator implements Generator {
     static final MethodReference intValueMethod = new MethodReference(Integer.class, "intValue", int.class);
     static final MethodReference booleanValueMethod = new MethodReference(Boolean.class, "booleanValue", boolean.class);
+    static final MethodReference byteValueMethod = new MethodReference(Byte.class, "byteValue", byte.class);
+    static final MethodReference shortValueMethod = new MethodReference(Byte.class, "shortValue", short.class);
     static final MethodReference doubleValueMethod = new MethodReference(Double.class, "doubleValue", double.class);
     static final MethodReference charValueMethod = new MethodReference(Character.class, "charValue", char.class);
+    static final MethodReference valueOfByteMethod = new MethodReference(Byte.class, "valueOf",
+            byte.class, Byte.class);
+    static final MethodReference valueOfShortMethod = new MethodReference(Short.class, "valueOf",
+            short.class, Short.class);
     static final MethodReference valueOfIntMethod = new MethodReference(Integer.class, "valueOf",
             int.class, Integer.class);
+    static final MethodReference valueOfLongMethod = new MethodReference(Long.class, "valueOf",
+            long.class, Long.class);
     static final MethodReference valueOfBooleanMethod = new MethodReference(Boolean.class, "valueOf",
             boolean.class, Boolean.class);
     static final MethodReference valueOfDoubleMethod = new MethodReference(Double.class, "valueOf",
@@ -59,8 +67,10 @@ public class JavaScriptConvGenerator implements Generator {
         String obj = context.getParameterName(1);
         writer.append("if (" + obj + " === null || " + obj + " === undefined) {").softNewLine().indent();
         writer.append("return " + obj + ";").softNewLine();
+
         writer.outdent().append("} else if (typeof " + obj + " === 'number') {").indent().softNewLine();
         writer.append("return " + obj + ";").softNewLine();
+
         writer.outdent().append("} else if (" + obj + ".constructor.$meta && " + obj + ".constructor.$meta.item) {")
                 .indent().softNewLine();
         writer.append("var arr = new Array(" + obj + ".data.length);").softNewLine();
@@ -68,23 +78,38 @@ public class JavaScriptConvGenerator implements Generator {
         writer.append("arr[i] = ").appendMethodBody(toJsMethod).append("(" + obj + ".data[i]);").softNewLine();
         writer.outdent().append("}").softNewLine();
         writer.append("return arr;").softNewLine();
+
         writer.outdent().append("} else if (" + obj + ".constructor === ").appendClass("java.lang.String")
                 .append(") {").indent().softNewLine();
         generateStringToJavaScript(context, writer);
+
+        writer.outdent().append("} else if (" + obj + ".constructor === ").appendClass("java.lang.Byte")
+                .append(") {").indent().softNewLine();
+        writer.append("return ").appendMethodBody(byteValueMethod).append("(" + obj + ")|0;").softNewLine();
+
+        writer.outdent().append("} else if (" + obj + ".constructor === ").appendClass("java.lang.Short")
+                .append(") {").indent().softNewLine();
+        writer.append("return ").appendMethodBody(shortValueMethod).append("(" + obj + ")|0;").softNewLine();
+
         writer.outdent().append("} else if (" + obj + ".constructor === ").appendClass("java.lang.Integer")
                 .append(") {").indent().softNewLine();
         writer.append("return ").appendMethodBody(intValueMethod).append("(" + obj + ")|0;").softNewLine();
+
         writer.outdent().append("} else if (" + obj + ".constructor === ").appendClass("java.lang.Boolean")
                 .append(") {").indent().softNewLine();
         writer.append("return ").appendMethodBody(booleanValueMethod).append("(" + obj + ")!==0;").softNewLine();
+
         writer.outdent().append("} else if (" + obj + ".constructor === ").appendClass("java.lang.Double")
                 .append(") {").indent().softNewLine();
         writer.append("return ").appendMethodBody(doubleValueMethod).append("(" + obj + ");").softNewLine();
+
         writer.outdent().append("} else if (" + obj + ".constructor === ").appendClass("java.lang.Character")
                 .append(") {").indent().softNewLine();
         writer.append("return ").appendMethodBody(charValueMethod).append("(" + obj + ");").softNewLine();
+
         writer.outdent().append("} else {").indent().softNewLine();
         writer.append("return " + obj + ";").softNewLine();
+
         writer.outdent().append("}").softNewLine();
     }
 
@@ -101,30 +126,54 @@ public class JavaScriptConvGenerator implements Generator {
                 type + ".$meta.item);").softNewLine();
         writer.outdent().append("}").softNewLine();
         writer.append("return arr;").softNewLine();
+
         writer.outdent().append("} else if (" + type + " === ").appendClass("java.lang.String")
                 .append(") {").indent().softNewLine();
         writer.append("return $rt_str(" + obj + ");").softNewLine();
-        writer.outdent().append("} else if (" + type + " === ").appendClass("java.lang.Integer")
-                .append(") {").indent().softNewLine();
-        writer.append("return ").appendMethodBody(valueOfIntMethod).append("(" + obj + ");").softNewLine();
-        writer.outdent().append("} else if (" + type + " === ").appendClass("java.lang.Double")
-                .append(") {").indent().softNewLine();
-        writer.append("return ").appendMethodBody(valueOfDoubleMethod).append("(" + obj + ");").softNewLine();
-        writer.outdent().append("} else if (" + type + " === $rt_intcls() || " + type + " === $rt_bytecls() || " +
-                type + " === $rt_shortcls()) {").indent().softNewLine();
-        writer.append("return " + obj + "|0;").softNewLine();
-        writer.outdent().append("} else if (" + type + " === $rt_doublecls() || " + type + " == $rt_floatcls()) {")
-                .indent().softNewLine();
-        writer.append("return " + obj + ";").softNewLine();
+
         writer.outdent().append("} else if (" + type + " === ").appendClass("java.lang.Boolean")
                 .append(") {").indent().softNewLine();
         writer.append("return ").appendMethodBody(valueOfBooleanMethod).append("(" + obj + "?1:0);").softNewLine();
+
         writer.outdent().append("} else if (" + type + " === ").appendClass("java.lang.Character")
                 .append(") {").indent().softNewLine();
         writer.append("return ").appendMethodBody(valueOfCharMethod).append("(typeof " + obj + " === 'number' ? " +
                 obj + "0xFFFF : " + obj + ".charCodeAt(0));").softNewLine();
+
+        writer.outdent().append("} else if (" + type + " === ").appendClass("java.lang.Byte")
+                .append(") {").indent().softNewLine();
+        writer.append("return ").appendMethodBody(valueOfByteMethod).append("(" + obj + "|0);").softNewLine();
+
+        writer.outdent().append("} else if (" + type + " === ").appendClass("java.lang.Short")
+                .append(") {").indent().softNewLine();
+        writer.append("return ").appendMethodBody(valueOfShortMethod).append("(" + obj + "|0);").softNewLine();
+
+        writer.outdent().append("} else if (" + type + " === ").appendClass("java.lang.Integer")
+                .append(") {").indent().softNewLine();
+        writer.append("return ").appendMethodBody(valueOfIntMethod).append("(" + obj + "|0);").softNewLine();
+
+        writer.outdent().append("} else if (" + type + " === ").appendClass("java.lang.Long")
+                .append(") {").indent().softNewLine();
+        writer.append("return ").appendMethodBody(valueOfLongMethod).append("(Long_fromInt(" + obj + "|0));")
+                .softNewLine();
+
+        writer.outdent().append("} else if (" + type + " === ").appendClass("java.lang.Double")
+                .append(") {").indent().softNewLine();
+        writer.append("return ").appendMethodBody(valueOfDoubleMethod).append("(" + obj + ");").softNewLine();
+
+        writer.outdent().append("} else if (" + type + " === $rt_intcls() || " + type + " === $rt_bytecls() || " +
+                type + " === $rt_shortcls() ||" + type + " == $rt_charcls()) {").indent().softNewLine();
+        writer.append("return " + obj + "|0;").softNewLine();
+
+        writer.outdent().append("} else if (" + type + " === $rt_longcls()) {").indent().softNewLine();
+        writer.append("return Long_fromInt(" + obj + "|0);").softNewLine();
+
+        writer.outdent().append("} else if (" + type + " === $rt_doublecls() || " + type + " == $rt_floatcls()) {")
+                .indent().softNewLine();
+        writer.append("return " + obj + ";").softNewLine();
         writer.outdent().append("} else if (" + type + " === $rt_booleancls()) {").indent().softNewLine();
         writer.append("return " + obj + "?1:0;").softNewLine();
+
         writer.outdent().append("} else if (" + obj + " instanceof Array) {").indent().softNewLine();
         writer.append("var arr = $rt_createArray($rt_objcls(), " + obj + ".length);").softNewLine();
         writer.append("for (var i = 0; i < arr.data.length; ++i) {").indent().softNewLine();
@@ -132,14 +181,17 @@ public class JavaScriptConvGenerator implements Generator {
                 .softNewLine();
         writer.outdent().append("}").softNewLine();
         writer.append("return arr;").softNewLine();
+
         writer.outdent().append("} else if (typeof " + obj + " === 'string') {").indent().softNewLine();
         writer.append("return $rt_str(" + obj + ");").softNewLine();
+
         writer.outdent().append("} else if (typeof " + obj + " === 'number') {").indent().softNewLine();
         writer.append("if (" + obj + "|0 === " + obj + ") {").indent().softNewLine();
         writer.append("return ").appendMethodBody(valueOfIntMethod).append("(" + obj + ");").softNewLine();
         writer.outdent().append("} else {").indent().softNewLine();
         writer.append("return ").appendMethodBody(valueOfDoubleMethod).append("(" + obj + ");").softNewLine();
         writer.outdent().append("}").softNewLine();
+
         writer.outdent().append("} else if (typeof " + obj + " === 'boolean') {").indent().softNewLine();
         writer.append("return ").appendMethodBody(valueOfBooleanMethod).append("(" + obj + "?1:0);").softNewLine();
         writer.outdent().append("} else {").indent().softNewLine();

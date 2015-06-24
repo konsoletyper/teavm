@@ -103,6 +103,19 @@ public class MethodDependency implements MethodDependencyInfo {
         return used;
     }
 
+    public MethodDependency propagate(int parameterIndex, Class<?> type) {
+        return propagate(parameterIndex, dependencyChecker.getType(type.getName()));
+    }
+
+    public MethodDependency propagate(int parameterIndex, String type) {
+        return propagate(parameterIndex, dependencyChecker.getType(type));
+    }
+
+    public MethodDependency propagate(int parameterIndex, DependencyType type) {
+        getVariable(parameterIndex).propagate(type);
+        return this;
+    }
+
     public void use() {
         if (!used) {
             used = true;
