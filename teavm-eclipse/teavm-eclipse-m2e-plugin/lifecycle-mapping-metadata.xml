@@ -5,7 +5,7 @@
        <pluginExecutionFilter>
          <groupId>org.teavm</groupId>
          <artifactId>teavm-maven-plugin</artifactId>
-         <versionRange>0.3.0-SNAPSHOT</versionRange>
+         <versionRange>[0.3.0,0.4.0)</versionRange>
           <goals>
             <goal>build-javascript</goal>
           </goals>
