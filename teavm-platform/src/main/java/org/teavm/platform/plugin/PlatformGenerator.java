@@ -209,13 +209,12 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
     private void generateAnnotations(GeneratorContext context, SourceWriter writer) throws IOException {
         writer.append("var c").ws().append("=").ws().append("'$$annotations$$';").softNewLine();
         for (String clsName : context.getClassSource().getClassNames()) {
-            ClassReader cls = context.getClassSource().get(clsName);
-            MethodReader method = cls.getMethod(new MethodDescriptor("$$__readAnnotations__$$",
-                    ValueType.parse(Annotation[].class)));
-            if (method != null) {
+            ClassReader annotCls = context.getClassSource().get(clsName + "$$__annotations__$$");
+            if (annotCls != null) {
                 writer.appendClass(clsName).append("[c]").ws().append("=").ws();
-                writer.appendMethodBody(method.getReference());
-                writer.append(";").softNewLine();
+                MethodReference ctor = new MethodReference(annotCls.getName(), "<init>", ValueType.VOID);
+                writer.append(writer.getNaming().getNameForInit(ctor));
+                writer.append("();").softNewLine();
             }
         }
 
@@ -225,7 +224,7 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
         writer.append("if").ws().append("(!cls.hasOwnProperty(c))").ws().append("{").indent().softNewLine();
         writer.append("return null;").softNewLine();
         writer.outdent().append("}").softNewLine();
-        writer.append("return cls[c]();").softNewLine();
+        writer.append("return cls[c].").appendMethod("getAnnotations", Annotation[].class).append("();").softNewLine();
         writer.outdent().append("};").softNewLine();
 
         writer.append("return ").append(selfName).append("(").append(context.getParameterName(1))
