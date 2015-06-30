@@ -258,7 +258,7 @@ public class ValueEmitter {
         GetElementInstruction insn = new GetElementInstruction();
         insn.setArray(variable);
         insn.setIndex(index.variable);
-        insn.setReceiver(variable);
+        insn.setReceiver(result);
         pe.addInstruction(insn);
         return pe.var(result);
     }
