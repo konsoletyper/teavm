@@ -166,7 +166,7 @@ public class ValueEmitter {
         return invoke(InvocationType.VIRTUAL, method, arguments);
     }
 
-    public ValueEmitter join(ValueEmitter other) {
+    public ValueEmitter join(BasicBlock block, ValueEmitter other, BasicBlock otherBlock) {
         Variable var = pe.getProgram().createVariable();
         Phi phi = new Phi();
         phi.setReceiver(var);
@@ -175,7 +175,7 @@ public class ValueEmitter {
         incoming.setValue(variable);
         phi.getIncomings().add(incoming);
         incoming = new Incoming();
-        incoming.setSource(other.block);
+        incoming.setSource(otherBlock);
         incoming.setValue(other.variable);
         phi.getIncomings().add(incoming);
         pe.getBlock().getPhis().add(phi);
