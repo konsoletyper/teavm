@@ -17,7 +17,6 @@ package org.teavm.classlib.impl;
 
 import java.util.ServiceLoader;
 import org.teavm.classlib.impl.unicode.CLDRReader;
-import org.teavm.classlib.java.lang.reflect.AnnotationClassTransformer;
 import org.teavm.classlib.java.lang.reflect.AnnotationDependencyListener;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.PlatformClass;
@@ -42,6 +41,5 @@ public class JCLPlugin implements TeaVMPlugin {
         host.registerService(CLDRReader.class, new CLDRReader(host.getProperties(), host.getClassLoader()));
 
         host.add(new AnnotationDependencyListener());
-        host.add(new AnnotationClassTransformer());
     }
 }

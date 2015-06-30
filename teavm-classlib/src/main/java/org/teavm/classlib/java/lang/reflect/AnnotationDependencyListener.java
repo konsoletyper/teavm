@@ -15,6 +15,8 @@
  */
 package org.teavm.classlib.java.lang.reflect;
 
+import java.lang.annotation.Annotation;
+import java.lang.annotation.Retention;
 import java.util.ArrayList;
 import java.util.List;
 import org.teavm.dependency.AbstractDependencyListener;
@@ -22,6 +24,7 @@ import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.model.AccessLevel;
 import org.teavm.model.AnnotationReader;
+import org.teavm.model.AnnotationValue;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassReader;
@@ -35,6 +38,8 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.model.emit.ProgramEmitter;
 import org.teavm.model.emit.ValueEmitter;
+import org.teavm.model.instructions.ArrayElementType;
+import org.teavm.platform.PlatformAnnotationProvider;
 
 /**
  *
@@ -48,12 +53,11 @@ public class AnnotationDependencyListener extends AbstractDependencyListener {
             return;
         }
 
-        if (cls.hasModifier(ElementModifier.ANNOTATION)) {
-            getAnnotationImplementor(agent, className);
-        }
         for (AnnotationReader annotation : cls.getAnnotations().all()) {
             agent.linkClass(annotation.getType(), location);
         }
+
+        createAnnotationClass(agent, className);
     }
 
     private String getAnnotationImplementor(DependencyAgent agent, String annotationType) {
@@ -148,6 +152,130 @@ public class AnnotationDependencyListener extends AbstractDependencyListener {
                     agent.linkClass(annotation.getType(), location);
                 }
             }
+        }
+    }
+
+    private void createAnnotationClass(DependencyAgent agent, String className) {
+        String readerClassName = className + "$$__annotations__$$";
+        if (agent.getClassSource().get(readerClassName) != null) {
+            return;
+        }
+
+        ClassHolder cls = new ClassHolder(className + "$$__annotations__$$");
+        cls.setLevel(AccessLevel.PUBLIC);
+        cls.setOwnerName("java.lang.Object");
+        cls.getInterfaces().add(PlatformAnnotationProvider.class.getName());
+
+        MethodHolder ctor = new MethodHolder("<init>", ValueType.VOID);
+        ctor.setLevel(AccessLevel.PUBLIC);
+        ProgramEmitter pe = ProgramEmitter.create(ctor);
+        ValueEmitter thisVar = pe.newVar();
+
+        thisVar.invokeSpecial(new MethodReference(Object.class, "<init>", void.class));
+        pe.exit();
+
+        ClassReader annotatedClass = agent.getClassSource().get(className);
+        cls.addMethod(ctor);
+        cls.addMethod(addReader(agent, annotatedClass));
+
+        agent.submitClass(cls);
+    }
+
+    private MethodHolder addReader(DependencyAgent agent, ClassReader cls) {
+        MethodHolder readerMethod = new MethodHolder("getAnnotations", ValueType.parse(Annotation[].class));
+        readerMethod.setLevel(AccessLevel.PUBLIC);
+        ProgramEmitter pe = ProgramEmitter.create(readerMethod);
+
+        List<AnnotationReader> annotations = new ArrayList<>();
+        for (AnnotationReader annot : cls.getAnnotations().all()) {
+            ClassReader annotType = agent.getClassSource().get(annot.getType());
+            if (annotType == null) {
+                continue;
+            }
+
+            AnnotationReader retention = annotType.getAnnotations().get(Retention.class.getName());
+            if (retention != null) {
+                String retentionPolicy = retention.getValue("value").getEnumValue().getFieldName();
+                if (retentionPolicy.equals("RUNTIME")) {
+                    annotations.add(annot);
+                }
+            }
+        }
+
+        ValueEmitter array = pe.constructArray(Annotation.class, annotations.size());
+        for (int i = 0; i < annotations.size(); ++i) {
+            array.unwrapArray(ArrayElementType.OBJECT).setElement(i,
+                    generateAnnotationInstance(agent, pe, annotations.get(i)));
+        }
+
+        array.returnValue();
+
+        return readerMethod;
+    }
+
+    private ValueEmitter generateAnnotationInstance(DependencyAgent agent, ProgramEmitter pe,
+            AnnotationReader annotation) {
+        ClassReader annotationClass = agent.getClassSource().get(annotation.getType());
+        if (annotationClass == null) {
+            return pe.constantNull();
+        }
+
+        String className = getAnnotationImplementor(agent, annotation.getType());
+        List<ValueType> ctorSignature = new ArrayList<>();
+        List<ValueEmitter> params = new ArrayList<>();
+        for (MethodReader methodDecl : annotationClass.getMethods()) {
+            ctorSignature.add(methodDecl.getResultType());
+            AnnotationValue value = annotation.getValue(methodDecl.getName());
+            if (value == null) {
+                value = methodDecl.getAnnotationDefault();
+            }
+            params.add(generateAnnotationValue(agent, pe, methodDecl.getResultType(), value));
+        }
+        ctorSignature.add(ValueType.VOID);
+
+        MethodReference ctor = new MethodReference(className, "<init>", ctorSignature.toArray(
+                new ValueType[ctorSignature.size()]));
+        return pe.construct(ctor, params.toArray(new ValueEmitter[params.size()]));
+    }
+
+    private ValueEmitter generateAnnotationValue(DependencyAgent agent, ProgramEmitter pe, ValueType type,
+            AnnotationValue value) {
+        switch (value.getType()) {
+            case AnnotationValue.BOOLEAN:
+                return pe.constant(value.getBoolean() ? 1 : 0);
+            case AnnotationValue.BYTE:
+                return pe.constant(value.getByte());
+            case AnnotationValue.SHORT:
+                return pe.constant(value.getShort());
+            case AnnotationValue.INT:
+                return pe.constant(value.getInt());
+            case AnnotationValue.LONG:
+                return pe.constant(value.getLong());
+            case AnnotationValue.FLOAT:
+                return pe.constant(value.getFloat());
+            case AnnotationValue.DOUBLE:
+                return pe.constant(value.getDouble());
+            case AnnotationValue.STRING:
+                return pe.constant(value.getString());
+            case AnnotationValue.LIST: {
+                List<AnnotationValue> list = value.getList();
+                ValueType itemType = ((ValueType.Array)type).getItemType();
+                ValueEmitter array = pe.constructArray(itemType, list.size());
+                for (int i = 0; i < list.size(); ++i) {
+                    array.unwrapArray(ArrayElementType.OBJECT).setElement(i,
+                            generateAnnotationValue(agent, pe, itemType, list.get(i)));
+                }
+                return array;
+            }
+            case AnnotationValue.ENUM:
+                pe.initClass(value.getEnumValue().getClassName());
+                return pe.getField(value.getEnumValue(), type);
+            case AnnotationValue.CLASS:
+                return pe.constant(value.getJavaClass());
+            case AnnotationValue.ANNOTATION:
+                return generateAnnotationInstance(agent, pe, value.getAnnotation());
+            default:
+                throw new IllegalArgumentException("Unknown annotation value type: " + value.getType());
         }
     }
 }

@@ -26,6 +26,7 @@ import org.teavm.model.CallLocation;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.platform.Platform;
+import org.teavm.platform.PlatformAnnotationProvider;
 
 /**
  *
@@ -50,10 +51,19 @@ public class AnnotationDependencySupport extends AbstractDependencyListener {
         if (method.getReference().getClassName().equals(Platform.class.getName()) &&
                 method.getReference().getName().equals("getAnnotations")) {
             method.getResult().propagate(agent.getType("[" + Annotation.class.getName()));
+            agent.linkMethod(new MethodReference(PlatformAnnotationProvider.class, "getAnnotations",
+                    Annotation[].class), location);
             allClasses.addConsumer(new DependencyConsumer() {
                 @Override public void consume(DependencyType type) {
-                    MethodDependency readMethod = agent.linkMethod(new MethodReference(type.getName(),
-                            "$$__readAnnotations__$$", ValueType.parse(Annotation[].class)), location);
+                    if (type.getName().endsWith("$$__annotations__$$")) {
+                        return;
+                    }
+                    String className = type.getName() + "$$__annotations__$$";
+                    agent.linkMethod(new MethodReference(className, "<init>", ValueType.VOID), location)
+                            .propagate(0, className)
+                            .use();
+                    MethodDependency readMethod = agent.linkMethod(new MethodReference(className,
+                            "getAnnotations", ValueType.parse(Annotation[].class)), location);
                     readMethod.getResult().getArrayItem().connect(method.getResult().getArrayItem());
                     readMethod.use();
                 }
