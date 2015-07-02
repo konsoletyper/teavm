@@ -251,6 +251,10 @@ class JavascriptNativeProcessor {
     }
 
     public void addFunctorField(ClassHolder cls, MethodReference method) {
+        if (cls.getAnnotations().get(FunctorImpl.class.getName()) != null) {
+            return;
+        }
+
         FieldHolder field = new FieldHolder("$$jso_functor$$");
         field.setLevel(AccessLevel.PUBLIC);
         field.setType(ValueType.parse(JSObject.class));
