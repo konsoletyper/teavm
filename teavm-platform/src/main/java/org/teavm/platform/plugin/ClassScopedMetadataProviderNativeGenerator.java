@@ -90,7 +90,7 @@ public class ClassScopedMetadataProviderNativeGenerator implements Generator {
                 .softNewLine().indent();
         writer.append("return cls.hasOwnProperty(p)").ws().append("?").ws().append("cls[p]").ws().append(":")
                 .ws().append("null;").softNewLine();
-        writer.outdent().append("}").softNewLine();
+        writer.outdent().append("};").softNewLine();
         writer.append("return ").appendMethodBody(methodRef).append("(").append(context.getParameterName(1))
                 .append(");").softNewLine();
     }
