@@ -86,7 +86,7 @@ public class TLogger {
                 index = next;
                 continue;
             }
-            int paramIndex = TInteger.parseInt(message.substring(index, next - 1));
+            int paramIndex = TInteger.parseInt(message.substring(paramStart, next));
             if (paramIndex >= params.length) {
                 sb.append(message.substring(index, next));
                 index = next;
