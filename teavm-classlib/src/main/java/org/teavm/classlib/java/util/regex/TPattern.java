@@ -131,8 +131,6 @@ public final class TPattern implements Serializable {
      */
     private int flags = 0;
 
-    private String pattern = null;
-
     /*
      * All backreferences that may be used in pattern.
      */
@@ -320,7 +318,6 @@ public final class TPattern implements Serializable {
     private TPattern compileImpl(String pattern, int flags) throws TPatternSyntaxException {
         this.lexemes = new TLexer(pattern, flags);
         this.flags = flags;
-        this.pattern = pattern;
 
         start = processExpression(-1, this.flags, null);
         if (!lexemes.isEmpty()) {
@@ -1341,20 +1338,5 @@ public final class TPattern implements Serializable {
      *
      */
     private TPattern() {
-    }
-
-    /**
-     * Serialization support
-     */
-    private void readObject(java.io.ObjectInputStream s) throws java.io.IOException, ClassNotFoundException {
-        s.defaultReadObject();
-        TAbstractSet.counter = 1;
-        globalGroupIndex = -1;
-        compCount = -1;
-        consCount = -1;
-        backRefs = new TFSet[BACK_REF_NUMBER];
-
-        compileImpl(pattern, flags);
-
     }
 }
