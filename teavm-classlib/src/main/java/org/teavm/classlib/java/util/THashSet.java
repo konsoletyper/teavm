@@ -114,7 +114,7 @@ public class THashSet<E> extends TAbstractSet<E> implements TCloneable, TSeriali
     public TObject clone0() {
         try {
             THashSet<E> clone = (THashSet<E>) super.clone();
-            clone.backingMap = (THashMap<E, THashSet<E>>)backingMap.clone0();
+            clone.backingMap = (THashMap<E, THashSet<E>>)backingMap.clone();
             return clone;
         } catch (TCloneNotSupportedException e) {
             return null;
