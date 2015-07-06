@@ -66,7 +66,6 @@ public class DataFlowGraphBuilder implements InstructionReader {
                     int from = incoming.getValue().getIndex();
                     int to = phi.getReceiver().getIndex();
                     builder.addEdge(from, to);
-                    join(from, to);
                 }
             }
             block.readAllInstructions(this);
