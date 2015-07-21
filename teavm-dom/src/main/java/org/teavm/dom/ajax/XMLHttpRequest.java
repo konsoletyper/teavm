@@ -50,6 +50,8 @@ public interface XMLHttpRequest extends JSObject {
 
     String getAllResponseHeaders();
 
+    String getResponseHeader(String name);
+
     @JSProperty("onreadystatechange")
     void setOnReadyStateChange(ReadyStateChangeHandler handler);
 
