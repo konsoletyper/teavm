@@ -259,10 +259,10 @@ public class TCollections extends TObject {
         while (true) {
             int i = (l + u) / 2;
             T e = list.get(i);
-            int cmp = c.compare(key, e);
+            int cmp = c.compare(e, key);
             if (cmp == 0) {
                 return i;
-            } else if (cmp < 0) {
+            } else if (cmp > 0) {
                 u = i - 1;
                 if (u < l) {
                     return -i - 1;
