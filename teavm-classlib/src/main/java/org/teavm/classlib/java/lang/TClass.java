@@ -77,11 +77,15 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
 
     public TString getSimpleName() {
         if (simpleName == null) {
+            if (isArray()) {
+                simpleName = getComponentType().getSimpleName().concat(TString.wrap("[]"));
+                return simpleName;
+            }
             String name = platformClass.getMetadata().getName();
             int lastDollar = name.lastIndexOf('$');
             if (lastDollar != -1) {
                 name = name.substring(lastDollar + 1);
-                if (name.charAt(0) >= 0 && name.charAt(0) <= 9) {
+                if (name.charAt(0) >= '0' && name.charAt(0) <= '9') {
                     name = "";
                 }
             } else {
