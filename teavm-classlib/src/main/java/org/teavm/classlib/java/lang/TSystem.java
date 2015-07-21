@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
+import org.teavm.classlib.java.io.TConsole;
 import org.teavm.classlib.java.io.TPrintStream;
 import org.teavm.classlib.java.lang.reflect.TArray;
 import org.teavm.dependency.PluggableDependency;
@@ -29,6 +30,10 @@ public final class TSystem extends TObject {
     public static final TPrintStream err = new TPrintStream(new TConsoleOutputStream_stderr(), false);
 
     private TSystem() {
+    }
+
+    public static TConsole console() {
+        return null;
     }
 
     public static void arraycopy(TObject src, int srcPos, TObject dest, int destPos, int length) {
