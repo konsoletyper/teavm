@@ -17,9 +17,7 @@ package org.teavm.platform.plugin;
 
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
-import org.teavm.dependency.DependencyConsumer;
 import org.teavm.dependency.DependencyNode;
-import org.teavm.dependency.DependencyType;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReader;
@@ -51,19 +49,17 @@ public class EnumDependencySupport extends AbstractDependencyListener {
     }
 
     @Override
-    public void methodReached(final DependencyAgent agent, MethodDependency method, CallLocation location) {
+    public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
         if (method.getReference().getClassName().equals(Platform.class.getName()) &&
                 method.getReference().getName().equals("getEnumConstants")) {
             allEnums.connect(method.getResult().getArrayItem());
             final MethodReference ref = method.getReference();
-            allEnums.addConsumer(new DependencyConsumer() {
-                @Override public void consume(DependencyType type) {
-                    ClassReader cls = agent.getClassSource().get(type.getName());
-                    MethodReader method = cls.getMethod(new MethodDescriptor("values",
-                            ValueType.arrayOf(ValueType.object(cls.getName()))));
-                    if (method != null) {
-                        agent.linkMethod(method.getReference(), new CallLocation(ref)).use();
-                    }
+            allEnums.addConsumer(type -> {
+                ClassReader cls = agent.getClassSource().get(type.getName());
+                MethodReader valuesMethod = cls.getMethod(new MethodDescriptor("values",
+                        ValueType.arrayOf(ValueType.object(cls.getName()))));
+                if (valuesMethod != null) {
+                    agent.linkMethod(valuesMethod.getReference(), new CallLocation(ref)).use();
                 }
             });
             method.getResult().propagate(agent.getType("[java.lang.Enum"));

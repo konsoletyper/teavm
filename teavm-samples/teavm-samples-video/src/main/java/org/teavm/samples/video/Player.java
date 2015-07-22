@@ -16,8 +16,6 @@
 package org.teavm.samples.video;
 
 import org.teavm.dom.browser.Window;
-import org.teavm.dom.events.EventListener;
-import org.teavm.dom.events.MouseEvent;
 import org.teavm.dom.html.HTMLBodyElement;
 import org.teavm.dom.html.HTMLButtonElement;
 import org.teavm.dom.html.HTMLDocument;
@@ -53,7 +51,7 @@ public final class Player {
         HTMLElement p = document.createElement("p");
         p.appendChild(document.createTextNode("Your user agent does not support the HTML5 Video element."));
 
-        final HTMLVideoElement video = (HTMLVideoElement)document.createElement("video");
+        HTMLVideoElement video = (HTMLVideoElement)document.createElement("video");
         video.setAttribute("id", "video");
         video.setControls(true);
         video.setPreload("none");
@@ -69,129 +67,61 @@ public final class Player {
 
         HTMLButtonElement loadButton = (HTMLButtonElement)document.createElement("button");
         loadButton.appendChild(document.createTextNode("load()"));
-        loadButton.addEventListener("click", new EventListener<MouseEvent>() {
-            @Override
-            public void handleEvent(MouseEvent evt) {
-                video.load();
-            }
-        });
+        loadButton.addEventListener("click", evt -> video.load());
 
         HTMLButtonElement playButton = (HTMLButtonElement)document.createElement("button");
         playButton.appendChild(document.createTextNode("play()"));
-        playButton.addEventListener("click", new EventListener<MouseEvent>() {
-            @Override
-            public void handleEvent(MouseEvent evt) {
-                video.play();
-            }
-        });
+        playButton.addEventListener("click", evt -> video.play());
 
         HTMLButtonElement pauseButton = (HTMLButtonElement)document.createElement("button");
         pauseButton.appendChild(document.createTextNode("pause()"));
-        pauseButton.addEventListener("click", new EventListener<MouseEvent>() {
-            @Override
-            public void handleEvent(MouseEvent evt) {
-                video.pause();
-            }
-        });
+        pauseButton.addEventListener("click", evt -> video.pause());
 
         HTMLButtonElement currentTimePlusButton = (HTMLButtonElement)document.createElement("button");
         currentTimePlusButton.appendChild(document.createTextNode("currentTime+=10"));
-        currentTimePlusButton.addEventListener("click", new EventListener<MouseEvent>() {
-            @Override
-            public void handleEvent(MouseEvent evt) {
-                video.setCurrentTime(video.getCurrentTime() + 10);
-            }
-        });
+        currentTimePlusButton.addEventListener("click", evt -> video.setCurrentTime(video.getCurrentTime() + 10));
 
         HTMLButtonElement currentTimeMinusButton = (HTMLButtonElement)document.createElement("button");
         currentTimeMinusButton.appendChild(document.createTextNode("currentTime-=10"));
-        currentTimeMinusButton.addEventListener("click", new EventListener<MouseEvent>() {
-            @Override
-            public void handleEvent(MouseEvent evt) {
-                video.setCurrentTime(video.getCurrentTime() - 10);
-            }
-        });
+        currentTimeMinusButton.addEventListener("click", evt -> video.setCurrentTime(video.getCurrentTime() - 10));
 
         HTMLButtonElement currentTime50Button = (HTMLButtonElement)document.createElement("button");
         currentTime50Button.appendChild(document.createTextNode("currentTime=50"));
-        currentTime50Button.addEventListener("click", new EventListener<MouseEvent>() {
-            @Override
-            public void handleEvent(MouseEvent evt) {
-                video.setCurrentTime(50);
-            }
-        });
+        currentTime50Button.addEventListener("click", evt -> video.setCurrentTime(50));
 
         HTMLButtonElement playbackRateIncrementButton = (HTMLButtonElement)document.createElement("button");
         playbackRateIncrementButton.appendChild(document.createTextNode("playbackRate++"));
-        playbackRateIncrementButton.addEventListener("click", new EventListener<MouseEvent>() {
-            @Override
-            public void handleEvent(MouseEvent evt) {
-                video.setPlaybackRate(video.getPlaybackRate() + 1);
-            }
-        });
+        playbackRateIncrementButton.addEventListener("click", evt -> video.setPlaybackRate(
+                video.getPlaybackRate() + 1));
 
         HTMLButtonElement playbackRateDecrementButton = (HTMLButtonElement)document.createElement("button");
         playbackRateDecrementButton.appendChild(document.createTextNode("playbackRate--"));
-        playbackRateDecrementButton.addEventListener("click", new EventListener<MouseEvent>() {
-            @Override
-            public void handleEvent(MouseEvent evt) {
-                video.setPlaybackRate(video.getPlaybackRate() - 1);
-            }
-        });
+        playbackRateDecrementButton.addEventListener("click", evt -> video.setPlaybackRate(
+                video.getPlaybackRate() - 1));
 
         HTMLButtonElement playbackRatePlusButton = (HTMLButtonElement)document.createElement("button");
         playbackRatePlusButton.appendChild(document.createTextNode("playbackRate+=0.1"));
-        playbackRatePlusButton.addEventListener("click", new EventListener<MouseEvent>() {
-            @Override
-            public void handleEvent(MouseEvent evt) {
-                video.setPlaybackRate(video.getPlaybackRate() + 0.1);
-            }
-        });
+        playbackRatePlusButton.addEventListener("click", evt -> video.setPlaybackRate(video.getPlaybackRate() + 0.1));
 
         HTMLButtonElement playbackRateMinusButton = (HTMLButtonElement)document.createElement("button");
         playbackRateMinusButton.appendChild(document.createTextNode("playbackRate-=0.1"));
-        playbackRateMinusButton.addEventListener("click", new EventListener<MouseEvent>() {
-            @Override
-            public void handleEvent(MouseEvent evt) {
-                video.setPlaybackRate(video.getPlaybackRate() - 0.1);
-            }
-        });
+        playbackRateMinusButton.addEventListener("click", evt -> video.setPlaybackRate(video.getPlaybackRate() - 0.1));
 
         HTMLButtonElement volumePlusButton = (HTMLButtonElement)document.createElement("button");
         volumePlusButton.appendChild(document.createTextNode("volume+=0.1"));
-        volumePlusButton.addEventListener("click", new EventListener<MouseEvent>() {
-            @Override
-            public void handleEvent(MouseEvent evt) {
-                video.setVolume(video.getVolume() + 0.1f);
-            }
-        });
+        volumePlusButton.addEventListener("click", evt -> video.setVolume(video.getVolume() + 0.1f));
 
         HTMLButtonElement volumeMinusButton = (HTMLButtonElement)document.createElement("button");
         volumeMinusButton.appendChild(document.createTextNode("volume-=0.1"));
-        volumeMinusButton.addEventListener("click", new EventListener<MouseEvent>() {
-            @Override
-            public void handleEvent(MouseEvent evt) {
-                video.setVolume(video.getVolume() - 0.1f);
-            }
-        });
+        volumeMinusButton.addEventListener("click", evt -> video.setVolume(video.getVolume() - 0.1f));
 
         HTMLButtonElement muteButton = (HTMLButtonElement)document.createElement("button");
         muteButton.appendChild(document.createTextNode("muted=true"));
-        muteButton.addEventListener("click", new EventListener<MouseEvent>() {
-            @Override
-            public void handleEvent(MouseEvent evt) {
-                video.setMuted(true);
-            }
-        });
+        muteButton.addEventListener("click", evt -> video.setMuted(true));
 
         HTMLButtonElement unmuteButton = (HTMLButtonElement)document.createElement("button");
         unmuteButton.appendChild(document.createTextNode("muted=false"));
-        unmuteButton.addEventListener("click", new EventListener<MouseEvent>() {
-            @Override
-            public void handleEvent(MouseEvent evt) {
-                video.setMuted(false);
-            }
-        });
+        unmuteButton.addEventListener("click", evt -> video.setMuted(false));
 
         HTMLElement divButtons = document.createElement("div");
         divButtons.setAttribute("id", "buttons");

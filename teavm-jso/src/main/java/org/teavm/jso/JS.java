@@ -515,39 +515,31 @@ public final class JS {
             JSObject c, JSObject d, JSObject e, JSObject f, JSObject g, JSObject h);
 
     public static <T extends JSObject> Iterable<T> iterate(final JSArrayReader<T> array) {
-        return new Iterable<T>() {
-            @Override public Iterator<T> iterator() {
-                return new Iterator<T>() {
-                    int index;
-                    @Override public boolean hasNext() {
-                        return index < array.getLength();
-                    }
-                    @Override public T next() {
-                        return array.get(index++);
-                    }
-                    @Override public void remove() {
-                        throw new UnsupportedOperationException();
-                    }
-                };
+        return () -> new Iterator<T>() {
+            int index;
+            @Override public boolean hasNext() {
+                return index < array.getLength();
+            }
+            @Override public T next() {
+                return array.get(index++);
+            }
+            @Override public void remove() {
+                throw new UnsupportedOperationException();
             }
         };
     }
 
     public static Iterable<String> iterate(final JSStringArrayReader array) {
-        return new Iterable<String>() {
-            @Override public Iterator<String> iterator() {
-                return new Iterator<String>() {
-                    int index;
-                    @Override public boolean hasNext() {
-                        return index < array.getLength();
-                    }
-                    @Override public String next() {
-                        return array.get(index++);
-                    }
-                    @Override public void remove() {
-                        throw new UnsupportedOperationException();
-                    }
-                };
+        return () -> new Iterator<String>() {
+            int index;
+            @Override public boolean hasNext() {
+                return index < array.getLength();
+            }
+            @Override public String next() {
+                return array.get(index++);
+            }
+            @Override public void remove() {
+                throw new UnsupportedOperationException();
             }
         };
     }

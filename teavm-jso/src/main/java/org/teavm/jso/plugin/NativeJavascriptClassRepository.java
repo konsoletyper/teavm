@@ -59,17 +59,12 @@ class NativeJavascriptClassRepository {
         if (cls == null || !(cls.hasModifier(ElementModifier.INTERFACE) || cls.hasModifier(ElementModifier.ABSTRACT))) {
             return false;
         }
-        for (String iface : cls.getInterfaces()) {
-            if (isJavaScriptClass(iface)) {
-                return true;
-            }
-        }
         if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
             if (isJavaScriptClass(cls.getParent())) {
                 return true;
             }
         }
-        return false;
+        return cls.getInterfaces().stream().anyMatch(iface -> isJavaScriptClass(iface));
     }
 
     private boolean examineIfJavaScriptImplementation(String className) {
@@ -85,11 +80,6 @@ class NativeJavascriptClassRepository {
                 return true;
             }
         }
-        for (String iface : cls.getInterfaces()) {
-            if (isJavaScriptClass(iface)) {
-                return true;
-            }
-        }
-        return false;
+        return cls.getInterfaces().stream().anyMatch(iface -> isJavaScriptClass(iface));
     }
 }

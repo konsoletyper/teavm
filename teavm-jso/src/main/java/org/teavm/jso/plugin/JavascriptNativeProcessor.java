@@ -115,7 +115,7 @@ class JavascriptNativeProcessor {
             return null;
         }
         Map<MethodDescriptor, MethodReference> methods = new HashMap<>();
-        getFunctorMethods(className, new HashSet<String>(), methods);
+        getFunctorMethods(className, new HashSet<>(), methods);
         if (methods.size() == 1) {
             return methods.values().iterator().next();
         }
@@ -267,7 +267,7 @@ class JavascriptNativeProcessor {
 
     public void makeSync(ClassHolder cls) {
         Set<MethodDescriptor> methods = new HashSet<>();
-        findInheritedMethods(cls, methods, new HashSet<String>());
+        findInheritedMethods(cls, methods, new HashSet<>());
         for (MethodHolder method : cls.getMethods()) {
             if (methods.contains(method.getDescriptor()) && method.getAnnotations().get(Sync.class.getName()) == null) {
                 AnnotationHolder annot = new AnnotationHolder(Sync.class.getName());
@@ -544,9 +544,8 @@ class JavascriptNativeProcessor {
         // create program that invokes proxy method
         program = new Program();
         BasicBlock block = program.createBasicBlock();
-        List<Variable> params = new ArrayList<>();
         for (int i = 0; i < paramCount; ++i) {
-            params.add(program.createVariable());
+            program.createVariable();
         }
         if (isStatic) {
             program.createVariable();

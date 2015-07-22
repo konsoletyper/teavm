@@ -70,7 +70,7 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
             case "classFromResource":
             case "objectFromResource":
                 context.writeExpr(context.getArgument(0));
-                return;
+                break;
         }
     }
 

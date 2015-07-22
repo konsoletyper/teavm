@@ -264,9 +264,9 @@ class TByteBufferImpl extends TByteBuffer {
         int d = array[start + position + 3] & 0xFF;
         position += 4;
         if (order == TByteOrder.BIG_ENDIAN) {
-            return (int)((a << 24) | (b << 16) | (c << 8) | d);
+            return (a << 24) | (b << 16) | (c << 8) | d;
         } else {
-            return (int)((d << 24) | (c << 16) | (b << 8) | a);
+            return (d << 24) | (c << 16) | (b << 8) | a;
         }
     }
 
@@ -302,9 +302,9 @@ class TByteBufferImpl extends TByteBuffer {
         int c = array[start + index + 2] & 0xFF;
         int d = array[start + index + 3] & 0xFF;
         if (order == TByteOrder.BIG_ENDIAN) {
-            return (int)((a << 24) | (b << 16) | (c << 8) | d);
+            return (a << 24) | (b << 16) | (c << 8) | d;
         } else {
-            return (int)((d << 24) | (c << 16) | (b << 8) | a);
+            return (d << 24) | (c << 16) | (b << 8) | a;
         }
     }
 
@@ -355,9 +355,9 @@ class TByteBufferImpl extends TByteBuffer {
         long h = array[start + position + 7] & 0xFF;
         position += 8;
         if (order == TByteOrder.BIG_ENDIAN) {
-            return (long)((a << 56) | (b << 48) | (c << 40) | (d << 32) | (e << 24) | (f << 16) | (g << 8) | h);
+            return (a << 56) | (b << 48) | (c << 40) | (d << 32) | (e << 24) | (f << 16) | (g << 8) | h;
         } else {
-            return (long)((h << 56) | (g << 48) | (f << 40) | (e << 32) | (d << 24) | (c << 16) | (b << 8) | a);
+            return (h << 56) | (g << 48) | (f << 40) | (e << 32) | (d << 24) | (c << 16) | (b << 8) | a;
         }
     }
 
@@ -406,9 +406,9 @@ class TByteBufferImpl extends TByteBuffer {
         long h = array[start + index + 7] & 0xFF;
         position += 8;
         if (order == TByteOrder.BIG_ENDIAN) {
-            return (long)((a << 56) | (b << 48) | (c << 40) | (d << 32) | (e << 24) | (f << 16) | (g << 8) | h);
+            return (a << 56) | (b << 48) | (c << 40) | (d << 32) | (e << 24) | (f << 16) | (g << 8) | h;
         } else {
-            return (long)((h << 56) | (g << 48) | (f << 40) | (e << 32) | (d << 24) | (c << 16) | (b << 8) | a);
+            return (h << 56) | (g << 48) | (f << 40) | (e << 32) | (d << 24) | (c << 16) | (b << 8) | a;
         }
     }
 

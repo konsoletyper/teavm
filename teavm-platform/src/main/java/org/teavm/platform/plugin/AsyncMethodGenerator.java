@@ -19,12 +19,16 @@ import java.io.IOException;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyPlugin;
-import org.teavm.dependency.DependencyType;
-import org.teavm.dependency.DependencyTypeFilter;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.javascript.spi.Generator;
 import org.teavm.javascript.spi.GeneratorContext;
-import org.teavm.model.*;
+import org.teavm.model.CallLocation;
+import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ElementModifier;
+import org.teavm.model.MethodReader;
+import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 import org.teavm.platform.async.AsyncCallback;
 
 /**
@@ -95,7 +99,7 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin {
     }
 
     @Override
-    public void methodAchieved(final DependencyAgent checker, final MethodDependency method, CallLocation location) {
+    public void methodAchieved(DependencyAgent checker, MethodDependency method, CallLocation location) {
         MethodReference asyncRef = getAsyncReference(method.getReference());
         MethodDependency asyncMethod = checker.linkMethod(asyncRef, location);
         int paramCount = method.getReference().parameterCount();
@@ -107,12 +111,8 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin {
         MethodDependency completeMethod = checker.linkMethod(
                 new MethodReference(AsyncCallbackWrapper.class, "complete", Object.class, void.class), null);
         if (method.getResult() != null) {
-            completeMethod.getVariable(1).connect(method.getResult(), new DependencyTypeFilter() {
-                @Override
-                public boolean match(DependencyType type) {
-                    return isSubtype(checker.getClassSource(), type.getName(), method.getReference().getReturnType());
-                }
-            });
+            completeMethod.getVariable(1).connect(method.getResult(), type -> isSubtype(checker.getClassSource(),
+                    type.getName(), method.getReference().getReturnType()));
         }
         completeMethod.use();
 
@@ -150,11 +150,6 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin {
                 return true;
             }
         }
-        for (String iface : cls.getInterfaces()) {
-            if (isSubclass(classSource, iface, baseClass)) {
-                return true;
-            }
-        }
-        return false;
+        return cls.getInterfaces().stream().anyMatch(iface -> isSubclass(classSource, iface, baseClass));
     }
 }

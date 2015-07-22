@@ -166,11 +166,7 @@ public class JSNativeGenerator implements Injector, DependencyPlugin, Generator 
             case "instantiate":
             case "function":
                 for (int i = 0; i < method.getReference().parameterCount(); ++i) {
-                    method.getVariable(i).addConsumer(new DependencyConsumer() {
-                        @Override public void consume(DependencyType type) {
-                            achieveFunctorMethods(agent, type.getName(), method);
-                        }
-                    });
+                    method.getVariable(i).addConsumer(type -> achieveFunctorMethods(agent, type.getName(), method));
                 }
                 break;
             case "unwrapString":

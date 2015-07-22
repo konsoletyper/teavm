@@ -37,19 +37,17 @@ public class ClassLookupDependencySupport extends AbstractDependencyListener {
     }
 
     @Override
-    public void methodReached(final DependencyAgent agent, MethodDependency method, final CallLocation location) {
+    public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
         MethodReference ref = method.getReference();
         if (ref.getClassName().equals(Platform.class.getName()) && ref.getName().equals("lookupClass")) {
-            allClasses.addConsumer(new DependencyConsumer() {
-                @Override public void consume(DependencyType type) {
-                    ClassReader cls = agent.getClassSource().get(type.getName());
-                    if (cls == null) {
-                        return;
-                    }
-                    MethodReader initMethod = cls.getMethod(new MethodDescriptor("<clinit>", void.class));
-                    if (initMethod != null) {
-                        agent.linkMethod(initMethod.getReference(), location).use();
-                    }
+            allClasses.addConsumer(type -> {
+                ClassReader cls = agent.getClassSource().get(type.getName());
+                if (cls == null) {
+                    return;
+                }
+                MethodReader initMethod = cls.getMethod(new MethodDescriptor("<clinit>", void.class));
+                if (initMethod != null) {
+                    agent.linkMethod(initMethod.getReference(), location).use();
                 }
             });
         }
