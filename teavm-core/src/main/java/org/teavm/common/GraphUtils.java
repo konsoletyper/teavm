@@ -80,11 +80,7 @@ public final class GraphUtils {
     }
 
     public static int[][] findStronglyConnectedComponents(Graph graph, int[] start) {
-        return findStronglyConnectedComponents(graph, start, new GraphNodeFilter() {
-            @Override public boolean match(int node) {
-                return true;
-            }
-        });
+        return findStronglyConnectedComponents(graph, start, node -> true);
     }
 
     /*

@@ -236,12 +236,8 @@ class DependencyGraphBuilder {
                 methodDep.use();
                 DependencyNode[] targetParams = methodDep.getVariables();
                 if (parameters[0] != null && targetParams[0] != null) {
-                    parameters[0].connect(targetParams[0], new DependencyTypeFilter() {
-                        @Override public boolean match(DependencyType thisType) {
-                            return isAssignableFrom(checker.getClassSource(), methodDep.getMethod().getOwnerName(),
-                                    thisType.getName());
-                        }
-                    });
+                    parameters[0].connect(targetParams[0], thisType -> isAssignableFrom(checker.getClassSource(),
+                            methodDep.getMethod().getOwnerName(), thisType.getName()));
                 }
                 for (int i = 1; i < parameters.length; ++i) {
                     if (parameters[i] != null && targetParams[i] != null) {
@@ -267,10 +263,8 @@ class DependencyGraphBuilder {
         if (subtype.getParent() != null && isAssignableFrom(classSource, supertype, subtype.getParent())) {
             return true;
         }
-        for (String iface : subtype.getInterfaces()) {
-            if (isAssignableFrom(classSource, supertype, iface)) {
-                return true;
-            }
+        if (subtype.getInterfaces().stream().anyMatch(iface -> isAssignableFrom(classSource, supertype, iface))) {
+            return true;
         }
         return false;
     }
@@ -358,14 +352,12 @@ class DependencyGraphBuilder {
                 final ClassReader targetClass = dependencyChecker.getClassSource().get(targetClsName);
                 if (targetClass != null) {
                     if (valueNode != null && receiverNode != null) {
-                        valueNode.connect(receiverNode, new DependencyTypeFilter() {
-                            @Override public boolean match(DependencyType type) {
-                                if (targetClass.getName().equals("java.lang.Object")) {
-                                    return true;
-                                }
-                                return isAssignableFrom(dependencyChecker.getClassSource(), targetClass.getName(),
-                                        type.getName());
+                        valueNode.connect(receiverNode, type -> {
+                            if (targetClass.getName().equals("java.lang.Object")) {
+                                return true;
                             }
+                            return isAssignableFrom(dependencyChecker.getClassSource(), targetClass.getName(),
+                                    type.getName());
                         });
                     }
                     return;
@@ -514,11 +506,7 @@ class DependencyGraphBuilder {
             DependencyNode arrayNode = nodes[array.getIndex()];
             final DependencyNode receiverNode = nodes[receiver.getIndex()];
             if (arrayNode != null && receiverNode != null) {
-                arrayNode.addConsumer(new DependencyConsumer() {
-                    @Override public void consume(DependencyType type) {
-                        receiverNode.propagate(type);
-                    }
-                });
+                arrayNode.addConsumer(type -> receiverNode.propagate(type));
                 arrayNode.getArrayItem().connect(receiverNode.getArrayItem());
             }
         }

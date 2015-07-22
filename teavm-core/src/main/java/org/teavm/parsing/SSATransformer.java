@@ -122,8 +122,8 @@ public class SSATransformer {
         List<List<TryCatchBlock>> caughtBlocks = new ArrayList<>();
         List<List<Phi>> specialPhis = new ArrayList<>();
         for (int i = 0; i < program.basicBlockCount(); ++i) {
-            caughtBlocks.add(new ArrayList<TryCatchBlock>());
-            specialPhis.add(new ArrayList<Phi>());
+            caughtBlocks.add(new ArrayList<>());
+            specialPhis.add(new ArrayList<>());
         }
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             for (TryCatchBlock tryCatch : program.basicBlockAt(i).getTryCatchBlocks()) {

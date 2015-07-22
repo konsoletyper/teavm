@@ -378,7 +378,6 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                     statements.remove(i + 1);
                     wieldTryCatch(first.getProtectedBody());
                     --i;
-                    continue;
                 }
             }
         }

@@ -15,7 +15,6 @@
  */
 package org.teavm.model;
 
-import org.teavm.common.Mapper;
 import org.teavm.model.util.ModelUtils;
 import org.teavm.resource.MapperClassHolderSource;
 
@@ -25,11 +24,7 @@ import org.teavm.resource.MapperClassHolderSource;
  */
 public class CopyClassHolderSource implements ClassHolderSource {
     private ClassReaderSource innerSource;
-    private MapperClassHolderSource mapperSource = new MapperClassHolderSource(new Mapper<String, ClassHolder>() {
-        @Override public ClassHolder map(String preimage) {
-            return copyClass(preimage);
-        }
-    });
+    private MapperClassHolderSource mapperSource = new MapperClassHolderSource(preimage -> copyClass(preimage));
 
     public CopyClassHolderSource(ClassReaderSource innerSource) {
         this.innerSource = innerSource;

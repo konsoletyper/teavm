@@ -125,12 +125,7 @@ public class ClasspathResourceMapper implements Mapper<String, ClassHolder>, Cla
         return name;
     }
 
-    private Mapper<String, String> classNameMapper = new Mapper<String, String>() {
-        @Override
-        public String map(String preimage) {
-            return renameClass(preimage);
-        }
-    };
+    private Mapper<String, String> classNameMapper = preimage -> renameClass(preimage);
 
     @Override
     public Date getModificationDate(String className) {

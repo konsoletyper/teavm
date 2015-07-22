@@ -271,7 +271,7 @@ class DebugInformationWriter {
             }
             if (count > 1) {
                 if (current > last) {
-                    writeUnsignedNumber(((current - last) << 1) | 0);
+                    writeUnsignedNumber((current - last) << 1);
                     while (last < current) {
                         writeUnsignedNumber(array[last++]);
                     }
@@ -282,7 +282,7 @@ class DebugInformationWriter {
             }
         }
         if (array.length > last) {
-            writeUnsignedNumber(((array.length - last) << 1) | 0);
+            writeUnsignedNumber((array.length - last) << 1);
             while (last < array.length) {
                 writeUnsignedNumber(array[last++]);
             }

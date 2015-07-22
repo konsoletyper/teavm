@@ -31,7 +31,7 @@ public abstract class Expr implements Cloneable {
 
     @Override
     public Expr clone() {
-        return clone(new HashMap<Expr, Expr>());
+        return clone(new HashMap<>());
     }
 
     protected abstract Expr clone(Map<Expr, Expr> cache);

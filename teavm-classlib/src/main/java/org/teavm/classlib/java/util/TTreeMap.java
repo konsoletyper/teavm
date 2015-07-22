@@ -156,7 +156,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         }
         int mid = (l + u) / 2;
         Entry<? extends K, ? extends V> entry = entries[mid];
-        TreeNode<K, V> node = new TreeNode<K, V>(entry.getKey());
+        TreeNode<K, V> node = new TreeNode<>(entry.getKey());
         node.setValue(entry.getValue());
         node.left = createNode(entries, l, mid - 1);
         node.right = createNode(entries, mid + 1, u);

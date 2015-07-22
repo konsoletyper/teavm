@@ -92,14 +92,11 @@ public class RangeTree {
         for (Range range : ranges) {
             rangeList.add(range);
         }
-        Collections.sort(rangeList, new Comparator<Range>() {
-            @Override
-            public int compare(Range o1, Range o2) {
-                if (o1.right != o2.right) {
-                    return o2.right - o1.right;
-                }
-                return o1.left - o2.left;
+        Collections.sort(rangeList, (o1, o2) -> {
+            if (o1.right != o2.right) {
+                return o2.right - o1.right;
             }
+            return o1.left - o2.left;
         });
         Deque<NodeImpl> stack = new ArrayDeque<>();
         stack.push(root);

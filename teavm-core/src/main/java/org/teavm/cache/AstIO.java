@@ -348,7 +348,7 @@ public class AstIO {
                 output.writeInt(statement.getExceptionType() != null ?
                         symbolTable.lookup(statement.getExceptionType()) : -1);
                 output.writeShort(statement.getExceptionVariable() != null ?
-                        statement.getExceptionVariable().intValue() : -1);
+                        statement.getExceptionVariable() : -1);
                 writeSequence(statement.getHandler());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);

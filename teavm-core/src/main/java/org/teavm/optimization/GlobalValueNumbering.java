@@ -126,7 +126,7 @@ public class GlobalValueNumbering implements MethodOptimization {
     private List<List<Incoming>> findOutgoings(Program program) {
         List<List<Incoming>> outgoings = new ArrayList<>();
         for (int i = 0; i < program.basicBlockCount(); ++i) {
-            outgoings.add(new ArrayList<Incoming>());
+            outgoings.add(new ArrayList<>());
         }
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             for (Phi phi : program.basicBlockAt(i).getPhis()) {

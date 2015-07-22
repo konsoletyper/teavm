@@ -38,11 +38,7 @@ public class ThreadPoolFiniteExecutor implements FiniteExecutor {
 
     public ThreadPoolFiniteExecutor(int numThreads) {
         for (int i = 0; i < numThreads; ++i) {
-            Thread thread = new Thread() {
-                @Override public void run() {
-                    takeTask();
-                }
-            };
+            Thread thread = new Thread(() -> takeTask());
             threads.add(thread);
             thread.start();
         }

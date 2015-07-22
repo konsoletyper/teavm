@@ -182,11 +182,7 @@ public class DependencyNode implements ValueDependencyInfo {
             if (DependencyChecker.shouldLog) {
                 arrayItemNode.tag = tag + "[";
             }
-            arrayItemNode.addConsumer(new DependencyConsumer() {
-                @Override public void consume(DependencyType type) {
-                    DependencyNode.this.propagate(type);
-                }
-            });
+            arrayItemNode.addConsumer(type -> propagate(type));
         }
         return arrayItemNode;
     }

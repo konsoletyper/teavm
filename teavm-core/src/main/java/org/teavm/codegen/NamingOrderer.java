@@ -33,11 +33,7 @@ public class NamingOrderer implements NameFrequencyConsumer {
         Entry entry = entries.get(key);
         if (entry == null) {
             entry = new Entry();
-            entry.operation = new NamingOperation() {
-                @Override public void perform(NamingStrategy naming) {
-                    naming.getFullNameFor(method);
-                }
-            };
+            entry.operation = naming -> naming.getFullNameFor(method);
             entries.put(key, entry);
         }
         entry.frequency++;
@@ -50,11 +46,7 @@ public class NamingOrderer implements NameFrequencyConsumer {
         Entry entry = entries.get(key);
         if (entry == null) {
             entry = new Entry();
-            entry.operation = new NamingOperation() {
-                @Override public void perform(NamingStrategy naming) {
-                    naming.getNameForInit(method);
-                }
-            };
+            entry.operation = naming -> naming.getNameForInit(method);
             entries.put(key, entry);
         }
         entry.frequency++;
@@ -66,11 +58,7 @@ public class NamingOrderer implements NameFrequencyConsumer {
         Entry entry = entries.get(key);
         if (entry == null) {
             entry = new Entry();
-            entry.operation = new NamingOperation() {
-                @Override public void perform(NamingStrategy naming) {
-                    naming.getNameFor(method);
-                }
-            };
+            entry.operation = naming -> naming.getNameFor(method);
             entries.put(key, entry);
         }
         entry.frequency++;
@@ -82,11 +70,7 @@ public class NamingOrderer implements NameFrequencyConsumer {
         Entry entry = entries.get(key);
         if (entry == null) {
             entry = new Entry();
-            entry.operation = new NamingOperation() {
-                @Override public void perform(NamingStrategy naming) {
-                    naming.getNameFor(className);
-                }
-            };
+            entry.operation = naming -> naming.getNameFor(className);
             entries.put(key, entry);
         }
         entry.frequency++;
@@ -98,11 +82,7 @@ public class NamingOrderer implements NameFrequencyConsumer {
         Entry entry = entries.get(key);
         if (entry == null) {
             entry = new Entry();
-            entry.operation = new NamingOperation() {
-                @Override public void perform(NamingStrategy naming) {
-                    naming.getNameFor(field);
-                }
-            };
+            entry.operation = naming -> naming.getNameFor(field);
             entries.put(key, entry);
         }
         entry.frequency++;
@@ -114,11 +94,7 @@ public class NamingOrderer implements NameFrequencyConsumer {
         Entry entry = entries.get(key);
         if (entry == null) {
             entry = new Entry();
-            entry.operation = new NamingOperation() {
-                @Override public void perform(NamingStrategy naming) {
-                    naming.getNameForFunction(name);
-                }
-            };
+            entry.operation = naming -> naming.getNameForFunction(name);
             entries.put(key, entry);
         }
         entry.frequency++;
@@ -126,11 +102,7 @@ public class NamingOrderer implements NameFrequencyConsumer {
 
     public void apply(NamingStrategy naming) {
         List<Entry> entryList = new ArrayList<>(entries.values());
-        Collections.sort(entryList, new Comparator<Entry>() {
-            @Override public int compare(Entry o1, Entry o2) {
-                return Integer.compare(o2.frequency, o1.frequency);
-            }
-        });
+        Collections.sort(entryList, (o1, o2) -> Integer.compare(o2.frequency, o1.frequency));
         for (Entry entry : entryList) {
             entry.operation.perform(naming);
         }

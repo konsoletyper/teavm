@@ -16,11 +16,12 @@
 package org.teavm.common;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import com.carrotsearch.hppc.IntOpenHashSet;
 import com.carrotsearch.hppc.IntSet;
 import java.util.Arrays;
-import java.util.Comparator;
 import org.junit.Test;
 
 /**
@@ -77,11 +78,7 @@ public class GraphTest {
         builder.addEdge(5, 3);
         Graph graph = builder.build();
 
-        int[][] sccs = GraphUtils.findStronglyConnectedComponents(graph, new int[] { 1, 2, 3 }, new GraphNodeFilter() {
-            @Override public boolean match(int node) {
-                return node != 0;
-            }
-        });
+        int[][] sccs = GraphUtils.findStronglyConnectedComponents(graph, new int[] { 1, 2, 3 }, node -> node != 0);
         sortSccs(sccs);
 
         assertThat(sccs.length, is(1));
@@ -129,12 +126,7 @@ public class GraphTest {
         builder.addEdge(8, 7);
         Graph graph = builder.build();
 
-        int[][] sccs = GraphUtils.findStronglyConnectedComponents(graph, new int[] { 1, 2, 3, 4 },
-                new GraphNodeFilter() {
-            @Override public boolean match(int node) {
-                return node != 0;
-            }
-        });
+        int[][] sccs = GraphUtils.findStronglyConnectedComponents(graph, new int[] { 1, 2, 3, 4 }, node -> node != 0);
         sortSccs(sccs);
 
         assertThat(sccs.length, is(2));
@@ -240,20 +232,12 @@ public class GraphTest {
         return true;
     }
 
-    private GraphNodeFilter filter = new GraphNodeFilter() {
-        @Override public boolean match(int node) {
-            return true;
-        }
-    };
+    private GraphNodeFilter filter = (int node) -> true;
 
     private void sortSccs(int[][] sccs) {
         for (int i = 0; i < sccs.length; ++i) {
             Arrays.sort(sccs[i]);
         }
-        Arrays.sort(sccs, new Comparator<int[]>() {
-            @Override public int compare(int[] o1, int[] o2) {
-                return Integer.compare(o1[0], o2[0]);
-            }
-        });
+        Arrays.sort(sccs, (o1, o2) -> Integer.compare(o1[0], o2[0]));
     }
 }

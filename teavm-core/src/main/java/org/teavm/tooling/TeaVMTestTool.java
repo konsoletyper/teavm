@@ -254,24 +254,18 @@ public class TeaVMTestTool {
             if (numThreads != 1) {
                 int threads = numThreads != 0 ? numThreads : Runtime.getRuntime().availableProcessors();
                 final ThreadPoolFiniteExecutor threadedExecutor = new ThreadPoolFiniteExecutor(threads);
-                finalizer = new Runnable() {
-                    @Override public void run() {
-                        threadedExecutor.stop();
-                    }
-                };
+                finalizer = () -> threadedExecutor.stop();
                 executor = threadedExecutor;
             }
             for (final MethodReference method : testMethods) {
                 final ClassHolderSource builderClassSource = classSource;
-                executor.execute(new Runnable() {
-                    @Override public void run() {
-                        log.debug("Building test for " + method);
-                        try {
-                            decompileClassesForTest(classLoader, new CopyClassHolderSource(builderClassSource), method,
-                                    fileNames.get(method));
-                        } catch (IOException e) {
-                            log.error("Error generating JavaScript", e);
-                        }
+                executor.execute(() ->  {
+                    log.debug("Building test for " + method);
+                    try {
+                        decompileClassesForTest(classLoader, new CopyClassHolderSource(builderClassSource), method,
+                                fileNames.get(method));
+                    } catch (IOException e) {
+                        log.error("Error generating JavaScript", e);
                     }
                 });
                 ++methodsGenerated;

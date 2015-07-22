@@ -44,7 +44,7 @@ class LocationGraphBuilder {
         Deque<Step> stack = new ArrayDeque<>();
         for (int i = 0; i < graph.size(); ++i) {
             if (graph.incomingEdgesCount(i) == 0) {
-                stack.push(new Step(null, new HashSet<InstructionLocation>(), i));
+                stack.push(new Step(null, new HashSet<>(), i));
             }
         }
         boolean[] visited = new boolean[graph.size()];
@@ -84,8 +84,7 @@ class LocationGraphBuilder {
                 }
             } else {
                 for (int next : graph.outgoingEdges(step.block)) {
-                    stack.push(new Step(location, started ? new HashSet<InstructionLocation>() : step.startLocations,
-                            next));
+                    stack.push(new Step(location, started ? new HashSet<>() : step.startLocations, next));
                 }
             }
         }

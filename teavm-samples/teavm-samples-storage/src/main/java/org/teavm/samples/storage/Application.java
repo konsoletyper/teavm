@@ -17,8 +17,6 @@ package org.teavm.samples.storage;
 
 import org.teavm.dom.browser.Storage;
 import org.teavm.dom.browser.Window;
-import org.teavm.dom.events.Event;
-import org.teavm.dom.events.EventListener;
 import org.teavm.dom.html.HTMLButtonElement;
 import org.teavm.dom.html.HTMLDocument;
 import org.teavm.dom.html.HTMLElement;
@@ -44,37 +42,28 @@ public final class Application {
         }
 
         HTMLButtonElement saveButton = (HTMLButtonElement)document.getElementById("save-button");
-        saveButton.addEventListener("click", new EventListener() {
-            @Override
-            public void handleEvent(Event evt) {
-                String key = ((HTMLInputElement)document.getElementById("key")).getValue();
-                String value = ((HTMLInputElement)document.getElementById("value")).getValue();
+        saveButton.addEventListener("click", e -> {
+            String key = ((HTMLInputElement)document.getElementById("key")).getValue();
+            String value = ((HTMLInputElement)document.getElementById("value")).getValue();
 
-                if (key != null && key.length() > 0 && value != null && value.length() > 0) {
-                    storage.setItem(key, value);
-                    draw();
-                }
+            if (key != null && key.length() > 0 && value != null && value.length() > 0) {
+                storage.setItem(key, value);
+                draw();
             }
         });
         HTMLButtonElement deleteButton = (HTMLButtonElement)document.getElementById("delete-button");
-        deleteButton.addEventListener("click", new EventListener() {
-            @Override
-            public void handleEvent(Event evt) {
-                String key = ((HTMLInputElement)document.getElementById("key")).getValue();
+        deleteButton.addEventListener("click", e -> {
+            String key = ((HTMLInputElement)document.getElementById("key")).getValue();
 
-                if (key != null && key.length() > 0) {
-                    storage.removeItem(key);
-                    draw();
-                }
+            if (key != null && key.length() > 0) {
+                storage.removeItem(key);
+                draw();
             }
         });
         HTMLButtonElement deleteAllButton = (HTMLButtonElement)document.getElementById("delete-all-button");
-        deleteAllButton.addEventListener("click", new EventListener() {
-            @Override
-            public void handleEvent(Event evt) {
-                storage.clear();
-                draw();
-            }
+        deleteAllButton.addEventListener("click", e -> {
+            storage.clear();
+            draw();
         });
         draw();
     }

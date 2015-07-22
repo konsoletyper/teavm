@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.teavm.common.CachedMapper;
-import org.teavm.common.Mapper;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
@@ -38,11 +37,7 @@ class DependencyClassSource implements ClassReaderSource {
     private Diagnostics diagnostics;
     private Map<String, ClassHolder> generatedClasses = new HashMap<>();
     private List<ClassHolderTransformer> transformers = new ArrayList<>();
-    private CachedMapper<String, ClassReader> cache = new CachedMapper<>(new Mapper<String, ClassReader>() {
-        @Override public ClassReader map(String preimage) {
-            return findAndTransformClass(preimage);
-        }
-    });
+    private CachedMapper<String, ClassReader> cache = new CachedMapper<>(preimage -> findAndTransformClass(preimage));
 
     public DependencyClassSource(ClassReaderSource innerSource, Diagnostics diagnostics) {
         this.innerSource = innerSource;

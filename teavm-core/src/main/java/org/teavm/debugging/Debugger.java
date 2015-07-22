@@ -107,8 +107,7 @@ public class Debugger {
             DebugInformation debugInfo = debugInformationMap.get(script);
             if (frame.getLocation() != null && frame.getLocation().getFileName() != null &&
                     frame.getLocation().getLine() >= 0 && debugInfo != null) {
-                exits = addFollowing(debugInfo, frame.getLocation(), script, new HashSet<SourceLocation>(),
-                        successors);
+                exits = addFollowing(debugInfo, frame.getLocation(), script, new HashSet<>(), successors);
                 if (enterMethod) {
                     CallSiteSuccessorFinder successorFinder = new CallSiteSuccessorFinder(debugInfo, script,
                             successors);

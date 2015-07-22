@@ -71,40 +71,24 @@ public class DependencyChecker implements DependencyInfo {
         this.classSource = new DependencyClassSource(classSource, diagnostics);
         this.classLoader = classLoader;
         this.services = services;
-        methodReaderCache = new CachedMapper<>(new Mapper<MethodReference, MethodReader>() {
-            @Override public MethodReader map(MethodReference preimage) {
-                return findMethodReader(preimage);
+        methodReaderCache = new CachedMapper<>(preimage -> findMethodReader(preimage));
+        fieldReaderCache = new CachedMapper<>(preimage -> findFieldReader(preimage));
+        methodCache = new CachedMapper<>(preimage ->  {
+            MethodReader method = methodReaderCache.map(preimage);
+            if (method != null && !method.getReference().equals(preimage)) {
+                return methodCache.map(method.getReference());
             }
+            return createMethodDep(preimage, method);
         });
-        fieldReaderCache = new CachedMapper<>(new Mapper<FieldReference, FieldReader>() {
-            @Override public FieldReader map(FieldReference preimage) {
-                return findFieldReader(preimage);
+        fieldCache = new CachedMapper<>(preimage -> {
+            FieldReader field = fieldReaderCache.map(preimage);
+            if (field != null && !field.getReference().equals(preimage)) {
+                return fieldCache.map(field.getReference());
             }
-        });
-        methodCache = new CachedMapper<>(new Mapper<MethodReference, MethodDependency>() {
-            @Override public MethodDependency map(MethodReference preimage) {
-                MethodReader method = methodReaderCache.map(preimage);
-                if (method != null && !method.getReference().equals(preimage)) {
-                    return methodCache.map(method.getReference());
-                }
-                return createMethodDep(preimage, method);
-            }
-        });
-        fieldCache = new CachedMapper<>(new Mapper<FieldReference, FieldDependency>() {
-            @Override public FieldDependency map(FieldReference preimage) {
-                FieldReader field = fieldReaderCache.map(preimage);
-                if (field != null && !field.getReference().equals(preimage)) {
-                    return fieldCache.map(field.getReference());
-                }
-                return createFieldNode(preimage, field);
-            }
+            return createFieldNode(preimage, field);
         });
 
-        classCache = new CachedMapper<>(new Mapper<String, ClassDependency>() {
-            @Override public ClassDependency map(String preimage) {
-                return createClassDependency(preimage);
-            }
-        });
+        classCache = new CachedMapper<>(preimage -> createClassDependency(preimage));
 
         agent = new DependencyAgent(this);
     }
@@ -183,20 +167,14 @@ public class DependencyChecker implements DependencyInfo {
         }
     }
 
-    void schedulePropagation(final DependencyConsumer consumer, final DependencyType type) {
-        tasks.add(new Runnable() {
-            @Override public void run() {
-                consumer.consume(type);
-            }
-        });
+    void schedulePropagation(DependencyConsumer consumer, DependencyType type) {
+        tasks.add(() -> consumer.consume(type));
     }
 
-    void schedulePropagation(final DependencyConsumer consumer, final DependencyType[] types) {
-        tasks.add(new Runnable() {
-            @Override public void run() {
-                for (DependencyType type : types) {
-                    consumer.consume(type);
-                }
+    void schedulePropagation(DependencyConsumer consumer, DependencyType[] types) {
+        tasks.add(() -> {
+            for (DependencyType type : types) {
+                consumer.consume(type);
             }
         });
     }
@@ -215,12 +193,9 @@ public class DependencyChecker implements DependencyInfo {
             added = classesAddedByRoot.add(className);
         }
         if (!dep.isMissing() && added) {
-            tasks.add(new Runnable() {
-                @Override
-                public void run() {
-                    for (DependencyListener listener : listeners) {
-                        listener.classReached(agent, className, callLocation);
-                    }
+            tasks.add(() -> {
+                for (DependencyListener listener : listeners) {
+                    listener.classReached(agent, className, callLocation);
                 }
             });
         }
@@ -289,11 +264,7 @@ public class DependencyChecker implements DependencyInfo {
         ClassReader reader = cls.getClassReader();
         final MethodReader method = reader.getMethod(new MethodDescriptor("<clinit>", void.class));
         if (method != null) {
-            tasks.add(new Runnable() {
-                @Override public void run() {
-                    linkMethod(method.getReference(), callLocation).use();
-                }
-            });
+            tasks.add(() -> linkMethod(method.getReference(), callLocation).use());
         }
     }
 
@@ -369,22 +340,18 @@ public class DependencyChecker implements DependencyInfo {
         final MethodDependency dep = new MethodDependency(this, parameterNodes, paramCount, resultNode, thrown,
                 method, methodRef);
         if (method != null) {
-            tasks.add(new Runnable() {
-                @Override public void run() {
-                    CallLocation caller = new CallLocation(dep.getMethod().getReference());
-                    linkClass(dep.getMethod().getOwnerName(), caller).initClass(caller);
-                }
+            tasks.add(() -> {
+                CallLocation caller = new CallLocation(dep.getMethod().getReference());
+                linkClass(dep.getMethod().getOwnerName(), caller).initClass(caller);
             });
         }
         return dep;
     }
 
     void scheduleMethodAnalysis(final MethodDependency dep) {
-        tasks.add(new Runnable() {
-            @Override public void run() {
-                DependencyGraphBuilder graphBuilder = new DependencyGraphBuilder(DependencyChecker.this);
-                graphBuilder.buildGraph(dep);
-            }
+        tasks.add(() -> {
+            DependencyGraphBuilder graphBuilder = new DependencyGraphBuilder(DependencyChecker.this);
+            graphBuilder.buildGraph(dep);
         });
     }
 
@@ -414,11 +381,7 @@ public class DependencyChecker implements DependencyInfo {
         }
         FieldDependency dep = fieldCache.map(fieldRef);
         if (!dep.isMissing()) {
-            tasks.add(new Runnable() {
-                @Override public void run() {
-                    linkClass(fieldRef.getClassName(), location).initClass(location);
-                }
-            });
+            tasks.add(() -> linkClass(fieldRef.getClassName(), location).initClass(location));
         }
         if (!dep.isMissing() && added) {
             for (DependencyListener listener : listeners) {
@@ -438,18 +401,14 @@ public class DependencyChecker implements DependencyInfo {
         return classCache.getKnown(className);
     }
 
-    private FieldDependency createFieldNode(final FieldReference fieldRef, FieldReader field) {
+    private FieldDependency createFieldNode(FieldReference fieldRef, FieldReader field) {
         DependencyNode node = createNode();
         if (shouldLog) {
             node.setTag(fieldRef.getClassName() + "#" + fieldRef.getFieldName());
         }
         FieldDependency dep = new FieldDependency(node, field, fieldRef);
         if (!dep.isMissing()) {
-            tasks.add(new Runnable() {
-                @Override public void run() {
-                    linkClass(fieldRef.getClassName(), null).initClass(null);
-                }
-            });
+            tasks.add(() -> linkClass(fieldRef.getClassName(), null).initClass(null));
         }
         return dep;
     }

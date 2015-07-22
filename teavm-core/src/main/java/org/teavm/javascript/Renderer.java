@@ -359,7 +359,6 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         debugEmitter.emitClass(cls.getName());
         try {
             List<MethodNode> nonInitMethods = new ArrayList<>();
-            List<MethodNode> virtualMethods = new ArrayList<>();
             MethodHolder clinit = classSource.get(cls.getName()).getMethod(
                     new MethodDescriptor("<clinit>", ValueType.VOID));
             List<MethodNode> clinitMethods = new ArrayList<>();
@@ -393,8 +392,6 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     if (!method.getModifiers().contains(NodeModifier.STATIC)) {
                         if (method.getReference().getName().equals("<init>")) {
                             renderInitializer(method);
-                        } else {
-                            virtualMethods.add(method);
                         }
                     }
                 }
@@ -686,7 +683,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     variableNames.add(variableName(i));
                 }
                 TryCatchFinder tryCatchFinder = new TryCatchFinder();
-                for (AsyncMethodPart part :  methodNode.getBody()) {
+                for (AsyncMethodPart part : methodNode.getBody()) {
                     if (!tryCatchFinder.tryCatchFound) {
                         part.getStatement().acceptVisitor(tryCatchFinder);
                     }

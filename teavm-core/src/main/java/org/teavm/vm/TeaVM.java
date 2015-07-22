@@ -350,11 +350,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             return;
         }
         AliasProvider aliasProvider = minifying ? new MinifyingAliasProvider() : new DefaultAliasProvider();
-        dependencyChecker.setInterruptor(new DependencyCheckerInterruptor() {
-            @Override public boolean shouldContinue() {
-                return progressListener.progressReached(0) == TeaVMProgressFeedback.CONTINUE;
-            }
-        });
+        dependencyChecker.setInterruptor(() -> progressListener.progressReached(0) == TeaVMProgressFeedback.CONTINUE);
         dependencyChecker.linkMethod(new MethodReference(Class.class.getName(), "getClass",
                 ValueType.object("org.teavm.platform.PlatformClass"), ValueType.parse(Class.class)), null).use();
         dependencyChecker.linkMethod(new MethodReference(String.class, "<init>", char[].class, void.class),
