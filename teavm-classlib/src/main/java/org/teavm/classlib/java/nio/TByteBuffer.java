@@ -86,6 +86,9 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
     }
 
     public TByteBuffer put(byte[] src, int offset, int length) {
+        if (length == 0) {
+            return this;
+        }
         if (isReadOnly()) {
             throw new TReadOnlyBufferException();
         }
@@ -228,6 +231,14 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
     public abstract TByteBuffer putInt(int index, int value);
 
     public abstract TIntBuffer asIntBuffer();
+
+    public abstract long getLong();
+
+    public abstract TByteBuffer putLong(long value);
+
+    public abstract long getLong(int index);
+
+    public abstract TByteBuffer putLong(int index, long value);
 
     public abstract TLongBuffer asLongBuffer();
 

@@ -17,6 +17,9 @@ package org.teavm.classlib.impl.unicode;
 
 import java.util.Arrays;
 
+import org.teavm.classlib.impl.Base46;
+import org.teavm.classlib.impl.CharFlow;
+
 /**
  *
  * @author Alexey Andreev
@@ -43,30 +46,20 @@ public class UnicodeHelper {
     }
 
     public static String encodeIntByte(int[] data) {
-        char[] chars = new char[data.length / 2 * 5];
-        int j = 0;
-        for (int i = 0; i < data.length;) {
-            int val = data[i++];
-            int shift = 32;
-            for (int k = 0; k < 4; ++k) {
-                shift -= 8;
-                chars[j++] = (char)('z' + ((val >> shift) & 0xFF));
-            }
-            chars[j++] = (char)('z' + (data[i++] & 0xFF));
+        StringBuilder sb = new StringBuilder();
+        Base46.encode(sb, data.length);
+        for (int i = 0; i < data.length; i++) {
+            Base46.encode(sb, data[i]);
         }
-        return new String(chars);
+        return sb.toString();
     }
 
     public static int[] decodeIntByte(String text) {
-        int[] data = new int[2 * (text.length() / 5)];
-        int j = 0;
-        for (int i = 0; i < data.length;) {
-            int val = 0;
-            for (int k = 0; k < 4; ++k) {
-                val = (val << 8) | (text.charAt(j++) - 'z');
-            }
-            data[i++] = val;
-            data[i++] = text.charAt(j++) - 'z';
+        CharFlow flow = new CharFlow(text.toCharArray());
+        int sz = Base46.decode(flow);
+        int[] data = new int[sz];
+        for (int i = 0; i < sz; i++) {
+            data[i] = Base46.decode(flow);
         }
         return data;
     }

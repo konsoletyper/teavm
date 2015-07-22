@@ -17,6 +17,7 @@ package org.teavm.classlib.java.lang;
 
 import java.util.HashMap;
 import java.util.Map;
+
 import org.teavm.classlib.impl.DeclaringClassMetadataGenerator;
 import org.teavm.classlib.java.lang.annotation.TAnnotation;
 import org.teavm.classlib.java.lang.reflect.TAnnotatedElement;
@@ -32,6 +33,7 @@ import org.teavm.platform.metadata.ClassScopedMetadataProvider;
  */
 public class TClass<T> extends TObject implements TAnnotatedElement {
     TString name;
+    TString simpleName;
     private TClass<?> componentType;
     private boolean componentTypeDirty = true;
     private PlatformClass platformClass;
@@ -71,6 +73,30 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
             name = TString.wrap(platformClass.getMetadata().getName());
         }
         return name;
+    }
+
+    public TString getSimpleName() {
+        if (simpleName == null) {
+            if (isArray()) {
+                simpleName = getComponentType().getSimpleName().concat(TString.wrap("[]"));
+                return simpleName;
+            }
+            String name = platformClass.getMetadata().getName();
+            int lastDollar = name.lastIndexOf('$');
+            if (lastDollar != -1) {
+                name = name.substring(lastDollar + 1);
+                if (name.charAt(0) >= '0' && name.charAt(0) <= '9') {
+                    name = "";
+                }
+            } else {
+                int lastDot = name.lastIndexOf('.');
+                if (lastDot != -1) {
+                    name = name.substring(lastDot + 1);
+                }
+            }
+            simpleName = TString.wrap(name);
+        }
+        return simpleName;
     }
 
     public boolean isPrimitive() {

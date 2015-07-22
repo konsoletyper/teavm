@@ -346,6 +346,17 @@ public class ByteBufferTest {
     }
 
     @Test
+    public void putsBytesWithZeroLengthArray() {
+        byte[] array = new byte[4];
+        ByteBuffer buffer = ByteBuffer.wrap(array);
+        buffer.get();
+        byte[] data = { };
+        buffer.put(data, 0, 0);
+        assertThat(buffer.position(), is(1));
+        assertThat(array, is(new byte[] {0, 0, 0, 0 }));
+    }
+
+    @Test
     public void compacts() {
         byte[] array = { 2, 3, 5, 7 };
         ByteBuffer buffer = ByteBuffer.wrap(array);
@@ -493,6 +504,101 @@ public class ByteBufferTest {
         assertThat(buffer.get(1), is((byte)0x2C));
         try {
             buffer.putShort(3, (short)0x2D2E);
+            fail("Exception expected");
+        } catch (IndexOutOfBoundsException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void getsInt() {
+        byte[] array = { 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x30 };
+        ByteBuffer buffer = ByteBuffer.wrap(array);
+        assertThat(buffer.getInt(), is(0x23242526));
+        assertThat(buffer.getInt(), is(0x27282930));
+        try {
+            buffer.getInt();
+            fail("Exception expected");
+        } catch (BufferUnderflowException e) {
+            // expected
+        }
+        buffer.position(7);
+        try {
+            buffer.getInt();
+            fail("Exception expected");
+        } catch (BufferUnderflowException e) {
+            // expected
+        }
+        assertThat(buffer.getInt(0), is(0x23242526));
+        assertThat(buffer.getInt(4), is(0x27282930));
+        try {
+            buffer.getInt(7);
+            fail("Exception expected");
+        } catch (IndexOutOfBoundsException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void getsLong() {
+        byte[] array = { 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38 };
+        ByteBuffer buffer = ByteBuffer.wrap(array);
+        assertThat(buffer.getLong(), is(0x2324252627282930L));
+        assertThat(buffer.getLong(), is(0x3132333435363738L));
+        try {
+            buffer.getLong();
+            fail("Exception expected");
+        } catch (BufferUnderflowException e) {
+            // expected
+        }
+        buffer.position(15);
+        try {
+            buffer.getLong();
+            fail("Exception expected");
+        } catch (BufferUnderflowException e) {
+            // expected
+        }
+        assertThat(buffer.getLong(0), is(0x2324252627282930L));
+        assertThat(buffer.getLong(8), is(0x3132333435363738L));
+        try {
+            buffer.getLong(16);
+            fail("Exception expected");
+        } catch (IndexOutOfBoundsException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void putsLong() {
+        byte[] array = new byte[16];
+        ByteBuffer buffer = ByteBuffer.wrap(array);
+        buffer.putLong(0x2324252627282930L);
+        buffer.putLong(0x3132333435363738L);
+        try {
+            buffer.putLong(0L);
+            fail("Exception expected");
+        } catch (BufferOverflowException e) {
+            // expected
+        }
+        buffer.position(15);
+        try {
+            buffer.putLong(0L);
+            fail("Exception expected");
+        } catch (BufferOverflowException e) {
+            // expected
+        }
+        assertThat(buffer.get(0), is((byte)0x23));
+        assertThat(buffer.get(1), is((byte)0x24));
+        assertThat(buffer.get(2), is((byte)0x25));
+        assertThat(buffer.get(3), is((byte)0x26));
+        assertThat(buffer.get(4), is((byte)0x27));
+        assertThat(buffer.get(5), is((byte)0x28));
+        assertThat(buffer.get(6), is((byte)0x29));
+        assertThat(buffer.get(7), is((byte)0x30));
+        buffer.putLong(0, 0xAABBCCDDEEFF0000L);
+        assertThat(buffer.get(1), is((byte)0xBB));
+        try {
+            buffer.putLong(15, 0x0L);
             fail("Exception expected");
         } catch (IndexOutOfBoundsException e) {
             // expected

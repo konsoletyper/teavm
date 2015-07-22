@@ -64,7 +64,7 @@ You can try its TeaVM-compiled version [here](http://xelfi.cz/minesweeper/teavm/
 [source code](http://source.apidesign.org/hg/html~demo/file/4dce5ea7e13a/minesweeper/src/main/java/org/apidesign/demo/minesweeper/MinesModel.java)
 and [HTML page](http://source.apidesign.org/hg/html~demo/file/4dce5ea7e13a/minesweeper/src/main/webapp/pages/index.html).
 
-Another example is avaialble [here](http://graphhopper.com/teavm/).
+Another example is available [here](http://graphhopper.com/teavm/).
 It uses [GraphHopper](https://github.com/graphhopper/graphhopper/) to build route in browser.
 Unlike original GraphHopper example it works completely in browser instead of querying server.
 Thanks to [Peter Karich](https://github.com/karussell).

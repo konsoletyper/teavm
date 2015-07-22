@@ -39,6 +39,16 @@ public class ClassTest {
     }
 
     @Test
+    public void classSimpleNameEvaluated() {
+        assertEquals("Object", Object.class.getSimpleName());
+        assertEquals("Object[]", Object[].class.getSimpleName());
+        assertEquals("int", int.class.getSimpleName());
+        assertEquals("int[]", int[].class.getSimpleName());
+        assertEquals("InnerClass", InnerClass.class.getSimpleName());
+        assertEquals("", new Object(){}.getClass().getSimpleName());
+    }
+
+    @Test
     public void objectClassNameEvaluated() {
         assertEquals("java.lang.Object", new Object().getClass().getName());
     }
@@ -204,5 +214,8 @@ public class ClassTest {
         String[] m();
 
         Class<?> n();
+    }
+
+    static class InnerClass {
     }
 }
