@@ -15,7 +15,16 @@
  */
 package org.teavm.model.emit;
 
-import org.teavm.model.*;
+import org.teavm.model.BasicBlock;
+import org.teavm.model.ClassReader;
+import org.teavm.model.FieldReference;
+import org.teavm.model.Instruction;
+import org.teavm.model.InstructionLocation;
+import org.teavm.model.MethodHolder;
+import org.teavm.model.Program;
+import org.teavm.model.ValueType;
+import org.teavm.model.Variable;
+import org.teavm.model.instructions.BranchingCondition;
 import org.teavm.model.instructions.ClassConstantInstruction;
 import org.teavm.model.instructions.ConstructArrayInstruction;
 import org.teavm.model.instructions.ConstructInstruction;
@@ -75,7 +84,7 @@ public final class ProgramEmitter {
         insn.setReceiver(var);
         insn.setConstant(value);
         addInstruction(insn);
-        return var(var);
+        return var(var, ValueType.object("java.lang.Class"));
     }
 
     public ValueEmitter constant(String value) {
@@ -84,7 +93,7 @@ public final class ProgramEmitter {
         insn.setReceiver(var);
         insn.setConstant(value);
         addInstruction(insn);
-        return var(var);
+        return var(var, ValueType.object("java.lang.String"));
     }
 
     public ValueEmitter constant(int value) {
@@ -93,7 +102,7 @@ public final class ProgramEmitter {
         insn.setReceiver(var);
         insn.setConstant(value);
         addInstruction(insn);
-        return var(var);
+        return var(var, ValueType.INTEGER);
     }
 
     public ValueEmitter constant(long value) {
@@ -102,7 +111,7 @@ public final class ProgramEmitter {
         insn.setReceiver(var);
         insn.setConstant(value);
         addInstruction(insn);
-        return var(var);
+        return var(var, ValueType.LONG);
     }
 
     public ValueEmitter constant(float value) {
@@ -111,7 +120,7 @@ public final class ProgramEmitter {
         insn.setReceiver(var);
         insn.setConstant(value);
         addInstruction(insn);
-        return var(var);
+        return var(var, ValueType.FLOAT);
     }
 
     public ValueEmitter constant(double value) {
@@ -120,15 +129,15 @@ public final class ProgramEmitter {
         insn.setReceiver(var);
         insn.setConstant(value);
         addInstruction(insn);
-        return var(var);
+        return var(var, ValueType.DOUBLE);
     }
 
-    public ValueEmitter constantNull() {
+    public ValueEmitter constantNull(ValueType type) {
         Variable var = program.createVariable();
         NullConstantInstruction insn = new NullConstantInstruction();
         insn.setReceiver(var);
         addInstruction(insn);
-        return var(var);
+        return var(var, type);
     }
 
     public ValueEmitter getField(FieldReference field, ValueType type) {
@@ -138,21 +147,33 @@ public final class ProgramEmitter {
         insn.setFieldType(type);
         insn.setReceiver(var);
         addInstruction(insn);
-        return var(var);
+        return var(var, type);
     }
 
-    public ProgramEmitter setField(FieldReference field, ValueType type, ValueEmitter value) {
+    public ValueEmitter getField(String className, String fieldName, ValueType type) {
+        return getField(new FieldReference(className, fieldName), type);
+    }
+
+    public ValueEmitter getField(Class<?> cls, String fieldName, Class<?> type) {
+        return getField(cls.getName(), fieldName, ValueType.parse(type));
+    }
+
+    public ProgramEmitter setField(FieldReference field, ValueEmitter value) {
         PutFieldInstruction insn = new PutFieldInstruction();
         insn.setField(field);
-        insn.setFieldType(type);
+        insn.setFieldType(value.type);
         insn.setValue(value.getVariable());
         addInstruction(insn);
         return this;
     }
 
-    public ValueEmitter invoke(MethodReference method, ValueEmitter... arguments) {
+    public ProgramEmitter setField(String className, String fieldName, ValueEmitter value) {
+        return setField(new FieldReference(className, fieldName), value);
+    }
+
+    public ValueEmitter invoke(String className, String methodName, ValueType resultType, ValueEmitter... arguments) {
         Variable result = null;
-        if (method.getReturnType() != ValueType.VOID) {
+        if (resultType != ValueType.VOID) {
             result = program.createVariable();
         }
         InvokeInstruction insn = new InvokeInstruction();
@@ -163,23 +184,31 @@ public final class ProgramEmitter {
             insn.getArguments().add(arg.variable);
         }
         addInstruction(insn);
-        return result != null ? var(result) : null;
+        return result != null ? var(result, resultType) : null;
     }
 
-    public ProgramEmitter invokeAndIgnore(MethodReference method, ValueEmitter... arguments) {
-        invoke(method, arguments);
+    public ValueEmitter invoke(Class<?> cls, String methodName, Class<?> resultType, ValueEmitter... arguments) {
+        return invoke(cls.getName(), methodName, ValueType.parse(resultType), arguments);
+    }
+
+    public ProgramEmitter invoke(String className, String methodName, ValueEmitter... arguments) {
+        invoke(className, methodName, ValueType.VOID, arguments);
         return this;
     }
 
-    public ValueEmitter construct(MethodReference method, ValueEmitter... arguments) {
+    public ValueEmitter construct(String className, ValueEmitter... arguments) {
         Variable var = program.createVariable();
         ConstructInstruction insn = new ConstructInstruction();
         insn.setReceiver(var);
-        insn.setType(method.getClassName());
+        insn.setType(className);
         addInstruction(insn);
-        ValueEmitter instance = var(var);
+        ValueEmitter instance = var(var, ValueType.object(className));
         instance.invokeSpecial(method, arguments);
         return instance;
+    }
+
+    public ValueEmitter construct(Class<?> cls, ValueEmitter... arguments) {
+        return construct(cls.getName(), arguments);
     }
 
     public ValueEmitter constructArray(ValueType type, ValueEmitter size) {
@@ -189,7 +218,7 @@ public final class ProgramEmitter {
         insn.setSize(size.getVariable());
         insn.setItemType(type);
         addInstruction(insn);
-        return var(var);
+        return var(var, ValueType.arrayOf(type));
     }
 
     public ValueEmitter constructArray(ValueType type, int size) {
@@ -204,10 +233,11 @@ public final class ProgramEmitter {
         return constructArray(ValueType.parse(type), size);
     }
 
-    public void initClass(String className) {
+    public ProgramEmitter initClass(String className) {
         InitClassInstruction insn = new InitClassInstruction();
         insn.setClassName(className);
         addInstruction(insn);
+        return this;
     }
 
     public ProgramEmitter jump(BasicBlock block) {
@@ -223,12 +253,24 @@ public final class ProgramEmitter {
         addInstruction(insn);
     }
 
-    public ValueEmitter var(Variable var) {
-        return new ValueEmitter(this, block, var);
+    public ValueEmitter var(Variable var, ValueType type) {
+        return new ValueEmitter(this, block, var, type);
     }
 
-    public ValueEmitter newVar() {
-        return var(program.createVariable());
+    public ValueEmitter var(Variable var, Class<?> type) {
+        return var(var, ValueType.parse(type));
+    }
+
+    public ValueEmitter newVar(ValueType type) {
+        return var(program.createVariable(), type);
+    }
+
+    public ValueEmitter newVar(ClassReader cls) {
+        return var(program.createVariable(), ValueType.object(cls.getName()));
+    }
+
+    public ValueEmitter newVar(Class<?> type) {
+        return var(program.createVariable(), type);
     }
 
     public InstructionLocation getCurrentLocation() {
@@ -257,5 +299,9 @@ public final class ProgramEmitter {
         zeroBlock.getInstructions().add(insn);
 
         return new ProgramEmitter(program, block);
+    }
+
+    public IfEmitter when(ComputationEmitter condition) {
+        return new IfEmitter(this, condition.emit(this).fork(BranchingCondition.NOT_EQUAL));
     }
 }

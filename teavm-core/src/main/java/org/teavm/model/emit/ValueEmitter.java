@@ -20,9 +20,9 @@ import org.teavm.model.FieldReference;
 import org.teavm.model.Incoming;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Phi;
+import org.teavm.model.PrimitiveType;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
-import org.teavm.model.instructions.ArrayElementType;
 import org.teavm.model.instructions.ArrayLengthInstruction;
 import org.teavm.model.instructions.BinaryBranchingCondition;
 import org.teavm.model.instructions.BinaryBranchingInstruction;
@@ -42,10 +42,10 @@ import org.teavm.model.instructions.IntegerSubtype;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.IsInstanceInstruction;
-import org.teavm.model.instructions.NegateInstruction;
 import org.teavm.model.instructions.NumericOperandType;
 import org.teavm.model.instructions.PutElementInstruction;
 import org.teavm.model.instructions.PutFieldInstruction;
+import org.teavm.model.instructions.RaiseInstruction;
 import org.teavm.model.instructions.UnwrapArrayInstruction;
 
 /**
@@ -56,11 +56,13 @@ public class ValueEmitter {
     ProgramEmitter pe;
     BasicBlock block;
     Variable variable;
+    ValueType type;
 
-    ValueEmitter(ProgramEmitter programEmitter, BasicBlock block, Variable variable) {
+    ValueEmitter(ProgramEmitter programEmitter, BasicBlock block, Variable variable, ValueType type) {
         this.pe = programEmitter;
         this.block = block;
         this.variable = variable;
+        this.type = type;
     }
 
     public ProgramEmitter getProgramEmitter() {
@@ -75,79 +77,310 @@ public class ValueEmitter {
         return variable;
     }
 
-    public ValueEmitter getField(FieldReference field, ValueType type) {
+    public ValueType getType() {
+        return type;
+    }
+
+    public ValueEmitter getField(String name, ValueType type) {
+        if (!(type instanceof ValueType.Object)) {
+            throw new IllegalStateException("Can't get field of non-object type: " + type);
+        }
+
+        String className = ((ValueType.Object) type).getClassName();
         Variable var = pe.getProgram().createVariable();
         GetFieldInstruction insn = new GetFieldInstruction();
-        insn.setField(field);
+        insn.setField(new FieldReference(className, name));
         insn.setFieldType(type);
         insn.setReceiver(var);
         insn.setInstance(variable);
         pe.addInstruction(insn);
-        return pe.var(var);
+        return pe.var(var, type);
     }
 
-    public void setField(FieldReference field, ValueType type, ValueEmitter value) {
+    public ValueEmitter getField(String name, Class<?> type) {
+        return getField(name, ValueType.parse(type));
+    }
+
+    public void setField(String name, ValueEmitter value) {
+        if (!(type instanceof ValueType.Object)) {
+            throw new IllegalStateException("Can't get field of non-object type: " + type);
+        }
+
+        String className = ((ValueType.Object) type).getClassName();
         PutFieldInstruction insn = new PutFieldInstruction();
-        insn.setField(field);
+        insn.setField(new FieldReference(className, name));
         insn.setFieldType(type);
         insn.setInstance(variable);
         insn.setValue(value.getVariable());
         pe.addInstruction(insn);
     }
 
-    public ValueEmitter binary(BinaryOperation op, NumericOperandType type, ValueEmitter other) {
+    static class Pair {
+        ValueEmitter first;
+        ValueEmitter second;
+
+        public Pair(ValueEmitter first, ValueEmitter second) {
+            this.first = first;
+            this.second = second;
+        }
+    }
+
+    private Pair commonNumeric(ValueEmitter other) {
+        if (!(type instanceof ValueType.Primitive)) {
+            throw new IllegalArgumentException("First argument is not a primitive: " + type);
+        }
+        if (!(other.type instanceof ValueType.Primitive)) {
+            throw new IllegalArgumentException("First argument is not a primitive: " + other.type);
+        }
+
+        PrimitiveType firstType = ((ValueType.Primitive) type).getKind();
+        PrimitiveType secondType = ((ValueType.Primitive) other.type).getKind();
+
+        if (firstType == PrimitiveType.BOOLEAN) {
+            throw new IllegalArgumentException("First argument is not numeric: " + type);
+        }
+        if (secondType == PrimitiveType.BOOLEAN) {
+            throw new IllegalArgumentException("Second argument is not numeric: " + other.type);
+        }
+
+        ValueEmitter a = this;
+        ValueEmitter b = other;
+
+        IntegerSubtype firstSubtype = convertToIntegerSubtype(firstType);
+        if (firstSubtype != null) {
+            a = castFromInteger(firstSubtype);
+            firstType = PrimitiveType.INTEGER;
+        }
+        IntegerSubtype secondSubtype = convertToIntegerSubtype(secondType);
+        if (secondSubtype != null) {
+            b = castFromInteger(secondSubtype);
+            secondType = PrimitiveType.INTEGER;
+        }
+
+        NumericOperandType firstNumeric = convertToNumeric(firstType);
+        NumericOperandType secondNumeric = convertToNumeric(secondType);
+        int commonIndex = Math.max(firstNumeric.ordinal(), secondNumeric.ordinal());
+        NumericOperandType common = NumericOperandType.values()[commonIndex];
+        ValueType commonType = ValueType.primitive(convertNumeric(common));
+
+        if (firstNumeric != common) {
+            CastNumberInstruction insn = new CastNumberInstruction(firstNumeric, common);
+            insn.setValue(a.getVariable());
+            a = pe.newVar(commonType);
+            insn.setReceiver(a.getVariable());
+            pe.addInstruction(insn);
+        }
+        if (secondNumeric != common) {
+            CastNumberInstruction insn = new CastNumberInstruction(secondNumeric, common);
+            insn.setValue(b.getVariable());
+            b = pe.newVar(commonType);
+            insn.setReceiver(b.getVariable());
+            pe.addInstruction(insn);
+        }
+
+        return new Pair(a, b);
+    }
+
+    private ValueEmitter binary(BinaryOperation op, ValueEmitter other) {
+        Pair pair = commonNumeric(other);
+        return binaryOp(op, pair.first, pair.second, pair.first.type);
+    }
+
+    private ValueEmitter binaryOp(BinaryOperation op, ValueEmitter a, ValueEmitter b, ValueType type) {
         Variable var = pe.getProgram().createVariable();
-        BinaryInstruction insn = new BinaryInstruction(op, type);
-        insn.setFirstOperand(variable);
-        insn.setSecondOperand(other.variable);
+        PrimitiveType common = ((ValueType.Primitive) a.type).getKind();
+
+        BinaryInstruction insn = new BinaryInstruction(op, convertToNumeric(common));
+        insn.setFirstOperand(a.getVariable());
+        insn.setSecondOperand(b.getVariable());
         insn.setReceiver(var);
         pe.addInstruction(insn);
-        return pe.var(var);
+        return pe.var(var, type);
     }
 
-    public ValueEmitter add(NumericOperandType type, ValueEmitter other) {
-        return binary(BinaryOperation.ADD, type, other);
+    private IntegerSubtype convertToIntegerSubtype(PrimitiveType type) {
+        switch (type) {
+            case BYTE:
+                return IntegerSubtype.BYTE;
+            case SHORT:
+                return IntegerSubtype.SHORT;
+            case CHARACTER:
+                return IntegerSubtype.CHARACTER;
+            default:
+                break;
+        }
+        return null;
     }
 
-    public ValueEmitter iadd(ValueEmitter other) {
-        return add(NumericOperandType.INT, other);
+    private NumericOperandType convertToNumeric(PrimitiveType type) {
+        switch (type) {
+            case BYTE:
+            case SHORT:
+            case CHARACTER:
+            case INTEGER:
+                return NumericOperandType.INT;
+            case LONG:
+                return NumericOperandType.LONG;
+            case FLOAT:
+                return NumericOperandType.FLOAT;
+            case DOUBLE:
+                return NumericOperandType.DOUBLE;
+            default:
+                break;
+        }
+        throw new AssertionError("Unexpected type: " + type);
     }
 
-    public ValueEmitter sub(NumericOperandType type, ValueEmitter other) {
-        return binary(BinaryOperation.SUBTRACT, type, other);
+    private PrimitiveType convertNumeric(NumericOperandType type) {
+        switch (type) {
+            case INT:
+                return PrimitiveType.INTEGER;
+            case LONG:
+                return PrimitiveType.LONG;
+            case FLOAT:
+                return PrimitiveType.FLOAT;
+            case DOUBLE:
+                return PrimitiveType.DOUBLE;
+            default:
+                break;
+        }
+        throw new AssertionError("Unknown type: " + type);
     }
 
-    public ValueEmitter isub(ValueEmitter other) {
-        return sub(NumericOperandType.INT, other);
+    public ValueEmitter add(ValueEmitter other) {
+        return binary(BinaryOperation.ADD, other);
     }
 
-    public ValueEmitter compare(NumericOperandType type, ValueEmitter other) {
-        return binary(BinaryOperation.COMPARE, type, other);
+    public ValueEmitter add(int value) {
+        return binary(BinaryOperation.ADD, pe.constant(value));
     }
 
-    public ValueEmitter icompare(ValueEmitter other) {
-        return compare(NumericOperandType.INT, other);
+    public ValueEmitter sub(ValueEmitter other) {
+        return binary(BinaryOperation.SUBTRACT, other);
     }
 
-    public ValueEmitter neg(NumericOperandType type) {
-        Variable var = pe.getProgram().createVariable();
-        NegateInstruction insn = new NegateInstruction(type);
-        insn.setOperand(variable);
-        insn.setReceiver(var);
-        return pe.var(var);
+    public ValueEmitter sub(int value) {
+        return binary(BinaryOperation.SUBTRACT, pe.constant(value));
     }
 
-    public ValueEmitter ineg() {
-        return neg(NumericOperandType.INT);
+    public ValueEmitter mul(ValueEmitter other) {
+        return binary(BinaryOperation.MULTIPLY, other);
     }
 
-    public ValueEmitter invoke(InvocationType type, MethodReference method, ValueEmitter... arguments) {
+    public ValueEmitter mul(int value) {
+        return binary(BinaryOperation.MULTIPLY, pe.constant(value));
+    }
+
+    public ValueEmitter div(ValueEmitter other) {
+        return binary(BinaryOperation.DIVIDE, other);
+    }
+
+    public ValueEmitter div(int value) {
+        return binary(BinaryOperation.DIVIDE, pe.constant(value));
+    }
+
+    public ValueEmitter rem(ValueEmitter other) {
+        return binary(BinaryOperation.MODULO, other);
+    }
+
+    public ValueEmitter rem(int value) {
+        return binary(BinaryOperation.MODULO, pe.constant(value));
+    }
+
+    public ValueEmitter compareTo(ValueEmitter other) {
+        Pair pair = commonNumeric(other);
+        return binaryOp(BinaryOperation.COMPARE, pair.first, pair.second, ValueType.INTEGER);
+    }
+
+    public ValueEmitter compareTo(int value) {
+        return compareTo(pe.constant(value));
+    }
+
+    private ValueEmitter logical(BinaryOperation op, ValueEmitter other) {
+        Pair pair = commonNumeric(other);
+        PrimitiveType common = ((ValueType.Primitive) pair.first.type).getKind();
+        checkInteger(common);
+        return binaryOp(op, pair.first, pair.second, pair.first.type);
+    }
+
+    public ValueEmitter bitAnd(ValueEmitter other) {
+        return logical(BinaryOperation.AND, other);
+    }
+
+    private void checkInteger(PrimitiveType common) {
+        switch (common) {
+            case FLOAT:
+            case DOUBLE:
+                throw new IllegalArgumentException("Can't perform bitwise operation between non-integers");
+            default:
+                break;
+        }
+    }
+
+    public ValueEmitter bitAnd(int value) {
+        return bitAnd(pe.constant(value));
+    }
+
+    public ValueEmitter bitOr(ValueEmitter other) {
+        return logical(BinaryOperation.OR, other);
+    }
+
+    public ValueEmitter bitOr(int value) {
+        return bitOr(pe.constant(value));
+    }
+
+    public ValueEmitter bitXor(ValueEmitter other) {
+        return logical(BinaryOperation.XOR, other);
+    }
+
+    public ValueEmitter bitXor(int value) {
+        return bitXor(pe.constant(value));
+    }
+
+    public ValueEmitter shl(ValueEmitter other) {
+        return binary(BinaryOperation.SHIFT_LEFT, other);
+    }
+
+    public ValueEmitter shl(int value) {
+        return binary(BinaryOperation.SHIFT_LEFT, pe.constant(value));
+    }
+
+    public ValueEmitter shr(ValueEmitter other) {
+        return binary(BinaryOperation.SHIFT_RIGHT, other);
+    }
+
+    public ValueEmitter shr(int value) {
+        return binary(BinaryOperation.SHIFT_RIGHT, pe.constant(value));
+    }
+
+    public ValueEmitter shru(ValueEmitter other) {
+        return binary(BinaryOperation.SHIFT_RIGHT_UNSIGNED, other);
+    }
+
+    public ValueEmitter shru(int value) {
+        return binary(BinaryOperation.SHIFT_RIGHT_UNSIGNED, pe.constant(value));
+    }
+
+    public ValueEmitter invoke(InvocationType invokeType, String className, String name, ValueType resultType,
+            ValueEmitter... arguments) {
+        if (!(type instanceof ValueType.Object)) {
+            throw new IllegalStateException("Can't invoke method on non-object type: " + type);
+        }
+
         Variable result = null;
+        String className = ((ValueType.Object) type).getClassName();
+        ValueType[] signature = new ValueType[arguments.length + 1];
+        for (int i = 0; i < arguments.length; ++i) {
+            signature[i] = arguments[i].type;
+        }
+        signature[arguments.length] = resultType;
+
+        MethodReference method = new MethodReference(className, name, signature);
         if (method.getReturnType() != ValueType.VOID) {
             result = pe.getProgram().createVariable();
         }
         InvokeInstruction insn = new InvokeInstruction();
-        insn.setType(type);
+        insn.setType(invokeType);
         insn.setMethod(method);
         insn.setInstance(variable);
         insn.setReceiver(result);
@@ -155,18 +388,54 @@ public class ValueEmitter {
             insn.getArguments().add(arg.variable);
         }
         pe.addInstruction(insn);
-        return result != null ? pe.var(result) : null;
+        return result != null ? pe.var(result, resultType) : null;
     }
 
-    public ValueEmitter invokeSpecial(MethodReference method, ValueEmitter... arguments) {
-        return invoke(InvocationType.SPECIAL, method, arguments);
+    public ValueEmitter invoke(InvocationType invokeType, String name, ValueType resultType,
+            ValueEmitter... arguments) {
+        return invoke(invokeType, ((ValueType.Object) type).getClassName(), name, resultType, arguments);
     }
 
-    public ValueEmitter invokeVirtual(MethodReference method, ValueEmitter... arguments) {
-        return invoke(InvocationType.VIRTUAL, method, arguments);
+    public ValueEmitter invokeSpecial(String className, String name, ValueType resultType, ValueEmitter... arguments) {
+        return invoke(InvocationType.SPECIAL, className, name, resultType, arguments);
     }
 
-    public ValueEmitter join(BasicBlock block, ValueEmitter other, BasicBlock otherBlock) {
+    public ValueEmitter invokeSpecial(String name, ValueType resultType, ValueEmitter... arguments) {
+        return invoke(InvocationType.SPECIAL, name, resultType, arguments);
+    }
+
+    public ValueEmitter invokeSpecial(String name, Class<?> resultType, ValueEmitter... arguments) {
+        return invoke(InvocationType.SPECIAL, name, ValueType.parse(resultType), arguments);
+    }
+
+    public ProgramEmitter invokeSpecial(String className, String name, ValueEmitter... arguments) {
+        invokeSpecial(className, name, ValueType.VOID, arguments);
+        return pe;
+    }
+
+    public ProgramEmitter invokeSpecial(Class<?> cls, String name, ValueEmitter... arguments) {
+        invokeSpecial(cls.getName(), name, ValueType.VOID, arguments);
+        return pe;
+    }
+
+    public ProgramEmitter invokeSpecial(String name, ValueEmitter... arguments) {
+        invokeSpecial(name, ValueType.VOID, arguments);
+        return pe;
+    }
+
+    public ValueEmitter invokeVirtual(String name, ValueType resultType, ValueEmitter... arguments) {
+        return invoke(InvocationType.VIRTUAL, name, resultType, arguments);
+    }
+
+    public ValueEmitter invokeVirtual(String name, Class<?> resultType, ValueEmitter... arguments) {
+        return invoke(InvocationType.VIRTUAL, name, ValueType.parse(resultType), arguments);
+    }
+
+    public void invokeVirtual(String name, ValueEmitter... arguments) {
+        invokeVirtual(name, ValueType.VOID, arguments);
+    }
+
+    public ValueEmitter join(BasicBlock block, ValueEmitter other, BasicBlock otherBlock, ValueType type) {
         Variable var = pe.getProgram().createVariable();
         Phi phi = new Phi();
         phi.setReceiver(var);
@@ -179,7 +448,7 @@ public class ValueEmitter {
         incoming.setValue(other.variable);
         phi.getIncomings().add(incoming);
         pe.getBlock().getPhis().add(phi);
-        return new ValueEmitter(pe, pe.getBlock(), var);
+        return new ValueEmitter(pe, pe.getBlock(), var, type);
     }
 
     public ForkEmitter fork(BinaryBranchingCondition condition, ValueEmitter other) {
@@ -187,12 +456,14 @@ public class ValueEmitter {
         insn.setFirstOperand(variable);
         insn.setSecondOperand(other.variable);
         pe.addInstruction(insn);
-        return new ForkEmitter() {
-            @Override public void setThen(BasicBlock block) {
+        return new ForkEmitter(pe) {
+            @Override public ForkEmitter setThen(BasicBlock block) {
                 insn.setConsequent(block);
+                return this;
             }
-            @Override public void setElse(BasicBlock block) {
+            @Override public ForkEmitter setElse(BasicBlock block) {
                 insn.setAlternative(block);
+                return this;
             }
         };
     }
@@ -201,12 +472,14 @@ public class ValueEmitter {
         final BranchingInstruction insn = new BranchingInstruction(condition);
         insn.setOperand(variable);
         pe.addInstruction(insn);
-        return new ForkEmitter() {
-            @Override public void setThen(BasicBlock block) {
+        return new ForkEmitter(pe) {
+            @Override public ForkEmitter setThen(BasicBlock block) {
                 insn.setConsequent(block);
+                return this;
             }
-            @Override public void setElse(BasicBlock block) {
+            @Override public ForkEmitter setElse(BasicBlock block) {
                 insn.setAlternative(block);
+                return this;
             }
         };
     }
@@ -217,50 +490,88 @@ public class ValueEmitter {
         pe.addInstruction(insn);
     }
 
+    public void raise() {
+        RaiseInstruction insn = new RaiseInstruction();
+        insn.setException(variable);
+        pe.addInstruction(insn);
+    }
+
+    public ValueEmitter cast(Class<?> type) {
+        return cast(ValueType.parse(type));
+    }
+
     public ValueEmitter cast(ValueType type) {
-        Variable result = pe.getProgram().createVariable();
-        CastInstruction insn = new CastInstruction();
+        if (type.equals(this.type)) {
+            return this;
+        }
+        if (type instanceof ValueType.Primitive) {
+
+        } else {
+            if (this.type instanceof ValueType.Primitive) {
+                throw new IllegalStateException("Can't convert " + this.type + " to " + type);
+            }
+            Variable result = pe.getProgram().createVariable();
+            CastInstruction insn = new CastInstruction();
+            insn.setValue(variable);
+            insn.setReceiver(result);
+            insn.setTargetType(type);
+            pe.addInstruction(insn);
+            return pe.var(result, type);
+        }
+    }
+
+    public ValueEmitter cast(NumericOperandType to) {
+        if (!(type instanceof ValueType.Primitive)) {
+            throw new IllegalStateException("Can't cast non-primitive type: " + type);
+        }
+
+        ValueEmitter value = this;
+        PrimitiveType kind = ((ValueType.Primitive) type).getKind();
+        IntegerSubtype subtype = convertToIntegerSubtype(kind);
+        if (subtype != null) {
+            value = value.castFromInteger(subtype);
+            kind = PrimitiveType.INTEGER;
+        }
+
+        ValueEmitter result = pe.newVar(ValueType.INTEGER);
+        CastNumberInstruction insn = new CastNumberInstruction(convertToNumeric(kind), to);
         insn.setValue(variable);
-        insn.setReceiver(result);
-        insn.setTargetType(type);
+        insn.setReceiver(result.getVariable());
         pe.addInstruction(insn);
-        return pe.var(result);
+
+        return result;
     }
 
-    public ValueEmitter cast(NumericOperandType from, NumericOperandType to) {
-        Variable result = pe.getProgram().createVariable();
-        CastNumberInstruction insn = new CastNumberInstruction(from, to);
+    private ValueEmitter castFromInteger(IntegerSubtype subtype) {
+        CastIntegerInstruction insn = new CastIntegerInstruction(subtype, CastIntegerDirection.TO_INTEGER);
         insn.setValue(variable);
-        insn.setReceiver(result);
+        ValueEmitter result = pe.newVar(ValueType.INTEGER);
+        insn.setReceiver(result.getVariable());
         pe.addInstruction(insn);
-        return pe.var(result);
+        return result;
     }
 
-    public ValueEmitter cast(IntegerSubtype subtype, CastIntegerDirection dir) {
-        Variable result = pe.getProgram().createVariable();
-        CastIntegerInstruction insn = new CastIntegerInstruction(subtype, dir);
+    private ValueEmitter castToInteger(IntegerSubtype subtype) {
+        CastIntegerInstruction insn = new CastIntegerInstruction(subtype, CastIntegerDirection.FROM_INTEGER);
         insn.setValue(variable);
-        insn.setReceiver(result);
+        ValueEmitter result = pe.newVar(ValueType.INTEGER);
+        insn.setReceiver(result.getVariable());
         pe.addInstruction(insn);
-        return pe.var(result);
-    }
-
-    public ValueEmitter toInteger(IntegerSubtype from) {
-        return cast(from, CastIntegerDirection.TO_INTEGER);
-    }
-
-    public ValueEmitter fromInteger(IntegerSubtype to) {
-        return cast(to, CastIntegerDirection.FROM_INTEGER);
+        return result;
     }
 
     public ValueEmitter getElement(ValueEmitter index) {
+        if (!(type instanceof ValueType.Array)) {
+            throw new IllegalArgumentException("Can't get element of non-array type: " + type);
+        }
+
         Variable result = pe.getProgram().createVariable();
         GetElementInstruction insn = new GetElementInstruction();
         insn.setArray(variable);
         insn.setIndex(index.variable);
         insn.setReceiver(result);
         pe.addInstruction(insn);
-        return pe.var(result);
+        return pe.var(result, ((ValueType.Array) type).getItemType());
     }
 
     public ValueEmitter getElement(int index) {
@@ -279,13 +590,13 @@ public class ValueEmitter {
         setElement(pe.constant(index), value);
     }
 
-    public ValueEmitter unwrapArray(ArrayElementType elementType) {
+    public ValueEmitter unwrapArray() {
         Variable result = pe.getProgram().createVariable();
         UnwrapArrayInstruction insn = new UnwrapArrayInstruction(elementType);
         insn.setArray(variable);
         insn.setReceiver(result);
         pe.addInstruction(insn);
-        return pe.var(result);
+        return pe.var(result, type);
     }
 
     public ValueEmitter arrayLength() {
@@ -294,7 +605,7 @@ public class ValueEmitter {
         insn.setArray(variable);
         insn.setReceiver(result);
         pe.addInstruction(insn);
-        return pe.var(result);
+        return pe.var(result, ValueType.INTEGER);
     }
 
     public ValueEmitter instanceOf(ValueType type) {
@@ -304,7 +615,7 @@ public class ValueEmitter {
         insn.setReceiver(result);
         insn.setType(type);
         pe.addInstruction(insn);
-        return pe.var(result);
+        return pe.var(result, ValueType.BOOLEAN);
     }
 
     public ValueEmitter cloneArray() {
@@ -313,6 +624,6 @@ public class ValueEmitter {
         insn.setArray(variable);
         insn.setReceiver(result);
         pe.addInstruction(insn);
-        return pe.var(result);
+        return pe.var(result, type);
     }
 }

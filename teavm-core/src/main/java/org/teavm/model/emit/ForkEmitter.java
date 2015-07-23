@@ -22,43 +22,55 @@ import org.teavm.model.BasicBlock;
  * @author Alexey Andreev
  */
 public abstract class ForkEmitter {
-    public abstract void setThen(BasicBlock block);
+    private ProgramEmitter pe;
 
-    public abstract void setElse(BasicBlock block);
+    public ForkEmitter(ProgramEmitter pe) {
+        this.pe = pe;
+    }
+
+    public abstract ForkEmitter setThen(BasicBlock block);
+
+    public abstract ForkEmitter setElse(BasicBlock block);
 
     public ForkEmitter and(BasicBlock block, final ForkEmitter other) {
         setThen(block);
-        return new ForkEmitter() {
-            @Override public void setThen(BasicBlock block) {
+        return new ForkEmitter(pe) {
+            @Override public ForkEmitter setThen(BasicBlock block) {
                 other.setThen(block);
+                return this;
             }
-            @Override public void setElse(BasicBlock block) {
+            @Override public ForkEmitter setElse(BasicBlock block) {
                 ForkEmitter.this.setElse(block);
                 other.setElse(block);
+                return this;
             }
         };
     }
 
     public ForkEmitter or(BasicBlock block, final ForkEmitter other) {
         setElse(block);
-        return new ForkEmitter() {
-            @Override public void setThen(BasicBlock block) {
+        return new ForkEmitter(pe) {
+            @Override public ForkEmitter setThen(BasicBlock block) {
                 ForkEmitter.this.setThen(block);
                 other.setThen(block);
+                return this;
             }
-            @Override public void setElse(BasicBlock block) {
+            @Override public ForkEmitter setElse(BasicBlock block) {
                 other.setElse(block);
+                return this;
             }
         };
     }
 
     public ForkEmitter not() {
-        return new ForkEmitter() {
-            @Override public void setThen(BasicBlock block) {
+        return new ForkEmitter(pe) {
+            @Override public ForkEmitter setThen(BasicBlock block) {
                 ForkEmitter.this.setElse(block);
+                return this;
             }
-            @Override public void setElse(BasicBlock block) {
+            @Override public ForkEmitter setElse(BasicBlock block) {
                 ForkEmitter.this.setThen(block);
+                return this;
             }
         };
     }
