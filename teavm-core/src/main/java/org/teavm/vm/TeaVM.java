@@ -240,8 +240,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     public TeaVMEntryPoint entryPoint(String name, MethodReference ref) {
         if (name != null) {
             if (entryPoints.containsKey(name)) {
-                throw new IllegalArgumentException("Entry point with public name `" + name + "' already defined " +
-                        "for method " + ref);
+                throw new IllegalArgumentException("Entry point with public name `" + name + "' already defined "
+                        + "for method " + ref);
             }
         }
         TeaVMEntryPoint entryPoint = new TeaVMEntryPoint(name, ref, dependencyChecker.linkMethod(ref, null));
@@ -276,8 +276,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
     public void exportType(String name, String className) {
         if (exportedClasses.containsKey(name)) {
-            throw new IllegalArgumentException("Class with public name `" + name + "' already defined for class " +
-                    className);
+            throw new IllegalArgumentException("Class with public name `" + name + "' already defined for class "
+                    + className);
         }
         dependencyChecker.linkClass(className, null).initClass(null);
         exportedClasses.put(name, className);
@@ -562,8 +562,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         List<String> classOrder = decompiler.getClassOrdering(classes.getClassNames());
         List<ClassNode> classNodes = new ArrayList<>();
         int index = 0;
-        try (PrintWriter bytecodeLogger = bytecodeLogging ?
-                new PrintWriter(new OutputStreamWriter(logStream, "UTF-8")) : null) {
+        try (PrintWriter bytecodeLogger = bytecodeLogging
+                ? new PrintWriter(new OutputStreamWriter(logStream, "UTF-8")) : null) {
             for (String className : classOrder) {
                 ClassHolder cls = classes.get(className);
                 for (MethodHolder method : cls.getMethods()) {
@@ -583,11 +583,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     }
 
     private void preprocessNativeMethod(MethodHolder method) {
-        if (!method.getModifiers().contains(ElementModifier.NATIVE) ||
-                methodGenerators.get(method.getReference()) != null ||
-                methodInjectors.get(method.getReference()) != null ||
-                method.getAnnotations().get(GeneratedBy.class.getName()) != null ||
-                method.getAnnotations().get(InjectedBy.class.getName()) != null) {
+        if (!method.getModifiers().contains(ElementModifier.NATIVE)
+                || methodGenerators.get(method.getReference()) != null
+                || methodInjectors.get(method.getReference()) != null
+                || method.getAnnotations().get(GeneratedBy.class.getName()) != null
+                || method.getAnnotations().get(InjectedBy.class.getName()) != null) {
             return;
         }
         method.getModifiers().remove(ElementModifier.NATIVE);
@@ -628,8 +628,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
 
         boolean noCache = method.getAnnotations().get(NoCache.class.getName()) != null;
-        Program optimizedProgram = incremental && !noCache && programCache != null ?
-                programCache.get(method.getReference()) : null;
+        Program optimizedProgram = incremental && !noCache && programCache != null
+                ? programCache.get(method.getReference()) : null;
         if (optimizedProgram == null) {
             optimizedProgram = ProgramUtils.copy(method.getProgram());
             if (optimizedProgram.basicBlockCount() > 0) {
@@ -681,12 +681,12 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
     private void printType(PrintWriter writer, ValueType type) {
         if (type instanceof ValueType.Object) {
-            writer.print(((ValueType.Object)type).getClassName());
+            writer.print(((ValueType.Object) type).getClassName());
         } else if (type instanceof ValueType.Array) {
-            printType(writer, ((ValueType.Array)type).getItemType());
+            printType(writer, ((ValueType.Array) type).getItemType());
             writer.print("[]");
         } else if (type instanceof ValueType.Primitive) {
-            switch (((ValueType.Primitive)type).getKind()) {
+            switch (((ValueType.Primitive) type).getKind()) {
                 case BOOLEAN:
                     writer.print("boolean");
                     break;

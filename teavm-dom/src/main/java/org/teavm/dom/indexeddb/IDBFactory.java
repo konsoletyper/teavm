@@ -36,8 +36,8 @@ public abstract class IDBFactory implements JSObject {
         return factory;
     }
 
-    @JSBody(params = {}, script = "return window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || " +
-            "window.msIndexedDB;")
+    @JSBody(params = {}, script = "return window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || "
+            + "window.msIndexedDB;")
     static native IDBFactory getInstanceImpl();
 
     public abstract IDBOpenDBRequest open(String name, int version);

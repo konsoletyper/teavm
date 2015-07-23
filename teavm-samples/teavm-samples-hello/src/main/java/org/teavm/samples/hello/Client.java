@@ -26,9 +26,9 @@ import org.teavm.dom.html.HTMLElement;
 import org.teavm.jso.JS;
 
 public final class Client {
-    private static Window window = (Window)JS.getGlobal();
+    private static Window window = (Window) JS.getGlobal();
     private static HTMLDocument document = window.getDocument();
-    private static HTMLButtonElement helloButton = (HTMLButtonElement)document.getElementById("hello-button");
+    private static HTMLButtonElement helloButton = (HTMLButtonElement) document.getElementById("hello-button");
     private static HTMLElement responsePanel = document.getElementById("response-panel");
     private static HTMLElement thinkingPanel = document.getElementById("thinking-panel");
 

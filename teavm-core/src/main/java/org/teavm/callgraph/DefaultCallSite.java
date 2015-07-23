@@ -56,9 +56,9 @@ public class DefaultCallSite implements CallSite {
         if (!(obj instanceof DefaultCallSite)) {
             return false;
         }
-        DefaultCallSite other = (DefaultCallSite)obj;
-        return Objects.equals(callee.getMethod(), other.callee.getMethod()) &&
-                Objects.equals(location, other.location);
+        DefaultCallSite other = (DefaultCallSite) obj;
+        return Objects.equals(callee.getMethod(), other.callee.getMethod())
+                && Objects.equals(location, other.location);
     }
 
     @Override

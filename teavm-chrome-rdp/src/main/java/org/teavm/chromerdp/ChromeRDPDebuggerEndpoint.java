@@ -39,7 +39,7 @@ public class ChromeRDPDebuggerEndpoint implements ChromeRDPExchange {
         session.setMaxIdleTimeout(0);
         Object debugger = session.getUserProperties().get("chrome.rdp");
         if (debugger instanceof ChromeRDPExchangeConsumer) {
-            this.debugger = (ChromeRDPExchangeConsumer)debugger;
+            this.debugger = (ChromeRDPExchangeConsumer) debugger;
             this.debugger.setExchange(this);
         }
     }

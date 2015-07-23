@@ -30,7 +30,7 @@ class BuildTimeResourceWriterMethod implements BuildTimeResourceMethod {
 
     @Override
     public Object invoke(BuildTimeResourceProxy proxy, Object[] args) throws Throwable {
-        SourceWriter writer = (SourceWriter)args[0];
+        SourceWriter writer = (SourceWriter) args[0];
         writer.append('{');
         for (int i = 0; i < propertyNames.length; ++i) {
             if (i > 0) {

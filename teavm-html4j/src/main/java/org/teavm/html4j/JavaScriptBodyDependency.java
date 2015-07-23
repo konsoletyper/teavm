@@ -63,8 +63,8 @@ public class JavaScriptBodyDependency extends AbstractDependencyListener {
     @Override
     public void classReached(DependencyAgent agent, String className, CallLocation location) {
         ClassReader cls = agent.getClassSource().get(className);
-        if (cls != null && !cls.hasModifier(ElementModifier.ABSTRACT) &&
-                !cls.hasModifier(ElementModifier.INTERFACE)) {
+        if (cls != null && !cls.hasModifier(ElementModifier.ABSTRACT)
+                && !cls.hasModifier(ElementModifier.INTERFACE)) {
             allClassesNode.propagate(agent.getType(className));
         }
     }

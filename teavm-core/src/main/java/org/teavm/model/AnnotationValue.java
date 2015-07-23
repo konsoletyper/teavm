@@ -102,63 +102,63 @@ public class AnnotationValue {
         if (type != BOOLEAN) {
             throw new IllegalStateException("There is no boolean value");
         }
-        return (Boolean)value;
+        return (Boolean) value;
     }
 
     public byte getByte() {
         if (type != BYTE) {
             throw new IllegalStateException("There is no byte value");
         }
-        return (Byte)value;
+        return (Byte) value;
     }
 
     public short getShort() {
         if (type != SHORT) {
             throw new IllegalStateException("There is no short value");
         }
-        return (Short)value;
+        return (Short) value;
     }
 
     public int getInt() {
         if (type != INT) {
             throw new IllegalStateException("There is no int value");
         }
-        return (Integer)value;
+        return (Integer) value;
     }
 
     public long getLong() {
         if (type != LONG) {
             throw new IllegalStateException("There is no long value");
         }
-        return (Long)value;
+        return (Long) value;
     }
 
     public float getFloat() {
         if (type != FLOAT) {
             throw new IllegalStateException("There is no float value");
         }
-        return (Float)value;
+        return (Float) value;
     }
 
     public double getDouble() {
         if (type != DOUBLE) {
             throw new IllegalStateException("There is no double value");
         }
-        return (Double)value;
+        return (Double) value;
     }
 
     public String getString() {
         if (type != STRING) {
             throw new IllegalStateException("There is no String value");
         }
-        return (String)value;
+        return (String) value;
     }
 
     public ValueType getJavaClass() {
         if (type != CLASS) {
             throw new IllegalStateException("There is no ValueType value");
         }
-        return (ValueType)value;
+        return (ValueType) value;
     }
 
     @SuppressWarnings("unchecked")
@@ -166,21 +166,21 @@ public class AnnotationValue {
         if (type != LIST) {
             throw new IllegalStateException("There is no List value");
         }
-        return Collections.unmodifiableList((List<AnnotationValue>)value);
+        return Collections.unmodifiableList((List<AnnotationValue>) value);
     }
 
     public FieldReference getEnumValue() {
         if (type != ENUM) {
             throw new IllegalStateException("There is no enum value");
         }
-        return (FieldReference)value;
+        return (FieldReference) value;
     }
 
     public AnnotationReader getAnnotation() {
         if (type != ANNOTATION) {
             throw new IllegalStateException("There is no annotation value");
         }
-        return (AnnotationReader)value;
+        return (AnnotationReader) value;
     }
 
     public byte getType() {

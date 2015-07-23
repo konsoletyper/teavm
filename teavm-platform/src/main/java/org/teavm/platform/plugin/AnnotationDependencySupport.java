@@ -45,8 +45,8 @@ public class AnnotationDependencySupport extends AbstractDependencyListener {
 
     @Override
     public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
-        if (method.getReference().getClassName().equals(Platform.class.getName()) &&
-                method.getReference().getName().equals("getAnnotations")) {
+        if (method.getReference().getClassName().equals(Platform.class.getName())
+                && method.getReference().getName().equals("getAnnotations")) {
             method.getResult().propagate(agent.getType("[" + Annotation.class.getName()));
             agent.linkMethod(new MethodReference(PlatformAnnotationProvider.class, "getAnnotations",
                     Annotation[].class), location);

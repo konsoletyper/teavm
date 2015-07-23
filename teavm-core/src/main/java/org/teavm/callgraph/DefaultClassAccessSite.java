@@ -61,9 +61,9 @@ public class DefaultClassAccessSite implements ClassAccessSite {
         if (!(obj instanceof DefaultClassAccessSite)) {
             return false;
         }
-        DefaultClassAccessSite other = (DefaultClassAccessSite)obj;
-        return Objects.equals(location, other.location) &&
-                Objects.equals(callee, other.callee) &&
-                Objects.equals(className, other.className);
+        DefaultClassAccessSite other = (DefaultClassAccessSite) obj;
+        return Objects.equals(location, other.location)
+                && Objects.equals(callee, other.callee)
+                && Objects.equals(className, other.className);
     }
 }

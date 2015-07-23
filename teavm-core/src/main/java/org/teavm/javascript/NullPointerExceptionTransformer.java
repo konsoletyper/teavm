@@ -44,7 +44,7 @@ public class NullPointerExceptionTransformer implements ClassHolderTransformer {
         for (int i = 0; i < block.getInstructions().size(); ++i) {
             Instruction insn = block.getInstructions().get(i);
             if (insn instanceof InvokeInstruction) {
-                InvokeInstruction invoke = (InvokeInstruction)insn;
+                InvokeInstruction invoke = (InvokeInstruction) insn;
                 if (invoke.getType() != InvocationType.VIRTUAL) {
                     continue;
                 }

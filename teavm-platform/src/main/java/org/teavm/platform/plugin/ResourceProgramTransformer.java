@@ -46,7 +46,7 @@ class ResourceProgramTransformer {
         for (int i = 0; i < instructions.size(); ++i) {
             Instruction insn = instructions.get(i);
             if (insn instanceof InvokeInstruction) {
-                InvokeInstruction invoke = (InvokeInstruction)insn;
+                InvokeInstruction invoke = (InvokeInstruction) insn;
                 List<Instruction> replacement = transformInvoke(invoke);
                 if (replacement != null) {
                     instructions.set(i, new EmptyInstruction());
@@ -62,8 +62,8 @@ class ResourceProgramTransformer {
             return null;
         }
         MethodReference method = insn.getMethod();
-        if (method.getClassName().equals(ResourceArray.class.getName()) ||
-                method.getClassName().equals(ResourceMap.class.getName())) {
+        if (method.getClassName().equals(ResourceArray.class.getName())
+                || method.getClassName().equals(ResourceMap.class.getName())) {
             if (method.getName().equals("keys")) {
                 return transformKeys(insn);
             }
@@ -142,7 +142,7 @@ class ResourceProgramTransformer {
         ValueType type = insn.getMethod().getDescriptor().getResultType();
         List<Instruction> instructions = new ArrayList<>();
         if (type instanceof ValueType.Primitive) {
-            switch (((ValueType.Primitive)type).getKind()) {
+            switch (((ValueType.Primitive) type).getKind()) {
                 case BOOLEAN:
                     getAndCastProperty(insn, property, instructions, boolean.class);
                     return instructions;
@@ -166,7 +166,7 @@ class ResourceProgramTransformer {
                     break;
             }
         } else if (type instanceof ValueType.Object) {
-            switch (((ValueType.Object)type).getClassName()) {
+            switch (((ValueType.Object) type).getClassName()) {
                 case "java.lang.String": {
                     Variable resultVar = insn.getProgram().createVariable();
                     getProperty(insn, property, instructions, resultVar);
@@ -218,8 +218,8 @@ class ResourceProgramTransformer {
         InvokeInstruction castInvoke = new InvokeInstruction();
         castInvoke.setType(InvocationType.SPECIAL);
         String primitiveCapitalized = primitive.getName();
-        primitiveCapitalized = Character.toUpperCase(primitiveCapitalized.charAt(0)) +
-                primitiveCapitalized.substring(1);
+        primitiveCapitalized = Character.toUpperCase(primitiveCapitalized.charAt(0))
+                + primitiveCapitalized.substring(1);
         castInvoke.setMethod(new MethodReference(ResourceAccessor.class, "castTo" + primitiveCapitalized,
                 Object.class, primitive));
         castInvoke.getArguments().add(resultVar);
@@ -231,7 +231,7 @@ class ResourceProgramTransformer {
         ValueType type = insn.getMethod().getDescriptor().parameterType(0);
         List<Instruction> instructions = new ArrayList<>();
         if (type instanceof ValueType.Primitive) {
-            switch (((ValueType.Primitive)type).getKind()) {
+            switch (((ValueType.Primitive) type).getKind()) {
                 case BOOLEAN:
                     castAndSetProperty(insn, property, instructions, boolean.class);
                     return instructions;
@@ -255,7 +255,7 @@ class ResourceProgramTransformer {
                     break;
             }
         } else if (type instanceof ValueType.Object) {
-            switch (((ValueType.Object)type).getClassName()) {
+            switch (((ValueType.Object) type).getClassName()) {
                 case "java.lang.String": {
                     Variable castVar = insn.getProgram().createVariable();
                     InvokeInstruction castInvoke = new InvokeInstruction();
@@ -300,8 +300,8 @@ class ResourceProgramTransformer {
         InvokeInstruction castInvoke = new InvokeInstruction();
         castInvoke.setType(InvocationType.SPECIAL);
         String primitiveCapitalized = primitive.getName();
-        primitiveCapitalized = Character.toUpperCase(primitiveCapitalized.charAt(0)) +
-                primitiveCapitalized.substring(1);
+        primitiveCapitalized = Character.toUpperCase(primitiveCapitalized.charAt(0))
+                + primitiveCapitalized.substring(1);
         castInvoke.setMethod(new MethodReference(ResourceAccessor.class, "castFrom" + primitiveCapitalized,
                 primitive, Object.class));
         castInvoke.getArguments().add(insn.getArguments().get(0));

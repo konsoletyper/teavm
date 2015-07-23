@@ -51,7 +51,7 @@ public class JUnitTestAdapter implements TestAdapter {
         AnnotationReader annot = method.getAnnotations().get(Test.class.getName());
         AnnotationValue expectedAnnot = annot.getValue("expected");
         if (expectedAnnot != null) {
-            String className = ((ValueType.Object)expectedAnnot.getJavaClass()).getClassName();
+            String className = ((ValueType.Object) expectedAnnot.getJavaClass()).getClassName();
             return Collections.singletonList(className);
         }
         return Collections.emptyList();

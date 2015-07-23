@@ -113,7 +113,7 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
         }
         if (currentClass != null) {
             int classIndex = classes.index(currentClass);
-            long fullIndex = ((long)classIndex << 32) | methodIndex;
+            long fullIndex = ((long) classIndex << 32) | methodIndex;
             if (!exactMethodMap.containsKey(fullIndex)) {
                 exactMethodMap.put(fullIndex, exactMethods.size());
                 exactMethods.add(fullIndex);
@@ -171,7 +171,7 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
             private int getExactMethodIndex(MethodReference method) {
                 int methodIndex = methods.index(method.getDescriptor().toString());
                 int classIndex = classes.index(method.getClassName());
-                long fullIndex = ((long)classIndex << 32) | methodIndex;
+                long fullIndex = ((long) classIndex << 32) | methodIndex;
                 Integer exactMethodIndex = exactMethodMap.get(fullIndex);
                 if (exactMethodIndex == null) {
                     exactMethodIndex = exactMethods.size();

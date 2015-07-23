@@ -42,7 +42,7 @@ public class MetadataProviderNativeGenerator implements Generator {
 
         // Find and instantiate metadata generator
         ValueType generatorType = providerAnnot.getValue("value").getJavaClass();
-        String generatorClassName = ((ValueType.Object)generatorType).getClassName();
+        String generatorClassName = ((ValueType.Object) generatorType).getClassName();
         Class<?> generatorClass;
         try {
             generatorClass = Class.forName(generatorClassName, true, context.getClassLoader());
@@ -55,16 +55,16 @@ public class MetadataProviderNativeGenerator implements Generator {
         try {
             cons = generatorClass.getConstructor();
         } catch (NoSuchMethodException e) {
-            context.getDiagnostics().error(new CallLocation(methodRef), "Metadata generator {{c0}} does not have " +
-                    "a public no-arg constructor", generatorClassName);
+            context.getDiagnostics().error(new CallLocation(methodRef), "Metadata generator {{c0}} does not have "
+                    + "a public no-arg constructor", generatorClassName);
             return;
         }
         MetadataGenerator generator;
         try {
-            generator = (MetadataGenerator)cons.newInstance();
+            generator = (MetadataGenerator) cons.newInstance();
         } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
-            context.getDiagnostics().error(new CallLocation(methodRef), "Error instantiating metadata " +
-                    "generator {{c0}}", generatorClassName);
+            context.getDiagnostics().error(new CallLocation(methodRef), "Error instantiating metadata "
+                    + "generator {{c0}}", generatorClassName);
             return;
         }
         DefaultMetadataGeneratorContext metadataContext = new DefaultMetadataGeneratorContext(context.getClassSource(),

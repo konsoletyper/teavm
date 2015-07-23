@@ -137,10 +137,10 @@ public class MissingItemsProcessor {
 
     private boolean checkClass(InstructionLocation location, ValueType type) {
         while (type instanceof ValueType.Array) {
-            type = ((ValueType.Array)type).getItemType();
+            type = ((ValueType.Array) type).getItemType();
         }
         if (type instanceof ValueType.Object) {
-            return checkClass(location, ((ValueType.Object)type).getClassName());
+            return checkClass(location, ((ValueType.Object) type).getClassName());
         }
         return true;
     }

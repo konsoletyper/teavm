@@ -49,7 +49,7 @@ public class Devirtualization {
                 if (!(insn instanceof InvokeInstruction)) {
                     continue;
                 }
-                InvokeInstruction invoke = (InvokeInstruction)insn;
+                InvokeInstruction invoke = (InvokeInstruction) insn;
                 if (invoke.getType() != InvocationType.VIRTUAL) {
                     continue;
                 }

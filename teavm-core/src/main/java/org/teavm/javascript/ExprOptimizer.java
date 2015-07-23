@@ -27,12 +27,12 @@ final class ExprOptimizer {
 
     public static Expr invert(Expr expr) {
         if (expr instanceof UnaryExpr) {
-            UnaryExpr unary = (UnaryExpr)expr;
+            UnaryExpr unary = (UnaryExpr) expr;
             if (unary.getOperation() == UnaryOperation.NOT) {
                 return unary.getOperand();
             }
         } else if (expr instanceof BinaryExpr) {
-            BinaryExpr binary = (BinaryExpr)expr;
+            BinaryExpr binary = (BinaryExpr) expr;
             Expr a = binary.getFirstOperand();
             Expr b = binary.getSecondOperand();
             switch (binary.getOperation()) {

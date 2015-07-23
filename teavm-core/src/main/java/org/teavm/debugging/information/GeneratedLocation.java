@@ -62,7 +62,7 @@ public class GeneratedLocation implements Comparable<GeneratedLocation> {
         if (obj == null) {
             return false;
         }
-        GeneratedLocation other = (GeneratedLocation)obj;
+        GeneratedLocation other = (GeneratedLocation) obj;
         return line == other.line && column == other.column;
     }
 

@@ -202,8 +202,8 @@ public class Decompiler {
             if (method.getModifiers().contains(ElementModifier.ABSTRACT)) {
                 continue;
             }
-            if (method.getAnnotations().get(InjectedBy.class.getName()) != null ||
-                    methodsToPass.contains(method.getReference())) {
+            if (method.getAnnotations().get(InjectedBy.class.getName()) != null
+                    || methodsToPass.contains(method.getReference())) {
                 continue;
             }
             MethodNode methodNode = decompile(method);
@@ -215,8 +215,8 @@ public class Decompiler {
     }
 
     public MethodNode decompile(MethodHolder method) {
-        return method.getModifiers().contains(ElementModifier.NATIVE) ? decompileNative(method) :
-                !asyncMethods.contains(method.getReference()) ? decompileRegular(method) : decompileAsync(method);
+        return method.getModifiers().contains(ElementModifier.NATIVE) ? decompileNative(method)
+                : !asyncMethods.contains(method.getReference()) ? decompileRegular(method) : decompileAsync(method);
     }
 
     public NativeMethodNode decompileNative(MethodHolder method) {
@@ -224,17 +224,17 @@ public class Decompiler {
         if (generator == null) {
             AnnotationHolder annotHolder = method.getAnnotations().get(GeneratedBy.class.getName());
             if (annotHolder == null) {
-                throw new DecompilationException("Method " + method.getOwnerName() + "." + method.getDescriptor() +
-                        " is native, but no " + GeneratedBy.class.getName() + " annotation found");
+                throw new DecompilationException("Method " + method.getOwnerName() + "." + method.getDescriptor()
+                        + " is native, but no " + GeneratedBy.class.getName() + " annotation found");
             }
             ValueType annotValue = annotHolder.getValues().get("value").getJavaClass();
-            String generatorClassName = ((ValueType.Object)annotValue).getClassName();
+            String generatorClassName = ((ValueType.Object) annotValue).getClassName();
             try {
                 Class<?> generatorClass = Class.forName(generatorClassName, true, classLoader);
-                generator = (Generator)generatorClass.newInstance();
+                generator = (Generator) generatorClass.newInstance();
             } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-                throw new DecompilationException("Error instantiating generator " + generatorClassName +
-                        " for native method " + method.getOwnerName() + "." + method.getDescriptor());
+                throw new DecompilationException("Error instantiating generator " + generatorClassName
+                        + " for native method " + method.getOwnerName() + "." + method.getDescriptor());
             }
         }
         NativeMethodNode methodNode = new NativeMethodNode(new MethodReference(method.getOwnerName(),
@@ -323,8 +323,8 @@ public class Decompiler {
             try {
                 part = getRegularMethodStatement(splitter.getProgram(i), splitter.getBlockSuccessors(i), i > 0);
             } catch (RuntimeException e) {
-                StringBuilder sb = new StringBuilder("Error decompiling method " + method.getReference() +
-                        " part " + i + ":\n");
+                StringBuilder sb = new StringBuilder("Error decompiling method " + method.getReference()
+                        + " part " + i + ":\n");
                 sb.append(new ListingBuilder().buildListing(splitter.getProgram(i), "  "));
                 throw new DecompilationException(sb.toString(), e);
             }
@@ -539,8 +539,8 @@ public class Decompiler {
             bookmark.offset = bookmark.block.body.size();
             bookmark.exceptionHandler = tryCatch.getHandler().getIndex();
             bookmark.exceptionType = tryCatch.getExceptionType();
-            bookmark.exceptionVariable = tryCatch.getExceptionVariable() != null ?
-                    tryCatch.getExceptionVariable().getIndex() : null;
+            bookmark.exceptionVariable = tryCatch.getExceptionVariable() != null
+                    ? tryCatch.getExceptionVariable().getIndex() : null;
             bookmark.block.tryCatches.add(bookmark);
             tryCatchBookmarks.add(bookmark);
         }
@@ -581,8 +581,8 @@ public class Decompiler {
             }
             result.add(block);
             int mappedIndex = indexer.nodeAt(currentNode.getEnd());
-            if (mappedIndex >= 0 && (blockMap[mappedIndex] == null ||
-                    !(blockMap[mappedIndex].statement instanceof WhileStatement))) {
+            if (mappedIndex >= 0 && (blockMap[mappedIndex] == null
+                    || !(blockMap[mappedIndex].statement instanceof WhileStatement))) {
                 blockMap[mappedIndex] = block;
             }
             if (loop) {

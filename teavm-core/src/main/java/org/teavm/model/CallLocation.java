@@ -58,7 +58,7 @@ public class CallLocation {
         if (!(obj instanceof CallLocation)) {
             return false;
         }
-        CallLocation other = (CallLocation)obj;
+        CallLocation other = (CallLocation) obj;
         return Objects.equals(method, other.method) && Objects.equals(sourceLocation, other.sourceLocation);
     }
 }

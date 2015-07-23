@@ -282,8 +282,8 @@ public class TeaVMTool {
             vm.setMinifying(minifying);
             vm.setBytecodeLogging(bytecodeLogging);
             vm.setProperties(properties);
-            DebugInformationBuilder debugEmitter = debugInformationGenerated || sourceMapsFileGenerated ?
-                    new DebugInformationBuilder() : null;
+            DebugInformationBuilder debugEmitter = debugInformationGenerated || sourceMapsFileGenerated
+                    ? new DebugInformationBuilder() : null;
             vm.setDebugEmitter(debugEmitter);
             vm.setIncremental(incremental);
             if (incremental) {

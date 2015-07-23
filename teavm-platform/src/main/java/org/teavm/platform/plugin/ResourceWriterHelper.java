@@ -31,16 +31,16 @@ final class ResourceWriterHelper {
             writer.append("null");
         } else {
             if (resource instanceof ResourceWriter) {
-                ((ResourceWriter)resource).write(writer);
+                ((ResourceWriter) resource).write(writer);
             } else if (resource instanceof Number) {
                 writer.append(resource);
             } else if (resource instanceof Boolean) {
                 writer.append(resource == Boolean.TRUE ? "true" : "false");
             } else if (resource instanceof String) {
-                writeString(writer, (String)resource);
+                writeString(writer, (String) resource);
             } else {
-                throw new RuntimeException("Error compiling resources. Value of illegal type found: " +
-                        resource.getClass());
+                throw new RuntimeException("Error compiling resources. Value of illegal type found: "
+                        + resource.getClass());
             }
         }
     }

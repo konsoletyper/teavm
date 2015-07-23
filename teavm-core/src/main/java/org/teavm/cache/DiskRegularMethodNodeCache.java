@@ -155,8 +155,8 @@ public class DiskRegularMethodNodeCache implements MethodNodeCache {
 
     private File getMethodFile(MethodReference method, boolean async) {
         File dir = new File(directory, method.getClassName().replace('.', '/'));
-        return new File(dir, FileNameEncoder.encodeFileName(method.getDescriptor().toString()) + ".teavm-ast" +
-                (async ? "-async" : ""));
+        return new File(dir, FileNameEncoder.encodeFileName(method.getDescriptor().toString()) + ".teavm-ast"
+                + (async ? "-async" : ""));
     }
 
     static class AstDependencyAnalyzer implements StatementVisitor, ExprVisitor {

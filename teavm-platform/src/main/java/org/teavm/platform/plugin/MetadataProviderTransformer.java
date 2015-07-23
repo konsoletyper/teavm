@@ -45,8 +45,8 @@ class MetadataProviderTransformer implements ClassHolderTransformer {
             if (providerAnnot != null) {
                 ValueType[] params = method.getParameterTypes();
                 if (params.length != 1 && params[0].isObject(PlatformClass.class.getName())) {
-                    diagnostics.error(new CallLocation(method.getReference()), "Method {{m0}} marked with {{c1}} " +
-                            "must take exactly one parameter of type {{c2}}",
+                    diagnostics.error(new CallLocation(method.getReference()), "Method {{m0}} marked with {{c1}} "
+                            + "must take exactly one parameter of type {{c2}}",
                             method.getReference(), ClassScopedMetadataProvider.class.getName(),
                             PlatformClass.class.getName());
                 }
@@ -111,8 +111,8 @@ class MetadataProviderTransformer implements ClassHolderTransformer {
             return false;
         }
         if (!method.hasModifier(ElementModifier.NATIVE)) {
-            diagnostics.error(new CallLocation(method.getReference()), "Method {{m0}} is marked with " +
-                    "{{c1}} annotation, but it is not native", method.getReference(),
+            diagnostics.error(new CallLocation(method.getReference()), "Method {{m0}} is marked with "
+                    + "{{c1}} annotation, but it is not native", method.getReference(),
                     MetadataProvider.class.getName());
             return false;
         }

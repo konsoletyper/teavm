@@ -77,7 +77,7 @@ public final class AsyncProgram {
         prime[2] = true;
         prime[3] = true;
         nextPrime: for (int i = 5; i < prime.length; i += 2) {
-            int maxPrime = (int)Math.sqrt(i);
+            int maxPrime = (int) Math.sqrt(i);
             for (int j = 3; j <= maxPrime; j += 2) {
                 Thread.yield();
                 if (prime[j] && i % j == 0) {

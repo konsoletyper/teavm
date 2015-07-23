@@ -436,8 +436,8 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
                 } else {
                     CallFunctionResponse response = mapper.reader(CallFunctionResponse.class).readValue(node);
                     RemoteObjectDTO result = response.getResult();
-                    sync.add(new RepresentationWrapper(result.getValue() != null ?
-                            result.getValue().getTextValue() : null));
+                    sync.add(new RepresentationWrapper(result.getValue() != null
+                            ? result.getValue().getTextValue() : null));
                 }
             }
         });

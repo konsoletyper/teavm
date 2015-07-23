@@ -40,8 +40,8 @@ public class DJGraph {
 
     public DJGraph(Graph src, int[] weight) {
         if (src.size() != weight.length) {
-            throw new IllegalArgumentException("Node count " + src.size() + " is not equal to weight array " +
-                    weight.length);
+            throw new IllegalArgumentException("Node count " + src.size() + " is not equal to weight array "
+                    + weight.length);
         }
         this.cfg = new MutableDirectedGraph(src);
         domTree = GraphUtils.buildDominatorTree(src);

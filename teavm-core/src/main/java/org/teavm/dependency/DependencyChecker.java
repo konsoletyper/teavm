@@ -430,7 +430,7 @@ public class DependencyChecker implements DependencyInfo {
             return;
         }
         ValueType depType = depAnnot.getValue("value").getJavaClass();
-        String depClassName = ((ValueType.Object)depType).getClassName();
+        String depClassName = ((ValueType.Object) depType).getClassName();
         Class<?> depClass;
         try {
             depClass = Class.forName(depClassName, true, classLoader);
@@ -438,7 +438,7 @@ public class DependencyChecker implements DependencyInfo {
             throw new RuntimeException("Dependency plugin not found: " + depClassName, e);
         }
         try {
-            methodDep.dependencyPlugin = (DependencyPlugin)depClass.newInstance();
+            methodDep.dependencyPlugin = (DependencyPlugin) depClass.newInstance();
         } catch (IllegalAccessException | InstantiationException e) {
             throw new RuntimeException("Can't instantiate dependency plugin " + depClassName, e);
         }

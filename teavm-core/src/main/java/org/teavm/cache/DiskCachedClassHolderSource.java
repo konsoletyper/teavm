@@ -157,19 +157,19 @@ public class DiskCachedClassHolderSource implements ClassHolderSource {
             output.writeByte(0);
         } else if (value instanceof Integer) {
             output.writeByte(1);
-            output.writeInt((Integer)value);
+            output.writeInt((Integer) value);
         } else if (value instanceof Long) {
             output.writeByte(2);
-            output.writeLong((Long)value);
+            output.writeLong((Long) value);
         } else if (value instanceof Float) {
             output.writeByte(3);
-            output.writeFloat((Float)value);
+            output.writeFloat((Float) value);
         } else if (value instanceof Double) {
             output.writeByte(4);
-            output.writeDouble((Double)value);
+            output.writeDouble((Double) value);
         } else if (value instanceof String) {
             output.writeByte(5);
-            output.writeUTF((String)value);
+            output.writeUTF((String) value);
         }
     }
 

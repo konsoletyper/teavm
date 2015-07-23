@@ -31,9 +31,9 @@ public class AsyncMethodProcessor implements ClassHolderTransformer {
     @Override
     public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
         for (MethodHolder method : cls.getMethods()) {
-            if (method.hasModifier(ElementModifier.NATIVE) &&
-                    method.getAnnotations().get(Async.class.getName()) != null &&
-                    method.getAnnotations().get(GeneratedBy.class.getName()) == null) {
+            if (method.hasModifier(ElementModifier.NATIVE)
+                    && method.getAnnotations().get(Async.class.getName()) != null
+                    && method.getAnnotations().get(GeneratedBy.class.getName()) == null) {
                 ValueType[] signature = new ValueType[method.parameterCount() + 2];
                 for (int i = 0; i < method.parameterCount(); ++i) {
                     signature[i] = method.parameterType(i);
@@ -43,10 +43,10 @@ public class AsyncMethodProcessor implements ClassHolderTransformer {
                 MethodDescriptor asyncDesc = new MethodDescriptor(method.getName(), signature);
                 MethodHolder asyncMethod = cls.getMethod(asyncDesc);
                 if (asyncMethod != null) {
-                    if (asyncMethod.hasModifier(ElementModifier.STATIC) !=
-                            method.hasModifier(ElementModifier.STATIC)) {
-                        diagnostics.error(new CallLocation(method.getReference()), "Methods {{m0}} and {{m1}} must " +
-                                "both be either static or non-static",
+                    if (asyncMethod.hasModifier(ElementModifier.STATIC)
+                            != method.hasModifier(ElementModifier.STATIC)) {
+                        diagnostics.error(new CallLocation(method.getReference()), "Methods {{m0}} and {{m1}} must "
+                                + "both be either static or non-static",
                                 method.getReference(), asyncMethod.getReference());
                     }
                     AnnotationHolder annot = new AnnotationHolder(GeneratedBy.class.getName());

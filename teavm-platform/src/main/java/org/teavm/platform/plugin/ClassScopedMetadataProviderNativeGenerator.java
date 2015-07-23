@@ -43,14 +43,15 @@ public class ClassScopedMetadataProviderNativeGenerator implements Generator {
             return;
         }
         if (!method.hasModifier(ElementModifier.NATIVE)) {
-            context.getDiagnostics().error(new CallLocation(methodRef), "Method {{m0}} is marked with " +
-                    "{{c1}} annotation, but it is not native", methodRef, ClassScopedMetadataProvider.class.getName());
+            context.getDiagnostics().error(new CallLocation(methodRef), "Method {{m0}} is marked with "
+                    + "{{c1}} annotation, but it is not native", methodRef,
+                    ClassScopedMetadataProvider.class.getName());
             return;
         }
 
         // Find and instantiate metadata generator
         ValueType generatorType = providerAnnot.getValue("value").getJavaClass();
-        String generatorClassName = ((ValueType.Object)generatorType).getClassName();
+        String generatorClassName = ((ValueType.Object) generatorType).getClassName();
         Class<?> generatorClass;
         try {
             generatorClass = Class.forName(generatorClassName, true, context.getClassLoader());
@@ -63,24 +64,24 @@ public class ClassScopedMetadataProviderNativeGenerator implements Generator {
         try {
             cons = generatorClass.getConstructor();
         } catch (NoSuchMethodException e) {
-            context.getDiagnostics().error(new CallLocation(methodRef), "Metadata generator {{c0}} does not have " +
-                    "a public no-arg constructor", generatorClassName);
+            context.getDiagnostics().error(new CallLocation(methodRef), "Metadata generator {{c0}} does not have "
+                    + "a public no-arg constructor", generatorClassName);
             return;
         }
         ClassScopedMetadataGenerator generator;
         try {
-            generator = (ClassScopedMetadataGenerator)cons.newInstance();
+            generator = (ClassScopedMetadataGenerator) cons.newInstance();
         } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
-            context.getDiagnostics().error(new CallLocation(methodRef), "Error instantiating metadata " +
-                    "generator {{c0}}", generatorClassName);
+            context.getDiagnostics().error(new CallLocation(methodRef), "Error instantiating metadata "
+                    + "generator {{c0}}", generatorClassName);
             return;
         }
         DefaultMetadataGeneratorContext metadataContext = new DefaultMetadataGeneratorContext(context.getClassSource(),
                 context.getClassLoader(), context.getProperties(), context);
 
         Map<String, Resource> resourceMap = generator.generateMetadata(metadataContext, methodRef);
-        writer.append("var p").ws().append("=").ws().append("\"" + Renderer.escapeString("$$res_" +
-                writer.getNaming().getFullNameFor(methodRef)) + "\"").append(";").softNewLine();
+        writer.append("var p").ws().append("=").ws().append("\"" + Renderer.escapeString("$$res_"
+                + writer.getNaming().getFullNameFor(methodRef)) + "\"").append(";").softNewLine();
         for (Map.Entry<String, Resource> entry : resourceMap.entrySet()) {
             writer.appendClass(entry.getKey()).append("[p]").ws().append("=").ws();
             ResourceWriterHelper.write(writer, entry.getValue());

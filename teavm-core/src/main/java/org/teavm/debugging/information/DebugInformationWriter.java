@@ -108,8 +108,8 @@ class DebugInformationWriter {
         writeUnsignedNumber(array.length);
         for (int i = 0; i < array.length; ++i) {
             long item = array[i];
-            int classIndex = (int)(item >> 32);
-            int methodIndex = (int)item;
+            int classIndex = (int) (item >> 32);
+            int methodIndex = (int) item;
             writeNumber(classIndex - lastClass);
             lastClass = classIndex;
             writeNumber(methodIndex - lastMethod);
@@ -249,7 +249,7 @@ class DebugInformationWriter {
 
     private void writeUnsignedNumber(int number) throws IOException {
         do {
-            byte b = (byte)(number & 0x7F);
+            byte b = (byte) (number & 0x7F);
             if ((number & 0xFFFFFF80) != 0) {
                 b |= 0x80;
             }

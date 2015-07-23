@@ -138,10 +138,10 @@ public class AsyncMethodFinder {
         if (method == null) {
             return;
         }
-        if (method.getAnnotations().get(Sync.class.getName()) != null ||
-                method.getAnnotations().get(InjectedBy.class.getName()) != null) {
-            diagnostics.error(new CallLocation(methodRef), "Method {{m0}} is claimed to be synchronous, " +
-                    "but it is has invocations of asynchronous methods", methodRef);
+        if (method.getAnnotations().get(Sync.class.getName()) != null
+                || method.getAnnotations().get(InjectedBy.class.getName()) != null) {
+            diagnostics.error(new CallLocation(methodRef), "Method {{m0}} is claimed to be synchronous, "
+                    + "but it is has invocations of asynchronous methods", methodRef);
             return;
         }
         for (CallSite callSite : node.getCallerCallSites()) {

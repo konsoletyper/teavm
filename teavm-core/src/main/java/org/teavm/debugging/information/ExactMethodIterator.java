@@ -39,13 +39,13 @@ public class ExactMethodIterator {
     }
 
     public boolean isEndReached() {
-        return methodIndex >= debugInformation.methodMapping.size() &&
-                classIndex >= debugInformation.classMapping.size();
+        return methodIndex >= debugInformation.methodMapping.size()
+                && classIndex >= debugInformation.classMapping.size();
     }
 
     private void read() {
-        if (classIndex < debugInformation.classMapping.size() &&
-                methodIndex < debugInformation.methodMapping.size()) {
+        if (classIndex < debugInformation.classMapping.size()
+                && methodIndex < debugInformation.methodMapping.size()) {
             RecordArray.Record classRecord = debugInformation.classMapping.get(classIndex);
             RecordArray.Record methodRecord = debugInformation.methodMapping.get(methodIndex);
             GeneratedLocation classLoc = DebugInformation.key(classRecord);

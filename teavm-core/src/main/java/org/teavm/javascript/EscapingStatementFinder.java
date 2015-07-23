@@ -34,7 +34,7 @@ class EscapingStatementFinder implements StatementVisitor {
         if (!(statement instanceof SequentialStatement)) {
             return false;
         }
-        SequentialStatement seq = (SequentialStatement)statement;
+        SequentialStatement seq = (SequentialStatement) statement;
         for (int i = seq.getSequence().size() - 1; i >= 0; --i) {
             if (!isEmpty(seq.getSequence().get(i))) {
                 return false;

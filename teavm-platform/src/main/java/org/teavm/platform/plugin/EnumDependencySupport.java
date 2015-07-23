@@ -50,8 +50,8 @@ public class EnumDependencySupport extends AbstractDependencyListener {
 
     @Override
     public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
-        if (method.getReference().getClassName().equals(Platform.class.getName()) &&
-                method.getReference().getName().equals("getEnumConstants")) {
+        if (method.getReference().getClassName().equals(Platform.class.getName())
+                && method.getReference().getName().equals("getEnumConstants")) {
             allEnums.connect(method.getResult().getArrayItem());
             final MethodReference ref = method.getReference();
             allEnums.addConsumer(type -> {

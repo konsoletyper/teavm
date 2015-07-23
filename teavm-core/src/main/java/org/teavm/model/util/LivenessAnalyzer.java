@@ -35,7 +35,7 @@ public class LivenessAnalyzer {
     }
 
     public BitSet liveIn(int block) {
-        return (BitSet)liveVars[block].clone();
+        return (BitSet) liveVars[block].clone();
     }
 
     public void analyze(Program program) {

@@ -437,8 +437,8 @@ class StatementGenerator implements InstructionVisitor {
 
     @Override
     public void visit(ExitInstruction insn) {
-        ReturnStatement stmt = Statement.exitFunction(insn.getValueToReturn() != null ?
-                Expr.var(insn.getValueToReturn().getIndex()) : null);
+        ReturnStatement stmt = Statement.exitFunction(insn.getValueToReturn() != null
+                ? Expr.var(insn.getValueToReturn().getIndex()) : null);
         stmt.setLocation(currentLocation);
         statements.add(stmt);
     }

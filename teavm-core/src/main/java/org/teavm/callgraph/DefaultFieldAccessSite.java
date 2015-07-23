@@ -62,8 +62,8 @@ public class DefaultFieldAccessSite implements FieldAccessSite {
         if (!(obj instanceof DefaultFieldAccessSite)) {
             return false;
         }
-        DefaultFieldAccessSite other = (DefaultFieldAccessSite)obj;
-        return Objects.equals(location, other.location) && Objects.equals(callee, other.callee) &&
-                Objects.equals(field, other.field);
+        DefaultFieldAccessSite other = (DefaultFieldAccessSite) obj;
+        return Objects.equals(location, other.location) && Objects.equals(callee, other.callee)
+                && Objects.equals(field, other.field);
     }
 }

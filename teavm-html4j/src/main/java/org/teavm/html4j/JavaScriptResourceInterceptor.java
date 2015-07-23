@@ -46,8 +46,8 @@ public class JavaScriptResourceInterceptor extends AbstractRendererListener {
             String resourceName = packageName.replace('.', '/') + "/" + path;
             try (InputStream input = context.getClassLoader().getResourceAsStream(resourceName)) {
                 if (input == null) {
-                    throw new RenderingException("Error processing JavaScriptResource annotation on class " +
-                            className + ". Resource not found: " + resourceName);
+                    throw new RenderingException("Error processing JavaScriptResource annotation on class "
+                            + className + ". Resource not found: " + resourceName);
                 }
                 StringWriter writer = new StringWriter();
                 IOUtils.copy(input, writer);

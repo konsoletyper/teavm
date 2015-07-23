@@ -176,10 +176,10 @@ public class ProgramParser implements VariableDebugInformation {
         for (int i = 0; i < instructions.size(); ++i) {
             AbstractInsnNode node = instructions.get(i);
             if (node instanceof LabelNode) {
-                labelIndexes.put(((LabelNode)node).getLabel(), i);
+                labelIndexes.put(((LabelNode) node).getLabel(), i);
             }
             if (node instanceof LineNumberNode) {
-                LineNumberNode lineNumberNode = (LineNumberNode)node;
+                LineNumberNode lineNumberNode = (LineNumberNode) node;
                 lineNumbers.put(lineNumberNode.start.getLabel(), lineNumberNode.line);
             }
         }
@@ -203,7 +203,7 @@ public class ProgramParser implements VariableDebugInformation {
         InsnList instructions = method.instructions;
         Deque<Step> workStack = new ArrayDeque<>();
         for (Object obj : method.tryCatchBlocks) {
-            TryCatchBlockNode tryCatchNode = (TryCatchBlockNode)obj;
+            TryCatchBlockNode tryCatchNode = (TryCatchBlockNode) obj;
             if (tryCatchNode.start == tryCatchNode.handler) {
                 continue;
             }
@@ -241,7 +241,7 @@ public class ProgramParser implements VariableDebugInformation {
             }
         }
         for (Object obj : method.tryCatchBlocks) {
-            TryCatchBlockNode tryCatchNode = (TryCatchBlockNode)obj;
+            TryCatchBlockNode tryCatchNode = (TryCatchBlockNode) obj;
             if (tryCatchNode.start == tryCatchNode.handler) {
                 continue;
             }
@@ -298,7 +298,7 @@ public class ProgramParser implements VariableDebugInformation {
             }
             AbstractInsnNode insnNode = methodNode.instructions.get(i);
             if (insnNode instanceof LabelNode) {
-                Label label = ((LabelNode)insnNode).getLabel();
+                Label label = ((LabelNode) insnNode).getLabel();
                 Integer lineNumber = lineNumbers.get(label);
                 if (lineNumber != null && !lineNumber.equals(lastLineNumber)) {
                     lastLineNumber = lineNumber;
@@ -340,7 +340,7 @@ public class ProgramParser implements VariableDebugInformation {
 
     private void emitNextBasicBlock() {
         if (index + 1 < basicBlocks.size()) {
-            getBasicBlock(index+ 1);
+            getBasicBlock(index + 1);
         }
     }
 
@@ -591,21 +591,21 @@ public class ProgramParser implements VariableDebugInformation {
         @Override
         public void visitLdcInsn(Object cst) {
             if (cst instanceof Integer) {
-                pushConstant((Integer)cst);
+                pushConstant((Integer) cst);
             } else if (cst instanceof Float) {
-                pushConstant((Float)cst);
+                pushConstant((Float) cst);
             } else if (cst instanceof Long) {
-                pushConstant((Long)cst);
+                pushConstant((Long) cst);
             } else if (cst instanceof Double) {
-                pushConstant((Double)cst);
+                pushConstant((Double) cst);
             } else if (cst instanceof String) {
                 StringConstantInstruction insn = new StringConstantInstruction();
-                insn.setConstant((String)cst);
+                insn.setConstant((String) cst);
                 insn.setReceiver(getVariable(pushSingle()));
                 addInstruction(insn);
             } else if (cst instanceof Type) {
                 ClassConstantInstruction insn = new ClassConstantInstruction();
-                insn.setConstant(ValueType.parse(((Type)cst).getDescriptor()));
+                insn.setConstant(ValueType.parse(((Type) cst).getDescriptor()));
                 insn.setReceiver(getVariable(pushSingle()));
                 addInstruction(insn);
             } else {
@@ -1055,7 +1055,7 @@ public class ProgramParser implements VariableDebugInformation {
                     }
                     break;
                 }
-                case Opcodes.DUP2_X1:{
+                case Opcodes.DUP2_X1: {
                     if (stack.type == SINGLE) {
                         popSingle();
                         popSingle();

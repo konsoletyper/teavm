@@ -107,7 +107,7 @@ class InterferenceGraphBuilder {
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
             for (Phi phi : block.getPhis()) {
-                for(Incoming incoming : phi.getIncomings()) {
+                for (Incoming incoming : phi.getIncomings()) {
                     outgoings.get(incoming.getSource().getIndex()).add(incoming);
                 }
             }

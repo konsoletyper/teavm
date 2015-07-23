@@ -55,7 +55,7 @@ public class InstructionLocation {
         if (!(obj instanceof InstructionLocation)) {
             return false;
         }
-        InstructionLocation other = (InstructionLocation)obj;
+        InstructionLocation other = (InstructionLocation) obj;
         return Objects.equals(fileName, other.fileName) && line == other.line;
     }
 

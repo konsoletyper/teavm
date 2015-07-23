@@ -155,8 +155,8 @@ public class DefaultNamingStrategy implements NamingStrategy {
             ClassReader clsHolder = classSource.get(cls);
             cls = clsHolder.getParent();
             if (cls == null) {
-                throw new NamingException("Can't provide name for field as the field not found: " +
-                        initialCls + "." + field);
+                throw new NamingException("Can't provide name for field as the field not found: "
+                        + initialCls + "." + field);
             }
         }
         return cls;

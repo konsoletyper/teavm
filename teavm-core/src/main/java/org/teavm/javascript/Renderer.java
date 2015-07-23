@@ -363,8 +363,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     new MethodDescriptor("<clinit>", ValueType.VOID));
             List<MethodNode> clinitMethods = new ArrayList<>();
             for (MethodNode method : cls.getMethods()) {
-                if (clinit == null || (!method.getModifiers().contains(NodeModifier.STATIC) &&
-                        !method.getReference().getName().equals("<init>"))) {
+                if (clinit == null || (!method.getModifiers().contains(NodeModifier.STATIC)
+                        && !method.getReference().getName().equals("<init>"))) {
                     nonInitMethods.add(method);
                 } else {
                     clinitMethods.add(method);
@@ -451,8 +451,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 List<String> stubNames = new ArrayList<>();
                 List<MethodNode> virtualMethods = new ArrayList<>();
                 for (MethodNode method : cls.getMethods()) {
-                    if (clinit != null && (method.getModifiers().contains(NodeModifier.STATIC) ||
-                            method.getReference().getName().equals("<init>"))) {
+                    if (clinit != null && (method.getModifiers().contains(NodeModifier.STATIC)
+                            || method.getReference().getName().equals("<init>"))) {
                         stubNames.add(naming.getFullNameFor(method.getReference()));
                     }
                     if (!method.getModifiers().contains(NodeModifier.STATIC)) {
@@ -485,14 +485,14 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
 
     private static Object getDefaultValue(ValueType type) {
         if (type instanceof ValueType.Primitive) {
-            ValueType.Primitive primitive = (ValueType.Primitive)type;
+            ValueType.Primitive primitive = (ValueType.Primitive) type;
             switch (primitive.getKind()) {
                 case BOOLEAN:
                     return false;
                 case BYTE:
-                    return (byte)0;
+                    return (byte) 0;
                 case SHORT:
-                    return (short)0;
+                    return (short) 0;
                 case INTEGER:
                     return 0;
                 case CHARACTER:
@@ -893,7 +893,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 popLocation();
             }
             if (statement.getLeftValue() instanceof VariableExpr) {
-                VariableExpr receiver = (VariableExpr)statement.getLeftValue();
+                VariableExpr receiver = (VariableExpr) statement.getLeftValue();
                 debugEmitter.emitVariable(statement.getDebugNames().toArray(new String[0]),
                         variableName(receiver.getIndex()));
             }
@@ -928,9 +928,9 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 visitStatements(statement.getConsequent());
                 if (!statement.getAlternative().isEmpty()) {
                     writer.outdent().append("}").ws();
-                    if (statement.getAlternative().size() == 1 &&
-                            statement.getAlternative().get(0) instanceof ConditionalStatement) {
-                        statement = (ConditionalStatement)statement.getAlternative().get(0);
+                    if (statement.getAlternative().size() == 1
+                            && statement.getAlternative().get(0) instanceof ConditionalStatement) {
+                        statement = (ConditionalStatement) statement.getAlternative().get(0);
                         writer.append("else ");
                         continue;
                     }
@@ -1194,8 +1194,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         if (index < variableNames.length()) {
             sb.append(Character.toString(variableNames.charAt(index)));
         } else {
-            sb.append(Character.toString(variableNames.charAt(index % variableNames.length())) +
-                    index / variableNames.length());
+            sb.append(Character.toString(variableNames.charAt(index % variableNames.length()))
+                    + index / variableNames.length());
         }
         if (!minifying && names != null && !names.isEmpty()) {
             List<String> nameList = new ArrayList<>(names);
@@ -1249,9 +1249,9 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         precedence.associativity = this.associativity;
         precedenceStack.push(precedence);
         wasGrouped = false;
-        if (autoGroup && (priority.ordinal() < this.priority.ordinal() ||
-                priority.ordinal() == this.priority.ordinal() &&
-                (associativity != this.associativity || associativity == Associativity.NONE))) {
+        if (autoGroup && (priority.ordinal() < this.priority.ordinal()
+                || priority.ordinal() == this.priority.ordinal()
+                && (associativity != this.associativity || associativity == Associativity.NONE))) {
             wasGrouped = true;
             writer.append('(');
         }
@@ -1548,10 +1548,10 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             return "null";
         }
         if (cst instanceof ValueType) {
-            ValueType type = (ValueType)cst;
+            ValueType type = (ValueType) cst;
             return naming.getNameForFunction("$rt_cls") + "(" + typeToClsString(naming, type) + ")";
         } else if (cst instanceof String) {
-            String string = (String)cst;
+            String string = (String) cst;
             Integer index = stringPoolMap.get(string);
             if (index == null) {
                 index = stringPool.size();
@@ -1560,16 +1560,16 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             }
             return "$rt_s(" + index + ")";
         } else if (cst instanceof Long) {
-            long value = (Long)cst;
+            long value = (Long) cst;
             if (value == 0) {
                 return "Long_ZERO";
-            } else if ((int)value == value) {
+            } else if ((int) value == value) {
                 return "Long_fromInt(" + value + ")";
             } else {
                 return "new Long(" + (value & 0xFFFFFFFFL) + ", " + (value >>> 32) + ")";
             }
         } else if (cst instanceof Character) {
-            return Integer.toString((Character)cst);
+            return Integer.toString((Character) cst);
         } else {
             return cst.toString();
         }
@@ -1579,16 +1579,16 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         int arrayCount = 0;
         while (type instanceof ValueType.Array) {
             arrayCount++;
-            type = ((ValueType.Array)type).getItemType();
+            type = ((ValueType.Array) type).getItemType();
         }
         String value;
         if (type instanceof ValueType.Object) {
-            ValueType.Object objType = (ValueType.Object)type;
+            ValueType.Object objType = (ValueType.Object) type;
             value = naming.getNameFor(objType.getClassName());
         } else if (type instanceof ValueType.Void) {
             value = "$rt_voidcls()";
         } else if (type instanceof ValueType.Primitive) {
-            ValueType.Primitive primitiveType = (ValueType.Primitive)type;
+            ValueType.Primitive primitiveType = (ValueType.Primitive) type;
             switch (primitiveType.getKind()) {
                 case BOOLEAN:
                     value = "$rt_booleancls()";
@@ -1854,7 +1854,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             ValueType type = expr.getType();
             enterPriority(Priority.COMMA, Associativity.NONE, false);
             if (type instanceof ValueType.Primitive) {
-                switch (((ValueType.Primitive)type).getKind()) {
+                switch (((ValueType.Primitive) type).getKind()) {
                     case BOOLEAN:
                         writer.append("$rt_createBooleanArray(");
                         expr.getLength().acceptVisitor(this);
@@ -1919,11 +1919,11 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             }
             ValueType type = expr.getType();
             for (int i = 0; i < expr.getDimensions().size(); ++i) {
-                type = ((ValueType.Array)type).getItemType();
+                type = ((ValueType.Array) type).getItemType();
             }
             enterPriority(Priority.COMMA, Associativity.NONE, false);
             if (type instanceof ValueType.Primitive) {
-                switch (((ValueType.Primitive)type).getKind()) {
+                switch (((ValueType.Primitive) type).getKind()) {
                     case BOOLEAN:
                         writer.append("$rt_createBooleanMultiArray(");
                         break;
@@ -1981,7 +1981,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 pushLocation(expr.getLocation());
             }
             if (expr.getType() instanceof ValueType.Object) {
-                String clsName = ((ValueType.Object)expr.getType()).getClassName();
+                String clsName = ((ValueType.Object) expr.getType()).getClassName();
                 ClassHolder cls = classSource.get(clsName);
                 if (cls != null && !cls.getModifiers().contains(ElementModifier.INTERFACE)) {
                     enterPriority(Priority.COMPARISON, Associativity.LEFT, true);
@@ -2041,7 +2041,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             sequence.add(statement);
             List<Statement> protectedBody = statement.getProtectedBody();
             while (protectedBody.size() == 1 && protectedBody.get(0) instanceof TryCatchStatement) {
-                TryCatchStatement nextStatement = (TryCatchStatement)protectedBody.get(0);
+                TryCatchStatement nextStatement = (TryCatchStatement) protectedBody.get(0);
                 sequence.add(nextStatement);
                 protectedBody = nextStatement.getProtectedBody();
             }
@@ -2082,7 +2082,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             if (!end || statement.getPart() != currentPart + 1) {
                 writer.append("continue ").append(mainLoopName()).append(";").softNewLine();
             }
-        } catch (IOException ex){
+        } catch (IOException ex) {
             throw new RenderingException("IO error occured", ex);
         }
     }
@@ -2104,7 +2104,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 statement.getObjectRef().acceptVisitor(this);
                 writer.append(");").softNewLine();
             }
-        } catch (IOException ex){
+        } catch (IOException ex) {
             throw new RenderingException("IO error occured", ex);
         }
     }
@@ -2132,7 +2132,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 statement.getObjectRef().acceptVisitor(this);
                 writer.append(");").softNewLine();
             }
-        } catch (IOException ex){
+        } catch (IOException ex) {
             throw new RenderingException("IO error occured", ex);
         }
     }
@@ -2149,7 +2149,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     AnnotationHolder injectedByAnnot = method.getAnnotations().get(InjectedBy.class.getName());
                     if (injectedByAnnot != null) {
                         ValueType type = injectedByAnnot.getValues().get("value").getJavaClass();
-                        holder = new InjectorHolder(instantiateInjector(((ValueType.Object)type).getClassName()));
+                        holder = new InjectorHolder(instantiateInjector(((ValueType.Object) type).getClassName()));
                     }
                 }
             }

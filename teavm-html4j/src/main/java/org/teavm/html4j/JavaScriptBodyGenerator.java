@@ -51,8 +51,8 @@ public class JavaScriptBodyGenerator implements Generator {
         }
         writer.append(")").ws().append("{").indent().softNewLine();
         writer.append(body).softNewLine();
-        writer.outdent().append("}).call(").append(!method.hasModifier(ElementModifier.STATIC) ?
-                context.getParameterName(0) : "null");
+        writer.outdent().append("}).call(").append(!method.hasModifier(ElementModifier.STATIC)
+                ? context.getParameterName(0) : "null");
         for (int i = 0; i < args.size(); ++i) {
             writer.append(",").ws();
             wrapParameter(writer, context.getParameterName(i + 1));
@@ -121,7 +121,7 @@ public class JavaScriptBodyGenerator implements Generator {
             if (type instanceof ValueType.Object) {
                 return ValueType.object("java.lang.Object");
             } else if (type instanceof ValueType.Array) {
-                ValueType.Array array = (ValueType.Array)type;
+                ValueType.Array array = (ValueType.Array) type;
                 return ValueType.arrayOf(simplifyParamType(array.getItemType()));
             } else {
                 return type;

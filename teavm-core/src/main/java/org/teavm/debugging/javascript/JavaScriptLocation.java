@@ -52,7 +52,7 @@ public class JavaScriptLocation {
         if (!(obj instanceof JavaScriptLocation)) {
             return false;
         }
-        JavaScriptLocation other = (JavaScriptLocation)obj;
+        JavaScriptLocation other = (JavaScriptLocation) obj;
         return Objects.equals(other.script, script) && other.line == line && other.column == column;
     }
 

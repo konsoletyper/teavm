@@ -220,8 +220,8 @@ class DependencyGraphBuilder {
         public void consume(DependencyType type) {
             String className = type.getName();
             if (DependencyChecker.shouldLog) {
-                System.out.println("Virtual call of " + methodDesc + " detected on " + node.getTag() + ". " +
-                        "Target class is " + className);
+                System.out.println("Virtual call of " + methodDesc + " detected on " + node.getTag() + ". "
+                        + "Target class is " + className);
             }
             if (className.startsWith("[")) {
                 className = "java.lang.Object";
@@ -286,10 +286,10 @@ class DependencyGraphBuilder {
                 node.propagate(dependencyChecker.getType("java.lang.Class"));
             }
             while (cst instanceof ValueType.Array) {
-                cst = ((ValueType.Array)cst).getItemType();
+                cst = ((ValueType.Array) cst).getItemType();
             }
             if (cst instanceof ValueType.Object) {
-                final String className = ((ValueType.Object)cst).getClassName();
+                final String className = ((ValueType.Object) cst).getClassName();
                 dependencyChecker.linkClass(className, new CallLocation(caller.getMethod(), currentLocation));
             }
         }
@@ -348,7 +348,7 @@ class DependencyGraphBuilder {
             DependencyNode valueNode = nodes[value.getIndex()];
             DependencyNode receiverNode = nodes[receiver.getIndex()];
             if (targetType instanceof ValueType.Object) {
-                String targetClsName = ((ValueType.Object)targetType).getClassName();
+                String targetClsName = ((ValueType.Object) targetType).getClassName();
                 final ClassReader targetClass = dependencyChecker.getClassSource().get(targetClsName);
                 if (targetClass != null) {
                     if (valueNode != null && receiverNode != null) {
@@ -426,9 +426,9 @@ class DependencyGraphBuilder {
 
         private String extractClassName(ValueType itemType) {
             while (itemType instanceof ValueType.Array) {
-                itemType = ((ValueType.Array)itemType).getItemType();
+                itemType = ((ValueType.Array) itemType).getItemType();
             }
-            return itemType instanceof ValueType.Object ? ((ValueType.Object)itemType).getClassName() : null;
+            return itemType instanceof ValueType.Object ? ((ValueType.Object) itemType).getClassName() : null;
         }
 
         @Override
@@ -437,11 +437,11 @@ class DependencyGraphBuilder {
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < dimensions.size(); ++i) {
                 sb.append('[');
-                itemType = ((ValueType.Array)itemType).getItemType();
+                itemType = ((ValueType.Array) itemType).getItemType();
             }
             String itemTypeStr;
             if (itemType instanceof ValueType.Object) {
-                itemTypeStr = ((ValueType.Object)itemType).getClassName();
+                itemTypeStr = ((ValueType.Object) itemType).getClassName();
             } else {
                 itemTypeStr = itemType.toString();
             }

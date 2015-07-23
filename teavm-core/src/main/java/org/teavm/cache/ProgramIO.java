@@ -67,8 +67,8 @@ public class ProgramIO {
             for (TryCatchBlock tryCatch : basicBlock.getTryCatchBlocks()) {
                 data.writeInt(tryCatch.getExceptionType() != null ? symbolTable.lookup(
                         tryCatch.getExceptionType()) : -1);
-                data.writeShort(tryCatch.getExceptionVariable() != null ?
-                        tryCatch.getExceptionVariable().getIndex() : -1);
+                data.writeShort(tryCatch.getExceptionVariable() != null
+                        ? tryCatch.getExceptionVariable().getIndex() : -1);
                 data.writeShort(tryCatch.getHandler().getIndex());
             }
             InstructionLocation location = null;
@@ -87,7 +87,7 @@ public class ProgramIO {
                     }
                     insn.acceptVisitor(insnWriter);
                 } catch (IOExceptionWrapper e) {
-                    throw (IOException)e.getCause();
+                    throw (IOException) e.getCause();
                 }
             }
             data.writeByte(-1);

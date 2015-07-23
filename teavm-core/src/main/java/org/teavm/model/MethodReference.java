@@ -127,7 +127,7 @@ public class MethodReference {
         if (!(obj instanceof MethodReference)) {
             return false;
         }
-        MethodReference other = (MethodReference)obj;
+        MethodReference other = (MethodReference) obj;
         return toString().equals(other.toString());
     }
 

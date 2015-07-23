@@ -58,8 +58,8 @@ public class ClassHolder extends ElementHolder implements ClassReader {
 
     public void addMethod(MethodHolder method) {
         if (method.getOwner() != null) {
-            throw new IllegalArgumentException("Method " + method.getDescriptor() +
-                    " is already in another class (" + method.getOwner().getName() + ")");
+            throw new IllegalArgumentException("Method " + method.getDescriptor()
+                    + " is already in another class (" + method.getOwner().getName() + ")");
         }
         method.setOwner(this);
         MethodHolder oldMethod = methods.put(method.getDescriptor(), method);
@@ -70,8 +70,8 @@ public class ClassHolder extends ElementHolder implements ClassReader {
 
     public void removeMethod(MethodHolder method) {
         if (method.getOwner() != this) {
-            throw new IllegalArgumentException("Method " + method.getOwner().getName() +
-                    "." + method.getDescriptor() + " is not a member of " + getName());
+            throw new IllegalArgumentException("Method " + method.getOwner().getName()
+                    + "." + method.getDescriptor() + " is not a member of " + getName());
         }
         methods.remove(method.getDescriptor());
         method.setOwner(null);
@@ -89,8 +89,8 @@ public class ClassHolder extends ElementHolder implements ClassReader {
 
     public void addField(FieldHolder field) {
         if (field.getOwner() != null) {
-            throw new IllegalArgumentException("Field " + field.getName() + " is already " +
-                    "in another class (" + field.getOwner().getName() + ")");
+            throw new IllegalArgumentException("Field " + field.getName() + " is already "
+                    + "in another class (" + field.getOwner().getName() + ")");
         }
         field.setOwner(this);
         FieldHolder oldField = fields.put(field.getName(), field);
@@ -101,8 +101,8 @@ public class ClassHolder extends ElementHolder implements ClassReader {
 
     public void removeField(FieldHolder field) {
         if (field.getOwner() != this) {
-            throw new IllegalArgumentException("Field " + field.getOwner().getName() + "." +
-                    field.getName() + " is not a member of " + getName());
+            throw new IllegalArgumentException("Field " + field.getOwner().getName() + "."
+                    + field.getName() + " is not a member of " + getName());
         }
         fields.remove(field.getName());
         field.setOwner(null);

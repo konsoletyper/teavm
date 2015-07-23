@@ -49,7 +49,7 @@ class AsyncCallsFinder implements StatementVisitor, ExprVisitor {
             statement.getRightValue().acceptVisitor(this);
             return;
         }
-        InvocationExpr invocation = (InvocationExpr)statement.getRightValue();
+        InvocationExpr invocation = (InvocationExpr) statement.getRightValue();
         asyncCalls.add(invocation.getMethod());
     }
 

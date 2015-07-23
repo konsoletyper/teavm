@@ -49,7 +49,7 @@ public class FieldReference {
         if (!(obj instanceof FieldReference)) {
             return false;
         }
-        FieldReference other = (FieldReference)obj;
+        FieldReference other = (FieldReference) obj;
         return className.equals(other.className) && fieldName.equals(other.fieldName);
     }
 

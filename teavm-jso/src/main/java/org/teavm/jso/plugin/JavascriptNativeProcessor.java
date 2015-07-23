@@ -172,8 +172,8 @@ class JavascriptNativeProcessor {
             if (method.hasModifier(ElementModifier.STATIC)) {
                 continue;
             }
-            if (method.hasModifier(ElementModifier.FINAL) && method.getProgram() != null &&
-                    method.getProgram().basicBlockCount() > 0) {
+            if (method.hasModifier(ElementModifier.FINAL) && method.getProgram() != null
+                    && method.getProgram().basicBlockCount() > 0) {
                 ValueType[] staticSignature = getStaticSignature(method.getReference());
                 MethodHolder callerMethod = new MethodHolder(new MethodDescriptor(method.getName() + "$static",
                         staticSignature));
@@ -282,8 +282,8 @@ class JavascriptNativeProcessor {
         }
         if (isNative(cls.getName())) {
             for (MethodReader method : cls.getMethods()) {
-                if (!method.hasModifier(ElementModifier.STATIC) && !method.hasModifier(ElementModifier.FINAL) &&
-                        method.getLevel() != AccessLevel.PRIVATE) {
+                if (!method.hasModifier(ElementModifier.STATIC) && !method.hasModifier(ElementModifier.FINAL)
+                        && method.getLevel() != AccessLevel.PRIVATE) {
                     methods.add(method.getDescriptor());
                 }
             }
@@ -323,7 +323,7 @@ class JavascriptNativeProcessor {
                 if (!(insn instanceof InvokeInstruction)) {
                     continue;
                 }
-                InvokeInstruction invoke = (InvokeInstruction)insn;
+                InvokeInstruction invoke = (InvokeInstruction) insn;
                 if (!nativeRepos.isJavaScriptClass(invoke.getMethod().getClassName())) {
                     continue;
                 }
@@ -339,8 +339,8 @@ class JavascriptNativeProcessor {
                     if (overriden != null) {
                         CallLocation callLocation = new CallLocation(methodToProcess.getReference(),
                                 insn.getLocation());
-                        diagnostics.error(callLocation, "JS final method {{m0}} overrides {{M1}}. " +
-                                "Overriding final method of overlay types is prohibited.",
+                        diagnostics.error(callLocation, "JS final method {{m0}} overrides {{M1}}. "
+                                + "Overriding final method of overlay types is prohibited.",
                                 method.getReference(), overriden.getReference());
                     }
                     if (method.getProgram() != null && method.getProgram().basicBlockCount() > 0) {
@@ -361,8 +361,8 @@ class JavascriptNativeProcessor {
                         if (annot.getValue("value") != null) {
                             propertyName = annot.getValue("value").getString();
                         } else {
-                            propertyName = method.getName().charAt(0) == 'i' ? cutPrefix(method.getName(), 2) :
-                                cutPrefix(method.getName(), 3);
+                            propertyName = method.getName().charAt(0) == 'i' ? cutPrefix(method.getName(), 2)
+                                    : cutPrefix(method.getName(), 3);
                         }
                         Variable result = invoke.getReceiver() != null ? program.createVariable() : null;
                         addPropertyGet(propertyName, invoke.getInstance(), result, invoke.getLocation());
@@ -382,8 +382,8 @@ class JavascriptNativeProcessor {
                                 method.parameterType(0));
                         addPropertySet(propertyName, invoke.getInstance(), wrapped, invoke.getLocation());
                     } else {
-                        diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript property " +
-                                "declaration", invoke.getMethod());
+                        diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript property "
+                                + "declaration", invoke.getMethod());
                         continue;
                     }
                 } else if (method.getAnnotations().get(JSIndexer.class.getName()) != null) {
@@ -402,8 +402,8 @@ class JavascriptNativeProcessor {
                                 invoke.getLocation());
                         addIndexerSet(invoke.getInstance(), index, value, invoke.getLocation());
                     } else {
-                        diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript indexer " +
-                                "declaration", invoke.getMethod());
+                        diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript indexer "
+                                + "declaration", invoke.getMethod());
                         continue;
                     }
                 } else {
@@ -412,16 +412,16 @@ class JavascriptNativeProcessor {
                     boolean isConstructor = false;
                     if (constructorAnnot != null) {
                         if (!isSupportedType(method.getResultType())) {
-                            diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript " +
-                                    "constructor declaration", invoke.getMethod());
+                            diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript "
+                                    + "constructor declaration", invoke.getMethod());
                             continue;
                         }
                         AnnotationValue nameVal = constructorAnnot.getValue("value");
                         name = nameVal != null ? constructorAnnot.getValue("value").getString() : "";
                         if (name.isEmpty()) {
                             if (!method.getName().startsWith("new") || method.getName().length() == 3) {
-                                diagnostics.error(callLocation, "Method {{m0}} is not declared as a native " +
-                                        "JavaScript constructor, but its name does not satisfy conventions",
+                                diagnostics.error(callLocation, "Method {{m0}} is not declared as a native "
+                                        + "JavaScript constructor, but its name does not satisfy conventions",
                                         invoke.getMethod());
                                 continue;
                             }
@@ -437,15 +437,15 @@ class JavascriptNativeProcessor {
                             }
                         }
                         if (method.getResultType() != ValueType.VOID && !isSupportedType(method.getResultType())) {
-                            diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript method " +
-                                    "declaration", invoke.getMethod());
+                            diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript method "
+                                    + "declaration", invoke.getMethod());
                             continue;
                         }
                     }
                     for (ValueType arg : method.getParameterTypes()) {
                         if (!isSupportedType(arg)) {
-                            diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript method " +
-                                    "or constructor declaration", invoke.getMethod());
+                            diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript method "
+                                    + "or constructor declaration", invoke.getMethod());
                             continue;
                         }
                     }
@@ -487,8 +487,8 @@ class JavascriptNativeProcessor {
         AnnotationHolder bodyAnnot = methodToProcess.getAnnotations().get(JSBody.class.getName());
         int jsParamCount = bodyAnnot.getValue("params").getList().size();
         if (methodToProcess.parameterCount() != jsParamCount) {
-            diagnostics.error(location, "JSBody method {{m0}} declares " + methodToProcess.parameterCount() +
-                    " parameters, but annotation specifies " + jsParamCount, methodToProcess);
+            diagnostics.error(location, "JSBody method {{m0}} declares " + methodToProcess.parameterCount()
+                    + " parameters, but annotation specifies " + jsParamCount, methodToProcess);
             return;
         }
 
@@ -524,8 +524,9 @@ class JavascriptNativeProcessor {
         for (int i = 0; i < paramCount; ++i) {
             proxyParamTypes[i] = ValueType.parse(JSObject.class);
         }
-        proxyParamTypes[paramCount] = methodToProcess.getResultType() == ValueType.VOID ? ValueType.VOID :
-                ValueType.parse(JSObject.class);
+        proxyParamTypes[paramCount] = methodToProcess.getResultType() == ValueType.VOID
+                ? ValueType.VOID
+                : ValueType.parse(JSObject.class);
 
         // create proxy method
         MethodHolder proxyMethod = new MethodHolder("$js_body$_" + methodIndexGenerator++, proxyParamTypes);
@@ -649,7 +650,7 @@ class JavascriptNativeProcessor {
 
     private Variable unwrap(CallLocation location, Variable var, ValueType type) {
         if (type instanceof ValueType.Primitive) {
-            switch (((ValueType.Primitive)type).getKind()) {
+            switch (((ValueType.Primitive) type).getKind()) {
                 case BOOLEAN:
                     return unwrap(var, "unwrapBoolean", ValueType.parse(JSObject.class), ValueType.BOOLEAN,
                             location.getSourceLocation());
@@ -675,7 +676,7 @@ class JavascriptNativeProcessor {
                     break;
             }
         } else if (type instanceof ValueType.Object) {
-            String className = ((ValueType.Object)type).getClassName();
+            String className = ((ValueType.Object) type).getClassName();
             if (className.equals(JSObject.class.getName())) {
                 return var;
             } else if (className.equals("java.lang.String")) {
@@ -692,7 +693,7 @@ class JavascriptNativeProcessor {
                 return result;
             }
         } else if (type instanceof ValueType.Array) {
-            return unwrapArray(location, var, (ValueType.Array)type);
+            return unwrapArray(location, var, (ValueType.Array) type);
         }
         diagnostics.error(location, "Unsupported type: {{t0}}", type);
         return var;
@@ -703,7 +704,7 @@ class JavascriptNativeProcessor {
         int degree = 0;
         while (itemType instanceof ValueType.Array) {
             ++degree;
-            itemType = ((ValueType.Array)itemType).getItemType();
+            itemType = ((ValueType.Array) itemType).getItemType();
         }
         if (degree > 3) {
             diagnostics.error(location, "Unsupported type: {{t0}}", type);
@@ -711,14 +712,15 @@ class JavascriptNativeProcessor {
         }
 
         if (itemType instanceof ValueType.Object) {
-            String className = ((ValueType.Object)itemType).getClassName();
+            String className = ((ValueType.Object) itemType).getClassName();
             if (className.equals("java.lang.String")) {
                 String methodName = "unwrapStringArray";
                 if (degree > 1) {
                     methodName += degree;
                 }
-                ValueType argType = degree == 1 ? ValueType.parse(JSStringArray.class) :
-                        ValueType.parse(JSArray.class);
+                ValueType argType = degree == 1
+                        ? ValueType.parse(JSStringArray.class)
+                        : ValueType.parse(JSArray.class);
                 return unwrap(var, methodName, argType, type, location.getSourceLocation());
             } else if (isNative(className)) {
                 return unwrapObjectArray(location, var, degree, itemType, type);
@@ -804,7 +806,7 @@ class JavascriptNativeProcessor {
 
     private Variable wrapArgument(CallLocation location, Variable var, ValueType type) {
         if (type instanceof ValueType.Object) {
-            String className = ((ValueType.Object)type).getClassName();
+            String className = ((ValueType.Object) type).getClassName();
             ClassReader cls = classSource.get(className);
             if (cls.getAnnotations().get(JSFunctor.class.getName()) != null) {
                 return wrapFunctor(location, var, cls);
@@ -838,7 +840,7 @@ class JavascriptNativeProcessor {
 
     private Variable wrap(Variable var, ValueType type, InstructionLocation location) {
         if (type instanceof ValueType.Object) {
-            String className = ((ValueType.Object)type).getClassName();
+            String className = ((ValueType.Object) type).getClassName();
             if (!className.equals("java.lang.String")) {
                 return var;
             }
@@ -856,7 +858,7 @@ class JavascriptNativeProcessor {
 
     private ValueType getWrappedType(ValueType type) {
         if (type instanceof ValueType.Array) {
-            ValueType itemType = ((ValueType.Array)type).getItemType();
+            ValueType itemType = ((ValueType.Array) type).getItemType();
             return ValueType.arrayOf(getWrappedType(itemType));
         } else if (type instanceof ValueType.Object) {
             if (type.isObject("java.lang.String")) {
@@ -871,9 +873,9 @@ class JavascriptNativeProcessor {
 
     private ValueType getWrapperType(ValueType type) {
         if (type instanceof ValueType.Array) {
-            ValueType itemType = ((ValueType.Array)type).getItemType();
+            ValueType itemType = ((ValueType.Array) type).getItemType();
             if (itemType instanceof ValueType.Primitive) {
-                switch (((ValueType.Primitive)itemType).getKind()) {
+                switch (((ValueType.Primitive) itemType).getKind()) {
                     case BOOLEAN:
                         return ValueType.parse(JSBooleanArray.class);
                     case BYTE:
@@ -926,8 +928,8 @@ class JavascriptNativeProcessor {
     }
 
     private boolean isProperSetter(MethodDescriptor desc) {
-        if (desc.parameterCount() != 1 || !isSupportedType(desc.parameterType(0)) ||
-                desc.getResultType() != ValueType.VOID) {
+        if (desc.parameterCount() != 1 || !isSupportedType(desc.parameterType(0))
+                || desc.getResultType() != ValueType.VOID) {
             return false;
         }
         return isProperPrefix(desc.getName(), "set");
@@ -942,13 +944,13 @@ class JavascriptNativeProcessor {
     }
 
     private boolean isProperGetIndexer(MethodDescriptor desc) {
-        return desc.parameterCount() == 1 && isSupportedType(desc.parameterType(0)) &&
-                isSupportedType(desc.getResultType());
+        return desc.parameterCount() == 1 && isSupportedType(desc.parameterType(0))
+                && isSupportedType(desc.getResultType());
     }
 
     private boolean isProperSetIndexer(MethodDescriptor desc) {
-        return desc.parameterCount() == 2 && isSupportedType(desc.parameterType(0)) &&
-                isSupportedType(desc.parameterType(0)) && desc.getResultType() == ValueType.VOID;
+        return desc.parameterCount() == 2 && isSupportedType(desc.parameterType(0))
+                && isSupportedType(desc.parameterType(0)) && desc.getResultType() == ValueType.VOID;
     }
 
     private String cutPrefix(String name, int prefixLength) {
@@ -967,16 +969,16 @@ class JavascriptNativeProcessor {
             return false;
         }
         if (type instanceof ValueType.Primitive) {
-            switch (((ValueType.Primitive)type).getKind()) {
+            switch (((ValueType.Primitive) type).getKind()) {
                 case LONG:
                     return false;
                 default:
                     return true;
             }
         } else if (type instanceof ValueType.Array) {
-            return isSupportedType(((ValueType.Array)type).getItemType());
+            return isSupportedType(((ValueType.Array) type).getItemType());
         } else if (type instanceof ValueType.Object) {
-            String typeName = ((ValueType.Object)type).getClassName();
+            String typeName = ((ValueType.Object) type).getClassName();
             return typeName.equals("java.lang.String") || nativeRepos.isJavaScriptClass(typeName);
         } else {
             return false;

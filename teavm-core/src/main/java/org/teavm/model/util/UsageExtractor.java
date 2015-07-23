@@ -151,8 +151,8 @@ public class UsageExtractor implements InstructionVisitor {
 
     @Override
     public void visit(PutFieldInstruction insn) {
-        usedVariables = insn.getInstance() != null ? new Variable[] { insn.getInstance(), insn.getValue() } :
-                new Variable[] { insn.getValue() };
+        usedVariables = insn.getInstance() != null ? new Variable[] { insn.getInstance(), insn.getValue() }
+                : new Variable[] { insn.getValue() };
     }
 
     @Override

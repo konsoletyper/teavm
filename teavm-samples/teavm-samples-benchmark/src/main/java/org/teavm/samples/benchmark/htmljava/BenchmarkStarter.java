@@ -34,20 +34,20 @@ import org.teavm.samples.benchmark.Scene;
 public final class BenchmarkStarter {
     private BenchmarkStarter() {
     }
-    
+
     private static final Timer TIMER = new Timer("Make Step");
     private static final Scene scene = new Scene();
     private static double startMillisecond;
     private static int currentSecond;
     private static double timeSpentCalculating;
     private static BrwsrCtx ctx;
-    
+
     public static void main(String[] args) {
         startMillisecond = System.currentTimeMillis();
         ctx = BrwsrCtx.findDefault(BenchmarkStarter.class);
         makeStep();
     }
-    
+
     static void makeStep() {
         ctx.execute(new Runnable() {
             @Override
@@ -61,7 +61,7 @@ public final class BenchmarkStarter {
         double start = System.currentTimeMillis();
         scene.calculate();
         double end = System.currentTimeMillis();
-        int second = (int)((System.currentTimeMillis() - startMillisecond) / 1000);
+        int second = (int) ((System.currentTimeMillis() - startMillisecond) / 1000);
         if (second > currentSecond) {
             publishResults(second, timeSpentCalculating);
             timeSpentCalculating = 0;
@@ -95,13 +95,13 @@ public final class BenchmarkStarter {
             for (Fixture fixture = body.getFixtureList(); fixture != null; fixture = fixture.getNext()) {
                 Shape shape = fixture.getShape();
                 if (shape.getType() == ShapeType.CIRCLE) {
-                    CircleShape circle = (CircleShape)shape;
+                    CircleShape circle = (CircleShape) shape;
                     context.beginPath();
                     context.arc(circle.m_p.x, circle.m_p.y, circle.getRadius(), 0, Math.PI * 2, true);
                     context.closePath();
                     context.stroke();
                 } else if (shape.getType() == ShapeType.POLYGON) {
-                    PolygonShape poly = (PolygonShape)shape;
+                    PolygonShape poly = (PolygonShape) shape;
                     Vec2[] vertices = poly.getVertices();
                     context.beginPath();
                     context.moveTo(vertices[0].x, vertices[0].y);
@@ -116,17 +116,17 @@ public final class BenchmarkStarter {
         }
         context.restore();
     }
-    
-    @JavaScriptBody(args = { "second", "timeSpentCalculating" }, body = 
-        "var resultTableBody = document.getElementById('result-table-body');\n" +
-        "var row = document.createElement(\"tr\");\n" +
-        "resultTableBody.appendChild(row);\n" +
-        "var secondCell = document.createElement(\"td\");\n" +
-        "row.appendChild(secondCell);\n" +
-        "secondCell.appendChild(document.createTextNode(second));\n" +
-        "var timeCell = document.createElement(\"td\");\n" +
-        "row.appendChild(timeCell);\n" +
-        "timeCell.appendChild(document.createTextNode(timeSpentCalculating));\n"
+
+    @JavaScriptBody(args = { "second", "timeSpentCalculating" }, body = ""
+        + "var resultTableBody = document.getElementById('result-table-body');\n"
+        + "var row = document.createElement(\"tr\");\n"
+        + "resultTableBody.appendChild(row);\n"
+        + "var secondCell = document.createElement(\"td\");\n"
+        + "row.appendChild(secondCell);\n"
+        + "secondCell.appendChild(document.createTextNode(second));\n"
+        + "var timeCell = document.createElement(\"td\");\n"
+        + "row.appendChild(timeCell);\n"
+        + "timeCell.appendChild(document.createTextNode(timeSpentCalculating));\n"
     )
     private static native void publishResults(int second, double time);
 }

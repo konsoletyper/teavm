@@ -36,11 +36,11 @@ import org.teavm.samples.benchmark.Scene;
  * @author Alexey Andreev
  */
 public final class BenchmarkStarter {
-    private static Window window = (Window)JS.getGlobal();
+    private static Window window = (Window) JS.getGlobal();
     private static HTMLDocument document = window.getDocument();
-    private static HTMLCanvasElement canvas = (HTMLCanvasElement)document.getElementById("benchmark-canvas");
+    private static HTMLCanvasElement canvas = (HTMLCanvasElement) document.getElementById("benchmark-canvas");
     private static HTMLElement resultTableBody = document.getElementById("result-table-body");
-    private static Performance performance = (Performance)JS.get(window, JS.wrap("performance"));
+    private static Performance performance = (Performance) JS.get(window, JS.wrap("performance"));
     private static Scene scene = new Scene();
     private static int currentSecond;
     private static long startMillisecond;
@@ -58,7 +58,7 @@ public final class BenchmarkStarter {
         double start = performance.now();
         scene.calculate();
         double end = performance.now();
-        int second = (int)((System.currentTimeMillis() - startMillisecond) / 1000);
+        int second = (int) ((System.currentTimeMillis() - startMillisecond) / 1000);
         if (second > currentSecond) {
             HTMLElement row = document.createElement("tr");
             resultTableBody.appendChild(row);
@@ -82,7 +82,7 @@ public final class BenchmarkStarter {
     }
 
     private static void render() {
-        CanvasRenderingContext2D context = (CanvasRenderingContext2D)canvas.getContext("2d");
+        CanvasRenderingContext2D context = (CanvasRenderingContext2D) canvas.getContext("2d");
         context.setFillStyle("white");
         context.setStrokeStyle("grey");
         context.fillRect(0, 0, 600, 600);
@@ -99,13 +99,13 @@ public final class BenchmarkStarter {
             for (Fixture fixture = body.getFixtureList(); fixture != null; fixture = fixture.getNext()) {
                 Shape shape = fixture.getShape();
                 if (shape.getType() == ShapeType.CIRCLE) {
-                    CircleShape circle = (CircleShape)shape;
+                    CircleShape circle = (CircleShape) shape;
                     context.beginPath();
                     context.arc(circle.m_p.x, circle.m_p.y, circle.getRadius(), 0, Math.PI * 2, true);
                     context.closePath();
                     context.stroke();
                 } else if (shape.getType() == ShapeType.POLYGON) {
-                    PolygonShape poly = (PolygonShape)shape;
+                    PolygonShape poly = (PolygonShape) shape;
                     Vec2[] vertices = poly.getVertices();
                     context.beginPath();
                     context.moveTo(vertices[0].x, vertices[0].y);

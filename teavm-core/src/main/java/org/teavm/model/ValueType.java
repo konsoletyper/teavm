@@ -296,7 +296,7 @@ public abstract class ValueType {
         if (supertype instanceof ValueType.Object) {
             return !(this instanceof Primitive);
         } else if (supertype instanceof Array && this instanceof Array) {
-            return ((Array)this).getItemType().isSubtypeOf(((Array)supertype).getItemType());
+            return ((Array) this).getItemType().isSubtypeOf(((Array) supertype).getItemType());
         } else {
             return false;
         }

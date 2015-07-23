@@ -108,7 +108,7 @@ class ResourceAccessorInjector implements Injector {
 
     private void writePropertyAccessor(InjectorContext context, Expr property) throws IOException {
         if (property instanceof ConstantExpr) {
-            String str = (String)((ConstantExpr)property).getValue();
+            String str = (String) ((ConstantExpr) property).getValue();
             if (str.isEmpty()) {
                 context.getWriter().append("[\"\"]");
                 return;
@@ -125,7 +125,7 @@ class ResourceAccessorInjector implements Injector {
 
     private void writeStringExpr(InjectorContext context, Expr expr) throws IOException {
         if (expr instanceof ConstantExpr) {
-            String str = (String)((ConstantExpr)expr).getValue();
+            String str = (String) ((ConstantExpr) expr).getValue();
             context.getWriter().append('"');
             context.writeEscaped(str);
             context.getWriter().append('"');

@@ -171,7 +171,7 @@ public class RegisterAllocator {
                 if (!(insn instanceof AssignInstruction)) {
                     continue;
                 }
-                AssignInstruction assignment = (AssignInstruction)insn;
+                AssignInstruction assignment = (AssignInstruction) insn;
                 boolean interfere = false;
                 int copyClass = congruenceClasses.find(assignment.getReceiver().getIndex());
                 int origClass = congruenceClasses.find(assignment.getAssignee().getIndex());

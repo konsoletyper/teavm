@@ -67,8 +67,8 @@ public class ListingBuilder {
                 block.readInstruction(j, stringifier);
                 if (!Objects.equals(location, stringifier.getLocation())) {
                     location = stringifier.getLocation();
-                    sb.append(prefix).append("  at ").append(location != null ? location.toString() :
-                            "unknown location").append('\n');
+                    sb.append(prefix).append("  at ").append(location != null ? location.toString()
+                            : "unknown location").append('\n');
                 }
                 sb.append(prefix).append("    ").append(insnSb).append("\n");
             }

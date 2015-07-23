@@ -52,19 +52,19 @@ public class Linker {
             BasicBlock block = program.basicBlockAt(i);
             for (Instruction insn : block.getInstructions()) {
                 if (insn instanceof InvokeInstruction) {
-                    InvokeInstruction invoke = (InvokeInstruction)insn;
+                    InvokeInstruction invoke = (InvokeInstruction) insn;
                     MethodDependencyInfo linkedMethod = dependency.getMethodImplementation(invoke.getMethod());
                     if (linkedMethod != null) {
                         invoke.setMethod(linkedMethod.getReference());
                     }
                 } else if (insn instanceof GetFieldInstruction) {
-                    GetFieldInstruction getField = (GetFieldInstruction)insn;
+                    GetFieldInstruction getField = (GetFieldInstruction) insn;
                     FieldDependencyInfo linkedField = dependency.getField(getField.getField());
                     if (linkedField != null) {
                         getField.setField(linkedField.getReference());
                     }
                 } else if (insn instanceof PutFieldInstruction) {
-                    PutFieldInstruction getField = (PutFieldInstruction)insn;
+                    PutFieldInstruction getField = (PutFieldInstruction) insn;
                     FieldDependencyInfo linkedField = dependency.getField(getField.getField());
                     if (linkedField != null) {
                         getField.setField(linkedField.getReference());

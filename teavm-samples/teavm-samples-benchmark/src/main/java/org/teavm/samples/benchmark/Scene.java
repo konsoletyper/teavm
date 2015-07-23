@@ -71,18 +71,18 @@ public class Scene {
         int parts = 30;
         for (int i = 0; i < parts; ++i) {
             PolygonShape shape = new PolygonShape();
-            double angle1 = i / (double)parts * 2 * Math.PI;
+            double angle1 = i / (double) parts * 2 * Math.PI;
             double x1 = 2.7 * Math.cos(angle1);
             double y1 = 2.7 * Math.sin(angle1);
-            double angle2 = (i + 1) / (double)parts * 2 * Math.PI;
+            double angle2 = (i + 1) / (double) parts * 2 * Math.PI;
             double x2 = 2.7 * Math.cos(angle2);
             double y2 = 2.7 * Math.sin(angle2);
             double angle = (angle1 + angle2) / 2;
             double x = 0.01 * Math.cos(angle);
             double y = 0.01 * Math.sin(angle);
 
-            shape.set(new Vec2[] { new Vec2((float)x1, (float)y1), new Vec2((float)x2, (float)y2),
-                    new Vec2((float)(x2 - x), (float)(y2 - y)), new Vec2((float)(x1 - x), (float)(y1 - y)) }, 4);
+            shape.set(new Vec2[] { new Vec2((float) x1, (float) y1), new Vec2((float) x2, (float) y2),
+                    new Vec2((float) (x2 - x), (float) (y2 - y)), new Vec2((float) (x1 - x), (float) (y1 - y)) }, 4);
             fixture.shape = shape;
             reel.createFixture(fixture);
         }
@@ -137,10 +137,10 @@ public class Scene {
 
     public void calculate() {
         long currentTime = System.currentTimeMillis();
-        int timeToCalculate = (int)(currentTime - lastCalculated);
+        int timeToCalculate = (int) (currentTime - lastCalculated);
         long relativeTime = currentTime - startTime;
         while (timeToCalculate > 10) {
-            int period = (int)((relativeTime + 5000) / 10000);
+            int period = (int) ((relativeTime + 5000) / 10000);
             reel.applyTorque(period % 2 == 0 ? 8f : -8f);
             world.step(0.01f, 20, 40);
             lastCalculated += 10;
@@ -149,7 +149,7 @@ public class Scene {
     }
 
     public int timeUntilNextStep() {
-        return (int)Math.max(0, lastCalculated + 10 - System.currentTimeMillis());
+        return (int) Math.max(0, lastCalculated + 10 - System.currentTimeMillis());
     }
 
     public World getWorld() {

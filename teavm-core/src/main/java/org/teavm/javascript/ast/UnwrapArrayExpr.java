@@ -49,7 +49,7 @@ public class UnwrapArrayExpr extends Expr {
 
     @Override
     protected UnwrapArrayExpr clone(Map<Expr, Expr> cache) {
-        UnwrapArrayExpr copy = (UnwrapArrayExpr)cache.get(this);
+        UnwrapArrayExpr copy = (UnwrapArrayExpr) cache.get(this);
         if (copy == null) {
             copy = new UnwrapArrayExpr(elementType);
             copy.array = array != null ? array.clone(cache) : null;

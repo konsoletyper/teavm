@@ -33,7 +33,7 @@ public class HTML4JPlugin implements TeaVMPlugin {
         host.add(new JavaScriptResourceInterceptor());
         EntryPointGenerator entryPointGen = new EntryPointGenerator(host.getProperties()
                 .getProperty("html4j.entryPoints", ""));
-        host.add((DependencyListener)entryPointGen);
-        host.add((RendererListener)entryPointGen);
+        host.add((DependencyListener) entryPointGen);
+        host.add((RendererListener) entryPointGen);
     }
 }

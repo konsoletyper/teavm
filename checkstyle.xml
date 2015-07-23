@@ -63,20 +63,19 @@
     <module name="EmptyForIteratorPad"/>
     <module name="MethodParamPad"/>
     <module name="NoWhitespaceAfter">
-       <property name="tokens" value="BNOT,DEC,DOT,INC,LNOT,UNARY_MINUS,UNARY_PLUS,TYPECAST"/>
+       <property name="tokens" value="BNOT,DEC,DOT,INC,LNOT,UNARY_MINUS,UNARY_PLUS"/>
     </module>
     <module name="NoWhitespaceBefore">
       <property name="allowLineBreaks" value="true"/>
       <property name="tokens" value="SEMI,POST_DEC,POST_INC"/>
     </module>
-    <module name="OperatorWrap">
-      <property name="option" value="eol"/>
-    </module>
+    <module name="OperatorWrap"/>
     <module name="ParenPad"/>
     <module name="TypecastParenPad"/>
     <module name="WhitespaceAfter">
-      <property name="tokens" value="COMMA,SEMI"/>
+      <property name="tokens" value="COMMA,SEMI,TYPECAST"/>
     </module>
+    <module name="WhitespaceAround"/>
   </module>
   <module name="RegexpHeader">
     <property name="headerFile" value="${config_loc}/license-regexp.txt"/>

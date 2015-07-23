@@ -64,7 +64,7 @@ public class AsyncProgramSplitter {
             for (int i = 0; i < sourceBlock.getInstructions().size(); ++i) {
                 Instruction insn = sourceBlock.getInstructions().get(i);
                 if (insn instanceof InvokeInstruction) {
-                    InvokeInstruction invoke = (InvokeInstruction)insn;
+                    InvokeInstruction invoke = (InvokeInstruction) insn;
                     if (!asyncMethods.contains(findRealMethod(invoke.getMethod()))) {
                         continue;
                     }
@@ -92,7 +92,7 @@ public class AsyncProgramSplitter {
 
                 // If this instruction already separates program, end with current block and refer to the
                 // existing part
-                long key = ((long)step.source << 32) | i;
+                long key = ((long) step.source << 32) | i;
                 if (partMap.containsKey(key)) {
                     step.targetPart.blockSuccessors[targetBlock.getIndex()] = partMap.get(key);
                     continue taskLoop;

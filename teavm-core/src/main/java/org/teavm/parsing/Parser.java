@@ -75,7 +75,7 @@ public final class Parser {
             }
         }
         for (Object obj : node.fields) {
-            FieldNode fieldNode = (FieldNode)obj;
+            FieldNode fieldNode = (FieldNode) obj;
             cls.addField(parseField(fieldNode));
         }
         String fullFileName = node.name.substring(0, node.name.lastIndexOf('/') + 1) + node.sourceFile;
@@ -172,7 +172,7 @@ public final class Parser {
             annotNodes.addAll(invisibleAnnotations);
         }
         for (Object obj : annotNodes) {
-            AnnotationNode annotNode = (AnnotationNode)obj;
+            AnnotationNode annotNode = (AnnotationNode) obj;
             String desc = annotNode.desc;
             if (desc.startsWith("L") && desc.endsWith(";")) {
                 desc = desc.substring(1, desc.length() - 1);
@@ -189,7 +189,7 @@ public final class Parser {
             return;
         }
         for (int i = 0; i < values.size(); i += 2) {
-            String key = (String)values.get(i);
+            String key = (String) values.get(i);
             Object value = values.get(i + 1);
             annot.getValues().put(key, parseAnnotationValue(value));
         }
@@ -197,41 +197,41 @@ public final class Parser {
 
     private static AnnotationValue parseAnnotationValue(Object value) {
         if (value instanceof String[]) {
-            String[] enumInfo = (String[])value;
-            ValueType.Object object = (ValueType.Object)ValueType.parse(enumInfo[0]);
+            String[] enumInfo = (String[]) value;
+            ValueType.Object object = (ValueType.Object) ValueType.parse(enumInfo[0]);
             return new AnnotationValue(new FieldReference(object.getClassName(), enumInfo[1]));
         } else if (value instanceof Type) {
-            Type cls = (Type)value;
+            Type cls = (Type) value;
             return new AnnotationValue(ValueType.parse(cls.getDescriptor()));
         } else if (value instanceof List<?>) {
-            List<?> originalList = (List<?>)value;
+            List<?> originalList = (List<?>) value;
             List<AnnotationValue> resultList = new ArrayList<>();
             for (Object item : originalList) {
                 resultList.add(parseAnnotationValue(item));
             }
             return new AnnotationValue(resultList);
         } else if (value instanceof AnnotationNode) {
-            AnnotationNode annotNode = (AnnotationNode)value;
-            ValueType.Object object = (ValueType.Object)ValueType.parse(annotNode.desc);
+            AnnotationNode annotNode = (AnnotationNode) value;
+            ValueType.Object object = (ValueType.Object) ValueType.parse(annotNode.desc);
             AnnotationHolder annotation = new AnnotationHolder(object.getClassName());
             parseAnnotationValues(annotation, annotNode.values);
             return new AnnotationValue(annotation);
         } else if (value instanceof String) {
-            return new AnnotationValue((String)value);
+            return new AnnotationValue((String) value);
         } else if (value instanceof Boolean) {
-            return new AnnotationValue((Boolean)value);
+            return new AnnotationValue((Boolean) value);
         } else if (value instanceof Byte) {
-            return new AnnotationValue((Byte)value);
+            return new AnnotationValue((Byte) value);
         } else if (value instanceof Short) {
-            return new AnnotationValue((Short)value);
+            return new AnnotationValue((Short) value);
         } else if (value instanceof Integer) {
-            return new AnnotationValue((Integer)value);
+            return new AnnotationValue((Integer) value);
         } else if (value instanceof Long) {
-            return new AnnotationValue((Long)value);
+            return new AnnotationValue((Long) value);
         } else if (value instanceof Float) {
-            return new AnnotationValue((Float)value);
+            return new AnnotationValue((Float) value);
         } else if (value instanceof Double) {
-            return new AnnotationValue((Double)value);
+            return new AnnotationValue((Double) value);
         } else if (value.getClass().isArray()) {
             List<AnnotationValue> resultList = new ArrayList<>();
             int size = Array.getLength(value);

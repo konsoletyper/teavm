@@ -116,13 +116,13 @@ public class DebugInformation {
 
     public MethodReference getExactMethod(int index) {
         long item = exactMethods[index];
-        int classIndex = (int)(item >>> 32);
-        int methodIndex = (int)item;
+        int classIndex = (int) (item >>> 32);
+        int methodIndex = (int) item;
         return new MethodReference(classNames[classIndex], MethodDescriptor.parse(methods[methodIndex]));
     }
 
     public int getExactMethodId(int classNameId, int methodId) {
-        long full = ((long)classNameId << 32) | methodId;
+        long full = ((long) classNameId << 32) | methodId;
         Integer id = exactMethodMap.get(full);
         return id != null ? id : -1;
     }
@@ -501,7 +501,7 @@ public class DebugInformation {
         int lastClass = -1;
         for (int i = 0; i < exactMethods.length; ++i) {
             long exactMethod = exactMethods[i];
-            int classIndex = (int)(exactMethod >>> 32);
+            int classIndex = (int) (exactMethod >>> 32);
             if (classIndex != lastClass) {
                 if (lastClass >= 0) {
                     ClassMetadata clsData = classesMetadata.get(lastClass);
@@ -510,7 +510,7 @@ public class DebugInformation {
                 }
                 lastClass = classIndex;
             }
-            int methodIndex = (int)exactMethod;
+            int methodIndex = (int) exactMethod;
             methods.add(methodIndex);
         }
         if (lastClass >= 0) {
@@ -563,7 +563,7 @@ public class DebugInformation {
     }
 
     private Integer getExactMethodIndex(int classIndex, int methodIndex) {
-        long entry = ((long)classIndex << 32) | methodIndex;
+        long entry = ((long) classIndex << 32) | methodIndex;
         return exactMethodMap.get(entry);
     }
 
@@ -663,8 +663,8 @@ public class DebugInformation {
             MethodReference[] references = new MethodReference[end - start];
             for (int i = 0; i < references.length; ++i) {
                 long item = exactMethods[data[start + i]];
-                int classIndex = (int)(item >>> 32);
-                int methodIndex = (int)item;
+                int classIndex = (int) (item >>> 32);
+                int methodIndex = (int) item;
                 references[i] = new MethodReference(classNames[classIndex],
                         MethodDescriptor.parse(methods[methodIndex]));
             }

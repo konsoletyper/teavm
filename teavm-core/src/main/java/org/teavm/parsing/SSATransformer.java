@@ -77,7 +77,7 @@ public class SSATransformer {
             ++index;
             ValueType arg = arguments[i];
             if (arg instanceof ValueType.Primitive) {
-                PrimitiveType kind = ((ValueType.Primitive)arg).getKind();
+                PrimitiveType kind = ((ValueType.Primitive) arg).getKind();
                 if (kind == PrimitiveType.LONG || kind == PrimitiveType.DOUBLE) {
                     variableMap[index] = variableMap[index - 1];
                     ++index;

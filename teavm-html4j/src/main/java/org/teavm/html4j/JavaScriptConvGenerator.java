@@ -116,14 +116,14 @@ public class JavaScriptConvGenerator implements Generator {
     private void generateFromJavaScript(GeneratorContext context, SourceWriter writer) throws IOException {
         String obj = context.getParameterName(1);
         String type = context.getParameterName(2);
-        writer.append("if (" + obj +" === null || " + obj + " === undefined)").ws().append("{")
+        writer.append("if (" + obj + " === null || " + obj + " === undefined)").ws().append("{")
                 .softNewLine().indent();
-        writer.append("return " + obj +";").softNewLine();
+        writer.append("return " + obj + ";").softNewLine();
         writer.outdent().append("} else if (" + type + ".$meta.item) {").indent().softNewLine();
         writer.append("var arr = $rt_createArray(" + type + ".$meta.item, " + obj + ".length);").softNewLine();
         writer.append("for (var i = 0; i < arr.data.length; ++i) {").indent().softNewLine();
-        writer.append("arr.data[i] = ").appendMethodBody(fromJsMethod).append("(" + obj + "[i], " +
-                type + ".$meta.item);").softNewLine();
+        writer.append("arr.data[i] = ").appendMethodBody(fromJsMethod).append("(" + obj + "[i], "
+                + type + ".$meta.item);").softNewLine();
         writer.outdent().append("}").softNewLine();
         writer.append("return arr;").softNewLine();
 
@@ -137,8 +137,8 @@ public class JavaScriptConvGenerator implements Generator {
 
         writer.outdent().append("} else if (" + type + " === ").appendClass("java.lang.Character")
                 .append(") {").indent().softNewLine();
-        writer.append("return ").appendMethodBody(valueOfCharMethod).append("(typeof " + obj + " === 'number' ? " +
-                obj + "0xFFFF : " + obj + ".charCodeAt(0));").softNewLine();
+        writer.append("return ").appendMethodBody(valueOfCharMethod).append("(typeof " + obj + " === 'number' ? "
+                + obj + "0xFFFF : " + obj + ".charCodeAt(0));").softNewLine();
 
         writer.outdent().append("} else if (" + type + " === ").appendClass("java.lang.Byte")
                 .append(") {").indent().softNewLine();
@@ -161,8 +161,8 @@ public class JavaScriptConvGenerator implements Generator {
                 .append(") {").indent().softNewLine();
         writer.append("return ").appendMethodBody(valueOfDoubleMethod).append("(" + obj + ");").softNewLine();
 
-        writer.outdent().append("} else if (" + type + " === $rt_intcls() || " + type + " === $rt_bytecls() || " +
-                type + " === $rt_shortcls() ||" + type + " == $rt_charcls()) {").indent().softNewLine();
+        writer.outdent().append("} else if (" + type + " === $rt_intcls() || " + type + " === $rt_bytecls() || "
+                + type + " === $rt_shortcls() ||" + type + " == $rt_charcls()) {").indent().softNewLine();
         writer.append("return " + obj + "|0;").softNewLine();
 
         writer.outdent().append("} else if (" + type + " === $rt_longcls()) {").indent().softNewLine();

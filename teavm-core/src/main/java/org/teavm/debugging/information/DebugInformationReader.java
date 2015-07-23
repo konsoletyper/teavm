@@ -269,7 +269,7 @@ class DebugInformationReader {
         for (int i = 0; i < result.length; ++i) {
             lastClass += readNumber();
             lastMethod += readNumber();
-            result[i] = ((long)lastClass << 32) | lastMethod;
+            result[i] = ((long) lastClass << 32) | lastMethod;
         }
         return result;
     }
@@ -306,7 +306,7 @@ class DebugInformationReader {
             if (r < 0) {
                 throw new EOFException();
             }
-            byte b = (byte)r;
+            byte b = (byte) r;
             number |= (b & 0x7F) << shift;
             shift += 7;
             if ((b & 0x80) == 0) {

@@ -221,8 +221,8 @@ public class TeaVMTestTool {
                             allTestsWriter.append(",");
                         }
                         firstMethod = false;
-                        allTestsWriter.append("\n            { name : \"" + methodRef.getName() + "\", script : \"" +
-                                scriptName + "\", expected : [");
+                        allTestsWriter.append("\n            { name : \"" + methodRef.getName() + "\", script : \""
+                                + scriptName + "\", expected : [");
                         MethodHolder methodHolder = classSource.get(testClass).getMethod(
                                 methodRef.getDescriptor());
                         boolean firstException = true;
@@ -322,7 +322,7 @@ public class TeaVMTestTool {
                 if (!file.exists()) {
                     file.createNewFile();
                 }
-                try(OutputStream out = new FileOutputStream(file)) {
+                try (OutputStream out = new FileOutputStream(file)) {
                     IOUtils.copy(in, out);
                 }
             } catch (IOException e) {
@@ -348,8 +348,8 @@ public class TeaVMTestTool {
             vm.add(transformer);
         }
         File file = new File(outputDir, targetName);
-        DebugInformationBuilder debugInfoBuilder = sourceMapsGenerated || debugInformationGenerated ?
-                new DebugInformationBuilder() : null;
+        DebugInformationBuilder debugInfoBuilder = sourceMapsGenerated || debugInformationGenerated
+                ? new DebugInformationBuilder() : null;
         try (Writer innerWriter = new OutputStreamWriter(new FileOutputStream(file), "UTF-8")) {
             MethodReference cons = new MethodReference(methodRef.getClassName(), "<init>", ValueType.VOID);
             MethodReference exceptionMsg = new MethodReference(ExceptionHelper.class, "showException",

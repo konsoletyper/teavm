@@ -46,7 +46,7 @@ public class SourceWriter implements Appendable, LocationProvider {
     }
 
     public SourceWriter append(String value) throws IOException {
-        append((CharSequence)value);
+        append((CharSequence) value);
         return this;
     }
 
@@ -154,7 +154,7 @@ public class SourceWriter implements Appendable, LocationProvider {
         }
     }
 
-    public SourceWriter newLine() throws IOException{
+    public SourceWriter newLine() throws IOException {
         innerWriter.append('\n');
         column = 0;
         ++line;
@@ -181,7 +181,7 @@ public class SourceWriter implements Appendable, LocationProvider {
         return this;
     }
 
-    public SourceWriter softNewLine() throws IOException{
+    public SourceWriter softNewLine() throws IOException {
         if (!minified) {
             innerWriter.append('\n');
             column = 0;

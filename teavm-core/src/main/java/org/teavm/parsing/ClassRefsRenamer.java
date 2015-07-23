@@ -91,10 +91,10 @@ public class ClassRefsRenamer implements InstructionVisitor {
 
     private ValueType rename(ValueType type) {
         if (type instanceof ValueType.Array) {
-            ValueType itemType = ((ValueType.Array)type).getItemType();
+            ValueType itemType = ((ValueType.Array) type).getItemType();
             return ValueType.arrayOf(rename(itemType));
         } else if (type instanceof ValueType.Object) {
-            String className = ((ValueType.Object)type).getClassName();
+            String className = ((ValueType.Object) type).getClassName();
             return ValueType.object(classNameMapper.map(className));
         } else {
             return type;
@@ -103,8 +103,8 @@ public class ClassRefsRenamer implements InstructionVisitor {
 
     private void rename(AnnotationContainer source, AnnotationContainer target) {
         for (AnnotationHolder annot : source.all()) {
-            if (!annot.getType().equals(Rename.class.getName()) &&
-                    !annot.getType().equals(Superclass.class.getName())) {
+            if (!annot.getType().equals(Rename.class.getName())
+                    && !annot.getType().equals(Superclass.class.getName())) {
                 target.add(rename(annot));
             }
         }
@@ -287,11 +287,9 @@ public class ClassRefsRenamer implements InstructionVisitor {
 
     @Override
     public void visit(MonitorEnterInstruction insn) {
-        
     }
 
     @Override
     public void visit(MonitorExitInstruction insn) {
-        
     }
 }

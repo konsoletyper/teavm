@@ -43,7 +43,7 @@ public class BenchmarkStarter implements EntryPoint {
     @Override
     public void onModuleLoad() {
         document = RootPanel.getBodyElement().getOwnerDocument();
-        canvas = (CanvasElement)document.getElementById("benchmark-canvas");
+        canvas = (CanvasElement) document.getElementById("benchmark-canvas");
         resultTableBody = document.getElementById("result-table-body");
         startMillisecond = System.currentTimeMillis();
         makeStep();
@@ -53,7 +53,7 @@ public class BenchmarkStarter implements EntryPoint {
         double start = Performance.now();
         scene.calculate();
         double end = Performance.now();
-        int second = (int)((System.currentTimeMillis() - startMillisecond) / 1000);
+        int second = (int) ((System.currentTimeMillis() - startMillisecond) / 1000);
         if (second > currentSecond) {
             Element row = document.createElement("tr");
             resultTableBody.appendChild(row);
@@ -94,13 +94,13 @@ public class BenchmarkStarter implements EntryPoint {
             for (Fixture fixture = body.getFixtureList(); fixture != null; fixture = fixture.getNext()) {
                 Shape shape = fixture.getShape();
                 if (shape.getType() == ShapeType.CIRCLE) {
-                    CircleShape circle = (CircleShape)shape;
+                    CircleShape circle = (CircleShape) shape;
                     context.beginPath();
                     context.arc(circle.m_p.x, circle.m_p.y, circle.getRadius(), 0, Math.PI * 2, true);
                     context.closePath();
                     context.stroke();
                 } else if (shape.getType() == ShapeType.POLYGON) {
-                    PolygonShape poly = (PolygonShape)shape;
+                    PolygonShape poly = (PolygonShape) shape;
                     Vec2[] vertices = poly.getVertices();
                     context.beginPath();
                     context.moveTo(vertices[0].x, vertices[0].y);

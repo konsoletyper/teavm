@@ -48,8 +48,8 @@ public class JSObjectClassTransformer implements ClassHolderTransformer {
         for (MethodHolder method : cls.getMethods().toArray(new MethodHolder[0])) {
             if (method.getAnnotations().get(JSBody.class.getName()) != null) {
                 processor.processJSBody(cls, method);
-            } else if (method.getProgram() != null &&
-                    method.getAnnotations().get(JSBodyImpl.class.getName()) == null) {
+            } else if (method.getProgram() != null
+                    && method.getAnnotations().get(JSBodyImpl.class.getName()) == null) {
                 processor.processProgram(method);
             }
         }

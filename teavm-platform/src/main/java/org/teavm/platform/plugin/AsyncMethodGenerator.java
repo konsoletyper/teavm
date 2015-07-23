@@ -133,7 +133,7 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin {
         } else if (returnType instanceof ValueType.Array) {
             return className.startsWith("[");
         } else {
-            return isSubclass(classSource, className, ((ValueType.Object)returnType).getClassName());
+            return isSubclass(classSource, className, ((ValueType.Object) returnType).getClassName());
         }
     }
 

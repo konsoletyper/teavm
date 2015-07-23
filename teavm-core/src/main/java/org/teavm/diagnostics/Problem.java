@@ -111,31 +111,31 @@ public class Problem {
                 if (!(param instanceof String)) {
                     return index;
                 }
-                consumer.appendClass((String)param);
+                consumer.appendClass((String) param);
                 break;
             case TYPE:
                 if (!(param instanceof ValueType)) {
                     return index;
                 }
-                consumer.appendType((ValueType)param);
+                consumer.appendType((ValueType) param);
                 break;
             case METHOD:
                 if (!(param instanceof MethodReference)) {
                     return index;
                 }
-                consumer.appendMethod((MethodReference)param);
+                consumer.appendMethod((MethodReference) param);
                 break;
             case FIELD:
                 if (!(param instanceof FieldReference)) {
                     return index;
                 }
-                consumer.appendField((FieldReference)param);
+                consumer.appendField((FieldReference) param);
                 break;
             case LOCATION:
                 if (!(param instanceof InstructionLocation)) {
                     return index;
                 }
-                consumer.appendLocation((InstructionLocation)param);
+                consumer.appendLocation((InstructionLocation) param);
                 break;
         }
         next += 2;

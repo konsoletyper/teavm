@@ -40,7 +40,7 @@ public class ArrayUnwrapMotion implements MethodOptimization {
         for (int i = 0; i < instructions.size(); ++i) {
             Instruction insn = instructions.get(i);
             if (insn instanceof UnwrapArrayInstruction) {
-                UnwrapArrayInstruction unwrap = (UnwrapArrayInstruction)insn;
+                UnwrapArrayInstruction unwrap = (UnwrapArrayInstruction) insn;
                 instructions.set(i, new EmptyInstruction());
                 int def = whereDefined(instructions, i, unwrap.getArray());
                 if (def < 0) {

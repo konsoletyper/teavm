@@ -50,23 +50,23 @@ public final class JS {
     }
 
     public static <T extends JSObject> JSArray<T> createArray(int size) {
-        return ((JSGlobal)JS.getGlobal()).newArray(size);
+        return ((JSGlobal) JS.getGlobal()).newArray(size);
     }
 
     public static JSIntArray createIntArray(int size) {
-        return ((JSGlobal)JS.getGlobal()).newIntArray(size);
+        return ((JSGlobal) JS.getGlobal()).newIntArray(size);
     }
 
     public static JSStringArray createStringArray(int size) {
-        return ((JSGlobal)JS.getGlobal()).newStringArray(size);
+        return ((JSGlobal) JS.getGlobal()).newStringArray(size);
     }
 
     public static JSBooleanArray createBooleanArray(int size) {
-        return ((JSGlobal)JS.getGlobal()).newBooleanArray(size);
+        return ((JSGlobal) JS.getGlobal()).newBooleanArray(size);
     }
 
     public static JSDoubleArray createDoubleArray(int size) {
-        return ((JSGlobal)JS.getGlobal()).newDoubleArray(size);
+        return ((JSGlobal) JS.getGlobal()).newDoubleArray(size);
     }
 
     @InjectedBy(JSNativeGenerator.class)
@@ -326,11 +326,11 @@ public final class JS {
     public static native boolean unwrapBoolean(JSObject obj);
 
     public static byte unwrapByte(JSObject obj) {
-        return (byte)unwrapInt(obj);
+        return (byte) unwrapInt(obj);
     }
 
     public static short unwrapShort(JSObject obj) {
-        return (short)unwrapInt(obj);
+        return (short) unwrapInt(obj);
     }
 
     @InjectedBy(JSNativeGenerator.class)
@@ -351,7 +351,7 @@ public final class JS {
 
     public static <T extends JSObject> T[] unwrapArray(Class<T> type, JSArray<T> array) {
         @SuppressWarnings("unchecked")
-        T[] result = (T[])Array.newInstance(type, array.getLength());
+        T[] result = (T[]) Array.newInstance(type, array.getLength());
         for (int i = 0; i < result.length; ++i) {
             result[i] = array.get(i);
         }
@@ -360,7 +360,7 @@ public final class JS {
 
     public static <T extends JSObject> T[][] unwrapArray2(Class<T> type, JSArray<JSArray<T>> array) {
         @SuppressWarnings("unchecked")
-        T[][] result = (T[][])Array.newInstance(Array.newInstance(type, 0).getClass(), array.getLength());
+        T[][] result = (T[][]) Array.newInstance(Array.newInstance(type, 0).getClass(), array.getLength());
         for (int i = 0; i < result.length; ++i) {
             result[i] = unwrapArray(type, array.get(i));
         }
@@ -370,7 +370,7 @@ public final class JS {
     public static <T extends JSObject> T[][][] unwrapArray3(Class<T> type, JSArray<JSArray<JSArray<T>>> array) {
         Class<?> baseType = Array.newInstance(type, 0).getClass();
         @SuppressWarnings("unchecked")
-        T[][][] result = (T[][][])Array.newInstance(Array.newInstance(baseType, 0).getClass(), array.getLength());
+        T[][][] result = (T[][][]) Array.newInstance(Array.newInstance(baseType, 0).getClass(), array.getLength());
         for (int i = 0; i < result.length; ++i) {
             result[i] = unwrapArray2(type, array.get(i));
         }

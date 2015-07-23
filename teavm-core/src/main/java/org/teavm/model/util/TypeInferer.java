@@ -62,8 +62,8 @@ public class TypeInferer {
         Graph graph = builder.build();
         Graph arrayElemGraph = builder.build();
         for (int i = 0; i < sz; ++i) {
-            if ((i >= graph.size() || graph.incomingEdgesCount(i) == 0) &&
-                    (i >= arrayElemGraph.size() || arrayElemGraph.incomingEdgesCount(i) == 0)) {
+            if ((i >= graph.size() || graph.incomingEdgesCount(i) == 0)
+                    && (i >= arrayElemGraph.size() || arrayElemGraph.incomingEdgesCount(i) == 0)) {
                 stack.push(i);
             }
         }
@@ -110,7 +110,7 @@ public class TypeInferer {
 
     VariableType convert(ValueType type) {
         if (type instanceof ValueType.Primitive) {
-            switch (((ValueType.Primitive)type).getKind()) {
+            switch (((ValueType.Primitive) type).getKind()) {
                 case BOOLEAN:
                 case BYTE:
                 case SHORT:
@@ -125,7 +125,7 @@ public class TypeInferer {
                     return VariableType.LONG;
             }
         } else if (type instanceof ValueType.Array) {
-            ValueType item = ((ValueType.Array)type).getItemType();
+            ValueType item = ((ValueType.Array) type).getItemType();
             return convertArray(item);
         }
         return VariableType.OBJECT;
@@ -189,7 +189,7 @@ public class TypeInferer {
 
     VariableType convertArray(ValueType type) {
         if (type instanceof ValueType.Primitive) {
-            switch (((ValueType.Primitive)type).getKind()) {
+            switch (((ValueType.Primitive) type).getKind()) {
                 case BOOLEAN:
                 case BYTE:
                     return VariableType.BYTE_ARRAY;

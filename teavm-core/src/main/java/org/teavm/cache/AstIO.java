@@ -71,7 +71,7 @@ public class AstIO {
         node.getModifiers().addAll(unpackModifiers(input.readInt()));
         int varCount = input.readShort();
         for (int i = 0; i < varCount; ++i) {
-            node.getVariables().add((int)input.readShort());
+            node.getVariables().add((int) input.readShort());
         }
         int paramDebugNameCount = input.readShort();
         for (int i = 0; i < paramDebugNameCount; ++i) {
@@ -116,7 +116,7 @@ public class AstIO {
         node.getModifiers().addAll(unpackModifiers(input.readInt()));
         int varCount = input.readShort();
         for (int i = 0; i < varCount; ++i) {
-            node.getVariables().add((int)input.readShort());
+            node.getVariables().add((int) input.readShort());
         }
         int paramDebugNameCount = input.readShort();
         for (int i = 0; i < paramDebugNameCount; ++i) {
@@ -345,10 +345,10 @@ public class AstIO {
             try {
                 output.writeByte(16);
                 writeSequence(statement.getProtectedBody());
-                output.writeInt(statement.getExceptionType() != null ?
-                        symbolTable.lookup(statement.getExceptionType()) : -1);
-                output.writeShort(statement.getExceptionVariable() != null ?
-                        statement.getExceptionVariable() : -1);
+                output.writeInt(statement.getExceptionType() != null
+                        ? symbolTable.lookup(statement.getExceptionType()) : -1);
+                output.writeShort(statement.getExceptionVariable() != null
+                        ? statement.getExceptionVariable() : -1);
                 writeSequence(statement.getHandler());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
@@ -430,19 +430,19 @@ public class AstIO {
                     output.writeByte(3);
                 } else if (value instanceof Integer) {
                     output.writeByte(4);
-                    output.writeInt((Integer)value);
+                    output.writeInt((Integer) value);
                 } else if (value instanceof Long) {
                     output.writeByte(5);
-                    output.writeLong((Long)value);
+                    output.writeLong((Long) value);
                 } else if (value instanceof Float) {
                     output.writeByte(6);
-                    output.writeFloat((Float)value);
+                    output.writeFloat((Float) value);
                 } else if (value instanceof Double) {
                     output.writeByte(7);
-                    output.writeDouble((Double)value);
+                    output.writeDouble((Double) value);
                 } else if (value instanceof String) {
                     output.writeByte(8);
-                    output.writeUTF((String)value);
+                    output.writeUTF((String) value);
                 } else if (value instanceof ValueType) {
                     output.writeByte(9);
                     output.writeInt(symbolTable.lookup(value.toString()));

@@ -149,7 +149,7 @@ public final class TeaVMTestRunner {
         }
 
         try {
-            return (TestAdapter)cons.newInstance();
+            return (TestAdapter) cons.newInstance();
         } catch (IllegalAccessException | InstantiationException e) {
             System.err.println("Error instantiating adapter: " + adapterName);
             e.printStackTrace(System.err);
@@ -187,7 +187,7 @@ public final class TeaVMTestRunner {
         }
 
         try {
-            return (ClassHolderTransformer)cons.newInstance();
+            return (ClassHolderTransformer) cons.newInstance();
         } catch (IllegalAccessException | InstantiationException e) {
             System.err.println("Error instantiating transformer: " + transformerName);
             e.printStackTrace(System.err);

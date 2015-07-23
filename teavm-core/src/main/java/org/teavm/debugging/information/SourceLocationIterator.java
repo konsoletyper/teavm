@@ -37,13 +37,11 @@ public class SourceLocationIterator {
     }
 
     public boolean isEndReached() {
-        return fileIndex >= debugInformation.fileMapping.size() &&
-                lineIndex >= debugInformation.lineMapping.size();
+        return fileIndex >= debugInformation.fileMapping.size() && lineIndex >= debugInformation.lineMapping.size();
     }
 
     private void read() {
-        if (fileIndex < debugInformation.fileMapping.size() &&
-                lineIndex < debugInformation.lineMapping.size()) {
+        if (fileIndex < debugInformation.fileMapping.size() && lineIndex < debugInformation.lineMapping.size()) {
             RecordArray.Record fileRecord = debugInformation.fileMapping.get(fileIndex);
             RecordArray.Record lineRecord = debugInformation.lineMapping.get(lineIndex);
             GeneratedLocation fileLoc = DebugInformation.key(fileRecord);

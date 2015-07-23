@@ -35,8 +35,8 @@ class BuildTimeResourceProxyBuilder {
 
     static {
         defaultValues.put(boolean.class, false);
-        defaultValues.put(byte.class, (byte)0);
-        defaultValues.put(short.class, (short)0);
+        defaultValues.put(byte.class, (byte) 0);
+        defaultValues.put(short.class, (short) 0);
         defaultValues.put(int.class, 0);
         defaultValues.put(float.class, 0F);
         defaultValues.put(double.class, 0.0);
@@ -70,8 +70,8 @@ class BuildTimeResourceProxyBuilder {
 
         BuildTimeResourceProxyFactory create() {
             if (!rootIface.isInterface()) {
-                throw new IllegalArgumentException("Error creating a new resource of type " + rootIface.getName() +
-                        " that is not an interface");
+                throw new IllegalArgumentException("Error creating a new resource of type " + rootIface.getName()
+                        + " that is not an interface");
             }
             scanIface(rootIface);
 
@@ -102,8 +102,8 @@ class BuildTimeResourceProxyBuilder {
 
         private void scanIface(Class<?> iface) {
             if (!Resource.class.isAssignableFrom(iface)) {
-                throw new IllegalArgumentException("Error creating a new resource of type " + iface.getName() + "." +
-                        " This type does not implement the " + Resource.class.getName() + " interface");
+                throw new IllegalArgumentException("Error creating a new resource of type " + iface.getName() + "."
+                        + " This type does not implement the " + Resource.class.getName() + " interface");
             }
 
             // Scan methods
@@ -127,18 +127,18 @@ class BuildTimeResourceProxyBuilder {
                 Class<?> getterType = property.getValue();
                 Class<?> setterType = setters.get(propertyName);
                 if (setterType == null) {
-                    throw new IllegalArgumentException("Property " + iface.getName() + "." + propertyName +
-                            " has a getter, but does not have a setter");
+                    throw new IllegalArgumentException("Property " + iface.getName() + "." + propertyName
+                            + " has a getter, but does not have a setter");
                 }
                 if (!setterType.equals(getterType)) {
-                    throw new IllegalArgumentException("Property " + iface.getName() + "." + propertyName +
-                            " has a getter and a setter of different types");
+                    throw new IllegalArgumentException("Property " + iface.getName() + "." + propertyName
+                            + " has a getter and a setter of different types");
                 }
             }
             for (String propertyName : setters.keySet()) {
                 if (!getters.containsKey(propertyName)) {
-                    throw new IllegalArgumentException("Property " + iface.getName() + "." + propertyName +
-                            " has a setter, but does not have a getter");
+                    throw new IllegalArgumentException("Property " + iface.getName() + "." + propertyName
+                            + " has a setter, but does not have a getter");
                 }
             }
 
@@ -148,8 +148,8 @@ class BuildTimeResourceProxyBuilder {
                 Class<?> propertyType = property.getValue();
                 if (!allowedPropertyTypes.contains(propertyType)) {
                     if (!propertyType.isInterface() || !Resource.class.isAssignableFrom(propertyType)) {
-                        throw new IllegalArgumentException("Property " + rootIface.getName() + "." + propertyName +
-                                " has an illegal type " + propertyType.getName());
+                        throw new IllegalArgumentException("Property " + rootIface.getName() + "." + propertyName
+                                + " has an illegal type " + propertyType.getName());
                     }
                 }
                 if (!propertyTypes.containsKey(propertyName)) {
@@ -164,45 +164,45 @@ class BuildTimeResourceProxyBuilder {
         }
 
         private void throwInvalidMethod(Method method) {
-            throw new IllegalArgumentException("Method " + method.getDeclaringClass().getName() + "." +
-                    method.getName() + " is not likely to be either getter or setter");
+            throw new IllegalArgumentException("Method " + method.getDeclaringClass().getName() + "."
+                    + method.getName() + " is not likely to be either getter or setter");
         }
 
         private void scanGetter(Method method) {
             String propertyName = extractPropertyName(method.getName().substring(3));
-            if (propertyName == null || method.getReturnType().equals(void.class) ||
-                    method.getParameterTypes().length > 0) {
+            if (propertyName == null || method.getReturnType().equals(void.class)
+                    || method.getParameterTypes().length > 0) {
                 throwInvalidMethod(method);
             }
             if (getters.put(propertyName, method.getReturnType()) != null) {
-                throw new IllegalArgumentException("Method " + method.getDeclaringClass().getName() + "." +
-                        method.getName() + " is a duplicate getter for property " + propertyName);
+                throw new IllegalArgumentException("Method " + method.getDeclaringClass().getName() + "."
+                        + method.getName() + " is a duplicate getter for property " + propertyName);
             }
             methods.put(method, new BuildTimeResourceGetter(getPropertyIndex(propertyName)));
         }
 
         private void scanBooleanGetter(Method method) {
             String propertyName = extractPropertyName(method.getName().substring(2));
-            if (propertyName == null || !method.getReturnType().equals(boolean.class) ||
-                    method.getParameterTypes().length > 0) {
+            if (propertyName == null || !method.getReturnType().equals(boolean.class)
+                    || method.getParameterTypes().length > 0) {
                 throwInvalidMethod(method);
             }
             if (getters.put(propertyName, method.getReturnType()) != null) {
-                throw new IllegalArgumentException("Method " + method.getDeclaringClass().getName() + "." +
-                        method.getName() + " is a duplicate getter for property " + propertyName);
+                throw new IllegalArgumentException("Method " + method.getDeclaringClass().getName() + "."
+                        + method.getName() + " is a duplicate getter for property " + propertyName);
             }
             methods.put(method, new BuildTimeResourceGetter(getPropertyIndex(propertyName)));
         }
 
         private void scanSetter(Method method) {
             String propertyName = extractPropertyName(method.getName().substring(3));
-            if (propertyName == null || !method.getReturnType().equals(void.class) ||
-                    method.getParameterTypes().length != 1) {
+            if (propertyName == null || !method.getReturnType().equals(void.class)
+                    || method.getParameterTypes().length != 1) {
                 throwInvalidMethod(method);
             }
             if (setters.put(propertyName, method.getParameterTypes()[0]) != null) {
-                throw new IllegalArgumentException("Method " + method.getDeclaringClass().getName() + "." +
-                        method.getName() + " is a duplicate setter for property " + propertyName);
+                throw new IllegalArgumentException("Method " + method.getDeclaringClass().getName() + "."
+                        + method.getName() + " is a duplicate setter for property " + propertyName);
             }
             methods.put(method, new BuildTimeResourceSetter(getPropertyIndex(propertyName)));
         }

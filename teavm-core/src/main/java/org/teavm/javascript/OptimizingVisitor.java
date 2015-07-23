@@ -35,11 +35,11 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     }
 
     private static boolean isZero(Expr expr) {
-        return expr instanceof ConstantExpr && Integer.valueOf(0).equals(((ConstantExpr)expr).getValue());
+        return expr instanceof ConstantExpr && Integer.valueOf(0).equals(((ConstantExpr) expr).getValue());
     }
 
     private static boolean isComparison(Expr expr) {
-        return expr instanceof BinaryExpr && ((BinaryExpr)expr).getOperation() == BinaryOperation.COMPARE;
+        return expr instanceof BinaryExpr && ((BinaryExpr) expr).getOperation() == BinaryOperation.COMPARE;
     }
 
     @Override
@@ -55,7 +55,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         expr.getSecondOperand().acceptVisitor(this);
         Expr b = resultExpr;
         if (b instanceof ConstantExpr && expr.getOperation() == BinaryOperation.SUBTRACT) {
-            if (tryMakePositive((ConstantExpr)b)) {
+            if (tryMakePositive((ConstantExpr) b)) {
                 expr.setOperation(BinaryOperation.ADD);
             }
         }
@@ -78,7 +78,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                 case LESS_OR_EQUALS:
                 case GREATER:
                 case GREATER_OR_EQUALS: {
-                    BinaryExpr comparison = (BinaryExpr)p;
+                    BinaryExpr comparison = (BinaryExpr) p;
                     Expr result = BinaryExpr.binary(expr.getOperation(),
                             comparison.getFirstOperand(), comparison.getSecondOperand());
                     result.setLocation(comparison.getLocation());
@@ -102,7 +102,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         expr.getOperand().acceptVisitor(this);
         Expr operand = resultExpr;
         if (expr.getOperation() == UnaryOperation.NEGATE && operand instanceof ConstantExpr) {
-            ConstantExpr constantExpr = (ConstantExpr)operand;
+            ConstantExpr constantExpr = (ConstantExpr) operand;
             if (tryMakePositive(constantExpr)) {
                 resultExpr = expr;
                 return;
@@ -114,23 +114,23 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
 
     private boolean tryMakePositive(ConstantExpr constantExpr) {
         Object value = constantExpr.getValue();
-        if (value instanceof Integer && (Integer)value < 0) {
-            constantExpr.setValue(-(Integer)value);
+        if (value instanceof Integer && (Integer) value < 0) {
+            constantExpr.setValue(-(Integer) value);
             return true;
-        } else if (value instanceof Float && (Float)value < 0) {
-            constantExpr.setValue(-(Float)value);
+        } else if (value instanceof Float && (Float) value < 0) {
+            constantExpr.setValue(-(Float) value);
             return true;
-        } else if (value instanceof Byte && (Byte)value < 0) {
-            constantExpr.setValue(-(Byte)value);
+        } else if (value instanceof Byte && (Byte) value < 0) {
+            constantExpr.setValue(-(Byte) value);
             return true;
-        } else if (value instanceof Short && (Short)value < 0) {
-            constantExpr.setValue(-(Short)value);
+        } else if (value instanceof Short && (Short) value < 0) {
+            constantExpr.setValue(-(Short) value);
             return true;
-        } else if (value instanceof Long && (Long)value < 0) {
-            constantExpr.setValue(-(Long)value);
+        } else if (value instanceof Long && (Long) value < 0) {
+            constantExpr.setValue(-(Long) value);
             return true;
-        } else if (value instanceof Double && (Double)value < 0) {
-            constantExpr.setValue(-(Double)value);
+        } else if (value instanceof Double && (Double) value < 0) {
+            constantExpr.setValue(-(Double) value);
             return true;
         }
         return false;
@@ -169,16 +169,16 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         if (!(last instanceof AssignmentStatement)) {
             return;
         }
-        AssignmentStatement assignment = (AssignmentStatement)last;
+        AssignmentStatement assignment = (AssignmentStatement) last;
         if (assignment.isAsync()) {
             return;
         }
         if (!(assignment.getLeftValue() instanceof VariableExpr)) {
             return;
         }
-        VariableExpr var = (VariableExpr)assignment.getLeftValue();
-        if (var.getLocation() != null && assignment.getLocation() != null &&
-                !assignment.getLocation().equals(var.getLocation())) {
+        VariableExpr var = (VariableExpr) assignment.getLeftValue();
+        if (var.getLocation() != null && assignment.getLocation() != null
+                && !assignment.getLocation().equals(var.getLocation())) {
             return;
         }
         if (var.getIndex() == index) {
@@ -231,22 +231,22 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         if (!(last instanceof AssignmentStatement)) {
             return false;
         }
-        AssignmentStatement assignment = (AssignmentStatement)last;
+        AssignmentStatement assignment = (AssignmentStatement) last;
         if (!(assignment.getLeftValue() instanceof VariableExpr)) {
             return false;
         }
-        VariableExpr var = (VariableExpr)assignment.getLeftValue();
+        VariableExpr var = (VariableExpr) assignment.getLeftValue();
         if (!(expr.getArguments().get(0) instanceof VariableExpr)) {
             return false;
         }
-        VariableExpr target = (VariableExpr)expr.getArguments().get(0);
+        VariableExpr target = (VariableExpr) expr.getArguments().get(0);
         if (target.getIndex() != var.getIndex()) {
             return false;
         }
         if (!(assignment.getRightValue() instanceof NewExpr)) {
             return false;
         }
-        NewExpr constructed = (NewExpr)assignment.getRightValue();
+        NewExpr constructed = (NewExpr) assignment.getRightValue();
         if (!constructed.getConstructedClass().equals(expr.getMethod().getClassName())) {
             return false;
         }
@@ -306,7 +306,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     public void visit(AssignmentStatement statement) {
         if (statement.getLeftValue() == null) {
             statement.getRightValue().acceptVisitor(this);
-            if (resultExpr instanceof InvocationExpr && tryApplyConstructor((InvocationExpr)resultExpr)) {
+            if (resultExpr instanceof InvocationExpr && tryApplyConstructor((InvocationExpr) resultExpr)) {
                 resultStmt = new SequentialStatement();
             } else {
                 statement.setRightValue(resultExpr);
@@ -345,7 +345,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         for (int i = 0; i < statements.size(); ++i) {
             Statement part = statements.get(i);
             if (part instanceof SequentialStatement) {
-                if (!processSequenceImpl(((SequentialStatement)part).getSequence())) {
+                if (!processSequenceImpl(((SequentialStatement) part).getSequence())) {
                     return false;
                 }
                 continue;
@@ -353,7 +353,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
             part.acceptVisitor(this);
             part = resultStmt;
             if (part instanceof SequentialStatement) {
-                if (!processSequenceImpl(((SequentialStatement)part).getSequence())) {
+                if (!processSequenceImpl(((SequentialStatement) part).getSequence())) {
                     return false;
                 }
                 continue;
@@ -369,11 +369,11 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     private void wieldTryCatch(List<Statement> statements) {
         for (int i = 0; i < statements.size() - 1; ++i) {
             if (statements.get(i) instanceof TryCatchStatement && statements.get(i + 1) instanceof TryCatchStatement) {
-                TryCatchStatement first = (TryCatchStatement)statements.get(i);
-                TryCatchStatement second = (TryCatchStatement)statements.get(i + 1);
-                if (Objects.equals(first.getExceptionType(), second.getExceptionType()) &&
-                        Objects.equals(first.getExceptionVariable(), second.getExceptionVariable()) &&
-                        briefStatementComparison(first.getHandler(), second.getHandler())) {
+                TryCatchStatement first = (TryCatchStatement) statements.get(i);
+                TryCatchStatement second = (TryCatchStatement) statements.get(i + 1);
+                if (Objects.equals(first.getExceptionType(), second.getExceptionType())
+                        && Objects.equals(first.getExceptionVariable(), second.getExceptionVariable())
+                        && briefStatementComparison(first.getHandler(), second.getHandler())) {
                     first.getProtectedBody().addAll(second.getProtectedBody());
                     statements.remove(i + 1);
                     wieldTryCatch(first.getProtectedBody());
@@ -393,8 +393,8 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         Statement first = firstSeq.get(0);
         Statement second = secondSeq.get(0);
         if (first instanceof BreakStatement && second instanceof BreakStatement) {
-            BreakStatement firstBreak = (BreakStatement)first;
-            BreakStatement secondBreak = (BreakStatement)second;
+            BreakStatement firstBreak = (BreakStatement) first;
+            BreakStatement secondBreak = (BreakStatement) second;
             return firstBreak.getTarget() == secondBreak.getTarget();
         }
         return false;
@@ -406,7 +406,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         }
         Statement last = statements.get(statements.size() - 1);
         if (last instanceof BreakStatement && exit != null) {
-            IdentifiedStatement target = ((BreakStatement)last).getTarget();
+            IdentifiedStatement target = ((BreakStatement) last).getTarget();
             if (exit == target) {
                 statements.remove(statements.size() - 1);
             }
@@ -417,12 +417,12 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         for (int i = 0; i < statements.size(); ++i) {
             Statement stmt = statements.get(i);
             if (stmt instanceof ConditionalStatement) {
-                ConditionalStatement cond = (ConditionalStatement)stmt;
+                ConditionalStatement cond = (ConditionalStatement) stmt;
                 check_conditional: {
-                    last = cond.getConsequent().isEmpty() ? null :
-                            cond.getConsequent().get(cond.getConsequent().size() - 1);
+                    last = cond.getConsequent().isEmpty() ? null
+                            : cond.getConsequent().get(cond.getConsequent().size() - 1);
                     if (last instanceof BreakStatement) {
-                        BreakStatement breakStmt = (BreakStatement)last;
+                        BreakStatement breakStmt = (BreakStatement) last;
                         if (exit != null && exit == breakStmt.getTarget()) {
                             cond.getConsequent().remove(cond.getConsequent().size() - 1);
                             List<Statement> remaining = statements.subList(i + 1, statements.size());
@@ -431,10 +431,10 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                             break check_conditional;
                         }
                     }
-                    last = cond.getAlternative().isEmpty() ? null :
-                            cond.getAlternative().get(cond.getAlternative().size() - 1);
+                    last = cond.getAlternative().isEmpty() ? null
+                            : cond.getAlternative().get(cond.getAlternative().size() - 1);
                     if (last instanceof BreakStatement) {
-                        BreakStatement breakStmt = (BreakStatement)last;
+                        BreakStatement breakStmt = (BreakStatement) last;
                         if (exit != null && exit == breakStmt.getTarget()) {
                             cond.getAlternative().remove(cond.getAlternative().size() - 1);
                             List<Statement> remaining = statements.subList(i + 1, statements.size());
@@ -450,7 +450,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                 }
                 normalizeConditional(cond);
                 if (cond.getConsequent().size() == 1 && cond.getConsequent().get(0) instanceof ConditionalStatement) {
-                    ConditionalStatement innerCond = (ConditionalStatement)cond.getConsequent().get(0);
+                    ConditionalStatement innerCond = (ConditionalStatement) cond.getConsequent().get(0);
                     if (innerCond.getAlternative().isEmpty()) {
                         if (cond.getAlternative().isEmpty()) {
                             cond.getConsequent().clear();
@@ -458,8 +458,8 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                             cond.setCondition(Expr.binary(BinaryOperation.AND, cond.getCondition(),
                                     innerCond.getCondition(), cond.getCondition().getLocation()));
                             --i;
-                        } else if (cond.getAlternative().size() != 1 ||
-                                !(cond.getAlternative().get(0) instanceof ConditionalStatement)) {
+                        } else if (cond.getAlternative().size() != 1
+                                || !(cond.getAlternative().get(0) instanceof ConditionalStatement)) {
                             cond.setCondition(ExprOptimizer.invert(cond.getCondition()));
                             cond.getConsequent().clear();
                             cond.getConsequent().addAll(cond.getAlternative());
@@ -470,13 +470,13 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                     }
                 }
             } else if (stmt instanceof BlockStatement) {
-                BlockStatement nestedBlock = (BlockStatement)stmt;
+                BlockStatement nestedBlock = (BlockStatement) stmt;
                 eliminateRedundantBreaks(nestedBlock.getBody(), nestedBlock);
             } else if (stmt instanceof WhileStatement) {
-                WhileStatement whileStmt = (WhileStatement)stmt;
+                WhileStatement whileStmt = (WhileStatement) stmt;
                 eliminateRedundantBreaks(whileStmt.getBody(), null);
             } else if (stmt instanceof SwitchStatement) {
-                SwitchStatement switchStmt = (SwitchStatement)stmt;
+                SwitchStatement switchStmt = (SwitchStatement) stmt;
                 for (SwitchClause clause : switchStmt.getClauses()) {
                     eliminateRedundantBreaks(clause.getBody(), null);
                 }
@@ -546,7 +546,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     @Override
     public void visit(WhileStatement statement) {
         if (statement.getBody().size() == 1 && statement.getBody().get(0) instanceof WhileStatement) {
-            WhileStatement innerLoop = (WhileStatement)statement.getBody().get(0);
+            WhileStatement innerLoop = (WhileStatement) statement.getBody().get(0);
             BreakToContinueReplacer replacer = new BreakToContinueReplacer(innerLoop, statement);
             replacer.visitSequence(innerLoop.getBody());
             statement.getBody().clear();
@@ -555,7 +555,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         List<Statement> statements = processSequence(statement.getBody());
         for (int i = 0; i < statements.size(); ++i) {
             if (statements.get(i) instanceof ContinueStatement) {
-                ContinueStatement continueStmt = (ContinueStatement)statements.get(i);
+                ContinueStatement continueStmt = (ContinueStatement) statements.get(i);
                 if (continueStmt.getTarget() == statement) {
                     statements.subList(i, statements.size()).clear();
                     break;
@@ -573,9 +573,9 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         }
         while (true) {
             if (!statement.getBody().isEmpty() && statement.getBody().get(0) instanceof ConditionalStatement) {
-                ConditionalStatement cond = (ConditionalStatement)statement.getBody().get(0);
+                ConditionalStatement cond = (ConditionalStatement) statement.getBody().get(0);
                 if (cond.getConsequent().size() == 1 && cond.getConsequent().get(0) instanceof BreakStatement) {
-                    BreakStatement breakStmt = (BreakStatement)cond.getConsequent().get(0);
+                    BreakStatement breakStmt = (BreakStatement) cond.getConsequent().get(0);
                     if (breakStmt.getTarget() == statement) {
                         statement.getBody().remove(0);
                         if (statement.getCondition() != null) {

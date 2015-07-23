@@ -29,7 +29,7 @@ import org.teavm.jso.JS;
 */
 public final class Application {
 
-    private static Window window = (Window)JS.getGlobal();
+    private static Window window = (Window) JS.getGlobal();
     private static HTMLDocument document = window.getDocument();
     private static Storage storage = window.getSessionStorage();
 
@@ -41,26 +41,25 @@ public final class Application {
             window.alert("storage is not supported.");
         }
 
-        HTMLButtonElement saveButton = (HTMLButtonElement)document.getElementById("save-button");
+        HTMLButtonElement saveButton = (HTMLButtonElement) document.getElementById("save-button");
         saveButton.addEventListener("click", e -> {
-            String key = ((HTMLInputElement)document.getElementById("key")).getValue();
-            String value = ((HTMLInputElement)document.getElementById("value")).getValue();
+            String key = ((HTMLInputElement) document.getElementById("key")).getValue();
+            String value = ((HTMLInputElement) document.getElementById("value")).getValue();
 
             if (key != null && key.length() > 0 && value != null && value.length() > 0) {
                 storage.setItem(key, value);
                 draw();
             }
         });
-        HTMLButtonElement deleteButton = (HTMLButtonElement)document.getElementById("delete-button");
+        HTMLButtonElement deleteButton = (HTMLButtonElement) document.getElementById("delete-button");
         deleteButton.addEventListener("click", e -> {
-            String key = ((HTMLInputElement)document.getElementById("key")).getValue();
-
+            String key = ((HTMLInputElement) document.getElementById("key")).getValue();
             if (key != null && key.length() > 0) {
                 storage.removeItem(key);
                 draw();
             }
         });
-        HTMLButtonElement deleteAllButton = (HTMLButtonElement)document.getElementById("delete-all-button");
+        HTMLButtonElement deleteAllButton = (HTMLButtonElement) document.getElementById("delete-all-button");
         deleteAllButton.addEventListener("click", e -> {
             storage.clear();
             draw();

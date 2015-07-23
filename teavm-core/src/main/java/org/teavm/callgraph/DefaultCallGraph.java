@@ -41,8 +41,8 @@ public class DefaultCallGraph implements CallGraph {
     @Override
     public Collection<DefaultFieldAccessSite> getFieldAccess(FieldReference reference) {
         Set<DefaultFieldAccessSite> resultSet = fieldAccessSites.get(reference);
-        return resultSet != null ? Collections.unmodifiableSet(resultSet) :
-                Collections.<DefaultFieldAccessSite>emptySet();
+        return resultSet != null ? Collections.unmodifiableSet(resultSet)
+                : Collections.<DefaultFieldAccessSite>emptySet();
     }
 
     void addFieldAccess(DefaultFieldAccessSite accessSite) {
@@ -57,8 +57,8 @@ public class DefaultCallGraph implements CallGraph {
     @Override
     public Collection<DefaultClassAccessSite> getClassAccess(String className) {
         Set<DefaultClassAccessSite> resultSet = classAccessSites.get(className);
-        return resultSet != null ? Collections.unmodifiableSet(resultSet) :
-            Collections.<DefaultClassAccessSite>emptySet();
+        return resultSet != null ? Collections.unmodifiableSet(resultSet)
+                : Collections.<DefaultClassAccessSite>emptySet();
     }
 
     void addClassAccess(DefaultClassAccessSite accessSite) {

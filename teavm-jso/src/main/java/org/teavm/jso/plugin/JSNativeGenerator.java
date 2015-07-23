@@ -129,9 +129,9 @@ public class JSNativeGenerator implements Injector, DependencyPlugin, Generator 
             case "wrap":
                 if (methodRef.getDescriptor().parameterType(0).isObject("java.lang.String")) {
                     if (context.getArgument(0) instanceof ConstantExpr) {
-                        ConstantExpr constant = (ConstantExpr)context.getArgument(0);
+                        ConstantExpr constant = (ConstantExpr) context.getArgument(0);
                         if (constant.getValue() instanceof String) {
-                            writer.append('"').append(Renderer.escapeString((String)constant.getValue())).append('"');
+                            writer.append('"').append(Renderer.escapeString((String) constant.getValue())).append('"');
                             break;
                         }
                     }
@@ -219,20 +219,20 @@ public class JSNativeGenerator implements Injector, DependencyPlugin, Generator 
         if (!(propertyName instanceof InvocationExpr)) {
             return null;
         }
-        InvocationExpr invoke = (InvocationExpr)propertyName;
+        InvocationExpr invoke = (InvocationExpr) propertyName;
         if (!invoke.getMethod().getClassName().equals(JS.class.getName())) {
             return null;
         }
-        if (!invoke.getMethod().getName().equals("wrap") ||
-                !invoke.getMethod().getDescriptor().parameterType(0).isObject("java.lang.String")) {
+        if (!invoke.getMethod().getName().equals("wrap")
+                || !invoke.getMethod().getDescriptor().parameterType(0).isObject("java.lang.String")) {
             return null;
         }
         Expr arg = invoke.getArguments().get(0);
         if (!(arg instanceof ConstantExpr)) {
             return null;
         }
-        ConstantExpr constant = (ConstantExpr)arg;
-        return constant.getValue() instanceof String ? (String)constant.getValue() : null;
+        ConstantExpr constant = (ConstantExpr) arg;
+        return constant.getValue() instanceof String ? (String) constant.getValue() : null;
     }
 
     private boolean isIdentifier(String name) {

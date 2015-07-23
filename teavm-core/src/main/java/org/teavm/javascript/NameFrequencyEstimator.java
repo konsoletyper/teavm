@@ -67,8 +67,8 @@ public class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, Me
             if (asyncFamilyMethods.contains(method.getReference())) {
                 consumer.consume(method.getReference());
             }
-            if (clinit != null && (method.getModifiers().contains(NodeModifier.STATIC) ||
-                    method.getReference().getName().equals("<init>"))) {
+            if (clinit != null && (method.getModifiers().contains(NodeModifier.STATIC)
+                    || method.getReference().getName().equals("<init>"))) {
                 consumer.consume(method.getReference());
             }
             if (!method.getModifiers().contains(NodeModifier.STATIC)) {
@@ -258,16 +258,16 @@ public class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, Me
     @Override
     public void visit(ConstantExpr expr) {
         if (expr.getValue() instanceof ValueType) {
-            visitType((ValueType)expr.getValue());
+            visitType((ValueType) expr.getValue());
         }
     }
 
     private void visitType(ValueType type) {
         while (type instanceof ValueType.Array) {
-            type = ((ValueType.Array)type).getItemType();
+            type = ((ValueType.Array) type).getItemType();
         }
         if (type instanceof ValueType.Object) {
-            String clsName = ((ValueType.Object)type).getClassName();
+            String clsName = ((ValueType.Object) type).getClassName();
             consumer.consume(clsName);
             consumer.consumeFunction("$rt_cls");
         }
@@ -340,7 +340,7 @@ public class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, Me
         expr.getExpr().acceptVisitor(this);
         visitType(expr.getType());
         if (expr.getType() instanceof ValueType.Object) {
-            String clsName = ((ValueType.Object)expr.getType()).getClassName();
+            String clsName = ((ValueType.Object) expr.getType()).getClassName();
             ClassReader cls = classSource.get(clsName);
             if (cls == null || cls.hasModifier(ElementModifier.INTERFACE)) {
                 consumer.consumeFunction("$rt_isInstance");

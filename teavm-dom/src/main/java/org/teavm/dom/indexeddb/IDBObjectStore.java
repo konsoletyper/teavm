@@ -33,7 +33,7 @@ public abstract class IDBObjectStore implements JSObject, IDBCursorSource {
         if (JS.getType(result) == JSType.STRING) {
             return new String[] { JS.unwrapString(result) };
         } else {
-            return JS.unwrapStringArray((JSStringArray)result);
+            return JS.unwrapStringArray((JSStringArray) result);
         }
     }
 
