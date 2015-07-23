@@ -81,8 +81,8 @@ class TDecimalFormatParser {
         format.negativeSuffix = negativeSuffix != null ? negativeSuffix : positiveSuffix;
         format.setGroupingSize(groupSize);
         format.setGroupingUsed(groupSize > 0);
-        format.setMinimumIntegerDigits(!decimalSeparatorRequired ? minimumIntLength :
-                Math.max(1, minimumIntLength));
+        format.setMinimumIntegerDigits(!decimalSeparatorRequired ? minimumIntLength
+                : Math.max(1, minimumIntLength));
         format.setMaximumIntegerDigits(intLength);
         format.setMinimumFractionDigits(minimumFracLength);
         format.setMaximumFractionDigits(fracLength);
@@ -100,26 +100,26 @@ class TDecimalFormatParser {
                 case '#':
                 case '0':
                     if (suffix) {
-                        throw new IllegalArgumentException("Prefix contains special character at " + index + " in " +
-                                string);
+                        throw new IllegalArgumentException("Prefix contains special character at " + index + " in "
+                                + string);
                     }
                     break loop;
                 case ';':
                     if (end) {
-                        throw new IllegalArgumentException("Prefix contains special character at " + index + " in " +
-                                string);
+                        throw new IllegalArgumentException("Prefix contains special character at " + index + " in "
+                                + string);
                     }
                     break loop;
                 case '.':
                 case 'E':
-                    throw new IllegalArgumentException("Prefix contains special character at " + index + " in " +
-                            string);
+                    throw new IllegalArgumentException("Prefix contains special character at " + index + " in "
+                            + string);
                 case '\'': {
                     ++index;
                     int next = string.indexOf('\'', index);
                     if (next < 0) {
-                        throw new IllegalArgumentException("Quote opened at " + index + " was not closed in " +
-                                string);
+                        throw new IllegalArgumentException("Quote opened at " + index + " was not closed in "
+                                + string);
                     }
                     if (next == index) {
                         sb.append('\'');
@@ -199,8 +199,8 @@ class TDecimalFormatParser {
             switch (string.charAt(index)) {
                 case '#':
                     if (!optionalDigits) {
-                        throw new IllegalArgumentException("Unexpected '#' at non-optional digit part at " + index +
-                                " in " + string);
+                        throw new IllegalArgumentException("Unexpected '#' at non-optional digit part at " + index
+                                + " in " + string);
                     }
                     ++length;
                     break;
@@ -224,8 +224,8 @@ class TDecimalFormatParser {
             ++index;
         }
         if (length == 0) {
-            throw new IllegalArgumentException("Pattern does not specify integer digits at " + index +
-                    " in " + string);
+            throw new IllegalArgumentException("Pattern does not specify integer digits at " + index
+                    + " in " + string);
         }
         if (lastGroup == index) {
             throw new IllegalArgumentException("Group separator at the end of number at " + index + " in " + string);
@@ -250,19 +250,19 @@ class TDecimalFormatParser {
                     optionalDigits = true;
                     break;
                 case ',':
-                    throw new IllegalArgumentException("Group separator found at fractional part at " + index +
-                            " in " + string);
+                    throw new IllegalArgumentException("Group separator found at fractional part at " + index
+                            + " in " + string);
                 case '0':
                     if (optionalDigits) {
-                        throw new IllegalArgumentException("Unexpected '0' at optional digit part at " + index +
-                                " in " + string);
+                        throw new IllegalArgumentException("Unexpected '0' at optional digit part at " + index
+                                + " in " + string);
                     }
                     ++length;
                     ++minimumLength;
                     break;
                 case '.':
-                    throw new IllegalArgumentException("Unexpected second decimal separator at " + index +
-                            " in " + string);
+                    throw new IllegalArgumentException("Unexpected second decimal separator at " + index
+                            + " in " + string);
                 default:
                     break loop;
             }
@@ -283,8 +283,7 @@ class TDecimalFormatParser {
                 case ',':
                 case '.':
                 case 'E':
-                    throw new IllegalArgumentException("Unexpected char at exponent at " + index +
-                            " in " + string);
+                    throw new IllegalArgumentException("Unexpected char at exponent at " + index + " in " + string);
                 case '0':
                     ++length;
                     break;
@@ -294,8 +293,8 @@ class TDecimalFormatParser {
             ++index;
         }
         if (length == 0) {
-            throw new IllegalArgumentException("Pattern does not specify exponent digits at " + index +
-                    " in " + string);
+            throw new IllegalArgumentException("Pattern does not specify exponent digits at " + index
+                    + " in " + string);
         }
         if (apply) {
             exponentLength = length;

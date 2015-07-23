@@ -1,12 +1,11 @@
 /*
- *  Licensed to the Apache Software Foundation (ASF) under one or more
- *  contributor license agreements.  See the NOTICE file distributed with
- *  this work for additional information regarding copyright ownership.
- *  The ASF licenses this file to You under the Apache License, Version 2.0
- *  (the "License"); you may not use this file except in compliance with
- *  the License.  You may obtain a copy of the License at
+ *  Copyright 2015 Alexey Andreev.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +13,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package org.teavm.classlib.java.math;
 
 /**
@@ -39,6 +37,8 @@ package org.teavm.classlib.java.math;
  * </ul>
  */
 class TDivision {
+    private TDivision() {
+    }
 
     /**
      * Divides the array 'a' by the array 'b' and gets the quotient and the
@@ -60,11 +60,11 @@ class TDivision {
      *            the divisor's length
      * @return the remainder
      */
-    static int[] divide(int quot[], int quotLength, int a[], int aLength, int b[], int bLength) {
+    static int[] divide(int[] quot, int quotLength, int[] a, int aLength, int[] b, int bLength) {
 
-        int normA[] = new int[aLength + 1]; // the normalized dividend
+        int[] normA = new int[aLength + 1]; // the normalized dividend
         // an extra byte is needed for correct shift
-        int normB[] = new int[bLength + 1]; // the normalized divisor;
+        int[] normB = new int[bLength + 1]; // the normalized divisor;
         int normBLength = bLength;
         /*
          * Step D1: normalize a and b and put the results to a1 and b1 the
@@ -90,7 +90,7 @@ class TDivision {
                 // set guessDigit to the largest unsigned int value
                 guessDigit = -1;
             } else {
-                long product = (((normA[j] & 0xffffffffL) << 32) + (normA[j - 1] & 0xffffffffL));
+                long product = ((normA[j] & 0xffffffffL) << 32) + (normA[j - 1] & 0xffffffffL);
                 long res = TDivision.divideLongByInt(product, firstDivisorDigit);
                 guessDigit = (int) res; // the quotient of divideLongByInt
                 int rem = (int) (res >> 32); // the remainder of
@@ -125,7 +125,7 @@ class TDivision {
                         } else {
                             rem = (int) longR;
                         }
-                    } while (((leftHand ^ 0x8000000000000000L) > (rightHand ^ 0x8000000000000000L)));
+                    } while ((leftHand ^ 0x8000000000000000L) > (rightHand ^ 0x8000000000000000L));
                 }
             }
             // Step D4: multiply normB by guessDigit and subtract the production
@@ -177,7 +177,7 @@ class TDivision {
      *            the divisor
      * @return remainder
      */
-    static int divideArrayByInt(int dest[], int src[], final int srcLength, final int divisor) {
+    static int divideArrayByInt(int[] dest, int[] src, final int srcLength, final int divisor) {
 
         long rem = 0;
         long bLong = divisor & 0xffffffffL;
@@ -186,8 +186,8 @@ class TDivision {
             long temp = (rem << 32) | (src[i] & 0xffffffffL);
             long quot;
             if (temp >= 0) {
-                quot = (temp / bLong);
-                rem = (temp % bLong);
+                quot = temp / bLong;
+                rem = temp % bLong;
             } else {
                 /*
                  * make the dividend positive shifting it right by 1 bit then
@@ -231,7 +231,7 @@ class TDivision {
      *            the divisor
      * @return remainder
      */
-    static int remainderArrayByInt(int src[], final int srcLength, final int divisor) {
+    static int remainderArrayByInt(int[] src, final int srcLength, final int divisor) {
 
         long result = 0;
 
@@ -274,8 +274,8 @@ class TDivision {
         long bLong = b & 0xffffffffL;
 
         if (a >= 0) {
-            quot = (a / bLong);
-            rem = (a % bLong);
+            quot = a / bLong;
+            rem = a % bLong;
         } else {
             /*
              * Make the dividend positive shifting it right by 1 bit then get
@@ -316,8 +316,8 @@ class TDivision {
         int valLen = val.numberLength;
         int valSign = val.sign;
         if (valLen == 1) {
-            long a = (valDigits[0] & 0xffffffffL);
-            long b = (divisor & 0xffffffffL);
+            long a = valDigits[0] & 0xffffffffL;
+            long b = divisor & 0xffffffffL;
             long quo = a / b;
             long rem = a % b;
             if (valSign != divisorSign) {
@@ -329,10 +329,9 @@ class TDivision {
             return new TBigInteger[] { TBigInteger.valueOf(quo), TBigInteger.valueOf(rem) };
         }
         int quotientLength = valLen;
-        int quotientSign = ((valSign == divisorSign) ? 1 : -1);
-        int quotientDigits[] = new int[quotientLength];
-        int remainderDigits[];
-        remainderDigits = new int[] { TDivision.divideArrayByInt(quotientDigits, valDigits, valLen, divisor) };
+        int quotientSign = valSign == divisorSign ? 1 : -1;
+        int[] quotientDigits = new int[quotientLength];
+        int[] remainderDigits = { TDivision.divideArrayByInt(quotientDigits, valDigits, valLen, divisor) };
         TBigInteger result0 = new TBigInteger(quotientSign, quotientLength, quotientDigits);
         TBigInteger result1 = new TBigInteger(valSign, 1, remainderDigits);
         result0.cutOffLeadingZeroes();
@@ -356,7 +355,7 @@ class TDivision {
      *            the multiplier of b
      * @return the carry element of subtraction
      */
-    static int multiplyAndSubtract(int a[], int start, int b[], int bLen, int c) {
+    static int multiplyAndSubtract(int[] a, int start, int[] b, int bLen, int c) {
         long carry0 = 0;
         long carry1 = 0;
 
@@ -472,7 +471,7 @@ class TDivision {
                 op2 >>>= Long.numberOfTrailingZeros(op2);
             }
         } while (op1 != 0);
-        return (op2 << pow2Count);
+        return op2 << pow2Count;
     }
 
     /**
@@ -493,7 +492,10 @@ class TDivision {
 
         int m = p.numberLength * 32;
         // PRE: a \in [1, p - 1]
-        TBigInteger u, v, r, s;
+        TBigInteger u;
+        TBigInteger v;
+        TBigInteger r;
+        TBigInteger s;
         u = p.copy(); // make copy to use inplace method
         v = a.copy();
         int max = Math.max(v.numberLength, u.numberLength);
@@ -536,8 +538,9 @@ class TDivision {
 
             while (u.compareTo(v) <= TBigInteger.EQUALS) {
                 TElementary.inplaceSubtract(v, u);
-                if (v.signum() == 0)
+                if (v.signum() == 0) {
                     break;
+                }
                 toShift = v.getLowestSetBit();
                 TBitLevel.inplaceShiftRight(v, toShift);
                 TElementary.inplaceAdd(s, r);
@@ -608,7 +611,11 @@ class TDivision {
      */
     static TBigInteger modInverseHars(TBigInteger a, TBigInteger m) {
         // PRE: (a > 0) and (m > 0)
-        TBigInteger u, v, r, s, temp;
+        TBigInteger u;
+        TBigInteger v;
+        TBigInteger r;
+        TBigInteger s;
+        TBigInteger temp;
         // u = MAX(a,m), v = MIN(a,m)
         if (a.compareTo(m) == TBigInteger.LESS) {
             u = m;
@@ -675,9 +682,10 @@ class TDivision {
      *
      * @see #oddModPow(BigInteger, BigInteger, BigInteger)
      */
-    static TBigInteger slidingWindow(TBigInteger x2, TBigInteger a2, TBigInteger exponent, TBigInteger modulus, int n2) {
+    static TBigInteger slidingWindow(TBigInteger x2, TBigInteger a2, TBigInteger exponent,
+            TBigInteger modulus, int n2) {
         // fill odd low pows of a2
-        TBigInteger pows[] = new TBigInteger[8];
+        TBigInteger[] pows = new TBigInteger[8];
         TBigInteger res = x2;
         int lowexp;
         TBigInteger x3;
@@ -730,7 +738,7 @@ class TDivision {
      */
     static TBigInteger oddModPow(TBigInteger base, TBigInteger exponent, TBigInteger modulus) {
         // PRE: (base > 0), (exponent > 0), (modulus > 0) and (odd modulus)
-        int k = (modulus.numberLength << 5); // r = 2^k
+        int k = modulus.numberLength << 5; // r = 2^k
         // n-residue of base [base * r (mod modulus)]
         TBigInteger a2 = base.shiftLeft(k).mod(modulus);
         // n-residue of base [1 * r (mod modulus)]
@@ -818,7 +826,7 @@ class TDivision {
     private static void monReduction(int[] res, TBigInteger modulus, int n2) {
 
         /* res + m*modulus_digits */
-        int[] modulus_digits = modulus.digits;
+        int[] modulusDigits = modulus.digits;
         int modulusLen = modulus.numberLength;
         long outerCarry = 0;
 
@@ -826,7 +834,7 @@ class TDivision {
             long innnerCarry = 0;
             int m = (int) TMultiplication.unsignedMultAddAdd(res[i], n2, 0, 0);
             for (int j = 0; j < modulusLen; j++) {
-                innnerCarry = TMultiplication.unsignedMultAddAdd(m, modulus_digits[j], res[i + j], (int) innnerCarry);
+                innnerCarry = TMultiplication.unsignedMultAddAdd(m, modulusDigits[j], res[i + j], (int) innnerCarry);
                 res[i + j] = (int) innnerCarry;
                 innnerCarry >>>= 32;
             }
@@ -863,7 +871,7 @@ class TDivision {
      */
     static TBigInteger monPro(TBigInteger a, TBigInteger b, TBigInteger modulus, int n2) {
         int modulusLen = modulus.numberLength;
-        int res[] = new int[(modulusLen << 1) + 1];
+        int[] res = new int[(modulusLen << 1) + 1];
         TMultiplication.multArraysPAP(a.digits, Math.min(modulusLen, a.numberLength), b.digits,
                 Math.min(modulusLen, b.numberLength), res);
         monReduction(res, modulus, n2);
@@ -877,13 +885,13 @@ class TDivision {
      * @see #monPro(TBigInteger, TBigInteger, TBigInteger, long)
      * @see #monSquare(TBigInteger, TBigInteger, long)
      */
-    static TBigInteger finalSubtraction(int res[], TBigInteger modulus) {
+    static TBigInteger finalSubtraction(int[] res, TBigInteger modulus) {
 
         // skipping leading zeros
         int modulusLen = modulus.numberLength;
         boolean doSub = res[modulusLen] != 0;
         if (!doSub) {
-            int modulusDigits[] = modulus.digits;
+            int[] modulusDigits = modulus.digits;
             doSub = true;
             for (int i = modulusLen - 1; i >= 0; i--) {
                 if (res[i] != modulusDigits[i]) {
@@ -921,7 +929,7 @@ class TDivision {
         for (int i = 1; i < n; i++) {
             if (TBitLevel.testBit(x.multiply(y), i)) {
                 // Adding 2^i to y (setting the i-th bit)
-                y.digits[i >> 5] |= (1 << (i & 31));
+                y.digits[i >> 5] |= 1 << (i & 31);
             }
         }
         return y;

@@ -24,9 +24,12 @@ import org.teavm.classlib.impl.CharFlow;
  *
  * @author Alexey Andreev
  */
-public class UnicodeHelper {
+public final class UnicodeHelper {
+    private UnicodeHelper() {
+    }
+
     static char hexDigit(int value) {
-        return value < 10 ? (char)('0' + value) : (char)('A' + value);
+        return value < 10 ? (char) ('0' + value) : (char) ('A' + value);
     }
 
     static int valueOfHexDigit(char digit) {
@@ -66,21 +69,21 @@ public class UnicodeHelper {
 
     public static char encodeByte(byte b) {
         if (b < '\"' - ' ') {
-            return (char)(b + ' ');
+            return (char) (b + ' ');
         } else if (b < '\\' - ' ' - 1) {
-            return (char)(b + ' ' + 1);
+            return (char) (b + ' ' + 1);
         } else {
-            return (char)(b + ' ' + 2);
+            return (char) (b + ' ' + 2);
         }
     }
 
     public static byte decodeByte(char c) {
         if (c > '\\') {
-            return (byte)(c - ' ' - 2);
+            return (byte) (c - ' ' - 2);
         } else if (c > '"') {
-            return (byte)(c - ' ' - 1);
+            return (byte) (c - ' ' - 1);
         } else {
-            return (byte)(c - ' ');
+            return (byte) (c - ' ');
         }
     }
 
@@ -95,13 +98,13 @@ public class UnicodeHelper {
                 }
                 i += count;
                 if (count < 80) {
-                    sb.append(UnicodeHelper.encodeByte((byte)(b + 32)));
-                    sb.append(UnicodeHelper.encodeByte((byte)count));
+                    sb.append(UnicodeHelper.encodeByte((byte) (b + 32)));
+                    sb.append(UnicodeHelper.encodeByte((byte) count));
                 } else {
-                    sb.append(UnicodeHelper.encodeByte((byte)64));
+                    sb.append(UnicodeHelper.encodeByte((byte) 64));
                     sb.append(UnicodeHelper.encodeByte(b));
                     for (int j = 0; j < 3; ++j) {
-                        sb.append(UnicodeHelper.encodeByte((byte)(count & 0x3F)));
+                        sb.append(UnicodeHelper.encodeByte((byte) (count & 0x3F)));
                         count /= 0x40;
                     }
                 }

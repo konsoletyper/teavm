@@ -54,7 +54,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
     }
 
     public TAbstractStringBuilder(TString value) {
-        this((TCharSequence)value);
+        this((TCharSequence) value);
     }
 
     public TAbstractStringBuilder(TCharSequence value) {
@@ -164,7 +164,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
             } else {
                 insertSpace(target, target + 1);
             }
-            buffer[target++] = Character.forDigit((int)value, radix);
+            buffer[target++] = Character.forDigit((int) value, radix);
         } else {
             int sz = 1;
             long pos = 1;
@@ -180,7 +180,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
                 buffer[target++] = '-';
             }
             while (pos > 0) {
-                buffer[target++] = TCharacter.forDigit((int)(value / pos), radix);
+                buffer[target++] = TCharacter.forDigit((int) (value / pos), radix);
                 value %= pos;
                 pos /= radix;
             }
@@ -254,7 +254,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
                 }
                 bit >>= 1;
             }
-            mantissa = (int)((value / (digit / FLOAT_DECIMAL_FACTOR)) + 0.5f);
+            mantissa = (int) ((value / (digit / FLOAT_DECIMAL_FACTOR)) + 0.5f);
         } else {
             int bit = 32;
             exp = 0;
@@ -267,7 +267,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
                 bit >>= 1;
             }
             exp = -exp;
-            mantissa = (int)(((value * FLOAT_MAX_POS) / digit) + 0.5f);
+            mantissa = (int) (((value * FLOAT_MAX_POS) / digit) + 0.5f);
         }
 
         // Remove trailing zeros
@@ -320,7 +320,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
             } else {
                 intDigit = 0;
             }
-            buffer[target++] = (char)('0' + intDigit);
+            buffer[target++] = (char) ('0' + intDigit);
             if (--intPart == 0) {
                 buffer[target++] = '.';
             }
@@ -335,9 +335,9 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
                 buffer[target++] = '-';
             }
             if (exp >= 10) {
-                buffer[target++] = (char)('0' + exp / 10);
+                buffer[target++] = (char) ('0' + exp / 10);
             }
-            buffer[target++] = (char)('0' + exp % 10);
+            buffer[target++] = (char) ('0' + exp % 10);
         }
         return this;
     }
@@ -408,7 +408,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
                 }
                 bit >>= 1;
             }
-            mantissa = (long)(((value / digit) * DOUBLE_DECIMAL_FACTOR) + 0.5);
+            mantissa = (long) (((value / digit) * DOUBLE_DECIMAL_FACTOR) + 0.5);
         } else {
             int bit = 256;
             exp = 0;
@@ -421,7 +421,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
                 bit >>= 1;
             }
             exp = -exp;
-            mantissa = (long)(((value * DOUBLE_MAX_POS) / digit) + 0.5);
+            mantissa = (long) (((value * DOUBLE_MAX_POS) / digit) + 0.5);
         }
 
         // Remove trailing zeros
@@ -472,12 +472,12 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
         for (int i = 0; i < digits; ++i) {
             int intDigit;
             if (pos > 0) {
-                intDigit = (int)(mantissa / pos);
+                intDigit = (int) (mantissa / pos);
                 mantissa %= pos;
             } else {
                 intDigit = 0;
             }
-            buffer[target++] = (char)('0' + intDigit);
+            buffer[target++] = (char) ('0' + intDigit);
             if (--intPart == 0) {
                 buffer[target++] = '.';
             }
@@ -492,13 +492,13 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
                 buffer[target++] = '-';
             }
             if (exp >= 100) {
-                buffer[target++] = (char)('0' + exp / 100);
+                buffer[target++] = (char) ('0' + exp / 100);
                 exp %= 100;
-                buffer[target++] = (char)('0' + exp / 10);
+                buffer[target++] = (char) ('0' + exp / 10);
             } else if (exp >= 10) {
-                buffer[target++] = (char)('0' + exp / 10);
+                buffer[target++] = (char) ('0' + exp / 10);
             }
-            buffer[target++] = (char)('0' + exp % 10);
+            buffer[target++] = (char) ('0' + exp % 10);
         }
         return this;
     }
@@ -553,7 +553,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
 
     protected TAbstractStringBuilder appendCodePoint(int codePoint) {
         if (codePoint < TCharacter.MIN_SUPPLEMENTARY_CODE_POINT) {
-            return append((char)codePoint);
+            return append((char) codePoint);
         }
         ensureCapacity(length + 2);
         buffer[length++] = TCharacter.highSurrogate(codePoint);
@@ -632,7 +632,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
     }
 
     protected TAbstractStringBuilder append(TStringBuffer s) {
-        return append((TCharSequence)s);
+        return append((TCharSequence) s);
     }
 
     protected TAbstractStringBuilder insert(int index, TCharSequence s) {

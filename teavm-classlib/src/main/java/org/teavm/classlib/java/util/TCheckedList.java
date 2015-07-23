@@ -37,7 +37,7 @@ class TCheckedList<E> extends TCheckedCollection<E> implements TList<E> {
         for (int i = 0; i < items.length; ++i) {
             items[i] = type.cast(TObject.wrap(items[i]));
         }
-        return innerList.addAll(index, TArrays.asList((E[])items));
+        return innerList.addAll(index, TArrays.asList((E[]) items));
     }
 
     @Override

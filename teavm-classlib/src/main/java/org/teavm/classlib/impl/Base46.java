@@ -28,7 +28,10 @@ package org.teavm.classlib.impl;
  *
  * @author Alexey Andreev
  */
-public class Base46 {
+public final class Base46 {
+    private Base46() {
+    }
+
     public static void encodeUnsigned(StringBuilder sb, int number) {
         boolean hasMore;
         do {
@@ -47,7 +50,7 @@ public class Base46 {
     public static void encodeUnsigned(StringBuilder sb, long number) {
         boolean hasMore;
         do {
-            int digit = (int)(number % 46);
+            int digit = (int) (number % 46);
             number /= 46;
             hasMore = number > 0;
             digit = digit * 2 + (hasMore ? 1 : 0);
@@ -105,11 +108,11 @@ public class Base46 {
 
     public static char encodeDigit(int digit) {
         if (digit < 2) {
-            return (char)(digit + ' ');
+            return (char) (digit + ' ');
         } else if (digit < 59) {
-            return (char)(digit + 1 + ' ');
+            return (char) (digit + 1 + ' ');
         } else {
-            return (char)(digit + 2 + ' ');
+            return (char) (digit + 2 + ' ');
         }
     }
 

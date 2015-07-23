@@ -15,15 +15,23 @@
  */
 package org.teavm.classlib.impl.unicode;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.*;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 /**
  *
@@ -115,7 +123,7 @@ public class CLDRReader {
                         readTimeZones(localeName, localeInfo, input);
                         break;
                     case "ca-gregorian.json": {
-                        JsonObject root = (JsonObject)new JsonParser().parse(new InputStreamReader(input));
+                        JsonObject root = (JsonObject) new JsonParser().parse(new InputStreamReader(input));
                         readEras(localeName, localeInfo, root);
                         readAmPms(localeName, localeInfo, root);
                         readMonths(localeName, localeInfo, root);
@@ -141,7 +149,7 @@ public class CLDRReader {
     }
 
     private void readLanguages(String localeCode, CLDRLocale locale, InputStream input) {
-        JsonObject root = (JsonObject)new JsonParser().parse(new InputStreamReader(input));
+        JsonObject root = (JsonObject) new JsonParser().parse(new InputStreamReader(input));
         JsonObject languagesJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
                 .get("localeDisplayNames").getAsJsonObject().get("languages").getAsJsonObject();
         for (Map.Entry<String, JsonElement> property : languagesJson.entrySet()) {
@@ -153,7 +161,7 @@ public class CLDRReader {
     }
 
     private void readCountries(String localeCode, CLDRLocale locale, InputStream input) {
-        JsonObject root = (JsonObject)new JsonParser().parse(new InputStreamReader(input));
+        JsonObject root = (JsonObject) new JsonParser().parse(new InputStreamReader(input));
         JsonObject countriesJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
                 .get("localeDisplayNames").getAsJsonObject().get("territories").getAsJsonObject();
         for (Map.Entry<String, JsonElement> property : countriesJson.entrySet()) {
@@ -165,7 +173,7 @@ public class CLDRReader {
     }
 
     private void readTimeZones(String localeCode, CLDRLocale locale, InputStream input) {
-        JsonObject root = (JsonObject)new JsonParser().parse(new InputStreamReader(input));
+        JsonObject root = (JsonObject) new JsonParser().parse(new InputStreamReader(input));
         JsonObject zonesJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
                 .get("dates").getAsJsonObject().get("timeZoneNames").getAsJsonObject().get("zone")
                 .getAsJsonObject();
@@ -195,7 +203,7 @@ public class CLDRReader {
     }
 
     private void readCurrencies(String localeCode, CLDRLocale locale, InputStream input) {
-        JsonObject root = (JsonObject)new JsonParser().parse(new InputStreamReader(input));
+        JsonObject root = (JsonObject) new JsonParser().parse(new InputStreamReader(input));
         JsonObject currenciesJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
                 .get("numbers").getAsJsonObject().get("currencies").getAsJsonObject();
         for (Map.Entry<String, JsonElement> currencyEntry : currenciesJson.entrySet()) {
@@ -211,7 +219,7 @@ public class CLDRReader {
     }
 
     private void readNumbers(String localeCode, CLDRLocale locale, InputStream input) {
-        JsonObject root = (JsonObject)new JsonParser().parse(new InputStreamReader(input));
+        JsonObject root = (JsonObject) new JsonParser().parse(new InputStreamReader(input));
         JsonObject numbersJson = root.get("main").getAsJsonObject().get(localeCode).getAsJsonObject()
                 .get("numbers").getAsJsonObject();
         String numbering = numbersJson.get("defaultNumberingSystem").getAsString();
@@ -224,7 +232,7 @@ public class CLDRReader {
         locale.decimalData.exponentSeparator = symbolsJson.get("exponential").getAsString();
         locale.decimalData.perMille = symbolsJson.get("perMille").getAsString().charAt(0);
         locale.decimalData.infinity = symbolsJson.get("infinity").getAsString();
-        locale.decimalData.NaN = symbolsJson.get("nan").getAsString();
+        locale.decimalData.nan = symbolsJson.get("nan").getAsString();
 
         JsonObject numberJson = numbersJson.get("decimalFormats-numberSystem-" + numbering).getAsJsonObject();
         locale.numberFormat = numberJson.get("standard").getAsString();
@@ -327,7 +335,7 @@ public class CLDRReader {
     }
 
     private void readWeekData(InputStream input) {
-        JsonObject root = (JsonObject)new JsonParser().parse(new InputStreamReader(input));
+        JsonObject root = (JsonObject) new JsonParser().parse(new InputStreamReader(input));
         JsonObject weekJson = root.get("supplemental").getAsJsonObject().get("weekData").getAsJsonObject();
         JsonObject minDaysJson = weekJson.get("minDays").getAsJsonObject();
         for (Map.Entry<String, JsonElement> property : minDaysJson.entrySet()) {
@@ -340,7 +348,7 @@ public class CLDRReader {
     }
 
     private void readLikelySubtags(InputStream input) {
-        JsonObject root = (JsonObject)new JsonParser().parse(new InputStreamReader(input));
+        JsonObject root = (JsonObject) new JsonParser().parse(new InputStreamReader(input));
         JsonObject likelySubtagsJson = root.get("supplemental").getAsJsonObject().get("likelySubtags")
                 .getAsJsonObject();
         for (Map.Entry<String, JsonElement> property : likelySubtagsJson.entrySet()) {

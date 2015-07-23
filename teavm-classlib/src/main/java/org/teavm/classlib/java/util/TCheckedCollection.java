@@ -83,7 +83,7 @@ class TCheckedCollection<E> implements TCollection<E> {
         for (int i = 0; i < items.length; ++i) {
             items[i] = type.cast(TObject.wrap(items[i]));
         }
-        return innerCollection.addAll(TArrays.asList((E[])items));
+        return innerCollection.addAll(TArrays.asList((E[]) items));
     }
 
     @Override

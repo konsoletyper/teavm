@@ -1,12 +1,11 @@
 /*
- *  Licensed to the Apache Software Foundation (ASF) under one or more
- *  contributor license agreements.  See the NOTICE file distributed with
- *  this work for additional information regarding copyright ownership.
- *  The ASF licenses this file to You under the Apache License, Version 2.0
- *  (the "License"); you may not use this file except in compliance with
- *  the License.  You may obtain a copy of the License at
+ *  Copyright 2015 Alexey Andreev.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +13,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package org.teavm.classlib.java.util;
 
 import java.io.Serializable;
@@ -87,7 +85,7 @@ public abstract class TTimeZone implements Serializable, Cloneable {
 
     private static TTimeZone defaultTz;
 
-    static TTimeZone GMT = new TIANATimeZone(new FixedDateTimeZone("GMT", 0, 0));
+    static final TTimeZone GMT = new TIANATimeZone(new FixedDateTimeZone("GMT", 0, 0));
 
     private String id;
 
@@ -345,7 +343,8 @@ public abstract class TTimeZone implements Serializable, Cloneable {
 
     private static String formatTimeZoneName(String name, int offset) {
         StringBuilder buf = new StringBuilder();
-        int index = offset, length = name.length();
+        int index = offset;
+        int length = name.length();
         buf.append(name.substring(0, offset));
 
         while (index < length) {
@@ -400,9 +399,15 @@ public abstract class TTimeZone implements Serializable, Cloneable {
     abstract public boolean inDaylightTime(TDate time);
 
     private static int parseNumber(String string, int offset, int[] position) {
-        int index = offset, length = string.length(), digit, result = 0;
-        while (index < length
-                && (digit = Character.digit(string.charAt(index), 10)) != -1) {
+        int index = offset;
+        int length = string.length();
+        int digit;
+        int result = 0;
+        while (index < length) {
+            digit = Character.digit(string.charAt(index), 10);
+            if (digit == -1) {
+                break;
+            }
             index++;
             result = result * 10 + digit;
         }
@@ -420,7 +425,7 @@ public abstract class TTimeZone implements Serializable, Cloneable {
      *            a {@code TimeZone} object.
      */
     public static void setDefault(TTimeZone timezone) {
-        defaultTz = timezone != null ? (TTimeZone)timezone.clone() : null;
+        defaultTz = timezone != null ? (TTimeZone) timezone.clone() : null;
     }
 
     /**
@@ -483,7 +488,7 @@ public abstract class TTimeZone implements Serializable, Cloneable {
         if (obj == null || obj.getClass() != TTimeZone.class) {
             return false;
         }
-        TTimeZone other = (TTimeZone)obj;
+        TTimeZone other = (TTimeZone) obj;
         return this.id.equals(other.id);
     }
 

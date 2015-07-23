@@ -31,10 +31,10 @@ public abstract class TNumber extends TObject implements TSerializable {
     public abstract double doubleValue();
 
     public byte byteValue() {
-        return (byte)intValue();
+        return (byte) intValue();
     }
 
     public short shortValue() {
-        return (short)intValue();
+        return (short) intValue();
     }
 }

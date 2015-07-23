@@ -1,12 +1,11 @@
 /*
- *  Licensed to the Apache Software Foundation (ASF) under one or more
- *  contributor license agreements.  See the NOTICE file distributed with
- *  this work for additional information regarding copyright ownership.
- *  The ASF licenses this file to You under the Apache License, Version 2.0
- *  (the "License"); you may not use this file except in compliance with
- *  the License.  You may obtain a copy of the License at
+ *  Copyright 2015 Alexey Andreev.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,16 +13,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package org.teavm.classlib.java.io;
 import org.teavm.classlib.java.lang.*;
 
-public class TDataOutputStream extends TFilterOutputStream implements TDataOutput{
+public class TDataOutputStream extends TFilterOutputStream implements TDataOutput {
     /**
      * The number of bytes written out so far.
      */
     protected int written;
-    byte buff[];
+    byte[] buff;
 
     public TDataOutputStream(TOutputStream out) {
         super(out);
@@ -43,7 +41,7 @@ public class TDataOutputStream extends TFilterOutputStream implements TDataOutpu
     }
 
     @Override
-    public void write(byte buffer[], int offset, int count) throws TIOException {
+    public void write(byte[] buffer, int offset, int count) throws TIOException {
         if (buffer == null) {
             throw new TNullPointerException();
         }
@@ -74,7 +72,7 @@ public class TDataOutputStream extends TFilterOutputStream implements TDataOutpu
         if (str.length() == 0) {
             return;
         }
-        byte bytes[] = new byte[str.length()];
+        byte[] bytes = new byte[str.length()];
         for (int index = 0; index < str.length(); index++) {
             bytes[index] = (byte) str.charAt(index);
         }
@@ -92,7 +90,7 @@ public class TDataOutputStream extends TFilterOutputStream implements TDataOutpu
 
     @Override
     public final void writeChars(TString str) throws TIOException {
-        byte newBytes[] = new byte[str.length() * 2];
+        byte[] newBytes = new byte[str.length() * 2];
         for (int index = 0; index < str.length(); index++) {
             int newIndex = index == 0 ? index : index * 2;
             newBytes[newIndex] = (byte) (str.charAt(index) >> 8);
@@ -136,8 +134,7 @@ public class TDataOutputStream extends TFilterOutputStream implements TDataOutpu
         written += 8;
     }
 
-    int writeLongToBuffer(long val,
-                          byte[] buffer, int offset) throws TIOException {
+    int writeLongToBuffer(long val, byte[] buffer, int offset) throws TIOException {
         buffer[offset++] = (byte) (val >> 56);
         buffer[offset++] = (byte) (val >> 48);
         buffer[offset++] = (byte) (val >> 40);
@@ -157,8 +154,7 @@ public class TDataOutputStream extends TFilterOutputStream implements TDataOutpu
         written += 2;
     }
 
-    int writeShortToBuffer(int val,
-                           byte[] buffer, int offset) throws TIOException {
+    int writeShortToBuffer(int val, byte[] buffer, int offset) throws TIOException {
         buffer[offset++] = (byte) (val >> 8);
         buffer[offset++] = (byte) val;
         return offset;
@@ -170,7 +166,7 @@ public class TDataOutputStream extends TFilterOutputStream implements TDataOutpu
         if (utfCount > 65535) {
             throw new TIOException(TString.wrap("UTF Error"));
         }
-        byte[] buffer = new byte[(int)utfCount + 2];
+        byte[] buffer = new byte[(int) utfCount + 2];
         int offset = 0;
         offset = writeShortToBuffer((int) utfCount, buffer, offset);
         offset = writeUTFBytesToBuffer(str, buffer, offset);
@@ -178,7 +174,8 @@ public class TDataOutputStream extends TFilterOutputStream implements TDataOutpu
     }
 
     long countUTFBytes(TString str) {
-        int utfCount = 0, length = str.length();
+        int utfCount = 0;
+        int length = str.length();
         for (int i = 0; i < length; i++) {
             int charValue = str.charAt(i);
             if (charValue > 0 && charValue <= 127) {

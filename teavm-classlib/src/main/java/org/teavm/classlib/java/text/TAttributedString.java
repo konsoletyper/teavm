@@ -1,20 +1,18 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ *  Copyright 2015 Alexey Andreev.
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
-
 package org.teavm.classlib.java.text;
 
 import org.teavm.classlib.java.text.TAttributedCharacterIterator.Attribute;
@@ -42,7 +40,9 @@ public class TAttributedString {
 
     static class AttributedIterator implements TAttributedCharacterIterator {
 
-        private int begin, end, offset;
+        private int begin;
+        private int end;
+        private int offset;
 
         private TAttributedString attrString;
 
@@ -393,8 +393,8 @@ public class TAttributedString {
                 Object value = iterator.getAttribute(attribute);
                 int runStart = iterator.getRunStart(attribute);
                 int limit = iterator.getRunLimit(attribute);
-                if ((value instanceof TAnnotation && runStart >= start && limit <= end) ||
-                        (value != null && !(value instanceof TAnnotation))) {
+                if ((value instanceof TAnnotation && runStart >= start && limit <= end)
+                        || (value != null && !(value instanceof TAnnotation))) {
                     addAttribute(attribute, value, (runStart < start ? start : runStart) - start, (limit > end ? end
                             : limit) - start);
                 }
@@ -513,7 +513,8 @@ public class TAttributedString {
                 it.previous();
                 break;
             } else if (start < range.end || (start == range.end && value.equals(range.value))) {
-                Range r1 = null, r3;
+                Range r1 = null;
+                Range r3;
                 it.remove();
                 r1 = new Range(range.start, start, range.value);
                 r3 = new Range(end, range.end, range.value);
@@ -575,7 +576,8 @@ public class TAttributedString {
      *             if {@code start < 0}, {@code end} is greater than the length
      *             of this string, or if {@code start >= end}.
      */
-    public void addAttributes(TMap<? extends TAttributedCharacterIterator.Attribute, ?> attributes, int start, int end) {
+    public void addAttributes(TMap<? extends TAttributedCharacterIterator.Attribute, ?> attributes,
+            int start, int end) {
         TIterator<?> it = attributes.entrySet().iterator();
         while (it.hasNext()) {
             TMap.Entry<?, ?> entry = (TMap.Entry<?, ?>) it.next();

@@ -28,9 +28,12 @@ import org.teavm.classlib.java.util.TLocale;
 public abstract class TNumberFormat extends TFormat {
     public static final int INTEGER_FIELD = 0;
     public static final int FRACTION_FIELD = 1;
-    private boolean groupingUsed = true, parseIntegerOnly;
-    private int maximumIntegerDigits = 40, minimumIntegerDigits = 1,
-            maximumFractionDigits = 3, minimumFractionDigits = 0;
+    private boolean groupingUsed = true;
+    private boolean parseIntegerOnly;
+    private int maximumIntegerDigits = 40;
+    private int minimumIntegerDigits = 1;
+    private int maximumFractionDigits = 3;
+    private int minimumFractionDigits;
     private TRoundingMode roundingMode = TRoundingMode.HALF_EVEN;
     TCurrency currency = TCurrency.getInstance(TLocale.getDefault());
 
@@ -167,8 +170,8 @@ public abstract class TNumberFormat extends TFormat {
     public int hashCode() {
         return (groupingUsed ? 1231 : 1237) + (parseIntegerOnly ? 1231 : 1237)
                 + maximumFractionDigits + maximumIntegerDigits
-                + minimumFractionDigits + minimumIntegerDigits +
-                roundingMode.hashCode() + Objects.hashCode(currency);
+                + minimumFractionDigits + minimumIntegerDigits
+                + roundingMode.hashCode() + Objects.hashCode(currency);
     }
 
     public boolean isGroupingUsed() {

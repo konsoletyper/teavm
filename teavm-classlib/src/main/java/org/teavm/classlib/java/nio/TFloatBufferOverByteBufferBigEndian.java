@@ -33,20 +33,20 @@ class TFloatBufferOverByteBufferBigEndian extends TFloatBufferOverByteBuffer {
 
     @Override
     float getElement(int index) {
-        int value = (byteByffer.array[start + index * 4] & 0xFF) |
-                ((byteByffer.array[start + index * 4 + 1] & 0xFF) << 8) |
-                ((byteByffer.array[start + index * 4 + 2] & 0xFF) << 16) |
-                ((byteByffer.array[start + index * 4 + 3] & 0xFF) << 24);
+        int value = (byteByffer.array[start + index * 4] & 0xFF)
+                | ((byteByffer.array[start + index * 4 + 1] & 0xFF) << 8)
+                | ((byteByffer.array[start + index * 4 + 2] & 0xFF) << 16)
+                | ((byteByffer.array[start + index * 4 + 3] & 0xFF) << 24);
         return Float.intBitsToFloat(value);
     }
 
     @Override
     void putElement(int index, float f) {
         int value = Float.floatToIntBits(f);
-        byteByffer.array[start + index * 4] = (byte)value;
-        byteByffer.array[start + index * 4 + 1] = (byte)(value >> 8);
-        byteByffer.array[start + index * 4 + 2] = (byte)(value >> 16);
-        byteByffer.array[start + index * 4 + 3] = (byte)(value >> 24);
+        byteByffer.array[start + index * 4] = (byte) value;
+        byteByffer.array[start + index * 4 + 1] = (byte) (value >> 8);
+        byteByffer.array[start + index * 4 + 2] = (byte) (value >> 16);
+        byteByffer.array[start + index * 4 + 3] = (byte) (value >> 24);
     }
 
     @Override

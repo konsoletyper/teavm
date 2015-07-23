@@ -97,8 +97,8 @@ public abstract class TCharBuffer extends TBuffer implements Comparable<TCharBuf
             throw new IndexOutOfBoundsException("Offset " + offset + " is outside of range [0;" + dst.length + ")");
         }
         if (offset + length > dst.length) {
-            throw new IndexOutOfBoundsException("The last char in dst " + (offset + length) + " is outside " +
-                    "of array of size " + dst.length);
+            throw new IndexOutOfBoundsException("The last char in dst " + (offset + length) + " is outside "
+                    + "of array of size " + dst.length);
         }
         if (remaining() < length) {
             throw new TBufferUnderflowException();
@@ -146,8 +146,8 @@ public abstract class TCharBuffer extends TBuffer implements Comparable<TCharBuf
             throw new IndexOutOfBoundsException("Offset " + offset + " is outside of range [0;" + src.length + ")");
         }
         if (offset + length > src.length) {
-            throw new IndexOutOfBoundsException("The last char in src " + (offset + length) + " is outside " +
-                    "of array of size " + src.length);
+            throw new IndexOutOfBoundsException("The last char in src " + (offset + length) + " is outside "
+                    + "of array of size " + src.length);
         }
         if (length < 0) {
             throw new IndexOutOfBoundsException("Length " + length + " must be non-negative");
@@ -176,8 +176,8 @@ public abstract class TCharBuffer extends TBuffer implements Comparable<TCharBuf
             throw new IndexOutOfBoundsException("Start " + start + " is outside of range [0;" + src.length() + ")");
         }
         if (end > src.length()) {
-            throw new IndexOutOfBoundsException("The last char in src " + end + " is outside " +
-                    "of string of size " + src.length());
+            throw new IndexOutOfBoundsException("The last char in src " + end + " is outside "
+                    + "of string of size " + src.length());
         }
         if (start > end) {
             throw new IndexOutOfBoundsException("Start " + start + " must be before end " + end);
@@ -238,7 +238,7 @@ public abstract class TCharBuffer extends TBuffer implements Comparable<TCharBuf
         if (!(obj instanceof TCharBuffer)) {
             return false;
         }
-        TCharBuffer other = (TCharBuffer)obj;
+        TCharBuffer other = (TCharBuffer) obj;
         int sz = remaining();
         if (sz != other.remaining()) {
             return false;

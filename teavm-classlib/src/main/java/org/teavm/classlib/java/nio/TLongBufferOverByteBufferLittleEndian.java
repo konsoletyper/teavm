@@ -33,26 +33,26 @@ class TLongBufferOverByteBufferLittleEndian extends TLongBufferOverByteBuffer {
 
     @Override
     long getElement(int index) {
-        return (byteByffer.array[start + index * 8] & 0xFF) |
-                (((long)byteByffer.array[start + index * 8 + 1] & 0xFF) << 8) |
-                (((long)byteByffer.array[start + index * 8 + 2] & 0xFF) << 16) |
-                (((long)byteByffer.array[start + index * 8 + 3] & 0xFF) << 24) |
-                (((long)byteByffer.array[start + index * 8 + 4] & 0xFF) << 32) |
-                (((long)byteByffer.array[start + index * 8 + 5] & 0xFF) << 40) |
-                (((long)byteByffer.array[start + index * 8 + 6] & 0xFF) << 48) |
-                (((long)byteByffer.array[start + index * 8 + 7] & 0xFF) << 56);
+        return (byteByffer.array[start + index * 8] & 0xFF)
+                | (((long) byteByffer.array[start + index * 8 + 1] & 0xFF) << 8)
+                | (((long) byteByffer.array[start + index * 8 + 2] & 0xFF) << 16)
+                | (((long) byteByffer.array[start + index * 8 + 3] & 0xFF) << 24)
+                | (((long) byteByffer.array[start + index * 8 + 4] & 0xFF) << 32)
+                | (((long) byteByffer.array[start + index * 8 + 5] & 0xFF) << 40)
+                | (((long) byteByffer.array[start + index * 8 + 6] & 0xFF) << 48)
+                | (((long) byteByffer.array[start + index * 8 + 7] & 0xFF) << 56);
     }
 
     @Override
     void putElement(int index, long value) {
-        byteByffer.array[start + index * 8] = (byte)value;
-        byteByffer.array[start + index * 8 + 1] = (byte)(value >> 8);
-        byteByffer.array[start + index * 8 + 2] = (byte)(value >> 16);
-        byteByffer.array[start + index * 8 + 3] = (byte)(value >> 24);
-        byteByffer.array[start + index * 8 + 4] = (byte)(value >> 32);
-        byteByffer.array[start + index * 8 + 5] = (byte)(value >> 40);
-        byteByffer.array[start + index * 8 + 6] = (byte)(value >> 48);
-        byteByffer.array[start + index * 8 + 7] = (byte)(value >> 56);
+        byteByffer.array[start + index * 8] = (byte) value;
+        byteByffer.array[start + index * 8 + 1] = (byte) (value >> 8);
+        byteByffer.array[start + index * 8 + 2] = (byte) (value >> 16);
+        byteByffer.array[start + index * 8 + 3] = (byte) (value >> 24);
+        byteByffer.array[start + index * 8 + 4] = (byte) (value >> 32);
+        byteByffer.array[start + index * 8 + 5] = (byte) (value >> 40);
+        byteByffer.array[start + index * 8 + 6] = (byte) (value >> 48);
+        byteByffer.array[start + index * 8 + 7] = (byte) (value >> 56);
     }
 
     @Override

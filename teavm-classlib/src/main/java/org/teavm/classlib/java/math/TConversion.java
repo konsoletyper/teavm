@@ -1,12 +1,11 @@
 /*
- *  Licensed to the Apache Software Foundation (ASF) under one or more
- *  contributor license agreements.  See the NOTICE file distributed with
- *  this work for additional information regarding copyright ownership.
- *  The ASF licenses this file to You under the Apache License, Version 2.0
- *  (the "License"); you may not use this file except in compliance with
- *  the License.  You may obtain a copy of the License at
+ *  Copyright 2015 Alexey Andreev.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +13,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package org.teavm.classlib.java.math;
 
 /**
@@ -24,7 +22,8 @@ package org.teavm.classlib.java.math;
 class TConversion {
 
     /** Just to denote that this class can't be instantiated */
-    private TConversion() {}
+    private TConversion() {
+    }
 
     /**
      * Holds the maximal exponent for each radix, so that radix<sup>digitFitInInt[radix]</sup>
@@ -39,7 +38,7 @@ class TConversion {
      * 2 ^ 31, bigRadices[8] = 10 ^ 9, etc.
      */
 
-    static final int bigRadices[] = { -2147483648, 1162261467, 1073741824, 1220703125, 362797056, 1977326743,
+    static final int[] bigRadices = { -2147483648, 1162261467, 1073741824, 1220703125, 362797056, 1977326743,
             1073741824, 387420489, 1000000000, 214358881, 429981696, 815730721, 1475789056, 170859375, 268435456,
             410338673, 612220032, 893871739, 1280000000, 1801088541, 113379904, 148035889, 191102976, 244140625,
             308915776, 387420489, 481890304, 594823321, 729000000, 887503681, 1073741824, 1291467969, 1544804416,
@@ -50,7 +49,7 @@ class TConversion {
     static String bigInteger2String(TBigInteger val, int radix) {
         int sign = val.sign;
         int numberLength = val.numberLength;
-        int digits[] = val.digits;
+        int[] digits = val.digits;
 
         if (sign == 0) {
             return "0";
@@ -70,11 +69,11 @@ class TConversion {
         bitsForRadixDigit = Math.log(radix) / Math.log(2);
         int resLengthInChars = (int) (val.abs().bitLength() / bitsForRadixDigit + ((sign < 0) ? 1 : 0)) + 1;
 
-        char result[] = new char[resLengthInChars];
+        char[] result = new char[resLengthInChars];
         int currentChar = resLengthInChars;
         int resDigit;
         if (radix != 16) {
-            int temp[] = new int[numberLength];
+            int[] temp = new int[numberLength];
             System.arraycopy(digits, 0, temp, 0, numberLength);
             int tempLen = numberLength;
             int charsPerInt = digitFitInInt[radix];
@@ -88,7 +87,8 @@ class TConversion {
                 int previous = currentChar;
                 do {
                     result[--currentChar] = Character.forDigit(resDigit % radix, radix);
-                } while (((resDigit /= radix) != 0) && (currentChar != 0));
+                    resDigit /= radix;
+                } while (resDigit != 0 && currentChar != 0);
                 int delta = charsPerInt - previous + currentChar;
                 for (i = 0; i < delta && currentChar > 0; i++) {
                     result[--currentChar] = '0';
@@ -129,10 +129,10 @@ class TConversion {
     static String toDecimalScaledString(TBigInteger val, int scale) {
         int sign = val.sign;
         int numberLength = val.numberLength;
-        int digits[] = val.digits;
+        int[] digits = val.digits;
         int resLengthInChars;
         int currentChar;
-        char result[];
+        char[] result;
 
         if (sign == 0) {
             switch (scale) {
@@ -190,7 +190,7 @@ class TConversion {
                 } while (v != 0);
             }
         } else {
-            int temp[] = new int[numberLength];
+            int[] temp = new int[numberLength];
             int tempLen = numberLength;
             System.arraycopy(digits, 0, temp, 0, tempLen);
             BIG_LOOP: while (true) {
@@ -208,7 +208,8 @@ class TConversion {
                 int previous = currentChar;
                 do {
                     result[--currentChar] = (char) (0x0030 + (resDigit % 10));
-                } while ((resDigit /= 10) != 0 && currentChar != 0);
+                    resDigit /= 10;
+                } while (resDigit != 0 && currentChar != 0);
                 int delta = 9 - previous + currentChar;
                 for (int i = 0; (i < delta) && (currentChar > 0); i++) {
                     result[--currentChar] = '0';
@@ -225,7 +226,7 @@ class TConversion {
                 currentChar++;
             }
         }
-        boolean negNumber = (sign < 0);
+        boolean negNumber = sign < 0;
         int exponent = resLengthInChars - currentChar - scale - 1;
         if (scale == 0) {
             if (negNumber) {
@@ -282,9 +283,9 @@ class TConversion {
     static String toDecimalScaledString(long value, int scale) {
         int resLengthInChars;
         int currentChar;
-        char result[];
+        char[] result;
         boolean negNumber = value < 0;
-        if(negNumber) {
+        if (negNumber) {
             value = -value;
         }
         if (value == 0) {
@@ -313,7 +314,7 @@ class TConversion {
         // +1 - one char for sign if needed.
         // +7 - For "special case 2" (see below) we have 7 free chars for
         //  inserting necessary scaled digits.
-        result = new char[resLengthInChars+1];
+        result = new char[resLengthInChars + 1];
         //  Allocated [resLengthInChars+1] characters.
         // a free latest character may be used for "special case 1" (see below)
         currentChar = resLengthInChars;
@@ -324,7 +325,7 @@ class TConversion {
             result[--currentChar] = (char) (0x0030 + (prev - v * 10));
         } while (v != 0);
 
-        long exponent = (long)resLengthInChars - (long)currentChar - scale - 1L;
+        long exponent = (long) resLengthInChars - (long) currentChar - scale - 1L;
         if (scale == 0) {
             if (negNumber) {
                 result[--currentChar] = '-';
@@ -334,8 +335,8 @@ class TConversion {
         if (scale > 0 && exponent >= -6) {
             if (exponent >= 0) {
                 // special case 1
-                int insertPoint = currentChar + (int)exponent;
-                for(int j = resLengthInChars - 1; j >= insertPoint; j--) {
+                int insertPoint = currentChar + (int) exponent;
+                for (int j = resLengthInChars - 1; j >= insertPoint; j--) {
                     result[j + 1] = result[j];
                 }
                 result[++insertPoint] = '.';
@@ -364,7 +365,7 @@ class TConversion {
         if (endPoint - startPoint >= 1) {
             result1.append(result[currentChar]);
             result1.append('.');
-            result1.append(result, currentChar+1, resLengthInChars - currentChar-1);
+            result1.append(result, currentChar + 1, resLengthInChars - currentChar - 1);
         } else {
             result1.append(result, currentChar, resLengthInChars - currentChar);
         }
@@ -382,8 +383,8 @@ class TConversion {
 
         if (a >= 0) {
             long bLong = 1000000000L;
-            quot = (a / bLong);
-            rem = (a % bLong);
+            quot = a / bLong;
+            rem = a % bLong;
         } else {
             /*
              * Make the dividend positive shifting it right by 1 bit then get

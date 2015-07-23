@@ -1,12 +1,11 @@
 /*
- *  Licensed to the Apache Software Foundation (ASF) under one or more
- *  contributor license agreements.  See the NOTICE file distributed with
- *  this work for additional information regarding copyright ownership.
- *  The ASF licenses this file to You under the Apache License, Version 2.0
- *  (the "License"); you may not use this file except in compliance with
- *  the License.  You may obtain a copy of the License at
+ *  Copyright 2015 Alexey Andreev.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +13,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package org.teavm.classlib.java.util;
 
 public class TStringTokenizer implements TEnumeration<Object> {
@@ -37,8 +35,9 @@ public class TStringTokenizer implements TEnumeration<Object> {
             this.delimiters = delimiters;
             this.returnDelimiters = returnDelimiters;
             this.position = 0;
-        } else
+        } else {
             throw new NullPointerException();
+        }
     }
 
     public int countTokens() {
@@ -46,8 +45,9 @@ public class TStringTokenizer implements TEnumeration<Object> {
         boolean inToken = false;
         for (int i = position, length = string.length(); i < length; i++) {
             if (delimiters.indexOf(string.charAt(i), 0) >= 0) {
-                if (returnDelimiters)
+                if (returnDelimiters) {
                     count++;
+                }
                 if (inToken) {
                     count++;
                     inToken = false;
@@ -56,8 +56,9 @@ public class TStringTokenizer implements TEnumeration<Object> {
                 inToken = true;
             }
         }
-        if (inToken)
+        if (inToken) {
             count++;
+        }
         return count;
     }
 
@@ -72,14 +73,17 @@ public class TStringTokenizer implements TEnumeration<Object> {
         }
         int length = string.length();
         if (position < length) {
-            if (returnDelimiters)
-                return true; // there is at least one character and even if
-            // it is a delimiter it is a token
-
+            if (returnDelimiters) {
+                return true;
+                // there is at least one character and even if
+                //it is a delimiter it is a token
+            }
             // otherwise find a character which is not a delimiter
-            for (int i = position; i < length; i++)
-                if (delimiters.indexOf(string.charAt(i), 0) == -1)
+            for (int i = position; i < length; i++) {
+                if (delimiters.indexOf(string.charAt(i), 0) == -1) {
                     return true;
+                }
+            }
         }
         return false;
     }

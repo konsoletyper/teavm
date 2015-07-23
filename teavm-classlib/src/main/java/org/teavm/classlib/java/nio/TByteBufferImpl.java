@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2015 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 package org.teavm.classlib.java.nio;
 
 /**
@@ -112,9 +127,9 @@ class TByteBufferImpl extends TByteBuffer {
         int b = array[start + position + 1] & 0xFF;
         position += 2;
         if (order == TByteOrder.BIG_ENDIAN) {
-            return (char)((a << 8) | b);
+            return (char) ((a << 8) | b);
         } else {
-            return (char)((b << 8) | a);
+            return (char) ((b << 8) | a);
         }
     }
 
@@ -127,11 +142,11 @@ class TByteBufferImpl extends TByteBuffer {
             throw new TBufferOverflowException();
         }
         if (order == TByteOrder.BIG_ENDIAN) {
-            array[start + position++] = (byte)(value >> 8);
-            array[start + position++] = (byte)value;
+            array[start + position++] = (byte) (value >> 8);
+            array[start + position++] = (byte) value;
         } else {
-            array[start + position++] = (byte)value;
-            array[start + position++] = (byte)(value >> 8);
+            array[start + position++] = (byte) value;
+            array[start + position++] = (byte) (value >> 8);
         }
         return this;
     }
@@ -144,9 +159,9 @@ class TByteBufferImpl extends TByteBuffer {
         int a = array[start + index] & 0xFF;
         int b = array[start + index + 1] & 0xFF;
         if (order == TByteOrder.BIG_ENDIAN) {
-            return (char)((a << 8) | b);
+            return (char) ((a << 8) | b);
         } else {
-            return (char)((b << 8) | a);
+            return (char) ((b << 8) | a);
         }
     }
 
@@ -159,11 +174,11 @@ class TByteBufferImpl extends TByteBuffer {
             throw new IndexOutOfBoundsException("Index " + index + " is outside of range [0;" + (limit - 1) + ")");
         }
         if (order == TByteOrder.BIG_ENDIAN) {
-            array[start + index] = (byte)(value >> 8);
-            array[start + index + 1] = (byte)value;
+            array[start + index] = (byte) (value >> 8);
+            array[start + index + 1] = (byte) value;
         } else {
-            array[start + index] = (byte)value;
-            array[start + index + 1] = (byte)(value >> 8);
+            array[start + index] = (byte) value;
+            array[start + index + 1] = (byte) (value >> 8);
         }
         return this;
     }
@@ -187,9 +202,9 @@ class TByteBufferImpl extends TByteBuffer {
         int b = array[start + position + 1] & 0xFF;
         position += 2;
         if (order == TByteOrder.BIG_ENDIAN) {
-            return (short)((a << 8) | b);
+            return (short) ((a << 8) | b);
         } else {
-            return (short)((b << 8) | a);
+            return (short) ((b << 8) | a);
         }
     }
 
@@ -202,11 +217,11 @@ class TByteBufferImpl extends TByteBuffer {
             throw new TBufferOverflowException();
         }
         if (order == TByteOrder.BIG_ENDIAN) {
-            array[start + position++] = (byte)(value >> 8);
-            array[start + position++] = (byte)value;
+            array[start + position++] = (byte) (value >> 8);
+            array[start + position++] = (byte) value;
         } else {
-            array[start + position++] = (byte)value;
-            array[start + position++] = (byte)(value >> 8);
+            array[start + position++] = (byte) value;
+            array[start + position++] = (byte) (value >> 8);
         }
         return this;
     }
@@ -219,9 +234,9 @@ class TByteBufferImpl extends TByteBuffer {
         int a = array[start + index] & 0xFF;
         int b = array[start + index + 1] & 0xFF;
         if (order == TByteOrder.BIG_ENDIAN) {
-            return (short)((a << 8) | b);
+            return (short) ((a << 8) | b);
         } else {
-            return (short)((b << 8) | a);
+            return (short) ((b << 8) | a);
         }
     }
 
@@ -234,11 +249,11 @@ class TByteBufferImpl extends TByteBuffer {
             throw new IndexOutOfBoundsException("Index " + index + " is outside of range [0;" + (limit - 1) + ")");
         }
         if (order == TByteOrder.BIG_ENDIAN) {
-            array[start + index] = (byte)(value >> 8);
-            array[start + index + 1] = (byte)value;
+            array[start + index] = (byte) (value >> 8);
+            array[start + index + 1] = (byte) value;
         } else {
-            array[start + index] = (byte)value;
-            array[start + index + 1] = (byte)(value >> 8);
+            array[start + index] = (byte) value;
+            array[start + index + 1] = (byte) (value >> 8);
         }
         return this;
     }
@@ -279,15 +294,15 @@ class TByteBufferImpl extends TByteBuffer {
             throw new TBufferOverflowException();
         }
         if (order == TByteOrder.BIG_ENDIAN) {
-            array[start + position++] = (byte)(value >> 24);
-            array[start + position++] = (byte)(value >> 16);
-            array[start + position++] = (byte)(value >> 8);
-            array[start + position++] = (byte)value;
+            array[start + position++] = (byte) (value >> 24);
+            array[start + position++] = (byte) (value >> 16);
+            array[start + position++] = (byte) (value >> 8);
+            array[start + position++] = (byte) value;
         } else {
-            array[start + position++] = (byte)value;
-            array[start + position++] = (byte)(value >> 8);
-            array[start + position++] = (byte)(value >> 16);
-            array[start + position++] = (byte)(value >> 24);
+            array[start + position++] = (byte) value;
+            array[start + position++] = (byte) (value >> 8);
+            array[start + position++] = (byte) (value >> 16);
+            array[start + position++] = (byte) (value >> 24);
         }
         return this;
     }
@@ -317,15 +332,15 @@ class TByteBufferImpl extends TByteBuffer {
             throw new IndexOutOfBoundsException("Index " + index + " is outside of range [0;" + (limit - 3) + ")");
         }
         if (order == TByteOrder.BIG_ENDIAN) {
-            array[start + index] = (byte)(value >> 24);
-            array[start + index + 1] = (byte)(value >> 16);
-            array[start + index + 2] = (byte)(value >> 8);
-            array[start + index + 3] = (byte)value;
+            array[start + index] = (byte) (value >> 24);
+            array[start + index + 1] = (byte) (value >> 16);
+            array[start + index + 2] = (byte) (value >> 8);
+            array[start + index + 3] = (byte) value;
         } else {
-            array[start + index] = (byte)value;
-            array[start + index + 1] = (byte)(value >> 8);
-            array[start + index + 2] = (byte)(value >> 16);
-            array[start + index + 3] = (byte)(value >> 24);
+            array[start + index] = (byte) value;
+            array[start + index + 1] = (byte) (value >> 8);
+            array[start + index + 2] = (byte) (value >> 16);
+            array[start + index + 3] = (byte) (value >> 24);
         }
         return this;
     }
@@ -370,23 +385,23 @@ class TByteBufferImpl extends TByteBuffer {
             throw new TBufferOverflowException();
         }
         if (order == TByteOrder.BIG_ENDIAN) {
-            array[start + position++] = (byte)(value >> 56);
-            array[start + position++] = (byte)(value >> 48);
-            array[start + position++] = (byte)(value >> 40);
-            array[start + position++] = (byte)(value >> 32);
-            array[start + position++] = (byte)(value >> 24);
-            array[start + position++] = (byte)(value >> 16);
-            array[start + position++] = (byte)(value >> 8);
-            array[start + position++] = (byte)value;
+            array[start + position++] = (byte) (value >> 56);
+            array[start + position++] = (byte) (value >> 48);
+            array[start + position++] = (byte) (value >> 40);
+            array[start + position++] = (byte) (value >> 32);
+            array[start + position++] = (byte) (value >> 24);
+            array[start + position++] = (byte) (value >> 16);
+            array[start + position++] = (byte) (value >> 8);
+            array[start + position++] = (byte) value;
         } else {
-            array[start + position++] = (byte)value;
-            array[start + position++] = (byte)(value >> 8);
-            array[start + position++] = (byte)(value >> 16);
-            array[start + position++] = (byte)(value >> 24);
-            array[start + position++] = (byte)(value >> 32);
-            array[start + position++] = (byte)(value >> 40);
-            array[start + position++] = (byte)(value >> 48);
-            array[start + position++] = (byte)(value >> 56);
+            array[start + position++] = (byte) value;
+            array[start + position++] = (byte) (value >> 8);
+            array[start + position++] = (byte) (value >> 16);
+            array[start + position++] = (byte) (value >> 24);
+            array[start + position++] = (byte) (value >> 32);
+            array[start + position++] = (byte) (value >> 40);
+            array[start + position++] = (byte) (value >> 48);
+            array[start + position++] = (byte) (value >> 56);
         }
         return this;
     }
@@ -421,23 +436,23 @@ class TByteBufferImpl extends TByteBuffer {
             throw new IndexOutOfBoundsException("Index " + index + " is outside of range [0;" + (limit - 3) + ")");
         }
         if (order == TByteOrder.BIG_ENDIAN) {
-            array[start + index + 0] = (byte)(value >> 56);
-            array[start + index + 1] = (byte)(value >> 48);
-            array[start + index + 2] = (byte)(value >> 40);
-            array[start + index + 3] = (byte)(value >> 32);
-            array[start + index + 4] = (byte)(value >> 24);
-            array[start + index + 5] = (byte)(value >> 16);
-            array[start + index + 6] = (byte)(value >> 8);
-            array[start + index + 7] = (byte)value;
+            array[start + index + 0] = (byte) (value >> 56);
+            array[start + index + 1] = (byte) (value >> 48);
+            array[start + index + 2] = (byte) (value >> 40);
+            array[start + index + 3] = (byte) (value >> 32);
+            array[start + index + 4] = (byte) (value >> 24);
+            array[start + index + 5] = (byte) (value >> 16);
+            array[start + index + 6] = (byte) (value >> 8);
+            array[start + index + 7] = (byte) value;
         } else {
-            array[start + index + 0] = (byte)value;
-            array[start + index + 1] = (byte)(value >> 8);
-            array[start + index + 2] = (byte)(value >> 16);
-            array[start + index + 3] = (byte)(value >> 24);
-            array[start + index + 4] = (byte)(value >> 24);
-            array[start + index + 5] = (byte)(value >> 24);
-            array[start + index + 6] = (byte)(value >> 24);
-            array[start + index + 7] = (byte)(value >> 24);
+            array[start + index + 0] = (byte) value;
+            array[start + index + 1] = (byte) (value >> 8);
+            array[start + index + 2] = (byte) (value >> 16);
+            array[start + index + 3] = (byte) (value >> 24);
+            array[start + index + 4] = (byte) (value >> 24);
+            array[start + index + 5] = (byte) (value >> 24);
+            array[start + index + 6] = (byte) (value >> 24);
+            array[start + index + 7] = (byte) (value >> 24);
         }
         return this;
     }

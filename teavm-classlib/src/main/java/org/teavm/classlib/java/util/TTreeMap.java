@@ -94,12 +94,12 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
     private TComparator<? super K> comparator;
     private TComparator<? super K> originalComparator;
     private TComparator<? super K> revertedComparator;
-    private int modCount = 0;
+    private int modCount;
     private EntrySet<K, V> cachedEntrySet;
     private NavigableKeySet<K, V> cachedNavigableKeySet;
 
     public TTreeMap() {
-        this((TComparator<? super K>)null);
+        this((TComparator<? super K>) null);
     }
 
     public TTreeMap(TComparator<? super K> comparator) {
@@ -107,8 +107,8 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         if (comparator == null) {
             comparator = new TComparator<Object>() {
                 @SuppressWarnings("unchecked") @Override public int compare(Object o1, Object o2) {
-                    return o1 != null ? ((TComparable<Object>)o1).compareTo(o2) :
-                            ((TComparable<Object>)o2).compareTo(o1);
+                    return o1 != null ? ((TComparable<Object>) o1).compareTo(o2)
+                            : ((TComparable<Object>) o2).compareTo(o1);
                 }
             };
         }
@@ -116,9 +116,9 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
     }
 
     public TTreeMap(TMap<? extends K, ? extends V> m) {
-        this((TComparator<? super K>)null);
+        this((TComparator<? super K>) null);
         @SuppressWarnings("unchecked")
-        Entry<K, V>[] entries = (Entry<K, V>[])new Entry<?, ?>[m.size()];
+        Entry<K, V>[] entries = (Entry<K, V>[]) new Entry<?, ?>[m.size()];
         entries = m.entrySet().toArray(entries);
         TArrays.sort(entries, new TComparator<Entry<K, V>>() {
             @Override public int compare(Entry<K, V> o1, Entry<K, V> o2) {
@@ -131,7 +131,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
     public TTreeMap(TSortedMap<K, ? extends V> m) {
         this(m.comparator());
         @SuppressWarnings("unchecked")
-        Entry<K, V>[] entries = (Entry<K, V>[])new Entry<?, ?>[m.size()];
+        Entry<K, V>[] entries = (Entry<K, V>[]) new Entry<?, ?>[m.size()];
         entries = m.entrySet().toArray(entries);
         fillMap(entries);
     }
@@ -211,7 +211,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         TreeNode<K, V> node = root;
         while (node != null) {
             @SuppressWarnings("unchecked")
-            int cmp = comparator.compare((K)key, node.getKey());
+            int cmp = comparator.compare((K) key, node.getKey());
             if (cmp == 0) {
                 return node;
             } else if (cmp < 0) {
@@ -228,7 +228,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         TreeNode<K, V> lastForward = null;
         while (node != null) {
             @SuppressWarnings("unchecked")
-            int cmp = comparator.compare((K)key, node.getKey());
+            int cmp = comparator.compare((K) key, node.getKey());
             if (reverse) {
                 cmp = -cmp;
             }
@@ -246,12 +246,12 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
     TreeNode<K, V>[] pathToExactOrNext(Object key, boolean reverse) {
         @SuppressWarnings("unchecked")
-        TreeNode<K, V>[] path = (TreeNode<K, V>[])new TreeNode<?, ?>[height()];
+        TreeNode<K, V>[] path = (TreeNode<K, V>[]) new TreeNode<?, ?>[height()];
         int depth = 0;
         TreeNode<K, V> node = root;
         while (node != null) {
             @SuppressWarnings("unchecked")
-            int cmp = comparator.compare((K)key, node.getKey());
+            int cmp = comparator.compare((K) key, node.getKey());
             if (reverse) {
                 cmp = -cmp;
             }
@@ -273,7 +273,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         TreeNode<K, V> lastForward = null;
         while (node != null) {
             @SuppressWarnings("unchecked")
-            int cmp = comparator.compare((K)key, node.getKey());
+            int cmp = comparator.compare((K) key, node.getKey());
             if (reverse) {
                 cmp = -cmp;
             }
@@ -289,12 +289,12 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
     TreeNode<K, V>[] pathToNext(Object key, boolean reverse) {
         @SuppressWarnings("unchecked")
-        TreeNode<K, V>[] path = (TreeNode<K, V>[])new TreeNode<?, ?>[height()];
+        TreeNode<K, V>[] path = (TreeNode<K, V>[]) new TreeNode<?, ?>[height()];
         int depth = 0;
         TreeNode<K, V> node = root;
         while (node != null) {
             @SuppressWarnings("unchecked")
-            int cmp = comparator.compare((K)key, node.getKey());
+            int cmp = comparator.compare((K) key, node.getKey());
             if (reverse) {
                 cmp = -cmp;
             }
@@ -310,7 +310,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
     TreeNode<K, V>[] pathToFirst(boolean reverse) {
         @SuppressWarnings("unchecked")
-        TreeNode<K, V>[] path = (TreeNode<K, V>[])new TreeNode<?, ?>[height()];
+        TreeNode<K, V>[] path = (TreeNode<K, V>[]) new TreeNode<?, ?>[height()];
         int depth = 0;
         TreeNode<K, V> node = root;
         while (node != null) {
@@ -341,7 +341,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
             return null;
         }
         @SuppressWarnings("unchecked")
-        int cmp = comparator.compare((K)key, root.getKey());
+        int cmp = comparator.compare((K) key, root.getKey());
         if (cmp < 0) {
             root.left = deleteNode(root.left, key);
         } else if (cmp > 0) {
@@ -353,7 +353,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
             TreeNode<K, V> right = root.right;
             TreeNode<K, V> min = right;
             @SuppressWarnings("unchecked")
-            TreeNode<K, V>[] pathToMin = (TreeNode<K, V>[])new TreeNode<?, ?>[right.height];
+            TreeNode<K, V>[] pathToMin = (TreeNode<K, V>[]) new TreeNode<?, ?>[right.height];
             int minDepth = 0;
             while (min.left != null) {
                 pathToMin[minDepth++] = min;
@@ -551,7 +551,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
     @Override
     public Object clone() {
-        TTreeMap<?, ?> copy = (TTreeMap<?, ?>)super.clone();
+        TTreeMap<?, ?> copy = (TTreeMap<?, ?>) super.clone();
         copy.cachedEntrySet = null;
         return copy;
     }
@@ -587,8 +587,8 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
                 modCount = owner.modCount;
                 size = owner.size();
                 if (fromChecked) {
-                    TreeNode<K, V>[] path = fromIncluded ? owner.pathToNext(from, true) :
-                            owner.pathToExactOrNext(from, true);
+                    TreeNode<K, V>[] path = fromIncluded ? owner.pathToNext(from, true)
+                            : owner.pathToExactOrNext(from, true);
                     for (TreeNode<K, V> node : path) {
                         if (node.left != null) {
                             size -= node.left.size;
@@ -597,8 +597,8 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
                     size -= path.length;
                 }
                 if (toChecked) {
-                    TreeNode<K, V> path[] = toIncluded ? owner.pathToNext(to, false) :
-                            owner.pathToExactOrNext(to, false);
+                    TreeNode<K, V>[] path = toIncluded ? owner.pathToNext(to, false)
+                            : owner.pathToExactOrNext(to, false);
                     for (TreeNode<K, V> node : path) {
                         if (node.right != null) {
                             size -= node.right.size;
@@ -653,18 +653,18 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
             if (!(o instanceof Entry)) {
                 return false;
             }
-            Entry<?, ?> entry = (Entry<?, ?>)o;
+            Entry<?, ?> entry = (Entry<?, ?>) o;
             Object key = entry.getKey();
             if (from != null) {
                 @SuppressWarnings("unchecked")
-                int cmp = owner.comparator.compare((K)key, from);
+                int cmp = owner.comparator.compare((K) key, from);
                 if (fromIncluded ? cmp < 0 : cmp <= 0) {
                     return false;
                 }
             }
             if (to != null) {
                 @SuppressWarnings("unchecked")
-                int cmp = owner.comparator.compare((K)key, to);
+                int cmp = owner.comparator.compare((K) key, to);
                 if (toIncluded ? cmp > 0 : cmp >= 0) {
                     return false;
                 }
@@ -810,7 +810,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         @SuppressWarnings("unchecked")
         @Override
         public V get(Object key) {
-            if (!keyInRange((K)key)) {
+            if (!keyInRange((K) key)) {
                 return null;
             }
             return owner.get(key);
@@ -819,7 +819,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         @SuppressWarnings("unchecked")
         @Override
         public V remove(Object key) {
-            if (!keyInRange((K)key)) {
+            if (!keyInRange((K) key)) {
                 return null;
             }
             return owner.remove(key);
@@ -847,8 +847,8 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
                 modCount = owner.modCount;
                 size = owner.size();
                 if (fromChecked) {
-                    TreeNode<K, V>[] path = fromIncluded ? owner.pathToNext(from, true) :
-                            owner.pathToExactOrNext(from, true);
+                    TreeNode<K, V>[] path = fromIncluded ? owner.pathToNext(from, true)
+                            : owner.pathToExactOrNext(from, true);
                     for (TreeNode<K, V> node : path) {
                         if (node.left != null) {
                             size -= node.left.size;
@@ -857,8 +857,8 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
                     size -= path.length;
                 }
                 if (toChecked) {
-                    TreeNode<K, V> path[] = toIncluded ? owner.pathToNext(to, false) :
-                            owner.pathToExactOrNext(to, false);
+                    TreeNode<K, V>[] path = toIncluded ? owner.pathToNext(to, false)
+                            : owner.pathToExactOrNext(to, false);
                     for (TreeNode<K, V> node : path) {
                         if (node.right != null) {
                             size -= node.right.size;
@@ -875,14 +875,14 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         public boolean containsKey(Object key) {
             if (fromChecked) {
                 @SuppressWarnings("unchecked")
-                int cmp = owner.comparator.compare((K)key, from);
+                int cmp = owner.comparator.compare((K) key, from);
                 if (fromIncluded ? cmp < 0 : cmp <= 0) {
                     return false;
                 }
             }
             if (toChecked) {
                 @SuppressWarnings("unchecked")
-                int cmp = owner.comparator.compare((K)key, to);
+                int cmp = owner.comparator.compare((K) key, to);
                 if (fromIncluded ? cmp > 0 : cmp >= 0) {
                     return false;
                 }

@@ -18,7 +18,7 @@ package org.teavm.classlib.java.io;
 import org.teavm.classlib.java.lang.TString;
 
 
-public interface TDataOutput{
+public interface TDataOutput {
     void write(int b) throws TIOException;
 
     void write(byte[] b) throws TIOException;

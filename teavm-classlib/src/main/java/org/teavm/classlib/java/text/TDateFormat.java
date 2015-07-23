@@ -1,20 +1,18 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ *  Copyright 2015 Alexey Andreev.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
-
 package org.teavm.classlib.java.text;
 
 import org.teavm.classlib.impl.unicode.CLDRHelper;
@@ -67,9 +65,9 @@ public abstract class TDateFormat extends TFormat {
             return false;
         }
         TDateFormat dateFormat = (TDateFormat) object;
-        return calendar.getFirstDayOfWeek() == dateFormat.calendar.getFirstDayOfWeek() &&
-                calendar.getMinimalDaysInFirstWeek() == dateFormat.calendar.getMinimalDaysInFirstWeek() &&
-                calendar.isLenient() == dateFormat.calendar.isLenient();
+        return calendar.getFirstDayOfWeek() == dateFormat.calendar.getFirstDayOfWeek()
+                && calendar.getMinimalDaysInFirstWeek() == dateFormat.calendar.getMinimalDaysInFirstWeek()
+                && calendar.isLenient() == dateFormat.calendar.isLenient();
     }
 
     @Override
@@ -219,8 +217,8 @@ public abstract class TDateFormat extends TFormat {
 
     @Override
     public int hashCode() {
-        return calendar.getFirstDayOfWeek() + calendar.getMinimalDaysInFirstWeek() +
-                (calendar.isLenient() ? 1231 : 1237);
+        return calendar.getFirstDayOfWeek() + calendar.getMinimalDaysInFirstWeek()
+                + (calendar.isLenient() ? 1231 : 1237);
     }
 
     public boolean isLenient() {

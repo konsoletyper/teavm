@@ -36,7 +36,8 @@ import org.teavm.classlib.java.lang.TIllegalStateException;
 public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
     private final boolean accessOrder;
 
-    transient private LinkedHashMapEntry<K, V> head, tail;
+    transient private LinkedHashMapEntry<K, V> head;
+    transient private LinkedHashMapEntry<K, V> tail;
 
     public TLinkedHashMap() {
         accessOrder = false;
@@ -83,7 +84,7 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
         }
 
         public boolean hasNext() {
-            return (futureEntry != null);
+            return futureEntry != null;
         }
 
         final void checkConcurrentMod() throws TConcurrentModificationException {
@@ -103,7 +104,7 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
 
         public void remove() {
             checkConcurrentMod();
-            if (currentEntry==null) {
+            if (currentEntry == null) {
                 throw new TIllegalStateException();
             }
             associatedMap.removeEntry(currentEntry);
@@ -131,8 +132,8 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
         }
     }
 
-    private static class EntryIterator <K, V> extends AbstractMapIterator<K, V> implements TIterator<Entry<K, V>> {
-        EntryIterator (TLinkedHashMap<K, V> map) {
+    private static class EntryIterator<K, V> extends AbstractMapIterator<K, V> implements TIterator<Entry<K, V>> {
+        EntryIterator(TLinkedHashMap<K, V> map) {
             super(map);
         }
 
@@ -143,8 +144,8 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
         }
     }
 
-    private static class KeyIterator <K, V> extends AbstractMapIterator<K, V> implements TIterator<K> {
-        KeyIterator (TLinkedHashMap<K, V> map) {
+    private static class KeyIterator<K, V> extends AbstractMapIterator<K, V> implements TIterator<K> {
+        KeyIterator(TLinkedHashMap<K, V> map) {
             super(map);
         }
 
@@ -155,8 +156,8 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
         }
     }
 
-    private static class ValueIterator <K, V> extends AbstractMapIterator<K, V> implements TIterator<V> {
-        ValueIterator (TLinkedHashMap<K, V> map) {
+    private static class ValueIterator<K, V> extends AbstractMapIterator<K, V> implements TIterator<V> {
+        ValueIterator(TLinkedHashMap<K, V> map) {
             super(map);
         }
 
@@ -167,19 +168,20 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
         }
     }
 
-    static final class LinkedHashMapEntrySet<KT, VT> extends HashMapEntrySet<KT, VT> {
-        public LinkedHashMapEntrySet(TLinkedHashMap<KT, VT> lhm) {
+    static final class LinkedHashMapEntrySet<K, V> extends HashMapEntrySet<K, V> {
+        public LinkedHashMapEntrySet(TLinkedHashMap<K, V> lhm) {
             super(lhm);
         }
 
         @Override
-        public TIterator<Entry<KT, VT>> iterator() {
-            return new EntryIterator<>((TLinkedHashMap<KT, VT>) hashMap());
+        public TIterator<Entry<K, V>> iterator() {
+            return new EntryIterator<>((TLinkedHashMap<K, V>) hashMap());
         }
     }
 
     static final class LinkedHashMapEntry<K, V> extends HashEntry<K, V> {
-        LinkedHashMapEntry<K, V> chainForward, chainBackward;
+        LinkedHashMapEntry<K, V> chainForward;
+        LinkedHashMapEntry<K, V> chainBackward;
 
         LinkedHashMapEntry(K theKey, V theValue) {
             super(theKey, theValue);
@@ -297,7 +299,8 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
     V putImpl(K key, V value) {
         LinkedHashMapEntry<K, V> m;
         if (elementCount == 0) {
-            head = tail = null;
+            head = null;
+            tail = null;
         }
         if (key == null) {
             m = (LinkedHashMapEntry<K, V>) findNullKeyEntry();
@@ -341,7 +344,8 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
 
         if (head == null) {
             // Check if the map is empty
-            head = tail = m;
+            head = m;
+            tail = m;
             return;
         }
 
@@ -484,6 +488,7 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
     @Override
     public void clear() {
         super.clear();
-        head = tail = null;
+        head = null;
+        tail = null;
     }
 }

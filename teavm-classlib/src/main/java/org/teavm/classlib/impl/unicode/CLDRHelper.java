@@ -23,7 +23,10 @@ import org.teavm.platform.metadata.*;
  *
  * @author Alexey Andreev
  */
-public class CLDRHelper {
+public final class CLDRHelper {
+    private CLDRHelper() {
+    }
+
     public static String getCode(String language, String country) {
         return !country.isEmpty() ? language + "-" + country : language;
     }
@@ -90,8 +93,9 @@ public class CLDRHelper {
     private static String[] resolveDateFormatSymbols(ResourceMap<ResourceArray<StringResource>> map, String language,
             String country) {
         String localeCode = getCode(language, country);
-        ResourceArray<StringResource> arrayRes = map.has(localeCode) ? map.get(localeCode) :
-                map.has(language) ? map.get(language) : map.get("root");
+        ResourceArray<StringResource> arrayRes = map.has(localeCode)
+                ? map.get(localeCode)
+                : map.has(language) ? map.get(language) : map.get("root");
         String[] result = new String[arrayRes.size()];
         for (int i = 0; i < result.length; ++i) {
             result[i] = arrayRes.get(i).getValue();
@@ -198,16 +202,16 @@ public class CLDRHelper {
 
     private static String resolveFormatSymbols(ResourceMap<StringResource> map, String language, String country) {
         String localeCode = getCode(language, country);
-        StringResource res = map.has(localeCode) ? map.get(localeCode) : map.has(language) ? map.get(language) :
-                map.get("root");
+        StringResource res = map.has(localeCode) ? map.get(localeCode) : map.has(language) ? map.get(language)
+                : map.get("root");
         return res.getValue();
     }
 
     public static DecimalData resolveDecimalData(String language, String country) {
         ResourceMap<DecimalData> map = getDecimalDataMap();
         String localeCode = getCode(language, country);
-        return map.has(localeCode) ? map.get(localeCode) : map.has(language) ? map.get(language) :
-                map.get("root");
+        return map.has(localeCode) ? map.get(localeCode) : map.has(language) ? map.get(language)
+                : map.get("root");
     }
 
     @MetadataProvider(DecimalMetadataGenerator.class)

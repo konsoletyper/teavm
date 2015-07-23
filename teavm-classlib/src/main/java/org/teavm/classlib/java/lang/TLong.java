@@ -65,8 +65,8 @@ public class TLong extends TNumber implements TComparable<TLong> {
                 throw new TNumberFormatException(TString.wrap("String contains invalid digits: " + s));
             }
             if (digit >= radix) {
-                throw new TNumberFormatException(TString.wrap("String contains digits out of radix " + radix +
-                        ": " + s));
+                throw new TNumberFormatException(TString.wrap("String contains digits out of radix " + radix
+                        + ": " + s));
             }
             value = radix * value + digit;
             if (value < 0) {
@@ -155,7 +155,7 @@ public class TLong extends TNumber implements TComparable<TLong> {
     }
     @Override
     public int intValue() {
-        return (int)value;
+        return (int) value;
     }
 
     @Override
@@ -211,7 +211,7 @@ public class TLong extends TNumber implements TComparable<TLong> {
         if (this == other) {
             return true;
         }
-        return other instanceof TLong && ((TLong)other).value == value;
+        return other instanceof TLong && ((TLong) other).value == value;
     }
 
     @GeneratedBy(LongNativeGenerator.class)
@@ -315,7 +315,7 @@ public class TLong extends TNumber implements TComparable<TLong> {
         i = ((i & 0x0700070007000700L) >> 8)  + (i & 0x0007000700070007L);
         i = ((i & 0x000F0000000F0000L) >> 16) + (i & 0x0000000F0000000FL);
         i = ((i & 0x0000001F00000000L) >> 32) + (i & 0x000000000000001FL);
-        return (int)i;
+        return (int) i;
     }
 
     public static long rotateLeft(long i, int distance) {
@@ -346,6 +346,6 @@ public class TLong extends TNumber implements TComparable<TLong> {
     }
 
     public static int signum(long i) {
-        return (int)((i >> 63) | (-i >>> 63));
+        return (int) ((i >> 63) | (-i >>> 63));
     }
 }

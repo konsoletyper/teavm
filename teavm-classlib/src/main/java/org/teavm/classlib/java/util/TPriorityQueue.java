@@ -44,9 +44,9 @@ public class TPriorityQueue<E> extends TAbstractQueue<E> implements TSerializabl
 
     public TPriorityQueue(TCollection<? extends E> c) {
         if (c instanceof TPriorityQueue) {
-            initFromPriorityQueue((TPriorityQueue<? extends E>)c);
+            initFromPriorityQueue((TPriorityQueue<? extends E>) c);
         } else if (c instanceof TSortedSet) {
-            initFromSortedSet((TSortedSet<? extends E>)c);
+            initFromSortedSet((TSortedSet<? extends E>) c);
         } else {
             data = new Object[c.size()];
             fillFromCollection(c);
@@ -65,7 +65,7 @@ public class TPriorityQueue<E> extends TAbstractQueue<E> implements TSerializabl
     @SuppressWarnings("unchecked")
     private void initFromSortedSet(TSortedSet<? extends E> sortedSet) {
         data = new Object[sortedSet.size()];
-        setComparator((TComparator<? super E>)sortedSet.comparator());
+        setComparator((TComparator<? super E>) sortedSet.comparator());
         fillFromCollection(sortedSet);
     }
 
@@ -73,7 +73,7 @@ public class TPriorityQueue<E> extends TAbstractQueue<E> implements TSerializabl
     private void initFromPriorityQueue(TPriorityQueue<? extends E> prirityQueue) {
         data = Arrays.copyOf(prirityQueue.data, prirityQueue.size);
         size = prirityQueue.size;
-        setComparator((TComparator<? super E>)prirityQueue.comparator());
+        setComparator((TComparator<? super E>) prirityQueue.comparator());
     }
 
     private void fillFromCollection(TCollection<? extends E> c) {
@@ -98,14 +98,14 @@ public class TPriorityQueue<E> extends TAbstractQueue<E> implements TSerializabl
             comparator = new TComparator<Object>() {
                 @Override public int compare(Object o1, Object o2) {
                     if (o1 instanceof TComparable) {
-                        return ((TComparable<Object>)o1).compareTo(o2);
+                        return ((TComparable<Object>) o1).compareTo(o2);
                     } else {
-                        return -((TComparable<Object>)o2).compareTo(o1);
+                        return -((TComparable<Object>) o2).compareTo(o1);
                     }
                 }
             };
         }
-        this.comparator = (TComparator<Object>)comparator;
+        this.comparator = (TComparator<Object>) comparator;
     }
 
     public TComparator<? super E> comparator() {
@@ -140,7 +140,7 @@ public class TPriorityQueue<E> extends TAbstractQueue<E> implements TSerializabl
             return null;
         }
         @SuppressWarnings("unchecked")
-        E elem = (E)data[0];
+        E elem = (E) data[0];
         removeAt(0);
         return elem;
     }
@@ -151,7 +151,7 @@ public class TPriorityQueue<E> extends TAbstractQueue<E> implements TSerializabl
         if (size == 0) {
             return null;
         }
-        return (E)data[0];
+        return (E) data[0];
     }
 
     @Override
@@ -176,7 +176,7 @@ public class TPriorityQueue<E> extends TAbstractQueue<E> implements TSerializabl
                     throw new TConcurrentModificationException();
                 }
                 removeIndex = index;
-                return (E)data[index++];
+                return (E) data[index++];
             }
             @Override public void remove() {
                 if (version != knownVersion) {

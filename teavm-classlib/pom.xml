@@ -78,6 +78,15 @@
 
   <build>
     <plugins>
+      <!-- 
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <configuration>
+          <configLocation>../checkstyle.xml</configLocation>
+        </configuration>
+      </plugin>
+      -->
       <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>

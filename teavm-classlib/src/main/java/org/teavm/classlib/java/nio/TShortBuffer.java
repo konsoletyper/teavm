@@ -64,8 +64,8 @@ public abstract class TShortBuffer extends TBuffer implements Comparable<TShortB
             throw new IndexOutOfBoundsException("Offset " + offset + " is outside of range [0;" + dst.length + ")");
         }
         if (offset + length > dst.length) {
-            throw new IndexOutOfBoundsException("The last short in dst " + (offset + length) + " is outside " +
-                    "of array of size " + dst.length);
+            throw new IndexOutOfBoundsException("The last short in dst " + (offset + length) + " is outside "
+                    + "of array of size " + dst.length);
         }
         if (remaining() < length) {
             throw new TBufferUnderflowException();
@@ -113,8 +113,8 @@ public abstract class TShortBuffer extends TBuffer implements Comparable<TShortB
             throw new IndexOutOfBoundsException("Offset " + offset + " is outside of range [0;" + src.length + ")");
         }
         if (offset + length > src.length) {
-            throw new IndexOutOfBoundsException("The last short in src " + (offset + length) + " is outside " +
-                    "of array of size " + src.length);
+            throw new IndexOutOfBoundsException("The last short in src " + (offset + length) + " is outside "
+                    + "of array of size " + src.length);
         }
         if (length < 0) {
             throw new IndexOutOfBoundsException("Length " + length + " must be non-negative");
@@ -159,8 +159,8 @@ public abstract class TShortBuffer extends TBuffer implements Comparable<TShortB
 
     @Override
     public String toString() {
-        return "[ShortBuffer position=" + position + ", limit=" + limit + ", capacity=" + capacity + ", mark " +
-                (mark >= 0 ? " at " + mark : " is not set") + "]";
+        return "[ShortBuffer position=" + position + ", limit=" + limit + ", capacity=" + capacity + ", mark "
+                + (mark >= 0 ? " at " + mark : " is not set") + "]";
     }
 
     @Override
@@ -181,7 +181,7 @@ public abstract class TShortBuffer extends TBuffer implements Comparable<TShortB
         if (!(obj instanceof TShortBuffer)) {
             return false;
         }
-        TShortBuffer other = (TShortBuffer)obj;
+        TShortBuffer other = (TShortBuffer) obj;
         int sz = remaining();
         if (sz != other.remaining()) {
             return false;

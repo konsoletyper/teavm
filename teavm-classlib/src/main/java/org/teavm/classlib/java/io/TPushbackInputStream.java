@@ -70,7 +70,7 @@ public class TPushbackInputStream extends TFilterInputStream {
         }
         // Is there a pushback byte available?
         if (pos < buf.length) {
-            return (buf[pos++] & 0xFF);
+            return buf[pos++] & 0xFF;
         }
         // Assume read() in the InputStream will return low-order byte or -1
         // if end of stream.
@@ -90,7 +90,9 @@ public class TPushbackInputStream extends TFilterInputStream {
             throw new TArrayIndexOutOfBoundsException(TString.wrap("Length out of bounds: " + length));
         }
 
-        int copiedBytes = 0, copyLength = 0, newOffset = offset;
+        int copiedBytes = 0;
+        int copyLength = 0;
+        int newOffset = offset;
         // Are there pushback bytes available?
         if (pos < buf.length) {
             copyLength = (buf.length - pos >= length) ? length : buf.length - pos;

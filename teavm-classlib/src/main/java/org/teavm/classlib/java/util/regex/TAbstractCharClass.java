@@ -52,13 +52,13 @@ abstract class TAbstractCharClass extends TSpecialToken {
     protected boolean altSurrogates;
 
     // Character.MAX_SURROGATE - Character.MIN_SURROGATE + 1
-    static int SURROGATE_CARDINALITY = 2048;
+    static final int SURROGATE_CARDINALITY = 2048;
 
     BitSet lowHighSurrogates = new BitSet(SURROGATE_CARDINALITY);
 
-    TAbstractCharClass charClassWithoutSurrogates = null;
+    TAbstractCharClass charClassWithoutSurrogates;
 
-    TAbstractCharClass charClassWithSurrogates = null;
+    TAbstractCharClass charClassWithSurrogates;
 
     static PredefinedCharacterClasses charClasses = new PredefinedCharacterClasses();
 
@@ -67,7 +67,7 @@ abstract class TAbstractCharClass extends TSpecialToken {
      * this flag is specified it doesn't mean that this class contains
      * supplementary characters but may contain.
      */
-    protected boolean mayContainSupplCodepoints = false;
+    protected boolean mayContainSupplCodepoints;
 
     abstract public boolean contains(int ch);
 
@@ -113,8 +113,8 @@ abstract class TAbstractCharClass extends TSpecialToken {
                 public boolean contains(int ch) {
                     int index = ch - Character.MIN_SURROGATE;
 
-                    return ((index >= 0) && (index < TAbstractCharClass.SURROGATE_CARDINALITY)) ? this.altSurrogates ^
-                            lHS.get(index) : false;
+                    return ((index >= 0) && (index < TAbstractCharClass.SURROGATE_CARDINALITY)) ? this.altSurrogates
+                            ^ lHS.get(index) : false;
                 }
             };
             charClassWithSurrogates.setNegative(this.altSurrogates);
@@ -133,8 +133,8 @@ abstract class TAbstractCharClass extends TSpecialToken {
                 public boolean contains(int ch) {
                     int index = ch - Character.MIN_SURROGATE;
 
-                    boolean containslHS = ((index >= 0) && (index < TAbstractCharClass.SURROGATE_CARDINALITY)) ? this.altSurrogates ^
-                            lHS.get(index)
+                    boolean containslHS = (index >= 0 && index < TAbstractCharClass.SURROGATE_CARDINALITY)
+                            ? this.altSurrogates ^ lHS.get(index)
                             : false;
 
                     return thisClass.contains(ch) && !containslHS;
@@ -179,19 +179,20 @@ abstract class TAbstractCharClass extends TSpecialToken {
     }
 
     public static boolean intersects(TAbstractCharClass cc1, TAbstractCharClass cc2) {
-        if (cc1.getBits() == null || cc2.getBits() == null)
+        if (cc1.getBits() == null || cc2.getBits() == null) {
             return true;
+        }
         return cc1.getBits().intersects(cc2.getBits());
     }
 
     public static TAbstractCharClass getPredefinedClass(String name, boolean negative) {
-        return ((LazyCharClass)charClasses.getObject(name)).getValue(negative);
+        return ((LazyCharClass) charClasses.getObject(name)).getValue(negative);
     }
 
     abstract static class LazyCharClass {
-        TAbstractCharClass posValue = null;
+        TAbstractCharClass posValue;
 
-        TAbstractCharClass negValue = null;
+        TAbstractCharClass negValue;
 
         public TAbstractCharClass getValue(boolean negative) {
             if (!negative && posValue == null) {
@@ -199,8 +200,9 @@ abstract class TAbstractCharClass extends TSpecialToken {
             } else if (negative && negValue == null) {
                 negValue = computeValue().setNegative(true);
             }
-            if (!negative)
+            if (!negative) {
                 return posValue;
+            }
             return negValue;
         }
 
@@ -290,7 +292,7 @@ abstract class TAbstractCharClass extends TSpecialToken {
     static class LazyAlnum extends LazyAlpha {
         @Override
         protected TAbstractCharClass computeValue() {
-            return ((TCharClass)super.computeValue()).add('0', '9');
+            return ((TCharClass) super.computeValue()).add('0', '9');
         }
     }
 
@@ -306,14 +308,14 @@ abstract class TAbstractCharClass extends TSpecialToken {
         @Override
         protected TAbstractCharClass computeValue() {
             /* plus punctuation */
-            return ((TCharClass)super.computeValue()).add(0x21, 0x40).add(0x5B, 0x60).add(0x7B, 0x7E);
+            return ((TCharClass) super.computeValue()).add(0x21, 0x40).add(0x5B, 0x60).add(0x7B, 0x7E);
         }
     }
 
     static class LazyPrint extends LazyGraph {
         @Override
         protected TAbstractCharClass computeValue() {
-            return ((TCharClass)super.computeValue()).add(0x20);
+            return ((TCharClass) super.computeValue()).add(0x20);
         }
     }
 
@@ -339,7 +341,8 @@ abstract class TAbstractCharClass extends TSpecialToken {
     }
 
     static class LazyRange extends LazyCharClass {
-        int start, end;
+        int start;
+        int end;
 
         public LazyRange(int start, int end) {
             this.start = start;
@@ -848,10 +851,10 @@ abstract class TAbstractCharClass extends TSpecialToken {
                 { "Cs", new LazyCategory(Character.SURROGATE, false, true) },
                 {
                         "IsP",
-                        new LazyCategoryScope((1 << Character.DASH_PUNCTUATION) | (1 << Character.START_PUNCTUATION) |
-                                (1 << Character.END_PUNCTUATION) | (1 << Character.CONNECTOR_PUNCTUATION) |
-                                (1 << Character.OTHER_PUNCTUATION) | (1 << Character.INITIAL_QUOTE_PUNCTUATION) |
-                                (1 << Character.FINAL_QUOTE_PUNCTUATION), true) },
+                        new LazyCategoryScope((1 << Character.DASH_PUNCTUATION) | (1 << Character.START_PUNCTUATION)
+                                | (1 << Character.END_PUNCTUATION) | (1 << Character.CONNECTOR_PUNCTUATION)
+                                | (1 << Character.OTHER_PUNCTUATION) | (1 << Character.INITIAL_QUOTE_PUNCTUATION)
+                                | (1 << Character.FINAL_QUOTE_PUNCTUATION), true) },
                 { "Pd", new LazyCategory(Character.DASH_PUNCTUATION, false) },
                 { "Ps", new LazyCategory(Character.START_PUNCTUATION, false) },
                 { "Pe", new LazyCategory(Character.END_PUNCTUATION, false) },

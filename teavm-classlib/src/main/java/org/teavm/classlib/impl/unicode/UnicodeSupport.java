@@ -30,7 +30,7 @@ import org.teavm.common.IntegerArray;
  *
  * @author Alexey Andreev
  */
-public class UnicodeSupport {
+public final class UnicodeSupport {
     private static AtomicBoolean filled = new AtomicBoolean();
     private static volatile CountDownLatch latch = new CountDownLatch(1);
     private static int[] digitValues;
@@ -68,6 +68,9 @@ public class UnicodeSupport {
         classMap.put("So", Character.OTHER_SYMBOL);
         classMap.put("Pi", Character.INITIAL_QUOTE_PUNCTUATION);
         classMap.put("Pf", Character.FINAL_QUOTE_PUNCTUATION);
+    }
+
+    private UnicodeSupport() {
     }
 
     private static void parseUnicodeData() {
@@ -119,7 +122,7 @@ public class UnicodeSupport {
         UnicodeSupport.digitValues = mergePairs(digitValues.getAll(), letterDigitValues.getAll());
         UnicodeSupport.classes = new byte[classes.size()];
         for (int i = 0; i < classes.size(); ++i) {
-            UnicodeSupport.classes[i] = (byte)classes.get(i);
+            UnicodeSupport.classes[i] = (byte) classes.get(i);
         }
     }
 

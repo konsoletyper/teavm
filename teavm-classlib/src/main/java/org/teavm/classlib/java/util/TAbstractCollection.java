@@ -59,7 +59,7 @@ public abstract class TAbstractCollection<E> extends TObject implements TCollect
     public <T> T[] toArray(T[] a) {
         int size = size();
         if (a.length < size) {
-            a = (T[])Array.newInstance(a.getClass().getComponentType(), size);
+            a = (T[]) Array.newInstance(a.getClass().getComponentType(), size);
         } else {
             for (int i = size; i < a.length; ++i) {
                 a[i] = null;
@@ -67,7 +67,7 @@ public abstract class TAbstractCollection<E> extends TObject implements TCollect
         }
         int i = 0;
         for (TIterator<E> iter = iterator(); iter.hasNext();) {
-            a[i++] = (T)iter.next();
+            a[i++] = (T) iter.next();
         }
         return a;
     }

@@ -34,7 +34,7 @@ public class TUTF8Decoder extends TBufferedDecoder {
         while (inPos < inSize && outPos < outSize) {
             int b = inArray[inPos++] & 0xFF;
             if ((b & 0x80) == 0) {
-                outArray[outPos++] = (char)b;
+                outArray[outPos++] = (char) b;
             } else if ((b & 0xE0) == 0xC0) {
                 if (inPos >= inSize) {
                     --inPos;
@@ -49,7 +49,7 @@ public class TUTF8Decoder extends TBufferedDecoder {
                     result = TCoderResult.malformedForLength(1);
                     break;
                 }
-                outArray[outPos++] = (char)(((b & 0x1F) << 6) | (b2 & 0x3F));
+                outArray[outPos++] = (char) (((b & 0x1F) << 6) | (b2 & 0x3F));
             } else if ((b & 0xF0) == 0xE0) {
                 if (inPos + 2 > inSize) {
                     --inPos;
@@ -65,7 +65,7 @@ public class TUTF8Decoder extends TBufferedDecoder {
                     result = TCoderResult.malformedForLength(1);
                     break;
                 }
-                char c = (char)(((b & 0x0F) << 12) | ((b2 & 0x3f) << 6) | (b3 & 0x3F));
+                char c = (char) (((b & 0x0F) << 12) | ((b2 & 0x3f) << 6) | (b3 & 0x3F));
                 if (Character.isSurrogate(c)) {
                     inPos -= 3;
                     result = TCoderResult.malformedForLength(3);

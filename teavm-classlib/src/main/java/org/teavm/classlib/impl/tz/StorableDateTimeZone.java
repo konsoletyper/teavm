@@ -38,9 +38,9 @@ public abstract class StorableDateTimeZone extends DateTimeZone {
 
     public static void writeTime(StringBuilder sb, long time) {
         if (time % 1800_000 == 0) {
-            Base46.encode(sb, (int)((time / 1800_000) << 1));
+            Base46.encode(sb, (int) ((time / 1800_000) << 1));
         } else {
-            Base46.encode(sb, (int)(((time / 60_000) << 1) | 1));
+            Base46.encode(sb, (int) (((time / 60_000) << 1) | 1));
         }
     }
 
@@ -55,9 +55,9 @@ public abstract class StorableDateTimeZone extends DateTimeZone {
 
     public static void writeUnsignedTime(StringBuilder sb, long time) {
         if (time % 1800_000 == 0) {
-            Base46.encodeUnsigned(sb, (int)((time / 1800_000) << 1));
+            Base46.encodeUnsigned(sb, (int) ((time / 1800_000) << 1));
         } else {
-            Base46.encodeUnsigned(sb, (int)(((time / 60_000) << 1) | 1));
+            Base46.encodeUnsigned(sb, (int) (((time / 60_000) << 1) | 1));
         }
     }
 
@@ -105,14 +105,14 @@ public abstract class StorableDateTimeZone extends DateTimeZone {
         while (index < array.length) {
             int count = Base46.decode(flow);
             if (count >= 0) {
-                int t = (int)readTime(flow);
+                int t = (int) readTime(flow);
                 while (count-- > 0) {
                     array[index++] = t;
                 }
             } else {
                 count = ~count;
                 while (count-- > 0) {
-                    array[index++] = (int)readTime(flow);
+                    array[index++] = (int) readTime(flow);
                 }
             }
         }

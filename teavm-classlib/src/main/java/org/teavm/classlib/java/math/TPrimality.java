@@ -1,12 +1,11 @@
 /*
- *  Licensed to the Apache Software Foundation (ASF) under one or more
- *  contributor license agreements.  See the NOTICE file distributed with
- *  this work for additional information regarding copyright ownership.
- *  The ASF licenses this file to You under the Apache License, Version 2.0
- *  (the "License"); you may not use this file except in compliance with
- *  the License.  You may obtain a copy of the License at
+ *  Copyright 2015 Alexey Andreev.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +13,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package org.teavm.classlib.java.math;
 
 import java.util.Arrays;
@@ -30,7 +28,7 @@ class TPrimality {
     }
 
     /** All prime numbers with bit length lesser than 10 bits. */
-    private static final int primes[] = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71,
+    private static final int[] primes = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71,
             73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139, 149, 151, 157, 163, 167, 173, 179, 181,
             191, 193, 197, 199, 211, 223, 227, 229, 233, 239, 241, 251, 257, 263, 269, 271, 277, 281, 283, 293, 307,
             311, 313, 317, 331, 337, 347, 349, 353, 359, 367, 373, 379, 383, 389, 397, 401, 409, 419, 421, 431, 433,
@@ -41,7 +39,7 @@ class TPrimality {
             1009, 1013, 1019, 1021 };
 
     /** All {@code BigInteger} prime numbers with bit length lesser than 8 bits. */
-    private static final TBigInteger BIprimes[] = new TBigInteger[primes.length];
+    private static final TBigInteger[] BIprimes = new TBigInteger[primes.length];
 
     /**
      * It encodes how many iterations of Miller-Rabin test are need to get an
@@ -62,7 +60,8 @@ class TPrimality {
     private static final int[][] offsetPrimes = { null, null, { 0, 2 }, { 2, 2 }, { 4, 2 }, { 6, 5 }, { 11, 7 },
             { 18, 13 }, { 31, 23 }, { 54, 43 }, { 97, 75 } };
 
-    static {// To initialize the dual table of BigInteger primes
+    static {
+        // To initialize the dual table of BigInteger primes
         for (int i = 0; i < primes.length; i++) {
             BIprimes[i] = TBigInteger.valueOf(primes[i]);
         }
@@ -79,11 +78,12 @@ class TPrimality {
      */
     static TBigInteger nextProbablePrime(TBigInteger n) {
         // PRE: n >= 0
-        int i, j;
+        int i;
+        int j;
         int certainty;
         int gapSize = 1024; // for searching of the next probable prime number
-        int modules[] = new int[primes.length];
-        boolean isDivisible[] = new boolean[gapSize];
+        int[] modules = new int[primes.length];
+        boolean[] isDivisible = new boolean[gapSize];
         TBigInteger startPoint;
         TBigInteger probPrime;
         // If n < "last prime of table" searches next prime in the table
@@ -153,7 +153,7 @@ class TPrimality {
         // PRE: bitLength >= 2;
         // For small numbers get a random prime from the prime table
         if (bitLength <= 10) {
-            int rp[] = offsetPrimes[bitLength];
+            int[] rp = offsetPrimes[bitLength];
             return BIprimes[rp[0] + rnd.nextInt(rp[1])];
         }
         int shiftCount = (-bitLength) & 31;
@@ -161,7 +161,8 @@ class TPrimality {
         TBigInteger n = new TBigInteger(1, last, new int[last]);
 
         last--;
-        do {// To fill the array with random integers
+        do {
+            // To fill the array with random integers
             for (int i = 0; i < n.numberLength; i++) {
                 n.digits[i] = rnd.nextInt();
             }
@@ -190,8 +191,8 @@ class TPrimality {
             return false;
         }
         // To check if 'n' exists in the table (it fit in 10 bits)
-        if ((n.numberLength == 1) && ((n.digits[0] & 0XFFFFFC00) == 0)) {
-            return (Arrays.binarySearch(primes, n.digits[0]) >= 0);
+        if (n.numberLength == 1 && (n.digits[0] & 0XFFFFFC00) == 0) {
+            return Arrays.binarySearch(primes, n.digits[0]) >= 0;
         }
         // To check if 'n' is divisible by some prime of the table
         for (int i = 1; i < primes.length; i++) {
@@ -227,32 +228,33 @@ class TPrimality {
         // PRE: n >= 0, t >= 0
         TBigInteger x; // x := UNIFORM{2...n-1}
         TBigInteger y; // y := x^(q * 2^j) mod n
-        TBigInteger n_minus_1 = n.subtract(TBigInteger.ONE); // n-1
-        int bitLength = n_minus_1.bitLength(); // ~ log2(n-1)
+        TBigInteger nMinus1 = n.subtract(TBigInteger.ONE); // n-1
+        int bitLength = nMinus1.bitLength(); // ~ log2(n-1)
         // (q,k) such that: n-1 = q * 2^k and q is odd
-        int k = n_minus_1.getLowestSetBit();
-        TBigInteger q = n_minus_1.shiftRight(k);
+        int k = nMinus1.getLowestSetBit();
+        TBigInteger q = nMinus1.shiftRight(k);
         Random rnd = new Random();
 
         for (int i = 0; i < t; i++) {
             // To generate a witness 'x', first it use the primes of table
             if (i < primes.length) {
                 x = BIprimes[i];
-            } else {/*
-                     * It generates random witness only if it's necesssary. Note
-                     * that all methods would call Miller-Rabin with t <= 50 so
-                     * this part is only to do more robust the algorithm
-                     */
+            } else {
+                /*
+                 * It generates random witness only if it's necessary. Note
+                 * that all methods would call Miller-Rabin with t <= 50 so
+                 * this part is only to do more robust the algorithm
+                 */
                 do {
                     x = new TBigInteger(bitLength, rnd);
                 } while ((x.compareTo(n) >= TBigInteger.EQUALS) || (x.sign == 0) || x.isOne());
             }
             y = x.modPow(q, n);
-            if (y.isOne() || y.equals(n_minus_1)) {
+            if (y.isOne() || y.equals(nMinus1)) {
                 continue;
             }
             for (int j = 1; j < k; j++) {
-                if (y.equals(n_minus_1)) {
+                if (y.equals(nMinus1)) {
                     continue;
                 }
                 y = y.multiply(y).mod(n);
@@ -260,7 +262,7 @@ class TPrimality {
                     return false;
                 }
             }
-            if (!y.equals(n_minus_1)) {
+            if (!y.equals(nMinus1)) {
                 return false;
             }
         }

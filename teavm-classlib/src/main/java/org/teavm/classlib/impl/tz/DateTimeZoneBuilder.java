@@ -5,7 +5,7 @@
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
@@ -99,17 +99,10 @@ public class DateTimeZoneBuilder {
      *  dayOfWeek when true, retreat when false.
      * @param millisOfDay  additional precision for specifying time of day of cutover
      */
-    public DateTimeZoneBuilder addCutover(int year,
-                                          char mode,
-                                          int monthOfYear,
-                                          int dayOfMonth,
-                                          int dayOfWeek,
-                                          boolean advanceDayOfWeek,
-                                          int millisOfDay)
-    {
+    public DateTimeZoneBuilder addCutover(int year, char mode, int monthOfYear, int dayOfMonth, int dayOfWeek,
+            boolean advanceDayOfWeek, int millisOfDay) {
         if (iRuleSets.size() > 0) {
-            OfYear ofYear = new OfYear
-                (mode, monthOfYear, dayOfMonth, dayOfWeek, advanceDayOfWeek, millisOfDay);
+            OfYear ofYear = new OfYear(mode, monthOfYear, dayOfMonth, dayOfWeek, advanceDayOfWeek, millisOfDay);
             RuleSet lastRuleSet = iRuleSets.get(iRuleSets.size() - 1);
             lastRuleSet.setUpperLimit(year, ofYear);
         }
@@ -162,11 +155,9 @@ public class DateTimeZoneBuilder {
                                                    int dayOfMonth,
                                                    int dayOfWeek,
                                                    boolean advanceDayOfWeek,
-                                                   int millisOfDay)
-    {
+                                                   int millisOfDay) {
         if (fromYear <= toYear) {
-            OfYear ofYear = new OfYear
-                (mode, monthOfYear, dayOfMonth, dayOfWeek, advanceDayOfWeek, millisOfDay);
+            OfYear ofYear = new OfYear(mode, monthOfYear, dayOfMonth, dayOfWeek, advanceDayOfWeek, millisOfDay);
             Recurrence recurrence = new Recurrence(ofYear, saveMillis);
             Rule rule = new Rule(recurrence, fromYear, toYear);
             getLastRuleSet().addRule(rule);
@@ -204,7 +195,7 @@ public class DateTimeZoneBuilder {
         int saveMillis = 0;
 
         int ruleSetCount = iRuleSets.size();
-        for (int i=0; i<ruleSetCount; i++) {
+        for (int i = 0; i < ruleSetCount; i++) {
             RuleSet rs = iRuleSets.get(i);
             Transition next = rs.firstTransition(millis);
             if (next == null) {
@@ -302,12 +293,7 @@ public class DateTimeZoneBuilder {
         final boolean iAdvance;
         final int iMillisOfDay;
 
-        OfYear(char mode,
-               int monthOfYear,
-               int dayOfMonth,
-               int dayOfWeek, boolean advanceDayOfWeek,
-               int millisOfDay)
-        {
+        OfYear(char mode, int monthOfYear, int dayOfMonth, int dayOfWeek, boolean advanceDayOfWeek, int millisOfDay) {
             if (mode != 'u' && mode != 'w' && mode != 's') {
                 throw new IllegalArgumentException("Unknown mode: " + mode);
             }
@@ -335,7 +321,7 @@ public class DateTimeZoneBuilder {
             int dayOfMonth = Base46.decodeUnsigned(flow);
             int dayOfWeek = Base46.decode(flow);
             boolean advance = flow.characters[flow.pointer++] == 'y';
-            int millisOfDay = (int)StorableDateTimeZone.readUnsignedTime(flow);
+            int millisOfDay = (int) StorableDateTimeZone.readUnsignedTime(flow);
             return new OfYear(mode, monthOfYear, dayOfMonth, dayOfWeek, advance, millisOfDay);
         }
 
@@ -557,7 +543,7 @@ public class DateTimeZoneBuilder {
 
         public static Recurrence read(CharFlow flow) {
             OfYear ofYear = OfYear.read(flow);
-            int saveMillis = (int)StorableDateTimeZone.readTime(flow);
+            int saveMillis = (int) StorableDateTimeZone.readTime(flow);
             return new Recurrence(ofYear, saveMillis);
         }
     }
@@ -678,8 +664,7 @@ public class DateTimeZoneBuilder {
             if (other == null) {
                 return true;
             }
-            return iMillis > other.iMillis &&
-                iWallOffset != other.iWallOffset;
+            return iMillis > other.iMillis && iWallOffset != other.iWallOffset;
         }
     }
 
@@ -886,8 +871,7 @@ public class DateTimeZoneBuilder {
             if (iRules.size() == 2) {
                 Rule startRule = iRules.get(0);
                 Rule endRule = iRules.get(1);
-                if (startRule.getToYear() == Integer.MAX_VALUE &&
-                    endRule.getToYear() == Integer.MAX_VALUE) {
+                if (startRule.getToYear() == Integer.MAX_VALUE && endRule.getToYear() == Integer.MAX_VALUE) {
 
                     // With exactly two infinitely recurring rules left, a
                     // simple DSTZone can be formed.
@@ -937,11 +921,11 @@ public class DateTimeZoneBuilder {
             Recurrence startRecurrence = iStartRecurrence;
             Recurrence endRecurrence = iEndRecurrence;
 
-            long start, end;
+            long start;
+            long end;
 
             try {
-                start = startRecurrence.next
-                    (instant, standardOffset, endRecurrence.getSaveMillis());
+                start = startRecurrence.next(instant, standardOffset, endRecurrence.getSaveMillis());
                 if (instant > 0 && start < 0) {
                     // Overflowed.
                     start = instant;
@@ -955,8 +939,7 @@ public class DateTimeZoneBuilder {
             }
 
             try {
-                end = endRecurrence.next
-                    (instant, standardOffset, startRecurrence.getSaveMillis());
+                end = endRecurrence.next(instant, standardOffset, startRecurrence.getSaveMillis());
                 if (instant > 0 && end < 0) {
                     // Overflowed.
                     end = instant;
@@ -982,11 +965,11 @@ public class DateTimeZoneBuilder {
             Recurrence startRecurrence = iStartRecurrence;
             Recurrence endRecurrence = iEndRecurrence;
 
-            long start, end;
+            long start;
+            long end;
 
             try {
-                start = startRecurrence.previous
-                    (instant, standardOffset, endRecurrence.getSaveMillis());
+                start = startRecurrence.previous(instant, standardOffset, endRecurrence.getSaveMillis());
                 if (instant < 0 && start > 0) {
                     // Overflowed.
                     start = instant;
@@ -1000,8 +983,7 @@ public class DateTimeZoneBuilder {
             }
 
             try {
-                end = endRecurrence.previous
-                    (instant, standardOffset, startRecurrence.getSaveMillis());
+                end = endRecurrence.previous(instant, standardOffset, startRecurrence.getSaveMillis());
                 if (instant < 0 && end > 0) {
                     // Overflowed.
                     end = instant;
@@ -1022,11 +1004,11 @@ public class DateTimeZoneBuilder {
             Recurrence startRecurrence = iStartRecurrence;
             Recurrence endRecurrence = iEndRecurrence;
 
-            long start, end;
+            long start;
+            long end;
 
             try {
-                start = startRecurrence.next
-                    (instant, standardOffset, endRecurrence.getSaveMillis());
+                start = startRecurrence.next(instant, standardOffset, endRecurrence.getSaveMillis());
             } catch (IllegalArgumentException e) {
                 // Overflowed.
                 start = instant;
@@ -1036,8 +1018,7 @@ public class DateTimeZoneBuilder {
             }
 
             try {
-                end = endRecurrence.next
-                    (instant, standardOffset, startRecurrence.getSaveMillis());
+                end = endRecurrence.next(instant, standardOffset, startRecurrence.getSaveMillis());
             } catch (IllegalArgumentException e) {
                 // Overflowed.
                 end = instant;
@@ -1058,7 +1039,7 @@ public class DateTimeZoneBuilder {
         }
 
         public static DSTZone readZone(String id, CharFlow flow) {
-            int standardOffset = (int)readTime(flow);
+            int standardOffset = (int) readTime(flow);
             Recurrence startRecurrence = Recurrence.read(flow);
             Recurrence endRecurrence = Recurrence.read(flow);
             return new DSTZone(id, standardOffset, startRecurrence, endRecurrence);
@@ -1075,7 +1056,7 @@ public class DateTimeZoneBuilder {
          * @param tailZone  optional zone for getting info beyond precalculated tables
          */
         static PrecalculatedZone create(String id, boolean outputID, ArrayList<Transition> transitions,
-                                        DSTZone tailZone) {
+                DSTZone tailZone) {
             int size = transitions.size();
             if (size == 0) {
                 throw new IllegalArgumentException();
@@ -1086,7 +1067,7 @@ public class DateTimeZoneBuilder {
             int[] standardOffsets = new int[size];
 
             Transition last = null;
-            for (int i=0; i<size; i++) {
+            for (int i = 0; i < size; i++) {
                 Transition tr = transitions.get(i);
 
                 if (!tr.isTransitionFrom(last)) {
@@ -1100,8 +1081,7 @@ public class DateTimeZoneBuilder {
                 last = tr;
             }
 
-            return new PrecalculatedZone
-                ((outputID ? id : ""), trans, wallOffsets, standardOffsets, tailZone);
+            return new PrecalculatedZone(outputID ? id : "", trans, wallOffsets, standardOffsets, tailZone);
         }
 
         // All array fields have the same length.
@@ -1116,9 +1096,8 @@ public class DateTimeZoneBuilder {
         /**
          * Constructor used ONLY for valid input, loaded via static methods.
          */
-        private PrecalculatedZone(String id, long[] transitions, int[] wallOffsets,
-                          int[] standardOffsets, DSTZone tailZone)
-        {
+        private PrecalculatedZone(String id, long[] transitions, int[] wallOffsets, int[] standardOffsets,
+                DSTZone tailZone) {
             super(id);
             iTransitions = transitions;
             iWallOffsets = wallOffsets;
@@ -1293,7 +1272,7 @@ public class DateTimeZoneBuilder {
             double distances = 0;
             int count = 0;
 
-            for (int i=1; i<transitions.length; i++) {
+            for (int i = 1; i < transitions.length; i++) {
                 long diff = transitions[i] - transitions[i - 1];
                 if (diff < ((366L + 365) * 24 * 60 * 60 * 1000)) {
                     distances += diff;

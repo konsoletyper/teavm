@@ -134,18 +134,18 @@ public class AnnotationDependencyListener extends AbstractDependencyListener {
     public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
         ValueType type = method.getMethod().getResultType();
         while (type instanceof ValueType.Array) {
-            type = ((ValueType.Array)type).getItemType();
+            type = ((ValueType.Array) type).getItemType();
         }
         if (type instanceof ValueType.Object) {
-            String className = ((ValueType.Object)type).getClassName();
+            String className = ((ValueType.Object) type).getClassName();
             ClassReader cls = agent.getClassSource().get(className);
             if (cls != null && cls.hasModifier(ElementModifier.ANNOTATION)) {
                 agent.linkClass(className, location);
             }
         }
 
-        if (method.getMethod().hasModifier(ElementModifier.STATIC) &&
-                method.getMethod().getName().equals("$$__readAnnotations__$$")) {
+        if (method.getMethod().hasModifier(ElementModifier.STATIC)
+                && method.getMethod().getName().equals("$$__readAnnotations__$$")) {
             ClassReader cls = agent.getClassSource().get(method.getReference().getClassName());
             if (cls != null) {
                 for (AnnotationReader annotation : cls.getAnnotations().all()) {
@@ -259,7 +259,7 @@ public class AnnotationDependencyListener extends AbstractDependencyListener {
                 return pe.constant(value.getString());
             case AnnotationValue.LIST: {
                 List<AnnotationValue> list = value.getList();
-                ValueType itemType = ((ValueType.Array)type).getItemType();
+                ValueType itemType = ((ValueType.Array) type).getItemType();
                 ValueEmitter array = pe.constructArray(itemType, list.size());
                 for (int i = 0; i < list.size(); ++i) {
                     array.unwrapArray(ArrayElementType.OBJECT).setElement(i,

@@ -46,7 +46,7 @@ public abstract class TCharsetEncoder {
     }
 
     protected TCharsetEncoder(TCharset cs, float averageBytesPerChar, float maxBytesPerChar) {
-        this(cs, averageBytesPerChar, maxBytesPerChar, new byte[] { (byte)'?' });
+        this(cs, averageBytesPerChar, maxBytesPerChar, new byte[] { (byte) '?' });
     }
 
     public final TCharset charset() {
@@ -160,7 +160,7 @@ public abstract class TCharsetEncoder {
             return TByteBuffer.allocate(0);
         }
         reset();
-        TByteBuffer output = TByteBuffer.allocate((int)(in.remaining() * averageBytesPerChar));
+        TByteBuffer output = TByteBuffer.allocate((int) (in.remaining() * averageBytesPerChar));
 
         TCoderResult result;
         while (true) {
@@ -225,7 +225,7 @@ public abstract class TCharsetEncoder {
     public boolean canEncode(CharSequence sequence) {
         TCharBuffer cb;
         if (sequence instanceof TCharBuffer) {
-            cb = ((TCharBuffer)sequence).duplicate();
+            cb = ((TCharBuffer) sequence).duplicate();
         } else {
             cb = TCharBuffer.wrap(sequence);
         }

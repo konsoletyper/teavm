@@ -115,8 +115,8 @@ public final class TLocale implements TCloneable, TSerializable {
         }
         if (object instanceof TLocale) {
             TLocale o = (TLocale) object;
-            return languageCode.equals(o.languageCode) && countryCode.equals(o.countryCode) &&
-                    variantCode.equals(o.variantCode);
+            return languageCode.equals(o.languageCode) && countryCode.equals(o.countryCode)
+                    && variantCode.equals(o.variantCode);
         }
         return false;
     }
@@ -147,7 +147,7 @@ public final class TLocale implements TCloneable, TSerializable {
         return defaultLocale;
     }
 
-    public final String getDisplayCountry() {
+    public String getDisplayCountry() {
         return getDisplayCountry(getDefault());
     }
 
@@ -170,7 +170,7 @@ public final class TLocale implements TCloneable, TSerializable {
         return countries.get(country).getValue();
     }
 
-    public final String getDisplayLanguage() {
+    public String getDisplayLanguage() {
         return getDisplayLanguage(getDefault());
     }
 
@@ -193,7 +193,7 @@ public final class TLocale implements TCloneable, TSerializable {
         return languages.get(language).getValue();
     }
 
-    public final String getDisplayName() {
+    public String getDisplayName() {
         return getDisplayName(getDefault());
     }
 
@@ -226,7 +226,7 @@ public final class TLocale implements TCloneable, TSerializable {
         return buffer.toString();
     }
 
-    public final String getDisplayVariant() {
+    public String getDisplayVariant() {
         return getDisplayVariant(getDefault());
     }
 
@@ -257,7 +257,7 @@ public final class TLocale implements TCloneable, TSerializable {
     }
 
     @Override
-    public final String toString() {
+    public String toString() {
         StringBuilder result = new StringBuilder();
         result.append(languageCode);
         if (countryCode.length() > 0) {

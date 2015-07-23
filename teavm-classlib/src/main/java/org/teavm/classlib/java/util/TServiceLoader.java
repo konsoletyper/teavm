@@ -41,7 +41,7 @@ public final class TServiceLoader<S> extends TObject implements TIterable<S> {
                 if (index == services.length) {
                     throw new TNoSuchElementException();
                 }
-                return (S)services[index++];
+                return (S) services[index++];
             }
             @Override public void remove() {
                 throw new TUnsupportedOperationException();

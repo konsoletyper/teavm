@@ -33,8 +33,11 @@ import org.teavm.platform.metadata.ResourceMap;
  *
  * @author Alexey Andreev
  */
-public class DateTimeZoneProvider {
+public final class DateTimeZoneProvider {
     private static Map<String, DateTimeZone> cache = new HashMap<>();
+
+    private DateTimeZoneProvider() {
+    }
 
     public static DateTimeZone getTimeZone(String id) {
         if (!cache.containsKey(id)) {
@@ -142,7 +145,7 @@ public class DateTimeZoneProvider {
                 Score score = scoreTable.get(i);
                 int tzOffset = score.tz.getOffset(time) / 60_000;
                 if (tzOffset != offset) {
-                    score.value += (int)((last - time) / 60_000) * (Math.abs(tzOffset - offset)) / 30;
+                    score.value += (int) ((last - time) / 60_000) * (Math.abs(tzOffset - offset)) / 30;
                 }
                 int j = i + 1;
                 while (j < scoreTable.size() && score.value > scoreTable.get(j).value) {

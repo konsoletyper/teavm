@@ -1,12 +1,11 @@
 /*
- *  Licensed to the Apache Software Foundation (ASF) under one or more
- *  contributor license agreements.  See the NOTICE file distributed with
- *  this work for additional information regarding copyright ownership.
- *  The ASF licenses this file to You under the Apache License, Version 2.0
- *  (the "License"); you may not use this file except in compliance with
- *  the License.  You may obtain a copy of the License at
+ *  Copyright 2015 Alexey Andreev.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +13,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package org.teavm.classlib.java.math;
 
 /**
@@ -51,13 +49,14 @@ class TElementary {
         for (i = size - 1; (i >= 0) && (a[i] == b[i]); i--) {
             // do nothing
         }
-        return ((i < 0) ? TBigInteger.EQUALS : (a[i] & 0xFFFFFFFFL) < (b[i] & 0xFFFFFFFFL) ? TBigInteger.LESS
-                : TBigInteger.GREATER);
+        return i < 0
+                ? TBigInteger.EQUALS
+                : (a[i] & 0xFFFFFFFFL) < (b[i] & 0xFFFFFFFFL) ? TBigInteger.LESS : TBigInteger.GREATER;
     }
 
     /** @see TBigInteger#add(TBigInteger) */
     static TBigInteger add(TBigInteger op1, TBigInteger op2) {
-        int resDigits[];
+        int[] resDigits;
         int resSign;
         int op1Sign = op1.sign;
         int op2Sign = op2.sign;
@@ -72,8 +71,8 @@ class TElementary {
         int op2Len = op2.numberLength;
 
         if (op1Len + op2Len == 2) {
-            long a = (op1.digits[0] & 0xFFFFFFFFL);
-            long b = (op2.digits[0] & 0xFFFFFFFFL);
+            long a = op1.digits[0] & 0xFFFFFFFFL;
+            long b = op2.digits[0] & 0xFFFFFFFFL;
             long res;
             int valueLo;
             int valueHi;
@@ -82,8 +81,8 @@ class TElementary {
                 res = a + b;
                 valueLo = (int) res;
                 valueHi = (int) (res >>> 32);
-                return ((valueHi == 0) ? new TBigInteger(op1Sign, valueLo) : new TBigInteger(op1Sign, 2, new int[] {
-                        valueLo, valueHi }));
+                return valueHi == 0 ? new TBigInteger(op1Sign, valueLo) : new TBigInteger(op1Sign, 2, new int[] {
+                        valueLo, valueHi });
             }
             return TBigInteger.valueOf((op1Sign < 0) ? (b - a) : (a - b));
         } else if (op1Sign == op2Sign) {
@@ -92,8 +91,9 @@ class TElementary {
             resDigits = (op1Len >= op2Len) ? add(op1.digits, op1Len, op2.digits, op2Len) : add(op2.digits, op2Len,
                     op1.digits, op1Len);
         } else { // signs are different
-            int cmp = ((op1Len != op2Len) ? ((op1Len > op2Len) ? 1 : -1)
-                    : compareArrays(op1.digits, op2.digits, op1Len));
+            int cmp = op1Len != op2Len
+                    ? (op1Len > op2Len ? 1 : -1)
+                    : compareArrays(op1.digits, op2.digits, op1Len);
 
             if (cmp == TBigInteger.EQUALS) {
                 return TBigInteger.ZERO;
@@ -115,7 +115,7 @@ class TElementary {
     /**
      * Performs {@code res = a + b}.
      */
-    private static void add(int res[], int a[], int aSize, int b[], int bSize) {
+    private static void add(int[] res, int[] a, int aSize, int[] b, int bSize) {
         // PRE: a.length < max(aSize, bSize)
 
         int i;
@@ -155,7 +155,7 @@ class TElementary {
     /** @see TBigInteger#subtract(TBigInteger) */
     static TBigInteger subtract(TBigInteger op1, TBigInteger op2) {
         int resSign;
-        int resDigits[];
+        int[] resDigits;
         int op1Sign = op1.sign;
         int op2Sign = op2.sign;
 
@@ -168,8 +168,8 @@ class TElementary {
         int op1Len = op1.numberLength;
         int op2Len = op2.numberLength;
         if (op1Len + op2Len == 2) {
-            long a = (op1.digits[0] & 0xFFFFFFFFL);
-            long b = (op2.digits[0] & 0xFFFFFFFFL);
+            long a = op1.digits[0] & 0xFFFFFFFFL;
+            long b = op2.digits[0] & 0xFFFFFFFFL;
             if (op1Sign < 0) {
                 a = -a;
             }
@@ -178,8 +178,9 @@ class TElementary {
             }
             return TBigInteger.valueOf(a - b);
         }
-        int cmp = ((op1Len != op2Len) ? ((op1Len > op2Len) ? 1 : -1) : TElementary.compareArrays(op1.digits, op2.digits,
-                op1Len));
+        int cmp = op1Len != op2Len
+                ? (op1Len > op2Len ? 1 : -1)
+                : TElementary.compareArrays(op1.digits, op2.digits, op1Len);
 
         if (cmp == TBigInteger.LESS) {
             resSign = -op2Sign;
@@ -205,7 +206,7 @@ class TElementary {
      * Performs {@code res = a - b}. It is assumed the magnitude of a is not
      * less than the magnitude of b.
      */
-    private static void subtract(int res[], int a[], int aSize, int b[], int bSize) {
+    private static void subtract(int[] res, int[] a, int aSize, int[] b, int bSize) {
         // PRE: a[] >= b[]
         int i;
         long borrow = 0;
@@ -229,9 +230,9 @@ class TElementary {
      *
      * @return {@code a + b}
      */
-    private static int[] add(int a[], int aSize, int b[], int bSize) {
+    private static int[] add(int[] a, int aSize, int[] b, int bSize) {
         // PRE: a[] >= b[]
-        int res[] = new int[aSize + 1];
+        int[] res = new int[aSize + 1];
         add(res, a, aSize, b, bSize);
         return res;
     }
@@ -259,7 +260,7 @@ class TElementary {
      *
      * @return a possible generated carry (0 or 1)
      */
-    static int inplaceAdd(int a[], final int aSize, final int addend) {
+    static int inplaceAdd(int[] a, final int aSize, final int addend) {
         long carry = addend & 0xFFFFFFFFL;
 
         for (int i = 0; (carry != 0) && (i < aSize); i++) {
@@ -303,7 +304,7 @@ class TElementary {
     /**
      * Performs {@code res = b - a}
      */
-    private static void inverseSubtract(int res[], int a[], int aSize, int b[], int bSize) {
+    private static void inverseSubtract(int[] res, int[] a, int aSize, int[] b, int bSize) {
         int i;
         long borrow = 0;
         if (aSize < bSize) {
@@ -339,9 +340,9 @@ class TElementary {
      *
      * @return {@code a - b}
      */
-    private static int[] subtract(int a[], int aSize, int b[], int bSize) {
+    private static int[] subtract(int[] a, int aSize, int[] b, int bSize) {
         // PRE: a[] >= b[]
-        int res[] = new int[aSize];
+        int[] res = new int[aSize];
         subtract(res, a, aSize, b, bSize);
         return res;
     }
@@ -387,17 +388,17 @@ class TElementary {
      *            any number
      */
     static void completeInPlaceAdd(TBigInteger op1, TBigInteger op2) {
-        if (op1.sign == 0)
+        if (op1.sign == 0) {
             System.arraycopy(op2.digits, 0, op1.digits, 0, op2.numberLength);
-        else if (op2.sign == 0)
+        } else if (op2.sign == 0) {
             return;
-        else if (op1.sign == op2.sign)
+        } else if (op1.sign == op2.sign) {
             add(op1.digits, op1.digits, op1.numberLength, op2.digits, op2.numberLength);
-        else {
+        } else {
             int sign = unsignedArraysCompare(op1.digits, op2.digits, op1.numberLength, op2.numberLength);
-            if (sign > 0)
+            if (sign > 0) {
                 subtract(op1.digits, op1.digits, op1.numberLength, op2.digits, op2.numberLength);
-            else {
+            } else {
                 inverseSubtract(op1.digits, op1.digits, op1.numberLength, op2.digits, op2.numberLength);
                 op1.sign = -op1.sign;
             }
@@ -413,12 +414,11 @@ class TElementary {
      * then b
      */
     private static int unsignedArraysCompare(int[] a, int[] b, int aSize, int bSize) {
-        if (aSize > bSize)
+        if (aSize > bSize) {
             return 1;
-        else if (aSize < bSize)
+        } else if (aSize < bSize) {
             return -1;
-
-        else {
+        } else {
             int i;
             for (i = aSize - 1; i >= 0 && a[i] == b[i]; i--) {
                 // do nothing
@@ -427,5 +427,4 @@ class TElementary {
                     : TBigInteger.GREATER);
         }
     }
-
 }

@@ -1,28 +1,11 @@
 /*
- *  Licensed to the Apache Software Foundation (ASF) under one or more
- *  contributor license agreements.  See the NOTICE file distributed with
- *  this work for additional information regarding copyright ownership.
- *  The ASF licenses this file to You under the Apache License, Version 2.0
- *  (the "License"); you may not use this file except in compliance with
- *  the License.  You may obtain a copy of the License at
+ *  Copyright 2015 Alexey Andreev.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
-/*
- *  Licensed to the Apache Software Foundation (ASF) under one or more
- *  contributor license agreements.  See the NOTICE file distributed with
- *  this work for additional information regarding copyright ownership.
- *  The ASF licenses this file to You under the Apache License, Version 2.0
- *  (the "License"); you may not use this file except in compliance with
- *  the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
@@ -30,7 +13,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package org.teavm.classlib.java.util;
 
 import java.lang.reflect.Array;
@@ -174,7 +156,7 @@ public class TVector<E> extends TAbstractList<E> implements TList<E>, TRandomAcc
 
     public TEnumeration<E> elements() {
         return new TEnumeration<E>() {
-            int pos = 0;
+            int pos;
 
             @Override
             public boolean hasMoreElements() {
@@ -215,7 +197,8 @@ public class TVector<E> extends TAbstractList<E> implements TList<E>, TRandomAcc
             int index = 0;
             TIterator<?> it = list.iterator();
             while (it.hasNext()) {
-                Object e1 = elementData[index++], e2 = it.next();
+                Object e1 = elementData[index++];
+                Object e2 = it.next();
                 if (!(e1 == null ? e2 == null : e1.equals(e2))) {
                     return false;
                 }
@@ -252,7 +235,8 @@ public class TVector<E> extends TAbstractList<E> implements TList<E>, TRandomAcc
     private void growByOne() {
         int adding = 0;
         if (capacityIncrement <= 0) {
-            if ((adding = elementData.length) == 0) {
+            adding = elementData.length;
+            if (adding == 0) {
                 adding = 1;
             }
         } else {
@@ -267,7 +251,8 @@ public class TVector<E> extends TAbstractList<E> implements TList<E>, TRandomAcc
     private void growBy(int required) {
         int adding = 0;
         if (capacityIncrement <= 0) {
-            if ((adding = elementData.length) == 0) {
+            adding = elementData.length;
+            if (adding == 0) {
                 adding = required;
             }
             while (adding < required) {
@@ -411,8 +396,8 @@ public class TVector<E> extends TAbstractList<E> implements TList<E>, TRandomAcc
     }
 
     public synchronized boolean removeElement(Object object) {
-        int index;
-        if ((index = indexOf(object, 0)) == -1) {
+        int index = indexOf(object, 0);
+        if (index == -1) {
             return false;
         }
         removeElementAt(index);
@@ -522,7 +507,7 @@ public class TVector<E> extends TAbstractList<E> implements TList<E>, TRandomAcc
     @Override
     public synchronized String toString() {
         if (elementCount == 0) {
-            return "[]"; //$NON-NLS-1$
+            return "[]";
         }
         int length = elementCount - 1;
         StringBuilder buffer = new StringBuilder(elementCount * 16);

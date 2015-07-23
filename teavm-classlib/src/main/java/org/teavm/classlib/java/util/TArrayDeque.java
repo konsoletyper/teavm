@@ -113,7 +113,7 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E> 
             return null;
         }
         @SuppressWarnings("unchecked")
-        E result = (E)array[head];
+        E result = (E) array[head];
         array[head] = null;
         head++;
         if (head >= array.length) {
@@ -133,7 +133,7 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E> 
             tail = array.length - 1;
         }
         @SuppressWarnings("unchecked")
-        E result = (E)array[tail];
+        E result = (E) array[tail];
         array[tail] = null;
         ++version;
         return result;
@@ -160,13 +160,13 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E> 
     @Override
     @SuppressWarnings("unchecked")
     public E peekFirst() {
-        return !isEmpty() ? (E)array[head] : null;
+        return !isEmpty() ? (E) array[head] : null;
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public E peekLast() {
-        return !isEmpty() ? (E)array[tail > 0 ? tail - 1 : array.length - 1] : null;
+        return !isEmpty() ? (E) array[tail > 0 ? tail - 1 : array.length - 1] : null;
     }
 
     @Override
@@ -292,7 +292,7 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E> 
                 }
                 lastIndex = index;
                 @SuppressWarnings("unchecked")
-                E result = (E)array[index++];
+                E result = (E) array[index++];
                 if (index >= array.length) {
                     index = 0;
                     wrapped = true;
@@ -327,7 +327,7 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E> 
                 }
                 lastIndex = index;
                 @SuppressWarnings("unchecked")
-                E result = (E)array[index];
+                E result = (E) array[index];
                 return result;
             }
             @Override public void remove() {

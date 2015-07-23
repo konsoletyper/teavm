@@ -28,29 +28,17 @@ public class DateSymbolsMetadataGenerator implements MetadataGenerator {
     public Resource generateMetadata(MetadataGeneratorContext context, MethodReference method) {
         switch (method.getName()) {
             case "getErasMap":
-                return generateSymbols(context, new ResourceExtractor() {
-                    @Override public String[] extract(CLDRLocale locale) { return locale.getEras(); }
-                });
+                return generateSymbols(context, locale -> locale.getEras());
             case "getAmPmMap":
-                return generateSymbols(context, new ResourceExtractor() {
-                    @Override public String[] extract(CLDRLocale locale) { return locale.getDayPeriods(); }
-                });
+                return generateSymbols(context, locale -> locale.getDayPeriods());
             case "getMonthMap":
-                return generateSymbols(context, new ResourceExtractor() {
-                    @Override public String[] extract(CLDRLocale locale) { return locale.getMonths(); }
-                });
+                return generateSymbols(context, locale -> locale.getMonths());
             case "getShortMonthMap":
-                return generateSymbols(context, new ResourceExtractor() {
-                    @Override public String[] extract(CLDRLocale locale) { return locale.getShortMonths(); }
-                });
+                return generateSymbols(context, locale -> locale.getShortMonths());
             case "getWeekdayMap":
-                return generateSymbols(context, new ResourceExtractor() {
-                    @Override public String[] extract(CLDRLocale locale) { return locale.getWeekdays(); }
-                });
+                return generateSymbols(context, locale -> locale.getWeekdays());
             case "getShortWeekdayMap":
-                return generateSymbols(context, new ResourceExtractor() {
-                    @Override public String[] extract(CLDRLocale locale) { return locale.getShortWeekdays(); }
-                });
+                return generateSymbols(context, locale -> locale.getShortWeekdays());
             default:
                 throw new AssertionError("Unsupported method: " + method);
         }
@@ -71,7 +59,7 @@ public class DateSymbolsMetadataGenerator implements MetadataGenerator {
         return result;
     }
 
-    private static interface ResourceExtractor {
+    private interface ResourceExtractor {
         String[] extract(CLDRLocale locale);
     }
 }

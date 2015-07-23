@@ -178,7 +178,7 @@ public abstract class TAbstractList<E> extends TAbstractCollection<E> implements
             return false;
         }
         @SuppressWarnings("unchecked")
-        TList<Object> list = (TList<Object>)other;
+        TList<Object> list = (TList<Object>) other;
         if (size() != list.size()) {
             return false;
         }

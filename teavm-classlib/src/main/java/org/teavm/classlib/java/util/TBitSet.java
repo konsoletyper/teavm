@@ -44,8 +44,8 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
     public static TBitSet valueOf(long[] longs) {
         int[] ints = new int[longs.length * 2];
         for (int i = 0; i < longs.length; ++i) {
-            ints[i * 2 + 1] = (int)longs[i];
-            ints[i * 2 + 1] = (int)(longs[i] >>> TInteger.SIZE);
+            ints[i * 2 + 1] = (int) longs[i];
+            ints[i * 2 + 1] = (int) (longs[i] >>> TInteger.SIZE);
         }
         return new TBitSet(ints);
     }
@@ -54,15 +54,15 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
         int[] ints = new int[(bytes.length + 3) / 4];
         int fullInts = bytes.length / 4;
         for (int i = 0; i < fullInts; ++i) {
-            ints[i] = (bytes[i * 4] & 0xFF) | ((bytes[i * 4 + 1] & 0xFF) << 8) | ((bytes[i * 4 + 2] & 0xFF) << 16) |
-                    ((bytes[i * 4 + 3] & 0xFF) << 24);
+            ints[i] = (bytes[i * 4] & 0xFF) | ((bytes[i * 4 + 1] & 0xFF) << 8) | ((bytes[i * 4 + 2] & 0xFF) << 16)
+                    | ((bytes[i * 4 + 3] & 0xFF) << 24);
         }
         int lastInt = ints.length - 1;
         int lastByte = lastInt * 4;
         switch (bytes.length % 4) {
             case 3:
-                ints[lastInt] = (bytes[lastByte] & 0xFF) | ((bytes[lastByte + 1] & 0xFF) << 8) |
-                        ((bytes[lastByte + 2] & 0xFF) << 16);
+                ints[lastInt] = (bytes[lastByte] & 0xFF) | ((bytes[lastByte + 1] & 0xFF) << 8)
+                        | ((bytes[lastByte + 2] & 0xFF) << 16);
                 break;
             case 2:
                 ints[lastInt] = (bytes[lastByte] & 0xFF) | ((bytes[lastByte + 1] & 0xFF) << 8);
@@ -80,23 +80,23 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
         int j = 0;
         int i = 0;
         for (; i < fullInts; i += 4) {
-            bytes[j++] = (byte)data[i];
-            bytes[j++] = (byte)(data[i] >>> 8);
-            bytes[j++] = (byte)(data[i] >>> 16);
-            bytes[j++] = (byte)(data[i] >>> 24);
+            bytes[j++] = (byte) data[i];
+            bytes[j++] = (byte) (data[i] >>> 8);
+            bytes[j++] = (byte) (data[i] >>> 16);
+            bytes[j++] = (byte) (data[i] >>> 24);
         }
         switch (bytes.length % 4) {
             case 3:
-                bytes[j++] = (byte)data[i];
-                bytes[j++] = (byte)(data[i] >>> 8);
-                bytes[j++] = (byte)(data[i] >>> 16);
+                bytes[j++] = (byte) data[i];
+                bytes[j++] = (byte) (data[i] >>> 8);
+                bytes[j++] = (byte) (data[i] >>> 16);
                 break;
             case 2:
-                bytes[j++] = (byte)data[i];
-                bytes[j++] = (byte)(data[i] >>> 8);
+                bytes[j++] = (byte) data[i];
+                bytes[j++] = (byte) (data[i] >>> 8);
                 break;
             case 1:
-                bytes[j++] = (byte)data[i];
+                bytes[j++] = (byte) data[i];
                 break;
         }
         return bytes;
@@ -107,7 +107,7 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
         int fullLongs = length / 64;
         int i = 0;
         for (; i < fullLongs; ++i) {
-            longs[i] = data[i * 2] | ((long)data[i * 2 + 1] << 32);
+            longs[i] = data[i * 2] | ((long) data[i * 2 + 1] << 32);
         }
         if ((((31 + length) / 32) & 1) == 1) {
             longs[i] = data[i * 2];
@@ -286,7 +286,7 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
         }
         int index = fromIndex / 32;
         int val = data[index];
-        val >>>= (fromIndex % 32);
+        val >>>= fromIndex % 32;
         if (val != 0) {
             return TInteger.numberOfTrailingZeros(val) + fromIndex;
         }
@@ -305,7 +305,7 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
         }
         int index = fromIndex / 32;
         int val = ~data[index];
-        val >>>= (fromIndex % 32);
+        val >>>= fromIndex % 32;
         if (val != 0) {
             return TInteger.numberOfTrailingZeros(val) + fromIndex;
         }
@@ -458,7 +458,7 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
         if (!(other instanceof TBitSet)) {
             return false;
         }
-        TBitSet set = (TBitSet)other;
+        TBitSet set = (TBitSet) other;
         if (set.length != length) {
             return false;
         }
@@ -475,10 +475,10 @@ public class TBitSet extends TObject implements TCloneable, TSerializable {
     public int hashCode() {
         long h = 1234;
         long[] words = toLongArray();
-        for (int i = words.length; --i >= 0; ) {
+        for (int i = words.length; --i >= 0;) {
             h ^= words[i] * (i + 1);
         }
-        return (int)((h >> 32) ^ h);
+        return (int) ((h >> 32) ^ h);
     }
 
     @Override

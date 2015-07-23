@@ -38,12 +38,12 @@ public abstract class TCharsetDecoder {
 
     protected TCharsetDecoder(TCharset cs, float averageCharsPerByte, float maxCharsPerByte) {
         if (averageCharsPerByte <= 0) {
-            throw new IllegalArgumentException("averageCharsPerByte must be positive. Actual value is " +
-                    averageCharsPerByte);
+            throw new IllegalArgumentException("averageCharsPerByte must be positive. Actual value is "
+                    + averageCharsPerByte);
         }
         if (maxCharsPerByte <= 0) {
-            throw new IllegalArgumentException("maxCharsPerByte must be positive. Actual value is " +
-                    maxCharsPerByte);
+            throw new IllegalArgumentException("maxCharsPerByte must be positive. Actual value is "
+                    + maxCharsPerByte);
         }
         this.charset = cs;
         this.averageCharsPerByte = averageCharsPerByte;
@@ -191,7 +191,7 @@ public abstract class TCharsetDecoder {
             reset();
         }
 
-        TCharBuffer out = TCharBuffer.allocate(Math.max(8, (int)(in.remaining() * averageCharsPerByte)));
+        TCharBuffer out = TCharBuffer.allocate(Math.max(8, (int) (in.remaining() * averageCharsPerByte)));
         TCoderResult result;
         while (true) {
             result = decode(in, out, false);

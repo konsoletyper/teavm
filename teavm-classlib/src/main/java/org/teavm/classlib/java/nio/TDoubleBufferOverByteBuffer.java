@@ -45,23 +45,23 @@ class TDoubleBufferOverByteBuffer extends TDoubleBufferImpl {
     double getElement(int index) {
         long value;
         if (byteOrder == TByteOrder.BIG_ENDIAN) {
-            value = (((long)byteByffer.array[start + index * 8] & 0xFF) << 56) |
-                    (((long)byteByffer.array[start + index * 8 + 1] & 0xFF) << 48) |
-                    (((long)byteByffer.array[start + index * 8 + 2] & 0xFF) << 40) |
-                    (((long)byteByffer.array[start + index * 8 + 3] & 0xFF) << 32) |
-                    (((long)byteByffer.array[start + index * 8 + 4] & 0xFF) << 24) |
-                    (((long)byteByffer.array[start + index * 8 + 5] & 0xFF) << 16) |
-                    (((long)byteByffer.array[start + index * 8 + 6] & 0xFF) << 8) |
-                    (byteByffer.array[start + index * 8 + 7] & 0xFF);
+            value = (((long) byteByffer.array[start + index * 8] & 0xFF) << 56)
+                    | (((long) byteByffer.array[start + index * 8 + 1] & 0xFF) << 48)
+                    | (((long) byteByffer.array[start + index * 8 + 2] & 0xFF) << 40)
+                    | (((long) byteByffer.array[start + index * 8 + 3] & 0xFF) << 32)
+                    | (((long) byteByffer.array[start + index * 8 + 4] & 0xFF) << 24)
+                    | (((long) byteByffer.array[start + index * 8 + 5] & 0xFF) << 16)
+                    | (((long) byteByffer.array[start + index * 8 + 6] & 0xFF) << 8)
+                    | (byteByffer.array[start + index * 8 + 7] & 0xFF);
         } else {
-            value = (byteByffer.array[start + index * 8] & 0xFF) |
-                    (((long)byteByffer.array[start + index * 8 + 1] & 0xFF) << 8) |
-                    (((long)byteByffer.array[start + index * 8 + 2] & 0xFF) << 16) |
-                    (((long)byteByffer.array[start + index * 8 + 3] & 0xFF) << 24) |
-                    (((long)byteByffer.array[start + index * 8 + 4] & 0xFF) << 32) |
-                    (((long)byteByffer.array[start + index * 8 + 5] & 0xFF) << 40) |
-                    (((long)byteByffer.array[start + index * 8 + 6] & 0xFF) << 48) |
-                    (((long)byteByffer.array[start + index * 8 + 7] & 0xFF) << 56);
+            value = (byteByffer.array[start + index * 8] & 0xFF)
+                    | (((long) byteByffer.array[start + index * 8 + 1] & 0xFF) << 8)
+                    | (((long) byteByffer.array[start + index * 8 + 2] & 0xFF) << 16)
+                    | (((long) byteByffer.array[start + index * 8 + 3] & 0xFF) << 24)
+                    | (((long) byteByffer.array[start + index * 8 + 4] & 0xFF) << 32)
+                    | (((long) byteByffer.array[start + index * 8 + 5] & 0xFF) << 40)
+                    | (((long) byteByffer.array[start + index * 8 + 6] & 0xFF) << 48)
+                    | (((long) byteByffer.array[start + index * 8 + 7] & 0xFF) << 56);
         }
         return Double.longBitsToDouble(value);
     }
@@ -70,23 +70,23 @@ class TDoubleBufferOverByteBuffer extends TDoubleBufferImpl {
     void putElement(int index, double d) {
         long value = Double.doubleToLongBits(d);
         if (byteOrder == TByteOrder.BIG_ENDIAN) {
-            byteByffer.array[start + index * 8] = (byte)(value >> 56);
-            byteByffer.array[start + index * 8 + 1] = (byte)(value >> 48);
-            byteByffer.array[start + index * 8 + 2] = (byte)(value >> 40);
-            byteByffer.array[start + index * 8 + 3] = (byte)(value >> 32);
-            byteByffer.array[start + index * 8 + 4] = (byte)(value >> 24);
-            byteByffer.array[start + index * 8 + 5] = (byte)(value >> 16);
-            byteByffer.array[start + index * 8 + 6] = (byte)(value >> 8);
-            byteByffer.array[start + index * 8 + 7] = (byte)value;
+            byteByffer.array[start + index * 8] = (byte) (value >> 56);
+            byteByffer.array[start + index * 8 + 1] = (byte) (value >> 48);
+            byteByffer.array[start + index * 8 + 2] = (byte) (value >> 40);
+            byteByffer.array[start + index * 8 + 3] = (byte) (value >> 32);
+            byteByffer.array[start + index * 8 + 4] = (byte) (value >> 24);
+            byteByffer.array[start + index * 8 + 5] = (byte) (value >> 16);
+            byteByffer.array[start + index * 8 + 6] = (byte) (value >> 8);
+            byteByffer.array[start + index * 8 + 7] = (byte) value;
         } else {
-            byteByffer.array[start + index * 8] = (byte)value;
-            byteByffer.array[start + index * 8 + 1] = (byte)(value >> 8);
-            byteByffer.array[start + index * 8 + 2] = (byte)(value >> 16);
-            byteByffer.array[start + index * 8 + 3] = (byte)(value >> 24);
-            byteByffer.array[start + index * 8 + 4] = (byte)(value >> 32);
-            byteByffer.array[start + index * 8 + 5] = (byte)(value >> 40);
-            byteByffer.array[start + index * 8 + 6] = (byte)(value >> 48);
-            byteByffer.array[start + index * 8 + 7] = (byte)(value >> 56);
+            byteByffer.array[start + index * 8] = (byte) value;
+            byteByffer.array[start + index * 8 + 1] = (byte) (value >> 8);
+            byteByffer.array[start + index * 8 + 2] = (byte) (value >> 16);
+            byteByffer.array[start + index * 8 + 3] = (byte) (value >> 24);
+            byteByffer.array[start + index * 8 + 4] = (byte) (value >> 32);
+            byteByffer.array[start + index * 8 + 5] = (byte) (value >> 40);
+            byteByffer.array[start + index * 8 + 6] = (byte) (value >> 48);
+            byteByffer.array[start + index * 8 + 7] = (byte) (value >> 56);
         }
     }
 

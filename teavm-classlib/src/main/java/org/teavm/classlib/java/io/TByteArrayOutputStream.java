@@ -38,7 +38,7 @@ public class TByteArrayOutputStream extends TOutputStream {
     @Override
     public void write(int b) {
         ensureCapacity(count + 1);
-        buf[count++] = (byte)b;
+        buf[count++] = (byte) b;
     }
 
     @Override

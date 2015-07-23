@@ -1,12 +1,11 @@
 /*
- *  Licensed to the Apache Software Foundation (ASF) under one or more
- *  contributor license agreements.  See the NOTICE file distributed with
- *  this work for additional information regarding copyright ownership.
- *  The ASF licenses this file to You under the Apache License, Version 2.0
- *  (the "License"); you may not use this file except in compliance with
- *  the License.  You may obtain a copy of the License at
+ *  Copyright 2015 Alexey Andreev.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +13,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package org.teavm.classlib.java.math;
 
 /**
@@ -32,7 +30,8 @@ class TLogical {
 
     /** Just to denote that this class can't be instantiated. */
 
-    private TLogical() {}
+    private TLogical() {
+    }
 
 
     /** @see TBigInteger#not() */
@@ -43,7 +42,7 @@ class TLogical {
         if (val.equals(TBigInteger.MINUS_ONE)) {
             return TBigInteger.ZERO;
         }
-        int resDigits[] = new int[val.numberLength + 1];
+        int[] resDigits = new int[val.numberLength + 1];
         int i;
 
         if (val.sign > 0) {
@@ -62,7 +61,8 @@ class TLogical {
                 }
             }
             // Here a carry 1 was generated
-        } else {// (val.sign < 0)
+        } else {
+            // (val.sign < 0)
             // ~val = -val - 1
             for (i = 0; val.digits[i] == 0; i++) {
                 resDigits[i] = -1;
@@ -83,7 +83,7 @@ class TLogical {
         if (that.sign == 0 || val.sign == 0) {
             return TBigInteger.ZERO;
         }
-        if (that.equals(TBigInteger.MINUS_ONE)){
+        if (that.equals(TBigInteger.MINUS_ONE)) {
             return val;
         }
         if (val.equals(TBigInteger.MINUS_ONE)) {
@@ -117,8 +117,8 @@ class TLogical {
             return TBigInteger.ZERO;
         }
 
-        int resDigits[] = new int[resLength];
-        for ( ; i < resLength; i++) {
+        int[] resDigits = new int[resLength];
+        for (; i < resLength; i++) {
             resDigits[i] = val.digits[i] & that.digits[i];
         }
 
@@ -139,7 +139,7 @@ class TLogical {
             return TBigInteger.ZERO;
         }
         int resLength = positive.numberLength;
-        int resDigits[] = new int[resLength];
+        int[] resDigits = new int[resLength];
 
         // Must start from max(iPos, iNeg)
         int i = Math.max(iPos, iNeg);
@@ -148,13 +148,13 @@ class TLogical {
             i++;
         }
         int limit = Math.min(negative.numberLength, positive.numberLength);
-        for ( ; i < limit; i++) {
+        for (; i < limit; i++) {
             resDigits[i] = ~negative.digits[i] & positive.digits[i];
         }
         // if the negative was shorter must copy the remaining digits
         // from positive
         if (i >= negative.numberLength) {
-            for ( ; i < positive.numberLength; i++) {
+            for (; i < positive.numberLength; i++) {
                 resDigits[i] = positive.digits[i];
             }
         } // else positive ended and must "copy" virtual 0's, do nothing then
@@ -177,7 +177,7 @@ class TLogical {
         }
 
         int resLength;
-        int resDigits[];
+        int[] resDigits;
         int i = Math.max(iShorter, iLonger);
         int digit;
         if (iShorter > iLonger) {
@@ -188,13 +188,19 @@ class TLogical {
             digit = -shorter.digits[i] & -longer.digits[i];
         }
         if (digit == 0) {
-            for (i++; i < shorter.numberLength && (digit = ~(longer.digits[i] | shorter.digits[i])) == 0; i++) {
-                // do nothing
+            for (i++; i < shorter.numberLength; i++) {
+                digit = ~(longer.digits[i] | shorter.digits[i]);
+                if (digit != 0) {
+                    break;
+                }
             }
             if (digit == 0) {
                 // shorter has only the remaining virtual sign bits
-                for ( ; i < longer.numberLength && (digit = ~longer.digits[i]) == 0; i++) {
-                    // do nothing
+                for (; i < longer.numberLength; i++) {
+                    digit = ~longer.digits[i];
+                    if (digit != 0) {
+                        break;
+                    }
                 }
                 if (digit == 0) {
                     resLength = longer.numberLength + 1;
@@ -209,12 +215,12 @@ class TLogical {
         resLength = longer.numberLength;
                 resDigits = new int[resLength];
         resDigits[i] = -digit;
-        for (i++; i < shorter.numberLength; i++){
+        for (i++; i < shorter.numberLength; i++) {
             // resDigits[i] = ~(~longer.digits[i] & ~shorter.digits[i];)
             resDigits[i] = longer.digits[i] | shorter.digits[i];
         }
         // shorter has only the remaining virtual sign bits
-        for( ; i < longer.numberLength; i++){
+        for (; i < longer.numberLength; i++) {
             resDigits[i] = longer.digits[i];
         }
 
@@ -224,7 +230,7 @@ class TLogical {
 
     /** @see TBigInteger#andNot(TBigInteger) */
     static TBigInteger andNot(TBigInteger val, TBigInteger that) {
-        if (that.sign == 0 ) {
+        if (that.sign == 0) {
             return val;
         }
         if (val.sign == 0) {
@@ -233,7 +239,7 @@ class TLogical {
         if (val.equals(TBigInteger.MINUS_ONE)) {
             return that.not();
         }
-        if (that.equals(TBigInteger.MINUS_ONE)){
+        if (that.equals(TBigInteger.MINUS_ONE)) {
             return TBigInteger.ZERO;
         }
 
@@ -257,14 +263,14 @@ class TLogical {
     /** @return sign = 1, magnitude = val.magnitude & ~that.magnitude*/
     static TBigInteger andNotPositive(TBigInteger val, TBigInteger that) {
         // PRE: both arguments are positive
-        int resDigits[] = new int[val.numberLength];
+        int[] resDigits = new int[val.numberLength];
 
         int limit = Math.min(val.numberLength, that.numberLength);
         int i;
         for (i = val.getFirstNonzeroDigit(); i < limit; i++) {
             resDigits[i] = val.digits[i] & ~that.digits[i];
         }
-        for ( ; i < val.numberLength; i++) {
+        for (; i < val.numberLength; i++) {
             resDigits[i] = val.digits[i];
         }
 
@@ -284,11 +290,11 @@ class TLogical {
         }
 
         int resLength = Math.min(positive.numberLength, negative.numberLength);
-        int resDigits[] = new int[resLength];
+        int[] resDigits = new int[resLength];
 
         // Always start from first non zero of positive
         int i = iPos;
-        for ( ; i < iNeg; i++) {
+        for (; i < iNeg; i++) {
             // resDigits[i] = positive.digits[i] & -1 (~0)
             resDigits[i] = positive.digits[i];
         }
@@ -296,7 +302,7 @@ class TLogical {
             resDigits[i] = positive.digits[i] & (negative.digits[i] - 1);
             i++;
         }
-        for ( ; i < resLength; i++) {
+        for (; i < resLength; i++) {
             // resDigits[i] = positive.digits[i] & ~(~negative.digits[i]);
             resDigits[i] = positive.digits[i] & negative.digits[i];
         }
@@ -310,7 +316,7 @@ class TLogical {
     static TBigInteger andNotNegativePositive(TBigInteger negative, TBigInteger positive) {
         // PRE: negative < 0 && positive > 0
         int resLength;
-        int resDigits[];
+        int[] resDigits;
         int limit;
         int digit;
 
@@ -326,7 +332,7 @@ class TLogical {
         if (iPos > iNeg) {
             resDigits = new int[resLength];
             limit = Math.min(negative.numberLength, iPos);
-            for ( ; i < limit; i++) {
+            for (; i < limit; i++) {
                 // 1st case:  resDigits [i] = -(-negative.digits[i] & (~0))
                 // otherwise: resDigits[i] = ~(~negative.digits[i] & ~0)  ;
                 resDigits[i] = negative.digits[i];
@@ -341,16 +347,25 @@ class TLogical {
             digit = -negative.digits[i] & ~positive.digits[i];
             if (digit == 0) {
                 limit = Math.min(positive.numberLength, negative.numberLength);
-                for (i++; i < limit && (digit = ~(negative.digits[i] | positive.digits[i])) == 0; i++) {
-                    // do nothing
+                for (i++; i < limit; i++) {
+                    digit = ~(negative.digits[i] | positive.digits[i]);
+                    if (digit != 0) {
+                        break;
+                    }
                 }
                 if (digit == 0) {
                     // the shorter has only the remaining virtual sign bits
-                    for ( ; i < positive.numberLength && (digit = ~positive.digits[i]) == 0; i++) {
-                        // do nothing
+                    for (; i < positive.numberLength; i++) {
+                        digit = ~positive.digits[i];
+                        if (digit != 0) {
+                            break;
+                        }
                     }
-                    for ( ; i < negative.numberLength && (digit = ~negative.digits[i]) == 0; i++) {
-                        // do nothing
+                    for (; i < negative.numberLength; i++) {
+                        digit = ~negative.digits[i];
+                        if (digit != 0) {
+                            break;
+                        }
                     }
                     if (digit == 0) {
                         resLength++;
@@ -368,15 +383,15 @@ class TLogical {
                     }
 
         limit = Math.min(positive.numberLength, negative.numberLength);
-        for ( ; i < limit; i++) {
+        for (; i < limit; i++) {
             //resDigits[i] = ~(~negative.digits[i] & ~positive.digits[i]);
             resDigits[i] = negative.digits[i] | positive.digits[i];
         }
         // Actually one of the next two cycles will be executed
-        for ( ; i < negative.numberLength; i++) {
+        for (; i < negative.numberLength; i++) {
             resDigits[i] = negative.digits[i];
                 }
-        for ( ; i < positive.numberLength; i++) {
+        for (; i < positive.numberLength; i++) {
             resDigits[i] = positive.digits[i];
         }
 
@@ -395,7 +410,7 @@ class TLogical {
         }
 
         int resLength = that.numberLength;
-        int resDigits[] = new int[resLength];
+        int[] resDigits = new int[resLength];
         int limit;
         int i = iVal;
         if (iVal < iThat) {
@@ -407,7 +422,7 @@ class TLogical {
                 resDigits[i] = ~val.digits[i];
             }
             if (i == val.numberLength) {
-                for ( ; i < iThat; i++) {
+                for (; i < iThat; i++) {
                     // resDigits[i] = -1 & -1;
                     resDigits[i] = -1;
                 }
@@ -417,7 +432,7 @@ class TLogical {
                 // resDigits[i] = ~val.digits[i] & ~-that.digits[i];
                 resDigits[i] = ~val.digits[i] & (that.digits[i] - 1);
             }
-        } else if (iThat < iVal ) {
+        } else if (iThat < iVal) {
             // resDigits[i] = -val.digits[i] & ~~that.digits[i];
             resDigits[i] = -val.digits[i] & that.digits[i];
         } else {
@@ -430,7 +445,7 @@ class TLogical {
             // resDigits[i] = ~val.digits[i] & ~~that.digits[i];
             resDigits[i] = ~val.digits[i] & that.digits[i];
         }
-        for ( ; i < that.numberLength; i++) {
+        for (; i < that.numberLength; i++) {
             // resDigits[i] = -1 & ~~that.digits[i];
             resDigits[i] = that.digits[i];
         }
@@ -478,13 +493,13 @@ class TLogical {
         // PRE: longer and shorter are positive;
         // PRE: longer has at least as many digits as shorter
         int resLength = longer.numberLength;
-        int resDigits[] = new int[resLength];
+        int[] resDigits = new int[resLength];
 
         int i = Math.min(longer.getFirstNonzeroDigit(), shorter.getFirstNonzeroDigit());
         for (i = 0; i < shorter.numberLength; i++) {
             resDigits[i] = longer.digits[i] | shorter.digits[i];
         }
-        for ( ; i < resLength; i++) {
+        for (; i < resLength; i++) {
             resDigits[i] = longer.digits[i];
         }
 
@@ -493,7 +508,7 @@ class TLogical {
     }
 
     /** @return sign = -1, magnitude = -(-val.magnitude | -that.magnitude) */
-    static TBigInteger orNegative(TBigInteger val, TBigInteger that){
+    static TBigInteger orNegative(TBigInteger val, TBigInteger that) {
         // PRE: val and that are negative;
         // PRE: val has at least as many trailing zeros digits as that
         int iThat = that.getFirstNonzeroDigit();
@@ -502,12 +517,12 @@ class TLogical {
 
         if (iVal >= that.numberLength) {
             return that;
-        }else if (iThat >= val.numberLength) {
+        } else if (iThat >= val.numberLength) {
             return val;
         }
 
         int resLength = Math.min(val.numberLength, that.numberLength);
-        int resDigits[] = new int[resLength];
+        int[] resDigits = new int[resLength];
 
         //Looking for the first non-zero digit of the result
         if (iThat == iVal) {
@@ -530,7 +545,7 @@ class TLogical {
     }
 
     /** @return sign = -1, magnitude = -(positive.magnitude | -negative.magnitude) */
-    static TBigInteger orDiffSigns(TBigInteger positive, TBigInteger negative){
+    static TBigInteger orDiffSigns(TBigInteger positive, TBigInteger negative) {
         // Jumping over the least significant zero bits
         int iNeg = negative.getFirstNonzeroDigit();
         int iPos = positive.getFirstNonzeroDigit();
@@ -543,9 +558,9 @@ class TLogical {
             return negative;
         }
         int resLength = negative.numberLength;
-        int resDigits[] = new int[resLength];
+        int[] resDigits = new int[resLength];
 
-        if (iNeg < iPos ) {
+        if (iNeg < iPos) {
             // We know for sure that this will
             // be the first non zero digit in the result
             for (i = iNeg; i < iPos; i++) {
@@ -555,20 +570,21 @@ class TLogical {
             i = iPos;
             resDigits[i] = -positive.digits[i];
             limit = Math.min(positive.numberLength, iNeg);
-            for(i++; i < limit; i++ ) {
+            for (i++; i < limit; i++) {
                 resDigits[i] = ~positive.digits[i];
             }
             if (i != positive.numberLength) {
                 resDigits[i] = ~(-negative.digits[i] | positive.digits[i]);
-            } else{
-                  for (; i<iNeg; i++) {
+            } else {
+                  for (; i < iNeg; i++) {
                       resDigits[i] = -1;
                   }
                   // resDigits[i] = ~(-negative.digits[i] | 0);
                   resDigits[i] = negative.digits[i] - 1;
             }
             i++;
-        } else {// iNeg == iPos
+        } else {
+            // iNeg == iPos
             // Applying two complement to negative and to result
             i = iPos;
             resDigits[i] = -(-negative.digits[i] | positive.digits[i]);
@@ -580,7 +596,7 @@ class TLogical {
             // resDigits[i] = ~(~negative.digits[i] | positive.digits[i] );
             resDigits[i] = negative.digits[i] & ~positive.digits[i];
         }
-        for( ; i < negative.numberLength; i++) {
+        for (; i < negative.numberLength; i++) {
             resDigits[i] = negative.digits[i];
         }
 
@@ -630,12 +646,12 @@ class TLogical {
         // PRE: longer and shorter are positive;
         // PRE: longer has at least as many digits as shorter
         int resLength = longer.numberLength;
-        int resDigits[] = new int[resLength];
+        int[] resDigits = new int[resLength];
         int i = Math.min(longer.getFirstNonzeroDigit(), shorter.getFirstNonzeroDigit());
-        for ( ; i < shorter.numberLength; i++) {
+        for (; i < shorter.numberLength; i++) {
             resDigits[i] = longer.digits[i] ^ shorter.digits[i];
         }
-        for( ; i < longer.numberLength; i++ ){
+        for (; i < longer.numberLength; i++) {
             resDigits[i] = longer.digits[i];
         }
 
@@ -645,11 +661,11 @@ class TLogical {
     }
 
     /** @return sign = 0, magnitude = -val.magnitude ^ -that.magnitude */
-    static TBigInteger xorNegative(TBigInteger val, TBigInteger that){
+    static TBigInteger xorNegative(TBigInteger val, TBigInteger that) {
         // PRE: val and that are negative
         // PRE: val has at least as many trailing zero digits as that
         int resLength = Math.max(val.numberLength, that.numberLength);
-        int resDigits[] = new int[resLength];
+        int[] resDigits = new int[resLength];
         int iVal = val.getFirstNonzeroDigit();
         int iThat = that.getFirstNonzeroDigit();
         int i = iThat;
@@ -667,7 +683,7 @@ class TLogical {
             // Remains digits in that?
             if (i == that.numberLength) {
                 //Jumping over the remaining zero to the first non one
-                for ( ;i < iVal; i++) {
+                for (; i < iVal; i++) {
                     //resDigits[i] = 0 ^ -1;
                     resDigits[i] = -1;
                 }
@@ -685,11 +701,11 @@ class TLogical {
             resDigits[i] = val.digits[i] ^ that.digits[i];
         }
         //Perform ^ between val digits and -1 until val ends
-        for ( ; i < val.numberLength; i++) {
+        for (; i < val.numberLength; i++) {
             //resDigits[i] = ~val.digits[i] ^ -1  ;
-            resDigits[i] = val.digits[i] ;
+            resDigits[i] = val.digits[i];
         }
-        for ( ; i < that.numberLength; i++) {
+        for (; i < that.numberLength; i++) {
             //resDigits[i] = -1 ^ ~that.digits[i] ;
             resDigits[i] = that.digits[i];
         }
@@ -700,9 +716,9 @@ class TLogical {
     }
 
     /** @return sign = 1, magnitude = -(positive.magnitude ^ -negative.magnitude)*/
-    static TBigInteger xorDiffSigns(TBigInteger positive, TBigInteger negative){
+    static TBigInteger xorDiffSigns(TBigInteger positive, TBigInteger negative) {
         int resLength = Math.max(negative.numberLength, positive.numberLength);
-        int resDigits[];
+        int[] resDigits;
         int iNeg = negative.getFirstNonzeroDigit();
         int iPos = positive.getFirstNonzeroDigit();
             int i;
@@ -723,7 +739,7 @@ class TLogical {
             //if the negative has no more elements, must fill the
             //result with the remaining digits of the positive
             if (i == negative.numberLength) {
-                for ( ; i < positive.numberLength; i++) {
+                for (; i < positive.numberLength; i++) {
                     //resDigits[i] = ~(positive.digits[i] ^ -1) -> ~(~positive.digits[i])
                     resDigits[i] = positive.digits[i];
                 }
@@ -746,11 +762,11 @@ class TLogical {
             } else {
                 //if the positive has no more elements must fill the remaining digits with
                 //the negative ones
-                for ( ; i < iNeg; i++) {
+                for (; i < iNeg; i++) {
                     // resDigits[i] = ~(0 ^ 0)
                     resDigits[i] = -1;
                 }
-                for ( ; i < negative.numberLength; i++) {
+                for (; i < negative.numberLength; i++) {
                     //resDigits[i] = ~(~negative.digits[i] ^ 0)
                     resDigits[i] = negative.digits[i];
                 }
@@ -762,16 +778,25 @@ class TLogical {
             digit = positive.digits[i] ^ -negative.digits[i];
             if (digit == 0) {
                 limit = Math.min(positive.numberLength, negative.numberLength);
-                for (i++; i < limit && (digit = positive.digits[i] ^ ~negative.digits[i]) == 0; i++) {
-                    // do nothing
+                for (i++; i < limit; i++) {
+                    digit = positive.digits[i] ^ ~negative.digits[i];
+                    if (digit != 0) {
+                        break;
+                    }
                 }
                 if (digit == 0) {
                     // shorter has only the remaining virtual sign bits
-                    for ( ; i < positive.numberLength && (digit = ~positive.digits[i]) == 0; i++) {
-                        // do nothing
+                    for (; i < positive.numberLength; i++) {
+                        digit = ~positive.digits[i];
+                        if (digit != 0) {
+                            break;
+                        }
                     }
-                    for ( ; i < negative.numberLength && (digit = ~negative.digits[i]) == 0; i++) {
-                        // do nothing
+                    for (; i < negative.numberLength; i++) {
+                        digit = ~negative.digits[i];
+                        if (digit != 0) {
+                            break;
+                        }
                     }
                     if (digit == 0) {
                         resLength = resLength + 1;
@@ -789,14 +814,14 @@ class TLogical {
         }
 
         limit = Math.min(negative.numberLength, positive.numberLength);
-        for ( ; i < limit; i++) {
+        for (; i < limit; i++) {
             resDigits[i] = ~(~negative.digits[i] ^ positive.digits[i]);
         }
-        for ( ; i < positive.numberLength; i++) {
+        for (; i < positive.numberLength; i++) {
             // resDigits[i] = ~(positive.digits[i] ^ -1)
             resDigits[i] = positive.digits[i];
         }
-        for ( ; i < negative.numberLength; i++) {
+        for (; i < negative.numberLength; i++) {
             // resDigits[i] = ~(0 ^ ~negative.digits[i])
             resDigits[i] = negative.digits[i];
         }

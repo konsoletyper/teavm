@@ -48,7 +48,7 @@ public abstract class TReader implements TCloseable {
         char[] buffer = new char[1024];
         long skipped = 0;
         while (skipped < n) {
-            int charsRead = read(buffer, 0, (int)TMath.min(n, buffer.length));
+            int charsRead = read(buffer, 0, (int) TMath.min(n, buffer.length));
             if (charsRead < 0) {
                 break;
             }

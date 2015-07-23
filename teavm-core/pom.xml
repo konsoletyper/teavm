@@ -45,10 +45,6 @@
       <artifactId>hppc</artifactId>
       <version>0.6.1</version>
     </dependency>
-    <dependency>
-      <groupId>org.checkerframework</groupId>
-      <artifactId>checker</artifactId>
-    </dependency>
   </dependencies>
 
   <name>TeaVM core</name>

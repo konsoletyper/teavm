@@ -1,12 +1,11 @@
 /*
- *  Licensed to the Apache Software Foundation (ASF) under one or more
- *  contributor license agreements.  See the NOTICE file distributed with
- *  this work for additional information regarding copyright ownership.
- *  The ASF licenses this file to You under the Apache License, Version 2.0
- *  (the "License"); you may not use this file except in compliance with
- *  the License.  You may obtain a copy of the License at
+ *  Copyright 2015 Alexey Andreev.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +13,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package org.teavm.classlib.java.math;
 
 import java.io.Serializable;
@@ -116,22 +114,22 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
     private static final double LOG10_2 = 0.3010299956639812;
 
     /** The <code>String</code> representation is cached. */
-    private transient String toStringImage = null;
+    private transient String toStringImage;
 
     /** Cache for the hash code. */
-    private transient int hashCode = 0;
+    private transient int hashCode;
 
     /**
      * An array with powers of five that fit in the type <code>long</code>
      * (<code>5^0,5^1,...,5^27</code>).
      */
-    private static final TBigInteger FIVE_POW[];
+    private static final TBigInteger[] FIVE_POW;
 
     /**
      * An array with powers of ten that fit in the type <code>long</code>
      * (<code>10^0,10^1,...,10^18</code>).
      */
-    private static final TBigInteger TEN_POW[];
+    private static final TBigInteger[] TEN_POW;
 
     /**
      * An array with powers of ten that fit in the type <code>long</code>
@@ -198,13 +196,13 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
      * An array with the first <code>BigInteger</code> scaled by zero.
      * (<code>[0,0],[1,0],...,[10,0]</code>).
      */
-    private static final TBigDecimal BI_SCALED_BY_ZERO[] = new TBigDecimal[BI_SCALED_BY_ZERO_LENGTH];
+    private static final TBigDecimal[] BI_SCALED_BY_ZERO = new TBigDecimal[BI_SCALED_BY_ZERO_LENGTH];
 
     /**
      * An array with the zero number scaled by the first positive scales.
      * (<code>0*10^0, 0*10^1, ..., 0*10^10</code>).
      */
-    private static final TBigDecimal ZERO_SCALED_BY[] = new TBigDecimal[11];
+    private static final TBigDecimal[] ZERO_SCALED_BY = new TBigDecimal[11];
 
     /** An array filled with characters <code>'0'</code>. */
     private static final char[] CH_ZEROS = new char[100];
@@ -222,10 +220,10 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
         for (; i < CH_ZEROS.length; i++) {
             CH_ZEROS[i] = '0';
         }
-        for(int j=0; j<LONG_FIVE_POW_BIT_LENGTH.length; j++) {
+        for (int j = 0; j < LONG_FIVE_POW_BIT_LENGTH.length; j++) {
             LONG_FIVE_POW_BIT_LENGTH[j] = bitLength(LONG_FIVE_POW[j]);
         }
-        for(int j=0; j<LONG_TEN_POW_BIT_LENGTH.length; j++) {
+        for (int j = 0; j < LONG_TEN_POW_BIT_LENGTH.length; j++) {
             LONG_TEN_POW_BIT_LENGTH[j] = bitLength(LONG_TEN_POW[j]);
         }
 
@@ -258,7 +256,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
      * @see #precision()
      * @see #inplaceRound(TMathContext)
      */
-    private transient int precision = 0;
+    private transient int precision;
 
     private TBigDecimal(long smallValue, int scale) {
         this.smallValue = smallValue;
@@ -344,7 +342,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
                 }
             }
             scale = offset - begin;
-            bufLength +=scale;
+            bufLength += scale;
             unscaledBuffer.append(in, begin, scale);
         } else {
             scale = 0;
@@ -363,8 +361,8 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
             // Accumulating all remaining digits
             scaleString = String.valueOf(in, begin, last + 1 - begin);
             // Checking if the scale is defined
-            newScale = (long)scale - Integer.parseInt(scaleString);
-            scale = (int)newScale;
+            newScale = (long) scale - Integer.parseInt(scaleString);
+            scale = (int) newScale;
             if (newScale != scale) {
                 throw new NumberFormatException("Scale out of range.");
             }
@@ -378,7 +376,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
         }
         precision = unscaledBuffer.length() - counter;
         if (unscaledBuffer.charAt(0) == '-') {
-            precision --;
+            precision--;
         }
     }
 
@@ -516,7 +514,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
         long mantisa;
         int trailingZeros;
         // Extracting the exponent, note that the bias is 1023
-        scale = 1075 - (int)((bits >> 52) & 0x7FFL);
+        scale = 1075 - (int) ((bits >> 52) & 0x7FFL);
         // Extracting the 52 bits of the mantisa.
         mantisa = scale == 1075 ? (bits & 0xFFFFFFFFFFFFFL) << 1 : (bits & 0xFFFFFFFFFFFFFL) | 0x10000000000000L;
         if (mantisa == 0) {
@@ -530,13 +528,13 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
             scale -= trailingZeros;
         }
         // Calculating the new unscaled value and the new scale
-        if((bits >> 63) != 0) {
+        if ((bits >> 63) != 0) {
             mantisa = -mantisa;
         }
         int mantisaBits = bitLength(mantisa);
         if (scale < 0) {
             bitLength = mantisaBits == 0 ? 0 : mantisaBits - scale;
-            if(bitLength < 64) {
+            if (bitLength < 64) {
                 smallValue = mantisa << (-scale);
             } else {
                 intVal = TBigInteger.valueOf(mantisa).shiftLeft(-scale);
@@ -544,7 +542,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
             scale = 0;
         } else if (scale > 0) {
             // m * 2^e =  (m * 5^(-e)) * 10^e
-            if(scale < LONG_FIVE_POW.length && mantisaBits + LONG_FIVE_POW_BIT_LENGTH[scale] < 64) {
+            if (scale < LONG_FIVE_POW.length && mantisaBits + LONG_FIVE_POW_BIT_LENGTH[scale] < 64) {
                 smallValue = mantisa * LONG_FIVE_POW[scale];
                 bitLength = bitLength(smallValue);
             } else {
@@ -667,7 +665,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
      *            int value to be converted to a {@code BigDecimal} instance.
      */
     public TBigDecimal(int val) {
-        this(val,0);
+        this(val, 0);
     }
 
     /**
@@ -685,7 +683,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
      *             within the given precision without rounding.
      */
     public TBigDecimal(int val, TMathContext mc) {
-        this(val,0);
+        this(val, 0);
         inplaceRound(mc);
     }
 
@@ -697,7 +695,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
      *            long value to be converted to a {@code BigDecimal} instance.
      */
     public TBigDecimal(long val) {
-        this(val,0);
+        this(val, 0);
     }
 
     /**
@@ -756,9 +754,9 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
      */
     public static TBigDecimal valueOf(long unscaledVal) {
         if ((unscaledVal >= 0) && (unscaledVal < BI_SCALED_BY_ZERO_LENGTH)) {
-            return BI_SCALED_BY_ZERO[(int)unscaledVal];
+            return BI_SCALED_BY_ZERO[(int) unscaledVal];
         }
-        return new TBigDecimal(unscaledVal,0);
+        return new TBigDecimal(unscaledVal, 0);
     }
 
     /**
@@ -822,18 +820,19 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
         } else if (diffScale > 0) {
             // case s1 > s2 : [(u1 + u2) * 10 ^ (s1 - s2) , s1]
             return addAndMult10(this, augend, diffScale);
-        } else {// case s2 > s1 : [(u2 + u1) * 10 ^ (s2 - s1) , s2]
+        } else {
+            // case s2 > s1 : [(u2 + u1) * 10 ^ (s2 - s1) , s2]
             return addAndMult10(augend, this, -diffScale);
         }
     }
 
-    private static TBigDecimal addAndMult10(TBigDecimal thisValue,TBigDecimal augend, int diffScale) {
-        if(diffScale < LONG_TEN_POW.length &&
-                Math.max(thisValue.bitLength, augend.bitLength + LONG_TEN_POW_BIT_LENGTH[diffScale]) + 1 < 64) {
+    private static TBigDecimal addAndMult10(TBigDecimal thisValue, TBigDecimal augend, int diffScale) {
+        if (diffScale < LONG_TEN_POW.length
+                && Math.max(thisValue.bitLength, augend.bitLength + LONG_TEN_POW_BIT_LENGTH[diffScale]) + 1 < 64) {
             return valueOf(thisValue.smallValue + augend.smallValue * LONG_TEN_POW[diffScale], thisValue.scale);
         }
         return new TBigDecimal(thisValue.getUnscaledValue().add(
-                TMultiplication.multiplyByTenPow(augend.getUnscaledValue(),diffScale)), thisValue.scale);
+                TMultiplication.multiplyByTenPow(augend.getUnscaledValue(), diffScale)), thisValue.scale);
     }
 
     /**
@@ -852,7 +851,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
         TBigDecimal larger; // operand with the largest unscaled value
         TBigDecimal smaller; // operand with the smallest unscaled value
         TBigInteger tempBI;
-        long diffScale = (long)this.scale - augend.scale;
+        long diffScale = (long) this.scale - augend.scale;
         int largerSignum;
         // Some operand is zero or the precision is infinity
         if ((augend.isZero()) || (this.isZero()) || (mc.getPrecision() == 0)) {
@@ -865,7 +864,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
         } else if (augend.aproxPrecision() < -diffScale - 1) {
             larger = this;
             smaller = augend;
-        } else {// No optimization is done
+        } else {
             return add(augend).round(mc);
         }
         if (mc.getPrecision() >= larger.aproxPrecision()) {
@@ -915,22 +914,23 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
         if (diffScale == 0) {
             // case s1 = s2 : [u1 - u2 , s1]
             if (Math.max(this.bitLength, subtrahend.bitLength) + 1 < 64) {
-                return valueOf(this.smallValue - subtrahend.smallValue,this.scale);
+                return valueOf(this.smallValue - subtrahend.smallValue, this.scale);
             }
             return new TBigDecimal(this.getUnscaledValue().subtract(subtrahend.getUnscaledValue()), this.scale);
         } else if (diffScale > 0) {
             // case s1 > s2 : [ u1 - u2 * 10 ^ (s1 - s2) , s1 ]
-            if(diffScale < LONG_TEN_POW.length &&
-                    Math.max(this.bitLength, subtrahend.bitLength + LONG_TEN_POW_BIT_LENGTH[diffScale]) + 1 < 64) {
+            if (diffScale < LONG_TEN_POW.length
+                    && Math.max(this.bitLength, subtrahend.bitLength + LONG_TEN_POW_BIT_LENGTH[diffScale]) + 1 < 64) {
                 return valueOf(this.smallValue - subtrahend.smallValue * LONG_TEN_POW[diffScale], this.scale);
             }
             return new TBigDecimal(this.getUnscaledValue().subtract(
-                    TMultiplication.multiplyByTenPow(subtrahend.getUnscaledValue(),diffScale)), this.scale);
-        } else {// case s2 > s1 : [ u1 * 10 ^ (s2 - s1) - u2 , s2 ]
+                    TMultiplication.multiplyByTenPow(subtrahend.getUnscaledValue(), diffScale)), this.scale);
+        } else {
+            // case s2 > s1 : [ u1 * 10 ^ (s2 - s1) - u2 , s2 ]
             diffScale = -diffScale;
-            if(diffScale < LONG_TEN_POW.length &&
-                    Math.max(this.bitLength + LONG_TEN_POW_BIT_LENGTH[diffScale], subtrahend.bitLength) + 1 < 64) {
-                return valueOf(this.smallValue * LONG_TEN_POW[diffScale] - subtrahend.smallValue,subtrahend.scale);
+            if (diffScale < LONG_TEN_POW.length
+                    && Math.max(this.bitLength + LONG_TEN_POW_BIT_LENGTH[diffScale], subtrahend.bitLength) + 1 < 64) {
+                return valueOf(this.smallValue * LONG_TEN_POW[diffScale] - subtrahend.smallValue, subtrahend.scale);
             }
             return new TBigDecimal(TMultiplication.multiplyByTenPow(this.getUnscaledValue(), diffScale)
                     .subtract(subtrahend.getUnscaledValue()), subtrahend.scale);
@@ -950,7 +950,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
      *             if {@code subtrahend == null} or {@code mc == null}.
      */
     public TBigDecimal subtract(TBigDecimal subtrahend, TMathContext mc) {
-        long diffScale = subtrahend.scale - (long)this.scale;
+        long diffScale = subtrahend.scale - (long) this.scale;
         int thisSignum;
         TBigDecimal leftOperand; // it will be only the left operand (this)
         TBigInteger tempBI;
@@ -992,15 +992,15 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
      *             if {@code multiplicand == null}.
      */
     public TBigDecimal multiply(TBigDecimal multiplicand) {
-        long newScale = (long)this.scale + multiplicand.scale;
+        long newScale = (long) this.scale + multiplicand.scale;
 
         if (isZero() || multiplicand.isZero()) {
             return zeroScaledBy(newScale);
         }
         /* Let be: this = [u1,s1] and multiplicand = [u2,s2] so:
          * this x multiplicand = [ s1 * s2 , s1 + s2 ] */
-        if(this.bitLength + multiplicand.bitLength < 64) {
-            return valueOf(this.smallValue*multiplicand.smallValue, toIntScale(newScale));
+        if (this.bitLength + multiplicand.bitLength < 64) {
+            return valueOf(this.smallValue * multiplicand.smallValue, toIntScale(newScale));
         }
         return new TBigDecimal(this.getUnscaledValue().multiply(
                 multiplicand.getUnscaledValue()), toIntScale(newScale));
@@ -1086,22 +1086,22 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
             throw new ArithmeticException("Division by zero");
         }
 
-        long diffScale = ((long)this.scale - divisor.scale) - scale;
-        if(this.bitLength < 64 && divisor.bitLength < 64 ) {
-            if(diffScale == 0) {
+        long diffScale = ((long) this.scale - divisor.scale) - scale;
+        if (this.bitLength < 64 && divisor.bitLength < 64) {
+            if (diffScale == 0) {
                 return dividePrimitiveLongs(this.smallValue, divisor.smallValue, scale, roundingMode);
-            } else if(diffScale > 0) {
-                if(diffScale < LONG_TEN_POW.length &&
-                        divisor.bitLength + LONG_TEN_POW_BIT_LENGTH[(int)diffScale] < 64) {
+            } else if (diffScale > 0) {
+                if (diffScale < LONG_TEN_POW.length
+                        && divisor.bitLength + LONG_TEN_POW_BIT_LENGTH[(int) diffScale] < 64) {
                     return dividePrimitiveLongs(this.smallValue,
-                            divisor.smallValue*LONG_TEN_POW[(int)diffScale],
+                            divisor.smallValue * LONG_TEN_POW[(int) diffScale],
                             scale,
                             roundingMode);
                 }
             } else { // diffScale < 0
-                if(-diffScale < LONG_TEN_POW.length &&
-                        this.bitLength + LONG_TEN_POW_BIT_LENGTH[(int)-diffScale] < 64) {
-                    return dividePrimitiveLongs(this.smallValue*LONG_TEN_POW[(int)-diffScale],
+                if (-diffScale < LONG_TEN_POW.length
+                        && this.bitLength + LONG_TEN_POW_BIT_LENGTH[(int) -diffScale] < 64) {
+                    return dividePrimitiveLongs(this.smallValue * LONG_TEN_POW[(int) -diffScale],
                             divisor.smallValue, scale, roundingMode);
                 }
             }
@@ -1111,10 +1111,10 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
 
         if (diffScale > 0) {
             // Multiply 'u2'  by:  10^((s1 - s2) - scale)
-            scaledDivisor = TMultiplication.multiplyByTenPow(scaledDivisor, (int)diffScale);
+            scaledDivisor = TMultiplication.multiplyByTenPow(scaledDivisor, (int) diffScale);
         } else if (diffScale < 0) {
             // Multiply 'u1'  by:  10^(scale - (s1 - s2))
-            scaledDividend  = TMultiplication.multiplyByTenPow(scaledDividend, (int)-diffScale);
+            scaledDividend  = TMultiplication.multiplyByTenPow(scaledDividend, (int) -diffScale);
         }
         return divideBigIntegers(scaledDividend, scaledDivisor, scale, roundingMode);
         }
@@ -1130,10 +1130,11 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
         }
         int sign = scaledDividend.signum() * scaledDivisor.signum();
         int compRem;                                      // 'compare to remainder'
-        if(scaledDivisor.bitLength() < 63) { // 63 in order to avoid out of long after <<1
+        if (scaledDivisor.bitLength() < 63) {
+            // 63 in order to avoid out of long after <<1
             long rem = remainder.longValue();
             long divisor = scaledDivisor.longValue();
-            compRem = longCompareTo(Math.abs(rem) << 1,Math.abs(divisor));
+            compRem = longCompareTo(Math.abs(rem) << 1, Math.abs(divisor));
             // To look if there is a carry
             compRem = roundingBehavior(quotient.testBit(0) ? 1 : 0,
                     sign * (5 + compRem), roundingMode);
@@ -1144,8 +1145,8 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
             compRem = roundingBehavior(quotient.testBit(0) ? 1 : 0, sign * (5 + compRem), roundingMode);
         }
         if (compRem != 0) {
-            if(quotient.bitLength() < 63) {
-                return valueOf(quotient.longValue() + compRem,scale);
+            if (quotient.bitLength() < 63) {
+                return valueOf(quotient.longValue() + compRem, scale);
             }
             quotient = quotient.add(TBigInteger.valueOf(compRem));
             return new TBigDecimal(quotient, scale);
@@ -1158,13 +1159,13 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
             TRoundingMode roundingMode) {
         long quotient = scaledDividend / scaledDivisor;
         long remainder = scaledDividend % scaledDivisor;
-        int sign = Long.signum( scaledDividend ) * Long.signum(scaledDivisor);
+        int sign = Long.signum(scaledDividend) * Long.signum(scaledDivisor);
         if (remainder != 0) {
             // Checking if:  remainder * 2 >= scaledDivisor
             int compRem;                                      // 'compare to remainder'
             compRem = longCompareTo(Math.abs(remainder) << 1, Math.abs(scaledDivisor));
             // To look if there is a carry
-            quotient += roundingBehavior(((int)quotient) & 1, sign * (5 + compRem), roundingMode);
+            quotient += roundingBehavior(((int) quotient) & 1, sign * (5 + compRem), roundingMode);
         }
         // Constructing the result with the appropriate unscaled value
         return valueOf(quotient, scale);
@@ -1241,8 +1242,8 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
         TBigInteger p = this.getUnscaledValue();
         TBigInteger q = divisor.getUnscaledValue();
         TBigInteger gcd; // greatest common divisor between 'p' and 'q'
-        TBigInteger quotAndRem[];
-        long diffScale = (long)scale - divisor.scale;
+        TBigInteger[] quotAndRem;
+        long diffScale = (long) scale - divisor.scale;
         int newScale; // the new scale for final quotient
         int k; // number of factors "2" in 'q'
         int l = 0; // number of factors "5" in 'q'
@@ -1319,13 +1320,13 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
         /* Calculating how many zeros must be append to 'dividend'
          * to obtain a  quotient with at least 'mc.precision()' digits */
         long traillingZeros = mc.getPrecision() + 2L + divisor.aproxPrecision() - aproxPrecision();
-        long diffScale = (long)scale - divisor.scale;
+        long diffScale = (long) scale - divisor.scale;
         long newScale = diffScale; // scale of the final quotient
         int compRem; // to compare the remainder
         int i = 1; // index
         int lastPow = TEN_POW.length - 1; // last power of ten
         TBigInteger integerQuot; // for temporal results
-        TBigInteger quotAndRem[] = {getUnscaledValue()};
+        TBigInteger[] quotAndRem = {getUnscaledValue()};
         // In special cases it reduces the problem to call the dual method
         if ((mc.getPrecision() == 0) || (this.isZero())
         || (divisor.isZero())) {
@@ -1333,15 +1334,15 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
         }
         if (traillingZeros > 0) {
             // To append trailing zeros at end of dividend
-            quotAndRem[0] = getUnscaledValue().multiply( TMultiplication.powerOf10(traillingZeros) );
+            quotAndRem[0] = getUnscaledValue().multiply(TMultiplication.powerOf10(traillingZeros));
             newScale += traillingZeros;
         }
-        quotAndRem = quotAndRem[0].divideAndRemainder( divisor.getUnscaledValue() );
+        quotAndRem = quotAndRem[0].divideAndRemainder(divisor.getUnscaledValue());
         integerQuot = quotAndRem[0];
         // Calculating the exact quotient with at least 'mc.precision()' digits
         if (quotAndRem[1].signum() != 0) {
             // Checking if:   2 * remainder >= divisor ?
-            compRem = quotAndRem[1].shiftLeftOneBit().compareTo( divisor.getUnscaledValue() );
+            compRem = quotAndRem[1].shiftLeftOneBit().compareTo(divisor.getUnscaledValue());
             // quot := quot * 10 + r;     with 'r' in {-6,-5,-4, 0,+4,+5,+6}
             integerQuot = integerQuot.multiply(TBigInteger.TEN)
             .add(TBigInteger.valueOf(quotAndRem[0].signum() * (5 + compRem)));
@@ -1385,8 +1386,8 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
     public TBigDecimal divideToIntegralValue(TBigDecimal divisor) {
         TBigInteger integralValue; // the integer of result
         TBigInteger powerOfTen; // some power of ten
-        TBigInteger quotAndRem[] = {getUnscaledValue()};
-        long newScale = (long)this.scale - divisor.scale;
+        TBigInteger[] quotAndRem = {getUnscaledValue()};
+        long newScale = (long) this.scale - divisor.scale;
         long tempScale = 0;
         int i = 1;
         int lastPow = TEN_POW.length - 1;
@@ -1395,19 +1396,20 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
             throw new ArithmeticException("Division by zero");
         }
         if ((divisor.aproxPrecision() + newScale > this.aproxPrecision() + 1L)
-        || (this.isZero())) {
+                || (this.isZero())) {
             /* If the divisor's integer part is greater than this's integer part,
              * the result must be zero with the appropriate scale */
             integralValue = TBigInteger.ZERO;
         } else if (newScale == 0) {
-            integralValue = getUnscaledValue().divide( divisor.getUnscaledValue() );
+            integralValue = getUnscaledValue().divide(divisor.getUnscaledValue());
         } else if (newScale > 0) {
             powerOfTen = TMultiplication.powerOf10(newScale);
-            integralValue = getUnscaledValue().divide( divisor.getUnscaledValue().multiply(powerOfTen) );
+            integralValue = getUnscaledValue().divide(divisor.getUnscaledValue().multiply(powerOfTen));
             integralValue = integralValue.multiply(powerOfTen);
-        } else {// (newScale < 0)
+        } else {
+            // (newScale < 0)
             powerOfTen = TMultiplication.powerOf10(-newScale);
-            integralValue = getUnscaledValue().multiply(powerOfTen).divide( divisor.getUnscaledValue() );
+            integralValue = getUnscaledValue().multiply(powerOfTen).divide(divisor.getUnscaledValue());
             // To strip trailing zeros approximating to the preferred scale
             while (!integralValue.testBit(0)) {
                 quotAndRem = integralValue.divideAndRemainder(TEN_POW[i]);
@@ -1427,9 +1429,9 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
             }
             newScale = tempScale;
         }
-        return ((integralValue.signum() == 0)
-        ? zeroScaledBy(newScale)
-                : new TBigDecimal(integralValue, toIntScale(newScale)));
+        return integralValue.signum() == 0
+                ? zeroScaledBy(newScale)
+                : new TBigDecimal(integralValue, toIntScale(newScale));
     }
 
     /**
@@ -1457,10 +1459,10 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
         int mcPrecision = mc.getPrecision();
         int diffPrecision = this.precision() - divisor.precision();
         int lastPow = TEN_POW.length - 1;
-        long diffScale = (long)this.scale - divisor.scale;
+        long diffScale = (long) this.scale - divisor.scale;
         long newScale = diffScale;
         long quotPrecision = diffPrecision - diffScale + 1;
-        TBigInteger quotAndRem[] = new TBigInteger[2];
+        TBigInteger[] quotAndRem = new TBigInteger[2];
         // In special cases it call the dual method
         if ((mcPrecision == 0) || (this.isZero()) || (divisor.isZero())) {
             return this.divideToIntegralValue(divisor);
@@ -1470,19 +1472,20 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
             quotAndRem[0] = TBigInteger.ZERO;
         } else if (diffScale == 0) {
             // CASE s1 == s2:  to calculate   u1 / u2
-            quotAndRem[0] = this.getUnscaledValue().divide( divisor.getUnscaledValue() );
+            quotAndRem[0] = this.getUnscaledValue().divide(divisor.getUnscaledValue());
         } else if (diffScale > 0) {
             // CASE s1 >= s2:  to calculate   u1 / (u2 * 10^(s1-s2)
             quotAndRem[0] = this.getUnscaledValue().divide(
-                    divisor.getUnscaledValue().multiply(TMultiplication.powerOf10(diffScale)) );
+                    divisor.getUnscaledValue().multiply(TMultiplication.powerOf10(diffScale)));
             // To chose  10^newScale  to get a quotient with at least 'mc.precision()' digits
             newScale = Math.min(diffScale, Math.max(mcPrecision - quotPrecision + 1, 0));
             // To calculate: (u1 / (u2 * 10^(s1-s2)) * 10^newScale
             quotAndRem[0] = quotAndRem[0].multiply(TMultiplication.powerOf10(newScale));
-        } else {// CASE s2 > s1:
+        } else {
+            // CASE s2 > s1:
             /* To calculate the minimum power of ten, such that the quotient
              *   (u1 * 10^exp) / u2   has at least 'mc.precision()' digits. */
-            long exp = Math.min(-diffScale, Math.max((long)mcPrecision - diffPrecision, 0));
+            long exp = Math.min(-diffScale, Math.max((long) mcPrecision - diffPrecision, 0));
             long compRemDiv;
             // Let be:   (u1 * 10^exp) / u2 = [q,r]
             quotAndRem = this.getUnscaledValue().multiply(TMultiplication.powerOf10(exp)).
@@ -1517,9 +1520,9 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
         // To strip trailing zeros until the specified precision is reached
         while (!strippedBI.testBit(0)) {
             quotAndRem = strippedBI.divideAndRemainder(TEN_POW[i]);
-            if ((quotAndRem[1].signum() == 0) &&
-                    ((resultPrecision - i >= mcPrecision)
-                    || (newScale - i >= diffScale)) ) {
+            if ((quotAndRem[1].signum() == 0)
+                    && ((resultPrecision - i >= mcPrecision)
+                    || (newScale - i >= diffScale))) {
                 resultPrecision -= i;
                 newScale -= i;
                 if (i < lastPow) {
@@ -1604,10 +1607,10 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
      * @see #remainder
      */
     public TBigDecimal[] divideAndRemainder(TBigDecimal divisor) {
-        TBigDecimal quotAndRem[] = new TBigDecimal[2];
+        TBigDecimal[] quotAndRem = new TBigDecimal[2];
 
         quotAndRem[0] = this.divideToIntegralValue(divisor);
-        quotAndRem[1] = this.subtract( quotAndRem[0].multiply(divisor) );
+        quotAndRem[1] = this.subtract(quotAndRem[0].multiply(divisor));
         return quotAndRem;
     }
 
@@ -1634,10 +1637,10 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
      * @see #remainder
      */
     public TBigDecimal[] divideAndRemainder(TBigDecimal divisor, TMathContext mc) {
-        TBigDecimal quotAndRem[] = new TBigDecimal[2];
+        TBigDecimal[] quotAndRem = new TBigDecimal[2];
 
         quotAndRem[0] = this.divideToIntegralValue(divisor, mc);
-        quotAndRem[1] = this.subtract( quotAndRem[0].multiply(divisor) );
+        quotAndRem[1] = this.subtract(quotAndRem[0].multiply(divisor));
         return quotAndRem;
     }
 
@@ -1663,11 +1666,11 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
         if ((n < 0) || (n > 999999999)) {
             throw new ArithmeticException("Invalid Operation");
         }
-        long newScale = scale * (long)n;
+        long newScale = scale * (long) n;
         // Let be: this = [u,s]   so:  this^n = [u^n, s*n]
-        return ((isZero())
-        ? zeroScaledBy(newScale)
-        : new TBigDecimal(getUnscaledValue().pow(n), toIntScale(newScale)));
+        return isZero()
+                ? zeroScaledBy(newScale)
+                : new TBigDecimal(getUnscaledValue().pow(n), toIntScale(newScale));
     }
 
     /**
@@ -1689,7 +1692,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
         // The ANSI standard X3.274-1996 algorithm
         int m = Math.abs(n);
         int mcPrecision = mc.getPrecision();
-        int elength = (int)Math.log10(m) + 1;   // decimal digits in 'n'
+        int elength = (int) Math.log10(m) + 1;   // decimal digits in 'n'
         int oneBitMask; // mask of bits
         TBigDecimal accum; // the single accumulator
         TMathContext newPrecision = mc; // MathContext by default
@@ -1698,13 +1701,11 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
         if ((n == 0) || ((isZero()) && (n > 0))) {
             return pow(n);
         }
-        if ((m > 999999999) || ((mcPrecision == 0) && (n < 0))
-                || ((mcPrecision > 0) && (elength > mcPrecision))) {
+        if ((m > 999999999) || ((mcPrecision == 0) && (n < 0)) || ((mcPrecision > 0) && (elength > mcPrecision))) {
             throw new ArithmeticException("Invalid Operation");
         }
         if (mcPrecision > 0) {
-            newPrecision = new TMathContext( mcPrecision + elength + 1,
-                    mc.getRoundingMode());
+            newPrecision = new TMathContext(mcPrecision + elength + 1, mc.getRoundingMode());
         }
         // The result is calculated as if 'n' were positive
         accum = round(newPrecision);
@@ -1733,7 +1734,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
      * @return {@code abs(this)}
      */
     public TBigDecimal abs() {
-        return ((signum() < 0) ? negate() : this);
+        return signum() < 0 ? negate() : this;
     }
 
     /**
@@ -1756,8 +1757,8 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
      * @return {@code -this}
      */
     public TBigDecimal negate() {
-        if(bitLength < 63 || (bitLength == 63 && smallValue!=Long.MIN_VALUE)) {
-            return valueOf(-smallValue,scale);
+        if (bitLength < 63 || (bitLength == 63 && smallValue != Long.MIN_VALUE)) {
+            return valueOf(-smallValue, scale);
         }
         return new TBigDecimal(getUnscaledValue().negate(), scale);
     }
@@ -1803,8 +1804,8 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
      *         {@code 0} if {@code this == 0},
      *         {@code 1} if {@code this > 0}.     */
     public int signum() {
-        if( bitLength < 64) {
-            return Long.signum( this.smallValue );
+        if (bitLength < 64) {
+            return Long.signum(this.smallValue);
         }
         return getUnscaledValue().signum();
     }
@@ -1851,7 +1852,8 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
                 doubleUnsc = smallValue;
             }
             decimalDigits += Math.log10(Math.abs(doubleUnsc));
-        } else {// (bitLength >= 1024)
+        } else {
+            // (bitLength >= 1024)
             /* To calculate the precision for large numbers
              * Note that: 2 ^(bitlength() - 1) <= intVal < 10 ^(precision()) */
             decimalDigits += (bitLength - 1) * LOG10_2;
@@ -1926,25 +1928,26 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
         if (roundingMode == null) {
             throw new NullPointerException();
         }
-        long diffScale = newScale - (long)scale;
+        long diffScale = newScale - (long) scale;
         // Let be:  'this' = [u,s]
-        if(diffScale == 0) {
+        if (diffScale == 0) {
             return this;
         }
-        if(diffScale > 0) {
-        // return  [u * 10^(s2 - s), newScale]
-            if(diffScale < LONG_TEN_POW.length &&
-                    (this.bitLength + LONG_TEN_POW_BIT_LENGTH[(int)diffScale]) < 64 ) {
-                return valueOf(this.smallValue*LONG_TEN_POW[(int)diffScale],newScale);
+        if (diffScale > 0) {
+            // return  [u * 10^(s2 - s), newScale]
+            if (diffScale < LONG_TEN_POW.length
+                    && (this.bitLength + LONG_TEN_POW_BIT_LENGTH[(int) diffScale]) < 64) {
+                return valueOf(this.smallValue * LONG_TEN_POW[(int) diffScale], newScale);
             }
-            return new TBigDecimal(TMultiplication.multiplyByTenPow(getUnscaledValue(),(int)diffScale), newScale);
+            return new TBigDecimal(TMultiplication.multiplyByTenPow(getUnscaledValue(), (int) diffScale), newScale);
         }
         // diffScale < 0
         // return  [u,s] / [1,newScale]  with the appropriate scale and rounding
-        if(this.bitLength < 64 && -diffScale < LONG_TEN_POW.length) {
-            return dividePrimitiveLongs(this.smallValue, LONG_TEN_POW[(int)-diffScale], newScale,roundingMode);
+        if (this.bitLength < 64 && -diffScale < LONG_TEN_POW.length) {
+            return dividePrimitiveLongs(this.smallValue, LONG_TEN_POW[(int) -diffScale], newScale, roundingMode);
         }
-        return divideBigIntegers(this.getUnscaledValue(),TMultiplication.powerOf10(-diffScale),newScale,roundingMode);
+        return divideBigIntegers(this.getUnscaledValue(), TMultiplication.powerOf10(-diffScale),
+                newScale, roundingMode);
     }
 
     /**
@@ -2010,7 +2013,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
      * @return {@code this * 10^(-n}).
      */
     public TBigDecimal movePointLeft(int n) {
-        return movePoint(scale + (long)n);
+        return movePoint(scale + (long) n);
     }
 
     private TBigDecimal movePoint(long newScale) {
@@ -2019,17 +2022,17 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
         }
         /* When:  'n'== Integer.MIN_VALUE  isn't possible to call to movePointRight(-n)
          * since  -Integer.MIN_VALUE == Integer.MIN_VALUE */
-        if(newScale >= 0) {
-            if(bitLength < 64) {
-                return valueOf(smallValue,toIntScale(newScale));
+        if (newScale >= 0) {
+            if (bitLength < 64) {
+                return valueOf(smallValue, toIntScale(newScale));
             }
             return new TBigDecimal(getUnscaledValue(), toIntScale(newScale));
         }
-        if(-newScale < LONG_TEN_POW.length &&
-                bitLength + LONG_TEN_POW_BIT_LENGTH[(int)-newScale] < 64 ) {
-            return valueOf(smallValue*LONG_TEN_POW[(int)-newScale],0);
+        if (-newScale < LONG_TEN_POW.length
+                && bitLength + LONG_TEN_POW_BIT_LENGTH[(int) -newScale] < 64) {
+            return valueOf(smallValue * LONG_TEN_POW[(int) -newScale], 0);
         }
-        return new TBigDecimal(TMultiplication.multiplyByTenPow(getUnscaledValue(),(int)-newScale), 0);
+        return new TBigDecimal(TMultiplication.multiplyByTenPow(getUnscaledValue(), (int) -newScale), 0);
     }
 
     /**
@@ -2049,7 +2052,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
      * @return {@code this * 10^n}.
      */
     public TBigDecimal movePointRight(int n) {
-        return movePoint(scale - (long)n);
+        return movePoint(scale - (long) n);
     }
 
     /**
@@ -2065,13 +2068,13 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
      * @return {@code this * 10^n}
      */
     public TBigDecimal scaleByPowerOfTen(int n) {
-        long newScale = scale - (long)n;
-        if(bitLength < 64) {
+        long newScale = scale - (long) n;
+        if (bitLength < 64) {
             //Taking care when a 0 is to be scaled
-            if( smallValue==0  ){
-                return zeroScaledBy( newScale );
+            if (smallValue == 0) {
+                return zeroScaledBy(newScale);
             }
-            return valueOf(smallValue,toIntScale(newScale));
+            return valueOf(smallValue, toIntScale(newScale));
         }
         return new TBigDecimal(getUnscaledValue(), toIntScale(newScale));
     }
@@ -2142,20 +2145,22 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
         int thisSign = signum();
         int valueSign = val.signum();
 
-        if( thisSign == valueSign) {
-            if(this.scale == val.scale && this.bitLength<64 && val.bitLength<64 ) {
+        if (thisSign == valueSign) {
+            if (this.scale == val.scale && this.bitLength < 64 && val.bitLength < 64) {
                 return (smallValue < val.smallValue) ? -1 : (smallValue > val.smallValue) ? 1 : 0;
             }
-            long diffScale = (long)this.scale - val.scale;
+            long diffScale = (long) this.scale - val.scale;
             int diffPrecision = this.aproxPrecision() - val.aproxPrecision();
             if (diffPrecision > diffScale + 1) {
                 return thisSign;
             } else if (diffPrecision < diffScale - 1) {
                 return -thisSign;
-            } else {// thisSign == val.signum()  and  diffPrecision is aprox. diffScale
+            } else {
+                // thisSign == val.signum() and diffPrecision is aprox. diffScale
                 TBigInteger thisUnscaled = this.getUnscaledValue();
                 TBigInteger valUnscaled = val.getUnscaledValue();
-                // If any of both precision is bigger, append zeros to the shorter one
+                // If any of both precision is bigger, append zeros to the
+                // shorter one
                 if (diffScale < 0) {
                     thisUnscaled = thisUnscaled.multiply(TMultiplication.powerOf10(-diffScale));
                 } else if (diffScale > 0) {
@@ -2165,7 +2170,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
             }
         } else if (thisSign < valueSign) {
             return -1;
-        } else  {
+        } else {
             return 1;
         }
     }
@@ -2207,7 +2212,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
      *             if {@code val == null}.
      */
     public TBigDecimal min(TBigDecimal val) {
-        return ((compareTo(val) <= 0) ? this : val);
+        return compareTo(val) <= 0 ? this : val;
     }
 
     /**
@@ -2220,7 +2225,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
      *             if {@code val == null}.
      */
     public TBigDecimal max(TBigDecimal val) {
-        return ((compareTo(val) >= 0) ? this : val);
+        return compareTo(val) >= 0 ? this : val;
     }
 
     /**
@@ -2234,8 +2239,8 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
             return hashCode;
         }
         if (bitLength < 64) {
-            hashCode = (int)(smallValue & 0xffffffff);
-            hashCode = 33 * hashCode +  (int)((smallValue >> 32) & 0xffffffff);
+            hashCode = (int) (smallValue & 0xffffffff);
+            hashCode = 33 * hashCode +  (int) ((smallValue >> 32) & 0xffffffff);
             hashCode = 17 * hashCode + scale;
             return hashCode;
         }
@@ -2260,7 +2265,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
             return toStringImage;
         }
         if (bitLength < 32) {
-            toStringImage = TConversion.toDecimalScaledString(smallValue,scale);
+            toStringImage = TConversion.toDecimalScaledString(smallValue, scale);
             return toStringImage;
         }
         String intString = getUnscaledValue().toString();
@@ -2269,7 +2274,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
         }
         int begin = (getUnscaledValue().signum() < 0) ? 2 : 1;
         int end = intString.length();
-        long exponent = -(long)scale + end - begin;
+        long exponent = -(long) scale + end - begin;
         StringBuilder result = new StringBuilder();
 
         result.append(intString);
@@ -2278,7 +2283,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
                 result.insert(end - scale, '.');
             } else {
                 result.insert(begin - 1, "0.");
-                result.insert(begin + 1, CH_ZEROS, 0, -(int)exponent - 1);
+                result.insert(begin + 1, CH_ZEROS, 0, -(int) exponent - 1);
             }
         } else {
             if (end - begin >= 1) {
@@ -2314,19 +2319,19 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
         }
         int begin = (getUnscaledValue().signum() < 0) ? 2 : 1;
         int end = intString.length();
-        long exponent = -(long)scale + end - begin;
+        long exponent = -(long) scale + end - begin;
         StringBuilder result = new StringBuilder(intString);
 
         if ((scale > 0) && (exponent >= -6)) {
             if (exponent >= 0) {
                 result.insert(end - scale, '.');
             } else {
-                result.insert(begin - 1, "0."); //$NON-NLS-1$
-                result.insert(begin + 1, CH_ZEROS, 0, -(int)exponent - 1);
+                result.insert(begin - 1, "0.");
+                result.insert(begin + 1, CH_ZEROS, 0, -(int) exponent - 1);
             }
         } else {
             int delta = end - begin;
-            int rem = (int)(exponent % 3);
+            int rem = (int) (exponent % 3);
 
             if (rem != 0) {
                 // adjust exponent so it is a multiple of three
@@ -2391,7 +2396,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
             result.append('-');
         }
         if (scale > 0) {
-            delta -= (intStr.length() - begin);
+            delta -= intStr.length() - begin;
             if (delta >= 0) {
                 result.append("0."); //$NON-NLS-1$
                 // To append zeros after the decimal point
@@ -2406,7 +2411,8 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
                 result.append('.');
                 result.append(intStr.substring(delta));
             }
-        } else {// (scale <= 0)
+        } else {
+            // (scale <= 0)
             result.append(intStr.substring(begin));
             // To append trailing zeros
             for (; delta < -CH_ZEROS.length; delta += CH_ZEROS.length) {
@@ -2427,8 +2433,9 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
         if ((scale == 0) || (isZero())) {
             return getUnscaledValue();
         } else if (scale < 0) {
-            return getUnscaledValue().multiply(TMultiplication.powerOf10(-(long)scale));
-        } else {// (scale > 0)
+            return getUnscaledValue().multiply(TMultiplication.powerOf10(-(long) scale));
+        } else {
+            // (scale > 0)
             return getUnscaledValue().divide(TMultiplication.powerOf10(scale));
         }
     }
@@ -2446,8 +2453,9 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
         if ((scale == 0) || (isZero())) {
             return getUnscaledValue();
         } else if (scale < 0) {
-            return getUnscaledValue().multiply(TMultiplication.powerOf10(-(long)scale));
-        } else {// (scale > 0)
+            return getUnscaledValue().multiply(TMultiplication.powerOf10(-(long) scale));
+        } else {
+            // (scale > 0)
             TBigInteger[] integerAndFraction;
             // An optimization before do a heavy division
             if ((scale > aproxPrecision()) || (scale > getUnscaledValue().getLowestSetBit())) {
@@ -2473,9 +2481,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
     public long longValue() {
         /* If scale <= -64 there are at least 64 trailing bits zero in 10^(-scale).
          * If the scale is positive and very large the long value could be zero. */
-        return ((scale <= -64) || (scale > aproxPrecision())
-        ? 0L
-                : toBigInteger().longValue());
+        return scale <= -64 || scale > aproxPrecision() ? 0L : toBigInteger().longValue();
     }
 
     /**
@@ -2502,9 +2508,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
     public int intValue() {
         /* If scale <= -32 there are at least 32 trailing bits zero in 10^(-scale).
          * If the scale is positive and very large the long value could be zero. */
-        return ((scale <= -32) || (scale > aproxPrecision())
-        ? 0
-                : toBigInteger().intValue());
+        return scale <= -32 || scale > aproxPrecision() ? 0 : toBigInteger().intValue();
     }
 
     /**
@@ -2517,7 +2521,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
      *             if rounding is necessary or the number doesn't fit in a int.
      */
     public int intValueExact() {
-        return (int)valueExact(32);
+        return (int) valueExact(32);
     }
 
     /**
@@ -2531,7 +2535,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
      *             short.
      */
     public short shortValueExact() {
-        return (short)valueExact(16);
+        return (short) valueExact(16);
     }
 
     /**
@@ -2544,7 +2548,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
      *             if rounding is necessary or the number doesn't fit in a byte.
      */
     public byte byteValueExact() {
-        return (byte)valueExact(8);
+        return (byte) valueExact(8);
     }
 
     /**
@@ -2570,7 +2574,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
         /* A similar code like in doubleValue() could be repeated here,
          * but this simple implementation is quite efficient. */
         float floatResult = signum();
-        long powerOfTwo = this.bitLength - (long)(scale / LOG10_2);
+        long powerOfTwo = this.bitLength - (long) (scale / LOG10_2);
         if ((powerOfTwo < -149) || (floatResult == 0.0f)) {
             // Cases which 'this' is very small
             floatResult *= 0.0f;
@@ -2578,7 +2582,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
             // Cases which 'this' is very large
             floatResult *= Float.POSITIVE_INFINITY;
         } else {
-            floatResult = (float)doubleValue();
+            floatResult = (float) doubleValue();
         }
         return floatResult;
     }
@@ -2608,27 +2612,28 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
         int exponent = 1076; // bias + 53
         int lowestSetBit;
         int discardedSize;
-        long powerOfTwo = this.bitLength - (long)(scale / LOG10_2);
+        long powerOfTwo = this.bitLength - (long) (scale / LOG10_2);
         long bits; // IEEE-754 Standard
         long tempBits; // for temporal calculations
         TBigInteger mantisa;
 
         if ((powerOfTwo < -1074) || (sign == 0)) {
             // Cases which 'this' is very small
-            return (sign * 0.0d);
+            return sign * 0.0d;
         } else if (powerOfTwo > 1025) {
             // Cases which 'this' is very large
-            return (sign * Double.POSITIVE_INFINITY);
+            return sign * Double.POSITIVE_INFINITY;
         }
         mantisa = getUnscaledValue().abs();
         // Let be:  this = [u,s], with s > 0
         if (scale <= 0) {
             // mantisa = abs(u) * 10^s
             mantisa = mantisa.multiply(TMultiplication.powerOf10(-scale));
-        } else {// (scale > 0)
-            TBigInteger quotAndRem[];
+        } else {
+            // (scale > 0)
+            TBigInteger[] quotAndRem;
             TBigInteger powerOfTen = TMultiplication.powerOf10(scale);
-            int k = 100 - (int)powerOfTwo;
+            int k = 100 - (int) powerOfTwo;
             int compRem;
 
             if (k > 0) {
@@ -2642,13 +2647,13 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
             // To check if the fractional part >= 0.5
             compRem = quotAndRem[1].shiftLeftOneBit().compareTo(powerOfTen);
             // To add two rounded bits at end of mantisa
-            mantisa = quotAndRem[0].shiftLeft(2).add(
-                    TBigInteger.valueOf((compRem * (compRem + 3)) / 2 + 1));
+            mantisa = quotAndRem[0].shiftLeft(2).add(TBigInteger.valueOf((compRem * (compRem + 3)) / 2 + 1));
             exponent -= 2;
         }
         lowestSetBit = mantisa.getLowestSetBit();
         discardedSize = mantisa.bitLength() - 54;
-        if (discardedSize > 0) {// (n > 54)
+        if (discardedSize > 0) {
+            // (n > 54)
             // mantisa = (abs(u) * 10^s) >> (n - 54)
             bits = mantisa.shiftRight(discardedSize).longValue();
             tempBits = bits;
@@ -2657,7 +2662,8 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
                     || ((bits & 3) == 3)) {
                 bits += 2;
             }
-        } else {// (n <= 54)
+        } else {
+            // (n <= 54)
             // mantisa = (abs(u) * 10^s) << (54 - n)
             bits = mantisa.longValue() << -discardedSize;
             tempBits = bits;
@@ -2672,23 +2678,27 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
             bits >>= 1;
             // exponent = 2^(s-n+53+bias)
             exponent += discardedSize;
-        } else {// #bits = 54
+        } else {
+            // #bits = 54
             bits >>= 2;
             exponent += discardedSize + 1;
         }
         // To test if the 53-bits number fits in 'double'
-        if (exponent > 2046) {// (exponent - bias > 1023)
-            return (sign * Double.POSITIVE_INFINITY);
-        } else if (exponent <= 0) {// (exponent - bias <= -1023)
+        if (exponent > 2046) {
+            // (exponent - bias > 1023)
+            return sign * Double.POSITIVE_INFINITY;
+        } else if (exponent <= 0) {
+            // (exponent - bias <= -1023)
             // Denormalized numbers (having exponent == 0)
-            if (exponent < -53) {// exponent - bias < -1076
-                return (sign * 0.0d);
+            if (exponent < -53) {
+                // exponent - bias < -1076
+                return sign * 0.0d;
             }
             // -1076 <= exponent - bias <= -1023
             // To discard '- exponent + 1' bits
             bits = tempBits >> 1;
             tempBits = bits & (-1L >>> (63 + exponent));
-            bits >>= (-exponent );
+            bits >>= -exponent;
             // To test if after discard bits, a new carry is generated
             if (((bits & 3) == 3) || (((bits & 1) == 1) && (tempBits != 0)
             && (lowestSetBit < discardedSize))) {
@@ -2698,7 +2708,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
             bits >>= 1;
         }
         // Construct the 64 double bits: [sign(1), exponent(11), mantisa(52)]
-        bits = (sign & 0x8000000000000000L) | ((long)exponent << 52) | (bits & 0xFFFFFFFFFFFFFL);
+        bits = (sign & 0x8000000000000000L) | ((long) exponent << 52) | (bits & 0xFFFFFFFFFFFFFL);
         return Double.longBitsToDouble(bits);
     }
 
@@ -2739,7 +2749,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
         }
         int discardedPrecision = precision() - mcPrecision;
         // If no rounding is necessary it returns immediately
-        if ((discardedPrecision <= 0)) {
+        if (discardedPrecision <= 0) {
             return;
         }
         // When the number is small perform an efficient rounding
@@ -2750,15 +2760,15 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
         // Getting the integer part and the discarded fraction
         TBigInteger sizeOfFraction = TMultiplication.powerOf10(discardedPrecision);
         TBigInteger[] integerAndFraction = getUnscaledValue().divideAndRemainder(sizeOfFraction);
-        long newScale = (long)scale - discardedPrecision;
+        long newScale = (long) scale - discardedPrecision;
         int compRem;
         TBigDecimal tempBD;
         // If the discarded fraction is non-zero, perform rounding
         if (integerAndFraction[1].signum() != 0) {
             // To check if the discarded fraction >= 0.5
-            compRem = (integerAndFraction[1].abs().shiftLeftOneBit().compareTo(sizeOfFraction));
+            compRem = integerAndFraction[1].abs().shiftLeftOneBit().compareTo(sizeOfFraction);
             // To look if there is a carry
-            compRem =  roundingBehavior( integerAndFraction[0].testBit(0) ? 1 : 0,
+            compRem =  roundingBehavior(integerAndFraction[0].testBit(0) ? 1 : 0,
                     integerAndFraction[1].signum() * (5 + compRem),
                     mc.getRoundingMode());
             if (compRem != 0) {
@@ -2792,7 +2802,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
      */
     private void smallRound(TMathContext mc, int discardedPrecision) {
         long sizeOfFraction = LONG_TEN_POW[discardedPrecision];
-        long newScale = (long)scale - discardedPrecision;
+        long newScale = (long) scale - discardedPrecision;
         long unscaledVal = smallValue;
         // Getting the integer part and the discarded fraction
         long integer = unscaledVal / sizeOfFraction;
@@ -2801,9 +2811,9 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
         // If the discarded fraction is non-zero perform rounding
         if (fraction != 0) {
             // To check if the discarded fraction >= 0.5
-            compRem = longCompareTo(Math.abs(fraction) << 1,sizeOfFraction);
+            compRem = longCompareTo(Math.abs(fraction) << 1, sizeOfFraction);
             // To look if there is a carry
-            integer += roundingBehavior( ((int)integer) & 1,
+            integer += roundingBehavior(((int) integer) & 1,
                     Long.signum(fraction) * (5 + compRem),
                     mc.getRoundingMode());
             // If after to add the increment the precision changed, we normalize the size
@@ -2928,7 +2938,7 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
         } else if (longScale > Integer.MAX_VALUE) {
             throw new ArithmeticException("Underflow");
         } else {
-            return (int)longScale;
+            return (int) longScale;
         }
     }
 
@@ -2947,16 +2957,16 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
      */
     private static TBigDecimal zeroScaledBy(long longScale) {
         if (longScale == (int) longScale) {
-            return valueOf(0,(int)longScale);
-            }
-        if (longScale >= 0) {
-            return new TBigDecimal( 0, Integer.MAX_VALUE);
+            return valueOf(0, (int) longScale);
         }
-        return new TBigDecimal( 0, Integer.MIN_VALUE);
+        if (longScale >= 0) {
+            return new TBigDecimal(0, Integer.MAX_VALUE);
+        }
+        return new TBigDecimal(0, Integer.MIN_VALUE);
     }
 
     private TBigInteger getUnscaledValue() {
-        if(intVal == null) {
+        if (intVal == null) {
             intVal = TBigInteger.valueOf(smallValue);
         }
         return intVal;
@@ -2965,20 +2975,20 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
     private void setUnscaledValue(TBigInteger unscaledValue) {
         this.intVal = unscaledValue;
         this.bitLength = unscaledValue.bitLength();
-        if(this.bitLength < 64) {
+        if (this.bitLength < 64) {
             this.smallValue = unscaledValue.longValue();
         }
     }
 
     private static int bitLength(long smallValue) {
-        if(smallValue < 0) {
+        if (smallValue < 0) {
             smallValue = ~smallValue;
         }
         return 64 - Long.numberOfLeadingZeros(smallValue);
     }
 
     private static int bitLength(int smallValue) {
-        if(smallValue < 0) {
+        if (smallValue < 0) {
             smallValue = ~smallValue;
         }
         return 32 - Integer.numberOfLeadingZeros(smallValue);

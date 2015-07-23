@@ -38,7 +38,7 @@ public class TDecimalFormat extends TNumberFormat {
     private static final double[] POW10_FRAC_ARRAY = { 1E1, 1E2, 1E4, 1E8, 1E16, 1E32, 1E64, 1E128, 1E256 };
     private static final double[] POWM10_FRAC_ARRAY = { 1E-1, 1E-2, 1E-4, 1E-8, 1E-16, 1E-32, 1E-64, 1E-128, 1E-256 };
     private static final int DOUBLE_MAX_EXPONENT = 308;
-    private static long MAX_LONG_DIV_10 = Long.MAX_VALUE / 10;
+    private static final long MAX_LONG_DIV_10 = Long.MAX_VALUE / 10;
     TDecimalFormatSymbols symbols;
     FormatField[] positivePrefix = {};
     FormatField[] negativePrefix = { new TextField("-") };
@@ -59,7 +59,7 @@ public class TDecimalFormat extends TNumberFormat {
     }
 
     public TDecimalFormat(String pattern, TDecimalFormatSymbols value) {
-        symbols = (TDecimalFormatSymbols)value.clone();
+        symbols = (TDecimalFormatSymbols) value.clone();
         applyPattern(pattern);
     }
 
@@ -70,7 +70,7 @@ public class TDecimalFormat extends TNumberFormat {
     }
 
     public DecimalFormatSymbols getDecimalFormatSymbols() {
-        return (DecimalFormatSymbols)symbols.clone();
+        return (DecimalFormatSymbols) symbols.clone();
     }
 
     private StringBuffer fieldsToText(FormatField[] fields, StringBuffer buffer) {
@@ -168,19 +168,19 @@ public class TDecimalFormat extends TNumberFormat {
         if (!(obj instanceof TDecimalFormat)) {
             return false;
         }
-        TDecimalFormat other = (TDecimalFormat)obj;
+        TDecimalFormat other = (TDecimalFormat) obj;
         if (!super.equals(obj)) {
             return false;
         }
-        return positivePrefix.equals(other.positivePrefix) &&
-                positiveSuffix.equals(other.positiveSuffix) &&
-                negativePrefix.equals(other.negativePrefix) &&
-                negativeSuffix.equals(other.negativeSuffix) &&
-                multiplier == other.multiplier &&
-                groupingSize == other.groupingSize &&
-                decimalSeparatorAlwaysShown == other.decimalSeparatorAlwaysShown &&
-                parseBigDecimal == other.parseBigDecimal &&
-                exponentDigits == other.exponentDigits;
+        return positivePrefix.equals(other.positivePrefix)
+                && positiveSuffix.equals(other.positiveSuffix)
+                && negativePrefix.equals(other.negativePrefix)
+                && negativeSuffix.equals(other.negativeSuffix)
+                && multiplier == other.multiplier
+                && groupingSize == other.groupingSize
+                && decimalSeparatorAlwaysShown == other.decimalSeparatorAlwaysShown
+                && parseBigDecimal == other.parseBigDecimal
+                && exponentDigits == other.exponentDigits;
     }
 
     @Override
@@ -503,9 +503,9 @@ public class TDecimalFormat extends TNumberFormat {
     @Override
     public StringBuffer format(Object object, StringBuffer buffer, TFieldPosition field) {
         if (object instanceof BigDecimal) {
-            return format((BigDecimal)object, buffer, field);
+            return format((BigDecimal) object, buffer, field);
         } else if (object instanceof BigInteger) {
-            return format((BigInteger)object, buffer, field);
+            return format((BigInteger) object, buffer, field);
         } else {
             return super.format(object, buffer, field);
         }
@@ -608,7 +608,7 @@ public class TDecimalFormat extends TNumberFormat {
         int exponentPos = Math.max(visibleExponent, 0);
         for (int i = mantissaLength - 1; i >= exponentPos; --i) {
             long mantissaDigitMask = POW10_ARRAY[i];
-            buffer.append(forDigit(Math.abs((int)(mantissa / mantissaDigitMask))));
+            buffer.append(forDigit(Math.abs((int) (mantissa / mantissaDigitMask))));
             mantissa %= mantissaDigitMask;
         }
         for (int i = exponentPos - 1; i >= visibleExponent; --i) {
@@ -624,7 +624,7 @@ public class TDecimalFormat extends TNumberFormat {
             int count = 0;
             for (int i = visibleExponent - 1; i >= limit; --i) {
                 long mantissaDigitMask = POW10_ARRAY[i];
-                buffer.append(forDigit(Math.abs((int)(mantissa / mantissaDigitMask))));
+                buffer.append(forDigit(Math.abs((int) (mantissa / mantissaDigitMask))));
                 mantissa %= mantissaDigitMask;
                 ++count;
                 if (mantissa == 0) {
@@ -698,7 +698,7 @@ public class TDecimalFormat extends TNumberFormat {
         int mantissaDigit = mantissaLength - 1;
         for (int i = 0; i < significantIntDigits; ++i) {
             long mantissaDigitMask = POW10_ARRAY[mantissaDigit--];
-            buffer.append(forDigit(Math.abs((int)(mantissa / mantissaDigitMask))));
+            buffer.append(forDigit(Math.abs((int) (mantissa / mantissaDigitMask))));
             mantissa %= mantissaDigitMask;
             if (groupingSize > 0 && digitPos % groupingSize == 0 && digitPos > 0) {
                 buffer.append(symbols.getGroupingSeparator());
@@ -746,7 +746,7 @@ public class TDecimalFormat extends TNumberFormat {
                 }
                 ++digitPos;
                 long mantissaDigitMask = POW10_ARRAY[mantissaDigit];
-                buffer.append(forDigit(Math.abs((int)(mantissa / mantissaDigitMask))));
+                buffer.append(forDigit(Math.abs((int) (mantissa / mantissaDigitMask))));
                 mantissa %= mantissaDigitMask;
                 mantissaDigit--;
             }
@@ -848,8 +848,8 @@ public class TDecimalFormat extends TNumberFormat {
                 fieldsToText(positiveSuffix, buffer);
             }
         } else {
-            fieldsToText(negativeSuffix != null ? negativeSuffix :
-                    positiveSuffix != null ? positiveSuffix : new FormatField[0], buffer);
+            fieldsToText(negativeSuffix != null ? negativeSuffix
+                    : positiveSuffix != null ? positiveSuffix : new FormatField[0], buffer);
         }
     }
 
@@ -1174,7 +1174,7 @@ public class TDecimalFormat extends TNumberFormat {
                 }
                 bit >>= 1;
             }
-            mantissa = (long)(((value / digit) * mantissaPattern) + 0.5);
+            mantissa = (long) (((value / digit) * mantissaPattern) + 0.5);
         } else {
             int bit = 256;
             exp = 0;
@@ -1187,14 +1187,14 @@ public class TDecimalFormat extends TNumberFormat {
                 bit >>= 1;
             }
             exp = -exp;
-            mantissa = (long)(((value * mantissaPattern) / digit) + 0.5);
+            mantissa = (long) (((value * mantissaPattern) / digit) + 0.5);
         }
         mantissa = ((mantissa + 500) / 1000) * 1000;
         return new MantissaAndExponent(positive ? mantissa : -mantissa, exp);
     }
 
     private char forDigit(int n) {
-        return (char)(symbols.getZeroDigit() + n);
+        return (char) (symbols.getZeroDigit() + n);
     }
 
     static class MantissaAndExponent {

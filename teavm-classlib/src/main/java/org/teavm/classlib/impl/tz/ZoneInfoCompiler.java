@@ -5,7 +5,7 @@
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
@@ -106,7 +106,7 @@ public class ZoneInfoCompiler {
         if (newPos == ~pos) {
             throw new IllegalArgumentException(str);
         }
-        int millis = (int)mdt.getMillis();
+        int millis = (int) mdt.getMillis();
         if (pos == 1) {
             millis = -millis;
         }
@@ -156,11 +156,9 @@ public class ZoneInfoCompiler {
 
             if (offset == nextOffset) {
                 System.out.println("*d* Error in " + tz.getID() + " "
-                                   + new DateTime(millis,
-                                                  ISOChronology.getInstanceUTC()));
+                        + new DateTime(millis, ISOChronology.getInstanceUTC()));
                 return false;
             }
-
 
             transitions.add(Long.valueOf(millis));
 
@@ -172,7 +170,7 @@ public class ZoneInfoCompiler {
         millis = ISOChronology.getInstanceUTC().year().set(0, 2050);
         end = ISOChronology.getInstanceUTC().year().set(0, 1850);
 
-        for (int i=transitions.size(); --i>= 0; ) {
+        for (int i = transitions.size(); --i >= 0;) {
             long prev = tz.previousTransition(millis);
             if (prev == millis || prev < end) {
                 break;
@@ -184,10 +182,8 @@ public class ZoneInfoCompiler {
 
             if (trans - 1 != millis) {
                 System.out.println("*r* Error in " + tz.getID() + " "
-                                   + new DateTime(millis,
-                                                  ISOChronology.getInstanceUTC()) + " != "
-                                   + new DateTime(trans - 1,
-                                                  ISOChronology.getInstanceUTC()));
+                        + new DateTime(millis, ISOChronology.getInstanceUTC()) + " != "
+                        + new DateTime(trans - 1, ISOChronology.getInstanceUTC()));
 
                 return false;
             }
@@ -237,8 +233,8 @@ public class ZoneInfoCompiler {
             String alias = iGoodLinks.get(i + 1);
             Zone sourceZone = sourceMap.get(baseId);
             if (sourceZone == null) {
-                /*throw new RuntimeException("Cannot find source zone '" + baseId + "' to link alias '" +
-                        alias + "' to");*/
+                throw new RuntimeException("Cannot find source zone '" + baseId + "' to link alias '"
+                        + alias + "' to");
             } else {
                 DateTimeZoneBuilder builder = new DateTimeZoneBuilder();
                 sourceZone.addToBuilder(builder, iRuleSets);
@@ -257,10 +253,10 @@ public class ZoneInfoCompiler {
                 String alias = iBackLinks.get(i + 1);
                 StorableDateTimeZone tz = map.get(id);
                 if (tz == null) {
-                    /*if (pass > 0) {
-                        throw new RuntimeException("Cannot find time zone '" + id + "' to link alias '" +
-                                alias + "' to");
-                    }*/
+                    if (pass > 0) {
+                        throw new RuntimeException("Cannot find time zone '" + id + "' to link alias '"
+                                + alias + "' to");
+                    }
                 } else {
                     map.put(alias, new AliasDateTimeZone(alias, tz));
                 }
@@ -404,10 +400,9 @@ public class ZoneInfoCompiler {
                             if (month == 12 && day == 31) {
                                 millis = parseTime("23:59:59.999");
                             } else {
-                                LocalDate date = (day == -1 ?
-                                        new LocalDate(2001, month, 1).plusMonths(1) :
-                                        new LocalDate(2001, month, day).plusDays(1));
-                                advance = (day != -1 && dayOfWeek != 0);
+                                LocalDate date = day == -1 ? new LocalDate(2001, month, 1).plusMonths(1)
+                                        : new LocalDate(2001, month, day).plusDays(1);
+                                advance = day != -1 && dayOfWeek != 0;
                                 month = date.getMonthOfYear();
                                 day = date.getDayOfMonth();
                                 if (dayOfWeek != 0) {
@@ -459,13 +454,9 @@ public class ZoneInfoCompiler {
 
         @Override
         public String toString() {
-            return
-                "MonthOfYear: " + iMonthOfYear + "\n" +
-                "DayOfMonth: " + iDayOfMonth + "\n" +
-                "DayOfWeek: " + iDayOfWeek + "\n" +
-                "AdvanceDayOfWeek: " + iAdvanceDayOfWeek + "\n" +
-                "MillisOfDay: " + iMillisOfDay + "\n" +
-                "ZoneChar: " + iZoneChar + "\n";
+            return "MonthOfYear: " + iMonthOfYear + "\n" + "DayOfMonth: " + iDayOfMonth + "\n" + "DayOfWeek: "
+                    + iDayOfWeek + "\n" + "AdvanceDayOfWeek: " + iAdvanceDayOfWeek + "\n" + "MillisOfDay: "
+                    + iMillisOfDay + "\n" + "ZoneChar: " + iZoneChar + "\n";
         }
     }
 
@@ -500,15 +491,9 @@ public class ZoneInfoCompiler {
 
         @Override
         public String toString() {
-            return
-                "[Rule]\n" +
-                "Name: " + iName + "\n" +
-                "FromYear: " + iFromYear + "\n" +
-                "ToYear: " + iToYear + "\n" +
-                "Type: " + iType + "\n" +
-                iDateTimeOfYear +
-                "SaveMillis: " + iSaveMillis + "\n" +
-                "LetterS: " + iLetterS + "\n";
+            return "[Rule]\n" + "Name: " + iName + "\n" + "FromYear: " + iFromYear + "\n" + "ToYear: " + iToYear + "\n"
+                    + "Type: " + iType + "\n" + iDateTimeOfYear + "SaveMillis: " + iSaveMillis + "\n" + "LetterS: "
+                    + iLetterS + "\n";
         }
     }
 
@@ -531,7 +516,7 @@ public class ZoneInfoCompiler {
          * Adds recurring savings rules to the builder.
          */
         public void addRecurring(DateTimeZoneBuilder builder) {
-            for (int i=0; i<iRules.size(); i++) {
+            for (int i = 0; i < iRules.size(); i++) {
                 Rule rule = iRules.get(i);
                 rule.addRecurring(builder);
             }
@@ -595,10 +580,7 @@ public class ZoneInfoCompiler {
             addToBuilder(this, builder, ruleSets);
         }
 
-        private static void addToBuilder(Zone zone,
-                                         DateTimeZoneBuilder builder,
-                                         Map<String, RuleSet> ruleSets)
-        {
+        private static void addToBuilder(Zone zone, DateTimeZoneBuilder builder, Map<String, RuleSet> ruleSets) {
             for (; zone != null; zone = zone.iNext) {
                 builder.setStandardOffset(zone.iOffsetMillis);
 
@@ -609,12 +591,10 @@ public class ZoneInfoCompiler {
                         // Check if iRules actually just refers to a savings.
                         int saveMillis = parseTime(zone.iRules);
                         builder.setFixedSavings(zone.iFormat, saveMillis);
-                    }
-                    catch (Exception e) {
+                    } catch (Exception e) {
                         RuleSet rs = ruleSets.get(zone.iRules);
                         if (rs == null) {
-                            throw new IllegalArgumentException
-                                ("Rules not found: " + zone.iRules);
+                            throw new IllegalArgumentException("Rules not found: " + zone.iRules);
                         }
                         rs.addRecurring(builder);
                     }
@@ -630,14 +610,9 @@ public class ZoneInfoCompiler {
 
         @Override
         public String toString() {
-            String str =
-                "[Zone]\n" +
-                "Name: " + iName + "\n" +
-                "OffsetMillis: " + iOffsetMillis + "\n" +
-                "Rules: " + iRules + "\n" +
-                "Format: " + iFormat + "\n" +
-                "UntilYear: " + iUntilYear + "\n" +
-                iUntilDateTimeOfYear;
+            String str = "[Zone]\n" + "Name: " + iName + "\n" + "OffsetMillis: " + iOffsetMillis + "\n" + "Rules: "
+                    + iRules + "\n" + "Format: " + iFormat + "\n" + "UntilYear: " + iUntilYear + "\n"
+                    + iUntilDateTimeOfYear;
 
             if (iNext == null) {
                 return str;

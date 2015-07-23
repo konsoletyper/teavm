@@ -117,7 +117,7 @@ public class TOutputStreamWriter extends TWriter {
 
     @Override
     public void write(int oneChar) throws TIOException {
-        char[] array = { (char)oneChar };
+        char[] array = { (char) oneChar };
         write(array, 0, array.length);
     }
 

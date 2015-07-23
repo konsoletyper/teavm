@@ -238,7 +238,7 @@ public class TObject {
     }
 
     @Rename("wait")
-    public final void wait0(long timeout) throws TInterruptedException{
+    public final void wait0(long timeout) throws TInterruptedException {
         try {
             wait(timeout, 0);
         } catch (InterruptedException ex) {
@@ -247,7 +247,7 @@ public class TObject {
     }
 
     @Rename("wait")
-    private final void wait0(long timeout, int nanos) throws TInterruptedException {
+    private void wait0(long timeout, int nanos) throws TInterruptedException {
         if (!holdsLock(this)) {
             throw new TIllegalMonitorStateException();
         }
@@ -255,14 +255,14 @@ public class TObject {
     }
 
     @Async
-    private native final void waitImpl(long timeout, int nanos) throws TInterruptedException;
+    private native void waitImpl(long timeout, int nanos) throws TInterruptedException;
 
     public final void waitImpl(long timeout, int nanos, final AsyncCallback<Void> callback) {
         final NotifyListenerImpl listener = new NotifyListenerImpl(this, callback, monitor.count);
         monitor.notifyListeners.add(listener);
         if (timeout > 0 || nanos > 0) {
-            listener.timerId = Platform.schedule(listener, timeout >= Integer.MAX_VALUE ? Integer.MAX_VALUE :
-                    (int)timeout);
+            listener.timerId = Platform.schedule(listener, timeout >= Integer.MAX_VALUE ? Integer.MAX_VALUE
+                    : (int) timeout);
         }
         monitorExit(this, monitor.count);
     }
@@ -332,7 +332,7 @@ public class TObject {
     @Rename("wait")
     public final void wait0() throws TInterruptedException {
         try {
-            wait(0l);
+            wait(0L);
         } catch (InterruptedException ex) {
             throw new TInterruptedException();
         }
@@ -343,6 +343,6 @@ public class TObject {
     }
 
     public static TObject wrap(Object obj) {
-        return (TObject)obj;
+        return (TObject) obj;
     }
 }

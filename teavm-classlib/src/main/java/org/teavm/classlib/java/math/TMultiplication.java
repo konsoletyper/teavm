@@ -1,12 +1,11 @@
 /*
- *  Licensed to the Apache Software Foundation (ASF) under one or more
- *  contributor license agreements.  See the NOTICE file distributed with
- *  this work for additional information regarding copyright ownership.
- *  The ASF licenses this file to You under the Apache License, Version 2.0
- *  (the "License"); you may not use this file except in compliance with
- *  the License.  You may obtain a copy of the License at
+ *  Copyright 2015 Alexey Andreev.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +13,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package org.teavm.classlib.java.math;
 
 /**
@@ -23,7 +21,8 @@ package org.teavm.classlib.java.math;
 class TMultiplication {
 
     /** Just to denote that this class can't be instantiated. */
-    private TMultiplication() {}
+    private TMultiplication() {
+    }
 
     /**
      * Break point in digits (number of {@code int} elements)
@@ -35,7 +34,7 @@ class TMultiplication {
      * An array with powers of ten that fit in the type {@code int}.
      * ({@code 10^0,10^1,...,10^9})
      */
-    static final int tenPows[] = {
+    static final int[] tenPows = {
         1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000, 1000000000
     };
 
@@ -43,7 +42,7 @@ class TMultiplication {
      * An array with powers of five that fit in the type {@code int}.
      * ({@code 5^0,5^1,...,5^13})
      */
-    static final int fivePows[] = {
+    static final int[] fivePows = {
         1, 5, 25, 125, 625, 3125, 15625, 78125, 390625,
         1953125, 9765625, 48828125, 244140625, 1220703125
     };
@@ -58,9 +57,7 @@ class TMultiplication {
      * An array with the first powers of five in {@code BigInteger} version.
      * ({@code 5^0,5^1,...,5^31})
      */
-    static final TBigInteger bigFivePows[] = new TBigInteger[32];
-
-
+    static final TBigInteger[] bigFivePows = new TBigInteger[32];
 
     static {
         int i;
@@ -93,7 +90,8 @@ class TMultiplication {
      *             v = v<sub>1</sub> * B + v<sub>0</sub><br>
      *
      *
-     *  u*v = (u<sub>1</sub> * v<sub>1</sub>) * B<sub>2</sub> + ((u<sub>1</sub> - u<sub>0</sub>) * (v<sub>0</sub> - v<sub>1</sub>) + u<sub>1</sub> * v<sub>1</sub> +
+     *  u*v = (u<sub>1</sub> * v<sub>1</sub>) * B<sub>2</sub> + ((u<sub>1</sub> - u<sub>0</sub>)
+     *      * (v<sub>0</sub> - v<sub>1</sub>) + u<sub>1</sub> * v<sub>1</sub> +
      *  u<sub>0</sub> * v<sub>0</sub> ) * B + u<sub>0</sub> * v<sub>0</sub><br>
      *</tt>
      * @param op1 first factor of the product
@@ -124,8 +122,7 @@ class TMultiplication {
 
         TBigInteger upper = karatsuba(upperOp1, upperOp2);
         TBigInteger lower = karatsuba(lowerOp1, lowerOp2);
-        TBigInteger middle = karatsuba( upperOp1.subtract(lowerOp1),
-                lowerOp2.subtract(upperOp2));
+        TBigInteger middle = karatsuba(upperOp1.subtract(lowerOp1), lowerOp2.subtract(upperOp2));
         middle = middle.add(upper).add(lower);
         middle = middle.shiftLeft(ndiv2);
         upper = upper.shiftLeft(ndiv2 << 1);
@@ -229,15 +226,15 @@ class TMultiplication {
         // A special case when both numbers don't exceed int
         if (resLength == 2) {
             long val = unsignedMultAddAdd(a.digits[0], b.digits[0], 0, 0);
-            int valueLo = (int)val;
-            int valueHi = (int)(val >>> 32);
-            return ((valueHi == 0)
-            ? new TBigInteger(resSign, valueLo)
-            : new TBigInteger(resSign, 2, new int[]{valueLo, valueHi}));
+            int valueLo = (int) val;
+            int valueHi = (int) (val >>> 32);
+            return valueHi == 0
+                    ? new TBigInteger(resSign, valueLo)
+                    : new TBigInteger(resSign, 2, new int[] { valueLo, valueHi });
         }
         int[] aDigits = a.digits;
         int[] bDigits = b.digits;
-        int resDigits[] = new int[resLength];
+        int[] resDigits = new int[resLength];
         // Common case
         multArraysPAP(aDigits, aLen, bDigits, bLen, resDigits);
         TBigInteger result = new TBigInteger(resSign, resLength, resDigits);
@@ -246,32 +243,34 @@ class TMultiplication {
     }
 
     static void multArraysPAP(int[] aDigits, int aLen, int[] bDigits, int bLen, int[] resDigits) {
-        if(aLen == 0 || bLen == 0) return;
+        if (aLen == 0 || bLen == 0) {
+            return;
+        }
 
-        if(aLen == 1) {
+        if (aLen == 1) {
             resDigits[bLen] = multiplyByInt(resDigits, bDigits, bLen, aDigits[0]);
-        } else if(bLen == 1) {
+        } else if (bLen == 1) {
             resDigits[aLen] = multiplyByInt(resDigits, aDigits, aLen, bDigits[0]);
         } else {
             multPAP(aDigits, bDigits, resDigits, aLen, bLen);
         }
     }
 
-    static void multPAP(int a[], int b[], int t[], int aLen, int bLen) {
-        if(a == b && aLen == bLen) {
+    static void multPAP(int[] a, int[] b, int[] t, int aLen, int bLen) {
+        if (a == b && aLen == bLen) {
             square(a, aLen, t);
             return;
         }
 
-        for(int i = 0; i < aLen; i++){
+        for (int i = 0; i < aLen; i++) {
             long carry = 0;
             int aI = a[i];
-            for (int j = 0; j < bLen; j++){
-               carry = unsignedMultAddAdd(aI, b[j], t[i+j], (int)carry);
-               t[i+j] = (int) carry;
+            for (int j = 0; j < bLen; j++) {
+               carry = unsignedMultAddAdd(aI, b[j], t[i + j], (int) carry);
+               t[i + j] = (int) carry;
                carry >>>= 32;
              }
-             t[i+bLen] = (int) carry;
+             t[i + bLen] = (int) carry;
         }
     }
 
@@ -283,14 +282,14 @@ class TMultiplication {
      * @param factor the multiplier
      * @return the top digit of production
      */
-    private static int multiplyByInt(int res[], int a[], final int aSize, final int factor) {
+    private static int multiplyByInt(int[] res, int[] a, final int aSize, final int factor) {
         long carry = 0;
         for (int i = 0; i < aSize; i++) {
-            carry = unsignedMultAddAdd(a[i], factor, (int)carry, 0);
-            res[i] = (int)carry;
+            carry = unsignedMultAddAdd(a[i], factor, (int) carry, 0);
+            res[i] = (int) carry;
             carry >>>= 32;
         }
-        return (int)carry;
+        return (int) carry;
     }
 
 
@@ -301,7 +300,7 @@ class TMultiplication {
      * @param factor the multiplier
      * @return the top digit of production
      */
-    static int multiplyByInt(int a[], final int aSize, final int factor) {
+    static int multiplyByInt(int[] a, final int aSize, final int factor) {
         return multiplyByInt(a, a, aSize, factor);
     }
 
@@ -321,15 +320,15 @@ class TMultiplication {
 
         if (aNumberLength == 1) {
             long res = unsignedMultAddAdd(aDigits[0], factor, 0, 0);
-            int resLo = (int)res;
-            int resHi = (int)(res >>> 32);
-            return ((resHi == 0)
-            ? new TBigInteger(resSign, resLo)
-            : new TBigInteger(resSign, 2, new int[]{resLo, resHi}));
+            int resLo = (int) res;
+            int resHi = (int) (res >>> 32);
+            return resHi == 0
+                    ? new TBigInteger(resSign, resLo)
+                    : new TBigInteger(resSign, 2, new int[] { resLo, resHi });
         }
         // Common case
         int resLength = aNumberLength + 1;
-        int resDigits[] = new int[resLength];
+        int[] resDigits = new int[resLength];
 
         resDigits[aNumberLength] = multiplyByInt(resDigits, aDigits, aNumberLength, factor);
         TBigInteger result = new TBigInteger(resSign, resLength, resDigits);
@@ -349,11 +348,10 @@ class TMultiplication {
             }
             // acc = base^(2^i)
             //a limit where karatsuba performs a faster square than the square algorithm
-            if ( acc.numberLength == 1 ){
+            if (acc.numberLength == 1) {
                 acc = acc.multiply(acc); // square
-            }
-            else{
-                acc = new TBigInteger(1, square(acc.digits, acc.numberLength, new int [acc.numberLength<<1]));
+            } else {
+                acc = new TBigInteger(1, square(acc.digits, acc.numberLength, new int[acc.numberLength << 1]));
             }
         }
         // exponent == 1, multiply one more time
@@ -369,26 +367,26 @@ class TMultiplication {
     static int[] square(int[] a, int aLen, int[] res) {
         long carry;
 
-        for(int i = 0; i < aLen; i++){
+        for (int i = 0; i < aLen; i++) {
             carry = 0;
-            for (int j = i+1; j < aLen; j++){
-                carry = unsignedMultAddAdd(a[i], a[j], res[i+j], (int)carry);
-                res[i+j] = (int) carry;
+            for (int j = i + 1; j < aLen; j++) {
+                carry = unsignedMultAddAdd(a[i], a[j], res[i + j], (int) carry);
+                res[i + j] = (int) carry;
                 carry >>>= 32;
             }
-            res[i+aLen] = (int) carry;
+            res[i + aLen] = (int) carry;
         }
 
         TBitLevel.shiftLeftOneBit(res, res, aLen << 1);
 
         carry = 0;
-        for(int i = 0, index = 0; i < aLen; i++, index++){
-            carry = unsignedMultAddAdd(a[i], a[i], res[index],(int)carry);
+        for (int i = 0, index = 0; i < aLen; i++, index++) {
+            carry = unsignedMultAddAdd(a[i], a[i], res[index], (int) carry);
             res[index] = (int) carry;
             carry >>>= 32;
             index++;
             carry += res[index] & 0xFFFFFFFFL;
-            res[index] = (int)carry;
+            res[index] = (int) carry;
             carry >>>= 32;
         }
         return res;
@@ -403,9 +401,9 @@ class TMultiplication {
      */
     static TBigInteger multiplyByTenPow(TBigInteger val, long exp) {
         // PRE: exp >= 0
-        return ((exp < tenPows.length)
-        ? multiplyByPositiveInt(val, tenPows[(int)exp])
-        : val.multiply(powerOf10(exp)));
+        return exp < tenPows.length
+                ? multiplyByPositiveInt(val, tenPows[(int) exp])
+                : val.multiply(powerOf10(exp));
     }
 
     /**
@@ -417,7 +415,7 @@ class TMultiplication {
      */
     static TBigInteger powerOf10(long exp) {
         // PRE: exp >= 0
-        int intExp = (int)exp;
+        int intExp = (int) exp;
         // "SMALL POWERS"
         if (exp < bigTenPows.length) {
             // The largest power that fit in 'long' type
@@ -434,7 +432,7 @@ class TMultiplication {
          * To check if there is free memory to allocate a BigInteger of the
          * estimated size, measured in bytes: 1 + [exp / log10(2)]
          */
-        long byteArraySize = 1 + (long)(exp / 2.4082399653118496);
+        long byteArraySize = 1 + (long) (exp / 2.4082399653118496);
 
         if (byteArraySize > 1000000) {
             throw new ArithmeticException("power of ten too big");
@@ -454,7 +452,7 @@ class TMultiplication {
         TBigInteger res = powerOfFive;
         long longExp = exp - Integer.MAX_VALUE;
 
-        intExp = (int)(exp % Integer.MAX_VALUE);
+        intExp = (int) (exp % Integer.MAX_VALUE);
         while (longExp > Integer.MAX_VALUE) {
             res = res.multiply(powerOfFive);
             longExp -= Integer.MAX_VALUE;
@@ -484,7 +482,8 @@ class TMultiplication {
             return multiplyByPositiveInt(val, fivePows[exp]);
         } else if (exp < bigFivePows.length) {
             return val.multiply(bigFivePows[exp]);
-        } else {// Large powers of five
+        } else {
+            // Large powers of five
             return val.multiply(bigFivePows[1].pow(exp));
         }
     }

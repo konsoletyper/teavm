@@ -1,20 +1,18 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ *  Copyright 2015 Alexey Andreev.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
-
 package org.teavm.classlib.java.text;
 
 import org.teavm.classlib.java.io.TSerializable;
@@ -64,7 +62,7 @@ public interface TAttributedCharacterIterator extends TCharacterIterator {
      *
      * @return a set of attribute keys; may be empty.
      */
-    public TSet<Attribute> getAllAttributeKeys();
+    TSet<Attribute> getAllAttributeKeys();
 
     /**
      * Returns the value stored in the attribute for the current character. If
@@ -74,7 +72,7 @@ public interface TAttributedCharacterIterator extends TCharacterIterator {
      * @return the value of the requested attribute for the current character or
      *         {@code null} if it was not defined.
      */
-    public Object getAttribute(Attribute attribute);
+    Object getAttribute(Attribute attribute);
 
     /**
      * Returns a map of all attributes of the current character. If no
@@ -84,7 +82,7 @@ public interface TAttributedCharacterIterator extends TCharacterIterator {
      * @return a map of all attributes for the current character or an empty
      *         map.
      */
-    public TMap<Attribute, Object> getAttributes();
+    TMap<Attribute, Object> getAttributes();
 
     /**
      * Returns the index of the last character in the run having the same
@@ -92,7 +90,7 @@ public interface TAttributedCharacterIterator extends TCharacterIterator {
      *
      * @return the index of the last character of the current run.
      */
-    public int getRunLimit();
+    int getRunLimit();
 
     /**
      * Returns the index of the last character in the run that has the same
@@ -102,7 +100,7 @@ public interface TAttributedCharacterIterator extends TCharacterIterator {
      *            the attribute which the run is based on.
      * @return the index of the last character of the current run.
      */
-    public int getRunLimit(Attribute attribute);
+    int getRunLimit(Attribute attribute);
 
     /**
      * Returns the index of the last character in the run that has the same
@@ -112,7 +110,7 @@ public interface TAttributedCharacterIterator extends TCharacterIterator {
      *            the set of attributes which the run is based on.
      * @return the index of the last character of the current run.
      */
-    public int getRunLimit(TSet<? extends Attribute> attributes);
+    int getRunLimit(TSet<? extends Attribute> attributes);
 
     /**
      * Returns the index of the first character in the run that has the same
@@ -120,7 +118,7 @@ public interface TAttributedCharacterIterator extends TCharacterIterator {
      *
      * @return the index of the last character of the current run.
      */
-    public int getRunStart();
+    int getRunStart();
 
     /**
      * Returns the index of the first character in the run that has the same
@@ -130,7 +128,7 @@ public interface TAttributedCharacterIterator extends TCharacterIterator {
      *            the attribute which the run is based on.
      * @return the index of the last character of the current run.
      */
-    public int getRunStart(Attribute attribute);
+    int getRunStart(Attribute attribute);
 
     /**
      * Returns the index of the first character in the run that has the same
@@ -140,5 +138,5 @@ public interface TAttributedCharacterIterator extends TCharacterIterator {
      *            the set of attributes which the run is based on.
      * @return the index of the last character of the current run.
      */
-    public int getRunStart(TSet<? extends Attribute> attributes);
+    int getRunStart(TSet<? extends Attribute> attributes);
 }

@@ -101,7 +101,7 @@ public class CurrenciesGenerator implements MetadataGenerator {
                     }
                     @Override
                     public Element next() {
-                        Element result = (Element)nodes.item(index);
+                        Element result = (Element) nodes.item(index);
                         following();
                         return result;
                     }
@@ -129,11 +129,11 @@ public class CurrenciesGenerator implements MetadataGenerator {
             switch (child.getNodeType()) {
                 case Node.TEXT_NODE:
                 case Node.CDATA_SECTION_NODE:
-                    CharacterData cdata = (CharacterData)child;
+                    CharacterData cdata = (CharacterData) child;
                     sb.append(cdata.getData());
                     break;
                 case Node.ENTITY_REFERENCE_NODE:
-                    EntityReference ref = (EntityReference)child;
+                    EntityReference ref = (EntityReference) child;
                     sb.append(ref.getNodeValue());
                     break;
             }

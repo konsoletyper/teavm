@@ -283,8 +283,8 @@ abstract class TDateFormatElement {
             if (number < 10) {
                 buffer.append(number);
             } else {
-                buffer.append((char)((number % 100 / 10) + '0'));
-                buffer.append((char)((number % 10) + '0'));
+                buffer.append((char) ((number % 100 / 10) + '0'));
+                buffer.append((char) ((number % 10) + '0'));
             }
         }
 
@@ -588,10 +588,9 @@ abstract class TDateFormatElement {
                 }
             }
             int sign = signChar == '-' ? -1 : 1;
-            int hours = 10 * Character.digit(text.charAt(index), 10) +
-                    Character.digit(text.charAt(index + 1), 10);
-            int minutes = 10 * Character.digit(text.charAt(index + 2), 10) +
-                    Character.digit(text.charAt(index + 3), 10);
+            int hours = 10 * Character.digit(text.charAt(index), 10) + Character.digit(text.charAt(index + 1), 10);
+            int minutes = 10 * Character.digit(text.charAt(index + 2), 10)
+                    + Character.digit(text.charAt(index + 3), 10);
             date.setTimeZone(getStaticTimeZone(sign * hours, minutes));
             return true;
         }
@@ -623,8 +622,8 @@ abstract class TDateFormatElement {
         }
         ++index;
 
-        if (index + 2 > text.length() || !Character.isDigit(text.charAt(index)) ||
-                !Character.isDigit(text.charAt(index + 1))) {
+        if (index + 2 > text.length() || !Character.isDigit(text.charAt(index))
+                || !Character.isDigit(text.charAt(index + 1))) {
             position.setErrorIndex(index);
             return;
         }
@@ -635,8 +634,8 @@ abstract class TDateFormatElement {
     }
 
     static TTimeZone getStaticTimeZone(int hours, int minutes) {
-        return TTimeZone.getTimeZone("GMT" + (hours > 0 ? '+' : '-') + Math.abs(hours) +
-                ":" + (minutes / 10) + (minutes % 10));
+        return TTimeZone.getTimeZone("GMT" + (hours > 0 ? '+' : '-') + Math.abs(hours)
+                + ":" + (minutes / 10) + (minutes % 10));
     }
 
     static class TrieNode {

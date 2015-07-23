@@ -49,7 +49,7 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
         if (cls == null) {
             return null;
         }
-        TClass<?> result = (TClass<?>)(Object)Platform.asJavaClass(cls.getJavaClass());
+        TClass<?> result = (TClass<?>) (Object) Platform.asJavaClass(cls.getJavaClass());
         if (result == null) {
             result = new TClass<>(cls);
         }
@@ -122,47 +122,47 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
 
     @SuppressWarnings("unchecked")
     static TClass<TVoid> voidClass() {
-        return (TClass<TVoid>)getClass(Platform.getPrimitives().getVoidClass());
+        return (TClass<TVoid>) getClass(Platform.getPrimitives().getVoidClass());
     }
 
     @SuppressWarnings("unchecked")
     static TClass<TBoolean> booleanClass() {
-        return (TClass<TBoolean>)getClass(Platform.getPrimitives().getBooleanClass());
+        return (TClass<TBoolean>) getClass(Platform.getPrimitives().getBooleanClass());
     }
 
     @SuppressWarnings("unchecked")
     static TClass<TCharacter> charClass() {
-        return (TClass<TCharacter>)getClass(Platform.getPrimitives().getCharClass());
+        return (TClass<TCharacter>) getClass(Platform.getPrimitives().getCharClass());
     }
 
     @SuppressWarnings("unchecked")
     static TClass<TByte> byteClass() {
-        return (TClass<TByte>)getClass(Platform.getPrimitives().getByteClass());
+        return (TClass<TByte>) getClass(Platform.getPrimitives().getByteClass());
     }
 
     @SuppressWarnings("unchecked")
     static TClass<TShort> shortClass() {
-        return (TClass<TShort>)getClass(Platform.getPrimitives().getShortClass());
+        return (TClass<TShort>) getClass(Platform.getPrimitives().getShortClass());
     }
 
     @SuppressWarnings("unchecked")
     static TClass<TInteger> intClass() {
-        return (TClass<TInteger>)getClass(Platform.getPrimitives().getIntClass());
+        return (TClass<TInteger>) getClass(Platform.getPrimitives().getIntClass());
     }
 
     @SuppressWarnings("unchecked")
     static TClass<TLong> longClass() {
-        return (TClass<TLong>)getClass(Platform.getPrimitives().getLongClass());
+        return (TClass<TLong>) getClass(Platform.getPrimitives().getLongClass());
     }
 
     @SuppressWarnings("unchecked")
     static TClass<TFloat> floatClass() {
-        return (TClass<TFloat>)getClass(Platform.getPrimitives().getFloatClass());
+        return (TClass<TFloat>) getClass(Platform.getPrimitives().getFloatClass());
     }
 
     @SuppressWarnings("unchecked")
     static TClass<TDouble> doubleClass() {
-        return (TClass<TDouble>)getClass(Platform.getPrimitives().getDoubleClass());
+        return (TClass<TDouble>) getClass(Platform.getPrimitives().getDoubleClass());
     }
 
     public boolean desiredAssertionStatus() {
@@ -171,21 +171,21 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
 
     @SuppressWarnings("unchecked")
     public TClass<? super T> getSuperclass() {
-        return (TClass<? super T>)getClass(platformClass.getMetadata().getSuperclass());
+        return (TClass<? super T>) getClass(platformClass.getMetadata().getSuperclass());
     }
 
     @SuppressWarnings("unchecked")
     public T[] getEnumConstants() {
-        return isEnum() ? (T[])Platform.getEnumConstants(platformClass) : null;
+        return isEnum() ? (T[]) Platform.getEnumConstants(platformClass) : null;
     }
 
     @SuppressWarnings("unchecked")
     public T cast(TObject obj) {
-        if (obj != null && !isAssignableFrom((TClass<?>)(Object)obj.getClass())) {
-            throw new TClassCastException(TString.wrap(obj.getClass().getName() +
-                    " is not subtype of " + name));
+        if (obj != null && !isAssignableFrom((TClass<?>) (Object) obj.getClass())) {
+            throw new TClassCastException(TString.wrap(obj.getClass().getName()
+                    + " is not subtype of " + name));
         }
-        return (T)obj;
+        return (T) obj;
     }
 
     public TClassLoader getClassLoader() {
@@ -212,7 +212,7 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
         if (instance == null) {
             throw new TInstantiationException();
         }
-        return (T)instance;
+        return (T) instance;
     }
 
     public TClass<?> getDeclaringClass() {
@@ -228,7 +228,7 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
         if (!clazz.isAssignableFrom(this)) {
             throw new TClassCastException();
         }
-        return (TClass<? extends U>)this;
+        return (TClass<? extends U>) this;
     }
 
     @Override
@@ -241,13 +241,13 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
     @Override
     public <S extends TAnnotation> S getAnnotation(TClass<S> annotationClass) {
         ensureAnnotationsByType();
-        return (S)annotationsByType.get(annotationClass);
+        return (S) annotationsByType.get(annotationClass);
     }
 
     @Override
     public TAnnotation[] getAnnotations() {
         if (annotationsCache == null) {
-            annotationsCache = (TAnnotation[])Platform.getAnnotations(getPlatformClass());
+            annotationsCache = (TAnnotation[]) Platform.getAnnotations(getPlatformClass());
         }
         return annotationsCache.clone();
     }
@@ -263,7 +263,7 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
         }
         annotationsByType = new HashMap<>();
         for (TAnnotation annot : getAnnotations()) {
-            annotationsByType.put((TClass<?>)(Object)annot.annotationType(), annot);
+            annotationsByType.put((TClass<?>) (Object) annot.annotationType(), annot);
         }
     }
 }

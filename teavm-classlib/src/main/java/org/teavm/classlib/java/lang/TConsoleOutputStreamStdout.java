@@ -23,7 +23,7 @@ import org.teavm.platform.Platform;
  *
  * @author Alexey Andreev
  */
-class TConsoleOutputStream_stdout extends TOutputStream {
+class TConsoleOutputStreamStdout extends TOutputStream {
     @Override
     public void write(int b) throws TIOException {
         Platform.getConsole().output(b);

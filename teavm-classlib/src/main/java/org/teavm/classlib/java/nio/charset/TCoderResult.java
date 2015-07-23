@@ -20,8 +20,8 @@ package org.teavm.classlib.java.nio.charset;
  * @author Alexey Andreev
  */
 public class TCoderResult {
-    public static final TCoderResult UNDERFLOW = new TCoderResult((byte)0, 0);
-    public static final TCoderResult OVERFLOW = new TCoderResult((byte)1, 0);
+    public static final TCoderResult UNDERFLOW = new TCoderResult((byte) 0, 0);
+    public static final TCoderResult OVERFLOW = new TCoderResult((byte) 1, 0);
     private byte kind;
     private int length;
 
@@ -59,11 +59,11 @@ public class TCoderResult {
     }
 
     public static TCoderResult malformedForLength(int length) {
-        return new TCoderResult((byte)2, length);
+        return new TCoderResult((byte) 2, length);
     }
 
     public static TCoderResult unmappableForLength(int length) {
-        return new TCoderResult((byte)3, length);
+        return new TCoderResult((byte) 3, length);
     }
 
     public void throwException() throws TCharacterCodingException {

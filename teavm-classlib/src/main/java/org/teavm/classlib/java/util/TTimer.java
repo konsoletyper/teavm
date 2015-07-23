@@ -51,7 +51,7 @@ public class TTimer extends TObject {
             throw new TIllegalStateException();
         }
         task.timer = this;
-        task.nativeTimerId = ((Window)JS.getGlobal()).setTimeout(new TimerHandler() {
+        task.nativeTimerId = ((Window) JS.getGlobal()).setTimeout(new TimerHandler() {
             @Override
             public void onTimer() {
                 new Thread() {
@@ -64,7 +64,7 @@ public class TTimer extends TObject {
                     }
                 }.start();
             }
-        }, (int)delay);
+        }, (int) delay);
     }
 
     public void schedule(final TTimerTask task, long delay, final long period) {
@@ -72,7 +72,7 @@ public class TTimer extends TObject {
             throw new TIllegalStateException();
         }
         task.timer = this;
-        task.nativeTimerId = ((Window)JS.getGlobal()).setTimeout(new TimerHandler() {
+        task.nativeTimerId = ((Window) JS.getGlobal()).setTimeout(new TimerHandler() {
             @Override
             public void onTimer() {
                 final TimerHandler self = this;
@@ -82,7 +82,7 @@ public class TTimer extends TObject {
                         if (cancelled || task.timer == null) {
                             return;
                         }
-                        task.nativeTimerId = ((Window)JS.getGlobal()).setTimeout(self, (int)period);
+                        task.nativeTimerId = ((Window) JS.getGlobal()).setTimeout(self, (int) period);
                         TTimerTask.performOnce(task);
                         if (!cancelled) {
                             task.timer = TTimer.this;
@@ -90,6 +90,6 @@ public class TTimer extends TObject {
                     }
                 }.start();
             }
-        }, (int)delay);
+        }, (int) delay);
     }
 }

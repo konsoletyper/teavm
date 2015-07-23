@@ -1,20 +1,18 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ *  Copyright 2015 Alexey Andreev.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
  */
-
 package org.teavm.classlib.java.text;
 
 import org.teavm.classlib.java.io.TSerializable;
@@ -46,7 +44,8 @@ public abstract class TFormat implements TSerializable, TCloneable {
             if (next == '\'') {
                 quote = !quote;
             }
-            if (!quote && (index = fromChars.indexOf(next)) != -1) {
+            index = fromChars.indexOf(next);
+            if (!quote && index != -1) {
                 output.append(toChars.charAt(index));
             } else if (check && !quote && ((next >= 'a' && next <= 'z') || (next >= 'A' && next <= 'Z'))) {
                 throw new IllegalArgumentException("Invalid pattern char" + next + " in " + template);
@@ -82,8 +81,10 @@ public abstract class TFormat implements TSerializable, TCloneable {
     public abstract Object parseObject(String string, TParsePosition position);
 
     static boolean upTo(String string, TParsePosition position, StringBuffer buffer, char stop) {
-        int index = position.getIndex(), length = string.length();
-        boolean lastQuote = false, quote = false;
+        int index = position.getIndex();
+        int length = string.length();
+        boolean lastQuote = false;
+        boolean quote = false;
         while (index < length) {
             char ch = string.charAt(index++);
             if (ch == '\'') {
@@ -105,7 +106,9 @@ public abstract class TFormat implements TSerializable, TCloneable {
     }
 
     static boolean upToWithQuotes(String string, TParsePosition position, StringBuffer buffer, char stop, char start) {
-        int index = position.getIndex(), length = string.length(), count = 1;
+        int index = position.getIndex();
+        int length = string.length();
+        int count = 1;
         boolean quote = false;
         while (index < length) {
             char ch = string.charAt(index++);

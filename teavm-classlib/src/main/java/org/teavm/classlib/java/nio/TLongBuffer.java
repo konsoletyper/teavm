@@ -64,8 +64,8 @@ public abstract class TLongBuffer extends TBuffer implements Comparable<TLongBuf
             throw new IndexOutOfBoundsException("Offset " + offset + " is outside of range [0;" + dst.length + ")");
         }
         if (offset + length > dst.length) {
-            throw new IndexOutOfBoundsException("The last long in dst " + (offset + length) + " is outside " +
-                    "of array of size " + dst.length);
+            throw new IndexOutOfBoundsException("The last long in dst " + (offset + length) + " is outside "
+                    + "of array of size " + dst.length);
         }
         if (remaining() < length) {
             throw new TBufferUnderflowException();
@@ -113,8 +113,8 @@ public abstract class TLongBuffer extends TBuffer implements Comparable<TLongBuf
             throw new IndexOutOfBoundsException("Offset " + offset + " is outside of range [0;" + src.length + ")");
         }
         if (offset + length > src.length) {
-            throw new IndexOutOfBoundsException("The last long in src " + (offset + length) + " is outside " +
-                    "of array of size " + src.length);
+            throw new IndexOutOfBoundsException("The last long in src " + (offset + length) + " is outside "
+                    + "of array of size " + src.length);
         }
         if (length < 0) {
             throw new IndexOutOfBoundsException("Length " + length + " must be non-negative");
@@ -159,8 +159,8 @@ public abstract class TLongBuffer extends TBuffer implements Comparable<TLongBuf
 
     @Override
     public String toString() {
-        return "[LongBuffer position=" + position + ", limit=" + limit + ", capacity=" + capacity + ", mark " +
-                (mark >= 0 ? " at " + mark : " is not set") + "]";
+        return "[LongBuffer position=" + position + ", limit=" + limit + ", capacity=" + capacity + ", mark "
+                + (mark >= 0 ? " at " + mark : " is not set") + "]";
     }
 
     @Override
@@ -169,7 +169,7 @@ public abstract class TLongBuffer extends TBuffer implements Comparable<TLongBuf
         int pos = position;
         for (int i = position; i < limit; ++i) {
             long elem = getElement(pos++);
-            hashCode = 31 * hashCode + (int)elem + (int)(elem >>> 32);
+            hashCode = 31 * hashCode + (int) elem + (int) (elem >>> 32);
         }
         return hashCode;
     }
@@ -182,7 +182,7 @@ public abstract class TLongBuffer extends TBuffer implements Comparable<TLongBuf
         if (!(obj instanceof TLongBuffer)) {
             return false;
         }
-        TLongBuffer other = (TLongBuffer)obj;
+        TLongBuffer other = (TLongBuffer) obj;
         int sz = remaining();
         if (sz != other.remaining()) {
             return false;

@@ -54,7 +54,7 @@ public class TByteArrayInputStream extends TInputStream {
 
     @Override
     public long skip(long n) {
-        int bytesSkipped = (int)TMath.min(n, count - pos);
+        int bytesSkipped = (int) TMath.min(n, count - pos);
         pos += bytesSkipped;
         return bytesSkipped;
     }

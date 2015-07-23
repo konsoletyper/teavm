@@ -72,11 +72,11 @@ public final class TStackTraceElement extends TObject implements TSerializable {
         if (!(obj instanceof TStackTraceElement)) {
             return false;
         }
-        TStackTraceElement other = (TStackTraceElement)obj;
-        return TObjects.equals(declaringClass, other.declaringClass) &&
-                TObjects.equals(methodName, other.methodName) &&
-                TObjects.equals(fileName, other.fileName) &&
-                lineNumber == other.lineNumber;
+        TStackTraceElement other = (TStackTraceElement) obj;
+        return TObjects.equals(declaringClass, other.declaringClass)
+                && TObjects.equals(methodName, other.methodName)
+                && TObjects.equals(fileName, other.fileName)
+                && lineNumber == other.lineNumber;
     }
 
     @Override

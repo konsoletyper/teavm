@@ -1,12 +1,11 @@
 /*
- *  Licensed to the Apache Software Foundation (ASF) under one or more
- *  contributor license agreements.  See the NOTICE file distributed with
- *  this work for additional information regarding copyright ownership.
- *  The ASF licenses this file to You under the Apache License, Version 2.0
- *  (the "License"); you may not use this file except in compliance with
- *  the License.  You may obtain a copy of the License at
+ *  Copyright 2015 Alexey Andreev.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +13,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package org.teavm.classlib.java.net;
 
 import org.teavm.classlib.java.io.TSerializable;
@@ -42,7 +40,7 @@ public final class TURI implements TComparable<TURI>, TSerializable {
     private transient TString fragment;
     private transient boolean opaque;
     private transient boolean absolute;
-    private transient boolean serverAuthority = false;
+    private transient boolean serverAuthority;
     private transient int hash = -1;
 
     private TURI() {
@@ -124,8 +122,8 @@ public final class TURI implements TComparable<TURI>, TSerializable {
      *             if the temporary created string doesn't fit to the
      *             specification RFC2396 or could not be parsed correctly.
      */
-    public TURI(TString scheme, TString userinfo, TString host, int port, TString path, TString query, TString fragment)
-            throws TURISyntaxException {
+    public TURI(TString scheme, TString userinfo, TString host, int port, TString path, TString query,
+            TString fragment) throws TURISyntaxException {
 
         if (scheme == null && userinfo == null && host == null && path == null && query == null && fragment == null) {
             this.path = TString.wrap("");
@@ -273,7 +271,10 @@ public final class TURI implements TComparable<TURI>, TSerializable {
             TString temp = uri;
             // assign uri string to the input value per spec
             string = uri;
-            int index, index1, index2, index3;
+            int index;
+            int index1;
+            int index2;
+            int index3;
             // parse into Fragment, Scheme, and SchemeSpecificPart
             // then parse SchemeSpecificPart if necessary
 
@@ -287,7 +288,8 @@ public final class TURI implements TComparable<TURI>, TSerializable {
             }
 
             // Scheme and SchemeSpecificPart
-            index = index1 = temp.indexOf(':');
+            index = temp.indexOf(':');
+            index1 = index;
             index2 = temp.indexOf('/');
             index3 = temp.indexOf('?');
 
@@ -444,8 +446,11 @@ public final class TURI implements TComparable<TURI>, TSerializable {
                 return;
             }
 
-            TString temp, tempUserinfo = null, tempHost = null;
-            int index, hostindex = 0;
+            TString temp;
+            TString tempUserinfo = null;
+            TString tempHost = null;
+            int index;
+            int hostindex = 0;
             int tempPort = -1;
 
             temp = authority;
@@ -952,7 +957,8 @@ public final class TURI implements TComparable<TURI>, TSerializable {
             return s;
         }
 
-        int index = 0, previndex = 0;
+        int index = 0;
+        int previndex = 0;
         while ((index = s.indexOf('%', previndex)) != -1) {
             result.append(s.substring(previndex, index + 1));
             result.append(s.substring(index + 1, index + 3).toLowerCase());
@@ -972,9 +978,17 @@ public final class TURI implements TComparable<TURI>, TSerializable {
             return first.equals(second);
         }
 
-        int index = 0, previndex = 0;
-        while ((index = first.indexOf('%', previndex)) != -1
-                && second.indexOf('%', previndex) == index) {
+        int index = 0;
+        int previndex = 0;
+        while (true) {
+            index = first.indexOf('%', previndex);
+            if (index == -1) {
+                break;
+            }
+            if (second.indexOf('%', previndex) != index) {
+                break;
+            }
+
             boolean match = first.substring(previndex, index).equals(second.substring(previndex, index));
             if (!match) {
                 return false;

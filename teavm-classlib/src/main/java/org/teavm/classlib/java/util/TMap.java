@@ -22,7 +22,7 @@ package org.teavm.classlib.java.util;
  * @param <V>
  */
 public interface TMap<K, V> {
-    public static interface Entry<K1, V1> {
+    public interface Entry<K1, V1> {
         K1 getKey();
 
         V1 getValue();
@@ -44,7 +44,7 @@ public interface TMap<K, V> {
 
     V remove(Object key);
 
-    void putAll(TMap<? extends K,? extends V> m);
+    void putAll(TMap<? extends K, ? extends V> m);
 
     void clear();
 

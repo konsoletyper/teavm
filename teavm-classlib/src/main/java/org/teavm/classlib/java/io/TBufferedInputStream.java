@@ -1,12 +1,11 @@
 /*
- *  Licensed to the Apache Software Foundation (ASF) under one or more
- *  contributor license agreements.  See the NOTICE file distributed with
- *  this work for additional information regarding copyright ownership.
- *  The ASF licenses this file to You under the Apache License, Version 2.0
- *  (the "License"); you may not use this file except in compliance with
- *  the License.  You may obtain a copy of the License at
+ *  Copyright 2015 Alexey Andreev.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
@@ -78,13 +77,15 @@ public class TBufferedInputStream extends TFilterInputStream {
             System.arraycopy(localBuf, 0, newbuf, 0, localBuf.length);
             // Reassign buf, which will invalidate any local references
             // FIXME: what if buf was null?
-            localBuf = buf = newbuf;
+            buf = newbuf;
+            localBuf = buf;
         } else if (markpos > 0) {
             System.arraycopy(localBuf, markpos, localBuf, 0, localBuf.length - markpos);
         }
         /* Set the new position and mark position */
         pos -= markpos;
-        count = markpos = 0;
+        count = 0;
+        markpos = 0;
         int bytesread = localIn.read(localBuf, pos, localBuf.length - pos);
         count = bytesread <= 0 ? pos : pos + bytesread;
         return bytesread;
@@ -245,7 +246,7 @@ public class TBufferedInputStream extends TFilterInputStream {
                     return amount;
                 }
                 // Couldn't get all the bytes, skip what we read
-                read += (count - pos);
+                read += count - pos;
                 pos = count;
                 return read;
             }

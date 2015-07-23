@@ -50,7 +50,7 @@ public class TSimpleDateFormat extends TDateFormat {
     }
 
     public TSimpleDateFormat(String pattern, TDateFormatSymbols dateFormatSymbols) {
-        this.dateFormatSymbols = (TDateFormatSymbols)dateFormatSymbols.clone();
+        this.dateFormatSymbols = (TDateFormatSymbols) dateFormatSymbols.clone();
         locale = TLocale.getDefault();
         applyPattern(pattern);
     }
@@ -79,7 +79,7 @@ public class TSimpleDateFormat extends TDateFormat {
 
     @Override
     public TDate parse(String string, TParsePosition position) {
-        TCalendar calendar = (TCalendar)this.calendar.clone();
+        TCalendar calendar = (TCalendar) this.calendar.clone();
         calendar.clear();
         for (TDateFormatElement element : elements) {
             if (position.getIndex() > string.length()) {
@@ -96,18 +96,18 @@ public class TSimpleDateFormat extends TDateFormat {
 
     @Override
     public Object clone() {
-        TSimpleDateFormat copy = (TSimpleDateFormat)super.clone();
-        copy.dateFormatSymbols = (TDateFormatSymbols)dateFormatSymbols.clone();
+        TSimpleDateFormat copy = (TSimpleDateFormat) super.clone();
+        copy.dateFormatSymbols = (TDateFormatSymbols) dateFormatSymbols.clone();
         copy.elements = elements.clone();
         return copy;
     }
 
     public TDateFormatSymbols getDateFormatSymbols() {
-        return (TDateFormatSymbols)dateFormatSymbols.clone();
+        return (TDateFormatSymbols) dateFormatSymbols.clone();
     }
 
     public void setDateFormatSymbols(TDateFormatSymbols newFormatSymbols) {
-        dateFormatSymbols = (TDateFormatSymbols)newFormatSymbols.clone();
+        dateFormatSymbols = (TDateFormatSymbols) newFormatSymbols.clone();
         reparsePattern();
     }
 

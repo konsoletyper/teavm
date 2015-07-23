@@ -1,12 +1,11 @@
 /*
- *  Licensed to the Apache Software Foundation (ASF) under one or more
- *  contributor license agreements.  See the NOTICE file distributed with
- *  this work for additional information regarding copyright ownership.
- *  The ASF licenses this file to You under the Apache License, Version 2.0
- *  (the "License"); you may not use this file except in compliance with
- *  the License.  You may obtain a copy of the License at
+ *  Copyright 2015 Alexey Andreev.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +13,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package org.teavm.classlib.java.util;
 
 public class TGregorianCalendar extends TCalendar {
@@ -23,7 +21,7 @@ public class TGregorianCalendar extends TCalendar {
 
     public static final int AD = 1;
 
-    private static final long defaultGregorianCutover = -12219292800000l;
+    private static final long defaultGregorianCutover = -12219292800000L;
 
     private long gregorianCutover = defaultGregorianCutover;
 
@@ -31,9 +29,9 @@ public class TGregorianCalendar extends TCalendar {
 
     private transient int julianSkew = ((changeYear - 2000) / 400) + julianError() - ((changeYear - 2000) / 100);
 
-    static byte[] DaysInMonth = new byte[] { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+    static byte[] daysInMonth = new byte[] { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
-    private static int[] DaysInYear = new int[] { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334 };
+    private static int[] daysInYear = new int[] { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334 };
 
     private static int[] maximums = new int[] { 1, 292278994, 11, 53, 6, 31, 366, 7, 6, 1, 11, 23, 59, 59, 999,
             14 * 3600 * 1000, 7200000 };
@@ -45,15 +43,15 @@ public class TGregorianCalendar extends TCalendar {
 
     private boolean isCached;
 
-    private int cachedFields[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+    private int[] cachedFields = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
-    private long nextMidnightMillis = 0L;
+    private long nextMidnightMillis;
 
-    private long lastMidnightMillis = 0L;
+    private long lastMidnightMillis;
 
     private int currentYearSkew = 10;
 
-    private int lastYearSkew = 0;
+    private int lastYearSkew;
 
     public TGregorianCalendar() {
         this(TLocale.getDefault());
@@ -194,7 +192,7 @@ public class TGregorianCalendar extends TCalendar {
         return thisClone;
     }
 
-    private final void fullFieldsCalc(long timeVal, int millis, int zoneOffset) {
+    private void fullFieldsCalc(long timeVal, int millis, int zoneOffset) {
         long days = timeVal / 86400000;
 
         if (millis < 0) {
@@ -257,13 +255,13 @@ public class TGregorianCalendar extends TCalendar {
             }
         }
 
-        fields[MILLISECOND] = (millis % 1000);
+        fields[MILLISECOND] = millis % 1000;
         millis /= 1000;
-        fields[SECOND] = (millis % 60);
+        fields[SECOND] = millis % 60;
         millis /= 60;
-        fields[MINUTE] = (millis % 60);
+        fields[MINUTE] = millis % 60;
         millis /= 60;
-        fields[HOUR_OF_DAY] = (millis % 24);
+        fields[HOUR_OF_DAY] = millis % 24;
         fields[AM_PM] = fields[HOUR_OF_DAY] > 11 ? 1 : 0;
         fields[HOUR] = fields[HOUR_OF_DAY] % 12;
 
@@ -278,11 +276,11 @@ public class TGregorianCalendar extends TCalendar {
         fields[DAY_OF_WEEK_IN_MONTH] = (date - 1) / 7 + 1;
         fields[WEEK_OF_MONTH] = (date - 1 + mod7(days - date - 2 - (getFirstDayOfWeek() - 1))) / 7 + 1;
         int daysFromStart = mod7(days - 3 - (fields[DAY_OF_YEAR] - 1) - (getFirstDayOfWeek() - 1));
-        int week = (fields[DAY_OF_YEAR] - 1 + daysFromStart) / 7 +
-                (7 - daysFromStart >= getMinimalDaysInFirstWeek() ? 1 : 0);
+        int week = (fields[DAY_OF_YEAR] - 1 + daysFromStart) / 7
+                + (7 - daysFromStart >= getMinimalDaysInFirstWeek() ? 1 : 0);
         if (week == 0) {
-            fields[WEEK_OF_YEAR] = 7 - mod7(daysFromStart - (isLeapYear(fields[YEAR] - 1) ? 2 : 1)) >= getMinimalDaysInFirstWeek() ? 53
-                    : 52;
+            fields[WEEK_OF_YEAR] = 7 - mod7(daysFromStart - (isLeapYear(fields[YEAR] - 1) ? 2 : 1))
+                    >= getMinimalDaysInFirstWeek() ? 53 : 52;
         } else if (fields[DAY_OF_YEAR] >= (leapYear ? 367 : 366) - mod7(daysFromStart + (leapYear ? 2 : 1))) {
             fields[WEEK_OF_YEAR] = 7 - mod7(daysFromStart + (leapYear ? 2 : 1)) >= getMinimalDaysInFirstWeek() ? 1
                     : week;
@@ -291,12 +289,12 @@ public class TGregorianCalendar extends TCalendar {
         }
     }
 
-    private final void cachedFieldsCheckAndGet(long timeVal, long newTimeMillis, long newTimeMillisAdjusted,
+    private void cachedFieldsCheckAndGet(long timeVal, long newTimeMillis, long newTimeMillisAdjusted,
             int millis, int zoneOffset) {
         int dstOffset = fields[DST_OFFSET];
-        if (!isCached || newTimeMillis >= nextMidnightMillis || newTimeMillis <= lastMidnightMillis ||
-                cachedFields[4] != zoneOffset || (dstOffset == 0 && (newTimeMillisAdjusted >= nextMidnightMillis)) ||
-                (dstOffset != 0 && (newTimeMillisAdjusted <= lastMidnightMillis))) {
+        if (!isCached || newTimeMillis >= nextMidnightMillis || newTimeMillis <= lastMidnightMillis
+                || cachedFields[4] != zoneOffset || (dstOffset == 0 && (newTimeMillisAdjusted >= nextMidnightMillis))
+                || (dstOffset != 0 && (newTimeMillisAdjusted <= lastMidnightMillis))) {
             fullFieldsCalc(timeVal, millis, zoneOffset);
             isCached = false;
         } else {
@@ -352,13 +350,13 @@ public class TGregorianCalendar extends TCalendar {
                 millis -= 86400000;
             }
 
-            fields[MILLISECOND] = (millis % 1000);
+            fields[MILLISECOND] = millis % 1000;
             millis /= 1000;
-            fields[SECOND] = (millis % 60);
+            fields[SECOND] = millis % 60;
             millis /= 60;
-            fields[MINUTE] = (millis % 60);
+            fields[MINUTE] = millis % 60;
             millis /= 60;
-            fields[HOUR_OF_DAY] = (millis % 24);
+            fields[HOUR_OF_DAY] = millis % 24;
             millis /= 24;
             fields[AM_PM] = fields[HOUR_OF_DAY] > 11 ? 1 : 0;
             fields[HOUR] = fields[HOUR_OF_DAY] % 12;
@@ -509,8 +507,8 @@ public class TGregorianCalendar extends TCalendar {
             boolean leapYear = isLeapYear(year);
             days = daysFromBaseYear(year) + daysInYear(leapYear, month);
             boolean useDate = isSet[DATE];
-            if (useDate &&
-                    (lastDateFieldSet == DAY_OF_WEEK || lastDateFieldSet == WEEK_OF_MONTH || lastDateFieldSet == DAY_OF_WEEK_IN_MONTH)) {
+            if (useDate && (lastDateFieldSet == DAY_OF_WEEK || lastDateFieldSet == WEEK_OF_MONTH
+                    || lastDateFieldSet == DAY_OF_WEEK_IN_MONTH)) {
                 useDate = !(isSet[DAY_OF_WEEK] && weekMonthSet);
             }
             if (useDate) {
@@ -532,9 +530,9 @@ public class TGregorianCalendar extends TCalendar {
                     if (fields[DAY_OF_WEEK_IN_MONTH] >= 0) {
                         days += mod7(dayOfWeek - (days - 3)) + (fields[DAY_OF_WEEK_IN_MONTH] - 1) * 7;
                     } else {
-                        days += daysInMonth(leapYear, month) +
-                                mod7(dayOfWeek - (days + daysInMonth(leapYear, month) - 3)) +
-                                fields[DAY_OF_WEEK_IN_MONTH] * 7;
+                        days += daysInMonth(leapYear, month)
+                                + mod7(dayOfWeek - (days + daysInMonth(leapYear, month) - 3))
+                                + fields[DAY_OF_WEEK_IN_MONTH] * 7;
                     }
                 } else if (isSet[DAY_OF_WEEK]) {
                     int skew = mod7(days - 3 - (getFirstDayOfWeek() - 1));
@@ -560,8 +558,8 @@ public class TGregorianCalendar extends TCalendar {
                     days += 7;
                 }
             } else if (isSet[DAY_OF_YEAR]) {
-                if (!isLenient() &&
-                        (fields[DAY_OF_YEAR] < 1 || fields[DAY_OF_YEAR] > (365 + (isLeapYear(year) ? 1 : 0)))) {
+                if (!isLenient() && (fields[DAY_OF_YEAR] < 1
+                        || fields[DAY_OF_YEAR] > (365 + (isLeapYear(year) ? 1 : 0)))) {
                     throw new IllegalArgumentException();
                 }
                 days += fields[DAY_OF_YEAR] - 1;
@@ -629,10 +627,10 @@ public class TGregorianCalendar extends TCalendar {
 
     private int daysInMonth(boolean leapYear, int month) {
         if (leapYear && month == FEBRUARY) {
-            return DaysInMonth[month] + 1;
+            return daysInMonth[month] + 1;
         }
 
-        return DaysInMonth[month];
+        return daysInMonth[month];
     }
 
     private int daysInYear(int year) {
@@ -648,10 +646,10 @@ public class TGregorianCalendar extends TCalendar {
 
     private int daysInYear(boolean leapYear, int month) {
         if (leapYear && month > FEBRUARY) {
-            return DaysInYear[month] + 1;
+            return daysInYear[month] + 1;
         }
 
-        return DaysInYear[month];
+        return daysInYear[month];
     }
 
     @Override
@@ -661,8 +659,8 @@ public class TGregorianCalendar extends TCalendar {
 
     @Override
     public int getActualMaximum(int field) {
-        int value;
-        if ((value = maximums[field]) == leastMaximums[field]) {
+        int value = maximums[field];
+        if (value == leastMaximums[field]) {
             return value;
         }
 
@@ -803,7 +801,11 @@ public class TGregorianCalendar extends TCalendar {
         isCached = false;
 
         complete();
-        int days, day, mod, maxWeeks, newWeek;
+        int days;
+        int day;
+        int mod;
+        int maxWeeks;
+        int newWeek;
         int max = -1;
         switch (field) {
             case YEAR:

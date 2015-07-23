@@ -27,15 +27,15 @@ class TCharBufferOverByteBufferLittleEndian extends TCharBufferOverByteBuffer {
 
     @Override
     char getChar(int index) {
-        int value = ((byteByffer.array[start + index * 2 + 1] & 0xFF) << 8) |
-                (byteByffer.array[start + index * 2] & 0xFF);
-        return (char)value;
+        int value = ((byteByffer.array[start + index * 2 + 1] & 0xFF) << 8)
+                | (byteByffer.array[start + index * 2] & 0xFF);
+        return (char) value;
     }
 
     @Override
     void putChar(int index, char value) {
-        byteByffer.array[start + index * 2] = (byte)value;
-        byteByffer.array[start + index * 2 + 1] = (byte)(value >> 8);
+        byteByffer.array[start + index * 2] = (byte) value;
+        byteByffer.array[start + index * 2 + 1] = (byte) (value >> 8);
     }
 
     @Override

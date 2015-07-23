@@ -86,8 +86,8 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
                 throw new TNumberFormatException(TString.wrap("String contains invalid digits: " + s));
             }
             if (digit >= radix) {
-                throw new TNumberFormatException(TString.wrap("String contains digits out of radix " + radix +
-                        ": " + s));
+                throw new TNumberFormatException(TString.wrap("String contains digits out of radix " + radix
+                        + ": " + s));
             }
             value = radix * value + digit;
             if (value < 0) {
@@ -164,7 +164,7 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
         if (this == other) {
             return true;
         }
-        return other instanceof TInteger && ((TInteger)other).value == value;
+        return other instanceof TInteger && ((TInteger) other).value == value;
     }
 
     public static TInteger getInteger(TString nm) {

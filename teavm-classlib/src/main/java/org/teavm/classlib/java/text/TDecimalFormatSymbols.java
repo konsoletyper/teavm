@@ -15,8 +15,8 @@
  */
 package org.teavm.classlib.java.text;
 
-import org.teavm.classlib.impl.unicode.DecimalData;
 import org.teavm.classlib.impl.unicode.CLDRHelper;
+import org.teavm.classlib.impl.unicode.DecimalData;
 import org.teavm.classlib.java.util.TLocale;
 
 /**
@@ -32,7 +32,7 @@ public class TDecimalFormatSymbols implements Cloneable {
     private char percent;
     private char digit;
     private char patternSeparator;
-    private String NaN;
+    private String nan;
     private String infinity;
     private char minusSign;
     private char monetaryDecimalSeparator;
@@ -50,16 +50,16 @@ public class TDecimalFormatSymbols implements Cloneable {
     private void initData() {
         DecimalData data = CLDRHelper.resolveDecimalData(locale.getLanguage(), locale.getCountry());
         zeroDigit = '0';
-        groupingSeparator = (char)data.getGroupingSeparator();
-        decimalSeparator = (char)data.getDecimalSeparator();
-        perMill = (char)data.getPerMille();
-        percent = (char)data.getPercent();
+        groupingSeparator = (char) data.getGroupingSeparator();
+        decimalSeparator = (char) data.getDecimalSeparator();
+        perMill = (char) data.getPerMille();
+        percent = (char) data.getPercent();
         digit = '#';
         patternSeparator = ';';
-        NaN = data.getNaN();
+        nan = data.getNaN();
         infinity = data.getInfinity();
-        minusSign = (char)data.getMinusSign();
-        monetaryDecimalSeparator = (char)data.getDecimalSeparator();
+        minusSign = (char) data.getMinusSign();
+        monetaryDecimalSeparator = (char) data.getDecimalSeparator();
         exponentSeparator = data.getExponentSeparator();
     }
 
@@ -136,11 +136,11 @@ public class TDecimalFormatSymbols implements Cloneable {
     }
 
     public String getNaN() {
-        return NaN;
+        return nan;
     }
 
     public void setNaN(String naN) {
-        NaN = naN;
+        nan = naN;
     }
 
     public String getInfinity() {

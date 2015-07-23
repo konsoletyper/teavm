@@ -133,7 +133,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
         if (this == other) {
             return true;
         }
-        return other instanceof TCharacter && ((TCharacter)other).value == value;
+        return other instanceof TCharacter && ((TCharacter) other).value == value;
     }
 
     @Override
@@ -178,13 +178,13 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static int toCodePoint(char high, char low) {
-        return (((high & SURROGATE_BIT_INV_MASK) << MEANINGFUL_SURROGATE_BITS) | (low & SURROGATE_BIT_INV_MASK)) +
-                MIN_SUPPLEMENTARY_CODE_POINT;
+        return (((high & SURROGATE_BIT_INV_MASK) << MEANINGFUL_SURROGATE_BITS) | (low & SURROGATE_BIT_INV_MASK))
+                + MIN_SUPPLEMENTARY_CODE_POINT;
     }
 
     public static int codePointAt(TCharSequence seq, int index) {
-        if (index >= seq.length() - 1 || !isHighSurrogate(seq.charAt(index)) ||
-                !isLowSurrogate(seq.charAt(index + 1))) {
+        if (index >= seq.length() - 1 || !isHighSurrogate(seq.charAt(index))
+                || !isLowSurrogate(seq.charAt(index + 1))) {
             return seq.charAt(index);
         } else {
             return toCodePoint(seq.charAt(index), seq.charAt(index + 1));
@@ -224,15 +224,15 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
 
     public static char highSurrogate(int codePoint) {
         codePoint -= MIN_SUPPLEMENTARY_CODE_POINT;
-        return (char)(HIGH_SURROGATE_BITS | (codePoint >> MEANINGFUL_SURROGATE_BITS) & SURROGATE_BIT_INV_MASK);
+        return (char) (HIGH_SURROGATE_BITS | (codePoint >> MEANINGFUL_SURROGATE_BITS) & SURROGATE_BIT_INV_MASK);
     }
 
     public static char lowSurrogate(int codePoint) {
-        return (char)(LOW_SURROGATE_BITS | codePoint & SURROGATE_BIT_INV_MASK);
+        return (char) (LOW_SURROGATE_BITS | codePoint & SURROGATE_BIT_INV_MASK);
     }
 
     public static char toLowerCase(char ch) {
-        return (char)toLowerCase((int)ch);
+        return (char) toLowerCase((int) ch);
     }
 
     public static int toLowerCase(int ch) {
@@ -240,7 +240,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static char toUpperCase(char ch) {
-        return (char)toUpperCase((int)ch);
+        return (char) toUpperCase((int) ch);
     }
 
     public static int toUpperCase(int codePoint) {
@@ -248,7 +248,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static int digit(char ch, int radix) {
-        return digit((int)ch, radix);
+        return digit((int) ch, radix);
     }
 
     public static int digit(int codePoint, int radix) {
@@ -260,7 +260,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static int getNumericValue(char ch) {
-        return getNumericValue((int)ch);
+        return getNumericValue((int) ch);
     }
 
     public static int getNumericValue(int codePoint) {
@@ -285,11 +285,11 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
         if (radix < MIN_RADIX || radix > MAX_RADIX || digit >= radix) {
             return '\0';
         }
-        return digit < 10 ? (char)('0' + digit) : (char)('a' + digit - 10);
+        return digit < 10 ? (char) ('0' + digit) : (char) ('a' + digit - 10);
     }
 
     public static boolean isDigit(char ch) {
-        return isDigit((int)ch);
+        return isDigit((int) ch);
     }
 
     public static boolean isDigit(int codePoint) {
@@ -322,7 +322,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
             dst[dstIndex + 1] = lowSurrogate(codePoint);
             return 2;
         } else {
-            dst[dstIndex] = (char)codePoint;
+            dst[dstIndex] = (char) codePoint;
             return 1;
         }
     }
@@ -331,7 +331,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
         if (codePoint >= MIN_SUPPLEMENTARY_CODE_POINT) {
             return new char[] { highSurrogate(codePoint), lowSurrogate(codePoint) };
         } else {
-            return new char[] { (char)codePoint };
+            return new char[] { (char) codePoint };
         }
     }
 
@@ -361,8 +361,8 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
 
     public static int offsetByCodePoints(TCharSequence seq, int index, int codePointOffset) {
         for (int i = 0; i < codePointOffset; ++i) {
-            if (index < seq.length() - 1 && isHighSurrogate(seq.charAt(index)) &&
-                    isLowSurrogate(seq.charAt(index + 1))) {
+            if (index < seq.length() - 1 && isHighSurrogate(seq.charAt(index))
+                    && isLowSurrogate(seq.charAt(index + 1))) {
                 index += 2;
             } else {
                 index++;
@@ -383,7 +383,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static boolean isISOControl(char ch) {
-        return isISOControl((int)ch);
+        return isISOControl((int) ch);
     }
 
     public static boolean isISOControl(int codePoint) {
@@ -391,11 +391,11 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static int getType(char c) {
-        return getType((int)c);
+        return getType((int) c);
     }
 
     public static int getType(int codePoint) {
-        if (isBmpCodePoint(codePoint) && isSurrogate((char)codePoint)) {
+        if (isBmpCodePoint(codePoint) && isSurrogate((char) codePoint)) {
             return SURROGATE;
         }
         UnicodeHelper.Range[] classes = getClasses();
@@ -416,7 +416,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static boolean isLowerCase(char ch) {
-        return isLowerCase((int)ch);
+        return isLowerCase((int) ch);
     }
 
     public static boolean isLowerCase(int codePoint) {
@@ -424,7 +424,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static boolean isUpperCase(char ch) {
-        return isUpperCase((int)ch);
+        return isUpperCase((int) ch);
     }
 
     public static boolean isUpperCase(int codePoint) {
@@ -432,7 +432,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static boolean isTitleCase(char ch) {
-        return isTitleCase((int)ch);
+        return isTitleCase((int) ch);
     }
 
     public static boolean isTitleCase(int codePoint) {
@@ -440,7 +440,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static boolean isDefined(char ch) {
-        return isDefined((int)ch);
+        return isDefined((int) ch);
     }
 
     public static boolean isDefined(int codePoint) {
@@ -448,7 +448,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static boolean isLetter(char ch) {
-        return isLetter((int)ch);
+        return isLetter((int) ch);
     }
 
     public static boolean isLetter(int codePoint) {
@@ -465,7 +465,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static boolean isLetterOrDigit(char ch) {
-        return isLetterOrDigit((int)ch);
+        return isLetterOrDigit((int) ch);
     }
 
     public static boolean isLetterOrDigit(int codePoint) {
@@ -488,7 +488,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static boolean isJavaIdentifierStart(char ch) {
-        return isJavaIdentifierStart((int)ch);
+        return isJavaIdentifierStart((int) ch);
     }
 
     public static boolean isJavaIdentifierStart(int codePoint) {
@@ -513,7 +513,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static boolean isJavaIdentifierPart(char ch) {
-        return isJavaIdentifierPart((int)ch);
+        return isJavaIdentifierPart((int) ch);
     }
 
     public static boolean isJavaIdentifierPart(int codePoint) {
@@ -550,7 +550,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static boolean isUnicodeIdentifierStart(char ch) {
-        return isUnicodeIdentifierStart((int)ch);
+        return isUnicodeIdentifierStart((int) ch);
     }
 
     public static boolean isUnicodeIdentifierStart(int codePoint) {
@@ -568,7 +568,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static boolean isUnicodeIdentifierPart(char ch) {
-        return isUnicodeIdentifierPart((int)ch);
+        return isUnicodeIdentifierPart((int) ch);
     }
 
     public static boolean isUnicodeIdentifierPart(int codePoint) {
@@ -590,12 +590,12 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static boolean isIdentifierIgnorable(char ch) {
-        return isIdentifierIgnorable((int)ch);
+        return isIdentifierIgnorable((int) ch);
     }
 
     public static boolean isIdentifierIgnorable(int codePoint) {
-        if (codePoint >= 0x00 && codePoint <= 0x08 || codePoint >= 0x0E && codePoint <= 0x1B ||
-                codePoint >= 0x7F && codePoint <= 0x9F) {
+        if (codePoint >= 0x00 && codePoint <= 0x08 || codePoint >= 0x0E && codePoint <= 0x1B
+                || codePoint >= 0x7F && codePoint <= 0x9F) {
             return true;
         }
         return getType(codePoint) == FORMAT;
@@ -616,7 +616,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static boolean isSpaceChar(char ch) {
-        return isSpaceChar((int)ch);
+        return isSpaceChar((int) ch);
     }
 
     public static boolean isSpaceChar(int codePoint) {
@@ -631,7 +631,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static boolean isWhitespace(char ch) {
-        return isWhitespace((int)ch);
+        return isWhitespace((int) ch);
     }
 
     public static boolean isWhitespace(int codePoint) {
@@ -668,6 +668,6 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     public static char reverseBytes(char ch) {
-        return (char)((ch >> 8) | (ch << 8));
+        return (char) ((ch >> 8) | (ch << 8));
     }
 }

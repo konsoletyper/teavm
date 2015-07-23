@@ -1,18 +1,18 @@
 /*
-* Copyright 2014 Alexey Andreev.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ *  Copyright 2014 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 /*
 * Licensed to the Apache Software Foundation (ASF) under one or more
 * contributor license agreements. See the NOTICE file distributed with
@@ -38,6 +38,7 @@ import org.teavm.classlib.java.lang.TCloneable;
 import org.teavm.classlib.java.lang.TComparable;
 import org.teavm.platform.metadata.IntResource;
 import org.teavm.platform.metadata.ResourceMap;
+
 
 public abstract class TCalendar implements TSerializable, TCloneable, TComparable<TCalendar> {
     protected boolean areFieldsSet;
@@ -159,7 +160,8 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
     TCalendar(TTimeZone timezone) {
         fields = new int[FIELD_COUNT];
         isSet = new boolean[FIELD_COUNT];
-        areFieldsSet = isTimeSet = false;
+        areFieldsSet = false;
+        isTimeSet = false;
         setLenient(true);
         setTimeZone(timezone);
     }
@@ -168,7 +170,8 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
         this(timezone);
         fields = new int[FIELD_COUNT];
         isSet = new boolean[FIELD_COUNT];
-        areFieldsSet = isTimeSet = false;
+        areFieldsSet = false;
+        isTimeSet = false;
         setLenient(true);
         setFirstDayOfWeek(resolveFirstDayOfWeek(locale));
         setMinimalDaysInFirstWeek(resolveMinimalDaysInFirstWeek(locale));
@@ -191,8 +194,8 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
         }
         String country = CLDRHelper.resolveCountry(locale.getLanguage(), locale.getCountry());
         ResourceMap<IntResource> dayMap = CLDRHelper.getMinimalDaysInFirstWeek();
-        minimalDaysInFirstWeekCache = dayMap.has(country) ? dayMap.get(country).getValue() :
-                dayMap.get("001").getValue();
+        minimalDaysInFirstWeekCache = dayMap.has(country) ? dayMap.get(country).getValue()
+                : dayMap.get("001").getValue();
         return minimalDaysInFirstWeekCache;
     }
 
@@ -217,13 +220,15 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
             fields[i] = 0;
             isSet[i] = false;
         }
-        areFieldsSet = isTimeSet = false;
+        areFieldsSet = false;
+        isTimeSet = false;
     }
 
     public final void clear(int field) {
         fields[field] = 0;
         isSet[field] = false;
-        areFieldsSet = isTimeSet = false;
+        areFieldsSet = false;
+        isTimeSet = false;
     }
 
     @Override
@@ -232,7 +237,7 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
             TCalendar clone = (TCalendar) super.clone();
             clone.fields = fields.clone();
             clone.isSet = isSet.clone();
-            clone.zone = (TTimeZone)zone.clone();
+            clone.zone = (TTimeZone) zone.clone();
             return clone;
         } catch (CloneNotSupportedException e) {
             return null;
@@ -263,10 +268,10 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
             return false;
         }
         TCalendar cal = (TCalendar) object;
-        return getTimeInMillis() == cal.getTimeInMillis() && isLenient() == cal.isLenient() &&
-                getFirstDayOfWeek() == cal.getFirstDayOfWeek() &&
-                getMinimalDaysInFirstWeek() == cal.getMinimalDaysInFirstWeek() &&
-                zone.equals(cal.zone);
+        return getTimeInMillis() == cal.getTimeInMillis() && isLenient() == cal.isLenient()
+                && getFirstDayOfWeek() == cal.getFirstDayOfWeek()
+                && getMinimalDaysInFirstWeek() == cal.getMinimalDaysInFirstWeek()
+                && zone.equals(cal.zone);
     }
 
     public int get(int field) {
@@ -275,8 +280,10 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
     }
 
     public int getActualMaximum(int field) {
-        int value, next;
-        if (getMaximum(field) == (next = getLeastMaximum(field))) {
+        int value;
+        int max = getMaximum(field);
+        int next = getLeastMaximum(field);
+        if (max == next) {
             return next;
         }
         complete();
@@ -293,8 +300,10 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
     }
 
     public int getActualMinimum(int field) {
-        int value, next;
-        if (getMinimum(field) == (next = getGreatestMinimum(field))) {
+        int value;
+        int min = getMinimum(field);
+        int next = getGreatestMinimum(field);
+        if (min == next) {
             return next;
         }
         complete();
@@ -397,7 +406,8 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
     public void set(int field, int value) {
         fields[field] = value;
         isSet[field] = true;
-        areFieldsSet = isTimeSet = false;
+        areFieldsSet = false;
+        isTimeSet = false;
         if (field > MONTH && field < AM_PM) {
             lastDateFieldSet = field;
         }
@@ -453,10 +463,10 @@ public abstract class TCalendar implements TSerializable, TCloneable, TComparabl
 
     @Override
     public String toString() {
-        StringBuilder result = new StringBuilder(getClass().getName() + "[time=" +
-                (isTimeSet ? String.valueOf(time) : "?") + ",areFieldsSet=" + areFieldsSet + ",lenient=" + lenient +
-                ",firstDayOfWeek=" + firstDayOfWeek + ",minimalDaysInFirstWeek=" +
-                minimalDaysInFirstWeek);
+        StringBuilder result = new StringBuilder(getClass().getName() + "[time="
+                + (isTimeSet ? String.valueOf(time) : "?") + ",areFieldsSet=" + areFieldsSet + ",lenient=" + lenient
+                + ",firstDayOfWeek=" + firstDayOfWeek + ",minimalDaysInFirstWeek="
+                + minimalDaysInFirstWeek);
         for (int i = 0; i < FIELD_COUNT; i++) {
             result.append(',');
             result.append(fieldNames[i]);

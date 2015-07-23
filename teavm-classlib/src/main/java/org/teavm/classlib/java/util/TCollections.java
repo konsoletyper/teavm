@@ -164,7 +164,7 @@ public class TCollections extends TObject {
     }
 
     public static <K, V> TMap<K, V> singletonMap(final K key, final V value) {
-        final TSet<Entry<K, V>> entries = singleton((Entry<K, V>)new TAbstractMap.SimpleImmutableEntry<>(key, value));
+        final TSet<Entry<K, V>> entries = singleton((Entry<K, V>) new TAbstractMap.SimpleImmutableEntry<>(key, value));
         return new TAbstractMap<K, V>() {
             @Override public TSet<Entry<K, V>> entrySet() {
                 return entries;
@@ -199,7 +199,7 @@ public class TCollections extends TObject {
 
     public static void swap(TList<?> list, int i, int j) {
         @SuppressWarnings("unchecked")
-        TList<Object> objList = (TList<Object>)list;
+        TList<Object> objList = (TList<Object>) list;
         Object tmp = objList.get(i);
         objList.set(i, objList.get(j));
         objList.set(j, tmp);
@@ -210,7 +210,7 @@ public class TCollections extends TObject {
             c = naturalOrder;
         }
         @SuppressWarnings("unchecked")
-        T[] array = (T[])new Object[list.size()];
+        T[] array = (T[]) new Object[list.size()];
         list.toArray(array);
         TArrays.sort(array, c);
         for (int i = 0; i < array.length; ++i) {
@@ -230,7 +230,7 @@ public class TCollections extends TObject {
             TList<Object> randomAccess = new TArrayList<>(list);
             reverse(list, 0, list.size());
             list.clear();
-            ((TList<Object>)list).addAll(randomAccess);
+            ((TList<Object>) list).addAll(randomAccess);
         }
     }
 
@@ -240,7 +240,7 @@ public class TCollections extends TObject {
 
     private static TComparator<Object> naturalOrder = new TComparator<Object>() {
         @SuppressWarnings("unchecked") @Override public int compare(Object o1, Object o2) {
-            return o1 != null ? ((TComparable<Object>)o1).compareTo(o2) : -((TComparable<Object>)o2).compareTo(o1);
+            return o1 != null ? ((TComparable<Object>) o1).compareTo(o2) : -((TComparable<Object>) o2).compareTo(o1);
         }
     };
 
@@ -288,7 +288,7 @@ public class TCollections extends TObject {
             TList<Object> randomAccess = new TArrayList<>(list);
             shuffleRandomAccess(randomAccess, rnd);
             list.clear();
-            ((TList<Object>)list).addAll(randomAccess);
+            ((TList<Object>) list).addAll(randomAccess);
         }
     }
 
@@ -376,7 +376,7 @@ public class TCollections extends TObject {
             TList<Object> randomAccess = new TArrayList<>(list);
             rotateRandomAccess(randomAccess, distance);
             list.clear();
-            ((TList<Object>)list).addAll(randomAccess);
+            ((TList<Object>) list).addAll(randomAccess);
         }
     }
 
@@ -395,7 +395,7 @@ public class TCollections extends TObject {
 
     private static void reverse(TList<?> list, int from, int to) {
         @SuppressWarnings("unchecked")
-        TList<Object> safeList = (TList<Object>)list;
+        TList<Object> safeList = (TList<Object>) list;
         int half = (from + to) / 2;
         int j = to - 1;
         for (int i = from; i < half; ++i, --j) {
@@ -546,12 +546,12 @@ public class TCollections extends TObject {
 
     @SuppressWarnings("unchecked")
     public static <T> TComparator<T> reverseOrder() {
-        return (TComparator<T>)reverseOrder;
+        return (TComparator<T>) reverseOrder;
     }
 
     private static TComparator<Object> reverseOrder = new TComparator<Object>() {
         @SuppressWarnings("unchecked") @Override public int compare(Object o1, Object o2) {
-            return o1 != null ? -((TComparable<Object>)o1).compareTo(o2) : ((TComparable<Object>)o2).compareTo(o1);
+            return o1 != null ? -((TComparable<Object>) o1).compareTo(o2) : ((TComparable<Object>) o2).compareTo(o1);
         }
     };
 

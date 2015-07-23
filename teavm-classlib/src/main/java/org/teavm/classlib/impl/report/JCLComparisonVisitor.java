@@ -100,8 +100,8 @@ class JCLComparisonVisitor extends ClassVisitor {
             if ((access & Opcodes.ACC_ABSTRACT) == 0 && method.hasModifier(ElementModifier.ABSTRACT)) {
                 item.status = JCLStatus.MISSING;
             } else {
-                item.status = method.getOwnerName().equals(classReader.getName()) ?
-                        JCLStatus.FOUND : JCLStatus.PARTIAL;
+                item.status = method.getOwnerName().equals(classReader.getName())
+                        ? JCLStatus.FOUND : JCLStatus.PARTIAL;
             }
         }
         item.visibility = (access & Opcodes.ACC_PROTECTED) != 0 ? JCLVisibility.PROTECTED : JCLVisibility.PUBLIC;

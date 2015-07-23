@@ -25,7 +25,7 @@ public class CLDRDecimalData {
     int listSeparator;
     int perMille;
     int percent;
-    String NaN;
+    String nan;
     String infinity;
     int minusSign;
     int monetaryDecimalSeparator;
@@ -52,7 +52,7 @@ public class CLDRDecimalData {
     }
 
     public String getNaN() {
-        return NaN;
+        return nan;
     }
 
     public String getInfinity() {

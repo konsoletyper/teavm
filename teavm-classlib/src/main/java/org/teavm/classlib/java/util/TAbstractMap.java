@@ -36,7 +36,7 @@ public abstract class TAbstractMap<K, V> extends TObject implements TMap<K, V> {
             this.value = value;
         }
 
-        public SimpleEntry(TMap.Entry<? extends K,? extends V> entry) {
+        public SimpleEntry(TMap.Entry<? extends K, ? extends V> entry) {
             this(entry.getKey(), entry.getValue());
         }
 
@@ -62,7 +62,7 @@ public abstract class TAbstractMap<K, V> extends TObject implements TMap<K, V> {
             if (!(obj instanceof TMap.Entry)) {
                 return false;
             }
-            TMap.Entry<?, ?> other = (TMap.Entry<?, ?>)obj;
+            TMap.Entry<?, ?> other = (TMap.Entry<?, ?>) obj;
             if (getKey() == null ? other.getKey() != null : !getKey().equals(other.getKey())) {
                 return false;
             }
@@ -89,7 +89,7 @@ public abstract class TAbstractMap<K, V> extends TObject implements TMap<K, V> {
             this.value = value;
         }
 
-        public SimpleImmutableEntry(TMap.Entry<? extends K,? extends V> entry) {
+        public SimpleImmutableEntry(TMap.Entry<? extends K, ? extends V> entry) {
             this(entry.getKey(), entry.getValue());
         }
 
@@ -113,7 +113,7 @@ public abstract class TAbstractMap<K, V> extends TObject implements TMap<K, V> {
             if (!(obj instanceof TMap.Entry)) {
                 return false;
             }
-            TMap.Entry<?, ?> other = (TMap.Entry<?, ?>)obj;
+            TMap.Entry<?, ?> other = (TMap.Entry<?, ?>) obj;
             if (getKey() == null ? other.getKey() != null : !getKey().equals(other.getKey())) {
                 return false;
             }
@@ -186,7 +186,7 @@ public abstract class TAbstractMap<K, V> extends TObject implements TMap<K, V> {
     }
 
     @Override
-    public void putAll(TMap<? extends K,? extends V> m) {
+    public void putAll(TMap<? extends K, ? extends V> m) {
         for (TIterator<? extends TMap.Entry<? extends K, ? extends V>> iter = m.entrySet().iterator();
                 iter.hasNext();) {
             TMap.Entry<? extends K, ? extends V> entry = iter.next();
@@ -207,7 +207,7 @@ public abstract class TAbstractMap<K, V> extends TObject implements TMap<K, V> {
     }
 
     @Override
-    public abstract TSet<TMap.Entry<K,V>> entrySet();
+    public abstract TSet<TMap.Entry<K, V>> entrySet();
 
     @Override
     public void clear() {
@@ -239,7 +239,7 @@ public abstract class TAbstractMap<K, V> extends TObject implements TMap<K, V> {
             return false;
         }
         @SuppressWarnings("unchecked")
-        TMap<Object, Object> other = (TMap<Object, Object>)obj;
+        TMap<Object, Object> other = (TMap<Object, Object>) obj;
         if (size() != other.size()) {
             return false;
         }
@@ -267,7 +267,7 @@ public abstract class TAbstractMap<K, V> extends TObject implements TMap<K, V> {
 
     @Override
     protected Object clone() throws TCloneNotSupportedException {
-        TAbstractMap<?, ?> copy = (TAbstractMap<?, ?>)super.clone();
+        TAbstractMap<?, ?> copy = (TAbstractMap<?, ?>) super.clone();
         copy.cachedKeySet = null;
         copy.cachedValues = null;
         return copy;

@@ -5,7 +5,7 @@
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,7 +25,7 @@ package org.teavm.classlib.impl.tz;
  * @author Brian S O'Neill
  * @since 1.0
  */
-public class CachedDateTimeZone extends StorableDateTimeZone {
+public final class CachedDateTimeZone extends StorableDateTimeZone {
 
     private static final int cInfoCacheMask;
 
@@ -38,7 +38,7 @@ public class CachedDateTimeZone extends StorableDateTimeZone {
      */
     public static CachedDateTimeZone forZone(StorableDateTimeZone zone) {
         if (zone instanceof CachedDateTimeZone) {
-            return (CachedDateTimeZone)zone;
+            return (CachedDateTimeZone) zone;
         }
         return new CachedDateTimeZone(zone);
     }
@@ -101,11 +101,11 @@ public class CachedDateTimeZone extends StorableDateTimeZone {
     // synchronized.
 
     private Info getInfo(long millis) {
-        int period = (int)(millis >> 32);
+        int period = (int) (millis >> 32);
         Info[] cache = iInfoCache;
         int index = period & cInfoCacheMask;
         Info info = cache[index];
-        if (info == null || (int)((info.iPeriodStart >> 32)) != period) {
+        if (info == null || (int) ((info.iPeriodStart >> 32)) != period) {
             info = createInfo(millis);
             cache[index] = info;
         }
@@ -124,7 +124,8 @@ public class CachedDateTimeZone extends StorableDateTimeZone {
                 break;
             }
             periodStart = next;
-            chain = (chain.iNextInfo = new Info(iZone, periodStart));
+            chain.iNextInfo = new Info(iZone, periodStart);
+            chain = chain.iNextInfo;
         }
 
         return info;

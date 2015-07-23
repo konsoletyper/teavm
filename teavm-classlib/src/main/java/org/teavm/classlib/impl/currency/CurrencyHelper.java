@@ -25,6 +25,9 @@ import org.teavm.platform.metadata.StringResource;
  * @author Alexey Andreev
  */
 public final class CurrencyHelper {
+    private CurrencyHelper() {
+    }
+
     @MetadataProvider(CurrenciesGenerator.class)
     public static native ResourceArray<CurrencyResource> getCurrencies();
 

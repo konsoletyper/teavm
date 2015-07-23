@@ -33,15 +33,15 @@ public abstract class TWriter implements TAppendable, TCloseable, TFlushable {
         this.lock = lock;
     }
 
-    public void write(char buf[]) throws TIOException {
+    public void write(char[] buf) throws TIOException {
         write(buf, 0, buf.length);
     }
 
-    public abstract void write(char buf[], int offset, int count) throws TIOException;
+    public abstract void write(char[] buf, int offset, int count) throws TIOException;
 
     public void write(int oneChar) throws TIOException {
         synchronized (lock) {
-            char oneCharArray[] = new char[1];
+            char[] oneCharArray = new char[1];
             oneCharArray[0] = (char) oneChar;
             write(oneCharArray);
         }
@@ -55,7 +55,7 @@ public abstract class TWriter implements TAppendable, TCloseable, TFlushable {
         if (count < 0) {
             throw new StringIndexOutOfBoundsException();
         }
-        char buf[] = new char[count];
+        char[] buf = new char[count];
         str.getChars(offset, offset + count, buf, 0);
         synchronized (lock) {
             write(buf, 0, buf.length);

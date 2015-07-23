@@ -35,12 +35,12 @@ public class TRandom extends TObject implements TSerializable {
     }
 
     protected int next(int bits) {
-        return (int)(random() * (1L << TMath.min(32, bits)));
+        return (int) (random() * (1L << TMath.min(32, bits)));
     }
 
     public void nextBytes(byte[] bytes) {
         for (int i = 0; i < bytes.length; ++i) {
-            bytes[i] = (byte)next(8);
+            bytes[i] = (byte) next(8);
         }
     }
 
@@ -49,11 +49,11 @@ public class TRandom extends TObject implements TSerializable {
     }
 
     public int nextInt(int n) {
-        return (int)(random() * n);
+        return (int) (random() * n);
     }
 
     public long nextLong() {
-        return ((long)nextInt() << 32) | nextInt();
+        return ((long) nextInt() << 32) | nextInt();
     }
 
     public boolean nextBoolean() {
@@ -61,7 +61,7 @@ public class TRandom extends TObject implements TSerializable {
     }
 
     public float nextFloat() {
-        return (float)random();
+        return (float) random();
     }
 
     public double nextDouble() {

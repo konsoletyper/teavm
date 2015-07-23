@@ -99,7 +99,7 @@ public class TArrays extends TObject {
 
     public static <T> T[] copyOf(T[] original, int newLength) {
         @SuppressWarnings("unchecked")
-        T[] result = (T[])Array.newInstance(original.getClass().getComponentType(), newLength);
+        T[] result = (T[]) Array.newInstance(original.getClass().getComponentType(), newLength);
         int sz = TMath.min(newLength, original.length);
         for (int i = 0; i < sz; ++i) {
             result[i] = original[i];
@@ -110,10 +110,10 @@ public class TArrays extends TObject {
     @SuppressWarnings("unchecked")
     public static <T, U> T[] copyOf(U[] original, int newLength, TClass<? extends T[]> cls) {
         TClass<?> componentType = cls.getComponentType();
-        T[] result = (T[])(Object)TArray.newInstance(componentType, newLength);
+        T[] result = (T[]) (Object) TArray.newInstance(componentType, newLength);
         int sz = TMath.min(newLength, original.length);
         for (int i = 0; i < sz; ++i) {
-            result[i] = (T)componentType.cast(TObject.wrap(original[i]));
+            result[i] = (T) componentType.cast(TObject.wrap(original[i]));
         }
         return result;
     }
@@ -184,7 +184,7 @@ public class TArrays extends TObject {
 
     public static <T> T[] copyOfRange(T[] original, int from, int to) {
         @SuppressWarnings("unchecked")
-        T[] result = (T[])Array.newInstance(original.getClass().getComponentType(), to - from);
+        T[] result = (T[]) Array.newInstance(original.getClass().getComponentType(), to - from);
         for (int i = from; i < to; ++i) {
             result[i - from] = original[i];
         }
@@ -194,9 +194,9 @@ public class TArrays extends TObject {
     @SuppressWarnings("unchecked")
     public static <T, U> T[] copyOfRange(U[] original, int from, int to, TClass<? extends T[]> newType) {
         TClass<?> componentType = newType.getComponentType();
-        T[] result = (T[])(Object)TArray.newInstance(componentType, to - from);
+        T[] result = (T[]) (Object) TArray.newInstance(componentType, to - from);
         for (int i = from; i < to; ++i) {
-            result[i - from] = (T)newType.getComponentType().cast(TObject.wrap(original[i]));
+            result[i - from] = (T) newType.getComponentType().cast(TObject.wrap(original[i]));
         }
         return result;
     }
@@ -881,9 +881,9 @@ public class TArrays extends TObject {
         @SuppressWarnings({ "rawtypes", "unchecked" })
         @Override public int compare(Object o1, Object o2) {
             if (o1 != null) {
-                return ((TComparable)o1).compareTo(o2);
+                return ((TComparable) o1).compareTo(o2);
             } else if (o2 != null) {
-                return ((TComparable)o2).compareTo(o1);
+                return ((TComparable) o2).compareTo(o1);
             } else {
                 return 0;
             }
@@ -892,7 +892,7 @@ public class TArrays extends TObject {
 
     public static <T> void sort(T[] a, int fromIndex, int toIndex, TComparator<? super T> c) {
         @SuppressWarnings("unchecked")
-        T[] subarray = (T[])new Object[toIndex - fromIndex];
+        T[] subarray = (T[]) new Object[toIndex - fromIndex];
         for (int i = fromIndex; i < toIndex; ++i) {
             subarray[i - fromIndex] = a[i];
         }
@@ -913,7 +913,7 @@ public class TArrays extends TObject {
         while (chunkSize < a.length) {
             for (int i = 0; i < first.length; i += chunkSize * 2) {
                 merge(first, second, i, Math.min(first.length, i + chunkSize),
-                        Math.min(first.length, i + 2 * chunkSize), (TComparator<Object>)c);
+                        Math.min(first.length, i + 2 * chunkSize), (TComparator<Object>) c);
             }
             Object[] tmp = first;
             first = second;
@@ -1348,7 +1348,7 @@ public class TArrays extends TObject {
         }
         int hash = 0xA5A537FC;
         for (int i = 0; i < a.length; ++i) {
-            int h = (int)(a[i] >>> 32) ^ (int)a[i];
+            int h = (int) (a[i] >>> 32) ^ (int) a[i];
             hash = TInteger.rotateLeft(h, 4) ^ TInteger.rotateRight(h, 7) ^ TInteger.rotateLeft(hash, 13);
         }
         return hash;
@@ -1417,7 +1417,7 @@ public class TArrays extends TObject {
         int hash = 0xA5A537FC;
         for (int i = 0; i < a.length; ++i) {
             long lh = TDouble.doubleToLongBits(a[i]);
-            int h = (int)lh ^ (int)(lh >> 32);
+            int h = (int) lh ^ (int) (lh >> 32);
             hash = TInteger.rotateLeft(h, 4) ^ TInteger.rotateRight(h, 7) ^ TInteger.rotateLeft(hash, 13);
         }
         return hash;
@@ -1444,23 +1444,23 @@ public class TArrays extends TObject {
             Object el = a[i];
             int h;
             if (a[i] instanceof boolean[]) {
-                h = hashCode((boolean[])el);
+                h = hashCode((boolean[]) el);
             } else if (a[i] instanceof byte[]) {
-                h = hashCode((byte[])el);
+                h = hashCode((byte[]) el);
             } else if (a[i] instanceof short[]) {
-                h = hashCode((short[])el);
+                h = hashCode((short[]) el);
             } else if (a[i] instanceof char[]) {
-                h = hashCode((char[])el);
+                h = hashCode((char[]) el);
             } else if (a[i] instanceof int[]) {
-                h = hashCode((int[])el);
+                h = hashCode((int[]) el);
             } else if (a[i] instanceof long[]) {
-                h = hashCode((long[])el);
+                h = hashCode((long[]) el);
             } else if (a[i] instanceof float[]) {
-                h = hashCode((float[])el);
+                h = hashCode((float[]) el);
             } else if (a[i] instanceof double[]) {
-                h = hashCode((double[])el);
+                h = hashCode((double[]) el);
             } else if (a[i] instanceof Object[]) {
-                h = deepHashCode((Object[])el);
+                h = deepHashCode((Object[]) el);
             } else {
                 h = TObjects.hashCode(el) ^ 0x1F7A58E0;
             }
@@ -1529,7 +1529,7 @@ public class TArrays extends TObject {
 
     private static void deepToString(Object a, TStringBuilder out, TList<Object[]> visited) {
         if (a instanceof Object[]) {
-            deepToString((Object[])a, out, visited);
+            deepToString((Object[]) a, out, visited);
         } else {
             out.append(TObject.wrap(a));
         }

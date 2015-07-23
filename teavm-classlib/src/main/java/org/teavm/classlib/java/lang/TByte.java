@@ -75,7 +75,7 @@ public class TByte extends TNumber implements TComparable<TByte> {
 
     @Override
     public boolean equals(Object other) {
-        return other instanceof TByte && ((TByte)other).value == value;
+        return other instanceof TByte && ((TByte) other).value == value;
     }
 
     @Override
@@ -101,7 +101,7 @@ public class TByte extends TNumber implements TComparable<TByte> {
         if (value < MIN_VALUE || value >= MAX_VALUE) {
             throw new TNumberFormatException();
         }
-        return (byte)value;
+        return (byte) value;
     }
 
     public static TByte valueOf(TString s, int radix) throws TNumberFormatException {
@@ -117,6 +117,6 @@ public class TByte extends TNumber implements TComparable<TByte> {
         if (value.intValue() < MIN_VALUE || value.intValue() >= MAX_VALUE) {
             throw new TNumberFormatException();
         }
-        return TByte.valueOf((byte)value.intValue());
+        return TByte.valueOf((byte) value.intValue());
     }
 }

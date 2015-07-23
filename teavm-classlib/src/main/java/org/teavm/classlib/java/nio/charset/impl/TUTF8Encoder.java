@@ -34,7 +34,7 @@ public class TUTF8Encoder extends TBufferedEncoder {
         while (inPos < inSize && outPos < outSize) {
             char ch = inArray[inPos++];
             if (ch < 0x80) {
-                outArray[outPos++] = (byte)ch;
+                outArray[outPos++] = (byte) ch;
             } else if (ch < 0x800) {
                 if (outPos + 2 > outSize) {
                     --inPos;
@@ -43,8 +43,8 @@ public class TUTF8Encoder extends TBufferedEncoder {
                     }
                     break;
                 }
-                outArray[outPos++] = (byte)(0xC0 | (ch >> 6));
-                outArray[outPos++] = (byte)(0x80 | (ch & 0x3F));
+                outArray[outPos++] = (byte) (0xC0 | (ch >> 6));
+                outArray[outPos++] = (byte) (0x80 | (ch & 0x3F));
             } else if (!Character.isSurrogate(ch)) {
                 if (outPos + 3 > outSize) {
                     --inPos;
@@ -53,9 +53,9 @@ public class TUTF8Encoder extends TBufferedEncoder {
                     }
                     break;
                 }
-                outArray[outPos++] = (byte)(0xE0 | (ch >> 12));
-                outArray[outPos++] = (byte)(0x80 | ((ch >> 6) & 0x3F));
-                outArray[outPos++] = (byte)(0x80 | (ch & 0x3F));
+                outArray[outPos++] = (byte) (0xE0 | (ch >> 12));
+                outArray[outPos++] = (byte) (0x80 | ((ch >> 6) & 0x3F));
+                outArray[outPos++] = (byte) (0x80 | (ch & 0x3F));
             } else if (Character.isHighSurrogate(ch)) {
                 if (inPos >= inSize) {
                     if (!controller.hasMoreInput()) {
@@ -77,10 +77,10 @@ public class TUTF8Encoder extends TBufferedEncoder {
                     break;
                 }
                 int codePoint = Character.toCodePoint(ch, low);
-                outArray[outPos++] = (byte)(0xF0 | (codePoint >> 18));
-                outArray[outPos++] = (byte)(0x80 | ((codePoint >> 12) & 0x3F));
-                outArray[outPos++] = (byte)(0x80 | ((codePoint >> 6) & 0x3F));
-                outArray[outPos++] = (byte)(0x80 | (codePoint & 0x3F));
+                outArray[outPos++] = (byte) (0xF0 | (codePoint >> 18));
+                outArray[outPos++] = (byte) (0x80 | ((codePoint >> 12) & 0x3F));
+                outArray[outPos++] = (byte) (0x80 | ((codePoint >> 6) & 0x3F));
+                outArray[outPos++] = (byte) (0x80 | (codePoint & 0x3F));
             } else {
                 result = TCoderResult.malformedForLength(1);
                 break;

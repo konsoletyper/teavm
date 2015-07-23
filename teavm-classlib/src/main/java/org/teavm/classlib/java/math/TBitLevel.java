@@ -1,12 +1,11 @@
 /*
- *  Licensed to the Apache Software Foundation (ASF) under one or more
- *  contributor license agreements.  See the NOTICE file distributed with
- *  this work for additional information regarding copyright ownership.
- *  The ASF licenses this file to You under the Apache License, Version 2.0
- *  (the "License"); you may not use this file except in compliance with
- *  the License.  You may obtain a copy of the License at
+ *  Copyright 2015 Alexey Andreev.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
  *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +13,6 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-
 package org.teavm.classlib.java.math;
 
 /**
@@ -43,7 +41,7 @@ class TBitLevel {
         if (val.sign == 0) {
             return 0;
         }
-        int bLength = (val.numberLength << 5);
+        int bLength = val.numberLength << 5;
         int highDigit = val.digits[val.numberLength - 1];
 
         if (val.sign < 0) {
@@ -71,7 +69,8 @@ class TBitLevel {
             for (; i < val.numberLength; i++) {
                 bCount += Integer.bitCount(val.digits[i]);
             }
-        } else {// (sign < 0)
+        } else {
+            // (sign < 0)
             // this digit absorbs the carry
             bCount += Integer.bitCount(-val.digits[i]);
             for (i++; i < val.numberLength; i++) {
@@ -89,7 +88,7 @@ class TBitLevel {
      */
     static boolean testBit(TBigInteger val, int n) {
         // PRE: 0 <= n < val.bitLength()
-        return ((val.digits[n >> 5] & (1 << (n & 31))) != 0);
+        return (val.digits[n >> 5] & (1 << (n & 31))) != 0;
     }
 
     /**
@@ -99,15 +98,15 @@ class TBitLevel {
      *            the number of the lowest bits to check
      * @return false if all bits are 0s, true otherwise
      */
-    static boolean nonZeroDroppedBits(int numberOfBits, int digits[]) {
+    static boolean nonZeroDroppedBits(int numberOfBits, int[] digits) {
         int intCount = numberOfBits >> 5;
         int bitCount = numberOfBits & 31;
         int i;
 
-        for (i = 0; (i < intCount) && (digits[i] == 0); i++) {
+        for (i = 0; i < intCount && digits[i] == 0; i++) {
             // do nothing
         }
-        return ((i != intCount) || (digits[i] << (32 - bitCount) != 0));
+        return i != intCount || digits[i] << (32 - bitCount) != 0;
     }
 
     /** @see TBigInteger#shiftLeft(int) */
@@ -115,7 +114,7 @@ class TBitLevel {
         int intCount = count >> 5;
         count &= 31; // %= 32
         int resLength = source.numberLength + intCount + ((count == 0) ? 0 : 1);
-        int resDigits[] = new int[resLength];
+        int[] resDigits = new int[resLength];
 
         shiftLeft(resDigits, source.digits, intCount, count);
         TBigInteger result = new TBigInteger(source.sign, resLength, resDigits);
@@ -129,8 +128,8 @@ class TBitLevel {
     // val should have enough place (and one digit more)
     static void inplaceShiftLeft(TBigInteger val, int count) {
         int intCount = count >> 5; // count of integers
-        val.numberLength += intCount +
-                (Integer.numberOfLeadingZeros(val.digits[val.numberLength - 1]) - (count & 31) >= 0 ? 0 : 1);
+        val.numberLength += intCount
+                + (Integer.numberOfLeadingZeros(val.digits[val.numberLength - 1]) - (count & 31) >= 0 ? 0 : 1);
         shiftLeft(val.digits, val.digits, intCount, count & 31);
         val.cutOffLeadingZeroes();
         val.unCache();
@@ -149,7 +148,7 @@ class TBitLevel {
      * @param count
      *            an additional shift distance in bits
      */
-    static void shiftLeft(int result[], int source[], int intCount, int count) {
+    static void shiftLeft(int[] result, int[] source, int intCount, int count) {
         if (count == 0) {
             System.arraycopy(source, 0, result, intCount, result.length - intCount);
         } else {
@@ -183,7 +182,7 @@ class TBitLevel {
      *            the length of {@code source}; may be less than
      *            {@code source.length}
      */
-    static void shiftLeftOneBit(int result[], int source[], int srcLen) {
+    static void shiftLeftOneBit(int[] result, int[] source, int srcLen) {
         int carry = 0;
         for (int i = 0; i < srcLen; i++) {
             int val = source[i];
@@ -198,7 +197,7 @@ class TBitLevel {
     static TBigInteger shiftLeftOneBit(TBigInteger source) {
         int srcLen = source.numberLength;
         int resLen = srcLen + 1;
-        int resDigits[] = new int[resLen];
+        int[] resDigits = new int[resLen];
         shiftLeftOneBit(resDigits, source.digits, srcLen);
         TBigInteger result = new TBigInteger(source.sign, resLen, resDigits);
         result.cutOffLeadingZeroes();
@@ -210,11 +209,11 @@ class TBitLevel {
         int intCount = count >> 5; // count of integers
         count &= 31; // count of remaining bits
         if (intCount >= source.numberLength) {
-            return ((source.sign < 0) ? TBigInteger.MINUS_ONE : TBigInteger.ZERO);
+            return source.sign < 0 ? TBigInteger.MINUS_ONE : TBigInteger.ZERO;
         }
         int i;
         int resLength = source.numberLength - intCount;
-        int resDigits[] = new int[resLength + 1];
+        int[] resDigits = new int[resLength + 1];
 
         shiftRight(resDigits, resLength, source.digits, intCount, count);
         if (source.sign < 0) {
@@ -244,8 +243,9 @@ class TBitLevel {
      */
     static void inplaceShiftRight(TBigInteger val, int count) {
         int sign = val.signum();
-        if (count == 0 || val.signum() == 0)
+        if (count == 0 || val.signum() == 0) {
             return;
+        }
         int intCount = count >> 5; // count of integers
         val.numberLength -= intCount;
         if (!shiftRight(val.digits, val.numberLength, val.digits, intCount, count & 31) && sign < 0) {
@@ -279,7 +279,7 @@ class TBitLevel {
      *            the number of bits to be shifted
      * @return dropped bit's are all zero (i.e. remaider is zero)
      */
-    static boolean shiftRight(int result[], int resultLen, int source[], int intCount, int count) {
+    static boolean shiftRight(int[] result, int resultLen, int[] source, int intCount, int count) {
         int i;
         boolean allZero = true;
         for (i = 0; i < intCount; i++) {
@@ -295,7 +295,7 @@ class TBitLevel {
             for (i = 0; i < resultLen - 1; i++) {
                 result[i] = (source[i + intCount] >>> count) | (source[i + intCount + 1] << leftShiftCount);
             }
-            result[i] = (source[i + intCount] >>> count);
+            result[i] = source[i + intCount] >>> count;
             i++;
         }
 
@@ -317,7 +317,7 @@ class TBitLevel {
         int intCount = n >> 5;
         int bitN = n & 31;
         int resLength = Math.max(intCount + 1, val.numberLength) + 1;
-        int resDigits[] = new int[resLength];
+        int[] resDigits = new int[resLength];
         int i;
 
         int bitNumber = 1 << bitN;
@@ -348,7 +348,8 @@ class TBitLevel {
                     }
                 }
             }
-        } else {// case where val is positive
+        } else {
+            // case where val is positive
             resDigits[intCount] ^= bitNumber;
         }
         TBigInteger result = new TBigInteger(resSign, resLength, resDigits);

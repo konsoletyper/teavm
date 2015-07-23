@@ -122,7 +122,7 @@ public class TBufferedReader extends TReader {
             index += n;
             return n;
         } else {
-            n -= (count - index);
+            n -= count - index;
             long skipped = innerReader.skip(n);
             if (skipped == n) {
                 fillBuffer(0);

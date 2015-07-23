@@ -39,7 +39,7 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
     }
 
     public TFloat(double value) {
-        this((float)value);
+        this((float) value);
     }
 
     public TFloat(TString value) throws TNumberFormatException {
@@ -48,12 +48,12 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
 
     @Override
     public int intValue() {
-        return (int)value;
+        return (int) value;
     }
 
     @Override
     public long longValue() {
-        return (long)value;
+        return (long) value;
     }
 
     @Override
@@ -84,7 +84,7 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
         if (this == other) {
             return true;
         }
-        return other instanceof TFloat && ((TFloat)other).value == value;
+        return other instanceof TFloat && ((TFloat) other).value == value;
     }
 
     @Override
@@ -260,7 +260,7 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
         } else {
             doubleMantissa = abs * 0x1p126f * binaryExponent(negExp - 126);
         }
-        int mantissa = (int)(doubleMantissa + 0.5f) & 0x7FFFFF;
+        int mantissa = (int) (doubleMantissa + 0.5f) & 0x7FFFFF;
         return mantissa | ((exp + 127) << 23) | (value < 0 || 1 / value == NEGATIVE_INFINITY  ? (1 << 31) : 0);
     }
 
@@ -280,7 +280,7 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
         if (rawExp == 0) {
             mantissa <<= 1;
         } else {
-            mantissa |= (1L << 23);
+            mantissa |= 1L << 23;
         }
         float value = mantissa * binaryExponent(rawExp - 127 - 23);
         return !negative ? value : -value;

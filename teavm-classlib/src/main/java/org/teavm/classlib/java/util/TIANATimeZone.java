@@ -71,7 +71,7 @@ class TIANATimeZone extends TTimeZone {
 
     @Override
     public TIANATimeZone clone() {
-        TIANATimeZone copy = (TIANATimeZone)super.clone();
+        TIANATimeZone copy = (TIANATimeZone) super.clone();
         copy.rawOffset = rawOffset;
         copy.underlyingZone = underlyingZone;
         return copy;
@@ -85,7 +85,7 @@ class TIANATimeZone extends TTimeZone {
         if (!(obj instanceof TIANATimeZone)) {
             return false;
         }
-        TIANATimeZone other = (TIANATimeZone)obj;
+        TIANATimeZone other = (TIANATimeZone) obj;
         return rawOffset == other.rawOffset && underlyingZone.getID().equals(other.getID());
     }
 

@@ -22,8 +22,8 @@ import org.teavm.javascript.spi.GeneratedBy;
  * @author Alexey Andreev
  */
 public final class TMath extends TObject {
-    public static double E = 2.71828182845904523536;
-    public static double PI = 3.14159265358979323846;
+    public static final double E = 2.71828182845904523536;
+    public static final double PI = 3.14159265358979323846;
 
     private TMath() {
     }
@@ -72,7 +72,7 @@ public final class TMath extends TObject {
     }
 
     public static double IEEEremainder(double f1, double f2) {
-        int n = (int)(f1 / f2);
+        int n = (int) (f1 / f2);
         return f1 - n * f2;
     }
 
@@ -93,11 +93,11 @@ public final class TMath extends TObject {
     public static native double atan2(double y, double x);
 
     public static int round(float a) {
-        return (int)(a + signum(a) * 0.5f);
+        return (int) (a + signum(a) * 0.5f);
     }
 
     public static long round(double a) {
-        return (long)(a + signum(a) * 0.5);
+        return (long) (a + signum(a) * 0.5);
     }
 
     @GeneratedBy(MathNativeGenerator.class)
@@ -156,7 +156,7 @@ public final class TMath extends TObject {
     }
 
     public static float ulp(float d) {
-        return (float)pow(2, getExponent(d) - 23);
+        return (float) pow(2, getExponent(d) - 23);
     }
 
     public static double signum(double d) {

@@ -33,15 +33,15 @@ class TShortBufferOverByteBufferBigEndian extends TShortBufferOverByteBuffer {
 
     @Override
     short getElement(int index) {
-        int value = ((byteByffer.array[start + index * 2] & 0xFF) << 8) |
-                (byteByffer.array[start + index * 2 + 1] & 0xFF);
-        return (short)value;
+        int value = ((byteByffer.array[start + index * 2] & 0xFF) << 8)
+                | (byteByffer.array[start + index * 2 + 1] & 0xFF);
+        return (short) value;
     }
 
     @Override
     void putElement(int index, short value) {
-        byteByffer.array[start + index * 2] = (byte)(value >> 8);
-        byteByffer.array[start + index * 2 + 1] = (byte)value;
+        byteByffer.array[start + index * 2] = (byte) (value >> 8);
+        byteByffer.array[start + index * 2 + 1] = (byte) value;
     }
 
     @Override

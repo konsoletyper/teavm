@@ -135,7 +135,8 @@ public class THashtable<K, V> extends TDictionary<K, V> implements TMap<K, V>,
     }
 
     private class HashIterator<E> implements TIterator<E> {
-        int position, expectedModCount;
+        int position;
+        int expectedModCount;
 
         final TMapEntry.Type<E, K, V> type;
 
@@ -143,7 +144,7 @@ public class THashtable<K, V> extends TDictionary<K, V> implements TMap<K, V>,
 
         int lastPosition;
 
-        boolean canRemove = false;
+        boolean canRemove;
 
         HashIterator(TMapEntry.Type<E, K, V> value) {
             type = value;
@@ -173,8 +174,11 @@ public class THashtable<K, V> extends TDictionary<K, V> implements TMap<K, V>,
                     lastEntry = lastEntry.next;
                 }
                 if (lastEntry == null) {
-                    while (position >= firstSlot
-                            && (lastEntry = elementData[position]) == null) {
+                    while (position >= firstSlot) {
+                        lastEntry = elementData[position];
+                        if (lastEntry != null) {
+                            break;
+                        }
                         position--;
                     }
                     if (lastEntry != null) {
@@ -287,7 +291,8 @@ public class THashtable<K, V> extends TDictionary<K, V> implements TMap<K, V>,
             hashtable.elementData = new Entry[elementData.length];
             Entry<K, V> entry;
             for (int i = elementData.length; --i >= 0;) {
-                if ((entry = elementData[i]) != null) {
+                entry = elementData[i];
+                if (entry != null) {
                     hashtable.elementData[i] = (Entry<K, V>) entry.clone();
                 }
             }
@@ -523,7 +528,7 @@ public class THashtable<K, V> extends TDictionary<K, V> implements TMap<K, V>,
 
     class HashEnumIterator<E> extends HashIterator<E> implements TEnumeration<E> {
 
-        private boolean isEnumeration = false;
+        private boolean isEnumeration;
 
         int start;
 

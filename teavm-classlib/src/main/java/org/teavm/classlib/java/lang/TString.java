@@ -96,7 +96,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
                 characters[charCount++] = TCharacter.highSurrogate(codePoint);
                 characters[charCount++] = TCharacter.lowSurrogate(codePoint);
             } else {
-                characters[charCount++] = (char)codePoint;
+                characters[charCount++] = (char) codePoint;
             }
         }
         if (charCount < characters.length) {
@@ -152,8 +152,8 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
-        if (srcBegin < 0 || srcBegin > srcEnd || srcEnd > length() || dstBegin < 0 ||
-                dstBegin + (srcEnd - srcBegin) > dst.length) {
+        if (srcBegin < 0 || srcBegin > srcEnd || srcEnd > length() || dstBegin < 0
+                || dstBegin + (srcEnd - srcBegin) > dst.length) {
             throw new TIndexOutOfBoundsException();
         }
         while (srcBegin < srcEnd) {
@@ -286,7 +286,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
 
     public int indexOf(int ch, int fromIndex) {
         if (ch < TCharacter.MIN_SUPPLEMENTARY_CODE_POINT) {
-            char bmpChar = (char)ch;
+            char bmpChar = (char) ch;
             for (int i = fromIndex; i < characters.length; ++i) {
                 if (characters[i] == bmpChar) {
                     return i;
@@ -311,7 +311,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
 
     public int lastIndexOf(int ch, int fromIndex) {
         if (ch < TCharacter.MIN_SUPPLEMENTARY_CODE_POINT) {
-            char bmpChar = (char)ch;
+            char bmpChar = (char) ch;
             for (int i = fromIndex; i >= 0; --i) {
                 if (characters[i] == bmpChar) {
                     return i;
@@ -458,7 +458,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
 
     @Override
     public String toString() {
-        return (String)(Object)this;
+        return (String) (Object) this;
     }
 
     public char[] toCharArray() {
@@ -521,7 +521,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         if (!(other instanceof TString)) {
             return false;
         }
-        TString str = (TString)other;
+        TString str = (TString) other;
         if (str.length() != length()) {
             return false;
         }
@@ -581,7 +581,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public static TString wrap(String str) {
-        return (TString)(Object)str;
+        return (TString) (Object) str;
     }
 
     public TString toLowerCase() {
@@ -591,8 +591,8 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         int[] codePoints = new int[characters.length];
         int codePointCount = 0;
         for (int i = 0; i < characters.length; ++i) {
-            if (i == characters.length - 1 || !TCharacter.isHighSurrogate(characters[i]) ||
-                    !TCharacter.isLowSurrogate(characters[i + 1])) {
+            if (i == characters.length - 1 || !TCharacter.isHighSurrogate(characters[i])
+                    || !TCharacter.isLowSurrogate(characters[i + 1])) {
                 codePoints[codePointCount++] = TCharacter.toLowerCase(characters[i]);
             } else {
                 codePoints[codePointCount++] = TCharacter.toLowerCase(TCharacter.toCodePoint(
@@ -610,8 +610,8 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         int[] codePoints = new int[characters.length];
         int codePointCount = 0;
         for (int i = 0; i < characters.length; ++i) {
-            if (i == characters.length - 1 || !TCharacter.isHighSurrogate(characters[i]) ||
-                    !TCharacter.isLowSurrogate(characters[i + 1])) {
+            if (i == characters.length - 1 || !TCharacter.isHighSurrogate(characters[i])
+                    || !TCharacter.isLowSurrogate(characters[i + 1])) {
                 codePoints[codePointCount++] = TCharacter.toUpperCase(characters[i]);
             } else {
                 codePoints[codePointCount++] = TCharacter.toUpperCase(TCharacter.toCodePoint(

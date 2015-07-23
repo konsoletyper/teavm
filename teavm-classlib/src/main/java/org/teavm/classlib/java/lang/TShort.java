@@ -74,7 +74,7 @@ public class TShort extends TNumber implements TComparable<TShort> {
 
     @Override
     public boolean equals(Object other) {
-        return other instanceof TShort && ((TShort)other).value == value;
+        return other instanceof TShort && ((TShort) other).value == value;
     }
 
     @Override
@@ -96,7 +96,7 @@ public class TShort extends TNumber implements TComparable<TShort> {
         if (value < MIN_VALUE || value > MAX_VALUE) {
             throw new TNumberFormatException();
         }
-        return (short)value;
+        return (short) value;
     }
 
     public static short parseShort(TString s) throws TNumberFormatException {
@@ -116,10 +116,10 @@ public class TShort extends TNumber implements TComparable<TShort> {
         if (value < MIN_VALUE || value > MAX_VALUE) {
             throw new TNumberFormatException();
         }
-        return valueOf((short)value);
+        return valueOf((short) value);
     }
 
     public static short reverseBytes(short i) {
-        return (short)((i << 8) | (i >>> 8));
+        return (short) ((i << 8) | (i >>> 8));
     }
 }

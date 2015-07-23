@@ -27,7 +27,7 @@ import org.teavm.classlib.java.lang.TString;
 public class TStringReader extends TReader {
     private TString string;
     private int index;
-    private int mark = 0;
+    private int mark;
 
     public TStringReader(TString string) {
         if (string == null) {

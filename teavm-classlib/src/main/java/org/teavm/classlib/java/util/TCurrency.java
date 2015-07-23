@@ -92,8 +92,8 @@ public final class TCurrency implements TSerializable {
     public String getSymbol(TLocale locale) {
         CurrencyLocalization localization = CLDRHelper.resolveCurrency(locale.getLanguage(), locale.getCountry(),
                 getCurrencyCode());
-        return localization != null && !localization.getSymbol().isEmpty() ?
-                localization.getSymbol() : getCurrencyCode();
+        return localization != null && !localization.getSymbol().isEmpty()
+                ? localization.getSymbol() : getCurrencyCode();
     }
 
     public int getDefaultFractionDigits() {

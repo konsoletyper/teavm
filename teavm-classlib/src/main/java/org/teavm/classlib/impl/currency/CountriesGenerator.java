@@ -76,8 +76,8 @@ public class CountriesGenerator implements MetadataGenerator {
                 while (index < row.length()) {
                     next = row.indexOf('"', index);
                     if (next == -1) {
-                        throw new IllegalStateException("Syntax error at row " + rowIndex +
-                                ": closing quote not found");
+                        throw new IllegalStateException("Syntax error at row " + rowIndex
+                                + ": closing quote not found");
                     }
                     if (next + 1 == row.length() || row.charAt(next + 1) != '"') {
                         sb.append(row.substring(index, next));
@@ -87,8 +87,8 @@ public class CountriesGenerator implements MetadataGenerator {
                     index = next + 2;
                 }
                 if (index < row.length() && row.charAt(index) != ',') {
-                    throw new IllegalStateException("Syntax error at row " + rowIndex + ": closing quote must be " +
-                            "followed by either line separator or comma");
+                    throw new IllegalStateException("Syntax error at row " + rowIndex + ": closing quote must be "
+                            + "followed by either line separator or comma");
                 }
                 values.add(sb.toString());
             } else {

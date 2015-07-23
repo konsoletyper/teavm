@@ -88,7 +88,7 @@ public class TBoolean extends TObject implements TSerializable, TComparable<TBoo
         if (this == obj) {
             return true;
         }
-        return obj instanceof TBoolean && ((TBoolean)obj).value == value;
+        return obj instanceof TBoolean && ((TBoolean) obj).value == value;
     }
 
     public boolean getBoolean(TString key) {

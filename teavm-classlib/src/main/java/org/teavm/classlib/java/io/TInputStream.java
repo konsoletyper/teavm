@@ -38,14 +38,14 @@ public abstract class TInputStream extends TObject implements TCloseable {
             if (bt < 0) {
                 return i == 0 ? -1 : i;
             }
-            b[off++] = (byte)bt;
+            b[off++] = (byte) bt;
         }
         return len > 0 ? len : -1;
     }
 
     public long skip(long n) throws TIOException {
         if (n < TInteger.MAX_VALUE) {
-            return skip((int)n);
+            return skip((int) n);
         } else {
             for (long i = 0; i < n; ++i) {
                 if (read() < 0) {

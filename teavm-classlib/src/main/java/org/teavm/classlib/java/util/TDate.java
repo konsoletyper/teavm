@@ -51,7 +51,7 @@ public class TDate implements TComparable<TDate> {
 
     @Deprecated
     public TDate(int year, int month, int date, int hrs, int min, int sec) {
-        this((long)buildNumericTime(year, month, date, hrs, min, sec));
+        this((long) buildNumericTime(year, month, date, hrs, min, sec));
         setFullYear(value, year + 1900);
     }
 
@@ -66,7 +66,7 @@ public class TDate implements TComparable<TDate> {
 
     @Deprecated
     public static long UTC(int year, int month, int date, int hrs, int min, int sec) {
-        return (long)buildNumericUTC(year, month, date, hrs, min, sec);
+        return (long) buildNumericUTC(year, month, date, hrs, min, sec);
     }
 
     @Deprecated
@@ -75,7 +75,7 @@ public class TDate implements TComparable<TDate> {
         if (Double.isNaN(value)) {
             throw new IllegalArgumentException("Can't parse date: " + s);
         }
-        return (long)value;
+        return (long) value;
     }
 
     @Deprecated
@@ -85,7 +85,7 @@ public class TDate implements TComparable<TDate> {
 
     @Deprecated
     public void setYear(int year) {
-        this.value = (long)setFullYear(value, year + 1900);
+        this.value = (long) setFullYear(value, year + 1900);
     }
 
     @Deprecated
@@ -95,7 +95,7 @@ public class TDate implements TComparable<TDate> {
 
     @Deprecated
     public void setMonth(int month) {
-        this.value = (long)setMonth(value, month);
+        this.value = (long) setMonth(value, month);
     }
 
     @Deprecated
@@ -105,7 +105,7 @@ public class TDate implements TComparable<TDate> {
 
     @Deprecated
     public void setDate(int date) {
-        this.value = (long)setDate(value, date);
+        this.value = (long) setDate(value, date);
     }
 
     @Deprecated
@@ -120,7 +120,7 @@ public class TDate implements TComparable<TDate> {
 
     @Deprecated
     public void setHours(int hours) {
-        this.value = (long)setHours(value, hours);
+        this.value = (long) setHours(value, hours);
     }
 
     @Deprecated
@@ -130,7 +130,7 @@ public class TDate implements TComparable<TDate> {
 
     @Deprecated
     public void setMinutes(int minutes) {
-        this.value = (long)setMinutes(value, minutes);
+        this.value = (long) setMinutes(value, minutes);
     }
 
     @Deprecated
@@ -140,7 +140,7 @@ public class TDate implements TComparable<TDate> {
 
     @Deprecated
     public void setSeconds(int seconds) {
-        this.value = (long)setSeconds(value, seconds);
+        this.value = (long) setSeconds(value, seconds);
     }
 
     public long getTime() {
@@ -164,7 +164,7 @@ public class TDate implements TComparable<TDate> {
         if (!(obj instanceof TDate)) {
             return false;
         }
-        TDate other = (TDate)obj;
+        TDate other = (TDate) obj;
         return value == other.value;
     }
 
@@ -175,7 +175,7 @@ public class TDate implements TComparable<TDate> {
 
     @Override
     public int hashCode() {
-        return (int)value ^ (int)(value >>> 32);
+        return (int) value ^ (int) (value >>> 32);
     }
 
     @Override
