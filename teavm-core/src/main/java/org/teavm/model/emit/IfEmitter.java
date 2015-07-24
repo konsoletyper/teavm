@@ -16,7 +16,6 @@
 package org.teavm.model.emit;
 
 import org.teavm.model.BasicBlock;
-import org.teavm.model.instructions.BranchingCondition;
 
 /**
  *
@@ -27,36 +26,30 @@ public class IfEmitter {
     private ForkEmitter fork;
     private BasicBlock join;
 
-    IfEmitter(ProgramEmitter pe, ForkEmitter fork) {
+    IfEmitter(ProgramEmitter pe, ForkEmitter fork, BasicBlock join) {
         this.pe = pe;
         this.fork = fork;
-        this.join = pe.createBlock();
+        this.join = join;
     }
 
-    public IfEmitter and(ComputationEmitter condition) {
-        BasicBlock block = pe.createBlock();
-        fork = fork.and(block, condition.emit(pe).fork(BranchingCondition.NOT_EQUAL));
-        pe.setBlock(join);
-        return this;
+    public ConditionEmitter and(ComputationEmitter condition) {
+        return new ConditionEmitter(pe, condition, join);
     }
 
-    public IfEmitter or(ComputationEmitter condition) {
-        BasicBlock block = pe.createBlock();
-        fork = fork.or(block, condition.emit(pe).fork(BranchingCondition.NOT_EQUAL));
-        pe.setBlock(join);
-        return this;
+    public ConditionEmitter or(ComputationEmitter condition) {
+        return new ConditionEmitter(pe, condition, join);
     }
 
     public IfEmitter thenDo(FragmentEmitter fragment) {
         fork.setThen(pe.createBlock());
-        fragment.emit(pe);
+        fragment.emit();
         pe.jump(join);
         return this;
     }
 
     public IfEmitter elseDo(FragmentEmitter fragment) {
         fork.setThen(pe.createBlock());
-        fragment.emit(pe);
+        fragment.emit();
         pe.jump(join);
         return this;
     }

@@ -21,10 +21,11 @@ import org.teavm.model.FieldReference;
 import org.teavm.model.Instruction;
 import org.teavm.model.InstructionLocation;
 import org.teavm.model.MethodHolder;
+import org.teavm.model.MethodReference;
+import org.teavm.model.Phi;
 import org.teavm.model.Program;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
-import org.teavm.model.instructions.BranchingCondition;
 import org.teavm.model.instructions.ClassConstantInstruction;
 import org.teavm.model.instructions.ConstructArrayInstruction;
 import org.teavm.model.instructions.ConstructInstruction;
@@ -41,6 +42,7 @@ import org.teavm.model.instructions.LongConstantInstruction;
 import org.teavm.model.instructions.NullConstantInstruction;
 import org.teavm.model.instructions.PutFieldInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
+import org.teavm.model.instructions.SwitchInstruction;
 
 /**
  *
@@ -176,6 +178,14 @@ public final class ProgramEmitter {
         if (resultType != ValueType.VOID) {
             result = program.createVariable();
         }
+
+        ValueType[] argumentTypes = new ValueType[arguments.length + 1];
+        for (int i = 0; i < arguments.length; ++i) {
+            argumentTypes[i] = arguments[i].type;
+        }
+        argumentTypes[arguments.length] = resultType;
+        MethodReference method = new MethodReference(className, methodName, argumentTypes);
+
         InvokeInstruction insn = new InvokeInstruction();
         insn.setType(InvocationType.SPECIAL);
         insn.setMethod(method);
@@ -203,7 +213,7 @@ public final class ProgramEmitter {
         insn.setType(className);
         addInstruction(insn);
         ValueEmitter instance = var(var, ValueType.object(className));
-        instance.invokeSpecial(method, arguments);
+        instance.invokeSpecial("<init>", void.class, arguments);
         return instance;
     }
 
@@ -301,7 +311,41 @@ public final class ProgramEmitter {
         return new ProgramEmitter(program, block);
     }
 
-    public IfEmitter when(ComputationEmitter condition) {
-        return new IfEmitter(this, condition.emit(this).fork(BranchingCondition.NOT_EQUAL));
+    public ConditionEmitter when(ComputationEmitter condition) {
+        return new ConditionEmitter(this, condition, program.createBasicBlock());
+    }
+
+    public PhiEmitter phi(ValueType type, BasicBlock block) {
+        ValueEmitter value = newVar(type);
+        Phi phi = new Phi();
+        phi.setReceiver(value.getVariable());
+        block.getPhis().add(phi);
+        return new PhiEmitter(phi, value);
+    }
+
+    public PhiEmitter phi(Class<?> cls, BasicBlock block) {
+        return phi(ValueType.parse(cls), block);
+    }
+
+    public PhiEmitter phi(ClassReader cls, BasicBlock block) {
+        return phi(ValueType.object(cls.getName()), block);
+    }
+
+    public PhiEmitter phi(ValueType type) {
+        return phi(type, block);
+    }
+
+    public PhiEmitter phi(Class<?> cls) {
+        return phi(ValueType.parse(cls));
+    }
+
+    public PhiEmitter phi(ClassReader cls) {
+        return phi(ValueType.object(cls.getName()));
+    }
+
+    public ChooseEmitter choise(ValueEmitter value) {
+        SwitchInstruction insn = new SwitchInstruction();
+        insn.setCondition(value.getVariable());
+        return new ChooseEmitter(this, insn, program.createBasicBlock());
     }
 }

@@ -31,14 +31,11 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldHolder;
-import org.teavm.model.FieldReference;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
-import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.model.emit.ProgramEmitter;
 import org.teavm.model.emit.ValueEmitter;
-import org.teavm.model.instructions.ArrayElementType;
 import org.teavm.platform.PlatformAnnotationProvider;
 
 /**
@@ -94,8 +91,8 @@ public class AnnotationDependencyListener extends AbstractDependencyListener {
 
             MethodHolder accessor = new MethodHolder(methodDecl.getDescriptor());
             ProgramEmitter pe = ProgramEmitter.create(accessor);
-            ValueEmitter thisVal = pe.newVar();
-            ValueEmitter result = thisVal.getField(field.getReference(), field.getType());
+            ValueEmitter thisVal = pe.newVar(implementor);
+            ValueEmitter result = thisVal.getField(field.getName(), field.getType());
             if (field.getType() instanceof ValueType.Array) {
                 result = result.cloneArray();
             }
@@ -108,22 +105,21 @@ public class AnnotationDependencyListener extends AbstractDependencyListener {
 
         MethodHolder ctor = new MethodHolder("<init>", ctorSignature.toArray(new ValueType[ctorSignature.size()]));
         ProgramEmitter pe = ProgramEmitter.create(ctor);
-        ValueEmitter thisVal = pe.newVar();
-        thisVal.invokeSpecial(new MethodReference(Object.class, "<init>", void.class));
+        ValueEmitter thisVar = pe.newVar(implementor);
+        thisVar.invokeSpecial(Object.class, "<init>");
         for (MethodReader methodDecl : annotation.getMethods()) {
             if (methodDecl.hasModifier(ElementModifier.STATIC)) {
                 continue;
             }
-            ValueEmitter param = pe.newVar();
-            FieldReference field = new FieldReference(implementorName, "$" + methodDecl.getName());
-            thisVal.setField(field, methodDecl.getResultType(), param);
+            ValueEmitter param = pe.newVar(methodDecl.getResultType());
+            thisVar.setField("$" + methodDecl.getName(), param);
         }
         pe.exit();
         implementor.addMethod(ctor);
 
         MethodHolder annotTypeMethod = new MethodHolder("annotationType", ValueType.parse(Class.class));
         pe = ProgramEmitter.create(annotTypeMethod);
-        pe.newVar();
+        pe.newVar(implementor);
         pe.constant(ValueType.object(annotationType)).returnValue();
         implementor.addMethod(annotTypeMethod);
 
@@ -169,10 +165,8 @@ public class AnnotationDependencyListener extends AbstractDependencyListener {
         MethodHolder ctor = new MethodHolder("<init>", ValueType.VOID);
         ctor.setLevel(AccessLevel.PUBLIC);
         ProgramEmitter pe = ProgramEmitter.create(ctor);
-        ValueEmitter thisVar = pe.newVar();
-
-        thisVar.invokeSpecial(new MethodReference(Object.class, "<init>", void.class));
-        pe.exit();
+        ValueEmitter thisVar = pe.newVar(cls);
+        thisVar.invokeSpecial(Object.class, "<init>").exit();
 
         ClassReader annotatedClass = agent.getClassSource().get(className);
         cls.addMethod(ctor);
@@ -204,8 +198,7 @@ public class AnnotationDependencyListener extends AbstractDependencyListener {
 
         ValueEmitter array = pe.constructArray(Annotation.class, annotations.size());
         for (int i = 0; i < annotations.size(); ++i) {
-            array.unwrapArray(ArrayElementType.OBJECT).setElement(i,
-                    generateAnnotationInstance(agent, pe, annotations.get(i)));
+            array.unwrapArray().setElement(i, generateAnnotationInstance(agent, pe, annotations.get(i)));
         }
 
         array.returnValue();
@@ -217,25 +210,20 @@ public class AnnotationDependencyListener extends AbstractDependencyListener {
             AnnotationReader annotation) {
         ClassReader annotationClass = agent.getClassSource().get(annotation.getType());
         if (annotationClass == null) {
-            return pe.constantNull();
+            return pe.constantNull(ValueType.object(annotation.getType()));
         }
 
         String className = getAnnotationImplementor(agent, annotation.getType());
-        List<ValueType> ctorSignature = new ArrayList<>();
         List<ValueEmitter> params = new ArrayList<>();
         for (MethodReader methodDecl : annotationClass.getMethods()) {
-            ctorSignature.add(methodDecl.getResultType());
             AnnotationValue value = annotation.getValue(methodDecl.getName());
             if (value == null) {
                 value = methodDecl.getAnnotationDefault();
             }
             params.add(generateAnnotationValue(agent, pe, methodDecl.getResultType(), value));
         }
-        ctorSignature.add(ValueType.VOID);
 
-        MethodReference ctor = new MethodReference(className, "<init>", ctorSignature.toArray(
-                new ValueType[ctorSignature.size()]));
-        return pe.construct(ctor, params.toArray(new ValueEmitter[params.size()]));
+        return pe.construct(className, params.toArray(new ValueEmitter[params.size()]));
     }
 
     private ValueEmitter generateAnnotationValue(DependencyAgent agent, ProgramEmitter pe, ValueType type,
@@ -262,8 +250,7 @@ public class AnnotationDependencyListener extends AbstractDependencyListener {
                 ValueType itemType = ((ValueType.Array) type).getItemType();
                 ValueEmitter array = pe.constructArray(itemType, list.size());
                 for (int i = 0; i < list.size(); ++i) {
-                    array.unwrapArray(ArrayElementType.OBJECT).setElement(i,
-                            generateAnnotationValue(agent, pe, itemType, list.get(i)));
+                    array.unwrapArray().setElement(i, generateAnnotationValue(agent, pe, itemType, list.get(i)));
                 }
                 return array;
             }

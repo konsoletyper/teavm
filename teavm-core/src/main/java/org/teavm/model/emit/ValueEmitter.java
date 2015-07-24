@@ -23,6 +23,7 @@ import org.teavm.model.Phi;
 import org.teavm.model.PrimitiveType;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
+import org.teavm.model.instructions.ArrayElementType;
 import org.teavm.model.instructions.ArrayLengthInstruction;
 import org.teavm.model.instructions.BinaryBranchingCondition;
 import org.teavm.model.instructions.BinaryBranchingInstruction;
@@ -311,7 +312,7 @@ public class ValueEmitter {
         switch (common) {
             case FLOAT:
             case DOUBLE:
-                throw new IllegalArgumentException("Can't perform bitwise operation between non-integers");
+                throw new IllegalArgumentException("Can't perform bitwise operation between non-integers: " + common);
             default:
                 break;
         }
@@ -338,27 +339,64 @@ public class ValueEmitter {
     }
 
     public ValueEmitter shl(ValueEmitter other) {
-        return binary(BinaryOperation.SHIFT_LEFT, other);
+        return shift(BinaryOperation.SHIFT_LEFT, other);
     }
 
     public ValueEmitter shl(int value) {
-        return binary(BinaryOperation.SHIFT_LEFT, pe.constant(value));
+        return shl(pe.constant(value));
     }
 
     public ValueEmitter shr(ValueEmitter other) {
-        return binary(BinaryOperation.SHIFT_RIGHT, other);
+        return shift(BinaryOperation.SHIFT_RIGHT, other);
     }
 
     public ValueEmitter shr(int value) {
-        return binary(BinaryOperation.SHIFT_RIGHT, pe.constant(value));
+        return shr(pe.constant(value));
     }
 
     public ValueEmitter shru(ValueEmitter other) {
-        return binary(BinaryOperation.SHIFT_RIGHT_UNSIGNED, other);
+        return shift(BinaryOperation.SHIFT_RIGHT_UNSIGNED, other);
     }
 
     public ValueEmitter shru(int value) {
-        return binary(BinaryOperation.SHIFT_RIGHT_UNSIGNED, pe.constant(value));
+        return shru(pe.constant(value));
+    }
+
+    private ValueEmitter shift(BinaryOperation op, ValueEmitter other) {
+        if (!(type instanceof ValueType.Primitive) || !(other.type instanceof ValueType.Primitive)) {
+            throw new IllegalArgumentException("Can't shift " + type + " by " + other.type);
+        }
+
+        ValueType valueType = type;
+        PrimitiveType kind = ((ValueType.Primitive) type).getKind();
+        switch (kind) {
+            case FLOAT:
+            case DOUBLE:
+                throw new IllegalArgumentException("Can't perform bit shift operation over non-integer: " + type);
+            default:
+                break;
+        }
+
+        PrimitiveType shiftKind = ((ValueType.Primitive) type).getKind();
+        switch (kind) {
+            case BYTE:
+            case SHORT:
+            case INTEGER:
+                break;
+            default:
+                throw new IllegalArgumentException("Can't perform bit shift operation with non-integer "
+                        + "shift: " + type);
+        }
+        other = other.castToInteger(convertToIntegerSubtype(shiftKind));
+
+        ValueEmitter value = this;
+        IntegerSubtype subtype = convertToIntegerSubtype(kind);
+        if (subtype != null) {
+            value = value.castToInteger(subtype);
+            valueType = ValueType.INTEGER;
+        }
+
+        return binaryOp(op, value, other, valueType);
     }
 
     public ValueEmitter invoke(InvocationType invokeType, String className, String name, ValueType resultType,
@@ -368,7 +406,6 @@ public class ValueEmitter {
         }
 
         Variable result = null;
-        String className = ((ValueType.Object) type).getClassName();
         ValueType[] signature = new ValueType[arguments.length + 1];
         for (int i = 0; i < arguments.length; ++i) {
             signature[i] = arguments[i].type;
@@ -434,6 +471,7 @@ public class ValueEmitter {
     public void invokeVirtual(String name, ValueEmitter... arguments) {
         invokeVirtual(name, ValueType.VOID, arguments);
     }
+
 
     public ValueEmitter join(BasicBlock block, ValueEmitter other, BasicBlock otherBlock, ValueType type) {
         Variable var = pe.getProgram().createVariable();
@@ -505,7 +543,38 @@ public class ValueEmitter {
             return this;
         }
         if (type instanceof ValueType.Primitive) {
+            if (!(this.type instanceof ValueType.Primitive)) {
+                throw new IllegalStateException("Can't convert " + this.type + " to " + type);
+            }
 
+            ValueEmitter value = this;
+            PrimitiveType sourceKind = ((ValueType.Primitive) this.type).getKind();
+            PrimitiveType targetKind = ((ValueType.Primitive) type).getKind();
+
+            if (sourceKind == PrimitiveType.BOOLEAN || targetKind == PrimitiveType.BOOLEAN) {
+                throw new IllegalStateException("Can't convert " + this.type + " to " + type);
+            }
+
+            IntegerSubtype sourceSubtype = convertToIntegerSubtype(sourceKind);
+            if (sourceSubtype != null) {
+                sourceKind = PrimitiveType.INTEGER;
+                value = castToInteger(sourceSubtype);
+            }
+            NumericOperandType sourceNumeric = convertToNumeric(sourceKind);
+            NumericOperandType targetNumeric = convertToNumeric(sourceKind);
+
+            CastNumberInstruction insn = new CastNumberInstruction(sourceNumeric, targetNumeric);
+            insn.setValue(value.getVariable());
+            value = pe.newVar(type);
+            insn.setReceiver(value.getVariable());
+            pe.addInstruction(insn);
+
+            IntegerSubtype targetSubtype = convertToIntegerSubtype(targetKind);
+            if (targetSubtype != null) {
+                value = castFromInteger(targetSubtype);
+            }
+
+            return value;
         } else {
             if (this.type instanceof ValueType.Primitive) {
                 throw new IllegalStateException("Can't convert " + this.type + " to " + type);
@@ -591,8 +660,13 @@ public class ValueEmitter {
     }
 
     public ValueEmitter unwrapArray() {
+        if (!(type instanceof ValueType.Array)) {
+            throw new IllegalStateException("Can't unwrap non-array value: " + type);
+        }
+
+        ValueType elementType = ((ValueType.Array) type).getItemType();
         Variable result = pe.getProgram().createVariable();
-        UnwrapArrayInstruction insn = new UnwrapArrayInstruction(elementType);
+        UnwrapArrayInstruction insn = new UnwrapArrayInstruction(getArrayElementType(elementType));
         insn.setArray(variable);
         insn.setReceiver(result);
         pe.addInstruction(insn);
@@ -625,5 +699,36 @@ public class ValueEmitter {
         insn.setReceiver(result);
         pe.addInstruction(insn);
         return pe.var(result, type);
+    }
+
+    private ArrayElementType getArrayElementType(ValueType type) {
+        if (type instanceof ValueType.Primitive) {
+            switch (((ValueType.Primitive) type).getKind()) {
+                case BOOLEAN:
+                case BYTE:
+                    return ArrayElementType.BYTE;
+                case SHORT:
+                    return ArrayElementType.SHORT;
+                case CHARACTER:
+                    return ArrayElementType.CHAR;
+                case INTEGER:
+                    return ArrayElementType.INT;
+                case LONG:
+                    return ArrayElementType.LONG;
+                case FLOAT:
+                    return ArrayElementType.FLOAT;
+                case DOUBLE:
+                    return ArrayElementType.DOUBLE;
+            }
+        }
+        return ArrayElementType.OBJECT;
+    }
+
+    public ProgramEmitter enter(PhiEmitter phi) {
+        Incoming incoming = new Incoming();
+        incoming.setValue(variable);
+        incoming.setSource(pe.getBlock());
+        phi.phi.getIncomings().add(incoming);
+        return pe;
     }
 }
