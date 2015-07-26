@@ -15,10 +15,7 @@
  */
 package org.teavm.optimization;
 
-import org.teavm.model.BasicBlock;
-import org.teavm.model.Instruction;
-import org.teavm.model.Program;
-import org.teavm.model.Variable;
+import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 
 /**
@@ -185,6 +182,16 @@ public final class VariableEscapeAnalyzer {
 
         @Override
         public void visit(InvokeInstruction insn) {
+            if (insn.getInstance() != null) {
+                escaping[insn.getInstance().getIndex()] = true;
+            }
+            for (Variable arg : insn.getArguments()) {
+                escaping[arg.getIndex()] = true;
+            }
+        }
+
+        @Override
+        public void visit(InvokeDynamicInstruction insn) {
             if (insn.getInstance() != null) {
                 escaping[insn.getInstance().getIndex()] = true;
             }

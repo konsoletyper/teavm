@@ -188,6 +188,13 @@ class InstructionReadVisitor implements InstructionVisitor {
     }
 
     @Override
+    public void visit(InvokeDynamicInstruction insn) {
+        reader.invokeDynamic(insn.getReceiver(), insn.getInstance(), insn.getMethod(),
+                Collections.unmodifiableList(insn.getArguments()), insn.getBootstrapMethod(),
+                Collections.unmodifiableList(insn.getBootstrapArguments()));
+    }
+
+    @Override
     public void visit(IsInstanceInstruction insn) {
         reader.isInstance(insn.getReceiver(), insn.getValue(), insn.getType());
     }

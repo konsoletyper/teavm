@@ -122,6 +122,15 @@ public class DiskProgramCache implements ProgramCache {
         @Override public void visit(InvokeInstruction insn) {
             dependencies.add(insn.getMethod().getClassName());
         }
+        @Override
+        public void visit(InvokeDynamicInstruction insn) {
+            for (RuntimeConstant cst : insn.getBootstrapArguments()) {
+                if (cst.getKind() == RuntimeConstant.METHOD_HANDLE) {
+                    MethodHandle handle = cst.getMethodHandle();
+                    dependencies.add(handle.getClassName());
+                }
+            }
+        }
         @Override public void visit(EmptyInstruction insn) { }
         @Override public void visit(ClassConstantInstruction insn) { }
         @Override public void visit(NullConstantInstruction insn) { }
@@ -153,15 +162,7 @@ public class DiskProgramCache implements ProgramCache {
         @Override public void visit(IsInstanceInstruction insn) { }
         @Override public void visit(InitClassInstruction insn) { }
         @Override public void visit(NullCheckInstruction insn) { }
-
-        @Override
-        public void visit(MonitorEnterInstruction insn) {
-            
-        }
-
-        @Override
-        public void visit(MonitorExitInstruction insn) {
-            
-        }
+        @Override public void visit(MonitorEnterInstruction insn) { }
+        @Override public void visit(MonitorExitInstruction insn) { }
     }
 }

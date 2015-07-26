@@ -17,6 +17,7 @@ package org.teavm.model.util;
 
 import java.util.List;
 import org.teavm.model.BasicBlock;
+import org.teavm.model.InvokeDynamicInstruction;
 import org.teavm.model.instructions.*;
 
 /**
@@ -157,6 +158,11 @@ public class InstructionTransitionExtractor implements InstructionVisitor {
 
     @Override
     public void visit(InvokeInstruction insn) {
+        targets = null;
+    }
+
+    @Override
+    public void visit(InvokeDynamicInstruction insn) {
         targets = null;
     }
 

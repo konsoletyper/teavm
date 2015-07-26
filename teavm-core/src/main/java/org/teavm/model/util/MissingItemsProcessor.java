@@ -192,6 +192,10 @@ public class MissingItemsProcessor {
         }
 
         @Override
+        public void visit(InvokeDynamicInstruction insn) {
+        }
+
+        @Override
         public void visit(PutElementInstruction insn) {
         }
 

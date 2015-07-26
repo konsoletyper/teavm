@@ -308,6 +308,13 @@ public class DataFlowGraphBuilder implements InstructionReader {
     }
 
     @Override
+    public void invokeDynamic(VariableReader receiver, VariableReader instance, MethodDescriptor method,
+            List<? extends VariableReader> arguments, MethodHandle bootstrapMethod,
+            List<RuntimeConstant> bootstrapArguments) {
+        // Should be eliminated by bootstrap method substitutor
+    }
+
+    @Override
     public void isInstance(VariableReader receiver, VariableReader value, ValueType type) {
     }
 

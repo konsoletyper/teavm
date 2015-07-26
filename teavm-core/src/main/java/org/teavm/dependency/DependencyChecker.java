@@ -15,7 +15,16 @@
  */
 package org.teavm.dependency;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.callgraph.DefaultCallGraph;
 import org.teavm.callgraph.DefaultCallGraphNode;
@@ -29,10 +38,12 @@ import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
+import org.teavm.model.FieldHolder;
 import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
 import org.teavm.model.InstructionLocation;
 import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -47,8 +58,8 @@ public class DependencyChecker implements DependencyInfo {
     private int classNameSuffix;
     private DependencyClassSource classSource;
     private ClassLoader classLoader;
-    private Mapper<MethodReference, MethodReader> methodReaderCache;
-    private Mapper<FieldReference, FieldReader> fieldReaderCache;
+    private Mapper<MethodReference, MethodHolder> methodReaderCache;
+    private Mapper<FieldReference, FieldHolder> fieldReaderCache;
     private CachedMapper<MethodReference, MethodDependency> methodCache;
     private CachedMapper<FieldReference, FieldDependency> fieldCache;
     private CachedMapper<String, ClassDependency> classCache;
@@ -64,6 +75,7 @@ public class DependencyChecker implements DependencyInfo {
     private DependencyAgent agent;
     List<DependencyNode> nodes = new ArrayList<>();
     List<BitSet> typeBitSets = new ArrayList<>();
+    Map<MethodReference, BootstrapMethodSubstitutor> bootstrapMethodSubstitutors = new HashMap<>();
 
     public DependencyChecker(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services,
             Diagnostics diagnostics) {
@@ -71,10 +83,10 @@ public class DependencyChecker implements DependencyInfo {
         this.classSource = new DependencyClassSource(classSource, diagnostics);
         this.classLoader = classLoader;
         this.services = services;
-        methodReaderCache = new CachedMapper<>(preimage -> findMethodReader(preimage));
-        fieldReaderCache = new CachedMapper<>(preimage -> findFieldReader(preimage));
+        methodReaderCache = new CachedMapper<>(preimage -> this.classSource.resolveMutable(preimage));
+        fieldReaderCache = new CachedMapper<>(preimage -> this.classSource.resolveMutable(preimage));
         methodCache = new CachedMapper<>(preimage ->  {
-            MethodReader method = methodReaderCache.map(preimage);
+            MethodHolder method = methodReaderCache.map(preimage);
             if (method != null && !method.getReference().equals(preimage)) {
                 return methodCache.map(method.getReference());
             }
@@ -268,53 +280,7 @@ public class DependencyChecker implements DependencyInfo {
         }
     }
 
-    private MethodReader findMethodReader(MethodReference methodRef) {
-        String clsName = methodRef.getClassName();
-        MethodDescriptor desc = methodRef.getDescriptor();
-        ClassReader cls = classSource.get(clsName);
-        if (cls == null) {
-            return null;
-        }
-        MethodReader reader = cls.getMethod(desc);
-        if (reader != null) {
-            return reader;
-        }
-        if (cls.getParent() != null && cls.getParent().equals(cls.getParent())) {
-            reader = methodReaderCache.map(new MethodReference(cls.getParent(), desc));
-            if (reader != null) {
-                return reader;
-            }
-        }
-        for (String ifaceName : cls.getInterfaces()) {
-            reader = methodReaderCache.map(new MethodReference(ifaceName, desc));
-            if (reader != null) {
-                return reader;
-            }
-        }
-        return null;
-    }
-
-    private FieldReader findFieldReader(FieldReference fieldRef) {
-        String clsName = fieldRef.getClassName();
-        String name = fieldRef.getFieldName();
-        while (clsName != null) {
-            ClassReader cls = classSource.get(clsName);
-            if (cls == null) {
-                return null;
-            }
-            FieldReader field = cls.getField(name);
-            if (field != null) {
-                return field;
-            }
-            if (clsName.equals(cls.getParent())) {
-                break;
-            }
-            clsName = cls.getParent();
-        }
-        return null;
-    }
-
-    private MethodDependency createMethodDep(MethodReference methodRef, MethodReader method) {
+    private MethodDependency createMethodDep(MethodReference methodRef, MethodHolder method) {
         ValueType[] arguments = methodRef.getParameterTypes();
         int paramCount = arguments.length + 1;
         DependencyNode[] parameterNodes = new DependencyNode[arguments.length + 1];
@@ -481,5 +447,9 @@ public class DependencyChecker implements DependencyInfo {
     @Override
     public CallGraph getCallGraph() {
         return callGraph;
+    }
+
+    public void addBootstrapMethodSubstitutor(MethodReference method, BootstrapMethodSubstitutor substitutor) {
+        bootstrapMethodSubstitutors.put(method, substitutor);
     }
 }

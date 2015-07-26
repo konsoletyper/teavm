@@ -91,14 +91,15 @@ class MetadataProviderTransformer implements ClassHolderTransformer {
         method.getModifiers().remove(ElementModifier.NATIVE);
         ProgramEmitter pe = ProgramEmitter.create(method);
         ForkEmitter fork = pe.getField(field.getReference(), field.getType()).fork(
-                BinaryBranchingCondition.REFERENCE_NOT_EQUAL, pe.constantNull());
+                BinaryBranchingCondition.REFERENCE_NOT_EQUAL, pe.constantNull(field.getType()));
 
         BasicBlock resourceFound = pe.createBlock();
         fork.setThen(resourceFound);
         pe.getField(field.getReference(), field.getType()).returnValue();
 
         fork.setElse(pe.createBlock());
-        pe.setField(field.getReference(), field.getType(), pe.invoke(createMethod.getReference()));
+        pe.setField(field.getReference(), pe.invoke(createMethod.getReference().getClassName(),
+                createMethod.getReference().getName(), createMethod.getResultType()));
         pe.jump(resourceFound);
 
         AnnotationHolder noCacheAnnot = new AnnotationHolder(NoCache.class.getName());

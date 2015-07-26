@@ -15,11 +15,8 @@
  */
 package org.teavm.samples.hello;
 
-import org.teavm.dom.ajax.ReadyStateChangeHandler;
 import org.teavm.dom.ajax.XMLHttpRequest;
 import org.teavm.dom.browser.Window;
-import org.teavm.dom.events.EventListener;
-import org.teavm.dom.events.MouseEvent;
 import org.teavm.dom.html.HTMLButtonElement;
 import org.teavm.dom.html.HTMLDocument;
 import org.teavm.dom.html.HTMLElement;
@@ -36,22 +33,16 @@ public final class Client {
     }
 
     public static void main(String[] args) {
-        helloButton.addEventListener("click", new EventListener<MouseEvent>() {
-            @Override public void handleEvent(MouseEvent evt) {
-                sayHello();
-            }
-        });
+        helloButton.addEventListener("click", evt -> sayHello());
     }
 
     private static void sayHello() {
         helloButton.setDisabled(true);
         thinkingPanel.getStyle().setProperty("display", "");
         final XMLHttpRequest xhr = window.createXMLHttpRequest();
-        xhr.setOnReadyStateChange(new ReadyStateChangeHandler() {
-            @Override public void stateChanged() {
-                if (xhr.getReadyState() == XMLHttpRequest.DONE) {
-                    receiveResponse(xhr.getResponseText());
-                }
+        xhr.setOnReadyStateChange(() -> {
+            if (xhr.getReadyState() == XMLHttpRequest.DONE) {
+                receiveResponse(xhr.getResponseText());
             }
         });
         xhr.open("GET", "hello");

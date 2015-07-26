@@ -83,11 +83,11 @@ public class ValueEmitter {
     }
 
     public ValueEmitter getField(String name, ValueType type) {
-        if (!(type instanceof ValueType.Object)) {
+        if (!(this.type instanceof ValueType.Object)) {
             throw new IllegalStateException("Can't get field of non-object type: " + type);
         }
 
-        String className = ((ValueType.Object) type).getClassName();
+        String className = ((ValueType.Object) this.type).getClassName();
         Variable var = pe.getProgram().createVariable();
         GetFieldInstruction insn = new GetFieldInstruction();
         insn.setField(new FieldReference(className, name));

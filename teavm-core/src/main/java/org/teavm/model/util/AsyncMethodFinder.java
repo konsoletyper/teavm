@@ -370,6 +370,12 @@ public class AsyncMethodFinder {
         }
 
         @Override
+        public void invokeDynamic(VariableReader receiver, VariableReader instance, MethodDescriptor method,
+                List<? extends VariableReader> arguments, MethodHandle bootstrapMethod,
+                List<RuntimeConstant> bootstrapArguments) {
+        }
+
+        @Override
         public void isInstance(VariableReader receiver, VariableReader value, ValueType type) {
         }
 

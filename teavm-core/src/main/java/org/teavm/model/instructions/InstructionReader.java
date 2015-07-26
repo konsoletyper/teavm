@@ -92,8 +92,11 @@ public interface InstructionReader {
     void putElement(VariableReader array, VariableReader index, VariableReader value);
 
     void invoke(VariableReader receiver, VariableReader instance, MethodReference method,
-            List<? extends VariableReader> arguments,
-            InvocationType type);
+            List<? extends VariableReader> arguments, InvocationType type);
+
+    void invokeDynamic(VariableReader receiver, VariableReader instance, MethodDescriptor method,
+            List<? extends VariableReader> arguments, MethodHandle bootstrapMethod,
+            List<RuntimeConstant> bootstrapArguments);
 
     void isInstance(VariableReader receiver, VariableReader value, ValueType type);
 

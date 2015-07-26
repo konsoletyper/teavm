@@ -367,6 +367,10 @@ public class LoopInvariantMotion implements MethodOptimization {
         }
 
         @Override
+        public void visit(InvokeDynamicInstruction insn) {
+        }
+
+        @Override
         public void visit(IsInstanceInstruction insn) {
             canMove = true;
         }
@@ -558,6 +562,10 @@ public class LoopInvariantMotion implements MethodOptimization {
 
         @Override
         public void visit(InvokeInstruction insn) {
+        }
+
+        @Override
+        public void visit(InvokeDynamicInstruction insn) {
         }
 
         @Override

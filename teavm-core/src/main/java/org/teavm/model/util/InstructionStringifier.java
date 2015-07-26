@@ -15,7 +15,9 @@
  */
 package org.teavm.model.util;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 
@@ -335,6 +337,73 @@ public class InstructionStringifier implements InstructionReader {
             sb.append("@").append(arguments.get(i).getIndex());
         }
         sb.append(")");
+    }
+
+    @Override
+    public void invokeDynamic(VariableReader receiver, VariableReader instance, MethodDescriptor method,
+            List<? extends VariableReader> arguments, MethodHandle bootstrapMethod,
+            List<RuntimeConstant> bootstrapArguments) {
+        if (receiver != null) {
+            sb.append("@").append(receiver.getIndex()).append(" := ");
+        }
+        if (instance != null) {
+            sb.append("@").append(instance.getIndex()).append(".");
+        }
+        sb.append(method.getName()).append("(");
+        sb.append(arguments.stream().map(arg -> "@"  + arg.getIndex()).collect(Collectors.joining(", ")));
+        sb.append(") ");
+        sb.append("[").append(convert(bootstrapMethod)).append('(');
+        sb.append(bootstrapArguments.stream().map(arg -> convert(arg)).collect(Collectors.joining(", ")));
+        sb.append(")");
+    }
+
+    private String convert(MethodHandle handle) {
+        switch (handle.getKind()) {
+            case INVOKE_VIRTUAL:
+            case INVOKE_SPECIAL:
+            case INVOKE_INTERFACE:
+                return new MethodDescriptor(handle.getName(), handle.signature()).toString();
+            case INVOKE_CONSTRUCTOR:
+                return "new" + handle.getClassName() + "." + new MethodDescriptor(handle.getName(),
+                        handle.signature()).toString();
+            case INVOKE_STATIC:
+                return handle.getClassName() + "." + new MethodDescriptor(handle.getName(),
+                        handle.signature()).toString();
+            case GET_FIELD:
+                return "GET " + handle.getName();
+            case GET_STATIC_FIELD:
+                return "GET " + handle.getClassName() + "." + handle.getName();
+            case PUT_FIELD:
+                return "PUT " + handle.getName();
+            case PUT_STATIC_FIELD:
+                return "PUT " + handle.getClassName() + "." + handle.getName();
+        }
+        throw new IllegalArgumentException("Unexpected handle type: " + handle.getKind());
+    }
+
+    private String convert(RuntimeConstant cst) {
+        switch (cst.getKind()) {
+            case RuntimeConstant.INT:
+                return String.valueOf(cst.getInt());
+            case RuntimeConstant.LONG:
+                return String.valueOf(cst.getLong());
+            case RuntimeConstant.FLOAT:
+                return String.valueOf(cst.getFloat());
+            case RuntimeConstant.DOUBLE:
+                return String.valueOf(cst.getDouble());
+            case RuntimeConstant.STRING:
+                return String.valueOf(cst.getString());
+            case RuntimeConstant.TYPE:
+                return String.valueOf(cst.getValueType());
+            case RuntimeConstant.METHOD: {
+                ValueType[] methodType = cst.getMethodType();
+                return "(" + Arrays.stream(methodType, 0, methodType.length - 1).map(Object::toString)
+                            .collect(Collectors.joining()) + ")" + methodType[methodType.length - 1];
+            }
+            case RuntimeConstant.METHOD_HANDLE:
+                return convert(cst.getMethodHandle());
+        }
+        throw new IllegalArgumentException("Unexpected runtime constant type: " + cst.getKind());
     }
 
     @Override

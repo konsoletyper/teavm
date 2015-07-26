@@ -15,6 +15,8 @@
  */
 package org.teavm.model.instructions;
 
+import org.teavm.model.InvokeDynamicInstruction;
+
 /**
  *
  * @author Alexey Andreev
@@ -82,13 +84,15 @@ public interface InstructionVisitor {
 
     void visit(InvokeInstruction insn);
 
+    void visit(InvokeDynamicInstruction insn);
+
     void visit(IsInstanceInstruction insn);
 
     void visit(InitClassInstruction insn);
 
     void visit(NullCheckInstruction insn);
-    
+
     void visit(MonitorEnterInstruction insn);
-    
+
     void visit(MonitorExitInstruction insn);
 }

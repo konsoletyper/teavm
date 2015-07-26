@@ -271,6 +271,22 @@ public final class ProgramEmitter {
         return var(var, ValueType.parse(type));
     }
 
+    public ValueEmitter var(Variable var, ClassReader type) {
+        return var(var, ValueType.object(type.getName()));
+    }
+
+    public ValueEmitter var(int var, ValueType type) {
+        return new ValueEmitter(this, block, program.variableAt(var), type);
+    }
+
+    public ValueEmitter var(int var, Class<?> type) {
+        return var(var, ValueType.parse(type));
+    }
+
+    public ValueEmitter var(int var, ClassReader type) {
+        return var(var, ValueType.object(type.getName()));
+    }
+
     public ValueEmitter newVar(ValueType type) {
         return var(program.createVariable(), type);
     }
@@ -307,6 +323,11 @@ public final class ProgramEmitter {
         JumpInstruction insn = new JumpInstruction();
         insn.setTarget(block);
         zeroBlock.getInstructions().add(insn);
+
+        program.createVariable();
+        for (int i = 0; i < method.parameterCount(); ++i) {
+            program.createVariable();
+        }
 
         return new ProgramEmitter(program, block);
     }
@@ -347,5 +368,9 @@ public final class ProgramEmitter {
         SwitchInstruction insn = new SwitchInstruction();
         insn.setCondition(value.getVariable());
         return new ChooseEmitter(this, insn, program.createBasicBlock());
+    }
+
+    public static ProgramEmitter create(Program program) {
+        return new ProgramEmitter(program, null);
     }
 }

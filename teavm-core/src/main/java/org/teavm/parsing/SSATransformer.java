@@ -394,6 +394,20 @@ public class SSATransformer {
         }
 
         @Override
+        public void visit(InvokeDynamicInstruction insn) {
+            List<Variable> args = insn.getArguments();
+            for (int i = 0; i < args.size(); ++i) {
+                args.set(i, use(args.get(i)));
+            }
+            if (insn.getInstance() != null) {
+                insn.setInstance(use(insn.getInstance()));
+            }
+            if (insn.getReceiver() != null) {
+                insn.setReceiver(define(insn.getReceiver()));
+            }
+        }
+
+        @Override
         public void visit(IsInstanceInstruction insn) {
             insn.setValue(use(insn.getValue()));
             insn.setReceiver(define(insn.getReceiver()));

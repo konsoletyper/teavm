@@ -236,6 +236,13 @@ public class UnusedVariableElimination implements MethodOptimization {
         }
 
         @Override
+        public void visit(InvokeDynamicInstruction insn) {
+            if (insn.getReceiver() != null && !used[insn.getReceiver().getIndex()]) {
+                insn.setReceiver(null);
+            }
+        }
+
+        @Override
         public void visit(IsInstanceInstruction insn) {
             requestUsage(insn.getReceiver());
         }
@@ -251,12 +258,12 @@ public class UnusedVariableElimination implements MethodOptimization {
 
         @Override
         public void visit(MonitorEnterInstruction insn) {
-            
+
         }
 
         @Override
         public void visit(MonitorExitInstruction insn) {
-            
+
         }
     }
 }

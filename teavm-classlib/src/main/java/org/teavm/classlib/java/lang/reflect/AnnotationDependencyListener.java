@@ -91,7 +91,7 @@ public class AnnotationDependencyListener extends AbstractDependencyListener {
 
             MethodHolder accessor = new MethodHolder(methodDecl.getDescriptor());
             ProgramEmitter pe = ProgramEmitter.create(accessor);
-            ValueEmitter thisVal = pe.newVar(implementor);
+            ValueEmitter thisVal = pe.var(0, implementor);
             ValueEmitter result = thisVal.getField(field.getName(), field.getType());
             if (field.getType() instanceof ValueType.Array) {
                 result = result.cloneArray();
@@ -105,13 +105,14 @@ public class AnnotationDependencyListener extends AbstractDependencyListener {
 
         MethodHolder ctor = new MethodHolder("<init>", ctorSignature.toArray(new ValueType[ctorSignature.size()]));
         ProgramEmitter pe = ProgramEmitter.create(ctor);
-        ValueEmitter thisVar = pe.newVar(implementor);
+        ValueEmitter thisVar = pe.var(0, implementor);
         thisVar.invokeSpecial(Object.class, "<init>");
+        int index = 1;
         for (MethodReader methodDecl : annotation.getMethods()) {
             if (methodDecl.hasModifier(ElementModifier.STATIC)) {
                 continue;
             }
-            ValueEmitter param = pe.newVar(methodDecl.getResultType());
+            ValueEmitter param = pe.var(index++, methodDecl.getResultType());
             thisVar.setField("$" + methodDecl.getName(), param);
         }
         pe.exit();
@@ -119,7 +120,6 @@ public class AnnotationDependencyListener extends AbstractDependencyListener {
 
         MethodHolder annotTypeMethod = new MethodHolder("annotationType", ValueType.parse(Class.class));
         pe = ProgramEmitter.create(annotTypeMethod);
-        pe.newVar(implementor);
         pe.constant(ValueType.object(annotationType)).returnValue();
         implementor.addMethod(annotTypeMethod);
 
@@ -165,7 +165,7 @@ public class AnnotationDependencyListener extends AbstractDependencyListener {
         MethodHolder ctor = new MethodHolder("<init>", ValueType.VOID);
         ctor.setLevel(AccessLevel.PUBLIC);
         ProgramEmitter pe = ProgramEmitter.create(ctor);
-        ValueEmitter thisVar = pe.newVar(cls);
+        ValueEmitter thisVar = pe.var(0, cls);
         thisVar.invokeSpecial(Object.class, "<init>").exit();
 
         ClassReader annotatedClass = agent.getClassSource().get(className);
