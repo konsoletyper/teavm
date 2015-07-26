@@ -486,7 +486,54 @@ public class ProgramParser implements VariableDebugInformation {
 
         @Override
         public void visitInvokeDynamicInsn(String name, String desc, Handle bsm, Object... bsmArgs) {
-            throw new IllegalStateException("InvokeDynamic is not supported in TeaVM");
+            InvokeDynamicInstruction insn = new InvokeDynamicInstruction();
+
+            insn.setInstance(getVariable(popSingle()));
+            Type[] types = Type.getArgumentTypes(desc);
+            Variable[] args = new Variable[types.length];
+            int j = args.length;
+            for (int i = types.length - 1; i >= 0; --i) {
+                args[--j] = types[i].getSize() == 2 ? getVariable(popDouble()) : getVariable(popSingle());
+            }
+            insn.getArguments().addAll(Arrays.asList(args));
+
+            Type returnType = Type.getReturnType(desc);
+            if (returnType.getSize() > 0) {
+                insn.setReceiver(getVariable(returnType.getSize() == 2 ? pushDouble() : pushSingle()));
+            }
+
+            insn.setMethod(new MethodDescriptor(name, MethodDescriptor.parseSignature(desc)));
+            insn.setBootstrapMethod(parseHandle(bsm));
+            for (int i = 0; i < bsmArgs.length; ++i) {
+                insn.getBootstrapArguments().add(convertConstant(bsmArgs[i]));
+            }
+
+            addInstruction(insn);
+        }
+
+        private RuntimeConstant convertConstant(Object value) {
+            if (value instanceof Integer) {
+                return new RuntimeConstant((Integer) value);
+            } else if (value instanceof Long) {
+                return new RuntimeConstant((Long) value);
+            } else if (value instanceof Float) {
+                return new RuntimeConstant((Float) value);
+            } else if (value instanceof Double) {
+                return new RuntimeConstant((Double) value);
+            } else if (value instanceof String) {
+                return new RuntimeConstant((String) value);
+            } else if (value instanceof Type) {
+                Type type = (Type) value;
+                if (type.getSort() == Type.METHOD) {
+                    return new RuntimeConstant(MethodDescriptor.parseSignature(type.getDescriptor()));
+                } else {
+                    return new RuntimeConstant(ValueType.parse(type.getDescriptor()));
+                }
+            } else if (value instanceof Handle) {
+                return new RuntimeConstant(parseHandle((Handle) value));
+            } else {
+                throw new IllegalArgumentException("Unknown runtime constant: " + value);
+            }
         }
 
         @Override
@@ -1673,4 +1720,38 @@ public class ProgramParser implements VariableDebugInformation {
             return null;
         }
     };
+
+    static MethodHandle parseHandle(Handle handle) {
+        switch (handle.getTag()) {
+            case Opcodes.H_GETFIELD:
+                return MethodHandle.fieldGetter(handle.getOwner(), handle.getName(),
+                        ValueType.parse(handle.getDesc()));
+            case Opcodes.H_GETSTATIC:
+                return MethodHandle.staticFieldGetter(handle.getOwner(), handle.getName(),
+                        ValueType.parse(handle.getDesc()));
+            case Opcodes.H_PUTFIELD:
+                return MethodHandle.fieldSetter(handle.getOwner(), handle.getName(),
+                        ValueType.parse(handle.getDesc()));
+            case Opcodes.H_PUTSTATIC:
+                return MethodHandle.staticFieldSetter(handle.getOwner(), handle.getName(),
+                        ValueType.parse(handle.getDesc()));
+            case Opcodes.H_INVOKEVIRTUAL:
+                return MethodHandle.virtualCaller(handle.getOwner(), handle.getName(),
+                        MethodDescriptor.parseSignature(handle.getDesc()));
+            case Opcodes.H_INVOKESTATIC:
+                return MethodHandle.staticCaller(handle.getOwner(), handle.getName(),
+                        MethodDescriptor.parseSignature(handle.getDesc()));
+            case Opcodes.H_INVOKESPECIAL:
+                return MethodHandle.specialCaller(handle.getOwner(), handle.getName(),
+                        MethodDescriptor.parseSignature(handle.getDesc()));
+            case Opcodes.H_NEWINVOKESPECIAL:
+                return MethodHandle.constructorCaller(handle.getOwner(), handle.getName(),
+                        MethodDescriptor.parseSignature(handle.getDesc()));
+            case Opcodes.H_INVOKEINTERFACE:
+                return MethodHandle.interfaceCaller(handle.getOwner(), handle.getName(),
+                        MethodDescriptor.parseSignature(handle.getDesc()));
+            default:
+                throw new IllegalArgumentException("Unknown handle tag: " + handle.getTag());
+        }
+    }
 }

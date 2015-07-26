@@ -15,10 +15,8 @@
  */
 package org.teavm.optimization;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.function.UnaryOperator;
 import org.teavm.common.DominatorTree;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphUtils;
@@ -395,11 +393,16 @@ public class GlobalValueNumbering implements MethodOptimization {
                 int instance = map[insn.getInstance().getIndex()];
                 insn.setInstance(program.variableAt(instance));
             }
-            for (int i = 0; i < insn.getArguments().size(); ++i) {
-                int arg = map[insn.getArguments().get(i).getIndex()];
-                insn.getArguments().set(i, program.variableAt(arg));
-            }
+            insn.getArguments().replaceAll(mapper);
         }
+
+        @Override
+        public void visit(InvokeDynamicInstruction insn) {
+            Optional.ofNullable(insn.getInstance()).map(mapper).ifPresent(var -> insn.setInstance(var));
+            insn.getArguments().replaceAll(mapper);
+        }
+
+        private UnaryOperator<Variable> mapper = var -> program.variableAt(map[var.getIndex()]);
 
         @Override
         public void visit(IsInstanceInstruction insn) {

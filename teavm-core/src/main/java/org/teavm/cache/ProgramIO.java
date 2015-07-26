@@ -563,6 +563,26 @@ public class ProgramIO {
         }
 
         @Override
+        public void visit(InvokeDynamicInstruction insn) {
+            try {
+                output.writeByte(41);
+                output.writeShort(insn.getReceiver() != null ? insn.getReceiver().getIndex() : -1);
+                output.writeShort(insn.getInstance().getIndex());
+                output.writeInt(symbolTable.lookup(insn.getMethod().toString()));
+                for (int i = 0; i < insn.getArguments().size(); ++i) {
+                    output.writeShort(insn.getArguments().get(i).getIndex());
+                }
+                write(insn.getBootstrapMethod());
+                output.writeByte(insn.getBootstrapArguments().size());
+                for (int i = 0; i < insn.getBootstrapArguments().size(); ++i) {
+                    write(insn.getBootstrapArguments().get(i));
+                }
+            } catch (IOException e) {
+                throw new IOExceptionWrapper(e);
+            }
+        }
+
+        @Override
         public void visit(IsInstanceInstruction insn) {
             try {
                 output.writeByte(36);
@@ -612,6 +632,89 @@ public class ProgramIO {
                 output.writeShort(insn.getObjectRef().getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
+            }
+        }
+
+        private void write(MethodHandle handle) throws IOException {
+            switch (handle.getKind()) {
+                case GET_FIELD:
+                    output.writeByte(0);
+                    break;
+                case GET_STATIC_FIELD:
+                    output.writeByte(1);
+                    break;
+                case PUT_FIELD:
+                    output.writeByte(2);
+                    break;
+                case PUT_STATIC_FIELD:
+                    output.writeByte(3);
+                    break;
+                case INVOKE_VIRTUAL:
+                    output.writeByte(4);
+                    break;
+                case INVOKE_STATIC:
+                    output.writeByte(5);
+                    break;
+                case INVOKE_SPECIAL:
+                    output.writeByte(6);
+                    break;
+                case INVOKE_CONSTRUCTOR:
+                    output.writeByte(7);
+                    break;
+                case INVOKE_INTERFACE:
+                    output.writeByte(8);
+                    break;
+            }
+            output.writeInt(symbolTable.lookup(handle.getClassName()));
+            switch (handle.getKind()) {
+                case GET_FIELD:
+                case GET_STATIC_FIELD:
+                case PUT_FIELD:
+                case PUT_STATIC_FIELD:
+                    output.writeInt(symbolTable.lookup(handle.getName()));
+                    output.writeInt(symbolTable.lookup(handle.getValueType().toString()));
+                    break;
+                default:
+                    output.writeInt(symbolTable.lookup(new MethodDescriptor(handle.getName(),
+                            handle.signature()).toString()));
+                    break;
+            }
+        }
+
+        private void write(RuntimeConstant cst) throws IOException {
+            switch (cst.getKind()) {
+                case RuntimeConstant.INT:
+                    output.writeByte(0);
+                    output.writeInt(cst.getInt());
+                    break;
+                case RuntimeConstant.LONG:
+                    output.writeByte(1);
+                    output.writeLong(cst.getLong());
+                    break;
+                case RuntimeConstant.FLOAT:
+                    output.writeByte(2);
+                    output.writeFloat(cst.getFloat());
+                    break;
+                case RuntimeConstant.DOUBLE:
+                    output.writeByte(3);
+                    output.writeDouble(cst.getDouble());
+                    break;
+                case RuntimeConstant.STRING:
+                    output.writeByte(4);
+                    output.writeUTF(cst.getString());
+                    break;
+                case RuntimeConstant.TYPE:
+                    output.writeByte(5);
+                    output.writeInt(symbolTable.lookup(cst.getValueType().toString()));
+                    break;
+                case RuntimeConstant.METHOD:
+                    output.writeByte(6);
+                    output.writeInt(symbolTable.lookup(ValueType.methodTypeToString(cst.getMethodType())));
+                    break;
+                case RuntimeConstant.METHOD_HANDLE:
+                    output.writeByte(7);
+                    write(cst.getMethodHandle());
+                    break;
             }
         }
     }
@@ -928,8 +1031,97 @@ public class ProgramIO {
                 insn.setObjectRef(program.variableAt(input.readShort()));
                 return insn;
             }
+            case 41: {
+                /*
+                        output.writeByte(41);
+                        output.writeShort(insn.getReceiver() != null ? insn.getReceiver().getIndex() : -1);
+                        output.writeShort(insn.getInstance().getIndex());
+                        output.writeInt(symbolTable.lookup(insn.getMethod().toString()));
+                        for (int i = 0; i < insn.getArguments().size(); ++i) {
+                            output.writeShort(insn.getArguments().get(i).getIndex());
+                        }
+                        write(insn.getBootstrapMethod());
+                        output.writeByte(insn.getBootstrapArguments().size());
+                        for (int i = 0; i < insn.getBootstrapArguments().size(); ++i) {
+                            write(insn.getBootstrapArguments().get(i));
+                        */
+                InvokeDynamicInstruction insn = new InvokeDynamicInstruction();
+                short receiver = input.readShort();
+                insn.setReceiver(receiver >= 0 ? program.variableAt(receiver) : null);
+                insn.setInstance(program.variableAt(input.readShort()));
+                insn.setMethod(MethodDescriptor.parse(symbolTable.at(input.readInt())));
+                int argsCount = insn.getMethod().parameterCount();
+                for (int i = 0; i < argsCount; ++i) {
+                    insn.getArguments().add(program.variableAt(input.readShort()));
+                }
+                insn.setBootstrapMethod(readMethodHandle(input));
+                int bootstrapArgsCount = input.readByte();
+                for (int i = 0; i < bootstrapArgsCount; ++i) {
+                    insn.getBootstrapArguments().add(readRuntimeConstant(input));
+                }
+                return insn;
+            }
             default:
                 throw new RuntimeException("Unknown instruction type: " + insnType);
+        }
+    }
+
+    private MethodHandle readMethodHandle(DataInput input) throws IOException {
+        byte kind = input.readByte();
+        switch (kind) {
+            case 0:
+                return MethodHandle.fieldGetter(symbolTable.at(input.readInt()), symbolTable.at(input.readInt()),
+                        ValueType.parse(symbolTable.at(input.readInt())));
+            case 1:
+                return MethodHandle.staticFieldGetter(symbolTable.at(input.readInt()), symbolTable.at(input.readInt()),
+                        ValueType.parse(symbolTable.at(input.readInt())));
+            case 2:
+                return MethodHandle.fieldSetter(symbolTable.at(input.readInt()), symbolTable.at(input.readInt()),
+                        ValueType.parse(symbolTable.at(input.readInt())));
+            case 3:
+                return MethodHandle.staticFieldSetter(symbolTable.at(input.readInt()), symbolTable.at(input.readInt()),
+                        ValueType.parse(symbolTable.at(input.readInt())));
+            case 4:
+                return MethodHandle.virtualCaller(symbolTable.at(input.readInt()), symbolTable.at(input.readInt()),
+                        MethodDescriptor.parseSignature(symbolTable.at(input.readInt())));
+            case 5:
+                return MethodHandle.staticCaller(symbolTable.at(input.readInt()), symbolTable.at(input.readInt()),
+                        MethodDescriptor.parseSignature(symbolTable.at(input.readInt())));
+            case 6:
+                return MethodHandle.specialCaller(symbolTable.at(input.readInt()), symbolTable.at(input.readInt()),
+                        MethodDescriptor.parseSignature(symbolTable.at(input.readInt())));
+            case 7:
+                return MethodHandle.constructorCaller(symbolTable.at(input.readInt()), symbolTable.at(input.readInt()),
+                        MethodDescriptor.parseSignature(symbolTable.at(input.readInt())));
+            case 8:
+                return MethodHandle.interfaceCaller(symbolTable.at(input.readInt()), symbolTable.at(input.readInt()),
+                        MethodDescriptor.parseSignature(symbolTable.at(input.readInt())));
+            default:
+                throw new IllegalArgumentException("Unexpected method handle type: " + kind);
+        }
+    }
+
+    private RuntimeConstant readRuntimeConstant(DataInput input) throws IOException {
+        byte kind = input.readByte();
+        switch (kind) {
+            case 0:
+                return new RuntimeConstant(input.readInt());
+            case 1:
+                return new RuntimeConstant(input.readLong());
+            case 2:
+                return new RuntimeConstant(input.readFloat());
+            case 3:
+                return new RuntimeConstant(input.readDouble());
+            case 4:
+                return new RuntimeConstant(input.readUTF());
+            case 5:
+                return new RuntimeConstant(ValueType.parse(symbolTable.at(input.readInt())));
+            case 6:
+                return new RuntimeConstant(MethodDescriptor.parseSignature(symbolTable.at(input.readInt())));
+            case 7:
+                return new RuntimeConstant(readMethodHandle(input));
+            default:
+                throw new IllegalArgumentException("Unexpected runtime constant type: " + kind);
         }
     }
 }

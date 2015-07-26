@@ -15,6 +15,8 @@
  */
 package org.teavm.model;
 
+import java.util.stream.Stream;
+
 /**
  *
  * @author Alexey Andreev
@@ -22,4 +24,24 @@ package org.teavm.model;
 public interface ClassHolderSource extends ClassReaderSource {
     @Override
     ClassHolder get(String name);
+
+    default Stream<ClassHolder> getMutableAncestors(String name) {
+        return getAncestors(name).map(cls -> (ClassHolder) cls);
+    }
+
+    default Stream<ClassHolder> getMutableAncestorClasses(String name) {
+        return getAncestorClasses(name).map(cls -> (ClassHolder) cls);
+    }
+
+    default MethodHolder resolveMutable(MethodReference method) {
+        return (MethodHolder) resolve(method);
+    }
+
+    default FieldHolder resolveMutable(FieldReference field) {
+        return (FieldHolder) resolve(field);
+    }
+
+    default Stream<MethodHolder> mutableOverridenMethods(MethodReference method) {
+        return overridenMethods(method).map(m -> (MethodHolder) m);
+    }
 }

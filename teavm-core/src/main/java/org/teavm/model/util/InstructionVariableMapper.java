@@ -15,6 +15,7 @@
  */
 package org.teavm.model.util;
 
+import org.teavm.model.InvokeDynamicInstruction;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.*;
 
@@ -214,6 +215,19 @@ public abstract class InstructionVariableMapper implements InstructionVisitor {
     }
 
     @Override
+    public void visit(InvokeDynamicInstruction insn) {
+        if (insn.getReceiver() != null) {
+            insn.setReceiver(map(insn.getReceiver()));
+        }
+        if (insn.getInstance() != null) {
+            insn.setInstance(map(insn.getInstance()));
+        }
+        for (int i = 0; i < insn.getArguments().size(); ++i) {
+            insn.getArguments().set(i, map(insn.getArguments().get(i)));
+        }
+    }
+
+    @Override
     public void visit(IsInstanceInstruction insn) {
         insn.setReceiver(map(insn.getReceiver()));
         insn.setValue(map(insn.getValue()));
@@ -238,8 +252,8 @@ public abstract class InstructionVariableMapper implements InstructionVisitor {
     public void visit(MonitorExitInstruction insn) {
         insn.setObjectRef(map(insn.getObjectRef()));
     }
-    
-    
-    
-    
+
+
+
+
 }

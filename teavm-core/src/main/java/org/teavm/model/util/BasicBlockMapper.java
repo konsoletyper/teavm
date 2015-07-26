@@ -177,6 +177,10 @@ public abstract class BasicBlockMapper implements InstructionVisitor {
     }
 
     @Override
+    public void visit(InvokeDynamicInstruction insn) {
+    }
+
+    @Override
     public void visit(IsInstanceInstruction insn) {
     }
 

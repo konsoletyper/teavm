@@ -297,6 +297,15 @@ public class TypeInferer {
         }
 
         @Override
+        public void invokeDynamic(VariableReader receiver, VariableReader instance, MethodDescriptor method,
+                List<? extends VariableReader> arguments, MethodHandle bootstrapMethod,
+                List<RuntimeConstant> bootstrapArguments) {
+            if (receiver != null) {
+                types[receiver.getIndex()] = convert(method.getResultType());
+            }
+        }
+
+        @Override
         public void integerConstant(VariableReader receiver, int cst) {
             types[receiver.getIndex()] = VariableType.INT;
         }

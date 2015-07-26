@@ -15,6 +15,7 @@
  */
 package org.teavm.model.util;
 
+import org.teavm.model.InvokeDynamicInstruction;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.*;
 
@@ -182,6 +183,18 @@ public class UsageExtractor implements InstructionVisitor {
 
     @Override
     public void visit(InvokeInstruction insn) {
+        if (insn.getInstance() != null) {
+            usedVariables = new Variable[insn.getArguments().size() + 1];
+            insn.getArguments().toArray(usedVariables);
+            usedVariables[insn.getArguments().size()] = insn.getInstance();
+        } else {
+            usedVariables = new Variable[insn.getArguments().size()];
+            insn.getArguments().toArray(usedVariables);
+        }
+    }
+
+    @Override
+    public void visit(InvokeDynamicInstruction insn) {
         if (insn.getInstance() != null) {
             usedVariables = new Variable[insn.getArguments().size() + 1];
             insn.getArguments().toArray(usedVariables);

@@ -17,12 +17,7 @@ package org.teavm.tooling;
 
 import java.util.List;
 import java.util.Set;
-import org.teavm.model.BasicBlockReader;
-import org.teavm.model.FieldReference;
-import org.teavm.model.InstructionLocation;
-import org.teavm.model.MethodReference;
-import org.teavm.model.ValueType;
-import org.teavm.model.VariableReader;
+import org.teavm.model.*;
 import org.teavm.model.instructions.ArrayElementType;
 import org.teavm.model.instructions.BinaryBranchingCondition;
 import org.teavm.model.instructions.BinaryOperation;
@@ -181,6 +176,12 @@ class InstructionLocationReader implements InstructionReader {
     @Override
     public void invoke(VariableReader receiver, VariableReader instance, MethodReference method,
             List<? extends VariableReader> arguments, InvocationType type) {
+    }
+
+    @Override
+    public void invokeDynamic(VariableReader receiver, VariableReader instance, MethodDescriptor method,
+            List<? extends VariableReader> arguments, MethodHandle bootstrapMethod,
+            List<RuntimeConstant> bootstrapArguments) {
     }
 
     @Override

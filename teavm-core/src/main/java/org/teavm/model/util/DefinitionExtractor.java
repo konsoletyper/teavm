@@ -15,6 +15,7 @@
  */
 package org.teavm.model.util;
 
+import org.teavm.model.InvokeDynamicInstruction;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.*;
 
@@ -156,6 +157,15 @@ public class DefinitionExtractor implements InstructionVisitor {
 
     @Override
     public void visit(InvokeInstruction insn) {
+        if (insn.getReceiver() == null) {
+            definedVariables = new Variable[0];
+        } else {
+            definedVariables = new Variable[] { insn.getReceiver() };
+        }
+    }
+
+    @Override
+    public void visit(InvokeDynamicInstruction insn) {
         if (insn.getReceiver() == null) {
             definedVariables = new Variable[0];
         } else {

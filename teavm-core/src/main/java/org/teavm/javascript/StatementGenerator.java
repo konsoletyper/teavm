@@ -564,6 +564,11 @@ class StatementGenerator implements InstructionVisitor {
     }
 
     @Override
+    public void visit(InvokeDynamicInstruction insn) {
+        // InvokeDynamic should be eliminated at previous phases
+    }
+
+    @Override
     public void visit(IsInstanceInstruction insn) {
         assign(Expr.instanceOf(Expr.var(insn.getValue().getIndex()), insn.getType()), insn.getReceiver());
     }

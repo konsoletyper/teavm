@@ -198,6 +198,10 @@ public final class VariableUsageGraphBuilder {
         }
 
         @Override
+        public void visit(InvokeDynamicInstruction insn) {
+        }
+
+        @Override
         public void visit(IsInstanceInstruction insn) {
             use(insn.getReceiver(), insn.getValue());
         }
@@ -213,12 +217,12 @@ public final class VariableUsageGraphBuilder {
 
         @Override
         public void visit(MonitorEnterInstruction insn) {
-            
+
         }
 
         @Override
         public void visit(MonitorExitInstruction insn) {
-            
+
         }
     }
 }

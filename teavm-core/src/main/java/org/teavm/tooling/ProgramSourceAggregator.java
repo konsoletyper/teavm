@@ -86,17 +86,12 @@ class ProgramSourceAggregator implements InstructionReader {
     @Override public void putElement(VariableReader array, VariableReader index, VariableReader value) { }
     @Override public void invoke(VariableReader receiver, VariableReader instance, MethodReference method,
             List<? extends VariableReader> arguments, InvocationType type) { }
+    @Override public void invokeDynamic(VariableReader receiver, VariableReader instance, MethodDescriptor method,
+            List<? extends VariableReader> arguments, MethodHandle bootstrapMethod,
+            List<RuntimeConstant> bootstrapArguments) { }
     @Override public void isInstance(VariableReader receiver, VariableReader value, ValueType type) { }
     @Override public void initClass(String className) { }
     @Override public void nullCheck(VariableReader receiver, VariableReader value) { }
-
-    @Override
-    public void monitorEnter(VariableReader objectRef) {
-
-    }
-
-    @Override
-    public void monitorExit(VariableReader objectRef) {
-
-    }
+    @Override public void monitorEnter(VariableReader objectRef) { }
+    @Override public void monitorExit(VariableReader objectRef) { }
 }

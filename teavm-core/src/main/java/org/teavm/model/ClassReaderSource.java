@@ -15,10 +15,96 @@
  */
 package org.teavm.model;
 
+import java.util.*;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
 /**
  *
  * @author Alexey Andreev
  */
 public interface ClassReaderSource {
     ClassReader get(String name);
+
+    default Stream<ClassReader> getAncestorClasses(String name) {
+        return StreamSupport.stream(((Iterable<ClassReader>) () -> {
+            return new Iterator<ClassReader>() {
+                ClassReader currentClass = get(name);
+                @Override public ClassReader next() {
+                    ClassReader result = currentClass;
+                    if (currentClass.getParent() != null && !currentClass.getName().equals(currentClass.getParent())) {
+                        currentClass = get(currentClass.getParent());
+                    } else {
+                        currentClass = null;
+                    }
+                    return result;
+                }
+                @Override public boolean hasNext() {
+                    return currentClass != null;
+                }
+            };
+        }).spliterator(), false);
+    }
+
+    default Stream<ClassReader> getAncestors(String name) {
+        return StreamSupport.stream(((Iterable<ClassReader>) () -> {
+            return new Iterator<ClassReader>() {
+                private Deque<Deque<ClassReader>> state = new ArrayDeque<>();
+                private Set<ClassReader> visited = new HashSet<>();
+                {
+                    add(name);
+                }
+                @Override public ClassReader next() {
+                    while (!state.isEmpty()) {
+                        Deque<ClassReader> level = state.peek();
+                        if (!level.isEmpty()) {
+                            ClassReader result = level.removeFirst();
+                            follow(result);
+                            return result;
+                        }
+                        state.pop();
+                    }
+                    return null;
+                }
+                @Override public boolean hasNext() {
+                    return !state.isEmpty();
+                }
+                private void follow(ClassReader cls) {
+                    state.push(new ArrayDeque<>());
+                    if (cls.getParent() != null) {
+                        add(cls.getParent());
+                    }
+                    for (String iface : cls.getInterfaces()) {
+                        add(iface);
+                    }
+                }
+                private void add(String name) {
+                    ClassReader cls = get(name);
+                    if (cls != null && visited.add(cls)) {
+                        state.peek().addLast(cls);
+                    }
+                }
+            };
+        }).spliterator(), false);
+    }
+
+    default MethodReader resolve(MethodReference method) {
+        return getAncestorClasses(method.getClassName())
+                .map(cls -> cls.getMethod(method.getDescriptor()))
+                .filter(candidate -> candidate != null)
+                .findFirst().orElse(null);
+    }
+
+    default FieldReader resolve(FieldReference field) {
+        return getAncestorClasses(field.getClassName())
+                .map(cls -> cls.getField(field.getFieldName()))
+                .filter(candidate -> candidate != null)
+                .findFirst().orElse(null);
+    }
+
+    default Stream<MethodReader> overridenMethods(MethodReference method) {
+        return getAncestorClasses(method.getClassName())
+                .map(cls -> cls.getMethod(method.getDescriptor()))
+                .filter(candidate -> candidate != null);
+    }
 }

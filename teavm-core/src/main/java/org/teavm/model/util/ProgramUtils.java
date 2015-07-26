@@ -16,6 +16,7 @@
 package org.teavm.model.util;
 
 import java.util.*;
+import java.util.stream.Collectors;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphBuilder;
 import org.teavm.model.*;
@@ -467,6 +468,21 @@ public final class ProgramUtils {
             for (VariableReader arg : arguments) {
                 insnCopy.getArguments().add(copyVar(arg));
             }
+            copy = insnCopy;
+            copy.setLocation(location);
+        }
+
+        @Override
+        public void invokeDynamic(VariableReader receiver, VariableReader instance, MethodDescriptor method,
+                List<? extends VariableReader> arguments, MethodHandle bootstrapMethod,
+                List<RuntimeConstant> bootstrapArguments) {
+            InvokeDynamicInstruction insnCopy = new InvokeDynamicInstruction();
+            insnCopy.setMethod(method);
+            insnCopy.setBootstrapMethod(bootstrapMethod);
+            insnCopy.getBootstrapArguments().addAll(bootstrapArguments);
+            insnCopy.setInstance(copyVar(instance));
+            insnCopy.getArguments().addAll(arguments.stream().map(v -> copyVar(v)).collect(Collectors.toList()));
+            insnCopy.setReceiver(receiver != null ? copyVar(receiver) : null);
             copy = insnCopy;
             copy.setLocation(location);
         }

@@ -15,10 +15,8 @@
  */
 package org.teavm.model;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 
 /**
@@ -258,6 +256,11 @@ public abstract class ValueType {
             sb.append(type);
         }
         return sb.toString();
+    }
+
+    public static String methodTypeToString(ValueType[] types) {
+        return "(" + Arrays.stream(types, 0, types.length - 1).map(ValueType::toString)
+                .collect(Collectors.joining()) + ")" + types[types.length - 1];
     }
 
     public abstract boolean isObject(String cls);

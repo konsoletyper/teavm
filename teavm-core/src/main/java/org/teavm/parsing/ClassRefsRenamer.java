@@ -15,6 +15,7 @@
  */
 package org.teavm.parsing;
 
+import java.util.Arrays;
 import java.util.Map;
 import org.teavm.common.Mapper;
 import org.teavm.javascript.spi.Remove;
@@ -99,6 +100,58 @@ public class ClassRefsRenamer implements InstructionVisitor {
         } else {
             return type;
         }
+    }
+
+    private ValueType[] rename(ValueType[] types) {
+        return Arrays.stream(types).map(e -> rename(e)).toArray(sz -> new ValueType[sz]);
+    }
+
+    private RuntimeConstant rename(RuntimeConstant cst) {
+        switch (cst.getKind()) {
+            case RuntimeConstant.TYPE:
+                return new RuntimeConstant(rename(cst.getValueType()));
+            case RuntimeConstant.METHOD:
+                return new RuntimeConstant(rename(cst.getMethodType()));
+            case RuntimeConstant.METHOD_HANDLE:
+                return new RuntimeConstant(rename(cst.getMethodHandle()));
+            default:
+                return cst;
+        }
+    }
+
+    private MethodHandle rename(MethodHandle handle) {
+        switch (handle.getKind()) {
+            case GET_FIELD:
+                return MethodHandle.fieldGetter(classNameMapper.map(handle.getClassName()), handle.getName(),
+                        rename(handle.getValueType()));
+            case GET_STATIC_FIELD:
+                return MethodHandle.staticFieldGetter(classNameMapper.map(handle.getClassName()), handle.getName(),
+                        rename(handle.getValueType()));
+            case PUT_FIELD:
+                return MethodHandle.fieldSetter(classNameMapper.map(handle.getClassName()), handle.getName(),
+                        rename(handle.getValueType()));
+            case PUT_STATIC_FIELD:
+                return MethodHandle.staticFieldSetter(classNameMapper.map(handle.getClassName()), handle.getName(),
+                        rename(handle.getValueType()));
+            case INVOKE_VIRTUAL:
+                return MethodHandle.virtualCaller(classNameMapper.map(handle.getClassName()), handle.getName(),
+                        rename(handle.signature()));
+            case INVOKE_STATIC:
+                return MethodHandle.staticCaller(classNameMapper.map(handle.getClassName()), handle.getName(),
+                        rename(handle.signature()));
+            case INVOKE_SPECIAL:
+                return MethodHandle.specialCaller(classNameMapper.map(handle.getClassName()), handle.getName(),
+                        rename(handle.signature()));
+            case INVOKE_CONSTRUCTOR:
+                return MethodHandle.constructorCaller(classNameMapper.map(handle.getClassName()), handle.getName(),
+                        rename(handle.signature()));
+            case INVOKE_INTERFACE:
+                return MethodHandle.interfaceCaller(classNameMapper.map(handle.getClassName()), handle.getName(),
+                        rename(handle.signature()));
+            default:
+                break;
+        }
+        throw new IllegalArgumentException("Unknown method handle type: " + handle.getKind());
     }
 
     private void rename(AnnotationContainer source, AnnotationContainer target) {
@@ -269,6 +322,18 @@ public class ClassRefsRenamer implements InstructionVisitor {
             signature[i] = rename(signature[i]);
         }
         insn.setMethod(new MethodReference(className, new MethodDescriptor(insn.getMethod().getName(), signature)));
+    }
+
+    @Override
+    public void visit(InvokeDynamicInstruction insn) {
+        ValueType[] signature = insn.getMethod().getSignature();
+        for (int i = 0; i < signature.length; ++i) {
+            signature[i] = rename(signature[i]);
+        }
+        insn.setMethod(new MethodDescriptor(insn.getMethod().getName(), signature));
+        for (int i = 0; i < insn.getBootstrapArguments().size(); ++i) {
+            insn.getBootstrapArguments().set(i, rename(insn.getBootstrapArguments().get(i)));
+        }
     }
 
     @Override
