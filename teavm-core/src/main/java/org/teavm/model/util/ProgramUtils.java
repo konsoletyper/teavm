@@ -480,7 +480,9 @@ public final class ProgramUtils {
             insnCopy.setMethod(method);
             insnCopy.setBootstrapMethod(bootstrapMethod);
             insnCopy.getBootstrapArguments().addAll(bootstrapArguments);
-            insnCopy.setInstance(copyVar(instance));
+            if (instance != null) {
+                insnCopy.setInstance(copyVar(instance));
+            }
             insnCopy.getArguments().addAll(arguments.stream().map(v -> copyVar(v)).collect(Collectors.toList()));
             insnCopy.setReceiver(receiver != null ? copyVar(receiver) : null);
             copy = insnCopy;

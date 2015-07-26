@@ -20,9 +20,45 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.teavm.callgraph.DefaultCallGraphNode;
-import org.teavm.model.*;
-import org.teavm.model.instructions.*;
+import org.teavm.model.BasicBlock;
+import org.teavm.model.BasicBlockReader;
+import org.teavm.model.CallLocation;
+import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ElementModifier;
+import org.teavm.model.FieldReference;
+import org.teavm.model.Incoming;
+import org.teavm.model.IncomingReader;
+import org.teavm.model.Instruction;
+import org.teavm.model.InstructionLocation;
+import org.teavm.model.InvokeDynamicInstruction;
+import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodHandle;
+import org.teavm.model.MethodHolder;
+import org.teavm.model.MethodReference;
+import org.teavm.model.Phi;
+import org.teavm.model.PhiReader;
+import org.teavm.model.Program;
+import org.teavm.model.RuntimeConstant;
+import org.teavm.model.TryCatchBlockReader;
+import org.teavm.model.ValueType;
+import org.teavm.model.VariableReader;
+import org.teavm.model.emit.ProgramEmitter;
+import org.teavm.model.emit.ValueEmitter;
+import org.teavm.model.instructions.ArrayElementType;
+import org.teavm.model.instructions.AssignInstruction;
+import org.teavm.model.instructions.BinaryBranchingCondition;
+import org.teavm.model.instructions.BinaryOperation;
+import org.teavm.model.instructions.BranchingCondition;
+import org.teavm.model.instructions.CastIntegerDirection;
+import org.teavm.model.instructions.InstructionReader;
+import org.teavm.model.instructions.IntegerSubtype;
+import org.teavm.model.instructions.InvocationType;
+import org.teavm.model.instructions.NullConstantInstruction;
+import org.teavm.model.instructions.NumericOperandType;
+import org.teavm.model.instructions.SwitchTableEntryReader;
 import org.teavm.model.util.ListingBuilder;
 
 /**
@@ -33,7 +69,7 @@ class DependencyGraphBuilder {
     private DependencyChecker dependencyChecker;
     private DependencyNode[] nodes;
     private DependencyNode resultNode;
-    private ProgramReader program;
+    private Program program;
     private DefaultCallGraphNode caller;
     private InstructionLocation currentLocation;
     private ExceptionConsumer currentExceptionConsumer;
@@ -44,12 +80,14 @@ class DependencyGraphBuilder {
 
     public void buildGraph(MethodDependency dep) {
         caller = dependencyChecker.callGraph.getNode(dep.getReference());
-        MethodReader method = dep.getMethod();
+        MethodHolder method = dep.method;
         if (method.getProgram() == null || method.getProgram().basicBlockCount() == 0) {
             return;
         }
         program = method.getProgram();
         resultNode = dep.getResult();
+
+        processInvokeDynamic();
 
         DataFlowGraphBuilder dfgBuilder = new DataFlowGraphBuilder();
         boolean[] significantParams = new boolean[dep.getParameterCount()];
@@ -142,6 +180,77 @@ class DependencyGraphBuilder {
                 for (DependencyNode node : syncNodes) {
                     nodes[0].connect(node);
                 }
+            }
+        }
+    }
+
+    private void processInvokeDynamic() {
+        if (program == null) {
+            return;
+        }
+        System.out.println(new ListingBuilder().buildListing(program, ""));
+        ProgramEmitter pe = ProgramEmitter.create(program);
+        for (int i = 0; i < program.basicBlockCount(); ++i) {
+            BasicBlock block = program.basicBlockAt(i);
+            for (int j = 0; j < block.getInstructions().size(); ++j) {
+                Instruction insn = block.getInstructions().get(j);
+                if (!(insn instanceof InvokeDynamicInstruction)) {
+                    continue;
+                }
+                InvokeDynamicInstruction indy = (InvokeDynamicInstruction) insn;
+                MethodReference bootstrapMethod = new MethodReference(indy.getBootstrapMethod().getClassName(),
+                        indy.getBootstrapMethod().getName(), indy.getBootstrapMethod().signature());
+                BootstrapMethodSubstitutor substitutor = dependencyChecker.bootstrapMethodSubstitutors
+                        .get(bootstrapMethod);
+                if (substitutor == null) {
+                    NullConstantInstruction nullInsn = new NullConstantInstruction();
+                    nullInsn.setReceiver(indy.getReceiver());
+                    nullInsn.setLocation(indy.getLocation());
+                    block.getInstructions().set(j, nullInsn);
+                    CallLocation location = new CallLocation(bootstrapMethod, indy.getLocation());
+                    dependencyChecker.getDiagnostics().error(location, "Substitutor for this dependency method "
+                            + "was not found");
+                    continue;
+                }
+
+                BasicBlock splitBlock = program.createBasicBlock();
+                List<Instruction> splitInstructions = block.getInstructions().subList(j + 1,
+                        block.getInstructions().size());
+                splitBlock.getInstructions().addAll(splitInstructions);
+                splitInstructions.clear();
+
+                for (int k = 0; k < program.basicBlockCount() - 1; ++k) {
+                    BasicBlock replaceBlock = program.basicBlockAt(k);
+                    for (Phi phi : replaceBlock.getPhis()) {
+                        for (Incoming incoming : phi.getIncomings()) {
+                            if (incoming.getSource() == block) {
+                                incoming.setSource(splitBlock);
+                            }
+                        }
+                    }
+                }
+
+                pe.setBlock(block);
+                pe.setCurrentLocation(indy.getLocation());
+                block.getInstructions().remove(j);
+
+                DynamicCallSite callSite = new DynamicCallSite(
+                        indy.getMethod(),
+                        indy.getInstance() != null ? pe.var(indy.getInstance()) : null,
+                        indy.getArguments().stream().map(arg -> pe.var(arg)).collect(Collectors.toList()),
+                        indy.getBootstrapMethod(),
+                        indy.getBootstrapArguments(),
+                        dependencyChecker.getAgent(),
+                        indy.getInstance() != null ? nodes[indy.getInstance().getIndex()] : null,
+                        indy.getArguments().stream().map(arg -> nodes[arg.getIndex()]).collect(Collectors.toList()));
+                ValueEmitter result = substitutor.substitute(callSite, pe);
+                if (result.getVariable() != null && result.getVariable() != indy.getReceiver()) {
+                    AssignInstruction assign = new AssignInstruction();
+                    assign.setAssignee(result.getVariable());
+                    assign.setReceiver(indy.getReceiver());
+                    pe.addInstruction(insn);
+                }
+                pe.jump(splitBlock);
             }
         }
     }
@@ -611,6 +720,13 @@ class DependencyGraphBuilder {
             if (className != null) {
                 dependencyChecker.linkClass(className, new CallLocation(caller.getMethod(), currentLocation));
             }
+        }
+
+        @Override
+        public void invokeDynamic(VariableReader receiver, VariableReader instance, MethodDescriptor method,
+                List<? extends VariableReader> arguments, MethodHandle bootstrapMethod,
+                List<RuntimeConstant> bootstrapArguments) {
+            // Should be eliminated by processInvokeDynamic method
         }
 
         @Override

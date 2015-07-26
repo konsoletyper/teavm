@@ -258,4 +258,8 @@ public final class ProgramEmitter {
 
         return new ProgramEmitter(program, block);
     }
+
+    public static ProgramEmitter create(Program program) {
+        return new ProgramEmitter(program, null);
+    }
 }

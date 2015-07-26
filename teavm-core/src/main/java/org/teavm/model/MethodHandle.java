@@ -117,8 +117,8 @@ public class MethodHandle {
     }
 
     public static MethodHandle staticCaller(String className, String name, ValueType... arguments) {
-        ValueType valueType = arguments[0];
-        arguments = Arrays.copyOfRange(arguments, 1, arguments.length);
+        ValueType valueType = arguments[arguments.length - 1];
+        arguments = Arrays.copyOfRange(arguments, 0, arguments.length - 1);
         return new MethodHandle(MethodHandleType.INVOKE_STATIC, className, name, valueType, arguments);
     }
 
@@ -131,8 +131,8 @@ public class MethodHandle {
     }
 
     public static MethodHandle specialCaller(String className, String name, ValueType... arguments) {
-        ValueType valueType = arguments[0];
-        arguments = Arrays.copyOfRange(arguments, 1, arguments.length);
+        ValueType valueType = arguments[arguments.length - 1];
+        arguments = Arrays.copyOfRange(arguments, 0, arguments.length - 1);
         return new MethodHandle(MethodHandleType.INVOKE_SPECIAL, className, name, valueType, arguments);
     }
 
@@ -145,8 +145,8 @@ public class MethodHandle {
     }
 
     public static MethodHandle constructorCaller(String className, String name, ValueType... arguments) {
-        ValueType valueType = arguments[0];
-        arguments = Arrays.copyOfRange(arguments, 1, arguments.length);
+        ValueType valueType = arguments[arguments.length - 1];
+        arguments = Arrays.copyOfRange(arguments, 0, arguments.length - 1);
         return new MethodHandle(MethodHandleType.INVOKE_CONSTRUCTOR, className, name, valueType, arguments);
     }
 
@@ -159,8 +159,8 @@ public class MethodHandle {
     }
 
     public static MethodHandle interfaceCaller(String className, String name, ValueType... arguments) {
-        ValueType valueType = arguments[0];
-        arguments = Arrays.copyOfRange(arguments, 1, arguments.length);
+        ValueType valueType = arguments[arguments.length - 1];
+        arguments = Arrays.copyOfRange(arguments, 0, arguments.length - 1);
         return new MethodHandle(MethodHandleType.INVOKE_INTERFACE, className, name, valueType, arguments);
     }
 

@@ -15,7 +15,11 @@
  */
 package org.teavm.model;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -52,6 +56,7 @@ public interface ClassReaderSource {
                 private Deque<Deque<ClassReader>> state = new ArrayDeque<>();
                 private Set<ClassReader> visited = new HashSet<>();
                 {
+                    state.push(new ArrayDeque<>());
                     add(name);
                 }
                 @Override public ClassReader next() {
@@ -89,14 +94,14 @@ public interface ClassReaderSource {
     }
 
     default MethodReader resolve(MethodReference method) {
-        return getAncestorClasses(method.getClassName())
+        return getAncestors(method.getClassName())
                 .map(cls -> cls.getMethod(method.getDescriptor()))
                 .filter(candidate -> candidate != null)
                 .findFirst().orElse(null);
     }
 
     default FieldReader resolve(FieldReference field) {
-        return getAncestorClasses(field.getClassName())
+        return getAncestors(field.getClassName())
                 .map(cls -> cls.getField(field.getFieldName()))
                 .filter(candidate -> candidate != null)
                 .findFirst().orElse(null);

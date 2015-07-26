@@ -20,9 +20,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.teavm.common.CachedMapper;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassHolder;
+import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
@@ -32,12 +32,12 @@ import org.teavm.model.util.ModelUtils;
  *
  * @author Alexey Andreev
  */
-class DependencyClassSource implements ClassReaderSource {
+class DependencyClassSource implements ClassHolderSource {
     private ClassReaderSource innerSource;
     private Diagnostics diagnostics;
     private Map<String, ClassHolder> generatedClasses = new HashMap<>();
     private List<ClassHolderTransformer> transformers = new ArrayList<>();
-    private CachedMapper<String, ClassReader> cache = new CachedMapper<>(preimage -> findAndTransformClass(preimage));
+    private Map<String, ClassHolder> cache = new HashMap<>();
 
     public DependencyClassSource(ClassReaderSource innerSource, Diagnostics diagnostics) {
         this.innerSource = innerSource;
@@ -45,8 +45,8 @@ class DependencyClassSource implements ClassReaderSource {
     }
 
     @Override
-    public ClassReader get(String name) {
-        return cache.map(name);
+    public ClassHolder get(String name) {
+        return cache.computeIfAbsent(name, n -> findAndTransformClass(n));
     }
 
     public void submit(ClassHolder cls) {
@@ -54,10 +54,10 @@ class DependencyClassSource implements ClassReaderSource {
             throw new IllegalArgumentException("Class " + cls.getName() + " is already defined");
         }
         generatedClasses.put(cls.getName(), cls);
-        cache.invalidate(cls.getName());
+        cache.remove(cls.getName());
     }
 
-    private ClassReader findAndTransformClass(String name) {
+    private ClassHolder findAndTransformClass(String name) {
         ClassHolder cls = findClass(name);
         if (cls != null && !transformers.isEmpty()) {
             for (ClassHolderTransformer transformer : transformers) {

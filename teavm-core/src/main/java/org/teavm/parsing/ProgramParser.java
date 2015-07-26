@@ -487,8 +487,18 @@ public class ProgramParser implements VariableDebugInformation {
         @Override
         public void visitInvokeDynamicInsn(String name, String desc, Handle bsm, Object... bsmArgs) {
             InvokeDynamicInstruction insn = new InvokeDynamicInstruction();
+            insn.setBootstrapMethod(parseHandle(bsm));
 
-            insn.setInstance(getVariable(popSingle()));
+            switch (insn.getBootstrapMethod().getKind()) {
+                case GET_STATIC_FIELD:
+                case PUT_STATIC_FIELD:
+                case INVOKE_STATIC:
+                case INVOKE_CONSTRUCTOR:
+                    break;
+                default:
+                    insn.setInstance(getVariable(popSingle()));
+                    break;
+            }
             Type[] types = Type.getArgumentTypes(desc);
             Variable[] args = new Variable[types.length];
             int j = args.length;
@@ -503,7 +513,6 @@ public class ProgramParser implements VariableDebugInformation {
             }
 
             insn.setMethod(new MethodDescriptor(name, MethodDescriptor.parseSignature(desc)));
-            insn.setBootstrapMethod(parseHandle(bsm));
             for (int i = 0; i < bsmArgs.length; ++i) {
                 insn.getBootstrapArguments().add(convertConstant(bsmArgs[i]));
             }

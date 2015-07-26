@@ -346,8 +346,10 @@ public class InstructionStringifier implements InstructionReader {
         if (receiver != null) {
             sb.append("@").append(receiver.getIndex()).append(" := ");
         }
-        sb.append("@").append(instance.getIndex());
-        sb.append(".").append(method.getName()).append("(");
+        if (instance != null) {
+            sb.append("@").append(instance.getIndex()).append(".");
+        }
+        sb.append(method.getName()).append("(");
         sb.append(arguments.stream().map(arg -> "@"  + arg.getIndex()).collect(Collectors.joining(", ")));
         sb.append(") ");
         sb.append("[").append(convert(bootstrapMethod)).append('(');

@@ -16,6 +16,7 @@
 package org.teavm.dependency;
 
 import java.util.Arrays;
+import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 
@@ -29,14 +30,14 @@ public class MethodDependency implements MethodDependencyInfo {
     private int parameterCount;
     private DependencyNode resultNode;
     private DependencyNode thrown;
-    private MethodReader method;
+    MethodHolder method;
     private MethodReference reference;
     private boolean used;
     DependencyPlugin dependencyPlugin;
     boolean dependencyPluginAttached;
 
     MethodDependency(DependencyChecker dependencyChecker, DependencyNode[] variableNodes, int parameterCount,
-            DependencyNode resultNode, DependencyNode thrown, MethodReader method, MethodReference reference) {
+            DependencyNode resultNode, DependencyNode thrown, MethodHolder method, MethodReference reference) {
         this.dependencyChecker = dependencyChecker;
         this.variableNodes = Arrays.copyOf(variableNodes, variableNodes.length);
         this.parameterCount = parameterCount;
