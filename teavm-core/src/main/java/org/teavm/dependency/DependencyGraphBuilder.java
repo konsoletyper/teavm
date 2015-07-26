@@ -188,7 +188,6 @@ class DependencyGraphBuilder {
         if (program == null) {
             return;
         }
-        System.out.println(new ListingBuilder().buildListing(program, ""));
         ProgramEmitter pe = ProgramEmitter.create(program);
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
@@ -207,17 +206,18 @@ class DependencyGraphBuilder {
                     nullInsn.setReceiver(indy.getReceiver());
                     nullInsn.setLocation(indy.getLocation());
                     block.getInstructions().set(j, nullInsn);
-                    CallLocation location = new CallLocation(bootstrapMethod, indy.getLocation());
-                    dependencyChecker.getDiagnostics().error(location, "Substitutor for this dependency method "
-                            + "was not found");
+                    CallLocation location = new CallLocation(caller.getMethod(), currentLocation);
+                    dependencyChecker.getDiagnostics().error(location, "Substitutor for bootstrap "
+                            + "method {{m0}} was not found", bootstrapMethod);
                     continue;
                 }
 
                 BasicBlock splitBlock = program.createBasicBlock();
                 List<Instruction> splitInstructions = block.getInstructions().subList(j + 1,
                         block.getInstructions().size());
-                splitBlock.getInstructions().addAll(splitInstructions);
+                List<Instruction> splitInstructionsBackup = new ArrayList<>(splitInstructions);
                 splitInstructions.clear();
+                splitBlock.getInstructions().addAll(splitInstructionsBackup);
 
                 for (int k = 0; k < program.basicBlockCount() - 1; ++k) {
                     BasicBlock replaceBlock = program.basicBlockAt(k);
@@ -240,15 +240,13 @@ class DependencyGraphBuilder {
                         indy.getArguments().stream().map(arg -> pe.var(arg)).collect(Collectors.toList()),
                         indy.getBootstrapMethod(),
                         indy.getBootstrapArguments(),
-                        dependencyChecker.getAgent(),
-                        indy.getInstance() != null ? nodes[indy.getInstance().getIndex()] : null,
-                        indy.getArguments().stream().map(arg -> nodes[arg.getIndex()]).collect(Collectors.toList()));
+                        dependencyChecker.getAgent());
                 ValueEmitter result = substitutor.substitute(callSite, pe);
                 if (result.getVariable() != null && result.getVariable() != indy.getReceiver()) {
                     AssignInstruction assign = new AssignInstruction();
                     assign.setAssignee(result.getVariable());
                     assign.setReceiver(indy.getReceiver());
-                    pe.addInstruction(insn);
+                    pe.addInstruction(assign);
                 }
                 pe.jump(splitBlock);
             }

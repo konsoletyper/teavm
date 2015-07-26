@@ -1733,31 +1733,31 @@ public class ProgramParser implements VariableDebugInformation {
     static MethodHandle parseHandle(Handle handle) {
         switch (handle.getTag()) {
             case Opcodes.H_GETFIELD:
-                return MethodHandle.fieldGetter(handle.getOwner(), handle.getName(),
+                return MethodHandle.fieldGetter(handle.getOwner().replace('/', '.'), handle.getName(),
                         ValueType.parse(handle.getDesc()));
             case Opcodes.H_GETSTATIC:
-                return MethodHandle.staticFieldGetter(handle.getOwner(), handle.getName(),
+                return MethodHandle.staticFieldGetter(handle.getOwner().replace('/', '.'), handle.getName(),
                         ValueType.parse(handle.getDesc()));
             case Opcodes.H_PUTFIELD:
-                return MethodHandle.fieldSetter(handle.getOwner(), handle.getName(),
+                return MethodHandle.fieldSetter(handle.getOwner().replace('/', '.'), handle.getName(),
                         ValueType.parse(handle.getDesc()));
             case Opcodes.H_PUTSTATIC:
-                return MethodHandle.staticFieldSetter(handle.getOwner(), handle.getName(),
+                return MethodHandle.staticFieldSetter(handle.getOwner().replace('/', '.'), handle.getName(),
                         ValueType.parse(handle.getDesc()));
             case Opcodes.H_INVOKEVIRTUAL:
-                return MethodHandle.virtualCaller(handle.getOwner(), handle.getName(),
+                return MethodHandle.virtualCaller(handle.getOwner().replace('/', '.'), handle.getName(),
                         MethodDescriptor.parseSignature(handle.getDesc()));
             case Opcodes.H_INVOKESTATIC:
-                return MethodHandle.staticCaller(handle.getOwner(), handle.getName(),
+                return MethodHandle.staticCaller(handle.getOwner().replace('/', '.'), handle.getName(),
                         MethodDescriptor.parseSignature(handle.getDesc()));
             case Opcodes.H_INVOKESPECIAL:
-                return MethodHandle.specialCaller(handle.getOwner(), handle.getName(),
+                return MethodHandle.specialCaller(handle.getOwner().replace('/', '.'), handle.getName(),
                         MethodDescriptor.parseSignature(handle.getDesc()));
             case Opcodes.H_NEWINVOKESPECIAL:
-                return MethodHandle.constructorCaller(handle.getOwner(), handle.getName(),
+                return MethodHandle.constructorCaller(handle.getOwner().replace('/', '.'), handle.getName(),
                         MethodDescriptor.parseSignature(handle.getDesc()));
             case Opcodes.H_INVOKEINTERFACE:
-                return MethodHandle.interfaceCaller(handle.getOwner(), handle.getName(),
+                return MethodHandle.interfaceCaller(handle.getOwner().replace('/', '.'), handle.getName(),
                         MethodDescriptor.parseSignature(handle.getDesc()));
             default:
                 throw new IllegalArgumentException("Unknown handle tag: " + handle.getTag());

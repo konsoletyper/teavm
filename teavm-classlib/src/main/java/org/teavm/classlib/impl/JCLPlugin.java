@@ -15,7 +15,13 @@
  */
 package org.teavm.classlib.impl;
 
+import java.lang.invoke.CallSite;
+import java.lang.invoke.LambdaMetafactory;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.util.ServiceLoader;
+import org.teavm.classlib.impl.lambda.LambdaMetafactorySubstitutor;
 import org.teavm.classlib.impl.unicode.CLDRReader;
 import org.teavm.classlib.java.lang.reflect.AnnotationDependencyListener;
 import org.teavm.model.MethodReference;
@@ -41,5 +47,8 @@ public class JCLPlugin implements TeaVMPlugin {
         host.registerService(CLDRReader.class, new CLDRReader(host.getProperties(), host.getClassLoader()));
 
         host.add(new AnnotationDependencyListener());
+        host.add(new MethodReference(LambdaMetafactory.class, "metafactory", MethodHandles.Lookup.class,
+                String.class, MethodType.class, MethodType.class, MethodHandle.class, MethodType.class,
+                CallSite.class), new LambdaMetafactorySubstitutor());
     }
 }

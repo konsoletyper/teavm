@@ -128,6 +128,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     }
 
     @Override
+    public void add(MethodReference methodRef, BootstrapMethodSubstitutor substitutor) {
+        dependencyChecker.addBootstrapMethodSubstitutor(methodRef, substitutor);
+    }
+
+    @Override
     public void add(RendererListener listener) {
         rendererListeners.add(listener);
     }

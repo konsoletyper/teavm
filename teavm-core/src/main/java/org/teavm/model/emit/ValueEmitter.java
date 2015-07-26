@@ -228,6 +228,9 @@ public class ValueEmitter {
     }
 
     public ValueEmitter cast(NumericOperandType from, NumericOperandType to) {
+        if (from == to) {
+            return this;
+        }
         Variable result = pe.getProgram().createVariable();
         CastNumberInstruction insn = new CastNumberInstruction(from, to);
         insn.setValue(variable);

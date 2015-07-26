@@ -53,7 +53,7 @@ public interface ClassReaderSource {
     default Stream<ClassReader> getAncestors(String name) {
         return StreamSupport.stream(((Iterable<ClassReader>) () -> {
             return new Iterator<ClassReader>() {
-                private Deque<Deque<ClassReader>> state = new ArrayDeque<>();
+                Deque<Deque<ClassReader>> state = new ArrayDeque<>();
                 private Set<ClassReader> visited = new HashSet<>();
                 {
                     state.push(new ArrayDeque<>());
@@ -72,7 +72,7 @@ public interface ClassReaderSource {
                     return null;
                 }
                 @Override public boolean hasNext() {
-                    return !state.isEmpty();
+                    return !this.state.stream().allMatch(e -> e.isEmpty());
                 }
                 private void follow(ClassReader cls) {
                     state.push(new ArrayDeque<>());
@@ -111,5 +111,26 @@ public interface ClassReaderSource {
         return getAncestorClasses(method.getClassName())
                 .map(cls -> cls.getMethod(method.getDescriptor()))
                 .filter(candidate -> candidate != null);
+    }
+
+    default boolean isSuperType(String superType, String subType) {
+        if (superType.equals(subType)) {
+            return true;
+        }
+        ClassReader cls = get(subType);
+        if (subType == null) {
+            return false;
+        }
+        if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
+            if (isSuperType(superType, cls.getParent())) {
+                return true;
+            }
+        }
+        for (String iface : cls.getInterfaces()) {
+            if (isSuperType(superType, iface)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

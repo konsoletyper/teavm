@@ -34,20 +34,15 @@ public class DynamicCallSite {
     private MethodHandle bootstrapMethod;
     private List<RuntimeConstant> bootstrapArguments;
     private DependencyAgent agent;
-    private DependencyNode instanceNode;
-    private List<DependencyNode> argumentNodes = new ArrayList<>();
 
     DynamicCallSite(MethodDescriptor calledMethod, ValueEmitter instance, List<ValueEmitter> arguments,
-            MethodHandle bootstrapMethod, List<RuntimeConstant> bootstrapArguments, DependencyAgent agent,
-            DependencyNode instanceNode, List<DependencyNode> argumentNodes) {
+            MethodHandle bootstrapMethod, List<RuntimeConstant> bootstrapArguments, DependencyAgent agent) {
         this.calledMethod = calledMethod;
         this.instance = instance;
         this.arguments = Collections.unmodifiableList(new ArrayList<>(arguments));
         this.bootstrapMethod = bootstrapMethod;
         this.bootstrapArguments = Collections.unmodifiableList(new ArrayList<>(bootstrapArguments));
         this.agent = agent;
-        this.instanceNode = instanceNode;
-        this.argumentNodes = Collections.unmodifiableList(new ArrayList<>(argumentNodes));
     }
 
     public MethodDescriptor getCalledMethod() {
@@ -72,13 +67,5 @@ public class DynamicCallSite {
 
     public ValueEmitter getInstance() {
         return instance;
-    }
-
-    public DependencyNode getInstanceNode() {
-        return instanceNode;
-    }
-
-    public List<DependencyNode> getArgumentNodes() {
-        return argumentNodes;
     }
 }
