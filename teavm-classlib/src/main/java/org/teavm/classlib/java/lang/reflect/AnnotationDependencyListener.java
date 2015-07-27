@@ -90,7 +90,7 @@ public class AnnotationDependencyListener extends AbstractDependencyListener {
             implementor.addField(field);
 
             MethodHolder accessor = new MethodHolder(methodDecl.getDescriptor());
-            ProgramEmitter pe = ProgramEmitter.create(accessor);
+            ProgramEmitter pe = ProgramEmitter.create(accessor, classSource);
             ValueEmitter thisVal = pe.var(0, implementor);
             ValueEmitter result = thisVal.getField(field.getName(), field.getType());
             if (field.getType() instanceof ValueType.Array) {
@@ -104,7 +104,7 @@ public class AnnotationDependencyListener extends AbstractDependencyListener {
         ctorSignature.add(ValueType.VOID);
 
         MethodHolder ctor = new MethodHolder("<init>", ctorSignature.toArray(new ValueType[ctorSignature.size()]));
-        ProgramEmitter pe = ProgramEmitter.create(ctor);
+        ProgramEmitter pe = ProgramEmitter.create(ctor, classSource);
         ValueEmitter thisVar = pe.var(0, implementor);
         thisVar.invokeSpecial(Object.class, "<init>");
         int index = 1;
@@ -119,7 +119,7 @@ public class AnnotationDependencyListener extends AbstractDependencyListener {
         implementor.addMethod(ctor);
 
         MethodHolder annotTypeMethod = new MethodHolder("annotationType", ValueType.parse(Class.class));
-        pe = ProgramEmitter.create(annotTypeMethod);
+        pe = ProgramEmitter.create(annotTypeMethod, classSource);
         pe.constant(ValueType.object(annotationType)).returnValue();
         implementor.addMethod(annotTypeMethod);
 
@@ -164,7 +164,7 @@ public class AnnotationDependencyListener extends AbstractDependencyListener {
 
         MethodHolder ctor = new MethodHolder("<init>", ValueType.VOID);
         ctor.setLevel(AccessLevel.PUBLIC);
-        ProgramEmitter pe = ProgramEmitter.create(ctor);
+        ProgramEmitter pe = ProgramEmitter.create(ctor, agent.getClassSource());
         ValueEmitter thisVar = pe.var(0, cls);
         thisVar.invokeSpecial(Object.class, "<init>").exit();
 
@@ -178,7 +178,7 @@ public class AnnotationDependencyListener extends AbstractDependencyListener {
     private MethodHolder addReader(DependencyAgent agent, ClassReader cls) {
         MethodHolder readerMethod = new MethodHolder("getAnnotations", ValueType.parse(Annotation[].class));
         readerMethod.setLevel(AccessLevel.PUBLIC);
-        ProgramEmitter pe = ProgramEmitter.create(readerMethod);
+        ProgramEmitter pe = ProgramEmitter.create(readerMethod, agent.getClassSource());
 
         List<AnnotationReader> annotations = new ArrayList<>();
         for (AnnotationReader annot : cls.getAnnotations().all()) {
@@ -198,7 +198,7 @@ public class AnnotationDependencyListener extends AbstractDependencyListener {
 
         ValueEmitter array = pe.constructArray(Annotation.class, annotations.size());
         for (int i = 0; i < annotations.size(); ++i) {
-            array.unwrapArray().setElement(i, generateAnnotationInstance(agent, pe, annotations.get(i)));
+            array.setElement(i, generateAnnotationInstance(agent, pe, annotations.get(i)));
         }
 
         array.returnValue();
@@ -250,7 +250,7 @@ public class AnnotationDependencyListener extends AbstractDependencyListener {
                 ValueType itemType = ((ValueType.Array) type).getItemType();
                 ValueEmitter array = pe.constructArray(itemType, list.size());
                 for (int i = 0; i < list.size(); ++i) {
-                    array.unwrapArray().setElement(i, generateAnnotationValue(agent, pe, itemType, list.get(i)));
+                    array.setElement(i, generateAnnotationValue(agent, pe, itemType, list.get(i)));
                 }
                 return array;
             }

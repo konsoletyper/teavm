@@ -30,25 +30,23 @@ public class IfEmitter {
         this.pe = pe;
         this.fork = fork;
         this.join = join;
-    }
-
-    public ConditionEmitter and(ComputationEmitter condition) {
-        return new ConditionEmitter(pe, condition, join);
-    }
-
-    public ConditionEmitter or(ComputationEmitter condition) {
-        return new ConditionEmitter(pe, condition, join);
+        fork.setThen(join);
+        fork.setElse(join);
     }
 
     public IfEmitter thenDo(FragmentEmitter fragment) {
-        fork.setThen(pe.createBlock());
+        BasicBlock block = pe.prepareBlock();
+        fork.setThen(block);
+        pe.enter(block);
         fragment.emit();
         pe.jump(join);
         return this;
     }
 
     public IfEmitter elseDo(FragmentEmitter fragment) {
-        fork.setThen(pe.createBlock());
+        BasicBlock block = pe.prepareBlock();
+        fork.setThen(block);
+        pe.enter(block);
         fragment.emit();
         pe.jump(join);
         return this;

@@ -187,7 +187,7 @@ class DependencyGraphBuilder {
         if (program == null) {
             return;
         }
-        ProgramEmitter pe = ProgramEmitter.create(program);
+        ProgramEmitter pe = ProgramEmitter.create(program, dependencyChecker.getClassSource());
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
             for (int j = 0; j < block.getInstructions().size(); ++j) {
@@ -229,7 +229,7 @@ class DependencyGraphBuilder {
                     }
                 }
 
-                pe.setBlock(block);
+                pe.enter(block);
                 pe.setCurrentLocation(indy.getLocation());
                 block.getInstructions().remove(j);
 

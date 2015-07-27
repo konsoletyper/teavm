@@ -16,8 +16,6 @@
 package org.teavm.model.emit;
 
 import org.teavm.model.BasicBlock;
-import org.teavm.model.instructions.BinaryBranchingCondition;
-import org.teavm.model.instructions.BranchingCondition;
 
 /**
  *
@@ -25,38 +23,26 @@ import org.teavm.model.instructions.BranchingCondition;
  */
 public class ConditionEmitter {
     private ProgramEmitter pe;
-    private ComputationEmitter argument;
-    private BasicBlock join;
+    ForkEmitter fork;
 
-    ConditionEmitter(ProgramEmitter pe, ComputationEmitter argument, BasicBlock join) {
+    ConditionEmitter(ProgramEmitter pe, ForkEmitter fork) {
         this.pe = pe;
-        this.argument = argument;
-        this.join = join;
+        this.fork = fork;
     }
 
-    public IfEmitter isTrue() {
-        return new IfEmitter(pe, argument.emit().fork(BranchingCondition.NOT_EQUAL), join);
+    public ConditionEmitter and(ConditionProducer other) {
+        BasicBlock block = pe.prepareBlock();
+        pe.enter(block);
+        ConditionEmitter otherEmitter = other.produce();
+        ForkEmitter newFork = fork.and(block, otherEmitter.fork);
+        return new ConditionEmitter(pe, newFork);
     }
 
-    public IfEmitter isFalse() {
-        return new IfEmitter(pe, argument.emit().fork(BranchingCondition.NOT_NULL), join);
-    }
-
-    public IfEmitter equalTo(ComputationEmitter other) {
-        return new IfEmitter(pe, argument.emit().fork(BinaryBranchingCondition.EQUAL, other.emit()), join);
-    }
-
-    public IfEmitter notEqualTo(ComputationEmitter other) {
-        return new IfEmitter(pe, argument.emit().fork(BinaryBranchingCondition.NOT_EQUAL, other.emit()), join);
-    }
-
-    public IfEmitter sameAs(ComputationEmitter other) {
-        return new IfEmitter(pe, argument.emit().fork(BinaryBranchingCondition.REFERENCE_EQUAL, other.emit()),
-                join);
-    }
-
-    public IfEmitter notSameAs(ComputationEmitter other) {
-        return new IfEmitter(pe, argument.emit().fork(BinaryBranchingCondition.REFERENCE_NOT_EQUAL, other.emit()),
-                join);
+    public ConditionEmitter or(ConditionProducer other) {
+        BasicBlock block = pe.prepareBlock();
+        pe.enter(block);
+        ConditionEmitter otherEmitter = other.produce();
+        ForkEmitter newFork = fork.or(block, otherEmitter.fork);
+        return new ConditionEmitter(pe, newFork);
     }
 }

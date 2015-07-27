@@ -19,6 +19,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -113,24 +114,44 @@ public interface ClassReaderSource {
                 .filter(candidate -> candidate != null);
     }
 
-    default boolean isSuperType(String superType, String subType) {
+    default Optional<Boolean> isSuperType(String superType, String subType) {
         if (superType.equals(subType)) {
-            return true;
+            return Optional.of(true);
         }
         ClassReader cls = get(subType);
         if (subType == null) {
-            return false;
+            return Optional.empty();
         }
         if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
-            if (isSuperType(superType, cls.getParent())) {
-                return true;
+            if (isSuperType(superType, cls.getParent()).orElse(false)) {
+                return Optional.of(true);
             }
         }
         for (String iface : cls.getInterfaces()) {
-            if (isSuperType(superType, iface)) {
-                return true;
+            if (isSuperType(superType, iface).orElse(false)) {
+                return Optional.of(true);
             }
         }
-        return false;
+        return Optional.of(false);
+    }
+
+    default Optional<Boolean> isSuperType(ValueType superType, ValueType subType) {
+        if (superType.equals(subType)) {
+            return Optional.of(true);
+        }
+        if (superType instanceof ValueType.Primitive || subType instanceof ValueType.Primitive) {
+            return Optional.of(false);
+        }
+        if (superType.isObject("java.lang.Object")) {
+            return Optional.of(true);
+        }
+        if (superType instanceof ValueType.Object && subType instanceof ValueType.Object) {
+            return isSuperType(((ValueType.Object) superType).getClassName(),
+                    ((ValueType.Object) subType).getClassName());
+        } else if (superType instanceof ValueType.Array & subType instanceof ValueType.Array) {
+            return isSuperType(((ValueType.Array) superType).getItemType(), ((ValueType.Array) subType).getItemType());
+        } else {
+            return Optional.of(false);
+        }
     }
 }

@@ -39,7 +39,7 @@ class MetadataProviderTransformer implements ClassHolderTransformer {
         for (MethodHolder method : cls.getMethods().toArray(new MethodHolder[0])) {
             AnnotationReader providerAnnot = method.getAnnotations().get(MetadataProvider.class.getName());
             if (providerAnnot != null) {
-                transformMetadataMethod(cls, method, diagnostics);
+                transformMetadataMethod(cls, method, diagnostics, innerSource);
             }
             providerAnnot = method.getAnnotations().get(ClassScopedMetadataProvider.class.getName());
             if (providerAnnot != null) {
@@ -62,7 +62,8 @@ class MetadataProviderTransformer implements ClassHolderTransformer {
         }
     }
 
-    private void transformMetadataMethod(ClassHolder cls, MethodHolder method, Diagnostics diagnostics) {
+    private void transformMetadataMethod(ClassHolder cls, MethodHolder method, Diagnostics diagnostics,
+            ClassReaderSource classSource) {
         if (!validate(method, diagnostics)) {
             return;
         }
@@ -89,15 +90,17 @@ class MetadataProviderTransformer implements ClassHolderTransformer {
         createMethod.getAnnotations().add(refAnnot);
 
         method.getModifiers().remove(ElementModifier.NATIVE);
-        ProgramEmitter pe = ProgramEmitter.create(method);
+        ProgramEmitter pe = ProgramEmitter.create(method, classSource);
         ForkEmitter fork = pe.getField(field.getReference(), field.getType()).fork(
                 BinaryBranchingCondition.REFERENCE_NOT_EQUAL, pe.constantNull(field.getType()));
 
-        BasicBlock resourceFound = pe.createBlock();
+        BasicBlock resourceFound = pe.prepareBlock();
         fork.setThen(resourceFound);
         pe.getField(field.getReference(), field.getType()).returnValue();
 
-        fork.setElse(pe.createBlock());
+        BasicBlock block = pe.prepareBlock();
+        fork.setElse(block);
+        pe.enter(block);
         pe.setField(field.getReference(), pe.invoke(createMethod.getReference().getClassName(),
                 createMethod.getReference().getName(), createMethod.getResultType()));
         pe.jump(resourceFound);

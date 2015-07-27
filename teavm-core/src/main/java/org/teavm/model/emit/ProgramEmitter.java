@@ -17,6 +17,8 @@ package org.teavm.model.emit;
 
 import org.teavm.model.BasicBlock;
 import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
+import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
 import org.teavm.model.Instruction;
 import org.teavm.model.InstructionLocation;
@@ -51,11 +53,13 @@ import org.teavm.model.instructions.SwitchInstruction;
 public final class ProgramEmitter {
     private Program program;
     private BasicBlock block;
+    ClassReaderSource classSource;
     private InstructionLocation currentLocation;
 
-    private ProgramEmitter(Program program, BasicBlock block) {
+    private ProgramEmitter(Program program, BasicBlock block, ClassReaderSource classSource) {
         this.program = program;
         this.block = block;
+        this.classSource = classSource;
     }
 
     public Program getProgram() {
@@ -66,14 +70,13 @@ public final class ProgramEmitter {
         return block;
     }
 
-    public void setBlock(BasicBlock block) {
+    public ProgramEmitter enter(BasicBlock block) {
         this.block = block;
+        return this;
     }
 
-    public BasicBlock createBlock() {
-        BasicBlock block = program.createBasicBlock();
-        setBlock(block);
-        return block;
+    public BasicBlock prepareBlock() {
+        return program.createBasicBlock();
     }
 
     public ValueEmitter constant(Class<?> cls) {
@@ -143,6 +146,11 @@ public final class ProgramEmitter {
     }
 
     public ValueEmitter getField(FieldReference field, ValueType type) {
+        FieldReader resolvedField = classSource.resolve(field);
+        if (resolvedField != null) {
+            field = resolvedField.getReference();
+        }
+
         Variable var = program.createVariable();
         GetFieldInstruction insn = new GetFieldInstruction();
         insn.setField(field);
@@ -161,6 +169,11 @@ public final class ProgramEmitter {
     }
 
     public ProgramEmitter setField(FieldReference field, ValueEmitter value) {
+        FieldReader resolvedField = classSource.resolve(field);
+        if (resolvedField != null) {
+            field = resolvedField.getReference();
+        }
+
         PutFieldInstruction insn = new PutFieldInstruction();
         insn.setField(field);
         insn.setFieldType(value.type);
@@ -171,6 +184,30 @@ public final class ProgramEmitter {
 
     public ProgramEmitter setField(String className, String fieldName, ValueEmitter value) {
         return setField(new FieldReference(className, fieldName), value);
+    }
+
+    public ValueEmitter invoke(MethodReference method, ValueEmitter... arguments) {
+        for (int i = 0; i < method.parameterCount(); ++i) {
+            if (!classSource.isSuperType(method.parameterType(i), arguments[i].getType()).orElse(true)) {
+                throw new EmitException("Argument " + i + " of type " + arguments[i].getType() + " is "
+                        + "not compatible with method " + method);
+            }
+        }
+
+        Variable result = null;
+        if (method.getReturnType() != ValueType.VOID) {
+            result = program.createVariable();
+        }
+
+        InvokeInstruction insn = new InvokeInstruction();
+        insn.setType(InvocationType.SPECIAL);
+        insn.setMethod(method);
+        insn.setReceiver(result);
+        for (ValueEmitter arg : arguments) {
+            insn.getArguments().add(arg.variable);
+        }
+        addInstruction(insn);
+        return result != null ? var(result, method.getReturnType()) : null;
     }
 
     public ValueEmitter invoke(String className, String methodName, ValueType resultType, ValueEmitter... arguments) {
@@ -314,7 +351,7 @@ public final class ProgramEmitter {
         block.getInstructions().add(insn);
     }
 
-    public static ProgramEmitter create(MethodHolder method) {
+    public static ProgramEmitter create(MethodHolder method, ClassReaderSource classSource) {
         Program program = new Program();
         method.setProgram(program);
         BasicBlock zeroBlock = program.createBasicBlock();
@@ -329,11 +366,15 @@ public final class ProgramEmitter {
             program.createVariable();
         }
 
-        return new ProgramEmitter(program, block);
+        return new ProgramEmitter(program, block, classSource);
     }
 
-    public ConditionEmitter when(ComputationEmitter condition) {
-        return new ConditionEmitter(this, condition, program.createBasicBlock());
+    public IfEmitter when(ConditionEmitter cond) {
+        return new IfEmitter(this, cond.fork, prepareBlock());
+    }
+
+    public IfEmitter when(ConditionProducer cond) {
+        return when(cond.produce());
     }
 
     public PhiEmitter phi(ValueType type, BasicBlock block) {
@@ -370,7 +411,11 @@ public final class ProgramEmitter {
         return new ChooseEmitter(this, insn, program.createBasicBlock());
     }
 
-    public static ProgramEmitter create(Program program) {
-        return new ProgramEmitter(program, null);
+    public ClassReaderSource getClassSource() {
+        return classSource;
+    }
+
+    public static ProgramEmitter create(Program program, ClassReaderSource classSource) {
+        return new ProgramEmitter(program, null, classSource);
     }
 }

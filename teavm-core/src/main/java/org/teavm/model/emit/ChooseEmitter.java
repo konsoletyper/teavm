@@ -38,14 +38,16 @@ public class ChooseEmitter {
     public ChooseEmitter option(int value, FragmentEmitter fragment) {
         SwitchTableEntry entry = new SwitchTableEntry();
         entry.setCondition(value);
-        entry.setTarget(pe.createBlock());
+        entry.setTarget(pe.prepareBlock());
+        pe.enter(entry.getTarget());
         fragment.emit();
         pe.jump(joinBlock);
         return this;
     }
 
     public ProgramEmitter otherwise(FragmentEmitter fragment) {
-        insn.setDefaultTarget(pe.createBlock());
+        insn.setDefaultTarget(pe.prepareBlock());
+        pe.enter(insn.getDefaultTarget());
         fragment.emit();
         pe.jump(joinBlock);
         return pe;
