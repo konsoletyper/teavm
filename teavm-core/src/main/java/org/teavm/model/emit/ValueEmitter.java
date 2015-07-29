@@ -580,11 +580,27 @@ public class ValueEmitter {
     }
 
     public ConditionEmitter isEqualTo(ValueEmitter other) {
-        return new ConditionEmitter(pe, fork(BinaryBranchingCondition.NOT_EQUAL, other));
+        return new ConditionEmitter(pe, fork(BinaryBranchingCondition.EQUAL, other));
     }
 
     public ConditionEmitter isNotEqualTo(ValueEmitter other) {
-        return new ConditionEmitter(pe, fork(BinaryBranchingCondition.EQUAL, other));
+        return new ConditionEmitter(pe, fork(BinaryBranchingCondition.NOT_EQUAL, other));
+    }
+
+    public ConditionEmitter isSame(ValueEmitter other) {
+        return new ConditionEmitter(pe, fork(BinaryBranchingCondition.REFERENCE_EQUAL, other));
+    }
+
+    public ConditionEmitter isNotSame(ValueEmitter other) {
+        return new ConditionEmitter(pe, fork(BinaryBranchingCondition.REFERENCE_NOT_EQUAL, other));
+    }
+
+    public ConditionEmitter isNull() {
+        return isSame(pe.constantNull(getType()));
+    }
+
+    public ConditionEmitter isNotNull() {
+        return isNotSame(pe.constantNull(getType()));
     }
 
     public ConditionEmitter isGreaterThan(ValueEmitter other) {
