@@ -867,7 +867,7 @@ public class ValueEmitter {
         return ArrayElementType.OBJECT;
     }
 
-    public ProgramEmitter enter(PhiEmitter phi) {
+    public ProgramEmitter propagateTo(PhiEmitter phi) {
         Incoming incoming = new Incoming();
         incoming.setValue(variable);
         incoming.setSource(pe.getBlock());

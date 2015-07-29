@@ -45,6 +45,7 @@ import org.teavm.model.instructions.NullConstantInstruction;
 import org.teavm.model.instructions.PutFieldInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.instructions.SwitchInstruction;
+import org.teavm.model.util.InstructionTransitionExtractor;
 
 /**
  *
@@ -408,11 +409,37 @@ public final class ProgramEmitter {
     public ChooseEmitter choise(ValueEmitter value) {
         SwitchInstruction insn = new SwitchInstruction();
         insn.setCondition(value.getVariable());
-        return new ChooseEmitter(this, insn, program.createBasicBlock());
+        return new ChooseEmitter(this, insn, prepareBlock());
+    }
+
+    public StringChooseEmitter stringChoise(ValueEmitter value) {
+        SwitchInstruction insn = new SwitchInstruction();
+        return new StringChooseEmitter(this, value, insn, prepareBlock());
     }
 
     public ClassReaderSource getClassSource() {
         return classSource;
+    }
+
+    public boolean escapes() {
+        Instruction insn = block.getLastInstruction();
+        if (insn == null) {
+            return false;
+        }
+        InstructionTransitionExtractor extractor = new InstructionTransitionExtractor();
+        insn.acceptVisitor(extractor);
+        return extractor.getTargets() != null;
+    }
+
+    public void emitAndJump(FragmentEmitter fragment, BasicBlock block) {
+        fragment.emit();
+        if (!escapes()) {
+            jump(block);
+        }
+    }
+
+    public StringBuilderEmitter string() {
+        return new StringBuilderEmitter(this);
     }
 
     public static ProgramEmitter create(Program program, ClassReaderSource classSource) {

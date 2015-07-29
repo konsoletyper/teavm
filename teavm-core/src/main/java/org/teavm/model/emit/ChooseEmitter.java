@@ -40,16 +40,16 @@ public class ChooseEmitter {
         entry.setCondition(value);
         entry.setTarget(pe.prepareBlock());
         pe.enter(entry.getTarget());
-        fragment.emit();
-        pe.jump(joinBlock);
+        pe.emitAndJump(fragment, joinBlock);
+        pe.enter(joinBlock);
         return this;
     }
 
     public ProgramEmitter otherwise(FragmentEmitter fragment) {
         insn.setDefaultTarget(pe.prepareBlock());
         pe.enter(insn.getDefaultTarget());
-        fragment.emit();
-        pe.jump(joinBlock);
+        pe.emitAndJump(fragment, joinBlock);
+        pe.enter(joinBlock);
         return pe;
     }
 
