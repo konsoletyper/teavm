@@ -292,7 +292,6 @@ public final class ProgramEmitter {
         JumpInstruction insn = new JumpInstruction();
         insn.setTarget(block);
         addInstruction(insn);
-        this.block = block;
         return this;
     }
 

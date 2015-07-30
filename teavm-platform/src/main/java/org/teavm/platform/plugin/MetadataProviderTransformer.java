@@ -18,10 +18,19 @@ package org.teavm.platform.plugin;
 import org.teavm.cache.NoCache;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.javascript.spi.GeneratedBy;
-import org.teavm.model.*;
-import org.teavm.model.emit.ForkEmitter;
+import org.teavm.model.AccessLevel;
+import org.teavm.model.AnnotationHolder;
+import org.teavm.model.AnnotationReader;
+import org.teavm.model.AnnotationValue;
+import org.teavm.model.CallLocation;
+import org.teavm.model.ClassHolder;
+import org.teavm.model.ClassHolderTransformer;
+import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ElementModifier;
+import org.teavm.model.FieldHolder;
+import org.teavm.model.MethodHolder;
+import org.teavm.model.ValueType;
 import org.teavm.model.emit.ProgramEmitter;
-import org.teavm.model.instructions.BinaryBranchingCondition;
 import org.teavm.model.util.ModelUtils;
 import org.teavm.platform.PlatformClass;
 import org.teavm.platform.metadata.ClassScopedMetadataProvider;
@@ -91,19 +100,11 @@ class MetadataProviderTransformer implements ClassHolderTransformer {
 
         method.getModifiers().remove(ElementModifier.NATIVE);
         ProgramEmitter pe = ProgramEmitter.create(method, classSource);
-        ForkEmitter fork = pe.getField(field.getReference(), field.getType()).fork(
-                BinaryBranchingCondition.REFERENCE_NOT_EQUAL, pe.constantNull(field.getType()));
-
-        BasicBlock resourceFound = pe.prepareBlock();
-        fork.setThen(resourceFound);
-        pe.getField(field.getReference(), field.getType()).returnValue();
-
-        BasicBlock block = pe.prepareBlock();
-        fork.setElse(block);
-        pe.enter(block);
-        pe.setField(field.getReference(), pe.invoke(createMethod.getReference().getClassName(),
-                createMethod.getReference().getName(), createMethod.getResultType()));
-        pe.jump(resourceFound);
+        pe.when(pe.getField(field.getReference(), field.getType()).isNull())
+                .thenDo(() -> pe.setField(field.getReference(), pe.invoke(createMethod.getReference().getClassName(),
+                            createMethod.getReference().getName(), createMethod.getResultType())));
+        pe.getField(field.getReference(), field.getType())
+                .returnValue();
 
         AnnotationHolder noCacheAnnot = new AnnotationHolder(NoCache.class.getName());
         method.getAnnotations().add(noCacheAnnot);

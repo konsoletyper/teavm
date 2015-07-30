@@ -26,7 +26,9 @@ import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
+import org.teavm.model.MethodHolder;
 import org.teavm.model.util.ModelUtils;
+import org.teavm.optimization.UnreachableBasicBlockEliminator;
 
 /**
  *
@@ -54,6 +56,11 @@ class DependencyClassSource implements ClassHolderSource {
             throw new IllegalArgumentException("Class " + cls.getName() + " is already defined");
         }
         generatedClasses.put(cls.getName(), cls);
+        for (MethodHolder method : cls.getMethods()) {
+            if (method.getProgram() != null && method.getProgram().basicBlockCount() > 0) {
+                new UnreachableBasicBlockEliminator().optimize(method.getProgram());
+            }
+        }
         cache.remove(cls.getName());
     }
 

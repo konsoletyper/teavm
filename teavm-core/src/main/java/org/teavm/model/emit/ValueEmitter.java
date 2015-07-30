@@ -415,7 +415,7 @@ public class ValueEmitter {
             }
         }
 
-        if (!pe.classSource.isSuperType(((ValueType.Object) type).getClassName(), method.getClassName())
+        if (!pe.classSource.isSuperType(method.getClassName(), ((ValueType.Object) type).getClassName())
                 .orElse(true)) {
             throw new EmitException("Can't call " + method + " on non-compatible class " + type);
         }
@@ -615,7 +615,7 @@ public class ValueEmitter {
         return new ConditionEmitter(pe, compareTo(other).fork(BranchingCondition.LESS));
     }
 
-    public ConditionEmitter isLessOrEuqalTo(ValueEmitter other) {
+    public ConditionEmitter isLessOrEqualTo(ValueEmitter other) {
         return new ConditionEmitter(pe, compareTo(other).fork(BranchingCondition.LESS_OR_EQUAL));
     }
 
@@ -640,8 +640,10 @@ public class ValueEmitter {
     }
 
     public ValueEmitter cast(ValueType type) {
-        if (type.equals(this.type) || pe.classSource.isSuperType(type, this.type).orElse(false)) {
+        if (type.equals(this.type)) {
             return this;
+        } else if (pe.classSource.isSuperType(type, this.type).orElse(false)) {
+            return pe.var(variable.getIndex(), type);
         }
 
         if (type instanceof ValueType.Primitive) {
@@ -720,10 +722,22 @@ public class ValueEmitter {
 
         CastIntegerInstruction insn = new CastIntegerInstruction(subtype, CastIntegerDirection.TO_INTEGER);
         insn.setValue(variable);
-        ValueEmitter result = pe.newVar(ValueType.INTEGER);
+        ValueEmitter result = pe.newVar(convertSubtype(subtype));
         insn.setReceiver(result.getVariable());
         pe.addInstruction(insn);
         return result;
+    }
+
+    private ValueType convertSubtype(IntegerSubtype subtype) {
+        switch (subtype)  {
+            case BYTE:
+                return ValueType.BYTE;
+            case SHORT:
+                return ValueType.SHORT;
+            case CHARACTER:
+                return ValueType.CHARACTER;
+        }
+        throw new IllegalArgumentException("Unknown subtype: " + subtype);
     }
 
     public ValueEmitter castToInteger(IntegerSubtype subtype) {

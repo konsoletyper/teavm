@@ -38,17 +38,17 @@ public class IfEmitter {
         BasicBlock block = pe.prepareBlock();
         fork.setThen(block);
         pe.enter(block);
-        fragment.emit();
-        pe.jump(join);
+        pe.emitAndJump(fragment, join);
+        pe.enter(join);
         return this;
     }
 
     public IfEmitter elseDo(FragmentEmitter fragment) {
         BasicBlock block = pe.prepareBlock();
-        fork.setThen(block);
+        fork.setElse(block);
         pe.enter(block);
-        fragment.emit();
-        pe.jump(join);
+        pe.emitAndJump(fragment, join);
+        pe.enter(join);
         return this;
     }
 }

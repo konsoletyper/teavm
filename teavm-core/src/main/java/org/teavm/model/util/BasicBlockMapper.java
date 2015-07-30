@@ -32,7 +32,11 @@ public abstract class BasicBlockMapper implements InstructionVisitor {
     }
 
     public void transform(BasicBlock block) {
-        block.getLastInstruction().acceptVisitor(this);
+        Instruction lastInsn = block.getLastInstruction();
+        if (lastInsn == null) {
+            return;
+        }
+        lastInsn.acceptVisitor(this);
         for (Phi phi : block.getPhis()) {
             for (Incoming incoming : phi.getIncomings()) {
                 incoming.setSource(map(incoming.getSource()));
