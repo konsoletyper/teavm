@@ -119,7 +119,7 @@ public interface ClassReaderSource {
             return Optional.of(true);
         }
         ClassReader cls = get(subType);
-        if (subType == null) {
+        if (cls == null) {
             return Optional.empty();
         }
         if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {

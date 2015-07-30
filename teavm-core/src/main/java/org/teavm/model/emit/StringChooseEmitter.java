@@ -39,8 +39,10 @@ public class StringChooseEmitter {
         this.insn = insn;
         this.joinBlock = joinBlock;
         this.otherwiseBlock = pe.prepareBlock();
+        this.testValue = testValue;
         insn.setCondition(testValue.invokeVirtual("hashCode", int.class).getVariable());
         insn.setDefaultTarget(otherwiseBlock);
+        pe.addInstruction(insn);
         pe.enter(otherwiseBlock);
         pe.jump(joinBlock);
         pe.enter(joinBlock);
@@ -62,7 +64,7 @@ public class StringChooseEmitter {
         }
 
         pe.enter(block);
-        fork = testValue.invokeVirtual("equals", boolean.class, testValue.cast(Object.class))
+        fork = testValue.invokeVirtual("equals", boolean.class, pe.constant(value).cast(Object.class))
                 .fork(BranchingCondition.NOT_EQUAL);
         hashForks.put(hash, fork);
 

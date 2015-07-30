@@ -345,6 +345,9 @@ public final class ProgramEmitter {
     }
 
     public void addInstruction(Instruction insn) {
+        if (escapes()) {
+            throw new EmitException("This block has already escaped");
+        }
         if (currentLocation != null) {
             insn.setLocation(currentLocation);
         }

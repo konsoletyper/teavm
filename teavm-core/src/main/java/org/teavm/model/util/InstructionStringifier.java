@@ -229,7 +229,7 @@ public class InstructionStringifier implements InstructionReader {
                 sb.append("; ");
             }
             SwitchTableEntryReader entry = table.get(i);
-            sb.append("case ").append(entry.getCondition()).append(": goto $").append(entry.getTarget());
+            sb.append("case ").append(entry.getCondition()).append(": goto $").append(entry.getTarget().getIndex());
         }
         sb.append(", default: goto $").append(defaultTarget.getIndex());
     }
