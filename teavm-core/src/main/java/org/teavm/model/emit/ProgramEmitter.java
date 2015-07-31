@@ -244,6 +244,10 @@ public final class ProgramEmitter {
         return this;
     }
 
+    public ProgramEmitter invoke(Class<?> cls, String methodName, ValueEmitter... arguments) {
+        return invoke(cls.getName(), methodName, arguments);
+    }
+
     public ValueEmitter construct(String className, ValueEmitter... arguments) {
         Variable var = program.createVariable();
         ConstructInstruction insn = new ConstructInstruction();

@@ -198,7 +198,7 @@ public class JavaScriptBodyDependency extends AbstractDependencyListener {
             this.superClass = agent.getClassSource().get(superMethod.getOwnerName());
         }
         @Override public void consume(DependencyType type) {
-            if (!isAssignableFrom(superClass, type.getName())) {
+            if (!agent.getClassSource().isSuperType(superClass.getName(), type.getName()).orElse(false)) {
                 return;
             }
             MethodReference methodRef = new MethodReference(type.getName(), superMethod.getDescriptor());
@@ -207,25 +207,6 @@ public class JavaScriptBodyDependency extends AbstractDependencyListener {
             for (int i = 0; i < method.getParameterCount(); ++i) {
                 allClassesNode.connect(method.getVariable(i));
             }
-        }
-        private boolean isAssignableFrom(ClassReader supertype, String subtypeName) {
-            ClassReaderSource classSource = agent.getClassSource();
-            if (supertype.getName().equals(subtypeName)) {
-                return true;
-            }
-            ClassReader subtype = classSource.get(subtypeName);
-            if (subtype == null) {
-                return false;
-            }
-            if (subtype.getParent() != null && isAssignableFrom(supertype, subtype.getParent())) {
-                return true;
-            }
-            for (String iface : subtype.getInterfaces()) {
-                if (isAssignableFrom(supertype, iface)) {
-                    return true;
-                }
-            }
-            return false;
         }
     }
 }

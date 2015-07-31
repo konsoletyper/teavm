@@ -115,37 +115,22 @@ class JavascriptNativeProcessor {
             return null;
         }
         Map<MethodDescriptor, MethodReference> methods = new HashMap<>();
-        getFunctorMethods(className, new HashSet<>(), methods);
+        getFunctorMethods(className, methods);
         if (methods.size() == 1) {
             return methods.values().iterator().next();
         }
         return null;
     }
 
-    private void getFunctorMethods(String className, Set<String> visited,
-            Map<MethodDescriptor, MethodReference> methods) {
-        if (!visited.add(className)) {
-            return;
-        }
-
-        ClassReader cls = classSource.get(className);
-        if (cls == null) {
-            return;
-        }
-
-        if (cls.getAnnotations().get(JSFunctor.class.getName()) != null && isProperFunctor(cls)) {
-            MethodReference method = cls.getMethods().iterator().next().getReference();
-            if (!methods.containsKey(method.getDescriptor())) {
-                methods.put(method.getDescriptor(), method);
+    private void getFunctorMethods(String className, Map<MethodDescriptor, MethodReference> methods) {
+        classSource.getAncestors(className).forEach(cls -> {
+            if (cls.getAnnotations().get(JSFunctor.class.getName()) != null && isProperFunctor(cls)) {
+                MethodReference method = cls.getMethods().iterator().next().getReference();
+                if (!methods.containsKey(method.getDescriptor())) {
+                    methods.put(method.getDescriptor(), method);
+                }
             }
-        }
-
-        if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
-            getFunctorMethods(cls.getParent(), visited, methods);
-        }
-        for (String iface : cls.getInterfaces()) {
-            getFunctorMethods(iface, visited, methods);
-        }
+        });
     }
 
     public void processClass(ClassHolder cls) {
@@ -223,31 +208,12 @@ class JavascriptNativeProcessor {
     }
 
     private MethodReader findOverridenMethod(String className, MethodReader finalMethod) {
-        ClassReader cls = classSource.get(className);
-        if (cls == null) {
-            return null;
-        }
-
-        MethodReader method = cls.getMethod(finalMethod.getDescriptor());
-        if (method != null && !method.getOwnerName().equals(finalMethod.getOwnerName())) {
-            return method;
-        }
-
-        if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
-            method = findOverridenMethod(cls.getParent(), finalMethod);
-            if (method != null) {
-                return method;
-            }
-        }
-
-        for (String iface : cls.getInterfaces()) {
-            method = findOverridenMethod(iface, finalMethod);
-            if (method != null) {
-                return method;
-            }
-        }
-
-        return null;
+        return classSource.getAncestors(className)
+                .skip(1)
+                .map(cls -> cls.getMethod(finalMethod.getDescriptor()))
+                .filter(method -> method != null)
+                .findFirst()
+                .orElse(null);
     }
 
     public void addFunctorField(ClassHolder cls, MethodReference method) {

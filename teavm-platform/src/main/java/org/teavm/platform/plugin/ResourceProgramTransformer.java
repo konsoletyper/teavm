@@ -80,7 +80,7 @@ class ResourceProgramTransformer {
             return Arrays.<Instruction>asList(accessInsn);
         }
         ClassReader iface = innerSource.get(method.getClassName());
-        if (iface == null || !isSubclass(iface, Resource.class.getName())) {
+        if (iface == null || !innerSource.isSuperType(Resource.class.getName(), iface.getName()).orElse(false)) {
             return null;
         }
         if (method.getName().startsWith("get")) {
@@ -116,23 +116,6 @@ class ResourceProgramTransformer {
         transformInsn.setReceiver(insn.getReceiver());
 
         return Arrays.<Instruction>asList(keysInsn, transformInsn);
-    }
-
-    private boolean isSubclass(ClassReader cls, String superClass) {
-        if (cls.getName().equals(superClass)) {
-            return true;
-        }
-        ClassReader parent = cls.getParent() != null ? innerSource.get(cls.getParent()) : null;
-        if (parent != null && isSubclass(parent, superClass)) {
-            return true;
-        }
-        for (String ifaceName : cls.getInterfaces()) {
-            ClassReader iface = innerSource.get(ifaceName);
-            if (iface != null) {
-                return isSubclass(iface, superClass);
-            }
-        }
-        return false;
     }
 
     private List<Instruction> transformGetterInvocation(InvokeInstruction insn, String property) {

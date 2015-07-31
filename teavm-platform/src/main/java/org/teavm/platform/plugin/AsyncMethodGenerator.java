@@ -24,7 +24,6 @@ import org.teavm.javascript.spi.Generator;
 import org.teavm.javascript.spi.GeneratorContext;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReader;
-import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
@@ -100,9 +99,10 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin {
 
     @Override
     public void methodAchieved(DependencyAgent checker, MethodDependency method, CallLocation location) {
-        MethodReference asyncRef = getAsyncReference(method.getReference());
+        MethodReference ref = method.getReference();
+        MethodReference asyncRef = getAsyncReference(ref);
         MethodDependency asyncMethod = checker.linkMethod(asyncRef, location);
-        int paramCount = method.getReference().parameterCount();
+        int paramCount = ref.parameterCount();
         for (int i = 0; i <= paramCount; ++i) {
             method.getVariable(i).connect(asyncMethod.getVariable(i));
         }
@@ -111,8 +111,8 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin {
         MethodDependency completeMethod = checker.linkMethod(
                 new MethodReference(AsyncCallbackWrapper.class, "complete", Object.class, void.class), null);
         if (method.getResult() != null) {
-            completeMethod.getVariable(1).connect(method.getResult(), type -> isSubtype(checker.getClassSource(),
-                    type.getName(), method.getReference().getReturnType()));
+            completeMethod.getVariable(1).connect(method.getResult(), type -> checker.getClassSource()
+                    .isSuperType(ref.getReturnType(), ValueType.object(type.getName())).orElse(false));
         }
         completeMethod.use();
 
@@ -125,31 +125,5 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin {
                 AsyncCallback.class, AsyncCallbackWrapper.class), null).use();
 
         asyncMethod.use();
-    }
-
-    private boolean isSubtype(ClassReaderSource classSource, String className, ValueType returnType) {
-        if (returnType instanceof ValueType.Primitive) {
-            return false;
-        } else if (returnType instanceof ValueType.Array) {
-            return className.startsWith("[");
-        } else {
-            return isSubclass(classSource, className, ((ValueType.Object) returnType).getClassName());
-        }
-    }
-
-    private boolean isSubclass(ClassReaderSource classSource, String className, String baseClass) {
-        if (className.equals(baseClass)) {
-            return true;
-        }
-        ClassReader cls = classSource.get(className);
-        if (cls == null) {
-            return false;
-        }
-        if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
-            if (isSubclass(classSource, cls.getParent(), baseClass)) {
-                return true;
-            }
-        }
-        return cls.getInterfaces().stream().anyMatch(iface -> isSubclass(classSource, iface, baseClass));
     }
 }

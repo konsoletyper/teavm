@@ -71,7 +71,7 @@ public class Devirtualization {
                 className = "java.lang.Object";
             }
             ClassReader cls = classSource.get(className);
-            if (cls == null || !isAssignable(ref.getClassName(), cls)) {
+            if (cls == null || !classSource.isSuperType(ref.getClassName(), cls.getName()).orElse(false)) {
                 continue;
             }
             MethodDependencyInfo methodDep = dependency.getMethodImplementation(new MethodReference(
@@ -81,24 +81,5 @@ public class Devirtualization {
             }
         }
         return methods;
-    }
-
-    private boolean isAssignable(String target, ClassReader cls) {
-        if (cls.getName().equals(target)) {
-            return true;
-        }
-        if (cls.getParent() != null) {
-            ClassReader parent = classSource.get(cls.getParent());
-            if (parent != null && isAssignable(target, parent)) {
-                return true;
-            }
-        }
-        for (String ifaceName : cls.getInterfaces()) {
-            ClassReader iface = classSource.get(ifaceName);
-            if (iface != null && isAssignable(target, iface)) {
-                return true;
-            }
-        }
-        return false;
     }
 }

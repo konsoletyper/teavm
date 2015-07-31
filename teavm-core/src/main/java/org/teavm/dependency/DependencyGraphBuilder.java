@@ -284,9 +284,10 @@ class DependencyGraphBuilder {
 
         @Override
         public void consume(DependencyType type) {
+            ClassReaderSource classSource = checker.getClassSource();
             for (int i = 0; i < exceptions.length; ++i) {
-                if (exceptions[i] == null || isAssignableFrom(checker.getClassSource(), exceptions[i].getName(),
-                        type.getName())) {
+                if (exceptions[i] == null || classSource.isSuperType(exceptions[i].getName(), type.getName())
+                        .orElse(false)) {
                     if (vars[i] != null) {
                         vars[i].propagate(type);
                     }
@@ -334,7 +335,9 @@ class DependencyGraphBuilder {
             if (className.startsWith("[")) {
                 className = "java.lang.Object";
             }
-            if (!isAssignableFrom(checker.getClassSource(), filterClass.getName(), className)) {
+
+            ClassReaderSource classSource = checker.getClassSource();
+            if (classSource.isSuperType(filterClass.getName(), className).orElse(false)) {
                 return;
             }
             MethodReference methodRef = new MethodReference(className, methodDesc);
@@ -344,8 +347,8 @@ class DependencyGraphBuilder {
                 methodDep.use();
                 DependencyNode[] targetParams = methodDep.getVariables();
                 if (parameters[0] != null && targetParams[0] != null) {
-                    parameters[0].connect(targetParams[0], thisType -> isAssignableFrom(checker.getClassSource(),
-                            methodDep.getMethod().getOwnerName(), thisType.getName()));
+                    parameters[0].connect(targetParams[0], thisType -> classSource.isSuperType(
+                            methodDep.getMethod().getOwnerName(), thisType.getName()).orElse(false));
                 }
                 for (int i = 1; i < parameters.length; ++i) {
                     if (parameters[i] != null && targetParams[i] != null) {
@@ -358,23 +361,6 @@ class DependencyGraphBuilder {
                 methodDep.getThrown().addConsumer(exceptionConsumer);
             }
         }
-    }
-
-    private static boolean isAssignableFrom(ClassReaderSource classSource, String supertype, String subtypeName) {
-        if (supertype.equals(subtypeName)) {
-            return true;
-        }
-        ClassReader subtype = classSource.get(subtypeName);
-        if (subtype == null) {
-            return false;
-        }
-        if (subtype.getParent() != null && isAssignableFrom(classSource, supertype, subtype.getParent())) {
-            return true;
-        }
-        if (subtype.getInterfaces().stream().anyMatch(iface -> isAssignableFrom(classSource, supertype, iface))) {
-            return true;
-        }
-        return false;
     }
 
     private InstructionReader reader = new InstructionReader() {
@@ -455,17 +441,17 @@ class DependencyGraphBuilder {
         public void cast(VariableReader receiver, VariableReader value, ValueType targetType) {
             DependencyNode valueNode = nodes[value.getIndex()];
             DependencyNode receiverNode = nodes[receiver.getIndex()];
+            ClassReaderSource classSource = dependencyChecker.getClassSource();
             if (targetType instanceof ValueType.Object) {
                 String targetClsName = ((ValueType.Object) targetType).getClassName();
-                final ClassReader targetClass = dependencyChecker.getClassSource().get(targetClsName);
+                final ClassReader targetClass = classSource.get(targetClsName);
                 if (targetClass != null) {
                     if (valueNode != null && receiverNode != null) {
                         valueNode.connect(receiverNode, type -> {
                             if (targetClass.getName().equals("java.lang.Object")) {
                                 return true;
                             }
-                            return isAssignableFrom(dependencyChecker.getClassSource(), targetClass.getName(),
-                                    type.getName());
+                            return classSource.isSuperType(targetClass.getName(), type.getName()).orElse(false);
                         });
                     }
                     return;
