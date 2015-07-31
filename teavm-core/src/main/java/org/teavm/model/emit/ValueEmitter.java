@@ -45,6 +45,7 @@ import org.teavm.model.instructions.IntegerSubtype;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.IsInstanceInstruction;
+import org.teavm.model.instructions.NegateInstruction;
 import org.teavm.model.instructions.NumericOperandType;
 import org.teavm.model.instructions.PutElementInstruction;
 import org.teavm.model.instructions.PutFieldInstruction;
@@ -117,6 +118,27 @@ public class ValueEmitter {
         insn.setValue(value.getVariable());
         pe.addInstruction(insn);
         return pe;
+    }
+
+    public ValueEmitter neg() {
+        if (!(type instanceof ValueType.Primitive)) {
+            throw new EmitException("Can't negate non-primitive: " + type);
+        }
+
+        ValueEmitter value = this;
+        PrimitiveType type = ((ValueType.Primitive) this.type).getKind();
+        IntegerSubtype subtype = convertToIntegerSubtype(type);
+        if (subtype != null) {
+            value = value.castToInteger(subtype);
+            type = PrimitiveType.INTEGER;
+        }
+
+        ValueEmitter result = pe.newVar(ValueType.primitive(type));
+        NegateInstruction insn = new NegateInstruction(convertToNumeric(type));
+        insn.setOperand(value.variable);
+        insn.setReceiver(result.variable);
+        pe.addInstruction(insn);
+        return result;
     }
 
     static class Pair {

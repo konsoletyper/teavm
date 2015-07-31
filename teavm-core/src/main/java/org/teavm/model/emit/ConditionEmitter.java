@@ -45,4 +45,8 @@ public class ConditionEmitter {
         ForkEmitter newFork = fork.or(block, otherEmitter.fork);
         return new ConditionEmitter(pe, newFork);
     }
+
+    public ConditionEmitter not() {
+        return new ConditionEmitter(pe, fork.not());
+    }
 }
