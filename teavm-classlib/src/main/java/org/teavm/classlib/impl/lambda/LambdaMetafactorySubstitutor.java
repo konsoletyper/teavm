@@ -68,7 +68,7 @@ public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor 
                     implementorSignature[i + capturedVarCount]);
         }
 
-        ValueEmitter result = invoke(pe, implMethod, callSite.getInstance(), passedArguments);
+        ValueEmitter result = invoke(pe, implMethod, passedArguments);
         if (result != null) {
             ValueType actualResult = implementorSignature[implementorSignature.length - 1];
             ValueType expectedResult = instantiatedMethodType[instantiatedMethodType.length - 1];
@@ -83,15 +83,14 @@ public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor 
         return callerPe.construct(ctor.getOwnerName(), callSite.getArguments().toArray(new ValueEmitter[0]));
     }
 
-    private ValueEmitter invoke(ProgramEmitter pe, MethodHandle handle, ValueEmitter instance,
-            ValueEmitter[] arguments) {
+    private ValueEmitter invoke(ProgramEmitter pe, MethodHandle handle, ValueEmitter[] arguments) {
         switch (handle.getKind()) {
             case GET_FIELD:
-                return instance.getField(handle.getName(), handle.getValueType());
+                return arguments[0].getField(handle.getName(), handle.getValueType());
             case GET_STATIC_FIELD:
                 return pe.getField(handle.getClassName(), handle.getName(), handle.getValueType());
             case PUT_FIELD:
-                instance.setField(handle.getName(), arguments[0].cast(handle.getValueType()));
+                arguments[0].setField(handle.getName(), arguments[0].cast(handle.getValueType()));
                 return null;
             case PUT_STATIC_FIELD:
                 pe.setField(handle.getClassName(), handle.getName(), arguments[0].cast(handle.getValueType()));
@@ -99,10 +98,12 @@ public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor 
             case INVOKE_VIRTUAL:
             case INVOKE_INTERFACE:
             case INVOKE_SPECIAL:
-                for (int i = 0; i < arguments.length; ++i) {
-                    arguments[i] = arguments[i].cast(handle.getArgumentType(i));
+                for (int i = 1; i < arguments.length; ++i) {
+                    arguments[i] = arguments[i].cast(handle.getArgumentType(i - 1));
                 }
-                return instance.invokeVirtual(handle.getName(), handle.getValueType(), arguments);
+                arguments[0] = arguments[0].cast(ValueType.object(handle.getClassName()));
+                return arguments[0].invokeVirtual(handle.getName(), handle.getValueType(),
+                        Arrays.copyOfRange(arguments, 1, arguments.length));
             case INVOKE_STATIC:
                 for (int i = 0; i < arguments.length; ++i) {
                     arguments[i] = arguments[i].cast(handle.getArgumentType(i));
@@ -191,11 +192,23 @@ public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor 
     private ValueType[] getSignature(MethodHandle handle) {
         switch (handle.getKind()) {
             case GET_FIELD:
+                return new ValueType[] { ValueType.object(handle.getClassName()), handle.getValueType() };
             case GET_STATIC_FIELD:
                 return new ValueType[] { handle.getValueType() };
             case PUT_FIELD:
+                return new ValueType[] { ValueType.object(handle.getClassName()), handle.getValueType(),
+                        ValueType.VOID };
             case PUT_STATIC_FIELD:
                 return new ValueType[] { handle.getValueType(), ValueType.VOID };
+            case INVOKE_VIRTUAL:
+            case INVOKE_INTERFACE:
+            case INVOKE_SPECIAL: {
+                ValueType[] signature = handle.signature();
+                ValueType[] result = new ValueType[signature.length + 1];
+                System.arraycopy(signature, 0, result, 1, signature.length);
+                result[0] = ValueType.object(handle.getClassName());
+                return result;
+            }
             default:
                 return handle.signature();
         }
