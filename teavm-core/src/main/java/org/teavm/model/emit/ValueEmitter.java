@@ -677,8 +677,28 @@ public class ValueEmitter {
             PrimitiveType sourceKind = ((ValueType.Primitive) this.type).getKind();
             PrimitiveType targetKind = ((ValueType.Primitive) type).getKind();
 
-            if (sourceKind == PrimitiveType.BOOLEAN || targetKind == PrimitiveType.BOOLEAN) {
-                throw new EmitException("Can't convert " + this.type + " to " + type);
+            if (sourceKind == PrimitiveType.BOOLEAN) {
+                switch (targetKind) {
+                    case BOOLEAN:
+                    case BYTE:
+                    case SHORT:
+                    case INTEGER:
+                    case CHARACTER:
+                        return pe.var(value.getVariable(), type);
+                    default:
+                        throw new EmitException("Can't convert " + this.type + " to " + type);
+                }
+            } else if (targetKind == PrimitiveType.BOOLEAN) {
+                switch (sourceKind) {
+                    case BOOLEAN:
+                    case BYTE:
+                    case SHORT:
+                    case INTEGER:
+                    case CHARACTER:
+                        return pe.var(value.getVariable(), type);
+                    default:
+                        throw new EmitException("Can't convert " + this.type + " to " + type);
+                }
             }
 
             IntegerSubtype sourceSubtype = convertToIntegerSubtype(sourceKind);

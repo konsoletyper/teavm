@@ -47,6 +47,9 @@ public class ListingBuilder {
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlockReader block = program.basicBlockAt(i);
             sb.append(prefix).append("$").append(i).append(":\n");
+            if (block == null) {
+                continue;
+            }
             for (PhiReader phi : block.readPhis()) {
                 sb.append(prefix).append("    ");
                 sb.append("@").append(phi.getReceiver().getIndex()).append(" := ");
