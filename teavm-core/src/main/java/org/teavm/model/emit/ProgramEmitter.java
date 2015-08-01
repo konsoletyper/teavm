@@ -146,6 +146,30 @@ public final class ProgramEmitter {
         return var(var, type);
     }
 
+    public ValueEmitter defaultValue(ValueType type) {
+        if (type instanceof ValueType.Primitive) {
+            switch (((ValueType.Primitive) type).getKind()) {
+                case BOOLEAN:
+                    return constant(0).cast(boolean.class);
+                case BYTE:
+                    return constant(0).cast(byte.class);
+                case SHORT:
+                    return constant(0).cast(short.class);
+                case CHARACTER:
+                    return constant(0).cast(char.class);
+                case INTEGER:
+                    return constant(0);
+                case LONG:
+                    return constant(0L);
+                case FLOAT:
+                    return constant(0F);
+                case DOUBLE:
+                    return constant(0.0);
+            }
+        }
+        return constantNull(type);
+    }
+
     public ValueEmitter getField(FieldReference field, ValueType type) {
         FieldReader resolvedField = classSource.resolve(field);
         if (resolvedField != null) {

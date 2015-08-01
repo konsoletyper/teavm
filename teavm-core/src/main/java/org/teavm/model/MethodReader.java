@@ -30,6 +30,10 @@ public interface MethodReader extends MemberReader {
 
     ValueType[] getParameterTypes();
 
+    AnnotationContainerReader parameterAnnotation(int index);
+
+    AnnotationContainerReader[] getParameterAnnotations();
+
     MethodDescriptor getDescriptor();
 
     MethodReference getReference();

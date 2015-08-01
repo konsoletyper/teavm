@@ -55,6 +55,9 @@ public final class ModelUtils {
         if (method.getAnnotationDefault() != null) {
             copy.setAnnotationDefault(copyAnnotationValue(method.getAnnotationDefault()));
         }
+        for (int i = 0; i < method.parameterCount(); ++i) {
+            copyAnnotations(method.parameterAnnotation(i), copy.parameterAnnotation(i));
+        }
         return copy;
     }
 

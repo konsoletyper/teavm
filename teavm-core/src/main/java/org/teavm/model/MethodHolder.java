@@ -24,10 +24,15 @@ public class MethodHolder extends MemberHolder implements MethodReader {
     private ClassHolder owner;
     private Program program;
     private AnnotationValue annotationDefault;
+    private AnnotationContainer[] parameterAnnotations;
 
     public MethodHolder(MethodDescriptor descriptor) {
         super(descriptor.getName());
         this.descriptor = descriptor;
+        parameterAnnotations = new AnnotationContainer[descriptor.parameterCount()];
+        for (int i = 0; i < parameterAnnotations.length; ++i) {
+            parameterAnnotations[i] = new AnnotationContainer();
+        }
     }
 
     public MethodHolder(String name, ValueType... signature) {
@@ -57,6 +62,16 @@ public class MethodHolder extends MemberHolder implements MethodReader {
     @Override
     public ValueType[] getParameterTypes() {
         return descriptor.getParameterTypes();
+    }
+
+    @Override
+    public AnnotationContainer parameterAnnotation(int index) {
+        return parameterAnnotations[index];
+    }
+
+    @Override
+    public AnnotationContainer[] getParameterAnnotations() {
+        return parameterAnnotations.clone();
     }
 
     @Override

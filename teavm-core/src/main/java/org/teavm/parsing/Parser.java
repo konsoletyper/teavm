@@ -57,6 +57,11 @@ public final class Parser {
         if (node.annotationDefault != null) {
             method.setAnnotationDefault(parseAnnotationValue(node.annotationDefault));
         }
+        for (int i = 0; i < method.parameterCount(); ++i) {
+            parseAnnotations(method.parameterAnnotation(i),
+                    node.visibleParameterAnnotations != null ? node.visibleParameterAnnotations[i] : null,
+                    node.invisibleParameterAnnotations != null ? node.invisibleParameterAnnotations[i] : null);
+        }
         return method;
     }
 
