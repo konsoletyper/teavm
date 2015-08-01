@@ -220,7 +220,8 @@ public class AnnotationDependencyListener extends AbstractDependencyListener {
             if (value == null) {
                 value = methodDecl.getAnnotationDefault();
             }
-            params.add(generateAnnotationValue(agent, pe, methodDecl.getResultType(), value));
+            params.add(generateAnnotationValue(agent, pe, methodDecl.getResultType(), value)
+                    .cast(methodDecl.getResultType()));
         }
 
         return pe.construct(className, params.toArray(new ValueEmitter[params.size()]));
