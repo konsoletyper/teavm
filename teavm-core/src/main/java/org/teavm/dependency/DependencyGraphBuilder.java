@@ -337,7 +337,7 @@ class DependencyGraphBuilder {
             }
 
             ClassReaderSource classSource = checker.getClassSource();
-            if (classSource.isSuperType(filterClass.getName(), className).orElse(false)) {
+            if (!classSource.isSuperType(filterClass.getName(), className).orElse(false)) {
                 return;
             }
             MethodReference methodRef = new MethodReference(className, methodDesc);
