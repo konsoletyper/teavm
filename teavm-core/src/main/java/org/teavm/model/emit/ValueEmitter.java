@@ -707,7 +707,7 @@ public class ValueEmitter {
                 value = castToInteger(sourceSubtype);
             }
             NumericOperandType sourceNumeric = convertToNumeric(sourceKind);
-            NumericOperandType targetNumeric = convertToNumeric(sourceKind);
+            NumericOperandType targetNumeric = convertToNumeric(targetKind);
 
             CastNumberInstruction insn = new CastNumberInstruction(sourceNumeric, targetNumeric);
             insn.setValue(value.getVariable());
