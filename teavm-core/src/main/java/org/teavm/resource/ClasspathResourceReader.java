@@ -35,7 +35,18 @@ public class ClasspathResourceReader implements ResourceReader {
 
     @Override
     public boolean hasResource(String name) {
-        return classLoader.getResource(name) != null;
+        if (classLoader.getResource(name) == null) {
+            return false;
+        }
+        try (InputStream input = classLoader.getResourceAsStream(name)) {
+            if (input == null) {
+                return false;
+            }
+            input.read();
+        } catch (IOException e) {
+            return false;
+        }
+        return true;
     }
 
     @Override
