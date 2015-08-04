@@ -34,10 +34,8 @@ public class JCLHacks implements ClassHolderTransformer {
     private void installThreadMethods(ClassHolder cls) {
         cls.addMethod(createMethodThrowingSecurityException(new MethodDescriptor("setName", String.class, void.class),
                 false));
-        cls.addMethod(createMethodThrowingSecurityException(new MethodDescriptor("start", void.class), false));
         cls.addMethod(createMethodThrowingSecurityException(new MethodDescriptor("setDaemon",
                 boolean.class, void.class), false));
-        cls.addMethod(createThreadSleep());
     }
 
     private MethodHolder createMethodThrowingSecurityException(MethodDescriptor desc, boolean staticMethod) {
@@ -69,20 +67,6 @@ public class JCLHacks implements ClassHolderTransformer {
         }
         method.setLevel(AccessLevel.PUBLIC);
         method.setProgram(program);
-        return method;
-    }
-
-    private MethodHolder createThreadSleep() {
-        MethodHolder method = new MethodHolder("sleep", ValueType.LONG, ValueType.VOID);
-        Program program = new Program();
-        program.createVariable();
-        program.createVariable();
-        BasicBlock block = program.createBasicBlock();
-        ExitInstruction exit = new ExitInstruction();
-        block.getInstructions().add(exit);
-        method.setProgram(program);
-        method.setLevel(AccessLevel.PUBLIC);
-        method.getModifiers().add(ElementModifier.STATIC);
         return method;
     }
 }
