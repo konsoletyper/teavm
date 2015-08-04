@@ -2,7 +2,7 @@
 <feature
       id="teavm-eclipse-feature"
       label="TeaVM Eclipse support"
-      version="0.3.1"
+      version="0.3.2"
       provider-name="Alexey Andreev &lt;konsoletyper@gmail.com&gt;">
 
   <description url="http://www.example.com/description">
