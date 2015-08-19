@@ -729,7 +729,7 @@ public class TBigInteger extends Number implements Comparable<TBigInteger>, Seri
         }
         // (sign != 0) implies that exists some non zero digit
         int i = getFirstNonzeroDigit();
-        return i << 5 + Integer.numberOfTrailingZeros(digits[i]);
+        return (i << 5) + Integer.numberOfTrailingZeros(digits[i]);
     }
 
     /**
