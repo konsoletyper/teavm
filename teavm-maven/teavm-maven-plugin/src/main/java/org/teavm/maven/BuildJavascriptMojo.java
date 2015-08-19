@@ -40,12 +40,9 @@ import org.teavm.tooling.*;
  *
  * @author Alexey Andreev
  */
-@Mojo(name = "build-javascript", requiresDependencyResolution = ResolutionScope.COMPILE,
-        requiresDependencyCollection = ResolutionScope.COMPILE)
+@Mojo(name = "build-javascript", requiresDependencyResolution = ResolutionScope.RUNTIME,
+        requiresDependencyCollection = ResolutionScope.RUNTIME)
 public class BuildJavascriptMojo extends AbstractMojo {
-    private static Set<String> compileScopes = new HashSet<>(Arrays.asList(
-            Artifact.SCOPE_COMPILE, Artifact.SCOPE_PROVIDED, Artifact.SCOPE_SYSTEM));
-
     @Component
     private MavenProject project;
 
@@ -66,6 +63,9 @@ public class BuildJavascriptMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${project.build.outputDirectory}")
     private File classFiles;
+
+    @Parameter
+    private List<String> compileScopes;
 
     @Parameter
     private String targetFileName = "classes.js";
@@ -305,8 +305,15 @@ public class BuildJavascriptMojo extends AbstractMojo {
             log.info("Preparing classpath for JavaScript generation");
             List<URL> urls = new ArrayList<>();
             StringBuilder classpath = new StringBuilder();
+            Set<String> scopes;
+            if (compileScopes == null) {
+                scopes = new HashSet<>(Arrays.asList(
+                    Artifact.SCOPE_COMPILE, Artifact.SCOPE_PROVIDED, Artifact.SCOPE_SYSTEM));
+            } else {
+                scopes = new HashSet<>(compileScopes);
+            }
             for (Artifact artifact : project.getArtifacts()) {
-                if (!compileScopes.contains(artifact.getScope())) {
+                if (!scopes.contains(artifact.getScope())) {
                     continue;
                 }
                 File file = artifact.getFile();
