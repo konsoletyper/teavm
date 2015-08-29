@@ -372,10 +372,12 @@ JUnitClient.run = function() {
         var thread = $rt_nativeThread();
         var instance;
         var ptr = 0;
+        var retry = 0;
         var message;
         if (thread.isResuming()) {
             ptr = thread.pop();
             instance = thread.pop();
+            retry = thread.pop();
         }
         loop: while (true) { switch (ptr) {
         case 0:
@@ -392,6 +394,7 @@ JUnitClient.run = function() {
             if (thread.isSuspending()) {
                 thread.push(instance);
                 thread.push(ptr);
+                thread.push(retry);
                 return;
             }
             ptr = 2;
@@ -399,13 +402,25 @@ JUnitClient.run = function() {
             try {
                 runTest(instance);
             } catch (e) {
-                message = {};
-                JUnitClient.makeErrorMessage(message, e);
-                break loop;
+                if (
+                    e.$javaException &&
+                    "java.lang.InterruptedException" === e.$javaException.constructor.$meta.name &&
+                    retry++ < 30
+                ) {
+                    thread.suspend(null);
+                    window.setTimeout(function() {
+                        thread.resume();
+                    }, 100);
+                } else {
+                    message = {};
+                    JUnitClient.makeErrorMessage(message, e);
+                    break loop;
+                }
             }
             if (thread.isSuspending()) {
                 thread.push(instance);
                 thread.push(ptr);
+                thread.push(retry);
                 return;
             }
             message = {};
