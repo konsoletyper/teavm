@@ -150,6 +150,14 @@ public final class KnockoutFXTest extends KnockoutTCK implements Transfer {
                     break;
                 }
                 String value = data.parameters[i];
+                if (value.startsWith("http.header.")) {
+                    String header = value.substring(12);
+                    int line = call.getHeaders().indexOf(header);
+                    int end = call.getHeaders().indexOf("\n", line);
+                    if (line >= 0 && end > line) {
+                        value = call.getHeaders().substring(line + header.length() + 1, end).trim();
+                    }
+                }
                 if (value.equals("http.method")) {
                     value = call.getMethod();
                 }
