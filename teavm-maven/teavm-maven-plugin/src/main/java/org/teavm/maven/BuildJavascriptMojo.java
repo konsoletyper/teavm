@@ -40,8 +40,8 @@ import org.teavm.tooling.*;
  *
  * @author Alexey Andreev
  */
-@Mojo(name = "build-javascript", requiresDependencyResolution = ResolutionScope.RUNTIME,
-        requiresDependencyCollection = ResolutionScope.RUNTIME)
+@Mojo(name = "build-javascript", requiresDependencyResolution = ResolutionScope.COMPILE_PLUS_RUNTIME,
+        requiresDependencyCollection = ResolutionScope.COMPILE_PLUS_RUNTIME)
 public class BuildJavascriptMojo extends AbstractMojo {
     @Component
     private MavenProject project;
