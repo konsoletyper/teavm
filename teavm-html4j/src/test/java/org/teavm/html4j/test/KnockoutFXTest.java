@@ -41,7 +41,7 @@ public final class KnockoutFXTest extends KnockoutTCK implements Transfer {
     private static Class<?> browserClass;
     private static Fn.Presenter browserContext;
     private KO4J ko4j = new KO4J();
-    private Map<String, String> urlMap = new HashMap<>();
+    private final Map<String, Request> urlMap = new HashMap<>();
 
     public KnockoutFXTest() {
     }
@@ -112,7 +112,7 @@ public final class KnockoutFXTest extends KnockoutTCK implements Transfer {
     public URI prepareURL(String content, String mimeType, String[] parameters) {
         try {
             String url = "http://localhost/dynamic/" + urlMap.size();
-            urlMap.put(url, content);
+            urlMap.put(url, new Request(content, mimeType, parameters));
             return new URI(url);
         } catch (URISyntaxException ex) {
             throw new IllegalStateException(ex);
@@ -140,15 +140,47 @@ public final class KnockoutFXTest extends KnockoutTCK implements Transfer {
             throw new IllegalArgumentException("This mock does not support JSONP calls");
         }
         String url = call.composeURL(null);
-        String data = urlMap.get(url);
+        Request data = urlMap.get(url);
         if (data != null) {
+            String content = data.content;
+            for (int i = 0;; i++) {
+                String find = "$" + i;
+                int at = content.indexOf(find);
+                if (at == -1) {
+                    break;
+                }
+                String value = data.parameters[i];
+                if (value.equals("http.method")) {
+                    value = call.getMethod();
+                }
+                if (value.equals("http.requestBody")) {
+                    value = call.getMessage();
+                }
+                content = content.substring(0, at) + value + content.substring(at + find.length());
+            }
             try {
-                call.notifySuccess(toJSON(new ByteArrayInputStream(data.getBytes())));
+                if (data.mimeType.equals("text/plain")) {
+                    call.notifySuccess(content);
+                } else {
+                    call.notifySuccess(toJSON(new ByteArrayInputStream(content.getBytes())));
+                }
             } catch (IOException e) {
                 call.notifyError(e);
             }
         } else {
             call.notifyError(new IllegalStateException());
+        }
+    }
+
+    private static final class Request {
+        final String content;
+        final String mimeType;
+        final String[] parameters;
+
+        public Request(String content, String mimeType, String[] parameters) {
+            this.content = content;
+            this.mimeType = mimeType;
+            this.parameters = parameters;
         }
     }
 }
