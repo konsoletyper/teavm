@@ -19,10 +19,17 @@ package org.teavm.jso;
  *
  * @author Alexey Andreev
  */
-public interface JSByteArrayReader extends JSObject {
-    @JSProperty
-    int getLength();
+public abstract class JSBoolean implements JSObject {
+    private JSBoolean() {
+    }
 
-    @JSIndexer
-    byte get(int index);
+    public final boolean booleanValue() {
+        return booleanValue(this);
+    }
+
+    @JSExpression(params = "value", expr = "value")
+    private static native boolean booleanValue(JSBoolean value);
+
+    @JSExpression(params = "value", expr = "value")
+    public static native JSBoolean valueOf(boolean value);
 }

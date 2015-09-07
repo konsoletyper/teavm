@@ -19,9 +19,8 @@ import org.teavm.dom.ajax.XMLHttpRequest;
 import org.teavm.dom.events.EventTarget;
 import org.teavm.dom.html.HTMLDocument;
 import org.teavm.dom.json.JSON;
-import org.teavm.dom.typedarrays.*;
+import org.teavm.dom.typedarrays.TypedArrayFactory;
 import org.teavm.jso.JSConstructor;
-import org.teavm.jso.JSGlobal;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
@@ -29,7 +28,7 @@ import org.teavm.jso.JSProperty;
  *
  * @author Alexey Andreev
  */
-public interface Window extends JSGlobal, EventTarget, StorageProvider, TypedArrayFactory {
+public interface Window extends JSObject, EventTarget, StorageProvider, TypedArrayFactory {
     @JSProperty
     HTMLDocument getDocument();
 

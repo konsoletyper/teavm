@@ -49,34 +49,14 @@ public final class JS {
         throw new AssertionError("Unexpected type");
     }
 
-    public static <T extends JSObject> JSArray<T> createArray(int size) {
-        return ((JSGlobal) JS.getGlobal()).newArray(size);
-    }
-
-    public static JSIntArray createIntArray(int size) {
-        return ((JSGlobal) JS.getGlobal()).newIntArray(size);
-    }
-
-    public static JSStringArray createStringArray(int size) {
-        return ((JSGlobal) JS.getGlobal()).newStringArray(size);
-    }
-
-    public static JSBooleanArray createBooleanArray(int size) {
-        return ((JSGlobal) JS.getGlobal()).newBooleanArray(size);
-    }
-
-    public static JSDoubleArray createDoubleArray(int size) {
-        return ((JSGlobal) JS.getGlobal()).newDoubleArray(size);
-    }
-
-    @InjectedBy(JSNativeGenerator.class)
-    public static native JSObject getTypeName(JSObject obj);
+    @JSExpression(params = "obj", expr = "typeof(obj)")
+    private static native JSObject getTypeName(JSObject obj);
 
     /**
      * Gets global JavaScript object, that is similar to the <code>window</code> object in the browser.
      * @return global object.
      */
-    @InjectedBy(JSNativeGenerator.class)
+    @JSExpression(params = "obj", expr = "window")
     public static native JSObject getGlobal();
 
     @InjectedBy(JSNativeGenerator.class)
@@ -86,28 +66,10 @@ public final class JS {
     public static native JSObject wrap(char c);
 
     @InjectedBy(JSNativeGenerator.class)
-    public static native JSObject wrap(int num);
-
-    @InjectedBy(JSNativeGenerator.class)
-    public static native JSObject wrap(float num);
-
-    @InjectedBy(JSNativeGenerator.class)
-    public static native JSObject wrap(double num);
-
-    @InjectedBy(JSNativeGenerator.class)
-    public static native JSObject wrap(boolean num);
-
-    @InjectedBy(JSNativeGenerator.class)
-    public static native JSObject wrap(byte num);
-
-    @InjectedBy(JSNativeGenerator.class)
-    public static native JSObject wrap(short num);
-
-    @InjectedBy(JSNativeGenerator.class)
     public static native JSObject marshall(Object obj);
 
     public static <T extends JSObject> JSArray<T> wrap(T[] array) {
-        JSArray<T> result = createArray(array.length);
+        JSArray<T> result = JSArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, array[i]);
         }
@@ -115,7 +77,7 @@ public final class JS {
     }
 
     public static <T extends JSObject> JSArray<JSArray<T>> wrap(T[][] array) {
-        JSArray<JSArray<T>> result = createArray(array.length);
+        JSArray<JSArray<T>> result = JSArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, wrap(array[i]));
         }
@@ -123,71 +85,71 @@ public final class JS {
     }
 
     public static <T extends JSObject> JSArray<JSArray<JSArray<T>>> wrap(T[][][] array) {
-        JSArray<JSArray<JSArray<T>>> result = createArray(array.length);
+        JSArray<JSArray<JSArray<T>>> result = JSArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, wrap(array[i]));
         }
         return result;
     }
 
-    public static JSBooleanArray wrap(boolean[] array) {
-        JSBooleanArray result = createBooleanArray(array.length);
+    public static JSArray<JSBoolean> wrap(boolean[] array) {
+        JSArray<JSBoolean> result = JSArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
-            result.set(i, array[i]);
+            result.set(i, JSBoolean.valueOf(array[i]));
         }
         return result;
     }
 
-    public static JSArray<JSBooleanArray> wrap(boolean[][] array) {
-        JSArray<JSBooleanArray> result = createArray(array.length);
+    public static JSArray<JSArray<JSBoolean>> wrap(boolean[][] array) {
+        JSArray<JSArray<JSBoolean>> result = JSArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, wrap(array[i]));
         }
         return result;
     }
 
-    public static JSArray<JSArray<JSBooleanArray>> wrap(boolean[][][] array) {
-        JSArray<JSArray<JSBooleanArray>> result = createArray(array.length);
+    public static JSArray<JSArray<JSArray<JSBoolean>>> wrap(boolean[][][] array) {
+        JSArray<JSArray<JSArray<JSBoolean>>> result = JSArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, wrap(array[i]));
         }
         return result;
     }
 
-    public static JSIntArray wrap(byte[] array) {
-        JSIntArray result = createIntArray(array.length);
+    public static JSArray<JSNumber> wrap(byte[] array) {
+        JSArray<JSNumber> result = JSArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
-            result.set(i, array[i]);
+            result.set(i, JSNumber.valueOf(array[i]));
         }
         return result;
     }
 
-    public static JSArray<JSIntArray> wrap(byte[][] array) {
-        JSArray<JSIntArray> result = createArray(array.length);
+    public static JSArray<JSArray<JSNumber>> wrap(byte[][] array) {
+        JSArray<JSArray<JSNumber>> result = JSArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, wrap(array[i]));
         }
         return result;
     }
 
-    public static JSArray<JSArray<JSIntArray>> wrap(byte[][][] array) {
-        JSArray<JSArray<JSIntArray>> result = createArray(array.length);
+    public static JSArray<JSArray<JSArray<JSNumber>>> wrap(byte[][][] array) {
+        JSArray<JSArray<JSArray<JSNumber>>> result = JSArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, wrap(array[i]));
         }
         return result;
     }
 
-    public static JSIntArray wrap(short[] array) {
-        JSIntArray result = createIntArray(array.length);
+    public static JSArray<JSNumber> wrap(short[] array) {
+        JSArray<JSNumber> result = JSArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
-            result.set(i, array[i]);
+            result.set(i, JSNumber.valueOf(array[i]));
         }
         return result;
     }
 
     public static JSArray<JSIntArray> wrap(short[][] array) {
-        JSArray<JSIntArray> result = createArray(array.length);
+        JSArray<JSIntArray> result = JSArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, wrap(array[i]));
         }
@@ -195,7 +157,7 @@ public final class JS {
     }
 
     public static JSArray<JSArray<JSIntArray>> wrap(short[][][] array) {
-        JSArray<JSArray<JSIntArray>> result = createArray(array.length);
+        JSArray<JSArray<JSIntArray>> result = JSArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, wrap(array[i]));
         }
@@ -211,7 +173,7 @@ public final class JS {
     }
 
     public static JSArray<JSIntArray> wrap(char[][] array) {
-        JSArray<JSIntArray> result = createArray(array.length);
+        JSArray<JSIntArray> result = JSArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, wrap(array[i]));
         }
@@ -219,7 +181,7 @@ public final class JS {
     }
 
     public static JSArray<JSArray<JSIntArray>> wrap(char[][][] array) {
-        JSArray<JSArray<JSIntArray>> result = createArray(array.length);
+        JSArray<JSArray<JSIntArray>> result = JSArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, wrap(array[i]));
         }
@@ -235,7 +197,7 @@ public final class JS {
     }
 
     public static JSArray<JSIntArray> wrap(int[][] array) {
-        JSArray<JSIntArray> result = createArray(array.length);
+        JSArray<JSIntArray> result = JSArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, wrap(array[i]));
         }
@@ -243,7 +205,7 @@ public final class JS {
     }
 
     public static JSArray<JSArray<JSIntArray>> wrap(int[][][] array) {
-        JSArray<JSArray<JSIntArray>> result = createArray(array.length);
+        JSArray<JSArray<JSIntArray>> result = JSArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, wrap(array[i]));
         }
@@ -251,7 +213,7 @@ public final class JS {
     }
 
     public static JSStringArray wrap(String[] array) {
-        JSStringArray result = createStringArray(array.length);
+        JSStringArray result = JSStringArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, array[i]);
         }
@@ -259,7 +221,7 @@ public final class JS {
     }
 
     public static JSArray<JSStringArray> wrap(String[][] array) {
-        JSArray<JSStringArray> result = createArray(array.length);
+        JSArray<JSStringArray> result = JSArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, wrap(array[i]));
         }
@@ -267,7 +229,7 @@ public final class JS {
     }
 
     public static JSArray<JSArray<JSStringArray>> wrap(String[][][] array) {
-        JSArray<JSArray<JSStringArray>> result = createArray(array.length);
+        JSArray<JSArray<JSStringArray>> result = JSArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, wrap(array[i]));
         }
@@ -283,7 +245,7 @@ public final class JS {
     }
 
     public static JSArray<JSDoubleArray> wrap(float[][] array) {
-        JSArray<JSDoubleArray> result = createArray(array.length);
+        JSArray<JSDoubleArray> result = JSArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, wrap(array[i]));
         }
@@ -291,7 +253,7 @@ public final class JS {
     }
 
     public static JSArray<JSArray<JSDoubleArray>> wrap(float[][][] array) {
-        JSArray<JSArray<JSDoubleArray>> result = createArray(array.length);
+        JSArray<JSArray<JSDoubleArray>> result = JSArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, wrap(array[i]));
         }
@@ -307,7 +269,7 @@ public final class JS {
     }
 
     public static JSArray<JSDoubleArray> wrap(double[][] array) {
-        JSArray<JSDoubleArray> result = createArray(array.length);
+        JSArray<JSDoubleArray> result = JSArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, wrap(array[i]));
         }
@@ -315,32 +277,12 @@ public final class JS {
     }
 
     public static JSArray<JSArray<JSDoubleArray>> wrap(double[][][] array) {
-        JSArray<JSArray<JSDoubleArray>> result = createArray(array.length);
+        JSArray<JSArray<JSDoubleArray>> result = JSArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, wrap(array[i]));
         }
         return result;
     }
-
-    @InjectedBy(JSNativeGenerator.class)
-    public static native boolean unwrapBoolean(JSObject obj);
-
-    public static byte unwrapByte(JSObject obj) {
-        return (byte) unwrapInt(obj);
-    }
-
-    public static short unwrapShort(JSObject obj) {
-        return (short) unwrapInt(obj);
-    }
-
-    @InjectedBy(JSNativeGenerator.class)
-    public static native int unwrapInt(JSObject obj);
-
-    @InjectedBy(JSNativeGenerator.class)
-    public static native float unwrapFloat(JSObject obj);
-
-    @InjectedBy(JSNativeGenerator.class)
-    public static native double unwrapDouble(JSObject obj);
 
     @InjectedBy(JSNativeGenerator.class)
     @PluggableDependency(JSNativeGenerator.class)
@@ -377,101 +319,101 @@ public final class JS {
         return result;
     }
 
-    public static String[] unwrapStringArray(JSStringArray array) {
-        String[] result = new String[array.getLength()];
-        for (int i = 0; i < result.length; ++i) {
-            result[i] = array.get(i);
-        }
-        return result;
-    }
-
-    public static String[][] unwrapStringArray2(JSArray<JSStringArray> array) {
-        String[][] result = new String[array.getLength()][];
-        for (int i = 0; i < result.length; ++i) {
-            result[i] = unwrapStringArray(array.get(i));
-        }
-        return result;
-    }
-
-    public static String[][][] unwrapStringArray3(JSArray<JSArray<JSStringArray>> array) {
-        String[][][] result = new String[array.getLength()][][];
-        for (int i = 0; i < result.length; ++i) {
-            result[i] = unwrapStringArray2(array.get(i));
-        }
-        return result;
-    }
-
-    @InjectedBy(JSNativeGenerator.class)
+    @JSExpression(params = "obj", expr = "typeof(obj) === 'undefined'")
     public static native boolean isUndefined(JSObject obj);
 
+    @JSExpression(params = { "instance", "method" }, expr = "instance[method]()")
     @InjectedBy(JSNativeGenerator.class)
     @PluggableDependency(JSNativeGenerator.class)
     public static native JSObject invoke(JSObject instance, JSObject method);
 
+    @JSExpression(params = { "instance", "method", "a" }, expr = "instance[method](a)")
     @InjectedBy(JSNativeGenerator.class)
     @PluggableDependency(JSNativeGenerator.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a);
 
+    @JSExpression(params = { "instance", "method", "a", "b" }, expr = "instance[method](a, b)")
     @InjectedBy(JSNativeGenerator.class)
     @PluggableDependency(JSNativeGenerator.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b);
 
+    @JSExpression(params = { "instance", "method", "a", "b", "c" }, expr = "instance[method](a, b, c)")
     @InjectedBy(JSNativeGenerator.class)
     @PluggableDependency(JSNativeGenerator.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c);
 
+    @JSExpression(params = { "instance", "method", "a", "b", "c", "d" }, expr = "instance[method](a, b, c, d)")
     @InjectedBy(JSNativeGenerator.class)
     @PluggableDependency(JSNativeGenerator.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d);
 
+    @JSExpression(params = { "instance", "method", "a", "b", "c", "d", "e" }, expr = "instance[method](a, b, c, d, e)")
     @InjectedBy(JSNativeGenerator.class)
     @PluggableDependency(JSNativeGenerator.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e);
 
+    @JSExpression(params = { "instance", "method", "a", "b", "c", "d", "e", "f" },
+            expr = "instance[method](a, b, c, d, e, f)")
     @InjectedBy(JSNativeGenerator.class)
     @PluggableDependency(JSNativeGenerator.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e, JSObject f);
 
+    @JSExpression(params = { "instance", "method", "a", "b", "c", "d", "e", "f", "g" },
+            expr = "instance[method](a, b, c, d, e, f, g)")
     @InjectedBy(JSNativeGenerator.class)
     @PluggableDependency(JSNativeGenerator.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e, JSObject f, JSObject g);
 
+    @JSExpression(params = { "instance", "method", "a", "b", "c", "d", "e", "f", "g", "h" },
+            expr = "instance[method](a, b, c, d, e, f, g, h)")
     @InjectedBy(JSNativeGenerator.class)
     @PluggableDependency(JSNativeGenerator.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e, JSObject f, JSObject g, JSObject h);
 
+    @JSExpression(params = { "instance", "method", "a", "b", "c", "d", "e", "f", "g", "h", "i" },
+            expr = "instance[method](a, b, c, d, e, f, g, h, i)")
     @InjectedBy(JSNativeGenerator.class)
     @PluggableDependency(JSNativeGenerator.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e, JSObject f, JSObject g, JSObject h, JSObject i);
 
+    @JSExpression(params = { "instance", "method", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j" },
+            expr = "instance[method](a, b, c, d, e, f, g, h, i, j)")
     @InjectedBy(JSNativeGenerator.class)
     @PluggableDependency(JSNativeGenerator.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e, JSObject f, JSObject g, JSObject h, JSObject i, JSObject j);
 
+    @JSExpression(params = { "instance", "method", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k" },
+            expr = "instance[method](a, b, c, d, e, f, g, h, i, j, k)")
     @InjectedBy(JSNativeGenerator.class)
     @PluggableDependency(JSNativeGenerator.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e, JSObject f, JSObject g, JSObject h, JSObject i, JSObject j, JSObject k);
 
+    @JSExpression(params = { "instance", "method", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l" },
+            expr = "instance[method](a, b, c, d, e, f, g, h, i, j, k, l)")
     @InjectedBy(JSNativeGenerator.class)
     @PluggableDependency(JSNativeGenerator.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e, JSObject f, JSObject g, JSObject h, JSObject i, JSObject j, JSObject k,
             JSObject l);
 
+    @JSExpression(params = { "instance", "method", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m" },
+            expr = "instance[method](a, b, c, d, e, f, g, h, i, j, k, l, m)")
     @InjectedBy(JSNativeGenerator.class)
     @PluggableDependency(JSNativeGenerator.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e, JSObject f, JSObject g, JSObject h, JSObject i, JSObject j, JSObject k,
             JSObject l, JSObject m);
 
+    @JSExpression(params = { "instance", "method" },
+            expr = "new instance[method]()")
     @InjectedBy(JSNativeGenerator.class)
     @PluggableDependency(JSNativeGenerator.class)
     public static native JSObject instantiate(JSObject instance, JSObject constructor);
@@ -529,25 +471,11 @@ public final class JS {
         };
     }
 
-    public static Iterable<String> iterate(final JSStringArrayReader array) {
-        return () -> new Iterator<String>() {
-            int index;
-            @Override public boolean hasNext() {
-                return index < array.getLength();
-            }
-            @Override public String next() {
-                return array.get(index++);
-            }
-            @Override public void remove() {
-                throw new UnsupportedOperationException();
-            }
-        };
-    }
-
-    @InjectedBy(JSNativeGenerator.class)
+    @JSExpression(params = { "instance", "index" }, expr = "instance[index]")
     public static native JSObject get(JSObject instance, JSObject index);
 
     @InjectedBy(JSNativeGenerator.class)
+    @JSExpression(params = { "instance", "index", "obj" }, expr = "instance[index] = obj")
     public static native void set(JSObject instance, JSObject index, JSObject obj);
 
     @GeneratedBy(JSNativeGenerator.class)

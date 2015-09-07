@@ -20,59 +20,68 @@ package org.teavm.jso;
  * @author Alexey Andreev
  * @param <T>
  */
-public interface JSArray<T extends JSObject> extends JSArrayReader<T> {
+public abstract class JSArray<T extends JSObject> implements JSArrayReader<T> {
+    private JSArray() {
+    }
+
     @JSIndexer
-    void set(int index, T value);
+    public abstract void set(int index, T value);
 
-    int push(T a);
+    public abstract int push(T a);
 
-    int push(T a, T b);
+    public abstract int push(T a, T b);
 
-    int push(T a, T b, T c);
+    public abstract int push(T a, T b, T c);
 
-    int push(T a, T b, T c, T d);
+    public abstract int push(T a, T b, T c, T d);
 
-    T shift();
+    public abstract T shift();
 
-    String join(String separator);
+    public abstract String join(String separator);
 
-    String join();
+    public abstract String join();
 
-    JSArray<T> concat(JSArrayReader<T> a);
+    public abstract JSArray<T> concat(JSArrayReader<T> a);
 
-    JSArray<T> concat(JSArrayReader<T> a, JSArrayReader<T> b);
+    public abstract JSArray<T> concat(JSArrayReader<T> a, JSArrayReader<T> b);
 
-    JSArray<T> concat(JSArrayReader<T> a, JSArrayReader<T> b, JSArrayReader<T> c);
+    public abstract JSArray<T> concat(JSArrayReader<T> a, JSArrayReader<T> b, JSArrayReader<T> c);
 
-    JSArray<T> concat(JSArrayReader<T> a, JSArrayReader<T> b, JSArrayReader<T> c, JSArrayReader<T> d);
+    public abstract JSArray<T> concat(JSArrayReader<T> a, JSArrayReader<T> b, JSArrayReader<T> c, JSArrayReader<T> d);
 
-    T pop();
+    public abstract T pop();
 
-    int unshift(T a);
+    public abstract int unshift(T a);
 
-    int unshift(T a, T b);
+    public abstract int unshift(T a, T b);
 
-    int unshift(T a, T b, T c);
+    public abstract int unshift(T a, T b, T c);
 
-    int unshift(T a, T b, T c, T d);
+    public abstract int unshift(T a, T b, T c, T d);
 
-    JSArray<T> slice(int start);
+    public abstract JSArray<T> slice(int start);
 
-    JSArray<T> slice(int start, int end);
+    public abstract JSArray<T> slice(int start, int end);
 
-    JSArray<T> reverse();
+    public abstract JSArray<T> reverse();
 
-    JSArray<T> sort(JSSortFunction<T> function);
+    public abstract JSArray<T> sort(JSSortFunction<T> function);
 
-    JSArray<T> sort();
+    public abstract JSArray<T> sort();
 
-    JSArray<T> splice(int start, int count);
+    public abstract JSArray<T> splice(int start, int count);
 
-    JSArray<T> splice(int start, int count, T a);
+    public abstract JSArray<T> splice(int start, int count, T a);
 
-    JSArray<T> splice(int start, int count, T a, T b);
+    public abstract JSArray<T> splice(int start, int count, T a, T b);
 
-    JSArray<T> splice(int start, int count, T a, T b, T c);
+    public abstract JSArray<T> splice(int start, int count, T a, T b, T c);
 
-    JSArray<T> splice(int start, int count, T a, T b, T c, T d);
+    public abstract JSArray<T> splice(int start, int count, T a, T b, T c, T d);
+
+    @JSExpression(params = {}, expr = "new Array()")
+    public static native <T extends JSObject> JSArray<T> create();
+
+    @JSExpression(params = "size", expr = "new Array(size)")
+    public static native <T extends JSObject> JSArray<T> create(int size);
 }

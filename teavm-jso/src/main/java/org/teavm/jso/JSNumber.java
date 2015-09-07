@@ -19,5 +19,57 @@ package org.teavm.jso;
  *
  * @author Alexey Andreev
  */
-public interface JSNumber extends JSObject {
+public abstract class JSNumber implements JSObject {
+    private JSNumber() {
+    }
+
+    public final double doubleValue() {
+        return doubleValue(this);
+    }
+
+    @JSExpression(params = "number", expr = "number")
+    private static native double doubleValue(JSNumber number);
+
+    public final int intValue() {
+        return intValue(this);
+    }
+
+    @JSExpression(params = "number", expr = "number")
+    private static native int intValue(JSNumber number);
+
+    public final byte byteValue() {
+        return byteValue(this);
+    }
+
+    @JSExpression(params = "number", expr = "number")
+    private static native byte byteValue(JSNumber number);
+
+    public final short shortValue() {
+        return shortValue(this);
+    }
+
+    @JSExpression(params = "number", expr = "number")
+    private static native short shortValue(JSNumber number);
+
+    public final float floatValue() {
+        return floatValue(this);
+    }
+
+    @JSExpression(params = "number", expr = "number")
+    private static native float floatValue(JSNumber number);
+
+    @JSExpression(params = "value", expr = "value")
+    public static native JSNumber valueOf(byte value);
+
+    @JSExpression(params = "value", expr = "value")
+    public static native JSNumber valueOf(short value);
+
+    @JSExpression(params = "value", expr = "value")
+    public static native JSNumber valueOf(int value);
+
+    @JSExpression(params = "value", expr = "value")
+    public static native JSNumber valueOf(float value);
+
+    @JSExpression(params = "value", expr = "value")
+    public static native JSNumber valueOf(double value);
 }
