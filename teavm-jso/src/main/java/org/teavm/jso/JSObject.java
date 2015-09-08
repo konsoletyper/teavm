@@ -20,6 +20,4 @@ package org.teavm.jso;
  * @author Alexey Andreev
  */
 public interface JSObject {
-    @Override
-    String toString();
 }

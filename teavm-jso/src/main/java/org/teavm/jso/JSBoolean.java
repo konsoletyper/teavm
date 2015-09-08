@@ -27,9 +27,9 @@ public abstract class JSBoolean implements JSObject {
         return booleanValue(this);
     }
 
-    @JSExpression(params = "value", expr = "value")
+    @JSBody(params = "value", script = "return value;")
     private static native boolean booleanValue(JSBoolean value);
 
-    @JSExpression(params = "value", expr = "value")
+    @JSBody(params = "value", script = "return value;")
     public static native JSBoolean valueOf(boolean value);
 }

@@ -79,9 +79,9 @@ public abstract class JSArray<T extends JSObject> implements JSArrayReader<T> {
 
     public abstract JSArray<T> splice(int start, int count, T a, T b, T c, T d);
 
-    @JSExpression(params = {}, expr = "new Array()")
+    @JSBody(params = {}, script = "return new Array();")
     public static native <T extends JSObject> JSArray<T> create();
 
-    @JSExpression(params = "size", expr = "new Array(size)")
+    @JSBody(params = "size", script = "return new Array(size);")
     public static native <T extends JSObject> JSArray<T> create(int size);
 }

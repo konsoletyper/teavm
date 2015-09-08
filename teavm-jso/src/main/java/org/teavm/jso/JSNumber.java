@@ -27,49 +27,59 @@ public abstract class JSNumber implements JSObject {
         return doubleValue(this);
     }
 
-    @JSExpression(params = "number", expr = "number")
+    @JSBody(params = "number", script = "return number;")
     private static native double doubleValue(JSNumber number);
 
     public final int intValue() {
         return intValue(this);
     }
 
-    @JSExpression(params = "number", expr = "number")
+    @JSBody(params = "number", script = "return number;")
     private static native int intValue(JSNumber number);
+
+    public final char charValue() {
+        return charValue(this);
+    }
+
+    @JSBody(params = "number", script = "return number;")
+    private static native char charValue(JSNumber number);
 
     public final byte byteValue() {
         return byteValue(this);
     }
 
-    @JSExpression(params = "number", expr = "number")
+    @JSBody(params = "number", script = "return number;")
     private static native byte byteValue(JSNumber number);
 
     public final short shortValue() {
         return shortValue(this);
     }
 
-    @JSExpression(params = "number", expr = "number")
+    @JSBody(params = "number", script = "return number;")
     private static native short shortValue(JSNumber number);
 
     public final float floatValue() {
         return floatValue(this);
     }
 
-    @JSExpression(params = "number", expr = "number")
+    @JSBody(params = "number", script = "return number;")
     private static native float floatValue(JSNumber number);
 
-    @JSExpression(params = "value", expr = "value")
+    @JSBody(params = "value", script = "return value;")
     public static native JSNumber valueOf(byte value);
 
-    @JSExpression(params = "value", expr = "value")
+    @JSBody(params = "value", script = "return value;")
     public static native JSNumber valueOf(short value);
 
-    @JSExpression(params = "value", expr = "value")
+    @JSBody(params = "value", script = "return value;")
     public static native JSNumber valueOf(int value);
 
-    @JSExpression(params = "value", expr = "value")
+    @JSBody(params = "value", script = "return value;")
+    public static native JSNumber valueOf(char value);
+
+    @JSBody(params = "value", script = "return value;")
     public static native JSNumber valueOf(float value);
 
-    @JSExpression(params = "value", expr = "value")
+    @JSBody(params = "value", script = "return value;")
     public static native JSNumber valueOf(double value);
 }
