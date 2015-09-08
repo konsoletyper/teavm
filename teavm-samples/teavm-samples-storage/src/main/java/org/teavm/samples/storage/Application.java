@@ -15,13 +15,13 @@
  */
 package org.teavm.samples.storage;
 
-import org.teavm.dom.browser.Storage;
-import org.teavm.dom.browser.Window;
-import org.teavm.dom.html.HTMLButtonElement;
-import org.teavm.dom.html.HTMLDocument;
-import org.teavm.dom.html.HTMLElement;
-import org.teavm.dom.html.HTMLInputElement;
-import org.teavm.jso.JS;
+import org.teavm.jso.browser.Storage;
+import org.teavm.jso.browser.Window;
+import org.teavm.jso.dom.html.HTMLButtonElement;
+import org.teavm.jso.dom.html.HTMLDocument;
+import org.teavm.jso.dom.html.HTMLElement;
+import org.teavm.jso.dom.html.HTMLInputElement;
+import org.teavm.jso.plugin.JS;
 
 /**
 *

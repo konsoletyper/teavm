@@ -19,7 +19,7 @@ import java.lang.annotation.Annotation;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.javascript.spi.GeneratedBy;
 import org.teavm.javascript.spi.InjectedBy;
-import org.teavm.jso.JS;
+import org.teavm.jso.plugin.JS;
 import org.teavm.platform.metadata.ClassResource;
 import org.teavm.platform.metadata.StaticFieldResource;
 import org.teavm.platform.plugin.PlatformGenerator;

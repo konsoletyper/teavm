@@ -15,14 +15,14 @@
  */
 package org.teavm.samples.video;
 
-import org.teavm.dom.browser.Window;
-import org.teavm.dom.html.HTMLBodyElement;
-import org.teavm.dom.html.HTMLButtonElement;
-import org.teavm.dom.html.HTMLDocument;
-import org.teavm.dom.html.HTMLElement;
-import org.teavm.dom.html.HTMLSourceElement;
-import org.teavm.dom.html.HTMLVideoElement;
-import org.teavm.jso.JS;
+import org.teavm.jso.browser.Window;
+import org.teavm.jso.dom.html.HTMLBodyElement;
+import org.teavm.jso.dom.html.HTMLButtonElement;
+import org.teavm.jso.dom.html.HTMLDocument;
+import org.teavm.jso.dom.html.HTMLElement;
+import org.teavm.jso.dom.html.HTMLSourceElement;
+import org.teavm.jso.dom.html.HTMLVideoElement;
+import org.teavm.jso.plugin.JS;
 
 public final class Player {
 

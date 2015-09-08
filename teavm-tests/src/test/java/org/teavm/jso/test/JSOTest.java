@@ -17,9 +17,9 @@ package org.teavm.jso.test;
 
 import static org.junit.Assert.*;
 import org.junit.Test;
-import org.teavm.jso.JS;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
+import org.teavm.jso.plugin.JS;
 
 /**
  *

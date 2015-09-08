@@ -22,13 +22,13 @@ import org.jbox2d.collision.shapes.ShapeType;
 import org.jbox2d.common.Vec2;
 import org.jbox2d.dynamics.Body;
 import org.jbox2d.dynamics.Fixture;
-import org.teavm.dom.browser.TimerHandler;
-import org.teavm.dom.browser.Window;
-import org.teavm.dom.canvas.CanvasRenderingContext2D;
-import org.teavm.dom.html.HTMLCanvasElement;
-import org.teavm.dom.html.HTMLDocument;
-import org.teavm.dom.html.HTMLElement;
-import org.teavm.jso.JS;
+import org.teavm.jso.browser.TimerHandler;
+import org.teavm.jso.browser.Window;
+import org.teavm.jso.canvas.CanvasRenderingContext2D;
+import org.teavm.jso.dom.html.HTMLCanvasElement;
+import org.teavm.jso.dom.html.HTMLDocument;
+import org.teavm.jso.dom.html.HTMLElement;
+import org.teavm.jso.plugin.JS;
 import org.teavm.samples.benchmark.Scene;
 
 /**

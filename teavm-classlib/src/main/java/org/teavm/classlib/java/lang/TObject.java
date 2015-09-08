@@ -15,11 +15,11 @@
  */
 package org.teavm.classlib.java.lang;
 
-import org.teavm.dom.browser.TimerHandler;
 import org.teavm.javascript.spi.Async;
 import org.teavm.javascript.spi.Rename;
 import org.teavm.javascript.spi.Superclass;
 import org.teavm.javascript.spi.Sync;
+import org.teavm.jso.browser.TimerHandler;
 import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformQueue;
 import org.teavm.platform.PlatformRunnable;

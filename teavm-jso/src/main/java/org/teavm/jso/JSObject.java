@@ -20,4 +20,8 @@ package org.teavm.jso;
  * @author Alexey Andreev
  */
 public interface JSObject {
+    @SuppressWarnings("unchecked")
+    default <T extends JSObject> T cast() {
+        return (T) this;
+    }
 }

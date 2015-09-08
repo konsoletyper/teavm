@@ -18,9 +18,8 @@ package org.teavm.classlib.java.util;
 import org.teavm.classlib.java.lang.TIllegalStateException;
 import org.teavm.classlib.java.lang.TObject;
 import org.teavm.classlib.java.lang.TString;
-import org.teavm.dom.browser.TimerHandler;
-import org.teavm.dom.browser.Window;
-import org.teavm.jso.JS;
+import org.teavm.jso.browser.TimerHandler;
+import org.teavm.jso.browser.Window;
 
 /**
  *
@@ -51,19 +50,13 @@ public class TTimer extends TObject {
             throw new TIllegalStateException();
         }
         task.timer = this;
-        task.nativeTimerId = ((Window) JS.getGlobal()).setTimeout(new TimerHandler() {
-            @Override
-            public void onTimer() {
-                new Thread() {
-                    @Override
-                    public void run() {
-                        if (cancelled || task.timer == null) {
-                            return;
-                        }
-                        TTimerTask.performOnce(task);
-                    }
-                }.start();
-            }
+        task.nativeTimerId = Window.setTimeout(() -> {
+            new Thread(() -> {
+                if (cancelled || task.timer == null) {
+                    return;
+                }
+                TTimerTask.performOnce(task);
+            }).start();
         }, (int) delay);
     }
 
@@ -72,24 +65,20 @@ public class TTimer extends TObject {
             throw new TIllegalStateException();
         }
         task.timer = this;
-        task.nativeTimerId = ((Window) JS.getGlobal()).setTimeout(new TimerHandler() {
-            @Override
-            public void onTimer() {
-                final TimerHandler self = this;
-                new Thread() {
-                    @Override
-                    public void run() {
-                        if (cancelled || task.timer == null) {
-                            return;
-                        }
-                        task.nativeTimerId = ((Window) JS.getGlobal()).setTimeout(self, (int) period);
-                        TTimerTask.performOnce(task);
-                        if (!cancelled) {
-                            task.timer = TTimer.this;
-                        }
+        TimerHandler handler = new TimerHandler() {
+            @Override public void onTimer() {
+                new Thread(() -> {
+                    if (cancelled || task.timer == null) {
+                        return;
                     }
-                }.start();
+                    task.nativeTimerId = Window.setTimeout(this, (int) period);
+                    TTimerTask.performOnce(task);
+                    if (!cancelled) {
+                        task.timer = TTimer.this;
+                    }
+                }).start();
             }
-        }, (int) delay);
+        };
+        task.nativeTimerId = Window.setTimeout(handler, (int) delay);
     }
 }

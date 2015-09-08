@@ -15,9 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
-import org.teavm.dom.browser.Window;
 import org.teavm.javascript.spi.Async;
-import org.teavm.jso.JS;
 import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformRunnable;
 import org.teavm.platform.async.AsyncCallback;
@@ -27,7 +25,6 @@ import org.teavm.platform.async.AsyncCallback;
  * @author Alexey Andreev
  */
 public class TThread extends TObject implements TRunnable {
-    private static Window window = (Window) JS.getGlobal();
     private static TThread mainThread = new TThread(TString.wrap("main"));
     private static TThread currentThread = mainThread;
     private static long nextId = 1;
