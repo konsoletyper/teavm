@@ -21,6 +21,21 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
+ * <p>Marks abstract member method either as an getter indexer or setter indexer.</p>
+ *
+ * <p>Getter indexer is a method that returns value and takes exactly one parameter. In
+ * this case annotation is equivalent to this:</p>
+ *
+ * <pre>{@code
+ * @JSBody(params = "index", script = "return this[index];")
+ * }</pre>
+ *
+ * <p>Setter indexer is a method that takes two parameter and does not return any value.
+ * Ins this case annotation is equivalent to the following:</p>
+ *
+ * <pre>{@code
+ * @JSBody(params = { "index", "value" }, script = "this[index] = value;")
+ * }</pre>
  *
  * @author Alexey Andreev
  */

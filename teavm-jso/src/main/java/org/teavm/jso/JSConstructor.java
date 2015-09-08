@@ -21,6 +21,14 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
+ * <p>Marks abstract member method as a JavaScript constructor. This is equivalent to the following:</p>
+ *
+ * <pre>{@code
+ * @JSBody(params = ..., script = "return new this.constructorName(...);")
+ * }</pre>
+ *
+ * <p>where <code>constructorName</code> is method's name by default or a name, directly specified by
+ * this annotation.</p>
  *
  * @author Alexey Andreev
  */

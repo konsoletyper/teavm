@@ -22,7 +22,6 @@ import org.teavm.javascript.spi.GeneratedBy;
 import org.teavm.javascript.spi.InjectedBy;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
-import org.teavm.jso.JSType;
 import org.teavm.jso.core.JSArray;
 import org.teavm.jso.core.JSArrayReader;
 import org.teavm.jso.core.JSBoolean;
@@ -37,27 +36,6 @@ import org.teavm.jso.core.JSString;
 final class JS {
     private JS() {
     }
-
-    public static JSType getType(JSObject obj) {
-        switch (unwrapString(getTypeName(obj))) {
-            case "boolean":
-                return JSType.OBJECT;
-            case "number":
-                return JSType.NUMBER;
-            case "string":
-                return JSType.STRING;
-            case "function":
-                return JSType.FUNCTION;
-            case "object":
-                return JSType.OBJECT;
-            case "undefined":
-                return JSType.UNDEFINED;
-        }
-        throw new AssertionError("Unexpected type");
-    }
-
-    @JSBody(params = "obj", script = "return typeof(obj);")
-    private static native JSObject getTypeName(JSObject obj);
 
     /**
      * Gets global JavaScript object, that is similar to the <code>window</code> object in the browser.
