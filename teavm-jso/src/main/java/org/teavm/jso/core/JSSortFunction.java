@@ -24,6 +24,7 @@ import org.teavm.jso.JSObject;
  * @param <T>
  */
 @JSFunctor
+@FunctionalInterface
 public interface JSSortFunction<T extends JSObject> {
     int compare(T a, T b);
 }

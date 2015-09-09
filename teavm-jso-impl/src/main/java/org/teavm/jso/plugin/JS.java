@@ -17,6 +17,7 @@ package org.teavm.jso.plugin;
 
 import java.lang.reflect.Array;
 import java.util.Iterator;
+import java.util.function.Function;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.javascript.spi.GeneratedBy;
 import org.teavm.javascript.spi.InjectedBy;
@@ -28,30 +29,54 @@ import org.teavm.jso.core.JSBoolean;
 import org.teavm.jso.core.JSNumber;
 import org.teavm.jso.core.JSString;
 
-/**
- * <p>Container of static methods to manipulate over {@link JSObject}s.</p>
- *
- * @author Alexey Andreev
- */
 final class JS {
     private JS() {
     }
 
-    /**
-     * Gets global JavaScript object, that is similar to the <code>window</code> object in the browser.
-     * @return global object.
-     */
-    @JSBody(params = {}, script = "return window;")
-    public static native JSObject getGlobal();
+    @InjectedBy(JSNativeGenerator.class)
+    public static native JSObject wrap(byte value);
 
     @InjectedBy(JSNativeGenerator.class)
-    public static native JSObject wrap(String str);
+    public static native JSObject wrap(short value);
 
     @InjectedBy(JSNativeGenerator.class)
-    public static native JSObject wrap(char c);
+    public static native JSObject wrap(int value);
 
     @InjectedBy(JSNativeGenerator.class)
-    public static native JSObject marshall(Object obj);
+    public static native JSObject wrap(char value);
+
+    @InjectedBy(JSNativeGenerator.class)
+    public static native JSObject wrap(float value);
+
+    @InjectedBy(JSNativeGenerator.class)
+    public static native JSObject wrap(double value);
+
+    @InjectedBy(JSNativeGenerator.class)
+    public static native JSObject wrap(boolean value);
+
+    @InjectedBy(JSNativeGenerator.class)
+    public static native JSObject wrap(String value);
+
+    @InjectedBy(JSNativeGenerator.class)
+    public static native byte unwrapByte(JSObject value);
+
+    @InjectedBy(JSNativeGenerator.class)
+    public static native short unwrapShort(JSObject value);
+
+    @InjectedBy(JSNativeGenerator.class)
+    public static native int unwrapInt(JSObject value);
+
+    @InjectedBy(JSNativeGenerator.class)
+    public static native float unwrapFloat(JSObject value);
+
+    @InjectedBy(JSNativeGenerator.class)
+    public static native double unwrapDouble(JSObject value);
+
+    @InjectedBy(JSNativeGenerator.class)
+    public static native boolean unwrapBoolean(JSObject value);
+
+    @InjectedBy(JSNativeGenerator.class)
+    public static native String unwrapString(JSObject value);
 
     public static <T extends JSObject> JSArray<T> wrap(T[] array) {
         JSArray<T> result = JSArray.create(array.length);
@@ -61,20 +86,20 @@ final class JS {
         return result;
     }
 
-    public static <T extends JSObject> JSArray<JSArray<T>> wrap(T[][] array) {
-        JSArray<JSArray<T>> result = JSArray.create(array.length);
+    public static <T extends JSObject> Function<T[], JSArray<T>> arrayWrapper() {
+        return JS::wrap;
+    }
+
+    public static <T extends JSObject, S> JSArray<T> map(S[] array, Function<S, T> f) {
+        JSArray<T> result = JSArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
-            result.set(i, wrap(array[i]));
+            result.set(i, f.apply(array[i]));
         }
         return result;
     }
 
-    public static <T extends JSObject> JSArray<JSArray<JSArray<T>>> wrap(T[][][] array) {
-        JSArray<JSArray<JSArray<T>>> result = JSArray.create(array.length);
-        for (int i = 0; i < array.length; ++i) {
-            result.set(i, wrap(array[i]));
-        }
-        return result;
+    public static <T extends JSObject, S> Function<S[], JSArray<T>> arrayMapper(Function<S, T> f) {
+        return array -> map(array, f);
     }
 
     public static JSArray<JSBoolean> wrap(boolean[] array) {
@@ -85,20 +110,8 @@ final class JS {
         return result;
     }
 
-    public static JSArray<JSArray<JSBoolean>> wrap(boolean[][] array) {
-        JSArray<JSArray<JSBoolean>> result = JSArray.create(array.length);
-        for (int i = 0; i < array.length; ++i) {
-            result.set(i, wrap(array[i]));
-        }
-        return result;
-    }
-
-    public static JSArray<JSArray<JSArray<JSBoolean>>> wrap(boolean[][][] array) {
-        JSArray<JSArray<JSArray<JSBoolean>>> result = JSArray.create(array.length);
-        for (int i = 0; i < array.length; ++i) {
-            result.set(i, wrap(array[i]));
-        }
-        return result;
+    public static Function<boolean[], JSArray<JSBoolean>> booleanArrayWrapper() {
+        return JS::wrap;
     }
 
     public static JSArray<JSNumber> wrap(byte[] array) {
@@ -109,20 +122,8 @@ final class JS {
         return result;
     }
 
-    public static JSArray<JSArray<JSNumber>> wrap(byte[][] array) {
-        JSArray<JSArray<JSNumber>> result = JSArray.create(array.length);
-        for (int i = 0; i < array.length; ++i) {
-            result.set(i, wrap(array[i]));
-        }
-        return result;
-    }
-
-    public static JSArray<JSArray<JSArray<JSNumber>>> wrap(byte[][][] array) {
-        JSArray<JSArray<JSArray<JSNumber>>> result = JSArray.create(array.length);
-        for (int i = 0; i < array.length; ++i) {
-            result.set(i, wrap(array[i]));
-        }
-        return result;
+    public static Function<byte[], JSArray<JSNumber>> byteArrayWrapper() {
+        return JS::wrap;
     }
 
     public static JSArray<JSNumber> wrap(short[] array) {
@@ -133,20 +134,8 @@ final class JS {
         return result;
     }
 
-    public static JSArray<JSArray<JSNumber>> wrap(short[][] array) {
-        JSArray<JSArray<JSNumber>> result = JSArray.create(array.length);
-        for (int i = 0; i < array.length; ++i) {
-            result.set(i, wrap(array[i]));
-        }
-        return result;
-    }
-
-    public static JSArray<JSArray<JSArray<JSNumber>>> wrap(short[][][] array) {
-        JSArray<JSArray<JSArray<JSNumber>>> result = JSArray.create(array.length);
-        for (int i = 0; i < array.length; ++i) {
-            result.set(i, wrap(array[i]));
-        }
-        return result;
+    public static Function<short[], JSArray<JSNumber>> shortArrayWrapper() {
+        return JS::wrap;
     }
 
     public static JSArray<JSNumber> wrap(char[] array) {
@@ -157,20 +146,8 @@ final class JS {
         return result;
     }
 
-    public static JSArray<JSArray<JSNumber>> wrap(char[][] array) {
-        JSArray<JSArray<JSNumber>> result = JSArray.create(array.length);
-        for (int i = 0; i < array.length; ++i) {
-            result.set(i, wrap(array[i]));
-        }
-        return result;
-    }
-
-    public static JSArray<JSArray<JSArray<JSNumber>>> wrap(char[][][] array) {
-        JSArray<JSArray<JSArray<JSNumber>>> result = JSArray.create(array.length);
-        for (int i = 0; i < array.length; ++i) {
-            result.set(i, wrap(array[i]));
-        }
-        return result;
+    public static Function<char[], JSArray<JSNumber>> charArrayWrapper() {
+        return JS::wrap;
     }
 
     public static JSArray<JSNumber> wrap(int[] array) {
@@ -181,20 +158,8 @@ final class JS {
         return result;
     }
 
-    public static JSArray<JSArray<JSNumber>> wrap(int[][] array) {
-        JSArray<JSArray<JSNumber>> result = JSArray.create(array.length);
-        for (int i = 0; i < array.length; ++i) {
-            result.set(i, wrap(array[i]));
-        }
-        return result;
-    }
-
-    public static JSArray<JSArray<JSArray<JSNumber>>> wrap(int[][][] array) {
-        JSArray<JSArray<JSArray<JSNumber>>> result = JSArray.create(array.length);
-        for (int i = 0; i < array.length; ++i) {
-            result.set(i, wrap(array[i]));
-        }
-        return result;
+    public static Function<int[], JSArray<JSNumber>> intArrayWrapper() {
+        return JS::wrap;
     }
 
     public static JSArray<JSString> wrap(String[] array) {
@@ -205,20 +170,8 @@ final class JS {
         return result;
     }
 
-    public static JSArray<JSArray<JSString>> wrap(String[][] array) {
-        JSArray<JSArray<JSString>> result = JSArray.create(array.length);
-        for (int i = 0; i < array.length; ++i) {
-            result.set(i, wrap(array[i]));
-        }
-        return result;
-    }
-
-    public static JSArray<JSArray<JSArray<JSString>>> wrap(String[][][] array) {
-        JSArray<JSArray<JSArray<JSString>>> result = JSArray.create(array.length);
-        for (int i = 0; i < array.length; ++i) {
-            result.set(i, wrap(array[i]));
-        }
-        return result;
+    public static Function<String[], JSArray<JSString>> stringArrayWrapper() {
+        return JS::wrap;
     }
 
     public static JSArray<JSNumber> wrap(float[] array) {
@@ -229,20 +182,8 @@ final class JS {
         return result;
     }
 
-    public static JSArray<JSArray<JSNumber>> wrap(float[][] array) {
-        JSArray<JSArray<JSNumber>> result = JSArray.create(array.length);
-        for (int i = 0; i < array.length; ++i) {
-            result.set(i, wrap(array[i]));
-        }
-        return result;
-    }
-
-    public static JSArray<JSArray<JSArray<JSNumber>>> wrap(float[][][] array) {
-        JSArray<JSArray<JSArray<JSNumber>>> result = JSArray.create(array.length);
-        for (int i = 0; i < array.length; ++i) {
-            result.set(i, wrap(array[i]));
-        }
-        return result;
+    public static Function<float[], JSArray<JSNumber>> floatArrayWrapper() {
+        return JS::wrap;
     }
 
     public static JSArray<JSNumber> wrap(double[] array) {
@@ -253,30 +194,11 @@ final class JS {
         return result;
     }
 
-    public static JSArray<JSArray<JSNumber>> wrap(double[][] array) {
-        JSArray<JSArray<JSNumber>> result = JSArray.create(array.length);
-        for (int i = 0; i < array.length; ++i) {
-            result.set(i, wrap(array[i]));
-        }
-        return result;
+    public static Function<double[], JSArray<JSNumber>> doubleArrayWrapper() {
+        return JS::wrap;
     }
 
-    public static JSArray<JSArray<JSArray<JSNumber>>> wrap(double[][][] array) {
-        JSArray<JSArray<JSArray<JSNumber>>> result = JSArray.create(array.length);
-        for (int i = 0; i < array.length; ++i) {
-            result.set(i, wrap(array[i]));
-        }
-        return result;
-    }
-
-    @InjectedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
-    public static native String unwrapString(JSObject obj);
-
-    @InjectedBy(JSNativeGenerator.class)
-    public static native char unwrapCharacter(JSObject obj);
-
-    public static <T extends JSObject> T[] unwrapArray(Class<T> type, JSArray<T> array) {
+    public static <T extends JSObject> T[] unwrapArray(Class<T> type, JSArrayReader<T> array) {
         @SuppressWarnings("unchecked")
         T[] result = (T[]) Array.newInstance(type, array.getLength());
         for (int i = 0; i < result.length; ++i) {
@@ -285,27 +207,118 @@ final class JS {
         return result;
     }
 
-    public static <T extends JSObject> T[][] unwrapArray2(Class<T> type, JSArray<JSArray<T>> array) {
+    public static <T extends JSObject> Function<JSArrayReader<T>, T[]> arrayUnwrapper(Class<T> type) {
+        return array -> unwrapArray(type, array);
+    }
+
+    public static <S extends JSObject, T> T[] unmapArray(Class<T> type, JSArrayReader<S> array, Function<S, T> f) {
         @SuppressWarnings("unchecked")
-        T[][] result = (T[][]) Array.newInstance(Array.newInstance(type, 0).getClass(), array.getLength());
+        T[] result = (T[]) Array.newInstance(type, array.getLength());
         for (int i = 0; i < result.length; ++i) {
-            result[i] = unwrapArray(type, array.get(i));
+            result[i] = f.apply(array.get(i));
         }
         return result;
     }
 
-    public static <T extends JSObject> T[][][] unwrapArray3(Class<T> type, JSArray<JSArray<JSArray<T>>> array) {
-        Class<?> baseType = Array.newInstance(type, 0).getClass();
-        @SuppressWarnings("unchecked")
-        T[][][] result = (T[][][]) Array.newInstance(Array.newInstance(baseType, 0).getClass(), array.getLength());
+    public static <T, S extends JSObject> Function<JSArray<S>, T[]> arrayUnmapper(Class<T> type, Function<S, T> f) {
+        return array -> unmapArray(type, array, f);
+    }
+
+    public static boolean[] unwrapBooleanArray(JSArrayReader<JSBoolean> array) {
+        boolean[] result = new boolean[array.getLength()];
         for (int i = 0; i < result.length; ++i) {
-            result[i] = unwrapArray2(type, array.get(i));
+            result[i] = array.get(i).booleanValue();
         }
         return result;
     }
 
-    @JSBody(params = "obj", script = "return typeof(obj) === 'undefined';")
-    public static native boolean isUndefined(JSObject obj);
+    public static Function<JSArrayReader<JSBoolean>, boolean[]> booleanArrayUnwrapper() {
+        return JS::unwrapBooleanArray;
+    }
+
+    public static byte[] unwrapByteArray(JSArrayReader<JSNumber> array) {
+        byte[] result = new byte[array.getLength()];
+        for (int i = 0; i < result.length; ++i) {
+            result[i] = array.get(i).byteValue();
+        }
+        return result;
+    }
+
+    public static Function<JSArrayReader<JSNumber>, byte[]> byteArrayUnwrapper() {
+        return JS::unwrapByteArray;
+    }
+
+    public static short[] unwrapShortArray(JSArrayReader<JSNumber> array) {
+        short[] result = new short[array.getLength()];
+        for (int i = 0; i < result.length; ++i) {
+            result[i] = array.get(i).shortValue();
+        }
+        return result;
+    }
+
+    public static Function<JSArrayReader<JSNumber>, short[]> shortArrayUnwrapper() {
+        return JS::unwrapShortArray;
+    }
+
+    public static int[] unwrapIntArray(JSArrayReader<JSNumber> array) {
+        int[] result = new int[array.getLength()];
+        for (int i = 0; i < result.length; ++i) {
+            result[i] = array.get(i).intValue();
+        }
+        return result;
+    }
+
+    public static Function<JSArrayReader<JSNumber>, int[]> intArrayUnwrapper() {
+        return JS::unwrapIntArray;
+    }
+
+    public static char[] unwrapCharArray(JSArrayReader<JSNumber> array) {
+        char[] result = new char[array.getLength()];
+        for (int i = 0; i < result.length; ++i) {
+            result[i] = array.get(i).charValue();
+        }
+        return result;
+    }
+
+    public static Function<JSArrayReader<JSNumber>, char[]> charArrayUnwrapper() {
+        return JS::unwrapCharArray;
+    }
+
+    public static float[] unwrapFloatArray(JSArrayReader<JSNumber> array) {
+        float[] result = new float[array.getLength()];
+        for (int i = 0; i < result.length; ++i) {
+            result[i] = array.get(i).floatValue();
+        }
+        return result;
+    }
+
+    public static Function<JSArrayReader<JSNumber>, float[]> floatArrayUnwrapper() {
+        return JS::unwrapFloatArray;
+    }
+
+    public static double[] unwrapDoubleArray(JSArrayReader<JSNumber> array) {
+        double[] result = new double[array.getLength()];
+        for (int i = 0; i < result.length; ++i) {
+            result[i] = array.get(i).doubleValue();
+        }
+        return result;
+    }
+
+    public static Function<JSArrayReader<JSNumber>, double[]> doubleArrayUnwrapper() {
+        return JS::unwrapDoubleArray;
+    }
+
+    public static String[] unwrapStringArray(JSArrayReader<JSString> array) {
+        String[] result = new String[array.getLength()];
+        for (int i = 0; i < result.length; ++i) {
+            result[i] = array.get(i).stringValue();
+        }
+        return result;
+    }
+
+    public static Function<JSArrayReader<JSString>, String[]> stringArrayUnwrapper() {
+        return JS::unwrapStringArray;
+    }
 
     @InjectedBy(JSNativeGenerator.class)
     @PluggableDependency(JSNativeGenerator.class)
@@ -332,7 +345,6 @@ final class JS {
     @PluggableDependency(JSNativeGenerator.class)
     public static native JSObject invoke(JSObject instance, JSObject method, JSObject a, JSObject b, JSObject c,
             JSObject d, JSObject e);
-
 
     @InjectedBy(JSNativeGenerator.class)
     @PluggableDependency(JSNativeGenerator.class)

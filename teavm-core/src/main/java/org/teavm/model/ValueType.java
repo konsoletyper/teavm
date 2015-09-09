@@ -265,6 +265,10 @@ public abstract class ValueType {
 
     public abstract boolean isObject(String cls);
 
+    public boolean isObject(Class<?> cls) {
+        return isObject(cls.getName());
+    }
+
     private static ValueType parseImpl(String string) {
         switch (string.charAt(0)) {
             case 'Z':

@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.javascript.spi.GeneratedBy;
 import org.teavm.javascript.spi.Sync;
@@ -33,6 +34,7 @@ import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.core.JSArray;
+import org.teavm.jso.core.JSArrayReader;
 import org.teavm.model.AccessLevel;
 import org.teavm.model.AnnotationHolder;
 import org.teavm.model.AnnotationReader;
@@ -667,28 +669,136 @@ class JavascriptNativeProcessor {
             ++degree;
             itemType = ((ValueType.Array) itemType).getItemType();
         }
-        if (degree > 3) {
-            diagnostics.error(location, "Unsupported type: {{t0}}", type);
-            return var;
+
+        CastInstruction castInsn = new CastInstruction();
+        castInsn.setValue(var);
+        castInsn.setTargetType(ValueType.parse(JSArrayReader.class));
+        var = program.createVariable();
+        castInsn.setReceiver(var);
+        castInsn.setLocation(location.getSourceLocation());
+        replacement.add(castInsn);
+
+        var = degree == 1
+                ? unwrapSingleDimensionArray(location, var, itemType)
+                : unwrapMultiDimensionArray(location, var, itemType, degree);
+
+        return var;
+    }
+
+    private Variable unwrapSingleDimensionArray(CallLocation location, Variable var, ValueType type) {
+        Variable result = program.createVariable();
+
+        InvokeInstruction insn = new InvokeInstruction();
+        insn.setMethod(singleDimensionArrayUnwrapper(type));
+        insn.setType(InvocationType.SPECIAL);
+
+        if (insn.getMethod().parameterCount() == 2) {
+            Variable cls = program.createVariable();
+            ClassConstantInstruction clsInsn = new ClassConstantInstruction();
+            clsInsn.setConstant(type);
+            clsInsn.setLocation(location.getSourceLocation());
+            clsInsn.setReceiver(cls);
+            replacement.add(clsInsn);
+            insn.getArguments().add(cls);
         }
 
-        if (itemType instanceof ValueType.Object) {
-            String className = ((ValueType.Object) itemType).getClassName();
-            if (className.equals("java.lang.String")) {
-                String methodName = "unwrapStringArray";
-                if (degree > 1) {
-                    methodName += degree;
-                }
-                ValueType argType = degree == 1
-                        ? ValueType.parse(JSStringArray.class)
-                        : ValueType.parse(JSArray.class);
-                return unwrap(var, methodName, argType, type, location.getSourceLocation());
-            } else if (isNative(className)) {
-                return unwrapObjectArray(location, var, degree, itemType, type);
-            }
+        insn.getArguments().add(var);
+        insn.setReceiver(result);
+        return result;
+    }
+
+    private Variable unwrapMultiDimensionArray(CallLocation location, Variable var, ValueType type, int degree) {
+        Variable function = program.createVariable();
+
+        InvokeInstruction insn = new InvokeInstruction();
+        insn.setMethod(multipleDimensionArrayUnwrapper(type));
+        insn.setType(InvocationType.SPECIAL);
+
+        if (insn.getMethod().parameterCount() == 1) {
+            Variable cls = program.createVariable();
+            ClassConstantInstruction clsInsn = new ClassConstantInstruction();
+            clsInsn.setConstant(type);
+            clsInsn.setLocation(location.getSourceLocation());
+            clsInsn.setReceiver(cls);
+            replacement.add(clsInsn);
+            insn.getArguments().add(cls);
         }
-        diagnostics.error(location, "Unsupported type: {{t0}}", type);
-        return var;
+
+        insn.setReceiver(function);
+
+        while (--degree > 1) {
+            type = ValueType.arrayOf(type);
+            Variable cls = program.createVariable();
+
+            ClassConstantInstruction clsInsn = new ClassConstantInstruction();
+            clsInsn.setConstant(type);
+            clsInsn.setLocation(location.getSourceLocation());
+            clsInsn.setReceiver(cls);
+            replacement.add(clsInsn);
+
+            insn = new InvokeInstruction();
+            insn.setMethod(new MethodReference(JS.class, "arrayUnmapper", Class.class, Function.class,
+                    Function.class));
+            insn.setType(InvocationType.SPECIAL);
+            insn.getArguments().add(cls);
+            insn.getArguments().add(function);
+            function = program.createVariable();
+            insn.setReceiver(function);
+        }
+
+        return null;
+    }
+
+    private MethodReference singleDimensionArrayUnwrapper(ValueType itemType) {
+        if (itemType instanceof ValueType.Primitive) {
+            switch (((ValueType.Primitive) itemType).getKind()) {
+                case BOOLEAN:
+                    return new MethodReference(JS.class, "unwrapBooleanArray", JSArrayReader.class, boolean[].class);
+                case BYTE:
+                    return new MethodReference(JS.class, "unwrapByteArray", JSArrayReader.class, byte[].class);
+                case SHORT:
+                    return new MethodReference(JS.class, "unwrapShortArray", JSArrayReader.class, short[].class);
+                case CHARACTER:
+                    return new MethodReference(JS.class, "unwrapCharArray", JSArrayReader.class, char[].class);
+                case INTEGER:
+                    return new MethodReference(JS.class, "unwrapIntArray", JSArrayReader.class, int[].class);
+                case FLOAT:
+                    return new MethodReference(JS.class, "unwrapFloatArray", JSArrayReader.class, float[].class);
+                case DOUBLE:
+                    return new MethodReference(JS.class, "unwrapDoubleArray", JSArrayReader.class, double[].class);
+                default:
+                    break;
+            }
+        } else if (itemType.isObject(String.class)) {
+            return new MethodReference(JS.class, "unwrapStringArray", JSArrayReader.class, String[].class);
+        }
+        return new MethodReference(JS.class, "unwrapArray", Class.class, JSArrayReader.class, byte[].class);
+    }
+
+    private MethodReference multipleDimensionArrayUnwrapper(ValueType itemType) {
+        if (itemType instanceof ValueType.Primitive) {
+            switch (((ValueType.Primitive) itemType).getKind()) {
+                case BOOLEAN:
+                    return new MethodReference(JS.class, "booleanArrayUnwrapper", Function.class, Function.class);
+                case BYTE:
+                    return new MethodReference(JS.class, "byteArrayUnwrapper", Function.class, Function.class);
+                case SHORT:
+                    return new MethodReference(JS.class, "shortArrayUnwrapper", Function.class, Function.class);
+                case CHARACTER:
+                    return new MethodReference(JS.class, "charArrayUnwrapper", Function.class, Function.class);
+                case INTEGER:
+                    return new MethodReference(JS.class, "intArrayUnwrapper", Function.class, Function.class);
+                case FLOAT:
+                    return new MethodReference(JS.class, "floatArrayUnwrapper", Function.class, Function.class);
+                case DOUBLE:
+                    return new MethodReference(JS.class, "doubleArrayUnwrapper", Function.class, Function.class);
+                default:
+                    break;
+            }
+        } else if (itemType.isObject(String.class)) {
+            return new MethodReference(JS.class, "stringArrayUnwrapper", Function.class, Function.class);
+        }
+        return new MethodReference(JS.class, "arrayUnwrapper", Class.class, Function.class, Function.class);
     }
 
     private Variable unwrap(Variable var, String methodName, ValueType argType, ValueType resultType,
@@ -712,57 +822,6 @@ class JavascriptNativeProcessor {
         insn.setLocation(location);
         replacement.add(insn);
         return result;
-    }
-
-    private Variable unwrapObjectArray(CallLocation location, Variable var, int degree, ValueType itemType,
-            ValueType expectedType) {
-        String methodName = "unwrapArray";
-        if (degree > 1) {
-            methodName += degree;
-        }
-        ValueType resultType = ValueType.parse(JSObject.class);
-        for (int i = 0; i < degree; ++i) {
-            resultType = ValueType.arrayOf(resultType);
-        }
-
-        Variable classVar = program.createVariable();
-        ClassConstantInstruction classInsn = new ClassConstantInstruction();
-        classInsn.setConstant(itemType);
-        classInsn.setReceiver(classVar);
-        classInsn.setLocation(location.getSourceLocation());
-        replacement.add(classInsn);
-
-        Variable castValue = program.createVariable();
-        CastInstruction castInsn = new CastInstruction();
-        castInsn.setValue(var);
-        castInsn.setReceiver(castValue);
-        castInsn.setLocation(location.getSourceLocation());
-        castInsn.setTargetType(ValueType.parse(JSArray.class));
-        replacement.add(castInsn);
-        var = castValue;
-
-        Variable result = program.createVariable();
-        InvokeInstruction insn = new InvokeInstruction();
-        insn.setMethod(new MethodReference(JS.class.getName(), methodName, ValueType.parse(Class.class),
-                ValueType.parse(JSArray.class), resultType));
-        insn.getArguments().add(classVar);
-        insn.getArguments().add(var);
-        insn.setReceiver(result);
-        insn.setType(InvocationType.SPECIAL);
-        insn.setLocation(location.getSourceLocation());
-        replacement.add(insn);
-        var = result;
-
-        Variable castResult = program.createVariable();
-        castInsn = new CastInstruction();
-        castInsn.setValue(var);
-        castInsn.setReceiver(castResult);
-        castInsn.setLocation(location.getSourceLocation());
-        castInsn.setTargetType(expectedType);
-        replacement.add(castInsn);
-        var = castResult;
-
-        return var;
     }
 
     private Variable wrapArgument(CallLocation location, Variable var, ValueType type) {
@@ -807,14 +866,81 @@ class JavascriptNativeProcessor {
             }
         }
         Variable result = program.createVariable();
-        InvokeInstruction insn = new InvokeInstruction();
-        insn.setMethod(new MethodReference(JS.class.getName(), "wrap", getWrappedType(type), getWrapperType(type)));
-        insn.getArguments().add(var);
-        insn.setReceiver(result);
-        insn.setType(InvocationType.SPECIAL);
-        insn.setLocation(location);
-        replacement.add(insn);
+
+        ValueType itemType = type;
+        int degree = 0;
+        while (itemType instanceof ValueType.Array) {
+            itemType = ((ValueType.Array) itemType).getItemType();
+            ++degree;
+        }
+
+        if (degree <= 1) {
+            InvokeInstruction insn = new InvokeInstruction();
+            insn.setMethod(new MethodReference(JS.class.getName(), "wrap", getWrappedType(type),
+                    getWrapperType(type)));
+            insn.getArguments().add(var);
+            insn.setReceiver(result);
+            insn.setType(InvocationType.SPECIAL);
+            insn.setLocation(location);
+            replacement.add(insn);
+        } else {
+            Variable function = program.createVariable();
+
+            InvokeInstruction insn = new InvokeInstruction();
+            insn.setMethod(getWrapperFunction(itemType));
+            insn.setReceiver(function);
+            insn.setType(InvocationType.SPECIAL);
+            insn.setLocation(location);
+            replacement.add(insn);
+
+            while (--degree > 1) {
+                insn = new InvokeInstruction();
+                insn.setMethod(new MethodReference(JS.class, "arrayMapper", Function.class, Function.class));
+                insn.getArguments().add(function);
+                function = program.createVariable();
+                insn.setReceiver(function);
+                insn.setType(InvocationType.SPECIAL);
+                insn.setLocation(location);
+                replacement.add(insn);
+            }
+
+            insn = new InvokeInstruction();
+            insn.setMethod(new MethodReference(JS.class.getName(), "map", getWrappedType(type),
+                    ValueType.parse(Function.class), getWrapperType(type)));
+            insn.getArguments().add(var);
+            insn.getArguments().add(function);
+            insn.setReceiver(result);
+            insn.setType(InvocationType.SPECIAL);
+            insn.setLocation(location);
+            replacement.add(insn);
+        }
         return result;
+    }
+
+    private MethodReference getWrapperFunction(ValueType type) {
+        if (type instanceof ValueType.Primitive) {
+            switch (((ValueType.Primitive) type).getKind()) {
+                case BOOLEAN:
+                    return new MethodReference(JS.class, "booleanArrayWrapper", Function.class);
+                case BYTE:
+                    return new MethodReference(JS.class, "byteArrayWrapper", Function.class);
+                case SHORT:
+                    return new MethodReference(JS.class, "shortArrayWrapper", Function.class);
+                case CHARACTER:
+                    return new MethodReference(JS.class, "charArrayWrapper", Function.class);
+                case INTEGER:
+                    return new MethodReference(JS.class, "intArrayWrapper", Function.class);
+                case FLOAT:
+                    return new MethodReference(JS.class, "floatArrayWrapper", Function.class);
+                case DOUBLE:
+                    return new MethodReference(JS.class, "doubleArrayWrapper", Function.class);
+                default:
+                    break;
+            }
+        } else if (type.isObject(String.class)) {
+            return new MethodReference(JS.class, "stringArrayWrapper", Function.class);
+        }
+        return new MethodReference(JS.class, "arrayWrapper", Function.class);
     }
 
     private ValueType getWrappedType(ValueType type) {
@@ -822,7 +948,7 @@ class JavascriptNativeProcessor {
             ValueType itemType = ((ValueType.Array) type).getItemType();
             return ValueType.arrayOf(getWrappedType(itemType));
         } else if (type instanceof ValueType.Object) {
-            if (type.isObject("java.lang.String")) {
+            if (type.isObject(String.class)) {
                 return type;
             } else {
                 return ValueType.parse(JSObject.class);
@@ -834,28 +960,7 @@ class JavascriptNativeProcessor {
 
     private ValueType getWrapperType(ValueType type) {
         if (type instanceof ValueType.Array) {
-            ValueType itemType = ((ValueType.Array) type).getItemType();
-            if (itemType instanceof ValueType.Primitive) {
-                switch (((ValueType.Primitive) itemType).getKind()) {
-                    case BOOLEAN:
-                        return ValueType.parse(JSBooleanArray.class);
-                    case BYTE:
-                    case SHORT:
-                    case INTEGER:
-                    case CHARACTER:
-                        return ValueType.parse(JSIntArray.class);
-                    case FLOAT:
-                    case DOUBLE:
-                        return ValueType.parse(JSDoubleArray.class);
-                    case LONG:
-                    default:
-                        return ValueType.parse(JSArray.class);
-                }
-            } else if (itemType.isObject("java.lang.String")) {
-                return ValueType.parse(JSStringArray.class);
-            } else {
-                return ValueType.parse(JSArray.class);
-            }
+            return ValueType.parse(JSArray.class);
         } else {
             return ValueType.parse(JSObject.class);
         }

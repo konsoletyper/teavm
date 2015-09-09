@@ -17,7 +17,9 @@ package org.teavm.jso.plugin;
 
 import java.io.IOException;
 import org.teavm.codegen.SourceWriter;
-import org.teavm.dependency.*;
+import org.teavm.dependency.DependencyAgent;
+import org.teavm.dependency.DependencyPlugin;
+import org.teavm.dependency.MethodDependency;
 import org.teavm.javascript.Renderer;
 import org.teavm.javascript.ast.ConstantExpr;
 import org.teavm.javascript.ast.Expr;
@@ -72,19 +74,6 @@ public class JSNativeGenerator implements Injector, DependencyPlugin, Generator 
     public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
         SourceWriter writer = context.getWriter();
         switch (methodRef.getName()) {
-            case "getGlobal":
-                writer.append("window");
-                break;
-            case "isUndefined":
-                writer.append("(");
-                context.writeExpr(context.getArgument(0));
-                writer.ws().append("===").ws().append("undefined)");
-                break;
-            case "getTypeName":
-                writer.append("(typeof ");
-                context.writeExpr(context.getArgument(0));
-                writer.append(")");
-                break;
             case "get":
                 context.writeExpr(context.getArgument(0));
                 renderProperty(context.getArgument(1), context);
@@ -121,9 +110,6 @@ public class JSNativeGenerator implements Injector, DependencyPlugin, Generator 
                     context.writeExpr(context.getArgument(i));
                 }
                 writer.append("))");
-                break;
-            case "marshall":
-                context.writeExpr(context.getArgument(0));
                 break;
             case "wrap":
                 if (methodRef.getDescriptor().parameterType(0).isObject("java.lang.String")) {
