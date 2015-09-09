@@ -69,6 +69,7 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
             case "asJavaClass":
             case "classFromResource":
             case "objectFromResource":
+            case "marshall":
                 context.writeExpr(context.getArgument(0));
                 break;
         }

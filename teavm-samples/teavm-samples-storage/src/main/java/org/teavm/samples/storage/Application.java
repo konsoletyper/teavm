@@ -21,45 +21,42 @@ import org.teavm.jso.dom.html.HTMLButtonElement;
 import org.teavm.jso.dom.html.HTMLDocument;
 import org.teavm.jso.dom.html.HTMLElement;
 import org.teavm.jso.dom.html.HTMLInputElement;
-import org.teavm.jso.plugin.JS;
 
 /**
 *
 * @author Junji Takakura
 */
 public final class Application {
-
-    private static Window window = (Window) JS.getGlobal();
-    private static HTMLDocument document = window.getDocument();
-    private static Storage storage = window.getSessionStorage();
+    private static HTMLDocument document = Window.current().getDocument();
+    private static Storage storage = Window.current().getSessionStorage();
 
     private Application() {
     }
 
     public static void main(String[] args) {
         if (storage == null) {
-            window.alert("storage is not supported.");
+            Window.alert("storage is not supported.");
         }
 
-        HTMLButtonElement saveButton = (HTMLButtonElement) document.getElementById("save-button");
+        HTMLButtonElement saveButton = document.getElementById("save-button").cast();
         saveButton.addEventListener("click", e -> {
-            String key = ((HTMLInputElement) document.getElementById("key")).getValue();
-            String value = ((HTMLInputElement) document.getElementById("value")).getValue();
+            String key = document.getElementById("key").<HTMLInputElement>cast().getValue();
+            String value = document.getElementById("value").<HTMLInputElement>cast().getValue();
 
             if (key != null && key.length() > 0 && value != null && value.length() > 0) {
                 storage.setItem(key, value);
                 draw();
             }
         });
-        HTMLButtonElement deleteButton = (HTMLButtonElement) document.getElementById("delete-button");
+        HTMLButtonElement deleteButton = document.getElementById("delete-button").cast();
         deleteButton.addEventListener("click", e -> {
-            String key = ((HTMLInputElement) document.getElementById("key")).getValue();
+            String key = document.getElementById("key").<HTMLInputElement>cast().getValue();
             if (key != null && key.length() > 0) {
                 storage.removeItem(key);
                 draw();
             }
         });
-        HTMLButtonElement deleteAllButton = (HTMLButtonElement) document.getElementById("delete-all-button");
+        HTMLButtonElement deleteAllButton = document.getElementById("delete-all-button").cast();
         deleteAllButton.addEventListener("click", e -> {
             storage.clear();
             draw();

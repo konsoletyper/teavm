@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 Alexey Andreev.
+ *  Copyright 2014 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,16 +13,18 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.test;
+package org.teavm.jso.browser;
 
-import org.teavm.jso.JSConstructor;
+import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 
-/**
- *
- * @author Alexey Andreev
- */
-public interface Window extends JSObject {
-    @JSConstructor("RegExp")
-    RegExp createRegExp(String regex);
+public final class Performance implements JSObject {
+    private Performance() {
+    }
+
+    @JSBody(params = {}, script = "return Performance.now();")
+    public static native double now();
+
+    @JSBody(params = {}, script = "return typeof(Performance) !== 'undefined';")
+    public static native boolean isSupported();
 }

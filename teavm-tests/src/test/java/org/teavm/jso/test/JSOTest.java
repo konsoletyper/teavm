@@ -19,7 +19,6 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
-import org.teavm.jso.plugin.JS;
 
 /**
  *
@@ -28,12 +27,8 @@ import org.teavm.jso.plugin.JS;
 public class JSOTest {
     @Test
     public void complexConstructorParenthesized() {
-        RegExp regexp = getWindow().createRegExp(".");
+        RegExp regexp = RegExp.create();
         assertEquals(".", regexp.getSource());
-    }
-
-    private static Window getWindow() {
-        return (Window)JS.getGlobal();
     }
 
     @Test

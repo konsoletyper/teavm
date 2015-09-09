@@ -15,6 +15,7 @@
  */
 package org.teavm.jso.test;
 
+import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
@@ -22,7 +23,10 @@ import org.teavm.jso.JSProperty;
  *
  * @author Alexey Andreev
  */
-public interface RegExp extends JSObject {
+public abstract class RegExp implements JSObject {
     @JSProperty
-    String getSource();
+    public abstract String getSource();
+
+    @JSBody(params = {}, script = "return new RegExp();")
+    public static native RegExp create();
 }

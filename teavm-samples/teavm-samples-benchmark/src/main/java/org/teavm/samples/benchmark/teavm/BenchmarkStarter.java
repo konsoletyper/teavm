@@ -22,13 +22,12 @@ import org.jbox2d.collision.shapes.ShapeType;
 import org.jbox2d.common.Vec2;
 import org.jbox2d.dynamics.Body;
 import org.jbox2d.dynamics.Fixture;
-import org.teavm.jso.browser.TimerHandler;
+import org.teavm.jso.browser.Performance;
 import org.teavm.jso.browser.Window;
 import org.teavm.jso.canvas.CanvasRenderingContext2D;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
 import org.teavm.jso.dom.html.HTMLDocument;
 import org.teavm.jso.dom.html.HTMLElement;
-import org.teavm.jso.plugin.JS;
 import org.teavm.samples.benchmark.Scene;
 
 /**
@@ -36,11 +35,9 @@ import org.teavm.samples.benchmark.Scene;
  * @author Alexey Andreev
  */
 public final class BenchmarkStarter {
-    private static Window window = (Window) JS.getGlobal();
-    private static HTMLDocument document = window.getDocument();
+    private static HTMLDocument document = Window.current().getDocument();
     private static HTMLCanvasElement canvas = (HTMLCanvasElement) document.getElementById("benchmark-canvas");
     private static HTMLElement resultTableBody = document.getElementById("result-table-body");
-    private static Performance performance = (Performance) JS.get(window, JS.wrap("performance"));
     private static Scene scene = new Scene();
     private static int currentSecond;
     private static long startMillisecond;
@@ -55,9 +52,9 @@ public final class BenchmarkStarter {
     }
 
     private static void makeStep() {
-        double start = performance.now();
+        double start = Performance.now();
         scene.calculate();
-        double end = performance.now();
+        double end = Performance.now();
         int second = (int) ((System.currentTimeMillis() - startMillisecond) / 1000);
         if (second > currentSecond) {
             HTMLElement row = document.createElement("tr");
@@ -74,11 +71,7 @@ public final class BenchmarkStarter {
         }
         timeSpentCalculating += end - start;
         render();
-        window.setTimeout(new TimerHandler() {
-            @Override public void onTimer() {
-                makeStep();
-            }
-        }, scene.timeUntilNextStep());
+        Window.setTimeout(() -> makeStep(), scene.timeUntilNextStep());
     }
 
     private static void render() {

@@ -20,12 +20,10 @@ import org.teavm.jso.browser.Window;
 import org.teavm.jso.dom.html.HTMLButtonElement;
 import org.teavm.jso.dom.html.HTMLDocument;
 import org.teavm.jso.dom.html.HTMLElement;
-import org.teavm.jso.plugin.JS;
 
 public final class Client {
-    private static Window window = (Window) JS.getGlobal();
-    private static HTMLDocument document = window.getDocument();
-    private static HTMLButtonElement helloButton = (HTMLButtonElement) document.getElementById("hello-button");
+    private static HTMLDocument document = Window.current().getDocument();
+    private static HTMLButtonElement helloButton = document.getElementById("hello-button").cast();
     private static HTMLElement responsePanel = document.getElementById("response-panel");
     private static HTMLElement thinkingPanel = document.getElementById("thinking-panel");
 
@@ -39,7 +37,7 @@ public final class Client {
     private static void sayHello() {
         helloButton.setDisabled(true);
         thinkingPanel.getStyle().setProperty("display", "");
-        final XMLHttpRequest xhr = window.createXMLHttpRequest();
+        XMLHttpRequest xhr = XMLHttpRequest.create();
         xhr.setOnReadyStateChange(() -> {
             if (xhr.getReadyState() == XMLHttpRequest.DONE) {
                 receiveResponse(xhr.getResponseText());
