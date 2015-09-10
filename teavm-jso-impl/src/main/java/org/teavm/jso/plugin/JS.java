@@ -16,7 +16,6 @@
 package org.teavm.jso.plugin;
 
 import java.lang.reflect.Array;
-import java.util.Iterator;
 import java.util.function.Function;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.javascript.spi.GeneratedBy;
@@ -59,6 +58,9 @@ final class JS {
 
     @InjectedBy(JSNativeGenerator.class)
     public static native byte unwrapByte(JSObject value);
+
+    @InjectedBy(JSNativeGenerator.class)
+    public static native char unwrapCharacter(JSObject value);
 
     @InjectedBy(JSNativeGenerator.class)
     public static native short unwrapShort(JSObject value);
@@ -430,21 +432,7 @@ final class JS {
     public static native JSObject instantiate(JSObject instance, JSObject constructor, JSObject a, JSObject b,
             JSObject c, JSObject d, JSObject e, JSObject f, JSObject g, JSObject h);
 
-    public static <T extends JSObject> Iterable<T> iterate(final JSArrayReader<T> array) {
-        return () -> new Iterator<T>() {
-            int index;
-            @Override public boolean hasNext() {
-                return index < array.getLength();
-            }
-            @Override public T next() {
-                return array.get(index++);
-            }
-            @Override public void remove() {
-                throw new UnsupportedOperationException();
-            }
-        };
-    }
-
+    @InjectedBy(JSNativeGenerator.class)
     @JSBody(params = { "instance", "index" }, script = "return instance[index];")
     public static native JSObject get(JSObject instance, JSObject index);
 

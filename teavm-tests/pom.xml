@@ -49,6 +49,12 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.teavm</groupId>
+      <artifactId>teavm-jso</artifactId>
+      <version>${project.version}</version>
+      <classifier>tck</classifier>
+    </dependency>
+    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <scope>test</scope>

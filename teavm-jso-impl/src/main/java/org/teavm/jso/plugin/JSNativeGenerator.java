@@ -32,6 +32,7 @@ import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReader;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 
 /**
  *
@@ -123,6 +124,10 @@ public class JSNativeGenerator implements Injector, DependencyPlugin, Generator 
                     writer.append("$rt_ustr(");
                     context.writeExpr(context.getArgument(0));
                     writer.append(")");
+                } else if (methodRef.getDescriptor().parameterType(0) == ValueType.BOOLEAN) {
+                    writer.append("(!!(");
+                    context.writeExpr(context.getArgument(0));
+                    writer.append("))");
                 } else {
                     context.writeExpr(context.getArgument(0));
                 }
@@ -134,6 +139,11 @@ public class JSNativeGenerator implements Injector, DependencyPlugin, Generator 
                 writer.append("$rt_str(");
                 context.writeExpr(context.getArgument(0));
                 writer.append(")");
+                break;
+            case "unwrapBoolean":
+                writer.append("(");
+                context.writeExpr(context.getArgument(0));
+                writer.ws().append("?").ws().append("1").ws().append(":").ws().append("0").append(")");
                 break;
             default:
                 if (methodRef.getName().startsWith("unwrap")) {
