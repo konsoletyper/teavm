@@ -704,6 +704,7 @@ class JavascriptNativeProcessor {
 
         insn.getArguments().add(var);
         insn.setReceiver(result);
+        replacement.add(insn);
         return result;
     }
 
@@ -725,6 +726,7 @@ class JavascriptNativeProcessor {
         }
 
         insn.setReceiver(function);
+        replacement.add(insn);
 
         while (--degree > 1) {
             type = ValueType.arrayOf(type);
@@ -744,9 +746,28 @@ class JavascriptNativeProcessor {
             insn.getArguments().add(function);
             function = program.createVariable();
             insn.setReceiver(function);
+            replacement.add(insn);
         }
 
-        return null;
+        Variable cls = program.createVariable();
+        ClassConstantInstruction clsInsn = new ClassConstantInstruction();
+        clsInsn.setConstant(ValueType.arrayOf(type));
+        clsInsn.setLocation(location.getSourceLocation());
+        clsInsn.setReceiver(cls);
+        replacement.add(clsInsn);
+
+        insn = new InvokeInstruction();
+        insn.setMethod(new MethodReference(JS.class, "unmapArray", Class.class, JSArrayReader.class, Function.class,
+                Object[].class));
+        insn.getArguments().add(cls);
+        insn.getArguments().add(var);
+        insn.getArguments().add(function);
+        insn.setReceiver(var);
+        insn.setType(InvocationType.SPECIAL);
+        insn.setLocation(location.getSourceLocation());
+        replacement.add(insn);
+
+        return var;
     }
 
     private MethodReference singleDimensionArrayUnwrapper(ValueType itemType) {
@@ -779,26 +800,26 @@ class JavascriptNativeProcessor {
         if (itemType instanceof ValueType.Primitive) {
             switch (((ValueType.Primitive) itemType).getKind()) {
                 case BOOLEAN:
-                    return new MethodReference(JS.class, "booleanArrayUnwrapper", Function.class, Function.class);
+                    return new MethodReference(JS.class, "booleanArrayUnwrapper", Function.class);
                 case BYTE:
-                    return new MethodReference(JS.class, "byteArrayUnwrapper", Function.class, Function.class);
+                    return new MethodReference(JS.class, "byteArrayUnwrapper", Function.class);
                 case SHORT:
-                    return new MethodReference(JS.class, "shortArrayUnwrapper", Function.class, Function.class);
+                    return new MethodReference(JS.class, "shortArrayUnwrapper", Function.class);
                 case CHARACTER:
-                    return new MethodReference(JS.class, "charArrayUnwrapper", Function.class, Function.class);
+                    return new MethodReference(JS.class, "charArrayUnwrapper", Function.class);
                 case INTEGER:
-                    return new MethodReference(JS.class, "intArrayUnwrapper", Function.class, Function.class);
+                    return new MethodReference(JS.class, "intArrayUnwrapper", Function.class);
                 case FLOAT:
-                    return new MethodReference(JS.class, "floatArrayUnwrapper", Function.class, Function.class);
+                    return new MethodReference(JS.class, "floatArrayUnwrapper", Function.class);
                 case DOUBLE:
-                    return new MethodReference(JS.class, "doubleArrayUnwrapper", Function.class, Function.class);
+                    return new MethodReference(JS.class, "doubleArrayUnwrapper", Function.class);
                 default:
                     break;
             }
         } else if (itemType.isObject(String.class)) {
-            return new MethodReference(JS.class, "stringArrayUnwrapper", Function.class, Function.class);
+            return new MethodReference(JS.class, "stringArrayUnwrapper", Function.class);
         }
-        return new MethodReference(JS.class, "arrayUnwrapper", Class.class, Function.class, Function.class);
+        return new MethodReference(JS.class, "arrayUnwrapper", Class.class, Function.class);
     }
 
     private Variable unwrap(Variable var, String methodName, ValueType argType, ValueType resultType,
@@ -946,7 +967,11 @@ class JavascriptNativeProcessor {
     private ValueType getWrappedType(ValueType type) {
         if (type instanceof ValueType.Array) {
             ValueType itemType = ((ValueType.Array) type).getItemType();
-            return ValueType.arrayOf(getWrappedType(itemType));
+            if (itemType instanceof ValueType.Array) {
+                return ValueType.parse(Object[].class);
+            } else {
+                return ValueType.arrayOf(getWrappedType(itemType));
+            }
         } else if (type instanceof ValueType.Object) {
             if (type.isObject(String.class)) {
                 return type;
