@@ -20,6 +20,7 @@ import org.junit.Test;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
+import org.teavm.jso.core.JSString;
 
 /**
  *
@@ -118,6 +119,26 @@ public class ConversionTest {
         assertArrayEquals(new float[] { 5.5F }, arrays.getF()[0][0][0], 0.01F);
         assertArrayEquals(new double[] { 6.5 }, arrays.getG()[0][0][0], 0.01);
         assertArrayEquals(new String[] { "foo" }, arrays.getH()[0][0][0]);
+    }
+
+    @Test
+    public void passesJSObject() {
+        assertEquals("(foo)", surround(JSString.valueOf("foo")).stringValue());
+    }
+
+    @Test
+    public void convertsArrayOfJSObject() {
+        assertEquals("(foo)", surround(new JSString[] { JSString.valueOf("foo") })[0].stringValue());
+        assertEquals("(foo)", surround(new JSString[][] {{ JSString.valueOf("foo") }})[0][0].stringValue());
+        assertEquals("(foo)", surround(new JSString[][][][] {{{{ JSString.valueOf("foo") }}}})[0][0][0][0]
+                .stringValue());
+    }
+
+    @Test
+    public void copiesArray() {
+        int[] array = { 23 };
+        assertEquals(24, mutate(array));
+        assertEquals(23, array[0]);
     }
 
     @JSBody(params = { "a", "b", "c", "d", "e", "f", "g", "h" }, script = ""
@@ -263,4 +284,19 @@ public class ConversionTest {
         @JSProperty
         String[][][][] getH();
     }
+
+    @JSBody(params = "str", script = "return '(' + str + ')';")
+    private static native JSString surround(JSString str);
+
+    @JSBody(params = "str", script = "return ['(' + str[0] + ')'];")
+    private static native JSString[] surround(JSString[] str);
+
+    @JSBody(params = "str", script = "return [['(' + str[0][0] + ')']];")
+    private static native JSString[][] surround(JSString[][] str);
+
+    @JSBody(params = "str", script = "return [[[['(' + str[0][0][0][0] + ')']]]];")
+    private static native JSString[][][][] surround(JSString[][][][] str);
+
+    @JSBody(params = "array", script = "array[0]++; return array[0];")
+    private static native int mutate(int[] array);
 }

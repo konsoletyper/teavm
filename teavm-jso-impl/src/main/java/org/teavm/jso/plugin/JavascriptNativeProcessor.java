@@ -27,7 +27,6 @@ import org.teavm.diagnostics.Diagnostics;
 import org.teavm.javascript.spi.GeneratedBy;
 import org.teavm.javascript.spi.Sync;
 import org.teavm.jso.JSBody;
-import org.teavm.jso.JSConstructor;
 import org.teavm.jso.JSFunctor;
 import org.teavm.jso.JSIndexer;
 import org.teavm.jso.JSMethod;
@@ -371,40 +370,20 @@ class JavascriptNativeProcessor {
                     }
                 } else {
                     String name = method.getName();
-                    AnnotationReader constructorAnnot = method.getAnnotations().get(JSConstructor.class.getName());
-                    boolean isConstructor = false;
-                    if (constructorAnnot != null) {
-                        if (!isSupportedType(method.getResultType())) {
-                            diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript "
-                                    + "constructor declaration", invoke.getMethod());
-                            continue;
-                        }
-                        AnnotationValue nameVal = constructorAnnot.getValue("value");
-                        name = nameVal != null ? constructorAnnot.getValue("value").getString() : "";
-                        if (name.isEmpty()) {
-                            if (!method.getName().startsWith("new") || method.getName().length() == 3) {
-                                diagnostics.error(callLocation, "Method {{m0}} is not declared as a native "
-                                        + "JavaScript constructor, but its name does not satisfy conventions",
-                                        invoke.getMethod());
-                                continue;
-                            }
-                            name = method.getName().substring(3);
-                        }
-                        isConstructor = true;
-                    } else {
-                        AnnotationReader methodAnnot = method.getAnnotations().get(JSMethod.class.getName());
-                        if (methodAnnot != null) {
-                            AnnotationValue redefinedMethodName = methodAnnot.getValue("value");
-                            if (redefinedMethodName != null) {
-                                name = redefinedMethodName.getString();
-                            }
-                        }
-                        if (method.getResultType() != ValueType.VOID && !isSupportedType(method.getResultType())) {
-                            diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript method "
-                                    + "declaration", invoke.getMethod());
-                            continue;
+
+                    AnnotationReader methodAnnot = method.getAnnotations().get(JSMethod.class.getName());
+                    if (methodAnnot != null) {
+                        AnnotationValue redefinedMethodName = methodAnnot.getValue("value");
+                        if (redefinedMethodName != null) {
+                            name = redefinedMethodName.getString();
                         }
                     }
+                    if (method.getResultType() != ValueType.VOID && !isSupportedType(method.getResultType())) {
+                        diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript method "
+                                + "declaration", invoke.getMethod());
+                        continue;
+                    }
+
                     for (ValueType arg : method.getParameterTypes()) {
                         if (!isSupportedType(arg)) {
                             diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript method "
@@ -416,8 +395,7 @@ class JavascriptNativeProcessor {
                     InvokeInstruction newInvoke = new InvokeInstruction();
                     ValueType[] signature = new ValueType[method.parameterCount() + 3];
                     Arrays.fill(signature, ValueType.object(JSObject.class.getName()));
-                    newInvoke.setMethod(new MethodReference(JS.class.getName(),
-                            isConstructor ? "instantiate" : "invoke", signature));
+                    newInvoke.setMethod(new MethodReference(JS.class.getName(), "invoke", signature));
                     newInvoke.setType(InvocationType.SPECIAL);
                     newInvoke.setReceiver(result);
                     newInvoke.getArguments().add(invoke.getInstance());
@@ -793,7 +771,7 @@ class JavascriptNativeProcessor {
         } else if (itemType.isObject(String.class)) {
             return new MethodReference(JS.class, "unwrapStringArray", JSArrayReader.class, String[].class);
         }
-        return new MethodReference(JS.class, "unwrapArray", Class.class, JSArrayReader.class, byte[].class);
+        return new MethodReference(JS.class, "unwrapArray", Class.class, JSArrayReader.class, JSObject[].class);
     }
 
     private MethodReference multipleDimensionArrayUnwrapper(ValueType itemType) {

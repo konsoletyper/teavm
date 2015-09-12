@@ -391,48 +391,6 @@ final class JS {
             JSObject l, JSObject m);
 
     @InjectedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
-    public static native JSObject instantiate(JSObject instance, JSObject constructor);
-
-    @InjectedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
-    public static native JSObject instantiate(JSObject instance, JSObject constructor, JSObject a);
-
-    @InjectedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
-    public static native JSObject instantiate(JSObject instance, JSObject constructor, JSObject a, JSObject b);
-
-    @InjectedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
-    public static native JSObject instantiate(JSObject instance, JSObject constructor, JSObject a, JSObject b,
-            JSObject c);
-
-    @InjectedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
-    public static native JSObject instantiate(JSObject instance, JSObject constructor, JSObject a, JSObject b,
-            JSObject c, JSObject d);
-
-    @InjectedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
-    public static native JSObject instantiate(JSObject instance, JSObject constructor, JSObject a, JSObject b,
-            JSObject c, JSObject d, JSObject e);
-
-    @InjectedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
-    public static native JSObject instantiate(JSObject instance, JSObject constructor, JSObject a, JSObject b,
-            JSObject c, JSObject d, JSObject e, JSObject f);
-
-    @InjectedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
-    public static native JSObject instantiate(JSObject instance, JSObject constructor, JSObject a, JSObject b,
-            JSObject c, JSObject d, JSObject e, JSObject f, JSObject g);
-
-    @InjectedBy(JSNativeGenerator.class)
-    @PluggableDependency(JSNativeGenerator.class)
-    public static native JSObject instantiate(JSObject instance, JSObject constructor, JSObject a, JSObject b,
-            JSObject c, JSObject d, JSObject e, JSObject f, JSObject g, JSObject h);
-
-    @InjectedBy(JSNativeGenerator.class)
     @JSBody(params = { "instance", "index" }, script = "return instance[index];")
     public static native JSObject get(JSObject instance, JSObject index);
 

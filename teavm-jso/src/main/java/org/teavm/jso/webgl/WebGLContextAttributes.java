@@ -15,6 +15,7 @@
  */
 package org.teavm.jso.webgl;
 
+import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
@@ -22,40 +23,43 @@ import org.teavm.jso.JSProperty;
  *
  * @author Alexey Andreev
  */
-public interface WebGLContextAttributes extends JSObject {
+public abstract class WebGLContextAttributes implements JSObject {
     @JSProperty
-    boolean isAlpha();
+    public abstract boolean isAlpha();
 
     @JSProperty
-    void setAlpha(boolean alpha);
+    public abstract void setAlpha(boolean alpha);
 
     @JSProperty
-    boolean isDepth();
+    public abstract boolean isDepth();
 
     @JSProperty
-    void setDepth(boolean depth);
+    public abstract void setDepth(boolean depth);
 
     @JSProperty
-    boolean isScencil();
+    public abstract boolean isScencil();
 
     @JSProperty
-    void setStencil(boolean stencil);
+    public abstract void setStencil(boolean stencil);
 
     @JSProperty
-    boolean isAntialias();
+    public abstract boolean isAntialias();
 
     @JSProperty
-    void setAntialias(boolean antialias);
+    public abstract void setAntialias(boolean antialias);
 
     @JSProperty
-    boolean isPremultipliedAlpha();
+    public abstract boolean isPremultipliedAlpha();
 
     @JSProperty
-    void setPremultipliedAlpha(boolean premultipliedAlpha);
+    public abstract void setPremultipliedAlpha(boolean premultipliedAlpha);
 
     @JSProperty
-    boolean isPreserveDrawingBuffer();
+    public abstract boolean isPreserveDrawingBuffer();
 
     @JSProperty
-    void setPreserveDrawingBuffer(boolean preserveDrawingBuffer);
+    public abstract void setPreserveDrawingBuffer(boolean preserveDrawingBuffer);
+
+    @JSBody(params = {}, script = "return {};")
+    public static native WebGLContextAttributes create();
 }

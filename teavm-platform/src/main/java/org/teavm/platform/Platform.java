@@ -134,9 +134,8 @@ public final class Platform {
         ((PlatformHelper) Window.current()).killSchedule(id);
     }
 
-    public static <T> PlatformQueue<T> createQueue() {
-        return ((PlatformHelper) Window.current()).newQueue();
-    }
+    @JSBody(params = {}, script = "return [];")
+    public static native <T> PlatformQueue<T> createQueue();
 
     public static PlatformString stringFromCharCode(int charCode) {
         return ((PlatformHelper) Window.current()).getStringClass().fromCharCode(charCode);
