@@ -16,11 +16,22 @@
 package org.teavm.jso.plugin;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.List;
+import org.mozilla.javascript.CompilerEnvirons;
+import org.mozilla.javascript.IRFactory;
+import org.mozilla.javascript.ast.AstNode;
+import org.mozilla.javascript.ast.AstRoot;
+import org.mozilla.javascript.ast.NodeVisitor;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.javascript.spi.Generator;
 import org.teavm.javascript.spi.GeneratorContext;
-import org.teavm.model.*;
+import org.teavm.model.AnnotationReader;
+import org.teavm.model.AnnotationValue;
+import org.teavm.model.CallLocation;
+import org.teavm.model.ClassReader;
+import org.teavm.model.MethodReader;
+import org.teavm.model.MethodReference;
 
 /**
  *
@@ -37,51 +48,24 @@ public class JSBodyGenerator implements Generator {
 
         int bodyParamCount = isStatic ? method.parameterCount() : method.parameterCount() - 1;
 
-        writer.append("if (!").appendMethodBody(methodRef).append(".$native)").ws().append('{').indent().newLine();
-        writer.appendMethodBody(methodRef).append(".$native").ws().append('=').ws().append("function(");
-        int count = method.parameterCount();
-        for (int i = 0; i < count; ++i) {
-            if (i > 0) {
-                writer.append(',').ws();
-            }
-            writer.append('_').append(context.getParameterName(i + 1));
+        CompilerEnvirons env = new CompilerEnvirons();
+        env.setRecoverFromErrors(true);
+        IRFactory factory = new IRFactory(env, new TeaVMErrorReporter(context.getDiagnostics(),
+                new CallLocation(methodRef)));
+        String script = annot.getValue("script").getString();
+        AstRoot rootNode;
+        try {
+            rootNode = factory.parse(new StringReader(script), null, 0);
+        } catch (IOException e) {
+            context.getDiagnostics().error(new CallLocation(methodRef), "IO error parsing JSBody script");
+            return;
         }
-        writer.append(')').ws().append('{').softNewLine().indent();
 
-        writer.append("return (function(");
-        for (int i = 0; i < bodyParamCount; ++i) {
-            if (i > 0) {
-                writer.append(',').ws();
+        rootNode.visit(new NodeVisitor() {
+            @Override
+            public boolean visit(AstNode node) {
+                return false;
             }
-            String name = paramNames.get(i).getString();
-            writer.append(name);
-        }
-        writer.append(')').ws().append('{').softNewLine().indent();
-        writer.append(annot.getValue("script").getString()).softNewLine();
-        writer.outdent().append("})");
-        if (!isStatic) {
-            writer.append(".call");
-        }
-        writer.append('(');
-        for (int i = 0; i < count; ++i) {
-            if (i > 0) {
-                writer.append(',').ws();
-            }
-            writer.append('_').append(context.getParameterName(i + 1));
-        }
-        writer.append(");").softNewLine();
-        writer.outdent().append("};").softNewLine();
-        writer.appendMethodBody(methodRef).ws().append('=').ws().appendMethodBody(methodRef).append(".$native;")
-                .softNewLine();
-        writer.outdent().append("}").softNewLine();
-
-        writer.append("return ").appendMethodBody(methodRef).append('(');
-        for (int i = 0; i < count; ++i) {
-            if (i > 0) {
-                writer.append(',').ws();
-            }
-            writer.append(context.getParameterName(i + 1));
-        }
-        writer.append(");").softNewLine();
+        });
     }
 }
