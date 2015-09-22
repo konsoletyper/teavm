@@ -20,6 +20,7 @@ import static org.junit.Assert.*;
 import java.io.IOException;
 import java.io.StringReader;
 import org.junit.Test;
+import org.junit.experimental.theories.suppliers.TestedOn;
 import org.mozilla.javascript.CompilerEnvirons;
 import org.mozilla.javascript.ast.AstRoot;
 import org.teavm.codegen.SourceWriter;
@@ -86,6 +87,59 @@ public class AstWriterTest {
     @Test
     public void writesEmptyContinue() throws IOException {
         assertThat(transform("while(true) { continue; }"), is("while(true){continue;}"));
+    }
+
+    @Test
+    public void writesBlock() throws IOException {
+        assertThat(transform("{ foo(); bar(); }"), is("{foo();bar();}"));
+    }
+
+    @Test
+    public void writesFor() throws IOException {
+        assertThat(transform("for (var i = 0; i < array.length; ++i) foo(array[i]);"),
+                is("for(var i=0;i<array.length;++i)foo(array[i]);"));
+    }
+
+    @Test
+    public void writesEmptyFor() throws IOException {
+        assertThat(transform("for (;;) foo();"), is("for(;;)foo();"));
+    }
+
+    @Test
+    public void writesForIn() throws IOException {
+        assertThat(transform("for (var property in window) alert(property);"),
+                is("for(var property in window)alert(property);"));
+    }
+
+    @Test
+    public void writesWhile() throws IOException {
+        assertThat(transform("while (shouldProceed()) proceed();"), is("while(shouldProceed())proceed();"));
+    }
+
+    @Test
+    public void writesDoWhile() throws IOException {
+        assertThat(transform("do proceed(); while(shouldRepeat());"), is("do proceed();while(shouldRepeat());"));
+    }
+
+    @Test
+    public void writesIfElse() throws IOException {
+        assertThat(transform("if (test()) performTrue(); else performFalse();"),
+                is("if(test())performTrue();else performFalse();"));
+    }
+
+    @Test
+    public void writesIf() throws IOException {
+        assertThat(transform("if (shouldPerform()) perform();"), is("if(shouldPerform())perform();"));
+    }
+
+    @Test
+    public void writesSwitch() throws IOException {
+        assertThat(transform("switch (c) { "
+                + "case '?': matchAny(); break; "
+                + "case '*': matchSequence(); break;"
+                + "default: matchChar(c); break; } "),
+                is("switch(c){case '?':matchAny();break;case '*':matchSequence();break;"
+                        + "default:matchChar(c);break;}"));
     }
 
     private String transform(String text) throws IOException {

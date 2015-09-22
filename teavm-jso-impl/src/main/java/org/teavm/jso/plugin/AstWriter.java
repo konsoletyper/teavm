@@ -341,14 +341,10 @@ public class AstWriter {
     }
 
     private void print(DoLoop node) throws IOException {
-        writer.append("do");
-        if (node.getBody() instanceof Block) {
-            writer.ws();
-        } else {
-            writer.append(' ');
-        }
+        writer.append("do ").ws();
         print(node.getBody());
         writer.append("while").ws().append('(');
+        print(node.getCondition());
         writer.append(");");
     }
 
@@ -372,7 +368,6 @@ public class AstWriter {
         print(node.getCondition());
         writer.append(';');
         print(node.getIncrement());
-        writer.append(';');
         writer.append(')').ws();
         print(node.getBody());
     }
@@ -456,7 +451,9 @@ public class AstWriter {
             writer.append(',').ws();
             print(node.getVariables().get(i));
         }
-        writer.append(';');
+        if (node.isStatement()) {
+            writer.append(';');
+        }
     }
 
     private void print(VariableInitializer node) throws IOException {
@@ -580,12 +577,12 @@ public class AstWriter {
     }
 
     private void print(NumberLiteral node) throws IOException {
-        writer.append(node.getNumber());
+        writer.append(node.getValue());
     }
 
     private void print(StringLiteral node) throws IOException {
         writer.append(node.getQuoteCharacter());
-        writer.append(ScriptRuntime.escapeString(node.getString(), node.getQuoteCharacter()));
+        writer.append(ScriptRuntime.escapeString(node.getValue(), node.getQuoteCharacter()));
         writer.append(node.getQuoteCharacter());
     }
 
