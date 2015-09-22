@@ -16,7 +16,11 @@
 package org.teavm.jso.plugin;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.mozilla.javascript.Node;
 import org.mozilla.javascript.ScriptRuntime;
 import org.mozilla.javascript.Token;
@@ -24,8 +28,10 @@ import org.mozilla.javascript.ast.ArrayComprehension;
 import org.mozilla.javascript.ast.ArrayComprehensionLoop;
 import org.mozilla.javascript.ast.ArrayLiteral;
 import org.mozilla.javascript.ast.AstNode;
+import org.mozilla.javascript.ast.AstRoot;
 import org.mozilla.javascript.ast.Block;
 import org.mozilla.javascript.ast.BreakStatement;
+import org.mozilla.javascript.ast.CatchClause;
 import org.mozilla.javascript.ast.ConditionalExpression;
 import org.mozilla.javascript.ast.ContinueStatement;
 import org.mozilla.javascript.ast.DoLoop;
@@ -43,7 +49,9 @@ import org.mozilla.javascript.ast.InfixExpression;
 import org.mozilla.javascript.ast.Label;
 import org.mozilla.javascript.ast.LabeledStatement;
 import org.mozilla.javascript.ast.LetNode;
+import org.mozilla.javascript.ast.Name;
 import org.mozilla.javascript.ast.NewExpression;
+import org.mozilla.javascript.ast.NodeVisitor;
 import org.mozilla.javascript.ast.NumberLiteral;
 import org.mozilla.javascript.ast.ObjectLiteral;
 import org.mozilla.javascript.ast.ObjectProperty;
@@ -51,7 +59,16 @@ import org.mozilla.javascript.ast.ParenthesizedExpression;
 import org.mozilla.javascript.ast.PropertyGet;
 import org.mozilla.javascript.ast.RegExpLiteral;
 import org.mozilla.javascript.ast.ReturnStatement;
+import org.mozilla.javascript.ast.Scope;
 import org.mozilla.javascript.ast.StringLiteral;
+import org.mozilla.javascript.ast.SwitchCase;
+import org.mozilla.javascript.ast.SwitchStatement;
+import org.mozilla.javascript.ast.ThrowStatement;
+import org.mozilla.javascript.ast.TryStatement;
+import org.mozilla.javascript.ast.UnaryExpression;
+import org.mozilla.javascript.ast.VariableDeclaration;
+import org.mozilla.javascript.ast.VariableInitializer;
+import org.mozilla.javascript.ast.WhileLoop;
 import org.teavm.codegen.SourceWriter;
 
 /**
@@ -59,7 +76,6 @@ import org.teavm.codegen.SourceWriter;
  * @author Alexey Andreev
  */
 public class AstWriter {
-    private static final int PRECEDENCE_PRIMARY = 1;
     private static final int PRECEDENCE_MEMBER = 2;
     private static final int PRECEDENCE_FUNCTION = 3;
     private static final int PRECEDENCE_POSTFIX = 4;
@@ -78,9 +94,52 @@ public class AstWriter {
     private static final int PRECEDENCE_ASSIGN = 17;
     private static final int PRECEDENCE_COMMA = 18;
     private SourceWriter writer;
+    private Map<String, String> nameMap = new HashMap<>();
+    private Set<String> aliases = new HashSet<>();
 
     public AstWriter(SourceWriter writer) {
         this.writer = writer;
+    }
+
+    private void declareName(String name) {
+        if (nameMap.containsKey(name)) {
+            return;
+        }
+        if (aliases.add(name)) {
+            nameMap.put(name, name);
+            return;
+        }
+        for (int i = 0;; ++i) {
+            String alias = name + "_" + i;
+            if (aliases.add(alias)) {
+                nameMap.put(name, alias);
+                return;
+            }
+        }
+    }
+
+    public void declareAlias(String name, String alias) {
+        if (!aliases.add(alias)) {
+            throw new IllegalArgumentException("Alias " + alias + " is already occupied");
+        }
+        nameMap.put(name, alias);
+    }
+
+    public void hoist(AstNode node) {
+        node.visit(new NodeVisitor() {
+            @Override
+            public boolean visit(AstNode node) {
+                if (node instanceof Scope) {
+                    Scope scope = (Scope) node;
+                    if (scope.getSymbolTable() != null) {
+                        for (String name : scope.getSymbolTable().keySet()) {
+                            declareName(name);
+                        }
+                    }
+                }
+                return true;
+            }
+        });
     }
 
     public void print(AstNode node) throws IOException {
@@ -89,6 +148,9 @@ public class AstWriter {
 
     private void print(AstNode node, int precedence) throws IOException {
         switch (node.getType()) {
+            case Token.SCRIPT:
+                print((AstRoot) node);
+                break;
             case Token.CALL:
             case Token.NEW:
                 print((FunctionCall) node, precedence);
@@ -111,6 +173,21 @@ public class AstWriter {
             case Token.STRING:
                 print((StringLiteral) node);
                 break;
+            case Token.TRUE:
+                writer.append("true");
+                break;
+            case Token.FALSE:
+                writer.append("false");
+                break;
+            case Token.THIS:
+                writer.append(nameMap.containsKey("this") ? nameMap.get("this") : "this");
+                break;
+            case Token.NULL:
+                writer.append("null");
+                break;
+            case Token.NAME:
+                print((Name) node);
+                break;
             case Token.REGEXP:
                 print((RegExpLiteral) node);
                 break;
@@ -121,7 +198,11 @@ public class AstWriter {
                 print((ArrayLiteral) node);
                 break;
             case Token.BLOCK:
-                print((Block) node);
+                if (node instanceof Block) {
+                    print((Block) node);
+                } else if (node instanceof Scope) {
+                    print((Scope) node);
+                }
                 break;
             case Token.HOOK:
                 print((ConditionalExpression) node, precedence);
@@ -170,15 +251,49 @@ public class AstWriter {
             case Token.IF:
                 print((IfStatement) node);
                 break;
+            case Token.SWITCH:
+                print((SwitchStatement) node);
+                break;
+            case Token.THROW:
+                print((ThrowStatement) node);
+                break;
+            case Token.TRY:
+                print((TryStatement) node);
+                break;
+            case Token.CONST:
+            case Token.VAR:
+            case Token.LET:
+                print((VariableDeclaration) node);
+                break;
+            case Token.WHILE:
+                print((WhileLoop) node);
+                break;
             default:
                 if (node instanceof InfixExpression) {
                     printInfix((InfixExpression) node, precedence);
+                } else if (node instanceof UnaryExpression) {
+                    printUnary((UnaryExpression) node, precedence);
                 }
                 break;
         }
     }
 
+    private void print(AstRoot node) throws IOException {
+        for (Node child : node) {
+            print((AstNode) child);
+        }
+    }
+
     private void print(Block node) throws IOException {
+        writer.append('{').softNewLine().indent();
+        for (Node child = node.getFirstChild(); child != null; child = child.getNext()) {
+            print((AstNode) child);
+            writer.softNewLine();
+        }
+        writer.outdent().append('}');
+    }
+
+    private void print(Scope node) throws IOException {
         writer.append('{').softNewLine().indent();
         for (Node child = node.getFirstChild(); child != null; child = child.getNext()) {
             print((AstNode) child);
@@ -219,6 +334,12 @@ public class AstWriter {
         writer.append(';');
     }
 
+    private void print(ThrowStatement node) throws IOException {
+        writer.append("throw ");
+        print(node.getExpression());
+        writer.append(';');
+    }
+
     private void print(DoLoop node) throws IOException {
         writer.append("do");
         if (node.getBody() instanceof Block) {
@@ -256,6 +377,13 @@ public class AstWriter {
         print(node.getBody());
     }
 
+    private void print(WhileLoop node) throws IOException {
+        writer.append("while").ws().append('(');
+        print(node.getCondition());
+        writer.append(')').ws();
+        print(node.getBody());
+    }
+
     private void print(IfStatement node) throws IOException {
         writer.append("if").ws().append('(');
         print(node.getCondition());
@@ -264,6 +392,78 @@ public class AstWriter {
         if (node.getElsePart() != null) {
             writer.ws().append("else ");
             print(node.getElsePart());
+        }
+    }
+
+    private void print(SwitchStatement node) throws IOException {
+        writer.append("switch").ws().append('(');
+        print(node.getExpression());
+        writer.append(')').ws().append('{').indent().softNewLine();
+        for (SwitchCase sc : node.getCases()) {
+            if (sc.getExpression() == null) {
+                writer.append("default:");
+            } else {
+                writer.append("case ");
+                print(sc.getExpression());
+                writer.append(':');
+            }
+            writer.indent().softNewLine();
+            if (sc.getStatements() != null) {
+                for (AstNode stmt : sc.getStatements()) {
+                    print(stmt);
+                    writer.softNewLine();
+                }
+            }
+            writer.outdent();
+        }
+        writer.append('}');
+    }
+
+    private void print(TryStatement node) throws IOException {
+        writer.append("try ");
+        print(node.getTryBlock());
+        for (CatchClause cc : node.getCatchClauses()) {
+            writer.ws().append("catch").ws().append('(');
+            print(cc.getVarName());
+            if (cc.getCatchCondition() != null) {
+                writer.append(" if ");
+                print(cc.getCatchCondition());
+            }
+            writer.append(')');
+        }
+        if (node.getFinallyBlock() != null) {
+            writer.ws().append("finally ");
+            print(node.getFinallyBlock());
+        }
+    }
+
+    private void print(VariableDeclaration node) throws IOException {
+        switch (node.getType()) {
+            case Token.VAR:
+                writer.append("var ");
+                break;
+            case Token.LET:
+                writer.append("let ");
+                break;
+            case Token.CONST:
+                writer.append("const ");
+                break;
+            default:
+                break;
+        }
+        print(node.getVariables().get(0));
+        for (int i = 1; i < node.getVariables().size(); ++i) {
+            writer.append(',').ws();
+            print(node.getVariables().get(i));
+        }
+        writer.append(';');
+    }
+
+    private void print(VariableInitializer node) throws IOException {
+        print(node.getTarget());
+        if (node.getInitializer() != null) {
+            writer.ws().append('=').ws();
+            print(node.getInitializer());
         }
     }
 
@@ -389,6 +589,14 @@ public class AstWriter {
         writer.append(node.getQuoteCharacter());
     }
 
+    private void print(Name node) throws IOException {
+        String alias = nameMap.get(node.getIdentifier());
+        if (alias == null) {
+            alias = node.getIdentifier();
+        }
+        writer.append(alias);
+    }
+
     private void print(RegExpLiteral node) throws IOException {
         writer.append('/').append(node.getValue()).append('/').append(node.getFlags());
     }
@@ -428,8 +636,9 @@ public class AstWriter {
         if (!node.isMethod()) {
             writer.append("function");
         }
-        if (node.getFunctionName() != null) {
-            writer.append(' ').append(node.getFunctionName());
+        if (node.getFunctionName().getString() != null) {
+            writer.append(' ');
+            print(node.getFunctionName());
         }
         writer.append('(');
         printList(node.getParams());
@@ -460,6 +669,31 @@ public class AstWriter {
 
     private void print(ParenthesizedExpression node, int precedence) throws IOException {
         print(node.getExpression(), precedence);
+    }
+
+    private void printUnary(UnaryExpression node, int precedence) throws IOException {
+        int innerPrecedence = node.isPostfix() ? PRECEDENCE_POSTFIX : PRECEDENCE_PREFIX;
+
+        if (!node.isPostfix()) {
+            writer.append(AstNode.operatorToString(node.getType()));
+            if (requiresWhitespaces(node.getType())) {
+                writer.append(' ');
+            }
+        }
+
+        if (innerPrecedence > precedence) {
+            writer.append('(');
+        }
+
+        print(node.getOperand(), innerPrecedence);
+
+        if (innerPrecedence > precedence) {
+            writer.append(')');
+        }
+
+        if (node.isPostfix()) {
+            writer.append(AstNode.operatorToString(node.getType()));
+        }
     }
 
     private void printInfix(InfixExpression node, int precedence) throws IOException {
@@ -591,6 +825,8 @@ public class AstWriter {
             case Token.IN:
             case Token.TYPEOF:
             case Token.INSTANCEOF:
+            case Token.VOID:
+            case Token.DEL_REF:
                 return true;
             default:
                 return false;
