@@ -162,7 +162,7 @@ public class AstWriter {
                 print((ArrayComprehension) node);
                 break;
             case Token.GETPROP:
-                print((PropertyGet) node, precedence);
+                print((PropertyGet) node);
                 break;
             case Token.GENEXPR:
                 print((GeneratorExpression) node);
@@ -208,7 +208,7 @@ public class AstWriter {
                 print((ConditionalExpression) node, precedence);
                 break;
             case Token.GETELEM:
-                print((ElementGet) node, precedence);
+                print((ElementGet) node);
                 break;
             case Token.LETEXPR:
                 print((LetNode) node);
@@ -425,6 +425,7 @@ public class AstWriter {
                 print(cc.getCatchCondition());
             }
             writer.append(')');
+            print(cc.getBody());
         }
         if (node.getFinallyBlock() != null) {
             writer.ws().append("finally ");
@@ -469,48 +470,40 @@ public class AstWriter {
         writer.append(';');
     }
 
-    private void print(ElementGet node, int precedence) throws IOException {
-        if (precedence < PRECEDENCE_MEMBER) {
-            writer.append('(');
-        }
+    private void print(ElementGet node) throws IOException {
         print(node.getTarget(), PRECEDENCE_MEMBER);
-        if (precedence < PRECEDENCE_MEMBER) {
-            writer.append(')');
-        }
         writer.append('[');
         print(node.getElement());
         writer.append(']');
     }
 
-    private void print(PropertyGet node, int precedence) throws IOException {
-        if (precedence < PRECEDENCE_MEMBER) {
-            writer.append('(');
-        }
-        print(node.getLeft());
-        if (precedence < PRECEDENCE_MEMBER) {
-            writer.append(')');
-        }
+    private void print(PropertyGet node) throws IOException {
+        print(node.getLeft(), PRECEDENCE_MEMBER);
         writer.ws().append('.').ws();
         print(node.getRight());
     }
 
     private void print(FunctionCall node, int precedence) throws IOException {
-        if (node instanceof NewExpression) {
-            writer.append("new ");
-        }
         if (precedence < PRECEDENCE_FUNCTION) {
             writer.append('(');
         }
-        print(node.getTarget(), PRECEDENCE_FUNCTION);
-        if (precedence < PRECEDENCE_FUNCTION) {
-            writer.append(')');
+        int innerPrecedence = node instanceof NewExpression ? PRECEDENCE_FUNCTION - 1 : PRECEDENCE_FUNCTION;
+        if (node instanceof NewExpression) {
+            writer.append("new ");
         }
+        print(node.getTarget(), innerPrecedence);
         writer.append('(');
         printList(node.getArguments());
         writer.append(')');
         if (node instanceof NewExpression) {
             writer.ws();
-            print(((NewExpression) node).getInitializer());
+            NewExpression newExpr = (NewExpression) node;
+            if (newExpr.getInitializer() != null) {
+                print(newExpr.getInitializer());
+            }
+        }
+        if (precedence < PRECEDENCE_FUNCTION) {
+            writer.append(')');
         }
     }
 
@@ -526,7 +519,6 @@ public class AstWriter {
         if (precedence < PRECEDENCE_COND) {
             writer.append(')');
         }
-        print(node.getTestExpression(), precedence);
     }
 
     private void printList(List<? extends AstNode> nodes) throws IOException {
@@ -613,19 +605,19 @@ public class AstWriter {
                 print(node.getElements().get(i));
             }
         }
-        printList(node.getElements());
         writer.append('}');
     }
 
     private void print(ObjectProperty node) throws IOException {
-        StringBuilder sb = new StringBuilder();
         if (node.isGetterMethod()) {
-            sb.append("get ");
+            writer.append("get ");
         } else if (node.isSetterMethod()) {
-            sb.append("set ");
+            writer.append("set ");
         }
         print(node.getLeft());
-        writer.ws().append(':').ws();
+        if (!node.isMethod()) {
+            writer.ws().append(':').ws();
+        }
         print(node.getRight());
     }
 
@@ -633,7 +625,7 @@ public class AstWriter {
         if (!node.isMethod()) {
             writer.append("function");
         }
-        if (node.getFunctionName().getString() != null) {
+        if (node.getFunctionName() != null) {
             writer.append(' ');
             print(node.getFunctionName());
         }
@@ -671,6 +663,11 @@ public class AstWriter {
     private void printUnary(UnaryExpression node, int precedence) throws IOException {
         int innerPrecedence = node.isPostfix() ? PRECEDENCE_POSTFIX : PRECEDENCE_PREFIX;
 
+
+        if (innerPrecedence > precedence) {
+            writer.append('(');
+        }
+
         if (!node.isPostfix()) {
             writer.append(AstNode.operatorToString(node.getType()));
             if (requiresWhitespaces(node.getType())) {
@@ -678,18 +675,14 @@ public class AstWriter {
             }
         }
 
-        if (innerPrecedence > precedence) {
-            writer.append('(');
-        }
-
         print(node.getOperand(), innerPrecedence);
-
-        if (innerPrecedence > precedence) {
-            writer.append(')');
-        }
 
         if (node.isPostfix()) {
             writer.append(AstNode.operatorToString(node.getType()));
+        }
+
+        if (innerPrecedence > precedence) {
+            writer.append(')');
         }
     }
 
@@ -760,7 +753,7 @@ public class AstWriter {
         print(node.getRight(), rightPrecedence);
 
         if (innerPrecedence > precedence) {
-            writer.append('(');
+            writer.append(')');
         }
     }
 
