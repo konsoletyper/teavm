@@ -16,6 +16,7 @@
 package org.teavm.jso.plugin;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -479,8 +480,11 @@ public class AstWriter {
 
     private void print(PropertyGet node) throws IOException {
         print(node.getLeft(), PRECEDENCE_MEMBER);
-        writer.ws().append('.').ws();
+        writer.append('.');
+        Map<String, String> oldNameMap = nameMap;
+        nameMap = Collections.emptyMap();
         print(node.getRight());
+        nameMap = oldNameMap;
     }
 
     private void print(FunctionCall node, int precedence) throws IOException {
@@ -597,7 +601,7 @@ public class AstWriter {
     }
 
     private void print(ObjectLiteral node) throws IOException {
-        writer.append('{');
+        writer.append('{').ws();
         if (node.getElements() != null && !node.getElements().isEmpty()) {
             print(node.getElements().get(0));
             for (int i = 1; i < node.getElements().size(); ++i) {
@@ -605,7 +609,7 @@ public class AstWriter {
                 print(node.getElements().get(i));
             }
         }
-        writer.append('}');
+        writer.ws().append('}');
     }
 
     private void print(ObjectProperty node) throws IOException {
@@ -614,7 +618,10 @@ public class AstWriter {
         } else if (node.isSetterMethod()) {
             writer.append("set ");
         }
+        Map<String, String> oldNameMap = nameMap;
+        nameMap = Collections.emptyMap();
         print(node.getLeft());
+        nameMap = oldNameMap;
         if (!node.isMethod()) {
             writer.ws().append(':').ws();
         }
@@ -631,7 +638,7 @@ public class AstWriter {
         }
         writer.append('(');
         printList(node.getParams());
-        writer.append(')');
+        writer.append(')').ws();
 
         if (node.isExpressionClosure()) {
             if (node.getBody().getLastChild() instanceof ReturnStatement) {
@@ -642,10 +649,6 @@ public class AstWriter {
             }
         } else {
             print(node.getBody());
-            writer.softNewLine();
-        }
-        if (node.getFunctionType() == FunctionNode.FUNCTION_STATEMENT || node.isMethod()) {
-            writer.softNewLine();
         }
     }
 

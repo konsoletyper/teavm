@@ -86,7 +86,7 @@ public class AnnotationsTest {
 
         @JSBody(params = "value", script = ""
                 + "return {"
-                    + "value : value, "
+                    + "'value' : value, "
                     + "testMethod : function(num) { return this.value + num + 1; }, "
                     + "renamedJSMethod : function(num) { return this.value + num + 2; }"
                 + "};")

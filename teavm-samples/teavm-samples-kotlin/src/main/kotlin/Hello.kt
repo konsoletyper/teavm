@@ -1,15 +1,14 @@
 package org.teavm.samples.kotlin
 
 import org.teavm.jso.*
-import org.teavm.dom.browser.*
-import org.teavm.dom.html.*
-import org.teavm.dom.events.*
+import org.teavm.jso.browser.*
+import org.teavm.jso.dom.html.*
+import org.teavm.jso.dom.events.*
 
 fun main(args : Array<String>) {
-    var window = JS.getGlobal() as Window;
-    var document = window.getDocument();
+    var document = Window.current().getDocument();
 
     document.getElementById("hello-kotlin").addEventListener("click", EventListener<MouseEvent>() {
-       window.alert("Hello, developer!");
+       Window.alert("Hello, developer!");
     })
 }

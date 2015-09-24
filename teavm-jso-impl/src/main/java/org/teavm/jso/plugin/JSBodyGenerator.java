@@ -19,10 +19,8 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.List;
 import org.mozilla.javascript.CompilerEnvirons;
-import org.mozilla.javascript.IRFactory;
-import org.mozilla.javascript.ast.AstNode;
+import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ast.AstRoot;
-import org.mozilla.javascript.ast.NodeVisitor;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.javascript.spi.Generator;
 import org.teavm.javascript.spi.GeneratorContext;
@@ -45,29 +43,86 @@ public class JSBodyGenerator implements Generator {
         AnnotationReader annot = method.getAnnotations().get(JSBodyImpl.class.getName());
         boolean isStatic = annot.getValue("isStatic").getBoolean();
         List<AnnotationValue> paramNames = annot.getValue("params").getList();
+        String script = annot.getValue("script").getString();
 
-        int bodyParamCount = isStatic ? method.parameterCount() : method.parameterCount() - 1;
-
+        TeaVMErrorReporter errorReporter = new TeaVMErrorReporter(context.getDiagnostics(),
+                new CallLocation(methodRef));
         CompilerEnvirons env = new CompilerEnvirons();
         env.setRecoverFromErrors(true);
-        IRFactory factory = new IRFactory(env, new TeaVMErrorReporter(context.getDiagnostics(),
-                new CallLocation(methodRef)));
-        String script = annot.getValue("script").getString();
-        AstRoot rootNode;
-        try {
-            rootNode = factory.parse(new StringReader(script), null, 0);
-        } catch (IOException e) {
-            context.getDiagnostics().error(new CallLocation(methodRef), "IO error parsing JSBody script");
+        env.setLanguageVersion(Context.VERSION_1_8);
+        env.setIdeMode(true);
+        JSParser parser = new JSParser(env, errorReporter);
+        parser.enterFunction();
+        AstRoot rootNode = parser.parse(new StringReader(script), null, 0);
+        parser.exitFunction();
+        if (errorReporter.hasErrors()) {
+            generateBloated(context, writer, methodRef, method, isStatic, paramNames, script);
             return;
         }
 
-        rootNode.visit(new NodeVisitor() {
-            @Override
-            public boolean visit(AstNode node) {
-                return false;
-            }
-        });
+        AstWriter astWriter = new AstWriter(writer);
+        int paramIndex = 1;
+        if (!isStatic) {
+            astWriter.declareAlias("this", context.getParameterName(paramIndex++));
+        }
+        for (int i = 0; i < paramNames.size(); ++i) {
+            astWriter.declareAlias(paramNames.get(i).getString(), context.getParameterName(paramIndex++));
+        }
+        astWriter.hoist(rootNode);
+        astWriter.print(rootNode);
+        writer.softNewLine();
     }
 
+    private void generateBloated(GeneratorContext context, SourceWriter writer, MethodReference methodRef,
+            MethodReader method, boolean isStatic, List<AnnotationValue> paramNames, String script)
+            throws IOException {
+        int bodyParamCount = isStatic ? method.parameterCount() : method.parameterCount() - 1;
 
+        writer.append("if (!").appendMethodBody(methodRef).append(".$native)").ws().append('{').indent().newLine();
+        writer.appendMethodBody(methodRef).append(".$native").ws().append('=').ws().append("function(");
+        int count = method.parameterCount();
+        for (int i = 0; i < count; ++i) {
+            if (i > 0) {
+                writer.append(',').ws();
+            }
+            writer.append('_').append(context.getParameterName(i + 1));
+        }
+        writer.append(')').ws().append('{').softNewLine().indent();
+
+        writer.append("return (function(");
+        for (int i = 0; i < bodyParamCount; ++i) {
+            if (i > 0) {
+                writer.append(',').ws();
+            }
+            String name = paramNames.get(i).getString();
+            writer.append(name);
+        }
+        writer.append(')').ws().append('{').softNewLine().indent();
+        writer.append(script).softNewLine();
+        writer.outdent().append("})");
+        if (!isStatic) {
+            writer.append(".call");
+        }
+        writer.append('(');
+        for (int i = 0; i < count; ++i) {
+            if (i > 0) {
+                writer.append(',').ws();
+            }
+            writer.append('_').append(context.getParameterName(i + 1));
+        }
+        writer.append(");").softNewLine();
+        writer.outdent().append("};").softNewLine();
+        writer.appendMethodBody(methodRef).ws().append('=').ws().appendMethodBody(methodRef).append(".$native;")
+                .softNewLine();
+        writer.outdent().append("}").softNewLine();
+
+        writer.append("return ").appendMethodBody(methodRef).append('(');
+        for (int i = 0; i < count; ++i) {
+            if (i > 0) {
+                writer.append(',').ws();
+            }
+            writer.append(context.getParameterName(i + 1));
+        }
+        writer.append(");").softNewLine();
+    }
 }

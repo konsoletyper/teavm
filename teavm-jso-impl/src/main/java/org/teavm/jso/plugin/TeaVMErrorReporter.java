@@ -27,22 +27,28 @@ import org.teavm.model.CallLocation;
 public class TeaVMErrorReporter implements ErrorReporter {
     private Diagnostics diagnostics;
     private CallLocation location;
+    private boolean hasErrors;
 
     public TeaVMErrorReporter(Diagnostics diagnostics, CallLocation location) {
         this.diagnostics = diagnostics;
         this.location = location;
     }
 
+    public boolean hasErrors() {
+        return hasErrors;
+    }
+
     @Override
     public void warning(String message, String sourceName, int line, String lineSource, int lineOffset) {
-        diagnostics.warning(location, "Error in @JSBody script line " + line + ", char " + lineOffset
+        diagnostics.warning(location, "Warning in @JSBody script line " + line + ", char " + lineOffset
                 + ": " + message);
     }
 
     @Override
     public void error(String message, String sourceName, int line, String lineSource, int lineOffset) {
-        diagnostics.error(location, "Error in @JSBody script line " + line + ", char " + lineOffset
+        diagnostics.warning(location, "Error in @JSBody script line " + line + ", char " + lineOffset
                 + ": " + message);
+        hasErrors = true;
     }
 
     @Override

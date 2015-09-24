@@ -22,9 +22,9 @@ public final class Performance implements JSObject {
     private Performance() {
     }
 
-    @JSBody(params = {}, script = "return Performance.now();")
+    @JSBody(params = {}, script = "return window.performance.now();")
     public static native double now();
 
-    @JSBody(params = {}, script = "return typeof(Performance) !== 'undefined';")
+    @JSBody(params = {}, script = "return typeof(window.performance) !== 'undefined';")
     public static native boolean isSupported();
 }

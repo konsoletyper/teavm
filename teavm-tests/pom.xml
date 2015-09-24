@@ -52,7 +52,8 @@
       <groupId>org.teavm</groupId>
       <artifactId>teavm-jso</artifactId>
       <version>${project.version}</version>
-      <classifier>tck</classifier>
+      <classifier>tests</classifier>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
@@ -83,6 +84,12 @@
             <phase>process-test-classes</phase>
             <configuration>
               <minifying>false</minifying>
+              <scanDependencies>true</scanDependencies>
+              <wildcards>
+                <wildcard>org.teavm.classlib.**.*Test</wildcard>
+                <wildcard>org.teavm.jso.**.*Test</wildcard>
+                <wildcard>org.teavm.platform.metadata.*Test</wildcard>
+              </wildcards>
               <properties>
                 <java.util.Locale.available>en, en_US, en_GB, ru, ru_RU</java.util.Locale.available>
               </properties>
