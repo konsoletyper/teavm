@@ -29,4 +29,5 @@ class JSBodyRepository {
     public final Map<MethodReference, JSBodyEmitter> emitters = new HashMap<>();
     public final Map<MethodReference, MethodReference> methodMap = new HashMap<>();
     public final Set<MethodReference> processedMethods = new HashSet<>();
+    public final Set<MethodReference> inlineMethods = new HashSet<>();
 }

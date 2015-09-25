@@ -27,9 +27,11 @@ import java.util.Set;
 import java.util.function.Function;
 import org.mozilla.javascript.CompilerEnvirons;
 import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ast.AstNode;
 import org.mozilla.javascript.ast.AstRoot;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.javascript.spi.GeneratedBy;
+import org.teavm.javascript.spi.InjectedBy;
 import org.teavm.javascript.spi.Sync;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSFunctor;
@@ -570,8 +572,14 @@ class JavascriptNativeProcessor {
             repository.emitters.put(proxyMethod, new JSBodyBloatedEmitter(isStatic, proxyMethod,
                     script, parameterNames));
         } else {
-            repository.emitters.put(proxyMethod, new JSBodyAstEmitter(isStatic, rootNode,
-                    parameterNames));
+            AstNode expr = JSBodyInlineUtil.isSuitableForInlining(methodToProcess.getReference(),
+                    parameterNames, rootNode);
+            if (expr != null) {
+                repository.inlineMethods.add(methodToProcess.getReference());
+            } else {
+                expr = rootNode;
+            }
+            repository.emitters.put(proxyMethod, new JSBodyAstEmitter(isStatic, expr, parameterNames));
         }
         repository.methodMap.put(methodToProcess.getReference(), proxyMethod);
     }
@@ -586,7 +594,9 @@ class JavascriptNativeProcessor {
                     MethodHolder proxyMethod = new MethodHolder(proxyRef.getDescriptor());
                     proxyMethod.getModifiers().add(ElementModifier.NATIVE);
                     proxyMethod.getModifiers().add(ElementModifier.STATIC);
-                    AnnotationHolder generatorAnnot = new AnnotationHolder(GeneratedBy.class.getName());
+                    boolean inline = repository.inlineMethods.contains(methodRef);
+                    AnnotationHolder generatorAnnot = new AnnotationHolder(inline
+                            ? InjectedBy.class.getName() : GeneratedBy.class.getName());
                     generatorAnnot.getValues().put("value",
                             new AnnotationValue(ValueType.parse(JSBodyGenerator.class)));
                     proxyMethod.getAnnotations().add(generatorAnnot);

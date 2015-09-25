@@ -16,7 +16,7 @@
 package org.teavm.jso.plugin;
 
 import java.io.IOException;
-import org.mozilla.javascript.ast.AstRoot;
+import org.mozilla.javascript.ast.AstNode;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.javascript.spi.GeneratorContext;
 import org.teavm.javascript.spi.InjectorContext;
@@ -28,10 +28,10 @@ import org.teavm.model.MethodReference;
  */
 class JSBodyAstEmitter implements JSBodyEmitter {
     private boolean isStatic;
-    private AstRoot ast;
+    private AstNode ast;
     private String[] parameterNames;
 
-    public JSBodyAstEmitter(boolean isStatic, AstRoot ast, String[] parameterNames) {
+    public JSBodyAstEmitter(boolean isStatic, AstNode ast, String[] parameterNames) {
         this.isStatic = isStatic;
         this.ast = ast;
         this.parameterNames = parameterNames;
@@ -51,7 +51,6 @@ class JSBodyAstEmitter implements JSBodyEmitter {
         }
         astWriter.hoist(ast);
         astWriter.print(ast);
-        context.getWriter().softNewLine();
     }
 
     @Override
