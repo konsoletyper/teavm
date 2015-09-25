@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,22 +15,12 @@
  */
 package org.teavm.jso.plugin;
 
-import org.teavm.vm.spi.TeaVMHost;
-import org.teavm.vm.spi.TeaVMPlugin;
+import java.io.IOException;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class JSOPlugin implements TeaVMPlugin {
-    @Override
-    public void install(TeaVMHost host) {
-        JSBodyRepository repository = new JSBodyRepository();
-        host.registerService(JSBodyRepository.class, repository);
-        host.add(new JSObjectClassTransformer(repository));
-        JSODependencyListener dependencyListener = new JSODependencyListener();
-        JSOAliasRenderer aliasRenderer = new JSOAliasRenderer(dependencyListener);
-        host.add(dependencyListener);
-        host.add(aliasRenderer);
-    }
+interface NameEmitter {
+    void emit() throws IOException;
 }

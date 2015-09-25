@@ -15,6 +15,8 @@
  */
 package org.teavm.jso.plugin;
 
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -23,6 +25,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import org.mozilla.javascript.CompilerEnvirons;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.ast.AstRoot;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.javascript.spi.GeneratedBy;
 import org.teavm.javascript.spi.Sync;
@@ -60,7 +65,6 @@ import org.teavm.model.Variable;
 import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.CastInstruction;
 import org.teavm.model.instructions.ClassConstantInstruction;
-import org.teavm.model.instructions.ExitInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
@@ -275,7 +279,7 @@ class JavascriptNativeProcessor {
         return staticSignature;
     }
 
-    public void processProgram(MethodHolder methodToProcess) {
+    public void processProgram(JSBodyRepository repository, MethodHolder methodToProcess) {
         program = methodToProcess.getProgram();
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
@@ -286,156 +290,224 @@ class JavascriptNativeProcessor {
                     continue;
                 }
                 InvokeInstruction invoke = (InvokeInstruction) insn;
-                if (!nativeRepos.isJavaScriptClass(invoke.getMethod().getClassName())) {
-                    continue;
-                }
-                replacement.clear();
 
                 MethodReader method = getMethod(invoke.getMethod());
-                if (method == null || method.hasModifier(ElementModifier.STATIC)) {
+                if (method == null) {
                     continue;
                 }
-
-                if (method.hasModifier(ElementModifier.FINAL)) {
-                    MethodReader overriden = getOverridenMethod(method);
-                    if (overriden != null) {
-                        CallLocation callLocation = new CallLocation(methodToProcess.getReference(),
-                                insn.getLocation());
-                        diagnostics.error(callLocation, "JS final method {{m0}} overrides {{M1}}. "
-                                + "Overriding final method of overlay types is prohibited.",
-                                method.getReference(), overriden.getReference());
-                    }
-                    if (method.getProgram() != null && method.getProgram().basicBlockCount() > 0) {
-                        invoke.setMethod(new MethodReference(method.getOwnerName(), method.getName() + "$static",
-                                getStaticSignature(method.getReference())));
-                        invoke.getArguments().add(0, invoke.getInstance());
-                        invoke.setInstance(null);
-                    }
-                    invoke.setType(InvocationType.SPECIAL);
-                    continue;
-                }
-
                 CallLocation callLocation = new CallLocation(methodToProcess.getReference(), insn.getLocation());
-                if (method.getAnnotations().get(JSProperty.class.getName()) != null) {
-                    if (isProperGetter(method.getDescriptor())) {
-                        String propertyName;
-                        AnnotationReader annot = method.getAnnotations().get(JSProperty.class.getName());
-                        if (annot.getValue("value") != null) {
-                            propertyName = annot.getValue("value").getString();
-                        } else {
-                            propertyName = method.getName().charAt(0) == 'i' ? cutPrefix(method.getName(), 2)
-                                    : cutPrefix(method.getName(), 3);
-                        }
-                        Variable result = invoke.getReceiver() != null ? program.createVariable() : null;
-                        addPropertyGet(propertyName, invoke.getInstance(), result, invoke.getLocation());
-                        if (result != null) {
-                            result = unwrap(callLocation, result, method.getResultType());
-                            copyVar(result, invoke.getReceiver(), invoke.getLocation());
-                        }
-                    } else if (isProperSetter(method.getDescriptor())) {
-                        String propertyName;
-                        AnnotationReader annot = method.getAnnotations().get(JSProperty.class.getName());
-                        if (annot.getValue("value") != null) {
-                            propertyName = annot.getValue("value").getString();
-                        } else {
-                            propertyName = cutPrefix(method.getName(), 3);
-                        }
-                        Variable wrapped = wrapArgument(callLocation, invoke.getArguments().get(0),
-                                method.parameterType(0));
-                        addPropertySet(propertyName, invoke.getInstance(), wrapped, invoke.getLocation());
-                    } else {
-                        diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript property "
-                                + "declaration", invoke.getMethod());
-                        continue;
-                    }
-                } else if (method.getAnnotations().get(JSIndexer.class.getName()) != null) {
-                    if (isProperGetIndexer(method.getDescriptor())) {
-                        Variable result = invoke.getReceiver() != null ? program.createVariable() : null;
-                        addIndexerGet(invoke.getInstance(), wrap(invoke.getArguments().get(0),
-                                method.parameterType(0), invoke.getLocation()), result, invoke.getLocation());
-                        if (result != null) {
-                            result = unwrap(callLocation, result, method.getResultType());
-                            copyVar(result, invoke.getReceiver(), invoke.getLocation());
-                        }
-                    } else if (isProperSetIndexer(method.getDescriptor())) {
-                        Variable index = wrap(invoke.getArguments().get(0), method.parameterType(0),
-                                invoke.getLocation());
-                        Variable value = wrap(invoke.getArguments().get(1), method.parameterType(1),
-                                invoke.getLocation());
-                        addIndexerSet(invoke.getInstance(), index, value, invoke.getLocation());
-                    } else {
-                        diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript indexer "
-                                + "declaration", invoke.getMethod());
-                        continue;
-                    }
-                } else {
-                    String name = method.getName();
-
-                    AnnotationReader methodAnnot = method.getAnnotations().get(JSMethod.class.getName());
-                    if (methodAnnot != null) {
-                        AnnotationValue redefinedMethodName = methodAnnot.getValue("value");
-                        if (redefinedMethodName != null) {
-                            name = redefinedMethodName.getString();
-                        }
-                    }
-                    if (method.getResultType() != ValueType.VOID && !isSupportedType(method.getResultType())) {
-                        diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript method "
-                                + "declaration", invoke.getMethod());
-                        continue;
-                    }
-
-                    for (ValueType arg : method.getParameterTypes()) {
-                        if (!isSupportedType(arg)) {
-                            diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript method "
-                                    + "or constructor declaration", invoke.getMethod());
-                            continue;
-                        }
-                    }
-                    Variable result = invoke.getReceiver() != null ? program.createVariable() : null;
-                    InvokeInstruction newInvoke = new InvokeInstruction();
-                    ValueType[] signature = new ValueType[method.parameterCount() + 3];
-                    Arrays.fill(signature, ValueType.object(JSObject.class.getName()));
-                    newInvoke.setMethod(new MethodReference(JS.class.getName(), "invoke", signature));
-                    newInvoke.setType(InvocationType.SPECIAL);
-                    newInvoke.setReceiver(result);
-                    newInvoke.getArguments().add(invoke.getInstance());
-                    newInvoke.getArguments().add(addStringWrap(addString(name, invoke.getLocation()),
-                            invoke.getLocation()));
-                    newInvoke.setLocation(invoke.getLocation());
-                    for (int k = 0; k < invoke.getArguments().size(); ++k) {
-                        Variable arg = wrapArgument(callLocation, invoke.getArguments().get(k),
-                                method.parameterType(k));
-                        newInvoke.getArguments().add(arg);
-                    }
-                    replacement.add(newInvoke);
-                    if (result != null) {
-                        result = unwrap(callLocation, result, method.getResultType());
-                        copyVar(result, invoke.getReceiver(), invoke.getLocation());
-                    }
+                replacement.clear();
+                if (processInvocation(repository, method, callLocation, invoke)) {
+                    block.getInstructions().set(j, replacement.get(0));
+                    block.getInstructions().addAll(j + 1, replacement.subList(1, replacement.size()));
+                    j += replacement.size() - 1;
                 }
-                block.getInstructions().set(j, replacement.get(0));
-                block.getInstructions().addAll(j + 1, replacement.subList(1, replacement.size()));
-                j += replacement.size() - 1;
             }
         }
     }
 
-    public void processJSBody(ClassHolder cls, MethodHolder methodToProcess) {
+    private boolean processInvocation(JSBodyRepository repository, MethodReader method, CallLocation callLocation,
+            InvokeInstruction invoke) {
+        if (method.getAnnotations().get(JSBody.class.getName()) != null) {
+            return processJSBodyInvocation(repository, method, callLocation, invoke);
+        }
+
+        if (!nativeRepos.isJavaScriptClass(invoke.getMethod().getClassName())) {
+            return false;
+        }
+
+        if (method == null || method.hasModifier(ElementModifier.STATIC)) {
+            return false;
+        }
+
+        if (method.hasModifier(ElementModifier.FINAL)) {
+            MethodReader overriden = getOverridenMethod(method);
+            if (overriden != null) {
+                diagnostics.error(callLocation, "JS final method {{m0}} overrides {{M1}}. "
+                        + "Overriding final method of overlay types is prohibited.",
+                        method.getReference(), overriden.getReference());
+            }
+            if (method.getProgram() != null && method.getProgram().basicBlockCount() > 0) {
+                invoke.setMethod(new MethodReference(method.getOwnerName(), method.getName() + "$static",
+                        getStaticSignature(method.getReference())));
+                invoke.getArguments().add(0, invoke.getInstance());
+                invoke.setInstance(null);
+            }
+            invoke.setType(InvocationType.SPECIAL);
+            return false;
+        }
+
+        if (method.getAnnotations().get(JSProperty.class.getName()) != null) {
+            return processProperty(method, callLocation, invoke);
+        } else if (method.getAnnotations().get(JSIndexer.class.getName()) != null) {
+            return processIndexer(method, callLocation, invoke);
+        } else {
+            return processMethod(method, callLocation, invoke);
+        }
+    }
+
+    private boolean processJSBodyInvocation(JSBodyRepository repository, MethodReader method,
+            CallLocation callLocation, InvokeInstruction invoke) {
+        requireJSBody(repository, diagnostics, method);
+        MethodReference delegate = repository.methodMap.get(method.getReference());
+        if (delegate == null) {
+            return false;
+        }
+
+        Variable result = invoke.getReceiver() != null ? program.createVariable() : null;
+        InvokeInstruction newInvoke = new InvokeInstruction();
+        ValueType[] signature = new ValueType[method.parameterCount() + 3];
+        Arrays.fill(signature, ValueType.object(JSObject.class.getName()));
+        newInvoke.setMethod(delegate);
+        newInvoke.setType(InvocationType.SPECIAL);
+        newInvoke.setReceiver(result);
+        newInvoke.setLocation(invoke.getLocation());
+        if (invoke.getInstance() != null) {
+            Variable arg = wrapArgument(callLocation, invoke.getInstance(), ValueType.object(method.getOwnerName()));
+            newInvoke.getArguments().add(arg);
+        }
+        for (int k = 0; k < invoke.getArguments().size(); ++k) {
+            Variable arg = wrapArgument(callLocation, invoke.getArguments().get(k),
+                    method.parameterType(k));
+            newInvoke.getArguments().add(arg);
+        }
+        replacement.add(newInvoke);
+        if (result != null) {
+            result = unwrap(callLocation, result, method.getResultType());
+            copyVar(result, invoke.getReceiver(), invoke.getLocation());
+        }
+
+        return true;
+    }
+
+    private boolean processProperty(MethodReader method, CallLocation callLocation, InvokeInstruction invoke) {
+        if (isProperGetter(method.getDescriptor())) {
+            String propertyName;
+            AnnotationReader annot = method.getAnnotations().get(JSProperty.class.getName());
+            if (annot.getValue("value") != null) {
+                propertyName = annot.getValue("value").getString();
+            } else {
+                propertyName = method.getName().charAt(0) == 'i' ? cutPrefix(method.getName(), 2)
+                        : cutPrefix(method.getName(), 3);
+            }
+            Variable result = invoke.getReceiver() != null ? program.createVariable() : null;
+            addPropertyGet(propertyName, invoke.getInstance(), result, invoke.getLocation());
+            if (result != null) {
+                result = unwrap(callLocation, result, method.getResultType());
+                copyVar(result, invoke.getReceiver(), invoke.getLocation());
+            }
+            return true;
+        }
+        if (isProperSetter(method.getDescriptor())) {
+            String propertyName;
+            AnnotationReader annot = method.getAnnotations().get(JSProperty.class.getName());
+            if (annot.getValue("value") != null) {
+                propertyName = annot.getValue("value").getString();
+            } else {
+                propertyName = cutPrefix(method.getName(), 3);
+            }
+            Variable wrapped = wrapArgument(callLocation, invoke.getArguments().get(0),
+                    method.parameterType(0));
+            addPropertySet(propertyName, invoke.getInstance(), wrapped, invoke.getLocation());
+            return true;
+        }
+        diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript property "
+                + "declaration", invoke.getMethod());
+        return false;
+    }
+
+    private boolean processIndexer(MethodReader method, CallLocation callLocation, InvokeInstruction invoke) {
+        if (isProperGetIndexer(method.getDescriptor())) {
+            Variable result = invoke.getReceiver() != null ? program.createVariable() : null;
+            addIndexerGet(invoke.getInstance(), wrap(invoke.getArguments().get(0),
+                    method.parameterType(0), invoke.getLocation()), result, invoke.getLocation());
+            if (result != null) {
+                result = unwrap(callLocation, result, method.getResultType());
+                copyVar(result, invoke.getReceiver(), invoke.getLocation());
+            }
+            return true;
+        }
+        if (isProperSetIndexer(method.getDescriptor())) {
+            Variable index = wrap(invoke.getArguments().get(0), method.parameterType(0),
+                    invoke.getLocation());
+            Variable value = wrap(invoke.getArguments().get(1), method.parameterType(1),
+                    invoke.getLocation());
+            addIndexerSet(invoke.getInstance(), index, value, invoke.getLocation());
+            return true;
+        }
+        diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript indexer "
+                + "declaration", invoke.getMethod());
+        return false;
+    }
+
+    private boolean processMethod(MethodReader method, CallLocation callLocation, InvokeInstruction invoke) {
+        String name = method.getName();
+
+        AnnotationReader methodAnnot = method.getAnnotations().get(JSMethod.class.getName());
+        if (methodAnnot != null) {
+            AnnotationValue redefinedMethodName = methodAnnot.getValue("value");
+            if (redefinedMethodName != null) {
+                name = redefinedMethodName.getString();
+            }
+        }
+        if (method.getResultType() != ValueType.VOID && !isSupportedType(method.getResultType())) {
+            diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript method "
+                    + "declaration", invoke.getMethod());
+            return false;
+        }
+
+        for (ValueType arg : method.getParameterTypes()) {
+            if (!isSupportedType(arg)) {
+                diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript method "
+                        + "or constructor declaration", invoke.getMethod());
+                return false;
+            }
+        }
+
+        Variable result = invoke.getReceiver() != null ? program.createVariable() : null;
+        InvokeInstruction newInvoke = new InvokeInstruction();
+        ValueType[] signature = new ValueType[method.parameterCount() + 3];
+        Arrays.fill(signature, ValueType.object(JSObject.class.getName()));
+        newInvoke.setMethod(new MethodReference(JS.class.getName(), "invoke", signature));
+        newInvoke.setType(InvocationType.SPECIAL);
+        newInvoke.setReceiver(result);
+        newInvoke.getArguments().add(invoke.getInstance());
+        newInvoke.getArguments().add(addStringWrap(addString(name, invoke.getLocation()),
+                invoke.getLocation()));
+        newInvoke.setLocation(invoke.getLocation());
+        for (int k = 0; k < invoke.getArguments().size(); ++k) {
+            Variable arg = wrapArgument(callLocation, invoke.getArguments().get(k),
+                    method.parameterType(k));
+            newInvoke.getArguments().add(arg);
+        }
+        replacement.add(newInvoke);
+        if (result != null) {
+            result = unwrap(callLocation, result, method.getResultType());
+            copyVar(result, invoke.getReceiver(), invoke.getLocation());
+        }
+
+        return true;
+    }
+
+    private void requireJSBody(JSBodyRepository repository, Diagnostics diagnostics, MethodReader methodToProcess) {
+        if (!repository.processedMethods.add(methodToProcess.getReference())) {
+            return;
+        }
+        processJSBody(repository, diagnostics,  methodToProcess);
+    }
+
+    private void processJSBody(JSBodyRepository repository, Diagnostics diagnostics, MethodReader methodToProcess) {
         CallLocation location = new CallLocation(methodToProcess.getReference());
         boolean isStatic = methodToProcess.hasModifier(ElementModifier.STATIC);
 
         // validate parameter names
-        AnnotationHolder bodyAnnot = methodToProcess.getAnnotations().get(JSBody.class.getName());
+        AnnotationReader bodyAnnot = methodToProcess.getAnnotations().get(JSBody.class.getName());
         int jsParamCount = bodyAnnot.getValue("params").getList().size();
         if (methodToProcess.parameterCount() != jsParamCount) {
             diagnostics.error(location, "JSBody method {{m0}} declares " + methodToProcess.parameterCount()
                     + " parameters, but annotation specifies " + jsParamCount, methodToProcess);
             return;
         }
-
-        // remove annotation and make non-native
-        methodToProcess.getAnnotations().remove(JSBody.class.getName());
-        methodToProcess.getModifiers().remove(ElementModifier.NATIVE);
 
         // generate parameter types for original method and validate
         int paramCount = methodToProcess.parameterCount();
@@ -445,11 +517,11 @@ class JavascriptNativeProcessor {
         ValueType[] paramTypes = new ValueType[paramCount];
         int offset = 0;
         if (!isStatic) {
-            ValueType paramType = ValueType.object(cls.getName());
+            ValueType paramType = ValueType.object(methodToProcess.getOwnerName());
             paramTypes[offset++] = paramType;
             if (!isSupportedType(paramType)) {
                 diagnostics.error(location, "Non-static JSBody method {{m0}} is owned by non-JS class {{c1}}",
-                        methodToProcess.getReference(), cls.getName());
+                        methodToProcess.getReference(), methodToProcess.getOwnerName());
             }
         }
         if (methodToProcess.getResultType() != ValueType.VOID && !isSupportedType(methodToProcess.getResultType())) {
@@ -470,52 +542,58 @@ class JavascriptNativeProcessor {
                 : ValueType.parse(JSObject.class);
 
         // create proxy method
-        MethodHolder proxyMethod = new MethodHolder("$js_body$_" + methodIndexGenerator++, proxyParamTypes);
-        proxyMethod.getModifiers().add(ElementModifier.NATIVE);
-        proxyMethod.getModifiers().add(ElementModifier.STATIC);
-        AnnotationHolder genBodyAnnot = new AnnotationHolder(JSBodyImpl.class.getName());
-        genBodyAnnot.getValues().put("script", bodyAnnot.getValue("script"));
-        genBodyAnnot.getValues().put("params", bodyAnnot.getValue("params"));
-        genBodyAnnot.getValues().put("isStatic", new AnnotationValue(isStatic));
-        AnnotationHolder generatorAnnot = new AnnotationHolder(GeneratedBy.class.getName());
-        generatorAnnot.getValues().put("value", new AnnotationValue(ValueType.parse(JSBodyGenerator.class)));
-        proxyMethod.getAnnotations().add(genBodyAnnot);
-        proxyMethod.getAnnotations().add(generatorAnnot);
-        cls.addMethod(proxyMethod);
+        MethodReference proxyMethod = new MethodReference(methodToProcess.getOwnerName(),
+                methodToProcess.getName() + "$js_body$_" + methodIndexGenerator++, proxyParamTypes);
+        String script = bodyAnnot.getValue("script").getString();
+        String[] parameterNames = bodyAnnot.getValue("params").getList().stream()
+                .map(ann -> ann.getString())
+                .toArray(sz -> new String[sz]);
 
-        // create program that invokes proxy method
-        program = new Program();
-        BasicBlock block = program.createBasicBlock();
-        for (int i = 0; i < paramCount; ++i) {
-            program.createVariable();
+        // Parse JS script
+        TeaVMErrorReporter errorReporter = new TeaVMErrorReporter(diagnostics,
+                new CallLocation(methodToProcess.getReference()));
+        CompilerEnvirons env = new CompilerEnvirons();
+        env.setRecoverFromErrors(true);
+        env.setLanguageVersion(Context.VERSION_1_8);
+        env.setIdeMode(true);
+        JSParser parser = new JSParser(env, errorReporter);
+        parser.enterFunction();
+        AstRoot rootNode;
+        try {
+            rootNode = parser.parse(new StringReader(script), null, 0);
+        } catch (IOException e) {
+            throw new RuntimeException("IO Error occured", e);
         }
-        if (isStatic) {
-            program.createVariable();
-        }
-        methodToProcess.setProgram(program);
+        parser.exitFunction();
 
-        // Generate invoke instruction
-        replacement.clear();
-        InvokeInstruction invoke = new InvokeInstruction();
-        invoke.setType(InvocationType.SPECIAL);
-        invoke.setMethod(proxyMethod.getReference());
-        for (int i = 0; i < paramCount; ++i) {
-            Variable var = program.variableAt(isStatic ? i + 1 : i);
-            invoke.getArguments().add(wrapArgument(location, var, paramTypes[i]));
+        if (errorReporter.hasErrors()) {
+            repository.emitters.put(proxyMethod, new JSBodyBloatedEmitter(isStatic, proxyMethod,
+                    script, parameterNames));
+        } else {
+            repository.emitters.put(proxyMethod, new JSBodyAstEmitter(isStatic, rootNode,
+                    parameterNames));
         }
-        block.getInstructions().addAll(replacement);
-        block.getInstructions().add(invoke);
+        repository.methodMap.put(methodToProcess.getReference(), proxyMethod);
+    }
 
-        // Generate return
-        ExitInstruction exit = new ExitInstruction();
-        if (methodToProcess.getResultType() != ValueType.VOID) {
-            replacement.clear();
-            Variable result = program.createVariable();
-            invoke.setReceiver(result);
-            exit.setValueToReturn(unwrap(location, result, methodToProcess.getResultType()));
-            block.getInstructions().addAll(replacement);
+    public void createJSMethods(JSBodyRepository repository, ClassHolder cls) {
+        for (MethodHolder method : cls.getMethods().toArray(new MethodHolder[0])) {
+            MethodReference methodRef = method.getReference();
+            if (method.getAnnotations().get(JSBody.class.getName()) != null) {
+                requireJSBody(repository, diagnostics, method);
+                if (repository.methodMap.containsKey(method.getReference())) {
+                    MethodReference proxyRef = repository.methodMap.get(methodRef);
+                    MethodHolder proxyMethod = new MethodHolder(proxyRef.getDescriptor());
+                    proxyMethod.getModifiers().add(ElementModifier.NATIVE);
+                    proxyMethod.getModifiers().add(ElementModifier.STATIC);
+                    AnnotationHolder generatorAnnot = new AnnotationHolder(GeneratedBy.class.getName());
+                    generatorAnnot.getValues().put("value",
+                            new AnnotationValue(ValueType.parse(JSBodyGenerator.class)));
+                    proxyMethod.getAnnotations().add(generatorAnnot);
+                    cls.addMethod(proxyMethod);
+                }
+            }
         }
-        block.getInstructions().add(exit);
     }
 
     private void addPropertyGet(String propertyName, Variable instance, Variable receiver,
@@ -971,6 +1049,9 @@ class JavascriptNativeProcessor {
 
     private MethodReader getMethod(MethodReference ref) {
         ClassReader cls = classSource.get(ref.getClassName());
+        if (cls == null) {
+            return null;
+        }
         MethodReader method = cls.getMethod(ref.getDescriptor());
         if (method != null) {
             return method;

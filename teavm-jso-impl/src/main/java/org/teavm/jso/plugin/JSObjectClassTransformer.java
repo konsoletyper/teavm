@@ -16,8 +16,11 @@
 package org.teavm.jso.plugin;
 
 import org.teavm.diagnostics.Diagnostics;
-import org.teavm.jso.JSBody;
-import org.teavm.model.*;
+import org.teavm.model.ClassHolder;
+import org.teavm.model.ClassHolderTransformer;
+import org.teavm.model.ClassReaderSource;
+import org.teavm.model.MethodHolder;
+import org.teavm.model.MethodReference;
 
 /**
  *
@@ -25,6 +28,11 @@ import org.teavm.model.*;
  */
 public class JSObjectClassTransformer implements ClassHolderTransformer {
     private JavascriptNativeProcessor processor;
+    private JSBodyRepository repository;
+
+    public JSObjectClassTransformer(JSBodyRepository repository) {
+        this.repository = repository;
+    }
 
     @Override
     public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
@@ -46,12 +54,10 @@ public class JSObjectClassTransformer implements ClassHolderTransformer {
             }
         }
         for (MethodHolder method : cls.getMethods().toArray(new MethodHolder[0])) {
-            if (method.getAnnotations().get(JSBody.class.getName()) != null) {
-                processor.processJSBody(cls, method);
-            } else if (method.getProgram() != null
-                    && method.getAnnotations().get(JSBodyImpl.class.getName()) == null) {
-                processor.processProgram(method);
+            if (method.getProgram() != null) {
+                processor.processProgram(repository, method);
             }
         }
+        processor.createJSMethods(repository, cls);
     }
 }

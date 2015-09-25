@@ -26,10 +26,6 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-@interface JSBodyImpl {
-    String[] params();
-
-    String script();
-
-    boolean isStatic();
+@interface JSBodyRef {
+    String method();
 }

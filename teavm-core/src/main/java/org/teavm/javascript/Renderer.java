@@ -656,6 +656,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     }
                     writer.append(";").softNewLine();
                 }
+
                 end = true;
                 currentPart = 0;
                 method.getBody().acceptVisitor(Renderer.this);

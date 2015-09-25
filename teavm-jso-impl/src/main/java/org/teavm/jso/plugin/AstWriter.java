@@ -95,7 +95,7 @@ public class AstWriter {
     private static final int PRECEDENCE_ASSIGN = 17;
     private static final int PRECEDENCE_COMMA = 18;
     private SourceWriter writer;
-    private Map<String, String> nameMap = new HashMap<>();
+    private Map<String, NameEmitter> nameMap = new HashMap<>();
     private Set<String> aliases = new HashSet<>();
 
     public AstWriter(SourceWriter writer) {
@@ -107,13 +107,13 @@ public class AstWriter {
             return;
         }
         if (aliases.add(name)) {
-            nameMap.put(name, name);
+            nameMap.put(name, () -> writer.append(name));
             return;
         }
         for (int i = 0;; ++i) {
             String alias = name + "_" + i;
             if (aliases.add(alias)) {
-                nameMap.put(name, alias);
+                nameMap.put(name, () -> writer.append(alias));
                 return;
             }
         }
@@ -123,7 +123,16 @@ public class AstWriter {
         if (!aliases.add(alias)) {
             throw new IllegalArgumentException("Alias " + alias + " is already occupied");
         }
-        nameMap.put(name, alias);
+        nameMap.put(name, () -> writer.append(alias));
+    }
+
+    public void reserveName(String name) {
+        aliases.add(name);
+        nameMap.put(name, () -> writer.append(name));
+    }
+
+    public void declareNameEmitter(String name, NameEmitter emitter) {
+        nameMap.put(name, emitter);
     }
 
     public void hoist(AstNode node) {
@@ -181,7 +190,11 @@ public class AstWriter {
                 writer.append("false");
                 break;
             case Token.THIS:
-                writer.append(nameMap.containsKey("this") ? nameMap.get("this") : "this");
+                if (nameMap.containsKey("this")) {
+                    nameMap.get("this").emit();
+                } else {
+                    writer.append("this");
+                }
                 break;
             case Token.NULL:
                 writer.append("null");
@@ -481,7 +494,7 @@ public class AstWriter {
     private void print(PropertyGet node) throws IOException {
         print(node.getLeft(), PRECEDENCE_MEMBER);
         writer.append('.');
-        Map<String, String> oldNameMap = nameMap;
+        Map<String, NameEmitter> oldNameMap = nameMap;
         nameMap = Collections.emptyMap();
         print(node.getRight());
         nameMap = oldNameMap;
@@ -583,11 +596,11 @@ public class AstWriter {
     }
 
     private void print(Name node) throws IOException {
-        String alias = nameMap.get(node.getIdentifier());
+        NameEmitter alias = nameMap.get(node.getIdentifier());
         if (alias == null) {
-            alias = node.getIdentifier();
+            alias = () -> writer.append(node.getIdentifier());
         }
-        writer.append(alias);
+        alias.emit();
     }
 
     private void print(RegExpLiteral node) throws IOException {
@@ -618,7 +631,7 @@ public class AstWriter {
         } else if (node.isSetterMethod()) {
             writer.append("set ");
         }
-        Map<String, String> oldNameMap = nameMap;
+        Map<String, NameEmitter> oldNameMap = nameMap;
         nameMap = Collections.emptyMap();
         print(node.getLeft());
         nameMap = oldNameMap;
