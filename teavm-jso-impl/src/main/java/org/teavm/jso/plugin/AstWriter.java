@@ -71,6 +71,9 @@ import org.mozilla.javascript.ast.VariableDeclaration;
 import org.mozilla.javascript.ast.VariableInitializer;
 import org.mozilla.javascript.ast.WhileLoop;
 import org.teavm.codegen.SourceWriter;
+import org.teavm.diagnostics.Diagnostics;
+import org.teavm.model.CallLocation;
+import org.teavm.model.MethodReference;
 
 /**
  *
@@ -94,11 +97,13 @@ public class AstWriter {
     private static final int PRECEDENCE_COND = 16;
     private static final int PRECEDENCE_ASSIGN = 17;
     private static final int PRECEDENCE_COMMA = 18;
+    private Diagnostics diagnostics;
     private SourceWriter writer;
     private Map<String, NameEmitter> nameMap = new HashMap<>();
     private Set<String> aliases = new HashSet<>();
 
-    public AstWriter(SourceWriter writer) {
+    public AstWriter(Diagnostics diagnostics, SourceWriter writer) {
+        this.diagnostics = diagnostics;
         this.writer = writer;
     }
 
@@ -501,6 +506,14 @@ public class AstWriter {
     }
 
     private void print(FunctionCall node, int precedence) throws IOException {
+        if (node.getTarget() instanceof PropertyGet) {
+            PropertyGet propertyGet = (PropertyGet) node.getTarget();
+            MethodReference methodRef = getJavaMethodSelector(propertyGet.getTarget());
+            if (methodRef != null && propertyGet.getProperty().getIdentifier().equals("invoke")) {
+                return;
+            }
+        }
+
         if (precedence < PRECEDENCE_FUNCTION) {
             writer.append('(');
         }
@@ -521,6 +534,57 @@ public class AstWriter {
         }
         if (precedence < PRECEDENCE_FUNCTION) {
             writer.append(')');
+        }
+    }
+
+    private MethodReference getJavaMethodSelector(AstNode node) {
+        if (!(node instanceof FunctionCall)) {
+            return null;
+        }
+        FunctionCall call = (FunctionCall) node;
+        if (!isJavaMethodRepository(call.getTarget())) {
+            return null;
+        }
+        if (call.getArguments().size() != 1) {
+            diagnostics.warning(new CallLocation(null), "JavaMethods.get method should take exactly one argument");
+            return null;
+        }
+        StringBuilder nameBuilder = new StringBuilder();
+        if (!extractMethodName(call.getArguments().get(0), nameBuilder)) {
+            diagnostics.warning(new CallLocation(null), "JavaMethods.get method should take string constant");
+            return null;
+        }
+        return MethodReference.parse(nameBuilder.toString());
+    }
+
+    private boolean isJavaMethodRepository(AstNode node) {
+        if (!(node instanceof PropertyGet)) {
+            return false;
+        }
+        PropertyGet propertyGet = (PropertyGet) node;
+
+        if (propertyGet.getLeft() instanceof Name) {
+            return false;
+        }
+        if (!((Name) propertyGet.getTarget()).getIdentifier().equals("JavaMethods")) {
+            return false;
+        }
+        if (!propertyGet.getProperty().getIdentifier().equals("get")) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean extractMethodName(AstNode node, StringBuilder sb) {
+        if (node.getType() == Token.ADD) {
+            InfixExpression infix = (InfixExpression) node;
+            return extractMethodName(infix.getLeft(), sb) && extractMethodName(infix.getRight(), sb);
+        } else if (node.getType() == Token.STRING) {
+            sb.append(((StringLiteral) node).getValue());
+            return true;
+        } else {
+            return false;
         }
     }
 
