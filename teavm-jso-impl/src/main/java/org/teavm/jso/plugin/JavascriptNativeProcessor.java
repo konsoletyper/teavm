@@ -318,7 +318,7 @@ class JavascriptNativeProcessor {
             return false;
         }
 
-        if (method == null || method.hasModifier(ElementModifier.STATIC)) {
+        if (method.hasModifier(ElementModifier.STATIC)) {
             return false;
         }
 
@@ -579,6 +579,8 @@ class JavascriptNativeProcessor {
             } else {
                 expr = rootNode;
             }
+            JavaInvocationValidator javaValidator = new JavaInvocationValidator(classSource, diagnostics);
+            javaValidator.validate(location, expr);
             repository.emitters.put(proxyMethod, new JSBodyAstEmitter(isStatic, expr, parameterNames));
         }
         repository.methodMap.put(methodToProcess.getReference(), proxyMethod);

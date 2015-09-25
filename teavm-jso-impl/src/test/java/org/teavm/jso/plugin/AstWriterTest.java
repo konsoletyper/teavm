@@ -39,7 +39,7 @@ public class AstWriterTest {
         SourceWriterBuilder builder = new SourceWriterBuilder(null);
         builder.setMinified(true);
         sourceWriter = builder.build(sb);
-        writer = new AstWriter(null, sourceWriter);
+        writer = new AstWriter(sourceWriter);
     }
 
     @Test

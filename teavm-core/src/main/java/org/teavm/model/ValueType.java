@@ -212,11 +212,23 @@ public abstract class ValueType {
     }
 
     public static ValueType[] parseMany(String text) {
+        ValueType[] types = parseManyIfPossible(text);
+        if (types == null) {
+            throw new IllegalArgumentException("Illegal method type signature: " + text);
+        }
+        return types;
+    }
+
+    public static ValueType[] parseManyIfPossible(String text) {
         List<ValueType> types = new ArrayList<>();
         int index = 0;
         while (index < text.length()) {
             int nextIndex = cut(text, index);
-            types.add(parse(text.substring(index, nextIndex)));
+            ValueType type = parse(text.substring(index, nextIndex));
+            if (type == null) {
+                return null;
+            }
+            types.add(type);
             index = nextIndex;
         }
         return types.toArray(new ValueType[types.size()]);
@@ -224,18 +236,30 @@ public abstract class ValueType {
 
     private static int cut(String text, int index) {
         while (text.charAt(index) == '[') {
-            ++index;
+            if (++index >= text.length()) {
+                return index;
+            }
         }
         if (text.charAt(index) != 'L') {
             return index + 1;
         }
         while (text.charAt(index) != ';') {
-            ++index;
+            if (++index >= text.length()) {
+                return index;
+            }
         }
         return index + 1;
     }
 
     public static ValueType parse(String string) {
+        ValueType type = parseIfPossible(string);
+        if (type == null) {
+            throw new IllegalArgumentException("Illegal type signature: " + string);
+        }
+        return type;
+    }
+
+    public static ValueType parseIfPossible(String string) {
         int arrayDegree = 0;
         int left = 0;
         while (string.charAt(left) == '[') {
@@ -243,7 +267,13 @@ public abstract class ValueType {
             ++left;
         }
         string = string.substring(left);
+        if (string.isEmpty()) {
+            return null;
+        }
         ValueType type = parseImpl(string);
+        if (type == null) {
+            return null;
+        }
         while (arrayDegree-- > 0) {
             type = arrayOf(type);
         }
@@ -295,7 +325,7 @@ public abstract class ValueType {
                 }
                 return object(string.substring(1, string.length() - 1).replace('/', '.'));
             default:
-                throw new IllegalArgumentException();
+                return null;
         }
     }
 

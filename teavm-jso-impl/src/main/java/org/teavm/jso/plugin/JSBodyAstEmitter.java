@@ -39,7 +39,7 @@ class JSBodyAstEmitter implements JSBodyEmitter {
 
     @Override
     public void emit(InjectorContext context) throws IOException {
-        AstWriter astWriter = new AstWriter(null, context.getWriter());
+        AstWriter astWriter = new AstWriter(context.getWriter());
         int paramIndex = 0;
         if (!isStatic) {
             int index = paramIndex++;
@@ -55,7 +55,7 @@ class JSBodyAstEmitter implements JSBodyEmitter {
 
     @Override
     public void emit(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
-        AstWriter astWriter = new AstWriter(context.getDiagnostics(), writer);
+        AstWriter astWriter = new AstWriter(writer);
         int paramIndex = 1;
         if (!isStatic) {
             int index = paramIndex++;

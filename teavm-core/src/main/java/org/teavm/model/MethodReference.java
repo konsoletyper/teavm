@@ -140,9 +140,21 @@ public class MethodReference {
     }
 
     public static MethodReference parse(String string) {
+        MethodReference reference = parseIfPossible(string);
+        if (reference == null) {
+            throw new IllegalArgumentException("Illegal method reference: " + string);
+        }
+        return reference;
+    }
+
+    public static MethodReference parseIfPossible(String string) {
         int index = string.lastIndexOf('.');
+        if (index < 1) {
+            return null;
+        }
         String className = string.substring(0, index);
-        return new MethodReference(className, MethodDescriptor.parse(string.substring(index + 1)));
+        MethodDescriptor desc = MethodDescriptor.parseIfPossible(string.substring(index + 1));
+        return desc != null ? new MethodReference(className, desc) : null;
     }
 
     public String signatureToString() {

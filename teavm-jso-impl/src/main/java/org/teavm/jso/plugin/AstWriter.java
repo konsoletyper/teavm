@@ -71,8 +71,6 @@ import org.mozilla.javascript.ast.VariableDeclaration;
 import org.mozilla.javascript.ast.VariableInitializer;
 import org.mozilla.javascript.ast.WhileLoop;
 import org.teavm.codegen.SourceWriter;
-import org.teavm.diagnostics.Diagnostics;
-import org.teavm.model.CallLocation;
 import org.teavm.model.MethodReference;
 
 /**
@@ -97,13 +95,11 @@ public class AstWriter {
     private static final int PRECEDENCE_COND = 16;
     private static final int PRECEDENCE_ASSIGN = 17;
     private static final int PRECEDENCE_COMMA = 18;
-    private Diagnostics diagnostics;
     private SourceWriter writer;
     private Map<String, NameEmitter> nameMap = new HashMap<>();
     private Set<String> aliases = new HashSet<>();
 
-    public AstWriter(Diagnostics diagnostics, SourceWriter writer) {
-        this.diagnostics = diagnostics;
+    public AstWriter(SourceWriter writer) {
         this.writer = writer;
     }
 
@@ -506,12 +502,8 @@ public class AstWriter {
     }
 
     private void print(FunctionCall node, int precedence) throws IOException {
-        if (node.getTarget() instanceof PropertyGet) {
-            PropertyGet propertyGet = (PropertyGet) node.getTarget();
-            MethodReference methodRef = getJavaMethodSelector(propertyGet.getTarget());
-            if (methodRef != null && propertyGet.getProperty().getIdentifier().equals("invoke")) {
-                return;
-            }
+        if (tryJavaInvocation(node)) {
+            return;
         }
 
         if (precedence < PRECEDENCE_FUNCTION) {
@@ -537,55 +529,59 @@ public class AstWriter {
         }
     }
 
-    private MethodReference getJavaMethodSelector(AstNode node) {
-        if (!(node instanceof FunctionCall)) {
-            return null;
-        }
-        FunctionCall call = (FunctionCall) node;
-        if (!isJavaMethodRepository(call.getTarget())) {
-            return null;
-        }
-        if (call.getArguments().size() != 1) {
-            diagnostics.warning(new CallLocation(null), "JavaMethods.get method should take exactly one argument");
-            return null;
-        }
-        StringBuilder nameBuilder = new StringBuilder();
-        if (!extractMethodName(call.getArguments().get(0), nameBuilder)) {
-            diagnostics.warning(new CallLocation(null), "JavaMethods.get method should take string constant");
-            return null;
-        }
-        return MethodReference.parse(nameBuilder.toString());
-    }
-
-    private boolean isJavaMethodRepository(AstNode node) {
-        if (!(node instanceof PropertyGet)) {
-            return false;
-        }
-        PropertyGet propertyGet = (PropertyGet) node;
-
-        if (propertyGet.getLeft() instanceof Name) {
-            return false;
-        }
-        if (!((Name) propertyGet.getTarget()).getIdentifier().equals("JavaMethods")) {
-            return false;
-        }
-        if (!propertyGet.getProperty().getIdentifier().equals("get")) {
+    private boolean tryJavaInvocation(FunctionCall node) throws IOException {
+        if (!(node.getTarget() instanceof PropertyGet)) {
             return false;
         }
 
-        return true;
-    }
+        PropertyGet propertyGet = (PropertyGet) node.getTarget();
+        String callMethod = getJavaMethod(propertyGet.getTarget());
+        if (callMethod == null || !propertyGet.getProperty().getIdentifier().equals("invoke")) {
+            return false;
+        }
 
-    private boolean extractMethodName(AstNode node, StringBuilder sb) {
-        if (node.getType() == Token.ADD) {
-            InfixExpression infix = (InfixExpression) node;
-            return extractMethodName(infix.getLeft(), sb) && extractMethodName(infix.getRight(), sb);
-        } else if (node.getType() == Token.STRING) {
-            sb.append(((StringLiteral) node).getValue());
-            return true;
+        boolean isStatic;
+        if (callMethod.startsWith("S")) {
+            isStatic = true;
+        } else if (callMethod.startsWith("V")) {
+            isStatic = false;
         } else {
             return false;
         }
+        callMethod = callMethod.substring(1);
+        MethodReference method = MethodReference.parseIfPossible(callMethod);
+        if (method == null) {
+            return false;
+        }
+
+        if (isStatic) {
+            writer.appendMethodBody(method).append('(');
+            printList(node.getArguments());
+            writer.append(')');
+        } else {
+            print(node.getArguments().get(0));
+            writer.append('.').appendMethod(method.getDescriptor()).append('(');
+            if (node.getArguments().size() > 1) {
+                print(node.getArguments().get(1));
+            }
+            for (int i = 2; i < node.getArguments().size(); ++i) {
+                writer.append(',').ws();
+                print(node.getArguments().get(i));
+            }
+            writer.append(')');
+        }
+        return true;
+    }
+
+    private String getJavaMethod(AstNode node) {
+        if (!(node instanceof StringLiteral)) {
+            return null;
+        }
+        String str = ((StringLiteral) node).getValue();
+        if (!str.startsWith("$$JSO$$_")) {
+            return null;
+        }
+        return str.substring("$$JSO$$_".length());
     }
 
     private void print(ConditionalExpression node, int precedence) throws IOException {

@@ -96,24 +96,46 @@ public class MethodDescriptor {
     }
 
     public static MethodDescriptor parse(String text) {
-        int parenIndex = text.indexOf('(');
-        if (parenIndex < 0) {
+        MethodDescriptor desc = parseIfPossible(text);
+        if (desc == null) {
             throw new IllegalArgumentException("Wrong method descriptor: " + text);
+        }
+        return desc;
+    }
+
+    public static MethodDescriptor parseIfPossible(String text) {
+        int parenIndex = text.indexOf('(');
+        if (parenIndex < 1) {
+            return null;
         }
         return new MethodDescriptor(text.substring(0, parenIndex),
                 parseSignature(text.substring(parenIndex)));
     }
 
     public static ValueType[] parseSignature(String text) {
+        ValueType[] signature = parseSignatureIfPossible(text);
+        if (signature == null) {
+            throw new IllegalArgumentException("Illegal method signature: " + text);
+        }
+        return signature;
+    }
+
+    public static ValueType[] parseSignatureIfPossible(String text) {
         if (text.charAt(0) != '(') {
-            throw new IllegalArgumentException("Wrong method descriptor: " + text);
+            return null;
         }
         int index = text.indexOf(')', 1);
-        if (index == -1) {
-            throw new IllegalArgumentException("Wrong method descriptor: " + text);
+        if (index < 0) {
+            return null;
         }
-        ValueType[] params = ValueType.parseMany(text.substring(1, index));
+        ValueType[] params = ValueType.parseManyIfPossible(text.substring(1, index));
+        if (params == null) {
+            return null;
+        }
         ValueType result = ValueType.parse(text.substring(index + 1));
+        if (result == null) {
+            return null;
+        }
         ValueType[] signature = new ValueType[params.length + 1];
         System.arraycopy(params, 0, signature, 0, params.length);
         signature[params.length] = result;
