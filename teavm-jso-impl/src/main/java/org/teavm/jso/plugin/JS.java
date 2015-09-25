@@ -78,6 +78,7 @@ final class JS {
     public static native boolean unwrapBoolean(JSObject value);
 
     @InjectedBy(JSNativeGenerator.class)
+    @PluggableDependency(JSNativeGenerator.class)
     public static native String unwrapString(JSObject value);
 
     public static <T extends JSObject> JSArray<T> wrap(T[] array) {
