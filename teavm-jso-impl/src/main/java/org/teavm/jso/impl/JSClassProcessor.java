@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.plugin;
+package org.teavm.jso.impl;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -78,18 +78,18 @@ import org.teavm.model.util.ProgramUtils;
  *
  * @author Alexey Andreev
  */
-class JavascriptNativeProcessor {
+class JSClassProcessor {
     private ClassReaderSource classSource;
     private Program program;
     private List<Instruction> replacement = new ArrayList<>();
-    private NativeJavascriptClassRepository nativeRepos;
+    private JSTypeHelper typeHelper;
     private Diagnostics diagnostics;
     private int methodIndexGenerator;
     private Map<MethodReference, MethodReader> overridenMethodCache = new HashMap<>();
 
-    public JavascriptNativeProcessor(ClassReaderSource classSource) {
+    public JSClassProcessor(ClassReaderSource classSource) {
         this.classSource = classSource;
-        nativeRepos = new NativeJavascriptClassRepository(classSource);
+        typeHelper = new JSTypeHelper(classSource);
     }
 
     public ClassReaderSource getClassSource() {
@@ -97,11 +97,11 @@ class JavascriptNativeProcessor {
     }
 
     public boolean isNative(String className) {
-        return nativeRepos.isJavaScriptClass(className);
+        return typeHelper.isJavaScriptClass(className);
     }
 
     public boolean isNativeImplementation(String className) {
-        return nativeRepos.isJavaScriptImplementation(className);
+        return typeHelper.isJavaScriptImplementation(className);
     }
 
     public void setDiagnostics(Diagnostics diagnostics) {
@@ -109,7 +109,7 @@ class JavascriptNativeProcessor {
     }
 
     public MethodReference isFunctor(String className) {
-        if (!nativeRepos.isJavaScriptImplementation(className)) {
+        if (!typeHelper.isJavaScriptImplementation(className)) {
             return null;
         }
         ClassReader cls = classSource.get(className);
@@ -138,7 +138,7 @@ class JavascriptNativeProcessor {
     public void processClass(ClassHolder cls) {
         Set<MethodDescriptor> preservedMethods = new HashSet<>();
         for (String iface : cls.getInterfaces()) {
-            if (nativeRepos.isJavaScriptClass(iface)) {
+            if (typeHelper.isJavaScriptClass(iface)) {
                 addPreservedMethods(iface, preservedMethods);
             }
         }
@@ -314,7 +314,7 @@ class JavascriptNativeProcessor {
             return processJSBodyInvocation(repository, method, callLocation, invoke);
         }
 
-        if (!nativeRepos.isJavaScriptClass(invoke.getMethod().getClassName())) {
+        if (!typeHelper.isJavaScriptClass(invoke.getMethod().getClassName())) {
             return false;
         }
 
@@ -452,14 +452,14 @@ class JavascriptNativeProcessor {
                 name = redefinedMethodName.getString();
             }
         }
-        if (method.getResultType() != ValueType.VOID && !isSupportedType(method.getResultType())) {
+        if (method.getResultType() != ValueType.VOID && !typeHelper.isSupportedType(method.getResultType())) {
             diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript method "
                     + "declaration", invoke.getMethod());
             return false;
         }
 
         for (ValueType arg : method.getParameterTypes()) {
-            if (!isSupportedType(arg)) {
+            if (!typeHelper.isSupportedType(arg)) {
                 diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript method "
                         + "or constructor declaration", invoke.getMethod());
                 return false;
@@ -521,12 +521,13 @@ class JavascriptNativeProcessor {
         if (!isStatic) {
             ValueType paramType = ValueType.object(methodToProcess.getOwnerName());
             paramTypes[offset++] = paramType;
-            if (!isSupportedType(paramType)) {
+            if (!typeHelper.isSupportedType(paramType)) {
                 diagnostics.error(location, "Non-static JSBody method {{m0}} is owned by non-JS class {{c1}}",
                         methodToProcess.getReference(), methodToProcess.getOwnerName());
             }
         }
-        if (methodToProcess.getResultType() != ValueType.VOID && !isSupportedType(methodToProcess.getResultType())) {
+        if (methodToProcess.getResultType() != ValueType.VOID
+                && !typeHelper.isSupportedType(methodToProcess.getResultType())) {
             diagnostics.error(location, "JSBody method {{m0}} returns unsupported type {{t1}}",
                     methodToProcess.getReference(), methodToProcess.getResultType());
         }
@@ -579,8 +580,9 @@ class JavascriptNativeProcessor {
             } else {
                 expr = rootNode;
             }
-            JavaInvocationValidator javaValidator = new JavaInvocationValidator(classSource, diagnostics);
-            javaValidator.validate(location, expr);
+            JavaInvocationProcessor javaInvocationProcessor = new JavaInvocationProcessor(typeHelper,
+                    classSource, diagnostics);
+            javaInvocationProcessor.validate(location, expr);
             repository.emitters.put(proxyMethod, new JSBodyAstEmitter(isStatic, expr, parameterNames));
         }
         repository.methodMap.put(methodToProcess.getReference(), proxyMethod);
@@ -1078,7 +1080,7 @@ class JavascriptNativeProcessor {
     }
 
     private boolean isProperGetter(MethodDescriptor desc) {
-        if (desc.parameterCount() > 0 || !isSupportedType(desc.getResultType())) {
+        if (desc.parameterCount() > 0 || !typeHelper.isSupportedType(desc.getResultType())) {
             return false;
         }
         if (desc.getResultType().equals(ValueType.BOOLEAN)) {
@@ -1090,7 +1092,7 @@ class JavascriptNativeProcessor {
     }
 
     private boolean isProperSetter(MethodDescriptor desc) {
-        if (desc.parameterCount() != 1 || !isSupportedType(desc.parameterType(0))
+        if (desc.parameterCount() != 1 || !typeHelper.isSupportedType(desc.parameterType(0))
                 || desc.getResultType() != ValueType.VOID) {
             return false;
         }
@@ -1106,13 +1108,13 @@ class JavascriptNativeProcessor {
     }
 
     private boolean isProperGetIndexer(MethodDescriptor desc) {
-        return desc.parameterCount() == 1 && isSupportedType(desc.parameterType(0))
-                && isSupportedType(desc.getResultType());
+        return desc.parameterCount() == 1 && typeHelper.isSupportedType(desc.parameterType(0))
+                && typeHelper.isSupportedType(desc.getResultType());
     }
 
     private boolean isProperSetIndexer(MethodDescriptor desc) {
-        return desc.parameterCount() == 2 && isSupportedType(desc.parameterType(0))
-                && isSupportedType(desc.parameterType(0)) && desc.getResultType() == ValueType.VOID;
+        return desc.parameterCount() == 2 && typeHelper.isSupportedType(desc.parameterType(0))
+                && typeHelper.isSupportedType(desc.parameterType(0)) && desc.getResultType() == ValueType.VOID;
     }
 
     private String cutPrefix(String name, int prefixLength) {
@@ -1124,26 +1126,5 @@ class JavascriptNativeProcessor {
             return name.substring(prefixLength);
         }
         return Character.toLowerCase(name.charAt(prefixLength)) + name.substring(prefixLength + 1);
-    }
-
-    private boolean isSupportedType(ValueType type) {
-        if (type == ValueType.VOID) {
-            return false;
-        }
-        if (type instanceof ValueType.Primitive) {
-            switch (((ValueType.Primitive) type).getKind()) {
-                case LONG:
-                    return false;
-                default:
-                    return true;
-            }
-        } else if (type instanceof ValueType.Array) {
-            return isSupportedType(((ValueType.Array) type).getItemType());
-        } else if (type instanceof ValueType.Object) {
-            String typeName = ((ValueType.Object) type).getClassName();
-            return typeName.equals("java.lang.String") || nativeRepos.isJavaScriptClass(typeName);
-        } else {
-            return false;
-        }
     }
 }

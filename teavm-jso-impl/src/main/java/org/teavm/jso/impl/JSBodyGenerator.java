@@ -13,11 +13,13 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.plugin;
+package org.teavm.jso.impl;
 
 import java.io.IOException;
 import org.teavm.codegen.SourceWriter;
+import org.teavm.javascript.spi.Generator;
 import org.teavm.javascript.spi.GeneratorContext;
+import org.teavm.javascript.spi.Injector;
 import org.teavm.javascript.spi.InjectorContext;
 import org.teavm.model.MethodReference;
 
@@ -25,8 +27,18 @@ import org.teavm.model.MethodReference;
  *
  * @author Alexey Andreev
  */
-interface JSBodyEmitter {
-    void emit(InjectorContext context) throws IOException;
+public class JSBodyGenerator implements Injector, Generator {
+    @Override
+    public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
+        JSBodyRepository emitterRepository = context.getService(JSBodyRepository.class);
+        JSBodyEmitter emitter = emitterRepository.emitters.get(methodRef);
+        emitter.emit(context);
+    }
 
-    void emit(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException;
+    @Override
+    public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
+        JSBodyRepository emitterRepository = context.getService(JSBodyRepository.class);
+        JSBodyEmitter emitter = emitterRepository.emitters.get(methodRef);
+        emitter.emit(context, writer, methodRef);
+    }
 }

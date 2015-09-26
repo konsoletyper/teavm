@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.plugin;
+package org.teavm.jso.impl;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -38,7 +38,7 @@ import org.teavm.model.MethodReader;
  *
  * @author Alexey Andreev
  */
-class JSODependencyListener extends AbstractDependencyListener {
+class JSDependencyListener extends AbstractDependencyListener {
     private Map<String, ExposedClass> exposedClasses = new HashMap<>();
     private ClassReaderSource classSource;
     private DependencyAgent agent;

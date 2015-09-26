@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.plugin;
+package org.teavm.jso.impl;
 
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassHolder;
@@ -27,7 +27,7 @@ import org.teavm.model.MethodReference;
  * @author Alexey Andreev
  */
 public class JSObjectClassTransformer implements ClassHolderTransformer {
-    private JavascriptNativeProcessor processor;
+    private JSClassProcessor processor;
     private JSBodyRepository repository;
 
     public JSObjectClassTransformer(JSBodyRepository repository) {
@@ -37,7 +37,7 @@ public class JSObjectClassTransformer implements ClassHolderTransformer {
     @Override
     public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
         if (processor == null || processor.getClassSource() != innerSource) {
-            processor = new JavascriptNativeProcessor(innerSource);
+            processor = new JSClassProcessor(innerSource);
         }
         processor.setDiagnostics(diagnostics);
         processor.processClass(cls);

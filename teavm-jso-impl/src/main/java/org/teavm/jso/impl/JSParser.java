@@ -13,14 +13,30 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.plugin;
+package org.teavm.jso.impl;
 
-import java.io.IOException;
+import org.mozilla.javascript.CompilerEnvirons;
+import org.mozilla.javascript.ErrorReporter;
+import org.mozilla.javascript.Parser;
 
 /**
  *
  * @author Alexey Andreev
  */
-interface NameEmitter {
-    void emit() throws IOException;
+public class JSParser extends Parser {
+    public JSParser(CompilerEnvirons compilerEnv, ErrorReporter errorReporter) {
+        super(compilerEnv, errorReporter);
+    }
+
+    public JSParser(CompilerEnvirons compilerEnv) {
+        super(compilerEnv);
+    }
+
+    public void enterFunction() {
+        ++nestingOfFunction;
+    }
+
+    public void exitFunction() {
+        --nestingOfFunction;
+    }
 }

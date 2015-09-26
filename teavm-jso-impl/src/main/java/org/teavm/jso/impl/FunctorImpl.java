@@ -13,30 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.plugin;
+package org.teavm.jso.impl;
 
-import org.mozilla.javascript.CompilerEnvirons;
-import org.mozilla.javascript.ErrorReporter;
-import org.mozilla.javascript.Parser;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class JSParser extends Parser {
-    public JSParser(CompilerEnvirons compilerEnv, ErrorReporter errorReporter) {
-        super(compilerEnv, errorReporter);
-    }
-
-    public JSParser(CompilerEnvirons compilerEnv) {
-        super(compilerEnv);
-    }
-
-    public void enterFunction() {
-        ++nestingOfFunction;
-    }
-
-    public void exitFunction() {
-        --nestingOfFunction;
-    }
+@Retention(RetentionPolicy.CLASS)
+@Target(ElementType.TYPE)
+@interface FunctorImpl {
+    String value();
 }

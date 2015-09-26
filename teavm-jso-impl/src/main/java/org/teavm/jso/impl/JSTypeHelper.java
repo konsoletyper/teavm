@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.plugin;
+package org.teavm.jso.impl;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -21,17 +21,18 @@ import org.teavm.jso.JSObject;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
+import org.teavm.model.ValueType;
 
 /**
  *
  * @author Alexey Andreev
  */
-class NativeJavascriptClassRepository {
+class JSTypeHelper {
     private ClassReaderSource classSource;
     private Map<String, Boolean> knownJavaScriptClasses = new HashMap<>();
     private Map<String, Boolean> knownJavaScriptImplementations = new HashMap<>();
 
-    public NativeJavascriptClassRepository(ClassReaderSource classSource) {
+    public JSTypeHelper(ClassReaderSource classSource) {
         this.classSource = classSource;
         knownJavaScriptClasses.put(JSObject.class.getName(), true);
     }
@@ -81,5 +82,26 @@ class NativeJavascriptClassRepository {
             }
         }
         return cls.getInterfaces().stream().anyMatch(iface -> isJavaScriptClass(iface));
+    }
+
+    public boolean isSupportedType(ValueType type) {
+        if (type == ValueType.VOID) {
+            return false;
+        }
+        if (type instanceof ValueType.Primitive) {
+            switch (((ValueType.Primitive) type).getKind()) {
+                case LONG:
+                    return false;
+                default:
+                    return true;
+            }
+        } else if (type instanceof ValueType.Array) {
+            return isSupportedType(((ValueType.Array) type).getItemType());
+        } else if (type instanceof ValueType.Object) {
+            String typeName = ((ValueType.Object) type).getClassName();
+            return typeName.equals("java.lang.String") || isJavaScriptClass(typeName);
+        } else {
+            return false;
+        }
     }
 }

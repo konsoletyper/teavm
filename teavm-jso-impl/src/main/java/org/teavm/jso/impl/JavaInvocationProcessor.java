@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.plugin;
+package org.teavm.jso.impl;
 
 import org.mozilla.javascript.Token;
 import org.mozilla.javascript.ast.AstNode;
@@ -34,12 +34,14 @@ import org.teavm.model.MethodReference;
  *
  * @author Alexey Andreev
  */
-class JavaInvocationValidator implements NodeVisitor {
+class JavaInvocationProcessor implements NodeVisitor {
     private ClassReaderSource classSource;
+    private JSTypeHelper typeHelper;
     private Diagnostics diagnostics;
     private CallLocation location;
 
-    public JavaInvocationValidator(ClassReaderSource classSource, Diagnostics diagnostics) {
+    public JavaInvocationProcessor(JSTypeHelper typeHelper, ClassReaderSource classSource, Diagnostics diagnostics) {
+        this.typeHelper = typeHelper;
         this.classSource = classSource;
         this.diagnostics = diagnostics;
     }

@@ -13,21 +13,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.plugin;
+package org.teavm.jso.impl;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.io.IOException;
+import org.teavm.codegen.SourceWriter;
+import org.teavm.javascript.spi.GeneratorContext;
+import org.teavm.javascript.spi.InjectorContext;
 import org.teavm.model.MethodReference;
 
 /**
  *
  * @author Alexey Andreev
  */
-class JSBodyRepository {
-    public final Map<MethodReference, JSBodyEmitter> emitters = new HashMap<>();
-    public final Map<MethodReference, MethodReference> methodMap = new HashMap<>();
-    public final Set<MethodReference> processedMethods = new HashSet<>();
-    public final Set<MethodReference> inlineMethods = new HashSet<>();
+interface JSBodyEmitter {
+    void emit(InjectorContext context) throws IOException;
+
+    void emit(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException;
 }

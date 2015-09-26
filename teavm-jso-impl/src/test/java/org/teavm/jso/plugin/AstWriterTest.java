@@ -25,6 +25,8 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ast.AstRoot;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.codegen.SourceWriterBuilder;
+import org.teavm.jso.impl.AstWriter;
+import org.teavm.jso.impl.JSParser;
 
 /**
  *

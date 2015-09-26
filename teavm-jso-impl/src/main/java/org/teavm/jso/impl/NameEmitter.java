@@ -13,19 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.plugin;
+package org.teavm.jso.impl;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.io.IOException;
 
 /**
  *
  * @author Alexey Andreev
  */
-@Retention(RetentionPolicy.CLASS)
-@Target(ElementType.TYPE)
-@interface FunctorImpl {
-    String value();
+interface NameEmitter {
+    void emit() throws IOException;
 }

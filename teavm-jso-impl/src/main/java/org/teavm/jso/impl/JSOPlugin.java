@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.plugin;
+package org.teavm.jso.impl;
 
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
@@ -28,8 +28,8 @@ public class JSOPlugin implements TeaVMPlugin {
         JSBodyRepository repository = new JSBodyRepository();
         host.registerService(JSBodyRepository.class, repository);
         host.add(new JSObjectClassTransformer(repository));
-        JSODependencyListener dependencyListener = new JSODependencyListener();
-        JSOAliasRenderer aliasRenderer = new JSOAliasRenderer(dependencyListener);
+        JSDependencyListener dependencyListener = new JSDependencyListener();
+        JSAliasRenderer aliasRenderer = new JSAliasRenderer(dependencyListener);
         host.add(dependencyListener);
         host.add(aliasRenderer);
     }

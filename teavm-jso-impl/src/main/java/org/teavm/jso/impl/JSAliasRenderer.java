@@ -13,13 +13,13 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.plugin;
+package org.teavm.jso.impl;
 
 import java.io.IOException;
 import java.util.Map;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.javascript.RenderingContext;
-import org.teavm.jso.plugin.JSODependencyListener.ExposedClass;
+import org.teavm.jso.impl.JSDependencyListener.ExposedClass;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.vm.BuildTarget;
 import org.teavm.vm.spi.RendererListener;
@@ -28,12 +28,12 @@ import org.teavm.vm.spi.RendererListener;
  *
  * @author Alexey Andreev
  */
-class JSOAliasRenderer implements RendererListener {
+class JSAliasRenderer implements RendererListener {
     private static String variableChars = "abcdefghijklmnopqrstuvwxyz";
-    private JSODependencyListener dependencyListener;
+    private JSDependencyListener dependencyListener;
     private SourceWriter writer;
 
-    public JSOAliasRenderer(JSODependencyListener dependencyListener) {
+    public JSAliasRenderer(JSDependencyListener dependencyListener) {
         this.dependencyListener = dependencyListener;
     }
 
