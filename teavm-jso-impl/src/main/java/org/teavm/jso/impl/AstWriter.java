@@ -540,36 +540,14 @@ public class AstWriter {
             return false;
         }
 
-        boolean isStatic;
-        if (callMethod.startsWith("S")) {
-            isStatic = true;
-        } else if (callMethod.startsWith("V")) {
-            isStatic = false;
-        } else {
-            return false;
-        }
-        callMethod = callMethod.substring(1);
         MethodReference method = MethodReference.parseIfPossible(callMethod);
         if (method == null) {
             return false;
         }
 
-        if (isStatic) {
-            writer.appendMethodBody(method).append('(');
-            printList(node.getArguments());
-            writer.append(')');
-        } else {
-            print(node.getArguments().get(0));
-            writer.append('.').appendMethod(method.getDescriptor()).append('(');
-            if (node.getArguments().size() > 1) {
-                print(node.getArguments().get(1));
-            }
-            for (int i = 2; i < node.getArguments().size(); ++i) {
-                writer.append(',').ws();
-                print(node.getArguments().get(i));
-            }
-            writer.append(')');
-        }
+        writer.appendMethodBody(method).append('(');
+        printList(node.getArguments());
+        writer.append(')');
         return true;
     }
 

@@ -18,6 +18,7 @@ package org.teavm.jso.test;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSObject;
 
 /**
  *
@@ -29,11 +30,32 @@ public class JavaInvocationTest {
         assertEquals(7, staticInvocation(5));
     }
 
+    @Test
+    public void callMemberMethod() {
+        assertEquals(7, Num.create(5).add(Num.create(2)).value());
+    }
+
     @JSBody(params = { "a" }, script = "return javaMethods.get('org.teavm.jso.test.JavaInvocationTest.sum(II)I')"
             + ".invoke(a, 2);")
     private static native int staticInvocation(int a);
 
     private static int sum(int a, int b) {
         return a + b;
+    }
+
+    static abstract class Num implements JSObject {
+        @JSBody(params = "n", script = "return n;")
+        public static native Num create(int n);
+
+        @JSBody(params = {}, script = "return this;")
+        public native int value();
+
+        @JSBody(params = "other", script = "return javaMethods.get('org.teavm.jso.test.JavaInvocationTest$Num"
+                + ".addImpl(I)I').invoke(this, other);")
+        public native Num add(Num other);
+
+        private int addImpl(int other) {
+            return value() + other;
+        }
     }
 }

@@ -102,11 +102,8 @@ class JavaInvocationProcessor implements NodeVisitor {
         repository.callbackMethods.computeIfAbsent(delegate, key -> new HashSet<>()).add(caller);
         validateSignature(method);
 
-        StringBuilder sb = new StringBuilder("$$JSO$$_");
-        sb.append(method.hasModifier(ElementModifier.STATIC) ? 'S' : "V");
-        sb.append(caller.toString());
         StringLiteral newTarget = new StringLiteral();
-        newTarget.setValue(sb.toString());
+        newTarget.setValue("$$JSO$$_" + caller);
         propertyGet.setTarget(newTarget);
 
         return false;

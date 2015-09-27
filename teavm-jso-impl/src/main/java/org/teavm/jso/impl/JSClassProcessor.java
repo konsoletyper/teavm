@@ -156,13 +156,12 @@ class JSClassProcessor {
         }
     }
 
-    public void processFinalMethods(ClassHolder cls) {
+    public void processMemberMethods(ClassHolder cls) {
         for (MethodHolder method : cls.getMethods().toArray(new MethodHolder[0])) {
             if (method.hasModifier(ElementModifier.STATIC)) {
                 continue;
             }
-            if (method.hasModifier(ElementModifier.FINAL) && method.getProgram() != null
-                    && method.getProgram().basicBlockCount() > 0) {
+            if (method.getProgram() != null && method.getProgram().basicBlockCount() > 0) {
                 ValueType[] staticSignature = getStaticSignature(method.getReference());
                 MethodHolder callerMethod = new MethodHolder(new MethodDescriptor(method.getName() + "$static",
                         staticSignature));
@@ -273,7 +272,7 @@ class JSClassProcessor {
         }
     }
 
-    private static ValueType[] getStaticSignature(MethodReference method) {
+    static ValueType[] getStaticSignature(MethodReference method) {
         ValueType[] signature = method.getSignature();
         ValueType[] staticSignature = new ValueType[signature.length + 1];
         for (int i = 0; i < signature.length; ++i) {
@@ -323,10 +322,10 @@ class JSClassProcessor {
             return false;
         }
 
-        if (method.hasModifier(ElementModifier.FINAL)) {
+        if (method.getProgram() != null && method.getProgram().basicBlockCount() > 0) {
             MethodReader overriden = getOverridenMethod(method);
             if (overriden != null) {
-                diagnostics.error(callLocation, "JS final method {{m0}} overrides {{M1}}. "
+                diagnostics.error(callLocation, "JS final method {{m0}} overrides {{m1}}. "
                         + "Overriding final method of overlay types is prohibited.",
                         method.getReference(), overriden.getReference());
             }
@@ -461,7 +460,7 @@ class JSClassProcessor {
         for (ValueType arg : method.getParameterTypes()) {
             if (!typeHelper.isSupportedType(arg)) {
                 diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript method "
-                        + "or constructor declaration", invoke.getMethod());
+                        + " declaration", invoke.getMethod());
                 return false;
             }
         }
@@ -660,6 +659,7 @@ class JSClassProcessor {
 
         callerMethod.setProgram(program);
         cls.addMethod(callerMethod);
+        processProgram(callerMethod);
     }
 
     private void addPropertyGet(String propertyName, Variable instance, Variable receiver,

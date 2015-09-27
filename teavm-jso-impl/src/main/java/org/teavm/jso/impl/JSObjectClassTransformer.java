@@ -41,7 +41,7 @@ public class JSObjectClassTransformer implements ClassHolderTransformer {
         }
         processor.processClass(cls);
         if (processor.isNative(cls.getName())) {
-            processor.processFinalMethods(cls);
+            processor.processMemberMethods(cls);
         }
         if (processor.isNativeImplementation(cls.getName())) {
             processor.makeSync(cls);
