@@ -27,17 +27,17 @@ import java.lang.annotation.Target;
  * (or <code>is</code> in case of boolean getter). It must not take any parameters and must return a value.
  * For getter annotation is equivalent to the following:</p>
  *
- * <pre>{@code
- * @JSBody(params = {}, script = "return this.propertyName;")
- * }</pre>
+ * <pre>
+ * {@literal @}JSBody(params = {}, script = "return this.propertyName;")
+ * </pre>
  *
  * <p>Setter's name must conform the Java Beans specification, i.e. start with <code>set</code> prefix
  * It must take exactly one parameter and must not return a value.
  * For setter annotation is equivalent to the following:</p>
  *
- * <pre>{@code
- * @JSBody(params = "value", script = "this.propertyName = value;")
- * }</pre>
+ * <pre>
+ * {@literal @}JSBody(params = "value", script = "this.propertyName = value;")
+ * </pre>
  *
  * <p>By default <code>propertyName</code> is calculated from method's name according to Java Beans specification,
  * otherwise the name specified by annotation is taken.</p>

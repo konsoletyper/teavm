@@ -16,6 +16,7 @@
 package org.teavm.jso.dom.html;
 
 import org.teavm.jso.JSProperty;
+import org.teavm.jso.browser.Window;
 import org.teavm.jso.dom.events.EventTarget;
 import org.teavm.jso.dom.xml.Document;
 
@@ -45,4 +46,8 @@ public interface HTMLDocument extends Document, EventTarget {
 
     @JSProperty
     int getScrollTop();
+
+    static HTMLDocument current() {
+        return Window.current().getDocument();
+    }
 }

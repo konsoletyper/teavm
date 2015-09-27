@@ -35,4 +35,12 @@ public abstract class Storage implements JSObject {
     public abstract void removeItem(String key);
 
     public abstract void clear();
+
+    public static Storage getSessionStorage() {
+        return Window.current().getSessionStorage();
+    }
+
+    public static Storage getLocalStorage() {
+        return Window.current().getLocalStorage();
+    }
 }

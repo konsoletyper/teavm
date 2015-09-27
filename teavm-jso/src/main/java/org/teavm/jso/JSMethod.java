@@ -23,12 +23,15 @@ import java.lang.annotation.Target;
 /**
  * <p>Marks abstract member method as a JavaScript method. This is equivalent to the following:</p>
  *
- * <pre>{@code
- * @JSBody(params = ..., script = "return new this.methodName(...);")
- * }</pre>
+ * <pre>
+ * {@literal @}JSBody(params = ..., script = "return new this.methodName(...);")
+ * </pre>
  *
  * <p>where <code>methodName</code> is method's name by default or a name, directly specified by
  * this annotation.</p>
+ *
+ * <p>JSMethod can be avoided. This means that if you define abstract method on overlay class or interface,
+ * and don't specify any annotations, this method is treated as marked by JSMethod.</p>
  *
  * @author Alexey Andreev
  */

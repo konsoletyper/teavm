@@ -37,4 +37,8 @@ public interface Screen extends JSObject {
 
     @JSProperty
     int getColorDepth();
+
+    static Screen current() {
+        return Window.current().getScreen();
+    }
 }
