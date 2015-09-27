@@ -57,11 +57,31 @@ public abstract class JSString implements JSObject {
 
     public abstract int lastIndexOf(JSString a);
 
+    public abstract JSArray<JSString> match(JSRegExp regexp);
+
+    public abstract JSArray<JSString> match(JSString regexp);
+
+    public abstract JSString replace(JSRegExp regexp, JSString replaceBy);
+
+    public abstract JSString replace(JSRegExp regexp, JSReplaceFunction replaceBy);
+
+    public abstract JSString replace(JSString regexp, JSString replaceBy);
+
+    public abstract JSString replace(JSString regexp, JSReplaceFunction replaceBy);
+
+    public abstract int search(JSRegExp regexp);
+
+    public abstract int search(JSString regexp);
+
     public abstract JSString slice(int beginSlice);
 
     public abstract JSString slice(int beginSlice, int endSlice);
 
+    public abstract JSString[] split(JSRegExp separator);
+
     public abstract JSString[] split(JSString separator);
+
+    public abstract JSString[] split(JSRegExp separator, int limit);
 
     public abstract JSString[] split(JSString separator, int limit);
 
@@ -72,6 +92,12 @@ public abstract class JSString implements JSObject {
     public abstract JSString substring(int start);
 
     public abstract JSString substring(int start, int end);
+
+    public abstract JSString toLowerCase();
+
+    public abstract JSString toUpperCase();
+
+    public abstract JSString trim();
 
     @JSBody(params = "obj", script = "return typeof this === 'string';")
     public static native boolean isInstance(JSObject obj);
