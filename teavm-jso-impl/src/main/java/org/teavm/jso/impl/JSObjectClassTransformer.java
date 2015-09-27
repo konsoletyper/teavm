@@ -37,9 +37,8 @@ public class JSObjectClassTransformer implements ClassHolderTransformer {
     @Override
     public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
         if (processor == null || processor.getClassSource() != innerSource) {
-            processor = new JSClassProcessor(innerSource);
+            processor = new JSClassProcessor(innerSource, repository, diagnostics);
         }
-        processor.setDiagnostics(diagnostics);
         processor.processClass(cls);
         if (processor.isNative(cls.getName())) {
             processor.processFinalMethods(cls);
@@ -55,9 +54,9 @@ public class JSObjectClassTransformer implements ClassHolderTransformer {
         }
         for (MethodHolder method : cls.getMethods().toArray(new MethodHolder[0])) {
             if (method.getProgram() != null) {
-                processor.processProgram(repository, method);
+                processor.processProgram(method);
             }
         }
-        processor.createJSMethods(repository, cls);
+        processor.createJSMethods(cls);
     }
 }

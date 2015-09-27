@@ -67,6 +67,7 @@ import org.teavm.model.Variable;
 import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.CastInstruction;
 import org.teavm.model.instructions.ClassConstantInstruction;
+import org.teavm.model.instructions.ExitInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
@@ -80,6 +81,8 @@ import org.teavm.model.util.ProgramUtils;
  */
 class JSClassProcessor {
     private ClassReaderSource classSource;
+    private JSBodyRepository repository;
+    private JavaInvocationProcessor javaInvocationProcessor;
     private Program program;
     private List<Instruction> replacement = new ArrayList<>();
     private JSTypeHelper typeHelper;
@@ -87,9 +90,12 @@ class JSClassProcessor {
     private int methodIndexGenerator;
     private Map<MethodReference, MethodReader> overridenMethodCache = new HashMap<>();
 
-    public JSClassProcessor(ClassReaderSource classSource) {
+    public JSClassProcessor(ClassReaderSource classSource, JSBodyRepository repository, Diagnostics diagnostics) {
         this.classSource = classSource;
+        this.repository = repository;
+        this.diagnostics = diagnostics;
         typeHelper = new JSTypeHelper(classSource);
+        javaInvocationProcessor = new JavaInvocationProcessor(typeHelper, repository, classSource, diagnostics);
     }
 
     public ClassReaderSource getClassSource() {
@@ -102,10 +108,6 @@ class JSClassProcessor {
 
     public boolean isNativeImplementation(String className) {
         return typeHelper.isJavaScriptImplementation(className);
-    }
-
-    public void setDiagnostics(Diagnostics diagnostics) {
-        this.diagnostics = diagnostics;
     }
 
     public MethodReference isFunctor(String className) {
@@ -281,7 +283,7 @@ class JSClassProcessor {
         return staticSignature;
     }
 
-    public void processProgram(JSBodyRepository repository, MethodHolder methodToProcess) {
+    public void processProgram(MethodHolder methodToProcess) {
         program = methodToProcess.getProgram();
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
@@ -299,7 +301,7 @@ class JSClassProcessor {
                 }
                 CallLocation callLocation = new CallLocation(methodToProcess.getReference(), insn.getLocation());
                 replacement.clear();
-                if (processInvocation(repository, method, callLocation, invoke)) {
+                if (processInvocation(method, callLocation, invoke)) {
                     block.getInstructions().set(j, replacement.get(0));
                     block.getInstructions().addAll(j + 1, replacement.subList(1, replacement.size()));
                     j += replacement.size() - 1;
@@ -308,10 +310,9 @@ class JSClassProcessor {
         }
     }
 
-    private boolean processInvocation(JSBodyRepository repository, MethodReader method, CallLocation callLocation,
-            InvokeInstruction invoke) {
+    private boolean processInvocation(MethodReader method, CallLocation callLocation, InvokeInstruction invoke) {
         if (method.getAnnotations().get(JSBody.class.getName()) != null) {
-            return processJSBodyInvocation(repository, method, callLocation, invoke);
+            return processJSBodyInvocation(method, callLocation, invoke);
         }
 
         if (!typeHelper.isJavaScriptClass(invoke.getMethod().getClassName())) {
@@ -348,9 +349,8 @@ class JSClassProcessor {
         }
     }
 
-    private boolean processJSBodyInvocation(JSBodyRepository repository, MethodReader method,
-            CallLocation callLocation, InvokeInstruction invoke) {
-        requireJSBody(repository, diagnostics, method);
+    private boolean processJSBodyInvocation(MethodReader method, CallLocation callLocation, InvokeInstruction invoke) {
+        requireJSBody(diagnostics, method);
         MethodReference delegate = repository.methodMap.get(method.getReference());
         if (delegate == null) {
             return false;
@@ -491,14 +491,14 @@ class JSClassProcessor {
         return true;
     }
 
-    private void requireJSBody(JSBodyRepository repository, Diagnostics diagnostics, MethodReader methodToProcess) {
+    private void requireJSBody(Diagnostics diagnostics, MethodReader methodToProcess) {
         if (!repository.processedMethods.add(methodToProcess.getReference())) {
             return;
         }
-        processJSBody(repository, diagnostics,  methodToProcess);
+        processJSBody(diagnostics, methodToProcess);
     }
 
-    private void processJSBody(JSBodyRepository repository, Diagnostics diagnostics, MethodReader methodToProcess) {
+    private void processJSBody(Diagnostics diagnostics, MethodReader methodToProcess) {
         CallLocation location = new CallLocation(methodToProcess.getReference());
         boolean isStatic = methodToProcess.hasModifier(ElementModifier.STATIC);
 
@@ -569,6 +569,7 @@ class JSClassProcessor {
         }
         parser.exitFunction();
 
+        repository.methodMap.put(methodToProcess.getReference(), proxyMethod);
         if (errorReporter.hasErrors()) {
             repository.emitters.put(proxyMethod, new JSBodyBloatedEmitter(isStatic, proxyMethod,
                     script, parameterNames));
@@ -580,34 +581,85 @@ class JSClassProcessor {
             } else {
                 expr = rootNode;
             }
-            JavaInvocationProcessor javaInvocationProcessor = new JavaInvocationProcessor(typeHelper,
-                    classSource, diagnostics);
-            javaInvocationProcessor.validate(location, expr);
+            javaInvocationProcessor.process(location, expr);
             repository.emitters.put(proxyMethod, new JSBodyAstEmitter(isStatic, expr, parameterNames));
         }
-        repository.methodMap.put(methodToProcess.getReference(), proxyMethod);
     }
 
-    public void createJSMethods(JSBodyRepository repository, ClassHolder cls) {
+    public void createJSMethods(ClassHolder cls) {
         for (MethodHolder method : cls.getMethods().toArray(new MethodHolder[0])) {
             MethodReference methodRef = method.getReference();
-            if (method.getAnnotations().get(JSBody.class.getName()) != null) {
-                requireJSBody(repository, diagnostics, method);
-                if (repository.methodMap.containsKey(method.getReference())) {
-                    MethodReference proxyRef = repository.methodMap.get(methodRef);
-                    MethodHolder proxyMethod = new MethodHolder(proxyRef.getDescriptor());
-                    proxyMethod.getModifiers().add(ElementModifier.NATIVE);
-                    proxyMethod.getModifiers().add(ElementModifier.STATIC);
-                    boolean inline = repository.inlineMethods.contains(methodRef);
-                    AnnotationHolder generatorAnnot = new AnnotationHolder(inline
-                            ? InjectedBy.class.getName() : GeneratedBy.class.getName());
-                    generatorAnnot.getValues().put("value",
-                            new AnnotationValue(ValueType.parse(JSBodyGenerator.class)));
-                    proxyMethod.getAnnotations().add(generatorAnnot);
-                    cls.addMethod(proxyMethod);
+            if (method.getAnnotations().get(JSBody.class.getName()) == null) {
+                continue;
+            }
+
+            requireJSBody(diagnostics, method);
+            if (!repository.methodMap.containsKey(method.getReference())) {
+                continue;
+            }
+
+            MethodReference proxyRef = repository.methodMap.get(methodRef);
+            MethodHolder proxyMethod = new MethodHolder(proxyRef.getDescriptor());
+            proxyMethod.getModifiers().add(ElementModifier.NATIVE);
+            proxyMethod.getModifiers().add(ElementModifier.STATIC);
+            boolean inline = repository.inlineMethods.contains(methodRef);
+            AnnotationHolder generatorAnnot = new AnnotationHolder(inline
+                    ? InjectedBy.class.getName() : GeneratedBy.class.getName());
+            generatorAnnot.getValues().put("value",
+                    new AnnotationValue(ValueType.parse(JSBodyGenerator.class)));
+            proxyMethod.getAnnotations().add(generatorAnnot);
+            cls.addMethod(proxyMethod);
+
+            Set<MethodReference> callbacks = repository.callbackMethods.get(proxyRef);
+            if (callbacks != null) {
+                for (MethodReference callback : callbacks) {
+                    generateCallbackCaller(cls, callback);
                 }
             }
         }
+    }
+
+    private void generateCallbackCaller(ClassHolder cls, MethodReference callback) {
+        MethodReference calleeRef = repository.callbackCallees.get(callback);
+        MethodReader callee = classSource.resolve(calleeRef);
+        MethodHolder callerMethod = new MethodHolder(callback.getDescriptor());
+        callerMethod.getModifiers().add(ElementModifier.STATIC);
+        CallLocation location = new CallLocation(callback);
+
+        program = new Program();
+        for (int i = 0; i <= callback.parameterCount(); ++i) {
+            program.createVariable();
+        }
+        BasicBlock block = program.createBasicBlock();
+
+        int paramIndex = 1;
+        InvokeInstruction insn = new InvokeInstruction();
+        insn.setType(InvocationType.SPECIAL);
+        insn.setMethod(calleeRef);
+        replacement.clear();
+        if (!callee.hasModifier(ElementModifier.STATIC)) {
+            insn.setInstance(unwrap(location, program.variableAt(paramIndex++),
+                    ValueType.object(calleeRef.getClassName())));
+        }
+        for (int i = 0; i < callee.parameterCount(); ++i) {
+            insn.getArguments().add(unwrap(location, program.variableAt(paramIndex++), callee.parameterType(i)));
+        }
+        if (callee.getResultType() != ValueType.VOID) {
+            insn.setReceiver(program.createVariable());
+        }
+        block.getInstructions().addAll(replacement);
+        block.getInstructions().add(insn);
+
+        ExitInstruction exit = new ExitInstruction();
+        if (insn.getReceiver() != null) {
+            replacement.clear();
+            exit.setValueToReturn(wrap(insn.getReceiver(), callee.getResultType(), null));
+            block.getInstructions().addAll(replacement);
+        }
+        block.getInstructions().add(exit);
+
+        callerMethod.setProgram(program);
+        cls.addMethod(callerMethod);
     }
 
     private void addPropertyGet(String propertyName, Variable instance, Variable receiver,

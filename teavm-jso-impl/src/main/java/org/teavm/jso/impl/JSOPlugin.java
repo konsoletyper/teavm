@@ -28,7 +28,7 @@ public class JSOPlugin implements TeaVMPlugin {
         JSBodyRepository repository = new JSBodyRepository();
         host.registerService(JSBodyRepository.class, repository);
         host.add(new JSObjectClassTransformer(repository));
-        JSDependencyListener dependencyListener = new JSDependencyListener();
+        JSDependencyListener dependencyListener = new JSDependencyListener(repository);
         JSAliasRenderer aliasRenderer = new JSAliasRenderer(dependencyListener);
         host.add(dependencyListener);
         host.add(aliasRenderer);

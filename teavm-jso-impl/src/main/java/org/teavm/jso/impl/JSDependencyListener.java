@@ -33,6 +33,7 @@ import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
+import org.teavm.model.MethodReference;
 
 /**
  *
@@ -42,12 +43,28 @@ class JSDependencyListener extends AbstractDependencyListener {
     private Map<String, ExposedClass> exposedClasses = new HashMap<>();
     private ClassReaderSource classSource;
     private DependencyAgent agent;
+    private JSBodyRepository repository;
     private boolean anyAliasExists;
+
+    public JSDependencyListener(JSBodyRepository repository) {
+        this.repository = repository;
+    }
 
     @Override
     public void started(DependencyAgent agent) {
         this.agent = agent;
         classSource = agent.getClassSource();
+    }
+
+    @Override
+    public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
+        MethodReference ref = method.getReference();
+        Set<MethodReference> callbackMethods = repository.callbackMethods.get(ref);
+        if (callbackMethods != null) {
+            for (MethodReference callbackMethod : callbackMethods) {
+                agent.linkMethod(callbackMethod, new CallLocation(ref)).use();
+            }
+        }
     }
 
     @Override

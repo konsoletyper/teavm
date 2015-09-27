@@ -15,6 +15,7 @@
  */
 package org.teavm.jso.impl;
 
+import java.util.HashSet;
 import org.mozilla.javascript.Token;
 import org.mozilla.javascript.ast.AstNode;
 import org.mozilla.javascript.ast.FunctionCall;
@@ -24,11 +25,13 @@ import org.mozilla.javascript.ast.NodeVisitor;
 import org.mozilla.javascript.ast.PropertyGet;
 import org.mozilla.javascript.ast.StringLiteral;
 import org.teavm.diagnostics.Diagnostics;
+import org.teavm.jso.JSObject;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 
 /**
  *
@@ -37,16 +40,20 @@ import org.teavm.model.MethodReference;
 class JavaInvocationProcessor implements NodeVisitor {
     private ClassReaderSource classSource;
     private JSTypeHelper typeHelper;
+    private JSBodyRepository repository;
     private Diagnostics diagnostics;
     private CallLocation location;
+    private int idGenerator;
 
-    public JavaInvocationProcessor(JSTypeHelper typeHelper, ClassReaderSource classSource, Diagnostics diagnostics) {
+    public JavaInvocationProcessor(JSTypeHelper typeHelper, JSBodyRepository repository,
+            ClassReaderSource classSource, Diagnostics diagnostics) {
         this.typeHelper = typeHelper;
+        this.repository = repository;
         this.classSource = classSource;
         this.diagnostics = diagnostics;
     }
 
-    public void validate(CallLocation location, AstNode root) {
+    public void process(CallLocation location, AstNode root) {
         this.location = location;
         root.visit(this);
     }
@@ -54,12 +61,12 @@ class JavaInvocationProcessor implements NodeVisitor {
     @Override
     public boolean visit(AstNode node) {
         if (node instanceof FunctionCall) {
-            return validateCall((FunctionCall) node);
+            return visit((FunctionCall) node);
         }
         return true;
     }
 
-    private boolean validateCall(FunctionCall call) {
+    private boolean visit(FunctionCall call) {
         if (!(call.getTarget() instanceof PropertyGet)) {
             return true;
         }
@@ -89,14 +96,53 @@ class JavaInvocationProcessor implements NodeVisitor {
                     + ", encountered: " + call.getArguments().size(), methodRef);
         }
 
+        MethodReference caller = createCallbackMethod(method);
+        MethodReference delegate = repository.methodMap.get(location.getMethod());
+        repository.callbackCallees.put(caller, methodRef);
+        repository.callbackMethods.computeIfAbsent(delegate, key -> new HashSet<>()).add(caller);
+        validateSignature(method);
+
         StringBuilder sb = new StringBuilder("$$JSO$$_");
         sb.append(method.hasModifier(ElementModifier.STATIC) ? 'S' : "V");
-        sb.append(method.getReference().toString());
+        sb.append(caller.toString());
         StringLiteral newTarget = new StringLiteral();
         newTarget.setValue(sb.toString());
         propertyGet.setTarget(newTarget);
 
         return false;
+    }
+
+    private void validateSignature(MethodReader method) {
+        if (!method.hasModifier(ElementModifier.STATIC)) {
+            if (!typeHelper.isJavaScriptClass(method.getOwnerName())) {
+                diagnostics.error(location, "Can't call method {{m0}} of non-JS class", method.getReference());
+            }
+        }
+        for (int i = 0; i < method.parameterCount(); ++i) {
+            if (!typeHelper.isSupportedType(method.parameterType(i))) {
+                diagnostics.error(location, "Invalid type {{t0}} of parameter " + (i + 1) + " of method {{m1}}",
+                        method.parameterType(i), method.getReference());
+            }
+        }
+        if (method.getResultType() != ValueType.VOID && !typeHelper.isSupportedType(method.getResultType())) {
+            diagnostics.error(location, "Invalid type {{t0}} of return value of method {{m1}}", method.getResultType(),
+                    method.getReference());
+        }
+    }
+
+    private MethodReference createCallbackMethod(MethodReader method) {
+        int paramCount = method.parameterCount();
+        if (!method.hasModifier(ElementModifier.STATIC)) {
+            paramCount++;
+        }
+        ValueType[] signature = new ValueType[paramCount + 1];
+        for (int i = 0; i < paramCount; ++i) {
+            signature[i] = ValueType.object(JSObject.class.getName());
+        }
+        signature[paramCount] = method.getResultType() == ValueType.VOID ? ValueType.VOID
+                : ValueType.object(JSObject.class.getName());
+        return new MethodReference(location.getMethod().getClassName(),
+                method.getName() + "$jsocb$_" + idGenerator++, signature);
     }
 
     private MethodReference getJavaMethodSelector(AstNode node) {
