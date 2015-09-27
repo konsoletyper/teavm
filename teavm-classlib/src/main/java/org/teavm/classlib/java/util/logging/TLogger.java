@@ -15,10 +15,14 @@
  */
 package org.teavm.classlib.java.util.logging;
 
-import org.teavm.classlib.java.lang.*;
+import org.teavm.classlib.java.lang.TInteger;
+import org.teavm.classlib.java.lang.TObject;
+import org.teavm.classlib.java.lang.TString;
+import org.teavm.classlib.java.lang.TStringBuilder;
+import org.teavm.classlib.java.lang.TThrowable;
 import org.teavm.classlib.java.util.THashMap;
 import org.teavm.classlib.java.util.TMap;
-import org.teavm.javascript.spi.GeneratedBy;
+import org.teavm.jso.JSBody;
 
 /**
  *
@@ -170,12 +174,21 @@ public class TLogger {
         this.parent = parent;
     }
 
-    @GeneratedBy(LoggerNativeGenerator.class)
-    public native void info(TString message);
+    @JSBody(params = "message", script = ""
+            + "if (console) {"
+                + "console.info(message);"
+            + "}")
+    public static native void info(TString message);
 
-    @GeneratedBy(LoggerNativeGenerator.class)
-    private native void warn(TString message);
+    @JSBody(params = "message", script = ""
+            + "if (console) {"
+                + "console.warn(message);"
+            + "}")
+    private static native void warn(TString message);
 
-    @GeneratedBy(LoggerNativeGenerator.class)
-    private native void error(TString message);
+    @JSBody(params = "message", script = ""
+            + "if (console) {"
+                + "console.error(message);"
+            + "}")
+    private static native void error(TString message);
 }

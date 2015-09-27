@@ -15,7 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
-import org.teavm.javascript.spi.GeneratedBy;
+import org.teavm.jso.JSBody;
 
 /**
  *
@@ -92,13 +92,13 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
         return floatToIntBits(value);
     }
 
-    @GeneratedBy(FloatNativeGenerator.class)
+    @JSBody(params = "v", script = "return isNaN(v);")
     public static native boolean isNaN(float v);
 
-    @GeneratedBy(FloatNativeGenerator.class)
+    @JSBody(params = "v", script = "return !isFinite(v);")
     public static native boolean isInfinite(float v);
 
-    @GeneratedBy(FloatNativeGenerator.class)
+    @JSBody(params = {}, script = "return NaN;")
     private static native float getNaN();
 
     public static float parseFloat(TString string) throws TNumberFormatException {

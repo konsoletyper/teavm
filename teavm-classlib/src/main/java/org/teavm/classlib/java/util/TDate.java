@@ -18,8 +18,7 @@ package org.teavm.classlib.java.util;
 import java.util.TimeZone;
 import org.teavm.classlib.java.lang.TComparable;
 import org.teavm.classlib.java.lang.TSystem;
-import org.teavm.dependency.PluggableDependency;
-import org.teavm.javascript.spi.GeneratedBy;
+import org.teavm.jso.core.JSDate;
 
 /**
  *
@@ -27,9 +26,6 @@ import org.teavm.javascript.spi.GeneratedBy;
  */
 public class TDate implements TComparable<TDate> {
     private long value;
-
-    @GeneratedBy(DateNativeGenerator.class)
-    private static native void initNativeDate();
 
     public TDate() {
         value = TSystem.currentTimeMillis();
@@ -51,8 +47,8 @@ public class TDate implements TComparable<TDate> {
 
     @Deprecated
     public TDate(int year, int month, int date, int hrs, int min, int sec) {
-        this((long) buildNumericTime(year, month, date, hrs, min, sec));
-        setFullYear(value, year + 1900);
+        this((long) JSDate.create(year, month, date, hrs, min, sec).getTime());
+        setYear(year);
     }
 
     public TDate(String s) {
@@ -66,12 +62,12 @@ public class TDate implements TComparable<TDate> {
 
     @Deprecated
     public static long UTC(int year, int month, int date, int hrs, int min, int sec) {
-        return (long) buildNumericUTC(year, month, date, hrs, min, sec);
+        return (long) JSDate.UTC(year, month, date, hrs, min, sec);
     }
 
     @Deprecated
     public static long parse(String s) {
-        double value = parseNumericTime(s);
+        double value = JSDate.parse(s).getTime();
         if (Double.isNaN(value)) {
             throw new IllegalArgumentException("Can't parse date: " + s);
         }
@@ -80,67 +76,79 @@ public class TDate implements TComparable<TDate> {
 
     @Deprecated
     public int getYear() {
-        return getFullYear(value) - 1900;
+        return JSDate.create(value).getFullYear() - 1900;
     }
 
     @Deprecated
     public void setYear(int year) {
-        this.value = (long) setFullYear(value, year + 1900);
+        JSDate date = JSDate.create(value);
+        date.setFullYear(year + 1900);
+        this.value = (long) date.getTime();
     }
 
     @Deprecated
     public int getMonth() {
-        return getMonth(value);
+        return JSDate.create(value).getMonth();
     }
 
     @Deprecated
     public void setMonth(int month) {
-        this.value = (long) setMonth(value, month);
+        JSDate date = JSDate.create(value);
+        date.setMonth(month);
+        this.value = (long) date.getTime();
     }
 
     @Deprecated
     public int getDate() {
-        return getDate(value);
+        return JSDate.create(value).getDate();
     }
 
     @Deprecated
     public void setDate(int date) {
-        this.value = (long) setDate(value, date);
+        JSDate d = JSDate.create(value);
+        d.setDate(date);
+        this.value = (long) d.getTime();
     }
 
     @Deprecated
     public int getDay() {
-        return getDay(value);
+        return JSDate.create(value).getDay();
     }
 
     @Deprecated
     public int getHours() {
-        return getHours(value);
+        return JSDate.create(value).getHours();
     }
 
     @Deprecated
     public void setHours(int hours) {
-        this.value = (long) setHours(value, hours);
+        JSDate date = JSDate.create(value);
+        date.setHours(hours);
+        this.value = (long) date.getTime();
     }
 
     @Deprecated
     public int getMinutes() {
-        return getMinutes(value);
+        return JSDate.create(value).getMinutes();
     }
 
     @Deprecated
     public void setMinutes(int minutes) {
-        this.value = (long) setMinutes(value, minutes);
+        JSDate date = JSDate.create(value);
+        date.setMinutes(minutes);
+        this.value = (long) date.getTime();
     }
 
     @Deprecated
     public int getSeconds() {
-        return getSeconds(value);
+        return JSDate.create(value).getSeconds();
     }
 
     @Deprecated
     public void setSeconds(int seconds) {
-        this.value = (long) setSeconds(value, seconds);
+        JSDate date = JSDate.create(value);
+        date.setSeconds(seconds);
+        this.value = (long) date.getTime();
     }
 
     public long getTime() {
@@ -180,86 +188,21 @@ public class TDate implements TComparable<TDate> {
 
     @Override
     public String toString() {
-        return toString(value);
+        return JSDate.create(value).stringValue();
     }
 
     @Deprecated
     public String toLocaleString() {
-        return toLocaleFormat(value, "%c");
+        return JSDate.create(value).toLocaleFormat("%c");
     }
 
     @Deprecated
     public String toGMTString() {
-        return toGMTString(value);
+        return JSDate.create(value).toUTCString();
     }
 
     @Deprecated
     public int getTimezoneOffset() {
-        //return getTimezoneOffset(value);
         return -TimeZone.getDefault().getOffset(value) / (1000 * 60);
     }
-
-    @GeneratedBy(DateNativeGenerator.class)
-    private static native int getFullYear(double date);
-
-    @GeneratedBy(DateNativeGenerator.class)
-    private static native double setFullYear(double date, int year);
-
-    @GeneratedBy(DateNativeGenerator.class)
-    private static native int getMonth(double date);
-
-    @GeneratedBy(DateNativeGenerator.class)
-    private static native double setMonth(double date, int month);
-
-    @GeneratedBy(DateNativeGenerator.class)
-    private static native int getDate(double date);
-
-    @GeneratedBy(DateNativeGenerator.class)
-    private static native double setDate(double dateVal, int date);
-
-    @GeneratedBy(DateNativeGenerator.class)
-    private static native int getDay(double date);
-
-    @GeneratedBy(DateNativeGenerator.class)
-    private static native int getHours(double date);
-
-    @GeneratedBy(DateNativeGenerator.class)
-    private static native double setHours(double date, int hours);
-
-    @GeneratedBy(DateNativeGenerator.class)
-    private static native int getMinutes(double date);
-
-    @GeneratedBy(DateNativeGenerator.class)
-    private static native double setMinutes(double date, int minutes);
-
-    @GeneratedBy(DateNativeGenerator.class)
-    private static native int getSeconds(double date);
-
-    @GeneratedBy(DateNativeGenerator.class)
-    private static native double setSeconds(double date, int seconds);
-
-    @GeneratedBy(DateNativeGenerator.class)
-    private static native double buildNumericTime(int year, int month, int date, int hrs, int min, int sec);
-
-    @GeneratedBy(DateNativeGenerator.class)
-    private static native double parseNumericTime(String dateString);
-
-    @GeneratedBy(DateNativeGenerator.class)
-    private static native double buildNumericUTC(int year, int month, int date, int hrs, int min, int sec);
-
-    @GeneratedBy(DateNativeGenerator.class)
-    @PluggableDependency(DateNativeGenerator.class)
-    private static native String toString(double value);
-
-    @GeneratedBy(DateNativeGenerator.class)
-    @PluggableDependency(DateNativeGenerator.class)
-    private static native String toLocaleFormat(double value, String format);
-
-    @GeneratedBy(DateNativeGenerator.class)
-    @PluggableDependency(DateNativeGenerator.class)
-    private static native String toGMTString(double value);
-
-    @GeneratedBy(DateNativeGenerator.class)
-    @PluggableDependency(DateNativeGenerator.class)
-    static native int getTimezoneOffset(double value);
 }

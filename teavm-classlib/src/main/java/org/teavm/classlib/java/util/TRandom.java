@@ -18,7 +18,7 @@ package org.teavm.classlib.java.util;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.TMath;
 import org.teavm.classlib.java.lang.TObject;
-import org.teavm.javascript.spi.GeneratedBy;
+import org.teavm.jso.JSBody;
 
 /**
  *
@@ -68,6 +68,6 @@ public class TRandom extends TObject implements TSerializable {
         return random();
     }
 
-    @GeneratedBy(RandomNativeGenerator.class)
+    @JSBody(params = {}, script = "return Math.random();")
     private static native double random();
 }

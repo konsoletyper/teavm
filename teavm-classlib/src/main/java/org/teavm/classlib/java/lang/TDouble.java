@@ -15,8 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
-import org.teavm.javascript.spi.GeneratedBy;
-import org.teavm.javascript.spi.InjectedBy;
+import org.teavm.jso.JSBody;
 
 /**
  *
@@ -224,13 +223,13 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
         return isInfinite(value);
     }
 
-    @GeneratedBy(DoubleNativeGenerator.class)
+    @JSBody(params = "v", script = "return isNaN(v);")
     public static native boolean isNaN(double v);
 
-    @InjectedBy(DoubleNativeGenerator.class)
+    @JSBody(params = {}, script = "return NaN;")
     private static native double getNaN();
 
-    @GeneratedBy(DoubleNativeGenerator.class)
+    @JSBody(params = "v", script = "return !isFinite(v);")
     public static native boolean isInfinite(double v);
 
     public static long doubleToRawLongBits(double value) {
