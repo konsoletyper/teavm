@@ -640,8 +640,10 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
                             try {
                                 IContainer container = (IContainer)workspaceRoot.findMember(
                                         depJavaProject.getOutputLocation());
-                                collector.addPath(container.getLocation());
-                                binCollector.addContainer(container);
+                                if (container != null) {
+                                    collector.addPath(container.getLocation());
+                                    binCollector.addContainer(container);
+                                }
                             } catch (MalformedURLException e) {
                                 TeaVMEclipsePlugin.logError(e);
                             }

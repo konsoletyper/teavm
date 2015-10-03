@@ -36,5 +36,6 @@
     <module>teavm-samples-video</module>
     <module>teavm-samples-async</module>
     <module>teavm-samples-kotlin</module>
+    <module>teavm-samples-scala</module>
   </modules>
 </project>
