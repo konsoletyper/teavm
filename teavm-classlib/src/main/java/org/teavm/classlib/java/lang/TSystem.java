@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.lang;
 
 import org.teavm.classlib.java.io.TConsole;
+import org.teavm.classlib.java.io.TInputStream;
 import org.teavm.classlib.java.io.TPrintStream;
 import org.teavm.classlib.java.lang.reflect.TArray;
 import org.teavm.dependency.PluggableDependency;
@@ -28,6 +29,7 @@ import org.teavm.javascript.spi.GeneratedBy;
 public final class TSystem extends TObject {
     public static final TPrintStream out = new TPrintStream(new TConsoleOutputStreamStdout(), false);
     public static final TPrintStream err = new TPrintStream(new TConsoleOutputStreamStderr(), false);
+    public static final TInputStream in = new TConsoleInputStream();
 
     private TSystem() {
     }
