@@ -244,6 +244,9 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
 
     private void removeMarkers(TeaVMProfile profile) throws CoreException {
         for (IProject project : getProject().getWorkspace().getRoot().getProjects()) {
+            if (!project.isOpen()) {
+                continue;
+            }
             IMarker[] markers = project.findMarkers(TeaVMEclipsePlugin.PROBLEM_MARKER_ID, true,
                     IResource.DEPTH_INFINITE);
             for (IMarker marker : markers) {

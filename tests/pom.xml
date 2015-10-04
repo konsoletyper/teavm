@@ -45,12 +45,12 @@
     </dependency>
     <dependency>
       <groupId>org.teavm</groupId>
-      <artifactId>teavm-jso</artifactId>
+      <artifactId>teavm-jso-apis</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.teavm</groupId>
-      <artifactId>teavm-jso</artifactId>
+      <artifactId>teavm-jso-apis</artifactId>
       <version>${project.version}</version>
       <classifier>tests</classifier>
       <scope>compile</scope>
@@ -68,13 +68,6 @@
         <groupId>org.teavm</groupId>
         <artifactId>teavm-maven-plugin</artifactId>
         <version>${project.version}</version>
-        <dependencies>
-          <dependency>
-            <groupId>org.teavm</groupId>
-            <artifactId>teavm-platform</artifactId>
-            <version>${project.version}</version>
-          </dependency>
-        </dependencies>
         <executions>
           <execution>
             <id>generate-javascript-tests</id>

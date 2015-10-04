@@ -76,6 +76,7 @@
     <module>core</module>
     <module>classlib</module>
     <module>jso/core</module>
+    <module>jso/apis</module>
     <module>jso/impl</module>
     <module>html4j</module>
     <module>samples</module>
