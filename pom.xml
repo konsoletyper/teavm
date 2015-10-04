@@ -73,19 +73,18 @@
   </properties>
 
   <modules>
-    <module>teavm-core</module>
-    <module>teavm-classlib</module>
-    <module>teavm-maven</module>
-    <module>teavm-dom</module>
-    <module>teavm-jso</module>
-    <module>teavm-html4j</module>
-    <module>teavm-samples</module>
-    <module>teavm-platform</module>
-    <module>teavm-cli</module>
-    <module>teavm-chrome-rdp</module>
-    <module>teavm-tests</module>
-    <module>teavm-extras-slf4j</module>
-    <module>teavm-jso-impl</module>
+    <module>core</module>
+    <module>classlib</module>
+    <module>jso/core</module>
+    <module>jso/impl</module>
+    <module>html4j</module>
+    <module>samples</module>
+    <module>platform</module>
+    <module>tools/cli</module>
+    <module>tools/maven</module>
+    <module>tools/chrome-rdp</module>
+    <module>tests</module>
+    <module>extras-slf4j</module>
   </modules>
 
   <dependencyManagement>
@@ -294,7 +293,7 @@
     <profile>
       <id>enable-eclipse</id>
       <modules>
-        <module>teavm-eclipse</module>
+        <module>tools/eclipse</module>
       </modules>
     </profile>
   </profiles>

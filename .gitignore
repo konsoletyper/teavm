@@ -1,5 +1,8 @@
-/.directory
-/.project
-/.settings
-/target
+.directory
+.project
+.settings
+.classpath
+.factorypath
 .checkstyle
+.cache-main
+target
