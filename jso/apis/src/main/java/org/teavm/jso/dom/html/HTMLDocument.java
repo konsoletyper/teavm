@@ -15,6 +15,7 @@
  */
 package org.teavm.jso.dom.html;
 
+import java.util.function.Consumer;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.browser.Window;
 import org.teavm.jso.dom.events.EventTarget;
@@ -31,6 +32,12 @@ public interface HTMLDocument extends Document, EventTarget {
 
     @Override
     HTMLElement createElement(String tagName);
+
+    default HTMLElement createElement(String tagName, Consumer<HTMLElement> consumer) {
+        HTMLElement result = createElement(tagName);
+        consumer.accept(result);
+        return result;
+    }
 
     @Override
     HTMLElement getElementById(String elementId);

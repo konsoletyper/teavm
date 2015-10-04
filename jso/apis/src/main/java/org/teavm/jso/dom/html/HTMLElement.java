@@ -15,6 +15,7 @@
  */
 package org.teavm.jso.dom.html;
 
+import java.util.function.Consumer;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.css.ElementCSSInlineStyle;
 import org.teavm.jso.dom.events.EventTarget;
@@ -110,4 +111,34 @@ public interface HTMLElement extends Element, ElementCSSInlineStyle, EventTarget
     void setInnerHTML(String content);
 
     TextRectangle getBoundingClientRect();
+
+    default HTMLElement withAttr(String name, String value) {
+        setAttribute(name, value);
+        return this;
+    }
+
+    default HTMLElement withChild(String tagName) {
+        HTMLElement result = getOwnerDocument().createElement(tagName);
+        appendChild(result);
+        return result;
+    }
+
+    default HTMLElement withChild(String tagName, Consumer<HTMLElement> consumer) {
+        HTMLElement result = getOwnerDocument().createElement(tagName);
+        appendChild(result);
+        consumer.accept(result);
+        return result;
+    }
+
+    default HTMLElement clear() {
+        while (getLastChild() != null) {
+            removeChild(getLastChild());
+        }
+        return this;
+    }
+
+    default HTMLElement withText(String content) {
+        clear().appendChild(getOwnerDocument().createTextNode(content));
+        return this;
+    }
 }

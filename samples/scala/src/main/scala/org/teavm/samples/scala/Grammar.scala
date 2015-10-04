@@ -1,6 +1,6 @@
 package org.teavm.samples.scala
 
-trait Grammar {
+object Grammar {
   def rule[T](f : Seq[Char] => (Option[T], Seq[Char])) : Rule[T] = Rule.rule(f)
   def s(str : String) : Rule[String] = Rule.expect(str)
   def range(first : Char, last : Char) : Rule[Char] = Rule.range(first, last)
@@ -23,21 +23,16 @@ trait Rule[T] {
 }
 
 object Rule {
-  def rule[T](f : Seq[Char] => (Option[T], Seq[Char])) : Rule[T] = {
-    new Rule[T]() {
-      def parse(chars : Seq[Char]) : (Option[T], Seq[Char]) = f(chars)
-    }
+  def rule[T](f : Seq[Char] => (Option[T], Seq[Char])) : Rule[T] = new Rule[T]() {
+    def parse(chars : Seq[Char]) : (Option[T], Seq[Char]) = f(chars)
   }
   def concat[S, T](left : Rule[S], right : => Rule[T]) : Rule[(S, T)] = {
-    lazy val right2 = right
-    rule(chars => {
-      left.parse(chars) match {
-        case (Some(leftResult), rem) => right2.parse(rem) match {
-          case (Some(rightResult), rem2) => (Some((leftResult, rightResult)), rem2)
-          case (None, rem2) => (None, rem)
-        }
-        case (None, rem) => (None, rem)
+    rule(chars => left.parse(chars) match {
+      case (Some(leftResult), rem) => right.parse(rem) match {
+        case (Some(rightResult), rem2) => (Some((leftResult, rightResult)), rem2)
+        case (None, rem2) => (None, rem)
       }
+      case (None, rem) => (None, rem)
     })
   }
   def unlimited[T](inner : Rule[T]) : Rule[List[T]] = {
@@ -56,24 +51,19 @@ object Rule {
     })
   }
   def firstOf[T](first : Rule[T], second : => Rule[T]) : Rule[T] = {
-    lazy val second2 = second
-    rule(chars => {
-      first.parse(chars) match {
+    rule(chars => first.parse(chars) match {
+      case (Some(result), rem) => (Some(result), rem)
+      case (None, _) => second.parse(chars) match {
         case (Some(result), rem) => (Some(result), rem)
-        case (None, _) => second2.parse(chars) match {
-          case (Some(result), rem) => (Some(result), rem)
-          case (None, _) => (None, chars)
-        }
+        case (None, _) => (None, chars)
       }
     })
   }
   def optional[T](inner : Rule[T]) : Rule[Option[T]] = {
-    rule {
-      chars => inner.parse(chars) match {
-        case (Some(result), rem) => (Some(Some(result)), rem)
-        case (None, rem) => (Some(None), chars)
-      }
-    }
+    rule(chars => inner.parse(chars) match {
+      case (Some(result), rem) => (Some(Some(result)), rem)
+      case (None, rem) => (Some(None), chars)
+    })
   }
   implicit def expect(str : String) : Rule[String] = {
     def iter(chars : Seq[Char], index : Int) : (Boolean, Seq[Char]) = {
@@ -94,19 +84,15 @@ object Rule {
     })
   }
   def andThen[T, S](inner : Rule[T], f : T => S) : Rule[S] = {
-    rule(chars => {
-      inner.parse(chars) match {
-        case (Some(result), rem) => (Some(f(result)), rem)
-        case (None, rem) => (None, rem)
-      }
+    rule(chars => inner.parse(chars) match {
+      case (Some(result), rem) => (Some(f(result)), rem)
+      case (None, rem) => (None, rem)
     })
   }
   def range(first : Char, last : Char) : Rule[Char] = {
-    rule(chars => {
-      chars match {
-        case c +: rem if c >= first && c <= last => (Some(c), rem)
-        case _ => (None, chars)
-      }
+    rule(chars => chars match {
+      case c +: rem if c >= first && c <= last => (Some(c), rem)
+      case _ => (None, chars)
     })
   }
 }

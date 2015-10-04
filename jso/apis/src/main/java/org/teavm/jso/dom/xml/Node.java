@@ -103,4 +103,10 @@ public interface Node extends JSObject {
 
     @JSProperty
     Document getOwnerDocument();
+
+    default void delete() {
+        if (getParentNode() != null) {
+            getParentNode().removeChild(this);
+        }
+    }
 }
