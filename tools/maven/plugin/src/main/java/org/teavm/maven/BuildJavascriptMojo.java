@@ -21,7 +21,12 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Properties;
+import java.util.Set;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.repository.MavenArtifactRepository;
 import org.apache.maven.plugin.AbstractMojo;
@@ -34,7 +39,12 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.repository.RepositorySystem;
 import org.teavm.model.ClassHolderTransformer;
-import org.teavm.tooling.*;
+import org.teavm.tooling.ClassAlias;
+import org.teavm.tooling.MethodAlias;
+import org.teavm.tooling.RuntimeCopyOperation;
+import org.teavm.tooling.SourceFileProvider;
+import org.teavm.tooling.TeaVMTool;
+import org.teavm.tooling.TeaVMToolException;
 
 /**
  *
@@ -147,6 +157,14 @@ public class BuildJavascriptMojo extends AbstractMojo {
 
     public void setMainPageIncluded(boolean mainPageIncluded) {
         this.mainPageIncluded = mainPageIncluded;
+    }
+
+    public void setCompileScopes(List<String> compileScopes) {
+        this.compileScopes = compileScopes;
+    }
+
+    public void setMainClass(String mainClass) {
+        this.mainClass = mainClass;
     }
 
     public String[] getTransformers() {

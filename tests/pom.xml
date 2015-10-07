@@ -87,6 +87,7 @@
                 <java.util.Locale.available>en, en_US, en_GB, ru, ru_RU</java.util.Locale.available>
               </properties>
               <incremental>${teavm.test.incremental}</incremental>
+              <seleniumURL>http://127.0.0.1:4444/wd/hub</seleniumURL>
             </configuration>
           </execution>
         </executions>

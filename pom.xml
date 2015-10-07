@@ -69,7 +69,7 @@
     <html4j.version>1.2</html4j.version>
     <jetty.version>9.2.1.v20140609</jetty.version>
     <slf4j.version>1.7.7</slf4j.version>
-    <checker.version>1.9.3</checker.version>
+    <selenium.version>2.47.2</selenium.version>
   </properties>
 
   <modules>
@@ -166,13 +166,16 @@
         <artifactId>slf4j-api</artifactId>
         <version>${slf4j.version}</version>
       </dependency>
-      <!--
       <dependency>
-        <groupId>org.checkerframework</groupId>
-        <artifactId>checker</artifactId>
-        <version>${checker.version}</version>
+        <groupId>org.seleniumhq.selenium</groupId>
+        <artifactId>selenium-java</artifactId>
+        <version>${selenium.version}</version>
       </dependency>
-       -->
+      <dependency>
+        <groupId>org.seleniumhq.selenium</groupId>
+        <artifactId>selenium-remote-driver</artifactId>
+        <version>${selenium.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 

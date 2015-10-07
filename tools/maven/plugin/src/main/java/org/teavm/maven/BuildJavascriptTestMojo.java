@@ -16,16 +16,28 @@
 package org.teavm.maven;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.repository.MavenArtifactRepository;
 import org.apache.maven.plugin.AbstractMojo;
@@ -38,10 +50,16 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.repository.RepositorySystem;
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.remote.RemoteWebDriver;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.testing.JUnitTestAdapter;
 import org.teavm.testing.TestAdapter;
 import org.teavm.tooling.SourceFileProvider;
+import org.teavm.tooling.TeaVMTestCase;
 import org.teavm.tooling.TeaVMTestTool;
 import org.teavm.tooling.TeaVMToolException;
 
@@ -119,7 +137,13 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
     @Parameter
     private boolean sourceFilesCopied;
 
+    @Parameter
+    private URL seleniumURL;
+    private WebDriver webDriver;
+
     private TeaVMTestTool tool = new TeaVMTestTool();
+    private BlockingQueue<Runnable> seleniumTaskQueue = new LinkedBlockingQueue<>();
+    private volatile boolean seleniumStopped = false;
 
     public void setProject(MavenProject project) {
         this.project = project;
@@ -197,6 +221,10 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
         this.sourceFilesCopied = sourceFilesCopied;
     }
 
+    public void setSeleniumURL(URL seleniumURL) {
+        this.seleniumURL = seleniumURL;
+    }
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         if (System.getProperty("maven.test.skip", "false").equals("true") ||
@@ -204,6 +232,8 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
             getLog().info("Tests build skipped as specified by system property");
             return;
         }
+
+        detectSelenium();
         try {
             final ClassLoader classLoader = prepareClassLoader();
             getLog().info("Searching for tests in the directory `" + testFiles.getAbsolutePath() + "'");
@@ -239,9 +269,13 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
             if (additionalScripts != null) {
                 tool.getAdditionalScripts().addAll(Arrays.asList(additionalScripts));
             }
+            tool.addListener(testCase -> runSelenium(testCase));
             tool.generate();
         } catch (TeaVMToolException e) {
             throw new MojoFailureException("Error occured generating JavaScript files", e);
+        } finally {
+            webDriver.close();
+            stopSelenium();
         }
     }
 
@@ -418,5 +452,65 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
             }
         }
         return transformerInstances;
+    }
+
+    private void detectSelenium() {
+        if (seleniumURL == null) {
+            return;
+        }
+        ChromeDriver driver = new ChromeDriver();
+        webDriver = driver;
+        new Thread(() -> {
+            while (!seleniumStopped) {
+                Runnable task;
+                try {
+                    task = seleniumTaskQueue.poll(1, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    break;
+                }
+                task.run();
+            }
+        }).start();
+    }
+
+    private void addSeleniumTask(Runnable runnable) {
+        if (seleniumURL != null) {
+            seleniumTaskQueue.add(runnable);
+        }
+    }
+
+    private void stopSelenium() {
+        addSeleniumTask(() -> seleniumStopped = true);
+    }
+
+    private void runSelenium(TeaVMTestCase testCase) {
+        if (webDriver == null) {
+            return;
+        }
+        try {
+            JavascriptExecutor js = (JavascriptExecutor) webDriver;
+            js.executeAsyncScript(
+                    readResource("teavm-selenium.js"),
+                    readFile(testCase.getRuntimeScript()),
+                    readFile(testCase.getTestScript()),
+                    readResource("teavm-selenium-adapter.js"));
+        } catch (IOException e) {
+            getLog().error(e);
+        }
+    }
+
+    private String readFile(File file) throws IOException {
+        try (InputStream input = new FileInputStream(file)) {
+            return IOUtils.toString(input, "UTF-8");
+        }
+    }
+
+    private String readResource(String resourceName) throws IOException {
+        try (InputStream input = BuildJavascriptTestMojo.class.getClassLoader().getResourceAsStream(resourceName)) {
+            if (input == null) {
+                return "";
+            }
+            return IOUtils.toString(input, "UTF-8");
+        }
     }
 }

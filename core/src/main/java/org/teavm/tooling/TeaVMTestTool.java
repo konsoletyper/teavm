@@ -61,6 +61,7 @@ public class TeaVMTestTool {
     private MethodNodeCache astCache;
     private ProgramCache programCache;
     private SourceFilesCopier sourceFilesCopier;
+    private List<TeaVMTestToolListener> listeners = new ArrayList<>();
 
     public File getOutputDir() {
         return outputDir;
@@ -347,6 +348,7 @@ public class TeaVMTestTool {
         for (ClassHolderTransformer transformer : transformers) {
             vm.add(transformer);
         }
+
         File file = new File(outputDir, targetName);
         DebugInformationBuilder debugInfoBuilder = sourceMapsGenerated || debugInformationGenerated
                 ? new DebugInformationBuilder() : null;
@@ -376,12 +378,16 @@ public class TeaVMTestTool {
                 }
             }
         }
-        if (sourceMapsGenerated) {
+
+        File debugTableFile = null;
+        if (debugInformationGenerated) {
             DebugInformation debugInfo = debugInfoBuilder.getDebugInformation();
-            try (OutputStream debugInfoOut = new FileOutputStream(new File(outputDir, targetName + ".teavmdbg"))) {
+            debugTableFile = new File(outputDir, targetName + ".teavmdbg");
+            try (OutputStream debugInfoOut = new FileOutputStream(debugTableFile)) {
                 debugInfo.write(debugInfoOut);
             }
         }
+
         if (sourceMapsGenerated) {
             DebugInformation debugInfo = debugInfoBuilder.getDebugInformation();
             String sourceMapsFileName = targetName + ".map";
@@ -392,6 +398,11 @@ public class TeaVMTestTool {
         }
         if (sourceFilesCopied && vm.getWrittenClasses() != null) {
             sourceFilesCopier.addClasses(vm.getWrittenClasses());
+        }
+
+        TeaVMTestCase testCase = new TeaVMTestCase(new File(outputDir, "res/runtime.js"), file, debugTableFile);
+        for (TeaVMTestToolListener listener : listeners) {
+            listener.testGenerated(testCase);
         }
     }
 
@@ -421,5 +432,13 @@ public class TeaVMTestTool {
             }
         }
         writer.append('\"');
+    }
+
+    public void addListener(TeaVMTestToolListener listener) {
+        listeners.add(listener);
+    }
+
+    public void removeListener(TeaVMTestToolListener listener) {
+        listeners.remove(listener);
     }
 }
