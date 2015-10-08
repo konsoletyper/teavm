@@ -16,20 +16,27 @@
 package org.teavm.tooling;
 
 import java.io.File;
+import org.teavm.model.MethodReference;
 
 /**
  *
  * @author Alexey Andreev
  */
 public class TeaVMTestCase {
+    private MethodReference testMethod;
     private File runtimeScript;
     private File testScript;
     private File debugTable;
 
-    public TeaVMTestCase(File runtimeScript, File testScript, File debugTable) {
+    public TeaVMTestCase(MethodReference testMethod, File runtimeScript, File testScript, File debugTable) {
+        this.testMethod = testMethod;
         this.runtimeScript = runtimeScript;
         this.testScript = testScript;
         this.debugTable = debugTable;
+    }
+
+    public MethodReference getTestMethod() {
+        return testMethod;
     }
 
     public File getRuntimeScript() {

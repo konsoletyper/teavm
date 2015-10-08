@@ -400,7 +400,8 @@ public class TeaVMTestTool {
             sourceFilesCopier.addClasses(vm.getWrittenClasses());
         }
 
-        TeaVMTestCase testCase = new TeaVMTestCase(new File(outputDir, "res/runtime.js"), file, debugTableFile);
+        TeaVMTestCase testCase = new TeaVMTestCase(methodRef, new File(outputDir, "res/runtime.js"),
+                file, debugTableFile);
         for (TeaVMTestToolListener listener : listeners) {
             listener.testGenerated(testCase);
         }

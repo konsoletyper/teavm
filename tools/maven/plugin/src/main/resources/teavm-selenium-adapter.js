@@ -1,5 +1,6 @@
+var JUnitClient = {}
 JUnitClient.run = function() {
-    var handler = window.addEventListener("message", $rt_threadStarter(function() {
+    $rt_startThread(function() {
         var thread = $rt_nativeThread();
         var instance;
         var ptr = 0;
@@ -44,5 +45,17 @@ JUnitClient.run = function() {
             break loop;
         }}
         window.parent.postMessage(JSON.stringify(message), "*");
-    }));
+    })
+}
+
+JUnitClient.makeErrorMessage = function(message, e) {
+    message.status = "exception";
+    var stack = e.stack;
+    if (e.$javaException && e.$javaException.constructor.$meta) {
+        message.exception = e.$javaException.constructor.$meta.name;
+        message.stack = e.$javaException.constructor.$meta.name + ": ";
+        var exceptionMessage = extractException(e.$javaException);
+        message.stack += exceptionMessage ? $rt_ustr(exceptionMessage) : "";
+    }
+    message.stack += "\n" + stack;
 }
