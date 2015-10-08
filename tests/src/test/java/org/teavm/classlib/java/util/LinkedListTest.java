@@ -214,4 +214,13 @@ public class LinkedListTest {
         assertEquals(4, list.size());
         assertArrayEquals(new String[] { "1", "2", "3", "1" }, list.toArray(new String[0]));
     }
+
+    @Test
+    public void pushes() {
+        LinkedList<String> list = new LinkedList<>();
+        list.push("foo");
+        assertEquals("foo", list.peek());
+        list.push("bar");
+        assertEquals("bar", list.peek());
+    }
 }

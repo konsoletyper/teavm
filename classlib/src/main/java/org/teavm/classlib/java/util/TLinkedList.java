@@ -140,7 +140,10 @@ public class TLinkedList<E> extends TAbstractSequentialList<E> implements TDeque
 
     @Override
     public E element() {
-        return null;
+        if (firstEntry == null) {
+            throw new TNoSuchElementException();
+        }
+        return firstEntry.item;
     }
 
     @Override
@@ -273,12 +276,12 @@ public class TLinkedList<E> extends TAbstractSequentialList<E> implements TDeque
 
     @Override
     public void push(E e) {
-        add(e);
+        addFirst(e);
     }
 
     @Override
     public E pop() {
-        return removeLast();
+        return removeFirst();
     }
 
     @Override
