@@ -21,5 +21,6 @@ package org.teavm.maven;
  */
 public enum TestStatus {
     PASSED,
-    ERROR
+    ERROR,
+    EXCEPTION_NOT_THROWN
 }

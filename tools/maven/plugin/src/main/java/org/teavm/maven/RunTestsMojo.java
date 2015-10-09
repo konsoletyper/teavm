@@ -16,13 +16,17 @@
 package org.teavm.maven;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.Reader;
+import java.io.Writer;
+import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.List;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -40,15 +44,37 @@ public class RunTestsMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project.build.directory}/javascript-test")
     private File testDirectory;
 
+    @Parameter(defaultValue = "${project.build.directory}/teavm-test-report.json")
+    private File reportFile;
+
     @Parameter
-    private URL seleniumURL;
+    private String seleniumURL;
+
+    @Parameter
+    private int numThreads = 1;
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
+        if (seleniumURL == null || seleniumURL.isEmpty()) {
+            getLog().info("Tests build skipped as selenium URL was not specified");
+            return;
+        }
+
+        if (System.getProperty("maven.test.skip", "false").equals("true") ||
+                System.getProperty("skipTests") != null) {
+            getLog().info("Tests build skipped as specified by system property");
+            return;
+        }
+
         SeleniumTestRunner runner = new SeleniumTestRunner();
         runner.setLog(getLog());
         runner.setDirectory(testDirectory);
-        runner.setUrl(seleniumURL);
+        runner.setNumThreads(numThreads);
+        try {
+            runner.setUrl(new URL(seleniumURL));
+        } catch (MalformedURLException e) {
+            throw new MojoFailureException("Can't parse URL: " + seleniumURL, e);
+        }
 
         TestPlan plan;
         ObjectMapper mapper = new ObjectMapper();
@@ -63,23 +89,31 @@ public class RunTestsMojo extends AbstractMojo {
         processReport(runner.getReport());
     }
 
-    private void processReport(List<TestResult> report) throws MojoExecutionException {
-        if (report.isEmpty()) {
+    private void processReport(TestReport report) throws MojoExecutionException, MojoFailureException {
+        if (report.getResults().isEmpty()) {
             getLog().info("No tests ran");
             return;
         }
 
         int failedTests = 0;
-        for (TestResult result : report) {
+        for (TestResult result : report.getResults()) {
             if (result.getStatus() != TestStatus.PASSED) {
                 failedTests++;
             }
         }
 
         if (failedTests > 0) {
-            throw new MojoExecutionException(failedTests + " of " + report.size() + " test(s) failed");
+            throw new MojoExecutionException(failedTests + " of " + report.getResults().size() + " test(s) failed");
         } else {
-            getLog().info("All of " + report.size() + " tests successfully passed");
+            getLog().info("All of " + report.getResults().size() + " tests successfully passed");
+        }
+
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.enable(SerializationFeature.INDENT_OUTPUT);
+        try (Writer writer = new OutputStreamWriter(new FileOutputStream(reportFile), "UTF-8")) {
+            mapper.writeValue(writer, report);
+        } catch (IOException e) {
+            throw new MojoFailureException("Error writing test report", e);
         }
     }
 }

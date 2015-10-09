@@ -24,6 +24,7 @@
     <relativePath>../..</relativePath>
   </parent>
   <artifactId>teavm-tooling</artifactId>
+  <packaging>bundle</packaging>
 
   <name>TeaVM tooling core</name>
   <description>TeaVM API that helps to create tooling</description>
@@ -58,6 +59,17 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <extensions>true</extensions>
+        <configuration>
+          <instructions>
+            <Export-Package>org.teavm.*</Export-Package>
+            <Bundle-SymbolicName>teavm-tooling</Bundle-SymbolicName>
+          </instructions>
+        </configuration>
       </plugin>
     </plugins>
   </build>

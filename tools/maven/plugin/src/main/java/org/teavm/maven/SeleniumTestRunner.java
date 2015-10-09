@@ -34,7 +34,8 @@ import org.apache.maven.plugin.logging.Log;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
-import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.remote.RemoteWebDriver;
 import org.teavm.model.MethodReference;
 import org.teavm.tooling.testing.TestCase;
 import org.teavm.tooling.testing.TestGroup;
@@ -99,7 +100,7 @@ public class SeleniumTestRunner {
         latch = new CountDownLatch(numThreads);
         for (int i = 0; i < numThreads; ++i) {
             new Thread(() -> {
-                ChromeDriver driver = new ChromeDriver();
+                RemoteWebDriver driver = new RemoteWebDriver(DesiredCapabilities.chrome());
                 webDriver.set(driver);
                 localReport.set(new ArrayList<>());
                 while (!seleniumStopped || !seleniumTaskQueue.isEmpty()) {
@@ -157,13 +158,24 @@ public class SeleniumTestRunner {
             MethodReference ref = MethodReference.parse(testCase.getTestMethod());
             switch (status) {
                 case "ok":
-                    log.info("Test passed: " + testCase.getTestMethod());
-                    localReport.get().add(TestResult.passed(ref));
+                    if (testCase.getExpectedExceptions().isEmpty()) {
+                        log.info("Test passed: " + testCase.getTestMethod());
+                        localReport.get().add(TestResult.passed(ref));
+                    } else {
+                        log.info("Test failed: " + testCase.getTestMethod());
+                        localReport.get().add(TestResult.exceptionNotThrown(ref));
+                    }
                     break;
                 case "exception": {
                     String stack = resultObject.get("stack").asText();
-                    log.info("Test failed: " + testCase.getTestMethod());
-                    localReport.get().add(TestResult.error(ref, stack));
+                    String exception = resultObject.get("exception").asText();
+                    if (!testCase.getExpectedExceptions().contains(exception)) {
+                        log.info("Test failed: " + testCase.getTestMethod());
+                        localReport.get().add(TestResult.error(ref, exception, stack));
+                    } else {
+                        log.info("Test passed: " + testCase.getTestMethod());
+                        localReport.get().add(TestResult.passed(ref));
+                    }
                     break;
                 }
             }
@@ -194,7 +206,9 @@ public class SeleniumTestRunner {
         }
     }
 
-    public List<TestResult> getReport() {
-        return new ArrayList<>(report);
+    public TestReport getReport() {
+        TestReport report = new TestReport();
+        report.getResults().addAll(this.report);
+        return report;
     }
 }

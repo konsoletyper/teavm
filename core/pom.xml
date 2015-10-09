@@ -45,6 +45,11 @@
       <artifactId>hppc</artifactId>
       <version>0.6.1</version>
     </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-annotations</artifactId>
+      <optional>true</optional>
+    </dependency>
   </dependencies>
 
   <name>TeaVM core</name>

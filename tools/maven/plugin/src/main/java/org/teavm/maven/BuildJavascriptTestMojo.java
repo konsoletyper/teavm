@@ -28,7 +28,6 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Properties;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -81,12 +80,6 @@ public class BuildJavascriptTestMojo extends AbstractJavascriptMojo {
 
     @Parameter
     private String[] additionalScripts;
-
-    @Parameter
-    private Properties properties;
-
-    @Parameter
-    private boolean incremental;
 
     private TeaVMTestTool tool = new TeaVMTestTool();
 

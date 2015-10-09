@@ -4,7 +4,7 @@ Bundle-Name: TeaVM plugin for Eclipse
 Bundle-SymbolicName: teavm-eclipse-plugin;singleton:=true
 Bundle-Version: 0.4.0.qualifier
 Bundle-Vendor: Alexey Andreev <konsoletyper@gmail.com>
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Activator: org.teavm.eclipse.TeaVMEclipsePlugin
 Require-Bundle: org.eclipse.core.runtime;bundle-version="[3.8.0,4.0)",
  org.eclipse.debug.core;bundle-version="[3.7.0,4.0)",
@@ -48,5 +48,6 @@ Import-Package: org.teavm.cache,
  org.teavm.resource,
  org.teavm.testing,
  org.teavm.tooling,
+ org.teavm.tooling.sources,
  org.teavm.vm,
  org.teavm.vm.spi

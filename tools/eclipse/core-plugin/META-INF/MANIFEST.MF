@@ -71,5 +71,6 @@ Export-Package: org.teavm.cache,
  org.teavm.resource,
  org.teavm.testing,
  org.teavm.tooling,
+ org.teavm.tooling.sources,
  org.teavm.vm,
  org.teavm.vm.spi
