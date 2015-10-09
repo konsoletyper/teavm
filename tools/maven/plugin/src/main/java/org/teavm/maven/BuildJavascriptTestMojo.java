@@ -15,12 +15,15 @@
  */
 package org.teavm.maven;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -42,6 +45,7 @@ import org.teavm.testing.JUnitTestAdapter;
 import org.teavm.testing.TestAdapter;
 import org.teavm.tooling.TeaVMToolException;
 import org.teavm.tooling.testing.TeaVMTestTool;
+import org.teavm.tooling.testing.TestPlan;
 
 /**
  *
@@ -84,11 +88,6 @@ public class BuildJavascriptTestMojo extends AbstractJavascriptMojo {
     @Parameter
     private boolean incremental;
 
-    @Parameter
-    private URL seleniumURL;
-
-    private SeleniumTestRunner seleniumRunner;
-
     private TeaVMTestTool tool = new TeaVMTestTool();
 
     @Override
@@ -111,29 +110,19 @@ public class BuildJavascriptTestMojo extends AbstractJavascriptMojo {
             if (additionalScripts != null) {
                 tool.getAdditionalScripts().addAll(Arrays.asList(additionalScripts));
             }
-            tool.generate();
+            writePlan(tool.generate());
         } catch (TeaVMToolException e) {
             throw new MojoFailureException("Error occured generating JavaScript files", e);
         }
     }
 
-    private void processReport(List<TestResult> report) throws MojoExecutionException {
-        if (report.isEmpty()) {
-            getLog().info("No tests ran");
-            return;
-        }
-
-        int failedTests = 0;
-        for (TestResult result : report) {
-            if (result.getStatus() != TestStatus.PASSED) {
-                failedTests++;
-            }
-        }
-
-        if (failedTests > 0) {
-            throw new MojoExecutionException(failedTests + " of " + report.size() + " test(s) failed");
-        } else {
-            getLog().info("All of " + report.size() + " tests successfully passed");
+    private void writePlan(TestPlan plan) throws MojoExecutionException {
+        File file = new File(targetDirectory, "plan.json");
+        try (Writer writer = new OutputStreamWriter(new FileOutputStream(file), "UTF-8")) {
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.writeValue(writer, plan);
+        } catch (IOException e) {
+            throw new MojoExecutionException("Error writing test plan", e);
         }
     }
 

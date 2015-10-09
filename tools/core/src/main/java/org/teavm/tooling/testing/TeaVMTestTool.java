@@ -364,7 +364,8 @@ public class TeaVMTestTool implements BaseTeaVMTool {
                 testClass.getMethods().add(testMethod);
 
                 String debugTable = debugInformationGenerated ? testMethod.getFileName() + ".teavmdbg" : null;
-                cases.add(new TestCase(ref, testMethod.getFileName(), debugTable, testMethod.getExpectedExceptions()));
+                cases.add(new TestCase(ref.toString(), testMethod.getFileName(), debugTable,
+                        testMethod.getExpectedExceptions()));
                 ++testCount;
             }
         }

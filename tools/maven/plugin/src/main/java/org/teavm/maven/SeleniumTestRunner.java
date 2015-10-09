@@ -35,6 +35,7 @@ import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.teavm.model.MethodReference;
 import org.teavm.tooling.testing.TestCase;
 import org.teavm.tooling.testing.TestGroup;
 import org.teavm.tooling.testing.TestPlan;
@@ -48,7 +49,7 @@ public class SeleniumTestRunner {
     private int numThreads = 1;
     private ThreadLocal<WebDriver> webDriver = new ThreadLocal<>();
     private BlockingQueue<Runnable> seleniumTaskQueue = new LinkedBlockingQueue<>();
-    private CountDownLatch latch = new CountDownLatch(1);
+    private CountDownLatch latch;
     private volatile boolean seleniumStopped = false;
     private Log log;
     private List<TestResult> report = new CopyOnWriteArrayList<>();
@@ -95,15 +96,16 @@ public class SeleniumTestRunner {
     }
 
     private void initSelenium() {
+        latch = new CountDownLatch(numThreads);
         for (int i = 0; i < numThreads; ++i) {
             new Thread(() -> {
                 ChromeDriver driver = new ChromeDriver();
                 webDriver.set(driver);
                 localReport.set(new ArrayList<>());
-                while (!seleniumStopped) {
+                while (!seleniumStopped || !seleniumTaskQueue.isEmpty()) {
                     Runnable task;
                     try {
-                        task = seleniumTaskQueue.poll(1, TimeUnit.SECONDS);
+                        task = seleniumTaskQueue.poll(100, TimeUnit.MILLISECONDS);
                     } catch (InterruptedException e) {
                         break;
                     }
@@ -113,22 +115,19 @@ public class SeleniumTestRunner {
                 }
                 report.addAll(localReport.get());
                 localReport.remove();
+                webDriver.get().close();
                 webDriver.remove();
+                latch.countDown();
             }).start();
         }
     }
 
     private void addSeleniumTask(Runnable runnable) {
-        if (url != null) {
-            seleniumTaskQueue.add(runnable);
-        }
+        seleniumTaskQueue.add(runnable);
     }
 
     private void stopSelenium() {
-        addSeleniumTask(() -> {
-            seleniumStopped = true;
-            latch.countDown();
-        });
+        seleniumStopped = true;
     }
 
     private void waitForCompletion() {
@@ -145,7 +144,7 @@ public class SeleniumTestRunner {
 
     private void runImpl(String runtimeScript, TestCase testCase) {
         webDriver.get().manage().timeouts().setScriptTimeout(2, TimeUnit.SECONDS);
-        JavascriptExecutor js = (JavascriptExecutor) webDriver;
+        JavascriptExecutor js = (JavascriptExecutor) webDriver.get();
         try {
             String result = (String) js.executeAsyncScript(
                     readResource("teavm-selenium.js"),
@@ -155,15 +154,16 @@ public class SeleniumTestRunner {
             ObjectMapper mapper = new ObjectMapper();
             ObjectNode resultObject = (ObjectNode) mapper.readTree(result);
             String status = resultObject.get("status").asText();
+            MethodReference ref = MethodReference.parse(testCase.getTestMethod());
             switch (status) {
                 case "ok":
                     log.info("Test passed: " + testCase.getTestMethod());
-                    localReport.get().add(TestResult.passed(testCase.getTestMethod()));
+                    localReport.get().add(TestResult.passed(ref));
                     break;
                 case "exception": {
                     String stack = resultObject.get("stack").asText();
                     log.info("Test failed: " + testCase.getTestMethod());
-                    localReport.get().add(TestResult.error(testCase.getTestMethod(), stack));
+                    localReport.get().add(TestResult.error(ref, stack));
                     break;
                 }
             }

@@ -16,6 +16,7 @@
 package org.teavm.tooling.testing;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,15 +33,17 @@ public class TestPlan {
     @JsonCreator
     public TestPlan(
             @JsonProperty("runtimeScript") String runtimeScript,
-            @JsonProperty("groupList") List<TestGroup> groups) {
+            @JsonProperty("groups") List<TestGroup> groups) {
         this.runtimeScript = runtimeScript;
         this.groups = Collections.unmodifiableList(new ArrayList<>(groups));
     }
 
+    @JsonGetter
     public String getRuntimeScript() {
         return runtimeScript;
     }
 
+    @JsonGetter
     public List<TestGroup> getGroups() {
         return groups;
     }

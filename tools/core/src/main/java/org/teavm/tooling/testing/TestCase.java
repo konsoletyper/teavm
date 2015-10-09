@@ -21,21 +21,20 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.teavm.model.MethodReference;
 
 /**
  *
  * @author Alexey Andreev
  */
 public class TestCase {
-    private MethodReference testMethod;
+    private String testMethod;
     private String testScript;
     private String debugTable;
     private List<String> expectedExceptions = new ArrayList<>();
 
     @JsonCreator
     public TestCase(
-            @JsonProperty("testMethod") MethodReference testMethod,
+            @JsonProperty("testMethod") String testMethod,
             @JsonProperty("script") String testScript,
             @JsonProperty("debugTable") String debugTable,
             @JsonProperty("expectedExceptions") List<String> expectedExceptions) {
@@ -46,7 +45,7 @@ public class TestCase {
     }
 
     @JsonGetter
-    public MethodReference getTestMethod() {
+    public String getTestMethod() {
         return testMethod;
     }
 
