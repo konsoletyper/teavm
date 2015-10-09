@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.tooling;
+package org.teavm.tooling.testing;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -25,6 +25,7 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.io.IOUtils;
 import org.teavm.common.FiniteExecutor;
 import org.teavm.common.SimpleFiniteExecutor;
@@ -47,6 +48,13 @@ import org.teavm.model.ValueType;
 import org.teavm.parsing.ClasspathClassHolderSource;
 import org.teavm.testing.JUnitTestAdapter;
 import org.teavm.testing.TestAdapter;
+import org.teavm.tooling.BaseTeaVMTool;
+import org.teavm.tooling.EmptyTeaVMToolLog;
+import org.teavm.tooling.TeaVMProblemRenderer;
+import org.teavm.tooling.TeaVMToolException;
+import org.teavm.tooling.TeaVMToolLog;
+import org.teavm.tooling.sources.SourceFileProvider;
+import org.teavm.tooling.sources.SourceFilesCopier;
 import org.teavm.vm.DirectoryBuildTarget;
 import org.teavm.vm.TeaVM;
 import org.teavm.vm.TeaVMBuilder;
@@ -55,7 +63,7 @@ import org.teavm.vm.TeaVMBuilder;
  *
  * @author Alexey Andreev
  */
-public class TeaVMTestTool {
+public class TeaVMTestTool implements BaseTeaVMTool {
     private File outputDir = new File(".");
     private boolean minifying = true;
     private int numThreads = 1;
@@ -68,22 +76,25 @@ public class TeaVMTestTool {
     private ClassLoader classLoader = TeaVMTestTool.class.getClassLoader();
     private TeaVMToolLog log = new EmptyTeaVMToolLog();
     private boolean debugInformationGenerated;
-    private boolean sourceMapsGenerated;
+    private boolean sourceMapsFileGenerated;
     private boolean sourceFilesCopied;
     private boolean incremental;
     private List<SourceFileProvider> sourceFileProviders = new ArrayList<>();
     private MethodNodeCache astCache;
     private ProgramCache programCache;
     private SourceFilesCopier sourceFilesCopier;
-    private List<TeaVMTestToolListener> listeners = new ArrayList<>();
-    private List<TeaVMTestClass> testPlan = new ArrayList<>();
+    private List<TestClassBuilder> testPlan = new ArrayList<>();
     private int fileIndexGenerator;
+    private long startTime;
+    private int testCount;
+    private AtomicInteger testsBuilt = new AtomicInteger();
 
     public File getOutputDir() {
         return outputDir;
     }
 
-    public void setOutputDir(File outputDir) {
+    @Override
+    public void setTargetDirectory(File outputDir) {
         this.outputDir = outputDir;
     }
 
@@ -91,6 +102,7 @@ public class TeaVMTestTool {
         return minifying;
     }
 
+    @Override
     public void setMinifying(boolean minifying) {
         this.minifying = minifying;
     }
@@ -111,6 +123,7 @@ public class TeaVMTestTool {
         this.adapter = adapter;
     }
 
+    @Override
     public List<ClassHolderTransformer> getTransformers() {
         return transformers;
     }
@@ -119,6 +132,7 @@ public class TeaVMTestTool {
         return additionalScripts;
     }
 
+    @Override
     public Properties getProperties() {
         return properties;
     }
@@ -131,6 +145,7 @@ public class TeaVMTestTool {
         return classLoader;
     }
 
+    @Override
     public void setClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
     }
@@ -139,6 +154,7 @@ public class TeaVMTestTool {
         return log;
     }
 
+    @Override
     public void setLog(TeaVMToolLog log) {
         this.log = log;
     }
@@ -147,6 +163,7 @@ public class TeaVMTestTool {
         return incremental;
     }
 
+    @Override
     public void setIncremental(boolean incremental) {
         this.incremental = incremental;
     }
@@ -155,31 +172,36 @@ public class TeaVMTestTool {
         return debugInformationGenerated;
     }
 
+    @Override
     public void setDebugInformationGenerated(boolean debugInformationGenerated) {
         this.debugInformationGenerated = debugInformationGenerated;
     }
 
-    public boolean isSourceMapsGenerated() {
-        return sourceMapsGenerated;
+    public boolean isSourceMapsFileGenerated() {
+        return sourceMapsFileGenerated;
     }
 
-    public void setSourceMapsGenerated(boolean sourceMapsGenerated) {
-        this.sourceMapsGenerated = sourceMapsGenerated;
+    @Override
+    public void setSourceMapsFileGenerated(boolean sourceMapsFileGenerated) {
+        this.sourceMapsFileGenerated = sourceMapsFileGenerated;
     }
 
     public boolean isSourceFilesCopied() {
         return sourceFilesCopied;
     }
 
+    @Override
     public void setSourceFilesCopied(boolean sourceFilesCopied) {
         this.sourceFilesCopied = sourceFilesCopied;
     }
 
+    @Override
     public void addSourceFileProvider(SourceFileProvider sourceFileProvider) {
         sourceFileProviders.add(sourceFileProvider);
     }
 
-    public void generate() throws TeaVMToolException {
+    public TestPlan generate() throws TeaVMToolException {
+        testsBuilt.set(0);
         Runnable finalizer = null;
         try {
             new File(outputDir, "tests").mkdirs();
@@ -201,12 +223,17 @@ public class TeaVMTestTool {
             if (incremental) {
                 classSource = new PreOptimizingClassHolderSource(classSource);
             }
+
+            List<TestGroup> groups = new ArrayList<>();
             for (String testClass : testClasses) {
                 ClassHolder classHolder = classSource.get(testClass);
                 if (classHolder == null) {
                     throw new TeaVMToolException("Could not find class " + testClass);
                 }
-                findTests(classHolder);
+                TestGroup group = findTests(classHolder);
+                if (group != null) {
+                    groups.add(group);
+                }
             }
 
             includeAdditionalScripts(classLoader);
@@ -220,16 +247,21 @@ public class TeaVMTestTool {
             FiniteExecutor executor = new SimpleFiniteExecutor();
             if (numThreads != 1) {
                 int threads = numThreads != 0 ? numThreads : Runtime.getRuntime().availableProcessors();
-                final ThreadPoolFiniteExecutor threadedExecutor = new ThreadPoolFiniteExecutor(threads);
+                ThreadPoolFiniteExecutor threadedExecutor = new ThreadPoolFiniteExecutor(threads);
                 finalizer = () -> threadedExecutor.stop();
                 executor = threadedExecutor;
             }
+            startTime = System.currentTimeMillis();
             int methodsGenerated = writeMethods(executor, classSource);
 
             if (sourceFilesCopied) {
                 sourceFilesCopier.copy(new File(new File(outputDir, "tests"), "src"));
             }
-            log.info("Test files successfully generated for " + methodsGenerated + " method(s).");
+            long timeSpent = System.currentTimeMillis() - startTime;
+            log.info("Test files successfully generated for " + methodsGenerated + " method(s) in "
+                    + (timeSpent / 1000.0) + " seconds.");
+
+            return new TestPlan("res/runtime.js", groups);
         } catch (IOException e) {
             throw new TeaVMToolException("IO error occured generating JavaScript files", e);
         } finally {
@@ -245,7 +277,7 @@ public class TeaVMTestTool {
             allTestsWriter.write("prepare = function() {\n");
             allTestsWriter.write("    return new JUnitServer(document.body).readTests([");
             boolean first = true;
-            for (TeaVMTestClass testClass : testPlan) {
+            for (TestClassBuilder testClass : testPlan) {
                 if (!first) {
                     allTestsWriter.append(",");
                 }
@@ -253,7 +285,7 @@ public class TeaVMTestTool {
                 allTestsWriter.append("\n        { name : \"").append(testClass.getClassName())
                         .append("\", methods : [");
                 boolean firstMethod = true;
-                for (TeaVMTestMethod testMethod : testClass.getMethods()) {
+                for (TestMethodBuilder testMethod : testClass.getMethods()) {
                     String scriptName = testMethod.getFileName();
                     if (!firstMethod) {
                         allTestsWriter.append(",");
@@ -289,13 +321,12 @@ public class TeaVMTestTool {
         log.info("Generating test files");
         sourceFilesCopier = new SourceFilesCopier(sourceFileProviders);
         sourceFilesCopier.setLog(log);
-        for (TeaVMTestClass testClass : testPlan) {
-            for (TeaVMTestMethod testMethod : testClass.getMethods()) {
-                final ClassHolderSource builderClassSource = classSource;
+        for (TestClassBuilder testClass : testPlan) {
+            for (TestMethodBuilder testMethod : testClass.getMethods()) {
                 executor.execute(() ->  {
                     log.debug("Building test for " + testMethod.getMethod());
                     try {
-                        decompileClassesForTest(classLoader, new CopyClassHolderSource(builderClassSource),
+                        decompileClassesForTest(classLoader, new CopyClassHolderSource(classSource),
                                 testMethod);
                     } catch (IOException e) {
                         log.error("Error generating JavaScript", e);
@@ -316,8 +347,9 @@ public class TeaVMTestTool {
         }
     }
 
-    private void findTests(ClassHolder cls) {
-        TeaVMTestClass testClass = new TeaVMTestClass(cls.getName());
+    private TestGroup findTests(ClassHolder cls) {
+        List<TestCase> cases = new ArrayList<>();
+        TestClassBuilder testClass = new TestClassBuilder(cls.getName());
         for (MethodHolder method : cls.getMethods()) {
             if (adapter.acceptMethod(method)) {
                 MethodReference ref = new MethodReference(cls.getName(), method.getDescriptor());
@@ -328,12 +360,19 @@ public class TeaVMTestTool {
                     exceptions.add(exception);
                 }
 
-                TeaVMTestMethod testMethod = new TeaVMTestMethod(ref, fileName, exceptions);
+                TestMethodBuilder testMethod = new TestMethodBuilder(ref, fileName, exceptions);
                 testClass.getMethods().add(testMethod);
+
+                String debugTable = debugInformationGenerated ? testMethod.getFileName() + ".teavmdbg" : null;
+                cases.add(new TestCase(ref, testMethod.getFileName(), debugTable, testMethod.getExpectedExceptions()));
+                ++testCount;
             }
         }
         if (!testClass.getMethods().isEmpty()) {
             testPlan.add(testClass);
+            return new TestGroup(cls.getName(), cases);
+        } else {
+            return null;
         }
     }
 
@@ -362,7 +401,7 @@ public class TeaVMTestTool {
     }
 
     private void decompileClassesForTest(ClassLoader classLoader, ClassHolderSource classSource,
-            TeaVMTestMethod testMethod) throws IOException {
+            TestMethodBuilder testMethod) throws IOException {
         String targetName = testMethod.getFileName();
         TeaVM vm = new TeaVMBuilder()
                 .setClassLoader(classLoader)
@@ -380,7 +419,7 @@ public class TeaVMTestTool {
         }
 
         File file = new File(outputDir, testMethod.getFileName());
-        DebugInformationBuilder debugInfoBuilder = sourceMapsGenerated || debugInformationGenerated
+        DebugInformationBuilder debugInfoBuilder = sourceMapsFileGenerated || debugInformationGenerated
                 ? new DebugInformationBuilder() : null;
         MethodReference methodRef = testMethod.getMethod();
         try (Writer innerWriter = new OutputStreamWriter(new FileOutputStream(file), "UTF-8")) {
@@ -395,7 +434,7 @@ public class TeaVMTestTool {
             vm.build(innerWriter, new DirectoryBuildTarget(outputDir));
             innerWriter.append("\n");
             innerWriter.append("\nJUnitClient.run();");
-            if (sourceMapsGenerated) {
+            if (sourceMapsFileGenerated) {
                 String sourceMapsFileName = targetName.substring(targetName.lastIndexOf('/') + 1) + ".map";
                 innerWriter.append("\n//# sourceMappingURL=").append(sourceMapsFileName);
             }
@@ -410,16 +449,15 @@ public class TeaVMTestTool {
             }
         }
 
-        File debugTableFile = null;
         if (debugInformationGenerated) {
             DebugInformation debugInfo = debugInfoBuilder.getDebugInformation();
-            debugTableFile = new File(outputDir, targetName + ".teavmdbg");
+            File debugTableFile = new File(outputDir, targetName + ".teavmdbg");
             try (OutputStream debugInfoOut = new FileOutputStream(debugTableFile)) {
                 debugInfo.write(debugInfoOut);
             }
         }
 
-        if (sourceMapsGenerated) {
+        if (sourceMapsFileGenerated) {
             DebugInformation debugInfo = debugInfoBuilder.getDebugInformation();
             String sourceMapsFileName = targetName + ".map";
             try (Writer sourceMapsOut = new OutputStreamWriter(new FileOutputStream(
@@ -431,11 +469,19 @@ public class TeaVMTestTool {
             sourceFilesCopier.addClasses(vm.getWrittenClasses());
         }
 
-        TeaVMTestCase testCase = new TeaVMTestCase(methodRef, new File(outputDir, "res/runtime.js"),
-                file, debugTableFile, testMethod.getExpectedExceptions());
-        for (TeaVMTestToolListener listener : listeners) {
-            listener.testGenerated(testCase);
+        incrementCounter();
+    }
+
+    private void incrementCounter() {
+        int count = testsBuilt.incrementAndGet();
+        if (count % 10 != 0) {
+            return;
         }
+
+        long timeSpent = System.currentTimeMillis() - startTime;
+
+        getLog().info(count + " of " + testCount + " tests built in " + (timeSpent / 1000.0) + " seconds ("
+                + String.format("%.2f", (double) count / timeSpent * 1000.0) + " tests per second avg.)");
     }
 
     private void escapeString(String string, Writer writer) throws IOException {
@@ -464,13 +510,5 @@ public class TeaVMTestTool {
             }
         }
         writer.append('\"');
-    }
-
-    public void addListener(TeaVMTestToolListener listener) {
-        listeners.add(listener);
-    }
-
-    public void removeListener(TeaVMTestToolListener listener) {
-        listeners.remove(listener);
     }
 }

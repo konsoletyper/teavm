@@ -13,37 +13,37 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.tooling;
+package org.teavm.tooling.testing;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.teavm.model.MethodReference;
 
 /**
  *
  * @author Alexey Andreev
  */
-class TeaVMTestMethod {
-    private MethodReference method;
-    private String fileName;
-    private List<String> expectedExceptions = new ArrayList<>();
+public class TestGroup {
+    private String className;
+    private List<TestCase> testCases;
 
-    public TeaVMTestMethod(MethodReference method, String fileName, List<String> expectedExceptions) {
-        this.method = method;
-        this.fileName = fileName;
-        this.expectedExceptions = Collections.unmodifiableList(new ArrayList<>(expectedExceptions));
+    @JsonCreator
+    public TestGroup(@JsonProperty("className") String className,
+            @JsonProperty("testCases") List<TestCase> testCases) {
+        this.className = className;
+        this.testCases = Collections.unmodifiableList(new ArrayList<>(testCases));
     }
 
-    public MethodReference getMethod() {
-        return method;
+    @JsonGetter("className")
+    public String getClassName() {
+        return className;
     }
 
-    public String getFileName() {
-        return fileName;
-    }
-
-    public List<String> getExpectedExceptions() {
-        return expectedExceptions;
+    @JsonGetter("testCases")
+    public List<TestCase> getTestCases() {
+        return testCases;
     }
 }

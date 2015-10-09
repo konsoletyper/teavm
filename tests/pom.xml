@@ -72,9 +72,8 @@
           <execution>
             <id>generate-javascript-tests</id>
             <goals>
-              <goal>build-test-javascript</goal>
+              <goal>testCompile</goal>
             </goals>
-            <phase>process-test-classes</phase>
             <configuration>
               <minifying>false</minifying>
               <scanDependencies>true</scanDependencies>

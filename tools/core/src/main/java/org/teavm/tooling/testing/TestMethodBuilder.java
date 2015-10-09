@@ -13,9 +13,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.tooling;
+package org.teavm.tooling.testing;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -25,36 +24,23 @@ import org.teavm.model.MethodReference;
  *
  * @author Alexey Andreev
  */
-public class TeaVMTestCase {
-    private MethodReference testMethod;
-    private File runtimeScript;
-    private File testScript;
-    private File debugTable;
+class TestMethodBuilder {
+    private MethodReference method;
+    private String fileName;
     private List<String> expectedExceptions = new ArrayList<>();
 
-    public TeaVMTestCase(MethodReference testMethod, File runtimeScript, File testScript, File debugTable,
-            List<String> expectedExceptions) {
-        this.testMethod = testMethod;
-        this.runtimeScript = runtimeScript;
-        this.testScript = testScript;
-        this.debugTable = debugTable;
+    public TestMethodBuilder(MethodReference method, String fileName, List<String> expectedExceptions) {
+        this.method = method;
+        this.fileName = fileName;
         this.expectedExceptions = Collections.unmodifiableList(new ArrayList<>(expectedExceptions));
     }
 
-    public MethodReference getTestMethod() {
-        return testMethod;
+    public MethodReference getMethod() {
+        return method;
     }
 
-    public File getRuntimeScript() {
-        return runtimeScript;
-    }
-
-    public File getTestScript() {
-        return testScript;
-    }
-
-    public File getDebugTable() {
-        return debugTable;
+    public String getFileName() {
+        return fileName;
     }
 
     public List<String> getExpectedExceptions() {

@@ -70,6 +70,7 @@
     <jetty.version>9.2.1.v20140609</jetty.version>
     <slf4j.version>1.7.7</slf4j.version>
     <selenium.version>2.47.2</selenium.version>
+    <jackson.version>2.6.2</jackson.version>
   </properties>
 
   <modules>
@@ -81,6 +82,7 @@
     <module>html4j</module>
     <module>samples</module>
     <module>platform</module>
+    <module>tools/core</module>
     <module>tools/cli</module>
     <module>tools/maven</module>
     <module>tools/chrome-rdp</module>
@@ -175,6 +177,16 @@
         <groupId>org.seleniumhq.selenium</groupId>
         <artifactId>selenium-remote-driver</artifactId>
         <version>${selenium.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-annotations</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>${jackson.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

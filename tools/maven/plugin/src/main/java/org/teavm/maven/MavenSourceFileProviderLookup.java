@@ -26,9 +26,9 @@ import org.apache.maven.artifact.resolver.ArtifactResolutionRequest;
 import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.repository.RepositorySystem;
-import org.teavm.tooling.DirectorySourceFileProvider;
-import org.teavm.tooling.JarSourceFileProvider;
-import org.teavm.tooling.SourceFileProvider;
+import org.teavm.tooling.sources.DirectorySourceFileProvider;
+import org.teavm.tooling.sources.JarSourceFileProvider;
+import org.teavm.tooling.sources.SourceFileProvider;
 
 /**
  *

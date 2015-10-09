@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.tooling;
+package org.teavm.tooling.sources;
 
 import java.io.*;
 import java.util.HashSet;
@@ -23,6 +23,8 @@ import org.apache.commons.io.IOUtils;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodReader;
+import org.teavm.tooling.EmptyTeaVMToolLog;
+import org.teavm.tooling.TeaVMToolLog;
 
 /**
  *

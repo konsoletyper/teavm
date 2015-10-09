@@ -36,6 +36,8 @@
     <module>video</module>
     <module>async</module>
     <module>kotlin</module>
+    <!-- 
     <module>scala</module>
+     -->
   </modules>
 </project>

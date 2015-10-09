@@ -19,11 +19,17 @@ import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
-import org.apache.commons.cli.*;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.OptionBuilder;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.PosixParser;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.testing.TestAdapter;
-import org.teavm.tooling.TeaVMTestTool;
 import org.teavm.tooling.TeaVMToolException;
+import org.teavm.tooling.testing.TeaVMTestTool;
 
 /**
  *
@@ -84,7 +90,7 @@ public final class TeaVMTestRunner {
         }
 
         TeaVMTestTool tool = new TeaVMTestTool();
-        tool.setOutputDir(new File(commandLine.getOptionValue("d", ".")));
+        tool.setTargetDirectory(new File(commandLine.getOptionValue("d", ".")));
         tool.setMinifying(commandLine.hasOption("m"));
         try {
             tool.setNumThreads(Integer.parseInt(commandLine.getOptionValue("t", "1")));

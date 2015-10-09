@@ -21,6 +21,7 @@
     <groupId>org.teavm</groupId>
     <artifactId>teavm</artifactId>
     <version>0.4.0-SNAPSHOT</version>
+    <relativePath>../..</relativePath>
   </parent>
   <artifactId>teavm-cli</artifactId>
 
@@ -30,7 +31,7 @@
   <dependencies>
     <dependency>
       <groupId>org.teavm</groupId>
-      <artifactId>teavm-core</artifactId>
+      <artifactId>teavm-tooling</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

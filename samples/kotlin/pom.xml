@@ -92,9 +92,8 @@
         <executions>
           <execution>
             <id>web-client</id>
-            <phase>prepare-package</phase>
             <goals>
-              <goal>build-javascript</goal>
+              <goal>compile</goal>
             </goals>
             <configuration>
               <targetDirectory>${project.build.directory}/generated/js/teavm</targetDirectory>

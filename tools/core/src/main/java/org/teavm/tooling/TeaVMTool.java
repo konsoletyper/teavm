@@ -29,6 +29,8 @@ import org.teavm.diagnostics.ProblemProvider;
 import org.teavm.javascript.RenderingContext;
 import org.teavm.model.*;
 import org.teavm.parsing.ClasspathClassHolderSource;
+import org.teavm.tooling.sources.SourceFileProvider;
+import org.teavm.tooling.sources.SourceFilesCopier;
 import org.teavm.vm.*;
 import org.teavm.vm.spi.AbstractRendererListener;
 
@@ -36,7 +38,7 @@ import org.teavm.vm.spi.AbstractRendererListener;
  *
  * @author Alexey Andreev
  */
-public class TeaVMTool {
+public class TeaVMTool implements BaseTeaVMTool {
     private File targetDirectory = new File(".");
     private String targetFileName = "classes.js";
     private boolean minifying = true;
@@ -69,6 +71,7 @@ public class TeaVMTool {
         return targetDirectory;
     }
 
+    @Override
     public void setTargetDirectory(File targetDirectory) {
         this.targetDirectory = targetDirectory;
     }
@@ -85,6 +88,7 @@ public class TeaVMTool {
         return minifying;
     }
 
+    @Override
     public void setMinifying(boolean minifying) {
         this.minifying = minifying;
     }
@@ -93,6 +97,7 @@ public class TeaVMTool {
         return incremental;
     }
 
+    @Override
     public void setIncremental(boolean incremental) {
         this.incremental = incremental;
     }
@@ -133,6 +138,7 @@ public class TeaVMTool {
         return debugInformationGenerated;
     }
 
+    @Override
     public void setDebugInformationGenerated(boolean debugInformationGenerated) {
         this.debugInformationGenerated = debugInformationGenerated;
     }
@@ -149,6 +155,7 @@ public class TeaVMTool {
         return sourceMapsFileGenerated;
     }
 
+    @Override
     public void setSourceMapsFileGenerated(boolean sourceMapsFileGenerated) {
         this.sourceMapsFileGenerated = sourceMapsFileGenerated;
     }
@@ -157,14 +164,17 @@ public class TeaVMTool {
         return sourceFilesCopied;
     }
 
+    @Override
     public void setSourceFilesCopied(boolean sourceFilesCopied) {
         this.sourceFilesCopied = sourceFilesCopied;
     }
 
+    @Override
     public Properties getProperties() {
         return properties;
     }
 
+    @Override
     public List<ClassHolderTransformer> getTransformers() {
         return transformers;
     }
@@ -181,6 +191,7 @@ public class TeaVMTool {
         return log;
     }
 
+    @Override
     public void setLog(TeaVMToolLog log) {
         this.log = log;
     }
@@ -189,6 +200,7 @@ public class TeaVMTool {
         return classLoader;
     }
 
+    @Override
     public void setClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
     }
@@ -245,6 +257,7 @@ public class TeaVMTool {
         return resources;
     }
 
+    @Override
     public void addSourceFileProvider(SourceFileProvider sourceFileProvider) {
         sourceFileProviders.add(sourceFileProvider);
     }

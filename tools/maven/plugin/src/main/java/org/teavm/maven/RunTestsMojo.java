@@ -13,27 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.tooling;
+package org.teavm.maven;
 
-import java.util.List;
+import java.io.File;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 
 /**
  *
  * @author Alexey Andreev
  */
-class TeaVMTestClass {
-    private String className;
-    private List<TeaVMTestMethod> methods;
-
-    public TeaVMTestClass(String className) {
-        this.className = className;
-    }
-
-    public String getClassName() {
-        return className;
-    }
-
-    public List<TeaVMTestMethod> getMethods() {
-        return methods;
-    }
+@Mojo(name = "run-tests", defaultPhase = LifecyclePhase.TEST)
+public class RunTestsMojo {
+    @Parameter(defaultValue = "${project.build.directory}/javascript-tests")
+    private File targetDirectory;
 }
