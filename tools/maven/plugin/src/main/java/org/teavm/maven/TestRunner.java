@@ -62,17 +62,17 @@ public class TestRunner {
     }
 
     public void run(TestPlan testPlan) {
-        initSelenium();
+        init();
         for (TestGroup group : testPlan.getGroups()) {
             for (TestCase testCase : group.getTestCases()) {
                 run(testPlan.getRuntimeScript(), testCase);
             }
         }
-        stopSelenium();
+        stop();
         waitForCompletion();
     }
 
-    private void initSelenium() {
+    private void init() {
         latch = new CountDownLatch(numThreads);
         for (int i = 0; i < numThreads; ++i) {
             new Thread(() -> {
@@ -101,7 +101,7 @@ public class TestRunner {
         taskQueue.add(runnable);
     }
 
-    private void stopSelenium() {
+    private void stop() {
         stopped = true;
     }
 
@@ -124,6 +124,7 @@ public class TestRunner {
             if (result == null) {
                 log.info("Test failed: " + testCase.getTestMethod());
                 localReport.get().add(TestResult.error(ref, null, null));
+                return;
             }
             ObjectMapper mapper = new ObjectMapper();
             ObjectNode resultObject = (ObjectNode) mapper.readTree(result);
