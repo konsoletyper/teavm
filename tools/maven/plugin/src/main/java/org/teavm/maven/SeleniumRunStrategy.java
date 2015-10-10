@@ -47,7 +47,7 @@ public class SeleniumRunStrategy implements TestRunStrategy {
 
     @Override
     public void beforeThread() {
-        RemoteWebDriver driver = new RemoteWebDriver(url, DesiredCapabilities.chrome());
+        RemoteWebDriver driver = new RemoteWebDriver(url, DesiredCapabilities.firefox());
         webDriver.set(driver);
     }
 
@@ -71,8 +71,10 @@ public class SeleniumRunStrategy implements TestRunStrategy {
             log.error("Error occured running test " + testCase.getTestMethod(), e);
             @SuppressWarnings("unchecked")
             List<Object> errors = (List<Object>) js.executeScript("return window.jsErrors;");
-            for (Object error : errors) {
-                log.error("  -- additional error: " + error);
+            if (errors != null) {
+                for (Object error : errors) {
+                    log.error("  -- additional error: " + error);
+                }
             }
             return null;
         }
