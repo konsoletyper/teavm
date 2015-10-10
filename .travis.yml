@@ -5,9 +5,9 @@ cache:
   directories:
   - $HOME/.m2
 script: >
-  mvn test 
-   -Pteavm.test.skip=false
-   -Pteavm.test.selenium="http://$SAUCE_USER_NAME:$SAUCE_ACCESS_KEY@ondemand.saucelabs.com:80/wd/hub"
+  mvn test \
+   -Pteavm.test.skip=false \
+   -Pteavm.test.selenium="http://$SAUCE_USER_NAME:$SAUCE_ACCESS_KEY@ondemand.saucelabs.com:80/wd/hub" \
    -Pteavm.test.threads=2
 after_script:
   - rm -rf $HOME/.m2/repository/org/teavm
