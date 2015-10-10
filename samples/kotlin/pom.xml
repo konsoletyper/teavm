@@ -53,7 +53,7 @@
     </dependency>
     <dependency>
       <groupId>org.teavm</groupId>
-      <artifactId>teavm-dom</artifactId>
+      <artifactId>teavm-jso-apis</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
