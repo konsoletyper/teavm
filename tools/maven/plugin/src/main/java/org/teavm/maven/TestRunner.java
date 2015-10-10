@@ -17,11 +17,7 @@ package org.teavm.maven;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -29,13 +25,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.logging.Log;
-import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebDriverException;
-import org.openqa.selenium.remote.DesiredCapabilities;
-import org.openqa.selenium.remote.RemoteWebDriver;
 import org.teavm.model.MethodReference;
 import org.teavm.tooling.testing.TestCase;
 import org.teavm.tooling.testing.TestGroup;
@@ -45,36 +35,22 @@ import org.teavm.tooling.testing.TestPlan;
  *
  * @author Alexey Andreev
  */
-public class SeleniumTestRunner {
-    private URL url;
+public class TestRunner {
     private int numThreads = 1;
-    private ThreadLocal<WebDriver> webDriver = new ThreadLocal<>();
-    private BlockingQueue<Runnable> seleniumTaskQueue = new LinkedBlockingQueue<>();
+    private TestRunStrategy strategy;
+    private BlockingQueue<Runnable> taskQueue = new LinkedBlockingQueue<>();
     private CountDownLatch latch;
-    private volatile boolean seleniumStopped = false;
+    private volatile boolean stopped;
     private Log log;
     private List<TestResult> report = new CopyOnWriteArrayList<>();
     private ThreadLocal<List<TestResult>> localReport = new ThreadLocal<>();
-    private File directory = new File(".");
 
-    public URL getUrl() {
-        return url;
-    }
-
-    public void setUrl(URL url) {
-        this.url = url;
+    public TestRunner(TestRunStrategy strategy) {
+        this.strategy = strategy;
     }
 
     public void setLog(Log log) {
         this.log = log;
-    }
-
-    public File getDirectory() {
-        return directory;
-    }
-
-    public void setDirectory(File directory) {
-        this.directory = directory;
     }
 
     public int getNumThreads() {
@@ -100,13 +76,12 @@ public class SeleniumTestRunner {
         latch = new CountDownLatch(numThreads);
         for (int i = 0; i < numThreads; ++i) {
             new Thread(() -> {
-                RemoteWebDriver driver = new RemoteWebDriver(DesiredCapabilities.chrome());
-                webDriver.set(driver);
+                strategy.beforeThread();
                 localReport.set(new ArrayList<>());
-                while (!seleniumStopped || !seleniumTaskQueue.isEmpty()) {
+                while (!stopped || !taskQueue.isEmpty()) {
                     Runnable task;
                     try {
-                        task = seleniumTaskQueue.poll(100, TimeUnit.MILLISECONDS);
+                        task = taskQueue.poll(100, TimeUnit.MILLISECONDS);
                     } catch (InterruptedException e) {
                         break;
                     }
@@ -116,19 +91,18 @@ public class SeleniumTestRunner {
                 }
                 report.addAll(localReport.get());
                 localReport.remove();
-                webDriver.get().close();
-                webDriver.remove();
+                strategy.afterThread();
                 latch.countDown();
             }).start();
         }
     }
 
-    private void addSeleniumTask(Runnable runnable) {
-        seleniumTaskQueue.add(runnable);
+    private void addTask(Runnable runnable) {
+        taskQueue.add(runnable);
     }
 
     private void stopSelenium() {
-        seleniumStopped = true;
+        stopped = true;
     }
 
     private void waitForCompletion() {
@@ -140,22 +114,20 @@ public class SeleniumTestRunner {
     }
 
     private void run(String runtimeScript, TestCase testCase) {
-        addSeleniumTask(() -> runImpl(runtimeScript, testCase));
+        addTask(() -> runImpl(runtimeScript, testCase));
     }
 
     private void runImpl(String runtimeScript, TestCase testCase) {
-        webDriver.get().manage().timeouts().setScriptTimeout(2, TimeUnit.SECONDS);
-        JavascriptExecutor js = (JavascriptExecutor) webDriver.get();
+        MethodReference ref = MethodReference.parse(testCase.getTestMethod());
         try {
-            String result = (String) js.executeAsyncScript(
-                    readResource("teavm-selenium.js"),
-                    readFile(new File(directory, runtimeScript)),
-                    readFile(new File(directory, testCase.getTestScript())),
-                    readResource("teavm-selenium-adapter.js"));
+            String result = strategy.runTest(log, runtimeScript, testCase);
+            if (result == null) {
+                log.info("Test failed: " + testCase.getTestMethod());
+                localReport.get().add(TestResult.error(ref, null, null));
+            }
             ObjectMapper mapper = new ObjectMapper();
             ObjectNode resultObject = (ObjectNode) mapper.readTree(result);
             String status = resultObject.get("status").asText();
-            MethodReference ref = MethodReference.parse(testCase.getTestMethod());
             switch (status) {
                 case "ok":
                     if (testCase.getExpectedExceptions().isEmpty()) {
@@ -181,28 +153,6 @@ public class SeleniumTestRunner {
             }
         } catch (IOException e) {
             log.error(e);
-        } catch (WebDriverException e) {
-            log.error("Error occured running test " + testCase.getTestMethod(), e);
-            @SuppressWarnings("unchecked")
-            List<Object> errors = (List<Object>) js.executeScript("return window.jsErrors;");
-            for (Object error : errors) {
-                log.error("  -- additional error: " + error);
-            }
-        }
-    }
-
-    private String readFile(File file) throws IOException {
-        try (InputStream input = new FileInputStream(file)) {
-            return IOUtils.toString(input, "UTF-8");
-        }
-    }
-
-    private String readResource(String resourceName) throws IOException {
-        try (InputStream input = BuildJavascriptTestMojo.class.getClassLoader().getResourceAsStream(resourceName)) {
-            if (input == null) {
-                return "";
-            }
-            return IOUtils.toString(input, "UTF-8");
         }
     }
 

@@ -15,17 +15,18 @@
  */
 package org.teavm.maven;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.IOException;
+import org.apache.maven.plugin.logging.Log;
+import org.teavm.tooling.testing.TestCase;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class TestReport {
-    private List<TestResult> results = new ArrayList<>();
+public interface TestRunStrategy {
+    void beforeThread();
 
-    public List<TestResult> getResults() {
-        return results;
-    }
+    void afterThread();
+
+    String runTest(Log log, String runtimeScript, TestCase testCase) throws IOException;
 }

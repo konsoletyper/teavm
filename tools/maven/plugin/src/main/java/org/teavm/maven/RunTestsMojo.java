@@ -53,28 +53,25 @@ public class RunTestsMojo extends AbstractMojo {
     @Parameter
     private int numThreads = 1;
 
+    @Parameter
+    private boolean skip;
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-        if (seleniumURL == null || seleniumURL.isEmpty()) {
-            getLog().info("Tests build skipped as selenium URL was not specified");
+        if (skip) {
+            getLog().info("Tests run skipped as specified by skip property");
             return;
         }
 
-        if (System.getProperty("maven.test.skip", "false").equals("true") ||
-                System.getProperty("skipTests") != null) {
-            getLog().info("Tests build skipped as specified by system property");
+        if (System.getProperty("maven.test.skip", "false").equals("true")
+                || System.getProperty("skipTests") != null) {
+            getLog().info("Tests run skipped as specified by system property");
             return;
         }
 
-        SeleniumTestRunner runner = new SeleniumTestRunner();
+        TestRunner runner = new TestRunner(pickStrategy());
         runner.setLog(getLog());
-        runner.setDirectory(testDirectory);
         runner.setNumThreads(numThreads);
-        try {
-            runner.setUrl(new URL(seleniumURL));
-        } catch (MalformedURLException e) {
-            throw new MojoFailureException("Can't parse URL: " + seleniumURL, e);
-        }
 
         TestPlan plan;
         ObjectMapper mapper = new ObjectMapper();
@@ -87,6 +84,18 @@ public class RunTestsMojo extends AbstractMojo {
 
         runner.run(plan);
         processReport(runner.getReport());
+    }
+
+    private TestRunStrategy pickStrategy() throws MojoFailureException {
+        if (seleniumURL != null) {
+            try {
+                return new SeleniumRunStrategy(new URL(seleniumURL), testDirectory);
+            } catch (MalformedURLException e) {
+                throw new MojoFailureException("Can't parse URL: " + seleniumURL, e);
+            }
+        } else {
+            return new HtmlUnitRunStrategy(testDirectory);
+        }
     }
 
     private void processReport(TestReport report) throws MojoExecutionException, MojoFailureException {

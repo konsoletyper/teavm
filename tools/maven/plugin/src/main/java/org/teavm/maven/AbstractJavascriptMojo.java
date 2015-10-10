@@ -106,8 +106,8 @@ public abstract class AbstractJavascriptMojo extends AbstractMojo {
                 throw new MojoExecutionException("Transformer not found: " + transformerName, e);
             }
             if (!ClassHolderTransformer.class.isAssignableFrom(transformerRawType)) {
-                throw new MojoExecutionException("Transformer " + transformerName + " is not subtype of " +
-                        ClassHolderTransformer.class.getName());
+                throw new MojoExecutionException("Transformer " + transformerName + " is not subtype of "
+                        + ClassHolderTransformer.class.getName());
             }
             Class<? extends ClassHolderTransformer> transformerType = transformerRawType.asSubclass(
                     ClassHolderTransformer.class);

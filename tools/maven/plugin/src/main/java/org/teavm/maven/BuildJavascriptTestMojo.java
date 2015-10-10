@@ -85,8 +85,8 @@ public class BuildJavascriptTestMojo extends AbstractJavascriptMojo {
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-        if (System.getProperty("maven.test.skip", "false").equals("true") ||
-                System.getProperty("skipTests") != null) {
+        if (System.getProperty("maven.test.skip", "false").equals("true")
+                || System.getProperty("skipTests") != null) {
             getLog().info("Tests build skipped as specified by system property");
             return;
         }
@@ -127,8 +127,8 @@ public class BuildJavascriptTestMojo extends AbstractJavascriptMojo {
             throw new MojoExecutionException("Adapter not found: " + adapterClass, e);
         }
         if (!TestAdapter.class.isAssignableFrom(adapterClsRaw)) {
-            throw new MojoExecutionException("Adapter " + adapterClass + " does not implement " +
-                    TestAdapter.class.getName());
+            throw new MojoExecutionException("Adapter " + adapterClass + " does not implement "
+                    + TestAdapter.class.getName());
         }
         Class<? extends TestAdapter> adapterCls = adapterClsRaw.asSubclass(TestAdapter.class);
         Constructor<? extends TestAdapter> cons;

@@ -31,6 +31,7 @@
     <teavm.test.incremental>false</teavm.test.incremental>
     <teavm.test.threads>1</teavm.test.threads>
     <teavm.test.selenium></teavm.test.selenium>
+    <teavm.test.skip>true</teavm.test.skip>
   </properties>
 
   <dependencies>
@@ -100,6 +101,7 @@
               <goal>test</goal>
             </goals>
             <configuration>
+              <skip>${teavm.test.skip}</skip>
               <numThreads>${teavm.test.threads}</numThreads>
               <seleniumURL>${teavm.test.selenium}</seleniumURL>
             </configuration>
