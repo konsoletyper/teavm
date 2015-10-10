@@ -15,6 +15,8 @@
  */
 package org.teavm.model;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Arrays;
 
 /**
@@ -132,6 +134,7 @@ public class MethodReference {
     }
 
     @Override
+    @JsonValue
     public String toString() {
         if (reprCache == null) {
             reprCache = className + "." + name + signatureToString();
@@ -139,6 +142,7 @@ public class MethodReference {
         return reprCache;
     }
 
+    @JsonCreator
     public static MethodReference parse(String string) {
         MethodReference reference = parseIfPossible(string);
         if (reference == null) {

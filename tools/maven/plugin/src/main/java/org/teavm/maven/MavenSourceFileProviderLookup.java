@@ -26,9 +26,9 @@ import org.apache.maven.artifact.resolver.ArtifactResolutionRequest;
 import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.repository.RepositorySystem;
-import org.teavm.tooling.DirectorySourceFileProvider;
-import org.teavm.tooling.JarSourceFileProvider;
-import org.teavm.tooling.SourceFileProvider;
+import org.teavm.tooling.sources.DirectorySourceFileProvider;
+import org.teavm.tooling.sources.JarSourceFileProvider;
+import org.teavm.tooling.sources.SourceFileProvider;
 
 /**
  *
@@ -85,7 +85,12 @@ public class MavenSourceFileProviderLookup {
             ArtifactResolutionResult result = repositorySystem.resolve(request);
             for (Artifact resolvedArtifact : result.getArtifacts()) {
                 if (resolvedArtifact.getFile() != null) {
-                    providers.add(new JarSourceFileProvider(resolvedArtifact.getFile()));
+                    File file = resolvedArtifact.getFile();
+                    if (!file.isDirectory()) {
+                        providers.add(new JarSourceFileProvider(file));
+                    } else {
+                        providers.add(new DirectorySourceFileProvider(file));
+                    }
                 }
             }
         }

@@ -15,67 +15,50 @@
  */
 package org.teavm.maven;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.repository.MavenArtifactRepository;
-import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
-import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
-import org.apache.maven.project.MavenProject;
-import org.apache.maven.repository.RepositorySystem;
-import org.teavm.model.ClassHolderTransformer;
 import org.teavm.testing.JUnitTestAdapter;
 import org.teavm.testing.TestAdapter;
-import org.teavm.tooling.SourceFileProvider;
-import org.teavm.tooling.TeaVMTestTool;
 import org.teavm.tooling.TeaVMToolException;
+import org.teavm.tooling.testing.TeaVMTestTool;
+import org.teavm.tooling.testing.TestPlan;
 
 /**
  *
  * @author Alexey Andreev
  */
-@Mojo(name = "build-test-javascript", requiresDependencyResolution = ResolutionScope.TEST,
-        requiresDependencyCollection = ResolutionScope.TEST)
-public class BuildJavascriptTestMojo extends AbstractMojo {
+@Mojo(name = "testCompile", requiresDependencyResolution = ResolutionScope.TEST,
+        requiresDependencyCollection = ResolutionScope.TEST,
+        defaultPhase = LifecyclePhase.PROCESS_TEST_CLASSES)
+public class BuildJavascriptTestMojo extends AbstractJavascriptMojo {
     private static Set<String> testScopes = new HashSet<>(Arrays.asList(
             Artifact.SCOPE_COMPILE, Artifact.SCOPE_TEST, Artifact.SCOPE_SYSTEM, Artifact.SCOPE_RUNTIME,
             Artifact.SCOPE_PROVIDED));
-
-    @Component
-    private MavenProject project;
-
-    @Component
-    private RepositorySystem repositorySystem;
-
-    @Parameter(required = true, readonly = true, defaultValue = "${localRepository}")
-    private MavenArtifactRepository localRepository;
-
-    @Parameter(required = true, readonly = true, defaultValue = "${project.remoteArtifactRepositories}")
-    private List<MavenArtifactRepository> remoteRepositories;
-
-    @Parameter(readonly = true, defaultValue = "${plugin.artifacts}")
-    private List<Artifact> pluginArtifacts;
-
     @Parameter(defaultValue = "${project.build.directory}/javascript-test")
-    private File outputDir;
-
-    @Parameter(defaultValue = "${project.build.outputDirectory}")
-    private File classFiles;
+    private File targetDirectory;
 
     @Parameter(defaultValue = "${project.build.testOutputDirectory}")
     private File testFiles;
@@ -87,9 +70,6 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
     private String[] excludeWildcards = new String[0];
 
     @Parameter
-    private boolean minifying = true;
-
-    @Parameter
     private boolean scanDependencies;
 
     @Parameter
@@ -99,149 +79,43 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
     private String adapterClass = JUnitTestAdapter.class.getName();
 
     @Parameter
-    private String[] transformers;
-
-    @Parameter
     private String[] additionalScripts;
-
-    @Parameter
-    private Properties properties;
-
-    @Parameter
-    private boolean incremental;
-
-    @Parameter
-    private boolean debugInformationGenerated;
-
-    @Parameter
-    private boolean sourceMapsGenerated;
-
-    @Parameter
-    private boolean sourceFilesCopied;
 
     private TeaVMTestTool tool = new TeaVMTestTool();
 
-    public void setProject(MavenProject project) {
-        this.project = project;
-    }
-
-    public void setOutputDir(File outputDir) {
-        this.outputDir = outputDir;
-    }
-
-    public void setClassFiles(File classFiles) {
-        this.classFiles = classFiles;
-    }
-
-    public void setTestFiles(File testFiles) {
-        this.testFiles = testFiles;
-    }
-
-    public void setMinifying(boolean minifying) {
-        this.minifying = minifying;
-    }
-
-    public void setNumThreads(int numThreads) {
-        this.numThreads = numThreads;
-    }
-
-    public void setAdapterClass(String adapterClass) {
-        this.adapterClass = adapterClass;
-    }
-
-    public void setWildcards(String[] wildcards) {
-        this.wildcards = wildcards;
-    }
-
-    public void setExcludeWildcards(String[] excludeWildcards) {
-        this.excludeWildcards = excludeWildcards;
-    }
-
-    public String[] getTransformers() {
-        return transformers;
-    }
-
-    public void setTransformers(String[] transformers) {
-        this.transformers = transformers;
-    }
-
-    public void setProperties(Properties properties) {
-        this.properties = properties;
-    }
-
-    public void setIncremental(boolean incremental) {
-        this.incremental = incremental;
-    }
-
-    public boolean isDebugInformationGenerated() {
-        return debugInformationGenerated;
-    }
-
-    public void setDebugInformationGenerated(boolean debugInformationGenerated) {
-        this.debugInformationGenerated = debugInformationGenerated;
-    }
-
-    public boolean isSourceMapsGenerated() {
-        return sourceMapsGenerated;
-    }
-
-    public void setSourceMapsGenerated(boolean sourceMapsGenerated) {
-        this.sourceMapsGenerated = sourceMapsGenerated;
-    }
-
-    public boolean isSourceFilesCopied() {
-        return sourceFilesCopied;
-    }
-
-    public void setSourceFilesCopied(boolean sourceFilesCopied) {
-        this.sourceFilesCopied = sourceFilesCopied;
-    }
-
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-        if (System.getProperty("maven.test.skip", "false").equals("true") ||
-                System.getProperty("skipTests") != null) {
+        if (System.getProperty("maven.test.skip", "false").equals("true")
+                || System.getProperty("skipTests") != null) {
             getLog().info("Tests build skipped as specified by system property");
             return;
         }
+
+        setupTool(tool);
         try {
-            final ClassLoader classLoader = prepareClassLoader();
             getLog().info("Searching for tests in the directory `" + testFiles.getAbsolutePath() + "'");
-            tool.setClassLoader(classLoader);
             tool.setAdapter(createAdapter(classLoader));
             findTestClasses(classLoader, testFiles, "");
             if (scanDependencies) {
                 findTestsInDependencies(classLoader);
             }
-            tool.getTransformers().addAll(instantiateTransformers(classLoader));
-            tool.setLog(new MavenTeaVMToolLog(getLog()));
-            tool.setOutputDir(outputDir);
             tool.setNumThreads(numThreads);
-            tool.setMinifying(minifying);
-            tool.setIncremental(incremental);
-            tool.setDebugInformationGenerated(debugInformationGenerated);
-            tool.setSourceMapsGenerated(sourceMapsGenerated);
-            tool.setSourceFilesCopied(sourceFilesCopied);
-            if (sourceFilesCopied) {
-                MavenSourceFileProviderLookup lookup = new MavenSourceFileProviderLookup();
-                lookup.setMavenProject(project);
-                lookup.setRepositorySystem(repositorySystem);
-                lookup.setLocalRepository(localRepository);
-                lookup.setRemoteRepositories(remoteRepositories);
-                lookup.setPluginDependencies(pluginArtifacts);
-                for (SourceFileProvider provider : lookup.resolve()) {
-                    tool.addSourceFileProvider(provider);
-                }
-            }
-            if (properties != null) {
-                tool.getProperties().putAll(properties);
-            }
             if (additionalScripts != null) {
                 tool.getAdditionalScripts().addAll(Arrays.asList(additionalScripts));
             }
-            tool.generate();
+            writePlan(tool.generate());
         } catch (TeaVMToolException e) {
             throw new MojoFailureException("Error occured generating JavaScript files", e);
+        }
+    }
+
+    private void writePlan(TestPlan plan) throws MojoExecutionException {
+        File file = new File(targetDirectory, "plan.json");
+        try (Writer writer = new OutputStreamWriter(new FileOutputStream(file), "UTF-8")) {
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.writeValue(writer, plan);
+        } catch (IOException e) {
+            throw new MojoExecutionException("Error writing test plan", e);
         }
     }
 
@@ -253,8 +127,8 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
             throw new MojoExecutionException("Adapter not found: " + adapterClass, e);
         }
         if (!TestAdapter.class.isAssignableFrom(adapterClsRaw)) {
-            throw new MojoExecutionException("Adapter " + adapterClass + " does not implement " +
-                    TestAdapter.class.getName());
+            throw new MojoExecutionException("Adapter " + adapterClass + " does not implement "
+                    + TestAdapter.class.getName());
         }
         Class<? extends TestAdapter> adapterCls = adapterClsRaw.asSubclass(TestAdapter.class);
         Constructor<? extends TestAdapter> cons;
@@ -269,38 +143,6 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
             throw new MojoExecutionException("Error creating test adapter", e);
         } catch (InvocationTargetException e) {
             throw new MojoExecutionException("Error creating test adapter", e.getTargetException());
-        }
-    }
-
-    private ClassLoader prepareClassLoader() throws MojoExecutionException {
-        try {
-            Log log = getLog();
-            log.info("Preparing classpath for JavaScript test generation");
-            List<URL> urls = new ArrayList<>();
-            StringBuilder classpath = new StringBuilder();
-            for (Artifact artifact : project.getArtifacts()) {
-                if (!testScopes.contains(artifact.getScope())) {
-                    continue;
-                }
-                File file = artifact.getFile();
-                if (classpath.length() > 0) {
-                    classpath.append(':');
-                }
-                classpath.append(file.getPath());
-                urls.add(file.toURI().toURL());
-            }
-            if (classpath.length() > 0) {
-                classpath.append(':');
-            }
-            classpath.append(testFiles.getPath());
-            urls.add(testFiles.toURI().toURL());
-            classpath.append(':').append(classFiles.getPath());
-            urls.add(classFiles.toURI().toURL());
-            log.info("Using the following classpath for JavaScript test generation: " + classpath);
-            return new URLClassLoader(urls.toArray(new URL[urls.size()]),
-                    BuildJavascriptTestMojo.class.getClassLoader());
-        } catch (MalformedURLException e) {
-            throw new MojoExecutionException("Error gathering classpath information", e);
         }
     }
 
@@ -384,39 +226,18 @@ public class BuildJavascriptTestMojo extends AbstractMojo {
         }
     }
 
+    @Override
+    protected File getTargetDirectory() {
+        return targetDirectory;
+    }
 
-    private List<ClassHolderTransformer> instantiateTransformers(ClassLoader classLoader)
-            throws MojoExecutionException {
-        List<ClassHolderTransformer> transformerInstances = new ArrayList<>();
-        if (transformers == null) {
-            return transformerInstances;
-        }
-        for (String transformerName : transformers) {
-            Class<?> transformerRawType;
-            try {
-                transformerRawType = Class.forName(transformerName, true, classLoader);
-            } catch (ClassNotFoundException e) {
-                throw new MojoExecutionException("Transformer not found: " + transformerName, e);
-            }
-            if (!ClassHolderTransformer.class.isAssignableFrom(transformerRawType)) {
-                throw new MojoExecutionException("Transformer " + transformerName + " is not subtype of " +
-                        ClassHolderTransformer.class.getName());
-            }
-            Class<? extends ClassHolderTransformer> transformerType = transformerRawType.asSubclass(
-                    ClassHolderTransformer.class);
-            Constructor<? extends ClassHolderTransformer> ctor;
-            try {
-                ctor = transformerType.getConstructor();
-            } catch (NoSuchMethodException e) {
-                throw new MojoExecutionException("Transformer " + transformerName + " has no default constructor");
-            }
-            try {
-                ClassHolderTransformer transformer = ctor.newInstance();
-                transformerInstances.add(transformer);
-            } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-                throw new MojoExecutionException("Error instantiating transformer " + transformerName, e);
-            }
-        }
-        return transformerInstances;
+    @Override
+    protected List<File> getAdditionalClassPath() {
+        return Arrays.asList(testFiles);
+    }
+
+    @Override
+    protected boolean isSupportedScope(String scope) {
+        return testScopes.contains(scope);
     }
 }

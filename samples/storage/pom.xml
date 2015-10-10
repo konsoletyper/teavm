@@ -38,13 +38,7 @@
     </dependency>
     <dependency>
       <groupId>org.teavm</groupId>
-      <artifactId>teavm-jso</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.teavm</groupId>
-      <artifactId>teavm-dom</artifactId>
+      <artifactId>teavm-jso-apis</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
@@ -78,12 +72,11 @@
             <id>web-client</id>
             <phase>prepare-package</phase>
             <goals>
-              <goal>build-javascript</goal>
+              <goal>compile</goal>
             </goals>
             <configuration>
               <targetDirectory>${project.build.directory}/generated/js/teavm</targetDirectory>
               <mainClass>org.teavm.samples.storage.Application</mainClass>
-              <runtime>SEPARATE</runtime>
               <minifying>false</minifying>
               <debugInformationGenerated>true</debugInformationGenerated>
               <sourceMapsGenerated>true</sourceMapsGenerated>

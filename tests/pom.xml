@@ -27,6 +27,13 @@
   <name>TeaVM tests</name>
   <description>Project containing TeaVM tests, as it is impossible to test each module separately</description>
 
+  <properties>
+    <teavm.test.incremental>false</teavm.test.incremental>
+    <teavm.test.threads>1</teavm.test.threads>
+    <teavm.test.selenium></teavm.test.selenium>
+    <teavm.test.skip>true</teavm.test.skip>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.teavm</groupId>
@@ -72,9 +79,8 @@
           <execution>
             <id>generate-javascript-tests</id>
             <goals>
-              <goal>build-test-javascript</goal>
+              <goal>testCompile</goal>
             </goals>
-            <phase>process-test-classes</phase>
             <configuration>
               <minifying>false</minifying>
               <scanDependencies>true</scanDependencies>
@@ -87,6 +93,17 @@
                 <java.util.Locale.available>en, en_US, en_GB, ru, ru_RU</java.util.Locale.available>
               </properties>
               <incremental>${teavm.test.incremental}</incremental>
+            </configuration>
+          </execution>
+          <execution>
+            <id>run-javascript-tests</id>
+            <goals>
+              <goal>test</goal>
+            </goals>
+            <configuration>
+              <skip>${teavm.test.skip}</skip>
+              <numThreads>${teavm.test.threads}</numThreads>
+              <seleniumURL>${teavm.test.selenium}</seleniumURL>
             </configuration>
           </execution>
         </executions>

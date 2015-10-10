@@ -33,7 +33,7 @@ public class TeaVMProjectConfigurator extends AbstractProjectConfigurator {
     private static final String TOOL_ID = "teavm-eclipse-m2e-plugin.tool";
     private static final String TEAVM_ARTIFACT_ID = "teavm-maven-plugin";
     private static final String TEAVM_GROUP_ID = "org.teavm";
-    private static final String TEAVM_MAIN_GOAL = "build-javascript";
+    private static final String TEAVM_MAIN_GOAL = "compile";
     private int executionIdGenerator;
     private Set<String> usedExecutionIds = new HashSet<>();
     private IMaven maven;

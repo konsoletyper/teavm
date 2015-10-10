@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,19 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.tooling;
-
-import java.io.IOException;
-import java.io.InputStream;
+package org.teavm.maven;
 
 /**
  *
  * @author Alexey Andreev
  */
-public interface SourceFileProvider {
-    void open() throws IOException;
-
-    void close() throws IOException;
-
-    InputStream openSourceFile(String fullPath) throws IOException;
+public enum TestStatus {
+    PASSED,
+    ERROR,
+    EXCEPTION_NOT_THROWN
 }

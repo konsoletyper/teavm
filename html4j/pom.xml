@@ -74,12 +74,11 @@
           <execution>
             <id>generate-javascript-tests</id>
             <goals>
-              <goal>build-test-javascript</goal>
+              <goal>testCompile</goal>
             </goals>
-            <phase>process-test-classes</phase>
             <configuration>
               <minifying>false</minifying>
-              <outputDir>${project.build.directory}/javascript-test</outputDir>
+              <targetDirectory>${project.build.directory}/javascript-test</targetDirectory>
               <debugInformationGenerated>true</debugInformationGenerated>
               <sourceMapsGenerated>true</sourceMapsGenerated>
             </configuration>
@@ -87,13 +86,12 @@
           <execution>
             <id>generate-javascript-tck</id>
             <goals>
-              <goal>build-test-javascript</goal>
+              <goal>testCompile</goal>
             </goals>
-            <phase>process-test-classes</phase>
             <configuration>
               <minifying>false</minifying>
               <scanDependencies>true</scanDependencies>
-              <outputDir>${project.build.directory}/javascript-tck</outputDir>
+              <targetDirectory>${project.build.directory}/javascript-tck</targetDirectory>
               <adapterClass>org.teavm.html4j.testing.KOTestAdapter</adapterClass>
               <transformers>
                 <param>org.teavm.javascript.NullPointerExceptionTransformer</param>
