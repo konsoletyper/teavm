@@ -85,7 +85,12 @@ public class MavenSourceFileProviderLookup {
             ArtifactResolutionResult result = repositorySystem.resolve(request);
             for (Artifact resolvedArtifact : result.getArtifacts()) {
                 if (resolvedArtifact.getFile() != null) {
-                    providers.add(new JarSourceFileProvider(resolvedArtifact.getFile()));
+                    File file = resolvedArtifact.getFile();
+                    if (!file.isDirectory()) {
+                        providers.add(new JarSourceFileProvider(file));
+                    } else {
+                        providers.add(new DirectorySourceFileProvider(file));
+                    }
                 }
             }
         }
