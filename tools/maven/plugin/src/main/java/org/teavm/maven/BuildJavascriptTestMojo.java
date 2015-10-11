@@ -93,6 +93,9 @@ public class BuildJavascriptTestMojo extends AbstractJavascriptMojo {
 
         setupTool(tool);
         try {
+            if (!testFiles.isDirectory()) {
+                throw new MojoFailureException("Directory with tests doesn't exist: " + testFiles);
+            }
             getLog().info("Searching for tests in the directory `" + testFiles.getAbsolutePath() + "'");
             tool.setAdapter(createAdapter(classLoader));
             findTestClasses(classLoader, testFiles, "");
