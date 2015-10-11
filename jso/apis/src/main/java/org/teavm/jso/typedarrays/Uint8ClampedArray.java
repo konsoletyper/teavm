@@ -30,12 +30,12 @@ public abstract class Uint8ClampedArray extends ArrayBufferView {
     public abstract void set(int index, int value);
 
     @JSBody(params = "length", script = "return new Uint8ClampedArray(length);")
-    public static native ArrayBuffer create(int length);
+    public static native Uint8ClampedArray create(int length);
 
     @JSBody(params = "buffer", script = "return new Uint8ClampedArray(buffer);")
-    public static native ArrayBuffer create(ArrayBuffer buffer);
+    public static native Uint8ClampedArray create(ArrayBuffer buffer);
 
     @JSBody(params = { "buffer", "offset", "length" }, script = "return new "
             + "Uint8ClampedArray(buffer, offset, length);")
-    public static native ArrayBuffer create(ArrayBuffer buffer, int offset, int length);
+    public static native Uint8ClampedArray create(ArrayBuffer buffer, int offset, int length);
 }

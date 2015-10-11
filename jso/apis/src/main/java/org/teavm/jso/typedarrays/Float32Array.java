@@ -30,11 +30,11 @@ public abstract class Float32Array extends ArrayBufferView {
     public abstract void set(int index, float value);
 
     @JSBody(params = "length", script = "return new Float32Array(length);")
-    public static native ArrayBuffer create(int length);
+    public static native Float32Array create(int length);
 
     @JSBody(params = "buffer", script = "return new Float32Array(buffer);")
-    public static native ArrayBuffer create(ArrayBuffer buffer);
+    public static native Float32Array create(ArrayBuffer buffer);
 
     @JSBody(params = { "buffer", "offset", "length" }, script = "return new Float32Array(buffer, offset, length);")
-    public static native ArrayBuffer create(ArrayBuffer buffer, int offset, int length);
+    public static native Float32Array create(ArrayBuffer buffer, int offset, int length);
 }

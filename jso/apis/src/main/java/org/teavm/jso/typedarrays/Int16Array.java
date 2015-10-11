@@ -30,11 +30,11 @@ public abstract class Int16Array extends ArrayBufferView {
     public abstract void set(int index, short value);
 
     @JSBody(params = "length", script = "return new Int16Array(length);")
-    public static native ArrayBuffer create(int length);
+    public static native Int16Array create(int length);
 
     @JSBody(params = "buffer", script = "return new Int16Array(buffer);")
-    public static native ArrayBuffer create(ArrayBuffer buffer);
+    public static native Int16Array create(ArrayBuffer buffer);
 
     @JSBody(params = { "buffer", "offset", "length" }, script = "return new Int16Array(buffer, offset, length);")
-    public static native ArrayBuffer create(ArrayBuffer buffer, int offset, int length);
+    public static native Int16Array create(ArrayBuffer buffer, int offset, int length);
 }

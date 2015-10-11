@@ -30,11 +30,11 @@ public abstract class Int8Array extends ArrayBufferView {
     public abstract void set(int index, byte value);
 
     @JSBody(params = "length", script = "return new Int8Array(length);")
-    public static native ArrayBuffer create(int length);
+    public static native Int8Array create(int length);
 
     @JSBody(params = "buffer", script = "return new Int8Array(buffer);")
-    public static native ArrayBuffer create(ArrayBuffer buffer);
+    public static native Int8Array create(ArrayBuffer buffer);
 
     @JSBody(params = { "buffer", "offset", "length" }, script = "return new Int8Array(buffer, offset, length);")
-    public static native ArrayBuffer create(ArrayBuffer buffer, int offset, int length);
+    public static native Int8Array create(ArrayBuffer buffer, int offset, int length);
 }
