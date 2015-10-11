@@ -88,7 +88,7 @@
         <version>3.3</version>
         <configuration>
           <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
-          <goalPrefix>mysql-jdbc-compliance</goalPrefix>
+          <goalPrefix>teavm</goalPrefix>
         </configuration>
         <executions>
           <execution>
