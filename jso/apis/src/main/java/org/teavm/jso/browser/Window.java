@@ -50,13 +50,13 @@ public abstract class Window implements JSObject, EventTarget, StorageProvider {
     @JSBody(params = { "timeoutId" }, script = "clearTimeout(timeoutId);")
     public static native void clearTimeout(int timeoutId);
 
-    @JSBody(params = { "handler", "delay" }, script = "return setInverval(handler, delay);")
+    @JSBody(params = { "handler", "delay" }, script = "return setInterval(handler, delay);")
     public static native int setInterval(TimerHandler handler, int delay);
 
-    @JSBody(params = { "handler", "delay" }, script = "return setInverval(handler, delay);")
+    @JSBody(params = { "handler", "delay" }, script = "return setInterval(handler, delay);")
     public static native int setInterval(TimerHandler handler, double delay);
 
-    @JSBody(params = { "timeoutId" }, script = "clearInverval(timeoutId);")
+    @JSBody(params = { "timeoutId" }, script = "clearInterval(timeoutId);")
     public static native void clearInterval(int timeoutId);
 
     @JSBody(params = {}, script = "return window;")
