@@ -22,5 +22,5 @@ import java.io.IOException;
  * @author Alexey Andreev
  */
 interface NameEmitter {
-    void emit() throws IOException;
+    void emit(int precedence) throws IOException;
 }

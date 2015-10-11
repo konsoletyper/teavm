@@ -18,6 +18,7 @@ package org.teavm.jso.impl;
 import java.io.IOException;
 import org.mozilla.javascript.ast.AstNode;
 import org.teavm.codegen.SourceWriter;
+import org.teavm.javascript.Precedence;
 import org.teavm.javascript.spi.GeneratorContext;
 import org.teavm.javascript.spi.InjectorContext;
 import org.teavm.model.MethodReference;
@@ -43,14 +44,97 @@ class JSBodyAstEmitter implements JSBodyEmitter {
         int paramIndex = 0;
         if (!isStatic) {
             int index = paramIndex++;
-            astWriter.declareNameEmitter("this", () -> context.writeExpr(context.getArgument(index)));
+            astWriter.declareNameEmitter("this", prec -> context.writeExpr(context.getArgument(index)));
         }
         for (int i = 0; i < parameterNames.length; ++i) {
             int index = paramIndex++;
-            astWriter.declareNameEmitter(parameterNames[i], () -> context.writeExpr(context.getArgument(index)));
+            astWriter.declareNameEmitter(parameterNames[i],
+                    prec -> context.writeExpr(context.getArgument(index), convert(prec)));
         }
         astWriter.hoist(ast);
-        astWriter.print(ast);
+        astWriter.print(ast, convert(context.getPrecedence()));
+    }
+
+    private static int convert(Precedence precedence) {
+        switch (precedence) {
+            case ADDITION:
+                return AstWriter.PRECEDENCE_ADD;
+            case ASSIGNMENT:
+                return AstWriter.PRECEDENCE_ASSIGN;
+            case BITWISE_AND:
+                return AstWriter.PRECEDENCE_BITWISE_AND;
+            case BITWISE_OR:
+                return AstWriter.PRECEDENCE_BITWISE_OR;
+            case BITWISE_XOR:
+                return AstWriter.PRECEDENCE_BITWISE_XOR;
+            case BITWISE_SHIFT:
+                return AstWriter.PRECEDENCE_SHIFT;
+            case COMMA:
+                return AstWriter.PRECEDENCE_COMMA;
+            case COMPARISON:
+                return AstWriter.PRECEDENCE_RELATION;
+            case CONDITIONAL:
+                return AstWriter.PRECEDENCE_COND;
+            case EQUALITY:
+                return AstWriter.PRECEDENCE_EQUALITY;
+            case FUNCTION_CALL:
+                return AstWriter.PRECEDENCE_FUNCTION;
+            case GROUPING:
+                return 1;
+            case LOGICAL_AND:
+                return AstWriter.PRECEDENCE_AND;
+            case LOGICAL_OR:
+                return AstWriter.PRECEDENCE_OR;
+            case MEMBER_ACCESS:
+                return AstWriter.PRECEDENCE_MEMBER;
+            case MULTIPLICATION:
+                return AstWriter.PRECEDENCE_MUL;
+            case UNARY:
+                return AstWriter.PRECEDENCE_PREFIX;
+            default:
+                return AstWriter.PRECEDENCE_COMMA;
+        }
+    }
+
+    private static Precedence convert(int precedence) {
+        switch (precedence) {
+            case AstWriter.PRECEDENCE_ADD:
+                return Precedence.ADDITION;
+            case AstWriter.PRECEDENCE_ASSIGN:
+                return Precedence.ASSIGNMENT;
+            case AstWriter.PRECEDENCE_BITWISE_AND:
+                return Precedence.BITWISE_AND;
+            case AstWriter.PRECEDENCE_BITWISE_OR:
+                return Precedence.BITWISE_OR;
+            case AstWriter.PRECEDENCE_BITWISE_XOR:
+                return Precedence.BITWISE_XOR;
+            case AstWriter.PRECEDENCE_SHIFT:
+                return Precedence.BITWISE_SHIFT;
+            case AstWriter.PRECEDENCE_COMMA:
+                return Precedence.COMMA;
+            case AstWriter.PRECEDENCE_RELATION:
+                return Precedence.COMPARISON;
+            case AstWriter.PRECEDENCE_COND:
+                return Precedence.CONDITIONAL;
+            case AstWriter.PRECEDENCE_EQUALITY:
+                return Precedence.EQUALITY;
+            case AstWriter.PRECEDENCE_FUNCTION:
+                return Precedence.FUNCTION_CALL;
+            case 1:
+                return Precedence.GROUPING;
+            case AstWriter.PRECEDENCE_AND:
+                return Precedence.LOGICAL_AND;
+            case AstWriter.PRECEDENCE_OR:
+                return Precedence.LOGICAL_OR;
+            case AstWriter.PRECEDENCE_MEMBER:
+                return Precedence.MEMBER_ACCESS;
+            case AstWriter.PRECEDENCE_MUL:
+                return Precedence.MULTIPLICATION;
+            case AstWriter.PRECEDENCE_PREFIX:
+                return Precedence.UNARY;
+            default:
+                return Precedence.min();
+        }
     }
 
     @Override
@@ -59,11 +143,11 @@ class JSBodyAstEmitter implements JSBodyEmitter {
         int paramIndex = 1;
         if (!isStatic) {
             int index = paramIndex++;
-            astWriter.declareNameEmitter("this", () -> writer.append(context.getParameterName(index)));
+            astWriter.declareNameEmitter("this", prec -> writer.append(context.getParameterName(index)));
         }
         for (int i = 0; i < parameterNames.length; ++i) {
             int index = paramIndex++;
-            astWriter.declareNameEmitter(parameterNames[i], () -> writer.append(context.getParameterName(index)));
+            astWriter.declareNameEmitter(parameterNames[i], prec -> writer.append(context.getParameterName(index)));
         }
         astWriter.hoist(ast);
         astWriter.print(ast);

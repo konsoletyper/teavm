@@ -19,7 +19,7 @@ package org.teavm.javascript;
  *
  * @author Alexey Andreev
  */
-public enum Priority {
+public enum Precedence {
     COMMA,
     ASSIGNMENT,
     CONDITIONAL,
@@ -36,5 +36,21 @@ public enum Priority {
     UNARY,
     FUNCTION_CALL,
     MEMBER_ACCESS,
-    GROUPING
+    GROUPING;
+
+    private static Precedence[] cache = Precedence.values();
+
+    public Precedence next() {
+        int index = ordinal();
+        return index + 1 < cache.length ? cache[index + 1] : cache[index];
+    }
+
+    public Precedence previous() {
+        int index = ordinal();
+        return index > 0 ? cache[index - 1] : cache[index];
+    }
+
+    public static Precedence min() {
+        return Precedence.COMMA;
+    }
 }

@@ -18,7 +18,16 @@ package org.teavm.javascript;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import org.teavm.codegen.NamingException;
 import org.teavm.codegen.NamingOrderer;
 import org.teavm.codegen.NamingStrategy;
@@ -28,12 +37,68 @@ import org.teavm.debugging.information.DebugInformationEmitter;
 import org.teavm.debugging.information.DeferredCallSite;
 import org.teavm.debugging.information.DummyDebugInformationEmitter;
 import org.teavm.diagnostics.Diagnostics;
-import org.teavm.javascript.ast.*;
+import org.teavm.javascript.ast.AssignmentStatement;
+import org.teavm.javascript.ast.AsyncMethodNode;
+import org.teavm.javascript.ast.AsyncMethodPart;
+import org.teavm.javascript.ast.BinaryExpr;
+import org.teavm.javascript.ast.BinaryOperation;
+import org.teavm.javascript.ast.BlockStatement;
+import org.teavm.javascript.ast.BreakStatement;
+import org.teavm.javascript.ast.ClassNode;
+import org.teavm.javascript.ast.ConditionalExpr;
+import org.teavm.javascript.ast.ConditionalStatement;
+import org.teavm.javascript.ast.ConstantExpr;
+import org.teavm.javascript.ast.ContinueStatement;
+import org.teavm.javascript.ast.Expr;
+import org.teavm.javascript.ast.ExprVisitor;
+import org.teavm.javascript.ast.FieldNode;
+import org.teavm.javascript.ast.GotoPartStatement;
+import org.teavm.javascript.ast.InitClassStatement;
+import org.teavm.javascript.ast.InstanceOfExpr;
+import org.teavm.javascript.ast.InvocationExpr;
+import org.teavm.javascript.ast.InvocationType;
+import org.teavm.javascript.ast.MethodNode;
+import org.teavm.javascript.ast.MethodNodeVisitor;
+import org.teavm.javascript.ast.MonitorEnterStatement;
+import org.teavm.javascript.ast.MonitorExitStatement;
+import org.teavm.javascript.ast.NativeMethodNode;
+import org.teavm.javascript.ast.NewArrayExpr;
+import org.teavm.javascript.ast.NewExpr;
+import org.teavm.javascript.ast.NewMultiArrayExpr;
+import org.teavm.javascript.ast.NodeLocation;
+import org.teavm.javascript.ast.NodeModifier;
+import org.teavm.javascript.ast.QualificationExpr;
+import org.teavm.javascript.ast.RegularMethodNode;
+import org.teavm.javascript.ast.ReturnStatement;
+import org.teavm.javascript.ast.SequentialStatement;
+import org.teavm.javascript.ast.Statement;
+import org.teavm.javascript.ast.StatementVisitor;
+import org.teavm.javascript.ast.StaticClassExpr;
+import org.teavm.javascript.ast.SubscriptExpr;
+import org.teavm.javascript.ast.SwitchClause;
+import org.teavm.javascript.ast.SwitchStatement;
+import org.teavm.javascript.ast.ThrowStatement;
+import org.teavm.javascript.ast.TryCatchStatement;
+import org.teavm.javascript.ast.UnaryExpr;
+import org.teavm.javascript.ast.UnwrapArrayExpr;
+import org.teavm.javascript.ast.VariableExpr;
+import org.teavm.javascript.ast.WhileStatement;
 import org.teavm.javascript.spi.GeneratorContext;
 import org.teavm.javascript.spi.InjectedBy;
 import org.teavm.javascript.spi.Injector;
 import org.teavm.javascript.spi.InjectorContext;
-import org.teavm.model.*;
+import org.teavm.model.AnnotationHolder;
+import org.teavm.model.ClassHolder;
+import org.teavm.model.ClassReader;
+import org.teavm.model.ElementModifier;
+import org.teavm.model.FieldReference;
+import org.teavm.model.ListableClassHolderSource;
+import org.teavm.model.ListableClassReaderSource;
+import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodHolder;
+import org.teavm.model.MethodReader;
+import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 
 /**
  *
@@ -60,21 +125,12 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     private Set<MethodReference> asyncFamilyMethods;
     private Diagnostics diagnostics;
     private boolean async;
-    private Priority priority;
-    private Associativity associativity;
-    private boolean wasGrouped;
-    private Deque<OperatorPrecedence> precedenceStack = new ArrayDeque<>();
+    private Precedence precedence;
     private Map<String, String> blockIdMap = new HashMap<>();
     private List<Set<String>> debugNames = new ArrayList<>();
     private List<String> cachedVariableNames = new ArrayList<>();
     private boolean end;
     private int currentPart;
-
-    private static class OperatorPrecedence {
-        Priority priority;
-        Associativity associativity;
-        boolean wasGrouped;
-    }
 
     private static class InjectorHolder {
         public final Injector injector;
@@ -870,22 +926,19 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 if (statement.isAsync()) {
                     writer.append(tempVarName());
                 } else {
-                    priority = Priority.COMMA;
-                    associativity = Associativity.NONE;
+                    precedence = Precedence.COMMA;
                     statement.getLeftValue().acceptVisitor(this);
                 }
                 writer.ws().append("=").ws();
             }
-            priority = Priority.COMMA;
-            associativity = Associativity.NONE;
+            precedence = Precedence.COMMA;
             statement.getRightValue().acceptVisitor(this);
             debugEmitter.emitCallSite();
             writer.append(";").softNewLine();
             if (statement.isAsync()) {
                 emitSuspendChecker();
                 if (statement.getLeftValue() != null) {
-                    priority = Priority.COMMA;
-                    associativity = Associativity.NONE;
+                    precedence = Precedence.COMMA;
                     statement.getLeftValue().acceptVisitor(this);
                     writer.ws().append("=").ws().append(tempVarName()).append(";").softNewLine();
                 }
@@ -918,8 +971,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 }
                 prevCallSite = debugEmitter.emitCallSite();
                 writer.append("if").ws().append("(");
-                priority = Priority.COMMA;
-                associativity = Associativity.NONE;
+                precedence = Precedence.COMMA;
                 statement.getCondition().acceptVisitor(this);
                 if (statement.getCondition().getLocation() != null) {
                     popLocation();
@@ -958,8 +1010,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             }
             prevCallSite = debugEmitter.emitCallSite();
             writer.append("switch").ws().append("(");
-            priority = Priority.COMMA;
-            associativity = Associativity.NONE;
+            precedence = Precedence.min();
             statement.getValue().acceptVisitor(this);
             if (statement.getValue().getLocation() != null) {
                 popLocation();
@@ -1008,8 +1059,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             writer.append("while").ws().append("(");
             if (statement.getCondition() != null) {
                 prevCallSite = debugEmitter.emitCallSite();
-                priority = Priority.COMMA;
-                associativity = Associativity.NONE;
+                precedence = Precedence.min();
                 statement.getCondition().acceptVisitor(this);
                 debugEmitter.emitCallSite();
                 if (statement.getCondition().getLocation() != null) {
@@ -1112,8 +1162,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             if (statement.getResult() != null) {
                 writer.append(' ');
                 prevCallSite = debugEmitter.emitCallSite();
-                priority = Priority.COMMA;
-                associativity = Associativity.NONE;
+                precedence = Precedence.min();
                 statement.getResult().acceptVisitor(this);
                 debugEmitter.emitCallSite();
             }
@@ -1135,8 +1184,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             }
             writer.appendFunction("$rt_throw").append("(");
             prevCallSite = debugEmitter.emitCallSite();
-            priority = Priority.COMMA;
-            associativity = Associativity.NONE;
+            precedence = Precedence.min();
             statement.getException().acceptVisitor(this);
             writer.append(");").softNewLine();
             debugEmitter.emitCallSite();
@@ -1224,17 +1272,61 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         return minifying ? "$T" : "$thread";
     }
 
-    private void visitBinary(BinaryExpr expr, String op, Priority priority, Associativity associativity) {
+    private void visitBinary(BinaryExpr expr, String op) {
         try {
             if (expr.getLocation() != null) {
                 pushLocation(expr.getLocation());
             }
-            enterPriority(priority, associativity == Associativity.LEFT ? associativity : Associativity.NONE, true);
+
+            Precedence outerPrecedence = precedence;
+            Precedence innerPrecedence = getPrecedence(expr.getOperation());
+            if (innerPrecedence.ordinal() < outerPrecedence.ordinal()) {
+                writer.append('(');
+            }
+
+            switch (expr.getOperation()) {
+                case ADD:
+                case SUBTRACT:
+                case MULTIPLY:
+                case DIVIDE:
+                case MODULO:
+                case AND:
+                case OR:
+                case BITWISE_AND:
+                case BITWISE_OR:
+                case BITWISE_XOR:
+                case LEFT_SHIFT:
+                case RIGHT_SHIFT:
+                case UNSIGNED_RIGHT_SHIFT:
+                    precedence = innerPrecedence;
+                    break;
+                default:
+                    precedence = innerPrecedence.next();
+            }
             expr.getFirstOperand().acceptVisitor(this);
+
             writer.ws().append(op).ws();
-            this.associativity = associativity == Associativity.RIGHT ? associativity : Associativity.NONE;
+
+            switch (expr.getOperation()) {
+                case ADD:
+                case MULTIPLY:
+                case AND:
+                case OR:
+                case BITWISE_AND:
+                case BITWISE_OR:
+                case BITWISE_XOR:
+                    precedence = innerPrecedence;
+                    break;
+                default:
+                    precedence = innerPrecedence.next();
+                    break;
+            }
             expr.getSecondOperand().acceptVisitor(this);
-            exitPriority();
+
+            if (innerPrecedence.ordinal() < outerPrecedence.ordinal()) {
+                writer.append(')');
+            }
+
             if (expr.getLocation() != null) {
                 popLocation();
             }
@@ -1243,31 +1335,42 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         }
     }
 
-    private void enterPriority(Priority priority, Associativity associativity, boolean autoGroup) throws IOException {
-        OperatorPrecedence precedence = new OperatorPrecedence();
-        precedence.wasGrouped = this.wasGrouped;
-        precedence.priority = this.priority;
-        precedence.associativity = this.associativity;
-        precedenceStack.push(precedence);
-        wasGrouped = false;
-        if (autoGroup && (priority.ordinal() < this.priority.ordinal()
-                || priority.ordinal() == this.priority.ordinal()
-                && (associativity != this.associativity || associativity == Associativity.NONE))) {
-            wasGrouped = true;
-            writer.append('(');
+    private static Precedence getPrecedence(BinaryOperation op) {
+        switch (op) {
+            case ADD:
+            case SUBTRACT:
+                return Precedence.ADDITION;
+            case MULTIPLY:
+            case DIVIDE:
+            case MODULO:
+                return Precedence.MULTIPLICATION;
+            case AND:
+                return Precedence.LOGICAL_AND;
+            case OR:
+                return Precedence.LOGICAL_OR;
+            case STRICT_EQUALS:
+            case STRICT_NOT_EQUALS:
+            case EQUALS:
+            case NOT_EQUALS:
+                return Precedence.EQUALITY;
+            case GREATER:
+            case GREATER_OR_EQUALS:
+            case LESS:
+            case LESS_OR_EQUALS:
+                return Precedence.COMPARISON;
+            case BITWISE_AND:
+                return Precedence.BITWISE_AND;
+            case BITWISE_OR:
+                return Precedence.BITWISE_OR;
+            case BITWISE_XOR:
+                return Precedence.BITWISE_XOR;
+            case LEFT_SHIFT:
+            case RIGHT_SHIFT:
+            case UNSIGNED_RIGHT_SHIFT:
+                return Precedence.BITWISE_SHIFT;
+            default:
+                return Precedence.GROUPING;
         }
-        this.priority = priority;
-        this.associativity = associativity;
-    }
-
-    private void exitPriority() throws IOException {
-        if (wasGrouped) {
-            writer.append(')');
-        }
-        OperatorPrecedence precedence = precedenceStack.pop();
-        this.priority = precedence.priority;
-        this.associativity = precedence.associativity;
-        this.wasGrouped = precedence.wasGrouped;
     }
 
     private void visitBinaryFunction(BinaryExpr expr, String function) {
@@ -1275,14 +1378,14 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             if (expr.getLocation() != null) {
                 pushLocation(expr.getLocation());
             }
-            enterPriority(Priority.COMMA, Associativity.NONE, false);
             writer.append(function);
             writer.append('(');
+            precedence = Precedence.min();
             expr.getFirstOperand().acceptVisitor(this);
             writer.append(",").ws();
+            precedence = Precedence.min();
             expr.getSecondOperand().acceptVisitor(this);
             writer.append(')');
-            exitPriority();
             if (expr.getLocation() != null) {
                 popLocation();
             }
@@ -1295,58 +1398,58 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     public void visit(BinaryExpr expr) {
         switch (expr.getOperation()) {
             case ADD:
-                visitBinary(expr, "+", Priority.ADDITION, Associativity.LEFT);
+                visitBinary(expr, "+");
                 break;
             case ADD_LONG:
                 visitBinaryFunction(expr, "Long_add");
                 break;
             case SUBTRACT:
-                visitBinary(expr, "-", Priority.ADDITION, Associativity.LEFT);
+                visitBinary(expr, "-");
                 break;
             case SUBTRACT_LONG:
                 visitBinaryFunction(expr, "Long_sub");
                 break;
             case MULTIPLY:
-                visitBinary(expr, "*", Priority.MULTIPLICATION, Associativity.LEFT);
+                visitBinary(expr, "*");
                 break;
             case MULTIPLY_LONG:
                 visitBinaryFunction(expr, "Long_mul");
                 break;
             case DIVIDE:
-                visitBinary(expr, "/", Priority.MULTIPLICATION, Associativity.LEFT);
+                visitBinary(expr, "/");
                 break;
             case DIVIDE_LONG:
                 visitBinaryFunction(expr, "Long_div");
                 break;
             case MODULO:
-                visitBinary(expr, "%", Priority.MULTIPLICATION, Associativity.LEFT);
+                visitBinary(expr, "%");
                 break;
             case MODULO_LONG:
                 visitBinaryFunction(expr, "Long_rem");
                 break;
             case EQUALS:
-                visitBinary(expr, "==", Priority.EQUALITY, Associativity.LEFT);
+                visitBinary(expr, "==");
                 break;
             case NOT_EQUALS:
-                visitBinary(expr, "!=", Priority.EQUALITY, Associativity.LEFT);
+                visitBinary(expr, "!=");
                 break;
             case GREATER:
-                visitBinary(expr, ">", Priority.COMPARISON, Associativity.LEFT);
+                visitBinary(expr, ">");
                 break;
             case GREATER_OR_EQUALS:
-                visitBinary(expr, ">=", Priority.COMPARISON, Associativity.LEFT);
+                visitBinary(expr, ">=");
                 break;
             case LESS:
-                visitBinary(expr, "<", Priority.COMPARISON, Associativity.LEFT);
+                visitBinary(expr, "<");
                 break;
             case LESS_OR_EQUALS:
-                visitBinary(expr, "<=", Priority.COMPARISON, Associativity.LEFT);
+                visitBinary(expr, "<=");
                 break;
             case STRICT_EQUALS:
-                visitBinary(expr, "===", Priority.COMPARISON, Associativity.LEFT);
+                visitBinary(expr, "===");
                 break;
             case STRICT_NOT_EQUALS:
-                visitBinary(expr, "!==", Priority.COMPARISON, Associativity.LEFT);
+                visitBinary(expr, "!==");
                 break;
             case COMPARE:
                 visitBinaryFunction(expr, naming.getNameForFunction("$rt_compare"));
@@ -1355,43 +1458,43 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 visitBinaryFunction(expr, "Long_compare");
                 break;
             case OR:
-                visitBinary(expr, "||", Priority.LOGICAL_OR, Associativity.LEFT);
+                visitBinary(expr, "||");
                 break;
             case AND:
-                visitBinary(expr, "&&", Priority.LOGICAL_AND, Associativity.LEFT);
+                visitBinary(expr, "&&");
                 break;
             case BITWISE_OR:
-                visitBinary(expr, "|", Priority.BITWISE_OR, Associativity.LEFT);
+                visitBinary(expr, "|");
                 break;
             case BITWISE_OR_LONG:
                 visitBinaryFunction(expr, "Long_or");
                 break;
             case BITWISE_AND:
-                visitBinary(expr, "&", Priority.BITWISE_AND, Associativity.LEFT);
+                visitBinary(expr, "&");
                 break;
             case BITWISE_AND_LONG:
                 visitBinaryFunction(expr, "Long_and");
                 break;
             case BITWISE_XOR:
-                visitBinary(expr, "^", Priority.BITWISE_XOR, Associativity.LEFT);
+                visitBinary(expr, "^");
                 break;
             case BITWISE_XOR_LONG:
                 visitBinaryFunction(expr, "Long_xor");
                 break;
             case LEFT_SHIFT:
-                visitBinary(expr, "<<", Priority.BITWISE_SHIFT, Associativity.LEFT);
+                visitBinary(expr, "<<");
                 break;
             case LEFT_SHIFT_LONG:
                 visitBinaryFunction(expr, "Long_shl");
                 break;
             case RIGHT_SHIFT:
-                visitBinary(expr, ">>", Priority.BITWISE_SHIFT, Associativity.LEFT);
+                visitBinary(expr, ">>");
                 break;
             case RIGHT_SHIFT_LONG:
                 visitBinaryFunction(expr, "Long_shr");
                 break;
             case UNSIGNED_RIGHT_SHIFT:
-                visitBinary(expr, ">>>", Priority.BITWISE_SHIFT, Associativity.LEFT);
+                visitBinary(expr, ">>>");
                 break;
             case UNSIGNED_RIGHT_SHIFT_LONG:
                 visitBinaryFunction(expr, "Long_shru");
@@ -1405,92 +1508,109 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             if (expr.getLocation() != null) {
                 pushLocation(expr.getLocation());
             }
+            Precedence outerPrecedence = precedence;
             switch (expr.getOperation()) {
-                case NOT:
-                    enterPriority(Priority.UNARY, Associativity.RIGHT, true);
+                case NOT: {
+                    if (outerPrecedence.ordinal() > Precedence.UNARY.ordinal()) {
+                        writer.append('(');
+                    }
                     writer.append("!");
+                    precedence = Precedence.UNARY;
                     expr.getOperand().acceptVisitor(this);
-                    exitPriority();
+                    if (outerPrecedence.ordinal() > Precedence.UNARY.ordinal()) {
+                        writer.append(')');
+                    }
                     break;
+                }
                 case NEGATE:
-                    enterPriority(Priority.MULTIPLICATION, Associativity.RIGHT, true);
+                    if (outerPrecedence.ordinal() > Precedence.UNARY.ordinal()) {
+                        writer.append('(');
+                    }
                     writer.append("-");
+                    precedence = Precedence.UNARY;
                     expr.getOperand().acceptVisitor(this);
-                    exitPriority();
+                    if (outerPrecedence.ordinal() > Precedence.UNARY.ordinal()) {
+                        writer.append(')');
+                    }
                     break;
                 case LENGTH:
-                    enterPriority(Priority.MEMBER_ACCESS, Associativity.LEFT, true);
+                    precedence = Precedence.MEMBER_ACCESS;
                     expr.getOperand().acceptVisitor(this);
-                    exitPriority();
                     writer.append(".length");
                     break;
                 case INT_TO_LONG:
-                    enterPriority(Priority.COMMA, Associativity.NONE, false);
                     writer.append("Long_fromInt(");
+                    precedence = Precedence.min();
                     expr.getOperand().acceptVisitor(this);
                     writer.append(')');
-                    exitPriority();
                     break;
                 case NUM_TO_LONG:
-                    enterPriority(Priority.COMMA, Associativity.NONE, false);
                     writer.append("Long_fromNumber(");
+                    precedence = Precedence.min();
                     expr.getOperand().acceptVisitor(this);
                     writer.append(')');
-                    exitPriority();
                     break;
                 case LONG_TO_NUM:
-                    enterPriority(Priority.COMMA, Associativity.NONE, false);
                     writer.append("Long_toNumber(");
+                    precedence = Precedence.min();
                     expr.getOperand().acceptVisitor(this);
                     writer.append(')');
-                    exitPriority();
                     break;
                 case LONG_TO_INT:
-                    enterPriority(Priority.MEMBER_ACCESS, Associativity.LEFT, false);
+                    precedence = Precedence.MEMBER_ACCESS;
                     expr.getOperand().acceptVisitor(this);
-                    exitPriority();
                     writer.append(".lo");
                     break;
                 case NEGATE_LONG:
-                    enterPriority(Priority.COMMA, Associativity.NONE, false);
                     writer.append("Long_neg(");
+                    precedence = Precedence.min();
                     expr.getOperand().acceptVisitor(this);
                     writer.append(')');
-                    exitPriority();
                     break;
                 case NOT_LONG:
-                    enterPriority(Priority.COMMA, Associativity.NONE, false);
                     writer.append("Long_not(");
+                    precedence = Precedence.min();
                     expr.getOperand().acceptVisitor(this);
                     writer.append(')');
-                    exitPriority();
                     break;
                 case INT_TO_BYTE:
-                    enterPriority(Priority.BITWISE_SHIFT, Associativity.LEFT, true);
-                    writer.append("(");
+                    if (outerPrecedence.ordinal() > Precedence.BITWISE_SHIFT.ordinal()) {
+                        writer.append('(');
+                    }
+                    precedence = Precedence.BITWISE_SHIFT;
                     expr.getOperand().acceptVisitor(this);
-                    writer.ws().append("<<").ws().append("24)").ws().append(">>").ws().append("24");
-                    exitPriority();
+                    writer.ws().append("<<").ws().append("24").ws().append(">>").ws().append("24");
+                    if (outerPrecedence.ordinal() > Precedence.BITWISE_SHIFT.ordinal()) {
+                        writer.append(')');
+                    }
                     break;
                 case INT_TO_SHORT:
-                    enterPriority(Priority.BITWISE_SHIFT, Associativity.LEFT, true);
-                    writer.append("(");
+                    if (outerPrecedence.ordinal() > Precedence.BITWISE_SHIFT.ordinal()) {
+                        writer.append('(');
+                    }
+                    precedence = Precedence.BITWISE_SHIFT;
                     expr.getOperand().acceptVisitor(this);
-                    writer.ws().append("<<").ws().append("16)").ws().append(">>").ws().append("16");
-                    exitPriority();
+                    writer.ws().append("<<").ws().append("16").ws().append(">>").ws().append("16");
+                    if (outerPrecedence.ordinal() > Precedence.BITWISE_SHIFT.ordinal()) {
+                        writer.append(')');
+                    }
                     break;
                 case INT_TO_CHAR:
-                    enterPriority(Priority.BITWISE_AND, Associativity.LEFT, true);
+                    if (outerPrecedence.ordinal() > Precedence.BITWISE_AND.ordinal()) {
+                        writer.append('(');
+                    }
+                    precedence = Precedence.BITWISE_AND;
                     expr.getOperand().acceptVisitor(this);
                     writer.ws().append("&").ws().append("65535");
-                    exitPriority();
+                    if (outerPrecedence.ordinal() > Precedence.BITWISE_AND.ordinal()) {
+                        writer.append('(');
+                    }
                     break;
                 case NULL_CHECK:
-                    enterPriority(Priority.COMMA, Associativity.NONE, false);
                     writer.appendFunction("$rt_nullCheck").append("(");
+                    precedence = Precedence.min();
                     expr.getOperand().acceptVisitor(this);
                     writer.append(')');
-                    exitPriority();
                     break;
             }
             if (expr.getLocation() != null) {
@@ -1507,13 +1627,25 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             if (expr.getLocation() != null) {
                 pushLocation(expr.getLocation());
             }
-            enterPriority(priority, Associativity.RIGHT, async);
+
+            Precedence outerPrecedence = precedence;
+            if (outerPrecedence.ordinal() > Precedence.CONDITIONAL.ordinal()) {
+                writer.append('(');
+            }
+
+            precedence = Precedence.CONDITIONAL.next();
             expr.getCondition().acceptVisitor(this);
             writer.ws().append("?").ws();
+            precedence = Precedence.CONDITIONAL.next();
             expr.getConsequent().acceptVisitor(this);
             writer.ws().append(":").ws();
+            precedence = Precedence.CONDITIONAL;
             expr.getAlternative().acceptVisitor(this);
-            exitPriority();
+
+            if (outerPrecedence.ordinal() > Precedence.CONDITIONAL.ordinal()) {
+                writer.append('(');
+            }
+
             if (expr.getLocation() != null) {
                 popLocation();
             }
@@ -1529,12 +1661,12 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 pushLocation(expr.getLocation());
             }
             String str = constantToString(expr.getValue());
-            if (str.startsWith("-")) {
-                enterPriority(Priority.MULTIPLICATION, Associativity.NONE, true);
+            if (str.startsWith("-") && precedence.ordinal() > Precedence.MULTIPLICATION.ordinal()) {
+                writer.append('(');
             }
             writer.append(str);
-            if (str.startsWith("-")) {
-                exitPriority();
+            if (str.startsWith("-") && precedence.ordinal() > Precedence.MULTIPLICATION.ordinal()) {
+                writer.append(')');
             }
             if (expr.getLocation() != null) {
                 popLocation();
@@ -1691,14 +1823,12 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             if (expr.getLocation() != null) {
                 pushLocation(expr.getLocation());
             }
-            enterPriority(Priority.MEMBER_ACCESS, Associativity.LEFT, true);
+            precedence = Precedence.MEMBER_ACCESS;
             expr.getArray().acceptVisitor(this);
             writer.append('[');
-            enterPriority(Priority.COMMA, Associativity.NONE, false);
+            precedence = Precedence.min();
             expr.getIndex().acceptVisitor(this);
-            exitPriority();
             writer.append(']');
-            exitPriority();
             if (expr.getLocation() != null) {
                 popLocation();
             }
@@ -1713,13 +1843,12 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             if (expr.getLocation() != null) {
                 pushLocation(expr.getLocation());
             }
-            enterPriority(Priority.MEMBER_ACCESS, Associativity.LEFT, true);
+            precedence = Precedence.MEMBER_ACCESS;
             expr.getArray().acceptVisitor(this);
             writer.append(".data");
             if (expr.getLocation() != null) {
                 popLocation();
             }
-            exitPriority();
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
         }
@@ -1736,6 +1865,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 injector.generate(new InjectorContextImpl(expr.getArguments()), expr.getMethod());
             } else {
                 if (expr.getType() == InvocationType.DYNAMIC) {
+                    precedence = Precedence.MEMBER_ACCESS;
                     expr.getArguments().get(0).acceptVisitor(this);
                 }
                 MethodReference method = expr.getMethod();
@@ -1746,7 +1876,6 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     lastCallSite = callSite;
                 }
                 boolean virtual = false;
-                enterPriority(Priority.COMMA, Associativity.NONE, false);
                 switch (expr.getType()) {
                     case STATIC:
                         writer.append(naming.getFullNameFor(method)).append("(");
@@ -1755,15 +1884,18 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                             if (i > 0) {
                                 writer.append(",").ws();
                             }
+                            precedence = Precedence.min();
                             expr.getArguments().get(i).acceptVisitor(this);
                         }
                         break;
                     case SPECIAL:
                         writer.append(naming.getFullNameFor(method)).append("(");
                         prevCallSite = debugEmitter.emitCallSite();
+                        precedence = Precedence.min();
                         expr.getArguments().get(0).acceptVisitor(this);
                         for (int i = 1; i < expr.getArguments().size(); ++i) {
                             writer.append(",").ws();
+                            precedence = Precedence.min();
                             expr.getArguments().get(i).acceptVisitor(this);
                         }
                         break;
@@ -1774,6 +1906,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                             if (i > 1) {
                                 writer.append(",").ws();
                             }
+                            precedence = Precedence.min();
                             expr.getArguments().get(i).acceptVisitor(this);
                         }
                         virtual = true;
@@ -1785,12 +1918,12 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                             if (i > 0) {
                                 writer.append(",").ws();
                             }
+                            precedence = Precedence.min();
                             expr.getArguments().get(i).acceptVisitor(this);
                         }
                         break;
                 }
                 writer.append(')');
-                exitPriority();
                 if (lastCallSite != null) {
                     if (virtual) {
                         lastCallSite.setVirtualMethod(expr.getMethod());
@@ -1817,13 +1950,12 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             if (expr.getLocation() != null) {
                 pushLocation(expr.getLocation());
             }
-            enterPriority(Priority.MEMBER_ACCESS, Associativity.LEFT, true);
+            precedence = Precedence.MEMBER_ACCESS;
             expr.getQualified().acceptVisitor(this);
             writer.append('.').appendField(expr.getField());
             if (expr.getLocation() != null) {
                 popLocation();
             }
-            exitPriority();
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
         }
@@ -1835,9 +1967,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             if (expr.getLocation() != null) {
                 pushLocation(expr.getLocation());
             }
-            enterPriority(Priority.FUNCTION_CALL, Associativity.RIGHT, true);
+            precedence = Precedence.FUNCTION_CALL;
             writer.append("new ").append(naming.getNameFor(expr.getConstructedClass()));
-            exitPriority();
             if (expr.getLocation() != null) {
                 popLocation();
             }
@@ -1853,46 +1984,53 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 pushLocation(expr.getLocation());
             }
             ValueType type = expr.getType();
-            enterPriority(Priority.COMMA, Associativity.NONE, false);
             if (type instanceof ValueType.Primitive) {
                 switch (((ValueType.Primitive) type).getKind()) {
                     case BOOLEAN:
                         writer.append("$rt_createBooleanArray(");
+                        precedence = Precedence.min();
                         expr.getLength().acceptVisitor(this);
                         writer.append(")");
                         break;
                     case BYTE:
                         writer.append("$rt_createByteArray(");
+                        precedence = Precedence.min();
                         expr.getLength().acceptVisitor(this);
                         writer.append(")");
                         break;
                     case SHORT:
                         writer.append("$rt_createShortArray(");
+                        precedence = Precedence.min();
                         expr.getLength().acceptVisitor(this);
                         writer.append(")");
                         break;
                     case INTEGER:
                         writer.append("$rt_createIntArray(");
+                        precedence = Precedence.min();
                         expr.getLength().acceptVisitor(this);
                         writer.append(")");
                         break;
                     case LONG:
                         writer.append("$rt_createLongArray(");
+                        precedence = Precedence.min();
                         expr.getLength().acceptVisitor(this);
                         writer.append(")");
                         break;
                     case FLOAT:
                         writer.append("$rt_createFloatArray(");
+                        precedence = Precedence.min();
                         expr.getLength().acceptVisitor(this);
                         writer.append(")");
                         break;
                     case DOUBLE:
                         writer.append("$rt_createDoubleArray(");
+                        precedence = Precedence.min();
                         expr.getLength().acceptVisitor(this);
                         writer.append(")");
                         break;
                     case CHARACTER:
                         writer.append("$rt_createCharArray(");
+                        precedence = Precedence.min();
                         expr.getLength().acceptVisitor(this);
                         writer.append(")");
                         break;
@@ -1900,10 +2038,10 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             } else {
                 writer.appendFunction("$rt_createArray").append("(").append(typeToClsString(naming, expr.getType()))
                         .append(",").ws();
+                precedence = Precedence.min();
                 expr.getLength().acceptVisitor(this);
                 writer.append(")");
             }
-            exitPriority();
             if (expr.getLocation() != null) {
                 popLocation();
             }
@@ -1922,7 +2060,6 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             for (int i = 0; i < expr.getDimensions().size(); ++i) {
                 type = ((ValueType.Array) type).getItemType();
             }
-            enterPriority(Priority.COMMA, Associativity.NONE, false);
             if (type instanceof ValueType.Primitive) {
                 switch (((ValueType.Primitive) type).getKind()) {
                     case BOOLEAN:
@@ -1963,10 +2100,10 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     writer.append(",").ws();
                 }
                 first = false;
+                precedence = Precedence.min();
                 dimension.acceptVisitor(this);
             }
             writer.append("])");
-            exitPriority();
             if (expr.getLocation() != null) {
                 popLocation();
             }
@@ -1985,21 +2122,19 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 String clsName = ((ValueType.Object) expr.getType()).getClassName();
                 ClassHolder cls = classSource.get(clsName);
                 if (cls != null && !cls.getModifiers().contains(ElementModifier.INTERFACE)) {
-                    enterPriority(Priority.COMPARISON, Associativity.LEFT, true);
+                    precedence = Precedence.COMPARISON.next();
                     expr.getExpr().acceptVisitor(this);
                     writer.append(" instanceof ").appendClass(clsName);
-                    exitPriority();
                     if (expr.getLocation() != null) {
                         popLocation();
                     }
                     return;
                 }
             }
-            enterPriority(Priority.COMMA, Associativity.NONE, false);
             writer.appendFunction("$rt_isInstance").append("(");
+            precedence = Precedence.min();
             expr.getExpr().acceptVisitor(this);
             writer.append(",").ws().append(typeToClsString(naming, expr.getType())).append(")");
-            exitPriority();
             if (expr.getLocation() != null) {
                 popLocation();
             }
@@ -2095,6 +2230,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 MethodReference monitorEnterRef = new MethodReference(
                         Object.class, "monitorEnter", Object.class, void.class);
                 writer.appendMethodBody(monitorEnterRef).append("(");
+                precedence = Precedence.min();
                 statement.getObjectRef().acceptVisitor(this);
                 writer.append(");").softNewLine();
                 emitSuspendChecker();
@@ -2102,6 +2238,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 MethodReference monitorEnterRef = new MethodReference(
                         Object.class, "monitorEnterSync", Object.class, void.class);
                 writer.appendMethodBody(monitorEnterRef).append('(');
+                precedence = Precedence.min();
                 statement.getObjectRef().acceptVisitor(this);
                 writer.append(");").softNewLine();
             }
@@ -2124,12 +2261,14 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 MethodReference monitorExitRef = new MethodReference(
                         Object.class, "monitorExit", Object.class, void.class);
                 writer.appendMethodBody(monitorExitRef).append("(");
+                precedence = Precedence.min();
                 statement.getObjectRef().acceptVisitor(this);
                 writer.append(");").softNewLine();
             } else {
                 MethodReference monitorEnterRef = new MethodReference(
                         Object.class, "monitorExitSync", Object.class, void.class);
                 writer.appendMethodBody(monitorEnterRef).append('(');
+                precedence = Precedence.min();
                 statement.getObjectRef().acceptVisitor(this);
                 writer.append(");").softNewLine();
             }
@@ -2175,6 +2314,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
 
     private class InjectorContextImpl implements InjectorContext {
         private List<Expr> arguments;
+        private Precedence precedence = Renderer.this.precedence;
 
         public InjectorContextImpl(List<Expr> arguments) {
             this.arguments = arguments;
@@ -2207,6 +2347,12 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
 
         @Override
         public void writeExpr(Expr expr) throws IOException {
+            writeExpr(expr, Precedence.GROUPING);
+        }
+
+        @Override
+        public void writeExpr(Expr expr, Precedence precedence) throws IOException {
+            Renderer.this.precedence = precedence;
             expr.acceptVisitor(Renderer.this);
         }
 
@@ -2223,6 +2369,11 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         @Override
         public Properties getProperties() {
             return new Properties(properties);
+        }
+
+        @Override
+        public Precedence getPrecedence() {
+            return precedence;
         }
     }
 

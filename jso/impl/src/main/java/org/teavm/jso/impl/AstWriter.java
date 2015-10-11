@@ -78,23 +78,23 @@ import org.teavm.model.MethodReference;
  * @author Alexey Andreev
  */
 public class AstWriter {
-    private static final int PRECEDENCE_MEMBER = 2;
-    private static final int PRECEDENCE_FUNCTION = 3;
-    private static final int PRECEDENCE_POSTFIX = 4;
-    private static final int PRECEDENCE_PREFIX = 5;
-    private static final int PRECEDENCE_MUL = 6;
-    private static final int PRECEDENCE_ADD = 7;
-    private static final int PRECEDENCE_SHIFT = 8;
-    private static final int PRECEDENCE_RELATION = 9;
-    private static final int PRECEDENCE_EQUALITY = 10;
-    private static final int PRECEDENCE_BITWISE_AND = 11;
-    private static final int PRECEDENCE_BITWISE_XOR = 12;
-    private static final int PRECEDENCE_BITWISE_OR = 13;
-    private static final int PRECEDENCE_AND = 14;
-    private static final int PRECEDENCE_OR = 15;
-    private static final int PRECEDENCE_COND = 16;
-    private static final int PRECEDENCE_ASSIGN = 17;
-    private static final int PRECEDENCE_COMMA = 18;
+    public static final int PRECEDENCE_MEMBER = 2;
+    public static final int PRECEDENCE_FUNCTION = 3;
+    public static final int PRECEDENCE_POSTFIX = 4;
+    public static final int PRECEDENCE_PREFIX = 5;
+    public static final int PRECEDENCE_MUL = 6;
+    public static final int PRECEDENCE_ADD = 7;
+    public static final int PRECEDENCE_SHIFT = 8;
+    public static final int PRECEDENCE_RELATION = 9;
+    public static final int PRECEDENCE_EQUALITY = 10;
+    public static final int PRECEDENCE_BITWISE_AND = 11;
+    public static final int PRECEDENCE_BITWISE_XOR = 12;
+    public static final int PRECEDENCE_BITWISE_OR = 13;
+    public static final int PRECEDENCE_AND = 14;
+    public static final int PRECEDENCE_OR = 15;
+    public static final int PRECEDENCE_COND = 16;
+    public static final int PRECEDENCE_ASSIGN = 17;
+    public static final int PRECEDENCE_COMMA = 18;
     private SourceWriter writer;
     private Map<String, NameEmitter> nameMap = new HashMap<>();
     private Set<String> aliases = new HashSet<>();
@@ -108,13 +108,13 @@ public class AstWriter {
             return;
         }
         if (aliases.add(name)) {
-            nameMap.put(name, () -> writer.append(name));
+            nameMap.put(name, p -> writer.append(name));
             return;
         }
         for (int i = 0;; ++i) {
             String alias = name + "_" + i;
             if (aliases.add(alias)) {
-                nameMap.put(name, () -> writer.append(alias));
+                nameMap.put(name, p -> writer.append(alias));
                 return;
             }
         }
@@ -124,12 +124,12 @@ public class AstWriter {
         if (!aliases.add(alias)) {
             throw new IllegalArgumentException("Alias " + alias + " is already occupied");
         }
-        nameMap.put(name, () -> writer.append(alias));
+        nameMap.put(name, p -> writer.append(alias));
     }
 
     public void reserveName(String name) {
         aliases.add(name);
-        nameMap.put(name, () -> writer.append(name));
+        nameMap.put(name, p -> writer.append(name));
     }
 
     public void declareNameEmitter(String name, NameEmitter emitter) {
@@ -157,7 +157,7 @@ public class AstWriter {
         print(node, PRECEDENCE_COMMA);
     }
 
-    private void print(AstNode node, int precedence) throws IOException {
+    public void print(AstNode node, int precedence) throws IOException {
         switch (node.getType()) {
             case Token.SCRIPT:
                 print((AstRoot) node);
@@ -192,7 +192,7 @@ public class AstWriter {
                 break;
             case Token.THIS:
                 if (nameMap.containsKey("this")) {
-                    nameMap.get("this").emit();
+                    nameMap.get("this").emit(precedence);
                 } else {
                     writer.append("this");
                 }
@@ -201,7 +201,7 @@ public class AstWriter {
                 writer.append("null");
                 break;
             case Token.NAME:
-                print((Name) node);
+                print((Name) node, precedence);
                 break;
             case Token.REGEXP:
                 print((RegExpLiteral) node);
@@ -633,12 +633,12 @@ public class AstWriter {
         writer.append(node.getQuoteCharacter());
     }
 
-    private void print(Name node) throws IOException {
+    private void print(Name node, int precedence) throws IOException {
         NameEmitter alias = nameMap.get(node.getIdentifier());
         if (alias == null) {
-            alias = () -> writer.append(node.getIdentifier());
+            alias = prec -> writer.append(node.getIdentifier());
         }
-        alias.emit();
+        alias.emit(precedence);
     }
 
     private void print(RegExpLiteral node) throws IOException {
