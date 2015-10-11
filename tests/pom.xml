@@ -76,6 +76,7 @@
         <artifactId>teavm-maven-plugin</artifactId>
         <version>${project.version}</version>
         <executions>
+          <!-- 
           <execution>
             <id>generate-javascript-tests</id>
             <goals>
@@ -95,6 +96,7 @@
               <incremental>${teavm.test.incremental}</incremental>
             </configuration>
           </execution>
+           -->
           <execution>
             <id>run-javascript-tests</id>
             <goals>

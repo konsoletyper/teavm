@@ -209,6 +209,7 @@ public class TeaVMTestTool implements BaseTeaVMTool {
             resourceToFile("org/teavm/javascript/runtime.js", "res/runtime.js");
             String prefix = "org/teavm/tooling/test";
             resourceToFile(prefix + "/res/junit-support.js", "res/junit-support.js");
+            resourceToFile(prefix + "/res/junit-client.js", "res/junit-client.js");
             resourceToFile(prefix + "/res/junit.css", "res/junit.css");
             resourceToFile(prefix + "/res/class_obj.png", "res/class_obj.png");
             resourceToFile(prefix + "/res/control-000-small.png", "res/control-000-small.png");
@@ -219,6 +220,7 @@ public class TeaVMTestTool implements BaseTeaVMTool {
             resourceToFile(prefix + "/res/toggle-small-expand.png", "res/toggle-small-expand.png");
             resourceToFile(prefix + "/res/toggle-small.png", "res/toggle-small.png");
             resourceToFile(prefix + "/junit.html", "junit.html");
+            resourceToFile(prefix + "/junit-client.html", "junit-client.html");
             ClassHolderSource classSource = new ClasspathClassHolderSource(classLoader);
             if (incremental) {
                 classSource = new PreOptimizingClassHolderSource(classSource);

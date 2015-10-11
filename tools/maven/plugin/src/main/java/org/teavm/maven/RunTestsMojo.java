@@ -111,18 +111,18 @@ public class RunTestsMojo extends AbstractMojo {
             }
         }
 
-        if (failedTests > 0) {
-            throw new MojoExecutionException(failedTests + " of " + report.getResults().size() + " test(s) failed");
-        } else {
-            getLog().info("All of " + report.getResults().size() + " tests successfully passed");
-        }
-
         ObjectMapper mapper = new ObjectMapper();
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
         try (Writer writer = new OutputStreamWriter(new FileOutputStream(reportFile), "UTF-8")) {
             mapper.writeValue(writer, report);
         } catch (IOException e) {
             throw new MojoFailureException("Error writing test report", e);
+        }
+
+        if (failedTests > 0) {
+            throw new MojoExecutionException(failedTests + " of " + report.getResults().size() + " test(s) failed");
+        } else {
+            getLog().info("All of " + report.getResults().size() + " tests successfully passed");
         }
     }
 }

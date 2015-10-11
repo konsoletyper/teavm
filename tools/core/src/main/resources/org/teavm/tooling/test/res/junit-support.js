@@ -77,34 +77,29 @@ JUnitServer.prototype.isExpectedException = function(ex) {
 }
 JUnitServer.prototype.loadCode = function(path, additionalScripts, callback) {
     this.frame = document.createElement("iframe");
+    this.frame.src = "junit-client.html";
     document.body.appendChild(this.frame);
-    var frameDoc = this.frame.contentWindow.document;
-    var self = this;
-    var sequence = ["res/junit-support.js", "res/runtime.js"];
-    if (additionalScripts) {
-        for (var i = 0; i < additionalScripts.length; ++i) {
-            sequence.push(additionalScripts[i]);
-        }
-    }
+    var sequence = [];
     sequence.push(path);
-    self.loadScripts(sequence, 0, callback);
-}
-JUnitServer.prototype.loadScripts = function(scripts, index, callback) {
+    for (var i = 0; i < additionalScripts.length; ++i) {
+        sequence.push(additionalScripts[i]);
+    }
     var self = this;
-    if (index == scripts.length) {
-        callback();
-    } else {
-        this.loadScript(scripts[index], function() { self.loadScripts(scripts, index + 1, callback) });
+    var handler = function() {
+        window.removeEventListener("message", handler);
+        self.loadScripts(sequence, callback);
     }
+    window.addEventListener("message", handler);
 }
-JUnitServer.prototype.loadScript = function(name, callback) {
-    var doc = this.frame.contentWindow.document;
-    var script = doc.createElement("script");
-    script.src = name;
-    doc.body.appendChild(script);
-    script.onload = function() {
+JUnitServer.prototype.loadScripts = function(scripts, callback) {
+    for (var i = 0; i < scripts.length; ++i) {
+        this.frame.contentWindow.postMessage({ command : "loadScript", "script" : scripts[i] }, "*");
+    }
+    var handler = function() {
+        window.removeEventListener("message", handler);
         callback();
     }
+    window.addEventListener("message", handler);
 }
 JUnitServer.prototype.runTest = function(node, callback) {
     node.indicator.className = "complete-indicator in-progress";
@@ -118,10 +113,10 @@ JUnitServer.prototype.runTest = function(node, callback) {
                 window.removeEventListener("message", messageHandler);
                 var timeSpent = new Date().getTime() - startTime;
                 node.timeIndicator.appendChild(document.createTextNode("(" + (timeSpent / 1000).toFixed(3) + ")"));
-                self.handleEvent(JSON.parse(event.data), callback);
+                self.handleEvent(event.data, callback);
             };
             window.addEventListener("message", messageHandler);
-            self.frame.contentWindow.postMessage("runTest", "*");
+            self.frame.contentWindow.postMessage({ command : "runTest" }, "*");
         });
     } else {
         var self = this;
@@ -364,72 +359,4 @@ TreeNode.prototype.select = function() {
     for (var i = 0; i < this.tree.selectionListeners.length; ++i) {
         this.tree.selectionListeners[i](this);
     }
-}
-
-var JUnitClient = {};
-JUnitClient.run = function() {
-    var handler = window.addEventListener("message", $rt_threadStarter(function() {
-        var thread = $rt_nativeThread();
-        var instance;
-        var ptr = 0;
-        var message;
-        if (thread.isResuming()) {
-            ptr = thread.pop();
-            instance = thread.pop();
-        }
-        loop: while (true) { switch (ptr) {
-        case 0:
-            instance = new TestClass();
-            ptr = 1;
-        case 1:
-            try {
-                initInstance(instance);
-            } catch (e) {
-                message = {};
-                JUnitClient.makeErrorMessage(message, e);
-                break loop;
-            }
-            if (thread.isSuspending()) {
-                thread.push(instance);
-                thread.push(ptr);
-                return;
-            }
-            ptr = 2;
-        case 2:
-            try {
-                runTest(instance);
-            } catch (e) {
-                message = {};
-                JUnitClient.makeErrorMessage(message, e);
-                break loop;
-            }
-            if (thread.isSuspending()) {
-                thread.push(instance);
-                thread.push(ptr);
-                return;
-            }
-            message = {};
-            message.status = "ok";
-            break loop;
-        }}
-        window.parent.postMessage(JSON.stringify(message), "*");
-    }));
-}
-JUnitClient.makeErrorMessage = function(message, e) {
-    message.status = "exception";
-    var stack = e.stack;
-    if (e.$javaException && e.$javaException.constructor.$meta) {
-        message.exception = e.$javaException.constructor.$meta.name;
-        message.stack = e.$javaException.constructor.$meta.name + ": ";
-        var exceptionMessage = extractException(e.$javaException);
-        message.stack += exceptionMessage ? $rt_ustr(exceptionMessage) : "";
-    }
-    message.stack += "\n" + stack;
-}
-JUnitClient.reportError = function(error) {
-    var handler = window.addEventListener("message", function() {
-        window.removeEventListener("message", handler);
-        var message = { status : "exception", stack : error };
-        window.parent.postMessage(JSON.stringify(message), "*");
-    });
 }
