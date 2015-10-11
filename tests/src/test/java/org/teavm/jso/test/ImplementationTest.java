@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso;
+package org.teavm.jso.test;
 
 import static org.junit.Assert.*;
 import org.junit.Test;

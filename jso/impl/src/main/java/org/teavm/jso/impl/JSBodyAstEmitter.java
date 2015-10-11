@@ -44,7 +44,8 @@ class JSBodyAstEmitter implements JSBodyEmitter {
         int paramIndex = 0;
         if (!isStatic) {
             int index = paramIndex++;
-            astWriter.declareNameEmitter("this", prec -> context.writeExpr(context.getArgument(index)));
+            astWriter.declareNameEmitter("this", prec -> context.writeExpr(context.getArgument(index),
+                    convert(prec)));
         }
         for (int i = 0; i < parameterNames.length; ++i) {
             int index = paramIndex++;

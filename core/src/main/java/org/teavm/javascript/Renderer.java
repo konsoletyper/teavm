@@ -1603,7 +1603,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     expr.getOperand().acceptVisitor(this);
                     writer.ws().append("&").ws().append("65535");
                     if (outerPrecedence.ordinal() > Precedence.BITWISE_AND.ordinal()) {
-                        writer.append('(');
+                        writer.append(')');
                     }
                     break;
                 case NULL_CHECK:

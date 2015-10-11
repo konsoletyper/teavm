@@ -20,6 +20,7 @@ import org.teavm.codegen.SourceWriter;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
+import org.teavm.javascript.Precedence;
 import org.teavm.javascript.Renderer;
 import org.teavm.javascript.ast.ConstantExpr;
 import org.teavm.javascript.ast.Expr;
@@ -76,41 +77,45 @@ public class JSNativeGenerator implements Injector, DependencyPlugin, Generator 
         SourceWriter writer = context.getWriter();
         switch (methodRef.getName()) {
             case "get":
-                context.writeExpr(context.getArgument(0));
+                context.writeExpr(context.getArgument(0), Precedence.MEMBER_ACCESS);
                 renderProperty(context.getArgument(1), context);
                 break;
             case "set":
-                writer.append('(');
-                context.writeExpr(context.getArgument(0));
+                context.writeExpr(context.getArgument(0), Precedence.ASSIGNMENT.next());
                 renderProperty(context.getArgument(1), context);
                 writer.ws().append('=').ws();
-                context.writeExpr(context.getArgument(2));
-                writer.append(')');
+                context.writeExpr(context.getArgument(2), Precedence.ASSIGNMENT.next());
                 break;
             case "invoke":
-                context.writeExpr(context.getArgument(0));
+                context.writeExpr(context.getArgument(0), Precedence.GROUPING);
                 renderProperty(context.getArgument(1), context);
                 writer.append('(');
                 for (int i = 2; i < context.argumentCount(); ++i) {
                     if (i > 2) {
                         writer.append(',').ws();
                     }
-                    context.writeExpr(context.getArgument(i));
+                    context.writeExpr(context.getArgument(i), Precedence.min());
                 }
                 writer.append(')');
                 break;
             case "instantiate":
-                writer.append("(new (");
-                context.writeExpr(context.getArgument(0));
+                if (context.getPrecedence().ordinal() >= Precedence.FUNCTION_CALL.ordinal()) {
+                    writer.append("(");
+                }
+                writer.append("new ");
+                context.writeExpr(context.getArgument(0), Precedence.GROUPING);
                 renderProperty(context.getArgument(1), context);
-                writer.append(")(");
+                writer.append("(");
                 for (int i = 2; i < context.argumentCount(); ++i) {
                     if (i > 2) {
                         writer.append(',').ws();
                     }
-                    context.writeExpr(context.getArgument(i));
+                    context.writeExpr(context.getArgument(i), Precedence.min());
                 }
-                writer.append("))");
+                writer.append(")");
+                if (context.getPrecedence().ordinal() >= Precedence.FUNCTION_CALL.ordinal()) {
+                    writer.append(")");
+                }
                 break;
             case "wrap":
                 if (methodRef.getDescriptor().parameterType(0).isObject("java.lang.String")) {
@@ -122,14 +127,19 @@ public class JSNativeGenerator implements Injector, DependencyPlugin, Generator 
                         }
                     }
                     writer.append("$rt_ustr(");
-                    context.writeExpr(context.getArgument(0));
+                    context.writeExpr(context.getArgument(0), Precedence.min());
                     writer.append(")");
                 } else if (methodRef.getDescriptor().parameterType(0) == ValueType.BOOLEAN) {
-                    writer.append("(!!(");
-                    context.writeExpr(context.getArgument(0));
-                    writer.append("))");
+                    if (context.getPrecedence().ordinal() >= Precedence.UNARY.ordinal()) {
+                        writer.append("(");
+                    }
+                    writer.append("!!");
+                    context.writeExpr(context.getArgument(0), Precedence.UNARY);
+                    if (context.getPrecedence().ordinal() >= Precedence.UNARY.ordinal()) {
+                        writer.append(")");
+                    }
                 } else {
-                    context.writeExpr(context.getArgument(0));
+                    context.writeExpr(context.getArgument(0), context.getPrecedence());
                 }
                 break;
             case "function":
@@ -137,17 +147,22 @@ public class JSNativeGenerator implements Injector, DependencyPlugin, Generator 
                 break;
             case "unwrapString":
                 writer.append("$rt_str(");
-                context.writeExpr(context.getArgument(0));
+                context.writeExpr(context.getArgument(0), Precedence.min());
                 writer.append(")");
                 break;
             case "unwrapBoolean":
-                writer.append("(");
-                context.writeExpr(context.getArgument(0));
-                writer.ws().append("?").ws().append("1").ws().append(":").ws().append("0").append(")");
+                if (context.getPrecedence().ordinal() >= Precedence.CONDITIONAL.ordinal()) {
+                    writer.append("(");
+                }
+                context.writeExpr(context.getArgument(0), Precedence.CONDITIONAL.next());
+                writer.ws().append("?").ws().append("1").ws().append(":").ws().append("0");
+                if (context.getPrecedence().ordinal() >= Precedence.CONDITIONAL.ordinal()) {
+                    writer.append(")");
+                }
                 break;
             default:
                 if (methodRef.getName().startsWith("unwrap")) {
-                    context.writeExpr(context.getArgument(0));
+                    context.writeExpr(context.getArgument(0), context.getPrecedence());
                 }
                 break;
         }
@@ -199,7 +214,7 @@ public class JSNativeGenerator implements Injector, DependencyPlugin, Generator 
         String name = extractPropertyName(property);
         if (name == null) {
             writer.append('[');
-            context.writeExpr(property);
+            context.writeExpr(property, Precedence.min());
             writer.append(']');
         } else if (!isIdentifier(name)) {
             writer.append("[\"");
