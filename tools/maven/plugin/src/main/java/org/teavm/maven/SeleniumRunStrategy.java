@@ -39,6 +39,7 @@ public class SeleniumRunStrategy implements TestRunStrategy {
     private URL url;
     private File directory;
     private ThreadLocal<WebDriver> webDriver = new ThreadLocal<>();
+    private ThreadLocal<Integer> commandsSent = new ThreadLocal<>();
 
     public SeleniumRunStrategy(URL url, File directory) {
         this.url = url;
@@ -49,6 +50,7 @@ public class SeleniumRunStrategy implements TestRunStrategy {
     public void beforeThread() {
         RemoteWebDriver driver = new RemoteWebDriver(url, DesiredCapabilities.firefox());
         webDriver.set(driver);
+        commandsSent.set(0);
     }
 
     @Override
@@ -59,6 +61,13 @@ public class SeleniumRunStrategy implements TestRunStrategy {
 
     @Override
     public String runTest(Log log, String runtimeScript, TestCase testCase) throws IOException {
+        commandsSent.set(commandsSent.get() + 1);
+        if (commandsSent.get().equals(100)) {
+            commandsSent.set(0);
+            webDriver.get().close();
+            webDriver.set(new RemoteWebDriver(url, DesiredCapabilities.firefox()));
+        }
+
         webDriver.get().manage().timeouts().setScriptTimeout(2, TimeUnit.SECONDS);
         JavascriptExecutor js = (JavascriptExecutor) webDriver.get();
         try {
