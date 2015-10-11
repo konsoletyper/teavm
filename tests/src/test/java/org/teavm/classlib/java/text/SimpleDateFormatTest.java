@@ -26,6 +26,10 @@ import org.junit.Test;
  * @author Alexey Andreev
  */
 public class SimpleDateFormatTest {
+    public SimpleDateFormatTest() {
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+    }
+
     @Test
     public void firstDayOfWeekMatches() {
         assertEquals(Calendar.SUNDAY, new GregorianCalendar(Locale.ENGLISH).getFirstDayOfWeek());
@@ -135,15 +139,15 @@ public class SimpleDateFormatTest {
 
     private Date getDateWithZoneOffset(long milliseconds) {
         Calendar calendar = new GregorianCalendar(Locale.ENGLISH);
+        calendar.setTimeZone(TimeZone.getTimeZone("GMT"));
         calendar.setTimeInMillis(milliseconds);
-        milliseconds -= calendar.get(Calendar.ZONE_OFFSET);
-        milliseconds -= calendar.get(Calendar.DST_OFFSET);
         return new Date(milliseconds);
     }
 
     private long getTimeWithoutZoneOffset(Date date) {
         Calendar calendar = new GregorianCalendar(Locale.ENGLISH);
+        calendar.setTimeZone(TimeZone.getTimeZone("GMT"));
         calendar.setTime(date);
-        return calendar.getTimeInMillis() + calendar.get(Calendar.ZONE_OFFSET) + calendar.get(Calendar.DST_OFFSET);
+        return calendar.getTimeInMillis();
     }
 }

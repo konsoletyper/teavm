@@ -22,6 +22,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
+import java.util.TimeZone;
 import org.junit.Test;
 
 /**
@@ -29,6 +30,10 @@ import org.junit.Test;
  * @author Alexey Andreev
  */
 public class DateFormatTest {
+    public DateFormatTest() {
+        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+    }
+
     @Test
     public void shortDateFormatHandled() throws ParseException {
         DateFormat format = DateFormat.getDateInstance(DateFormat.SHORT, Locale.ENGLISH);
