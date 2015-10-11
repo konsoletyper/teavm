@@ -211,6 +211,9 @@ class JSClassProcessor {
     }
 
     private MethodReader findOverridenMethod(String className, MethodReader finalMethod) {
+        if (finalMethod.getName().equals("<init>")) {
+            return null;
+        }
         return classSource.getAncestors(className)
                 .skip(1)
                 .map(cls -> cls.getMethod(finalMethod.getDescriptor()))

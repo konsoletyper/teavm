@@ -111,6 +111,9 @@ class JSDependencyListener extends AbstractDependencyListener {
         }
         addInterfaces(exposedCls, cls);
         for (MethodReader method : cls.getMethods()) {
+            if (method.getName().equals("<init>")) {
+                continue;
+            }
             if (exposedCls.inheritedMethods.containsKey(method.getDescriptor())
                     || exposedCls.methods.containsKey(method.getDescriptor())) {
                 MethodDependency methodDep = agent.linkMethod(method.getReference(), null);
