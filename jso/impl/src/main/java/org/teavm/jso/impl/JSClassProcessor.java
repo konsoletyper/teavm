@@ -1125,6 +1125,13 @@ class JSClassProcessor {
         if (method != null) {
             return method;
         }
+        if (cls.getParent() != null && !cls.getParent().equals(cls.getName())
+                && !cls.getParent().equals("java.lang.Object")) {
+            method = getMethod(new MethodReference(cls.getParent(), ref.getDescriptor()));
+            if (method != null) {
+                return method;
+            }
+        }
         for (String iface : cls.getInterfaces()) {
             method = getMethod(new MethodReference(iface, ref.getDescriptor()));
             if (method != null) {
