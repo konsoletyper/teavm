@@ -73,7 +73,7 @@ public final class TeaVMPluginLoader {
                 .collect(Collectors.toList());
     }
 
-    public static List<String> orderPlugins(ClassLoader classLoader, Set<String> classNames) {
+    static List<String> orderPlugins(ClassLoader classLoader, Set<String> classNames) {
         Map<String, PluginDescriptor> descriptors = new HashMap<>();
         try {
             for (String className : classNames) {
@@ -160,11 +160,11 @@ public final class TeaVMPluginLoader {
                 throw new IllegalStateException("Plugin " + descriptor.name
                         + " has both before and after annotations");
             }
-            descriptor.beforeList.addAll(Arrays.asList(descriptor.before));
-            for (String after : descriptor.after) {
-                PluginDescriptor afterDescriptor = descriptors.get(after);
-                if (afterDescriptor != null && afterDescriptor.reachable) {
-                    afterDescriptor.beforeList.add(descriptor.name);
+            descriptor.afterList.addAll(Arrays.asList(descriptor.after));
+            for (String before : descriptor.before) {
+                PluginDescriptor beforeDescriptor = descriptors.get(before);
+                if (beforeDescriptor != null && beforeDescriptor.reachable) {
+                    beforeDescriptor.afterList.add(descriptor.name);
                 }
             }
         }
@@ -180,14 +180,15 @@ public final class TeaVMPluginLoader {
         }
         path.add(descriptor.name);
 
-        for (String before : descriptor.beforeList) {
-            PluginDescriptor beforeDescriptor = descriptors.get(before);
-            if (beforeDescriptor != null) {
-                if (visited.contains(before) && !emmited.contains(before)) {
+        for (String after : descriptor.afterList) {
+            PluginDescriptor afterDescriptor = descriptors.get(after);
+            if (afterDescriptor != null && afterDescriptor.reachable) {
+                if (visited.contains(after) && !emmited.contains(after)) {
                     List<String> loop = new ArrayList<>();
+                    Collections.reverse(path);
                     for (String pathElem : path) {
                         loop.add(pathElem);
-                        if (pathElem.equals(descriptor.name)) {
+                        if (pathElem.equals(afterDescriptor.name)) {
                             break;
                         }
                     }
@@ -195,7 +196,7 @@ public final class TeaVMPluginLoader {
                     throw new IllegalStateException("Circular dependency found: " + loop.stream()
                             .collect(Collectors.joining(" -> ")));
                 }
-                orderDescriptors(beforeDescriptor, descriptors, list, visited, emmited, path);
+                orderDescriptors(afterDescriptor, descriptors, list, visited, emmited, path);
             }
         }
 
@@ -260,7 +261,7 @@ public final class TeaVMPluginLoader {
         String[] requires = new String[0];
         String[] before = new String[0];
         String[] after = new String[0];
-        List<String> beforeList = new ArrayList<>();
+        List<String> afterList = new ArrayList<>();
         boolean reachable;
     }
 }

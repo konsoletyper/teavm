@@ -766,7 +766,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
      * obtains all implementation classes that are enumerated there.</p>
      */
     public void installPlugins() {
-        for (TeaVMPlugin plugin : ServiceLoader.load(TeaVMPlugin.class, classLoader)) {
+        for (TeaVMPlugin plugin : TeaVMPluginLoader.load(classLoader)) {
             plugin.install(this);
         }
     }
