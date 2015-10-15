@@ -93,13 +93,13 @@ public class JavaScriptBodyConversionTest {
     @JavaScriptBody(args = { "value" }, body = "return value + 1;")
     private native int addOne(int value);
 
-    @JavaScriptBody(args = { "value" }, body = "return value;")
+    @JavaScriptBody(args = { "array" }, body = "return array;")
     private native Object returnAsObject(Object array);
 
-    @JavaScriptBody(args = { "value" }, body = "return value;")
+    @JavaScriptBody(args = { "array" }, body = "return array;")
     private native int[] returnAsIntArray(Object array);
 
-    @JavaScriptBody(args = { "value" }, body = "return value;")
+    @JavaScriptBody(args = { "array" }, body = "return array;")
     private native Integer[] returnAsIntegerArray(Object array);
 
     @JavaScriptBody(args = { "value" }, body = "value[0] = 1; return value;")

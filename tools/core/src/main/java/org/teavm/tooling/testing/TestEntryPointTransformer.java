@@ -23,7 +23,9 @@ import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
+import org.teavm.model.ValueType;
 import org.teavm.model.emit.ProgramEmitter;
+import org.teavm.model.emit.ValueEmitter;
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
 
@@ -70,7 +72,15 @@ class TestEntryPointTransformer implements ClassHolderTransformer, TeaVMPlugin {
 
     private Program generateLaunchProgram(MethodHolder method, ClassReaderSource innerSource) {
         ProgramEmitter pe = ProgramEmitter.create(method, innerSource);
-        pe.construct(testMethod.getClassName()).invokeSpecial(testMethod);
+        ValueEmitter testCaseVar = pe.getField(TestEntryPoint.class, "testCase", Object.class);
+        pe.when(testCaseVar.isNull())
+            .thenDo(() -> {
+                pe.setField(TestEntryPoint.class, "testCase",
+                        pe.construct(testMethod.getClassName()).cast(Object.class));
+            });
+        pe.getField(TestEntryPoint.class, "testCase", Object.class)
+                .cast(ValueType.object(testMethod.getClassName()))
+                .invokeSpecial(testMethod);
         pe.exit();
         return pe.getProgram();
     }

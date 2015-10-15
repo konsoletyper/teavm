@@ -211,6 +211,10 @@ public final class ProgramEmitter {
         return setField(new FieldReference(className, fieldName), value);
     }
 
+    public ProgramEmitter setField(Class<?> cls, String fieldName, ValueEmitter value) {
+        return setField(new FieldReference(cls.getName(), fieldName), value);
+    }
+
     public ValueEmitter invoke(MethodReference method, ValueEmitter... arguments) {
         for (int i = 0; i < method.parameterCount(); ++i) {
             if (!classSource.isSuperType(method.parameterType(i), arguments[i].getType()).orElse(true)) {

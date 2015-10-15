@@ -34,6 +34,7 @@ public class KOTestRunner implements TestRunner {
                 if (++repeatCount == 10) {
                     throw e;
                 }
+                Thread.sleep(50);
             } catch (Throwable e) {
                 throw e;
             }

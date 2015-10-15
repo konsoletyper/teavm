@@ -22,6 +22,8 @@ import org.teavm.testing.TestRunner;
  * @author Alexey Andreev
  */
 final class TestEntryPoint {
+    private static Object testCase;
+
     private TestEntryPoint() {
     }
 

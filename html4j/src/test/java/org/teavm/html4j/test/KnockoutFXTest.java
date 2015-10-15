@@ -97,7 +97,7 @@ public final class KnockoutFXTest extends KnockoutTCK implements Transfer {
         "var f = new Function(s); " +
         "return f.apply(null, args);"
     )
-    public native Object executeScript(String script, Object[] arguments);
+    public native Object executeScript(String s, Object[] args);
 
     @JavaScriptBody(args = {  }, body =
           "var h;" +
