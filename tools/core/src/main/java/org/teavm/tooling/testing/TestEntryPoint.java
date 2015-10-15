@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,20 +13,23 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.testing;
+package org.teavm.tooling.testing;
 
-import org.teavm.model.MethodReader;
+import org.teavm.testing.TestRunner;
 
 /**
  *
  * @author Alexey Andreev
  */
-public interface TestAdapter {
-    boolean acceptClass(Class<?> cls);
+final class TestEntryPoint {
+    private TestEntryPoint() {
+    }
 
-    boolean acceptMethod(MethodReader method);
+    public static void run() throws Throwable {
+        createRunner().run(() -> launchTest());
+    }
 
-    Iterable<String> getExpectedExceptions(MethodReader method);
+    private static native TestRunner createRunner();
 
-    Class<? extends TestRunner> getRunner(MethodReader method);
+    private static native void launchTest();
 }

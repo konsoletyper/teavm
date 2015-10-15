@@ -348,7 +348,7 @@ public class Decompiler {
     private AsyncMethodPart getRegularMethodStatement(Program program, int[] targetBlocks, boolean async) {
         AsyncMethodPart result = new AsyncMethodPart();
         lastBlockId = 1;
-        graph = ProgramUtils.buildControlFlowGraphWithTryCatch(program);
+        graph = ProgramUtils.buildControlFlowGraph(program);
         int[] weights = new int[graph.size()];
         for (int i = 0; i < weights.length; ++i) {
             weights[i] = program.basicBlockAt(i).getInstructions().size();
@@ -391,7 +391,7 @@ public class Decompiler {
                 generator.nextBlock = tmp >= 0 && next < indexer.size() ? program.basicBlockAt(tmp) : null;
             }
 
-            closeExpiredBookmarks(generator, generator.currentBlock.getTryCatchBlocks());
+            closeExpiredBookmarks(generator, node, generator.currentBlock.getTryCatchBlocks());
 
             List<TryCatchBookmark> inheritedBookmarks = new ArrayList<>();
             Block block = stack.peek();
@@ -475,7 +475,7 @@ public class Decompiler {
         return result;
     }
 
-    private void closeExpiredBookmarks(StatementGenerator generator, List<TryCatchBlock> tryCatchBlocks) {
+    private void closeExpiredBookmarks(StatementGenerator generator, int node, List<TryCatchBlock> tryCatchBlocks) {
         tryCatchBlocks = new ArrayList<>(tryCatchBlocks);
         Collections.reverse(tryCatchBlocks);
 
@@ -514,8 +514,10 @@ public class Decompiler {
             TryCatchStatement tryCatchStmt = new TryCatchStatement();
             tryCatchStmt.setExceptionType(bookmark.exceptionType);
             tryCatchStmt.setExceptionVariable(bookmark.exceptionVariable);
-            tryCatchStmt.getHandler().add(generator.generateJumpStatement(
-                    program.basicBlockAt(bookmark.exceptionHandler)));
+            if (node != bookmark.exceptionHandler) {
+                tryCatchStmt.getHandler().add(generator.generateJumpStatement(
+                        program.basicBlockAt(bookmark.exceptionHandler)));
+            }
             List<Statement> blockPart = block.body.subList(bookmark.offset, block.body.size());
             tryCatchStmt.getProtectedBody().addAll(blockPart);
             blockPart.clear();

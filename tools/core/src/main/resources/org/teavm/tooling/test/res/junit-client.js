@@ -25,25 +25,8 @@ JUnitClient.runTest = function() {
     }
     loop: while (true) { switch (ptr) {
     case 0:
-        instance = new TestClass();
-        ptr = 1;
-    case 1:
         try {
-            initInstance(instance);
-        } catch (e) {
-            message = {};
-            JUnitClient.makeErrorMessage(message, e);
-            break loop;
-        }
-        if (thread.isSuspending()) {
-            thread.push(instance);
-            thread.push(ptr);
-            return;
-        }
-        ptr = 2;
-    case 2:
-        try {
-            runTest(instance);
+            runTest();
         } catch (e) {
             message = {};
             JUnitClient.makeErrorMessage(message, e);

@@ -28,11 +28,14 @@ class TestMethodBuilder {
     private MethodReference method;
     private String fileName;
     private List<String> expectedExceptions = new ArrayList<>();
+    private String runner;
 
-    public TestMethodBuilder(MethodReference method, String fileName, List<String> expectedExceptions) {
+    public TestMethodBuilder(MethodReference method, String fileName, List<String> expectedExceptions,
+            String runner) {
         this.method = method;
         this.fileName = fileName;
         this.expectedExceptions = Collections.unmodifiableList(new ArrayList<>(expectedExceptions));
+        this.runner = runner;
     }
 
     public MethodReference getMethod() {
@@ -45,5 +48,9 @@ class TestMethodBuilder {
 
     public List<String> getExpectedExceptions() {
         return expectedExceptions;
+    }
+
+    public String getRunner() {
+        return runner;
     }
 }

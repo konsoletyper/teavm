@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,18 +15,10 @@
  */
 package org.teavm.testing;
 
-import org.teavm.model.MethodReader;
-
 /**
  *
  * @author Alexey Andreev
  */
-public interface TestAdapter {
-    boolean acceptClass(Class<?> cls);
-
-    boolean acceptMethod(MethodReader method);
-
-    Iterable<String> getExpectedExceptions(MethodReader method);
-
-    Class<? extends TestRunner> getRunner(MethodReader method);
+public interface TestRunner {
+    void run(TestLauncher launcher) throws Throwable;
 }

@@ -31,17 +31,20 @@ public class TestCase {
     private String testScript;
     private String debugTable;
     private List<String> expectedExceptions = new ArrayList<>();
+    private String runner;
 
     @JsonCreator
     public TestCase(
             @JsonProperty("testMethod") String testMethod,
             @JsonProperty("script") String testScript,
             @JsonProperty("debugTable") String debugTable,
-            @JsonProperty("expectedExceptions") List<String> expectedExceptions) {
+            @JsonProperty("expectedExceptions") List<String> expectedExceptions,
+            @JsonProperty("runner") String runner) {
         this.testMethod = testMethod;
         this.testScript = testScript;
         this.debugTable = debugTable;
         this.expectedExceptions = Collections.unmodifiableList(new ArrayList<>(expectedExceptions));
+        this.runner = runner;
     }
 
     @JsonGetter
@@ -62,5 +65,10 @@ public class TestCase {
     @JsonGetter
     public List<String> getExpectedExceptions() {
         return expectedExceptions;
+    }
+
+    @JsonGetter
+    public String getRunner() {
+        return runner;
     }
 }

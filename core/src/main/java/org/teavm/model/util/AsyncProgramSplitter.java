@@ -151,7 +151,7 @@ public class AsyncProgramSplitter {
             IntegerArray splitPoints = IntegerArray.of(part.splitPoints);
             AsyncProgramSplittingBackend splittingBackend = new AsyncProgramSplittingBackend(
                     new ProgramNodeSplittingBackend(part.program), blockSuccessors, originalBlocks, splitPoints);
-            Graph graph = ProgramUtils.buildControlFlowGraphWithTryCatch(part.program);
+            Graph graph = ProgramUtils.buildControlFlowGraph(part.program);
             int[] weights = new int[graph.size()];
             for (int i = 0; i < part.program.basicBlockCount(); ++i) {
                 weights[i] = part.program.basicBlockAt(i).getInstructions().size();

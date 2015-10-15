@@ -44,7 +44,6 @@ import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
 import org.teavm.model.PreOptimizingClassHolderSource;
 import org.teavm.model.ProgramCache;
-import org.teavm.model.ValueType;
 import org.teavm.parsing.ClasspathClassHolderSource;
 import org.teavm.testing.JUnitTestAdapter;
 import org.teavm.testing.TestAdapter;
@@ -362,12 +361,14 @@ public class TeaVMTestTool implements BaseTeaVMTool {
                     exceptions.add(exception);
                 }
 
-                TestMethodBuilder testMethod = new TestMethodBuilder(ref, fileName, exceptions);
+                String runner = adapter.getRunner(method).getName();
+
+                TestMethodBuilder testMethod = new TestMethodBuilder(ref, fileName, exceptions, runner);
                 testClass.getMethods().add(testMethod);
 
                 String debugTable = debugInformationGenerated ? testMethod.getFileName() + ".teavmdbg" : null;
                 cases.add(new TestCase(ref.toString(), testMethod.getFileName(), debugTable,
-                        testMethod.getExpectedExceptions()));
+                        testMethod.getExpectedExceptions(), runner));
                 ++testCount;
             }
         }
@@ -417,6 +418,7 @@ public class TeaVMTestTool implements BaseTeaVMTool {
         vm.setMinifying(minifying);
         vm.installPlugins();
         new TestExceptionPlugin().install(vm);
+        new TestEntryPointTransformer(testMethod.getRunner(), testMethod.getMethod()).install(vm);
         for (ClassHolderTransformer transformer : transformers) {
             vm.add(transformer);
         }
@@ -426,13 +428,10 @@ public class TeaVMTestTool implements BaseTeaVMTool {
                 ? new DebugInformationBuilder() : null;
         MethodReference methodRef = testMethod.getMethod();
         try (Writer innerWriter = new OutputStreamWriter(new FileOutputStream(file), "UTF-8")) {
-            MethodReference cons = new MethodReference(methodRef.getClassName(), "<init>", ValueType.VOID);
             MethodReference exceptionMsg = new MethodReference(ExceptionHelper.class, "showException",
                     Throwable.class, String.class);
-            vm.entryPoint("initInstance", cons);
-            vm.entryPoint("runTest", methodRef).withValue(0, cons.getClassName()).async();
+            vm.entryPoint("runTest", new MethodReference(TestEntryPoint.class, "run", void.class)).async();
             vm.entryPoint("extractException", exceptionMsg);
-            vm.exportType("TestClass", cons.getClassName());
             vm.setDebugEmitter(debugInfoBuilder);
             vm.build(innerWriter, new DirectoryBuildTarget(outputDir));
             innerWriter.append("\n");

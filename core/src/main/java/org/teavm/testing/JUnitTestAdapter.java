@@ -56,4 +56,9 @@ public class JUnitTestAdapter implements TestAdapter {
         }
         return Collections.emptyList();
     }
+
+    @Override
+    public Class<? extends TestRunner> getRunner(MethodReader method) {
+        return SimpleTestRunner.class;
+    }
 }

@@ -21,6 +21,7 @@ import java.util.Collections;
 import org.netbeans.html.json.tck.KOTest;
 import org.teavm.model.MethodReader;
 import org.teavm.testing.TestAdapter;
+import org.teavm.testing.TestRunner;
 
 /**
  *
@@ -47,5 +48,10 @@ public class KOTestAdapter implements TestAdapter {
     @Override
     public Iterable<String> getExpectedExceptions(MethodReader method) {
         return Collections.emptyList();
+    }
+
+    @Override
+    public Class<? extends TestRunner> getRunner(MethodReader method) {
+        return KOTestRunner.class;
     }
 }
