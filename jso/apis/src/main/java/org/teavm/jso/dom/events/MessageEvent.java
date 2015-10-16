@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,11 +16,20 @@
 package org.teavm.jso.dom.events;
 
 import org.teavm.jso.JSObject;
+import org.teavm.jso.JSProperty;
+import org.teavm.jso.typedarrays.ArrayBuffer;
 
 /**
  *
  * @author Alexey Andreev
  */
-public interface DocumentEvent extends JSObject {
-    Event createEvent(String eventType);
+public interface MessageEvent extends Event {
+    @JSProperty
+    JSObject getData();
+
+    @JSProperty("data")
+    String getDataAsString();
+
+    @JSProperty("data")
+    ArrayBuffer getDataAsArray();
 }

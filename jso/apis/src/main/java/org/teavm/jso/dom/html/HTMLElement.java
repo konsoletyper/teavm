@@ -19,14 +19,20 @@ import java.util.function.Consumer;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.css.ElementCSSInlineStyle;
 import org.teavm.jso.dom.events.EventTarget;
+import org.teavm.jso.dom.events.FocusEventTarget;
+import org.teavm.jso.dom.events.KeyboardEventTarget;
+import org.teavm.jso.dom.events.LoadEventTarget;
+import org.teavm.jso.dom.events.MouseEventTarget;
 import org.teavm.jso.dom.xml.Element;
+import org.teavm.jso.dom.xml.Node;
 import org.teavm.jso.dom.xml.NodeList;
 
 /**
  *
  * @author Alexey Andreev
  */
-public interface HTMLElement extends Element, ElementCSSInlineStyle, EventTarget {
+public interface HTMLElement extends Element, ElementCSSInlineStyle, EventTarget, FocusEventTarget, MouseEventTarget,
+        KeyboardEventTarget, LoadEventTarget {
     @Override
     @JSProperty
     NodeList<? extends HTMLElement> getElementsByTagName(String name);
@@ -120,14 +126,19 @@ public interface HTMLElement extends Element, ElementCSSInlineStyle, EventTarget
     default HTMLElement withChild(String tagName) {
         HTMLElement result = getOwnerDocument().createElement(tagName);
         appendChild(result);
-        return result;
+        return this;
+    }
+
+    default HTMLElement withChild(Node node) {
+        appendChild(node);
+        return this;
     }
 
     default HTMLElement withChild(String tagName, Consumer<HTMLElement> consumer) {
         HTMLElement result = getOwnerDocument().createElement(tagName);
         appendChild(result);
         consumer.accept(result);
-        return result;
+        return this;
     }
 
     default HTMLElement clear() {

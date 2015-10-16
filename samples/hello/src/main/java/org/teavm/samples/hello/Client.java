@@ -31,18 +31,14 @@ public final class Client {
     }
 
     public static void main(String[] args) {
-        helloButton.addEventListener("click", evt -> sayHello());
+        helloButton.listenClick(evt -> sayHello());
     }
 
     private static void sayHello() {
         helloButton.setDisabled(true);
         thinkingPanel.getStyle().setProperty("display", "");
         XMLHttpRequest xhr = XMLHttpRequest.create();
-        xhr.setOnReadyStateChange(() -> {
-            if (xhr.getReadyState() == XMLHttpRequest.DONE) {
-                receiveResponse(xhr.getResponseText());
-            }
-        });
+        xhr.onComplete(() -> receiveResponse(xhr.getResponseText()));
         xhr.open("GET", "hello");
         xhr.send();
     }

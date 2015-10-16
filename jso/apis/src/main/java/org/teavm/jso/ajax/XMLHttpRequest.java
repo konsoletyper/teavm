@@ -56,6 +56,14 @@ public abstract class XMLHttpRequest implements JSObject {
     @JSProperty("onreadystatechange")
     public abstract void setOnReadyStateChange(ReadyStateChangeHandler handler);
 
+    public final void onComplete(Runnable runnable) {
+        setOnReadyStateChange(() -> {
+            if (getReadyState() == DONE) {
+                runnable.run();
+            }
+        });
+    }
+
     public abstract void overrideMimeType(String mimeType);
 
     @JSProperty

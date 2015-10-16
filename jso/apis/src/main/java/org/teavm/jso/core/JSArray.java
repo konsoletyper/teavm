@@ -88,4 +88,13 @@ public abstract class JSArray<T extends JSObject> implements JSArrayReader<T> {
 
     @JSBody(params = "size", script = "return new Array(size);")
     public static native <T extends JSObject> JSArray<T> create(int size);
+
+    @SafeVarargs
+    public static <S extends JSObject> JSArray<S> of(S... items) {
+        JSArray<S> array = create(items.length);
+        for (int i = 0; i < items.length; ++i) {
+            array.set(i, items[i]);
+        }
+        return array;
+    }
 }

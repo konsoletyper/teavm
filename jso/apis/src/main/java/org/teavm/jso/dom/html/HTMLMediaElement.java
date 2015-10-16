@@ -83,6 +83,10 @@ public interface HTMLMediaElement extends HTMLElement {
     @JSProperty
     void setCurrentTime(double currentTime);
 
+    default void addCurrentTime(double delta) {
+        setCurrentTime(getCurrentTime() + delta);
+    }
+
     @JSProperty
     double getDuration();
 
@@ -103,6 +107,10 @@ public interface HTMLMediaElement extends HTMLElement {
 
     @JSProperty
     void setPlaybackRate(double playbackRate);
+
+    default void addPlaybackRate(double delta) {
+        setPlaybackRate(getPlaybackRate() + delta);
+    }
 
     @JSProperty
     TimeRanges getPlayed();
@@ -148,6 +156,10 @@ public interface HTMLMediaElement extends HTMLElement {
 
     @JSProperty
     void setVolume(float volume);
+
+    default void addVolume(float delta) {
+        setVolume(getVolume() + delta);
+    }
 
     @JSProperty
     boolean isMuted();
