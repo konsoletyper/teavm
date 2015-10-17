@@ -19,6 +19,7 @@ import org.teavm.jso.dom.events.Event;
 import org.teavm.jso.dom.events.EventListener;
 import org.teavm.jso.dom.events.EventTarget;
 import org.teavm.jso.dom.events.FocusEventTarget;
+import org.teavm.jso.dom.events.HashChangeEvent;
 import org.teavm.jso.dom.events.KeyboardEventTarget;
 import org.teavm.jso.dom.events.LoadEventTarget;
 import org.teavm.jso.dom.events.MessageEvent;
@@ -44,5 +45,13 @@ public interface WindowEventTarget extends EventTarget, FocusEventTarget, MouseE
 
     default void neglectMessage(EventListener<MessageEvent> listener) {
         removeEventListener("message", listener);
+    }
+
+    default void listenHashChange(EventListener<HashChangeEvent> listener) {
+        addEventListener("hashchange", listener);
+    }
+
+    default void neglectHashChange(EventListener<HashChangeEvent> listener) {
+        removeEventListener("hashchange", listener);
     }
 }
