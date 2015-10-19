@@ -56,6 +56,8 @@ public class TObject {
         }
         if (o.monitor.owner == null) {
             o.monitor.owner = TThread.currentThread();
+        } else if (o.monitor.owner != TThread.currentThread()) {
+            throw new IllegalStateException("Can't enter monitor from another thread synchronously");
         }
         o.monitor.count++;
     }
@@ -64,7 +66,9 @@ public class TObject {
         if (o.isEmptyMonitor() || o.monitor.owner != TThread.currentThread()) {
             throw new TIllegalMonitorStateException();
         }
-        --o.monitor.count;
+        if (--o.monitor.count == 0) {
+            o.monitor.owner = null;
+        }
         o.isEmptyMonitor();
     }
 
