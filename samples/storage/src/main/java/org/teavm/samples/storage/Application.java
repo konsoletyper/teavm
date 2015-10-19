@@ -39,7 +39,7 @@ public final class Application {
         }
 
         HTMLButtonElement saveButton = document.getElementById("save-button").cast();
-        saveButton.addEventListener("click", e -> {
+        saveButton.listenClick(e -> {
             String key = document.getElementById("key").<HTMLInputElement>cast().getValue();
             String value = document.getElementById("value").<HTMLInputElement>cast().getValue();
 
@@ -49,7 +49,7 @@ public final class Application {
             }
         });
         HTMLButtonElement deleteButton = document.getElementById("delete-button").cast();
-        deleteButton.addEventListener("click", e -> {
+        deleteButton.listenClick(e -> {
             String key = document.getElementById("key").<HTMLInputElement>cast().getValue();
             if (key != null && key.length() > 0) {
                 storage.removeItem(key);
@@ -57,7 +57,7 @@ public final class Application {
             }
         });
         HTMLButtonElement deleteAllButton = document.getElementById("delete-all-button").cast();
-        deleteAllButton.addEventListener("click", e -> {
+        deleteAllButton.listenClick(e -> {
             storage.clear();
             draw();
         });
@@ -75,15 +75,9 @@ public final class Application {
             String key = storage.key(i);
             String value = storage.getItem(key);
 
-            HTMLElement tdKey = document.createElement("td");
-            tdKey.appendChild(document.createTextNode(key));
-
-            HTMLElement tdValue = document.createElement("td");
-            tdValue.appendChild(document.createTextNode(value));
-
-            HTMLElement tr = document.createElement("tr");
-            tr.appendChild(tdKey);
-            tr.appendChild(tdValue);
+            HTMLElement tdKey = document.createElement("td").withText(key);
+            HTMLElement tdValue = document.createElement("td").withText(value);
+            HTMLElement tr = document.createElement("tr").withChild(tdKey).withChild(tdValue);
 
             tbody.appendChild(tr);
         }

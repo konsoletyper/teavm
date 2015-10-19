@@ -14,7 +14,7 @@ object Client {
     var exprElem = doc.getElementById("expr").asInstanceOf[HTMLInputElement]
     var calcElem = doc.getElementById("calculate")
     var resultList = doc.getElementById("result-list");
-    calcElem.addEventListener("click", (e : MouseEvent) => {
+    calcElem.listenClick((e : MouseEvent) => {
        parse(exprElem.getValue().toSeq) match {
          case (None, _) => Window.alert("Error parsing expression");
          case (Some(x), Nil) => {
