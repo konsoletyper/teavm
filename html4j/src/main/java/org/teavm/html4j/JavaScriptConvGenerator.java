@@ -138,7 +138,7 @@ public class JavaScriptConvGenerator implements Generator {
         writer.outdent().append("} else if (" + type + " === ").appendClass("java.lang.Character")
                 .append(") {").indent().softNewLine();
         writer.append("return ").appendMethodBody(valueOfCharMethod).append("(typeof " + obj + " === 'number' ? "
-                + obj + "0xFFFF : " + obj + ".charCodeAt(0));").softNewLine();
+                + obj + " & 0xFFFF : " + obj + ".charCodeAt(0));").softNewLine();
 
         writer.outdent().append("} else if (" + type + " === ").appendClass("java.lang.Byte")
                 .append(") {").indent().softNewLine();
@@ -186,7 +186,7 @@ public class JavaScriptConvGenerator implements Generator {
         writer.append("return $rt_str(" + obj + ");").softNewLine();
 
         writer.outdent().append("} else if (typeof " + obj + " === 'number') {").indent().softNewLine();
-        writer.append("if (" + obj + "|0 === " + obj + ") {").indent().softNewLine();
+        writer.append("if ((" + obj + "|0) === " + obj + ") {").indent().softNewLine();
         writer.append("return ").appendMethodBody(valueOfIntMethod).append("(" + obj + ");").softNewLine();
         writer.outdent().append("} else {").indent().softNewLine();
         writer.append("return ").appendMethodBody(valueOfDoubleMethod).append("(" + obj + ");").softNewLine();

@@ -93,7 +93,7 @@ public abstract class Window implements JSObject, WindowEventTarget, StorageProv
         return prompt(message, "");
     }
 
-    @JSBody(params = { "message", "default" }, script = "prompt(message, default);")
+    @JSBody(params = { "message", "defaultValue" }, script = "prompt(message, defaultValue);")
     public static native String prompt(String message, String defaultValue);
 
     @JSBody(params = { "handler", "delay" }, script = "return setTimeout(handler, delay);")

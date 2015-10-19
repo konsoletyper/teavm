@@ -72,18 +72,8 @@ public class AsyncMethodFinder {
                     if (asyncMethods.contains(method.getReference()) || method.getProgram() == null) {
                         continue;
                     }
-                    if (method.hasModifier(ElementModifier.SYNCHRONIZED)) {
+                    if (hasMonitor(method)) {
                         add(method.getReference());
-                        continue;
-                    }
-                    ProgramReader program = method.getProgram();
-                    AsyncInstructionReader insnReader = new AsyncInstructionReader();
-                    for (int i = 0; i < program.basicBlockCount(); ++i) {
-                        program.basicBlockAt(i).readAllInstructions(insnReader);
-                        if (insnReader.async) {
-                            add(method.getReference());
-                            break;
-                        }
                     }
                 }
             }
@@ -105,21 +95,36 @@ public class AsyncMethodFinder {
     }
 
     private boolean hasAsyncMethods() {
-        int count = asyncMethods.size();
-        if (asyncMethods.contains(new MethodReference(Object.class, "monitorEnter", Object.class, void.class))) {
-            --count;
-        }
-        if (asyncMethods.contains(new MethodReference(Object.class, "monitorEnter", Object.class,
-                int.class, void.class))) {
-            --count;
-        }
-        if (asyncMethods.contains(new MethodReference(Object.class, "monitorEnterWait", Object.class,
-                int.class, void.class))) {
-            --count;
+        boolean result = false;
+        loop: for (String clsName : classSource.getClassNames()) {
+            ClassReader cls = classSource.get(clsName);
+            for (MethodReader method : cls.getMethods()) {
+                if (!asyncMethods.contains(method.getReference()) || method.getProgram() == null) {
+                    continue;
+                }
+                if (hasMonitor(method)) {
+                    break loop;
+                }
+            }
         }
         ClassReader cls = classSource.get("java.lang.Thread");
         MethodReader method = cls != null ? cls.getMethod(new MethodDescriptor("start", void.class)) : null;
-        return count > 0 && method != null;
+        return result && method != null;
+    }
+
+    private boolean hasMonitor(MethodReader method) {
+        if (method.hasModifier(ElementModifier.SYNCHRONIZED)) {
+            return true;
+        }
+        ProgramReader program = method.getProgram();
+        AsyncInstructionReader insnReader = new AsyncInstructionReader();
+        for (int i = 0; i < program.basicBlockCount(); ++i) {
+            program.basicBlockAt(i).readAllInstructions(insnReader);
+            if (insnReader.async) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void add(MethodReference methodRef) {
