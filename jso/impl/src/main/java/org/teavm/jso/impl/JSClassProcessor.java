@@ -29,6 +29,7 @@ import org.mozilla.javascript.CompilerEnvirons;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ast.AstNode;
 import org.mozilla.javascript.ast.AstRoot;
+import org.mozilla.javascript.ast.FunctionNode;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.javascript.spi.GeneratedBy;
 import org.teavm.javascript.spi.InjectedBy;
@@ -562,14 +563,15 @@ class JSClassProcessor {
         env.setLanguageVersion(Context.VERSION_1_8);
         env.setIdeMode(true);
         JSParser parser = new JSParser(env, errorReporter);
-        parser.enterFunction();
+        //parser.enterFunction();
         AstRoot rootNode;
         try {
-            rootNode = parser.parse(new StringReader(script), null, 0);
+            rootNode = parser.parse(new StringReader("function(){" + script + "}"), null, 0);
         } catch (IOException e) {
             throw new RuntimeException("IO Error occured", e);
         }
-        parser.exitFunction();
+        AstNode body = ((FunctionNode) rootNode.getFirstChild()).getBody();
+        //parser.exitFunction();
 
         repository.methodMap.put(methodToProcess.getReference(), proxyMethod);
         if (errorReporter.hasErrors()) {
@@ -577,11 +579,11 @@ class JSClassProcessor {
                     script, parameterNames));
         } else {
             AstNode expr = JSBodyInlineUtil.isSuitableForInlining(methodToProcess.getReference(),
-                    parameterNames, rootNode);
+                    parameterNames, body);
             if (expr != null) {
                 repository.inlineMethods.add(methodToProcess.getReference());
             } else {
-                expr = rootNode;
+                expr = body;
             }
             javaInvocationProcessor.process(location, expr);
             repository.emitters.put(proxyMethod, new JSBodyAstEmitter(isStatic, expr, parameterNames));

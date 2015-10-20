@@ -29,6 +29,7 @@ import org.netbeans.html.context.spi.Contexts;
 import org.netbeans.html.json.spi.JSONCall;
 import org.netbeans.html.json.spi.Technology;
 import org.netbeans.html.json.spi.Transfer;
+import org.netbeans.html.json.spi.WSTransfer;
 import org.netbeans.html.json.tck.KnockoutTCK;
 import org.netbeans.html.ko4j.KO4J;
 import org.teavm.jso.JSBody;
@@ -43,23 +44,24 @@ import org.testng.Assert;
  *
  * @author Jaroslav Tulach <jtulach@netbeans.org>
  */
-public final class KnockoutFXTest extends KnockoutTCK implements Transfer {
+public final class KnockoutFXTest extends KnockoutTCK implements Transfer, WSTransfer<WSImpl> {
     private static Class<?> browserClass;
     private static Fn.Presenter browserContext;
     private KO4J ko4j = new KO4J();
     private final Map<String, Request> urlMap = new HashMap<>();
+    private final Map<String, WSImpl> wsUrlMap = new HashMap<>();
 
     public KnockoutFXTest() {
     }
 
-    static synchronized ClassLoader getClassLoader() throws InterruptedException {
+    static ClassLoader getClassLoader() throws InterruptedException {
         while (browserClass == null) {
             KnockoutFXTest.class.wait();
         }
         return browserClass.getClassLoader();
     }
 
-    public static synchronized void initialized(Class<?> browserCls) throws Exception {
+    public static void initialized(Class<?> browserCls) throws Exception {
         browserClass = browserCls;
         browserContext = Fn.activePresenter();
         KnockoutFXTest.class.notifyAll();
@@ -81,6 +83,7 @@ public final class KnockoutFXTest extends KnockoutTCK implements Transfer {
         return Contexts.newBuilder()
                 .register(Transfer.class, this, 1)
                 .register(Technology.class, ko4j.knockout(), 1)
+                .register(WSTransfer.class, this, 1)
                 .build();
     }
 
@@ -105,21 +108,24 @@ public final class KnockoutFXTest extends KnockoutTCK implements Transfer {
     )
     public native Object executeScript(String s, Object[] args);
 
-    @JavaScriptBody(args = {  }, body =
-          "var h;" +
-          "if (!!window && !!window.location && !!window.location.href)\n" +
-          "  h = window.location.href;\n" +
-          "else " +
-          "  h = null;" +
-         "return h;\n")
-    private static native String findBaseURL();
-
     @Override
     public URI prepareURL(String content, String mimeType, String[] parameters) {
         try {
+            boolean isWS = false;
+            for (String param : parameters) {
+                if (param.equals("protocol:ws")) {
+                    isWS = true;
+                    break;
+                }
+            }
             String url = "http://localhost/dynamic/" + urlMap.size();
-            urlMap.put(url, new Request(content, mimeType, parameters));
-            return new URI(url);
+            if (!isWS) {
+                urlMap.put(url, new Request(content, mimeType, parameters));
+                return new URI(url);
+            } else {
+                wsUrlMap.put(url, new WSImpl(url, content));
+                return new URI(url);
+            }
         } catch (URISyntaxException ex) {
             throw new IllegalStateException(ex);
         }
@@ -224,6 +230,43 @@ public final class KnockoutFXTest extends KnockoutTCK implements Transfer {
         });
     }
 
+    @Override
+    public WSImpl open(String url, JSONCall callback) {
+        WSImpl impl = wsUrlMap.get(url);
+        if (impl != null) {
+            impl.callback = callback;
+            callback.notifySuccess(null);
+        } else {
+            callback.notifyError(null);
+        }
+        return impl;
+    }
+
+    @Override
+    public void send(WSImpl socket, JSONCall data) {
+        String content = socket.content;
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < content.length(); i++) {
+            if (content.charAt(i) == '$') {
+                int digit = content.charAt(++i) - '0';
+                if (digit == 0) {
+                    sb.append(data.getMessage());
+                } else {
+                    sb.append('$').append(content.charAt(i));
+                }
+            } else {
+                sb.append(content.charAt(i));
+            }
+        }
+        socket.callback.notifySuccess(eval("(" + sb + ")"));
+    }
+
+    @Override
+    public void close(WSImpl socket) {
+        wsUrlMap.remove(socket.url);
+        socket.callback.notifyError(null);
+    }
+
     @JSBody(params = { "name", "callback" }, script = "window[name] = callback;")
     private static native void defineFunction(String name, JSONPCallback callback);
 
@@ -234,6 +277,9 @@ public final class KnockoutFXTest extends KnockoutTCK implements Transfer {
     static interface JSONPCallback extends JSObject {
         void dataReceived(JSObject dataReceived);
     }
+
+    @JSBody(params = "text", script = "return eval(text);")
+    private static native JSObject eval(String text);
 
     private static final class Request {
         final String content;

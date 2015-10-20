@@ -19,7 +19,6 @@ import java.util.HashMap;
 import java.util.Map;
 import org.mozilla.javascript.Token;
 import org.mozilla.javascript.ast.AstNode;
-import org.mozilla.javascript.ast.AstRoot;
 import org.mozilla.javascript.ast.ExpressionStatement;
 import org.mozilla.javascript.ast.Name;
 import org.mozilla.javascript.ast.NodeVisitor;
@@ -37,7 +36,7 @@ final class JSBodyInlineUtil {
     private JSBodyInlineUtil() {
     }
 
-    public static AstNode isSuitableForInlining(MethodReference method, String[] parameters, AstRoot ast) {
+    public static AstNode isSuitableForInlining(MethodReference method, String[] parameters, AstNode ast) {
         AstNode statement = isSingleStatement(ast);
         if (statement == null) {
             return null;
