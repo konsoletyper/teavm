@@ -29,6 +29,7 @@ import org.teavm.model.AnnotationValue;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
@@ -145,6 +146,9 @@ class JSDependencyListener extends AbstractDependencyListener {
             if (addInterface(exposedCls, iface)) {
                 added = true;
                 for (MethodReader method : iface.getMethods()) {
+                    if (method.hasModifier(ElementModifier.STATIC)) {
+                        continue;
+                    }
                     if (!exposedCls.inheritedMethods.containsKey(method.getDescriptor())) {
                         String name = method.getName();
                         AnnotationReader methodAnnot = method.getAnnotations().get(JSMethod.class.getName());

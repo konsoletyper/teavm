@@ -36,30 +36,21 @@ public final class AsyncProgram {
 
         report("");
         final Object lock = new Object();
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    doRun(lock);
-                } catch (InterruptedException ex) {
-                    report("Exception caught: " + ex.getMessage());
-                }
+        new Thread(() -> {
+            try {
+                doRun(lock);
+            } catch (InterruptedException ex) {
+                report("Exception caught: " + ex.getMessage());
             }
+        }, "Test Thread").start();
 
-        }, "Test Thread");
-        t.start();
-
-        Thread t2 = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    doRun(lock);
-                } catch (InterruptedException ex) {
-                    report("Exception caught: " + ex.getMessage());
-                }
+        new Thread(() -> {
+            try {
+                doRun(lock);
+            } catch (InterruptedException ex) {
+                report("Exception caught: " + ex.getMessage());
             }
-        }, "Test Thread 2");
-        t2.start();
+        }, "Test Thread 2").start();
 
         report("Should be main");
         report("Now trying wait...");

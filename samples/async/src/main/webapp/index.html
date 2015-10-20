@@ -33,7 +33,7 @@
   </head>
   <body onload="runAll()">
     <div id="description">This application shows how TeaVM can handle multiple threads and synchronization primitives
-    (see <a href="https://github.com/konsoletyper/teavm/tree/master/teavm-samples/teavm-samples-async">source code on GitHub</a>).</div>
+    (see <a href="https://github.com/konsoletyper/teavm/tree/master/samples/async">source code on GitHub</a>).</div>
 
     <div id="blocks">
       <div class="block" id="stdout-wrapper">
@@ -59,30 +59,21 @@ public final class AsyncProgram {
 
         report("");
         final Object lock = new Object();
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    doRun(lock);
-                } catch (InterruptedException ex) {
-                    report("Exception caught: " + ex.getMessage());
-                }
+        new Thread(() -> {
+            try {
+                doRun(lock);
+            } catch (InterruptedException ex) {
+                report("Exception caught: " + ex.getMessage());
             }
+        }, "Test Thread").start();
 
-        }, "Test Thread");
-        t.start();
-
-        Thread t2 = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    doRun(lock);
-                } catch (InterruptedException ex) {
-                    report("Exception caught: " + ex.getMessage());
-                }
+        new Thread(() -> {
+            try {
+                doRun(lock);
+            } catch (InterruptedException ex) {
+                report("Exception caught: " + ex.getMessage());
             }
-        }, "Test Thread 2");
-        t2.start();
+        }, "Test Thread 2").start();
 
         report("Should be main");
         report("Now trying wait...");
@@ -99,18 +90,18 @@ public final class AsyncProgram {
         boolean[] prime = new boolean[1000];
         prime[2] = true;
         prime[3] = true;
-        nextPrime: for (int i = 5; i &lt; prime.length; i += 2) {
-            int maxPrime = (int)Math.sqrt(i);
-            for (int j = 3; j &lt;= maxPrime; j += 2) {
+        nextPrime: for (int i = 5; i < prime.length; i += 2) {
+            int maxPrime = (int) Math.sqrt(i);
+            for (int j = 3; j <= maxPrime; j += 2) {
                 Thread.yield();
-                if (prime[j] &amp;&amp; i % j == 0) {
+                if (prime[j] && i % j == 0) {
                     continue nextPrime;
                 }
             }
             prime[i] = true;
         }
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i &lt; 1000; ++i) {
+        for (int i = 0; i < 1000; ++i) {
             if (prime[i]) {
                 sb.append(i).append(' ');
             }
@@ -144,9 +135,9 @@ public final class AsyncProgram {
 
     private static void withoutAsync() {
         report("Start sync");
-        for (int i = 0; i &lt; 20; ++i) {
+        for (int i = 0; i < 20; ++i) {
             StringBuilder sb = new StringBuilder();
-            for (int j = 0; j &lt;= i; ++j) {
+            for (int j = 0; j <= i; ++j) {
                 sb.append(j);
                 sb.append(' ');
             }
@@ -157,9 +148,9 @@ public final class AsyncProgram {
 
     private static void withAsync() throws InterruptedException {
         report("Start async");
-        for (int i = 0; i &lt; 20; ++i) {
+        for (int i = 0; i < 20; ++i) {
             StringBuilder sb = new StringBuilder();
-            for (int j = 0; j &lt;= i; ++j) {
+            for (int j = 0; j <= i; ++j) {
                 sb.append(j);
                 sb.append(' ');
             }
@@ -187,6 +178,7 @@ public final class AsyncProgram {
         throw new IllegalStateException();
     }
 }
+
 </pre>
 
       </div>
