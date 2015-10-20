@@ -56,15 +56,17 @@ public class SeleniumRunStrategy implements TestRunStrategy {
     @Override
     public void afterThread() {
         webDriver.get().close();
+        webDriver.get().quit();
         webDriver.remove();
     }
 
     @Override
     public String runTest(Log log, String runtimeScript, TestCase testCase) throws IOException {
         commandsSent.set(commandsSent.get() + 1);
-        if (commandsSent.get().equals(100)) {
+        if (commandsSent.get().equals(20)) {
             commandsSent.set(0);
             webDriver.get().close();
+            webDriver.get().quit();
             webDriver.set(new RemoteWebDriver(url, DesiredCapabilities.firefox()));
         }
 
