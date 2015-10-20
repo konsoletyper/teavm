@@ -154,4 +154,16 @@ public abstract class Window implements JSObject, WindowEventTarget, StorageProv
 
     @JSBody(params = {}, script = "return window;")
     public static native Window current();
+
+    @JSBody(params = "uri", script = "return encodeURI(uri);")
+    public static native String encodeURI(String uri);
+
+    @JSBody(params = "uri", script = "return encodeURIComponent(uri);")
+    public static native String encodeURIComponent(String uri);
+
+    @JSBody(params = "uri", script = "return decodeURI(uri);")
+    public static native String decodeURI(String uri);
+
+    @JSBody(params = "uri", script = "return decodeURIComponent(uri);")
+    public static native String decodeURIComponent(String uri);
 }

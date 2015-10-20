@@ -31,6 +31,12 @@ import org.netbeans.html.json.spi.Technology;
 import org.netbeans.html.json.spi.Transfer;
 import org.netbeans.html.json.tck.KnockoutTCK;
 import org.netbeans.html.ko4j.KO4J;
+import org.teavm.jso.JSBody;
+import org.teavm.jso.JSFunctor;
+import org.teavm.jso.JSObject;
+import org.teavm.jso.browser.Window;
+import org.teavm.jso.dom.html.HTMLDocument;
+import org.teavm.jso.dom.html.HTMLElement;
 import org.testng.Assert;
 
 /**
@@ -136,10 +142,30 @@ public final class KnockoutFXTest extends KnockoutTCK implements Transfer {
 
     @Override
     public void loadJSON(JSONCall call) {
-        if (call.isJSONP()) {
-            throw new IllegalArgumentException("This mock does not support JSONP calls");
+        String callback = call.isJSONP() ? "jsonpTest" + urlMap.size() : null;
+        String url = call.composeURL(call.isJSONP() ? callback : null);
+        if (callback != null) {
+            defineCallback(callback, call);
         }
-        String url = call.composeURL(null);
+
+        int paramsIndex = url.indexOf('?');
+        Map<String, String> parameters = new HashMap<>();
+        if (paramsIndex >= 0) {
+            int current = paramsIndex + 1;
+            while (current < url.length()) {
+                int next = url.indexOf('&', current);
+                if (next == -1) {
+                    next = url.length();
+                }
+                int eq = url.indexOf('=', current);
+                String key = url.substring(current, eq);
+                String value = url.substring(eq + 1, next);
+                parameters.put(Window.decodeURI(key), Window.decodeURI(value));
+                current = next + 1;
+            }
+            url = url.substring(0, paramsIndex);
+        }
+
         Request data = urlMap.get(url);
         if (data != null) {
             String content = data.content;
@@ -157,27 +183,56 @@ public final class KnockoutFXTest extends KnockoutTCK implements Transfer {
                     if (line >= 0 && end > line) {
                         value = call.getHeaders().substring(line + header.length() + 1, end).trim();
                     }
-                }
-                if (value.equals("http.method")) {
+                } else if (value.equals("http.method")) {
                     value = call.getMethod();
-                }
-                if (value.equals("http.requestBody")) {
+                } else if (value.equals("http.requestBody")) {
                     value = call.getMessage();
+                } else {
+                    value = parameters.get(value);
                 }
                 content = content.substring(0, at) + value + content.substring(at + find.length());
             }
-            try {
-                if (data.mimeType.equals("text/plain")) {
-                    call.notifySuccess(content);
-                } else {
-                    call.notifySuccess(toJSON(new ByteArrayInputStream(content.getBytes())));
+
+            if (call.isJSONP()) {
+                String scriptContent = content;
+                HTMLElement script = HTMLDocument.current().createElement("script")
+                        .withText(scriptContent)
+                        .withAttr("id", "jsonp-" + callback)
+                        .withAttr("type", "text/javascript");
+                HTMLDocument.current().getBody().appendChild(script);
+            } else {
+                try {
+                    if (data.mimeType.equals("text/plain")) {
+                        call.notifySuccess(content);
+                    } else {
+                        call.notifySuccess(toJSON(new ByteArrayInputStream(content.getBytes())));
+                    }
+                } catch (IOException e) {
+                    call.notifyError(e);
                 }
-            } catch (IOException e) {
-                call.notifyError(e);
             }
         } else {
             call.notifyError(new IllegalStateException());
         }
+    }
+
+    private static void defineCallback(String name, JSONCall call) {
+        defineFunction(name, data -> {
+            removeFunction(name);
+            HTMLDocument.current().getElementById("jsonp-" + name).delete();
+            call.notifySuccess(call);
+        });
+    }
+
+    @JSBody(params = { "name", "callback" }, script = "window[name] = callback;")
+    private static native void defineFunction(String name, JSONPCallback callback);
+
+    @JSBody(params = "name", script = "delete window[name];")
+    private static native void removeFunction(String name);
+
+    @JSFunctor
+    static interface JSONPCallback extends JSObject {
+        void dataReceived(JSObject dataReceived);
     }
 
     private static final class Request {

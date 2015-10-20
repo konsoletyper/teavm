@@ -142,8 +142,13 @@ public interface HTMLElement extends Element, ElementCSSInlineStyle, EventTarget
     }
 
     default HTMLElement clear() {
-        while (getLastChild() != null) {
-            removeChild(getLastChild());
+        Node node = getLastChild();
+        while (node != null) {
+            Node prev = node.getPreviousSibling();
+            if (node.getNodeType() != ATTRIBUTE_NODE) {
+                removeChild(node);
+            }
+            node = prev;
         }
         return this;
     }

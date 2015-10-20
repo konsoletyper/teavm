@@ -256,6 +256,11 @@ public class AstWriterTest {
         assertThat(transform("return a - (b + c);"), is("return a-(b+c);"));
     }
 
+    @Test
+    public void writesDelete() throws IOException {
+        assertThat(transform("delete a.b;"), is("delete a.b;"));
+    }
+
     private String transform(String text) throws IOException {
         sb.setLength(0);
         CompilerEnvirons env = new CompilerEnvirons();

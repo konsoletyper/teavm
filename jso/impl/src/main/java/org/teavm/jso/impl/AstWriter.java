@@ -871,6 +871,7 @@ public class AstWriter {
             case Token.INSTANCEOF:
             case Token.VOID:
             case Token.DEL_REF:
+            case Token.DELPROP:
                 return true;
             default:
                 return false;
