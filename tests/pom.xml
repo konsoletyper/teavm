@@ -27,13 +27,6 @@
   <name>TeaVM tests</name>
   <description>Project containing TeaVM tests, as it is impossible to test each module separately</description>
 
-  <properties>
-    <teavm.test.incremental>false</teavm.test.incremental>
-    <teavm.test.threads>1</teavm.test.threads>
-    <teavm.test.selenium></teavm.test.selenium>
-    <teavm.test.skip>true</teavm.test.skip>
-  </properties>
-
   <dependencies>
     <dependency>
       <groupId>org.teavm</groupId>

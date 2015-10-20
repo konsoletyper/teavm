@@ -104,6 +104,30 @@
               </excludeWildcards>
             </configuration>
           </execution>
+          <execution>
+            <id>run-javascript-tests</id>
+            <goals>
+              <goal>test</goal>
+            </goals>
+            <configuration>
+              <skip>${teavm.test.skip}</skip>
+              <numThreads>${teavm.test.threads}</numThreads>
+              <seleniumURL>${teavm.test.selenium}</seleniumURL>
+            </configuration>
+          </execution>
+          <execution>
+            <id>run-javascript-tck</id>
+            <goals>
+              <goal>test</goal>
+            </goals>
+            <configuration>
+              <testDirectory>${project.build.directory}/javascript-tck</testDirectory>
+              <reportFile>${project.build.directory}/teavm-tck-report.json</reportFile>
+              <skip>${teavm.test.skip}</skip>
+              <numThreads>${teavm.test.threads}</numThreads>
+              <seleniumURL>${teavm.test.selenium}</seleniumURL>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
       <plugin>
