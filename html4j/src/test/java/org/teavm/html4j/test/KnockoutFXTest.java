@@ -220,7 +220,7 @@ public final class KnockoutFXTest extends KnockoutTCK implements Transfer {
         defineFunction(name, data -> {
             removeFunction(name);
             HTMLDocument.current().getElementById("jsonp-" + name).delete();
-            call.notifySuccess(call);
+            call.notifySuccess(data);
         });
     }
 
