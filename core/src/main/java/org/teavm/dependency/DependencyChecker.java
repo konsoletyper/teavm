@@ -166,34 +166,46 @@ public class DependencyChecker implements DependencyInfo {
 
     public void submitMethod(MethodReference methodRef, Program program) {
         if (!completing) {
-            throw new IllegalStateException("Can't submit class during check phase");
-        }
+            ClassHolder cls = classSource.get(methodRef.getClassName());
 
-        MethodDependency dep = getMethod(methodRef);
-        if (dep == null) {
-            throw new IllegalArgumentException("Method was not reached: " + methodRef);
-        }
-        MethodHolder method = dep.method;
+            if (cls == null) {
+                throw new IllegalArgumentException("Class not found: " + methodRef.getClassName());
+            }
+            if (cls.getMethod(methodRef.getDescriptor()) != null) {
+                throw new IllegalArgumentException("Method already exists: " + methodRef.getClassName());
+            }
+            MethodHolder method = new MethodHolder(methodRef.getDescriptor());
+            method.getModifiers().add(ElementModifier.STATIC);
+            method.setProgram(ProgramUtils.copy(program));
+            new UnreachableBasicBlockEliminator().optimize(program);
+            cls.addMethod(method);
+        } else {
+            MethodDependency dep = getMethod(methodRef);
+            if (dep == null) {
+                throw new IllegalArgumentException("Method was not reached: " + methodRef);
+            }
+            MethodHolder method = dep.method;
 
-        if (!method.hasModifier(ElementModifier.NATIVE)) {
-            throw new IllegalArgumentException("Method is not native: " + methodRef);
-        }
-        if (!dep.used) {
-            return;
-        }
-        method.getModifiers().remove(ElementModifier.NATIVE);
-        method.setProgram(ProgramUtils.copy(program));
-        new UnreachableBasicBlockEliminator().optimize(method.getProgram());
+            if (!method.hasModifier(ElementModifier.NATIVE)) {
+                throw new IllegalArgumentException("Method is not native: " + methodRef);
+            }
+            if (!dep.used) {
+                return;
+            }
+            method.getModifiers().remove(ElementModifier.NATIVE);
+            method.setProgram(ProgramUtils.copy(program));
+            new UnreachableBasicBlockEliminator().optimize(method.getProgram());
 
-        dep.used = false;
-        lock(dep, false);
-        tasks.add(() -> {
-            DependencyGraphBuilder graphBuilder = new DependencyGraphBuilder(DependencyChecker.this);
-            graphBuilder.buildGraph(dep);
-            dep.used = true;
-        });
+            dep.used = false;
+            lock(dep, false);
+            tasks.add(() -> {
+                DependencyGraphBuilder graphBuilder = new DependencyGraphBuilder(DependencyChecker.this);
+                graphBuilder.buildGraph(dep);
+                dep.used = true;
+            });
 
-        processQueue();
+            processQueue();
+        }
     }
 
     public void addDependencyListener(DependencyListener listener) {
