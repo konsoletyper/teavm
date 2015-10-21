@@ -98,7 +98,7 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin {
     }
 
     @Override
-    public void methodAchieved(DependencyAgent checker, MethodDependency method, CallLocation location) {
+    public void methodReached(DependencyAgent checker, MethodDependency method, CallLocation location) {
         MethodReference ref = method.getReference();
         MethodReference asyncRef = getAsyncReference(ref);
         MethodDependency asyncMethod = checker.linkMethod(asyncRef, location);

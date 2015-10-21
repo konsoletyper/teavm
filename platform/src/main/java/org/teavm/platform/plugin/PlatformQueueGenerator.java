@@ -32,7 +32,7 @@ import org.teavm.platform.PlatformQueue;
  */
 public class PlatformQueueGenerator implements Injector, DependencyPlugin {
     @Override
-    public void methodAchieved(DependencyAgent agent, MethodDependency method, CallLocation location) {
+    public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
         MethodDependency addMethod = agent.linkMethod(new MethodReference(PlatformQueue.class, "wrap",
                 Object.class, PlatformObject.class), null);
         addMethod.getVariable(1).connect(method.getResult());

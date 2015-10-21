@@ -1525,10 +1525,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 case NEGATE:
                     if (outerPrecedence.ordinal() > Precedence.UNARY.ordinal()) {
                         writer.append('(');
-                    } else if (outerPrecedence.ordinal() >= Precedence.ADDITION.ordinal()) {
-                        writer.append(' ');
                     }
-                    writer.append("-");
+                    writer.append(" -");
                     precedence = Precedence.UNARY;
                     expr.getOperand().acceptVisitor(this);
                     if (outerPrecedence.ordinal() > Precedence.UNARY.ordinal()) {
@@ -1664,16 +1662,9 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             }
             String str = constantToString(expr.getValue());
             if (str.startsWith("-")) {
-                if (precedence.ordinal() >= Precedence.UNARY.ordinal()) {
-                    writer.append('(');
-                } else {
-                    writer.append(' ');
-                }
+                writer.append(' ');
             }
             writer.append(str);
-            if (str.startsWith("-") && precedence.ordinal() >= Precedence.UNARY.ordinal()) {
-                writer.append(')');
-            }
             if (expr.getLocation() != null) {
                 popLocation();
             }

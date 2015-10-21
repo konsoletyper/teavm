@@ -382,7 +382,7 @@ public class DependencyChecker implements DependencyInfo {
     private void activateDependencyPlugin(MethodDependency methodDep, CallLocation location) {
         attachDependencyPlugin(methodDep);
         if (methodDep.dependencyPlugin != null) {
-            methodDep.dependencyPlugin.methodAchieved(agent, methodDep, location);
+            methodDep.dependencyPlugin.methodReached(agent, methodDep, location);
         }
     }
 
