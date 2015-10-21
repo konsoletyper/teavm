@@ -198,8 +198,8 @@ public class AstWriterTest {
     @Test
     public void writesConditionalExpr() throws IOException {
         assertThat(transform("return cond ? 1 : 0;"), is("return cond?1:0;"));
-        assertThat(transform("return a < b ? -1 : a > b ? 1 : 0;"), is("return a<b?-1:a>b?1:0;"));
-        assertThat(transform("return a < b ? -1 : (a > b ? 1 : 0);"), is("return a<b?-1:a>b?1:0;"));
+        assertThat(transform("return a < b ? -1 : a > b ? 1 : 0;"), is("return a<b? -1:a>b?1:0;"));
+        assertThat(transform("return a < b ? -1 : (a > b ? 1 : 0);"), is("return a<b? -1:a>b?1:0;"));
         assertThat(transform("return (a < b ? x == y : x != y) ? 1 : 0;"), is("return (a<b?x==y:x!=y)?1:0;"));
         assertThat(transform("return a < b ? (x > y ? x : y) : z"), is("return a<b?(x>y?x:y):z;"));
     }
@@ -233,11 +233,11 @@ public class AstWriterTest {
 
     @Test
     public void writesUnary() throws IOException {
-        assertThat(transform("return -a;"), is("return -a;"));
-        assertThat(transform("return -(a + b);"), is("return -(a+b);"));
-        assertThat(transform("return -a + b;"), is("return -a+b;"));
-        assertThat(transform("return (-a) + b;"), is("return -a+b;"));
-        assertThat(transform("return (-f)(x);"), is("return (-f)(x);"));
+        assertThat(transform("return -a;"), is("return  -a;"));
+        assertThat(transform("return -(a + b);"), is("return  -(a+b);"));
+        assertThat(transform("return -a + b;"), is("return  -a+b;"));
+        assertThat(transform("return (-a) + b;"), is("return  -a+b;"));
+        assertThat(transform("return (-f)(x);"), is("return ( -f)(x);"));
         assertThat(transform("return typeof a;"), is("return typeof a;"));
     }
 
@@ -251,9 +251,9 @@ public class AstWriterTest {
         assertThat(transform("return a + b + c;"), is("return a+b+c;"));
         assertThat(transform("return (a + b) + c;"), is("return a+b+c;"));
         assertThat(transform("return a + (b + c);"), is("return a+b+c;"));
-        assertThat(transform("return a - b + c;"), is("return a-b+c;"));
-        assertThat(transform("return (a - b) + c;"), is("return a-b+c;"));
-        assertThat(transform("return a - (b + c);"), is("return a-(b+c);"));
+        assertThat(transform("return a - b + c;"), is("return a -b+c;"));
+        assertThat(transform("return (a - b) + c;"), is("return a -b+c;"));
+        assertThat(transform("return a - (b + c);"), is("return a -(b+c);"));
     }
 
     @Test
