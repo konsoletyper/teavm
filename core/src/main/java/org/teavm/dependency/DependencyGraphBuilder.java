@@ -115,8 +115,10 @@ class DependencyGraphBuilder {
             nodeClassCount = Math.max(nodeClassCount, nodeMapping[i] + 1);
         }
         DependencyNode[] nodeClasses = Arrays.copyOf(dep.getVariables(), nodeClassCount);
+        MethodReference ref = method.getReference();
         for (int i = dep.getVariableCount(); i < nodeClasses.length; ++i) {
             nodeClasses[i] = dependencyChecker.createNode();
+            nodeClasses[i].method = ref;
             if (DependencyChecker.shouldLog) {
                 nodeClasses[i].setTag(dep.getMethod().getReference() + ":" + i);
             }

@@ -16,6 +16,7 @@
 package org.teavm.dependency;
 
 import java.util.*;
+import org.teavm.model.MethodReference;
 
 /**
  *
@@ -31,6 +32,8 @@ public class DependencyNode implements ValueDependencyInfo {
     private DependencyNode arrayItemNode;
     private int degree;
     int index;
+    boolean locked;
+    MethodReference method;
 
     DependencyNode(DependencyChecker dependencyChecker, int index) {
         this(dependencyChecker, index, 0);
@@ -45,6 +48,10 @@ public class DependencyNode implements ValueDependencyInfo {
     private boolean addType(DependencyType type) {
         if (types == null) {
             if (smallTypes == null) {
+                if (locked) {
+                    throw new IllegalStateException("Error propagating type " + type.getName()
+                            + " to node in " + method);
+                }
                 smallTypes = new int[] { type.index };
                 return true;
             }
@@ -62,12 +69,19 @@ public class DependencyNode implements ValueDependencyInfo {
                 }
                 smallTypes = null;
             } else {
+                if (locked) {
+                    throw new IllegalStateException("Error propagating type " + type.getName() + " to node in method "
+                            + method);
+                }
                 smallTypes = Arrays.copyOf(smallTypes, smallTypes.length + 1);
                 smallTypes[smallTypes.length - 1] = type.index;
                 return true;
             }
         }
         if (!types.get(type.index)) {
+            if (locked) {
+                throw new IllegalStateException("Error propagating type " + type.getName() + " to node " + tag);
+            }
             types.set(type.index);
             return true;
         }

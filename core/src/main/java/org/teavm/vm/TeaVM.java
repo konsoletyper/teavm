@@ -312,11 +312,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     }
 
     public Collection<String> getClasses() {
-        return dependencyChecker.getAchievableClasses();
+        return dependencyChecker.getReachableClasses();
     }
 
     public Collection<MethodReference> getMethods() {
-        return dependencyChecker.getAchievableMethods();
+        return dependencyChecker.getReachableMethods();
     }
 
     public DependencyInfo getDependencyInfo() {
@@ -474,7 +474,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     }
 
     public ListableClassHolderSource link(DependencyInfo dependency) {
-        reportPhase(TeaVMPhase.LINKING, dependency.getAchievableClasses().size());
+        reportPhase(TeaVMPhase.LINKING, dependency.getReachableClasses().size());
         Linker linker = new Linker();
         MutableClassHolderSource cutClasses = new MutableClassHolderSource();
         MissingItemsProcessor missingItemsProcessor = new MissingItemsProcessor(dependency, diagnostics);
@@ -482,7 +482,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             return cutClasses;
         }
         int index = 0;
-        for (String className : dependency.getAchievableClasses()) {
+        for (String className : dependency.getReachableClasses()) {
             ClassReader clsReader = dependency.getClassSource().get(className);
             if (clsReader == null) {
                 continue;

@@ -26,13 +26,13 @@ import org.teavm.model.MethodReference;
  */
 public class MethodDependency implements MethodDependencyInfo {
     private DependencyChecker dependencyChecker;
-    private DependencyNode[] variableNodes;
+    DependencyNode[] variableNodes;
     private int parameterCount;
-    private DependencyNode resultNode;
-    private DependencyNode thrown;
+    DependencyNode resultNode;
+    DependencyNode thrown;
     MethodHolder method;
     private MethodReference reference;
-    private boolean used;
+    boolean used;
     DependencyPlugin dependencyPlugin;
     boolean dependencyPluginAttached;
 

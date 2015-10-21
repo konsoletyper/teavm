@@ -30,11 +30,11 @@ public interface DependencyInfo {
 
     ClassLoader getClassLoader();
 
-    Collection<MethodReference> getAchievableMethods();
+    Collection<MethodReference> getReachableMethods();
 
-    Collection<FieldReference> getAchievableFields();
+    Collection<FieldReference> getReachableFields();
 
-    Collection<String> getAchievableClasses();
+    Collection<String> getReachableClasses();
 
     FieldDependencyInfo getField(FieldReference fieldRef);
 

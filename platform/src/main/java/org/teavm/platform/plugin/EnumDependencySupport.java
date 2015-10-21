@@ -63,7 +63,7 @@ public class EnumDependencySupport extends AbstractDependencyListener {
                 }
             });
             method.getResult().propagate(agent.getType("[java.lang.Enum"));
-            for (String cls : agent.getAchievableClasses()) {
+            for (String cls : agent.getReachableClasses()) {
                 classReached(agent, cls, location);
             }
         }

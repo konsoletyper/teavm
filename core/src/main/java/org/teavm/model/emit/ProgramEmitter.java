@@ -22,6 +22,7 @@ import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
 import org.teavm.model.Instruction;
 import org.teavm.model.InstructionLocation;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Phi;
@@ -144,6 +145,10 @@ public final class ProgramEmitter {
         insn.setReceiver(var);
         addInstruction(insn);
         return var(var, type);
+    }
+
+    public ValueEmitter constantNull(Class<?> type) {
+        return constantNull(ValueType.parse(type));
     }
 
     public ValueEmitter defaultValue(ValueType type) {
@@ -387,8 +392,13 @@ public final class ProgramEmitter {
     }
 
     public static ProgramEmitter create(MethodHolder method, ClassReaderSource classSource) {
+        ProgramEmitter pe = create(method.getDescriptor(), classSource);
+        method.setProgram(pe.getProgram());
+        return pe;
+    }
+
+    public static ProgramEmitter create(MethodDescriptor method, ClassReaderSource classSource) {
         Program program = new Program();
-        method.setProgram(program);
         BasicBlock zeroBlock = program.createBasicBlock();
         BasicBlock block = program.createBasicBlock();
 
@@ -440,13 +450,13 @@ public final class ProgramEmitter {
         return phi(ValueType.object(cls.getName()));
     }
 
-    public ChooseEmitter choise(ValueEmitter value) {
+    public ChooseEmitter choice(ValueEmitter value) {
         SwitchInstruction insn = new SwitchInstruction();
         insn.setCondition(value.getVariable());
         return new ChooseEmitter(this, insn, prepareBlock());
     }
 
-    public StringChooseEmitter stringChoise(ValueEmitter value) {
+    public StringChooseEmitter stringChoice(ValueEmitter value) {
         SwitchInstruction insn = new SwitchInstruction();
         return new StringChooseEmitter(this, value, insn, prepareBlock());
     }

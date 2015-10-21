@@ -29,4 +29,6 @@ public interface DependencyListener {
     void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location);
 
     void fieldReached(DependencyAgent agent, FieldDependency field, CallLocation location);
+
+    void completing(DependencyAgent agent);
 }
