@@ -61,6 +61,10 @@ public class CachedMapper<T, R> implements Mapper<T, R> {
         return wrapper.value;
     }
 
+    public void replace(T preimage, R value) {
+        cache.get(preimage).value = value;
+    }
+
     public void invalidate(T preimage) {
         cache.remove(preimage);
     }

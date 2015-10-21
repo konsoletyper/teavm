@@ -38,6 +38,7 @@ import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldHolder;
 import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
@@ -46,8 +47,10 @@ import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
+import org.teavm.model.Program;
 import org.teavm.model.ValueType;
 import org.teavm.model.util.ModelUtils;
+import org.teavm.model.util.ProgramUtils;
 
 /**
  *
@@ -76,6 +79,7 @@ public class DependencyChecker implements DependencyInfo {
     List<DependencyNode> nodes = new ArrayList<>();
     List<BitSet> typeBitSets = new ArrayList<>();
     Map<MethodReference, BootstrapMethodSubstitutor> bootstrapMethodSubstitutors = new HashMap<>();
+    private boolean completing;
 
     public DependencyChecker(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services,
             Diagnostics diagnostics) {
@@ -153,7 +157,34 @@ public class DependencyChecker implements DependencyInfo {
     }
 
     public void submitClass(ClassHolder cls) {
+        if (completing) {
+            throw new IllegalStateException("Can't submit class during completion phase");
+        }
         classSource.submit(ModelUtils.copyClass(cls));
+    }
+
+    public void submitMethod(MethodReference methodRef, Program program) {
+        if (!completing) {
+            throw new IllegalStateException("Can't submit class during check phase");
+        }
+
+        MethodDependency dep = getMethod(methodRef);
+        if (dep == null) {
+            throw new IllegalArgumentException("Method was not reached: " + methodRef);
+        }
+        MethodHolder method = dep.method;
+
+        if (!method.hasModifier(ElementModifier.NATIVE)) {
+            throw new IllegalArgumentException("Method is not native: " + methodRef);
+        }
+        method.getModifiers().remove(ElementModifier.NATIVE);
+        method.setProgram(ProgramUtils.copy(program));
+
+        dep.used = false;
+        lock(dep, false);
+        scheduleMethodAnalysis(dep);
+
+        processQueue();
     }
 
     public void addDependencyListener(DependencyListener listener) {
@@ -193,7 +224,10 @@ public class DependencyChecker implements DependencyInfo {
 
     private Set<String> classesAddedByRoot = new HashSet<>();
 
-    public ClassDependency linkClass(final String className, final CallLocation callLocation) {
+    public ClassDependency linkClass(String className, CallLocation callLocation) {
+        if (completing && getClass(className) == null) {
+            throw new IllegalStateException("Can't link class during completion phase");
+        }
         ClassDependency dep = classCache.map(className);
         boolean added = true;
         if (callLocation != null && callLocation.getMethod() != null) {
@@ -247,6 +281,9 @@ public class DependencyChecker implements DependencyInfo {
     private Set<MethodReference> methodsAddedByRoot = new HashSet<>();
 
     public MethodDependency linkMethod(MethodReference methodRef, CallLocation callLocation) {
+        if (completing && getMethod(methodRef) == null) {
+            throw new IllegalStateException("Can't submit class during completion phase");
+        }
         if (methodRef == null) {
             throw new IllegalArgumentException();
         }
@@ -272,9 +309,9 @@ public class DependencyChecker implements DependencyInfo {
         return graph;
     }
 
-    void initClass(ClassDependency cls, final CallLocation callLocation) {
+    void initClass(ClassDependency cls, CallLocation callLocation) {
         ClassReader reader = cls.getClassReader();
-        final MethodReader method = reader.getMethod(new MethodDescriptor("<clinit>", void.class));
+        MethodReader method = reader.getMethod(new MethodDescriptor("<clinit>", void.class));
         if (method != null) {
             tasks.add(() -> linkMethod(method.getReference(), callLocation).use());
         }
@@ -286,6 +323,7 @@ public class DependencyChecker implements DependencyInfo {
         DependencyNode[] parameterNodes = new DependencyNode[arguments.length + 1];
         for (int i = 0; i < parameterNodes.length; ++i) {
             parameterNodes[i] = createNode();
+            parameterNodes[i].method = methodRef;
             if (shouldLog) {
                 parameterNodes[i].setTag(methodRef + ":" + i);
             }
@@ -295,15 +333,17 @@ public class DependencyChecker implements DependencyInfo {
             resultNode = null;
         } else {
             resultNode = createNode();
+            resultNode.method = methodRef;
             if (shouldLog) {
                 resultNode.setTag(methodRef + ":RESULT");
             }
         }
         DependencyNode thrown = createNode();
+        thrown.method = methodRef;
         if (shouldLog) {
             thrown.setTag(methodRef + ":THROWN");
         }
-        final MethodDependency dep = new MethodDependency(this, parameterNodes, paramCount, resultNode, thrown,
+        MethodDependency dep = new MethodDependency(this, parameterNodes, paramCount, resultNode, thrown,
                 method, methodRef);
         if (method != null) {
             tasks.add(() -> {
@@ -314,7 +354,7 @@ public class DependencyChecker implements DependencyInfo {
         return dep;
     }
 
-    void scheduleMethodAnalysis(final MethodDependency dep) {
+    void scheduleMethodAnalysis(MethodDependency dep) {
         tasks.add(() -> {
             DependencyGraphBuilder graphBuilder = new DependencyGraphBuilder(DependencyChecker.this);
             graphBuilder.buildGraph(dep);
@@ -322,23 +362,26 @@ public class DependencyChecker implements DependencyInfo {
     }
 
     @Override
-    public Collection<MethodReference> getAchievableMethods() {
+    public Collection<MethodReference> getReachableMethods() {
         return methodCache.getCachedPreimages();
     }
 
     @Override
-    public Collection<FieldReference> getAchievableFields() {
+    public Collection<FieldReference> getReachableFields() {
         return fieldCache.getCachedPreimages();
     }
 
     @Override
-    public Collection<String> getAchievableClasses() {
+    public Collection<String> getReachableClasses() {
         return classCache.getCachedPreimages();
     }
 
     private Set<FieldReference> fieldsAddedByRoot = new HashSet<>();
 
-    public FieldDependency linkField(final FieldReference fieldRef, final CallLocation location) {
+    public FieldDependency linkField(FieldReference fieldRef, CallLocation location) {
+        if (completing) {
+            throw new IllegalStateException("Can't submit class during completion phase");
+        }
         boolean added = true;
         if (location != null) {
             added = callGraph.getNode(location.getMethod()).addFieldAccess(fieldRef, location.getSourceLocation());
@@ -382,7 +425,7 @@ public class DependencyChecker implements DependencyInfo {
     private void activateDependencyPlugin(MethodDependency methodDep, CallLocation location) {
         attachDependencyPlugin(methodDep);
         if (methodDep.dependencyPlugin != null) {
-            methodDep.dependencyPlugin.methodAchieved(agent, methodDep, location);
+            methodDep.dependencyPlugin.methodReached(agent, methodDep, location);
         }
     }
 
@@ -421,8 +464,10 @@ public class DependencyChecker implements DependencyInfo {
         return method != null ? methodCache.getKnown(method.getReference()) : null;
     }
 
-    public void processDependencies() {
-        interrupted = false;
+    private void processQueue() {
+        if (interrupted) {
+            return;
+        }
         int index = 0;
         while (!tasks.isEmpty()) {
             tasks.poll().run();
@@ -434,6 +479,45 @@ public class DependencyChecker implements DependencyInfo {
                 index = 0;
             }
         }
+    }
+
+    public void processDependencies() {
+        interrupted = false;
+        processQueue();
+        if (!interrupted) {
+            completing = true;
+            lock();
+            for (DependencyListener listener : listeners) {
+                listener.completing(agent);
+            }
+        }
+    }
+
+    private void lock() {
+        for (MethodReference method : getReachableMethods()) {
+            lock(getMethod(method), true);
+        }
+        for (FieldReference field : getReachableFields()) {
+            lock(getField(field));
+        }
+    }
+
+    private void lock(MethodDependency dep, boolean lock) {
+        for (DependencyNode node : dep.variableNodes) {
+            if (node != null) {
+                node.locked = lock;
+            }
+        }
+        if (dep.resultNode != null) {
+            dep.resultNode.locked = lock;
+        }
+        if (dep.thrown != null) {
+            dep.thrown.locked = lock;
+        }
+    }
+
+    private void lock(FieldDependency dep) {
+        dep.value.locked = true;
     }
 
     public <T> T getService(Class<T> type) {

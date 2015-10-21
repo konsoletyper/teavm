@@ -169,7 +169,7 @@ public class JSNativeGenerator implements Injector, DependencyPlugin, Generator 
     }
 
     @Override
-    public void methodAchieved(final DependencyAgent agent, final MethodDependency method,
+    public void methodReached(final DependencyAgent agent, final MethodDependency method,
             final CallLocation location) {
         switch (method.getReference().getName()) {
             case "invoke":

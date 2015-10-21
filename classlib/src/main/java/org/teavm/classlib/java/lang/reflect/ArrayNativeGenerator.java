@@ -39,7 +39,7 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
             ValueType.INTEGER, ValueType.LONG, ValueType.FLOAT, ValueType.DOUBLE, ValueType.BOOLEAN };
 
     @Override
-    public void methodAchieved(DependencyAgent agent, MethodDependency method, CallLocation location) {
+    public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
         switch (method.getReference().getName()) {
             case "getLength":
                 achieveGetLength(agent, method);

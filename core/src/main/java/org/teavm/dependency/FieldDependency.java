@@ -23,7 +23,7 @@ import org.teavm.model.FieldReference;
  * @author Alexey Andreev
  */
 public class FieldDependency implements FieldDependencyInfo {
-    private DependencyNode value;
+    DependencyNode value;
     private FieldReader field;
     private FieldReference reference;
 

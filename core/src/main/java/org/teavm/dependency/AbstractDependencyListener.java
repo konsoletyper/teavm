@@ -37,4 +37,8 @@ public abstract class AbstractDependencyListener implements DependencyListener {
     @Override
     public void fieldReached(DependencyAgent agent, FieldDependency field, CallLocation location) {
     }
+
+    @Override
+    public void completing(DependencyAgent agent) {
+    }
 }

@@ -48,6 +48,10 @@ public class DependencyAgent implements DependencyInfo, ServiceRepository {
         checker.submitClass(cls);
     }
 
+    public void submitMethod(MethodReference method, Program program) {
+        checker.submitMethod(method, program);
+    }
+
     public MethodDependency linkMethod(MethodReference methodRef, CallLocation callLocation) {
         return checker.linkMethod(methodRef, callLocation);
     }
@@ -80,18 +84,18 @@ public class DependencyAgent implements DependencyInfo, ServiceRepository {
     }
 
     @Override
-    public Collection<MethodReference> getAchievableMethods() {
-        return checker.getAchievableMethods();
+    public Collection<MethodReference> getReachableMethods() {
+        return checker.getReachableMethods();
     }
 
     @Override
-    public Collection<FieldReference> getAchievableFields() {
-        return checker.getAchievableFields();
+    public Collection<FieldReference> getReachableFields() {
+        return checker.getReachableFields();
     }
 
     @Override
-    public Collection<String> getAchievableClasses() {
-        return checker.getAchievableClasses();
+    public Collection<String> getReachableClasses() {
+        return checker.getReachableClasses();
     }
 
     @Override

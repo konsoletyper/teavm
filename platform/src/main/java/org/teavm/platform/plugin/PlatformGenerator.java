@@ -41,7 +41,7 @@ import org.teavm.platform.PlatformRunnable;
  */
 public class PlatformGenerator implements Generator, Injector, DependencyPlugin {
     @Override
-    public void methodAchieved(DependencyAgent agent, MethodDependency method, CallLocation location) {
+    public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
         switch (method.getReference().getName()) {
             case "asJavaClass":
                 method.getResult().propagate(agent.getType("java.lang.Class"));

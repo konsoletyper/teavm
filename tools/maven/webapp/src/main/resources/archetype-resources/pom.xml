@@ -41,7 +41,7 @@
 
   <build>
     <plugins>
-      <!-- Configure Java compiler to use Java 7 syntax  -->
+      <!-- Configure Java compiler to use Java 8 syntax  -->
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.1</version>

@@ -41,9 +41,9 @@ public class MissingItemsProcessor {
     public MissingItemsProcessor(DependencyInfo dependencyInfo, Diagnostics diagnostics) {
         this.dependencyInfo = dependencyInfo;
         this.diagnostics = diagnostics;
-        achievableClasses = dependencyInfo.getAchievableClasses();
-        achievableMethods = dependencyInfo.getAchievableMethods();
-        achievableFields = dependencyInfo.getAchievableFields();
+        achievableClasses = dependencyInfo.getReachableClasses();
+        achievableMethods = dependencyInfo.getReachableMethods();
+        achievableFields = dependencyInfo.getReachableFields();
     }
 
     public void processClass(ClassHolder cls) {

@@ -717,13 +717,16 @@ public class AstWriter {
     private void printUnary(UnaryExpression node, int precedence) throws IOException {
         int innerPrecedence = node.isPostfix() ? PRECEDENCE_POSTFIX : PRECEDENCE_PREFIX;
 
-
         if (innerPrecedence > precedence) {
             writer.append('(');
         }
 
         if (!node.isPostfix()) {
-            writer.append(AstNode.operatorToString(node.getType()));
+            String op = AstNode.operatorToString(node.getType());
+            if (op.startsWith("-")) {
+                writer.append(' ');
+            }
+            writer.append(op);
             if (requiresWhitespaces(node.getType())) {
                 writer.append(' ');
             }
@@ -768,13 +771,14 @@ public class AstWriter {
         }
         print(node.getLeft(), leftPrecedence);
 
+        String op = AstNode.operatorToString(node.getType());
         boolean ws = requiresWhitespaces(node.getType());
-        if (ws) {
+        if (ws || op.startsWith("-")) {
             writer.append(' ');
         } else {
             writer.ws();
         }
-        writer.append(AstNode.operatorToString(node.getType()));
+        writer.append(op);
         if (ws) {
             writer.append(' ');
         } else {
