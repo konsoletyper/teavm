@@ -17,6 +17,7 @@ package org.teavm.maven;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.List;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -28,6 +29,8 @@ import org.teavm.tooling.MethodAlias;
 import org.teavm.tooling.RuntimeCopyOperation;
 import org.teavm.tooling.TeaVMTool;
 import org.teavm.tooling.TeaVMToolException;
+import org.teavm.tooling.sources.DirectorySourceFileProvider;
+import org.teavm.tooling.sources.SourceFileProvider;
 
 /**
  *
@@ -39,6 +42,9 @@ import org.teavm.tooling.TeaVMToolException;
 public class BuildJavascriptMojo extends AbstractJavascriptMojo {
     @Parameter(defaultValue = "${project.build.directory}/javascript")
     private File targetDirectory;
+
+    @Parameter(defaultValue = "${project.build.sourceDirectory}")
+    private File sourceDirectory;
 
     @Parameter
     private String targetFileName = "classes.js";
@@ -101,5 +107,10 @@ public class BuildJavascriptMojo extends AbstractJavascriptMojo {
         } catch (TeaVMToolException e) {
             throw new MojoExecutionException("IO error occured", e);
         }
+    }
+
+    @Override
+    protected void addSourceProviders(List<SourceFileProvider> providers) {
+        providers.add(new DirectorySourceFileProvider(sourceDirectory));
     }
 }

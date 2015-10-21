@@ -43,6 +43,8 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.teavm.testing.JUnitTestAdapter;
 import org.teavm.testing.TestAdapter;
 import org.teavm.tooling.TeaVMToolException;
+import org.teavm.tooling.sources.DirectorySourceFileProvider;
+import org.teavm.tooling.sources.SourceFileProvider;
 import org.teavm.tooling.testing.TeaVMTestTool;
 import org.teavm.tooling.testing.TestPlan;
 
@@ -59,6 +61,12 @@ public class BuildJavascriptTestMojo extends AbstractJavascriptMojo {
             Artifact.SCOPE_PROVIDED));
     @Parameter(defaultValue = "${project.build.directory}/javascript-test")
     private File targetDirectory;
+
+    @Parameter(defaultValue = "${project.build.sourceDirectory}")
+    private File sourceDirectory;
+
+    @Parameter(defaultValue = "${project.build.testSourceDirectory}")
+    private File testSourceDirectory;
 
     @Parameter(defaultValue = "${project.build.testOutputDirectory}")
     private File testFiles;
@@ -242,5 +250,11 @@ public class BuildJavascriptTestMojo extends AbstractJavascriptMojo {
     @Override
     protected boolean isSupportedScope(String scope) {
         return testScopes.contains(scope);
+    }
+
+    @Override
+    protected void addSourceProviders(List<SourceFileProvider> providers) {
+        providers.add(new DirectorySourceFileProvider(sourceDirectory));
+        providers.add(new DirectorySourceFileProvider(testSourceDirectory));
     }
 }

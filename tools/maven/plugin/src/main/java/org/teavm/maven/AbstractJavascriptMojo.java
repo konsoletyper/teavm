@@ -214,6 +214,11 @@ public abstract class AbstractJavascriptMojo extends AbstractMojo {
         lookup.setLocalRepository(localRepository);
         lookup.setRemoteRepositories(remoteRepositories);
         lookup.setPluginDependencies(pluginArtifacts);
-        return lookup.resolve();
+        List<SourceFileProvider> providers = lookup.resolve();
+        addSourceProviders(providers);
+        return providers;
+    }
+
+    protected void addSourceProviders(@SuppressWarnings("unused") List<SourceFileProvider> providers) {
     }
 }
