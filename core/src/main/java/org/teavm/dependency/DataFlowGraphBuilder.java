@@ -216,7 +216,7 @@ public class DataFlowGraphBuilder implements InstructionReader {
     @Override
     public void exit(VariableReader valueToReturn) {
         if (valueToReturn != null && returnIndex >= 0) {
-            connect(valueToReturn.getIndex(), returnIndex);
+            builder.addEdge(valueToReturn.getIndex(), returnIndex);
         }
     }
 
@@ -253,7 +253,7 @@ public class DataFlowGraphBuilder implements InstructionReader {
         if (fieldType instanceof ValueType.Primitive) {
             return;
         }
-        connect(getFieldNode(field), receiver.getIndex());
+        builder.addEdge(getFieldNode(field), receiver.getIndex());
     }
 
     @Override
@@ -261,7 +261,7 @@ public class DataFlowGraphBuilder implements InstructionReader {
         if (fieldType instanceof ValueType.Primitive) {
             return;
         }
-        connect(value.getIndex(), getFieldNode(field));
+        builder.addEdge(value.getIndex(), getFieldNode(field));
     }
 
     @Override

@@ -51,6 +51,7 @@ import org.teavm.model.Program;
 import org.teavm.model.ValueType;
 import org.teavm.model.util.ModelUtils;
 import org.teavm.model.util.ProgramUtils;
+import org.teavm.optimization.UnreachableBasicBlockEliminator;
 
 /**
  *
@@ -177,12 +178,20 @@ public class DependencyChecker implements DependencyInfo {
         if (!method.hasModifier(ElementModifier.NATIVE)) {
             throw new IllegalArgumentException("Method is not native: " + methodRef);
         }
+        if (!dep.used) {
+            return;
+        }
         method.getModifiers().remove(ElementModifier.NATIVE);
         method.setProgram(ProgramUtils.copy(program));
+        new UnreachableBasicBlockEliminator().optimize(method.getProgram());
 
         dep.used = false;
         lock(dep, false);
-        scheduleMethodAnalysis(dep);
+        tasks.add(() -> {
+            DependencyGraphBuilder graphBuilder = new DependencyGraphBuilder(DependencyChecker.this);
+            graphBuilder.buildGraph(dep);
+            dep.used = true;
+        });
 
         processQueue();
     }
