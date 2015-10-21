@@ -30,6 +30,7 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ast.AstNode;
 import org.mozilla.javascript.ast.AstRoot;
 import org.mozilla.javascript.ast.FunctionNode;
+import org.teavm.cache.NoCache;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.javascript.spi.GeneratedBy;
 import org.teavm.javascript.spi.InjectedBy;
@@ -304,7 +305,7 @@ class JSClassProcessor {
                 }
                 CallLocation callLocation = new CallLocation(methodToProcess.getReference(), insn.getLocation());
                 replacement.clear();
-                if (processInvocation(method, callLocation, invoke)) {
+                if (processInvocation(method, callLocation, invoke, methodToProcess)) {
                     block.getInstructions().set(j, replacement.get(0));
                     block.getInstructions().addAll(j + 1, replacement.subList(1, replacement.size()));
                     j += replacement.size() - 1;
@@ -313,9 +314,10 @@ class JSClassProcessor {
         }
     }
 
-    private boolean processInvocation(MethodReader method, CallLocation callLocation, InvokeInstruction invoke) {
+    private boolean processInvocation(MethodReader method, CallLocation callLocation, InvokeInstruction invoke,
+            MethodHolder methodToProcess) {
         if (method.getAnnotations().get(JSBody.class.getName()) != null) {
-            return processJSBodyInvocation(method, callLocation, invoke);
+            return processJSBodyInvocation(method, callLocation, invoke, methodToProcess);
         }
 
         if (!typeHelper.isJavaScriptClass(invoke.getMethod().getClassName())) {
@@ -352,7 +354,8 @@ class JSClassProcessor {
         }
     }
 
-    private boolean processJSBodyInvocation(MethodReader method, CallLocation callLocation, InvokeInstruction invoke) {
+    private boolean processJSBodyInvocation(MethodReader method, CallLocation callLocation, InvokeInstruction invoke,
+            MethodHolder methodToProcess) {
         requireJSBody(diagnostics, method);
         MethodReference delegate = repository.methodMap.get(method.getReference());
         if (delegate == null) {
@@ -380,6 +383,10 @@ class JSClassProcessor {
         if (result != null) {
             result = unwrap(callLocation, result, method.getResultType());
             copyVar(result, invoke.getReceiver(), invoke.getLocation());
+        }
+
+        if (methodToProcess.getAnnotations().get(NoCache.class.getName()) == null) {
+            methodToProcess.getAnnotations().add(new AnnotationHolder(NoCache.class.getName()));
         }
 
         return true;

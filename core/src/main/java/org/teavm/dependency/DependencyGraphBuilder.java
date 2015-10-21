@@ -20,7 +20,9 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.teavm.cache.NoCache;
 import org.teavm.callgraph.DefaultCallGraphNode;
+import org.teavm.model.AnnotationHolder;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.BasicBlockReader;
 import org.teavm.model.CallLocation;
@@ -190,6 +192,7 @@ class DependencyGraphBuilder {
             return;
         }
         ProgramEmitter pe = ProgramEmitter.create(program, dependencyChecker.getClassSource());
+        boolean hasIndy = false;
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
             for (int j = 0; j < block.getInstructions().size(); ++j) {
@@ -213,6 +216,7 @@ class DependencyGraphBuilder {
                     continue;
                 }
 
+                hasIndy = true;
                 BasicBlock splitBlock = program.createBasicBlock();
                 List<Instruction> splitInstructions = block.getInstructions().subList(j + 1,
                         block.getInstructions().size());
@@ -253,6 +257,10 @@ class DependencyGraphBuilder {
                 }
                 pe.jump(splitBlock);
             }
+        }
+
+        if (hasIndy && methodDep.method.getAnnotations().get(NoCache.class.getName()) == null) {
+            methodDep.method.getAnnotations().add(new AnnotationHolder(NoCache.class.getName()));
         }
     }
 

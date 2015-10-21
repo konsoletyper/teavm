@@ -1,9 +1,11 @@
 package org.teavm.classlib.impl.lambda;
 
 import java.util.Arrays;
+import org.teavm.cache.NoCache;
 import org.teavm.dependency.BootstrapMethodSubstitutor;
 import org.teavm.dependency.DynamicCallSite;
 import org.teavm.model.AccessLevel;
+import org.teavm.model.AnnotationHolder;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
@@ -46,10 +48,12 @@ public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor 
         int capturedVarCount = callSite.getCalledMethod().parameterCount();
         MethodHolder ctor = createConstructor(classSource, implementor,
                 Arrays.copyOfRange(invokedType, 0, capturedVarCount));
+        ctor.getAnnotations().add(new AnnotationHolder(NoCache.class.getName()));
         createBridge(classSource, implementor, callSite.getCalledMethod().getName(), instantiatedMethodType,
                 samMethodType);
 
         MethodHolder worker = new MethodHolder(callSite.getCalledMethod().getName(), instantiatedMethodType);
+        worker.getAnnotations().add(new AnnotationHolder(NoCache.class.getName()));
         worker.setLevel(AccessLevel.PUBLIC);
         ProgramEmitter pe = ProgramEmitter.create(worker, callSite.getAgent().getClassSource());
         ValueEmitter thisVar = pe.var(0, implementor);
@@ -244,6 +248,7 @@ public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor 
         }
 
         MethodHolder bridge = new MethodHolder(name, bridgeTypes);
+        bridge.getAnnotations().add(new AnnotationHolder(NoCache.class.getName()));
         bridge.setLevel(AccessLevel.PUBLIC);
         bridge.getModifiers().add(ElementModifier.BRIDGE);
         ProgramEmitter pe = ProgramEmitter.create(bridge, classSource);
