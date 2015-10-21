@@ -57,8 +57,12 @@ class JSAliasRenderer implements RendererListener {
             }
             writer.append("c").ws().append("=").ws().appendClass(entry.getKey()).append(".prototype;").softNewLine();
             for (Map.Entry<MethodDescriptor, String> aliasEntry : cls.methods.entrySet()) {
-                writer.append("c.").append(aliasEntry.getValue()).ws().append("=").ws().append("c.")
-                        .appendMethod(aliasEntry.getKey()).append(";").softNewLine();
+                if (isKeyword(aliasEntry.getValue())) {
+                    writer.append("c[\"").append(aliasEntry.getValue()).append("\"]");
+                } else {
+                    writer.append("c.").append(aliasEntry.getValue());
+                }
+                writer.ws().append("=").ws().append("c.").appendMethod(aliasEntry.getKey()).append(";").softNewLine();
             }
 
             if (cls.functorField != null) {
@@ -66,6 +70,25 @@ class JSAliasRenderer implements RendererListener {
             }
         }
         writer.outdent().append("})();").newLine();
+    }
+
+    private boolean isKeyword(String id) {
+        switch (id) {
+            case "with":
+            case "delete":
+            case "in":
+            case "undefined":
+            case "debugger":
+            case "export":
+            case "function":
+            case "let":
+            case "var":
+            case "typeof":
+            case "yield":
+                return true;
+            default:
+                return false;
+        }
     }
 
     private void writeFunctor(ExposedClass cls) throws IOException {
