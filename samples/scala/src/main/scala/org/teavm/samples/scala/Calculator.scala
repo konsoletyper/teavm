@@ -7,7 +7,7 @@ object Calculator {
     case Add(a, b) => eval(a) + eval(b)
     case Subtract(a, b) => eval(a) - eval(b)
     case Multiply(a, b) => eval(a) * eval(b)
-    case Divide(a, b) => eval(a) * eval(b)
+    case Divide(a, b) => eval(a) / eval(b)
     case Negate(n) => -eval(n)
     case Number(v) => v
   }

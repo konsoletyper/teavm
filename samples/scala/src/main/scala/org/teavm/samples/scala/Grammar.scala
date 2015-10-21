@@ -47,7 +47,7 @@ object Rule {
     }
     rule(chars => {
       val (result, rem) = iter(chars)
-      (Some(result.reverse), rem)
+      (Some(result), rem)
     })
   }
   def firstOf[T](first : Rule[T], second : => Rule[T]) : Rule[T] = {
