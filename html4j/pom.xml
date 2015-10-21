@@ -123,7 +123,7 @@
             <configuration>
               <testDirectory>${project.build.directory}/javascript-tck</testDirectory>
               <reportFile>${project.build.directory}/teavm-tck-report.json</reportFile>
-              <skip>${teavm.test.skip}</skip>
+              <skip>true</skip>
               <numThreads>${teavm.test.threads}</numThreads>
               <seleniumURL>${teavm.test.selenium}</seleniumURL>
             </configuration>
