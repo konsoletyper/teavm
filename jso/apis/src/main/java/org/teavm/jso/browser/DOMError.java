@@ -18,24 +18,9 @@ package org.teavm.jso.browser;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
-/**
-*
-* @author Jan-Felix Wittmann
-*/
-public interface Blob extends JSObject {
+public interface DOMError extends JSObject {
 
     @JSProperty
-    int getSize();
-
-    @JSProperty
-    String getType();
-
-    Blob slice();
-
-    Blob slice(int start);
-
-    Blob slice(int start, int end);
-
-    Blob slice(int start, int end, String contentType);
+    String getName();
 
 }
