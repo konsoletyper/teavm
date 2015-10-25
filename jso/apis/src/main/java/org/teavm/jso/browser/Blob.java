@@ -43,7 +43,7 @@ public abstract class Blob implements JSObject {
     @JSBody(params = { "array" }, script = "return new Blob(array);")
     public static native <T extends JSObject> Blob create(JSArray<T> array);
 
-    @JSBody(params = { "array", "options" }, script = "return new Blob(array);")
+    @JSBody(params = { "array", "options" }, script = "return new Blob(array, options);")
     public static native <T extends JSObject> Blob create(JSArray<T> array, BlobOptions options);
 
 }
