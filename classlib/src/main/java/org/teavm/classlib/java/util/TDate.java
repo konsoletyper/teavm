@@ -67,7 +67,7 @@ public class TDate implements TComparable<TDate> {
 
     @Deprecated
     public static long parse(String s) {
-        double value = JSDate.parse(s).getTime();
+        double value = JSDate.parse(s);
         if (Double.isNaN(value)) {
             throw new IllegalArgumentException("Can't parse date: " + s);
         }

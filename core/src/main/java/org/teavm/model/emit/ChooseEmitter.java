@@ -42,6 +42,7 @@ public class ChooseEmitter {
         pe.enter(entry.getTarget());
         pe.emitAndJump(fragment, joinBlock);
         pe.enter(joinBlock);
+        insn.getEntries().add(entry);
         return this;
     }
 

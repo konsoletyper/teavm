@@ -453,6 +453,7 @@ public final class ProgramEmitter {
     public ChooseEmitter choice(ValueEmitter value) {
         SwitchInstruction insn = new SwitchInstruction();
         insn.setCondition(value.getVariable());
+        addInstruction(insn);
         return new ChooseEmitter(this, insn, prepareBlock());
     }
 

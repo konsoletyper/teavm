@@ -42,4 +42,8 @@ public interface History extends JSObject {
     void replaceState(JSObject data, String title);
 
     void replaceState(JSObject data, String title, String url);
+
+    static History current() {
+        return Window.current().getHistory();
+    }
 }

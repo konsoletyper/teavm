@@ -55,7 +55,7 @@ public abstract class JSDate implements JSObject {
     public static native double now();
 
     @JSBody(params = "stringValue", script = "return Date.parse(stringValue);")
-    public static native JSDate parse(String stringValue);
+    public static native double parse(String stringValue);
 
     @JSBody(params = { "year", "month" }, script = "return Date.UTC(year, month);")
     public static native double UTC(int year, int month);
