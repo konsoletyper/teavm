@@ -22,12 +22,12 @@ import org.teavm.jso.core.JSDate;
 *
 * @author Jan-Felix Wittmann
 */
-public interface File extends Blob {
+public abstract class File extends Blob {
 
     @JSProperty
-    JSDate getLastModifiedDate();
+    public abstract JSDate getLastModifiedDate();
 
     @JSProperty
-    String getName();
+    public abstract String getName();
 
 }
