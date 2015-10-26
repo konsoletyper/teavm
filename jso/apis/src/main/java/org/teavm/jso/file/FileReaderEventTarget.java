@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.browser;
+package org.teavm.jso.file;
 
 import org.teavm.jso.dom.events.Event;
 import org.teavm.jso.dom.events.EventListener;

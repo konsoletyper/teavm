@@ -13,24 +13,22 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.browser;
+package org.teavm.jso.file;
 
-import org.teavm.jso.JSIndexer;
-import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
+import org.teavm.jso.blob.Blob;
+import org.teavm.jso.core.JSDate;
 
 /**
 *
 * @author Jan-Felix Wittmann
 */
-public interface FileList extends JSObject {
+public abstract class File extends Blob {
 
     @JSProperty
-    int getLength();
+    public abstract JSDate getLastModifiedDate();
 
-    @JSIndexer
-    File get(int index);
-
-    File item(int index);
+    @JSProperty
+    public abstract String getName();
 
 }
