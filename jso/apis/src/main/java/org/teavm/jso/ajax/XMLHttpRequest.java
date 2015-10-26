@@ -18,6 +18,7 @@ package org.teavm.jso.ajax;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
+import org.teavm.jso.blob.Blob;
 import org.teavm.jso.dom.xml.Document;
 
 /**
@@ -46,6 +47,10 @@ public abstract class XMLHttpRequest implements JSObject {
     public abstract void send();
 
     public abstract void send(String data);
+
+    public abstract void send(Blob data);
+
+    public abstract void send(FormData data);
 
     public abstract void setRequestHeader(String name, String value);
 
