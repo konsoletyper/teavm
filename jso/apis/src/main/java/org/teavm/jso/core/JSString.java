@@ -18,12 +18,13 @@ package org.teavm.jso.core;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
+import org.teavm.jso.blob.BlobConvertible;
 
 /**
  *
  * @author Alexey Andreev
  */
-public abstract class JSString implements JSObject {
+public abstract class JSString implements JSObject, BlobConvertible {
     private JSString() {
     }
 

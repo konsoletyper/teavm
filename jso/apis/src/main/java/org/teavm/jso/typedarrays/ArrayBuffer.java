@@ -18,12 +18,13 @@ package org.teavm.jso.typedarrays;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
+import org.teavm.jso.blob.BlobConvertible;
 
 /**
  *
  * @author Alexey Andreev
  */
-public abstract class ArrayBuffer implements JSObject {
+public abstract class ArrayBuffer implements JSObject, BlobConvertible {
     @JSProperty
     public abstract int getByteLength();
 

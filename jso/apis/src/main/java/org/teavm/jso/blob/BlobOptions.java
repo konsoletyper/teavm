@@ -13,37 +13,25 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.browser;
+package org.teavm.jso.blob;
 
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
-import org.teavm.jso.core.JSArray;
 
 /**
 *
 * @author Jan-Felix Wittmann
 */
-public abstract class Blob implements JSObject {
+public abstract class BlobOptions implements JSObject {
 
     @JSProperty
-    public abstract int getSize();
+    public abstract void setType(String type);
 
     @JSProperty
-    public abstract String getType();
+    public abstract void setEndings(String endings);
 
-    public abstract Blob slice();
-
-    public abstract Blob slice(int start);
-
-    public abstract Blob slice(int start, int end);
-
-    public abstract Blob slice(int start, int end, String contentType);
-
-    @JSBody(params = { "array" }, script = "return new Blob(array);")
-    public static native <T extends JSObject> Blob create(JSArray<T> array);
-
-    @JSBody(params = { "array", "options" }, script = "return new Blob(array, options);")
-    public static native <T extends JSObject> Blob create(JSArray<T> array, BlobOptions options);
+    @JSBody(params = {}, script = "return {};")
+    public static native BlobOptions create();
 
 }

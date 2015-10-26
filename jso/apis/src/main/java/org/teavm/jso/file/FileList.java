@@ -13,9 +13,9 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.browser;
+package org.teavm.jso.file;
 
-import org.teavm.jso.JSBody;
+import org.teavm.jso.JSIndexer;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
@@ -23,15 +23,14 @@ import org.teavm.jso.JSProperty;
 *
 * @author Jan-Felix Wittmann
 */
-public abstract class BlobOptions implements JSObject {
+public interface FileList extends JSObject {
 
     @JSProperty
-    public abstract void setType(String type);
+    int getLength();
 
-    @JSProperty
-    public abstract void setEndings(String endings);
+    @JSIndexer
+    File get(int index);
 
-    @JSBody(params = {}, script = "return {};")
-    public static native BlobOptions create();
+    File item(int index);
 
 }

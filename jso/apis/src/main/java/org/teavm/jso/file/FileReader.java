@@ -13,11 +13,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.browser;
+package org.teavm.jso.file;
 
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
+import org.teavm.jso.blob.Blob;
+import org.teavm.jso.browser.DOMError;
+import org.teavm.jso.core.JSString;
+import org.teavm.jso.typedarrays.ArrayBuffer;
 
 /**
 *
@@ -40,27 +44,23 @@ public abstract class FileReader implements JSObject, FileReaderEventTarget {
     @JSProperty
     public abstract <T extends JSObject> T getResult();
 
+    @JSProperty("result")
+    public abstract JSString getResultAsString();
+
+    @JSProperty("result")
+    public abstract ArrayBuffer getResultAsArrayBuffer();
+
     public abstract void abort();
 
-    public abstract void readAsArrayBuffer(Blob blob);
+    public abstract <T extends Blob> void readAsArrayBuffer(T blob);
 
-    public abstract void readAsArrayBuffer(File file);
+    public abstract <T extends Blob> void readAsBinaryString(T blob);
 
-    public abstract void readAsBinaryString(Blob blob);
+    public abstract <T extends Blob> void readAsDataURL(T blob);
 
-    public abstract void readAsBinaryString(File file);
+    public abstract <T extends Blob> void readAsText(T blob);
 
-    public abstract void readAsDataURL(Blob blob);
-
-    public abstract void readAsDataURL(File file);
-
-    public abstract void readAsText(Blob blob);
-
-    public abstract void readAsText(File file);
-
-    public abstract void readAsText(Blob blob, String encoding);
-
-    public abstract void readAsText(File file, String encoding);
+    public abstract <T extends Blob> void readAsText(T blob, String encoding);
 
     @JSBody(params = {}, script = "return new FileReader();")
     public static native FileReader create();
