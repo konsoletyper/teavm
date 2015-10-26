@@ -32,11 +32,6 @@ public abstract class Blob implements JSObject, BlobConvertible {
     @JSProperty
     public abstract String getType();
 
-    @JSProperty
-    public abstract boolean getIsClosed();
-
-    public abstract void close();
-
     public abstract Blob slice();
 
     public abstract Blob slice(int start);
