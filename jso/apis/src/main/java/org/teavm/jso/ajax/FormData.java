@@ -19,6 +19,7 @@ import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.blob.Blob;
 import org.teavm.jso.core.JSArray;
+import org.teavm.jso.dom.html.HTMLFormElement;
 
 /**
 *
@@ -53,4 +54,6 @@ public abstract class FormData implements JSObject {
     @JSBody(params = {}, script = "return new FormData();")
     public static native FormData create();
 
+    @JSBody(params = { "form" }, script = "return new FormData(form);")
+    public static native FormData create(HTMLFormElement form);
 }
