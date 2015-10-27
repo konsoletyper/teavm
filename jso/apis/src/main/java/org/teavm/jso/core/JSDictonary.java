@@ -23,29 +23,72 @@ import org.teavm.jso.JSObject;
 *
 * @author Jan-Felix Wittmann
 */
-public abstract class JSDictonary<K extends JSObject, T extends JSObject> implements JSObject {
+
+public abstract class JSDictonary implements JSObject {
 
     @JSIndexer
-    public abstract T get(K key);
+    public abstract JSObject get(String key);
 
     @JSIndexer
-    public abstract T get(String key);
+    public abstract JSObject get(int key);
 
     @JSIndexer
-    public abstract void set(K key, T value);
+    public abstract JSObject get(float key);
 
     @JSIndexer
-    public abstract void set(String key, T value);
-    
+    public abstract <V extends JSObject> void set(String key, V value);
+
+    @JSIndexer
+    public abstract <V extends JSObject> void set(int key, V value);
+
+    @JSIndexer
+    public abstract <V extends JSObject> void set(float key, V value);
+
+    public <V extends JSObject> JSDictonary with(String key, V value) {
+        this.set(key, value);
+        return this;
+    }
+
+    public JSDictonary with(String key, String value) {
+        return this.with(key, JSString.valueOf(value));
+    }
+
+    public JSDictonary with(String key, JSDictonary value) {
+        return this.with(key, (JSObject) value);
+    }
+
+    public JSDictonary with(String key, int value) {
+        return this.with(key, JSNumber.valueOf(value));
+    }
+
+    public JSDictonary with(String key, float value) {
+        return this.with(key, JSNumber.valueOf(value));
+    }
+
+    public JSDictonary with(String key, double value) {
+        return this.with(key, JSNumber.valueOf(value));
+    }
+
+    public JSDictonary with(String key, boolean value) {
+        return this.with(key, JSBoolean.valueOf(value));
+    }
+
     @JSBody(params = { "key" }, script = "delete this[key]; return this;")
-    public final native JSDictonary<K, T> del(K key);
+    public final native JSDictonary del(String key);
+
+    @JSBody(params = { "key" }, script = "delete this[key]; return this;")
+    public final native JSDictonary del(int key);
+
+    @JSBody(params = { "key" }, script = "delete this[key]; return this;")
+    public final native JSDictonary del(float key);
 
     @JSBody(params = {}, script = "return Object.keys(this);")
-    public final native K[] keys();
+    public final native String[] keys();
 
     @JSBody(params = {}, script = "return {};")
-    public static native <K extends JSObject, T extends JSObject> JSDictonary<K, T> create();
+    public static native JSDictonary create();
 
     @JSBody(params = { "obj" }, script = "return obj;")
-    public static native <K extends JSObject, T extends JSObject> JSDictonary<K, T> create(JSObject obj);
+    public static native JSDictonary of(JSObject obj);
+
 }

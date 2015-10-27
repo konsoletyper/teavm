@@ -60,4 +60,5 @@ public abstract class Blob implements JSObject, BlobConvertible {
 
     @JSBody(params = {}, script = "return this.slice || this.mozSlice || this.webkitSlice;")
     private native JSFunction getSliceImpl();
+
 }
