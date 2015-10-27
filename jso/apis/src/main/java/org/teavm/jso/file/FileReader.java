@@ -19,8 +19,8 @@ import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.blob.Blob;
-import org.teavm.jso.browser.DOMError;
 import org.teavm.jso.core.JSString;
+import org.teavm.jso.dom.DOMError;
 import org.teavm.jso.typedarrays.ArrayBuffer;
 
 /**

@@ -19,6 +19,9 @@ import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.core.JSArray;
+import org.teavm.jso.core.JSFunction;
+import org.teavm.jso.core.JSNumber;
+import org.teavm.jso.core.JSString;
 
 /**
 *
@@ -32,13 +35,22 @@ public abstract class Blob implements JSObject, BlobConvertible {
     @JSProperty
     public abstract String getType();
 
-    public abstract Blob slice();
+    public Blob slice() {
+        return getSliceImpl().call(this).cast();
+    }
 
-    public abstract Blob slice(int start);
+    public Blob slice(int start) {
+        return getSliceImpl().call(this, JSNumber.valueOf(start)).cast();
+    }
 
-    public abstract Blob slice(int start, int end);
+    public Blob slice(int start, int end) {
+        return getSliceImpl().call(this, JSNumber.valueOf(start), JSNumber.valueOf(end)).cast();
+    }
 
-    public abstract Blob slice(int start, int end, String contentType);
+    public Blob slice(int start, int end, String contentType) {
+        return getSliceImpl().call(this, JSNumber.valueOf(start), JSNumber.valueOf(end), JSString.valueOf(contentType))
+                .cast();
+    }
 
     @JSBody(params = { "array" }, script = "return new Blob(array);")
     public static native <T extends JSObject & BlobConvertible> Blob create(JSArray<T> array);
@@ -46,4 +58,6 @@ public abstract class Blob implements JSObject, BlobConvertible {
     @JSBody(params = { "array", "options" }, script = "return new Blob(array, options);")
     public static native <T extends JSObject & BlobConvertible> Blob create(JSArray<T> array, BlobOptions options);
 
+    @JSBody(params = {}, script = "return this.slice || this.mozSlice || this.webkitSlice;")
+    private native JSFunction getSliceImpl();
 }

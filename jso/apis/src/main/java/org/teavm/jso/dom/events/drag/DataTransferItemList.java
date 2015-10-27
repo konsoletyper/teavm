@@ -13,14 +13,24 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.browser;
+package org.teavm.jso.dom.events.drag;
 
 import org.teavm.jso.JSObject;
-import org.teavm.jso.JSProperty;
+import org.teavm.jso.core.JSArrayReader;
+import org.teavm.jso.file.File;
 
-public interface DOMError extends JSObject {
+/**
+*
+* @author Jan-Felix Wittmann
+*/
+public interface DataTransferItemList extends JSObject, JSArrayReader<File> {
 
-    @JSProperty
-    String getName();
+    DataTransferItem add(File data);
+
+    void clear();
+
+    File item(int index);
+
+    void remove(int index);
 
 }

@@ -18,6 +18,7 @@ package org.teavm.jso.dom.html;
 import java.util.function.Consumer;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.css.ElementCSSInlineStyle;
+import org.teavm.jso.dom.events.DragEventTarget;
 import org.teavm.jso.dom.events.EventTarget;
 import org.teavm.jso.dom.events.FocusEventTarget;
 import org.teavm.jso.dom.events.KeyboardEventTarget;
@@ -32,7 +33,7 @@ import org.teavm.jso.dom.xml.NodeList;
  * @author Alexey Andreev
  */
 public interface HTMLElement extends Element, ElementCSSInlineStyle, EventTarget, FocusEventTarget, MouseEventTarget,
-        KeyboardEventTarget, LoadEventTarget {
+        KeyboardEventTarget, LoadEventTarget, DragEventTarget {
     @Override
     @JSProperty
     NodeList<? extends HTMLElement> getElementsByTagName(String name);
