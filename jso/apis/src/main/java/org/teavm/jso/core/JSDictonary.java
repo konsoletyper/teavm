@@ -89,4 +89,5 @@ public abstract class JSDictonary implements JSObject {
 
     @JSBody(params = { "obj" }, script = "return obj;")
     public static native JSDictonary of(JSObject obj);
+
 }
