@@ -25,6 +25,6 @@ import org.teavm.jso.JSObject;
 @JSFunctor
 public interface DataTransferItemAsStringCallback extends JSObject {
 
-    public void apply(String data);
+    void apply(String data);
 
 }
