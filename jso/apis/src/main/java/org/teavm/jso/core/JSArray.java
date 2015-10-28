@@ -89,12 +89,37 @@ public abstract class JSArray<T extends JSObject> implements JSArrayReader<T> {
     @JSBody(params = "size", script = "return new Array(size);")
     public static native <T extends JSObject> JSArray<T> create(int size);
 
-    @SafeVarargs
-    public static <S extends JSObject> JSArray<S> of(S... items) {
-        JSArray<S> array = create(items.length);
+    private static <V extends Object, S extends JSObject> JSArray<S> of(V[] items, JSObjectMapper<V, S> mapper) {
+        final JSArray<S> array = create(items.length);
         for (int i = 0; i < items.length; ++i) {
-            array.set(i, items[i]);
+            array.set(i, mapper.apply(items[i]));
         }
         return array;
     }
+
+    @SafeVarargs
+    public static <S extends JSObject> JSArray<S> of(S... items) {
+        return of(items, value -> value);
+    }
+
+    @SafeVarargs
+    public static JSArray<JSString> of(String... items) {
+        return of(items, value -> JSString.valueOf(value));
+    }
+
+    @SafeVarargs
+    public static JSArray<JSNumber> of(Integer... items) {
+        return of(items, value -> JSNumber.valueOf(value));
+    }
+
+    @SafeVarargs
+    public static JSArray<JSNumber> of(Double... items) {
+        return of(items, value -> JSNumber.valueOf(value));
+    }
+
+    @SafeVarargs
+    public static JSArray<JSNumber> of(Float... items) {
+        return of(items, value -> JSNumber.valueOf(value));
+    }
+
 }

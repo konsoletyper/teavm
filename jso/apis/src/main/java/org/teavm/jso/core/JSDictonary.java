@@ -15,6 +15,8 @@
  */
 package org.teavm.jso.core;
 
+import java.util.Map;
+
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSIndexer;
 import org.teavm.jso.JSObject;
@@ -30,22 +32,10 @@ public abstract class JSDictonary implements JSObject {
     public abstract JSObject get(String key);
 
     @JSIndexer
-    public abstract JSObject get(int key);
-
-    @JSIndexer
-    public abstract JSObject get(float key);
-
-    @JSIndexer
-    public abstract <V extends JSObject> void set(String key, V value);
-
-    @JSIndexer
-    public abstract <V extends JSObject> void set(int key, V value);
-
-    @JSIndexer
-    public abstract <V extends JSObject> void set(float key, V value);
+    public abstract <V extends JSObject> void put(String key, V value);
 
     public <V extends JSObject> JSDictonary with(String key, V value) {
-        this.set(key, value);
+        this.put(key, value);
         return this;
     }
 
@@ -57,30 +47,40 @@ public abstract class JSDictonary implements JSObject {
         return this.with(key, (JSObject) value);
     }
 
-    public JSDictonary with(String key, int value) {
+    public JSDictonary with(String key, Integer value) {
         return this.with(key, JSNumber.valueOf(value));
     }
 
-    public JSDictonary with(String key, float value) {
+    public JSDictonary with(String key, Float value) {
         return this.with(key, JSNumber.valueOf(value));
     }
 
-    public JSDictonary with(String key, double value) {
+    public JSDictonary with(String key, Double value) {
         return this.with(key, JSNumber.valueOf(value));
     }
 
-    public JSDictonary with(String key, boolean value) {
+    public JSDictonary with(String key, Boolean value) {
         return this.with(key, JSBoolean.valueOf(value));
+    }
+
+    public JSDictonary withStringMap(Map<String, String> map) {
+        return of(this, map, value -> JSString.valueOf(value));
+    }
+
+    public JSDictonary withIntMap(Map<String, Integer> map) {
+        return of(this, map, value -> JSNumber.valueOf(value));
+    }
+
+    public JSDictonary withFloatMap(Map<String, Float> map) {
+        return of(this, map, value -> JSNumber.valueOf(value));
+    }
+
+    public JSDictonary withDoubleMap(Map<String, Double> map) {
+        return of(this, map, value -> JSNumber.valueOf(value));
     }
 
     @JSBody(params = { "key" }, script = "delete this[key]; return this;")
     public final native JSDictonary del(String key);
-
-    @JSBody(params = { "key" }, script = "delete this[key]; return this;")
-    public final native JSDictonary del(int key);
-
-    @JSBody(params = { "key" }, script = "delete this[key]; return this;")
-    public final native JSDictonary del(float key);
 
     @JSBody(params = {}, script = "return Object.keys(this);")
     public final native String[] keys();
@@ -91,4 +91,32 @@ public abstract class JSDictonary implements JSObject {
     @JSBody(params = { "obj" }, script = "return obj;")
     public static native JSDictonary of(JSObject obj);
 
+    private static <V extends Object> JSDictonary of(JSDictonary dict, Map<String, V> map,
+            JSObjectMapper<V, JSObject> mapper) {
+        for (Map.Entry<String, V> entry : map.entrySet()) {
+            dict.put(entry.getKey(), mapper.apply(entry.getValue()));
+        }
+        return dict;
+    }
+
+    private static <V extends Object> JSDictonary of(Map<String, V> map, JSObjectMapper<V, JSObject> mapper) {
+        final JSDictonary dict = create();
+        return of(dict, map, mapper);
+    }
+
+    public static JSDictonary ofStringMap(Map<String, String> map) {
+        return of(map, value -> JSString.valueOf(value));
+    }
+
+    public static JSDictonary ofIntMap(Map<String, Integer> map) {
+        return of(map, value -> JSNumber.valueOf(value));
+    }
+
+    public static JSDictonary ofFloatMap(Map<String, Float> map) {
+        return of(map, value -> JSNumber.valueOf(value));
+    }
+
+    public static JSDictonary ofDoubleMap(Map<String, Double> map) {
+        return of(map, value -> JSNumber.valueOf(value));
+    }
 }
