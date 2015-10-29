@@ -35,7 +35,7 @@ public abstract class JSString implements JSObject, BlobConvertible {
     @JSBody(params = "str", script = "return str;")
     private static native String stringValue(JSString str);
 
-    @JSBody(params = "val", script = "return str;")
+    @JSBody(params = "str", script = "return str;")
     public static native JSString valueOf(String str);
 
     @JSBody(params = "val", script = "return val.toString()")
