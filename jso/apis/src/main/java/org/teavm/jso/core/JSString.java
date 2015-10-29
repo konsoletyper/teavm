@@ -18,12 +18,13 @@ package org.teavm.jso.core;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
+import org.teavm.jso.blob.BlobConvertible;
 
 /**
  *
  * @author Alexey Andreev
  */
-public abstract class JSString implements JSObject {
+public abstract class JSString implements JSObject, BlobConvertible {
     private JSString() {
     }
 
@@ -36,6 +37,15 @@ public abstract class JSString implements JSObject {
 
     @JSBody(params = "str", script = "return str;")
     public static native JSString valueOf(String str);
+
+    @JSBody(params = "val", script = "return val.toString()")
+    public static native JSString valueOf(int val);
+
+    @JSBody(params = "val", script = "return val.toString()")
+    public static native JSString valueOf(double val);
+
+    @JSBody(params = "val", script = "return val.toString()")
+    public static native JSString valueOf(float val);
 
     @JSBody(params = "code", script = "return String.fromCharCode(code)")
     public static native JSString fromCharCode(int code);
