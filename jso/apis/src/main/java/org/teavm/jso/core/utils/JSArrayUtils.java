@@ -23,13 +23,6 @@ import org.teavm.jso.JSObject;
 import org.teavm.jso.core.JSArray;
 import org.teavm.jso.core.JSNumber;
 import org.teavm.jso.core.JSString;
-import org.teavm.jso.core.utils.JSArrayFunctors.JSFilterFunction;
-import org.teavm.jso.core.utils.JSArrayFunctors.JSForeachFunction;
-import org.teavm.jso.core.utils.JSArrayFunctors.JSMapDoubleFunction;
-import org.teavm.jso.core.utils.JSArrayFunctors.JSMapFunction;
-import org.teavm.jso.core.utils.JSArrayFunctors.JSMapIntFunction;
-import org.teavm.jso.core.utils.JSArrayFunctors.JSMapStringFunction;
-import org.teavm.jso.core.utils.JSArrayFunctors.JSReduceFunction;
 
 /**
 *
@@ -39,7 +32,7 @@ public final class JSArrayUtils {
 
     private JSArrayUtils() {
     }
-    
+
     public static <V extends Object, S extends JSObject> JSArray<S> of(V[] items, JSFromObjectMapper<V, S> mapper) {
         final JSArray<S> array = JSArray.create(items.length);
         for (int i = 0; i < items.length; ++i) {
@@ -120,10 +113,6 @@ public final class JSArrayUtils {
     @JSBody(params = { "arr", "callback" }, script = "return arr.forEach(callback);")
     public static native <T extends JSObject> void forEach(JSArray<T> arr, JSForeachFunction<T> callback);
 
-    @JSBody(params = { "arr", "callback" }, script = "return arr.map(callback);")
-    public static native <T extends JSObject, R extends JSObject> JSArray<R> map(JSArray<T> arr,
-            JSMapFunction<T, R> callback);
-
     @JSBody(params = { "arr", "callback" }, script = "return arr.filter(callback);")
     public static native <T extends JSObject> void filter(JSArray<T> arr, JSFilterFunction<T> callback);
 
@@ -131,17 +120,9 @@ public final class JSArrayUtils {
     public static native <T extends JSObject, R extends JSObject> void reduce(JSArray<T> arr,
             JSReduceFunction<T, R> callback);
 
-    public static JSArray<JSNumber> mapInt(JSArray<JSNumber> array, JSMapIntFunction callback) {
-        return map(array, (el, idx, arr) -> JSNumber.valueOf(callback.apply(el.intValue(), idx, arr)));
-    }
-
-    public static JSArray<JSNumber> mapDouble(JSArray<JSNumber> array, JSMapDoubleFunction callback) {
-        return map(array, (el, idx, arr) -> JSNumber.valueOf(callback.apply(el.doubleValue(), idx, arr)));
-    }
-
-    public static JSArray<JSString> mapString(JSArray<JSString> array, JSMapStringFunction callback) {
-        return map(array, (el, idx, arr) -> JSString.valueOf(callback.apply(el.stringValue(), idx, arr)));
-    }
+    @JSBody(params = { "arr", "callback" }, script = "return arr.map(callback);")
+    public static native <T extends JSObject, R extends JSObject> JSArray<R> map(JSArray<T> arr,
+            JSMapFunction<T, R> callback);
 
     @JSBody(params = {}, script = "return typeof Array.prototype.forEach !== 'undefined';")
     public static native boolean isForEachSupported();
