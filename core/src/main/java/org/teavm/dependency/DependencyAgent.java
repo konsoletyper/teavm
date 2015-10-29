@@ -44,6 +44,10 @@ public class DependencyAgent implements DependencyInfo, ServiceRepository {
         return checker.generateClassName();
     }
 
+    public String submitClassFile(byte[] data) {
+        return checker.submitClassFile(data);
+    }
+
     public void submitClass(ClassHolder cls) {
         checker.submitClass(cls);
     }

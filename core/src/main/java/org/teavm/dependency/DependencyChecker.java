@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import org.objectweb.asm.tree.ClassNode;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.callgraph.DefaultCallGraph;
 import org.teavm.callgraph.DefaultCallGraphNode;
@@ -52,6 +53,7 @@ import org.teavm.model.ValueType;
 import org.teavm.model.util.ModelUtils;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.optimization.UnreachableBasicBlockEliminator;
+import org.teavm.parsing.Parser;
 
 /**
  *
@@ -155,6 +157,14 @@ public class DependencyChecker implements DependencyInfo {
 
     public String generateClassName() {
         return "$$teavm_generated_class$$" + classNameSuffix++;
+    }
+
+    public String submitClassFile(byte[] data) {
+        ClassNode node = new ClassNode();
+        org.objectweb.asm.ClassReader reader = new org.objectweb.asm.ClassReader(data);
+        reader.accept(node, 0);
+        submitClass(Parser.parseClass(node));
+        return node.name;
     }
 
     public void submitClass(ClassHolder cls) {
