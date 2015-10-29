@@ -20,6 +20,7 @@ import java.util.Map;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSIndexer;
 import org.teavm.jso.JSObject;
+import org.teavm.jso.core.utils.JSDictonaryUtils;
 
 /**
 *
@@ -27,6 +28,9 @@ import org.teavm.jso.JSObject;
 */
 
 public abstract class JSDictonary implements JSObject {
+  
+    private JSDictonary() {
+    }
 
     @JSIndexer
     public abstract JSObject get(String key);
@@ -64,19 +68,19 @@ public abstract class JSDictonary implements JSObject {
     }
 
     public JSDictonary withStringMap(Map<String, String> map) {
-        return of(this, map, value -> JSString.valueOf(value));
+        return JSDictonaryUtils.of(this, map, value -> JSString.valueOf(value));
     }
 
     public JSDictonary withIntMap(Map<String, Integer> map) {
-        return of(this, map, value -> JSNumber.valueOf(value));
+        return JSDictonaryUtils.of(this, map, value -> JSNumber.valueOf(value));
     }
 
     public JSDictonary withFloatMap(Map<String, Float> map) {
-        return of(this, map, value -> JSNumber.valueOf(value));
+        return JSDictonaryUtils.of(this, map, value -> JSNumber.valueOf(value));
     }
 
     public JSDictonary withDoubleMap(Map<String, Double> map) {
-        return of(this, map, value -> JSNumber.valueOf(value));
+        return JSDictonaryUtils.of(this, map, value -> JSNumber.valueOf(value));
     }
 
     @JSBody(params = { "key" }, script = "delete this[key]; return this;")
@@ -91,32 +95,4 @@ public abstract class JSDictonary implements JSObject {
     @JSBody(params = { "obj" }, script = "return obj;")
     public static native JSDictonary of(JSObject obj);
 
-    private static <V extends Object> JSDictonary of(JSDictonary dict, Map<String, V> map,
-            JSObjectMapper<V, JSObject> mapper) {
-        for (Map.Entry<String, V> entry : map.entrySet()) {
-            dict.put(entry.getKey(), mapper.apply(entry.getValue()));
-        }
-        return dict;
-    }
-
-    private static <V extends Object> JSDictonary of(Map<String, V> map, JSObjectMapper<V, JSObject> mapper) {
-        final JSDictonary dict = create();
-        return of(dict, map, mapper);
-    }
-
-    public static JSDictonary ofStringMap(Map<String, String> map) {
-        return of(map, value -> JSString.valueOf(value));
-    }
-
-    public static JSDictonary ofIntMap(Map<String, Integer> map) {
-        return of(map, value -> JSNumber.valueOf(value));
-    }
-
-    public static JSDictonary ofFloatMap(Map<String, Float> map) {
-        return of(map, value -> JSNumber.valueOf(value));
-    }
-
-    public static JSDictonary ofDoubleMap(Map<String, Double> map) {
-        return of(map, value -> JSNumber.valueOf(value));
-    }
 }

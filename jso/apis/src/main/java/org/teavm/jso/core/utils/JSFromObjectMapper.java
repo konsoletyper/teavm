@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.core;
+package org.teavm.jso.core.utils;
 
 import org.teavm.jso.JSObject;
 
@@ -22,7 +22,7 @@ import org.teavm.jso.JSObject;
 * @author Jan-Felix Wittmann
 */
 @FunctionalInterface
-public interface JSObjectMapper<V extends Object, R extends JSObject> {
+public interface JSFromObjectMapper<V extends Object, R extends JSObject> {
 
     R apply(V value);
 
