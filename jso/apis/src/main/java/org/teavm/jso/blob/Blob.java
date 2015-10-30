@@ -52,13 +52,23 @@ public abstract class Blob implements JSObject, BlobConvertible {
                 .cast();
     }
 
+    @JSBody(params = {}, script = "return this.slice || this.mozSlice || this.webkitSlice;")
+    private native JSFunction getSliceImpl();
+
+    public boolean isSliceSupported() {
+        return !isSliceUndefined(getSliceImpl());
+    }
+
     @JSBody(params = { "array" }, script = "return new Blob(array);")
     public static native <T extends JSObject & BlobConvertible> Blob create(JSArray<T> array);
 
     @JSBody(params = { "array", "options" }, script = "return new Blob(array, options);")
     public static native <T extends JSObject & BlobConvertible> Blob create(JSArray<T> array, BlobOptions options);
 
-    @JSBody(params = {}, script = "return this.slice || this.mozSlice || this.webkitSlice;")
-    private native JSFunction getSliceImpl();
+    @JSBody(params = {}, script = "return typeof Blob !== 'undefined';")
+    public static native boolean isSupported();
+
+    @JSBody(params = { "slice" }, script = "return typeof slice === 'undefined';")
+    private native boolean isSliceUndefined(JSFunction slice);
 
 }

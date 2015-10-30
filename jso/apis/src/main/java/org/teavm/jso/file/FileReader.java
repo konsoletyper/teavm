@@ -65,4 +65,7 @@ public abstract class FileReader implements JSObject, FileReaderEventTarget {
     @JSBody(params = {}, script = "return new FileReader();")
     public static native FileReader create();
 
+    @JSBody(params = {}, script = "return typeof FileReader !== 'undefined';")
+    public static native boolean isSupported();
+
 }

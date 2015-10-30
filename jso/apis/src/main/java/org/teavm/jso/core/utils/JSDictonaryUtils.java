@@ -27,11 +27,10 @@ import org.teavm.jso.core.JSString;
 * @author Jan-Felix Wittmann
 */
 public class JSDictonaryUtils {
-    
+
     private JSDictonaryUtils() {
-        
     }
-    
+
     public static <V extends Object> JSDictonary of(JSDictonary dict, Map<String, V> map,
             JSFromObjectMapper<V, JSObject> mapper) {
         for (Map.Entry<String, V> entry : map.entrySet()) {
@@ -60,4 +59,22 @@ public class JSDictonaryUtils {
     public static JSDictonary ofDoubleMap(Map<String, Double> map) {
         return of(map, value -> JSNumber.valueOf(value));
     }
+
+    public <V extends Object> JSDictonary putStringMap(JSDictonary dict, Map<String, String> map) {
+        return of(dict, map, value -> JSString.valueOf(value));
+    }
+
+    public JSDictonary putIntMap(JSDictonary dict, Map<String, Integer> map) {
+        return of(dict, map, value -> JSNumber.valueOf(value));
+    }
+
+    public JSDictonary putFloatMap(JSDictonary dict, Map<String, Float> map) {
+        return of(dict, map, value -> JSNumber.valueOf(value));
+    }
+
+    public JSDictonary putDoubleMap(JSDictonary dict, Map<String, Double> map) {
+        return of(dict, map, value -> JSNumber.valueOf(value));
+    }
+
 }
+

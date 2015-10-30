@@ -15,12 +15,9 @@
  */
 package org.teavm.jso.core;
 
-import java.util.Map;
-
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSIndexer;
 import org.teavm.jso.JSObject;
-import org.teavm.jso.core.utils.JSDictonaryUtils;
 
 /**
 *
@@ -28,7 +25,7 @@ import org.teavm.jso.core.utils.JSDictonaryUtils;
 */
 
 public abstract class JSDictonary implements JSObject {
-  
+
     private JSDictonary() {
     }
 
@@ -67,27 +64,14 @@ public abstract class JSDictonary implements JSObject {
         return this.with(key, JSBoolean.valueOf(value));
     }
 
-    public JSDictonary withStringMap(Map<String, String> map) {
-        return JSDictonaryUtils.of(this, map, value -> JSString.valueOf(value));
-    }
-
-    public JSDictonary withIntMap(Map<String, Integer> map) {
-        return JSDictonaryUtils.of(this, map, value -> JSNumber.valueOf(value));
-    }
-
-    public JSDictonary withFloatMap(Map<String, Float> map) {
-        return JSDictonaryUtils.of(this, map, value -> JSNumber.valueOf(value));
-    }
-
-    public JSDictonary withDoubleMap(Map<String, Double> map) {
-        return JSDictonaryUtils.of(this, map, value -> JSNumber.valueOf(value));
-    }
-
     @JSBody(params = { "key" }, script = "delete this[key]; return this;")
     public final native JSDictonary del(String key);
 
     @JSBody(params = {}, script = "return Object.keys(this);")
     public final native String[] keys();
+
+    @JSBody(params = { "key" }, script = "return this.hasOwnProperty(key)")
+    public final native boolean has(String key);
 
     @JSBody(params = {}, script = "return {};")
     public static native JSDictonary create();
