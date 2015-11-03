@@ -60,21 +60,20 @@ public class JSDictonaryUtils {
         return of(map, value -> JSNumber.valueOf(value));
     }
 
-    public <V extends Object> JSDictonary putStringMap(JSDictonary dict, Map<String, String> map) {
-        return of(dict, map, value -> JSString.valueOf(value));
+    public void putStringMap(JSDictonary dict, Map<String, String> map) {
+        of(dict, map, value -> JSString.valueOf(value));
     }
 
-    public JSDictonary putIntMap(JSDictonary dict, Map<String, Integer> map) {
-        return of(dict, map, value -> JSNumber.valueOf(value));
+    public void putIntMap(JSDictonary dict, Map<String, Integer> map) {
+        of(dict, map, value -> JSNumber.valueOf(value));
     }
 
-    public JSDictonary putFloatMap(JSDictonary dict, Map<String, Float> map) {
-        return of(dict, map, value -> JSNumber.valueOf(value));
+    public void putFloatMap(JSDictonary dict, Map<String, Float> map) {
+        of(dict, map, value -> JSNumber.valueOf(value));
     }
 
-    public JSDictonary putDoubleMap(JSDictonary dict, Map<String, Double> map) {
-        return of(dict, map, value -> JSNumber.valueOf(value));
+    public void putDoubleMap(JSDictonary dict, Map<String, Double> map) {
+        of(dict, map, value -> JSNumber.valueOf(value));
     }
 
 }
-

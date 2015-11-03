@@ -18,7 +18,6 @@ package org.teavm.jso.core.utils;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.core.JSArray;
 import org.teavm.jso.core.JSNumber;
@@ -32,7 +31,7 @@ public final class JSArrayUtils {
 
     private JSArrayUtils() {
     }
-
+    
     public static <V extends Object, S extends JSObject> JSArray<S> of(V[] items, JSFromObjectMapper<V, S> mapper) {
         final JSArray<S> array = JSArray.create(items.length);
         for (int i = 0; i < items.length; ++i) {
@@ -110,29 +109,4 @@ public final class JSArrayUtils {
         return asList(arr, value -> value.floatValue());
     }
 
-    @JSBody(params = { "arr", "callback" }, script = "return arr.forEach(callback);")
-    public static native <T extends JSObject> void forEach(JSArray<T> arr, JSForeachFunction<T> callback);
-
-    @JSBody(params = { "arr", "callback" }, script = "return arr.filter(callback);")
-    public static native <T extends JSObject> void filter(JSArray<T> arr, JSFilterFunction<T> callback);
-
-    @JSBody(params = { "arr", "callback" }, script = "return arr.reduce(callback);")
-    public static native <T extends JSObject, R extends JSObject> void reduce(JSArray<T> arr,
-            JSReduceFunction<T, R> callback);
-
-    @JSBody(params = { "arr", "callback" }, script = "return arr.map(callback);")
-    public static native <T extends JSObject, R extends JSObject> JSArray<R> map(JSArray<T> arr,
-            JSMapFunction<T, R> callback);
-
-    @JSBody(params = {}, script = "return typeof Array.prototype.forEach !== 'undefined';")
-    public static native boolean isForEachSupported();
-
-    @JSBody(params = {}, script = "return typeof Array.prototype.map !== 'undefined';")
-    public static native boolean isMapSupported();
-
-    @JSBody(params = {}, script = "return typeof Array.prototype.filter !== 'undefined';")
-    public static native boolean isFilterSupported();
-
-    @JSBody(params = {}, script = "return typeof Array.prototype.reduce !== 'undefined';")
-    public static native boolean isReduceSupported();
 }

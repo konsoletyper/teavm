@@ -15,15 +15,14 @@
  */
 package org.teavm.jso.core;
 
-import org.teavm.jso.JSBody;
 import org.teavm.jso.JSIndexer;
 import org.teavm.jso.JSObject;
+import org.teavm.jso.core.utils.JSObjectUtils;
 
 /**
 *
 * @author Jan-Felix Wittmann
 */
-
 public abstract class JSDictonary implements JSObject {
 
     private JSDictonary() {
@@ -64,19 +63,25 @@ public abstract class JSDictonary implements JSObject {
         return this.with(key, JSBoolean.valueOf(value));
     }
 
-    @JSBody(params = { "key" }, script = "delete this[key]; return this;")
-    public final native JSDictonary del(String key);
+    public JSObject remove(String key) {
+        if (JSObjectUtils.hasOwnProperty(this, key)) {
+            final JSObject value = get(key);
+            JSObjectUtils.delete(this, key);
+            return value;
+        }
+        return null;
+    }
 
-    @JSBody(params = {}, script = "return Object.keys(this);")
-    public final native String[] keys();
+    public String[] keys() {
+        return JSObjectUtils.keys(this);
+    }
 
-    @JSBody(params = { "key" }, script = "return this.hasOwnProperty(key)")
-    public final native boolean has(String key);
+    public boolean has(String key) {
+        return JSObjectUtils.hasOwnProperty(this, key);
+    }
 
-    @JSBody(params = {}, script = "return {};")
-    public static native JSDictonary create();
-
-    @JSBody(params = { "obj" }, script = "return obj;")
-    public static native JSDictonary of(JSObject obj);
+    public static JSDictonary create() {
+        return JSObjectUtils.create();
+    }
 
 }

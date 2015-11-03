@@ -17,16 +17,12 @@ package org.teavm.jso.core.utils;
 
 import org.teavm.jso.JSFunctor;
 import org.teavm.jso.JSObject;
-import org.teavm.jso.core.JSArray;
 
 /**
 *
 * @author Jan-Felix Wittmann
 */
 @JSFunctor
-@FunctionalInterface
-public interface JSForeachFunction<T extends JSObject> extends JSObject {
-
-    void apply(T element, int index, JSArray<T> arr);
-
+public interface JSForInCallback<P extends JSObject> extends JSObject {
+    void apply(P prop, JSObject obj);
 }
