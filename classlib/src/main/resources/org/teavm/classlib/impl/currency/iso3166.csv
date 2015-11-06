@@ -37,8 +37,8 @@ Sort Order,Common Name,Formal Name,Type,Sub Type,Sovereignty,Capital,ISO 4217 Cu
 36,"China, People's Republic of",People's Republic of China,Independent State,,,Beijing,CNY,Yuan Renminbi,86,CN,CHN,156,.cn
 37,Colombia,Republic of Colombia,Independent State,,,Bogota,COP,Peso,57,CO,COL,170,.co
 38,Comoros,Union of Comoros,Independent State,,,Moroni,KMF,Franc,269,KM,COM,174,.km
-39,"Congo, (Congo  Kinshasa)",Democratic Republic of the Congo,Independent State,,,Kinshasa,CDF,Franc,243,CD,COD,180,.cd
-40,"Congo, (Congo  Brazzaville)",Republic of the Congo,Independent State,,,Brazzaville,XAF,Franc,242,CG,COG,178,.cg
+39,"Congo, (Congo Â– Kinshasa)",Democratic Republic of the Congo,Independent State,,,Kinshasa,CDF,Franc,243,CD,COD,180,.cd
+40,"Congo, (Congo Â– Brazzaville)",Republic of the Congo,Independent State,,,Brazzaville,XAF,Franc,242,CG,COG,178,.cg
 41,Costa Rica,Republic of Costa Rica,Independent State,,,San Jose,CRC,Colon,506,CR,CRI,188,.cr
 42,Cote d'Ivoire (Ivory Coast),Republic of Cote d'Ivoire,Independent State,,,Yamoussoukro,XOF,Franc,225,CI,CIV,384,.ci
 43,Croatia,Republic of Croatia,Independent State,,,Zagreb,HRK,Kuna,385,HR,HRV,191,.hr
@@ -212,7 +212,7 @@ Sort Order,Common Name,Formal Name,Type,Sub Type,Sovereignty,Capital,ISO 4217 Cu
 211,Saint Martin,Collectivity of Saint Martin,Dependency,Overseas Collectivity,France,Marigot,EUR,Euro,590,GP,GLP,312,.gp
 212,Saint Pierre and Miquelon,Territorial Collectivity of Saint Pierre and Miquelon,Dependency,Overseas Collectivity,France,Saint-Pierre,EUR,Euro,508,PM,SPM,666,.pm
 213,Wallis and Futuna,Collectivity of the Wallis and Futuna Islands,Dependency,Overseas Collectivity,France,Mata'utu,XPF,Franc,681,WF,WLF,876,.wf
-214,French Southern and Antarctic Lands,Territory of the French Southern and Antarctic Lands,Dependency,Overseas Territory,France,Martin-de-Viviès,,,,TF,ATF,260,.tf
+214,French Southern and Antarctic Lands,Territory of the French Southern and Antarctic Lands,Dependency,Overseas Territory,France,Martin-de-ViviÃ¨s,,,,TF,ATF,260,.tf
 215,Clipperton Island,,Dependency,Possession,France,,,,,PF,PYF,258,.pf
 216,Bouvet Island,,Dependency,Territory,Norway,,,,,BV,BVT,74,.bv
 217,Cook Islands,,Dependency,Self-Governing in Free Association,New Zealand,Avarua,NZD,Dollar,682,CK,COK,184,.ck
