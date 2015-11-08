@@ -68,6 +68,7 @@ public interface Location extends JSObject {
     @JSProperty
     String getHash();
 
+    @JSProperty
     void setHash(String hash);
 
     void assign(String url);

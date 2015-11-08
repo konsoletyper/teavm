@@ -312,15 +312,16 @@ public class DependencyChecker implements DependencyInfo {
     private Set<MethodReference> methodsAddedByRoot = new HashSet<>();
 
     public MethodDependency linkMethod(MethodReference methodRef, CallLocation callLocation) {
-        if (completing && getMethod(methodRef) == null) {
-            throw new IllegalStateException("Can't submit class during completion phase");
-        }
         if (methodRef == null) {
             throw new IllegalArgumentException();
         }
         MethodReader methodReader = methodReaderCache.map(methodRef);
         if (methodReader != null) {
             methodRef = methodReader.getReference();
+        }
+
+        if (completing && getMethod(methodRef) == null) {
+            throw new IllegalStateException("Can't submit class during completion phase");
         }
         callGraph.getNode(methodRef);
         boolean added = true;

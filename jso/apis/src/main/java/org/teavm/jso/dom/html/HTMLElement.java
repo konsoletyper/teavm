@@ -34,7 +34,6 @@ import org.teavm.jso.dom.xml.NodeList;
 public interface HTMLElement extends Element, ElementCSSInlineStyle, EventTarget, FocusEventTarget, MouseEventTarget,
         KeyboardEventTarget, LoadEventTarget {
     @Override
-    @JSProperty
     NodeList<? extends HTMLElement> getElementsByTagName(String name);
 
     @JSProperty

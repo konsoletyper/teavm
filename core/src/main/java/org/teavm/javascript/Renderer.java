@@ -196,7 +196,9 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
 
     @Override
     public Properties getProperties() {
-        return new Properties(properties);
+        Properties properties = new Properties();
+        properties.putAll(this.properties);
+        return properties;
     }
 
     public DebugInformationEmitter getDebugEmitter() {
