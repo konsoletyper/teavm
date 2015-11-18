@@ -77,6 +77,9 @@ public abstract class Window implements JSObject, WindowEventTarget, StorageProv
     @JSProperty
     public abstract Window getTop();
 
+    @JSProperty
+    public abstract History getHistory();
+
     @JSBody(params = "message", script = "alert(message);")
     public static native void alert(JSObject message);
 
