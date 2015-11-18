@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,23 +13,24 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.typedarrays;
+package org.teavm.jso.dom.events.drag;
 
-import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
-import org.teavm.jso.JSProperty;
-import org.teavm.jso.blob.BlobConvertible;
+import org.teavm.jso.core.JSArrayReader;
+import org.teavm.jso.file.File;
 
 /**
- *
- * @author Alexey Andreev
- */
-public abstract class ArrayBuffer implements JSObject, BlobConvertible {
-    @JSProperty
-    public abstract int getByteLength();
+*
+* @author Jan-Felix Wittmann
+*/
+public interface DataTransferItemList extends JSObject, JSArrayReader<File> {
 
-    public abstract ArrayBuffer slice(int begin, int end);
+    DataTransferItem add(File data);
 
-    @JSBody(params = "length", script = "return new ArrayBuffer(length);")
-    public static native ArrayBuffer create(int length);
+    void clear();
+
+    File item(int index);
+
+    void remove(int index);
+
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,62 +16,76 @@
 package org.teavm.jso.dom.html;
 
 import org.teavm.jso.JSProperty;
-import org.teavm.jso.file.FileList;
 
 /**
- *
- * @author Alexey Andreev
- */
-public interface HTMLInputElement extends HTMLElement {
-    @JSProperty
-    boolean isChecked();
+*
+* @author Jan-Felix Wittmann
+*/
+public interface HTMLFormElement extends HTMLElement {
 
     @JSProperty
-    void setChecked(boolean checked);
+    void setAcceptCharset(String acceptCharset);
 
     @JSProperty
-    boolean isDisabled();
+    String getAcceptCharset();
 
     @JSProperty
-    void setDisabled(boolean disabled);
+    void setAction(String action);
 
     @JSProperty
-    int getMaxLength();
+    String getAction();
 
     @JSProperty
-    void setMaxLength(int maxLength);
+    void setAutocomplete(String autocomplete);
 
     @JSProperty
-    String getName();
+    String getAutocomplete();
+
+    @JSProperty
+    void setEnctype(String enctype);
+
+    @JSProperty
+    String getEnctype();
+
+    @JSProperty
+    void setEncoding(String encoding);
+
+    @JSProperty
+    String getEncoding();
+
+    @JSProperty
+    void setMethod(String method);
+
+    @JSProperty
+    void getMethod();
 
     @JSProperty
     void setName(String name);
 
     @JSProperty
-    boolean isReadOnly();
+    String getName();
 
     @JSProperty
-    void setReadOnly(boolean readOnly);
+    void setNoValidate(boolean noValidate);
 
     @JSProperty
-    int getSize();
+    boolean isNoValidate();
 
     @JSProperty
-    void setSize(int size);
+    void setTarget(String target);
 
     @JSProperty
-    String getType();
+    String getTarget();
 
     @JSProperty
-    void setType(String type);
+    HTMLFormControlsCollection getElements();
 
     @JSProperty
-    String getValue();
+    int getLength();
 
-    @JSProperty
-    void setValue(String value);
+    void submit();
 
-    @JSProperty
-    FileList getFiles();
+    void reset();
 
+    void reportValidity();
 }

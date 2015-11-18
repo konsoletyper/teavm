@@ -15,6 +15,7 @@
  */
 package org.teavm.jso.browser;
 
+import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
@@ -22,24 +23,32 @@ import org.teavm.jso.JSProperty;
  *
  * @author Alexey Andreev
  */
-public interface History extends JSObject {
+public abstract class History implements JSObject {
     @JSProperty
-    int getLength();
+    public abstract int getLength();
 
     @JSProperty
-    JSObject getState();
+    public abstract JSObject getState();
 
-    void back();
+    public abstract void back();
 
-    void forward();
+    public abstract void forward();
 
-    void go(int delta);
+    public abstract void go(int delta);
 
-    void pushState(JSObject data, String title);
+    public abstract void pushState(JSObject data, String title);
 
-    void pushState(JSObject data, String title, String url);
+    public abstract void pushState(JSObject data, String title, String url);
 
-    void replaceState(JSObject data, String title);
+    public abstract void replaceState(JSObject data, String title);
 
-    void replaceState(JSObject data, String title, String url);
+    public abstract void replaceState(JSObject data, String title, String url);
+
+    @JSBody(params = {}, script = "return window.history && window.history.pushState;")
+    public static native boolean isSupported();
+
+    public static History current() {
+        return Window.current().getHistory();
+    }
+    
 }

@@ -77,6 +77,9 @@ public abstract class Window implements JSObject, WindowEventTarget, StorageProv
     @JSProperty
     public abstract Window getTop();
 
+    @JSProperty
+    public abstract History getHistory();
+
     @JSBody(params = "message", script = "alert(message);")
     public static native void alert(JSObject message);
 
@@ -166,4 +169,10 @@ public abstract class Window implements JSObject, WindowEventTarget, StorageProv
 
     @JSBody(params = "uri", script = "return decodeURIComponent(uri);")
     public static native String decodeURIComponent(String uri);
+
+    @JSBody(params = "encodedData", script = "return atob(encodedData);")
+    public static native String atob(String encodedData);
+
+    @JSBody(params = "str", script = "return btoa(str);")
+    public static native String btoa(String str);
 }

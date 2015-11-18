@@ -24,12 +24,13 @@ import org.teavm.jso.dom.events.KeyboardEventTarget;
 import org.teavm.jso.dom.events.LoadEventTarget;
 import org.teavm.jso.dom.events.MessageEvent;
 import org.teavm.jso.dom.events.MouseEventTarget;
+import org.teavm.jso.dom.events.PopStateEvent;
 
 /**
  *
  * @author Alexey Andreev
  */
-public interface WindowEventTarget extends EventTarget, FocusEventTarget, MouseEventTarget, KeyboardEventTarget,
+public interface WindowEventTarget extends EventTarget, FocusEventTarget, MouseEventTarget, KeyboardEventTarget, 
         LoadEventTarget {
     default void listenBeforeOnload(EventListener<Event> listener) {
         addEventListener("beforeunload", listener);
@@ -53,5 +54,13 @@ public interface WindowEventTarget extends EventTarget, FocusEventTarget, MouseE
 
     default void neglectHashChange(EventListener<HashChangeEvent> listener) {
         removeEventListener("hashchange", listener);
+    }
+
+    default void listenPopstate(EventListener<PopStateEvent> listener) {
+        addEventListener("popstate", listener);
+    }
+
+    default void neglectPopstate(EventListener<PopStateEvent> listener) {
+        removeEventListener("popstate", listener);
     }
 }

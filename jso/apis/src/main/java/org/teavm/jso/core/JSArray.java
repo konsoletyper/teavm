@@ -91,10 +91,11 @@ public abstract class JSArray<T extends JSObject> implements JSArrayReader<T> {
 
     @SafeVarargs
     public static <S extends JSObject> JSArray<S> of(S... items) {
-        JSArray<S> array = create(items.length);
+        final JSArray<S> array = create(items.length);
         for (int i = 0; i < items.length; ++i) {
             array.set(i, items[i]);
         }
         return array;
     }
+
 }

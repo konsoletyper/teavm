@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,23 +13,17 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.typedarrays;
+package org.teavm.jso.dom.html;
 
-import org.teavm.jso.JSBody;
-import org.teavm.jso.JSObject;
-import org.teavm.jso.JSProperty;
-import org.teavm.jso.blob.BlobConvertible;
+import org.teavm.jso.dom.xml.Element;
 
 /**
- *
- * @author Alexey Andreev
- */
-public abstract class ArrayBuffer implements JSObject, BlobConvertible {
-    @JSProperty
-    public abstract int getByteLength();
+*
+* @author Jan-Felix Wittmann
+*/
+public interface HTMLFormControlsCollection extends HTMLCollection {
 
-    public abstract ArrayBuffer slice(int begin, int end);
+    @Override
+    Element namedItem(String name); // returns the RadioNodeList or the Element
 
-    @JSBody(params = "length", script = "return new ArrayBuffer(length);")
-    public static native ArrayBuffer create(int length);
 }
