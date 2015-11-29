@@ -103,8 +103,8 @@ public class MethodHandle {
     }
 
     public static MethodHandle virtualCaller(String className, String name, ValueType... arguments) {
-        ValueType valueType = arguments[0];
-        arguments = Arrays.copyOfRange(arguments, 1, arguments.length);
+        ValueType valueType = arguments[arguments.length - 1];
+        arguments = Arrays.copyOfRange(arguments, 0, arguments.length - 1);
         return new MethodHandle(MethodHandleType.INVOKE_VIRTUAL, className, name, valueType, arguments);
     }
 
