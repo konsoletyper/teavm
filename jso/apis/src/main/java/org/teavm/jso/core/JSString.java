@@ -99,6 +99,6 @@ public abstract class JSString implements JSObject {
 
     public abstract JSString trim();
 
-    @JSBody(params = "obj", script = "return typeof this === 'string';")
+    @JSBody(params = "obj", script = "return typeof obj === 'string';")
     public static native boolean isInstance(JSObject obj);
 }
