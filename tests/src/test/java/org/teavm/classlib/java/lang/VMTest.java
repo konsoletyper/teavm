@@ -15,7 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 import org.junit.Test;
 
 /**
@@ -103,4 +103,31 @@ public class VMTest {
     }
     private int foo() { return 2; }
     private void bar() { throw new RuntimeException(); }
+
+    // See https://github.com/konsoletyper/teavm/issues/167
+    @Test
+    public void passesStaticFieldToSuperClassConstructor()  {
+      SubClass obj = new SubClass();
+      assertNotNull(obj.getValue());
+    }
+
+    static class SuperClass {
+        static final Integer ONE = new Integer(1);
+
+        private Integer value;
+
+        public SuperClass(Integer value) {
+            this.value = value;
+        }
+
+        public Integer getValue() {
+            return value;
+        }
+    }
+
+    static class SubClass extends SuperClass {
+        SubClass() {
+            super(ONE);
+        }
+    }
 }

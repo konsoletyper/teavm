@@ -419,16 +419,16 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             List<MethodNode> nonInitMethods = new ArrayList<>();
             MethodHolder clinit = classSource.get(cls.getName()).getMethod(
                     new MethodDescriptor("<clinit>", ValueType.VOID));
+            boolean needsClinit = clinit != null;
             List<MethodNode> clinitMethods = new ArrayList<>();
             for (MethodNode method : cls.getMethods()) {
-                if (clinit == null || (!method.getModifiers().contains(NodeModifier.STATIC)
-                        && !method.getReference().getName().equals("<init>"))) {
-                    nonInitMethods.add(method);
-                } else {
+                if (needsClinit && (method.getModifiers().contains(NodeModifier.STATIC)
+                        || method.getReference().getName().equals("<init>"))) {
                     clinitMethods.add(method);
+                } else {
+                    nonInitMethods.add(method);
                 }
             }
-            boolean needsClinit = clinit != null;
 
             if (needsClinit) {
                 writer.append("function ").appendClass(cls.getName()).append("_$clinit()").ws()

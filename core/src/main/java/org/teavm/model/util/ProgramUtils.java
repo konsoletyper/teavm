@@ -157,6 +157,9 @@ public final class ProgramUtils {
         }
 
         private Variable copyVar(VariableReader var) {
+            if (var == null) {
+                throw new NullPointerException();
+            }
             return programCopy.variableAt(var.getIndex());
         }
 
