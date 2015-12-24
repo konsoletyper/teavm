@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -266,4 +267,8 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
             annotationsByType.put((TClass<?>) (Object) annot.annotationType(), annot);
         }
     }
+
+     public InputStream getResourceAsStream(String name) {
+         throw new IllegalStateException("Cannot read resource " + name);
+     }
 }
