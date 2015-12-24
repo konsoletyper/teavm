@@ -3,10 +3,10 @@
   <description name="TeaVM update site">
     TeaVM update site
   </description>
-  <feature url="features/teavm-eclipse-feature_0.4.1.jar" id="teavm-eclipse-feature" version="0.0.0">
+  <feature id="teavm-eclipse-feature" version="0.0.0">
     <category name="teavm-eclipse-caregory"/>
   </feature>
-  <feature url="features/teavm-eclipse-m2e-feature_0.4.1.jar" id="teavm-eclipse-m2e-feature" version="0.0.0">
+  <feature id="teavm-eclipse-m2e-feature" version="0.0.0">
     <category name="teavm-eclipse-caregory"/>
   </feature>
   <category-def name="teavm-eclipse-caregory" label="TeaVM"/>
