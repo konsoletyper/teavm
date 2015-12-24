@@ -17,16 +17,16 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>org.teavm</groupId>
-    <artifactId>teavm</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
-    <relativePath>../..</relativePath>
-  </parent>
+  <groupId>org.teavm</groupId>
   <artifactId>teavm-eclipse-core-deps</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>TeaVM dependencies for Eclipse plugin</name>
+
+  <properties>
+    <jetty.version>9.2.1.v20140609</jetty.version>
+  </properties>
 
   <dependencies>
     <dependency>

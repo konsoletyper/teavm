@@ -5,7 +5,7 @@
        <pluginExecutionFilter>
          <groupId>org.teavm</groupId>
          <artifactId>teavm-maven-plugin</artifactId>
-         <versionRange>1.0.0.qualifier</versionRange>
+         <versionRange>0.0.0</versionRange>
           <goals>
             <goal>compile</goal>
           </goals>
