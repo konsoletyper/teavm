@@ -29,5 +29,6 @@ public class HTML4JPlugin implements TeaVMPlugin {
         host.add(new JavaScriptBodyTransformer());
         host.add(new JCLHacks());
         host.add(new JavaScriptResourceInterceptor());
+        host.add(new ResourcesInterceptor());
     }
 }
