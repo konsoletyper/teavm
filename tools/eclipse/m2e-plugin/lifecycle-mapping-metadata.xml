@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lifecycleMappingMetadata>
+   <pluginExecutions>
+     <pluginExecution>
+       <pluginExecutionFilter>
+         <groupId>org.teavm</groupId>
+         <artifactId>teavm-maven-plugin</artifactId>
+         <versionRange>0.4.0-SNAPSHOT</versionRange>
+          <goals>
+            <goal>compile</goal>
+          </goals>
+       </pluginExecutionFilter>
+       <action>
+         <configurator>
+           <id>org.teavm.eclipse.m2e.teaVMConfigurator</id>
+         </configurator>
+       </action>
+     </pluginExecution>
+   </pluginExecutions>
+</lifecycleMappingMetadata>

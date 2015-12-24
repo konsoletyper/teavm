@@ -13,14 +13,13 @@
     <module name="EmptyBlock">
       <property name="tokens" value="LITERAL_DO, LITERAL_ELSE, LITERAL_FINALLY, LITERAL_IF,
           LITERAL_FOR, LITERAL_TRY, LITERAL_WHILE, STATIC_INIT"/>
+      <property name="option" value="text"/>
     </module>
     <module name="LeftCurly"/>
     <module name="NeedBraces"/>
     <module name="RightCurly"/>
-    <module name="FinalClass"/>
     <module name="InterfaceIsType"/>
     <module name="HideUtilityClassConstructor"/>
-    <module name="MutableException"/>
     <module name="EmptyStatement"/>
     <module name="EqualsHashCode"/>
     <module name="InnerAssignment"/>
@@ -49,7 +48,9 @@
     <module name="LocalFinalVariableName"/>
     <module name="LocalVariableName"/>
     <module name="MemberName"/>
-    <module name="MethodName"/>
+    <module name="MethodName">
+      <property name="format" value="^(([A-Z][A-Z0-9]+)|([a-z][a-z0-9]*))([A-Z][a-z0-9]*)*"/>
+    </module>
     <module name="MethodTypeParameterName"/>
     <module name="PackageName"/>
     <module name="ParameterName"/>
@@ -63,20 +64,19 @@
     <module name="EmptyForIteratorPad"/>
     <module name="MethodParamPad"/>
     <module name="NoWhitespaceAfter">
-       <property name="tokens" value="BNOT,DEC,DOT,INC,LNOT,UNARY_MINUS,UNARY_PLUS,TYPECAST"/>
+       <property name="tokens" value="BNOT,DEC,DOT,INC,LNOT,UNARY_MINUS,UNARY_PLUS"/>
     </module>
     <module name="NoWhitespaceBefore">
       <property name="allowLineBreaks" value="true"/>
-      <property name="tokens" value="BNOT,DEC,DOT,INC,LNOT,UNARY_MINUS,UNARY_PLUS,TYPECAST"/>
+      <property name="tokens" value="SEMI,POST_DEC,POST_INC"/>
     </module>
-    <module name="OperatorWrap">
-      <property name="option" value="eol"/>
-    </module>
+    <module name="OperatorWrap"/>
     <module name="ParenPad"/>
     <module name="TypecastParenPad"/>
     <module name="WhitespaceAfter">
-      <property name="tokens" value="COMMA,SEMI"/>
+      <property name="tokens" value="COMMA,SEMI,TYPECAST"/>
     </module>
+    <module name="WhitespaceAround"/>
   </module>
   <module name="RegexpHeader">
     <property name="headerFile" value="${config_loc}/license-regexp.txt"/>

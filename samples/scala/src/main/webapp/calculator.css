@@ -1,0 +1,66 @@
+html, body {
+  margin: 0;
+  padding: 0
+}
+.top {
+  position: fixed;
+  padding-top: 10px;
+  padding-left: 10px;
+  padding-right: 10px;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 90px;
+  box-sizing: border-box;
+  border-bottom-color: rgb(120,120,120);
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+  background-color: rgb(230,230,230);
+}
+.expr {
+  width: 100%;
+  display: block
+}
+.calc-panel {
+   margin-right: 80px;
+}
+.calculate {
+  float: right;
+  width: 70px;
+}
+.result-list {
+  position: fixed;
+  top: 91px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: auto
+}
+.result-list > div {
+  padding-top: 4px;
+  padding-bottom: 4px;
+  border-bottom-color: rgb(170,170,170);
+  border-bottom-width: 1px;
+  border-bottom-style: dotted;
+}
+.result-list > div > span.result {
+  font-weight: bold;
+}
+.result-list > div:nth-child(1) {
+  color: rgb(0,0,0);
+}
+.result-list > div:nth-child(2) {
+  color: rgb(30,30,30);
+}
+.result-list > div:nth-child(3) {
+  color: rgb(60,60,60);
+}
+.result-list > div:nth-child(4) {
+  color: rgb(90,90,90);
+}
+.result-list > div:nth-child(5) {
+  color: rgb(120,120,120);
+}
+.result-list > div:nth-child(n+6) {
+  color: rgb(150,150,150);
+}

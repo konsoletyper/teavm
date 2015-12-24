@@ -20,7 +20,7 @@
 
   <groupId>org.teavm</groupId>
   <artifactId>teavm</artifactId>
-  <version>0.3.0-SNAPSHOT</version>
+  <version>0.4.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>TeaVM</name>
@@ -66,24 +66,33 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <sonatypeOssDistMgmtSnapshotsUrl>https://oss.sonatype.org/content/repositories/snapshots/</sonatypeOssDistMgmtSnapshotsUrl>
-    <html4j.version>1.1</html4j.version>
+    <html4j.version>1.2.3</html4j.version>
     <jetty.version>9.2.1.v20140609</jetty.version>
     <slf4j.version>1.7.7</slf4j.version>
+    <selenium.version>2.47.2</selenium.version>
+    <jackson.version>2.6.2</jackson.version>
+
+    <teavm.test.incremental>false</teavm.test.incremental>
+    <teavm.test.threads>1</teavm.test.threads>
+    <teavm.test.selenium></teavm.test.selenium>
+    <teavm.test.skip>true</teavm.test.skip>
   </properties>
 
   <modules>
-    <module>teavm-core</module>
-    <module>teavm-classlib</module>
-    <module>teavm-maven</module>
-    <module>teavm-dom</module>
-    <module>teavm-jso</module>
-    <module>teavm-html4j</module>
-    <module>teavm-samples</module>
-    <module>teavm-platform</module>
-    <module>teavm-cli</module>
-    <module>teavm-chrome-rdp</module>
-    <module>teavm-tests</module>
-    <module>teavm-extras-slf4j</module>
+    <module>core</module>
+    <module>classlib</module>
+    <module>jso/core</module>
+    <module>jso/apis</module>
+    <module>jso/impl</module>
+    <module>html4j</module>
+    <module>samples</module>
+    <module>platform</module>
+    <module>tools/core</module>
+    <module>tools/cli</module>
+    <module>tools/maven</module>
+    <module>tools/chrome-rdp</module>
+    <module>tests</module>
+    <module>extras-slf4j</module>
   </modules>
 
   <dependencyManagement>
@@ -122,27 +131,27 @@
       <dependency>
         <groupId>org.ow2.asm</groupId>
         <artifactId>asm-debug-all</artifactId>
-        <version>5.0.3</version>
+        <version>5.0.4</version>
       </dependency>
       <dependency>
         <groupId>org.apache.maven</groupId>
         <artifactId>maven-plugin-api</artifactId>
-        <version>3.0</version>
+        <version>3.3.3</version>
       </dependency>
       <dependency>
         <groupId>org.apache.maven.plugin-tools</groupId>
         <artifactId>maven-plugin-annotations</artifactId>
-        <version>3.0</version>
+        <version>3.3</version>
       </dependency>
       <dependency>
         <groupId>org.apache.maven</groupId>
         <artifactId>maven-core</artifactId>
-        <version>3.0</version>
+        <version>3.3.3</version>
       </dependency>
       <dependency>
         <groupId>org.apache.maven</groupId>
         <artifactId>maven-artifact</artifactId>
-        <version>3.0</version>
+        <version>3.3.3</version>
       </dependency>
       <dependency>
         <groupId>javax.websocket</groupId>
@@ -164,6 +173,26 @@
         <artifactId>slf4j-api</artifactId>
         <version>${slf4j.version}</version>
       </dependency>
+      <dependency>
+        <groupId>org.seleniumhq.selenium</groupId>
+        <artifactId>selenium-java</artifactId>
+        <version>${selenium.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.seleniumhq.selenium</groupId>
+        <artifactId>selenium-remote-driver</artifactId>
+        <version>${selenium.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-annotations</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -175,8 +204,8 @@
           <artifactId>maven-compiler-plugin</artifactId>
           <version>2.5.1</version>
           <configuration>
-            <source>1.7</source>
-            <target>1.7</target>
+            <source>1.8</source>
+            <target>1.8</target>
           </configuration>
         </plugin>
         <plugin>
@@ -219,7 +248,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-checkstyle-plugin</artifactId>
-          <version>2.11</version>
+          <version>2.16</version>
           <executions>
             <execution>
               <id>validate</id>
@@ -244,6 +273,11 @@
           <groupId>org.apache.felix</groupId>
           <artifactId>maven-bundle-plugin</artifactId>
           <version>2.5.3</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>2.6</version>
         </plugin>
       </plugins>
     </pluginManagement>
@@ -280,7 +314,7 @@
     <profile>
       <id>enable-eclipse</id>
       <modules>
-        <module>teavm-eclipse</module>
+        <module>tools/eclipse</module>
       </modules>
     </profile>
   </profiles>
