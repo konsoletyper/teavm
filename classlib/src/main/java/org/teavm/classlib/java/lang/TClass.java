@@ -22,6 +22,7 @@ import java.util.Map;
 import org.teavm.classlib.impl.DeclaringClassMetadataGenerator;
 import org.teavm.classlib.java.lang.annotation.TAnnotation;
 import org.teavm.classlib.java.lang.reflect.TAnnotatedElement;
+import org.teavm.jso.JSBody;
 import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformClass;
 import org.teavm.platform.metadata.ClassResource;
@@ -268,7 +269,22 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
         }
     }
 
-     public InputStream getResourceAsStream(String name) {
-         throw new IllegalStateException("Cannot read resource " + name);
-     }
+    @JSBody(params = "res", script = 
+        "if (!window.teaVMResources) return null;\n"
+      + "var data = window.teaVMResources[res];\n"
+      + "return data ? data : null;\n"
+    )
+    private static native String readResource(String message);
+
+    public InputStream getResourceAsStream(String name) {
+        TString clazzName = getName();
+        int lastDot = clazzName.lastIndexOf('.');
+        String resName;
+        if (lastDot == -1) {
+            resName = name;
+        } else {
+            resName = clazzName.substring(0, lastDot).replace('.', '/') + "/" + name;
+        }
+        throw new IllegalStateException("Read resource " + resName + " yields " + readResource(resName));
+    }
 }
