@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
@@ -272,7 +273,7 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
     @JSBody(params = "res", script = 
         "if (!window.teaVMResources) return null;\n"
       + "var data = window.teaVMResources[res];\n"
-      + "return data ? data : null;\n"
+      + "return data ? window.atob(data) : null;\n"
     )
     private static native String readResource(String message);
 
@@ -285,6 +286,7 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
         } else {
             resName = clazzName.substring(0, lastDot).replace('.', '/') + "/" + name;
         }
-        throw new IllegalStateException("Read resource " + resName + " yields " + readResource(resName));
+        String data = readResource(resName);
+        return data == null ? null : new ByteArrayInputStream(data.getBytes());
     }
 }
