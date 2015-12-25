@@ -356,6 +356,34 @@ class JSClassProcessor {
 
     private boolean processJSBodyInvocation(MethodReader method, CallLocation callLocation, InvokeInstruction invoke,
             MethodHolder methodToProcess) {
+        boolean valid = true;
+        for (int i = 0; i < method.parameterCount(); ++i) {
+            ValueType arg = method.parameterType(i);
+            if (!typeHelper.isSupportedType(arg)) {
+                diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript method "
+                        + " declaration. Its parameter #" + (i + 1) + " has invalid type {{t1}}", invoke.getMethod(),
+                        arg);
+                valid = false;
+            }
+        }
+        if (invoke.getInstance() != null) {
+            if (!typeHelper.isSupportedType(ValueType.object(method.getOwnerName()))) {
+                diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript method "
+                        + " declaration. It is non-static and declared on a non-overlay class {{c1}}",
+                        invoke.getMethod(), method.getOwnerName());
+                valid = false;
+            }
+        }
+        if (method.getResultType() != ValueType.VOID && !typeHelper.isSupportedType(method.getResultType())) {
+            diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript method "
+                    + " declaration, since it returns invalid type {{t1}}", invoke.getMethod(),
+                    method.getResultType());
+            valid = false;
+        }
+        if (!valid) {
+            return false;
+        }
+
         requireJSBody(diagnostics, method);
         MethodReference delegate = repository.methodMap.get(method.getReference());
         if (delegate == null) {
