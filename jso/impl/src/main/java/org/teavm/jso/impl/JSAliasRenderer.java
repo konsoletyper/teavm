@@ -20,6 +20,8 @@ import java.util.Map;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.javascript.RenderingContext;
 import org.teavm.jso.impl.JSDependencyListener.ExposedClass;
+import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.vm.BuildTarget;
 import org.teavm.vm.spi.RendererListener;
@@ -32,6 +34,7 @@ class JSAliasRenderer implements RendererListener {
     private static String variableChars = "abcdefghijklmnopqrstuvwxyz";
     private JSDependencyListener dependencyListener;
     private SourceWriter writer;
+    private ClassReaderSource classSource;
 
     public JSAliasRenderer(JSDependencyListener dependencyListener) {
         this.dependencyListener = dependencyListener;
@@ -40,6 +43,7 @@ class JSAliasRenderer implements RendererListener {
     @Override
     public void begin(RenderingContext context, BuildTarget buildTarget) throws IOException {
         writer = context.getWriter();
+        classSource = context.getClassSource();
     }
 
     @Override
@@ -52,11 +56,20 @@ class JSAliasRenderer implements RendererListener {
         writer.append("var c;").softNewLine();
         for (Map.Entry<String, ExposedClass> entry : dependencyListener.getExposedClasses().entrySet()) {
             ExposedClass cls = entry.getValue();
-            if (cls.methods.isEmpty()) {
+            ClassReader classReader = classSource.get(entry.getKey());
+            if (classReader == null || cls.methods.isEmpty()) {
                 continue;
             }
-            writer.append("c").ws().append("=").ws().appendClass(entry.getKey()).append(".prototype;").softNewLine();
+            boolean first = true;
             for (Map.Entry<MethodDescriptor, String> aliasEntry : cls.methods.entrySet()) {
+                if (classReader.getMethod(aliasEntry.getKey()) == null) {
+                    continue;
+                }
+                if (first) {
+                    writer.append("c").ws().append("=").ws().appendClass(entry.getKey()).append(".prototype;")
+                            .softNewLine();
+                    first = false;
+                }
                 if (isKeyword(aliasEntry.getValue())) {
                     writer.append("c[\"").append(aliasEntry.getValue()).append("\"]");
                 } else {
