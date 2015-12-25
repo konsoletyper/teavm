@@ -17,6 +17,10 @@
 
   <name>TeaVM performance benchmark</name>
   <description>Compares performance of the JavaScript code produced by TeaVM and GWT</description>
+  
+  <properties>
+      <bck2brwsr.version>0.14</bck2brwsr.version>
+  </properties>
 
   <dependencies>
     <dependency>
@@ -44,6 +48,12 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
+      <groupId>org.apidesign.bck2brwsr</groupId>
+      <artifactId>emul</artifactId>
+      <version>${bck2brwsr.version}</version>
+      <classifier>rt</classifier>
+    </dependency>
+    <dependency>
       <groupId>com.google.gwt</groupId>
       <artifactId>gwt-user</artifactId>
       <version>2.7.0</version>
@@ -53,6 +63,20 @@
       <groupId>com.dukescript.canvas</groupId>
       <artifactId>html5-canvas</artifactId>
       <version>0.7.2</version>
+    </dependency>
+    <dependency>
+      <groupId>com.dukescript.canvas</groupId>
+      <artifactId>canvas-api</artifactId>
+      <version>0.7.2</version>
+      <classifier>bck2brwsr</classifier>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apidesign.bck2brwsr</groupId>
+      <artifactId>ko-bck2brwsr</artifactId>
+      <version>${bck2brwsr.version}</version>
+      <classifier>bck2brwsr</classifier>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.netbeans.html</groupId>
@@ -136,6 +160,32 @@
           </execution>
         </executions>
       </plugin>
+        <plugin>
+            <groupId>org.apidesign.bck2brwsr</groupId>
+            <artifactId>bck2brwsr-maven-plugin</artifactId>
+            <version>${bck2brwsr.version}</version>
+            <executions>
+                <execution>
+                    <phase>prepare-package</phase>
+                    <goals>
+                        <goal>aot</goal>
+                    </goals>
+                </execution>
+            </executions>
+            <configuration>
+                <obfuscation>NONE</obfuscation>
+                <classPathPrefix>lib</classPathPrefix>
+                <mainJavaScript>${project.build.directory}/generated/js/b2b-benchmark.js</mainJavaScript>
+                <vm>${project.build.directory}/generated/js/bck2brwsr.js</vm>
+                <exports>
+                    <export>org.teavm.samples.benchmark.htmljava.BenchmarkStarter</export>
+                    <export>org/jbox2d/collision/shapes/</export>
+                    <export>org/jbox2d/common/</export>
+                    <export>org/jbox2d/dynamics/</export>
+                    <export>org/jbox2d/dynamics/joints/</export>
+                </exports>
+            </configuration>
+        </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>

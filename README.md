@@ -30,7 +30,7 @@ The easiest way to create a new TeaVM project is to type in the command line:
     mvn -DarchetypeCatalog=local \
       -DarchetypeGroupId=org.teavm \
       -DarchetypeArtifactId=teavm-maven-webapp \
-      -DarchetypeVersion=0.3.2 archetype:generate
+      -DarchetypeVersion=0.4.0 archetype:generate
 
 Now you can execute `mvn clean package` and get the generated `war` file.
 Deploy this `war` in Tomcat or another container, or simply unzip it and open the `index.html` page.
@@ -38,7 +38,7 @@ Deploy this `war` in Tomcat or another container, or simply unzip it and open th
 It is much easier to develop TeaVM applications using Eclipse.
 If you prefer Eclipse, please read [this tutorial](https://github.com/konsoletyper/teavm/wiki/Eclipse-tutorial).
 
-To learn TeaVM deeper, you take a look at the [teavm-samples](teavm-samples) module,
+To learn TeaVM deeper, you take a look at the [samples](samples) module,
 containing examples of TeaVM-based projects.
 Also you can read [project's wiki](https://github.com/konsoletyper/teavm/wiki/).
 

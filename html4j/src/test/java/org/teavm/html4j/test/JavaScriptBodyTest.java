@@ -15,9 +15,14 @@
  */
 package org.teavm.html4j.test;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import static org.junit.Assert.assertEquals;
 import java.util.Calendar;
 import net.java.html.js.JavaScriptBody;
+import static org.junit.Assert.assertNotNull;
 import org.junit.Test;
 
 /**
@@ -25,6 +30,16 @@ import org.junit.Test;
  * @author Alexey Andreev
  */
 public class JavaScriptBodyTest {
+    @Test
+    public void readResource() throws IOException {
+        InputStream is = JavaScriptBodyTest.class.getResourceAsStream("jvm.txt");
+        assertNotNull("Resource jvm.txt found", is);
+        try (BufferedReader r = new BufferedReader(new InputStreamReader(is))) {
+            String line = r.readLine();
+            assertEquals("Line read", "TeaVM", line);
+        }
+    }
+
     @Test
     public void javaScriptBodyHandled() {
         assertEquals(23, simpleNativeMethod());
