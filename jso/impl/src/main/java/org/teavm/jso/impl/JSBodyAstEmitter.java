@@ -16,7 +16,9 @@
 package org.teavm.jso.impl;
 
 import java.io.IOException;
+import org.mozilla.javascript.Node;
 import org.mozilla.javascript.ast.AstNode;
+import org.mozilla.javascript.ast.Block;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.javascript.Precedence;
 import org.teavm.javascript.spi.GeneratorContext;
@@ -151,7 +153,14 @@ class JSBodyAstEmitter implements JSBodyEmitter {
             astWriter.declareNameEmitter(parameterNames[i], prec -> writer.append(context.getParameterName(index)));
         }
         astWriter.hoist(ast);
-        astWriter.print(ast);
-        writer.softNewLine();
+        if (ast instanceof Block) {
+            for (Node child = ast.getFirstChild(); child != null; child = child.getNext()) {
+                astWriter.print((AstNode) child);
+                writer.softNewLine();
+            }
+        } else {
+            astWriter.print(ast);
+            writer.softNewLine();
+        }
     }
 }

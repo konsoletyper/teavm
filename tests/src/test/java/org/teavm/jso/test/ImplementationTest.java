@@ -15,9 +15,10 @@
  */
 package org.teavm.jso.test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSObject;
 
 /**
  *
@@ -35,4 +36,27 @@ public class ImplementationTest {
 
     @JSBody(params = { "a", "b" }, script = "return a * b;")
     static final native int mul(int a, int b);
+
+    @Test
+    public void inliningUsageCounterWorksProperly() {
+        ForInliningTest instance = ForInliningTest.create();
+        wrongInlineCandidate(instance.foo());
+        assertEquals(1, instance.counter);
+    }
+
+    @JSBody(params = { "a" }, script = "console.log(a, a);")
+    private static native void wrongInlineCandidate(JSObject a);
+
+    static class ForInliningTest implements JSObject {
+        public int counter = 0;
+
+        public ForInliningTest foo() {
+            ++counter;
+            return this;
+        }
+
+        public static ForInliningTest create() {
+            return new ForInliningTest();
+        }
+    }
 }

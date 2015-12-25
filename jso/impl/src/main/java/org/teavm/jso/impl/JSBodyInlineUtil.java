@@ -115,7 +115,7 @@ final class JSBodyInlineUtil {
                 Name name = (Name) node;
                 if (!name.isLocalName()) {
                     String id = name.getIdentifier();
-                    usages.put(id, getUsage(id));
+                    usages.put(id, getUsage(id) + 1);
                 }
             }
             return true;
