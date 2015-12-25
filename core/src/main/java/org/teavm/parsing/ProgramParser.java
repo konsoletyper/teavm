@@ -1679,11 +1679,6 @@ public class ProgramParser implements VariableDebugInformation {
                 case Opcodes.GETSTATIC: {
                     ValueType type = ValueType.parse(desc);
                     int value = desc.equals("D") || desc.equals("J") ? pushDouble() : pushSingle();
-                    if (!owner.equals(currentClassName)) {
-                        InitClassInstruction initInsn = new InitClassInstruction();
-                        initInsn.setClassName(ownerCls);
-                        addInstruction(initInsn);
-                    }
                     GetFieldInstruction insn = new GetFieldInstruction();
                     insn.setField(new FieldReference(ownerCls, name));
                     insn.setFieldType(type);

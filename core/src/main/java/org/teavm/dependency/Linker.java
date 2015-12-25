@@ -15,8 +15,17 @@
  */
 package org.teavm.dependency;
 
-import org.teavm.model.*;
+import org.teavm.model.BasicBlock;
+import org.teavm.model.ClassHolder;
+import org.teavm.model.ElementModifier;
+import org.teavm.model.FieldHolder;
+import org.teavm.model.FieldReference;
+import org.teavm.model.Instruction;
+import org.teavm.model.MethodHolder;
+import org.teavm.model.MethodReference;
+import org.teavm.model.Program;
 import org.teavm.model.instructions.GetFieldInstruction;
+import org.teavm.model.instructions.InitClassInstruction;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.PutFieldInstruction;
 
@@ -50,7 +59,9 @@ public class Linker {
         Program program = method.getProgram();
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
-            for (Instruction insn : block.getInstructions()) {
+            for (int j = 0; j < block.getInstructions().size(); ++j) {
+                Instruction insn = block.getInstructions().get(j);
+
                 if (insn instanceof InvokeInstruction) {
                     InvokeInstruction invoke = (InvokeInstruction) insn;
                     MethodDependencyInfo linkedMethod = dependency.getMethodImplementation(invoke.getMethod());
@@ -63,6 +74,14 @@ public class Linker {
                     if (linkedField != null) {
                         getField.setField(linkedField.getReference());
                     }
+
+                    FieldReference fieldRef = getField.getField();
+                    if (!fieldRef.getClassName().equals(method.getOwnerName())) {
+                        InitClassInstruction initInsn = new InitClassInstruction();
+                        initInsn.setClassName(fieldRef.getClassName());
+                        block.getInstructions().add(j++, initInsn);
+                    }
+
                 } else if (insn instanceof PutFieldInstruction) {
                     PutFieldInstruction getField = (PutFieldInstruction) insn;
                     FieldDependencyInfo linkedField = dependency.getField(getField.getField());
