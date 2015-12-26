@@ -10,7 +10,7 @@ sed -r -i -e "s/(lib\/teavm(-[a-z]+)+)-.+\.jar/\1-$1.jar/" build.properties
 sed -r -i -e "s/(lib\/teavm(-[a-z]+)+)-.+\.jar/\1-$1.jar/" META-INF/MANIFEST.MF
 popd
 
-pushd m2e-plugin
-sed -r -i -e "s/<versionRange>.+<\/versionRange>/<versionRange>$1<\/versionRange>/" lifecycle-mapping-metadata.xml
-popd
+#pushd m2e-plugin
+#sed -r -i -e "s/<versionRange>.+<\/versionRange>/<versionRange>$1<\/versionRange>/" lifecycle-mapping-metadata.xml
+#popd
 popd
