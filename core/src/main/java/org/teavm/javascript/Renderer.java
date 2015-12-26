@@ -2377,6 +2377,16 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         public Precedence getPrecedence() {
             return precedence;
         }
+
+        @Override
+        public ClassLoader getClassLoader() {
+            return classLoader;
+        }
+
+        @Override
+        public ListableClassReaderSource getClassSource() {
+            return classSource;
+        }
     }
 
     @Override

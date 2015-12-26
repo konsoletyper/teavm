@@ -15,6 +15,13 @@
  */
 package org.teavm.classlib.java.lang;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import org.teavm.classlib.impl.Base64;
+import org.teavm.javascript.spi.InjectedBy;
+import org.teavm.jso.JSIndexer;
+import org.teavm.jso.JSObject;
+
 /**
  *
  * @author Alexey Andreev
@@ -22,6 +29,7 @@ package org.teavm.classlib.java.lang;
 public abstract class TClassLoader extends TObject {
     private TClassLoader parent;
     private static TSystemClassLoader systemClassLoader = new TSystemClassLoader();
+    private static ResourceContainer resources;
 
     protected TClassLoader() {
         this(null);
@@ -37,5 +45,21 @@ public abstract class TClassLoader extends TObject {
 
     public static TClassLoader getSystemClassLoader() {
         return systemClassLoader;
+    }
+
+    public InputStream getResourceAsStream(String name) {
+        if (resources == null) {
+            resources = supplyResources();
+        }
+        String data = resources.getResource(name);
+        return data == null ? null : new ByteArrayInputStream(Base64.decode(data));
+    }
+
+    @InjectedBy(ClassLoaderNativeGenerator.class)
+    private static native ResourceContainer supplyResources();
+
+    static interface ResourceContainer extends JSObject {
+        @JSIndexer
+        String getResource(String name);
     }
 }

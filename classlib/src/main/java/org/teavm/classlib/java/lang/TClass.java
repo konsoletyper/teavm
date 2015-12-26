@@ -15,15 +15,12 @@
  */
 package org.teavm.classlib.java.lang;
 
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.teavm.classlib.impl.DeclaringClassMetadataGenerator;
 import org.teavm.classlib.java.lang.annotation.TAnnotation;
 import org.teavm.classlib.java.lang.reflect.TAnnotatedElement;
-import org.teavm.jso.JSBody;
 import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformClass;
 import org.teavm.platform.metadata.ClassResource;
@@ -270,23 +267,21 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
         }
     }
 
-    @JSBody(params = "res", script = 
-        "if (!window.teaVMResources) return null;\n"
-      + "var data = window.teaVMResources[res];\n"
-      + "return data ? window.atob(data) : null;\n"
-    )
-    private static native String readResource(String message);
-
     public InputStream getResourceAsStream(String name) {
-        TString clazzName = getName();
-        int lastDot = clazzName.lastIndexOf('.');
-        String resName;
-        if (lastDot == -1) {
-            resName = name;
-        } else {
-            resName = clazzName.substring(0, lastDot).replace('.', '/') + "/" + name;
+        if (name.startsWith("/")) {
+            return getClassLoader().getResourceAsStream(name.substring(1));
         }
-        String data = readResource(resName);
-        return data == null ? null : new ByteArrayInputStream(data.getBytes());
+
+        TClass<?> cls = this;
+        while (cls.isArray()) {
+            cls = cls.getComponentType();
+        }
+        String prefix = cls.getName().toString();
+        int index = prefix.lastIndexOf('.');
+        if (index >= 0) {
+            name = prefix.substring(0, index + 1).replace('.', '/') + name;
+        }
+
+        return getClassLoader().getResourceAsStream(name);
     }
 }

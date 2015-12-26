@@ -21,6 +21,7 @@ import org.teavm.codegen.SourceWriter;
 import org.teavm.common.ServiceRepository;
 import org.teavm.javascript.Precedence;
 import org.teavm.javascript.ast.Expr;
+import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.ValueType;
 
 /**
@@ -47,4 +48,8 @@ public interface InjectorContext extends ServiceRepository {
     void writeExpr(Expr expr, Precedence precedence) throws IOException;
 
     Precedence getPrecedence();
+
+    ClassLoader getClassLoader();
+
+    ListableClassReaderSource getClassSource();
 }

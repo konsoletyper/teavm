@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2015 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,21 +13,22 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.html4j;
+package org.teavm.classlib.java.lang;
 
-import org.teavm.vm.spi.TeaVMHost;
-import org.teavm.vm.spi.TeaVMPlugin;
+import org.teavm.classlib.ResourceSupplier;
+import org.teavm.model.ListableClassReaderSource;
 
 /**
  *
  * @author Alexey Andreev
  */
-public class HTML4JPlugin implements TeaVMPlugin {
+public class TestResourcesSupplier implements ResourceSupplier {
     @Override
-    public void install(TeaVMHost host) {
-        host.add(new JavaScriptBodyDependency());
-        host.add(new JavaScriptBodyTransformer());
-        host.add(new JCLHacks());
-        host.add(new JavaScriptResourceInterceptor());
+    public String[] supplyResources(ClassLoader classLoader, ListableClassReaderSource classSource) {
+        String[] result = { "1", "2", "3", "4", "5", "6", "7", "8" };
+        for (int i = 0; i < result.length; ++i) {
+            result[i] = "resources-for-test/" + result[i];
+        }
+        return result;
     }
 }
