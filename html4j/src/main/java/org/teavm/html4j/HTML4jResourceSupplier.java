@@ -15,8 +15,7 @@
  */
 package org.teavm.html4j;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.io.File;
 import org.teavm.classlib.ResourceSupplier;
 import org.teavm.model.ListableClassReaderSource;
 
@@ -27,17 +26,10 @@ import org.teavm.model.ListableClassReaderSource;
 public class HTML4jResourceSupplier implements ResourceSupplier {
     @Override
     public String[] supplyResources(ClassLoader classLoader, ListableClassReaderSource classSource) {
-        Set<String> resources = new HashSet<>();
-        for (String className : classSource.getClassNames()) {
-            final int lastDot = className.lastIndexOf('.');
-            if (lastDot == -1) {
-                continue;
-            }
-            String packageName = className.substring(0, lastDot);
-            String resourceName = packageName.replace('.', '/') + "/" + "jvm.txt";
-            resources.add(resourceName);
+        String resources = System.getProperty("resourcesSupplier");
+        if (resources == null) {
+            return null;
         }
-
-        return resources.toArray(new String[0]);
+        return resources.split(File.pathSeparator);
     }
 }

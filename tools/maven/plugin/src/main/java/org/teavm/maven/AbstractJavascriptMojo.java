@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Properties;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.repository.MavenArtifactRepository;
+import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
@@ -34,6 +35,7 @@ import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.repository.RepositorySystem;
+import org.codehaus.plexus.util.DirectoryScanner;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.tooling.BaseTeaVMTool;
 import org.teavm.tooling.sources.SourceFileProvider;
@@ -87,6 +89,9 @@ public abstract class AbstractJavascriptMojo extends AbstractMojo {
 
     @Parameter
     protected String[] transformers;
+
+    @Parameter
+    protected String resources;
 
     protected ClassLoader classLoader;
 
@@ -147,8 +152,32 @@ public abstract class AbstractJavascriptMojo extends AbstractMojo {
             tool.setDebugInformationGenerated(debugInformationGenerated);
             tool.setSourceMapsFileGenerated(sourceMapsGenerated);
             tool.setSourceFilesCopied(sourceFilesCopied);
+            if (resources != null) {
+                StringBuilder paths = new StringBuilder();
+                scanResources(this.project.getResources(), paths, resources);
+                scanResources(this.project.getTestResources(), paths, resources);
+                System.setProperty("resourcesSupplier", paths.toString());
+            }
         } catch (RuntimeException e) {
             throw new MojoExecutionException("Unexpected error occured", e);
+        }
+    }
+
+    private void scanResources(
+        final List<Resource> f, StringBuilder paths, String... includes
+    ) throws IllegalStateException {
+        for (Resource res : f) {
+            DirectoryScanner scanner = new DirectoryScanner();
+            scanner.setIncludes(includes);
+            File root = new File(res.getDirectory());
+            scanner.setBasedir(root);
+            scanner.scan();
+            for (String file : scanner.getIncludedFiles()) {
+                if (paths.length() > 0) {
+                    paths.append(File.pathSeparatorChar);
+                }
+                paths.append(file);
+            }
         }
     }
 
