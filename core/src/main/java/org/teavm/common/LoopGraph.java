@@ -175,7 +175,7 @@ public class LoopGraph implements Graph {
                 if (loop == testLoop) {
                     return bestLoop;
                 }
-                if (loop.walkIndex < testLoop.walkIndex) {
+                if (loop.parent.walkIndex < testLoop.walkIndex) {
                     testLoop.parent = loop.parent;
                     loop.parent = testLoop;
                     break;
