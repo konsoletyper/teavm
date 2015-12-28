@@ -36,6 +36,7 @@ public class ClassLoaderTest {
         assertEquals("qwerty", loadResource("6"));
         assertEquals("qwertyu", loadResource("7"));
         assertEquals("qwertyui", loadResource("8"));
+        assertEquals("qwertyuiopasdfghjklzxcvbnm", loadResource("9"));
     }
 
     private static String loadResource(String name) {

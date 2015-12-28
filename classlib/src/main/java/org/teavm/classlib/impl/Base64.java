@@ -55,7 +55,7 @@ public class Base64 {
 
         int triples = (outputSize / 3) * 3;
         i = 0;
-        for (j = 0; i < triples;) {
+        for (j = 0; j < triples;) {
             int a = decode(text.charAt(i++));
             int b = decode(text.charAt(i++));
             int c = decode(text.charAt(i++));
