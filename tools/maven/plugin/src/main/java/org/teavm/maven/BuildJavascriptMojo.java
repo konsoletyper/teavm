@@ -103,7 +103,7 @@ public class BuildJavascriptMojo extends AbstractJavascriptMojo {
                 throw new MojoExecutionException("Build error");
             }
         } catch (RuntimeException e) {
-            throw new MojoExecutionException("Unexpected error occured", e);
+            throw new MojoExecutionException("Unexpected error occurred", e);
         } catch (TeaVMToolException e) {
             throw new MojoExecutionException("IO error occured", e);
         }

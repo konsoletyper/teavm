@@ -79,7 +79,7 @@ public class SeleniumRunStrategy implements TestRunStrategy {
                     readFile(new File(directory, testCase.getTestScript())),
                     readResource("teavm-selenium-adapter.js"));
         } catch (WebDriverException e) {
-            log.error("Error occured running test " + testCase.getTestMethod(), e);
+            log.error("Error occurred running test " + testCase.getTestMethod(), e);
             @SuppressWarnings("unchecked")
             List<Object> errors = (List<Object>) js.executeScript("return window.jsErrors;");
             if (errors != null) {

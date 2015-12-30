@@ -148,7 +148,7 @@ public abstract class AbstractJavascriptMojo extends AbstractMojo {
             tool.setSourceMapsFileGenerated(sourceMapsGenerated);
             tool.setSourceFilesCopied(sourceFilesCopied);
         } catch (RuntimeException e) {
-            throw new MojoExecutionException("Unexpected error occured", e);
+            throw new MojoExecutionException("Unexpected error occurred", e);
         }
     }
 

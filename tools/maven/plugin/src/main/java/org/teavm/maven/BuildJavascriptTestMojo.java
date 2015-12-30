@@ -116,7 +116,7 @@ public class BuildJavascriptTestMojo extends AbstractJavascriptMojo {
             }
             writePlan(tool.generate());
         } catch (TeaVMToolException e) {
-            throw new MojoFailureException("Error occured generating JavaScript files", e);
+            throw new MojoFailureException("Error occurred generating JavaScript files", e);
         }
     }
 
