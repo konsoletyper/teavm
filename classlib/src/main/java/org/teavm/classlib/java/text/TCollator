@@ -1,0 +1,24 @@
+package org.teavm.classlib.java.text;
+
+import org.teavm.classlib.java.util.TComparator;
+import org.teavm.classlib.java.util.TLocale;
+import org.teavm.jso.JSBody;
+
+public class TCollator implements TComparator {
+   private static final TCollator instance = new TCollator(); 
+    
+   public static TCollator getInstance() {
+      return instance;
+   }
+   
+   public static TCollator getInstance(Locale locale) {
+      return instance;
+   }
+
+   @JSBody(params = { "source", "target" }, script = "return source.localeCompare(target);")
+   public native int compare( String source, String target );
+   
+   public int compare(Object o1, Object o2) {
+     return compare((String)o1, (String)o2);
+   }
+}
