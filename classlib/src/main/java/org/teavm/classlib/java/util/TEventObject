@@ -1,0 +1,21 @@
+package org.teavm.classlib.java.util;
+
+public class TEventObject {
+ 
+    protected Object source;
+
+    public TEventObject(Object source) {
+        if (source == null)
+            throw new TIllegalArgumentException("null source");
+
+        this.source = source;
+    }
+
+    public Object getSource() {
+        return source;
+    }
+
+    public String toString() {
+        return getClass().getName() + "[source=" + source + "]";
+    }
+}
