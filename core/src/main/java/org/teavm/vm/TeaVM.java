@@ -109,6 +109,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         };
     }
     
+    @Override
     public File getTargetDirectory() {
         return targetDirectory;
     }
@@ -116,7 +117,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     public void setTargetDirectory(File targetDirectory) {
         this.targetDirectory = targetDirectory;
     }
-
+    
+    @Override
     public String getTargetFileName() {
         return targetFileName;
     }
