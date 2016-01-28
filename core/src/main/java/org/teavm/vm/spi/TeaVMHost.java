@@ -16,6 +16,7 @@
 package org.teavm.vm.spi;
 
 import java.util.Properties;
+import java.io.File;
 import org.teavm.dependency.BootstrapMethodSubstitutor;
 import org.teavm.dependency.DependencyListener;
 import org.teavm.javascript.spi.Generator;
@@ -61,4 +62,9 @@ public interface TeaVMHost {
      * visible to VM.
      */
     Properties getProperties();
+    
+    File getTargetDirectory();
+     
+    String getTargetFileName();
+
 }
