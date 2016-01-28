@@ -295,6 +295,8 @@ public class TeaVMTool implements BaseTeaVMTool {
             vm.setMinifying(minifying);
             vm.setBytecodeLogging(bytecodeLogging);
             vm.setProperties(properties);
+            vm.setTargetDirectory(targetDirectory);
+            vm.setTargetFileName(targetFileName);
             DebugInformationBuilder debugEmitter = debugInformationGenerated || sourceMapsFileGenerated
                     ? new DebugInformationBuilder() : null;
             vm.setDebugEmitter(debugEmitter);
