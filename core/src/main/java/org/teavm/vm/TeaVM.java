@@ -92,6 +92,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     private ListableClassHolderSource writtenClasses;
     private Set<MethodReference> asyncMethods = new HashSet<>();
     private Set<MethodReference> asyncFamilyMethods = new HashSet<>();
+    private File targetDirectory;
+    private String targetFileName;
 
     TeaVM(ClassReaderSource classSource, ClassLoader classLoader) {
         this.classSource = classSource;
@@ -106,7 +108,25 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             }
         };
     }
+    
+    @Override
+    public File getTargetDirectory() {
+        return targetDirectory;
+    }
 
+    public void setTargetDirectory(File targetDirectory) {
+        this.targetDirectory = targetDirectory;
+    }
+    
+    @Override
+    public String getTargetFileName() {
+        return targetFileName;
+    }
+
+    public void setTargetFileName(String targetFileName) {
+        this.targetFileName = targetFileName;
+    }
+    
     @Override
     public void add(DependencyListener listener) {
         dependencyChecker.addDependencyListener(listener);
