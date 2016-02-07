@@ -14,10 +14,10 @@ function DebuggerAgent(tab) {
 }
 DebuggerAgent.MAX_MESSAGE_SIZE = 65534;
 DebuggerAgent.prototype.attach = function() {
-    chrome.debugger.attach(this.debuggee, "1.0", (function(callback) {
+    chrome.debugger.attach(this.debuggee, "1.0", function(callback) {
         this.attachedToDebugger = true;
         chrome.debugger.sendCommand(this.debuggee, "Debugger.enable", {}, callback);
-    }).bind(this, this.connectToServer.bind(this)));
+    }.bind(this, this.connectToServer.bind(this)));
 };
 DebuggerAgent.prototype.connectToServer = function() {
     this.connection = new WebSocket("ws://localhost:2357/");
@@ -60,7 +60,7 @@ DebuggerAgent.prototype.sendMessage = function(message) {
         str = str.substring(DebuggerAgent.MAX_MESSAGE_SIZE);
     }
     this.connection.send("." + str);
-}
+};
 DebuggerAgent.prototype.disconnect = function() {
     if (this.connection) {
         var conn = this.connection;

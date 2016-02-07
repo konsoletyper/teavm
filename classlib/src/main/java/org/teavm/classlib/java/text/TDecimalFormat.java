@@ -18,6 +18,8 @@ package org.teavm.classlib.java.text;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.DecimalFormatSymbols;
+import java.util.Arrays;
+
 import org.teavm.classlib.impl.unicode.CLDRHelper;
 import org.teavm.classlib.java.lang.TArithmeticException;
 import org.teavm.classlib.java.lang.TDouble;
@@ -172,10 +174,10 @@ public class TDecimalFormat extends TNumberFormat {
         if (!super.equals(obj)) {
             return false;
         }
-        return positivePrefix.equals(other.positivePrefix)
-                && positiveSuffix.equals(other.positiveSuffix)
-                && negativePrefix.equals(other.negativePrefix)
-                && negativeSuffix.equals(other.negativeSuffix)
+        return Arrays.equals(positivePrefix, other.positivePrefix)
+                && Arrays.equals(positiveSuffix, other.positiveSuffix)
+                && Arrays.equals(negativePrefix, other.negativePrefix)
+                && Arrays.equals(negativeSuffix, other.negativeSuffix)
                 && multiplier == other.multiplier
                 && groupingSize == other.groupingSize
                 && decimalSeparatorAlwaysShown == other.decimalSeparatorAlwaysShown
@@ -186,10 +188,10 @@ public class TDecimalFormat extends TNumberFormat {
     @Override
     public int hashCode() {
         int result = super.hashCode();
-        result = result * 31 + positivePrefix.hashCode();
-        result = result * 31 + positiveSuffix.hashCode();
-        result = result * 31 + negativePrefix.hashCode();
-        result = result * 31 + negativeSuffix.hashCode();
+        result = result * 31 + Arrays.hashCode(positivePrefix);
+        result = result * 31 + Arrays.hashCode(positiveSuffix);
+        result = result * 31 + Arrays.hashCode(negativePrefix);
+        result = result * 31 + Arrays.hashCode(negativeSuffix);
         result = result * 31 + multiplier;
         result = result * 31 + groupingSize;
         result = result * 31 + (decimalSeparatorAlwaysShown ? 1 : 0);

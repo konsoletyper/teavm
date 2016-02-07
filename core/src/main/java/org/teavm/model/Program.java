@@ -50,7 +50,7 @@ public class Program implements ProgramReader {
         }
         basicBlocks.set(index, null);
         basicBlock.setIndex(-1);
-        basicBlock.setProgram(null);
+        basicBlock.clearProgram();
         packed = false;
     }
 

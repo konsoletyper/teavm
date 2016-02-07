@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="war" name="teavm-samples-video:war">
+    <output-path>$PROJECT_DIR$/samples/video/target</output-path>
+    <root id="archive" name="teavm-samples-video-1.0.0-SNAPSHOT.war">
+      <element id="artifact" artifact-name="teavm-samples-video:war exploded" />
+    </root>
+  </artifact>
+</component>

@@ -439,7 +439,7 @@ public class TBigInteger extends Number implements Comparable<TBigInteger>, Seri
         return bytes;
     }
 
-    /** @see TBigInteger#BigInteger(String, int) */
+    /** @see TBigInteger#TBigInteger(String, int) */
     private static void setFromString(TBigInteger bi, String val, int radix) {
         int sign;
         int[] digits;
@@ -952,7 +952,7 @@ public class TBigInteger extends Number implements Comparable<TBigInteger>, Seri
             return hashCode;
         }
         for (int i = 0; i < digits.length; i++) {
-            hashCode = hashCode * 33 + (digits[i] & 0xffffffff);
+            hashCode = hashCode * 33 + digits[i];
         }
         hashCode = hashCode * sign;
         return hashCode;

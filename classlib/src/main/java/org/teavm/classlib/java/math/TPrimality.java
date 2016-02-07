@@ -145,7 +145,7 @@ class TPrimality {
     /**
      * A random number is generated until a probable prime number is found.
      *
-     * @see TBigInteger#BigInteger(int,int,Random)
+     * @see TBigInteger#TBigInteger(int,int,Random)
      * @see TBigInteger#probablePrime(int,Random)
      * @see #isProbablePrime(TBigInteger, int)
      */

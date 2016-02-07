@@ -339,12 +339,7 @@ public class THashtable<K, V> extends TDictionary<K, V> implements TMap<K, V>,
         if (elementCount == 0) {
             return (TEnumeration<V>) EMPTY_ENUMERATION;
         }
-        return new HashEnumIterator<>(new TMapEntry.Type<V, K, V>() {
-            @Override
-            public V get(TMapEntry<K, V> entry) {
-                return entry.value;
-            }
-        }, true);
+        return new HashEnumIterator<>(entry -> entry.value, true);
     }
 
     @Override
@@ -381,14 +376,7 @@ public class THashtable<K, V> extends TDictionary<K, V> implements TMap<K, V>,
 
             @Override
             public TIterator<TMap.Entry<K, V>> iterator() {
-                return new HashIterator<>(
-                        new TMapEntry.Type<TMap.Entry<K, V>, K, V>() {
-                            @Override
-                            public TMap.Entry<K, V> get(
-                                    TMapEntry<K, V> entry) {
-                                return entry;
-                            }
-                        });
+                return new HashIterator<>(entry -> entry);
             }
        };
     }
@@ -475,12 +463,7 @@ public class THashtable<K, V> extends TDictionary<K, V> implements TMap<K, V>,
         if (elementCount == 0) {
             return (TEnumeration<K>) EMPTY_ENUMERATION;
         }
-        return new HashEnumIterator<>(new TMapEntry.Type<K, K, V>() {
-            @Override
-            public K get(TMapEntry<K, V> entry) {
-                return entry.key;
-            }
-        }, true);
+        return new HashEnumIterator<>(entry -> entry.key, true);
     }
 
     @Override
@@ -516,12 +499,7 @@ public class THashtable<K, V> extends TDictionary<K, V> implements TMap<K, V>,
                 if (this.size() == 0) {
                     return (TIterator<K>) EMPTY_ITERATOR;
                 }
-                return new HashEnumIterator<>(new TMapEntry.Type<K, K, V>() {
-                    @Override
-                    public K get(TMapEntry<K, V> entry) {
-                        return entry.key;
-                    }
-                });
+                return new HashEnumIterator<>(entry -> entry.key);
             }
         };
     }
@@ -765,13 +743,7 @@ public class THashtable<K, V> extends TDictionary<K, V> implements TMap<K, V>,
 
             @Override
             public TIterator<V> iterator() {
-                return new HashIterator<>(
-                        new TMapEntry.Type<V, K, V>() {
-                            @Override
-                            public V get(TMapEntry<K, V> entry) {
-                                return entry.value;
-                            }
-                        });
+                return new HashIterator<>(entry -> entry.value);
             }
         };
     }

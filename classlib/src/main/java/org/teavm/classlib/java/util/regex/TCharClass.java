@@ -520,7 +520,6 @@ class TCharClass extends TAbstractCharClass {
      * <code>false</code> otherwise. Note: #setNegative() method changes the
      * meaning of contains method;
      *
-     * @param ch
      * @return <code>true</code> if character class contains symbol specified;
      *
      *         TODO: currently <code>character class</code> implementation based

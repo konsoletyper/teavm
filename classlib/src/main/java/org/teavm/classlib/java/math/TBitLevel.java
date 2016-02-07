@@ -306,10 +306,10 @@ class TBitLevel {
      * Performs a flipBit on the BigInteger, returning a BigInteger with the the
      * specified bit flipped.
      *
-     * @param intCount
+     * @param val
      *            : the index of the element of the digits array where the
      *            operation will be performed
-     * @param bitNumber
+     * @param n
      *            : the bit's position in the intCount element
      */
     static TBigInteger flipBit(TBigInteger val, int n) {

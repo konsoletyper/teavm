@@ -438,10 +438,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 for (MethodNode method : clinitMethods) {
                     renderBody(method, true);
                 }
-                if (clinit != null) {
-                    writer.appendMethodBody(new MethodReference(cls.getName(), clinit.getDescriptor()))
-                            .append("();").softNewLine();
-                }
+                writer.appendMethodBody(new MethodReference(cls.getName(), clinit.getDescriptor()))
+                        .append("();").softNewLine();
                 writer.outdent().append("}").newLine();
             }
             if (!cls.getModifiers().contains(NodeModifier.INTERFACE)) {

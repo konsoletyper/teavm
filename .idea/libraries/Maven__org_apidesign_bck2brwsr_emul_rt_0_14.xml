@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: org.apidesign.bck2brwsr:emul:rt:0.14">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/apidesign/bck2brwsr/emul/0.14/emul-0.14-rt.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/org/apidesign/bck2brwsr/emul/0.14/emul-0.14-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/apidesign/bck2brwsr/emul/0.14/emul-0.14-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

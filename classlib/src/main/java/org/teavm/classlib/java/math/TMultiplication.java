@@ -213,8 +213,8 @@ class TMultiplication {
      *
      *</tt>
      *
-     * @param op1 first factor of the multiplication {@code  op1 >= 0}
-     * @param op2 second factor of the multiplication {@code  op2 >= 0}
+     * @param a first factor of the multiplication {@code  op1 >= 0}
+     * @param b second factor of the multiplication {@code  op2 >= 0}
      * @return a {@code BigInteger} of value {@code  op1 * op2}
      */
     static TBigInteger multiplyPAP(TBigInteger a, TBigInteger b) {

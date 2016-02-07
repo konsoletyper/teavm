@@ -74,7 +74,7 @@
 
     <teavm.test.incremental>false</teavm.test.incremental>
     <teavm.test.threads>1</teavm.test.threads>
-    <teavm.test.selenium></teavm.test.selenium>
+    <teavm.test.selenium/>
     <teavm.test.skip>true</teavm.test.skip>
   </properties>
 
@@ -257,7 +257,6 @@
                 <encoding>UTF-8</encoding>
                 <consoleOutput>true</consoleOutput>
                 <failsOnError>true</failsOnError>
-                <linkXRef>false</linkXRef>
               </configuration>
               <goals>
                 <goal>check</goal>
@@ -304,12 +303,6 @@
           </plugin>
         </plugins>
       </build>
-    </profile>
-    <profile>
-      <id>enable-samples</id>
-      <modules>
-        <module>teavm-samples</module>
-      </modules>
     </profile>
   </profiles>
 </project>

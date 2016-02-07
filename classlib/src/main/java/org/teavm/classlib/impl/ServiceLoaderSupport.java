@@ -30,9 +30,7 @@ import java.util.Set;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
-import org.teavm.dependency.DependencyConsumer;
 import org.teavm.dependency.DependencyNode;
-import org.teavm.dependency.DependencyType;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.javascript.spi.Generator;
 import org.teavm.javascript.spi.GeneratorContext;
@@ -139,11 +137,7 @@ public class ServiceLoaderSupport extends AbstractDependencyListener implements 
         if (ref.getClassName().equals("java.util.ServiceLoader") && ref.getName().equals("loadServices")) {
             method.getResult().propagate(agent.getType("[java.lang.Object"));
             allClassesNode.connect(method.getResult().getArrayItem());
-            method.getResult().getArrayItem().addConsumer(new DependencyConsumer() {
-                @Override public void consume(DependencyType type) {
-                    initConstructor(agent, type.getName(), location);
-                }
-            });
+            method.getResult().getArrayItem().addConsumer(type -> initConstructor(agent, type.getName(), location));
         }
     }
 

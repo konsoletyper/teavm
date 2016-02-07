@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: org.sonatype.sisu:sisu-guice:no_aop:3.2.5">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/sonatype/sisu/sisu-guice/3.2.5/sisu-guice-3.2.5-no_aop.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/org/sonatype/sisu/sisu-guice/3.2.5/sisu-guice-3.2.5-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/sonatype/sisu/sisu-guice/3.2.5/sisu-guice-3.2.5-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

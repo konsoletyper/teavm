@@ -35,7 +35,7 @@ public class GraphBuilder {
     }
 
     public GraphBuilder(int sz) {
-        addedEdges.addAll(Collections.<IntSet>nCopies(sz, null));
+        addedEdges.addAll(Collections.nCopies(sz, null));
         this.sz = sz;
     }
 
@@ -53,7 +53,7 @@ public class GraphBuilder {
         if (addedEdges.size() == from) {
             addedEdges.add(IntOpenHashSet.from(to));
         } else if (addedEdges.size() <= from) {
-            addedEdges.addAll(Collections.<IntSet>nCopies(from - addedEdges.size(), null));
+            addedEdges.addAll(Collections.nCopies(from - addedEdges.size(), null));
             addedEdges.add(IntOpenHashSet.from(to));
         } else {
             IntSet set = addedEdges.get(from);

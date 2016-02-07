@@ -22,7 +22,7 @@ package org.teavm.classlib.java.util;
  * @param <V>
  */
 public interface TMap<K, V> {
-    public interface Entry<K1, V1> {
+    interface Entry<K1, V1> {
         K1 getKey();
 
         V1 getValue();

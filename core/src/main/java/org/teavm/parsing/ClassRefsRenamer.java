@@ -103,7 +103,7 @@ public class ClassRefsRenamer implements InstructionVisitor {
     }
 
     private ValueType[] rename(ValueType[] types) {
-        return Arrays.stream(types).map(e -> rename(e)).toArray(sz -> new ValueType[sz]);
+        return Arrays.stream(types).map(this::rename).toArray(ValueType[]::new);
     }
 
     private RuntimeConstant rename(RuntimeConstant cst) {

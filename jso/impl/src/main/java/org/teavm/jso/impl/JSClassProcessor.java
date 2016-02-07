@@ -588,7 +588,7 @@ class JSClassProcessor {
         String script = bodyAnnot.getValue("script").getString();
         String[] parameterNames = bodyAnnot.getValue("params").getList().stream()
                 .map(ann -> ann.getString())
-                .toArray(sz -> new String[sz]);
+                .toArray(String[]::new);
 
         // Parse JS script
         TeaVMErrorReporter errorReporter = new TeaVMErrorReporter(diagnostics,

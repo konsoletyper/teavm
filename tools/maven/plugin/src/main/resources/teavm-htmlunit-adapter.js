@@ -1,5 +1,5 @@
-function(callback) {
-    var JUnitClient = {}
+function main(callback) {
+    var JUnitClient = {};
     JUnitClient.run = function() {
         $rt_startThread(function() {
             var thread = $rt_nativeThread();
@@ -30,7 +30,7 @@ function(callback) {
             }}
             callback.complete(JSON.stringify(message));
         })
-    }
+    };
 
     JUnitClient.makeErrorMessage = function(message, e) {
         message.status = "exception";
@@ -42,7 +42,7 @@ function(callback) {
             message.stack += exceptionMessage ? $rt_ustr(exceptionMessage) : "";
         }
         message.stack += "\n" + stack;
-    }
+    };
 
     window.JUnitClient = JUnitClient;
 }

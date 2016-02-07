@@ -639,8 +639,8 @@ class StatementGenerator implements InstructionVisitor {
         Statement consequent = generateJumpStatement(consequentBlock);
         Statement alternative = generateJumpStatement(alternativeBlock);
         statements.add(Statement.cond(condition,
-                consequent != null ? Arrays.asList(consequent) : Collections.<Statement>emptyList(),
-                alternative != null ? Arrays.asList(alternative) : Collections.<Statement>emptyList()));
+                consequent != null ? Arrays.asList(consequent) : Collections.emptyList(),
+                alternative != null ? Arrays.asList(alternative) : Collections.emptyList()));
     }
 
     private Expr compare(BinaryOperation op, Variable value) {

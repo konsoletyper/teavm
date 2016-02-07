@@ -35,8 +35,6 @@ public class KOTestRunner implements TestRunner {
                     throw e;
                 }
                 Thread.sleep(50);
-            } catch (Throwable e) {
-                throw e;
             }
         }
     }

@@ -28,7 +28,7 @@ import org.teavm.jso.canvas.CanvasRenderingContext2D;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
 import org.teavm.jso.dom.html.HTMLDocument;
 import org.teavm.jso.dom.html.HTMLElement;
-import org.teavm.samples.benchmark.Scene;
+import org.teavm.samples.benchmark.shared.Scene;
 
 /**
  *

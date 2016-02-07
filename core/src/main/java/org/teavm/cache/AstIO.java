@@ -798,8 +798,7 @@ public class AstIO {
                 return expr;
             }
             case 3: {
-                ConstantExpr expr = new ConstantExpr();
-                return expr;
+                return new ConstantExpr();
             }
             case 4: {
                 ConstantExpr expr = new ConstantExpr();

@@ -274,7 +274,7 @@ public final class KnockoutFXTest extends KnockoutTCK implements Transfer, WSTra
     private static native void removeFunction(String name);
 
     @JSFunctor
-    static interface JSONPCallback extends JSObject {
+    interface JSONPCallback extends JSObject {
         void dataReceived(JSObject dataReceived);
     }
 

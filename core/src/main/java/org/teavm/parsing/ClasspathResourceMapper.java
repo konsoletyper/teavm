@@ -125,7 +125,7 @@ public class ClasspathResourceMapper implements Mapper<String, ClassHolder>, Cla
         return name;
     }
 
-    private Mapper<String, String> classNameMapper = preimage -> renameClass(preimage);
+    private Mapper<String, String> classNameMapper = this::renameClass;
 
     @Override
     public Date getModificationDate(String className) {

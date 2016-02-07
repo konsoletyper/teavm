@@ -107,7 +107,7 @@ public class DependencyChecker implements DependencyInfo {
             return createFieldNode(preimage, field);
         });
 
-        classCache = new CachedMapper<>(preimage -> createClassDependency(preimage));
+        classCache = new CachedMapper<>(this::createClassDependency);
 
         agent = new DependencyAgent(this);
     }

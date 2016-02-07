@@ -398,7 +398,7 @@ public class GlobalValueNumbering implements MethodOptimization {
 
         @Override
         public void visit(InvokeDynamicInstruction insn) {
-            Optional.ofNullable(insn.getInstance()).map(mapper).ifPresent(var -> insn.setInstance(var));
+            Optional.ofNullable(insn.getInstance()).map(mapper).ifPresent(insn::setInstance);
             insn.getArguments().replaceAll(mapper);
         }
 

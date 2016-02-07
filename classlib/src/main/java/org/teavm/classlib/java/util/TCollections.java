@@ -164,7 +164,7 @@ public class TCollections extends TObject {
     }
 
     public static <K, V> TMap<K, V> singletonMap(final K key, final V value) {
-        final TSet<Entry<K, V>> entries = singleton((Entry<K, V>) new TAbstractMap.SimpleImmutableEntry<>(key, value));
+        final TSet<Entry<K, V>> entries = singleton(new TAbstractMap.SimpleImmutableEntry<>(key, value));
         return new TAbstractMap<K, V>() {
             @Override public TSet<Entry<K, V>> entrySet() {
                 return entries;
@@ -238,11 +238,9 @@ public class TCollections extends TObject {
         return binarySearch(list, key, naturalOrder);
     }
 
-    private static TComparator<Object> naturalOrder = new TComparator<Object>() {
-        @SuppressWarnings("unchecked") @Override public int compare(Object o1, Object o2) {
-            return o1 != null ? ((TComparable<Object>) o1).compareTo(o2) : -((TComparable<Object>) o2).compareTo(o1);
-        }
-    };
+    private static TComparator<Object> naturalOrder = (o1, o2) -> o1 != null
+            ? ((TComparable<Object>) o1).compareTo(o2)
+            : -((TComparable<Object>) o2).compareTo(o1);
 
     public static <T> int binarySearch(TList<? extends T> list, T key, TComparator<? super T> c) {
         if (!(list instanceof TRandomAccess)) {
@@ -549,18 +547,12 @@ public class TCollections extends TObject {
         return (TComparator<T>) reverseOrder;
     }
 
-    private static TComparator<Object> reverseOrder = new TComparator<Object>() {
-        @SuppressWarnings("unchecked") @Override public int compare(Object o1, Object o2) {
-            return o1 != null ? -((TComparable<Object>) o1).compareTo(o2) : ((TComparable<Object>) o2).compareTo(o1);
-        }
-    };
+    private static TComparator<Object> reverseOrder = (o1, o2) -> o1 != null
+            ? -((TComparable<Object>) o1).compareTo(o2)
+            : ((TComparable<Object>) o2).compareTo(o1);
 
     public static <T> TComparator<T> reverseOrder(final TComparator<T> cmp) {
-        return new TComparator<T>() {
-            @Override public int compare(T o1, T o2) {
-                return -cmp.compare(o1, o2);
-            }
-        };
+        return (o1, o2) -> -cmp.compare(o1, o2);
     }
 
     public static <T> TEnumeration<T> enumeration(TCollection<T> c) {

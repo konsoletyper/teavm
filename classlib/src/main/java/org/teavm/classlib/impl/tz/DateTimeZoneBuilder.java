@@ -61,7 +61,6 @@ import org.teavm.classlib.impl.CharFlow;
  *
  * @author Brian S O'Neill
  * @see ZoneInfoCompiler
- * @see ZoneInfoProvider
  * @since 1.0
  */
 public class DateTimeZoneBuilder {
@@ -131,7 +130,6 @@ public class DateTimeZoneBuilder {
     /**
      * Add a recurring daylight saving time rule.
      *
-     * @param nameKey  the name key of new rule
      * @param saveMillis  the milliseconds to add to standard offset
      * @param fromYear  the first year that rule is in effect, MIN_VALUE indicates
      * beginning of time
@@ -930,10 +928,7 @@ public class DateTimeZoneBuilder {
                     // Overflowed.
                     start = instant;
                 }
-            } catch (IllegalArgumentException e) {
-                // Overflowed.
-                start = instant;
-            } catch (ArithmeticException e) {
+            } catch (IllegalArgumentException | ArithmeticException e) {
                 // Overflowed.
                 start = instant;
             }
@@ -944,10 +939,7 @@ public class DateTimeZoneBuilder {
                     // Overflowed.
                     end = instant;
                 }
-            } catch (IllegalArgumentException e) {
-                // Overflowed.
-                end = instant;
-            } catch (ArithmeticException e) {
+            } catch (IllegalArgumentException | ArithmeticException e) {
                 // Overflowed.
                 end = instant;
             }
@@ -974,10 +966,7 @@ public class DateTimeZoneBuilder {
                     // Overflowed.
                     start = instant;
                 }
-            } catch (IllegalArgumentException e) {
-                // Overflowed.
-                start = instant;
-            } catch (ArithmeticException e) {
+            } catch (IllegalArgumentException | ArithmeticException e) {
                 // Overflowed.
                 start = instant;
             }
@@ -988,10 +977,7 @@ public class DateTimeZoneBuilder {
                     // Overflowed.
                     end = instant;
                 }
-            } catch (IllegalArgumentException e) {
-                // Overflowed.
-                end = instant;
-            } catch (ArithmeticException e) {
+            } catch (IllegalArgumentException | ArithmeticException e) {
                 // Overflowed.
                 end = instant;
             }
@@ -1009,20 +995,14 @@ public class DateTimeZoneBuilder {
 
             try {
                 start = startRecurrence.next(instant, standardOffset, endRecurrence.getSaveMillis());
-            } catch (IllegalArgumentException e) {
-                // Overflowed.
-                start = instant;
-            } catch (ArithmeticException e) {
+            } catch (IllegalArgumentException | ArithmeticException e) {
                 // Overflowed.
                 start = instant;
             }
 
             try {
                 end = endRecurrence.next(instant, standardOffset, startRecurrence.getSaveMillis());
-            } catch (IllegalArgumentException e) {
-                // Overflowed.
-                end = instant;
-            } catch (ArithmeticException e) {
+            } catch (IllegalArgumentException | ArithmeticException e) {
                 // Overflowed.
                 end = instant;
             }

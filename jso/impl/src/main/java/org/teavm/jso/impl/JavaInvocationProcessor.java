@@ -191,10 +191,6 @@ class JavaInvocationProcessor implements NodeVisitor {
         if (!((Name) propertyGet.getTarget()).getIdentifier().equals("javaMethods")) {
             return false;
         }
-        if (!propertyGet.getProperty().getIdentifier().equals("get")) {
-            return false;
-        }
-
-        return true;
+        return propertyGet.getProperty().getIdentifier().equals("get");
     }
 }

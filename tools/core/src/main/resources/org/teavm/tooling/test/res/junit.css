@@ -14,30 +14,30 @@
  *  limitations under the License.
  */
 iframe {
-    with: 1px;
+    width: 1px;
     height: 1px;
-    padding: 0px;
-    margin: 0px;
+    padding: 0;
+    margin: 0;
     border-style: none;
 }
 * {
-    font-family: sans;
+    font-family: sans-serif;
     font-size: 10pt;
 }
 html, body {
     position: absolute;
-    left: 0px;
-    right: 0px;
-    top: 0px;
-    bottom: 0px;
-    padding: 0px;
-    margin: 0px;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    padding: 0;
+    margin: 0;
 }
 .test-header {
     position: absolute;
-    top: 0px;
-    right: 0px;
-    left: 0px;
+    top: 0;
+    right: 0;
+    left: 0;
     height: 40px;
     border-bottom-color: gray;
     border-bottom-width: 1px;
@@ -45,11 +45,11 @@ html, body {
 }
 .test-count, .failed-test-count {
     position: absolute;
-    top: 0px;
-    bottom: 0px;
+    top: 0;
+    bottom: 0;
     line-height: 40px;
-    padding: 0px;
-    margin: 0px;
+    padding: 0;
+    margin: 0;
     vertical-align: middle;
 }
 .test-count {
@@ -82,16 +82,16 @@ html, body {
 #progress-bar-content {
     position: absolute;
     background-color: green;
-    left: 0px;
-    top: 0px;
-    bottom: 0px;
-    width: 0%;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 0;
 }
 #test-tree {
     position: absolute;
     top: 41px;
-    bottom: 0px;
-    left: 0px;
+    bottom: 0;
+    left: 0;
     width: 50%;
     border-right-color: grey;
     border-right-width: 1px;
@@ -101,9 +101,9 @@ html, body {
 #test-trace {
     position: absolute;
     top: 41px;
-    bottom: 0px;
+    bottom: 0;
     left: 50%;
-    right: 0px;
+    right: 0;
     overflow: auto;
 }
 .tree-node {
@@ -126,12 +126,12 @@ html, body {
 .tree-node-button {
     position: absolute;
     cursor: pointer;
-    left: 0px;
-    top: 0px;
+    left: 0;
+    top: 0;
     width: 16px;
     height: 16px;
     background-repeat: no-repeat;
-    background-position: 0px 0px;
+    background-position: 0 0;
 }
 .tree-node-button.opened {
     background-image: url(toggle-small.png);
@@ -161,7 +161,7 @@ html, body {
     top: 5px;
     width: 16px;
     height: 16px;
-    background-position: 0px 0px;
+    background-position: 0 0;
     background-repeat: no-repeat;
     display: none;
 }

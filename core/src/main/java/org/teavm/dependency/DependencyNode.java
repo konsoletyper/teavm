@@ -196,7 +196,7 @@ public class DependencyNode implements ValueDependencyInfo {
             if (DependencyChecker.shouldLog) {
                 arrayItemNode.tag = tag + "[";
             }
-            arrayItemNode.addConsumer(type -> propagate(type));
+            arrayItemNode.addConsumer(this::propagate);
         }
         return arrayItemNode;
     }

@@ -10,8 +10,8 @@ html, body {
 
 .block {
   position: absolute;
-  left: 0px;
-  right: 0px;
+  left: 0;
+  right: 0;
 }
 .block-title {
   position: absolute;

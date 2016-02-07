@@ -32,11 +32,7 @@ import org.teavm.classlib.java.util.regex.TPattern;
  * @author Alexey Andreev
  */
 public class TString extends TObject implements TSerializable, TComparable<TString>, TCharSequence {
-    public static final TComparator<TString> CASE_INSENSITIVE_ORDER = new TComparator<TString>() {
-        @Override public int compare(TString o1, TString o2) {
-            return o1.compareToIgnoreCase(o2);
-        }
-    };
+    public static final TComparator<TString> CASE_INSENSITIVE_ORDER = (o1, o2) -> o1.compareToIgnoreCase(o2);
     private char[] characters;
     private transient int hashCode;
     private static TMap<TString, TString> pool = new THashMap<>();

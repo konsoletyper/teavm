@@ -58,7 +58,7 @@ public abstract class TClassLoader extends TObject {
     @InjectedBy(ClassLoaderNativeGenerator.class)
     private static native ResourceContainer supplyResources();
 
-    static interface ResourceContainer extends JSObject {
+    interface ResourceContainer extends JSObject {
         @JSIndexer
         String getResource(String name);
     }

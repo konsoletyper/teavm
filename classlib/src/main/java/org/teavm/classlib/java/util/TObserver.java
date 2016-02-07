@@ -27,9 +27,9 @@ public interface TObserver {
      * object has been updated.
      *
      * @param observable
-     *            the {@link Observable} object.
+     *            the {@link TObservable} object.
      * @param data
-     *            the data passed to {@link Observable#notifyObservers(Object)}.
+     *            the data passed to {@link TObservable#notifyObservers(Object)}.
      */
     void update(TObservable observable, Object data);
 }

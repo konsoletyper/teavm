@@ -490,7 +490,7 @@ public final class TURI implements TComparable<TURI>, TSerializable {
                 tempHost = temp;
             }
 
-            if (tempHost.equals("")) {
+            if (tempHost.equals(TString.wrap(""))) {
                 if (forceServer) {
                     throw new TURISyntaxException(authority, TString.wrap(""), hostindex);
                 }
@@ -1304,7 +1304,7 @@ public final class TURI implements TComparable<TURI>, TSerializable {
         // determine which segments get included in the normalized path
         for (int i = 0; i < size; i++) {
             include[i] = true;
-            if (seglist[i].equals("..")) { //$NON-NLS-1$
+            if (seglist[i].equals(TString.wrap(".."))) { //$NON-NLS-1$
                 int remove = i - 1;
                 // search back to find a segment to remove, if possible
                 while (remove > -1 && !include[remove]) {
@@ -1312,11 +1312,11 @@ public final class TURI implements TComparable<TURI>, TSerializable {
                 }
                 // if we find a segment to remove, remove it and the ".."
                 // segment
-                if (remove > -1 && !seglist[remove].equals("..")) { //$NON-NLS-1$
+                if (remove > -1 && !seglist[remove].equals(TString.wrap(".."))) { //$NON-NLS-1$
                     include[remove] = false;
                     include[i] = false;
                 }
-            } else if (seglist[i].equals(".")) { //$NON-NLS-1$
+            } else if (seglist[i].equals(TString.wrap("."))) { //$NON-NLS-1$
                 include[i] = false;
             }
         }
@@ -1463,7 +1463,7 @@ public final class TURI implements TComparable<TURI>, TSerializable {
         }
 
         TURI result;
-        if (relative.path.equals("") && relative.scheme == null //$NON-NLS-1$
+        if (relative.path.equals(TString.wrap("")) && relative.scheme == null //$NON-NLS-1$
                 && relative.authority == null && relative.query == null
                 && relative.fragment != null) {
             // if the relative URI only consists of fragment,

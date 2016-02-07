@@ -193,8 +193,8 @@ public class ProgramParser implements VariableDebugInformation {
             vars.add(localVar);
         }
         targetInstructions = new ArrayList<>(instructions.size());
-        targetInstructions.addAll(Collections.<List<Instruction>>nCopies(instructions.size(), null));
-        basicBlocks.addAll(Collections.<BasicBlock>nCopies(instructions.size(), null));
+        targetInstructions.addAll(Collections.nCopies(instructions.size(), null));
+        basicBlocks.addAll(Collections.nCopies(instructions.size(), null));
         stackBefore = new StackFrame[instructions.size()];
         stackAfter = new StackFrame[instructions.size()];
     }
@@ -287,7 +287,7 @@ public class ProgramParser implements VariableDebugInformation {
             List<LocalVariableNode> localVarNodes = localVariableMap.get(i);
             if (localVarNodes != null) {
                 if (builtInstructions == null || builtInstructions.isEmpty()) {
-                    builtInstructions = Arrays.<Instruction>asList(new EmptyInstruction());
+                    builtInstructions = Arrays.asList(new EmptyInstruction());
                 }
                 Map<Integer, String> debugNames = new HashMap<>();
                 variableDebugNames.put(builtInstructions.get(0), debugNames);

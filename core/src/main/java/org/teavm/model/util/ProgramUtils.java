@@ -486,7 +486,7 @@ public final class ProgramUtils {
             if (instance != null) {
                 insnCopy.setInstance(copyVar(instance));
             }
-            insnCopy.getArguments().addAll(arguments.stream().map(v -> copyVar(v)).collect(Collectors.toList()));
+            insnCopy.getArguments().addAll(arguments.stream().map(this::copyVar).collect(Collectors.toList()));
             insnCopy.setReceiver(receiver != null ? copyVar(receiver) : null);
             copy = insnCopy;
             copy.setLocation(location);

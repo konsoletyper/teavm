@@ -74,7 +74,7 @@ public final class TMathContext implements Serializable {
      * 'p','r','e','c','i','s','i','o','n','='}. It's used to improve the
      * methods related to {@code String} conversion.
      *
-     * @see #MathContext(String)
+     * @see #TMathContext(String)
      * @see #toString()
      */
     private final static char[] chPrecision = { 'p', 'r', 'e', 'c', 'i', 's',
@@ -85,7 +85,7 @@ public final class TMathContext implements Serializable {
      * 'r','o','u','n','d','i','n','g','M','o','d','e','='}. It's used to
      * improve the methods related to {@code String} conversion.
      *
-     * @see #MathContext(String)
+     * @see #TMathContext(String)
      * @see #toString()
      */
     private final static char[] chRoundingMode = { 'r', 'o', 'u', 'n', 'd',

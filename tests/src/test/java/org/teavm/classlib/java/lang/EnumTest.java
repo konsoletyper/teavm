@@ -23,11 +23,11 @@ import org.junit.Test;
  * @author Alexey Andreev
  */
 public class EnumTest {
-    private static enum Foo {
+    private enum Foo {
         A, B, C
     }
 
-    private static enum Bar {
+    private enum Bar {
         D, E
     }
 

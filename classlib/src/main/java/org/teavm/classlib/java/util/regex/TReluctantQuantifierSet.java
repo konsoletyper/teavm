@@ -23,7 +23,6 @@ package org.teavm.classlib.java.util.regex;
 /**
  * This class represents [+*]? constructs over LeafSets.
  *
- * @see java.util.regex.TLeafSet
  * @author Nikolay A. Kuznetsov
  */
 class TReluctantQuantifierSet extends TLeafQuantifierSet {

@@ -147,17 +147,9 @@ public class JCLComparisonBuilder {
     }
 
     private void processModel(List<JCLPackage> packages) {
-        Collections.sort(packages, new Comparator<JCLPackage>() {
-            @Override public int compare(JCLPackage o1, JCLPackage o2) {
-                return o1.name.compareTo(o2.name);
-            }
-        });
+        Collections.sort(packages, (o1, o2) -> o1.name.compareTo(o2.name));
         for (JCLPackage pkg : packages) {
-            Collections.sort(pkg.classes, new Comparator<JCLClass>() {
-                @Override public int compare(JCLClass o1, JCLClass o2) {
-                    return o1.name.compareTo(o2.name);
-                }
-            });
+            Collections.sort(pkg.classes, (o1, o2) -> o1.name.compareTo(o2.name));
         }
     }
 

@@ -38,7 +38,7 @@ public class Debugger {
     private ConcurrentMap<String, ConcurrentMap<DebugInformation, Object>> debugInformationFileMap =
             new ConcurrentHashMap<>();
     private ConcurrentMap<DebugInformation, String> scriptMap = new ConcurrentHashMap<>();
-    ConcurrentMap<JavaScriptBreakpoint, Breakpoint> breakpointMap = new ConcurrentHashMap<>();
+    final ConcurrentMap<JavaScriptBreakpoint, Breakpoint> breakpointMap = new ConcurrentHashMap<>();
     ConcurrentMap<Breakpoint, Object> breakpoints = new ConcurrentHashMap<>();
     private volatile CallFrame[] callStack;
 

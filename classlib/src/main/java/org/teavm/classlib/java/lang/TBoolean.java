@@ -54,7 +54,7 @@ public class TBoolean extends TObject implements TSerializable, TComparable<TBoo
     }
 
     public static boolean parseBoolean(TString s) {
-        return s != null && s.toLowerCase().equals("true");
+        return s != null && s.toLowerCase().equals(TString.wrap("true"));
     }
 
     public boolean booleanValue() {

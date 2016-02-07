@@ -2239,8 +2239,8 @@ public class TBigDecimal extends Number implements Comparable<TBigDecimal>, Seri
             return hashCode;
         }
         if (bitLength < 64) {
-            hashCode = (int) (smallValue & 0xffffffff);
-            hashCode = 33 * hashCode +  (int) ((smallValue >> 32) & 0xffffffff);
+            hashCode = (int) smallValue;
+            hashCode = 33 * hashCode + (int) (smallValue >> 32);
             hashCode = 17 * hashCode + scale;
             return hashCode;
         }

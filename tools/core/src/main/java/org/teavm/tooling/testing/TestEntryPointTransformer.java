@@ -51,14 +51,12 @@ class TestEntryPointTransformer implements ClassHolderTransformer, TeaVMPlugin {
     public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
         if (cls.getName().equals(TestEntryPoint.class.getName())) {
             for (MethodHolder method : cls.getMethods()) {
-                if (method.equals(method)) {
-                    if (method.getName().equals("createRunner")) {
-                        method.setProgram(generateRunnerProgram(method, innerSource));
-                        method.getModifiers().remove(ElementModifier.NATIVE);
-                    } else if (method.getName().equals("launchTest")) {
-                        method.setProgram(generateLaunchProgram(method, innerSource));
-                        method.getModifiers().remove(ElementModifier.NATIVE);
-                    }
+                if (method.getName().equals("createRunner")) {
+                    method.setProgram(generateRunnerProgram(method, innerSource));
+                    method.getModifiers().remove(ElementModifier.NATIVE);
+                } else if (method.getName().equals("launchTest")) {
+                    method.setProgram(generateLaunchProgram(method, innerSource));
+                    method.getModifiers().remove(ElementModifier.NATIVE);
                 }
             }
         }

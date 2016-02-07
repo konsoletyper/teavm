@@ -28,7 +28,7 @@ import org.teavm.platform.metadata.ResourceMap;
  */
 class BuildTimeResourceProxyBuilder {
     private Map<Class<?>, BuildTimeResourceProxyFactory> factories = new HashMap<>();
-    private static Set<Class<?>> allowedPropertyTypes = new HashSet<>(Arrays.<Class<?>>asList(
+    private static Set<Class<?>> allowedPropertyTypes = new HashSet<>(Arrays.asList(
             boolean.class, byte.class, short.class, int.class, float.class, double.class,
             String.class, ResourceArray.class, ResourceMap.class));
     private static Map<Class<?>, Object> defaultValues = new HashMap<>();

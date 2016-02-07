@@ -57,7 +57,7 @@ public abstract class Statement {
     }
 
     public static Statement cond(Expr predicate, List<Statement> consequent) {
-        return cond(predicate, consequent, Collections.<Statement>emptyList());
+        return cond(predicate, consequent, Collections.emptyList());
     }
 
     public static InitClassStatement initClass(String className) {

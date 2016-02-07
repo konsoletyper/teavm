@@ -29,7 +29,7 @@ import org.jbox2d.collision.shapes.ShapeType;
 import org.jbox2d.common.Vec2;
 import org.jbox2d.dynamics.Body;
 import org.jbox2d.dynamics.Fixture;
-import org.teavm.samples.benchmark.Scene;
+import org.teavm.samples.benchmark.shared.Scene;
 
 public final class BenchmarkStarter {
     private BenchmarkStarter() {
@@ -49,12 +49,7 @@ public final class BenchmarkStarter {
     }
 
     static void makeStep() {
-        ctx.execute(new Runnable() {
-            @Override
-            public void run() {
-                makeStep0();
-            }
-        });
+        ctx.execute(() -> makeStep0());
     }
 
     private static void makeStep0() {

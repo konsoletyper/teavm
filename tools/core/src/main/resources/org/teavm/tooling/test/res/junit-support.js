@@ -40,7 +40,7 @@ function JUnitServer() {
         }
     });
 }
-JUnitServer.prototype = new Object();
+JUnitServer.prototype = {};
 JUnitServer.prototype.handleEvent = function(message, callback) {
     if (message.status === "ok") {
         if (this.expectedExceptions.length > 0) {
@@ -66,7 +66,7 @@ JUnitServer.prototype.handleEvent = function(message, callback) {
     document.body.removeChild(this.frame);
     self.frame = null;
     callback();
-}
+};
 JUnitServer.prototype.isExpectedException = function(ex) {
     for (var i = 0; i < this.expectedExceptions.length; ++i) {
         if (this.expectedExceptions[i] === ex) {
@@ -74,7 +74,7 @@ JUnitServer.prototype.isExpectedException = function(ex) {
         }
     }
     return false;
-}
+};
 JUnitServer.prototype.loadCode = function(path, additionalScripts, callback) {
     this.frame = document.createElement("iframe");
     this.frame.src = "junit-client.html";
@@ -88,9 +88,9 @@ JUnitServer.prototype.loadCode = function(path, additionalScripts, callback) {
     var handler = function() {
         window.removeEventListener("message", handler);
         self.loadScripts(sequence, callback);
-    }
+    };
     window.addEventListener("message", handler);
-}
+};
 JUnitServer.prototype.loadScripts = function(scripts, callback) {
     for (var i = 0; i < scripts.length; ++i) {
         this.frame.contentWindow.postMessage({ command : "loadScript", "script" : scripts[i] }, "*");
@@ -98,9 +98,9 @@ JUnitServer.prototype.loadScripts = function(scripts, callback) {
     var handler = function() {
         window.removeEventListener("message", handler);
         callback();
-    }
+    };
     window.addEventListener("message", handler);
-}
+};
 JUnitServer.prototype.runTest = function(node, callback) {
     node.indicator.className = "complete-indicator in-progress";
     var startTime = new Date().getTime();
@@ -114,7 +114,7 @@ JUnitServer.prototype.runTest = function(node, callback) {
                 var timeSpent = new Date().getTime() - startTime;
                 node.timeIndicator.appendChild(document.createTextNode("(" + (timeSpent / 1000).toFixed(3) + ")"));
                 self.handleEvent(event.data, callback);
-            };
+            }
             window.addEventListener("message", messageHandler);
             self.frame.contentWindow.postMessage({ command : "runTest" }, "*");
         });
@@ -139,7 +139,7 @@ JUnitServer.prototype.runTest = function(node, callback) {
             callback();
         });
     }
-}
+};
 JUnitServer.prototype.readTests = function(tests) {
     var groups = this.groupTests(tests);
     var groupNames = [];
@@ -169,7 +169,7 @@ JUnitServer.prototype.readTests = function(tests) {
     }
     document.getElementById("test-count").appendChild(document.createTextNode(this.testCaseCount));
     return this;
-}
+};
 JUnitServer.prototype.createNode = function(parent, className, name) {
     var elem = document.createElement("div");
     elem.className = className;
@@ -182,7 +182,7 @@ JUnitServer.prototype.createNode = function(parent, className, name) {
     node.timeIndicator.className = "time-indicator";
     elem.appendChild(node.timeIndicator);
     return node;
-}
+};
 JUnitServer.prototype.groupTests = function(tests) {
     var groups = {};
     for (var i = 0; i < tests.length; ++i) {
@@ -196,7 +196,7 @@ JUnitServer.prototype.groupTests = function(tests) {
         group.push(test);
     }
     return groups;
-}
+};
 JUnitServer.prototype.runAllTests = function(callback) {
     this.cleanupTests();
     var self = this;
@@ -208,7 +208,7 @@ JUnitServer.prototype.runAllTests = function(callback) {
                 (totalTime / 1000).toFixed(3) + ")"));
         callback();
     });
-}
+};
 JUnitServer.prototype.runTestFromList = function(nodes, index, callback) {
     if (index < nodes.length) {
         var node = nodes[index];
@@ -219,7 +219,7 @@ JUnitServer.prototype.runTestFromList = function(nodes, index, callback) {
     } else {
         callback();
     }
-}
+};
 JUnitServer.prototype.cleanupTests = function() {
     if (this.failedElem.firstChild) {
         this.failedElem.removeChild(this.failedElem.firstChild);
@@ -234,7 +234,7 @@ JUnitServer.prototype.cleanupTests = function() {
     for (var i = 0; i < nodes.length; ++i) {
         this.cleanupNode(nodes[i]);
     }
-}
+};
 JUnitServer.prototype.cleanupNode = function(node) {
     delete node.error;
     node.indicator.className = "complete-indicator";
@@ -245,7 +245,7 @@ JUnitServer.prototype.cleanupNode = function(node) {
     for (var i = 0; i < nodes.length; ++i) {
         this.cleanupNode(nodes[i]);
     }
-}
+};
 
 function Tree(container) {
     this.container = container;
@@ -269,19 +269,19 @@ Tree.prototype.createNode = function(content) {
     childrenElem.style.display = "none";
     elem.appendChild(childrenElem);
     return new TreeNode(elem, contentElem, buttonElem, childrenElem, this);
-}
+};
 Tree.prototype.add = function(content) {
     var node = this.createNode(content);
     this.container.appendChild(node.elem);
     this.nodes.push(node);
     return node;
-}
+};
 Tree.prototype.getNodes = function() {
     return this.nodes;
-}
+};
 Tree.prototype.addSelectionListener = function(listener) {
     this.selectionListeners.push(listener);
-}
+};
 function TreeNode(elem, content, button, children, tree) {
     this.elem = elem;
     this.content = content;
@@ -294,7 +294,7 @@ function TreeNode(elem, content, button, children, tree) {
     var self = this;
     this.button.onclick = function() {
         self.toggle();
-    }
+    };
     this.content.onclick = function() {
         self.select();
     }
@@ -308,10 +308,10 @@ TreeNode.prototype.add = function(content) {
     node.parent = this;
     this.nodes.push(node);
     return node;
-}
+};
 TreeNode.prototype.isOpened = function() {
     return this.opened;
-}
+};
 TreeNode.prototype.open = function() {
     if (this.isOpened()) {
         return;
@@ -319,7 +319,7 @@ TreeNode.prototype.open = function() {
     this.opened = true;
     this.children.className = "tree-node-children opened";
     this.button.className = "tree-node-button opened";
-}
+};
 TreeNode.prototype.close = function() {
     if (!this.isOpened()) {
         return;
@@ -327,26 +327,26 @@ TreeNode.prototype.close = function() {
     this.opened = false;
     this.children.className = "tree-node-children closed";
     this.button.className = "tree-node-button closed";
-}
+};
 TreeNode.prototype.toggle = function() {
     if (this.isOpened()) {
         this.close();
     } else {
         this.open();
     }
-}
+};
 TreeNode.prototype.getNodes = function() {
     return this.nodes;
-}
+};
 TreeNode.prototype.getParent = function() {
     return this.parent;
-}
+};
 TreeNode.prototype.getTree = function() {
     return this.tree;
-}
+};
 TreeNode.prototype.isSelected = function() {
     return this.tree.selectedNode === this;
-}
+};
 TreeNode.prototype.select = function() {
     if (this.isSelected()) {
         return;
@@ -359,4 +359,4 @@ TreeNode.prototype.select = function() {
     for (var i = 0; i < this.tree.selectionListeners.length; ++i) {
         this.tree.selectionListeners[i](this);
     }
-}
+};

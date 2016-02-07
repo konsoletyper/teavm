@@ -373,9 +373,6 @@ class TDivision {
     }
 
     /**
-     * @param m
-     *            a positive modulus Return the greatest common divisor of op1
-     *            and op2,
      *
      * @param op1
      *            must be greater than zero
@@ -867,7 +864,6 @@ class TDivision {
      *            The digit modulus'[0].
      * @ar.org.fitc.ref "C. K. Koc - Analyzing and Comparing Montgomery
      *                  Multiplication Algorithms"
-     * @see #modPowOdd(TBigInteger, TBigInteger, TBigInteger)
      */
     static TBigInteger monPro(TBigInteger a, TBigInteger b, TBigInteger modulus, int n2) {
         int modulusLen = modulus.numberLength;
@@ -881,9 +877,6 @@ class TDivision {
 
     /**
      * Performs the final reduction of the Montgomery algorithm.
-     *
-     * @see #monPro(TBigInteger, TBigInteger, TBigInteger, long)
-     * @see #monSquare(TBigInteger, TBigInteger, long)
      */
     static TBigInteger finalSubtraction(int[] res, TBigInteger modulus) {
 

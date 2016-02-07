@@ -24,7 +24,7 @@ import org.teavm.resource.MapperClassHolderSource;
  */
 public class CopyClassHolderSource implements ClassHolderSource {
     private ClassReaderSource innerSource;
-    private MapperClassHolderSource mapperSource = new MapperClassHolderSource(preimage -> copyClass(preimage));
+    private MapperClassHolderSource mapperSource = new MapperClassHolderSource(this::copyClass);
 
     public CopyClassHolderSource(ClassReaderSource innerSource) {
         this.innerSource = innerSource;

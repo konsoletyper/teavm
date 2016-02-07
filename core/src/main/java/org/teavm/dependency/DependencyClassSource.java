@@ -48,7 +48,7 @@ class DependencyClassSource implements ClassHolderSource {
 
     @Override
     public ClassHolder get(String name) {
-        return cache.computeIfAbsent(name, n -> findAndTransformClass(n));
+        return cache.computeIfAbsent(name, this::findAndTransformClass);
     }
 
     public void submit(ClassHolder cls) {

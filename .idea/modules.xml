@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/teavm.iml" filepath="$PROJECT_DIR$/teavm.iml" />
+      <module fileurl="file://$PROJECT_DIR$/tools/chrome-rdp/teavm-chrome-rdp.iml" filepath="$PROJECT_DIR$/tools/chrome-rdp/teavm-chrome-rdp.iml" />
+      <module fileurl="file://$PROJECT_DIR$/classlib/teavm-classlib.iml" filepath="$PROJECT_DIR$/classlib/teavm-classlib.iml" />
+      <module fileurl="file://$PROJECT_DIR$/tools/cli/teavm-cli.iml" filepath="$PROJECT_DIR$/tools/cli/teavm-cli.iml" />
+      <module fileurl="file://$PROJECT_DIR$/core/teavm-core.iml" filepath="$PROJECT_DIR$/core/teavm-core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/extras-slf4j/teavm-extras-slf4j.iml" filepath="$PROJECT_DIR$/extras-slf4j/teavm-extras-slf4j.iml" />
+      <module fileurl="file://$PROJECT_DIR$/html4j/teavm-html4j.iml" filepath="$PROJECT_DIR$/html4j/teavm-html4j.iml" />
+      <module fileurl="file://$PROJECT_DIR$/jso/core/teavm-jso.iml" filepath="$PROJECT_DIR$/jso/core/teavm-jso.iml" />
+      <module fileurl="file://$PROJECT_DIR$/jso/apis/teavm-jso-apis.iml" filepath="$PROJECT_DIR$/jso/apis/teavm-jso-apis.iml" />
+      <module fileurl="file://$PROJECT_DIR$/jso/impl/teavm-jso-impl.iml" filepath="$PROJECT_DIR$/jso/impl/teavm-jso-impl.iml" />
+      <module fileurl="file://$PROJECT_DIR$/tools/maven/teavm-maven.iml" filepath="$PROJECT_DIR$/tools/maven/teavm-maven.iml" />
+      <module fileurl="file://$PROJECT_DIR$/tools/maven/plugin/teavm-maven-plugin.iml" filepath="$PROJECT_DIR$/tools/maven/plugin/teavm-maven-plugin.iml" />
+      <module fileurl="file://$PROJECT_DIR$/tools/maven/webapp/teavm-maven-webapp.iml" filepath="$PROJECT_DIR$/tools/maven/webapp/teavm-maven-webapp.iml" />
+      <module fileurl="file://$PROJECT_DIR$/platform/teavm-platform.iml" filepath="$PROJECT_DIR$/platform/teavm-platform.iml" />
+      <module fileurl="file://$PROJECT_DIR$/samples/teavm-samples.iml" filepath="$PROJECT_DIR$/samples/teavm-samples.iml" />
+      <module fileurl="file://$PROJECT_DIR$/samples/async/teavm-samples-async.iml" filepath="$PROJECT_DIR$/samples/async/teavm-samples-async.iml" />
+      <module fileurl="file://$PROJECT_DIR$/samples/benchmark/teavm-samples-benchmark.iml" filepath="$PROJECT_DIR$/samples/benchmark/teavm-samples-benchmark.iml" />
+      <module fileurl="file://$PROJECT_DIR$/samples/hello/teavm-samples-hello.iml" filepath="$PROJECT_DIR$/samples/hello/teavm-samples-hello.iml" />
+      <module fileurl="file://$PROJECT_DIR$/samples/kotlin/teavm-samples-kotlin.iml" filepath="$PROJECT_DIR$/samples/kotlin/teavm-samples-kotlin.iml" />
+      <module fileurl="file://$PROJECT_DIR$/samples/scala/teavm-samples-scala.iml" filepath="$PROJECT_DIR$/samples/scala/teavm-samples-scala.iml" />
+      <module fileurl="file://$PROJECT_DIR$/samples/storage/teavm-samples-storage.iml" filepath="$PROJECT_DIR$/samples/storage/teavm-samples-storage.iml" />
+      <module fileurl="file://$PROJECT_DIR$/samples/video/teavm-samples-video.iml" filepath="$PROJECT_DIR$/samples/video/teavm-samples-video.iml" />
+      <module fileurl="file://$PROJECT_DIR$/tests/teavm-tests.iml" filepath="$PROJECT_DIR$/tests/teavm-tests.iml" />
+      <module fileurl="file://$PROJECT_DIR$/tools/core/teavm-tooling.iml" filepath="$PROJECT_DIR$/tools/core/teavm-tooling.iml" />
+    </modules>
+  </component>
+</project>

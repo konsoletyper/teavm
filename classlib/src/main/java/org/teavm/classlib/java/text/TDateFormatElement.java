@@ -18,7 +18,6 @@ package org.teavm.classlib.java.text;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -683,11 +682,7 @@ abstract class TDateFormatElement {
                 builders.add(tmp);
                 tmp = tmp.sibling;
             }
-            Collections.sort(builders, new Comparator<TrieNodeBuilder>() {
-                @Override public int compare(TrieNodeBuilder o1, TrieNodeBuilder o2) {
-                    return Character.compare(o1.ch, o2.ch);
-                }
-            });
+            Collections.sort(builders, (o1, o2) -> Character.compare(o1.ch, o2.ch));
             node.chars = new char[builders.size()];
             node.childNodes = new TrieNode[builders.size()];
             for (int i = 0; i < node.chars.length; ++i) {

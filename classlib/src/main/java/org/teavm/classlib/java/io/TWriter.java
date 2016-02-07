@@ -19,7 +19,7 @@ import org.teavm.classlib.java.lang.TAppendable;
 import org.teavm.classlib.java.lang.TCharSequence;
 
 public abstract class TWriter implements TAppendable, TCloseable, TFlushable {
-    protected Object lock;
+    protected final Object lock;
 
     protected TWriter() {
         super();

@@ -249,7 +249,7 @@ public class TeaVMTestTool implements BaseTeaVMTool {
             if (numThreads != 1) {
                 int threads = numThreads != 0 ? numThreads : Runtime.getRuntime().availableProcessors();
                 ThreadPoolFiniteExecutor threadedExecutor = new ThreadPoolFiniteExecutor(threads);
-                finalizer = () -> threadedExecutor.stop();
+                finalizer = threadedExecutor::stop;
                 executor = threadedExecutor;
             }
             startTime = System.currentTimeMillis();

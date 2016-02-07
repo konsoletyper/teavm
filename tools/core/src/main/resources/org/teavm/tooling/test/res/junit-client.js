@@ -10,10 +10,10 @@ JUnitClient.run = function() {
                 });
                 break;
         }
-    }
+    };
     window.addEventListener("message", handler);
     window.parent.postMessage("ready", "*");
-}
+};
 JUnitClient.runTest = function() {
     var thread = $rt_nativeThread();
     var instance;
@@ -42,7 +42,7 @@ JUnitClient.runTest = function() {
         break loop;
     }}
     window.parent.postMessage(message, "*");
-}
+};
 JUnitClient.makeErrorMessage = function(message, e) {
     message.status = "exception";
     var stack = e.stack;
@@ -53,7 +53,7 @@ JUnitClient.makeErrorMessage = function(message, e) {
         message.stack += exceptionMessage ? $rt_ustr(exceptionMessage) : "";
     }
     message.stack += "\n" + stack;
-}
+};
 JUnitClient.reportError = function(error) {
     var handler = function() {
         window.removeEventListener("message", handler);
@@ -61,12 +61,12 @@ JUnitClient.reportError = function(error) {
         window.parent.postMessage(message, "*");
     };
     window.addEventListener("message", handler);
-}
+};
 JUnitClient.loadScript = function(scriptPath) {
     var script = document.createElement("script");
     script.src = scriptPath;
     document.body.appendChild(script);
-}
+};
 window.addEventListener("message", function(event) {
     var data = event.data;
     switch (data.command) {

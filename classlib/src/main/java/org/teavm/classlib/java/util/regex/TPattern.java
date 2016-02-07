@@ -63,7 +63,7 @@ public final class TPattern implements Serializable {
      * This constant specifies that a pattern matches Unix line endings ('\n')
      * only against the '.', '^', and '$' meta characters.
      */
-    public static final int UNIX_LINES = 1 << 0;
+    public static final int UNIX_LINES = 1;
 
     /**
      * This constant specifies that a {@code Pattern} is matched

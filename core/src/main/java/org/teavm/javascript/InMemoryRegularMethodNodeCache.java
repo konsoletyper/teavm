@@ -41,7 +41,7 @@ public class InMemoryRegularMethodNodeCache implements MethodNodeCache {
 
     @Override
     public AsyncMethodNode getAsync(MethodReference methodReference) {
-        return null;
+        return asyncCache.get(methodReference);
     }
 
     @Override

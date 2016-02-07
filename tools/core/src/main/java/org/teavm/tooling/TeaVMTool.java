@@ -227,7 +227,7 @@ public class TeaVMTool implements BaseTeaVMTool {
 
     public Collection<String> getUsedResources() {
         if (vm == null) {
-            return Collections.<String>emptyList();
+            return Collections.emptyList();
         }
 
         Set<String> resources = new HashSet<>();

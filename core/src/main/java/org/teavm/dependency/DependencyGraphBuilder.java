@@ -610,7 +610,7 @@ class DependencyGraphBuilder {
             DependencyNode arrayNode = nodes[array.getIndex()];
             final DependencyNode receiverNode = nodes[receiver.getIndex()];
             if (arrayNode != null && receiverNode != null) {
-                arrayNode.addConsumer(type -> receiverNode.propagate(type));
+                arrayNode.addConsumer(receiverNode::propagate);
                 arrayNode.getArrayItem().connect(receiverNode.getArrayItem());
             }
         }

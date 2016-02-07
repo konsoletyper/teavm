@@ -32,65 +32,61 @@ public interface ClassReaderSource {
     ClassReader get(String name);
 
     default Stream<ClassReader> getAncestorClasses(String name) {
-        return StreamSupport.stream(((Iterable<ClassReader>) () -> {
-            return new Iterator<ClassReader>() {
-                ClassReader currentClass = get(name);
-                @Override public ClassReader next() {
-                    ClassReader result = currentClass;
-                    if (currentClass.getParent() != null && !currentClass.getName().equals(currentClass.getParent())) {
-                        currentClass = get(currentClass.getParent());
-                    } else {
-                        currentClass = null;
-                    }
-                    return result;
+        return StreamSupport.stream(((Iterable<ClassReader>) () -> new Iterator<ClassReader>() {
+            ClassReader currentClass = get(name);
+            @Override public ClassReader next() {
+                ClassReader result = currentClass;
+                if (currentClass.getParent() != null && !currentClass.getName().equals(currentClass.getParent())) {
+                    currentClass = get(currentClass.getParent());
+                } else {
+                    currentClass = null;
                 }
-                @Override public boolean hasNext() {
-                    return currentClass != null;
-                }
-            };
+                return result;
+            }
+            @Override public boolean hasNext() {
+                return currentClass != null;
+            }
         }).spliterator(), false);
     }
 
     default Stream<ClassReader> getAncestors(String name) {
-        return StreamSupport.stream(((Iterable<ClassReader>) () -> {
-            return new Iterator<ClassReader>() {
-                Deque<Deque<ClassReader>> state = new ArrayDeque<>();
-                private Set<ClassReader> visited = new HashSet<>();
-                {
-                    state.push(new ArrayDeque<>());
-                    add(name);
-                }
-                @Override public ClassReader next() {
-                    while (!state.isEmpty()) {
-                        Deque<ClassReader> level = state.peek();
-                        if (!level.isEmpty()) {
-                            ClassReader result = level.removeFirst();
-                            follow(result);
-                            return result;
-                        }
-                        state.pop();
+        return StreamSupport.stream(((Iterable<ClassReader>) () -> new Iterator<ClassReader>() {
+            Deque<Deque<ClassReader>> state = new ArrayDeque<>();
+            private Set<ClassReader> visited = new HashSet<>();
+            {
+                state.push(new ArrayDeque<>());
+                add(name);
+            }
+            @Override public ClassReader next() {
+                while (!state.isEmpty()) {
+                    Deque<ClassReader> level = state.peek();
+                    if (!level.isEmpty()) {
+                        ClassReader result = level.removeFirst();
+                        follow(result);
+                        return result;
                     }
-                    return null;
+                    state.pop();
                 }
-                @Override public boolean hasNext() {
-                    return !this.state.stream().allMatch(e -> e.isEmpty());
+                return null;
+            }
+            @Override public boolean hasNext() {
+                return !this.state.stream().allMatch(e -> e.isEmpty());
+            }
+            private void follow(ClassReader cls) {
+                state.push(new ArrayDeque<>());
+                if (cls.getParent() != null) {
+                    add(cls.getParent());
                 }
-                private void follow(ClassReader cls) {
-                    state.push(new ArrayDeque<>());
-                    if (cls.getParent() != null) {
-                        add(cls.getParent());
-                    }
-                    for (String iface : cls.getInterfaces()) {
-                        add(iface);
-                    }
+                for (String iface : cls.getInterfaces()) {
+                    add(iface);
                 }
-                private void add(String name) {
-                    ClassReader cls = get(name);
-                    if (cls != null && visited.add(cls)) {
-                        state.peek().addLast(cls);
-                    }
+            }
+            private void add(String name) {
+                ClassReader cls = get(name);
+                if (cls != null && visited.add(cls)) {
+                    state.peek().addLast(cls);
                 }
-            };
+            }
         }).spliterator(), false);
     }
 

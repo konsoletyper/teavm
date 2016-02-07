@@ -105,7 +105,7 @@ class TLexer {
 
     public static final int CHAR_END_OF_LINE = 0x80000000 | 'Z';
 
-    public static final int MODE_PATTERN = 1 << 0;
+    public static final int MODE_PATTERN = 1;
 
     public static final int MODE_RANGE = 1 << 1;
 
@@ -1010,7 +1010,7 @@ class TLexer {
          * singleDecompTable doesn't contain ch == (hasSingleDecomp ==
          * singleDecompTableSize)
          */
-        return (hasSingleDecomp == singleDecompTableSize) ? false : true;
+        return hasSingleDecomp != singleDecompTableSize;
     }
 
     /**

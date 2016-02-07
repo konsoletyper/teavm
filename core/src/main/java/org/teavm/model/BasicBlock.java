@@ -48,8 +48,8 @@ public class BasicBlock implements BasicBlockReader {
         this.index = index;
     }
 
-    void setProgram(Program program) {
-        this.program = program;
+    void clearProgram() {
+        this.program = null;
     }
 
     private List<Instruction> safeInstructions = new AbstractList<Instruction>() {

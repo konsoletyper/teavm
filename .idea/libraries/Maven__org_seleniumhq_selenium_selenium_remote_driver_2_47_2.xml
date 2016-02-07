@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: org.seleniumhq.selenium:selenium-remote-driver:2.47.2">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/seleniumhq/selenium/selenium-remote-driver/2.47.2/selenium-remote-driver-2.47.2.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/org/seleniumhq/selenium/selenium-remote-driver/2.47.2/selenium-remote-driver-2.47.2-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/seleniumhq/selenium/selenium-remote-driver/2.47.2/selenium-remote-driver-2.47.2-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

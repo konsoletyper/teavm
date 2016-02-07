@@ -353,7 +353,7 @@ public class InstructionStringifier implements InstructionReader {
         sb.append(arguments.stream().map(arg -> "@"  + arg.getIndex()).collect(Collectors.joining(", ")));
         sb.append(") ");
         sb.append("[").append(convert(bootstrapMethod)).append('(');
-        sb.append(bootstrapArguments.stream().map(arg -> convert(arg)).collect(Collectors.joining(", ")));
+        sb.append(bootstrapArguments.stream().map(this::convert).collect(Collectors.joining(", ")));
         sb.append(")");
     }
 

@@ -35,25 +35,13 @@ public class NumberFormatMetadataGenerator implements MetadataGenerator {
         FormatAccessor accessor;
         switch (method.getName()) {
             case "getNumberFormatMap":
-                accessor = new FormatAccessor() {
-                    @Override public String getFormat(CLDRLocale locale) {
-                        return locale.numberFormat;
-                    }
-                };
+                accessor = locale -> locale.numberFormat;
                 break;
             case "getCurrencyFormatMap":
-                accessor = new FormatAccessor() {
-                    @Override public String getFormat(CLDRLocale locale) {
-                        return locale.currencyFormat;
-                    }
-                };
+                accessor = locale -> locale.currencyFormat;
                 break;
             case "getPercentFormatMap":
-                accessor = new FormatAccessor() {
-                    @Override public String getFormat(CLDRLocale locale) {
-                        return locale.percentFormat;
-                    }
-                };
+                accessor = locale -> locale.percentFormat;
                 break;
             default:
                 throw new AssertionError();

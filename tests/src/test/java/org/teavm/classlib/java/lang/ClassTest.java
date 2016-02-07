@@ -177,16 +177,16 @@ public class ClassTest {
     }
 
     @Retention(RetentionPolicy.RUNTIME)
-    static @interface TestAnnot {
+    @interface TestAnnot {
     }
 
     @Retention(RetentionPolicy.RUNTIME)
-    static @interface AnnotWithDefaultField {
+    @interface AnnotWithDefaultField {
         int x() default 2;
     }
 
     @Retention(RetentionPolicy.RUNTIME)
-    static @interface AnnotWithVariousFields {
+    @interface AnnotWithVariousFields {
         boolean a();
 
         byte b();

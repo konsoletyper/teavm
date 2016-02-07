@@ -66,9 +66,6 @@ import org.teavm.classlib.impl.unicode.CLDRHelper;
  * and {@code getTimeZone(String)}, is implementation dependent, so it may
  * introduce serialization incompatibility issues between different
  * implementations.
- *
- * @see GregorianCalendar
- * @see TSimpleTimeZone
  */
 public abstract class TTimeZone implements Serializable, Cloneable {
     private static final long serialVersionUID = 3581463369166924961L;

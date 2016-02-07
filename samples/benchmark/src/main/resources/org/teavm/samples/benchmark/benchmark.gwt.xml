@@ -17,7 +17,7 @@
 <module rename-to="benchmark">
   <inherits name="com.google.gwt.user.User" />
   <inherits name="org.jbox2d.JBox2D"/>
-  <source path=""/>
+  <source path="shared"/>
   <source path="gwt"/>
   <entry-point class="org.teavm.samples.benchmark.gwt.BenchmarkStarter"/>
 </module>

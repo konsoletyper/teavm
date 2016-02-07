@@ -48,7 +48,7 @@ import java.util.ArrayList;
  */
 public final class TMatcher implements TMatchResult {
 
-    static int MODE_FIND = 1 << 0;
+    static int MODE_FIND = 1;
 
     static int MODE_MATCH = 1 << 1;
 

@@ -34,22 +34,6 @@ import org.joda.time.chrono.LenientChronology;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
 
-/**
- * Compiles IANA ZoneInfo database files into binary files for each time zone
- * in the database. {@link DateTimeZoneBuilder} is used to construct and encode
- * compiled data files. {@link ZoneInfoProvider} loads the encoded files and
- * converts them back into {@link DateTimeZone} objects.
- * <p>
- * Although this tool is similar to zic, the binary formats are not
- * compatible. The latest IANA time zone database files may be obtained
- * <a href="http://www.iana.org/time-zones">here</a>.
- * <p>
- * ZoneInfoCompiler is mutable and not thread-safe, although the main method
- * may be safely invoked by multiple threads.
- *
- * @author Brian S O'Neill
- * @since 1.0
- */
 public class ZoneInfoCompiler {
     static DateTimeOfYear cStartOfYear;
 
@@ -71,12 +55,15 @@ public class ZoneInfoCompiler {
 
     static int parseYear(String str, int def) {
         str = str.toLowerCase();
-        if (str.equals("minimum") || str.equals("min")) {
-            return Integer.MIN_VALUE;
-        } else if (str.equals("maximum") || str.equals("max")) {
-            return Integer.MAX_VALUE;
-        } else if (str.equals("only")) {
-            return def;
+        switch (str) {
+            case "minimum":
+            case "min":
+                return Integer.MIN_VALUE;
+            case "maximum":
+            case "max":
+                return Integer.MAX_VALUE;
+            case "only":
+                return def;
         }
         return Integer.parseInt(str);
     }

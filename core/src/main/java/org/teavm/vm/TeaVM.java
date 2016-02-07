@@ -652,7 +652,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     }
 
     private List<MethodOptimization> getOptimizations() {
-        return Arrays.<MethodOptimization>asList(new ArrayUnwrapMotion(), new LoopInvariantMotion(),
+        return Arrays.asList(new ArrayUnwrapMotion(), new LoopInvariantMotion(),
                 new GlobalValueNumbering(), new UnusedVariableElimination());
     }
 

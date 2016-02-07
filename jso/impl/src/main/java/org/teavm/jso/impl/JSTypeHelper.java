@@ -65,7 +65,7 @@ class JSTypeHelper {
                 return true;
             }
         }
-        return cls.getInterfaces().stream().anyMatch(iface -> isJavaScriptClass(iface));
+        return cls.getInterfaces().stream().anyMatch(this::isJavaScriptClass);
     }
 
     private boolean examineIfJavaScriptImplementation(String className) {
@@ -81,7 +81,7 @@ class JSTypeHelper {
                 return true;
             }
         }
-        return cls.getInterfaces().stream().anyMatch(iface -> isJavaScriptClass(iface));
+        return cls.getInterfaces().stream().anyMatch(this::isJavaScriptClass);
     }
 
     public boolean isSupportedType(ValueType type) {

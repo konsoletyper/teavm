@@ -29,7 +29,7 @@ import org.teavm.model.util.ProgramUtils;
  */
 public class ClassSetOptimizer {
     private List<MethodOptimization> getOptimizations() {
-        return Arrays.<MethodOptimization>asList(new ArrayUnwrapMotion(), new LoopInvariantMotion(),
+        return Arrays.asList(new ArrayUnwrapMotion(), new LoopInvariantMotion(),
                 new GlobalValueNumbering(), new UnusedVariableElimination());
     }
 

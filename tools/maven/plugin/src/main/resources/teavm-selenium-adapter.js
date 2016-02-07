@@ -1,4 +1,4 @@
-var JUnitClient = {}
+var JUnitClient = {};
 JUnitClient.run = function() {
     $rt_startThread(function() {
         var thread = $rt_nativeThread();
@@ -29,7 +29,7 @@ JUnitClient.run = function() {
         }}
         window.parent.postMessage(JSON.stringify(message), "*");
     })
-}
+};
 
 JUnitClient.makeErrorMessage = function(message, e) {
     message.status = "exception";
@@ -41,4 +41,4 @@ JUnitClient.makeErrorMessage = function(message, e) {
         message.stack += exceptionMessage ? $rt_ustr(exceptionMessage) : "";
     }
     message.stack += "\n" + stack;
-}
+};

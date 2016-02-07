@@ -28,7 +28,7 @@ package org.teavm.classlib.java.util.regex;
  */
 abstract class TSpecialToken {
 
-    public static final int TOK_CHARCLASS = 1 << 0;
+    public static final int TOK_CHARCLASS = 1;
 
     public static final int TOK_QUANTIFIER = 1 << 1;
 

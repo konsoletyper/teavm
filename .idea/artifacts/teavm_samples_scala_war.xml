@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="war" name="teavm-samples-scala:war">
+    <output-path>$PROJECT_DIR$/samples/scala/target</output-path>
+    <root id="archive" name="teavm-samples-scala-1.0.0-SNAPSHOT.war">
+      <element id="artifact" artifact-name="teavm-samples-scala:war exploded" />
+    </root>
+  </artifact>
+</component>

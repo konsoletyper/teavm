@@ -30,7 +30,7 @@ class TPosAltGroupQuantifierSet extends TAltGroupQuantifierSet {
 
     public TPosAltGroupQuantifierSet(TAbstractSet innerSet, TAbstractSet next, int type) {
         super(innerSet, next, type);
-        ((TJointSet)innerSet).setNext(TFSet.posFSet);
+        innerSet.setNext(TFSet.posFSet);
     }
 
     @Override

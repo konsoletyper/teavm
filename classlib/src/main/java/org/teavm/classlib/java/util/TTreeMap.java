@@ -120,11 +120,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
         @SuppressWarnings("unchecked")
         Entry<K, V>[] entries = (Entry<K, V>[]) new Entry<?, ?>[m.size()];
         entries = m.entrySet().toArray(entries);
-        TArrays.sort(entries, new TComparator<Entry<K, V>>() {
-            @Override public int compare(Entry<K, V> o1, Entry<K, V> o2) {
-                return comparator.compare(o1.getKey(), o2.getKey());
-            }
-        });
+        TArrays.sort(entries, (o1, o2) -> comparator.compare(o1.getKey(), o2.getKey()));
         fillMap(entries);
     }
 
@@ -138,11 +134,7 @@ public class TTreeMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TS
 
     private void ensureRevertedComparator() {
         if (revertedComparator == null) {
-            revertedComparator = new TComparator<K>() {
-                @Override public int compare(K o1, K o2) {
-                    return -originalComparator.compare(o1, o2);
-                }
-            };
+            revertedComparator = (o1, o2) -> -originalComparator.compare(o1, o2);
         }
     }
 

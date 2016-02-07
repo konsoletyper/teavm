@@ -51,17 +51,6 @@ package org.teavm.classlib.impl.tz;
  * However, the factory that accepts a TimeZone will attempt to convert from
  * the old short id to a suitable long id.
  * <p>
- * There are four approaches to loading time-zone data, which are tried in this order:
- * <ol>
- * <li>load the specific {@link Provider} specified by the system property
- *   {@code org.joda.time.DateTimeZone.Provider}.
- * <li>load {@link ZoneInfoProvider} using the data in the filing system folder
- *   pointed to by system property {@code org.joda.time.DateTimeZone.Folder}.
- * <li>load {@link ZoneInfoProvider} using the data in the classpath location
- *   {@code org/joda/time/tz/data}.
- * <li>load {@link UTCProvider}
- * </ol>
- * <p>
  * Unless you override the standard behaviour, the default if the third approach.
  * <p>
  * DateTimeZone is thread-safe and immutable, and all subclasses must be as
@@ -271,7 +260,6 @@ public abstract class DateTimeZone {
      * @param strict  whether the conversion should reject non-existent local times
      * @return the UTC instant with the same local time,
      * @throws ArithmeticException if the result overflows a long
-     * @throws IllegalInstantException if the zone has no equivalent local time
      * @since 1.5
      */
     public long convertLocalToUTC(long instantLocal, boolean strict) {

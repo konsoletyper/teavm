@@ -59,7 +59,7 @@ public class GeneratedLocation implements Comparable<GeneratedLocation> {
         if (this == obj) {
             return true;
         }
-        if (obj == null) {
+        if (!(obj instanceof GeneratedLocation)) {
             return false;
         }
         GeneratedLocation other = (GeneratedLocation) obj;
