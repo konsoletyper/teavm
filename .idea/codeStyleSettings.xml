@@ -5,17 +5,21 @@
       <value>
         <option name="CLASS_COUNT_TO_USE_IMPORT_ON_DEMAND" value="99" />
         <option name="NAMES_COUNT_TO_USE_IMPORT_ON_DEMAND" value="99" />
+        <option name="PACKAGES_TO_USE_IMPORT_ON_DEMAND">
+          <value />
+        </option>
         <option name="IMPORT_LAYOUT_TABLE">
           <value>
-            <package name="javax" withSubpackages="true" static="false" />
-            <package name="java" withSubpackages="true" static="false" />
-            <package name="" withSubpackages="true" static="false" />
             <package name="" withSubpackages="true" static="true" />
+            <package name="" withSubpackages="true" static="false" />
           </value>
         </option>
         <JavaCodeStyleSettings>
           <option name="ANNOTATION_PARAMETER_WRAP" value="1" />
         </JavaCodeStyleSettings>
+        <XML>
+          <option name="XML_LEGACY_SETTINGS_IMPORTED" value="true" />
+        </XML>
         <codeStyleSettings language="JAVA">
           <option name="KEEP_BLANK_LINES_IN_DECLARATIONS" value="1" />
           <option name="KEEP_BLANK_LINES_IN_CODE" value="1" />
@@ -263,6 +267,13 @@
               </section>
             </rules>
           </arrangement>
+        </codeStyleSettings>
+        <codeStyleSettings language="XML">
+          <indentOptions>
+            <option name="INDENT_SIZE" value="2" />
+            <option name="CONTINUATION_INDENT_SIZE" value="4" />
+            <option name="TAB_SIZE" value="2" />
+          </indentOptions>
         </codeStyleSettings>
       </value>
     </option>

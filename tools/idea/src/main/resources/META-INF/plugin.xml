@@ -15,21 +15,20 @@
     ]]>
   </change-notes>
 
-  <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
   <idea-version since-build="141.0"/>
 
-  <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
-       on how to target different products -->
-  <!-- uncomment to enable plugin in all products
-  <depends>com.intellij.modules.lang</depends>
-  -->
-
   <extensions defaultExtensionNs="com.intellij">
-    <!-- Add your extensions here -->
+    <moduleConfigurable instance="org.teavm.idea.ui.TeaVMConfigurable"/>
+    <moduleService serviceInterface="org.teavm.idea.TeaVMConfigurationStorage"
+                   serviceImplementation="org.teavm.idea.TeaVMConfigurationStorage"/>
   </extensions>
 
   <actions>
-    <!-- Add your actions here -->
   </actions>
 
+  <module-components>
+    <component>
+      <implementation-class>org.teavm.idea.TeaVMConfigurationStorage</implementation-class>
+    </component>
+  </module-components>
 </idea-plugin>

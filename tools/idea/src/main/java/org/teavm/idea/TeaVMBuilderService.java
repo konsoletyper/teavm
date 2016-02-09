@@ -22,9 +22,12 @@ import org.jetbrains.jps.builders.BuildTargetType;
 import org.jetbrains.jps.incremental.BuilderCategory;
 import org.jetbrains.jps.incremental.BuilderService;
 import org.jetbrains.jps.incremental.ModuleLevelBuilder;
-import org.jetbrains.jps.incremental.TargetBuilder;
 
 public class TeaVMBuilderService extends BuilderService {
+    TeaVMBuilderService() {
+        System.out.println("Hello");
+    }
+
     @NotNull
     @Override
     public List<? extends BuildTargetType<?>> getTargetTypes() {
