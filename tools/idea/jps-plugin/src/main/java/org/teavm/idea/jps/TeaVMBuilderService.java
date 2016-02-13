@@ -13,30 +13,30 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.idea;
+package org.teavm.idea.jps;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jps.builders.BuildTargetType;
-import org.jetbrains.jps.incremental.BuilderCategory;
 import org.jetbrains.jps.incremental.BuilderService;
 import org.jetbrains.jps.incremental.ModuleLevelBuilder;
+import org.jetbrains.jps.incremental.TargetBuilder;
 
 public class TeaVMBuilderService extends BuilderService {
-    TeaVMBuilderService() {
+    public TeaVMBuilderService() {
         System.out.println("Hello");
     }
 
     @NotNull
     @Override
-    public List<? extends BuildTargetType<?>> getTargetTypes() {
-        return Arrays.asList(TeaVMBuildTargetType.INSTANCE);
+    public List<? extends ModuleLevelBuilder> createModuleLevelBuilders() {
+        return Arrays.asList(new TeaVMBuilder());
     }
 
     @NotNull
     @Override
-    public List<? extends ModuleLevelBuilder> createModuleLevelBuilders() {
-        return Arrays.asList(new TeaVMBuilder(BuilderCategory.CLASS_POST_PROCESSOR));
+    public List<? extends TargetBuilder<?, ?>> createBuilders() {
+        return Collections.emptyList();
     }
 }

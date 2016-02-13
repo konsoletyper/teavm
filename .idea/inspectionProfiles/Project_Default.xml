@@ -115,7 +115,7 @@
       <option name="SUGGEST_PRIVATE_FOR_INNERS" value="false" />
     </inspection_tool>
     <inspection_tool class="WrongImportPackage" enabled="false" level="ERROR" enabled_by_default="false" />
-    <inspection_tool class="XmlUnboundNsPrefix" enabled="true" level="WARNING" enabled_by_default="true">
+    <inspection_tool class="XmlUnboundNsPrefix" enabled="true" level="WEAK WARNING" enabled_by_default="true">
       <scope name="ecipse" level="WARNING" enabled="false" />
     </inspection_tool>
     <inspection_tool class="unused" enabled="true" level="WARNING" enabled_by_default="true">

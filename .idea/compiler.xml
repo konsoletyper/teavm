@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <excludeFromCompile>
+      <directory url="file://$PROJECT_DIR$/tools/maven/webapp/src/main/resources/archetype-resources" includeSubdirectories="true" />
+    </excludeFromCompile>
+    <resourceExtensions />
+    <wildcardResourcePatterns>
+      <entry name="!?*.java" />
+      <entry name="!?*.form" />
+      <entry name="!?*.class" />
+      <entry name="!?*.groovy" />
+      <entry name="!?*.scala" />
+      <entry name="!?*.flex" />
+      <entry name="!?*.kt" />
+      <entry name="!?*.clj" />
+      <entry name="!?*.aj" />
+    </wildcardResourcePatterns>
+    <annotationProcessing>
+      <profile default="true" name="Default" enabled="false">
+        <processorPath useClasspath="true" />
+      </profile>
+      <profile default="false" name="Annotation profile for teavm-cli" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="teavm-cli" />
+      </profile>
+      <profile default="false" name="Annotation profile for teavm-tooling" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="teavm-tooling" />
+      </profile>
+      <profile default="false" name="Annotation profile for teavm-platform" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="teavm-platform" />
+      </profile>
+      <profile default="false" name="Annotation profile for teavm-html4j" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="teavm-html4j" />
+      </profile>
+      <profile default="false" name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="teavm-maven-webapp" />
+      </profile>
+      <profile default="false" name="Annotation profile for teavm-jso-impl" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="teavm-jso-impl" />
+      </profile>
+      <profile default="false" name="Annotation profile for teavm-maven-plugin" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="teavm-maven-plugin" />
+      </profile>
+      <profile default="false" name="Annotation profile for teavm-jso-apis" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="teavm-jso-apis" />
+      </profile>
+      <profile default="false" name="Annotation profile for teavm-samples-scala" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="teavm-samples-scala" />
+      </profile>
+      <profile default="false" name="Annotation profile for teavm-jso" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="teavm-jso" />
+      </profile>
+      <profile default="false" name="Annotation profile for teavm-core" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="teavm-core" />
+      </profile>
+      <profile default="false" name="Annotation profile for teavm-samples-kotlin" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="teavm-samples-kotlin" />
+      </profile>
+      <profile default="false" name="Annotation profile for teavm-classlib" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="teavm-classlib" />
+      </profile>
+      <profile default="false" name="Annotation profile for teavm-samples-async" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="teavm-samples-async" />
+      </profile>
+      <profile default="false" name="Annotation profile for teavm-samples-video" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="teavm-samples-video" />
+      </profile>
+      <profile default="false" name="Annotation profile for teavm-samples-storage" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="teavm-samples-storage" />
+      </profile>
+      <profile default="false" name="Annotation profile for teavm-samples-benchmark" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="teavm-samples-benchmark" />
+      </profile>
+      <profile default="false" name="Annotation profile for teavm-samples-hello" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="teavm-samples-hello" />
+      </profile>
+      <profile default="false" name="Annotation profile for teavm-extras-slf4j" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="teavm-extras-slf4j" />
+      </profile>
+      <profile default="false" name="Annotation profile for teavm-chrome-rdp" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="teavm-chrome-rdp" />
+      </profile>
+      <profile default="false" name="Annotation profile for teavm-tests" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="teavm-tests" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="teavm" target="1.5" />
+      <module name="teavm-chrome-rdp" target="1.8" />
+      <module name="teavm-classlib" target="1.8" />
+      <module name="teavm-cli" target="1.8" />
+      <module name="teavm-core" target="1.8" />
+      <module name="teavm-extras-slf4j" target="1.8" />
+      <module name="teavm-html4j" target="1.8" />
+      <module name="teavm-jso" target="1.8" />
+      <module name="teavm-jso-apis" target="1.8" />
+      <module name="teavm-jso-impl" target="1.8" />
+      <module name="teavm-maven" target="1.5" />
+      <module name="teavm-maven-plugin" target="1.8" />
+      <module name="teavm-maven-webapp" target="1.5" />
+      <module name="teavm-platform" target="1.8" />
+      <module name="teavm-samples" target="1.5" />
+      <module name="teavm-samples-async" target="1.8" />
+      <module name="teavm-samples-benchmark" target="1.8" />
+      <module name="teavm-samples-hello" target="1.8" />
+      <module name="teavm-samples-kotlin" target="1.8" />
+      <module name="teavm-samples-scala" target="1.8" />
+      <module name="teavm-samples-storage" target="1.8" />
+      <module name="teavm-samples-video" target="1.8" />
+      <module name="teavm-tests" target="1.8" />
+      <module name="teavm-tooling" target="1.8" />
+    </bytecodeTargetLevel>
+  </component>
+</project>

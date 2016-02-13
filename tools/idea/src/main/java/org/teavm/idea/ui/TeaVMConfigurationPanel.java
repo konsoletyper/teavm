@@ -58,15 +58,21 @@ class TeaVMConfigurationPanel extends JPanel {
         constraints.gridwidth = GridBagConstraints.REMAINDER;
         add(enabledCheckBox, constraints);
 
-        constraints.gridwidth = GridBagConstraints.RELATIVE;
-        add(new JLabel("Main class:"), constraints);
-        constraints.gridwidth = GridBagConstraints.REMAINDER;
-        add(mainClassField, constraints);
+        GridBagConstraints labelConstrains = new GridBagConstraints();
+        labelConstrains.gridwidth = GridBagConstraints.RELATIVE;
+        labelConstrains.anchor = GridBagConstraints.BASELINE_TRAILING;
 
-        constraints.gridwidth = GridBagConstraints.RELATIVE;
-        add(new JLabel("Target directory:"), constraints);
-        constraints.gridwidth = GridBagConstraints.REMAINDER;
-        add(targetDirectoryField, constraints);
+        GridBagConstraints fieldConstrains = new GridBagConstraints();
+        fieldConstrains.gridwidth = GridBagConstraints.REMAINDER;
+        fieldConstrains.fill = GridBagConstraints.HORIZONTAL;
+        labelConstrains.anchor = GridBagConstraints.BASELINE_LEADING;
+        labelConstrains.insets.right = 5;
+
+        add(new JLabel("Main class:"), labelConstrains);
+        add(mainClassField, fieldConstrains);
+
+        add(new JLabel("Target directory:"), labelConstrains);
+        add(targetDirectoryField, fieldConstrains);
     }
 
     public void load(TeaVMConfiguration config) {
