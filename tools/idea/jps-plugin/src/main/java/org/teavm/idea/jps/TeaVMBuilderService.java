@@ -24,10 +24,6 @@ import org.jetbrains.jps.incremental.ModuleLevelBuilder;
 import org.jetbrains.jps.incremental.TargetBuilder;
 
 public class TeaVMBuilderService extends BuilderService {
-    public TeaVMBuilderService() {
-        System.out.println("Hello");
-    }
-
     @NotNull
     @Override
     public List<? extends ModuleLevelBuilder> createModuleLevelBuilders() {

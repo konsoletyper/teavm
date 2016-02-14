@@ -17,6 +17,9 @@ package org.teavm.idea.jps;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -29,6 +32,9 @@ import org.jetbrains.jps.incremental.CompileContext;
 import org.jetbrains.jps.incremental.ModuleBuildTarget;
 import org.jetbrains.jps.incremental.ModuleLevelBuilder;
 import org.jetbrains.jps.incremental.ProjectBuildException;
+import org.jetbrains.jps.incremental.messages.BuildMessage;
+import org.jetbrains.jps.incremental.messages.CompilerMessage;
+import org.jetbrains.jps.incremental.messages.ProgressMessage;
 import org.jetbrains.jps.model.java.JpsJavaExtensionService;
 import org.jetbrains.jps.model.library.JpsLibrary;
 import org.jetbrains.jps.model.library.JpsOrderRootType;
@@ -37,6 +43,12 @@ import org.jetbrains.jps.model.module.JpsLibraryDependency;
 import org.jetbrains.jps.model.module.JpsModule;
 import org.jetbrains.jps.model.module.JpsModuleDependency;
 import org.teavm.idea.jps.model.TeaVMJpsConfiguration;
+import org.teavm.tooling.TeaVMTool;
+import org.teavm.tooling.TeaVMToolException;
+import org.teavm.tooling.TeaVMToolLog;
+import org.teavm.vm.TeaVMPhase;
+import org.teavm.vm.TeaVMProgressFeedback;
+import org.teavm.vm.TeaVMProgressListener;
 
 public class TeaVMBuilder extends ModuleLevelBuilder {
     public TeaVMBuilder() {
@@ -47,20 +59,142 @@ public class TeaVMBuilder extends ModuleLevelBuilder {
     public ExitCode build(CompileContext context, ModuleChunk chunk,
             DirtyFilesHolder<JavaSourceRootDescriptor, ModuleBuildTarget> dirtyFilesHolder,
             OutputConsumer outputConsumer) throws ProjectBuildException, IOException {
+        boolean doneSomething = false;
         for (JpsModule module : chunk.getModules()) {
-            buildModule(module);
+            doneSomething |= buildModule(module, context);
+            if (context.getCancelStatus().isCanceled()) {
+                return ExitCode.ABORT;
+            }
         }
-        return ExitCode.OK;
+
+        return doneSomething ? ExitCode.OK : ExitCode.NOTHING_DONE;
     }
 
-    private void buildModule(JpsModule module) {
+    private boolean buildModule(JpsModule module, CompileContext context) {
         TeaVMJpsConfiguration config = TeaVMJpsConfiguration.get(module);
         if (config == null || !config.isEnabled()) {
-            return;
+            return false;
         }
+
+        TeaVMTool tool = new TeaVMTool();
+        tool.setProgressListener(createProgressListener(context));
+        tool.setLog(createLog(context));
+        tool.setMainClass(config.getMainClass());
+        tool.setSourceMapsFileGenerated(true);
+        tool.setTargetDirectory(new File(config.getTargetDirectory()));
+        tool.setClassLoader(buildClassLoader(module));
+
+        try {
+            tool.generate();
+        } catch (TeaVMToolException | RuntimeException | Error e) {
+            e.printStackTrace(System.err);
+            context.processMessage(new CompilerMessage("TeaVM", e));
+        }
+
+        return true;
+    }
+
+    private TeaVMToolLog createLog(CompileContext context) {
+        return new TeaVMToolLog() {
+            @Override
+            public void info(String text) {
+                context.processMessage(new CompilerMessage("TeaVM", BuildMessage.Kind.INFO, text));
+            }
+
+            @Override
+            public void debug(String text) {
+                context.processMessage(new CompilerMessage("TeaVM", BuildMessage.Kind.INFO, text));
+            }
+
+            @Override
+            public void warning(String text) {
+                context.processMessage(new CompilerMessage("TeaVM", BuildMessage.Kind.WARNING, text));
+            }
+
+            @Override
+            public void error(String text) {
+                context.processMessage(new CompilerMessage("TeaVM", BuildMessage.Kind.ERROR, text));
+            }
+
+            @Override
+            public void info(String text, Throwable e) {
+                context.processMessage(new CompilerMessage("TeaVM", BuildMessage.Kind.INFO, text + "\n"
+                        + CompilerMessage.getTextFromThrowable(e)));
+            }
+
+            @Override
+            public void debug(String text, Throwable e) {
+                context.processMessage(new CompilerMessage("TeaVM", BuildMessage.Kind.INFO, text + "\n"
+                        + CompilerMessage.getTextFromThrowable(e)));
+            }
+
+            @Override
+            public void warning(String text, Throwable e) {
+                context.processMessage(new CompilerMessage("TeaVM", BuildMessage.Kind.WARNING, text + "\n"
+                        + CompilerMessage.getTextFromThrowable(e)));
+            }
+
+            @Override
+            public void error(String text, Throwable e) {
+                context.processMessage(new CompilerMessage("TeaVM", BuildMessage.Kind.ERROR, text + "\n"
+                        + CompilerMessage.getTextFromThrowable(e)));
+            }
+        };
+    }
+
+    private TeaVMProgressListener createProgressListener(CompileContext context) {
+        return new TeaVMProgressListener() {
+            private TeaVMPhase currentPhase;
+            int expectedCount;
+
+            @Override
+            public TeaVMProgressFeedback phaseStarted(TeaVMPhase phase, int count) {
+                expectedCount = count;
+                context.processMessage(new ProgressMessage(phaseName(phase), 0));
+                currentPhase = phase;
+                return context.getCancelStatus().isCanceled() ? TeaVMProgressFeedback.CANCEL
+                        : TeaVMProgressFeedback.CONTINUE;
+            }
+
+            @Override
+            public TeaVMProgressFeedback progressReached(int progress) {
+                context.processMessage(new ProgressMessage(phaseName(currentPhase), (float) progress / expectedCount));
+                return context.getCancelStatus().isCanceled() ? TeaVMProgressFeedback.CANCEL
+                        : TeaVMProgressFeedback.CONTINUE;
+            }
+        };
+    }
+
+    private static String phaseName(TeaVMPhase phase) {
+        switch (phase) {
+            case DEPENDENCY_CHECKING:
+                return "Discovering classes to compile";
+            case LINKING:
+                return "Resolving method invocations";
+            case DEVIRTUALIZATION:
+                return "Eliminating virtual calls";
+            case DECOMPILATION:
+                return "Compiling classes";
+            case RENDERING:
+                return "Building JS file";
+            default:
+                throw new AssertionError();
+        }
+    }
+
+    private ClassLoader buildClassLoader(JpsModule module) {
         Set<String> classPathEntries = new HashSet<>();
         buildClassPath(module, new HashSet<>(), classPathEntries);
-        System.out.println(classPathEntries.stream().collect(Collectors.joining(":")));
+
+        URL[] urls = classPathEntries.stream().map(entry -> {
+            try {
+                return new File(entry).toURI().toURL();
+            } catch (MalformedURLException e) {
+                throw new RuntimeException(entry);
+            }
+        }).toArray(URL[]::new);
+
+        return new URLClassLoader(urls, TeaVMBuilder.class.getClassLoader());
     }
 
     private void buildClassPath(JpsModule module, Set<JpsModule> visited, Set<String> classPathEntries) {
