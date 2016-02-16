@@ -4,7 +4,6 @@
     <facet type="Osmorc" name="OSGi">
       <configuration manifestGenerationMode="OsmorcControlled" manifestLocation="" jarfileLocation="teavm-core-1.0.0-SNAPSHOT.jar" outputPathType="CompilerOutputPath" bndFileLocation="" bundlorFileLocation="" bundleActivator="" bundleSymbolicName="teavm-core" bundleVersion="1.0.0.SNAPSHOT" ignoreFilePattern="" useProjectDefaultManifestFileLocation="true" alwaysRebuildBundleJAR="false" doNotSynchronizeWithMaven="false">
         <additionalProperties>
-          <property key="Bundle-Description" value="TeaVM compiler and SPI" />
           <property key="Export-Package" value="org.teavm.*" />
           <property key="Bundle-Name" value="TeaVM core" />
           <property key="Include-Resource" value="org/teavm/javascript/runtime.js=$MODULE_DIR$/src/main/resources/org/teavm/javascript/runtime.js" />
@@ -28,7 +27,7 @@
     <orderEntry type="library" scope="PROVIDED" name="Maven: junit:junit:4.11" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: org.hamcrest:hamcrest-core:1.3" level="project" />
     <orderEntry type="library" name="Maven: commons-io:commons-io:2.4" level="project" />
-    <orderEntry type="library" name="Maven: org.ow2.asm:asm-debug-all:5.0.4" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: org.ow2.asm:asm-debug-all:5.0.4" level="project" />
     <orderEntry type="library" name="Maven: com.carrotsearch:hppc:0.6.1" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.6.2" level="project" />
   </component>

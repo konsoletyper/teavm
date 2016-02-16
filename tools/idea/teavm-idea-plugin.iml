@@ -12,6 +12,10 @@
     </content>
     <orderEntry type="jdk" jdkName="IntelliJ IDEA IU-144.3600.7" jdkType="IDEA JDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="teavm-jps-plugin" exported="" scope="RUNTIME" />
+    <orderEntry type="module" module-name="teavm-jps-plugin" exported="" />
+    <orderEntry type="library" exported="" name="teavm-tooling-1.0.0-SNAPSHOT" level="project" />
+    <orderEntry type="library" exported="" name="Maven: com.carrotsearch:hppc:0.6.1" level="project" />
+    <orderEntry type="library" exported="" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.6.2" level="project" />
+    <orderEntry type="library" exported="" name="Maven: commons-io:commons-io:2.4" level="project" />
   </component>
 </module>

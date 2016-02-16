@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="teavm-core-1.0.0-SNAPSHOT">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/teavm/teavm-core/1.0.0-SNAPSHOT/teavm-core-1.0.0-SNAPSHOT.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

@@ -9,19 +9,10 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="teavm-tooling" exported="" />
-    <orderEntry type="module" module-name="teavm-core" exported="" />
-    <orderEntry type="library" exported="" name="Maven: commons-io:commons-io:2.4" level="project" />
-    <orderEntry type="library" exported="" name="Maven: org.ow2.asm:asm-debug-all:5.0.4" level="project" />
-    <orderEntry type="library" exported="" name="Maven: com.carrotsearch:hppc:0.6.1" level="project" />
-    <orderEntry type="library" exported="" name="Maven: commons-cli:commons-cli:1.2" level="project" />
-    <orderEntry type="module" module-name="teavm-classlib" exported="" scope="RUNTIME" />
-    <orderEntry type="module" module-name="teavm-platform" exported="" scope="RUNTIME" />
-    <orderEntry type="module" module-name="teavm-jso" exported="" scope="RUNTIME" />
-    <orderEntry type="module" module-name="teavm-jso-apis" exported="" scope="RUNTIME" />
-    <orderEntry type="module" module-name="teavm-jso-impl" exported="" scope="RUNTIME" />
-    <orderEntry type="library" name="Maven: org.mozilla:rhino:1.7.7" level="project" />
-    <orderEntry type="module" module-name="teavm-samples-benchmark" />
-    <orderEntry type="module" module-name="teavm-samples-async" />
+    <orderEntry type="module" module-name="teavm-tooling" />
+    <orderEntry type="module" module-name="teavm-core" />
+    <orderEntry type="library" name="Maven: commons-io:commons-io:2.4" level="project" />
+    <orderEntry type="library" name="Maven: com.carrotsearch:hppc:0.6.1" level="project" />
+    <orderEntry type="library" name="Maven: commons-cli:commons-cli:1.2" level="project" />
   </component>
 </module>
