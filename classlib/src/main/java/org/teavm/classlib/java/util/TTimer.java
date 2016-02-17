@@ -81,4 +81,33 @@ public class TTimer extends TObject {
         };
         task.nativeTimerId = Window.setTimeout(handler, (int) delay);
     }
+    
+    public void scheduleAtFixedRate(final TTimerTask task, long delay, long period) {
+        if (cancelled || task.timer != null || task.nativeTimerId >= 0) {
+            throw new TIllegalStateException();
+        }
+        final long[] nextStartTime = new long[]{System.currentTimeMillis() + delay};
+        task.timer = this;
+        TimerHandler handler = new TimerHandler() {
+            @Override public void onTimer() {
+                new Thread(() -> {
+                    if (cancelled || task.timer == null) {
+                        return;
+                    }
+                    long nextDelay = nextStartTime[0] - System.currentTimeMillis();
+                    if (nextDelay < 0 ) {
+                        nextDelay = 0;
+                    }
+                    task.nativeTimerId = Window.setTimeout(this, (int) nextDelay);
+                    nextStartTime[0] += period;
+                    TTimerTask.performOnce(task);
+                    if (!cancelled) {
+                        task.timer = TTimer.this;
+                    }
+                }).start();
+            }
+        };
+        task.nativeTimerId = Window.setTimeout(handler, (int) delay);
+        nextStartTime[0] += period;
+    }
 }
