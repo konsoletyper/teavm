@@ -1,7 +1,0 @@
-<component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="install-artifacts-for-idea" type="CompoundRunConfigurationType" factoryName="Compound Run Configuration">
-    <toRun type="MavenRunConfiguration" name="install-core-artifact" />
-    <toRun type="MavenRunConfiguration" name="install-tooling-artifact" />
-    <method />
-  </configuration>
-</component>

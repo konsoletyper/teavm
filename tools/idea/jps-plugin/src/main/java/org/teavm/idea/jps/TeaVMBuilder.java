@@ -83,6 +83,7 @@ public class TeaVMBuilder extends ModuleLevelBuilder {
         tool.setSourceMapsFileGenerated(true);
         tool.setTargetDirectory(new File(config.getTargetDirectory()));
         tool.setClassLoader(buildClassLoader(module));
+        tool.setMinifying(false);
 
         try {
             tool.generate();

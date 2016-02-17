@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="teavm-all">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/tools/idea/jps-plugin/lib/teavm-all.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/core/src/main/java" />
+      <root url="file://$PROJECT_DIR$/tools/core/src/main/java" />
+    </SOURCES>
+  </library>
+</component>
