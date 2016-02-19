@@ -21,20 +21,21 @@ import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.module.ModuleComponent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.teavm.idea.jps.model.TeaVMJpsConfiguration;
 
 @State(name = "teavm", storages =  @Storage(id = "other", file = "$MODULE_FILE$"))
-public class TeaVMConfigurationStorage implements PersistentStateComponent<TeaVMConfiguration>, ModuleComponent {
-    private TeaVMConfiguration state;
+public class TeaVMConfigurationStorage implements PersistentStateComponent<TeaVMJpsConfiguration>, ModuleComponent {
+    private TeaVMJpsConfiguration state = new TeaVMJpsConfiguration();
 
     @Nullable
     @Override
-    public TeaVMConfiguration getState() {
-        return state;
+    public TeaVMJpsConfiguration getState() {
+        return state.createCopy();
     }
 
     @Override
-    public void loadState(TeaVMConfiguration state) {
-        this.state = state;
+    public void loadState(TeaVMJpsConfiguration state) {
+        this.state.applyChanges(state);
     }
 
     @Override

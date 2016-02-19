@@ -22,8 +22,8 @@ import com.intellij.openapi.options.ConfigurationException;
 import javax.swing.JComponent;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
-import org.teavm.idea.TeaVMConfiguration;
 import org.teavm.idea.TeaVMConfigurationStorage;
+import org.teavm.idea.jps.model.TeaVMJpsConfiguration;
 
 public class TeaVMConfigurable implements Configurable {
     private final Module module;
@@ -61,7 +61,7 @@ public class TeaVMConfigurable implements Configurable {
 
     @Override
     public void apply() throws ConfigurationException {
-        TeaVMConfiguration config = new TeaVMConfiguration();
+        TeaVMJpsConfiguration config = new TeaVMJpsConfiguration();
         panel.save(config);
         TeaVMConfigurationStorage configStorage = ModuleServiceManager.getService(module,
                 TeaVMConfigurationStorage.class);

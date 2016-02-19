@@ -29,20 +29,20 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import org.teavm.idea.TeaVMConfiguration;
+import org.teavm.idea.jps.model.TeaVMJpsConfiguration;
 
 class TeaVMConfigurationPanel extends JPanel {
     private final JCheckBox enabledCheckBox = new JCheckBox("TeaVM enabled for this module");
     private final JTextField mainClassField = new JTextField();
     private final JTextField targetDirectoryField = new JTextField();
-    private final TeaVMConfiguration initialConfiguration = new TeaVMConfiguration();
+    private final TeaVMJpsConfiguration initialConfiguration = new TeaVMJpsConfiguration();
     private final List<JComponent> editComponents = Arrays.asList(mainClassField, targetDirectoryField);
     private final List<Field<?>> fields = Arrays.asList(
-            new Field<>(TeaVMConfiguration::setEnabled, TeaVMConfiguration::isEnabled,
+            new Field<>(TeaVMJpsConfiguration::setEnabled, TeaVMJpsConfiguration::isEnabled,
                     enabledCheckBox::setSelected, enabledCheckBox::isSelected),
-            new Field<>(TeaVMConfiguration::setMainClass, TeaVMConfiguration::getMainClass,
+            new Field<>(TeaVMJpsConfiguration::setMainClass, TeaVMJpsConfiguration::getMainClass,
                     mainClassField::setText, mainClassField::getText),
-            new Field<>(TeaVMConfiguration::setTargetDirectory, TeaVMConfiguration::getTargetDirectory,
+            new Field<>(TeaVMJpsConfiguration::setTargetDirectory, TeaVMJpsConfiguration::getTargetDirectory,
                     targetDirectoryField::setText, targetDirectoryField::getText)
     );
 
@@ -75,9 +75,9 @@ class TeaVMConfigurationPanel extends JPanel {
         add(targetDirectoryField, fieldConstrains);
     }
 
-    public void load(TeaVMConfiguration config) {
+    public void load(TeaVMJpsConfiguration config) {
         if (config == null) {
-            config = new TeaVMConfiguration();
+            config = new TeaVMJpsConfiguration();
         }
         updateInitialConfiguration(config);
         for (Field<?> field : fields) {
@@ -86,18 +86,18 @@ class TeaVMConfigurationPanel extends JPanel {
         updateEnabledState();
     }
 
-    public void save(TeaVMConfiguration config) {
+    public void save(TeaVMJpsConfiguration config) {
         for (Field<?> field : fields) {
             saveField(field, config);
         }
         updateInitialConfiguration(config);
     }
 
-    private <T> void loadField(Field<T> field, TeaVMConfiguration config) {
+    private <T> void loadField(Field<T> field, TeaVMJpsConfiguration config) {
         field.editConsumer.accept(field.dataSupplier.apply(config));
     }
 
-    private <T> void saveField(Field<T> field, TeaVMConfiguration config) {
+    private <T> void saveField(Field<T> field, TeaVMJpsConfiguration config) {
         field.dataConsumer.accept(config, field.editSupplier.get());
     }
 
@@ -115,19 +115,19 @@ class TeaVMConfigurationPanel extends JPanel {
         return !Objects.equals(field.dataSupplier.apply(initialConfiguration), field.editSupplier.get());
     }
 
-    private void updateInitialConfiguration(TeaVMConfiguration config) {
+    private void updateInitialConfiguration(TeaVMJpsConfiguration config) {
         initialConfiguration.setEnabled(config.isEnabled());
         initialConfiguration.setMainClass(config.getMainClass());
         initialConfiguration.setTargetDirectory(config.getTargetDirectory());
     }
 
     static class Field<T> {
-        final BiConsumer<TeaVMConfiguration, T> dataConsumer;
-        final Function<TeaVMConfiguration, T> dataSupplier;
+        final BiConsumer<TeaVMJpsConfiguration, T> dataConsumer;
+        final Function<TeaVMJpsConfiguration, T> dataSupplier;
         final Consumer<T> editConsumer;
         final Supplier<T> editSupplier;
 
-        public Field(BiConsumer<TeaVMConfiguration, T> dataConsumer, Function<TeaVMConfiguration, T> dataSupplier,
+        public Field(BiConsumer<TeaVMJpsConfiguration, T> dataConsumer, Function<TeaVMJpsConfiguration, T> dataSupplier,
                 Consumer<T> editConsumer, Supplier<T> editSupplier) {
             this.dataConsumer = dataConsumer;
             this.dataSupplier = dataSupplier;
