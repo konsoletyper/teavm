@@ -24,7 +24,7 @@ import org.jetbrains.annotations.Nullable;
 import org.teavm.idea.jps.model.TeaVMJpsConfiguration;
 
 @State(name = "teavm", storages =  @Storage(id = "other", file = "$MODULE_FILE$"))
-public class TeaVMConfigurationStorage implements PersistentStateComponent<TeaVMJpsConfiguration>, ModuleComponent {
+public class TeaVMConfigurationStorage implements PersistentStateComponent<TeaVMJpsConfiguration> {
     private TeaVMJpsConfiguration state = new TeaVMJpsConfiguration();
 
     @Nullable
@@ -36,31 +36,5 @@ public class TeaVMConfigurationStorage implements PersistentStateComponent<TeaVM
     @Override
     public void loadState(TeaVMJpsConfiguration state) {
         this.state.applyChanges(state);
-    }
-
-    @Override
-    public void projectOpened() {
-    }
-
-    @Override
-    public void projectClosed() {
-    }
-
-    @Override
-    public void moduleAdded() {
-    }
-
-    @Override
-    public void initComponent() {
-    }
-
-    @Override
-    public void disposeComponent() {
-    }
-
-    @NotNull
-    @Override
-    public String getComponentName() {
-        return "TeaVM configuration";
     }
 }

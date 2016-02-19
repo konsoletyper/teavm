@@ -23,10 +23,4 @@
                    serviceImplementation="org.teavm.idea.TeaVMConfigurationStorage"/>
     <compileServer.plugin classpath="jps/teavm-jps-plugin.jar;teavm-all.jar"/>
   </extensions>
-
-  <module-components>
-    <component>
-      <implementation-class>org.teavm.idea.TeaVMConfigurationStorage</implementation-class>
-    </component>
-  </module-components>
 </idea-plugin>
