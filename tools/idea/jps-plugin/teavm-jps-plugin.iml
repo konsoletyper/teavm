@@ -13,5 +13,6 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="Maven: org.ow2.asm:asm-debug-all:5.0.4" level="project" />
     <orderEntry type="library" name="teavm-all" level="project" />
+    <orderEntry type="library" name="teavm-all" level="project" />
   </component>
 </module>

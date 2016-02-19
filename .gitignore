@@ -6,3 +6,5 @@
 .checkstyle
 .cache-main
 target
+.idea/libraries/Maven__*
+.idea/uiDesigner.xml
