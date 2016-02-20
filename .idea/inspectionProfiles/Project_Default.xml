@@ -100,6 +100,7 @@
       <option name="reportLocalVariables" value="true" />
       <option name="reportMethodParameters" value="true" />
     </inspection_tool>
+    <inspection_tool class="UndesirableClassUsage" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
     <inspection_tool class="UnnecessaryBoxing" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
     <inspection_tool class="UnregisteredActivator" enabled="false" level="ERROR" enabled_by_default="false" />
     <inspection_tool class="UnusedAssignment" enabled="true" level="WEAK WARNING" enabled_by_default="true">

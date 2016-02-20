@@ -15,6 +15,19 @@
  */
 package org.teavm.idea.ui;
 
+import com.intellij.ide.util.TreeClassChooser;
+import com.intellij.ide.util.TreeClassChooserFactory;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.fileChooser.FileChooserDescriptor;
+import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.TextFieldWithBrowseButton;
+import com.intellij.openapi.util.Computable;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.search.GlobalSearchScope;
+import com.intellij.psi.util.PsiMethodUtil;
+import com.intellij.ui.components.JBLabel;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.util.Arrays;
@@ -24,31 +37,68 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JTextField;
 import org.teavm.idea.jps.model.TeaVMJpsConfiguration;
 
 class TeaVMConfigurationPanel extends JPanel {
     private final JCheckBox enabledCheckBox = new JCheckBox("TeaVM enabled for this module");
-    private final JTextField mainClassField = new JTextField();
-    private final JTextField targetDirectoryField = new JTextField();
+    private final TextFieldWithBrowseButton mainClassField = new TextFieldWithBrowseButton(event -> chooseMainClass());
+    private final TextFieldWithBrowseButton targetDirectoryField = new TextFieldWithBrowseButton();
+    private final JComboBox<ComboBoxItem<Boolean>> minifyingField = new JComboBox<>(new DefaultComboBoxModel<>());
+    private final JComboBox<ComboBoxItem<Boolean>> sourceMapsField = new JComboBox<>(new DefaultComboBoxModel<>());;
+    private final JComboBox<ComboBoxItem<Boolean>> copySourcesField = new JComboBox<>(new DefaultComboBoxModel<>());
     private final TeaVMJpsConfiguration initialConfiguration = new TeaVMJpsConfiguration();
-    private final List<JComponent> editComponents = Arrays.asList(mainClassField, targetDirectoryField);
+    private final Project project;
+
+    private final List<JComponent> editComponents = Arrays.asList(mainClassField, targetDirectoryField,
+            minifyingField, sourceMapsField, copySourcesField);
+
+    private final List<ComboBoxItem<Boolean>> minifiedOptions = Arrays.asList(new ComboBoxItem<>(false, "Readable"),
+            new ComboBoxItem<>(true, "Minified (obfuscated)"));
+
+    private final List<ComboBoxItem<Boolean>> sourceMapsOptions = Arrays.asList(new ComboBoxItem<>(true, "Generate"),
+            new ComboBoxItem<>(false, "Skip"));
+
+    private final List<ComboBoxItem<Boolean>> copySourcesOptions = Arrays.asList(new ComboBoxItem<>(true, "Copy"),
+            new ComboBoxItem<>(false, "Skip"));
+
     private final List<Field<?>> fields = Arrays.asList(
             new Field<>(TeaVMJpsConfiguration::setEnabled, TeaVMJpsConfiguration::isEnabled,
                     enabledCheckBox::setSelected, enabledCheckBox::isSelected),
             new Field<>(TeaVMJpsConfiguration::setMainClass, TeaVMJpsConfiguration::getMainClass,
                     mainClassField::setText, mainClassField::getText),
             new Field<>(TeaVMJpsConfiguration::setTargetDirectory, TeaVMJpsConfiguration::getTargetDirectory,
-                    targetDirectoryField::setText, targetDirectoryField::getText)
+                    targetDirectoryField::setText, targetDirectoryField::getText),
+            new Field<>(TeaVMJpsConfiguration::setMinifying, TeaVMJpsConfiguration::isMinifying,
+                    value -> minifyingField.setSelectedIndex(value ? 1 : 0),
+                    () -> minifiedOptions.get(minifyingField.getSelectedIndex()).value),
+            new Field<>(TeaVMJpsConfiguration::setSourceMapsFileGenerated,
+                    TeaVMJpsConfiguration::isSourceMapsFileGenerated,
+                    value -> sourceMapsField.setSelectedIndex(value ? 0 : 1),
+                    () -> sourceMapsOptions.get(sourceMapsField.getSelectedIndex()).value),
+            new Field<>(TeaVMJpsConfiguration::setSourceFilesCopied,
+                    TeaVMJpsConfiguration::isSourceFilesCopied,
+                    value -> copySourcesField.setSelectedIndex(value ? 0 : 1),
+                    () -> copySourcesOptions.get(copySourcesField.getSelectedIndex()).value)
     );
 
-    TeaVMConfigurationPanel() {
+    TeaVMConfigurationPanel(Project project) {
+        this.project = project;
         enabledCheckBox.addActionListener(event -> updateEnabledState());
         setupLayout();
+
+        FileChooserDescriptor targetDirectoryChooserDescriptor = FileChooserDescriptorFactory
+                .createSingleFolderDescriptor();
+        targetDirectoryField.addBrowseFolderListener("Target Directory", "Please, select folder where TeaVM should"
+                + "write generated JS files", project, targetDirectoryChooserDescriptor);
+
+        minifiedOptions.stream().forEach(minifyingField::addItem);
+        sourceMapsOptions.stream().forEach(sourceMapsField::addItem);
+        copySourcesOptions.stream().forEach(copySourcesField::addItem);
     }
 
     private void setupLayout() {
@@ -56,26 +106,75 @@ class TeaVMConfigurationPanel extends JPanel {
 
         GridBagConstraints constraints = new GridBagConstraints();
         constraints.gridwidth = GridBagConstraints.REMAINDER;
+        constraints.anchor = GridBagConstraints.BASELINE_LEADING;
+        constraints.insets.left = 5;
+        constraints.insets.right = 5;
+        constraints.insets.bottom = 25;
+        constraints.insets.top = 10;
+        constraints.weighty = 1;
         add(enabledCheckBox, constraints);
 
-        GridBagConstraints labelConstrains = new GridBagConstraints();
-        labelConstrains.gridwidth = GridBagConstraints.RELATIVE;
-        labelConstrains.anchor = GridBagConstraints.BASELINE_TRAILING;
+        GridBagConstraints labelConstraints = new GridBagConstraints();
+        labelConstraints.gridwidth = GridBagConstraints.REMAINDER;
+        labelConstraints.anchor = GridBagConstraints.BASELINE_LEADING;
+        labelConstraints.weightx = 1;
+        labelConstraints.weighty = 1;
+        labelConstraints.insets.left = 5;
+        labelConstraints.insets.right = 5;
 
-        GridBagConstraints fieldConstrains = new GridBagConstraints();
-        fieldConstrains.gridwidth = GridBagConstraints.REMAINDER;
-        fieldConstrains.fill = GridBagConstraints.HORIZONTAL;
-        labelConstrains.anchor = GridBagConstraints.BASELINE_LEADING;
-        labelConstrains.insets.right = 5;
+        GridBagConstraints descriptionConstraints = (GridBagConstraints) labelConstraints.clone();
+        descriptionConstraints.fill = GridBagConstraints.BOTH;
+        descriptionConstraints.anchor = GridBagConstraints.BASELINE_LEADING;
+        descriptionConstraints.insets.top = 3;
 
-        add(new JLabel("Main class:"), labelConstrains);
-        add(mainClassField, fieldConstrains);
+        GridBagConstraints fieldConstraints = new GridBagConstraints();
+        fieldConstraints.gridwidth = GridBagConstraints.REMAINDER;
+        fieldConstraints.fill = GridBagConstraints.HORIZONTAL;
+        fieldConstraints.anchor = GridBagConstraints.BASELINE_LEADING;
+        fieldConstraints.weightx = 1;
+        fieldConstraints.weighty = 1;
+        fieldConstraints.insets.top = 5;
+        fieldConstraints.insets.bottom = 20;
+        fieldConstraints.insets.left = 10;
+        fieldConstraints.insets.right = 10;
 
-        add(new JLabel("Target directory:"), labelConstrains);
-        add(targetDirectoryField, fieldConstrains);
+        add(bold(new JBLabel("Main class")), labelConstraints);
+        add(mainClassField, fieldConstraints);
+
+        add(bold(new JBLabel("Target directory")), labelConstraints);
+        add(targetDirectoryField, fieldConstraints);
+
+        fieldConstraints.fill = GridBagConstraints.NONE;
+        add(bold(new JBLabel("Minification")), labelConstraints);
+        add(new JBLabel("Indicates whether TeaVM should minify (obfuscate) generated JavaScript."),
+                descriptionConstraints);
+        add(new JBLabel("It is highly desirable for production environment, since minified code is up to 3 "
+                + "times smaller."), descriptionConstraints);
+        add(minifyingField, fieldConstraints);
+
+        add(bold(new JBLabel("Source maps")), labelConstraints);
+        add(new JBLabel("Indicates whether TeaVM should generate source maps. With source maps "
+                + "you can debug code in the browser's devtools."), descriptionConstraints);
+        add(sourceMapsField, fieldConstraints);
+
+        add(bold(new JBLabel("Copy source code")), labelConstraints);
+        add(new JBLabel("Source maps require your server to provide source code."), descriptionConstraints);
+        add(new JBLabel("TeaVM can copy source code to the corresponding location, which is very convenient if "
+                + "you are going to debug in the browser."), descriptionConstraints);
+        add(copySourcesField, fieldConstraints);
+
+        constraints.fill = GridBagConstraints.BOTH;
+        constraints.weighty = 100;
+        constraints.weightx = 1;
+        add(new JPanel(), constraints);
     }
 
-    public void load(TeaVMJpsConfiguration config) {
+    private static JBLabel bold(JBLabel label) {
+        label.setFont(label.getFont().deriveFont(Font.BOLD));
+        return label;
+    }
+
+    void load(TeaVMJpsConfiguration config) {
         if (config == null) {
             config = new TeaVMJpsConfiguration();
         }
@@ -86,11 +185,35 @@ class TeaVMConfigurationPanel extends JPanel {
         updateEnabledState();
     }
 
-    public void save(TeaVMJpsConfiguration config) {
+    void save(TeaVMJpsConfiguration config) {
         for (Field<?> field : fields) {
             saveField(field, config);
         }
         updateInitialConfiguration(config);
+    }
+
+    boolean isModified() {
+        return fields.stream().anyMatch(this::isFieldModified);
+    }
+
+    private <T> boolean isFieldModified(Field<T> field) {
+        return !Objects.equals(field.dataSupplier.apply(initialConfiguration), field.editSupplier.get());
+    }
+
+    private void updateInitialConfiguration(TeaVMJpsConfiguration config) {
+        for (Field<?> field : fields) {
+            copyField(field, config);
+        }
+    }
+
+    private void updateEnabledState() {
+        for (JComponent component : editComponents) {
+            component.setEnabled(enabledCheckBox.isSelected());
+        }
+    }
+
+    private <T> void copyField(Field<T> field, TeaVMJpsConfiguration config) {
+        field.dataConsumer.accept(initialConfiguration, field.dataSupplier.apply(config));
     }
 
     private <T> void loadField(Field<T> field, TeaVMJpsConfiguration config) {
@@ -101,33 +224,46 @@ class TeaVMConfigurationPanel extends JPanel {
         field.dataConsumer.accept(config, field.editSupplier.get());
     }
 
-    private void updateEnabledState() {
-        for (JComponent component : editComponents) {
-            component.setEnabled(enabledCheckBox.isSelected());
+    private void chooseMainClass() {
+        TreeClassChooser chooser = TreeClassChooserFactory
+                .getInstance(project)
+                .createWithInnerClassesScopeChooser("Choose main class",
+                        GlobalSearchScope.allScope(project), this::isMainClass, null);
+        chooser.showDialog();
+        PsiClass cls = chooser.getSelected();
+        if (cls != null) {
+            mainClassField.setText(cls.getQualifiedName());
         }
     }
 
-    public boolean isModified() {
-        return fields.stream().anyMatch(this::isFieldModified);
+    private boolean isMainClass(PsiClass cls) {
+        return ApplicationManager.getApplication().runReadAction((Computable<Boolean>) () -> {
+            return PsiMethodUtil.MAIN_CLASS.value(cls) && PsiMethodUtil.hasMainMethod(cls);
+        });
     }
 
-    private <T> boolean isFieldModified(Field<T> field) {
-        return !Objects.equals(field.dataSupplier.apply(initialConfiguration), field.editSupplier.get());
+    private static class ComboBoxItem<T> {
+        final T value;
+        private final String title;
+
+        ComboBoxItem(T value, String title) {
+            this.value = value;
+            this.title = title;
+        }
+
+        @Override
+        public String toString() {
+            return title;
+        }
     }
 
-    private void updateInitialConfiguration(TeaVMJpsConfiguration config) {
-        initialConfiguration.setEnabled(config.isEnabled());
-        initialConfiguration.setMainClass(config.getMainClass());
-        initialConfiguration.setTargetDirectory(config.getTargetDirectory());
-    }
-
-    static class Field<T> {
+    private static class Field<T> {
         final BiConsumer<TeaVMJpsConfiguration, T> dataConsumer;
         final Function<TeaVMJpsConfiguration, T> dataSupplier;
         final Consumer<T> editConsumer;
         final Supplier<T> editSupplier;
 
-        public Field(BiConsumer<TeaVMJpsConfiguration, T> dataConsumer, Function<TeaVMJpsConfiguration, T> dataSupplier,
+        Field(BiConsumer<TeaVMJpsConfiguration, T> dataConsumer, Function<TeaVMJpsConfiguration, T> dataSupplier,
                 Consumer<T> editConsumer, Supplier<T> editSupplier) {
             this.dataConsumer = dataConsumer;
             this.dataSupplier = dataSupplier;

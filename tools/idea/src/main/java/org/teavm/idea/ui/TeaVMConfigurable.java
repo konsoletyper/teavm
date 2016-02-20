@@ -49,7 +49,7 @@ public class TeaVMConfigurable implements Configurable {
     @Override
     public JComponent createComponent() {
         if (panel == null) {
-            panel = new TeaVMConfigurationPanel();
+            panel = new TeaVMConfigurationPanel(module.getProject());
         }
         return panel;
     }

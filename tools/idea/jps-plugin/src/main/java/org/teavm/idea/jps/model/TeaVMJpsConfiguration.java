@@ -22,11 +22,14 @@ import org.jetbrains.jps.model.ex.JpsElementChildRoleBase;
 import org.jetbrains.jps.model.module.JpsModule;
 
 public class TeaVMJpsConfiguration extends JpsElementBase<TeaVMJpsConfiguration> {
-    public static final JpsElementChildRole<TeaVMJpsConfiguration> ROLE = JpsElementChildRoleBase.create(
+    private static final JpsElementChildRole<TeaVMJpsConfiguration> ROLE = JpsElementChildRoleBase.create(
             "TeaVM configuration");
     private boolean enabled;
     private String mainClass;
     private String targetDirectory;
+    private boolean minifying = false;
+    private boolean sourceMapsFileGenerated = true;
+    private boolean sourceFilesCopied = true;
 
     public boolean isEnabled() {
         return enabled;
@@ -52,6 +55,30 @@ public class TeaVMJpsConfiguration extends JpsElementBase<TeaVMJpsConfiguration>
         this.targetDirectory = targetDirectory;
     }
 
+    public boolean isMinifying() {
+        return minifying;
+    }
+
+    public void setMinifying(boolean minifying) {
+        this.minifying = minifying;
+    }
+
+    public boolean isSourceMapsFileGenerated() {
+        return sourceMapsFileGenerated;
+    }
+
+    public void setSourceMapsFileGenerated(boolean sourceMapsFileGenerated) {
+        this.sourceMapsFileGenerated = sourceMapsFileGenerated;
+    }
+
+    public boolean isSourceFilesCopied() {
+        return sourceFilesCopied;
+    }
+
+    public void setSourceFilesCopied(boolean sourceFilesCopied) {
+        this.sourceFilesCopied = sourceFilesCopied;
+    }
+
     public static TeaVMJpsConfiguration get(JpsModule module) {
         return module.getContainer().getChild(ROLE);
     }
@@ -73,5 +100,8 @@ public class TeaVMJpsConfiguration extends JpsElementBase<TeaVMJpsConfiguration>
         enabled = modified.enabled;
         mainClass = modified.mainClass;
         targetDirectory = modified.targetDirectory;
+        minifying = modified.minifying;
+        sourceMapsFileGenerated = modified.sourceMapsFileGenerated;
+        sourceFilesCopied = modified.sourceFilesCopied;
     }
 }
