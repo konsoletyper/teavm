@@ -81,6 +81,7 @@
               <targetDirectory>${project.build.directory}/javascript-test</targetDirectory>
               <debugInformationGenerated>true</debugInformationGenerated>
               <sourceMapsGenerated>true</sourceMapsGenerated>
+              <resources>**/*.txt</resources>
             </configuration>
           </execution>
           <execution>
