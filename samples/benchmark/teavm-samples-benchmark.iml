@@ -32,50 +32,6 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: commons-io:commons-io:2.4" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: com.carrotsearch:hppc:0.6.1" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: org.mozilla:rhino:1.7.7" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: com.google.code.gson:gson:2.2.4" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: com.jcraft:jzlib:1.1.3" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: joda-time:joda-time:2.7" level="project" />
-    <orderEntry type="library" name="Maven: org.jbox2d:jbox2d-library:2.2.1.1" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: org.jbox2d:jbox2d-library:sources:2.2.1.1" level="project" />
-    <orderEntry type="library" name="Maven: org.apidesign.bck2brwsr:emul:rt:0.14" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: com.google.gwt:gwt-user:2.7.0" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: javax.validation:validation-api:1.0.0.GA" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: javax.validation:validation-api:sources:1.0.0.GA" level="project" />
-    <orderEntry type="library" name="Maven: com.dukescript.canvas:html5-canvas:0.7.2" level="project" />
-    <orderEntry type="library" name="Maven: com.dukescript.canvas:canvas-api:0.7.2" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: com.dukescript.canvas:canvas-api:bck2brwsr:0.7.2" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: org.apidesign.bck2brwsr:ko-bck2brwsr:bck2brwsr:0.14" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: org.netbeans.html:net.java.html.json:1.1" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: org.netbeans.html:ko4j:1.2.3" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: org.netbeans.html:net.java.html.geo:1.1" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: org.netbeans.html:net.java.html.sound:1.1" level="project" />
-    <orderEntry type="library" name="Maven: org.netbeans.html:net.java.html.boot:1.2.3" level="project" />
-    <orderEntry type="library" name="Maven: org.netbeans.html:net.java.html:1.2.3" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: commons-io:commons-io:2.4" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: com.carrotsearch:hppc:0.6.1" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: org.mozilla:rhino:1.7.7" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: com.google.code.gson:gson:2.2.4" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: com.jcraft:jzlib:1.1.3" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: joda-time:joda-time:2.7" level="project" />
-    <orderEntry type="library" name="Maven: org.jbox2d:jbox2d-library:2.2.1.1" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: org.jbox2d:jbox2d-library:sources:2.2.1.1" level="project" />
-    <orderEntry type="library" name="Maven: org.apidesign.bck2brwsr:emul:rt:0.14" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: com.google.gwt:gwt-user:2.7.0" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: javax.validation:validation-api:1.0.0.GA" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: javax.validation:validation-api:sources:1.0.0.GA" level="project" />
-    <orderEntry type="library" name="Maven: com.dukescript.canvas:html5-canvas:0.7.2" level="project" />
-    <orderEntry type="library" name="Maven: com.dukescript.canvas:canvas-api:0.7.2" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: com.dukescript.canvas:canvas-api:bck2brwsr:0.7.2" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: org.apidesign.bck2brwsr:ko-bck2brwsr:bck2brwsr:0.14" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: org.netbeans.html:net.java.html.json:1.1" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: org.netbeans.html:ko4j:1.2.3" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: org.netbeans.html:net.java.html.geo:1.1" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: org.netbeans.html:net.java.html.sound:1.1" level="project" />
-    <orderEntry type="library" name="Maven: org.netbeans.html:net.java.html.boot:1.2.3" level="project" />
-    <orderEntry type="library" name="Maven: org.netbeans.html:net.java.html:1.2.3" level="project" />
     <orderEntry type="module" module-name="teavm-classlib" scope="PROVIDED" />
     <orderEntry type="module" module-name="teavm-platform" scope="PROVIDED" />
     <orderEntry type="module" module-name="teavm-core" scope="PROVIDED" />
@@ -91,18 +47,17 @@
     <orderEntry type="module" module-name="teavm-jso-apis" scope="PROVIDED" />
     <orderEntry type="library" name="Maven: org.jbox2d:jbox2d-library:2.2.1.1" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: org.jbox2d:jbox2d-library:sources:2.2.1.1" level="project" />
-    <orderEntry type="library" name="Maven: org.apidesign.bck2brwsr:emul:rt:0.14" level="project" />
+    <orderEntry type="library" name="Maven: org.apidesign.bck2brwsr:emul:rt:0.17" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: com.google.gwt:gwt-user:2.7.0" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: javax.validation:validation-api:1.0.0.GA" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: javax.validation:validation-api:sources:1.0.0.GA" level="project" />
     <orderEntry type="library" name="Maven: com.dukescript.canvas:html5-canvas:0.7.2" level="project" />
     <orderEntry type="library" name="Maven: com.dukescript.canvas:canvas-api:0.7.2" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: com.dukescript.canvas:canvas-api:bck2brwsr:0.7.2" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: org.apidesign.bck2brwsr:ko-bck2brwsr:bck2brwsr:0.14" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: org.netbeans.html:net.java.html.json:1.1" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: org.apidesign.bck2brwsr:ko-bck2brwsr:bck2brwsr:0.17" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: org.netbeans.html:net.java.html.json:1.2.3" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: org.netbeans.html:ko4j:1.2.3" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: org.netbeans.html:net.java.html.geo:1.1" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: org.netbeans.html:net.java.html.sound:1.1" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: org.netbeans.html:net.java.html.geo:1.2.3" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: org.netbeans.html:net.java.html.sound:1.2.3" level="project" />
     <orderEntry type="library" name="Maven: org.netbeans.html:net.java.html.boot:1.2.3" level="project" />
     <orderEntry type="library" name="Maven: org.netbeans.html:net.java.html:1.2.3" level="project" />
   </component>

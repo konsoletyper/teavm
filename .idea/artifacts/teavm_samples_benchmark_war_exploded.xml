@@ -8,7 +8,7 @@
         </element>
         <element id="directory" name="lib">
           <element id="library" level="project" name="Maven: org.jbox2d:jbox2d-library:2.2.1.1" />
-          <element id="library" level="project" name="Maven: org.apidesign.bck2brwsr:emul:rt:0.14" />
+          <element id="library" level="project" name="Maven: org.apidesign.bck2brwsr:emul:rt:0.17" />
           <element id="library" level="project" name="Maven: com.dukescript.canvas:html5-canvas:0.7.2" />
           <element id="library" level="project" name="Maven: com.dukescript.canvas:canvas-api:0.7.2" />
           <element id="library" level="project" name="Maven: org.netbeans.html:net.java.html.boot:1.2.3" />

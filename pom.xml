@@ -79,6 +79,7 @@
   </properties>
 
   <modules>
+    <module>metaprogramming-api</module>
     <module>core</module>
     <module>classlib</module>
     <module>jso/core</module>

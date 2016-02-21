@@ -167,6 +167,13 @@
         <processorPath useClasspath="true" />
         <module name="teavm-tests" />
       </profile>
+      <profile default="false" name="Annotation profile for teavm-metaprogramming-api" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="teavm-metaprogramming-api" />
+      </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="teavm" target="1.5" />
@@ -182,6 +189,7 @@
       <module name="teavm-maven" target="1.5" />
       <module name="teavm-maven-plugin" target="1.8" />
       <module name="teavm-maven-webapp" target="1.5" />
+      <module name="teavm-metaprogramming-api" target="1.8" />
       <module name="teavm-platform" target="1.8" />
       <module name="teavm-samples" target="1.5" />
       <module name="teavm-samples-async" target="1.8" />

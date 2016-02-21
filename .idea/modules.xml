@@ -17,6 +17,7 @@
       <module fileurl="file://$PROJECT_DIR$/tools/maven/teavm-maven.iml" filepath="$PROJECT_DIR$/tools/maven/teavm-maven.iml" />
       <module fileurl="file://$PROJECT_DIR$/tools/maven/plugin/teavm-maven-plugin.iml" filepath="$PROJECT_DIR$/tools/maven/plugin/teavm-maven-plugin.iml" />
       <module fileurl="file://$PROJECT_DIR$/tools/maven/webapp/teavm-maven-webapp.iml" filepath="$PROJECT_DIR$/tools/maven/webapp/teavm-maven-webapp.iml" />
+      <module fileurl="file://$PROJECT_DIR$/metaprogramming-api/teavm-metaprogramming-api.iml" filepath="$PROJECT_DIR$/metaprogramming-api/teavm-metaprogramming-api.iml" />
       <module fileurl="file://$PROJECT_DIR$/platform/teavm-platform.iml" filepath="$PROJECT_DIR$/platform/teavm-platform.iml" />
       <module fileurl="file://$PROJECT_DIR$/samples/teavm-samples.iml" filepath="$PROJECT_DIR$/samples/teavm-samples.iml" />
       <module fileurl="file://$PROJECT_DIR$/samples/async/teavm-samples-async.iml" filepath="$PROJECT_DIR$/samples/async/teavm-samples-async.iml" />

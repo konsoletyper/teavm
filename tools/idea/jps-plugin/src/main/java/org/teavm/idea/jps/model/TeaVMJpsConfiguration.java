@@ -27,7 +27,7 @@ public class TeaVMJpsConfiguration extends JpsElementBase<TeaVMJpsConfiguration>
     private boolean enabled;
     private String mainClass;
     private String targetDirectory;
-    private boolean minifying = false;
+    private boolean minifying;
     private boolean sourceMapsFileGenerated = true;
     private boolean sourceFilesCopied = true;
 
