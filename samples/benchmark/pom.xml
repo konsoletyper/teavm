@@ -19,7 +19,7 @@
   <description>Compares performance of the JavaScript code produced by TeaVM and GWT</description>
   
   <properties>
-      <bck2brwsr.version>0.14</bck2brwsr.version>
+      <bck2brwsr.version>0.17</bck2brwsr.version>
   </properties>
 
   <dependencies>
@@ -63,13 +63,6 @@
       <groupId>com.dukescript.canvas</groupId>
       <artifactId>html5-canvas</artifactId>
       <version>0.7.2</version>
-    </dependency>
-    <dependency>
-      <groupId>com.dukescript.canvas</groupId>
-      <artifactId>canvas-api</artifactId>
-      <version>0.7.2</version>
-      <classifier>bck2brwsr</classifier>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apidesign.bck2brwsr</groupId>
