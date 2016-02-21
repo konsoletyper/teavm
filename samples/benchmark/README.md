@@ -1,5 +1,5 @@
-TeaVM, GWT, HotSport JBox2D Benchmark
-=====================================
+TeaVM, GWT, HotSpot, Bck2Brwsr JBox2D Benchmark
+===============================================
 
 Compares the speed of execution on a complex [JBox2D](http://www.jbox2d.org/) CPU extensive
 computation. JavaScript produced by TeaVM and GWT can be compared by running 

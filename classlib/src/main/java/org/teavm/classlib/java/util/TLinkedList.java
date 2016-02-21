@@ -343,10 +343,10 @@ public class TLinkedList<E> extends TAbstractSequentialList<E> implements TDeque
             }
             removeEntry(currentEntry);
             if (currentEntry == prevEntry) {
-                prevEntry = nextEntry.previous;
+                prevEntry = hasNext() ? nextEntry.previous : null;
                 --index;
             } else if (currentEntry == nextEntry) {
-                nextEntry = prevEntry.next;
+                nextEntry = hasPrevious() ? prevEntry.next : null;
             }
             --size;
             version = modCount;
