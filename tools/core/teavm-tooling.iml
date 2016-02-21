@@ -4,6 +4,7 @@
     <facet type="Osmorc" name="OSGi">
       <configuration manifestGenerationMode="OsmorcControlled" manifestLocation="" jarfileLocation="teavm-tooling-1.0.0-SNAPSHOT.jar" outputPathType="CompilerOutputPath" bndFileLocation="" bundlorFileLocation="" bundleActivator="" bundleSymbolicName="teavm-tooling" bundleVersion="1.0.0.SNAPSHOT" ignoreFilePattern="" useProjectDefaultManifestFileLocation="true" alwaysRebuildBundleJAR="false" doNotSynchronizeWithMaven="false">
         <additionalProperties>
+          <property key="Bundle-Description" value="TeaVM API that helps to create tooling" />
           <property key="Export-Package" value="org.teavm.*" />
           <property key="Bundle-Name" value="TeaVM tooling core" />
           <property key="Include-Resource" value="org/teavm/tooling/main.html=$MODULE_DIR$/src/main/resources/org/teavm/tooling/main.html,org/teavm/tooling/test/junit.html=$MODULE_DIR$/src/main/resources/org/teavm/tooling/test/junit.html,org/teavm/tooling/test/junit-client.html=$MODULE_DIR$/src/main/resources/org/teavm/tooling/test/junit-client.html,org/teavm/tooling/test/res/junit-support.js=$MODULE_DIR$/src/main/resources/org/teavm/tooling/test/res/junit-support.js,org/teavm/tooling/test/res/control-000-small.png=$MODULE_DIR$/src/main/resources/org/teavm/tooling/test/res/control-000-small.png,org/teavm/tooling/test/res/package_obj.png=$MODULE_DIR$/src/main/resources/org/teavm/tooling/test/res/package_obj.png,org/teavm/tooling/test/res/junit-client.js=$MODULE_DIR$/src/main/resources/org/teavm/tooling/test/res/junit-client.js,org/teavm/tooling/test/res/junit.css=$MODULE_DIR$/src/main/resources/org/teavm/tooling/test/res/junit.css,org/teavm/tooling/test/res/tick-small-red.png=$MODULE_DIR$/src/main/resources/org/teavm/tooling/test/res/tick-small-red.png,org/teavm/tooling/test/res/tick-small.png=$MODULE_DIR$/src/main/resources/org/teavm/tooling/test/res/tick-small.png,org/teavm/tooling/test/res/class_obj.png=$MODULE_DIR$/src/main/resources/org/teavm/tooling/test/res/class_obj.png,org/teavm/tooling/test/res/toggle-small.png=$MODULE_DIR$/src/main/resources/org/teavm/tooling/test/res/toggle-small.png,org/teavm/tooling/test/res/toggle-small-expand.png=$MODULE_DIR$/src/main/resources/org/teavm/tooling/test/res/toggle-small-expand.png,org/teavm/tooling/test/res/methpub_obj.png=$MODULE_DIR$/src/main/resources/org/teavm/tooling/test/res/methpub_obj.png" />
@@ -25,8 +26,12 @@
     <orderEntry type="library" name="Maven: commons-io:commons-io:2.4" level="project" />
     <orderEntry type="library" name="Maven: com.carrotsearch:hppc:0.6.1" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.6.2" level="project" />
+    <orderEntry type="library" name="Maven: commons-io:commons-io:2.4" level="project" />
+    <orderEntry type="library" name="Maven: com.carrotsearch:hppc:0.6.1" level="project" />
+    <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.6.2" level="project" />
     <orderEntry type="module" module-name="teavm-core" />
     <orderEntry type="library" name="Maven: commons-io:commons-io:2.4" level="project" />
+    <orderEntry type="library" name="Maven: org.ow2.asm:asm-debug-all:5.0.4" level="project" />
     <orderEntry type="library" name="Maven: com.carrotsearch:hppc:0.6.1" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.6.2" level="project" />
   </component>

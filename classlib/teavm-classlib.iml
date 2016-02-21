@@ -11,6 +11,7 @@
     <facet type="Osmorc" name="OSGi">
       <configuration manifestGenerationMode="OsmorcControlled" manifestLocation="" jarfileLocation="teavm-classlib-1.0.0-SNAPSHOT.jar" outputPathType="CompilerOutputPath" bndFileLocation="" bundlorFileLocation="" bundleActivator="" bundleSymbolicName="teavm-classlib" bundleVersion="1.0.0.SNAPSHOT" ignoreFilePattern="" useProjectDefaultManifestFileLocation="true" alwaysRebuildBundleJAR="false" doNotSynchronizeWithMaven="false">
         <additionalProperties>
+          <property key="Bundle-Description" value="TeaVM Java class library emulation" />
           <property key="Export-Package" value="org.teavm.classlib.*" />
           <property key="Bundle-Name" value="TeaVM Java class library" />
           <property key="Include-Resource" value="html/jcl.html=$MODULE_DIR$/src/main/resources/html/jcl.html,html/annotation_obj.png=$MODULE_DIR$/src/main/resources/html/annotation_obj.png,html/enum_obj.png=$MODULE_DIR$/src/main/resources/html/enum_obj.png,html/jcl.css=$MODULE_DIR$/src/main/resources/html/jcl.css,html/package_obj.png=$MODULE_DIR$/src/main/resources/html/package_obj.png,html/field_public_obj.png=$MODULE_DIR$/src/main/resources/html/field_public_obj.png,html/class_obj.png=$MODULE_DIR$/src/main/resources/html/class_obj.png,html/int_obj.png=$MODULE_DIR$/src/main/resources/html/int_obj.png,html/jcl-class.html=$MODULE_DIR$/src/main/resources/html/jcl-class.html,html/methpro_obj.png=$MODULE_DIR$/src/main/resources/html/methpro_obj.png,html/methpub_obj.png=$MODULE_DIR$/src/main/resources/html/methpub_obj.png,html/field_protected_obj.png=$MODULE_DIR$/src/main/resources/html/field_protected_obj.png,META-INF/teavm.properties=$MODULE_DIR$/src/main/resources/META-INF/teavm.properties,META-INF/services/org.teavm.vm.spi.TeaVMPlugin=$MODULE_DIR$/src/main/resources/META-INF/services/org.teavm.vm.spi.TeaVMPlugin,org/teavm/classlib/impl/tz/tzdata2015d.zip=$MODULE_DIR$/src/main/resources/org/teavm/classlib/impl/tz/tzdata2015d.zip,org/teavm/classlib/impl/currency/iso4217.xml=$MODULE_DIR$/src/main/resources/org/teavm/classlib/impl/currency/iso4217.xml,org/teavm/classlib/impl/currency/iso3166.csv=$MODULE_DIR$/src/main/resources/org/teavm/classlib/impl/currency/iso3166.csv,org/teavm/classlib/impl/unicode/UnicodeData.txt=$MODULE_DIR$/src/main/resources/org/teavm/classlib/impl/unicode/UnicodeData.txt,org/teavm/classlib/impl/unicode/cldr-json.zip=$MODULE_DIR$/src/main/resources/org/teavm/classlib/impl/unicode/cldr-json.zip" />
@@ -41,6 +42,15 @@
     <orderEntry type="library" name="Maven: joda-time:joda-time:2.7" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: junit:junit:4.11" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.hamcrest:hamcrest-core:1.3" level="project" />
+    <orderEntry type="library" name="Maven: commons-io:commons-io:2.4" level="project" />
+    <orderEntry type="library" name="Maven: com.carrotsearch:hppc:0.6.1" level="project" />
+    <orderEntry type="library" name="Maven: org.mozilla:rhino:1.7.7" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: org.ow2.asm:asm-debug-all:5.0.4" level="project" />
+    <orderEntry type="library" name="Maven: com.google.code.gson:gson:2.2.4" level="project" />
+    <orderEntry type="library" name="Maven: com.jcraft:jzlib:1.1.3" level="project" />
+    <orderEntry type="library" name="Maven: joda-time:joda-time:2.7" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: junit:junit:4.11" level="project" />
+    <orderEntry type="library" scope="TEST" name="Maven: org.hamcrest:hamcrest-core:1.3" level="project" />
     <orderEntry type="module" module-name="teavm-platform" />
     <orderEntry type="module" module-name="teavm-core" />
     <orderEntry type="library" name="Maven: commons-io:commons-io:2.4" level="project" />
@@ -49,7 +59,7 @@
     <orderEntry type="module" module-name="teavm-jso-apis" />
     <orderEntry type="module" module-name="teavm-jso-impl" />
     <orderEntry type="library" name="Maven: org.mozilla:rhino:1.7.7" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: org.ow2.asm:asm-debug-all:5.0.4" level="project" />
+    <orderEntry type="library" name="Maven: org.ow2.asm:asm-debug-all:5.0.4" level="project" />
     <orderEntry type="library" name="Maven: com.google.code.gson:gson:2.2.4" level="project" />
     <orderEntry type="library" name="Maven: com.jcraft:jzlib:1.1.3" level="project" />
     <orderEntry type="library" name="Maven: joda-time:joda-time:2.7" level="project" />
