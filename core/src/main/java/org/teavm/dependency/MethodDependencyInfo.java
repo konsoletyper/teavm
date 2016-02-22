@@ -30,9 +30,9 @@ public interface MethodDependencyInfo {
 
     int getParameterCount();
 
-    DependencyNode getResult();
+    ValueDependencyInfo getResult();
 
-    DependencyNode getThrown();
+    ValueDependencyInfo getThrown();
 
     MethodReference getReference();
 

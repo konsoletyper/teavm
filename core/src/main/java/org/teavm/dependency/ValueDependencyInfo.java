@@ -26,5 +26,7 @@ public interface ValueDependencyInfo {
 
     boolean hasArrayType();
 
-    DependencyNode getArrayItem();
+    ValueDependencyInfo getArrayItem();
+
+    ValueDependencyInfo getClassValueNode();
 }

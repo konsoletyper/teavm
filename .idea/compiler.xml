@@ -20,159 +20,33 @@
       <profile default="true" name="Default" enabled="false">
         <processorPath useClasspath="true" />
       </profile>
-      <profile default="false" name="Annotation profile for teavm-cli" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="true" />
-        <module name="teavm-cli" />
-      </profile>
-      <profile default="false" name="Annotation profile for teavm-tooling" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="true" />
-        <module name="teavm-tooling" />
-      </profile>
-      <profile default="false" name="Annotation profile for teavm-platform" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="true" />
-        <module name="teavm-platform" />
-      </profile>
-      <profile default="false" name="Annotation profile for teavm-html4j" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="true" />
-        <module name="teavm-html4j" />
-      </profile>
       <profile default="false" name="Maven default annotation processors profile" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="true" />
-        <module name="teavm-maven-webapp" />
-      </profile>
-      <profile default="false" name="Annotation profile for teavm-jso-impl" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="true" />
-        <module name="teavm-jso-impl" />
-      </profile>
-      <profile default="false" name="Annotation profile for teavm-maven-plugin" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="true" />
-        <module name="teavm-maven-plugin" />
-      </profile>
-      <profile default="false" name="Annotation profile for teavm-jso-apis" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="true" />
-        <module name="teavm-jso-apis" />
-      </profile>
-      <profile default="false" name="Annotation profile for teavm-samples-scala" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="true" />
-        <module name="teavm-samples-scala" />
-      </profile>
-      <profile default="false" name="Annotation profile for teavm-jso" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="true" />
-        <module name="teavm-jso" />
-      </profile>
-      <profile default="false" name="Annotation profile for teavm-core" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="true" />
-        <module name="teavm-core" />
-      </profile>
-      <profile default="false" name="Annotation profile for teavm-samples-kotlin" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="true" />
-        <module name="teavm-samples-kotlin" />
-      </profile>
-      <profile default="false" name="Annotation profile for teavm-classlib" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="true" />
-        <module name="teavm-classlib" />
-      </profile>
-      <profile default="false" name="Annotation profile for teavm-samples-async" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="true" />
-        <module name="teavm-samples-async" />
-      </profile>
-      <profile default="false" name="Annotation profile for teavm-samples-video" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="true" />
-        <module name="teavm-samples-video" />
-      </profile>
-      <profile default="false" name="Annotation profile for teavm-samples-storage" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="true" />
-        <module name="teavm-samples-storage" />
-      </profile>
-      <profile default="false" name="Annotation profile for teavm-samples-benchmark" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="true" />
-        <module name="teavm-samples-benchmark" />
-      </profile>
-      <profile default="false" name="Annotation profile for teavm-samples-hello" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="true" />
-        <module name="teavm-samples-hello" />
-      </profile>
-      <profile default="false" name="Annotation profile for teavm-extras-slf4j" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="true" />
-        <module name="teavm-extras-slf4j" />
-      </profile>
-      <profile default="false" name="Annotation profile for teavm-chrome-rdp" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="true" />
         <module name="teavm-chrome-rdp" />
-      </profile>
-      <profile default="false" name="Annotation profile for teavm-tests" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="true" />
-        <module name="teavm-tests" />
-      </profile>
-      <profile default="false" name="Annotation profile for teavm-metaprogramming-api" enabled="true">
-        <sourceOutputDir name="target/generated-sources/annotations" />
-        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
-        <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="true" />
+        <module name="teavm-classlib" />
+        <module name="teavm-cli" />
+        <module name="teavm-core" />
+        <module name="teavm-extras-slf4j" />
+        <module name="teavm-html4j" />
+        <module name="teavm-jso" />
+        <module name="teavm-jso-apis" />
+        <module name="teavm-jso-impl" />
+        <module name="teavm-maven-plugin" />
+        <module name="teavm-maven-webapp" />
         <module name="teavm-metaprogramming-api" />
+        <module name="teavm-platform" />
+        <module name="teavm-samples-async" />
+        <module name="teavm-samples-benchmark" />
+        <module name="teavm-samples-hello" />
+        <module name="teavm-samples-kotlin" />
+        <module name="teavm-samples-scala" />
+        <module name="teavm-samples-storage" />
+        <module name="teavm-samples-video" />
+        <module name="teavm-tests" />
+        <module name="teavm-tooling" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>

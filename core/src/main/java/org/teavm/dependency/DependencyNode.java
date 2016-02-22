@@ -30,6 +30,7 @@ public class DependencyNode implements ValueDependencyInfo {
     private List<DependencyNodeToNodeTransition> transitions;
     private volatile String tag;
     private DependencyNode arrayItemNode;
+    private DependencyNode classValueNode;
     private int degree;
     int index;
     boolean locked;
@@ -199,6 +200,18 @@ public class DependencyNode implements ValueDependencyInfo {
             arrayItemNode.addConsumer(this::propagate);
         }
         return arrayItemNode;
+    }
+
+    public DependencyNode getClassValueNode() {
+        if (classValueNode == null) {
+            classValueNode = new DependencyNode(dependencyChecker, dependencyChecker.nodes.size(), degree);
+            dependencyChecker.nodes.add(classValueNode);
+            if (DependencyChecker.shouldLog) {
+                classValueNode.tag = tag + "@";
+            }
+            classValueNode.addConsumer(this::propagate);
+        }
+        return classValueNode;
     }
 
     @Override

@@ -388,6 +388,19 @@ class DependencyGraphBuilder {
             DependencyNode node = nodes[receiver.getIndex()];
             if (node != null) {
                 node.propagate(dependencyChecker.getType("java.lang.Class"));
+                if (!(cst instanceof ValueType.Primitive)) {
+                    StringBuilder sb = new StringBuilder();
+                    while (cst instanceof ValueType.Array) {
+                        cst = ((ValueType.Array) cst).getItemType();
+                        sb.append('[');
+                    }
+                    if (cst instanceof ValueType.Object) {
+                        sb.append(((ValueType.Object) cst).getClassName());
+                    } else {
+                        sb.append(cst.toString());
+                    }
+                    node.getClassValueNode().propagate(dependencyChecker.getType(sb.toString()));
+                }
             }
             while (cst instanceof ValueType.Array) {
                 cst = ((ValueType.Array) cst).getItemType();
@@ -655,6 +668,10 @@ class DependencyGraphBuilder {
                     case VIRTUAL:
                         invokeVirtual(receiver, instance, method, arguments);
                         break;
+                }
+                if (method.getName().equals("getClass") && method.parameterCount() == 0
+                        && method.getReturnType().isObject(Class.class) && receiver != null) {
+                    nodes[instance.getIndex()].connect(nodes[receiver.getIndex()].getClassValueNode());
                 }
             }
         }
