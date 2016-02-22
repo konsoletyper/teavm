@@ -13,14 +13,25 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.metaprogramming.reflect;
+package org.teavm.metaprogramming.impl;
 
-import org.teavm.metaprogramming.ReflectClass;
+import org.teavm.metaprogramming.Value;
+import org.teavm.model.ValueType;
+import org.teavm.model.Variable;
 
-public interface ReflectMember extends ReflectAnnotatedElement {
-    ReflectClass<?> getDeclaringClass();
+public class ValueImpl<T> implements Value<T> {
+    Variable innerValue;
+    VariableContext context;
+    ValueType type;
 
-    String getName();
+    public ValueImpl(Variable innerValue, VariableContext context, ValueType type) {
+        this.innerValue = innerValue;
+        this.context = context;
+        this.type = type;
+    }
 
-    int getModifiers();
+    @Override
+    public T get() {
+        throw new IllegalStateException("Can only read this value in emitter domain");
+    }
 }

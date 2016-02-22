@@ -13,14 +13,17 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.metaprogramming.reflect;
+package org.teavm.metaprogramming.impl;
 
-import org.teavm.metaprogramming.ReflectClass;
+import java.util.List;
+import org.teavm.model.MethodReference;
 
-public interface ReflectMember extends ReflectAnnotatedElement {
-    ReflectClass<?> getDeclaringClass();
+public class Fragment {
+    List<CapturedValue> capturedValues;
+    MethodReference method;
 
-    String getName();
-
-    int getModifiers();
+    public Fragment(List<CapturedValue> capturedValues, MethodReference method) {
+        this.capturedValues = capturedValues;
+        this.method = method;
+    }
 }

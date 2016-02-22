@@ -13,14 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.metaprogramming.reflect;
+package org.teavm.metaprogramming.impl;
 
-import org.teavm.metaprogramming.ReflectClass;
+public class CapturedValue {
+    public Object obj;
+    public boolean primitive;
 
-public interface ReflectMember extends ReflectAnnotatedElement {
-    ReflectClass<?> getDeclaringClass();
-
-    String getName();
-
-    int getModifiers();
+    public CapturedValue(Object obj, boolean primitive) {
+        this.obj = obj;
+        this.primitive = primitive;
+    }
 }

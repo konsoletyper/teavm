@@ -45,6 +45,7 @@
     <orderEntry type="library" name="Maven: org.eclipse.jetty:jetty-servlet:9.2.1.v20140609" level="project" />
     <orderEntry type="library" name="Maven: org.eclipse.jetty:jetty-security:9.2.1.v20140609" level="project" />
     <orderEntry type="module" module-name="teavm-core" />
+    <orderEntry type="module" module-name="teavm-metaprogramming-api" />
     <orderEntry type="library" name="Maven: commons-io:commons-io:2.4" level="project" />
     <orderEntry type="library" name="Maven: org.ow2.asm:asm-debug-all:5.0.4" level="project" />
     <orderEntry type="library" name="Maven: com.carrotsearch:hppc:0.6.1" level="project" />

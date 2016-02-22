@@ -13,14 +13,21 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.metaprogramming.reflect;
+package org.teavm.metaprogramming.impl;
 
-import org.teavm.metaprogramming.ReflectClass;
+import org.teavm.model.CallLocation;
+import org.teavm.model.Variable;
 
-public interface ReflectMember extends ReflectAnnotatedElement {
-    ReflectClass<?> getDeclaringClass();
+public abstract class VariableContext {
+    private VariableContext parent;
 
-    String getName();
+    public VariableContext(VariableContext parent) {
+        this.parent = parent;
+    }
 
-    int getModifiers();
+    public VariableContext getParent() {
+        return parent;
+    }
+
+    public abstract Variable emitVariable(ValueImpl<?> value, CallLocation location);
 }

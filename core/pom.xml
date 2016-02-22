@@ -33,6 +33,11 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
+      <groupId>org.teavm</groupId>
+      <artifactId>teavm-metaprogramming-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
     </dependency>

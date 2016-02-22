@@ -16,10 +16,11 @@
 package org.teavm.metaprogramming;
 
 import java.util.Arrays;
+import org.teavm.metaprogramming.reflect.ReflectAnnotatedElement;
 import org.teavm.metaprogramming.reflect.ReflectField;
 import org.teavm.metaprogramming.reflect.ReflectMethod;
 
-public interface ReflectClass<T> {
+public interface ReflectClass<T> extends ReflectAnnotatedElement {
     boolean isPrimitive();
 
     boolean isInterface();

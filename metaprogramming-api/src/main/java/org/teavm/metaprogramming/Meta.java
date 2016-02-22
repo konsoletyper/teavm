@@ -13,14 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.metaprogramming.reflect;
+package org.teavm.metaprogramming;
 
-import org.teavm.metaprogramming.ReflectClass;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public interface ReflectMember extends ReflectAnnotatedElement {
-    ReflectClass<?> getDeclaringClass();
-
-    String getName();
-
-    int getModifiers();
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface Meta {
 }
