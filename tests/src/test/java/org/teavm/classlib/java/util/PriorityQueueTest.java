@@ -23,11 +23,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
-/**
- *
- * @author Alexey Andreev
- */
+@RunWith(TeaVMTestRunner.class)
 public class PriorityQueueTest {
     @Test
     public void receivesElements() {

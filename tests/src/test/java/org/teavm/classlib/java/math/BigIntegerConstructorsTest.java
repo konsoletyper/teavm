@@ -24,12 +24,10 @@ import static org.junit.Assert.*;
 import java.math.BigInteger;
 import java.util.Random;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
-/**
- * Class:   java.math.BigInteger
- * Constructors: BigInteger(byte[] a), BigInteger(int sign, byte[] a),
- *               BigInteger(String val, int radix)
- */
+@RunWith(TeaVMTestRunner.class)
 public class BigIntegerConstructorsTest  {
     /**
      * Create a number from an array of bytes.

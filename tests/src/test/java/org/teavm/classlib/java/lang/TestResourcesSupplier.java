@@ -18,10 +18,6 @@ package org.teavm.classlib.java.lang;
 import org.teavm.classlib.ResourceSupplier;
 import org.teavm.model.ListableClassReaderSource;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TestResourcesSupplier implements ResourceSupplier {
     @Override
     public String[] supplyResources(ClassLoader classLoader, ListableClassReaderSource classSource) {

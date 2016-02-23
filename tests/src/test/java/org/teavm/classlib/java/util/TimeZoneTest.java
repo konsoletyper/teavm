@@ -24,11 +24,14 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
 /**
  *
  * @author Alexey Andreev
  */
+@RunWith(TeaVMTestRunner.class)
 public class TimeZoneTest {
     private static final int ONE_HOUR = 3600000;
 

@@ -7,11 +7,10 @@ import static org.junit.Assert.fail;
 import java.io.IOException;
 import java.nio.*;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
-/**
- *
- * @author Alexey Andreev
- */
+@RunWith(TeaVMTestRunner.class)
 public class CharBufferTest {
     @Test
     public void allocates() {

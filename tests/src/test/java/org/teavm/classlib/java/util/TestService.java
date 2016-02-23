@@ -15,10 +15,14 @@
  */
 package org.teavm.classlib.java.util;
 
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
+
 /**
  *
  * @author Alexey Andreev
  */
+@RunWith(TeaVMTestRunner.class)
 public interface TestService {
     void foo();
 }

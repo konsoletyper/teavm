@@ -19,8 +19,11 @@ package org.teavm.classlib.java.io;
 import static org.junit.Assert.*;
 import java.io.*;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
 @SuppressWarnings("resource")
+@RunWith(TeaVMTestRunner.class)
 public class BufferedInputStreamTest {
     byte[] ibuf = new byte[4096];
 
@@ -32,20 +35,6 @@ public class BufferedInputStreamTest {
             fail("Expected an IOException");
         } catch (IOException e) {
             // Expected
-        }
-    }
-
-    static class MockBufferedInputStream extends BufferedInputStream {
-        static byte[] buf;
-
-        MockBufferedInputStream(InputStream is) {
-            super(is);
-            buf = super.buf;
-        }
-
-        MockBufferedInputStream(InputStream is, int size) {
-            super(is, size);
-            buf = super.buf;
         }
     }
 

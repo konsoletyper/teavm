@@ -3,11 +3,10 @@ package org.teavm.classlib.java.util;
 import static org.junit.Assert.*;
 import java.util.Date;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
-/**
- *
- * @author Alexey Andreev
- */
+@RunWith(TeaVMTestRunner.class)
 public class DateTest {
     @SuppressWarnings("deprecation")
     @Test

@@ -24,11 +24,10 @@ import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.TimeZone;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
-/**
- *
- * @author Alexey Andreev
- */
+@RunWith(TeaVMTestRunner.class)
 public class DateFormatTest {
     public DateFormatTest() {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));

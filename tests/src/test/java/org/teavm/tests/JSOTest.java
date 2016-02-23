@@ -19,8 +19,10 @@ import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 import java.util.List;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.teavm.diagnostics.Problem;
 import org.teavm.jso.JSBody;
+import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.vm.TeaVM;
@@ -30,6 +32,7 @@ import org.teavm.vm.TeaVMBuilder;
  *
  * @author Alexey Andreev
  */
+@RunWith(TeaVMTestRunner.class)
 public class JSOTest {
     @Test
     public void reportsAboutWrongParameterOfJSBody() {

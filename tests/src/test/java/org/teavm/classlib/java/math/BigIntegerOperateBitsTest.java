@@ -23,12 +23,10 @@ package org.teavm.classlib.java.math;
 import static org.junit.Assert.*;
 import java.math.BigInteger;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
-/**
- * Class:   java.math.BigInteger
- * Methods: bitLength, shiftLeft, shiftRight,
- * clearBit, flipBit, setBit, testBit
- */
+@RunWith(TeaVMTestRunner.class)
 public class BigIntegerOperateBitsTest {
     /**
      * bitCount() of zero.

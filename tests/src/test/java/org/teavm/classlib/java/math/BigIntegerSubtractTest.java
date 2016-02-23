@@ -23,11 +23,10 @@ package org.teavm.classlib.java.math;
 import static org.junit.Assert.*;
 import java.math.BigInteger;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
-/**
- * Class:  java.math.BigInteger
- * Method: subtract
- */
+@RunWith(TeaVMTestRunner.class)
 public class BigIntegerSubtractTest {
     /**
      * Subtract two positive numbers of the same length.

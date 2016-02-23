@@ -16,12 +16,16 @@
 package org.teavm.classlib.java.lang;
 
 import static org.junit.Assert.*;
+import java.lang.annotation.Retention;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
 /**
  *
  * @author Alexey Andreev
  */
+@RunWith(TeaVMTestRunner.class)
 public class VMTest {
     @Test
     public void multiArrayCreated() {

@@ -20,11 +20,10 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
-/**
- *
- * @author Alexey Andreev
- */
+@RunWith(TeaVMTestRunner.class)
 public class SimpleDateFormatTest {
     public SimpleDateFormatTest() {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));

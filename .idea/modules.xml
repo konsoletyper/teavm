@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/all-deps/all-deps.iml" filepath="$PROJECT_DIR$/all-deps/all-deps.iml" />
       <module fileurl="file://$PROJECT_DIR$/teavm.iml" filepath="$PROJECT_DIR$/teavm.iml" />
       <module fileurl="file://$PROJECT_DIR$/tools/chrome-rdp/teavm-chrome-rdp.iml" filepath="$PROJECT_DIR$/tools/chrome-rdp/teavm-chrome-rdp.iml" />
       <module fileurl="file://$PROJECT_DIR$/classlib/teavm-classlib.iml" filepath="$PROJECT_DIR$/classlib/teavm-classlib.iml" />
@@ -14,6 +15,7 @@
       <module fileurl="file://$PROJECT_DIR$/jso/core/teavm-jso.iml" filepath="$PROJECT_DIR$/jso/core/teavm-jso.iml" />
       <module fileurl="file://$PROJECT_DIR$/jso/apis/teavm-jso-apis.iml" filepath="$PROJECT_DIR$/jso/apis/teavm-jso-apis.iml" />
       <module fileurl="file://$PROJECT_DIR$/jso/impl/teavm-jso-impl.iml" filepath="$PROJECT_DIR$/jso/impl/teavm-jso-impl.iml" />
+      <module fileurl="file://$PROJECT_DIR$/tools/junit/teavm-junit.iml" filepath="$PROJECT_DIR$/tools/junit/teavm-junit.iml" />
       <module fileurl="file://$PROJECT_DIR$/tools/maven/teavm-maven.iml" filepath="$PROJECT_DIR$/tools/maven/teavm-maven.iml" />
       <module fileurl="file://$PROJECT_DIR$/tools/maven/plugin/teavm-maven-plugin.iml" filepath="$PROJECT_DIR$/tools/maven/plugin/teavm-maven-plugin.iml" />
       <module fileurl="file://$PROJECT_DIR$/tools/maven/webapp/teavm-maven-webapp.iml" filepath="$PROJECT_DIR$/tools/maven/webapp/teavm-maven-webapp.iml" />

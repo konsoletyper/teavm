@@ -24,8 +24,11 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 import static org.junit.Assert.*;
 
+@RunWith(TeaVMTestRunner.class)
 public class OutputStreamWriterTest {
 
     private static final int UPPER = 0xd800;

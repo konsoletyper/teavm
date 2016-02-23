@@ -18,11 +18,10 @@ package org.teavm.classlib.java.lang.reflect;
 import static org.junit.Assert.*;
 import java.lang.reflect.Array;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
-/**
- *
- * @author Alexey Andreev
- */
+@RunWith(TeaVMTestRunner.class)
 public class ArrayTest {
     @Test
     public void createsNewInstance() {

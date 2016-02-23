@@ -20,11 +20,14 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.zip.GZIPInputStream;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
 /**
  *
  * @author Alexey Andreev
  */
+@RunWith(TeaVMTestRunner.class)
 public class GZIPInputStreamTest {
     @Test
     public void gzipInputWorks() throws IOException {

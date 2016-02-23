@@ -22,12 +22,11 @@ package org.teavm.classlib.java.math;
 
 import java.math.BigInteger;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 import static org.junit.Assert.*;
 
-/**
- * Class:   java.math.BigInteger
- * Method: toString(int radix)
- */
+@RunWith(TeaVMTestRunner.class)
 public class BigIntegerToStringTest {
     /**
      * If 36 < radix < 2 it should be set to 10

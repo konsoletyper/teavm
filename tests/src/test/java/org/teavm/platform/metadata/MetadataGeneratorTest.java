@@ -17,11 +17,14 @@ package org.teavm.platform.metadata;
 
 import static org.junit.Assert.*;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
 /**
  *
  * @author Alexey Andreev
  */
+@RunWith(TeaVMTestRunner.class)
 public class MetadataGeneratorTest {
     @MetadataProvider(TestResourceGenerator.class)
     private native TestResource getNull();

@@ -26,12 +26,10 @@ import java.math.BigInteger;
 import java.math.MathContext;
 import java.math.RoundingMode;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
-/**
- * Class:  java.math.BigDecimal
- * Methods: abs, compareTo, equals, hashCode,
- * max, min, negate, signum
- */
+@RunWith(TeaVMTestRunner.class)
 public class BigDecimalCompareTest {
     /**
      * Abs() of a negative BigDecimal

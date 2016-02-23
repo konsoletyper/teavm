@@ -21,9 +21,11 @@ import static org.junit.Assert.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.junit.Test;
-
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
 @SuppressWarnings("nls")
+@RunWith(TeaVMTestRunner.class)
 public class MatcherTest {
     String[] testPatterns = {
             "(a|b)*abb",

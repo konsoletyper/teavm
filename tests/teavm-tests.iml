@@ -29,5 +29,6 @@
     <orderEntry type="library" scope="TEST" name="Maven: junit:junit:4.11" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.hamcrest:hamcrest-core:1.3" level="project" />
     <orderEntry type="module" module-name="teavm-tooling" scope="TEST" />
+    <orderEntry type="module" module-name="teavm-junit" scope="TEST" />
   </component>
 </module>

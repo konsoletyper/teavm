@@ -35,7 +35,10 @@ import static org.junit.Assert.*;
 import java.io.Serializable;
 import java.util.*;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
+@RunWith(TeaVMTestRunner.class)
 public class TreeMapTest {
 
     public static class ReversedComparator implements Comparator<Object> {

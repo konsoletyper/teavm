@@ -40,8 +40,11 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.util.*;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.teavm.classlib.support.Support_ListTest;
+import org.teavm.junit.TeaVMTestRunner;
 
+@RunWith(TeaVMTestRunner.class)
 public class VectorTest {
     private Vector<Object> tVector = new Vector<>();
 

@@ -23,11 +23,10 @@ package org.teavm.classlib.java.math;
 import static org.junit.Assert.*;
 import java.math.*;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
-/**
- * Class:  java.math.BigDecimal
- * Methods: movePointLeft, movePointRight, scale, setScale, unscaledValue *
- */
+@RunWith(TeaVMTestRunner.class)
 public class BigDecimalScaleOperationsTest {
     /**
      * Check the default scale

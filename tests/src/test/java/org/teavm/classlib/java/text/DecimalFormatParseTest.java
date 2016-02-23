@@ -22,11 +22,10 @@ import java.text.DecimalFormatSymbols;
 import java.text.ParseException;
 import java.util.Locale;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
-/**
- *
- * @author Alexey Andreev
- */
+@RunWith(TeaVMTestRunner.class)
 public class DecimalFormatParseTest {
     private static DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.ENGLISH);
 

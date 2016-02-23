@@ -35,7 +35,10 @@ import static org.junit.Assert.*;
 import java.util.Arrays;
 import java.util.BitSet;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
+@RunWith(TeaVMTestRunner.class)
 public class BitSetTest {
     BitSet eightbs;
 

@@ -23,11 +23,10 @@ package org.teavm.classlib.java.math;
 import static org.junit.Assert.*;
 import java.math.BigInteger;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
-/**
- * Class:  java.math.BigInteger
- * Methods: and, andNot
- */
+@RunWith(TeaVMTestRunner.class)
 public class BigIntegerNotTest {
     /**
      * andNot for two positive numbers; the first is longer

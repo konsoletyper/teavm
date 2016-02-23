@@ -20,11 +20,10 @@ import java.util.Currency;
 import java.util.Locale;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
-/**
- *
- * @author Alexey Andreev
- */
+@RunWith(TeaVMTestRunner.class)
 public class CurrencyTest {
     @Test
     public void findsByCode() {

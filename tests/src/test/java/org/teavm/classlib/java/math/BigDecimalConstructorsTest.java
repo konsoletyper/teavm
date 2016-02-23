@@ -26,11 +26,10 @@ import java.math.BigInteger;
 import java.math.MathContext;
 import java.math.RoundingMode;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
-/**
- * Class:  java.math.BigDecimal
- * Methods: constructors and fields
- */
+@RunWith(TeaVMTestRunner.class)
 public class BigDecimalConstructorsTest {
     /**
      * check ONE

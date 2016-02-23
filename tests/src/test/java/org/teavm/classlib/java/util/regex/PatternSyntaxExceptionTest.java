@@ -20,12 +20,14 @@ import static org.junit.Assert.*;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import org.junit.Test;
-
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
 /**
  * TODO Type description
  */
 @SuppressWarnings("nls")
+@RunWith(TeaVMTestRunner.class)
 public class PatternSyntaxExceptionTest {
     @Test
     public void testCase() {

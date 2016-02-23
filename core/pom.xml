@@ -26,6 +26,9 @@
 
   <packaging>bundle</packaging>
 
+  <name>TeaVM core</name>
+  <description>TeaVM compiler and SPI</description>
+
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
@@ -56,9 +59,6 @@
       <optional>true</optional>
     </dependency>
   </dependencies>
-
-  <name>TeaVM core</name>
-  <description>TeaVM compiler and SPI</description>
 
   <build>
     <plugins>

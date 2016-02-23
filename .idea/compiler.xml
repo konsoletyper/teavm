@@ -34,6 +34,7 @@
         <module name="teavm-jso" />
         <module name="teavm-jso-apis" />
         <module name="teavm-jso-impl" />
+        <module name="teavm-junit" />
         <module name="teavm-maven-plugin" />
         <module name="teavm-maven-webapp" />
         <module name="teavm-metaprogramming-api" />
@@ -60,6 +61,7 @@
       <module name="teavm-jso" target="1.8" />
       <module name="teavm-jso-apis" target="1.8" />
       <module name="teavm-jso-impl" target="1.8" />
+      <module name="teavm-junit" target="1.8" />
       <module name="teavm-maven" target="1.5" />
       <module name="teavm-maven-plugin" target="1.8" />
       <module name="teavm-maven-webapp" target="1.5" />

@@ -21,12 +21,11 @@ import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.TimeZone;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 import static org.junit.Assert.*;
 
-/**
- *
- * @author shannah
- */
+@RunWith(TeaVMTestRunner.class)
 public class CalendarTest  {
     Locale defaultLocale;
 

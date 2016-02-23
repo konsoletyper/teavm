@@ -20,11 +20,11 @@ import static org.junit.Assert.*;
 import java.util.*;
 import java.util.Map.Entry;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.teavm.classlib.support.Support_MapTest2;
+import org.teavm.junit.TeaVMTestRunner;
 
-/**
- * @tests java.util.LinkedHashMap
- */
+@RunWith(TeaVMTestRunner.class)
 public class LinkedHashMapTest {
 
 	LinkedHashMap<Object, Object> hm;

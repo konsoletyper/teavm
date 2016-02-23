@@ -20,11 +20,10 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Iterator;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
-/**
- *
- * @author Alexey Andreev
- */
+@RunWith(TeaVMTestRunner.class)
 public class ArrayDequeTest {
     @Test
     public void addsToFront() {

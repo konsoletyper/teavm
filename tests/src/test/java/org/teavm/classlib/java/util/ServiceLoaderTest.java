@@ -18,11 +18,10 @@ package org.teavm.classlib.java.util;
 import static org.junit.Assert.*;
 import java.util.ServiceLoader;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
-/**
- *
- * @author Alexey Andreev
- */
+@RunWith(TeaVMTestRunner.class)
 public class ServiceLoaderTest {
     @Test
     public void loadsService() {

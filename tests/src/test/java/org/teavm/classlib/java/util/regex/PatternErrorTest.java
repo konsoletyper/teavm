@@ -19,11 +19,14 @@ package org.teavm.classlib.java.util.regex;
 import static org.junit.Assert.*;
 import java.util.regex.Pattern;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
 /**
  * Test boundary and error conditions in java.util.regex.Pattern
  */
 @SuppressWarnings("nls")
+@RunWith(TeaVMTestRunner.class)
 public class PatternErrorTest {
     @Test
     public void testCompileErrors() throws Exception {

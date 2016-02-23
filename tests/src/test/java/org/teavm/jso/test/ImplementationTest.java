@@ -17,13 +17,16 @@ package org.teavm.jso.test;
 
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
+import org.teavm.junit.TeaVMTestRunner;
 
 /**
  *
  * @author Alexey Andreev
  */
+@RunWith(TeaVMTestRunner.class)
 public class ImplementationTest {
     @Test
     public void respectsPrecedence() {

@@ -92,6 +92,7 @@
     <module>tools/cli</module>
     <module>tools/maven</module>
     <module>tools/chrome-rdp</module>
+    <module>tools/junit</module>
     <module>tests</module>
     <module>extras-slf4j</module>
   </modules>

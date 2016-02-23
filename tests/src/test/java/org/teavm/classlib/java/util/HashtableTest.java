@@ -47,9 +47,12 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.Vector;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.teavm.classlib.support.Support_MapTest2;
 import org.teavm.classlib.support.Support_UnmodifiableCollectionTest;
+import org.teavm.junit.TeaVMTestRunner;
 
+@RunWith(TeaVMTestRunner.class)
 public class HashtableTest {
 
     private Hashtable<String, String> ht10;

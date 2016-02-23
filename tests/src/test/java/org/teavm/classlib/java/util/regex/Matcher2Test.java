@@ -20,11 +20,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 import static org.junit.Assert.*;
 
-/**
- * Tests Matcher methods
- */
+@RunWith(TeaVMTestRunner.class)
 @SuppressWarnings("nls")
 public class Matcher2Test {
     @Test

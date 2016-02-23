@@ -21,11 +21,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
 /**
  * Tests Pattern compilation modes and modes triggered in pattern strings
  */
 @SuppressWarnings("nls")
+@RunWith(TeaVMTestRunner.class)
 public class ModeTest {
     @Test
     public void testCase() throws PatternSyntaxException {

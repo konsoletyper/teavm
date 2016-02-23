@@ -21,7 +21,10 @@ import static org.junit.Assert.*;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
+@RunWith(TeaVMTestRunner.class)
 public class StringTokenizerTest {
     @Test
     public void test_ConstructorLjava_lang_StringLjava_lang_String() {

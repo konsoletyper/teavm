@@ -21,11 +21,10 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import java.nio.*;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
-/**
- *
- * @author Alexey Andreev
- */
+@RunWith(TeaVMTestRunner.class)
 public class DoubleBufferTest {
     @Test
     public void allocatesSimple() {

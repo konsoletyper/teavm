@@ -24,12 +24,10 @@ import static org.junit.Assert.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
-/**
- * Class:  java.math.BigDecimal
- * Methods: doubleValue, floatValue, intValue, longValue,
- * valueOf, toString, toBigInteger
- */
+@RunWith(TeaVMTestRunner.class)
 public class BigDecimalConvertTest {
     /**
      * Double value of a negative BigDecimal

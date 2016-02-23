@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.lang;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TestObject extends Object implements Runnable {
     private int counter;
 

@@ -21,8 +21,11 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.PushbackInputStream;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
 @SuppressWarnings("resource")
+@RunWith(TeaVMTestRunner.class)
 public class PushbackInputStreamTest {
     PushbackInputStream pis;
 
