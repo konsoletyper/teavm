@@ -39,9 +39,12 @@ public final class Metaprogramming {
         return null;
     }
 
-    public static Scope currentScope() {
+    public static void exit(Value<?> returnValue) {
         unsupported();
-        return null;
+    }
+
+    public static void exit() {
+        unsupported();
     }
 
     public static void location(String fileName, int lineNumber) {
@@ -82,6 +85,11 @@ public final class Metaprogramming {
     }
 
     public static <T> Value<T> proxy(ReflectClass<T> type, InvocationHandler<T> handler) {
+        unsupported();
+        return null;
+    }
+
+    public static Diagnostics getDiagnostics() {
         unsupported();
         return null;
     }
