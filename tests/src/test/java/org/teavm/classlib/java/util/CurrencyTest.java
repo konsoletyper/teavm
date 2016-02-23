@@ -21,9 +21,13 @@ import java.util.Locale;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.junit.SkipJVM;
+import org.teavm.junit.TeaVMProperties;
+import org.teavm.junit.TeaVMProperty;
 import org.teavm.junit.TeaVMTestRunner;
 
 @RunWith(TeaVMTestRunner.class)
+@TeaVMProperties(@TeaVMProperty(key = "java.util.Locale.available", value = "en, en_US, en_GB, ru, ru_RU"))
 public class CurrencyTest {
     @Test
     public void findsByCode() {
@@ -46,8 +50,7 @@ public class CurrencyTest {
     }
 
     @Test
-    @Ignore
-    // It seems that JDK can't translate currency names into Russian
+    @SkipJVM
     public void getsDisplayName() {
         Locale russian = new Locale("ru");
         Locale english = new Locale("en");
@@ -64,8 +67,7 @@ public class CurrencyTest {
     }
 
     @Test
-    @Ignore
-    // It seems that JDK does not know about currency symbols
+    @SkipJVM
     public void getsSymbol() {
         Locale russian = new Locale("ru");
         Locale english = new Locale("en");

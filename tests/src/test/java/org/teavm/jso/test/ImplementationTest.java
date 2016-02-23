@@ -20,13 +20,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
+import org.teavm.junit.SkipJVM;
 import org.teavm.junit.TeaVMTestRunner;
 
-/**
- *
- * @author Alexey Andreev
- */
 @RunWith(TeaVMTestRunner.class)
+@SkipJVM
 public class ImplementationTest {
     @Test
     public void respectsPrecedence() {
@@ -35,10 +33,10 @@ public class ImplementationTest {
     }
 
     @JSBody(params = { "a", "b" }, script = "return a + b;")
-    static final native int add(int a, int b);
+    static native int add(int a, int b);
 
     @JSBody(params = { "a", "b" }, script = "return a * b;")
-    static final native int mul(int a, int b);
+    static native int mul(int a, int b);
 
     @Test
     public void inliningUsageCounterWorksProperly() {

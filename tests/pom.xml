@@ -84,43 +84,6 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>org.teavm</groupId>
-        <artifactId>teavm-maven-plugin</artifactId>
-        <version>${project.version}</version>
-        <executions>
-          <execution>
-            <id>generate-javascript-tests</id>
-            <goals>
-              <goal>testCompile</goal>
-            </goals>
-            <configuration>
-              <minifying>false</minifying>
-              <scanDependencies>true</scanDependencies>
-              <wildcards>
-                <wildcard>org.teavm.classlib.**.*Test</wildcard>
-                <wildcard>org.teavm.jso.**.*Test</wildcard>
-                <wildcard>org.teavm.platform.metadata.*Test</wildcard>
-              </wildcards>
-              <properties>
-                <java.util.Locale.available>en, en_US, en_GB, ru, ru_RU</java.util.Locale.available>
-              </properties>
-              <incremental>${teavm.test.incremental}</incremental>
-            </configuration>
-          </execution>
-          <execution>
-            <id>run-javascript-tests</id>
-            <goals>
-              <goal>test</goal>
-            </goals>
-            <configuration>
-              <skip>${teavm.test.skip}</skip>
-              <numThreads>${teavm.test.threads}</numThreads>
-              <seleniumURL>${teavm.test.selenium}</seleniumURL>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>

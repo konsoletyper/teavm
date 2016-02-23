@@ -7,6 +7,7 @@ import java.util.Locale;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.junit.SkipJVM;
 import org.teavm.junit.TeaVMTestRunner;
 
 @RunWith(TeaVMTestRunner.class)
@@ -32,7 +33,7 @@ public class NumberFormatTest {
     }
 
     @Test
-    @Ignore
+    @SkipJVM
     public void formatsPercent() {
         NumberFormat format = NumberFormat.getPercentInstance(new Locale("en", "US"));
         assertEquals("12,345,679%", format.format(123456.789123));

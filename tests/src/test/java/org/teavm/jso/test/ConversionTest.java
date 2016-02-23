@@ -22,9 +22,11 @@ import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.core.JSString;
+import org.teavm.junit.SkipJVM;
 import org.teavm.junit.TeaVMTestRunner;
 
 @RunWith(TeaVMTestRunner.class)
+@SkipJVM
 public class ConversionTest {
     @Test
     public void convertsPrimitivesToJavaScript() {

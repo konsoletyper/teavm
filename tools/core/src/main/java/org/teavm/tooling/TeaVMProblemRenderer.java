@@ -55,7 +55,7 @@ public final class TeaVMProblemRenderer {
         }
     }
 
-    private static void renderCallStack(CallGraph cg, CallLocation location, StringBuilder sb) {
+    public static void renderCallStack(CallGraph cg, CallLocation location, StringBuilder sb) {
         if (location == null) {
             return;
         }
@@ -76,7 +76,7 @@ public final class TeaVMProblemRenderer {
         }
     }
 
-    private static void renderCallLocation(MethodReference method, InstructionLocation location, StringBuilder sb) {
+    public static void renderCallLocation(MethodReference method, InstructionLocation location, StringBuilder sb) {
         if (method != null) {
             sb.append(method.getClassName() + "." + method.getName());
         } else {

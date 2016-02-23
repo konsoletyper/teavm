@@ -21,9 +21,11 @@ import org.junit.runner.RunWith;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSFunctor;
 import org.teavm.jso.JSObject;
+import org.teavm.junit.SkipJVM;
 import org.teavm.junit.TeaVMTestRunner;
 
 @RunWith(TeaVMTestRunner.class)
+@SkipJVM
 public class FunctorTest {
     @Test
     public void functorPassed() {

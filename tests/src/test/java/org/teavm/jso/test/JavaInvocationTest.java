@@ -20,9 +20,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
+import org.teavm.junit.SkipJVM;
 import org.teavm.junit.TeaVMTestRunner;
 
 @RunWith(TeaVMTestRunner.class)
+@SkipJVM
 public class JavaInvocationTest {
     @Test
     public void callStaticMethod() {
