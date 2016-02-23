@@ -24,6 +24,8 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -32,12 +34,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import org.apache.commons.io.IOUtils;
 import org.junit.runner.Description;
+import org.junit.runner.Runner;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunNotifier;
-import org.junit.runners.ParentRunner;
 import org.junit.runners.model.InitializationError;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.diagnostics.DefaultProblemTextConsumer;
@@ -53,23 +59,32 @@ import org.teavm.parsing.ClasspathClassHolderSource;
 import org.teavm.testing.JUnitTestAdapter;
 import org.teavm.testing.TestAdapter;
 import org.teavm.tooling.TeaVMProblemRenderer;
-import org.teavm.tooling.testing.TeaVMTestTool;
 import org.teavm.vm.DirectoryBuildTarget;
 import org.teavm.vm.TeaVM;
 import org.teavm.vm.TeaVMBuilder;
 
-public class TeaVMTestRunner extends ParentRunner<Method> {
+public class TeaVMTestRunner extends Runner {
     private static final String PATH_PARAM = "teavm.junit.target";
+    private static final String RUNNER = "teavm.junit.js.runner";
+    private static final String SELENIUM_URL = "teavm.junit.js.selenium.url";
+    private static final int stopTimeout = 15000;
+    private Class<?> testClass;
     private ClassHolder classHolder;
     private ClassLoader classLoader;
     private ClassHolderSource classSource;
+    private Description suiteDescription;
     private static Map<ClassLoader, ClassHolderSource> classSources = new WeakHashMap<>();
     private File outputDir;
     private TestAdapter testAdapter = new JUnitTestAdapter();
     private Map<Method, Description> descriptions = new HashMap<>();
+    private TestRunStrategy runStrategy;
+    private static volatile TestRunner runner;
+    private static ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
+    private static volatile ScheduledFuture<?> cleanupFuture;
+    private CountDownLatch latch;
 
     public TeaVMTestRunner(Class<?> testClass) throws InitializationError {
-        super(testClass);
+        this.testClass = testClass;
         classLoader = TeaVMTestRunner.class.getClassLoader();
         classSource = getClassSource(classLoader);
         classHolder = classSource.get(testClass.getName());
@@ -77,12 +92,62 @@ public class TeaVMTestRunner extends ParentRunner<Method> {
         if (outputPath != null) {
             outputDir = new File(outputPath);
         }
+
+        String runStrategyName = System.getProperty(RUNNER);
+        if (runStrategyName != null) {
+            switch (runStrategyName) {
+                case "selenium":
+                    try {
+                        runStrategy = new SeleniumRunStrategy(new URL(System.getProperty(SELENIUM_URL)));
+                    } catch (MalformedURLException e) {
+                        throw new InitializationError(e);
+                    }
+                    break;
+                case "htmlunit":
+                    runStrategy = new HtmlUnitRunStrategy();
+                    break;
+                default:
+                    throw new InitializationError("Unknown run strategy: " + runStrategyName);
+            }
+        }
     }
 
     @Override
+    public Description getDescription() {
+        if (suiteDescription == null) {
+            suiteDescription = Description.createSuiteDescription(testClass);
+            for (Method child : getChildren()) {
+                suiteDescription.getChildren().add(describeChild(child));
+            }
+        }
+        return suiteDescription;
+    }
+
+    @Override
+    public void run(RunNotifier notifier) {
+        List<Method> children = getChildren();
+        latch = new CountDownLatch(children.size());
+
+        notifier.fireTestStarted(getDescription());
+        for (Method child : children) {
+            runChild(child, notifier);
+        }
+
+        while (true) {
+            try {
+                if (latch.await(1000, TimeUnit.MILLISECONDS)) {
+                    break;
+                }
+            } catch (InterruptedException e) {
+                break;
+            }
+        }
+        notifier.fireTestFinished(getDescription());
+    }
+
     protected List<Method> getChildren() {
         List<Method> children = new ArrayList<>();
-        for (Method method : getTestClass().getJavaClass().getDeclaredMethods()) {
+        for (Method method : testClass.getDeclaredMethods()) {
             MethodHolder methodHolder = classHolder.getMethod(getDescriptor(method));
             if (testAdapter.acceptMethod(methodHolder)) {
                 children.add(method);
@@ -91,33 +156,32 @@ public class TeaVMTestRunner extends ParentRunner<Method> {
         return children;
     }
 
-    @Override
     protected Description describeChild(Method child) {
-        return descriptions.computeIfAbsent(child, method -> Description.createTestDescription(
-                getTestClass().getJavaClass(), method.getName()));
+        return descriptions.computeIfAbsent(child, method -> Description.createTestDescription(testClass,
+                method.getName()));
     }
 
-    @Override
     protected void runChild(Method child, RunNotifier notifier) {
         notifier.fireTestStarted(describeChild(child));
 
         boolean run = false;
         boolean success = true;
-        if (outputDir != null) {
-            run = true;
-            success &= runInTeaVM(child, notifier);
-        }
 
-        if (success && !child.isAnnotationPresent(SkipJVM.class)
+        if (!child.isAnnotationPresent(SkipJVM.class)
                 && !child.getDeclaringClass().isAnnotationPresent(SkipJVM.class)) {
             run = true;
-            success &= runInJvm(child, notifier);
+            success = runInJvm(child, notifier);
         }
 
-        if (!run) {
-            notifier.fireTestIgnored(describeChild(child));
+        if (success && outputDir != null) {
+            runInTeaVM(child, notifier);
+        } else {
+            if (!run) {
+                notifier.fireTestIgnored(describeChild(child));
+            }
+            notifier.fireTestFinished(describeChild(child));
+            latch.countDown();
         }
-        notifier.fireTestFinished(describeChild(child));
     }
 
     private boolean runInJvm(Method child, RunNotifier notifier) {
@@ -134,7 +198,7 @@ public class TeaVMTestRunner extends ParentRunner<Method> {
 
         Object instance;
         try {
-            instance = getTestClass().getJavaClass().newInstance();
+            instance = testClass.newInstance();
         } catch (InstantiationException | IllegalAccessException e) {
             notifier.fireTestFailure(new Failure(describeChild(child), e));
             return false;
@@ -184,7 +248,53 @@ public class TeaVMTestRunner extends ParentRunner<Method> {
             return false;
         }
 
+        Description description = describeChild(child);
+        TestRunCallback callback = new TestRunCallback() {
+            @Override
+            public void complete() {
+                notifier.fireTestFinished(description);
+                latch.countDown();
+            }
+
+            @Override
+            public void error(Throwable e) {
+                notifier.fireTestFailure(new Failure(description, e));
+            }
+        };
+
+        TestRun run = new TestRun(compileResult.file.getParentFile(), child,
+                new MethodReference(testClass.getName(), getDescriptor(child)),
+                description, callback);
+        submitRun(run);
         return true;
+    }
+
+    private void submitRun(TestRun run) {
+        synchronized (TeaVMTestRunner.class) {
+            if (runStrategy == null) {
+                return;
+            }
+
+            if (runner == null) {
+                runner = new TestRunner(runStrategy);
+                runner.init();
+            }
+            runner.run(run);
+
+            if (cleanupFuture != null) {
+                cleanupFuture.cancel(false);
+                cleanupFuture = null;
+            }
+            cleanupFuture = executor.schedule(TeaVMTestRunner::cleanupRunner, stopTimeout, TimeUnit.MILLISECONDS);
+        }
+    }
+
+    private static void cleanupRunner() {
+        synchronized (TeaVMTestRunner.class) {
+            cleanupFuture = null;
+            runner.stop();
+            runner = null;
+        }
     }
 
     private CompileResult compileTest(Method method) throws IOException {
@@ -254,7 +364,7 @@ public class TeaVMTestRunner extends ParentRunner<Method> {
     }
 
     private void resourceToFile(String resource, File fileName) throws IOException {
-        try (InputStream input = TeaVMTestTool.class.getClassLoader().getResourceAsStream(resource);
+        try (InputStream input = TeaVMTestRunner.class.getClassLoader().getResourceAsStream(resource);
                 OutputStream output = new FileOutputStream(fileName)) {
             IOUtils.copy(input, output);
         }

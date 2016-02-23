@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2016 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,18 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.tooling.testing;
+package org.teavm.junit;
 
-import org.teavm.vm.spi.TeaVMHost;
-import org.teavm.vm.spi.TeaVMPlugin;
+import java.io.IOException;
 
-/**
- *
- * @author Alexey Andreev
- */
-class TestExceptionPlugin implements TeaVMPlugin {
-    @Override
-    public void install(TeaVMHost host) {
-        host.add(new TestExceptionDependency());
-    }
+public interface TestRunStrategy {
+    void beforeThread();
+
+    void afterThread();
+
+    String runTest(TestRun run) throws IOException;
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 Alexey Andreev.
+ *  Copyright 2016 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.maven;
+package org.teavm.junit;
 
 import com.gargoylesoftware.htmlunit.BrowserVersion;
 import com.gargoylesoftware.htmlunit.WebClient;
@@ -28,20 +28,8 @@ import java.util.concurrent.TimeUnit;
 import net.sourceforge.htmlunit.corejs.javascript.Function;
 import net.sourceforge.htmlunit.corejs.javascript.NativeJavaObject;
 import org.apache.commons.io.IOUtils;
-import org.apache.maven.plugin.logging.Log;
-import org.teavm.tooling.testing.TestCase;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class HtmlUnitRunStrategy implements TestRunStrategy {
-    private File directory;
-
-    public HtmlUnitRunStrategy(File directory) {
-        this.directory = directory;
-    }
-
     @Override
     public void beforeThread() {
     }
@@ -51,10 +39,10 @@ public class HtmlUnitRunStrategy implements TestRunStrategy {
     }
 
     @Override
-    public String runTest(Log log, String runtimeScript, TestCase testCase) throws IOException {
+    public String runTest(TestRun run) throws IOException {
         try (WebClient webClient = new WebClient(BrowserVersion.CHROME)) {
             HtmlPage page = webClient.getPage("about:blank");
-            page.executeJavaScript(readFile(new File(directory, runtimeScript)));
+            page.executeJavaScript(readFile(new File(run.getBaseDirectory(), "runtime.js")));
 
             AsyncResult asyncResult = new AsyncResult();
             Function function = (Function) page.executeJavaScript(readResource("teavm-htmlunit-adapter.js"))
@@ -62,7 +50,7 @@ public class HtmlUnitRunStrategy implements TestRunStrategy {
             Object[] args = new Object[] { new NativeJavaObject(function, asyncResult, AsyncResult.class) };
             page.executeJavaScriptFunctionIfPossible(function, function, args, page);
 
-            page.executeJavaScript(readFile(new File(directory, testCase.getTestScript())));
+            page.executeJavaScript(readFile(new File(run.getBaseDirectory(), "test.js")));
             page.cleanUp();
             for (WebWindow window : webClient.getWebWindows()) {
                 window.getJobManager().removeAllJobs();
@@ -78,7 +66,7 @@ public class HtmlUnitRunStrategy implements TestRunStrategy {
     }
 
     private String readResource(String resourceName) throws IOException {
-        try (InputStream input = BuildJavascriptTestMojo.class.getClassLoader().getResourceAsStream(resourceName)) {
+        try (InputStream input = HtmlUnitRunStrategy.class.getClassLoader().getResourceAsStream(resourceName)) {
             if (input == null) {
                 return "";
             }

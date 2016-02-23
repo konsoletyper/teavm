@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 Alexey Andreev.
+ *  Copyright 2016 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.maven;
+package org.teavm.junit;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -23,27 +23,18 @@ import java.net.URL;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.io.IOUtils;
-import org.apache.maven.plugin.logging.Log;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
-import org.teavm.tooling.testing.TestCase;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class SeleniumRunStrategy implements TestRunStrategy {
     private URL url;
-    private File directory;
     private ThreadLocal<WebDriver> webDriver = new ThreadLocal<>();
     private ThreadLocal<Integer> commandsSent = new ThreadLocal<>();
 
-    public SeleniumRunStrategy(URL url, File directory) {
+    public SeleniumRunStrategy(URL url) {
         this.url = url;
-        this.directory = directory;
     }
 
     @Override
@@ -61,7 +52,7 @@ public class SeleniumRunStrategy implements TestRunStrategy {
     }
 
     @Override
-    public String runTest(Log log, String runtimeScript, TestCase testCase) throws IOException {
+    public String runTest(TestRun run) throws IOException {
         commandsSent.set(commandsSent.get() + 1);
         if (commandsSent.get().equals(20)) {
             commandsSent.set(0);
@@ -75,16 +66,16 @@ public class SeleniumRunStrategy implements TestRunStrategy {
         try {
             return (String) js.executeAsyncScript(
                     readResource("teavm-selenium.js"),
-                    readFile(new File(directory, runtimeScript)),
-                    readFile(new File(directory, testCase.getTestScript())),
+                    readFile(new File(run.getBaseDirectory(), "runtime.js")),
+                    readFile(new File(run.getBaseDirectory(), "test.js")),
                     readResource("teavm-selenium-adapter.js"));
-        } catch (WebDriverException e) {
-            log.error("Error occured running test " + testCase.getTestMethod(), e);
+        } catch (Throwable e) {
+            run.getCallback().error(e);
             @SuppressWarnings("unchecked")
             List<Object> errors = (List<Object>) js.executeScript("return window.jsErrors;");
             if (errors != null) {
                 for (Object error : errors) {
-                    log.error("  -- additional error: " + error);
+                    run.getCallback().error(new AssertionError(error));
                 }
             }
             return null;
@@ -98,7 +89,7 @@ public class SeleniumRunStrategy implements TestRunStrategy {
     }
 
     private String readResource(String resourceName) throws IOException {
-        try (InputStream input = BuildJavascriptTestMojo.class.getClassLoader().getResourceAsStream(resourceName)) {
+        try (InputStream input = SeleniumRunStrategy.class.getClassLoader().getResourceAsStream(resourceName)) {
             if (input == null) {
                 return "";
             }
