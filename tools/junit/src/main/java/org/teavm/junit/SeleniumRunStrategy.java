@@ -28,10 +28,11 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
 
-public class SeleniumRunStrategy implements TestRunStrategy {
+class SeleniumRunStrategy implements TestRunStrategy {
     private URL url;
     private ThreadLocal<WebDriver> webDriver = new ThreadLocal<>();
     private ThreadLocal<Integer> commandsSent = new ThreadLocal<>();
+    private int rebootRate = Integer.getInteger("teavm.junit.js.selenium.rebootAfter", 1000);
 
     public SeleniumRunStrategy(URL url) {
         this.url = url;
@@ -54,7 +55,7 @@ public class SeleniumRunStrategy implements TestRunStrategy {
     @Override
     public String runTest(TestRun run) throws IOException {
         commandsSent.set(commandsSent.get() + 1);
-        if (commandsSent.get().equals(20)) {
+        if (commandsSent.get().equals(100)) {
             commandsSent.set(0);
             webDriver.get().close();
             webDriver.get().quit();

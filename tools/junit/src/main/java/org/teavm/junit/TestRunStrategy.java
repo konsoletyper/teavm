@@ -17,7 +17,7 @@ package org.teavm.junit;
 
 import java.io.IOException;
 
-public interface TestRunStrategy {
+interface TestRunStrategy {
     void beforeThread();
 
     void afterThread();

@@ -29,7 +29,7 @@ $rt_startThread(function() {
             runTest();
         } catch (e) {
             message = {};
-            JUnitClient.makeErrorMessage(message, e);
+            makeErrorMessage(message, e);
             break loop;
         }
         if (thread.isSuspending()) {

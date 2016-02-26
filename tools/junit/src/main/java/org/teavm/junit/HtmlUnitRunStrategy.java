@@ -29,33 +29,56 @@ import net.sourceforge.htmlunit.corejs.javascript.Function;
 import net.sourceforge.htmlunit.corejs.javascript.NativeJavaObject;
 import org.apache.commons.io.IOUtils;
 
-public class HtmlUnitRunStrategy implements TestRunStrategy {
+class HtmlUnitRunStrategy implements TestRunStrategy {
+    private ThreadLocal<WebClient> webClient = new ThreadLocal<>();
+    private ThreadLocal<HtmlPage> page = new ThreadLocal<>();
+    private int runs;
+
     @Override
     public void beforeThread() {
+        init();
     }
 
     @Override
     public void afterThread() {
+        cleanUp();
     }
 
     @Override
     public String runTest(TestRun run) throws IOException {
-        try (WebClient webClient = new WebClient(BrowserVersion.CHROME)) {
-            HtmlPage page = webClient.getPage("about:blank");
-            page.executeJavaScript(readFile(new File(run.getBaseDirectory(), "runtime.js")));
+        if (++runs == 50) {
+            runs = 0;
+            cleanUp();
+            init();
+        }
 
-            AsyncResult asyncResult = new AsyncResult();
-            Function function = (Function) page.executeJavaScript(readResource("teavm-htmlunit-adapter.js"))
-                    .getJavaScriptResult();
-            Object[] args = new Object[] { new NativeJavaObject(function, asyncResult, AsyncResult.class) };
-            page.executeJavaScriptFunctionIfPossible(function, function, args, page);
+        page.get().executeJavaScript(readFile(new File(run.getBaseDirectory(), "runtime.js")));
+        page.get().executeJavaScript(readFile(new File(run.getBaseDirectory(), "test.js")));
 
-            page.executeJavaScript(readFile(new File(run.getBaseDirectory(), "test.js")));
-            page.cleanUp();
-            for (WebWindow window : webClient.getWebWindows()) {
-                window.getJobManager().removeAllJobs();
-            }
-            return (String) asyncResult.getResult();
+        AsyncResult asyncResult = new AsyncResult();
+        Function function = (Function) page.get().executeJavaScript(readResource("teavm-htmlunit-adapter.js"))
+                .getJavaScriptResult();
+        Object[] args = new Object[] { new NativeJavaObject(function, asyncResult, AsyncResult.class) };
+        page.get().executeJavaScriptFunctionIfPossible(function, function, args, page.get());
+        return (String) asyncResult.getResult();
+    }
+
+    private void cleanUp() {
+        page.get().cleanUp();
+        for (WebWindow window : webClient.get().getWebWindows()) {
+            window.getJobManager().removeAllJobs();
+        }
+        page.remove();
+        webClient.get().close();
+        webClient.remove();
+    }
+
+    private void init() {
+        webClient.set(new WebClient(BrowserVersion.CHROME));
+        try {
+            page.set(webClient.get().getPage("about:blank"));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

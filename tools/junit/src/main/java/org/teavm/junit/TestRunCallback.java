@@ -15,7 +15,7 @@
  */
 package org.teavm.junit;
 
-public interface TestRunCallback {
+interface TestRunCallback {
     void complete();
 
     void error(Throwable e);

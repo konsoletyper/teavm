@@ -22,18 +22,15 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import org.junit.runner.notification.Failure;
-import org.junit.runner.notification.RunNotifier;
-import org.teavm.model.MethodReference;
 
-public class TestRunner {
+class TestRunner {
     private int numThreads = 1;
     private TestRunStrategy strategy;
     private BlockingQueue<Runnable> taskQueue = new LinkedBlockingQueue<>();
     private CountDownLatch latch;
     private volatile boolean stopped;
 
-    public TestRunner(TestRunStrategy strategy) {
+    TestRunner(TestRunStrategy strategy) {
         this.strategy = strategy;
     }
 
@@ -73,7 +70,19 @@ public class TestRunner {
 
     public void stop() {
         stopped = true;
-        taskQueue.add(null);
+        taskQueue.add(() -> { });
+    }
+
+    public void waitForCompletion() {
+        while (true) {
+            try {
+                if (latch.await(1000, TimeUnit.MILLISECONDS)) {
+                    break;
+                }
+            } catch (InterruptedException e) {
+                break;
+            }
+        }
     }
 
     public void run(TestRun run) {
@@ -81,7 +90,6 @@ public class TestRunner {
     }
 
     private void runImpl(TestRun run) {
-        MethodReference ref = run.getReference();
         try {
             String result = strategy.runTest(run);
             if (result == null) {
@@ -93,17 +101,38 @@ public class TestRunner {
             String status = resultObject.get("status").asText();
             switch (status) {
                 case "ok":
-                    run.getCallback().complete();
+                    if (!run.getExpectedExceptions().isEmpty()) {
+                        run.getCallback().error(new AssertionError("Expected exception was not thrown"));
+                    } else {
+                        run.getCallback().complete();
+                    }
                     break;
                 case "exception": {
                     String stack = resultObject.get("stack").asText();
-                    String exception = resultObject.get("exception").asText();
-                    run.getCallback().error(new AssertionError(exception + "\n" + exception));
+                    String exception = resultObject.has("exception") ? resultObject.get("exception").asText() : null;
+                    Class<?> exceptionClass;
+                    if (exception != null) {
+                        try {
+                            exceptionClass = Class.forName(exception, false, TestRunner.class.getClassLoader());
+                        } catch (ClassNotFoundException e) {
+                            exceptionClass = null;
+                        }
+                    } else {
+                        exceptionClass = null;
+                    }
+                    if (exceptionClass != null) {
+                        Class<?> caught = exceptionClass;
+                        if (run.getExpectedExceptions().stream().anyMatch(e -> e.isAssignableFrom(caught))) {
+                            run.getCallback().complete();
+                            break;
+                        }
+                    }
+                    run.getCallback().error(new AssertionError(exception + "\n" + stack));
                     run.getCallback().complete();
                     break;
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             run.getCallback().error(e);
             run.getCallback().complete();
         }

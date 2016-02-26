@@ -15,10 +15,6 @@
  */
 package org.teavm.junit;
 
-/**
- *
- * @author Alexey Andreev
- */
 final class ExceptionHelper {
     private ExceptionHelper() {
     }

@@ -66,6 +66,7 @@ import org.teavm.vm.TeaVMBuilder;
 public class TeaVMTestRunner extends Runner {
     private static final String PATH_PARAM = "teavm.junit.target";
     private static final String RUNNER = "teavm.junit.js.runner";
+    private static final String THREAD_COUNT = "teavm.junit.js.threads";
     private static final String SELENIUM_URL = "teavm.junit.js.selenium.url";
     private static final int stopTimeout = 15000;
     private Class<?> testClass;
@@ -82,6 +83,16 @@ public class TeaVMTestRunner extends Runner {
     private static ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
     private static volatile ScheduledFuture<?> cleanupFuture;
     private CountDownLatch latch;
+
+    static {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            synchronized (TeaVMTestRunner.class) {
+                cleanupFuture = null;
+                runner.stop();
+                runner.waitForCompletion();
+            }
+        }));
+    }
 
     public TeaVMTestRunner(Class<?> testClass) throws InitializationError {
         this.testClass = testClass;
@@ -167,14 +178,27 @@ public class TeaVMTestRunner extends Runner {
         boolean run = false;
         boolean success = true;
 
+        MethodHolder methodHolder = classHolder.getMethod(getDescriptor(child));
+        Set<Class<?>> expectedExceptions = new HashSet<>();
+        for (String exceptionName : testAdapter.getExpectedExceptions(methodHolder)) {
+            try {
+                expectedExceptions.add(Class.forName(exceptionName, false, classLoader));
+            } catch (ClassNotFoundException e) {
+                notifier.fireTestFailure(new Failure(describeChild(child), e));
+                notifier.fireTestFinished(describeChild(child));
+                latch.countDown();
+                return;
+            }
+        }
+
         if (!child.isAnnotationPresent(SkipJVM.class)
                 && !child.getDeclaringClass().isAnnotationPresent(SkipJVM.class)) {
             run = true;
-            success = runInJvm(child, notifier);
+            success = runInJvm(child, notifier, expectedExceptions);
         }
 
         if (success && outputDir != null) {
-            runInTeaVM(child, notifier);
+            runInTeaVM(child, notifier, expectedExceptions);
         } else {
             if (!run) {
                 notifier.fireTestIgnored(describeChild(child));
@@ -184,18 +208,7 @@ public class TeaVMTestRunner extends Runner {
         }
     }
 
-    private boolean runInJvm(Method child, RunNotifier notifier) {
-        MethodHolder methodHolder = classHolder.getMethod(getDescriptor(child));
-        Set<Class<?>> expectedExceptions = new HashSet<>();
-        for (String exceptionName : testAdapter.getExpectedExceptions(methodHolder)) {
-            try {
-                expectedExceptions.add(Class.forName(exceptionName, false, classLoader));
-            } catch (ClassNotFoundException e) {
-                notifier.fireTestFailure(new Failure(describeChild(child), e));
-                return false;
-            }
-        }
-
+    private boolean runInJvm(Method child, RunNotifier notifier, Set<Class<?>> expectedExceptions) {
         Object instance;
         try {
             instance = testClass.newInstance();
@@ -233,22 +246,29 @@ public class TeaVMTestRunner extends Runner {
         return true;
     }
 
-    private boolean runInTeaVM(Method child, RunNotifier notifier) {
+    private boolean runInTeaVM(Method child, RunNotifier notifier, Set<Class<?>> expectedExceptions) {
+        Description description = describeChild(child);
+
         CompileResult compileResult;
         try {
             compileResult = compileTest(child);
         } catch (IOException e) {
-            notifier.fireTestFailure(new Failure(describeChild(child), e));
+            notifier.fireTestFailure(new Failure(description, e));
             return false;
         }
 
         if (!compileResult.success) {
-            notifier.fireTestFailure(new Failure(describeChild(child),
+            notifier.fireTestFailure(new Failure(description,
                     new AssertionError(compileResult.errorMessage)));
             return false;
         }
 
-        Description description = describeChild(child);
+        if (runStrategy == null) {
+            notifier.fireTestFinished(description);
+            latch.countDown();
+            return true;
+        }
+
         TestRunCallback callback = new TestRunCallback() {
             @Override
             public void complete() {
@@ -264,7 +284,7 @@ public class TeaVMTestRunner extends Runner {
 
         TestRun run = new TestRun(compileResult.file.getParentFile(), child,
                 new MethodReference(testClass.getName(), getDescriptor(child)),
-                description, callback);
+                description, callback, expectedExceptions);
         submitRun(run);
         return true;
     }
@@ -277,6 +297,11 @@ public class TeaVMTestRunner extends Runner {
 
             if (runner == null) {
                 runner = new TestRunner(runStrategy);
+                try {
+                    runner.setNumThreads(Integer.parseInt(System.getProperty(THREAD_COUNT, "1")));
+                } catch (NumberFormatException e) {
+                    runner.setNumThreads(1);
+                }
                 runner.init();
             }
             runner.run(run);

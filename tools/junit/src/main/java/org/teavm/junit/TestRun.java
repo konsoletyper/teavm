@@ -17,23 +17,28 @@ package org.teavm.junit;
 
 import java.io.File;
 import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import org.junit.runner.Description;
 import org.teavm.model.MethodReference;
 
-public class TestRun {
+class TestRun {
     private File baseDirectory;
     private Method method;
     private MethodReference reference;
     private Description description;
     private TestRunCallback callback;
+    private Set<Class<?>> expectedExceptions;
 
-    public TestRun(File baseDirectory, Method method, MethodReference reference, Description description,
-            TestRunCallback callback) {
+    TestRun(File baseDirectory, Method method, MethodReference reference, Description description,
+            TestRunCallback callback, Set<Class<?>> expectedExceptions) {
         this.baseDirectory = baseDirectory;
         this.method = method;
         this.reference = reference;
         this.description = description;
         this.callback = callback;
+        this.expectedExceptions = Collections.unmodifiableSet(new HashSet<>(expectedExceptions));
     }
 
     public File getBaseDirectory() {
@@ -54,5 +59,9 @@ public class TestRun {
 
     public TestRunCallback getCallback() {
         return callback;
+    }
+
+    public Set<Class<?>> getExpectedExceptions() {
+        return expectedExceptions;
     }
 }
