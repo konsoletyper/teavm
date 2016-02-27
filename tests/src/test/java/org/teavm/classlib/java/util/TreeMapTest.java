@@ -38,6 +38,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
 
+@SuppressWarnings({"UnnecessaryTemporaryOnConversionToString", "SuspiciousMethodCalls"})
 @RunWith(TeaVMTestRunner.class)
 public class TreeMapTest {
 
@@ -64,14 +65,13 @@ public class TreeMapTest {
             if (null == o1 || null == o2) {
                 return -1;
             }
-            T c1 = o1;
-            T c2 = o2;
-            return c1.compareTo(c2);
+            return o1.compareTo(o2);
         }
     }
 
     // Regression for Harmony-1161
     class MockComparatorNullTolerable implements Comparator<String> {
+        @SuppressWarnings("StringEquality")
         @Override
         public int compare(String o1, String o2) {
             if (o1 == o2) {
@@ -87,9 +87,9 @@ public class TreeMapTest {
         }
     }
 
-    TreeMap<Object, Object> tm;
+    private TreeMap<Object, Object> tm;
 
-    Object objArray[] = new Object[1000];
+    private Object[] objArray = new Object[1000];
 
     public TreeMapTest() {
         tm = new TreeMap<>();
@@ -255,7 +255,7 @@ public class TreeMapTest {
                 && head.containsKey("10"));
 
         // Regression for Harmony-1026
-        TreeMap<Integer, Double> map = new TreeMap<>(new MockComparator<Integer>());
+        TreeMap<Integer, Double> map = new TreeMap<>(new MockComparator<>());
         map.put(1, 2.1);
         map.put(2, 3.1);
         map.put(3, 4.5);
@@ -308,12 +308,14 @@ public class TreeMapTest {
             sub.firstKey();
             fail("java.util.NoSuchElementException should be thrown");
         } catch(java.util.NoSuchElementException e) {
+            // as expected
         }
 
         try{
             sub.lastKey();
             fail("java.util.NoSuchElementException should be thrown");
         } catch(java.util.NoSuchElementException e) {
+            // as expected
         }
 
         size = 256;
@@ -328,12 +330,14 @@ public class TreeMapTest {
             sub.firstKey();
             fail("java.util.NoSuchElementException should be thrown");
         } catch(java.util.NoSuchElementException e) {
+            // as expected
         }
 
         try{
             sub.lastKey();
             fail("java.util.NoSuchElementException should be thrown");
         } catch(java.util.NoSuchElementException e) {
+            // as expected
         }
 
     }
@@ -441,7 +445,7 @@ public class TreeMapTest {
 
         assertEquals(3, map.size());
 
-        Map<String, String> subMap = map.subMap("", "test");
+        Map<String, String> subMap = map.subMap("", "org/teavm/metaprogramming/test");
         assertEquals(3, subMap.size());
 
         int size = 0;
@@ -487,12 +491,14 @@ public class TreeMapTest {
             sub.firstKey();
             fail("java.util.NoSuchElementException should be thrown");
         } catch(java.util.NoSuchElementException e) {
+            // as expected
         }
 
         try{
             sub.lastKey();
             fail("java.util.NoSuchElementException should be thrown");
         } catch(java.util.NoSuchElementException e) {
+            // as expected
         }
 
         size = 256;
@@ -507,12 +513,14 @@ public class TreeMapTest {
             sub.firstKey();
             fail("java.util.NoSuchElementException should be thrown");
         } catch(java.util.NoSuchElementException e) {
+            // as expected
         }
 
         try{
             sub.lastKey();
             fail("java.util.NoSuchElementException should be thrown");
         } catch(java.util.NoSuchElementException e) {
+            // as expected
         }
 
     }

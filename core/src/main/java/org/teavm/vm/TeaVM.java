@@ -31,6 +31,7 @@ import org.teavm.javascript.spi.GeneratedBy;
 import org.teavm.javascript.spi.Generator;
 import org.teavm.javascript.spi.InjectedBy;
 import org.teavm.javascript.spi.Injector;
+import org.teavm.metaprogramming.impl.MetaprogrammingDependencyListener;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 import org.teavm.model.util.*;
@@ -354,6 +355,9 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         if (wasCancelled()) {
             return;
         }
+
+        dependencyChecker.addDependencyListener(new MetaprogrammingDependencyListener());
+
         AliasProvider aliasProvider = minifying ? new MinifyingAliasProvider() : new DefaultAliasProvider();
         dependencyChecker.setInterruptor(() -> progressListener.progressReached(0) == TeaVMProgressFeedback.CONTINUE);
         dependencyChecker.linkMethod(new MethodReference(Class.class.getName(), "getClass",
@@ -473,6 +477,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
     }
 
+    @SuppressWarnings("WeakerAccess")
     public ListableClassHolderSource link(DependencyInfo dependency) {
         reportPhase(TeaVMPhase.LINKING, dependency.getReachableClasses().size());
         Linker linker = new Linker();

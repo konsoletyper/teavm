@@ -20,10 +20,6 @@ import java.util.Collections;
 import java.util.List;
 import org.teavm.model.CallLocation;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class AccumulationDiagnostics implements Diagnostics, ProblemProvider {
     private List<Problem> problems = new ArrayList<>();
     private List<Problem> readonlyProblems = Collections.unmodifiableList(problems);

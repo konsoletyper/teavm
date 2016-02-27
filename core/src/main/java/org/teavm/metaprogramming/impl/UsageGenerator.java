@@ -23,7 +23,6 @@ import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.WeakHashMap;
 import org.teavm.dependency.DependencyAgent;
-import org.teavm.dependency.DependencyType;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.metaprogramming.CompileTime;
@@ -41,16 +40,17 @@ import org.teavm.model.Variable;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 
-public class UsageGenerator {
+class UsageGenerator {
     private static Map<DependencyAgent, Integer> suffixGenerator = new WeakHashMap<>();
-    DependencyAgent agent;
-    MethodModel model;
-    MethodDependency methodDep;
-    CallLocation location;
-    Diagnostics diagnostics;
-    Method proxyMethod;
+    private DependencyAgent agent;
+    private MethodModel model;
+    private MethodDependency methodDep;
+    private CallLocation location;
+    private Diagnostics diagnostics;
+    private Method proxyMethod;
     private MetaprogrammingClassLoader classLoader;
     private boolean annotationErrorReported;
+    private MethodDependency nameDependency;
 
     UsageGenerator(DependencyAgent agent, MethodModel model, MethodDependency methodDep, CallLocation location,
             MetaprogrammingClassLoader classLoader) {
@@ -65,10 +65,6 @@ public class UsageGenerator {
     public void installProxyEmitter() {
         Diagnostics diagnostics = agent.getDiagnostics();
 
-        MethodDependency getClassDep = agent.linkMethod(new MethodReference(Object.class, "getClass", Class.class),
-                location);
-        getClassDep.getThrown().connect(methodDep.getThrown());
-
         try {
             proxyMethod = getJavaMethod(classLoader, model.getMetaMethod());
             proxyMethod.setAccessible(true);
@@ -80,20 +76,20 @@ public class UsageGenerator {
             return;
         }
 
-        if (model.getClassParameterIndex() >= 0) {
-            int index = (model.isStatic() ? 0 : 1) + model.getClassParameterIndex();
-            methodDep.getVariable(index).addConsumer(type -> consumeType(type, getClassDep));
-        } else {
-            emitPermutation(null, getClassDep);
-        }
+        nameDependency = installAdditionalDependencies();
 
-        installAdditionalDependencies(getClassDep);
+        if (model.getClassParameterIndex() >= 0) {
+            int index = 1 + model.getClassParameterIndex();
+            methodDep.getVariable(index).getClassValueNode().addConsumer(
+                    type -> emitPermutation(findClass(type.getName())));
+        } else {
+            emitPermutation(null);
+        }
     }
 
-    private void installAdditionalDependencies(MethodDependency getClassDep) {
+    private MethodDependency installAdditionalDependencies() {
         MethodDependency nameDep = agent.linkMethod(new MethodReference(Class.class, "getName", String.class),
                 location);
-        getClassDep.getResult().connect(nameDep.getVariable(0));
         nameDep.getThrown().connect(methodDep.getThrown());
         nameDep.use();
 
@@ -109,13 +105,11 @@ public class UsageGenerator {
         nameDep.getResult().connect(hashCodeDep.getVariable(0));
         hashCodeDep.getThrown().connect(methodDep.getThrown());
         hashCodeDep.use();
+
+        return nameDep;
     }
 
-    private void consumeType(DependencyType type, MethodDependency getClassDep) {
-        emitPermutation(findClass(type.getName()), getClassDep);
-    }
-
-    private void emitPermutation(ValueType type, MethodDependency getClassDep) {
+    private void emitPermutation(ValueType type) {
         if (!classLoader.isCompileTimeClass(model.getMetaMethod().getClassName()) && !annotationErrorReported) {
             annotationErrorReported = true;
             diagnostics.error(location, "Metaprogramming method should be within class marked with "
@@ -128,28 +122,31 @@ public class UsageGenerator {
             return;
         }
 
-        implRef = buildMethodReference(type);
+        implRef = buildMethodReference();
         model.getUsages().put(type, implRef);
-        //emitter = new EmitterImpl<>(emitterContext, model.getProxyMethod(), model.getMethod().getReturnType());
+        MetaprogrammingImpl.templateMethod = model.getMetaMethod();
+        VariableContext varContext = new TopLevelVariableContext(diagnostics);
+        MetaprogrammingImpl.generator = new CompositeMethodGenerator(varContext);
+        MetaprogrammingImpl.varContext = varContext;
+        MetaprogrammingImpl.returnType = model.getMethod().getReturnType();
 
-        /*for (int i = 0; i <= model.getParameters().size(); ++i) {
-            emitter.generator.getProgram().createVariable();
+        for (int i = 0; i <= model.getMetaParameterCount(); ++i) {
+            MetaprogrammingImpl.generator.getProgram().createVariable();
         }
-        */
 
         Object[] proxyArgs = new Object[model.getMetaParameterCount()];
         for (int i = 0; i < proxyArgs.length; ++i) {
             if (i == model.getMetaClassParameterIndex()) {
                 proxyArgs[i] = MetaprogrammingImpl.findClass(type);
             } else {
-                proxyArgs[i] = new ValueImpl<>(null, null, model.getMetaParameterType(i));
+                proxyArgs[i] = new ValueImpl<>(getParameterVar(i), MetaprogrammingImpl.varContext,
+                        model.getMetaParameterType(i));
             }
         }
 
         try {
             proxyMethod.invoke(null, proxyArgs);
-            //emitter.close();
-            Program program = null; //emitter.generator.getProgram();
+            Program program = MetaprogrammingImpl.generator.getProgram();
             //new BoxingEliminator().optimize(program);
 
             ClassHolder cls = new ClassHolder(implRef.getClassName());
@@ -176,7 +173,8 @@ public class UsageGenerator {
         }
 
         if (model.getClassParameterIndex() >= 0) {
-            implMethod.getVariable(model.getClassParameterIndex() + 1).connect(getClassDep.getVariable(0));
+            implMethod.getVariable(model.getClassParameterIndex() + 1).getClassValueNode()
+                    .connect(nameDependency.getVariable(0));
         }
 
         if (implMethod.getResult() != null) {
@@ -211,15 +209,15 @@ public class UsageGenerator {
         }
     }
 
-    private MethodReference buildMethodReference(ValueType type) {
+    private MethodReference buildMethodReference() {
         if (model.getClassParameterIndex() < 0) {
             return new MethodReference(model.getMethod().getClassName() + "$PROXY$" + getSuffix(),
                     model.getMethod().getDescriptor());
         }
 
-        int i = 0;
-        ValueType[] signature = new ValueType[model.getMetaParameterCount()];
-        for (i = 0; i < signature.length; ++i) {
+        int i;
+        ValueType[] signature = new ValueType[model.getMetaParameterCount() + 1];
+        for (i = 0; i < signature.length - 1; ++i) {
             signature[i] = model.getMetaParameterType(i);
         }
         signature[i] = model.getMethod().getReturnType();
@@ -275,9 +273,43 @@ public class UsageGenerator {
         throw new AssertionError("Don't know how to map type: " + type);
     }
 
+    private Variable getParameterVar(int index) {
+        Program program = MetaprogrammingImpl.generator.getProgram();
+        Variable var = program.variableAt(index + 1);
+        ValueType type = model.getMethod().parameterType(index);
+        if (type instanceof ValueType.Primitive) {
+            switch (((ValueType.Primitive) type).getKind()) {
+                case BOOLEAN:
+                    var = box(var, Boolean.class, boolean.class);
+                    break;
+                case BYTE:
+                    var = box(var, Byte.class, byte.class);
+                    break;
+                case SHORT:
+                    var = box(var, Short.class, short.class);
+                    break;
+                case CHARACTER:
+                    var = box(var, Character.class, char.class);
+                    break;
+                case INTEGER:
+                    var = box(var, Integer.class, int.class);
+                    break;
+                case LONG:
+                    var = box(var, Long.class, long.class);
+                    break;
+                case FLOAT:
+                    var = box(var, Float.class, float.class);
+                    break;
+                case DOUBLE:
+                    var = box(var, Double.class, double.class);
+                    break;
+            }
+        }
+        return var;
+    }
 
     private Variable box(Variable var, Class<?> boxed, Class<?> primitive) {
-        Program program = null; //emitter.generator.getProgram();
+        Program program = MetaprogrammingImpl.generator.getProgram();
         BasicBlock block = program.basicBlockAt(0);
 
         InvokeInstruction insn = new InvokeInstruction();

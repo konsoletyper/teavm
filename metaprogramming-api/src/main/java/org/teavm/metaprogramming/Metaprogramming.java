@@ -39,7 +39,7 @@ public final class Metaprogramming {
         return null;
     }
 
-    public static void exit(Value<?> returnValue) {
+    public static void exit(Computation<?> returnValue) {
         unsupported();
     }
 

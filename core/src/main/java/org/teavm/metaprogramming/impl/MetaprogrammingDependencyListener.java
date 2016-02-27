@@ -24,6 +24,7 @@ import org.teavm.dependency.MethodDependency;
 import org.teavm.dependency.MethodDependencyInfo;
 import org.teavm.metaprogramming.impl.model.MethodDescriber;
 import org.teavm.metaprogramming.impl.model.MethodModel;
+import org.teavm.metaprogramming.impl.reflect.ReflectContext;
 import org.teavm.model.CallLocation;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -40,6 +41,11 @@ public class MetaprogrammingDependencyListener extends AbstractDependencyListene
     public void started(DependencyAgent agent) {
         proxyClassLoader = new MetaprogrammingClassLoader(agent.getClassLoader());
         describer = new MethodDescriber(agent.getDiagnostics(), agent.getClassSource());
+
+        MetaprogrammingImpl.classLoader = proxyClassLoader;
+        MetaprogrammingImpl.classSource = agent.getClassSource();
+        MetaprogrammingImpl.agent = agent;
+        MetaprogrammingImpl.reflectContext = new ReflectContext(agent.getClassSource(), proxyClassLoader);
     }
 
     @Override
@@ -56,8 +62,9 @@ public class MetaprogrammingDependencyListener extends AbstractDependencyListene
             ProgramEmitter pe = ProgramEmitter.create(model.getMethod().getDescriptor(), agent.getClassSource());
 
             ValueEmitter[] paramVars = new ValueEmitter[model.getMetaParameterCount()];
+            int offset = model.isStatic() ? 1 : 0;
             for (int i = 0; i < paramVars.length; ++i) {
-                paramVars[i] = pe.var(i, model.getMetaParameterType(i));
+                paramVars[i] = pe.var(i + offset, model.getMetaParameterType(i));
             }
 
             if (model.getUsages().size() == 1) {
@@ -91,7 +98,7 @@ public class MetaprogrammingDependencyListener extends AbstractDependencyListene
             ValueEmitter[] paramVars) {
         MethodDependencyInfo methodDep = agent.getMethod(model.getMethod());
         ValueEmitter paramVar = paramVars[model.getMetaClassParameterIndex()];
-        ValueEmitter tag = paramVar.invokeVirtual("getClass", Class.class).invokeVirtual("getName", String.class);
+        ValueEmitter tag = paramVar.invokeVirtual("getName", String.class);
 
         StringChooseEmitter choice = pe.stringChoice(tag);
         for (Map.Entry<ValueType, MethodReference> usageEntry : model.getUsages().entrySet()) {

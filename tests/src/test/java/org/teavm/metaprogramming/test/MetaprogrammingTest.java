@@ -18,14 +18,19 @@ package org.teavm.metaprogramming.test;
 import static org.junit.Assert.assertEquals;
 import static org.teavm.metaprogramming.Metaprogramming.exit;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.SkipJVM;
+import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.metaprogramming.CompileTime;
 import org.teavm.metaprogramming.Meta;
 import org.teavm.metaprogramming.ReflectClass;
 import org.teavm.metaprogramming.Value;
 
 @CompileTime
+@RunWith(TeaVMTestRunner.class)
 public class MetaprogrammingTest {
     @Test
+    @SkipJVM
     public void works() {
         assertEquals("java.lang.Object".length() + 2, classNameLength(Object.class, 2));
         assertEquals("java.lang.Integer".length() + 3, classNameLength(Integer.valueOf(5).getClass(), 3));

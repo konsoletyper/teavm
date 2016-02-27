@@ -53,6 +53,7 @@ public final class MetaprogrammingImpl {
     private MetaprogrammingImpl() {
     }
 
+    @SuppressWarnings("WeakerAccess")
     public static <T> Value<T> emit(Computation<T> computation) {
         if (computation instanceof ValueImpl<?>) {
             @SuppressWarnings("unchecked")
@@ -90,7 +91,8 @@ public final class MetaprogrammingImpl {
         return new LazyValueImpl<>(varContext, computation, type, generator.forcedLocation);
     }
 
-    public static void exit(Value<?> value) {
+    @SuppressWarnings({"WeakerAccess", "SameParameterValue"})
+    public static void exit(Computation<?> value) {
         if (value == null) {
             returnValue(null);
             return;
@@ -103,19 +105,12 @@ public final class MetaprogrammingImpl {
             generator.blockIndex = generator.returnBlockIndex;
 
             returnValue(unbox(generator.getResultVar()));
-        } else if (value instanceof ValueImpl) {
-            ValueImpl<?> valueImpl = (ValueImpl<?>) value;
-            returnValue(unbox(varContext.emitVariable(valueImpl, new CallLocation(templateMethod,
-                    generator.location))));
-        } else if (value instanceof LazyValueImpl) {
-            Variable var = generator.lazy((LazyValueImpl<?>) value);
-            returnValue(unbox(var));
         } else {
             throw new IllegalStateException("Unexpected computation type: " + value.getClass().getName());
         }
     }
 
-    static Variable unbox(Variable var) {
+    private static Variable unbox(Variable var) {
         if (returnType instanceof ValueType.Primitive) {
             switch (((ValueType.Primitive) returnType).getKind()) {
                 case BOOLEAN:
@@ -147,7 +142,7 @@ public final class MetaprogrammingImpl {
         return var;
     }
 
-    static Variable unbox(Variable var, Class<?> boxed, Class<?> primitive) {
+    private static Variable unbox(Variable var, Class<?> boxed, Class<?> primitive) {
         InvokeInstruction insn = new InvokeInstruction();
         insn.setInstance(var);
         insn.setType(InvocationType.VIRTUAL);
@@ -170,10 +165,12 @@ public final class MetaprogrammingImpl {
         unsupported();
     }
 
+    @SuppressWarnings("WeakerAccess")
     public static ReflectClass<?> findClass(String name) {
         return reflectContext.findClass(name);
     }
 
+    @SuppressWarnings("WeakerAccess")
     public static <T> ReflectClass<T> findClass(Class<T> cls) {
         return reflectContext.findClass(cls);
     }
@@ -200,6 +197,7 @@ public final class MetaprogrammingImpl {
         return proxy(findClass(type), handler);
     }
 
+    @SuppressWarnings("WeakerAccess")
     public static <T> Value<T> proxy(ReflectClass<T> type, InvocationHandler<T> handler) {
         unsupported();
         return null;

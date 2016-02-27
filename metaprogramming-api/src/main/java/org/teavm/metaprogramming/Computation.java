@@ -15,7 +15,6 @@
  */
 package org.teavm.metaprogramming;
 
-@SuppressWarnings("unused")
 public interface Computation<T> {
     T compute();
 }

@@ -73,7 +73,6 @@ public class TeaVMTestRunner extends Runner {
     private Class<?> testClass;
     private ClassHolder classHolder;
     private ClassLoader classLoader;
-    private ClassHolderSource classSource;
     private Description suiteDescription;
     private static Map<ClassLoader, ClassHolderSource> classSources = new WeakHashMap<>();
     private File outputDir;
@@ -88,9 +87,11 @@ public class TeaVMTestRunner extends Runner {
     static {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             synchronized (TeaVMTestRunner.class) {
-                cleanupFuture = null;
-                runner.stop();
-                runner.waitForCompletion();
+                if (runner != null) {
+                    cleanupFuture = null;
+                    runner.stop();
+                    runner.waitForCompletion();
+                }
             }
         }));
     }
@@ -98,7 +99,7 @@ public class TeaVMTestRunner extends Runner {
     public TeaVMTestRunner(Class<?> testClass) throws InitializationError {
         this.testClass = testClass;
         classLoader = TeaVMTestRunner.class.getClassLoader();
-        classSource = getClassSource(classLoader);
+        ClassHolderSource classSource = getClassSource(classLoader);
         classHolder = classSource.get(testClass.getName());
         String outputPath = System.getProperty(PATH_PARAM);
         if (outputPath != null) {
@@ -157,7 +158,7 @@ public class TeaVMTestRunner extends Runner {
         notifier.fireTestFinished(getDescription());
     }
 
-    protected List<Method> getChildren() {
+    private List<Method> getChildren() {
         List<Method> children = new ArrayList<>();
         for (Method method : testClass.getDeclaredMethods()) {
             MethodHolder methodHolder = classHolder.getMethod(getDescriptor(method));
@@ -168,12 +169,12 @@ public class TeaVMTestRunner extends Runner {
         return children;
     }
 
-    protected Description describeChild(Method child) {
+    private Description describeChild(Method child) {
         return descriptions.computeIfAbsent(child, method -> Description.createTestDescription(testClass,
                 method.getName()));
     }
 
-    protected void runChild(Method child, RunNotifier notifier) {
+    private void runChild(Method child, RunNotifier notifier) {
         notifier.fireTestStarted(describeChild(child));
 
         boolean run = false;
@@ -261,6 +262,8 @@ public class TeaVMTestRunner extends Runner {
         if (!compileResult.success) {
             notifier.fireTestFailure(new Failure(description,
                     new AssertionError(compileResult.errorMessage)));
+            notifier.fireTestFinished(description);
+            latch.countDown();
             return false;
         }
 

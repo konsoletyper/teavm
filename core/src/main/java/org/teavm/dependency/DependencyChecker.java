@@ -17,7 +17,6 @@ package org.teavm.dependency;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -55,10 +54,6 @@ import org.teavm.model.util.ProgramUtils;
 import org.teavm.optimization.UnreachableBasicBlockEliminator;
 import org.teavm.parsing.Parser;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class DependencyChecker implements DependencyInfo {
     static final boolean shouldLog = System.getProperty("org.teavm.logDependencies", "false").equals("true");
     private int classNameSuffix;
@@ -73,14 +68,13 @@ public class DependencyChecker implements DependencyInfo {
     private ServiceRepository services;
     private Queue<Runnable> tasks = new ArrayDeque<>();
     List<DependencyType> types = new ArrayList<>();
-    Map<String, DependencyType> typeMap = new HashMap<>();
+    private Map<String, DependencyType> typeMap = new HashMap<>();
     private DependencyCheckerInterruptor interruptor;
     private boolean interrupted;
     private Diagnostics diagnostics;
     DefaultCallGraph callGraph = new DefaultCallGraph();
     private DependencyAgent agent;
     List<DependencyNode> nodes = new ArrayList<>();
-    List<BitSet> typeBitSets = new ArrayList<>();
     Map<MethodReference, BootstrapMethodSubstitutor> bootstrapMethodSubstitutors = new HashMap<>();
     private boolean completing;
 
@@ -133,14 +127,13 @@ public class DependencyChecker implements DependencyInfo {
         if (type == null) {
             type = new DependencyType(this, name, types.size());
             types.add(type);
-            typeBitSets.add(new BitSet(nodes.size()));
             typeMap.put(name, type);
         }
         return type;
     }
 
     public DependencyNode createNode() {
-        DependencyNode node = new DependencyNode(this, nodes.size());
+        DependencyNode node = new DependencyNode(this);
         nodes.add(node);
         return node;
     }

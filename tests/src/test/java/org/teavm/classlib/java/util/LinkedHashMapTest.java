@@ -24,16 +24,18 @@ import org.junit.runner.RunWith;
 import org.teavm.classlib.support.Support_MapTest2;
 import org.teavm.junit.TeaVMTestRunner;
 
+@SuppressWarnings({"UnnecessaryUnboxing", "ClassInitializerMayBeStatic", "UnnecessaryTemporaryOnConversionToString",
+        "MismatchedQueryAndUpdateOfCollection", "StringEquality"})
 @RunWith(TeaVMTestRunner.class)
 public class LinkedHashMapTest {
 
-	LinkedHashMap<Object, Object> hm;
+	private LinkedHashMap<Object, Object> hm;
 
-	final static int hmSize = 1000;
+	private final static int hmSize = 1000;
 
-	static Object[] objArray;
+	private static Object[] objArray;
 
-	static Object[] objArray2;
+	private static Object[] objArray2;
 	{
 		objArray = new Object[hmSize];
 		objArray2 = new Object[hmSize];
@@ -47,14 +49,14 @@ public class LinkedHashMapTest {
         hm = new LinkedHashMap<>();
         for (int i = 0; i < objArray.length; i++)
             hm.put(objArray2[i], objArray[i]);
-        hm.put("test", null);
-        hm.put(null, "test");
+        hm.put("org/teavm/metaprogramming/test", null);
+        hm.put(null, "org/teavm/metaprogramming/test");
     }
 
     @Test
 	public void test_Constructor() {
 		// Test for method java.util.LinkedHashMap()
-		new Support_MapTest2(new LinkedHashMap<String, String>()).runTest();
+		new Support_MapTest2(new LinkedHashMap<>()).runTest();
 
 		LinkedHashMap<Object, Object> hm2 = new LinkedHashMap<>();
 		assertEquals("Created incorrect LinkedHashMap", 0, hm2.size());
@@ -69,6 +71,7 @@ public class LinkedHashMapTest {
 			new LinkedHashMap<>(-1);
 			fail("Failed to throw IllegalArgumentException for initial capacity < 0");
 		} catch (IllegalArgumentException e) {
+			// as expected
 		}
 
 		LinkedHashMap<Object, Object> empty = new LinkedHashMap<>(0);
@@ -86,6 +89,7 @@ public class LinkedHashMapTest {
 			new LinkedHashMap<>(0, 0);
 			fail("Failed to throw IllegalArgumentException for initial load factor <= 0");
 		} catch (IllegalArgumentException e) {
+            // as expected
 		}
 		LinkedHashMap<String, String> empty = new LinkedHashMap<>(0, 0.75f);
 		assertNull("Empty hashtable access", empty.get("nothing"));
@@ -114,8 +118,8 @@ public class LinkedHashMapTest {
 		assertEquals("Get returned incorecct value for existing key", "HELLO", hm.get("T"));
 
 		LinkedHashMap<Object, String> m = new LinkedHashMap<>();
-		m.put(null, "test");
-		assertEquals("Failed with null key", "test", m.get(null));
+		m.put(null, "org/teavm/metaprogramming/test");
+		assertEquals("Failed with null key", "org/teavm/metaprogramming/test", m.get(null));
 		assertNull("Failed with missing key matching null hash", m.get(new Integer(0)));
 	}
 
@@ -128,7 +132,7 @@ public class LinkedHashMapTest {
 
 		LinkedHashMap<Number, String> m = new LinkedHashMap<>();
 		m.put(new Short((short) 0), "short");
-		m.put(null, "test");
+		m.put(null, "org/teavm/metaprogramming/test");
 		m.put(new Integer(0), "int");
 		assertEquals("Failed adding to bucket containing null", "short", m.get(new Short((short) 0)));
 		assertEquals("Failed adding to bucket containing null2", "int", m.get(new Integer(0)));
@@ -159,7 +163,7 @@ public class LinkedHashMapTest {
 			assertTrue("Returned set does not contain all keys", s.contains(objArray[i].toString()));
 
 		LinkedHashMap<Object, String> m = new LinkedHashMap<>();
-		m.put(null, "test");
+		m.put(null, "org/teavm/metaprogramming/test");
 		assertTrue("Failed with null key", m.keySet().contains(null));
 		assertNull("Failed with null key", m.keySet().iterator().next());
 
@@ -228,9 +232,9 @@ public class LinkedHashMapTest {
 		assertNull("Remove of non-existent key returned non-null", hm.remove("LCLCLC"));
 
 		LinkedHashMap<Object, String> m = new LinkedHashMap<>();
-		m.put(null, "test");
+		m.put(null, "org/teavm/metaprogramming/test");
 		assertNull("Failed with same hash as null", m.remove(new Integer(0)));
-		assertEquals("Failed with null key", "test", m.remove(null));
+		assertEquals("Failed with null key", "org/teavm/metaprogramming/test", m.remove(null));
 	}
 
 	@Test
@@ -313,7 +317,7 @@ public class LinkedHashMapTest {
 		assertTrue("Returned true for invalid key", !hm.containsKey("KKDKDKD"));
 
 		LinkedHashMap<Object, String> m = new LinkedHashMap<>();
-		m.put(null, "test");
+		m.put(null, "org/teavm/metaprogramming/test");
 		assertTrue("Failed with null key", m.containsKey(null));
 		assertTrue("Failed with missing key matching null hash", !m.containsKey(new Integer(0)));
 	}

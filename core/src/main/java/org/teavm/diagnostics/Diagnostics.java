@@ -17,10 +17,6 @@ package org.teavm.diagnostics;
 
 import org.teavm.model.CallLocation;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface Diagnostics {
     void error(CallLocation location, String error, Object... params);
 

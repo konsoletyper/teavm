@@ -18,10 +18,6 @@ package org.teavm.dependency;
 import java.util.*;
 import org.teavm.model.MethodReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class DependencyNode implements ValueDependencyInfo {
     private DependencyChecker dependencyChecker;
     private List<DependencyConsumer> followers;
@@ -32,17 +28,15 @@ public class DependencyNode implements ValueDependencyInfo {
     private DependencyNode arrayItemNode;
     private DependencyNode classValueNode;
     private int degree;
-    int index;
     boolean locked;
     MethodReference method;
 
-    DependencyNode(DependencyChecker dependencyChecker, int index) {
-        this(dependencyChecker, index, 0);
+    DependencyNode(DependencyChecker dependencyChecker) {
+        this(dependencyChecker, 0);
     }
 
-    DependencyNode(DependencyChecker dependencyChecker, int index, int degree) {
+    private DependencyNode(DependencyChecker dependencyChecker, int degree) {
         this.dependencyChecker = dependencyChecker;
-        this.index = index;
         this.degree = degree;
     }
 
@@ -192,7 +186,7 @@ public class DependencyNode implements ValueDependencyInfo {
     @Override
     public DependencyNode getArrayItem() {
         if (arrayItemNode == null) {
-            arrayItemNode = new DependencyNode(dependencyChecker, dependencyChecker.nodes.size(), degree + 1);
+            arrayItemNode = new DependencyNode(dependencyChecker, degree + 1);
             dependencyChecker.nodes.add(arrayItemNode);
             if (DependencyChecker.shouldLog) {
                 arrayItemNode.tag = tag + "[";
@@ -204,7 +198,7 @@ public class DependencyNode implements ValueDependencyInfo {
 
     public DependencyNode getClassValueNode() {
         if (classValueNode == null) {
-            classValueNode = new DependencyNode(dependencyChecker, dependencyChecker.nodes.size(), degree);
+            classValueNode = new DependencyNode(dependencyChecker, degree);
             dependencyChecker.nodes.add(classValueNode);
             if (DependencyChecker.shouldLog) {
                 classValueNode.tag = tag + "@";

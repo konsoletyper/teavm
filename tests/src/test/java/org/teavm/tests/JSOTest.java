@@ -19,11 +19,8 @@ import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 import java.util.List;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.teavm.diagnostics.Problem;
 import org.teavm.jso.JSBody;
-import org.teavm.junit.SkipJVM;
-import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.vm.TeaVM;
@@ -98,7 +95,7 @@ public class JSOTest {
     private List<Problem> build(String methodName) {
         TeaVM vm = new TeaVMBuilder().build();
         vm.installPlugins();
-        vm.entryPoint("test", new MethodReference(JSOTest.class, methodName, void.class));
+        vm.entryPoint("org/teavm/metaprogramming/test", new MethodReference(JSOTest.class, methodName, void.class));
         vm.build(new StringBuilder(), null);
         return vm.getProblemProvider().getSevereProblems();
     }

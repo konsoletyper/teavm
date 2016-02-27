@@ -72,17 +72,18 @@ public class MethodDescriber {
 
     private MethodModel findMetaMethod(MethodReader method) {
         ClassReader cls = classSource.get(method.getOwnerName());
+        boolean isStatic = method.hasModifier(ElementModifier.STATIC);
+        int expectedParameterCount = (isStatic ? 0 : 1) + method.parameterCount();
         for (MethodReader meta : cls.getMethods()) {
             if (meta == method
                     || !meta.hasModifier(ElementModifier.STATIC)
                     || !meta.getName().equals(method.getName())
                     || meta.getResultType() != ValueType.VOID
-                    || meta.parameterCount() != method.parameterCount() + 1) {
+                    || meta.parameterCount() != expectedParameterCount) {
                 continue;
             }
 
             int paramOffset = 0;
-            boolean isStatic = method.hasModifier(ElementModifier.STATIC);
             if (!isStatic) {
                 if (meta.parameterCount() == 0 || meta.parameterType(0).isObject(Value.class)) {
                     return null;
