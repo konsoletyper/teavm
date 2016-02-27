@@ -4,13 +4,15 @@ import static org.junit.Assert.*;
 import java.text.NumberFormat;
 import java.util.Currency;
 import java.util.Locale;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.SkipJVM;
+import org.teavm.junit.TeaVMProperties;
+import org.teavm.junit.TeaVMProperty;
 import org.teavm.junit.TeaVMTestRunner;
 
 @RunWith(TeaVMTestRunner.class)
+@TeaVMProperties(@TeaVMProperty(key = "java.util.Locale.available", value = "en, en_US, en_GB, ru, ru_RU"))
 public class NumberFormatTest {
     @Test
     public void formatsNumber() {

@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -352,6 +353,10 @@ public class TeaVMTestRunner extends Runner {
         new TestExceptionPlugin().install(vm);
         new TestEntryPointTransformer(runnerType.getName(), methodHolder.getReference()).install(vm);
 
+        Properties properties = new Properties();
+        applyProperties(method.getDeclaringClass(), properties);
+        vm.setProperties(properties);
+
         try (Writer innerWriter = new OutputStreamWriter(new FileOutputStream(outputFile), "UTF-8")) {
             MethodReference exceptionMsg = new MethodReference(ExceptionHelper.class, "showException",
                     Throwable.class, String.class);
@@ -365,6 +370,18 @@ public class TeaVMTestRunner extends Runner {
         }
 
         return result;
+    }
+
+    private void applyProperties(Class<?> cls, Properties result) {
+        if (cls.getSuperclass() != null) {
+            applyProperties(cls.getSuperclass(), result);
+        }
+        TeaVMProperties properties = cls.getAnnotation(TeaVMProperties.class);
+        if (properties != null) {
+            for (TeaVMProperty property : properties.value()) {
+                result.setProperty(property.key(), property.value());
+            }
+        }
     }
 
     private MethodDescriptor getDescriptor(Method method) {
