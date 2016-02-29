@@ -71,8 +71,7 @@ public final class Metaprogramming {
     }
 
     public static <T> ReflectClass<T[]> arrayClass(ReflectClass<T> componentType) {
-        unsupported();
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     public static ReflectClass<?> createClass(byte[] bytecode) {

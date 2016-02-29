@@ -13,10 +13,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.metaprogramming;
+package org.teavm.metaprogramming.test;
 
-import org.teavm.metaprogramming.reflect.ReflectMethod;
+import static org.teavm.metaprogramming.Metaprogramming.emit;
+import org.teavm.metaprogramming.CompileTime;
+import org.teavm.metaprogramming.Value;
 
-public interface InvocationHandler<T> {
-    Computation<?> invoke(Value<T> proxy, ReflectMethod method, Value<Object>[] args);
+@CompileTime
+public class MetaprogrammingGenerator2 {
+    public Value<String> addParentheses(String value) {
+        return emit(() -> "[" + value + "]");
+    }
 }

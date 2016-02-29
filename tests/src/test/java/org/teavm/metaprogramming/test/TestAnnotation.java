@@ -13,10 +13,16 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.metaprogramming;
+package org.teavm.metaprogramming.test;
 
-import org.teavm.metaprogramming.reflect.ReflectMethod;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
-public interface InvocationHandler<T> {
-    Computation<?> invoke(Value<T> proxy, ReflectMethod method, Value<Object>[] args);
+@Retention(RetentionPolicy.RUNTIME)
+public @interface TestAnnotation {
+    String a() default "!";
+
+    int b() default 23;
+
+    Class<?>[] c();
 }

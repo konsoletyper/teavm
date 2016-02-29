@@ -28,17 +28,25 @@ import org.teavm.metaprogramming.impl.reflect.ReflectClassImpl;
 import org.teavm.metaprogramming.impl.reflect.ReflectContext;
 import org.teavm.metaprogramming.impl.reflect.ReflectFieldImpl;
 import org.teavm.metaprogramming.impl.reflect.ReflectMethodImpl;
+import org.teavm.model.BasicBlock;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassReaderSource;
+import org.teavm.model.Instruction;
 import org.teavm.model.InstructionLocation;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
+import org.teavm.model.instructions.DoubleConstantInstruction;
 import org.teavm.model.instructions.ExitInstruction;
+import org.teavm.model.instructions.FloatConstantInstruction;
+import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.instructions.LongConstantInstruction;
+import org.teavm.model.instructions.NullConstantInstruction;
+import org.teavm.model.util.InstructionTransitionExtractor;
 
 public final class MetaprogrammingImpl {
     static ClassLoader classLoader;
@@ -215,6 +223,62 @@ public final class MetaprogrammingImpl {
 
     public void submitClass(ClassHolder cls) {
         agent.submitClass(cls);
+    }
+
+    public static void close() {
+        InstructionTransitionExtractor transitionExtractor = new InstructionTransitionExtractor();
+        BasicBlock block = generator.currentBlock();
+        Instruction lastInstruction = block.getLastInstruction();
+        if (lastInstruction != null) {
+            lastInstruction.acceptVisitor(transitionExtractor);
+        }
+        if (transitionExtractor.getTargets() != null) {
+            return;
+        }
+
+        Variable var;
+        if (returnType instanceof ValueType.Void) {
+            var = null;
+        } else if (returnType instanceof ValueType.Primitive) {
+            var = generator.program.createVariable();
+            switch (((ValueType.Primitive) returnType).getKind()) {
+                case BOOLEAN:
+                case BYTE:
+                case SHORT:
+                case CHARACTER:
+                case INTEGER: {
+                    IntegerConstantInstruction constantInsn = new IntegerConstantInstruction();
+                    constantInsn.setReceiver(var);
+                    generator.add(constantInsn);
+                    break;
+                }
+                case LONG: {
+                    LongConstantInstruction constantInsn = new LongConstantInstruction();
+                    constantInsn.setReceiver(var);
+                    generator.add(constantInsn);
+                    break;
+                }
+                case FLOAT: {
+                    FloatConstantInstruction constantInsn = new FloatConstantInstruction();
+                    constantInsn.setReceiver(var);
+                    generator.add(constantInsn);
+                    break;
+                }
+                case DOUBLE: {
+                    DoubleConstantInstruction constantInsn = new DoubleConstantInstruction();
+                    constantInsn.setReceiver(var);
+                    generator.add(constantInsn);
+                    break;
+                }
+            }
+        } else {
+            NullConstantInstruction constantInsn = new NullConstantInstruction();
+            var = generator.program.createVariable();
+            constantInsn.setReceiver(var);
+            generator.add(constantInsn);
+        }
+
+        returnValue(var);
     }
 
     private static void unsupported() {

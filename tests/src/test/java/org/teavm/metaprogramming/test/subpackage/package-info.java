@@ -13,10 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.metaprogramming;
+@CompileTime
+package org.teavm.metaprogramming.test.subpackage;
 
-import org.teavm.metaprogramming.reflect.ReflectMethod;
-
-public interface InvocationHandler<T> {
-    Computation<?> invoke(Value<T> proxy, ReflectMethod method, Value<Object>[] args);
-}
+import org.teavm.metaprogramming.CompileTime;

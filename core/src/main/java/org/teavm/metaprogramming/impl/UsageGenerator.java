@@ -146,6 +146,7 @@ class UsageGenerator {
 
         try {
             proxyMethod.invoke(null, proxyArgs);
+            MetaprogrammingImpl.close();
             Program program = MetaprogrammingImpl.generator.getProgram();
             //new BoxingEliminator().optimize(program);
 

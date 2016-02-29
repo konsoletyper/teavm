@@ -2,7 +2,7 @@
   <configuration default="false" name="run-tests" type="JUnit" factoryName="JUnit">
     <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea">
       <pattern>
-        <option name="PATTERN" value="org.teavm.classlib.java.lang.*" />
+        <option name="PATTERN" value="org.teavm.*" />
         <option name="ENABLED" value="true" />
       </pattern>
     </extension>
