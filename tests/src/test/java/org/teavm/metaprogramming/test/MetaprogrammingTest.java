@@ -23,6 +23,7 @@ import static org.teavm.metaprogramming.Metaprogramming.arrayClass;
 import static org.teavm.metaprogramming.Metaprogramming.emit;
 import static org.teavm.metaprogramming.Metaprogramming.exit;
 import static org.teavm.metaprogramming.Metaprogramming.findClass;
+import static org.teavm.metaprogramming.Metaprogramming.lazy;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.SkipJVM;
@@ -299,6 +300,56 @@ public class MetaprogrammingTest {
         exit(() -> type.getArrayElement(array.get(), index.get()));
     }
 
+    @Test
+    public void lazyWorks() {
+        WithSideEffect a = new WithSideEffect(10);
+        WithSideEffect b = new WithSideEffect(20);
+        assertEquals(1, withLazy(a, b));
+        assertEquals(1, a.reads);
+        assertEquals(0, b.reads);
+
+        a = new WithSideEffect(-10);
+        b = new WithSideEffect(20);
+        assertEquals(1, withLazy(a, b));
+        assertEquals(1, a.reads);
+        assertEquals(1, b.reads);
+
+        a = new WithSideEffect(-10);
+        b = new WithSideEffect(-20);
+        assertEquals(2, withLazy(a, b));
+        assertEquals(1, a.reads);
+        assertEquals(1, b.reads);
+    }
+
+    @Meta
+    private static native int withLazy(WithSideEffect a, WithSideEffect b);
+    private static void withLazy(Value<WithSideEffect> a, Value<WithSideEffect> b) {
+        Value<Boolean> first = lazy(() -> a.get().getValue() > 0);
+        Value<Boolean> second = lazy(() -> b.get().getValue() > 0);
+        exit(() -> first.get() || second.get() ? 1 : 2);
+    }
+
+    @Test
+    public void conditionalWorks() {
+        assertEquals("int", fieldType(Context.class, "a"));
+        assertEquals("int", fieldType(Context.class, "b"));
+        assertNull(fieldType(Context.class, "c"));
+    }
+
+    @Meta
+    private static native String fieldType(Class<?> cls, String name);
+    private static void fieldType(ReflectClass<Object> cls, Value<String> name) {
+        Value<String> result = lazy(() -> null);
+        for (ReflectField field : cls.getDeclaredFields()) {
+            String type = field.getType().getName();
+            String fieldName = field.getName();
+            Value<String> existing = result;
+            result = lazy(() -> fieldName.equals(name.get()) ? type : existing.get());
+        }
+        Value<String> type = result;
+        exit(() -> type.get());
+    }
+
     static class Context {
         public int a;
         public int b;
@@ -344,6 +395,20 @@ public class MetaprogrammingTest {
     static class MetaprogrammingGenerator3 {
         public Value<String> addParentheses(String value) {
             return emit(() -> "{" + value + "}");
+        }
+    }
+
+    static class WithSideEffect {
+        private int value;
+        public int reads;
+
+        public WithSideEffect(int value) {
+            this.value = value;
+        }
+
+        public int getValue() {
+            ++reads;
+            return value;
         }
     }
 }
