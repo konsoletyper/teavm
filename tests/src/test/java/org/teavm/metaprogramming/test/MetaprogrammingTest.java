@@ -24,6 +24,7 @@ import static org.teavm.metaprogramming.Metaprogramming.emit;
 import static org.teavm.metaprogramming.Metaprogramming.exit;
 import static org.teavm.metaprogramming.Metaprogramming.findClass;
 import static org.teavm.metaprogramming.Metaprogramming.lazy;
+import java.util.function.Consumer;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.SkipJVM;
@@ -348,6 +349,50 @@ public class MetaprogrammingTest {
         }
         Value<String> type = result;
         exit(() -> type.get());
+    }
+
+    @Test
+    public void conditionalActionWorks() {
+        class TypeConsumer implements Consumer<String> {
+            String type;
+            @Override public void accept(String t) {
+                type = t;
+            }
+        }
+        TypeConsumer consumer = new TypeConsumer();
+
+        fieldType(Context.class, "a", consumer);
+        assertEquals("int", consumer.type);
+
+        fieldType(Context.class, "b", consumer);
+        assertEquals("int", consumer.type);
+
+        fieldType(Context.class, "c", consumer);
+        assertNull(consumer.type);
+    }
+
+    @Meta
+    private static native void fieldType(Class<?> cls, String name, Consumer<String> typeConsumer);
+    private static void fieldType(ReflectClass<Object> cls, Value<String> name, Value<Consumer<String>> typeConsumer) {
+        Value<Void> result = lazy(() -> {
+            typeConsumer.get().accept(null);
+            return null;
+        });
+        for (ReflectField field : cls.getDeclaredFields()) {
+            String type = field.getType().getName();
+            String fieldName = field.getName();
+            Value<Void> existing = result;
+            result = lazy(() -> {
+                if (fieldName.equals(name.get())) {
+                    typeConsumer.get().accept(type);
+                    return null;
+                } else {
+                    return existing.get();
+                }
+            });
+        }
+        Value<Void> type = result;
+        emit(() -> type);
     }
 
     static class Context {
