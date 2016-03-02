@@ -17,10 +17,12 @@ package org.teavm.metaprogramming.impl;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.metaprogramming.ReflectClass;
 import org.teavm.metaprogramming.Value;
@@ -126,6 +128,7 @@ public class CompositeMethodGenerator {
         location = null;
         resultVar = null;
         resultPhi = null;
+        int startBlock = blockIndex;
         AliasFinder aliasFinder = new AliasFinder();
         aliasFinder.findAliases(template);
 
@@ -138,6 +141,7 @@ public class CompositeMethodGenerator {
                 aliasFinder.getArrayElements(), program.basicBlockCount() - 1,
                 program.variableCount() - capturedValues.size());
 
+        // Pre-create blocks and variables
         for (int i = 0; i < template.basicBlockCount(); ++i) {
             program.createBasicBlock();
         }
@@ -147,25 +151,39 @@ public class CompositeMethodGenerator {
             program.createVariable();
         }
 
-        int startBlock = blockIndex;
+        // Pre-create phis
+        // We need this since phi input variables can be captured as well. In thi case
+        // we must perform capturing in input block rather that phi owner.
+        List<List<Incoming>> outgoings = Stream.<List<Incoming>>generate(ArrayList::new)
+                .limit(template.basicBlockCount())
+                .collect(Collectors.toList());
+        List<List<VariableReader>> outgoingVars = Stream.<List<VariableReader>>generate(ArrayList::new)
+                .limit(template.basicBlockCount())
+                .collect(Collectors.toList());
         for (int i = 0; i < template.basicBlockCount(); ++i) {
             BasicBlockReader templateBlock = template.basicBlockAt(i);
-            if (i > 0) {
-                blockIndex = substitutor.blockOffset + i;
-            }
+            blockIndex = i == 0 ? startBlock : substitutor.blockOffset + i;
             BasicBlock targetBlock = program.basicBlockAt(blockIndex);
-
             for (PhiReader templatePhi : templateBlock.readPhis()) {
                 Phi phi = new Phi();
                 for (IncomingReader templateIncoming : templatePhi.readIncomings()) {
                     Incoming incoming = new Incoming();
                     incoming.setSource(substitutor.block(templateIncoming.getSource()));
-                    incoming.setValue(substitutor.var(templateIncoming.getValue()));
                     phi.getIncomings().add(incoming);
+                    int sourceIndex = templateIncoming.getSource().getIndex();
+                    outgoings.get(sourceIndex).add(incoming);
+                    outgoingVars.get(sourceIndex).add(templateIncoming.getValue());
                 }
                 phi.setReceiver(substitutor.var(templatePhi.getReceiver()));
                 targetBlock.getPhis().add(phi);
             }
+        }
+
+        // Copy program
+        for (int i = 0; i < template.basicBlockCount(); ++i) {
+            BasicBlockReader templateBlock = template.basicBlockAt(i);
+            blockIndex = i == 0 ? startBlock : substitutor.blockOffset + i;
+            BasicBlock targetBlock = program.basicBlockAt(blockIndex);
 
             for (TryCatchBlockReader templateTryCatch : templateBlock.readTryCatchBlocks()) {
                 TryCatchBlock tryCatch = new TryCatchBlock();
@@ -176,9 +194,20 @@ public class CompositeMethodGenerator {
             }
 
             templateBlock.readAllInstructions(substitutor);
+
+            // Capture phi inputs of successor blocks
+            Instruction lastInsn = targetBlock.getInstructions().remove(targetBlock.getInstructions().size() - 1);
+            List<Incoming> blockOutgoings = outgoings.get(i);
+            for (int j = 0; j < blockOutgoings.size(); ++j) {
+                VariableReader outgoingVar = outgoingVars.get(i).get(j);
+                blockOutgoings.get(j).setValue(substitutor.var(outgoingVar));
+            }
+            targetBlock.getInstructions().add(lastInsn);
+
             phiBlockMap.put(targetBlock, currentBlock());
         }
 
+        // Fix phi input blocks
         for (int i = 0; i < template.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i == 0 ? startBlock : substitutor.blockOffset + i);
             for (Phi phi : block.getPhis()) {
