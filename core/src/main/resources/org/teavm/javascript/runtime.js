@@ -67,7 +67,7 @@ var $rt_createIntArray;
 var $rt_createBooleanArray;
 var $rt_createFloatArray;
 var $rt_createDoubleArray;
-if (ArrayBuffer) {
+if (typeof ArrayBuffer !== "undefined") {
     $rt_createNumericArray = function(cls, nativeArray) {
         return new ($rt_arraycls(cls))(nativeArray);
     };
