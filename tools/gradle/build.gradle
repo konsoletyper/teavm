@@ -1,0 +1,111 @@
+apply plugin: 'java-gradle-plugin'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'maven'
+apply plugin: 'signing'
+
+sourceCompatibility = 1.6
+
+ext {
+    libVersion = '0.4.3'
+    isSnapshot = '-SNAPSHOT'
+}
+
+group = projectGroupId
+archivesBaseName = "teavm-gradle-plugin"
+version = "$libVersion$isSnapshot"
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    jcenter()
+}
+
+configurations {
+    deployerJars
+}
+
+dependencies {
+    compile gradleApi()
+    compile "org.teavm:teavm-core:$libVersion"
+    compile "org.teavm:teavm-tooling:$libVersion"
+    deployerJars "org.apache.maven.wagon:wagon-ssh:2.2"
+    deployerJars "org.apache.maven.wagon:wagon-http:2.2"
+}
+
+jar {
+    from project.sourceSets.main.allSource
+    from project.sourceSets.main.output
+    baseName = 'teavm-gradle-plugin'
+}
+
+javadoc {
+    options.addStringOption("sourcepath", "")
+}
+
+task javadocJar(type: Jar) {
+    classifier = 'javadoc'
+    from javadoc
+}
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+artifacts {
+    archives javadocJar, sourcesJar
+}
+
+signing {
+    sign configurations.archives
+}
+
+uploadArchives {
+  repositories {
+    mavenDeployer {
+      beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+      repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+        authentication(userName: ossrhUsername, password: ossrhPassword)
+      }
+
+      snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+        authentication(userName: ossrhUsername, password: ossrhPassword)
+      }
+
+      pom.project {
+        name 'TeaVM Gradle Plugin'
+        packaging 'jar'
+        description 'Gradle plugin for TeaVM projects.'
+        url 'http://github.com/konsoletyper/teavm'
+
+        licenses {
+          license {
+            name 'The Apache License, Version 2.0'
+            url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+          }
+        }
+        
+        scm {
+          connection 'scm:git:git@github.com:konsoletyper/teavm.git'
+          developerConnection 'scm:git:git@github.com:konsoletyper/teavm.git'
+          url 'http://github.com/konsoletyper/teavm/'
+        }
+
+        developers {
+          developer {
+            id 'mj'
+            name 'MJ'
+            email 'john.hervicc@gmail.com'
+          }
+          developer {
+            id 'aa'
+            name 'Alexey Andreev'
+            email 'konsoletyper@gmail.com'
+          }
+        }
+      }
+    }
+  }
+}

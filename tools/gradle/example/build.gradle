@@ -1,0 +1,44 @@
+buildscript {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.teavm:teavm-gradle-plugin:0.4.3-SNAPSHOT"
+    }
+}
+repositories {
+    mavenCentral()
+}
+
+apply plugin: "eclipse"
+apply plugin: "teavm"
+
+mainClassName = "org.teavm.example.Client"
+
+teavm {
+    // Version of automatically included TeaVM libs.
+    version = "0.4.3";
+    // Directory in the build folder with compiled TeaVM sources.
+    targetDirectory = "dist";
+    // TeaVM cache directory in build folder.
+    cacheDirectory = "teavm-cache";
+    // Name of the generated JS file.
+    targetFile = "app.js";
+    /* Runtime javascript inclusion:
+        NONE: don't include runtime.
+        MERGED: merge runtime into main javascript file.
+        SEPARATE: include runtime as separated file.
+     */
+    runtime org.teavm.tooling.RuntimeCopyOperation.SEPARATE
+    // True to minify generated JS file.
+    minify = true;
+    // True to enerate TeaVM debugging info.
+    debugInfo = true;
+    // True to generate JS-to-Java source maps for debugging in browsers.
+    sourceMaps = true;
+    // True to copy source files to build folder.
+    sourceFilesCopied = true;
+    // True to include a simple HTML page.
+    mainPageIncluded = true;
+}
