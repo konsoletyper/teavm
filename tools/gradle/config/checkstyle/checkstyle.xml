@@ -1,0 +1,90 @@
+<!DOCTYPE module PUBLIC "-//Puppy Crawl//DTD Check Configuration 1.2//EN"
+    "http://www.puppycrawl.com/dtds/configuration_1_2.dtd">
+<module name="Checker">
+  <module name="TreeWalker">
+    <module name="AnnotationUseStyle"/>
+    <module name="MissingOverride">
+      <property name="javaFiveCompatibility" value="true"/>
+    </module>
+    <module name="EmptyBlock">
+      <property name="option" value="text"/>
+      <property name="tokens" value="LITERAL_CATCH"/>
+    </module>
+    <module name="EmptyBlock">
+      <property name="tokens" value="LITERAL_DO, LITERAL_ELSE, LITERAL_FINALLY, LITERAL_IF,
+          LITERAL_FOR, LITERAL_TRY, LITERAL_WHILE, STATIC_INIT"/>
+      <property name="option" value="text"/>
+    </module>
+    <module name="LeftCurly"/>
+    <module name="NeedBraces"/>
+    <module name="RightCurly"/>
+    <module name="InterfaceIsType"/>
+    <module name="HideUtilityClassConstructor"/>
+    <module name="EmptyStatement"/>
+    <module name="EqualsHashCode"/>
+    <module name="InnerAssignment"/>
+    <module name="SimplifyBooleanExpression"/>
+    <module name="SimplifyBooleanReturn"/>
+    <module name="StringLiteralEquality"/>
+    <module name="IllegalThrows">
+      <property name="illegalClassNames" value="java.lang.Error, java.lang.RuntimeException"/>
+    </module>
+    <module name="ExplicitInitialization"/>
+    <module name="DefaultComesLast"/>
+    <module name="FallThrough"/>
+    <module name="MultipleVariableDeclarations"/>
+    <module name="UnnecessaryParentheses"/>
+    <module name="RedundantImport"/>
+    <module name="UnusedImports">
+      <property name="processJavadoc" value="true"/>
+    </module>
+    <module name="ImportOrder">
+      <property name="option" value="top"/>
+    </module>
+    <module name="UpperEll"/>
+    <module name="ArrayTypeStyle"/>
+    <module name="RedundantModifier">
+      <property name="tokens" value="METHOD_DEF,VARIABLE_DEF,ANNOTATION_FIELD_DEF,INTERFACE_DEF,CLASS_DEF,ENUM_DEF"/>
+    </module>
+    <module name="ClassTypeParameterName"/>
+    <module name="LocalFinalVariableName"/>
+    <module name="LocalVariableName"/>
+    <module name="MemberName"/>
+    <module name="MethodName">
+      <property name="format" value="^(([A-Z][A-Z0-9]+)|([a-z][a-z0-9]*))([A-Z][a-z0-9]*)*"/>
+    </module>
+    <module name="MethodTypeParameterName"/>
+    <module name="PackageName"/>
+    <module name="ParameterName"/>
+    <module name="StaticVariableName"/>
+    <module name="TypeName"/>
+    <module name="LineLength">
+      <property name="max" value="120"/>
+    </module>
+    <module name="GenericWhitespace"/>
+    <module name="EmptyForInitializerPad"/>
+    <module name="EmptyForIteratorPad"/>
+    <module name="MethodParamPad"/>
+    <module name="NoWhitespaceAfter">
+       <property name="tokens" value="BNOT,DEC,DOT,INC,LNOT,UNARY_MINUS,UNARY_PLUS"/>
+    </module>
+    <module name="NoWhitespaceBefore">
+      <property name="allowLineBreaks" value="true"/>
+      <property name="tokens" value="SEMI,POST_DEC,POST_INC"/>
+    </module>
+    <module name="OperatorWrap"/>
+    <module name="ParenPad"/>
+    <module name="TypecastParenPad"/>
+    <module name="WhitespaceAfter">
+      <property name="tokens" value="COMMA,SEMI,TYPECAST"/>
+    </module>
+    <module name="WhitespaceAround"/>
+  </module>
+  <module name="RegexpHeader">
+    <property name="headerFile" value="config/checkstyle/license-regexp.txt"/>
+    <property name="fileExtensions" value="java"/>
+  </module>
+  <module name="FileTabCharacter">
+    <property name="fileExtensions" value="java"/>
+  </module>
+</module>

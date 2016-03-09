@@ -17,28 +17,43 @@ apply plugin: "teavm"
 mainClassName = "org.teavm.example.Client"
 
 teavm {
+    // True to automatically include basic TeaVM dependencies.
+    includeDependencies = true
     // Version of automatically included TeaVM libs.
-    version = "0.4.3";
+    version = "0.4.3"
     // Directory in the build folder with compiled TeaVM sources.
-    targetDirectory = "dist";
+    targetDirectory = "javascript"
+    // Name of the generated JS file.
+    targetFileName = "classes.js"
+    // True to minify generated JS file.
+    minifying = true
+    // True to generate TeaVM debugging info.
+    debugInformationGenerated = true
+    // True to generate source maps for debugging in browsers.
+    sourceMapsGenerated = true
+    // True to copy source files to build folder.
+    sourceFilesCopied = true
+    // True to run in incremental mode. Not advised in production mode.
+    incremental = false
     // TeaVM cache directory in build folder.
     cacheDirectory = "teavm-cache";
-    // Name of the generated JS file.
-    targetFile = "app.js";
+    // Map (string to string) with compiler properties.
+    // See: http://groovy-lang.org/groovy-dev-kit.html#Collections-Maps
+    properties = [:]
     /* Runtime javascript inclusion:
-        NONE: don't include runtime.
-        MERGED: merge runtime into main javascript file.
-        SEPARATE: include runtime as separated file.
-     */
-    runtime org.teavm.tooling.RuntimeCopyOperation.SEPARATE
-    // True to minify generated JS file.
-    minify = true;
-    // True to enerate TeaVM debugging info.
-    debugInfo = true;
-    // True to generate JS-to-Java source maps for debugging in browsers.
-    sourceMaps = true;
-    // True to copy source files to build folder.
-    sourceFilesCopied = true;
+        NONE: don't include runtime.js.
+        MERGED: merge runtime.js into main javascript file.
+        SEPARATE: include runtime.js as separate file.
+    */
+    runtime = org.teavm.tooling.RuntimeCopyOperation.SEPARATE
     // True to include a simple HTML page.
-    mainPageIncluded = true;
+    mainPageIncluded = true
+    // List of classes implementing ClassHolderTransformer interface.
+    transformers = []
+    // Map of class names to their aliases in generated JS file.
+    classAliases = ["org.teavm.example.Client": "Client"]
+    // List of maps with method aliases properties. Each properties map
+    // should contain 5 entries -  4 string values: alias, className,
+    // methodName, descriptor and 1 list of strings: types.
+    methodAliases = []
 }

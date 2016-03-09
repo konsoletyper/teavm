@@ -3,6 +3,7 @@ apply plugin: 'eclipse'
 apply plugin: 'idea'
 apply plugin: 'maven'
 apply plugin: 'signing'
+apply plugin: 'checkstyle'
 
 sourceCompatibility = 1.6
 
