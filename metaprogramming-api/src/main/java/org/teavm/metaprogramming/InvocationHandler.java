@@ -18,5 +18,5 @@ package org.teavm.metaprogramming;
 import org.teavm.metaprogramming.reflect.ReflectMethod;
 
 public interface InvocationHandler<T> {
-    Computation<?> invoke(Value<T> proxy, ReflectMethod method, Value<Object>[] args);
+    void invoke(Value<T> proxy, ReflectMethod method, Value<Object>[] args);
 }

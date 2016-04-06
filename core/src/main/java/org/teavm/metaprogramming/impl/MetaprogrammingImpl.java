@@ -15,6 +15,8 @@
  */
 package org.teavm.metaprogramming.impl;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.metaprogramming.Action;
 import org.teavm.metaprogramming.Computation;
@@ -28,14 +30,19 @@ import org.teavm.metaprogramming.impl.reflect.ReflectClassImpl;
 import org.teavm.metaprogramming.impl.reflect.ReflectContext;
 import org.teavm.metaprogramming.impl.reflect.ReflectFieldImpl;
 import org.teavm.metaprogramming.impl.reflect.ReflectMethodImpl;
+import org.teavm.metaprogramming.reflect.ReflectMethod;
+import org.teavm.model.AccessLevel;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ElementModifier;
 import org.teavm.model.Instruction;
 import org.teavm.model.InstructionLocation;
+import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
+import org.teavm.model.Program;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.DoubleConstantInstruction;
@@ -44,11 +51,13 @@ import org.teavm.model.instructions.FloatConstantInstruction;
 import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.instructions.JumpInstruction;
 import org.teavm.model.instructions.LongConstantInstruction;
 import org.teavm.model.instructions.NullConstantInstruction;
 import org.teavm.model.util.InstructionTransitionExtractor;
 
 public final class MetaprogrammingImpl {
+    static Map<String, Integer> proxySuffixGenerators = new HashMap<>();
     static ClassLoader classLoader;
     static ClassReaderSource classSource;
     static ReflectContext reflectContext;
@@ -207,8 +216,86 @@ public final class MetaprogrammingImpl {
 
     @SuppressWarnings("WeakerAccess")
     public static <T> Value<T> proxy(ReflectClass<T> type, InvocationHandler<T> handler) {
-        unsupported();
-        return null;
+        ValueType innerType = ((ReflectClassImpl<?>) type).type;
+        ClassHolder cls = new ClassHolder(createProxyName(type.getName()));
+        cls.setLevel(AccessLevel.PUBLIC);
+
+        String typeName = ((ValueType.Object) innerType).getClassName();
+        org.teavm.model.ClassReader typeReader = classSource.get(typeName);
+        if (typeReader.hasModifier(ElementModifier.INTERFACE)) {
+            cls.setParent("java.lang.Object");
+            cls.getInterfaces().add(typeName);
+        } else {
+            cls.setParent(typeName);
+        }
+
+        ProxyVariableContext nestedVarContext = new ProxyVariableContext(varContext, cls);
+        for (ReflectMethod method : type.getMethods()) {
+            ReflectMethodImpl methodImpl = (ReflectMethodImpl) method;
+            if (methodImpl.method.getProgram() != null && methodImpl.method.getProgram().basicBlockCount() > 0
+                    || methodImpl.method.hasModifier(ElementModifier.NATIVE)
+                    || !methodImpl.method.hasModifier(ElementModifier.ABSTRACT)) {
+                continue;
+            }
+
+            MethodHolder methodHolder = new MethodHolder(methodImpl.method.getDescriptor());
+            methodHolder.setLevel(AccessLevel.PUBLIC);
+
+            ValueType returnTypeBackup = returnType;
+            VariableContext varContextBackup = varContext;
+            CompositeMethodGenerator generatorBackup = generator;
+            try {
+                returnType = methodHolder.getResultType();
+                varContext = nestedVarContext;
+                generator = new CompositeMethodGenerator(varContext, new Program());
+
+                Program program = generator.program;
+                program.createBasicBlock();
+                generator.blockIndex = 0;
+                BasicBlock startBlock = generator.currentBlock();
+                nestedVarContext.init(startBlock);
+
+                methodHolder.setProgram(program);
+                Variable thisVar = program.createVariable();
+                int argumentCount = methodImpl.method.parameterCount();
+                @SuppressWarnings("unchecked")
+                ValueImpl<Object>[] arguments = (ValueImpl<Object>[]) new ValueImpl<?>[argumentCount];
+                for (int i = 0; i < arguments.length; ++i) {
+                    arguments[i] = new ValueImpl<>(program.createVariable(), nestedVarContext,
+                            methodImpl.method.parameterType(i));
+                }
+                for (int i = 0; i < arguments.length; ++i) {
+                    ValueType argType = methodImpl.method.parameterType(i);
+                    Variable var = generator.box(arguments[i].innerValue, argType);
+                    arguments[i] = new ValueImpl<>(var, nestedVarContext, argType);
+                }
+
+                handler.invoke(new ValueImpl<>(thisVar, nestedVarContext, innerType), methodImpl, arguments);
+                close();
+
+                JumpInstruction jumpToStart = new JumpInstruction();
+                jumpToStart.setTarget(program.basicBlockAt(startBlock.getIndex() + 1));
+                startBlock.getInstructions().add(jumpToStart);
+
+                //new BoxingEliminator().optimize(program);
+                cls.addMethod(methodHolder);
+            } finally {
+                returnType = returnTypeBackup;
+                varContext = varContextBackup;
+                generator = generatorBackup;
+            }
+        }
+
+        ValueImpl<T> result = new ValueImpl<>(nestedVarContext.createInstance(generator), varContext, innerType);
+
+        agent.submitClass(cls);
+        return result;
+    }
+
+    private static String createProxyName(String className) {
+        int suffix = proxySuffixGenerators.getOrDefault(className, 0);
+        proxySuffixGenerators.put(className, suffix + 1);
+        return className + "$proxy" + suffix;
     }
 
     private static void returnValue(Variable var) {
