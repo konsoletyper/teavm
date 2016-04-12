@@ -24,6 +24,7 @@ import org.teavm.dependency.MethodDependency;
 import org.teavm.dependency.MethodDependencyInfo;
 import org.teavm.metaprogramming.impl.model.MethodDescriber;
 import org.teavm.metaprogramming.impl.model.MethodModel;
+import org.teavm.metaprogramming.impl.optimization.Optimizations;
 import org.teavm.metaprogramming.impl.reflect.ReflectContext;
 import org.teavm.model.CallLocation;
 import org.teavm.model.MethodReference;
@@ -83,7 +84,7 @@ public class MetaprogrammingDependencyListener extends AbstractDependencyListene
 
     private void emitSingleUsage(MethodModel model, ProgramEmitter pe, DependencyAgent agent,
             ValueEmitter[] paramVars) {
-        MethodReference usage = model.getUsages().values().stream().findFirst().get();
+        MethodReference usage = model.getUsages().values().stream().findFirst().orElse(null);
         ValueEmitter result = pe.invoke(usage, paramVars);
         if (usage.getReturnType() == ValueType.VOID) {
             pe.exit();
@@ -91,7 +92,8 @@ public class MetaprogrammingDependencyListener extends AbstractDependencyListene
             assert result != null : "Expected non-null result at " + model.getMethod();
             result.returnValue();
         }
-        agent.submitMethod(model.getMethod(), pe.getProgram());
+
+        agent.submitMethod(model.getMethod(), new Optimizations().apply(pe.getProgram()));
     }
 
     private void emitMultipleUsage(MethodModel model, ProgramEmitter pe, DependencyAgent agent,
@@ -130,6 +132,6 @@ public class MetaprogrammingDependencyListener extends AbstractDependencyListene
             }
         });
 
-        agent.submitMethod(model.getMethod(), pe.getProgram());
+        agent.submitMethod(model.getMethod(), new Optimizations().apply(pe.getProgram()));
     }
 }
