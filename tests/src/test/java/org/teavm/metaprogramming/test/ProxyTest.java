@@ -22,7 +22,6 @@ import static org.teavm.metaprogramming.Metaprogramming.exit;
 import static org.teavm.metaprogramming.Metaprogramming.proxy;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.teavm.classlib.java.lang.StringBuilderTest;
 import org.teavm.junit.SkipJVM;
 import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.metaprogramming.CompileTime;

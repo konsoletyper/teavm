@@ -26,7 +26,6 @@ import java.util.stream.Stream;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.metaprogramming.ReflectClass;
 import org.teavm.metaprogramming.Value;
-import org.teavm.metaprogramming.impl.AliasFinder.ArrayElement;
 import org.teavm.metaprogramming.impl.reflect.ReflectClassImpl;
 import org.teavm.metaprogramming.impl.reflect.ReflectFieldImpl;
 import org.teavm.metaprogramming.impl.reflect.ReflectMethodImpl;
@@ -454,10 +453,10 @@ public class CompositeMethodGenerator {
         private int variableOffset;
         int[] variableMapping;
         CapturedValue[] capturedValues;
-        ArrayElement[] arrayElements;
+        AliasFinder.ArrayElement[] arrayElements;
 
-        TemplateSubstitutor(CapturedValue[] capturedValues, int[] variableMapping, ArrayElement[] arrayElements,
-                int blockOffset, int variableOffset) {
+        TemplateSubstitutor(CapturedValue[] capturedValues, int[] variableMapping,
+                AliasFinder.ArrayElement[] arrayElements, int blockOffset, int variableOffset) {
             this.capturedValues = capturedValues;
             this.variableMapping = variableMapping;
             this.arrayElements = arrayElements;
@@ -482,7 +481,7 @@ public class CompositeMethodGenerator {
             if (capturedValues[index] != null) {
                 return captureValue(capturedValues[index]);
             }
-            ArrayElement elem = arrayElements[index];
+            AliasFinder.ArrayElement elem = arrayElements[index];
             if (elem != null) {
                 int arrayVar = variableMapping[elem.array];
                 if (capturedValues[arrayVar] != null) {
@@ -770,7 +769,7 @@ public class CompositeMethodGenerator {
         public void getElement(VariableReader receiver, VariableReader array, VariableReader index) {
             int arrayIndex = variableMapping[array.getIndex()];
 
-            ArrayElement elem = arrayElements[receiver.getIndex()];
+            AliasFinder.ArrayElement elem = arrayElements[receiver.getIndex()];
             if (elem != null && capturedValues[arrayIndex] != null) {
                 AssignInstruction insn = new AssignInstruction();
                 insn.setAssignee(var(receiver));

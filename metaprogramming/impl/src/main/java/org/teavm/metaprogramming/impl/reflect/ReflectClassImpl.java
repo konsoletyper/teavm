@@ -53,7 +53,7 @@ public class ReflectClassImpl<T> implements ReflectClass<T> {
         this.context = context;
     }
 
-    public ReflectContext getReflectContext() {
+    ReflectContext getReflectContext() {
         return context;
     }
 
@@ -265,7 +265,7 @@ public class ReflectClassImpl<T> implements ReflectClass<T> {
         });
     }
 
-    public ReflectMethodImpl getDeclaredMethod(MethodDescriptor method) {
+    private ReflectMethodImpl getDeclaredMethod(MethodDescriptor method) {
         resolve();
         return methods.computeIfAbsent(method, m -> {
             MethodReader methodReader = classReader.getMethod(m);

@@ -42,16 +42,11 @@ import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.NumericOperandType;
 import org.teavm.model.instructions.SwitchTableEntryReader;
 
-/**
- *
- * @author Alexey Andreev
- */
-public class AliasFinder {
-    int[] aliases;
-    Object[] constants;
-    ArrayElement[] arrayElements;
+class AliasFinder {
+    private int[] aliases;
+    private ArrayElement[] arrayElements;
 
-    public void findAliases(ProgramReader program) {
+    void findAliases(ProgramReader program) {
         DisjointSet set = new DisjointSet();
         for (int i = 0; i < program.variableCount(); ++i) {
             set.create();
@@ -85,7 +80,7 @@ public class AliasFinder {
         }
 
         aliases = variables;
-        constants = reader.constants;
+        Object[] constants = reader.constants;
         arrayElements = reader.arrayElements;
 
         for (int i = 0; i < arrayElements.length; ++i) {
@@ -102,29 +97,25 @@ public class AliasFinder {
         }
     }
 
-    public static class ArrayElement {
+    static class ArrayElement {
         public int array;
         public int index;
     }
 
-    public int[] getAliases() {
+    int[] getAliases() {
         return aliases.clone();
     }
 
-    public Object[] getConstants() {
-        return constants.clone();
-    }
-
-    public ArrayElement[] getArrayElements() {
+    ArrayElement[] getArrayElements() {
         return arrayElements.clone();
     }
 
-    static class AliasReader implements InstructionReader {
+    private static class AliasReader implements InstructionReader {
         DisjointSet disjointSet;
         Object[] constants;
         ArrayElement[] arrayElements;
 
-        AliasReader(DisjointSet disjointSet, int variableCount) {
+        private AliasReader(DisjointSet disjointSet, int variableCount) {
             this.disjointSet = disjointSet;
             this.constants = new Object[variableCount];
             this.arrayElements = new ArrayElement[variableCount];

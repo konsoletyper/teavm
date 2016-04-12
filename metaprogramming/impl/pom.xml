@@ -18,21 +18,32 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <parent>
+    <artifactId>teavm</artifactId>
+    <groupId>org.teavm</groupId>
+    <version>1.0.0-SNAPSHOT</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>org.teavm</groupId>
-    <artifactId>teavm</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
-  </parent>
-  <artifactId>teavm-metaprogramming-api</artifactId>
+  <artifactId>teavm-metaprogramming-impl</artifactId>
 
   <packaging>bundle</packaging>
 
-  <name>TeaVM metaprogramming API</name>
-  <description>Declaration of interfaces and annotations for TeaVM metaprogramming</description>
+  <name>TeaVM metaprogramming API implementation</name>
+  <description>Implementation of metaprogramming API</description>
 
   <dependencies>
+    <dependency>
+      <groupId>org.teavm</groupId>
+      <artifactId>teavm-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.teavm</groupId>
+      <artifactId>teavm-metaprogramming-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
@@ -46,7 +57,8 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
         <configuration>
-          <configLocation>../checkstyle.xml</configLocation>
+          <configLocation>../../checkstyle.xml</configLocation>
+          <propertyExpansion>config_loc=${basedir}/../..</propertyExpansion>
         </configuration>
       </plugin>
       <plugin>

@@ -20,10 +20,6 @@ import org.teavm.metaprogramming.Value;
 import org.teavm.model.InstructionLocation;
 import org.teavm.model.ValueType;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class LazyValueImpl<T> implements Value<T> {
     boolean evaluated;
     VariableContext context;

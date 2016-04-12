@@ -66,6 +66,7 @@ public class SourceLocation {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(method.getName());
-        return lineNumber > 0 ? fileName + ":" + lineNumber : fileName;
+        sb.append(lineNumber > 0 ? fileName + ":" + lineNumber : fileName);
+        return sb.toString();
     }
 }

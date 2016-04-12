@@ -21,10 +21,6 @@ import org.teavm.metaprogramming.reflect.ReflectField;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReader;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class ReflectFieldImpl implements ReflectField {
     private ReflectContext context;
     private ReflectClassImpl<?> declaringClass;

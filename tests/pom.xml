@@ -57,10 +57,8 @@
     </dependency>
     <dependency>
       <groupId>org.teavm</groupId>
-      <artifactId>teavm-metaprogramming-api</artifactId>
+      <artifactId>teavm-metaprogramming-impl</artifactId>
       <version>${project.version}</version>
-      <classifier>tests</classifier>
-      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>junit</groupId>

@@ -24,10 +24,6 @@ import org.teavm.model.ElementModifier;
 import org.teavm.model.ElementReader;
 import org.teavm.model.ValueType;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class ReflectContext {
     private ClassReaderSource classSource;
     private Map<ValueType, ReflectClassImpl<?>> classes = new HashMap<>();

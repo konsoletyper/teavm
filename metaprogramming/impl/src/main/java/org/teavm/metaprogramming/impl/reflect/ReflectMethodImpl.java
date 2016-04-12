@@ -24,10 +24,6 @@ import org.teavm.metaprogramming.reflect.ReflectAnnotatedElement;
 import org.teavm.metaprogramming.reflect.ReflectMethod;
 import org.teavm.model.MethodReader;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class ReflectMethodImpl implements ReflectMethod {
     private ReflectContext context;
     private ReflectClassImpl<?> declaringClass;

@@ -79,7 +79,7 @@
   </properties>
 
   <modules>
-    <module>metaprogramming-api</module>
+    <module>metaprogramming/api</module>
     <module>core</module>
     <module>classlib</module>
     <module>jso/core</module>
@@ -95,6 +95,7 @@
     <module>tools/junit</module>
     <module>tests</module>
     <module>extras-slf4j</module>
+    <module>metaprogramming/impl</module>
   </modules>
 
   <dependencyManagement>

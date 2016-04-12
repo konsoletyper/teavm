@@ -45,7 +45,8 @@
     <file type="gwt" url="file://$PROJECT_DIR$/samples/benchmark" />
     <file type="Osmorc" url="file://$PROJECT_DIR$/classlib" />
     <file type="Osmorc" url="file://$PROJECT_DIR$/core" />
-    <file type="Osmorc" url="file://$PROJECT_DIR$/metaprogramming-api" />
+    <file type="Osmorc" url="file://$PROJECT_DIR$/metaprogramming/api" />
+    <file type="Osmorc" url="file://$PROJECT_DIR$/metaprogramming/impl" />
     <file type="Osmorc" url="file://$PROJECT_DIR$/platform" />
     <file type="Osmorc" url="file://$PROJECT_DIR$/tools/chrome-rdp" />
     <file type="Osmorc" url="file://$PROJECT_DIR$/tools/core" />

@@ -26,6 +26,7 @@ import org.teavm.metaprogramming.LazyComputation;
 import org.teavm.metaprogramming.ReflectClass;
 import org.teavm.metaprogramming.SourceLocation;
 import org.teavm.metaprogramming.Value;
+import org.teavm.metaprogramming.impl.optimization.Optimizations;
 import org.teavm.metaprogramming.impl.reflect.ReflectClassImpl;
 import org.teavm.metaprogramming.impl.reflect.ReflectContext;
 import org.teavm.metaprogramming.impl.reflect.ReflectFieldImpl;
@@ -277,7 +278,7 @@ public final class MetaprogrammingImpl {
                 jumpToStart.setTarget(program.basicBlockAt(startBlock.getIndex() + 1));
                 startBlock.getInstructions().add(jumpToStart);
 
-                //new BoxingEliminator().optimize(program);
+                new Optimizations().apply(program);
                 cls.addMethod(methodHolder);
             } finally {
                 returnType = returnTypeBackup;

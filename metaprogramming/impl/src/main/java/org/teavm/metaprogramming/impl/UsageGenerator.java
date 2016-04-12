@@ -62,7 +62,7 @@ class UsageGenerator {
         this.classLoader = classLoader;
     }
 
-    public void installProxyEmitter() {
+    void installProxyEmitter() {
         Diagnostics diagnostics = agent.getDiagnostics();
 
         try {
