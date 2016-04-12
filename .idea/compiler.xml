@@ -40,6 +40,7 @@
         <module name="teavm-maven-plugin" />
         <module name="teavm-maven-webapp" />
         <module name="teavm-metaprogramming-api" />
+        <module name="teavm-metaprogramming-impl" />
         <module name="teavm-platform" />
         <module name="teavm-samples-async" />
         <module name="teavm-samples-benchmark" />
@@ -69,6 +70,7 @@
       <module name="teavm-maven-plugin" target="1.8" />
       <module name="teavm-maven-webapp" target="1.5" />
       <module name="teavm-metaprogramming-api" target="1.8" />
+      <module name="teavm-metaprogramming-impl" target="1.8" />
       <module name="teavm-platform" target="1.8" />
       <module name="teavm-samples" target="1.5" />
       <module name="teavm-samples-async" target="1.8" />

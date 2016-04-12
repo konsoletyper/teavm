@@ -64,6 +64,7 @@
         <artifactId>maven-checkstyle-plugin</artifactId>
         <configuration>
           <configLocation>../../checkstyle.xml</configLocation>
+          <propertyExpansion>config_loc=${basedir}/../..</propertyExpansion>
         </configuration>
       </plugin>
       <plugin>

@@ -96,7 +96,7 @@
             </goals>
             <configuration>
               <targetDirectory>${project.build.directory}/generated/js/teavm</targetDirectory>
-              <mainClass>org.teavm.samples.kotlin.KotlinPackage</mainClass>
+              <mainClass>org.teavm.samples.kotlin.HelloKt</mainClass>
               <runtime>SEPARATE</runtime>
               <minifying>false</minifying>
               <debugInformationGenerated>true</debugInformationGenerated>
