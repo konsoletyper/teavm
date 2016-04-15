@@ -148,11 +148,11 @@ public class ProgramParser implements VariableDebugInformation {
 
     private int popDouble() {
         if (stack == null || stack.type != DOUBLE_SECOND_HALF) {
-            throw new AssertionError("Illegal stack state at " + index);
+            throw new AssertionError("***Illegal stack state at " + index);
         }
         stack = stack.next;
         if (stack == null || stack.type != DOUBLE_FIRST_HALF) {
-            throw new AssertionError("Illegal stack state at " + index);
+            throw new AssertionError("***Illegal stack state at " + index);
         }
         int depth = stack.depth;
         stack = stack.next;
@@ -1046,6 +1046,7 @@ public class ProgramParser implements VariableDebugInformation {
                     break;
                 case Opcodes.POP2:
                     if (stack.type == SINGLE) {
+                        popSingle();
                         popSingle();
                     } else {
                         popDouble();
