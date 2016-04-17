@@ -22,18 +22,14 @@ import org.teavm.javascript.ast.*;
 import org.teavm.model.MethodReference;
 import org.teavm.parsing.ClassDateProvider;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class DiskRegularMethodNodeCache implements MethodNodeCache {
-    private File directory;
-    private AstIO astIO;
-    private ClassDateProvider classDateProvider;
-    private Map<MethodReference, Item> cache = new HashMap<>();
-    private Map<MethodReference, AsyncItem> asyncCache = new HashMap<>();
-    private Set<MethodReference> newMethods = new HashSet<>();
-    private Set<MethodReference> newAsyncMethods = new HashSet<>();
+    private final File directory;
+    private final AstIO astIO;
+    private final ClassDateProvider classDateProvider;
+    private final Map<MethodReference, Item> cache = new HashMap<>();
+    private final Map<MethodReference, AsyncItem> asyncCache = new HashMap<>();
+    private final Set<MethodReference> newMethods = new HashSet<>();
+    private final Set<MethodReference> newAsyncMethods = new HashSet<>();
 
     public DiskRegularMethodNodeCache(File directory, SymbolTable symbolTable, SymbolTable fileTable,
             ClassDateProvider classDateProvider) {
@@ -52,17 +48,7 @@ public class DiskRegularMethodNodeCache implements MethodNodeCache {
             if (file.exists()) {
                 try (InputStream stream = new BufferedInputStream(new FileInputStream(file))) {
                     DataInput input = new DataInputStream(stream);
-                    int depCount = input.readShort();
-                    boolean dependenciesChanged = false;
-                    for (int i = 0; i < depCount; ++i) {
-                        String depClass = input.readUTF();
-                        Date depDate = classDateProvider.getModificationDate(depClass);
-                        if (depDate == null || depDate.after(new Date(file.lastModified()))) {
-                            dependenciesChanged = true;
-                            break;
-                        }
-                    }
-                    if (!dependenciesChanged) {
+                    if (!checkIfDependenciesChanged(input, file)) {
                         item.node = astIO.read(input, methodReference);
                     }
                 } catch (IOException e) {
@@ -91,17 +77,7 @@ public class DiskRegularMethodNodeCache implements MethodNodeCache {
             if (file.exists()) {
                 try (InputStream stream = new BufferedInputStream(new FileInputStream(file))) {
                     DataInput input = new DataInputStream(stream);
-                    int depCount = input.readShort();
-                    boolean dependenciesChanged = false;
-                    for (int i = 0; i < depCount; ++i) {
-                        String depClass = input.readUTF();
-                        Date depDate = classDateProvider.getModificationDate(depClass);
-                        if (depDate == null || depDate.after(new Date(file.lastModified()))) {
-                            dependenciesChanged = true;
-                            break;
-                        }
-                    }
-                    if (!dependenciesChanged) {
+                    if (!checkIfDependenciesChanged(input, file)) {
                         item.node = astIO.readAsync(input, methodReference);
                     }
                 } catch (IOException e) {
@@ -110,6 +86,18 @@ public class DiskRegularMethodNodeCache implements MethodNodeCache {
             }
         }
         return item.node;
+    }
+
+    private boolean checkIfDependenciesChanged(DataInput input, File file) throws IOException {
+        int depCount = input.readShort();
+        for (int i = 0; i < depCount; ++i) {
+            String depClass = input.readUTF();
+            Date depDate = classDateProvider.getModificationDate(depClass);
+            if (depDate == null || depDate.after(new Date(file.lastModified()))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -159,8 +147,8 @@ public class DiskRegularMethodNodeCache implements MethodNodeCache {
                 + (async ? "-async" : ""));
     }
 
-    static class AstDependencyAnalyzer implements StatementVisitor, ExprVisitor {
-        Set<String> dependencies = new HashSet<>();
+    private static class AstDependencyAnalyzer implements StatementVisitor, ExprVisitor {
+        final Set<String> dependencies = new HashSet<>();
 
         private void visitSequence(List<Statement> statements) {
             for (Statement stmt : statements) {
@@ -288,7 +276,9 @@ public class DiskRegularMethodNodeCache implements MethodNodeCache {
         @Override
         public void visit(QualificationExpr expr) {
             dependencies.add(expr.getField().getClassName());
-            expr.getQualified().acceptVisitor(this);
+            if (expr.getQualified() != null) {
+                expr.getQualified().acceptVisitor(this);
+            }
         }
 
         @Override
@@ -313,10 +303,6 @@ public class DiskRegularMethodNodeCache implements MethodNodeCache {
         }
 
         @Override
-        public void visit(StaticClassExpr expr) {
-        }
-
-        @Override
         public void visit(GotoPartStatement statement) {
         }
 
@@ -330,11 +316,11 @@ public class DiskRegularMethodNodeCache implements MethodNodeCache {
         }
     }
 
-    static class Item {
+    private static class Item {
         RegularMethodNode node;
     }
 
-    static class AsyncItem {
+    private static class AsyncItem {
         AsyncMethodNode node;
     }
 }

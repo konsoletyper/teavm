@@ -19,18 +19,16 @@ import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface AliasProvider {
-    String getAlias(FieldReference field);
+    String getFieldAlias(FieldReference field);
 
-    String getAlias(MethodReference method);
+    String getStaticFieldAlias(FieldReference field);
 
-    String getAlias(MethodDescriptor method);
+    String getStaticMethodAlias(MethodReference method);
 
-    String getAlias(String className);
+    String getMethodAlias(MethodDescriptor method);
+
+    String getClassAlias(String className);
 
     String getFunctionAlias(String name);
 }

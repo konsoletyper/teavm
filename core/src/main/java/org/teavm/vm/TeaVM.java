@@ -69,20 +69,20 @@ import org.teavm.vm.spi.TeaVMPlugin;
  * @author Alexey Andreev
  */
 public class TeaVM implements TeaVMHost, ServiceRepository {
-    private ClassReaderSource classSource;
-    private DependencyChecker dependencyChecker;
-    private AccumulationDiagnostics diagnostics = new AccumulationDiagnostics();
-    private ClassLoader classLoader;
+    private final ClassReaderSource classSource;
+    private final DependencyChecker dependencyChecker;
+    private final AccumulationDiagnostics diagnostics = new AccumulationDiagnostics();
+    private final ClassLoader classLoader;
     private boolean minifying = true;
     private boolean bytecodeLogging;
-    private OutputStream logStream = System.out;
-    private Map<String, TeaVMEntryPoint> entryPoints = new HashMap<>();
-    private Map<String, String> exportedClasses = new HashMap<>();
-    private Map<MethodReference, Generator> methodGenerators = new HashMap<>();
-    private Map<MethodReference, Injector> methodInjectors = new HashMap<>();
-    private List<RendererListener> rendererListeners = new ArrayList<>();
-    private Map<Class<?>, Object> services = new HashMap<>();
-    private Properties properties = new Properties();
+    private final OutputStream logStream = System.out;
+    private final Map<String, TeaVMEntryPoint> entryPoints = new HashMap<>();
+    private final Map<String, String> exportedClasses = new HashMap<>();
+    private final Map<MethodReference, Generator> methodGenerators = new HashMap<>();
+    private final Map<MethodReference, Injector> methodInjectors = new HashMap<>();
+    private final List<RendererListener> rendererListeners = new ArrayList<>();
+    private final Map<Class<?>, Object> services = new HashMap<>();
+    private final Properties properties = new Properties();
     private DebugInformationEmitter debugEmitter;
     private ProgramCache programCache;
     private MethodNodeCache astCache = new EmptyRegularMethodNodeCache();
@@ -90,8 +90,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     private TeaVMProgressListener progressListener;
     private boolean cancelled;
     private ListableClassHolderSource writtenClasses;
-    private Set<MethodReference> asyncMethods = new HashSet<>();
-    private Set<MethodReference> asyncFamilyMethods = new HashSet<>();
+    private final Set<MethodReference> asyncMethods = new HashSet<>();
+    private final Set<MethodReference> asyncFamilyMethods = new HashSet<>();
 
     TeaVM(ClassReaderSource classSource, ClassLoader classLoader) {
         this.classSource = classSource;
@@ -288,10 +288,6 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         exportedClasses.put(name, className);
     }
 
-    public void linkType(String className) {
-        dependencyChecker.linkClass(className, null).initClass(null);
-    }
-
     /**
      * Gets a {@link ClassReaderSource} which is used by this TeaVM instance. It is exactly what was
      * passed to {@link TeaVMBuilder#setClassSource(ClassHolderSource)}.
@@ -420,7 +416,6 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             return;
         }
         DefaultNamingStrategy naming = new DefaultNamingStrategy(aliasProvider, dependencyChecker.getClassSource());
-        naming.setMinifying(minifying);
         SourceWriterBuilder builder = new SourceWriterBuilder(naming);
         builder.setMinified(minifying);
         SourceWriter sourceWriter = builder.build(writer);

@@ -73,7 +73,6 @@ import org.teavm.javascript.ast.ReturnStatement;
 import org.teavm.javascript.ast.SequentialStatement;
 import org.teavm.javascript.ast.Statement;
 import org.teavm.javascript.ast.StatementVisitor;
-import org.teavm.javascript.ast.StaticClassExpr;
 import org.teavm.javascript.ast.SubscriptExpr;
 import org.teavm.javascript.ast.SwitchClause;
 import org.teavm.javascript.ast.SwitchStatement;
@@ -100,50 +99,46 @@ import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext {
     private static final String variableNames = "abcdefghijkmnopqrstuvwxyz";
     private static final String variablePartNames = "abcdefghijkmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    private NamingStrategy naming;
-    private SourceWriter writer;
-    private ListableClassHolderSource classSource;
-    private ClassLoader classLoader;
+    private final NamingStrategy naming;
+    private final SourceWriter writer;
+    private final ListableClassHolderSource classSource;
+    private final ClassLoader classLoader;
     private boolean minifying;
-    private Map<MethodReference, InjectorHolder> injectorMap = new HashMap<>();
-    private Map<String, Integer> stringPoolMap = new HashMap<>();
-    private List<String> stringPool = new ArrayList<>();
-    private Properties properties = new Properties();
-    private ServiceRepository services;
+    private final Map<MethodReference, InjectorHolder> injectorMap = new HashMap<>();
+    private final Map<String, Integer> stringPoolMap = new HashMap<>();
+    private final List<String> stringPool = new ArrayList<>();
+    private final Properties properties = new Properties();
+    private final ServiceRepository services;
     private DebugInformationEmitter debugEmitter = new DummyDebugInformationEmitter();
-    private Deque<LocationStackEntry> locationStack = new ArrayDeque<>();
+    private final Deque<LocationStackEntry> locationStack = new ArrayDeque<>();
     private DeferredCallSite lastCallSite;
     private DeferredCallSite prevCallSite;
-    private Set<MethodReference> asyncMethods;
-    private Set<MethodReference> asyncFamilyMethods;
-    private Diagnostics diagnostics;
+    private final Set<MethodReference> asyncMethods;
+    private final Set<MethodReference> asyncFamilyMethods;
+    private final Diagnostics diagnostics;
     private boolean async;
     private Precedence precedence;
-    private Map<String, String> blockIdMap = new HashMap<>();
-    private List<Set<String>> debugNames = new ArrayList<>();
-    private List<String> cachedVariableNames = new ArrayList<>();
+    private final Map<String, String> blockIdMap = new HashMap<>();
+    private final List<Set<String>> debugNames = new ArrayList<>();
+    private final List<String> cachedVariableNames = new ArrayList<>();
     private boolean end;
     private int currentPart;
 
     private static class InjectorHolder {
         public final Injector injector;
 
-        public InjectorHolder(Injector injector) {
+        private InjectorHolder(Injector injector) {
             this.injector = injector;
         }
     }
 
     private static class LocationStackEntry {
-        NodeLocation location;
+        final NodeLocation location;
 
-        public LocationStackEntry(NodeLocation location) {
+        LocationStackEntry(NodeLocation location) {
             this.location = location;
         }
     }
@@ -403,7 +398,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     value = getDefaultValue(field.getType());
                 }
                 FieldReference fieldRef = new FieldReference(cls.getName(), field.getName());
-                writer.appendClass(cls.getName()).append('.').appendField(fieldRef).ws().append("=").ws()
+                writer.append("var ").appendStaticField(fieldRef).ws().append("=").ws()
                         .append(constantToString(value)).append(";").softNewLine();
             }
         } catch (NamingException e) {
@@ -431,9 +426,9 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             }
 
             if (needsClinit) {
-                writer.append("function ").appendClass(cls.getName()).append("_$clinit()").ws()
+                writer.append("function ").appendClass(cls.getName()).append("_$callClinit()").ws()
                         .append("{").softNewLine().indent();
-                writer.appendClass(cls.getName()).append("_$clinit").ws().append("=").ws()
+                writer.appendClass(cls.getName()).append("_$callClinit").ws().append("=").ws()
                         .append("function(){};").newLine();
                 for (MethodNode method : clinitMethods) {
                     renderBody(method, true);
@@ -498,7 +493,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 MethodHolder clinit = classSource.get(cls.getName()).getMethod(
                         new MethodDescriptor("<clinit>", ValueType.VOID));
                 if (clinit != null) {
-                    writer.appendClass(cls.getName()).append("_$clinit");
+                    writer.appendClass(cls.getName()).append("_$callClinit");
                 } else {
                     writer.append('0');
                 }
@@ -624,13 +619,13 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         }
         writer.appendMethodBody(ref).append("(");
         writer.append("this");
-        for (int i = 0; i < args.size(); ++i) {
-            writer.append(",").ws().append(args.get(i));
+        for (String arg : args) {
+            writer.append(",").ws().append(arg);
         }
         writer.append(");").ws().append("}");
     }
 
-    public void renderBody(MethodNode method, boolean inner) throws IOException {
+    private void renderBody(MethodNode method, boolean inner) throws IOException {
         debugNames.clear();
         cachedVariableNames.clear();
         debugNames.addAll(method.getParameterDebugNames());
@@ -1211,7 +1206,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             if (statement.getLocation() != null) {
                 pushLocation(statement.getLocation());
             }
-            writer.appendClass(statement.getClassName()).append("_$clinit();").softNewLine();
+            writer.appendClass(statement.getClassName()).append("_$callClinit();").softNewLine();
             if (statement.getLocation() != null) {
                 popLocation();
             }
@@ -1220,7 +1215,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         }
     }
 
-    public String variableName(int index) {
+    private String variableName(int index) {
         while (index >= cachedVariableNames.size()) {
             cachedVariableNames.add(null);
         }
@@ -1673,7 +1668,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         }
     }
 
-    public String constantToString(Object cst) {
+    private String constantToString(Object cst) {
         if (cst == null) {
             return "null";
         }
@@ -1948,8 +1943,14 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 pushLocation(expr.getLocation());
             }
             precedence = Precedence.MEMBER_ACCESS;
-            expr.getQualified().acceptVisitor(this);
-            writer.append('.').appendField(expr.getField());
+
+            if (expr.getQualified() != null) {
+                expr.getQualified().acceptVisitor(this);
+                writer.append('.').appendField(expr.getField());
+            } else {
+                writer.appendStaticField(expr.getField());
+            }
+
             if (expr.getLocation() != null) {
                 popLocation();
             }
@@ -2140,21 +2141,6 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         }
     }
 
-    @Override
-    public void visit(StaticClassExpr expr) {
-        try {
-            if (expr.getLocation() != null) {
-                pushLocation(expr.getLocation());
-            }
-            writer.append(typeToClsString(naming, expr.getType()));
-            if (expr.getLocation() != null) {
-                popLocation();
-            }
-        } catch (IOException e) {
-            throw new RenderingException("IO error occured", e);
-        }
-    }
-
     private void visitStatements(List<Statement> statements) {
         if (statements.isEmpty()) {
             return;
@@ -2313,10 +2299,10 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     }
 
     private class InjectorContextImpl implements InjectorContext {
-        private List<Expr> arguments;
-        private Precedence precedence = Renderer.this.precedence;
+        private final List<Expr> arguments;
+        private final Precedence precedence = Renderer.this.precedence;
 
-        public InjectorContextImpl(List<Expr> arguments) {
+        InjectorContextImpl(List<Expr> arguments) {
             this.arguments = arguments;
         }
 

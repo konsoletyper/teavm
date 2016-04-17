@@ -76,7 +76,7 @@ class HtmlUnitRunStrategy implements TestRunStrategy {
     private void init() {
         webClient.set(new WebClient(BrowserVersion.CHROME));
         try {
-            page.set(webClient.get().getPage("about:blank"));
+            page.set(webClient.get().<HtmlPage>getPage("about:blank"));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

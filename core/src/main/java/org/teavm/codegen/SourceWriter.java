@@ -21,17 +21,13 @@ import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class SourceWriter implements Appendable, LocationProvider {
-    private Appendable innerWriter;
+    private final Appendable innerWriter;
     private int indentSize;
-    private NamingStrategy naming;
+    private final NamingStrategy naming;
     private boolean lineStart;
     private boolean minified;
-    private int lineWidth;
+    private final int lineWidth;
     private int column;
     private int line;
 
@@ -109,6 +105,10 @@ public class SourceWriter implements Appendable, LocationProvider {
 
     public SourceWriter appendField(FieldReference field) throws NamingException, IOException {
         return append(naming.getNameFor(field));
+    }
+
+    public SourceWriter appendStaticField(FieldReference field) throws NamingException, IOException {
+        return append(naming.getFullNameFor(field));
     }
 
     public SourceWriter appendMethod(MethodDescriptor method) throws NamingException, IOException {

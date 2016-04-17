@@ -15,10 +15,6 @@
  */
 package org.teavm.javascript.ast;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface ExprVisitor {
     void visit(BinaryExpr expr);
 
@@ -45,6 +41,4 @@ public interface ExprVisitor {
     void visit(NewMultiArrayExpr expr);
 
     void visit(InstanceOfExpr expr);
-
-    void visit(StaticClassExpr expr);
 }

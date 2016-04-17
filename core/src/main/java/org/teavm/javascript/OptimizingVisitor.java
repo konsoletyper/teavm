@@ -16,20 +16,17 @@
 package org.teavm.javascript;
 
 import java.util.*;
+import java.util.stream.Collectors;
 import org.teavm.javascript.ast.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 class OptimizingVisitor implements StatementVisitor, ExprVisitor {
-    public Expr resultExpr;
-    public Statement resultStmt;
-    private boolean[] preservedVars;
-    private int[] readFrequencies;
+    private Expr resultExpr;
+    Statement resultStmt;
+    private final boolean[] preservedVars;
+    private final int[] readFrequencies;
     private List<Statement> resultSequence;
 
-    public OptimizingVisitor(boolean[] preservedVars, int[] readFreqencies) {
+    OptimizingVisitor(boolean[] preservedVars, int[] readFreqencies) {
         this.preservedVars = preservedVars;
         this.readFrequencies = readFreqencies;
     }
@@ -261,9 +258,11 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(QualificationExpr expr) {
-        expr.getQualified().acceptVisitor(this);
-        Expr qualified = resultExpr;
-        expr.setQualified(qualified);
+        if (expr.getQualified() != null) {
+            expr.getQualified().acceptVisitor(this);
+            Expr qualified = resultExpr;
+            expr.setQualified(qualified);
+        }
         resultExpr = expr;
     }
 
@@ -298,11 +297,6 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     }
 
     @Override
-    public void visit(StaticClassExpr expr) {
-        resultExpr = expr;
-    }
-
-    @Override
     public void visit(AssignmentStatement statement) {
         if (statement.getLeftValue() == null) {
             statement.getRightValue().acceptVisitor(this);
@@ -331,19 +325,13 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         resultSequence = new ArrayList<>();
         processSequenceImpl(statements);
         wieldTryCatch(resultSequence);
-        List<Statement> result = new ArrayList<>();
-        for (Statement part : resultSequence) {
-            if (part != null) {
-                result.add(part);
-            }
-        }
+        List<Statement> result = resultSequence.stream().filter(part -> part != null).collect(Collectors.toList());
         resultSequence = backup;
         return result;
     }
 
     private boolean processSequenceImpl(List<Statement> statements) {
-        for (int i = 0; i < statements.size(); ++i) {
-            Statement part = statements.get(i);
+        for (Statement part : statements) {
             if (part instanceof SequentialStatement) {
                 if (!processSequenceImpl(((SequentialStatement) part).getSequence())) {
                     return false;
@@ -440,7 +428,6 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                             List<Statement> remaining = statements.subList(i + 1, statements.size());
                             cond.getConsequent().addAll(remaining);
                             remaining.clear();
-                            break check_conditional;
                         }
                     }
                 }

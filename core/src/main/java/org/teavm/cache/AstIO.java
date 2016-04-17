@@ -26,18 +26,14 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.model.instructions.ArrayElementType;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class AstIO {
-    private static NodeModifier[] nodeModifiers = NodeModifier.values();
-    private static BinaryOperation[] binaryOperations = BinaryOperation.values();
-    private static UnaryOperation[] unaryOperations = UnaryOperation.values();
-    private static ArrayElementType[] arrayElementTypes = ArrayElementType.values();
-    private SymbolTable symbolTable;
-    private SymbolTable fileTable;
-    private Map<String, IdentifiedStatement> statementMap = new HashMap<>();
+    private static final NodeModifier[] nodeModifiers = NodeModifier.values();
+    private static final BinaryOperation[] binaryOperations = BinaryOperation.values();
+    private static final UnaryOperation[] unaryOperations = UnaryOperation.values();
+    private static final ArrayElementType[] arrayElementTypes = ArrayElementType.values();
+    private final SymbolTable symbolTable;
+    private final SymbolTable fileTable;
+    private final Map<String, IdentifiedStatement> statementMap = new HashMap<>();
 
     public AstIO(SymbolTable symbolTable, SymbolTable fileTable) {
         this.symbolTable = symbolTable;
@@ -51,14 +47,7 @@ public class AstIO {
             output.writeShort(var);
         }
         output.writeShort(method.getParameterDebugNames().size());
-        for (Set<String> debugNames : method.getParameterDebugNames()) {
-            output.writeShort(debugNames != null ? debugNames.size() : 0);
-            if (debugNames != null) {
-                for (String debugName : debugNames) {
-                    output.writeUTF(debugName);
-                }
-            }
-        }
+        writeParameters(output, method);
         try {
             method.getBody().acceptVisitor(new NodeWriter(output));
         } catch (IOExceptionWrapper e) {
@@ -73,15 +62,7 @@ public class AstIO {
         for (int i = 0; i < varCount; ++i) {
             node.getVariables().add((int) input.readShort());
         }
-        int paramDebugNameCount = input.readShort();
-        for (int i = 0; i < paramDebugNameCount; ++i) {
-            int debugNameCount = input.readShort();
-            Set<String> debugNames = new HashSet<>();
-            for (int j = 0; j < debugNameCount; ++j) {
-                debugNames.add(input.readUTF());
-            }
-            node.getParameterDebugNames().add(debugNames);
-        }
+        readParameters(input, node);
         node.setBody(readStatement(input));
         return node;
     }
@@ -93,14 +74,7 @@ public class AstIO {
             output.writeShort(var);
         }
         output.writeShort(method.getParameterDebugNames().size());
-        for (Set<String> debugNames : method.getParameterDebugNames()) {
-            output.writeShort(debugNames != null ? debugNames.size() : 0);
-            if (debugNames != null) {
-                for (String debugName : debugNames) {
-                    output.writeUTF(debugName);
-                }
-            }
-        }
+        writeParameters(output, method);
         try {
              output.writeShort(method.getBody().size());
              for (int i = 0; i < method.getBody().size(); ++i) {
@@ -111,6 +85,17 @@ public class AstIO {
         }
     }
 
+    private void writeParameters(DataOutput output, MethodNode method) throws IOException {
+        for (Set<String> debugNames : method.getParameterDebugNames()) {
+            output.writeShort(debugNames != null ? debugNames.size() : 0);
+            if (debugNames != null) {
+                for (String debugName : debugNames) {
+                    output.writeUTF(debugName);
+                }
+            }
+        }
+    }
+
     public AsyncMethodNode readAsync(DataInput input, MethodReference method) throws IOException {
         AsyncMethodNode node = new AsyncMethodNode(method);
         node.getModifiers().addAll(unpackModifiers(input.readInt()));
@@ -118,6 +103,17 @@ public class AstIO {
         for (int i = 0; i < varCount; ++i) {
             node.getVariables().add((int) input.readShort());
         }
+        readParameters(input, node);
+        int partCount = input.readShort();
+        for (int i = 0; i < partCount; ++i) {
+            AsyncMethodPart part = new AsyncMethodPart();
+            part.setStatement(readStatement(input));
+            node.getBody().add(part);
+        }
+        return node;
+    }
+
+    private void readParameters(DataInput input, MethodNode node) throws IOException {
         int paramDebugNameCount = input.readShort();
         for (int i = 0; i < paramDebugNameCount; ++i) {
             int debugNameCount = input.readShort();
@@ -127,13 +123,6 @@ public class AstIO {
             }
             node.getParameterDebugNames().add(debugNames);
         }
-        int partCount = input.readShort();
-        for (int i = 0; i < partCount; ++i) {
-            AsyncMethodPart part = new AsyncMethodPart();
-            part.setStatement(readStatement(input));
-            node.getBody().add(part);
-        }
-        return node;
     }
 
     private int packModifiers(Set<NodeModifier> modifiers) {
@@ -154,15 +143,15 @@ public class AstIO {
         return modifiers;
     }
 
-    class NodeWriter implements ExprVisitor, StatementVisitor {
-        private DataOutput output;
+    private class NodeWriter implements ExprVisitor, StatementVisitor {
+        private final DataOutput output;
 
-        public NodeWriter(DataOutput output) {
+        NodeWriter(DataOutput output) {
             super();
             this.output = output;
         }
 
-        public void writeExpr(Expr expr) throws IOException {
+        void writeExpr(Expr expr) throws IOException {
             writeLocation(expr.getLocation());
             expr.acceptVisitor(this);
         }
@@ -515,8 +504,10 @@ public class AstIO {
         @Override
         public void visit(QualificationExpr expr) {
             try {
-                output.writeByte(17);
-                writeExpr(expr.getQualified());
+                output.writeByte(expr.getQualified() != null ? 17 : 18);
+                if (expr.getQualified() != null) {
+                    writeExpr(expr.getQualified());
+                }
                 output.writeInt(symbolTable.lookup(expr.getField().getClassName()));
                 output.writeInt(symbolTable.lookup(expr.getField().getFieldName()));
             } catch (IOException e) {
@@ -527,7 +518,7 @@ public class AstIO {
         @Override
         public void visit(NewExpr expr) {
             try {
-                output.writeByte(18);
+                output.writeByte(19);
                 output.writeInt(symbolTable.lookup(expr.getConstructedClass()));
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
@@ -537,7 +528,7 @@ public class AstIO {
         @Override
         public void visit(NewArrayExpr expr) {
             try {
-                output.writeByte(19);
+                output.writeByte(20);
                 writeExpr(expr.getLength());
                 output.writeInt(symbolTable.lookup(expr.getType().toString()));
             } catch (IOException e) {
@@ -548,7 +539,7 @@ public class AstIO {
         @Override
         public void visit(NewMultiArrayExpr expr) {
             try {
-                output.writeByte(20);
+                output.writeByte(21);
                 output.writeByte(expr.getDimensions().size());
                 for (Expr dimension : expr.getDimensions()) {
                     writeExpr(dimension);
@@ -562,18 +553,8 @@ public class AstIO {
         @Override
         public void visit(InstanceOfExpr expr) {
             try {
-                output.writeByte(21);
-                writeExpr(expr.getExpr());
-                output.writeInt(symbolTable.lookup(expr.getType().toString()));
-            } catch (IOException e) {
-                throw new IOExceptionWrapper(e);
-            }
-        }
-
-        @Override
-        public void visit(StaticClassExpr expr) {
-            try {
                 output.writeByte(22);
+                writeExpr(expr.getExpr());
                 output.writeInt(symbolTable.lookup(expr.getType().toString()));
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
@@ -856,24 +837,31 @@ public class AstIO {
                 return parseInvocationExpr(InvocationType.DYNAMIC, input);
             case 17: {
                 QualificationExpr expr = new QualificationExpr();
-                expr.setQualified(readExpr(input));
                 String className = symbolTable.at(input.readInt());
                 String fieldName = symbolTable.at(input.readInt());
                 expr.setField(new FieldReference(className, fieldName));
                 return expr;
             }
             case 18: {
+                QualificationExpr expr = new QualificationExpr();
+                expr.setQualified(readExpr(input));
+                String className = symbolTable.at(input.readInt());
+                String fieldName = symbolTable.at(input.readInt());
+                expr.setField(new FieldReference(className, fieldName));
+                return expr;
+            }
+            case 19: {
                 NewExpr expr = new NewExpr();
                 expr.setConstructedClass(symbolTable.at(input.readInt()));
                 return expr;
             }
-            case 19: {
+            case 20: {
                 NewArrayExpr expr = new NewArrayExpr();
                 expr.setLength(readExpr(input));
                 expr.setType(ValueType.parse(symbolTable.at(input.readInt())));
                 return expr;
             }
-            case 20: {
+            case 21: {
                 NewMultiArrayExpr expr = new NewMultiArrayExpr();
                 int dimensionCount = input.readByte();
                 for (int i = 0; i < dimensionCount; ++i) {
@@ -882,14 +870,9 @@ public class AstIO {
                 expr.setType(ValueType.parse(symbolTable.at(input.readInt())));
                 return expr;
             }
-            case 21: {
+            case 22: {
                 InstanceOfExpr expr = new InstanceOfExpr();
                 expr.setExpr(readExpr(input));
-                expr.setType(ValueType.parse(symbolTable.at(input.readInt())));
-                return expr;
-            }
-            case 22: {
-                StaticClassExpr expr = new StaticClassExpr();
                 expr.setType(ValueType.parse(symbolTable.at(input.readInt())));
                 return expr;
             }
@@ -911,10 +894,10 @@ public class AstIO {
         return expr;
     }
 
-    static class IOExceptionWrapper extends RuntimeException {
+    private static class IOExceptionWrapper extends RuntimeException {
         private static final long serialVersionUID = -7566355431593608333L;
 
-        public IOExceptionWrapper(Throwable cause) {
+        IOExceptionWrapper(Throwable cause) {
             super(cause);
         }
     }

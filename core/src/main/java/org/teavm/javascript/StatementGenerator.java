@@ -23,13 +23,9 @@ import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 import org.teavm.model.instructions.InvocationType;
 
-/**
- *
- * @author Alexey Andreev
- */
 class StatementGenerator implements InstructionVisitor {
     private int lastSwitchId;
-    List<Statement> statements = new ArrayList<>();
+    final List<Statement> statements = new ArrayList<>();
     GraphIndexer indexer;
     BasicBlock nextBlock;
     BasicBlock currentBlock;
@@ -39,7 +35,7 @@ class StatementGenerator implements InstructionVisitor {
     private NodeLocation currentLocation;
     boolean async;
 
-    public void setCurrentLocation(NodeLocation currentLocation) {
+    void setCurrentLocation(NodeLocation currentLocation) {
         this.currentLocation = currentLocation;
     }
 
@@ -478,8 +474,7 @@ class StatementGenerator implements InstructionVisitor {
             stmt.setLocation(currentLocation);
             statements.add(stmt);
         } else {
-            Expr fieldExpr = Expr.qualify(Expr.staticClass(ValueType.object(insn.getField().getClassName())),
-                    insn.getField());
+            Expr fieldExpr = Expr.qualify(null, insn.getField());
             AssignmentStatement stmt = Statement.assign(Expr.var(insn.getReceiver().getIndex()), fieldExpr);
             stmt.setLocation(currentLocation);
             statements.add(stmt);
@@ -493,7 +488,7 @@ class StatementGenerator implements InstructionVisitor {
         if (insn.getInstance() != null) {
             left = Expr.qualify(Expr.var(insn.getInstance().getIndex()), insn.getField());
         } else {
-            left = Expr.qualify(Expr.staticClass(ValueType.object(insn.getField().getClassName())), insn.getField());
+            left = Expr.qualify(null, insn.getField());
         }
         AssignmentStatement stmt = Statement.assign(left, right);
         stmt.setLocation(currentLocation);

@@ -20,10 +20,6 @@ import java.util.HashMap;
 import java.util.Map;
 import org.teavm.model.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class Expr implements Cloneable {
     private NodeLocation location;
 
@@ -149,12 +145,6 @@ public abstract class Expr implements Cloneable {
         InstanceOfExpr expr = new InstanceOfExpr();
         expr.setExpr(target);
         expr.setType(className);
-        return expr;
-    }
-
-    public static Expr staticClass(ValueType type) {
-        StaticClassExpr expr = new StaticClassExpr();
-        expr.setType(type);
         return expr;
     }
 
