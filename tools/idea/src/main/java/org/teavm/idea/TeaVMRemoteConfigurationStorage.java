@@ -18,21 +18,22 @@ package org.teavm.idea;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.teavm.idea.jps.model.TeaVMJpsConfiguration;
+import org.teavm.idea.jps.model.TeaVMJpsRemoteConfiguration;
 
-@State(name = "teavm", storages = @Storage(id = "other", file = "$MODULE_FILE$"))
-public class TeaVMConfigurationStorage implements PersistentStateComponent<TeaVMJpsConfiguration> {
-    private TeaVMJpsConfiguration state = new TeaVMJpsConfiguration();
+@State(name = "teavm", storages = @Storage(id = "other", file = "$PROJECT_FILE$"))
+public class TeaVMRemoteConfigurationStorage implements PersistentStateComponent<TeaVMJpsRemoteConfiguration> {
+    private TeaVMJpsRemoteConfiguration state = new TeaVMJpsRemoteConfiguration();
 
-    @Nullable
+    @NotNull
     @Override
-    public TeaVMJpsConfiguration getState() {
+    public TeaVMJpsRemoteConfiguration getState() {
         return state.createCopy();
     }
 
     @Override
-    public void loadState(TeaVMJpsConfiguration state) {
+    public void loadState(TeaVMJpsRemoteConfiguration state) {
         this.state.applyChanges(state);
     }
 }

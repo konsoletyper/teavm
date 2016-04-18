@@ -28,8 +28,6 @@ import org.jetbrains.jps.incremental.ProjectBuildException;
 import org.jetbrains.jps.model.module.JpsModule;
 
 public class TeaVMBuilder extends ModuleLevelBuilder {
-    private TeaVMStorageProvider storageProvider = new TeaVMStorageProvider();
-
     public TeaVMBuilder() {
         super(BuilderCategory.CLASS_POST_PROCESSOR);
     }
