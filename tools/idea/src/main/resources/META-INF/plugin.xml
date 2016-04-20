@@ -17,10 +17,17 @@
 
   <idea-version since-build="141.0"/>
 
+  <application-components>
+    <component>
+      <implementation-class>org.teavm.idea.TeaVMJPSRemoteService</implementation-class>
+    </component>
+  </application-components>
+
   <extensions defaultExtensionNs="com.intellij">
     <moduleConfigurable instance="org.teavm.idea.ui.TeaVMConfigurable"/>
     <moduleService serviceInterface="org.teavm.idea.TeaVMConfigurationStorage"
                    serviceImplementation="org.teavm.idea.TeaVMConfigurationStorage"/>
     <compileServer.plugin classpath="jps/teavm-jps-plugin.jar;teavm-all.jar"/>
+    <buildProcess.parametersProvider implementation="org.teavm.idea.TeaVMJPSConfigurator"/>
   </extensions>
 </idea-plugin>

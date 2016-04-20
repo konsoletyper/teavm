@@ -18,7 +18,6 @@ package org.teavm.idea;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
-import com.intellij.openapi.project.ProjectManagerAdapter;
 import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiMethod;
@@ -29,50 +28,53 @@ import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.Random;
 import org.jetbrains.annotations.NotNull;
-import org.teavm.idea.jps.model.TeaVMJpsRemoteConfiguration;
 import org.teavm.idea.jps.remote.TeaVMBuilderAssistant;
 import org.teavm.idea.jps.remote.TeaVMElementLocation;
 
-public class TeaVMJPSRemoteService implements ApplicationComponent, TeaVMBuilderAssistant {
+public class TeaVMJPSRemoteService extends UnicastRemoteObject implements ApplicationComponent, TeaVMBuilderAssistant {
+    private static final int MIN_PORT = 10000;
+    private static final int MAX_PORT = 1 << 16;
     private ProjectManager projectManager = ProjectManager.getInstance();
     private int port;
     private Registry registry;
 
-    @Override
-    public void initComponent() {
-
-        for (Project project : projectManager.getOpenProjects()) {
-            configureProject(project);
-        }
-        projectManager.addProjectManagerListener(new ProjectManagerAdapter() {
-            @Override
-            public void projectOpened(Project project) {
-                configureProject(project);
-            }
-        });
+    public TeaVMJPSRemoteService() throws RemoteException {
+        super();
     }
 
-    private void configureProject(Project project) {
-        try {
-            registry = LocateRegistry.createRegistry(0);
-            registry.bind("TeaVM", this);
-        } catch (RemoteException | AlreadyBoundException e) {
-            e.printStackTrace();
+    @Override
+    public void initComponent() {
+        Random random = new Random();
+        for (int i = 0; i < 20; ++i) {
+            port = random.nextInt(MAX_PORT - MIN_PORT) + MIN_PORT;
+            try {
+                registry = LocateRegistry.createRegistry(port);
+            } catch (RemoteException e) {
+                continue;
+            }
+            try {
+                registry.bind(TeaVMBuilderAssistant.ID, this);
+            } catch (RemoteException | AlreadyBoundException e) {
+                throw new IllegalStateException("Could not bind remote build assistant service", e);
+            }
+            return;
         }
-        TeaVMRemoteConfigurationStorage storage = project.getComponent(TeaVMRemoteConfigurationStorage.class);
-        TeaVMJpsRemoteConfiguration config = storage.getState();
-        config.setPort(port);
-        storage.loadState(config);
+        throw new IllegalStateException("Could not create RMI registry");
+    }
+
+    public int getPort() {
+        return port;
     }
 
     @Override
     public void disposeComponent() {
         try {
-            registry.unbind("TeaVM");
+            registry.unbind(TeaVMBuilderAssistant.ID);
             UnicastRemoteObject.unexportObject(registry, true);
         } catch (RemoteException | NotBoundException e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Could not clean-up RMI server", e);
         }
     }
 
