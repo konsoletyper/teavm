@@ -26,6 +26,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -160,6 +161,17 @@ public class TeaVMBuild {
                         line = location.getLine();
                         startOffset = location.getStartOffset();
                         endOffset = location.getEndOffset();
+                        file = new File(location.getPath());
+
+                        if (line <= 0) {
+                            int[] lines = getLineOffsets(file);
+                            if (lines != null) {
+                                line = Arrays.binarySearch(lines, (int) startOffset + 1);
+                                if (line < 0) {
+                                    line = -line - 1;
+                                }
+                            }
+                        }
                     } catch (Exception e) {
                         // just don't fill location fields
                     }
@@ -169,9 +181,13 @@ public class TeaVMBuild {
             DefaultProblemTextConsumer textConsumer = new DefaultProblemTextConsumer();
             problem.render(textConsumer);
 
-            if (path != null) {
-                file = lookupSource(path);
-                path = file != null ? file.getPath() : null;
+            if (file == null) {
+                if (path != null) {
+                    file = lookupSource(path);
+                    path = file != null ? file.getPath() : null;
+                }
+            } else {
+                path = file.getPath();
             }
 
             if (startOffset < 0 && file != null && line > 0) {

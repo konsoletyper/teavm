@@ -15,6 +15,7 @@
  */
 package org.teavm.idea;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
@@ -87,26 +88,32 @@ public class TeaVMJPSRemoteService extends UnicastRemoteObject implements Applic
     @Override
     public TeaVMElementLocation getMethodLocation(String className, String methodName, String methodDesc)
             throws RemoteException {
-        for (Project project : projectManager.getOpenProjects()) {
-            JavaPsiFacade psi = JavaPsiFacade.getInstance(project);
-            PsiClass cls = psi.findClass(className, GlobalSearchScope.allScope(project));
-            if (cls == null) {
-                continue;
-            }
+        TeaVMElementLocation[] resultHolder = new TeaVMElementLocation[1];
 
-            for (PsiMethod method : cls.getAllMethods()) {
-                if (!method.getName().equals(methodName)) {
+        ApplicationManager.getApplication().runReadAction(() -> {
+            for (Project project : projectManager.getOpenProjects()) {
+                JavaPsiFacade psi = JavaPsiFacade.getInstance(project);
+                PsiClass cls = psi.findClass(className, GlobalSearchScope.allScope(project));
+                if (cls == null) {
                     continue;
                 }
-                // TODO: check method raw signature
-                return getMethodLocation(method);
+
+                for (PsiMethod method : cls.getAllMethods()) {
+                    if (!method.getName().equals(methodName)) {
+                        continue;
+                    }
+                    // TODO: check method raw signature
+                    resultHolder[0] = getMethodLocation(method);
+                    return;
+                }
             }
-        }
-        return null;
+        });
+
+        return resultHolder[0];
     }
 
     private TeaVMElementLocation getMethodLocation(PsiMethod method) {
         return new TeaVMElementLocation(method.getTextOffset(), method.getTextOffset() + method.getTextLength(),
-                -1, -1);
+                -1, -1, method.getContainingFile().getVirtualFile().getPath());
     }
 }

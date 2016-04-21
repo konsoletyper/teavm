@@ -22,12 +22,14 @@ public class TeaVMElementLocation implements Serializable {
     private int endOffset;
     private int line;
     private int column;
+    private String path;
 
-    public TeaVMElementLocation(int startOffset, int endOffset, int line, int column) {
+    public TeaVMElementLocation(int startOffset, int endOffset, int line, int column, String path) {
         this.startOffset = startOffset;
         this.endOffset = endOffset;
         this.line = line;
         this.column = column;
+        this.path = path;
     }
 
     public int getStartOffset() {
@@ -44,5 +46,9 @@ public class TeaVMElementLocation implements Serializable {
 
     public int getColumn() {
         return column;
+    }
+
+    public String getPath() {
+        return path;
     }
 }
