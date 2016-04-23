@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jetbrains.jps.incremental.CompileContext;
 import org.jetbrains.jps.incremental.ModuleBuildTarget;
@@ -42,6 +43,7 @@ import org.jetbrains.jps.incremental.messages.ProgressMessage;
 import org.jetbrains.jps.model.JpsProject;
 import org.jetbrains.jps.model.java.JpsJavaExtensionService;
 import org.jetbrains.jps.model.library.JpsLibrary;
+import org.jetbrains.jps.model.library.JpsLibraryRoot;
 import org.jetbrains.jps.model.library.JpsOrderRootType;
 import org.jetbrains.jps.model.module.JpsDependencyElement;
 import org.jetbrains.jps.model.module.JpsLibraryDependency;
@@ -62,19 +64,23 @@ import org.teavm.model.ValueType;
 import org.teavm.tooling.EmptyTeaVMToolLog;
 import org.teavm.tooling.TeaVMTool;
 import org.teavm.tooling.TeaVMToolException;
+import org.teavm.tooling.sources.DirectorySourceFileProvider;
+import org.teavm.tooling.sources.JarSourceFileProvider;
+import org.teavm.tooling.sources.SourceFileProvider;
 import org.teavm.vm.TeaVMPhase;
 import org.teavm.vm.TeaVMProgressFeedback;
 import org.teavm.vm.TeaVMProgressListener;
 
 public class TeaVMBuild {
-    private CompileContext context;
-    private TeaVMStorageProvider storageProvider = new TeaVMStorageProvider();
-    private List<String> classPathEntries = new ArrayList<>();
+    private final CompileContext context;
+    private final TeaVMStorageProvider storageProvider = new TeaVMStorageProvider();
+    private final List<String> classPathEntries = new ArrayList<>();
     private List<String> directoryClassPathEntries;
     private TeaVMStorage storage;
-    private TeaVMBuilderAssistant assistant;
-    private Map<String, File> sourceFileCache = new HashMap<>();
-    private Map<File, int[]> fileLineCache = new HashMap<>();
+    private final TeaVMBuilderAssistant assistant;
+    private final Map<String, File> sourceFileCache = new HashMap<>();
+    private final Map<File, int[]> fileLineCache = new HashMap<>();
+    private final List<SourceFileProvider> sourceFileProviders = new ArrayList<>();
 
     public TeaVMBuild(CompileContext context, TeaVMBuilderAssistant assistant) {
         this.context = context;
@@ -102,10 +108,14 @@ public class TeaVMBuild {
         tool.setProgressListener(createProgressListener(context));
         tool.setLog(new EmptyTeaVMToolLog());
         tool.setMainClass(config.getMainClass());
-        tool.setSourceMapsFileGenerated(true);
+        tool.setSourceMapsFileGenerated(config.isSourceMapsFileGenerated());
         tool.setTargetDirectory(new File(config.getTargetDirectory()));
         tool.setClassLoader(buildClassLoader());
-        tool.setMinifying(false);
+        tool.setSourceFilesCopied(config.isSourceFilesCopied());
+        tool.setMinifying(config.isMinifying());
+        for (SourceFileProvider fileProvider : sourceFileProviders) {
+            tool.addSourceFileProvider(fileProvider);
+        }
 
         boolean errorOccurred = false;
         try {
@@ -366,9 +376,15 @@ public class TeaVMBuild {
         if (output != null) {
             classPathEntries.add(output.getPath());
         }
+
+        sourceFileProviders.addAll(module.getSourceRoots().stream()
+                .map(sourceRoot -> new DirectorySourceFileProvider(sourceRoot.getFile()))
+                .collect(Collectors.toList()));
+
         for (JpsDependencyElement dependency : module.getDependenciesList().getDependencies()) {
             if (dependency instanceof JpsModuleDependency) {
-                buildClassPath(((JpsModuleDependency) dependency).getModule(), visited);
+                JpsModuleDependency moduleDependency = (JpsModuleDependency) dependency;
+                buildClassPath(moduleDependency.getModule(), visited);
             } else if (dependency instanceof JpsLibraryDependency) {
                 JpsLibrary library = ((JpsLibraryDependency) dependency).getLibrary();
                 if (library == null) {
@@ -376,7 +392,32 @@ public class TeaVMBuild {
                 }
                 classPathEntries.addAll(library.getFiles(JpsOrderRootType.COMPILED).stream().map(File::getPath)
                         .collect(toList()));
+
+                for (JpsLibraryRoot libraryRoot : library.getRoots(JpsOrderRootType.SOURCES)) {
+                    File file = getFileFromUrl(libraryRoot.getUrl());
+                    if (file != null) {
+                        if (file.isDirectory()) {
+                            sourceFileProviders.add(new DirectorySourceFileProvider(file));
+                        } else {
+                            sourceFileProviders.add(new JarSourceFileProvider(file));
+                        }
+                    }
+                }
             }
+        }
+    }
+
+    private File getFileFromUrl(String url) {
+        if (url.startsWith("file://")) {
+            return new File(url.substring("file://".length()));
+        } else if (url.startsWith("jar://")) {
+            int index = url.indexOf('!');
+            return new File(url.substring("file://".length(), index));
+        } else if (url.startsWith("jar:file://")) {
+            int index = url.indexOf('!');
+            return new File(url.substring("jar:file://".length(), index));
+        } else {
+            return null;
         }
     }
 }

@@ -22,7 +22,10 @@ import com.intellij.openapi.project.ProjectManager;
 import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiParameter;
+import com.intellij.psi.PsiType;
 import com.intellij.psi.search.GlobalSearchScope;
+import com.siyeh.ig.fixes.MemberSignature;
 import java.rmi.AlreadyBoundException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -37,7 +40,7 @@ import org.teavm.idea.jps.remote.TeaVMElementLocation;
 public class TeaVMJPSRemoteService extends UnicastRemoteObject implements ApplicationComponent, TeaVMBuilderAssistant {
     private static final int MIN_PORT = 10000;
     private static final int MAX_PORT = 1 << 16;
-    private ProjectManager projectManager = ProjectManager.getInstance();
+    private final ProjectManager projectManager = ProjectManager.getInstance();
     private int port;
     private Registry registry;
 
@@ -99,10 +102,9 @@ public class TeaVMJPSRemoteService extends UnicastRemoteObject implements Applic
                 }
 
                 for (PsiMethod method : cls.getAllMethods()) {
-                    if (!method.getName().equals(methodName)) {
+                    if (!method.getName().equals(methodName) || !getMethodSignature(method).equals(methodDesc)) {
                         continue;
                     }
-                    // TODO: check method raw signature
                     resultHolder[0] = getMethodLocation(method);
                     return;
                 }
@@ -110,6 +112,18 @@ public class TeaVMJPSRemoteService extends UnicastRemoteObject implements Applic
         });
 
         return resultHolder[0];
+    }
+
+    private String getMethodSignature(PsiMethod method) {
+        StringBuilder sb = new StringBuilder("(");
+        for (PsiParameter parameter : method.getParameterList().getParameters()) {
+            sb.append(MemberSignature.createTypeSignature(parameter.getType()));
+        }
+        sb.append(")");
+
+        PsiType returnType = method.getReturnType();
+        sb.append(MemberSignature.createTypeSignature(returnType != null ? returnType : PsiType.VOID));
+        return sb.toString();
     }
 
     private TeaVMElementLocation getMethodLocation(PsiMethod method) {
