@@ -64,6 +64,14 @@
         <option value="$PROJECT_DIR$/pom.xml" />
       </list>
     </option>
+    <option name="ignoredFiles">
+      <set>
+        <option value="$PROJECT_DIR$/tools/eclipse/core-plugin/pom.xml" />
+        <option value="$PROJECT_DIR$/tools/eclipse/m2e-plugin/pom.xml" />
+        <option value="$PROJECT_DIR$/tools/eclipse/plugin/pom.xml" />
+        <option value="$PROJECT_DIR$/tools/eclipse/pom.xml" />
+      </set>
+    </option>
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="false">
     <OptionsSetting value="true" id="Add" />
