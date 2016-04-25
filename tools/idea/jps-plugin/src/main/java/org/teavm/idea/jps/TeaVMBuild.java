@@ -25,13 +25,16 @@ import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -50,6 +53,9 @@ import org.jetbrains.jps.model.module.JpsLibraryDependency;
 import org.jetbrains.jps.model.module.JpsModule;
 import org.jetbrains.jps.model.module.JpsModuleDependency;
 import org.jetbrains.jps.model.module.JpsModuleSourceRoot;
+import org.teavm.callgraph.CallGraph;
+import org.teavm.callgraph.CallGraphNode;
+import org.teavm.callgraph.CallSite;
 import org.teavm.common.IntegerArray;
 import org.teavm.diagnostics.DefaultProblemTextConsumer;
 import org.teavm.diagnostics.Problem;
@@ -71,7 +77,7 @@ import org.teavm.vm.TeaVMPhase;
 import org.teavm.vm.TeaVMProgressFeedback;
 import org.teavm.vm.TeaVMProgressListener;
 
-public class TeaVMBuild {
+class TeaVMBuild {
     private final CompileContext context;
     private final TeaVMStorageProvider storageProvider = new TeaVMStorageProvider();
     private final List<String> classPathEntries = new ArrayList<>();
@@ -82,12 +88,12 @@ public class TeaVMBuild {
     private final Map<File, int[]> fileLineCache = new HashMap<>();
     private final List<SourceFileProvider> sourceFileProviders = new ArrayList<>();
 
-    public TeaVMBuild(CompileContext context, TeaVMBuilderAssistant assistant) {
+    TeaVMBuild(CompileContext context, TeaVMBuilderAssistant assistant) {
         this.context = context;
         this.assistant = assistant;
     }
 
-    public boolean perform(JpsModule module, ModuleBuildTarget target) throws IOException {
+     boolean perform(JpsModule module, ModuleBuildTarget target) throws IOException {
         storage = context.getProjectDescriptor().dataManager.getStorage(target, storageProvider);
 
         TeaVMJpsConfiguration config = TeaVMJpsConfiguration.get(module);
@@ -130,12 +136,13 @@ public class TeaVMBuild {
             updateStorage(tool);
         }
 
-        reportProblems(tool.getProblemProvider());
+        CallGraph callGraph = tool.getDependencyInfo().getCallGraph();
+        reportProblems(tool.getProblemProvider(), callGraph);
 
         return true;
     }
 
-    private void reportProblems(ProblemProvider problemProvider) {
+    private void reportProblems(ProblemProvider problemProvider, CallGraph callGraph) {
         for (Problem problem : problemProvider.getProblems()) {
             BuildMessage.Kind kind;
             switch (problem.getSeverity()) {
@@ -149,47 +156,119 @@ public class TeaVMBuild {
                     continue;
             }
 
-            String path = null;
-            File file = null;
-            int line = -1;
-            long startOffset = -1;
-            long endOffset = -1;
-
-            if (problem.getLocation() != null) {
-                CallLocation callLocation = problem.getLocation();
-                InstructionLocation insnLocation = problem.getLocation().getSourceLocation();
-                if (insnLocation != null) {
-                    path = insnLocation.getFileName();
-                    line = insnLocation.getLine();
-                }
-
-                if (line <= 0 && assistant != null && callLocation != null && callLocation.getMethod() != null) {
-                    MethodReference method = callLocation.getMethod();
-                    try {
-                        TeaVMElementLocation location = assistant.getMethodLocation(method.getClassName(),
-                                method.getName(), ValueType.methodTypeToString(method.getSignature()));
-                        line = location.getLine();
-                        startOffset = location.getStartOffset();
-                        endOffset = location.getEndOffset();
-                        file = new File(location.getPath());
-
-                        if (line <= 0) {
-                            int[] lines = getLineOffsets(file);
-                            if (lines != null) {
-                                line = Arrays.binarySearch(lines, (int) startOffset + 1);
-                                if (line < 0) {
-                                    line = -line - 1;
-                                }
-                            }
-                        }
-                    } catch (Exception e) {
-                        // just don't fill location fields
-                    }
-                }
-            }
-
             DefaultProblemTextConsumer textConsumer = new DefaultProblemTextConsumer();
             problem.render(textConsumer);
+            String baseText = textConsumer.getText();
+
+            List<ProblemToReport> problemsToReport = resolveProblemLocation(problem, callGraph);
+
+            for (ProblemToReport problemToReport : problemsToReport) {
+                String text = baseText + buildCallStack(problemToReport.locations);
+                context.processMessage(new CompilerMessage("TeaVM", kind, text, problemToReport.path,
+                        problemToReport.startOffset, problemToReport.endOffset, problemToReport.startOffset,
+                        problemToReport.line, 0));
+            }
+        }
+    }
+
+    private class ProblemToReport {
+        int line;
+        int startOffset;
+        int endOffset;
+        String path;
+        CallLocationList locations;
+    }
+
+    private class CallLocationList {
+        final CallLocation value;
+        final CallLocationList next;
+
+        private CallLocationList(CallLocation value, CallLocationList next) {
+            this.value = value;
+            this.next = next;
+        }
+    }
+
+    private List<ProblemToReport> resolveProblemLocation(Problem problem, CallGraph callGraph) {
+        class Step {
+            private final CallLocationList locationList;
+            private final CallLocation location;
+
+            private Step(CallLocationList locationList, CallLocation location) {
+                this.locationList = locationList;
+                this.location = location;
+            }
+        }
+
+        List<ProblemToReport> problemsToReport = new ArrayList<>();
+        Set<MethodReference> visited = new HashSet<>();
+        Queue<Step> workList = new ArrayDeque<>();
+        workList.add(new Step(null, problem.getLocation()));
+
+        while (!workList.isEmpty()) {
+            Step step = workList.remove();
+            if (step.location == null || !visited.add(step.location.getMethod())) {
+                continue;
+            }
+            ProblemToReport result = getProblemLocation(step.location);
+
+            CallGraphNode node = callGraph.getNode(step.location.getMethod());
+            if (node.getCallerCallSites().isEmpty() || isValid(result)) {
+                result.locations = step.locationList;
+                problemsToReport.add(result);
+            } else {
+                for (CallSite callSite : node.getCallerCallSites()) {
+                    CallLocation nextLocation = new CallLocation(callSite.getCaller().getMethod(),
+                            callSite.getLocation());
+                    workList.add(new Step(new CallLocationList(step.location, step.locationList), nextLocation));
+                }
+            }
+        }
+
+        return problemsToReport;
+    }
+
+    private boolean isValid(ProblemToReport problemToReport) {
+        return problemToReport.path != null && (problemToReport.line >= 0 || problemToReport.startOffset >= 0);
+    }
+
+    private ProblemToReport getProblemLocation(CallLocation callLocation) {
+        String path = null;
+        File file = null;
+        int line = -1;
+        int startOffset = -1;
+        int endOffset = -1;
+
+        if (callLocation != null) {
+            InstructionLocation insnLocation = callLocation.getSourceLocation();
+            if (insnLocation != null) {
+                path = insnLocation.getFileName();
+                line = insnLocation.getLine();
+            }
+
+            if (line <= 0 && assistant != null && callLocation.getMethod() != null) {
+                MethodReference method = callLocation.getMethod();
+                try {
+                    TeaVMElementLocation location = assistant.getMethodLocation(method.getClassName(),
+                            method.getName(), ValueType.methodTypeToString(method.getSignature()));
+                    line = location.getLine();
+                    startOffset = location.getStartOffset();
+                    endOffset = location.getEndOffset();
+                    file = new File(location.getPath());
+
+                    if (line <= 0) {
+                        int[] lines = getLineOffsets(file);
+                        if (lines != null) {
+                            line = Arrays.binarySearch(lines, startOffset + 1);
+                            if (line < 0) {
+                                line = -line - 1;
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    // just don't fill location fields
+                }
+            }
 
             if (file == null) {
                 if (path != null) {
@@ -207,10 +286,32 @@ public class TeaVMBuild {
                     endOffset = lines[line] - 1;
                 }
             }
-
-            context.processMessage(new CompilerMessage("TeaVM", kind, textConsumer.getText(), path,
-                    startOffset, endOffset, startOffset, line, 0));
         }
+
+        ProblemToReport result = new ProblemToReport();
+        result.line = line;
+        result.startOffset = startOffset;
+        result.endOffset = endOffset;
+        result.path = path;
+        return result;
+    }
+
+    private String buildCallStack(CallLocationList callLocationList) {
+        List<CallLocation> locations = new ArrayList<>();
+        while (callLocationList != null) {
+            locations.add(callLocationList.value);
+            callLocationList = callLocationList.next;
+        }
+        Collections.reverse(locations);
+
+        StringBuilder sb = new StringBuilder();
+        for (CallLocation location : locations) {
+            sb.append("\n  at ").append(location.getMethod());
+            if (location.getSourceLocation() != null) {
+                sb.append("(").append(location.getSourceLocation()).append(")");
+            }
+        }
+        return sb.toString();
     }
 
     private File lookupSource(String relativePath) {

@@ -222,7 +222,7 @@ public class TeaVMTool implements BaseTeaVMTool {
     }
 
     public Collection<String> getClasses() {
-        return vm != null ? vm.getClasses() : Collections.<String>emptyList();
+        return vm != null ? vm.getClasses() : Collections.emptyList();
     }
 
     public Collection<String> getUsedResources() {
@@ -361,6 +361,7 @@ public class TeaVMTool implements BaseTeaVMTool {
                     TeaVMProblemRenderer.describeProblems(vm, log);
                 }
                 if (debugInformationGenerated) {
+                    assert debugEmitter != null;
                     DebugInformation debugInfo = debugEmitter.getDebugInformation();
                     try (OutputStream debugInfoOut = new FileOutputStream(new File(targetDirectory,
                             targetFileName + ".teavmdbg"))) {
@@ -369,6 +370,7 @@ public class TeaVMTool implements BaseTeaVMTool {
                     log.info("Debug information successfully written");
                 }
                 if (sourceMapsFileGenerated) {
+                    assert debugEmitter != null;
                     DebugInformation debugInfo = debugEmitter.getDebugInformation();
                     String sourceMapsFileName = targetFileName + ".map";
                     writer.append("\n//# sourceMappingURL=").append(sourceMapsFileName);

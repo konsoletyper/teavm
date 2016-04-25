@@ -4,6 +4,8 @@
   <version>1.0</version>
   <vendor email="info@teavm.org" url="http://teavm.org">TeaVM community</vendor>
 
+  <depends>org.jetbrains.idea.maven</depends>
+
   <description><![CDATA[
       Enter short description for your plugin here.<br>
       <em>most HTML tags may be used</em>
@@ -29,5 +31,9 @@
                    serviceImplementation="org.teavm.idea.TeaVMConfigurationStorage"/>
     <compileServer.plugin classpath="jps/teavm-jps-plugin.jar;teavm-all.jar"/>
     <buildProcess.parametersProvider implementation="org.teavm.idea.TeaVMJPSConfigurator"/>
+  </extensions>
+
+  <extensions defaultExtensionNs="org.jetbrains.idea.maven">
+    <importer implementation="org.teavm.idea.maven.TeaVMMavenImporter"/>
   </extensions>
 </idea-plugin>
