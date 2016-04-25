@@ -7,6 +7,7 @@
           <property key="Bundle-Description" value="Implementation of metaprogramming API" />
           <property key="Export-Package" value="org.teavm.metaprogramming.*" />
           <property key="Bundle-Name" value="TeaVM metaprogramming API implementation" />
+          <property key="Include-Resource" value="META-INF/services/org.teavm.vm.spi.TeaVMPlugin=$MODULE_DIR$/src/main/resources/META-INF/services/org.teavm.vm.spi.TeaVMPlugin" />
         </additionalProperties>
         <additionalJARContents />
       </configuration>
