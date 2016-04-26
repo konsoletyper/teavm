@@ -31,6 +31,7 @@
                    serviceImplementation="org.teavm.idea.TeaVMConfigurationStorage"/>
     <compileServer.plugin classpath="jps/teavm-jps-plugin.jar;teavm-all.jar"/>
     <buildProcess.parametersProvider implementation="org.teavm.idea.TeaVMJPSConfigurator"/>
+    <programRunner implementation="org.teavm.idea.debug.TeaVMDebugRunner"/>
   </extensions>
 
   <extensions defaultExtensionNs="org.jetbrains.idea.maven">
