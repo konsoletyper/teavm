@@ -32,11 +32,14 @@ import org.teavm.debugging.information.URLDebugInformationProvider;
 public class TeaVMDebugProcess extends XDebugProcess {
     public static final Key<Breakpoint> INNER_BREAKPOINT_KEY = new Key<>("TeaVM breakpoint");
     private TeaVMDebuggerEditorsProvider editorsProvider;
-    private Debugger innerDebugger;
-    private TeaVMLineBreakpointHandler breakpointHandler;
+    private final Debugger innerDebugger;
+    private final TeaVMLineBreakpointHandler breakpointHandler;
+    private final int port;
+    private ChromeRDPServer debugServer;
 
-    public TeaVMDebugProcess(@NotNull XDebugSession session) {
+    public TeaVMDebugProcess(@NotNull XDebugSession session, int port) {
         super(session);
+        this.port = port;
         innerDebugger = initDebugger();
         innerDebugger.addListener(new DebuggerListener() {
             @Override
@@ -66,12 +69,13 @@ public class TeaVMDebugProcess extends XDebugProcess {
     }
 
     private Debugger initDebugger() {
-        ChromeRDPServer debugServer = new ChromeRDPServer();
-        debugServer.setPort(2357);
+        debugServer = new ChromeRDPServer();
+        debugServer.setPort(port);
         ChromeRDPDebugger chromeDebugger = new ChromeRDPDebugger();
         debugServer.setExchangeConsumer(chromeDebugger);
         editorsProvider = new TeaVMDebuggerEditorsProvider();
 
+        new Thread(debugServer::start).start();
         return new Debugger(chromeDebugger, new URLDebugInformationProvider(""));
     }
 
@@ -99,6 +103,11 @@ public class TeaVMDebugProcess extends XDebugProcess {
     @Override
     public void resume() {
         innerDebugger.resume();
+    }
+
+    @Override
+    public void stop() {
+        debugServer.stop();
     }
 
     @Override

@@ -22,26 +22,39 @@ import com.intellij.execution.configurations.LocatableConfigurationBase;
 import com.intellij.execution.configurations.RunConfiguration;
 import com.intellij.execution.configurations.RunProfileState;
 import com.intellij.execution.runners.ExecutionEnvironment;
+import com.intellij.execution.runners.RunConfigurationWithSuppressedDefaultRunAction;
 import com.intellij.openapi.options.SettingsEditor;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.teavm.idea.debug.ui.TeaVMDebugSettingsEditor;
 
-public class TeaVMDebugRunConfiguration extends LocatableConfigurationBase {
-    public TeaVMDebugRunConfiguration(Project project, @NotNull ConfigurationFactory factory, String name) {
-        super(project, factory, name);
+public class TeaVMDebugConfiguration extends LocatableConfigurationBase
+        implements RunConfigurationWithSuppressedDefaultRunAction {
+    private int port = 2357;
+
+    public TeaVMDebugConfiguration(Project project, @NotNull ConfigurationFactory factory) {
+        super(project, factory, "TeaVM debug server");
     }
 
     @NotNull
     @Override
     public SettingsEditor<? extends RunConfiguration> getConfigurationEditor() {
-        return null;
+        return new TeaVMDebugSettingsEditor();
     }
 
     @Nullable
     @Override
     public RunProfileState getState(@NotNull Executor executor, @NotNull ExecutionEnvironment environment) throws
             ExecutionException {
-        return null;
+        return new TeaVMRunState(environment, port);
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public void setPort(int port) {
+        this.port = port;
     }
 }

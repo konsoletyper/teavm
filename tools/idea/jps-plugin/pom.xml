@@ -33,11 +33,23 @@
       <groupId>org.teavm</groupId>
       <artifactId>teavm-tooling</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.teavm</groupId>
       <artifactId>teavm-chrome-rdp</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
   </dependencies>
 
@@ -56,6 +68,10 @@
             <configuration>
               <outputFile>lib/teavm-all.jar</outputFile>
               <relocations>
+                <relocation>
+                  <pattern>org.objectweb.asm</pattern>
+                  <shadedPattern>org.teavm.asm</shadedPattern>
+                </relocation>
                 <relocation>
                   <pattern>org.objectweb.asm</pattern>
                   <shadedPattern>org.teavm.asm</shadedPattern>
