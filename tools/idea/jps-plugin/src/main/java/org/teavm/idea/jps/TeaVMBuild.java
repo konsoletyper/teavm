@@ -93,7 +93,7 @@ class TeaVMBuild {
         this.assistant = assistant;
     }
 
-     boolean perform(JpsModule module, ModuleBuildTarget target) throws IOException {
+    boolean perform(JpsModule module, ModuleBuildTarget target) throws IOException {
         storage = context.getProjectDescriptor().dataManager.getStorage(target, storageProvider);
 
         TeaVMJpsConfiguration config = TeaVMJpsConfiguration.get(module);
@@ -114,10 +114,13 @@ class TeaVMBuild {
         tool.setProgressListener(createProgressListener(context));
         tool.setLog(new EmptyTeaVMToolLog());
         tool.setMainClass(config.getMainClass());
-        tool.setSourceMapsFileGenerated(config.isSourceMapsFileGenerated());
         tool.setTargetDirectory(new File(config.getTargetDirectory()));
         tool.setClassLoader(buildClassLoader());
+
+        tool.setSourceMapsFileGenerated(config.isSourceMapsFileGenerated());
+        tool.setDebugInformationGenerated(config.isSourceMapsFileGenerated());
         tool.setSourceFilesCopied(config.isSourceFilesCopied());
+
         tool.setMinifying(config.isMinifying());
         for (SourceFileProvider fileProvider : sourceFileProviders) {
             tool.addSourceFileProvider(fileProvider);

@@ -65,7 +65,7 @@ public class TeaVMDebugProcess extends XDebugProcess {
             }
         });
 
-        breakpointHandler = new TeaVMLineBreakpointHandler(innerDebugger);
+        breakpointHandler = new TeaVMLineBreakpointHandler(session.getProject(), innerDebugger);
     }
 
     private Debugger initDebugger() {
