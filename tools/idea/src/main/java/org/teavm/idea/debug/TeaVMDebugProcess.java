@@ -44,12 +44,12 @@ public class TeaVMDebugProcess extends XDebugProcess {
         innerDebugger.addListener(new DebuggerListener() {
             @Override
             public void resumed() {
-                session.resume();
+                getSession().resume();
             }
 
             @Override
             public void paused() {
-                session.pause();
+                handlePaused();
             }
 
             @Override
@@ -113,6 +113,10 @@ public class TeaVMDebugProcess extends XDebugProcess {
     @Override
     public void runToPosition(@NotNull XSourcePosition position) {
         innerDebugger.continueToLocation(position.getFile().getPath(), position.getLine());
+    }
+
+    private void handlePaused() {
+        getSession().positionReached(new TeaVMSuspendContext(innerDebugger, getSession().getProject()));
     }
 
     @NotNull
