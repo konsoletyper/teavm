@@ -608,6 +608,9 @@ class StatementGenerator implements InstructionVisitor {
             return null;
         }
         Decompiler.Block block = blockMap[target.getIndex()];
+        if (block == null) {
+            throw new IllegalStateException("Could not find block for basic block $" + target.getIndex());
+        }
         if (target.getIndex() == indexer.nodeAt(block.end)) {
             BreakStatement breakStmt = new BreakStatement();
             breakStmt.setLocation(currentLocation);

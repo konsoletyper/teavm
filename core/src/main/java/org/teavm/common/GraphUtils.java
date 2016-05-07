@@ -252,4 +252,14 @@ public final class GraphUtils {
         }
         return set;
     }
+
+    public static Graph invert(Graph graph) {
+        GraphBuilder graphBuilder = new GraphBuilder(graph.size());
+        for (int node = 0; node < graph.size(); ++node) {
+            for (int pred : graph.incomingEdges(node)) {
+                graphBuilder.addEdge(node, pred);
+            }
+        }
+        return graphBuilder.build();
+    }
 }
