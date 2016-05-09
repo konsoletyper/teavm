@@ -67,14 +67,18 @@ import org.teavm.model.util.ProgramUtils;
  * ```
  *
  * where `condition` is a part of loop that has exits and `body` has no exits.
- * More formally, we define *condition end* as a node that postdominates all loop exits.
- * Therefore, *condition* is a set of nodes of the loop that are postdominated by condition end and
- * all remaining nodes are *body*.
+ * More formally, we define *body start candidate* as a node which 1) dominates all of the "tails" (i.e. nodes
+ * that have edges to loop header), 2) does not dominate loop exits. *Body start* is a body start candidate
+ * that is not dominates by some other body start candidate. If body start does not exits, loop is
+ * not inversible.
+ *
+ * Therefore, *body* is a set of nodes of the loop that are dominated by body start and
+ * all remaining nodes are *condition*.
  */
 class LoopInversionImpl {
-    private Program program;
+    private final Program program;
     private Graph cfg;
-    private DominatorTree pdom;
+    private DominatorTree dom;
     private boolean postponed;
 
     LoopInversionImpl(Program program) {
@@ -85,7 +89,7 @@ class LoopInversionImpl {
         do {
             cfg = ProgramUtils.buildControlFlowGraph(program);
             LoopGraph loopGraph = new LoopGraph(cfg);
-            pdom = GraphUtils.buildDominatorTree(GraphUtils.invert(cfg));
+            dom = GraphUtils.buildDominatorTree(cfg);
             List<LoopWithExits> loops = getLoopsWithExits(loopGraph);
 
             postponed = false;
@@ -147,11 +151,12 @@ class LoopInversionImpl {
         final IntSet nodes = new IntOpenHashSet();
         final IntSet nodesAndCopies = new IntOpenHashSet();
         final IntSet exits = new IntOpenHashSet();
-        int conditionEnd;
+        int bodyStart;
         int copyStart;
         int headCopy;
         final IntIntMap copiedVars = new IntIntOpenHashMap();
         final IntIntMap copiedNodes = new IntIntOpenHashMap();
+        final IntIntMap varDefinitionPoints = new IntIntOpenHashMap();
         boolean shouldSkip;
 
         LoopWithExits(int head, LoopWithExits parent) {
@@ -175,8 +180,7 @@ class LoopInversionImpl {
                 return false;
             }
 
-            findCondition();
-            if (conditionEnd < 0 || !canInvert()) {
+            if (!findCondition() || bodyStart < 0) {
                 return false;
             }
 
@@ -187,37 +191,31 @@ class LoopInversionImpl {
             removeInternalPhiInputsFromCondition();
             removeExternalPhiInputsFromConditionCopy();
             putNewPhis();
+            adjustOutputPhis();
 
             return true;
         }
 
-        private void findCondition() {
-            IntSet endNodes = new IntOpenHashSet(program.basicBlockCount());
-            for (int exit : exits.toArray()) {
-                for (int successor : cfg.outgoingEdges(exit)) {
-                    if (nodes.contains(successor) && successor != head) {
-                        endNodes.add(successor);
-                    }
+        private boolean findCondition() {
+            IntSet tailNodes = new IntOpenHashSet(program.basicBlockCount());
+            for (int tailCandidate : cfg.incomingEdges(head)) {
+                if (nodes.contains(tailCandidate)) {
+                    tailNodes.add(tailCandidate);
                 }
             }
-            conditionEnd = pdom.commonDominatorOf(endNodes.toArray());
-        }
 
-        /**
-         * We can't invert loop if condition has back edges. Indeed, back edges from `if` statement
-         * must point inside loop, which makes CFG irreducible.
-         */
-        private boolean canInvert() {
-            for (int node : nodes.toArray()) {
-                if (pdom.dominates(conditionEnd, node)) {
-                    for (int successor : cfg.outgoingEdges(node)) {
-                        if (successor == head) {
-                            return false;
-                        }
-                    }
+            bodyStart = dom.commonDominatorOf(tailNodes.toArray());
+            int candidate = bodyStart;
+            while (bodyStart != head) {
+                int currentCandidate = candidate;
+                if (Arrays.stream(exits.toArray()).anyMatch(exit -> dom.dominates(currentCandidate, exit))) {
+                    break;
                 }
+                bodyStart = candidate;
+                candidate = dom.immediateDominatorOf(candidate);
             }
-            return true;
+
+            return candidate != bodyStart;
         }
 
         private void collectNodesToCopy() {
@@ -225,7 +223,7 @@ class LoopInversionImpl {
             Arrays.sort(nodes);
             for (int node : nodes) {
                 nodesAndCopies.add(node);
-                if (pdom.dominates(conditionEnd, node)) {
+                if (node == head || (node != bodyStart && !dom.dominates(bodyStart, node))) {
                     int copy = program.createBasicBlock().getIndex();
                     if (head == node) {
                         headCopy = copy;
@@ -245,10 +243,12 @@ class LoopInversionImpl {
                     insn.acceptVisitor(definitionExtractor);
                     for (Variable var : definitionExtractor.getDefinedVariables()) {
                         varsToCopy.add(var.getIndex());
+                        varDefinitionPoints.put(var.getIndex(), node);
                     }
                 }
                 for (Phi phi : block.getPhis()) {
                     varsToCopy.add(phi.getReceiver().getIndex());
+                    varDefinitionPoints.put(phi.getReceiver().getIndex(), node);
                 }
             }
 
@@ -260,12 +260,8 @@ class LoopInversionImpl {
         }
 
         private void copyCondition() {
-            InstructionVariableMapper variableMapper = new InstructionVariableMapper() {
-                @Override
-                protected Variable map(Variable var) {
-                    return program.variableAt(copiedVars.getOrDefault(var.getIndex(), var.getIndex()));
-                }
-            };
+            InstructionVariableMapper variableMapper = new InstructionVariableMapper(var ->
+                    program.variableAt(copiedVars.getOrDefault(var.getIndex(), var.getIndex())));
             BasicBlockMapper blockMapper = new BasicBlockMapper() {
                 @Override
                 protected BasicBlock map(BasicBlock block) {
@@ -298,7 +294,7 @@ class LoopInversionImpl {
                         incomingCopy.setValue(program.variableAt(copiedVars.getOrDefault(value, value)));
                         phiCopy.getIncomings().add(incomingCopy);
                     }
-                    targetBlock.getPhis().add(phi);
+                    targetBlock.getPhis().add(phiCopy);
                 }
 
                 for (TryCatchBlock tryCatch : sourceBlock.getTryCatchBlocks()) {
@@ -358,54 +354,136 @@ class LoopInversionImpl {
             BasicBlock block = program.basicBlockAt(headCopy);
             for (Phi phi : block.getPhis()) {
                 List<Incoming> incomings = phi.getIncomings();
-                for (int i = 0; i < incomings.size(); ++i) {
-                    Incoming incoming = incomings.get(i);
-                    if (!nodesAndCopies.contains(incoming.getSource().getIndex())) {
-                        incomings.remove(i--);
+                List<Incoming> newIncomings = new ArrayList<>(incomings.size());
+                for (Incoming incoming : incomings) {
+                    if (nodesAndCopies.contains(incoming.getSource().getIndex())) {
+                        newIncomings.add(incoming);
+                    } else {
+                        for (int exit : exits.toArray()) {
+                            Incoming newIncoming = new Incoming();
+                            newIncoming.setValue(incoming.getValue());
+                            newIncoming.setSource(program.basicBlockAt(exit));
+                            newIncomings.add(newIncoming);
+                        }
                     }
                 }
+                incomings.clear();
+                incomings.addAll(newIncomings);
             }
         }
 
         /**
-         * Variables defined in condition should be converted to phis in a new loop head (i.e. condition end).
+         * Variables defined in condition should be converted to phis in a new loop head (i.e. body start).
          * Every reference to variable from old condition must be replaced by reference to corresponding phi.
          */
         private void putNewPhis() {
-            BasicBlock head = program.basicBlockAt(conditionEnd);
+            BasicBlock head = program.basicBlockAt(bodyStart);
             IntIntMap phiMap = new IntIntOpenHashMap();
 
             int[] vars = copiedVars.keys().toArray();
             Arrays.sort(vars);
+            List<Phi> phisToAdd = new ArrayList<>();
             for (int var : vars) {
+                int varCopy = copiedVars.get(var);
+
                 Phi phi = new Phi();
                 phi.setReceiver(program.createVariable());
                 phiMap.put(var, phi.getReceiver().getIndex());
-                head.getPhis().add(phi);
+                phisToAdd.add(phi);
 
-                for (int source : cfg.incomingEdges(conditionEnd)) {
-                    int inputVar = copiedNodes.containsKey(source) ? var : copiedVars.get(var);
+                for (int source : cfg.incomingEdges(bodyStart)) {
+                    if (!nodes.contains(source)) {
+                        continue;
+                    }
+
                     Incoming incoming = new Incoming();
-                    incoming.setValue(program.variableAt(inputVar));
+                    incoming.setValue(program.variableAt(var));
                     incoming.setSource(program.basicBlockAt(source));
+                    phi.getIncomings().add(incoming);
+
+                    incoming = new Incoming();
+                    incoming.setValue(program.variableAt(varCopy));
+                    incoming.setSource(program.basicBlockAt(copiedNodes.get(source)));
                     phi.getIncomings().add(incoming);
                 }
             }
 
-            InstructionVariableMapper mapper = new InstructionVariableMapper() {
-                @Override
-                protected Variable map(Variable var) {
-                    int index = var.getIndex();
-                    return program.variableAt(phiMap.getOrDefault(index, index));
-                }
-            };
+            InstructionVariableMapper mapper = new InstructionVariableMapper(var -> {
+                int index = var.getIndex();
+                return program.variableAt(phiMap.getOrDefault(index, index));
+            });
             for (int node : nodes.toArray()) {
-                if (copiedNodes.containsKey(node)) {
+                if (!copiedNodes.containsKey(node)) {
                     BasicBlock block = program.basicBlockAt(node);
-                    for (Instruction instruction : block.getInstructions()) {
-                        instruction.acceptVisitor(mapper);
+                    mapper.apply(block);
+                }
+            }
+
+            head.getPhis().addAll(phisToAdd);
+        }
+
+        private void adjustOutputPhis() {
+            IntIntMap phiMap = new IntIntOpenHashMap();
+            class PhiToAdd {
+                private final Phi phi;
+                private final BasicBlock target;
+                private PhiToAdd(Phi phi, BasicBlock target) {
+                    this.phi = phi;
+                    this.target = target;
+                }
+            }
+            List<PhiToAdd> phis = new ArrayList<>();
+
+            int[] vars = copiedVars.keys().toArray();
+            Arrays.sort(vars);
+            int[] exits = this.exits.toArray();
+            Arrays.sort(exits);
+
+            for (int exit : exits) {
+                for (int var : vars) {
+                    int definedAt = varDefinitionPoints.get(var);
+                    if (!dom.dominates(definedAt, exit)) {
+                        continue;
+                    }
+
+                    int varCopy = copiedVars.get(var);
+                    int copiedAt = copiedNodes.get(definedAt);
+                    for (int successor : cfg.outgoingEdges(exit)) {
+                        if (nodes.contains(successor)) {
+                            continue;
+                        }
+
+                        Phi phi = new Phi();
+                        phi.setReceiver(program.createVariable());
+
+                        Incoming originalInput = new Incoming();
+                        originalInput.setSource(program.basicBlockAt(definedAt));
+                        originalInput.setValue(program.variableAt(var));
+                        phi.getIncomings().add(originalInput);
+
+                        Incoming copyInput = new Incoming();
+                        copyInput.setSource(program.basicBlockAt(copiedAt));
+                        copyInput.setValue(program.variableAt(varCopy));
+                        phi.getIncomings().add(copyInput);
+
+                        phis.add(new PhiToAdd(phi, program.basicBlockAt(successor)));
+                        phiMap.put(var, phi.getReceiver().getIndex());
                     }
                 }
+            }
+
+            InstructionVariableMapper mapper = new InstructionVariableMapper(var -> {
+                int index = var.getIndex();
+                return program.variableAt(phiMap.getOrDefault(index, index));
+            });
+            for (int i = 0; i < cfg.size(); ++i) {
+                if (!nodes.contains(i)) {
+                    mapper.apply(program.basicBlockAt(i));
+                }
+            }
+
+            for (PhiToAdd phiToAdd : phis) {
+                phiToAdd.target.getPhis().add(phiToAdd.phi);
             }
         }
     }

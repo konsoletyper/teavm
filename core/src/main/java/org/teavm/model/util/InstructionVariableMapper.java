@@ -15,16 +15,43 @@
  */
 package org.teavm.model.util;
 
+import java.util.function.Function;
+import org.teavm.model.BasicBlock;
+import org.teavm.model.Incoming;
+import org.teavm.model.Instruction;
 import org.teavm.model.InvokeDynamicInstruction;
+import org.teavm.model.Phi;
+import org.teavm.model.TryCatchBlock;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.*;
 
-/**
- *
- * @author Alexey Andreev
- */
-public abstract class InstructionVariableMapper implements InstructionVisitor {
-    protected abstract Variable map(Variable var);
+public class InstructionVariableMapper implements InstructionVisitor {
+    private final Function<Variable, Variable> f;
+
+    public InstructionVariableMapper(Function<Variable, Variable> f) {
+        this.f = f;
+    }
+
+    public void apply(BasicBlock block) {
+        for (Instruction insn : block.getInstructions()) {
+            insn.acceptVisitor(this);
+        }
+        for (Phi phi : block.getPhis()) {
+            phi.setReceiver(map(phi.getReceiver()));
+            for (Incoming incoming : phi.getIncomings()) {
+                incoming.setValue(map(incoming.getValue()));
+            }
+        }
+        for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+            if (tryCatch.getExceptionVariable() != null) {
+                tryCatch.setExceptionVariable(map(tryCatch.getExceptionVariable()));
+            }
+        }
+    }
+
+    private Variable map(Variable var) {
+        return f.apply(var);
+    }
 
     @Override
     public void visit(EmptyInstruction insn) {
@@ -252,8 +279,4 @@ public abstract class InstructionVariableMapper implements InstructionVisitor {
     public void visit(MonitorExitInstruction insn) {
         insn.setObjectRef(map(insn.getObjectRef()));
     }
-
-
-
-
 }

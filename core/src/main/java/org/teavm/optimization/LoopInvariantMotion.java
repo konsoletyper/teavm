@@ -29,7 +29,6 @@ import org.teavm.model.util.*;
  */
 public class LoopInvariantMotion implements MethodOptimization {
     private int[] preheaders;
-    private Instruction[] constantInstructions;
     private LoopGraph graph;
     private DominatorTree dom;
     private Program program;
@@ -45,7 +44,7 @@ public class LoopInvariantMotion implements MethodOptimization {
         IntegerStack stack = new IntegerStack(graph.size());
         int[] defLocation = new int[program.variableCount()];
         Arrays.fill(defLocation, -1);
-        constantInstructions = new Instruction[program.variableCount()];
+        Instruction[] constantInstructions = new Instruction[program.variableCount()];
         for (int i = 0; i <= method.parameterCount(); ++i) {
             defLocation[i] = 0;
         }
@@ -126,7 +125,8 @@ public class LoopInvariantMotion implements MethodOptimization {
                     }
                 }
                 if (variableMap != null) {
-                    insn.acceptVisitor(new VariableMapperImpl(variableMap));
+                    Variable[] currentVariableMap = variableMap;
+                    insn.acceptVisitor(new InstructionVariableMapper(var -> currentVariableMap[var.getIndex()]));
                 }
                 newInstructions.add(insn);
                 preheaderInstructions.addAll(preheaderInstructions.size() - 1, newInstructions);
@@ -208,21 +208,8 @@ public class LoopInvariantMotion implements MethodOptimization {
         return preheader.getIndex();
     }
 
-    private static class VariableMapperImpl extends InstructionVariableMapper {
-        private Variable[] map;
-
-        public VariableMapperImpl(Variable[] map) {
-            this.map = map;
-        }
-
-        @Override
-        protected Variable map(Variable var) {
-            return map[var.getIndex()];
-        }
-    }
-
     private static class InstructionAnalyzer implements InstructionVisitor {
-        public boolean canMove;
+        boolean canMove;
         public boolean constant;
 
         @Override

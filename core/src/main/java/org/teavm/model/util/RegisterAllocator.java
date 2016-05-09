@@ -218,26 +218,11 @@ public class RegisterAllocator {
     }
 
     private void renameVariables(final Program program, final int[] varMap) {
-        InstructionVariableMapper mapper = new InstructionVariableMapper() {
-            @Override protected Variable map(Variable var) {
-                return program.variableAt(varMap[var.getIndex()]);
-            }
-        };
+        InstructionVariableMapper mapper = new InstructionVariableMapper(var ->
+                program.variableAt(varMap[var.getIndex()]));
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
-            for (Instruction insn : block.getInstructions()) {
-                insn.acceptVisitor(mapper);
-            }
-            for (Phi phi : block.getPhis()) {
-                phi.setReceiver(program.variableAt(varMap[phi.getReceiver().getIndex()]));
-                for (Incoming incoming : phi.getIncomings()) {
-                    incoming.setValue(program.variableAt(varMap[incoming.getValue().getIndex()]));
-                }
-            }
-            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                tryCatch.setExceptionVariable(program.variableAt(
-                        varMap[tryCatch.getExceptionVariable().getIndex()]));
-            }
+            mapper.apply(block);
         }
         String[][] originalNames = new String[program.variableCount()][];
         for (int i = 0; i < program.variableCount(); ++i) {
