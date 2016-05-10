@@ -157,6 +157,7 @@ class LoopInversionImpl {
         final IntIntMap copiedVars = new IntIntOpenHashMap();
         final IntIntMap copiedNodes = new IntIntOpenHashMap();
         final IntIntMap varDefinitionPoints = new IntIntOpenHashMap();
+        final IntIntMap newHeadPhiMap = new IntIntOpenHashMap();
         boolean shouldSkip;
 
         LoopWithExits(int head, LoopWithExits parent) {
@@ -188,9 +189,9 @@ class LoopInversionImpl {
             collectVariablesToCopy();
             copyCondition();
             moveBackEdges();
+            putNewPhis();
             removeInternalPhiInputsFromCondition();
             removeExternalPhiInputsFromConditionCopy();
-            putNewPhis();
             adjustOutputPhis();
 
             return true;
@@ -354,21 +355,15 @@ class LoopInversionImpl {
             BasicBlock block = program.basicBlockAt(headCopy);
             for (Phi phi : block.getPhis()) {
                 List<Incoming> incomings = phi.getIncomings();
-                List<Incoming> newIncomings = new ArrayList<>(incomings.size());
-                for (Incoming incoming : incomings) {
-                    if (nodesAndCopies.contains(incoming.getSource().getIndex())) {
-                        newIncomings.add(incoming);
+                for (int i = 0; i < incomings.size(); ++i) {
+                    Incoming incoming = incomings.get(i);
+                    if (!nodesAndCopies.contains(incoming.getSource().getIndex())) {
+                        incomings.remove(i--);
                     } else {
-                        for (int exit : exits.toArray()) {
-                            Incoming newIncoming = new Incoming();
-                            newIncoming.setValue(incoming.getValue());
-                            newIncoming.setSource(program.basicBlockAt(exit));
-                            newIncomings.add(newIncoming);
-                        }
+                        int var = incoming.getValue().getIndex();
+                        incoming.setValue(program.variableAt(newHeadPhiMap.getOrDefault(var, var)));
                     }
                 }
-                incomings.clear();
-                incomings.addAll(newIncomings);
             }
         }
 
@@ -389,6 +384,7 @@ class LoopInversionImpl {
                 Phi phi = new Phi();
                 phi.setReceiver(program.createVariable());
                 phiMap.put(var, phi.getReceiver().getIndex());
+                newHeadPhiMap.put(varCopy, phi.getReceiver().getIndex());
                 phisToAdd.add(phi);
 
                 for (int source : cfg.incomingEdges(bodyStart)) {
