@@ -167,13 +167,28 @@ public class TPrintStream extends TFilterOutputStream {
         printSB();
     }
 
-    public void println(int i) {
-        sb.append(i).append('\n');
+    public void print(long l) {
+        sb.append(l);
         printSB();
     }
 
-    public void print(long l) {
-        sb.append(l);
+    public void print(double d) {
+        sb.append(d);
+        printSB();
+    }
+
+    public void print(TString s) {
+        sb.append(s);
+        printSB();
+    }
+
+    public void print(TObject s) {
+        sb.append(s);
+        printSB();
+    }
+
+    public void println(int i) {
+        sb.append(i).append('\n');
         printSB();
     }
 
@@ -184,11 +199,6 @@ public class TPrintStream extends TFilterOutputStream {
 
     public void println(double d) {
         sb.append(d).append('\n');
-        printSB();
-    }
-
-    public void print(TString s) {
-        sb.append(s);
         printSB();
     }
 
