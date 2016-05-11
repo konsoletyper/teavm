@@ -1245,8 +1245,17 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             List<String> nameList = new ArrayList<>(names);
             Collections.sort(nameList);
             for (String name : nameList) {
-                sb.append('_').append(name);
+                sb.append('_').append(escapeName(name));
             }
+        }
+        return sb.toString();
+    }
+
+    private static String escapeName(String name) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < name.length(); ++i) {
+            char c = name.charAt(i);
+            sb.append(Character.isJavaIdentifierPart(c) ? c : '_');
         }
         return sb.toString();
     }
