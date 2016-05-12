@@ -110,7 +110,7 @@ public interface HTMLElement extends Element, ElementCSSInlineStyle, EventTarget
     HTMLDocument getOwnerDocument();
 
     @JSProperty
-    int getInnerHTML();
+    String getInnerHTML();
 
     @JSProperty
     void setInnerHTML(String content);
