@@ -390,6 +390,11 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                         .append("=").ws().append(constantToString(value)).append(";").softNewLine();
                 debugEmitter.addField(field.getName(), naming.getNameFor(fieldRef));
             }
+
+            if (cls.getName().equals("java.lang.Object")) {
+                writer.append("this.$id").ws().append('=').ws().append("0;").softNewLine();
+            }
+
             writer.outdent().append("}").newLine();
 
             for (FieldNode field : staticFields) {
