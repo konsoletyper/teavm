@@ -14,9 +14,15 @@
  *  limitations under the License.
  */
 "use strict";
-var $rt_lastObjectId = 0;
+var $rt_lastObjectId = 1;
 function $rt_nextId() {
-    return $rt_lastObjectId++;
+    var current = $rt_lastObjectId;
+    var next = (current + 1) | 0;
+    if (next === 0) {
+        next = (next + 1) | 0;
+    }
+    $rt_lastObjectId = next;
+    return current;
 }
 function $rt_compare(a, b) {
     return a > b ? 1 : a < b ? -1 : 0;
@@ -39,14 +45,17 @@ function $rt_isAssignable(from, to) {
 function $rt_createArray(cls, sz) {
     var data = new Array(sz);
     var arr = new ($rt_arraycls(cls))(data);
-    for (var i = 0; i < sz; i = (i + 1) | 0) {
-        data[i] = null;
+    if (sz > 0) {
+        var i = 0;
+        do {
+            data[i] = null;
+            i = (i + 1) | 0;
+        } while (i < sz);
     }
     return arr;
 }
 function $rt_wrapArray(cls, data) {
-    var arr = new ($rt_arraycls(cls))(data);
-    return arr;
+    return new ($rt_arraycls(cls))(data);
 }
 function $rt_createUnfilledArray(cls, sz) {
     return new ($rt_arraycls(cls))(new Array(sz));
@@ -67,7 +76,7 @@ var $rt_createIntArray;
 var $rt_createBooleanArray;
 var $rt_createFloatArray;
 var $rt_createDoubleArray;
-if (ArrayBuffer) {
+if (typeof 'ArrayBuffer' !== 'undefined') {
     $rt_createNumericArray = function(cls, nativeArray) {
         return new ($rt_arraycls(cls))(nativeArray);
     };
@@ -110,10 +119,11 @@ if (ArrayBuffer) {
     $rt_createCharArray = function(sz) { return $rt_createNumericArray($rt_charcls(), sz); }
 }
 function $rt_arraycls(cls) {
-    if (typeof cls.$array === 'undefined') {
+    var result = cls.$array;
+    if (result === null) {
         var arraycls = function(data) {
             this.data = data;
-            this.$id = $rt_nextId();
+            this.$id = 0;
         };
         arraycls.prototype = new ($rt_objcls())();
         arraycls.prototype.constructor = arraycls;
@@ -132,12 +142,15 @@ function $rt_arraycls(cls) {
         arraycls.$meta = { item : cls, supertypes : [$rt_objcls()], primitive : false, superclass : $rt_objcls(),
                 name : name, binaryName : name, enum : false };
         arraycls.classObject = null;
+        arraycls.$array = null;
+        result = arraycls;
         cls.$array = arraycls;
     }
-    return cls.$array;
+    return result;
 }
 function $rt_createcls() {
     return {
+        $array : null,
         classObject : null,
         $meta : {
             supertypes : [],
@@ -228,7 +241,7 @@ function $rt_throw(ex) {
 function $rt_exception(ex) {
     var err = ex.$jsException;
     if (!err) {
-        var err = new Error("Java exception thrown");
+        err = new Error("Java exception thrown");
         err.$javaException = ex;
         ex.$jsException = err;
     }
@@ -363,7 +376,7 @@ function $rt_putStderr(ch) {
 }
 function $rt_metadata(data) {
     for (var i = 0; i < data.length; i += 8) {
-        var cls = data[i + 0];
+        var cls = data[i];
         cls.$meta = {};
         var m = cls.$meta;
         m.name = data[i + 1];
@@ -402,8 +415,8 @@ function $rt_metadata(data) {
         }
 
         var virtualMethods = data[i + 7];
-        for (var j = 0; j < virtualMethods.length; j += 2) {
-            var name = virtualMethods[j + 0];
+        for (j = 0; j < virtualMethods.length; j += 2) {
+            var name = virtualMethods[j];
             var func = virtualMethods[j + 1];
             if (typeof name === 'string') {
                 name = [name];
@@ -412,6 +425,8 @@ function $rt_metadata(data) {
                 cls.prototype[name[k]] = func;
             }
         }
+
+        cls.$array = null;
     }
 }
 function $rt_threadStarter(f) {
@@ -681,7 +696,7 @@ function Long_compare(a, b) {
     if (r !== 0) {
         return r;
     }
-    var r = (a.lo >>> 1) - (b.lo >>> 1);
+    r = (a.lo >>> 1) - (b.lo >>> 1);
     if (r !== 0) {
         return r;
     }
@@ -895,15 +910,15 @@ function LongInt_ucompare(a, b) {
     if (r != 0) {
         return r;
     }
-    var r = (a.hi >>> 1) - (b.hi >>> 1);
+    r = (a.hi >>> 1) - (b.hi >>> 1);
     if (r != 0) {
         return r;
     }
-    var r = (a.hi & 1) - (b.hi & 1);
+    r = (a.hi & 1) - (b.hi & 1);
     if (r != 0) {
         return r;
     }
-    var r = (a.lo >>> 1) - (b.lo >>> 1);
+    r = (a.lo >>> 1) - (b.lo >>> 1);
     if (r != 0) {
         return r;
     }
@@ -924,7 +939,8 @@ function LongInt_numOfLeadingZeroBits(a) {
 function LongInt_shl(a, b) {
     if (b == 0) {
         return;
-    } else if (b < 32) {
+    }
+    if (b < 32) {
         a.sup = ((a.hi >>> (32 - b)) | (a.sup << b)) & 0xFFFF;
         a.hi = (a.lo >>> (32 - b)) | (a.hi << b);
         a.lo <<= b;
@@ -949,7 +965,8 @@ function LongInt_shl(a, b) {
 function LongInt_shr(a, b) {
     if (b == 0) {
         return;
-    } else if (b == 32) {
+    }
+    if (b == 32) {
         a.lo = a.hi;
         a.hi = a.sup;
         a.sup = 0;

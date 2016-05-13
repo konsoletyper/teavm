@@ -390,6 +390,11 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                         .append("=").ws().append(constantToString(value)).append(";").softNewLine();
                 debugEmitter.addField(field.getName(), naming.getNameFor(fieldRef));
             }
+
+            if (cls.getName().equals("java.lang.Object")) {
+                writer.append("this.$id").ws().append('=').ws().append("0;").softNewLine();
+            }
+
             writer.outdent().append("}").newLine();
 
             for (FieldNode field : staticFields) {
@@ -1245,8 +1250,17 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             List<String> nameList = new ArrayList<>(names);
             Collections.sort(nameList);
             for (String name : nameList) {
-                sb.append('_').append(name);
+                sb.append('_').append(escapeName(name));
             }
+        }
+        return sb.toString();
+    }
+
+    private static String escapeName(String name) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < name.length(); ++i) {
+            char c = name.charAt(i);
+            sb.append(Character.isJavaIdentifierPart(c) ? c : '_');
         }
         return sb.toString();
     }
