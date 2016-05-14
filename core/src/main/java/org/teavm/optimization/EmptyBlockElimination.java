@@ -44,11 +44,7 @@ public class EmptyBlockElimination implements MethodOptimization {
             }
             lastNonEmpty = blockMapping[i];
         }
-        new BasicBlockMapper() {
-            @Override protected BasicBlock map(BasicBlock block) {
-                return program.basicBlockAt(blockMapping[block.getIndex()]);
-            }
-        }.transform(program);
+        new BasicBlockMapper(block -> blockMapping[block]).transform(program);
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             if (blockMapping[i] != i) {
                 program.deleteBasicBlock(i);

@@ -33,15 +33,27 @@ public class InstructionVariableMapper implements InstructionVisitor {
     }
 
     public void apply(BasicBlock block) {
+        applyToInstructions(block);
+        applyToPhis(block);
+        applyToTryCatchBlocks(block);
+    }
+
+    public void applyToInstructions(BasicBlock block) {
         for (Instruction insn : block.getInstructions()) {
             insn.acceptVisitor(this);
         }
+    }
+
+    public void applyToPhis(BasicBlock block) {
         for (Phi phi : block.getPhis()) {
             phi.setReceiver(map(phi.getReceiver()));
             for (Incoming incoming : phi.getIncomings()) {
                 incoming.setValue(map(incoming.getValue()));
             }
         }
+    }
+
+    public void applyToTryCatchBlocks(BasicBlock block) {
         for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
             if (tryCatch.getExceptionVariable() != null) {
                 tryCatch.setExceptionVariable(map(tryCatch.getExceptionVariable()));

@@ -136,15 +136,8 @@ public class RegisterAllocator {
             JumpInstruction jumpInstruction = new JumpInstruction();
             jumpInstruction.setTarget(phi.getBasicBlock());
             copyBlock.getInstructions().add(jumpInstruction);
-            incoming.getSource().getLastInstruction().acceptVisitor(new BasicBlockMapper() {
-                @Override protected BasicBlock map(BasicBlock block) {
-                    if (block == phi.getBasicBlock()) {
-                        return copyBlock;
-                    } else {
-                        return block;
-                    }
-                }
-            });
+            incoming.getSource().getLastInstruction().acceptVisitor(new BasicBlockMapper(block ->
+                    block == phi.getBasicBlock().getIndex() ? copyBlock.getIndex() : block));
             blockMap.put(source, copyBlock);
             incoming.setSource(copyBlock);
             source = copyBlock;

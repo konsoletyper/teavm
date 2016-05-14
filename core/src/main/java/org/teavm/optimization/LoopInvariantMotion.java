@@ -195,14 +195,8 @@ public class LoopInvariantMotion implements MethodOptimization {
         for (int predIndex : graph.incomingEdges(headerIndex)) {
             if (!dom.dominates(headerIndex, predIndex)) {
                 BasicBlock pred = program.basicBlockAt(predIndex);
-                pred.getLastInstruction().acceptVisitor(new BasicBlockMapper() {
-                    @Override protected BasicBlock map(BasicBlock block) {
-                        if (block == header) {
-                            block = preheader;
-                        }
-                        return block;
-                    }
-                });
+                pred.getLastInstruction().acceptVisitor(new BasicBlockMapper(
+                        block -> block == header.getIndex() ? preheader.getIndex() : block));
             }
         }
         return preheader.getIndex();
