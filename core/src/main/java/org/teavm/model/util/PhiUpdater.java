@@ -1,5 +1,5 @@
 /*
- *  Copyright 2013 Alexey Andreev.
+ *  Copyright 2016 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.parsing;
+package org.teavm.model.util;
 
 import java.util.*;
 import org.teavm.common.DominatorTree;
@@ -21,70 +21,37 @@ import org.teavm.common.Graph;
 import org.teavm.common.GraphUtils;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
-import org.teavm.model.util.DefinitionExtractor;
-import org.teavm.model.util.ProgramUtils;
 
-/**
- *
- * @author Alexey Andreev
- */
-public class SSATransformer {
+public class PhiUpdater {
     private Program program;
     private Graph cfg;
-    private DominatorTree domTree;
     private int[][] domFrontiers;
     private Variable[] variableMap;
     private BasicBlock currentBlock;
     private Phi[][] phiMap;
     private int[][] phiIndexMap;
-    private ValueType[] arguments;
-    private VariableDebugInformation variableDebugInfo;
-    private Map<Integer, String> variableDebugMap = new HashMap<>();
 
-    public void transformToSSA(Program program, VariableDebugInformation variableDebugInfo, ValueType[] arguments) {
+    public void updatePhis(Program program, Variable[] arguments) {
         if (program.basicBlockCount() == 0) {
             return;
         }
         this.program = program;
-        this.variableDebugInfo = variableDebugInfo;
-        this.arguments = arguments;
-        variableDebugMap.clear();
         cfg = ProgramUtils.buildControlFlowGraphWithTryCatch(program);
-        domTree = GraphUtils.buildDominatorTree(cfg);
+        DominatorTree domTree = GraphUtils.buildDominatorTree(cfg);
         domFrontiers = new int[cfg.size()][];
         variableMap = new Variable[program.variableCount()];
+        for (int i = 0; i < arguments.length; ++i) {
+            variableMap[i] = arguments[i];
+        }
         phiMap = new Phi[program.basicBlockCount()][];
         phiIndexMap = new int[program.basicBlockCount()][];
         for (int i = 0; i < phiMap.length; ++i) {
             phiMap[i] = new Phi[program.variableCount()];
             phiIndexMap[i] = new int[program.variableCount()];
         }
-        applySignature();
         domFrontiers = GraphUtils.findDominanceFrontiers(cfg, domTree);
         estimatePhis();
         renameVariables();
-    }
-
-    private void applySignature() {
-        if (program.variableCount() == 0) {
-            return;
-        }
-        int index = 0;
-        variableMap[index] = program.variableAt(index);
-        ++index;
-        for (int i = 0; i < arguments.length; ++i) {
-            variableMap[index] = program.variableAt(i + 1);
-            ++index;
-            ValueType arg = arguments[i];
-            if (arg instanceof ValueType.Primitive) {
-                PrimitiveType kind = ((ValueType.Primitive) arg).getKind();
-                if (kind == PrimitiveType.LONG || kind == PrimitiveType.DOUBLE) {
-                    variableMap[index] = variableMap[index - 1];
-                    ++index;
-                }
-            }
-        }
-        arguments = null;
     }
 
     private void estimatePhis() {
@@ -97,10 +64,13 @@ public class SSATransformer {
                     markAssignment(var);
                 }
             }
+            for (Phi phi : currentBlock.getPhis()) {
+                markAssignment(phi.getReceiver());
+            }
         }
     }
 
-    static class Task {
+    private static class Task {
         Variable[] variables;
         BasicBlock block;
     }
@@ -161,19 +131,17 @@ public class SSATransformer {
                 specialPhis.get(currentBlock.getIndex()).add(phi);
             }
             for (Instruction insn : currentBlock.getInstructions()) {
-                variableDebugMap.putAll(variableDebugInfo.getDebugNames(insn));
                 insn.acceptVisitor(consumer);
             }
             int[] successors = domGraph.outgoingEdges(currentBlock.getIndex());
-            for (int i = 0; i < successors.length; ++i) {
+            for (int successor : successors) {
                 Task next = new Task();
                 next.variables = Arrays.copyOf(variableMap, variableMap.length);
-                next.block = program.basicBlockAt(successors[i]);
+                next.block = program.basicBlockAt(successor);
                 stack[head++] = next;
             }
             successors = cfg.outgoingEdges(currentBlock.getIndex());
-            for (int i = 0; i < successors.length; ++i) {
-                int successor = successors[i];
+            for (int successor : successors) {
                 int[] phiIndexes = phiIndexMap[successor];
                 List<Phi> phis = program.basicBlockAt(successor).getPhis();
                 for (int j = 0; j < phis.size(); ++j) {
@@ -230,10 +198,6 @@ public class SSATransformer {
         Variable mappedVar = variableMap[var.getIndex()];
         if (mappedVar == null) {
             throw new AssertionError();
-        }
-        String debugName = variableDebugMap.get(var.getIndex());
-        if (debugName != null) {
-            mappedVar.getDebugNames().add(debugName);
         }
         return mappedVar;
     }
@@ -440,9 +404,6 @@ public class SSATransformer {
         @Override
         public void visit(UnwrapArrayInstruction insn) {
             insn.setArray(use(insn.getArray()));
-            for (String debugName : insn.getArray().getDebugNames()) {
-                variableDebugMap.put(insn.getReceiver().getIndex(), debugName + ".data");
-            }
             insn.setReceiver(define(insn.getReceiver()));
         }
 

@@ -17,12 +17,14 @@ package org.teavm.parsing;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.JSRInlinerAdapter;
 import org.objectweb.asm.tree.*;
 import org.teavm.model.*;
+import org.teavm.model.util.PhiUpdater;
 import org.teavm.optimization.UnreachableBasicBlockEliminator;
 
 /**
@@ -47,8 +49,8 @@ public final class Parser {
         programParser.setFileName(fileName);
         Program program = programParser.parse(node, className);
         new UnreachableBasicBlockEliminator().optimize(program);
-        SSATransformer ssaProducer = new SSATransformer();
-        ssaProducer.transformToSSA(program, programParser, method.getParameterTypes());
+        PhiUpdater phiUpdater = new PhiUpdater();
+        phiUpdater.updatePhis(program, applySignature(program, method.getParameterTypes()));
         method.setProgram(program);
         parseAnnotations(method.getAnnotations(), node.visibleAnnotations, node.invisibleAnnotations);
         while (program.variableCount() <= method.parameterCount()) {
@@ -63,6 +65,31 @@ public final class Parser {
                     node.invisibleParameterAnnotations != null ? node.invisibleParameterAnnotations[i] : null);
         }
         return method;
+    }
+
+    private static Variable[] applySignature(Program program, ValueType[] arguments) {
+        if (program.variableCount() == 0) {
+            return new Variable[0];
+        }
+
+        Variable[] variableMap = new Variable[program.variableCount()];
+        int index = 0;
+        variableMap[index] = program.variableAt(index);
+        ++index;
+        for (int i = 0; i < arguments.length; ++i) {
+            variableMap[index] = program.variableAt(i + 1);
+            ++index;
+            ValueType arg = arguments[i];
+            if (arg instanceof ValueType.Primitive) {
+                PrimitiveType kind = ((ValueType.Primitive) arg).getKind();
+                if (kind == PrimitiveType.LONG || kind == PrimitiveType.DOUBLE) {
+                    variableMap[index] = variableMap[index - 1];
+                    ++index;
+                }
+            }
+        }
+
+        return Arrays.copyOf(variableMap, index);
     }
 
     public static ClassHolder parseClass(ClassNode node) {

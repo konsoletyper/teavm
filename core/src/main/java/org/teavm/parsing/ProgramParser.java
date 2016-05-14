@@ -27,7 +27,7 @@ import org.teavm.model.util.ProgramUtils;
  *
  * @author Alexey Andreev
  */
-public class ProgramParser implements VariableDebugInformation {
+public class ProgramParser {
     private static final byte ROOT = 0;
     private static final byte SINGLE = 1;
     private static final byte DOUBLE_FIRST_HALF = 2;
@@ -159,7 +159,6 @@ public class ProgramParser implements VariableDebugInformation {
         return depth;
     }
 
-    @Override
     public Map<Integer, String> getDebugNames(Instruction insn) {
         Map<Integer, String> map = variableDebugNames.get(insn);
         return map != null ? Collections.unmodifiableMap(map) : Collections.emptyMap();
