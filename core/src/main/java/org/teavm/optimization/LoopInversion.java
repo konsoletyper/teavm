@@ -15,12 +15,13 @@
  */
 package org.teavm.optimization;
 
+import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodReader;
 import org.teavm.model.Program;
 
 public class LoopInversion implements MethodOptimization {
     @Override
     public void optimize(MethodReader method, Program program) {
-        new LoopInversionImpl(program).apply();
+        new LoopInversionImpl(program, method.parameterCount() + 1).apply();
     }
 }

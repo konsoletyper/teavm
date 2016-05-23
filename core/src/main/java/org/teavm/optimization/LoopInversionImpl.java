@@ -38,8 +38,10 @@ import org.teavm.model.Instruction;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
 import org.teavm.model.TryCatchBlock;
+import org.teavm.model.Variable;
 import org.teavm.model.util.BasicBlockMapper;
 import org.teavm.model.util.InstructionCopyReader;
+import org.teavm.model.util.PhiUpdater;
 import org.teavm.model.util.ProgramUtils;
 
 /**
@@ -74,12 +76,15 @@ import org.teavm.model.util.ProgramUtils;
  */
 class LoopInversionImpl {
     private final Program program;
+    private final int parameterCount;
     private Graph cfg;
     private DominatorTree dom;
     private boolean postponed;
+    private boolean changed;
 
-    LoopInversionImpl(Program program) {
+    LoopInversionImpl(Program program, int parameterCount) {
         this.program = program;
+        this.parameterCount = parameterCount;
     }
 
     void apply() {
@@ -90,8 +95,17 @@ class LoopInversionImpl {
             List<LoopWithExits> loops = getLoopsWithExits(loopGraph);
 
             postponed = false;
-            for (LoopWithExits loop : loops) {
-                loop.invert();
+            if (!loops.isEmpty()) {
+                for (LoopWithExits loop : loops) {
+                    loop.invert();
+                }
+                if (changed) {
+                    Variable[] inputs = new Variable[parameterCount];
+                    for (int i = 0; i < inputs.length; ++i) {
+                        inputs[i] = program.variableAt(i);
+                    }
+                    new PhiUpdater().updatePhis(program, inputs);
+                }
             }
         } while (postponed);
     }
@@ -185,6 +199,7 @@ class LoopInversionImpl {
             removeInternalPhiInputsFromCondition();
             removeExternalPhiInputsFromConditionCopy();
 
+            changed = true;
             return true;
         }
 

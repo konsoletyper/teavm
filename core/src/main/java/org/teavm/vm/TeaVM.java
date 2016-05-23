@@ -15,26 +15,89 @@
  */
 package org.teavm.vm;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.ServiceLoader;
+import java.util.Set;
 import org.teavm.cache.NoCache;
-import org.teavm.codegen.*;
+import org.teavm.codegen.AliasProvider;
+import org.teavm.codegen.DefaultAliasProvider;
+import org.teavm.codegen.DefaultNamingStrategy;
+import org.teavm.codegen.MinifyingAliasProvider;
+import org.teavm.codegen.SourceWriter;
+import org.teavm.codegen.SourceWriterBuilder;
 import org.teavm.common.ServiceRepository;
 import org.teavm.debugging.information.DebugInformationEmitter;
 import org.teavm.debugging.information.SourceLocation;
-import org.teavm.dependency.*;
+import org.teavm.dependency.BootstrapMethodSubstitutor;
+import org.teavm.dependency.DependencyChecker;
+import org.teavm.dependency.DependencyInfo;
+import org.teavm.dependency.DependencyListener;
+import org.teavm.dependency.Linker;
+import org.teavm.dependency.MethodDependency;
 import org.teavm.diagnostics.AccumulationDiagnostics;
 import org.teavm.diagnostics.ProblemProvider;
-import org.teavm.javascript.*;
+import org.teavm.javascript.Decompiler;
+import org.teavm.javascript.EmptyRegularMethodNodeCache;
+import org.teavm.javascript.MethodNodeCache;
+import org.teavm.javascript.Renderer;
+import org.teavm.javascript.RenderingException;
 import org.teavm.javascript.ast.ClassNode;
 import org.teavm.javascript.spi.GeneratedBy;
 import org.teavm.javascript.spi.Generator;
 import org.teavm.javascript.spi.InjectedBy;
 import org.teavm.javascript.spi.Injector;
-import org.teavm.model.*;
-import org.teavm.model.instructions.*;
-import org.teavm.model.util.*;
-import org.teavm.optimization.*;
+import org.teavm.model.BasicBlock;
+import org.teavm.model.CallLocation;
+import org.teavm.model.ClassHolder;
+import org.teavm.model.ClassHolderSource;
+import org.teavm.model.ClassHolderTransformer;
+import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ElementHolder;
+import org.teavm.model.ElementModifier;
+import org.teavm.model.InstructionLocation;
+import org.teavm.model.ListableClassHolderSource;
+import org.teavm.model.ListableClassReaderSource;
+import org.teavm.model.MethodHolder;
+import org.teavm.model.MethodReference;
+import org.teavm.model.MutableClassHolderSource;
+import org.teavm.model.Program;
+import org.teavm.model.ProgramCache;
+import org.teavm.model.ValueType;
+import org.teavm.model.Variable;
+import org.teavm.model.instructions.ConstructInstruction;
+import org.teavm.model.instructions.InvocationType;
+import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.instructions.RaiseInstruction;
+import org.teavm.model.instructions.StringConstantInstruction;
+import org.teavm.model.util.AsyncMethodFinder;
+import org.teavm.model.util.ListingBuilder;
+import org.teavm.model.util.MissingItemsProcessor;
+import org.teavm.model.util.ModelUtils;
+import org.teavm.model.util.ProgramUtils;
+import org.teavm.model.util.RegisterAllocator;
+import org.teavm.optimization.ArrayUnwrapMotion;
+import org.teavm.optimization.Devirtualization;
+import org.teavm.optimization.GlobalValueNumbering;
+import org.teavm.optimization.LoopInvariantMotion;
+import org.teavm.optimization.LoopInversion;
+import org.teavm.optimization.MethodOptimization;
+import org.teavm.optimization.UnusedVariableElimination;
 import org.teavm.vm.spi.RendererListener;
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
@@ -649,7 +712,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     }
 
     private List<MethodOptimization> getOptimizations() {
-        return Arrays.asList(new ArrayUnwrapMotion(), /*new LoopInversion(),*/ new LoopInvariantMotion(),
+        return Arrays.asList(new ArrayUnwrapMotion(), new LoopInversion(), new LoopInvariantMotion(),
                 new GlobalValueNumbering(), new UnusedVariableElimination());
     }
 

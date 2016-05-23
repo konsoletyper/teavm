@@ -59,30 +59,6 @@ public final class ProgramUtils {
         return graphBuilder.build();
     }
 
-    public static Graph buildControlFlowGraphWithTryCatch(Program program) {
-        GraphBuilder graphBuilder = new GraphBuilder(program.basicBlockCount());
-        InstructionTransitionExtractor transitionExtractor = new InstructionTransitionExtractor();
-        for (int i = 0; i < program.basicBlockCount(); ++i) {
-            BasicBlock block = program.basicBlockAt(i);
-            Instruction insn = block.getLastInstruction();
-            if (insn != null) {
-                insn.acceptVisitor(transitionExtractor);
-                if (transitionExtractor.getTargets() != null) {
-                    for (BasicBlock successor : transitionExtractor.getTargets()) {
-                        graphBuilder.addEdge(i, successor.getIndex());
-                        for (TryCatchBlock succTryCatch : successor.getTryCatchBlocks()) {
-                            graphBuilder.addEdge(i, succTryCatch.getHandler().getIndex());
-                        }
-                    }
-                }
-            }
-            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                graphBuilder.addEdge(i, tryCatch.getHandler().getIndex());
-            }
-        }
-        return graphBuilder.build();
-    }
-
     public static Map<InstructionLocation, InstructionLocation[]> getLocationCFG(Program program) {
         return new LocationGraphBuilder().build(program);
     }
@@ -148,5 +124,23 @@ public final class ProgramUtils {
             result.add(tryCatchCopy);
         }
         return result;
+    }
+
+    public static List<List<Incoming>> getPhiOutputs(Program program) {
+        List<List<Incoming>> outputs = new ArrayList<>(program.basicBlockCount());
+        for (int i = 0; i < program.basicBlockCount(); ++i) {
+            outputs.add(new ArrayList<>());
+        }
+
+        for (int i = 0; i < program.basicBlockCount(); ++i) {
+            BasicBlock block = program.basicBlockAt(i);
+            for (Phi phi : block.getPhis()) {
+                for (Incoming incoming : phi.getIncomings()) {
+                    outputs.get(incoming.getSource().getIndex()).add(incoming);
+                }
+            }
+        }
+
+        return outputs;
     }
 }

@@ -15,12 +15,57 @@
  */
 package org.teavm.model.util;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.teavm.common.DominatorTree;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphUtils;
-import org.teavm.model.*;
-import org.teavm.model.instructions.*;
+import org.teavm.model.BasicBlock;
+import org.teavm.model.Incoming;
+import org.teavm.model.Instruction;
+import org.teavm.model.InvokeDynamicInstruction;
+import org.teavm.model.Phi;
+import org.teavm.model.Program;
+import org.teavm.model.TryCatchBlock;
+import org.teavm.model.Variable;
+import org.teavm.model.instructions.ArrayLengthInstruction;
+import org.teavm.model.instructions.AssignInstruction;
+import org.teavm.model.instructions.BinaryBranchingInstruction;
+import org.teavm.model.instructions.BinaryInstruction;
+import org.teavm.model.instructions.BranchingInstruction;
+import org.teavm.model.instructions.CastInstruction;
+import org.teavm.model.instructions.CastIntegerInstruction;
+import org.teavm.model.instructions.CastNumberInstruction;
+import org.teavm.model.instructions.ClassConstantInstruction;
+import org.teavm.model.instructions.CloneArrayInstruction;
+import org.teavm.model.instructions.ConstructArrayInstruction;
+import org.teavm.model.instructions.ConstructInstruction;
+import org.teavm.model.instructions.ConstructMultiArrayInstruction;
+import org.teavm.model.instructions.DoubleConstantInstruction;
+import org.teavm.model.instructions.EmptyInstruction;
+import org.teavm.model.instructions.ExitInstruction;
+import org.teavm.model.instructions.FloatConstantInstruction;
+import org.teavm.model.instructions.GetElementInstruction;
+import org.teavm.model.instructions.GetFieldInstruction;
+import org.teavm.model.instructions.InitClassInstruction;
+import org.teavm.model.instructions.InstructionVisitor;
+import org.teavm.model.instructions.IntegerConstantInstruction;
+import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.instructions.IsInstanceInstruction;
+import org.teavm.model.instructions.JumpInstruction;
+import org.teavm.model.instructions.LongConstantInstruction;
+import org.teavm.model.instructions.MonitorEnterInstruction;
+import org.teavm.model.instructions.MonitorExitInstruction;
+import org.teavm.model.instructions.NegateInstruction;
+import org.teavm.model.instructions.NullCheckInstruction;
+import org.teavm.model.instructions.NullConstantInstruction;
+import org.teavm.model.instructions.PutElementInstruction;
+import org.teavm.model.instructions.PutFieldInstruction;
+import org.teavm.model.instructions.RaiseInstruction;
+import org.teavm.model.instructions.StringConstantInstruction;
+import org.teavm.model.instructions.SwitchInstruction;
+import org.teavm.model.instructions.UnwrapArrayInstruction;
 
 public class PhiUpdater {
     private Program program;
@@ -30,13 +75,15 @@ public class PhiUpdater {
     private BasicBlock currentBlock;
     private Phi[][] phiMap;
     private int[][] phiIndexMap;
+    private List<List<Phi>> synthesizedPhis = new ArrayList<>();
+    private boolean[] usedDefinitions;
 
     public void updatePhis(Program program, Variable[] arguments) {
         if (program.basicBlockCount() == 0) {
             return;
         }
         this.program = program;
-        cfg = ProgramUtils.buildControlFlowGraphWithTryCatch(program);
+        cfg = ProgramUtils.buildControlFlowGraph(program);
         DominatorTree domTree = GraphUtils.buildDominatorTree(cfg);
         domFrontiers = new int[cfg.size()][];
         variableMap = new Variable[program.variableCount()];
@@ -50,6 +97,12 @@ public class PhiUpdater {
             phiIndexMap[i] = new int[program.variableCount()];
         }
         domFrontiers = GraphUtils.findDominanceFrontiers(cfg, domTree);
+
+        synthesizedPhis.clear();
+        for (int i = 0; i < program.basicBlockCount(); ++i) {
+            synthesizedPhis.add(new ArrayList<>());
+        }
+        usedDefinitions = new boolean[program.variableCount()];
         estimatePhis();
         renameVariables();
     }
@@ -89,61 +142,54 @@ public class PhiUpdater {
             }
         }
 
-        List<List<TryCatchBlock>> caughtBlocks = new ArrayList<>();
-        List<List<Phi>> specialPhis = new ArrayList<>();
-        for (int i = 0; i < program.basicBlockCount(); ++i) {
-            caughtBlocks.add(new ArrayList<>());
-            specialPhis.add(new ArrayList<>());
-        }
-        for (int i = 0; i < program.basicBlockCount(); ++i) {
-            for (TryCatchBlock tryCatch : program.basicBlockAt(i).getTryCatchBlocks()) {
-                caughtBlocks.get(tryCatch.getHandler().getIndex()).add(tryCatch);
-            }
-        }
+        List<List<Incoming>> phiOutputs = ProgramUtils.getPhiOutputs(program);
+
         boolean[] processed = new boolean[program.basicBlockCount()];
         while (head > 0) {
             Task task = stack[--head];
             currentBlock = task.block;
-            if (processed[currentBlock.getIndex()]) {
+            int index = currentBlock.getIndex();
+            if (processed[index]) {
                 continue;
             }
-            processed[currentBlock.getIndex()] = true;
+            processed[index] = true;
             variableMap = Arrays.copyOf(task.variables, task.variables.length);
-            for (Phi phi : currentBlock.getPhis()) {
+
+            for (Phi phi : synthesizedPhis.get(index)) {
                 Variable var = program.createVariable();
                 var.getDebugNames().addAll(phi.getReceiver().getDebugNames());
                 variableMap[phi.getReceiver().getIndex()] = var;
                 phi.setReceiver(var);
             }
-            if (!caughtBlocks.get(currentBlock.getIndex()).isEmpty()) {
-                Phi phi = new Phi();
-                phi.setReceiver(program.createVariable());
-                for (TryCatchBlock tryCatch : caughtBlocks.get(currentBlock.getIndex())) {
-                    variableMap[tryCatch.getExceptionVariable().getIndex()] = phi.getReceiver();
-                    Set<String> debugNames = tryCatch.getExceptionVariable().getDebugNames();
-                    tryCatch.setExceptionVariable(program.createVariable());
-                    tryCatch.getExceptionVariable().getDebugNames().addAll(debugNames);
-                    Incoming incoming = new Incoming();
-                    incoming.setSource(tryCatch.getProtectedBlock());
-                    incoming.setValue(tryCatch.getExceptionVariable());
-                    phi.getIncomings().add(incoming);
-                }
-                specialPhis.get(currentBlock.getIndex()).add(phi);
+
+            for (Phi phi : currentBlock.getPhis()) {
+                phi.setReceiver(define(phi.getReceiver()));
             }
+
             for (Instruction insn : currentBlock.getInstructions()) {
                 insn.acceptVisitor(consumer);
             }
-            int[] successors = domGraph.outgoingEdges(currentBlock.getIndex());
+            for (TryCatchBlock tryCatch : currentBlock.getTryCatchBlocks()) {
+                Variable var = tryCatch.getExceptionVariable();
+                if (var != null) {
+                    tryCatch.setExceptionVariable(define(var));
+                }
+            }
+            for (Incoming output : phiOutputs.get(index)) {
+                output.setValue(use(output.getValue()));
+            }
+
+            int[] successors = domGraph.outgoingEdges(index);
             for (int successor : successors) {
                 Task next = new Task();
                 next.variables = Arrays.copyOf(variableMap, variableMap.length);
                 next.block = program.basicBlockAt(successor);
                 stack[head++] = next;
             }
-            successors = cfg.outgoingEdges(currentBlock.getIndex());
+            successors = cfg.outgoingEdges(index);
             for (int successor : successors) {
                 int[] phiIndexes = phiIndexMap[successor];
-                List<Phi> phis = program.basicBlockAt(successor).getPhis();
+                List<Phi> phis = synthesizedPhis.get(successor);
                 for (int j = 0; j < phis.size(); ++j) {
                     Phi phi = phis.get(j);
                     Variable var = variableMap[phiIndexes[j]];
@@ -156,9 +202,8 @@ public class PhiUpdater {
                     }
                 }
             }
-        }
-        for (int i = 0; i < specialPhis.size(); ++i) {
-            program.basicBlockAt(i).getPhis().addAll(specialPhis.get(i));
+
+            program.basicBlockAt(index).getPhis().addAll(synthesizedPhis.get(index));
         }
     }
 
@@ -174,13 +219,12 @@ public class PhiUpdater {
             }
             for (int frontier : frontiers) {
                 BasicBlock frontierBlock = program.basicBlockAt(frontier);
-                frontierBlock.getPhis();
                 Phi phi = phiMap[frontier][var.getIndex()];
                 if (phi == null) {
                     phi = new Phi();
                     phi.setReceiver(var);
-                    phiIndexMap[frontier][frontierBlock.getPhis().size()] = var.getIndex();
-                    frontierBlock.getPhis().add(phi);
+                    phiIndexMap[frontier][synthesizedPhis.get(frontier).size()] = var.getIndex();
+                    synthesizedPhis.get(frontier).add(phi);
                     phiMap[frontier][var.getIndex()] = phi;
                     worklist[head++] = frontierBlock;
                 }
@@ -189,7 +233,14 @@ public class PhiUpdater {
     }
 
     private Variable define(Variable var) {
-        Variable result = program.createVariable();
+        Variable result;
+        if (!usedDefinitions[var.getIndex()]) {
+            usedDefinitions[var.getIndex()] = true;
+            result = var;
+        } else {
+            result = program.createVariable();
+        }
+
         variableMap[var.getIndex()] = result;
         return result;
     }
