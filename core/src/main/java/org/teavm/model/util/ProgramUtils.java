@@ -32,7 +32,10 @@ import org.teavm.model.Program;
 import org.teavm.model.ProgramReader;
 import org.teavm.model.TryCatchBlock;
 import org.teavm.model.TryCatchBlockReader;
+import org.teavm.model.TryCatchJoint;
+import org.teavm.model.TryCatchJointReader;
 import org.teavm.model.Variable;
+import org.teavm.model.VariableReader;
 
 public final class ProgramUtils {
     private ProgramUtils() {
@@ -77,13 +80,7 @@ public final class ProgramUtils {
             BasicBlock blockCopy = copy.basicBlockAt(i);
             blockCopy.getInstructions().addAll(copyInstructions(block, 0, block.instructionCount(), copy));
             blockCopy.getPhis().addAll(copyPhis(block, copy));
-            for (TryCatchBlockReader tryCatch : block.readTryCatchBlocks()) {
-                TryCatchBlock tryCatchCopy = new TryCatchBlock();
-                tryCatchCopy.setExceptionType(tryCatch.getExceptionType());
-                tryCatchCopy.setExceptionVariable(copy.variableAt(tryCatch.getExceptionVariable().getIndex()));
-                tryCatchCopy.setHandler(copy.basicBlockAt(tryCatch.getHandler().getIndex()));
-                blockCopy.getTryCatchBlocks().add(tryCatchCopy);
-            }
+            blockCopy.getTryCatchBlocks().addAll(copyTryCatches(block, copy));
         }
         return copy;
     }
@@ -122,6 +119,14 @@ public final class ProgramUtils {
             tryCatchCopy.setExceptionVariable(target.variableAt(tryCatch.getExceptionVariable().getIndex()));
             tryCatchCopy.setHandler(target.basicBlockAt(tryCatch.getHandler().getIndex()));
             result.add(tryCatchCopy);
+            for (TryCatchJointReader joint : tryCatch.readJoints()) {
+                TryCatchJoint jointCopy = new TryCatchJoint();
+                jointCopy.setTargetVariable(target.variableAt(joint.getTargetVariable().getIndex()));
+                for (VariableReader jointSourceVar : joint.readSourceVariables()) {
+                    jointCopy.getSourceVariables().add(target.variableAt(jointSourceVar.getIndex()));
+                }
+                tryCatchCopy.getJoints().add(jointCopy);
+            }
         }
         return result;
     }

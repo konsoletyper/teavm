@@ -38,6 +38,7 @@ import org.teavm.model.Instruction;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
 import org.teavm.model.TryCatchBlock;
+import org.teavm.model.TryCatchJoint;
 import org.teavm.model.Variable;
 import org.teavm.model.util.BasicBlockMapper;
 import org.teavm.model.util.InstructionCopyReader;
@@ -276,6 +277,27 @@ class LoopInversionImpl {
                     tryCatchCopy.setExceptionVariable(tryCatch.getExceptionVariable());
                     tryCatchCopy.setHandler(program.basicBlockAt(copiedNodes.getOrDefault(handler, handler)));
                     targetBlock.getTryCatchBlocks().add(tryCatchCopy);
+                    for (TryCatchJoint joint : tryCatch.getJoints()) {
+                        TryCatchJoint jointCopy = new TryCatchJoint();
+                        jointCopy.setTargetVariable(joint.getTargetVariable());
+                        jointCopy.getSourceVariables().addAll(joint.getSourceVariables());
+                        tryCatchCopy.getJoints().add(joint);
+                    }
+                }
+            }
+
+            for (int node = 0; node < cfg.size(); ++node) {
+                BasicBlock block = program.basicBlockAt(node);
+                for (Phi phi : block.getPhis()) {
+                    for (Incoming incoming : phi.getIncomings().toArray(new Incoming[0])) {
+                        int source = incoming.getSource().getIndex();
+                        if (copiedNodes.containsKey(source)) {
+                            Incoming incomingCopy = new Incoming();
+                            incomingCopy.setValue(incoming.getValue());
+                            incomingCopy.setSource(program.basicBlockAt(copiedNodes.get(source)));
+                            phi.getIncomings().add(incomingCopy);
+                        }
+                    }
                 }
             }
         }

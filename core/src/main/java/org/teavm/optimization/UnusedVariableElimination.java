@@ -70,6 +70,14 @@ public class UnusedVariableElimination implements MethodOptimization {
                     block.getPhis().remove(j--);
                 }
             }
+            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                for (int j = 0; j < tryCatch.getJoints().size(); ++j) {
+                    TryCatchJoint joint = tryCatch.getJoints().get(j);
+                    if (!used[joint.getTargetVariable().getIndex()]) {
+                        tryCatch.getJoints().remove(j--);
+                    }
+                }
+            }
         }
     }
 
@@ -258,12 +266,10 @@ public class UnusedVariableElimination implements MethodOptimization {
 
         @Override
         public void visit(MonitorEnterInstruction insn) {
-
         }
 
         @Override
         public void visit(MonitorExitInstruction insn) {
-
         }
     }
 }

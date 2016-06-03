@@ -22,6 +22,7 @@ import org.teavm.model.Instruction;
 import org.teavm.model.InvokeDynamicInstruction;
 import org.teavm.model.Phi;
 import org.teavm.model.TryCatchBlock;
+import org.teavm.model.TryCatchJoint;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.*;
 
@@ -57,6 +58,13 @@ public class InstructionVariableMapper implements InstructionVisitor {
         for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
             if (tryCatch.getExceptionVariable() != null) {
                 tryCatch.setExceptionVariable(map(tryCatch.getExceptionVariable()));
+            }
+            for (TryCatchJoint joint : tryCatch.getJoints()) {
+                joint.setTargetVariable(map(joint.getTargetVariable()));
+                for (int i = 0; i < joint.getSourceVariables().size(); ++i) {
+                    Variable var = joint.getSourceVariables().get(i);
+                    joint.getSourceVariables().set(i, map(var));
+                }
             }
         }
     }

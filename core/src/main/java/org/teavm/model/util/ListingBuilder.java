@@ -17,12 +17,9 @@ package org.teavm.model.util;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import org.teavm.model.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class ListingBuilder {
     public String buildListing(ProgramReader program, String prefix) {
         StringBuilder sb = new StringBuilder();
@@ -78,7 +75,16 @@ public class ListingBuilder {
             for (TryCatchBlockReader tryCatch : block.readTryCatchBlocks()) {
                 sb.append(prefix).append("    catch ").append(tryCatch.getExceptionType()).append(" @")
                         .append(tryCatch.getExceptionVariable().getIndex())
-                        .append(" -> $").append(tryCatch.getHandler().getIndex()).append("\n");
+                        .append(" -> $").append(tryCatch.getHandler().getIndex());
+                if (!tryCatch.readJoints().isEmpty()) {
+                    sb.append(" with ");
+                    for (TryCatchJointReader joint : tryCatch.readJoints()) {
+                        sb.append(" @").append(joint.getTargetVariable().getIndex()).append(" := ");
+                        sb.append(joint.readSourceVariables().stream().map(sourceVar -> "@" + sourceVar.getIndex())
+                                .collect(Collectors.joining("|")));
+                    }
+                }
+                sb.append("\n");
             }
         }
         return sb.toString();

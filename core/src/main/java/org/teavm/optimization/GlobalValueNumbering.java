@@ -100,8 +100,18 @@ public class GlobalValueNumbering implements MethodOptimization {
                 incoming.setValue(program.variableAt(value));
             }
             for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                int var = map[tryCatch.getExceptionVariable().getIndex()];
-                tryCatch.setExceptionVariable(program.variableAt(var));
+                for (TryCatchJoint joint : tryCatch.getJoints()) {
+                    joint.setTargetVariable(program.variableAt(map[joint.getTargetVariable().getIndex()]));
+                    for (int i = 0; i < joint.getSourceVariables().size(); ++i) {
+                        int var = joint.getSourceVariables().get(i).getIndex();
+                        var = map[var];
+                        joint.getSourceVariables().set(i, program.variableAt(var));
+                    }
+                }
+                if (tryCatch.getExceptionVariable() != null) {
+                    int var = map[tryCatch.getExceptionVariable().getIndex()];
+                    tryCatch.setExceptionVariable(program.variableAt(var));
+                }
             }
             for (int succ : dom.outgoingEdges(v)) {
                 stack[top++] = succ;

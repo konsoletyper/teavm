@@ -23,10 +23,6 @@ import java.util.Deque;
 import org.teavm.common.Graph;
 import org.teavm.model.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class LivenessAnalyzer {
     private BitSet[] liveVars;
 
@@ -69,6 +65,15 @@ public class LivenessAnalyzer {
                 }
             }
             for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                for (TryCatchJoint joint : tryCatch.getJoints()) {
+                    definitions[joint.getTargetVariable().getIndex()] = i;
+                    for (Variable sourceVar : joint.getSourceVariables()) {
+                        Task task = new Task();
+                        task.block = i;
+                        task.var = sourceVar.getIndex();
+                        stack.push(task);
+                    }
+                }
                 if (tryCatch.getExceptionVariable() != null) {
                     definitions[tryCatch.getExceptionVariable().getIndex()] = i;
                 }

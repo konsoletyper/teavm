@@ -53,10 +53,23 @@ class InterferenceGraphBuilder {
                 if (tryCatch.getExceptionVariable() != null) {
                     nodes.get(tryCatch.getExceptionVariable().getIndex()).connectAll(live);
                 }
+                for (TryCatchJoint joint : tryCatch.getJoints()) {
+                    nodes.get(joint.getTargetVariable().getIndex()).connectAll(live);
+                }
             }
             for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
                 if (tryCatch.getExceptionVariable() != null) {
                     live.remove(nodes.get(tryCatch.getExceptionVariable().getIndex()));
+                }
+                for (TryCatchJoint joint : tryCatch.getJoints()) {
+                    nodes.get(joint.getTargetVariable().getIndex()).connectAll(live);
+                }
+            }
+            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                for (TryCatchJoint joint : tryCatch.getJoints()) {
+                    for (Variable var : joint.getSourceVariables()) {
+                        live.add(nodes.get(var.getIndex()));
+                    }
                 }
             }
             for (int j = block.getInstructions().size() - 1; j >= 0; --j) {

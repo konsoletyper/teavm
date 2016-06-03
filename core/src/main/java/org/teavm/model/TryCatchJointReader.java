@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2016 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,14 +17,8 @@ package org.teavm.model;
 
 import java.util.List;
 
-public interface TryCatchBlockReader {
-    BasicBlockReader getProtectedBlock();
+public interface TryCatchJointReader {
+    List<VariableReader> readSourceVariables();
 
-    BasicBlockReader getHandler();
-
-    String getExceptionType();
-
-    VariableReader getExceptionVariable();
-
-    List<TryCatchJointReader> readJoints();
+    VariableReader getTargetVariable();
 }
