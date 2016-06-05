@@ -24,6 +24,7 @@ public class TryCatchJoint implements TryCatchJointReader {
     private List<Variable> sourceVariables = new ArrayList<>();
     private List<VariableReader> readonlySourceVariables;
     private Variable receiver;
+    BasicBlock block;
 
     @Override
     public List<VariableReader> readSourceVariables() {
@@ -53,5 +54,9 @@ public class TryCatchJoint implements TryCatchJointReader {
 
     public void setSource(BasicBlock source) {
         this.source = source;
+    }
+
+    public BasicBlock getBlock() {
+        return block;
     }
 }

@@ -23,4 +23,6 @@ public interface TryCatchJointReader {
     VariableReader getReceiver();
 
     BasicBlockReader getSource();
+
+    BasicBlockReader getBlock();
 }
