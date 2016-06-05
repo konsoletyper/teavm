@@ -32,5 +32,6 @@
     <orderEntry type="library" name="Maven: org.ow2.asm:asm-debug-all:5.0.4" level="project" />
     <orderEntry type="library" name="Maven: com.carrotsearch:hppc:0.6.1" level="project" />
     <orderEntry type="library" name="Maven: com.fasterxml.jackson.core:jackson-annotations:2.6.2" level="project" />
+    <orderEntry type="library" name="Maven: org.objenesis:objenesis:2.4" level="project" />
   </component>
 </module>

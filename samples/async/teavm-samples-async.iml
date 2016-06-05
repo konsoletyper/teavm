@@ -28,6 +28,7 @@
     <orderEntry type="module" module-name="teavm-metaprogramming-api" scope="PROVIDED" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: commons-io:commons-io:2.4" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: com.carrotsearch:hppc:0.6.1" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: org.objenesis:objenesis:2.4" level="project" />
     <orderEntry type="module" module-name="teavm-jso" scope="PROVIDED" />
     <orderEntry type="module" module-name="teavm-jso-apis" scope="PROVIDED" />
     <orderEntry type="module" module-name="teavm-jso-impl" scope="PROVIDED" />

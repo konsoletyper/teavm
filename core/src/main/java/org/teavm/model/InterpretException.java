@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2016 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,10 +15,21 @@
  */
 package org.teavm.model;
 
-public interface IncomingReader {
-    VariableReader getValue();
+public class InterpretException extends Exception {
+    private final BasicBlockReader block;
+    private final int index;
 
-    BasicBlockReader getSource();
+    public InterpretException(BasicBlockReader block, int index, Throwable cause) {
+        super(cause);
+        this.block = block;
+        this.index = index;
+    }
 
-    PhiReader getPhi();
+    public BasicBlockReader getBlock() {
+        return block;
+    }
+
+    public int getIndex() {
+        return index;
+    }
 }
