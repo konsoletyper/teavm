@@ -65,17 +65,18 @@ public class LivenessAnalyzer {
                 }
             }
             for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                for (TryCatchJoint joint : tryCatch.getJoints()) {
-                    definitions[joint.getTargetVariable().getIndex()] = i;
-                    for (Variable sourceVar : joint.getSourceVariables()) {
-                        Task task = new Task();
-                        task.block = i;
-                        task.var = sourceVar.getIndex();
-                        stack.push(task);
-                    }
-                }
                 if (tryCatch.getExceptionVariable() != null) {
                     definitions[tryCatch.getExceptionVariable().getIndex()] = i;
+                }
+            }
+
+            for (TryCatchJoint joint : block.getTryCatchJoints()) {
+                definitions[joint.getReceiver().getIndex()] = i;
+                for (Variable sourceVar : joint.getSourceVariables()) {
+                    Task task = new Task();
+                    task.block = joint.getSource().getIndex();
+                    task.var = sourceVar.getIndex();
+                    stack.push(task);
                 }
             }
             for (Phi phi : block.getPhis()) {

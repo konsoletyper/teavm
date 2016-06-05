@@ -24,10 +24,6 @@ import org.teavm.model.util.DefinitionExtractor;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.model.util.UsageExtractor;
 
-/**
- *
- * @author Alexey Andreev
- */
 class ReadWriteStatsBuilder {
     public int[] reads;
     public int[] writes;
@@ -64,6 +60,13 @@ class ReadWriteStatsBuilder {
                     writes[var.getIndex()]++;
                 }
                 for (Variable var : useExtractor.getUsedVariables()) {
+                    reads[var.getIndex()]++;
+                }
+            }
+
+            for (TryCatchJoint joint : block.getTryCatchJoints()) {
+                writes[joint.getReceiver().getIndex()] += joint.getSourceVariables().size();
+                for (Variable var : joint.getSourceVariables()) {
                     reads[var.getIndex()]++;
                 }
             }

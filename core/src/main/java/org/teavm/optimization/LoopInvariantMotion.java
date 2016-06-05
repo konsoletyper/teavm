@@ -165,18 +165,18 @@ public class LoopInvariantMotion implements MethodOptimization {
     }
 
     private int insertPreheader(int headerIndex) {
-        final BasicBlock preheader = program.createBasicBlock();
+        BasicBlock preheader = program.createBasicBlock();
         JumpInstruction escapeInsn = new JumpInstruction();
-        final BasicBlock header = program.basicBlockAt(headerIndex);
+        BasicBlock header = program.basicBlockAt(headerIndex);
         escapeInsn.setTarget(header);
         preheader.getInstructions().add(escapeInsn);
-        for (int i = 0; i < header.getPhis().size(); ++i) {
-            Phi phi = header.getPhis().get(i);
+
+        for (Phi phi : header.getPhis()) {
             Phi preheaderPhi = null;
-            for (int j = 0; j < phi.getIncomings().size(); ++j) {
-                Incoming incoming = phi.getIncomings().get(j);
+            for (int i = 0; i < phi.getIncomings().size(); ++i) {
+                Incoming incoming = phi.getIncomings().get(i);
                 if (!dom.dominates(headerIndex, incoming.getSource().getIndex())) {
-                    phi.getIncomings().remove(j--);
+                    phi.getIncomings().remove(i--);
                     if (preheaderPhi == null) {
                         preheaderPhi = new Phi();
                         preheaderPhi.setReceiver(program.createVariable());
@@ -192,6 +192,7 @@ public class LoopInvariantMotion implements MethodOptimization {
                 phi.getIncomings().add(incoming);
             }
         }
+
         for (int predIndex : graph.incomingEdges(headerIndex)) {
             if (!dom.dominates(headerIndex, predIndex)) {
                 BasicBlock pred = program.basicBlockAt(predIndex);
@@ -199,6 +200,7 @@ public class LoopInvariantMotion implements MethodOptimization {
                         block -> block == header.getIndex() ? preheader.getIndex() : block));
             }
         }
+
         return preheader.getIndex();
     }
 

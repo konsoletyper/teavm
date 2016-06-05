@@ -29,6 +29,7 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.PhiReader;
 import org.teavm.model.ProgramReader;
 import org.teavm.model.RuntimeConstant;
+import org.teavm.model.TryCatchJointReader;
 import org.teavm.model.ValueType;
 import org.teavm.model.VariableReader;
 import org.teavm.model.instructions.ArrayElementType;
@@ -62,6 +63,14 @@ class AliasFinder {
                         .collect(Collectors.toSet());
                 if (inputs.size() == 1) {
                     set.union(inputs.iterator().next(), phi.getReceiver().getIndex());
+                }
+            }
+            for (TryCatchJointReader joint : block.readTryCatchJoints()) {
+                Set<Integer> inputs = joint.readSourceVariables().stream()
+                        .map(sourceVar -> sourceVar.getIndex())
+                        .collect(Collectors.toSet());
+                if (inputs.size() == 1) {
+                    set.union(inputs.iterator().next(), joint.getReceiver().getIndex());
                 }
             }
         }

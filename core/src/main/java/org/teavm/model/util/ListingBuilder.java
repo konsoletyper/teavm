@@ -47,6 +47,13 @@ public class ListingBuilder {
             if (block == null) {
                 continue;
             }
+
+            for (TryCatchJointReader joint : block.readTryCatchJoints()) {
+                sb.append("@").append(joint.getReceiver().getIndex()).append(" := e-phi(");
+                sb.append(joint.readSourceVariables().stream().map(sourceVar -> "@" + sourceVar.getIndex())
+                        .collect(Collectors.joining(", ")));
+                sb.append(") from $").append(joint.getSource().getIndex()).append("\n");
+            }
             for (PhiReader phi : block.readPhis()) {
                 sb.append(prefix).append("    ");
                 sb.append("@").append(phi.getReceiver().getIndex()).append(" := ");
@@ -61,6 +68,7 @@ public class ListingBuilder {
                 }
                 sb.append("\n");
             }
+
             InstructionLocation location = null;
             for (int j = 0; j < block.instructionCount(); ++j) {
                 insnSb.setLength(0);
@@ -76,14 +84,6 @@ public class ListingBuilder {
                 sb.append(prefix).append("    catch ").append(tryCatch.getExceptionType()).append(" @")
                         .append(tryCatch.getExceptionVariable().getIndex())
                         .append(" -> $").append(tryCatch.getHandler().getIndex());
-                if (!tryCatch.readJoints().isEmpty()) {
-                    sb.append(" with ");
-                    for (TryCatchJointReader joint : tryCatch.readJoints()) {
-                        sb.append(" @").append(joint.getTargetVariable().getIndex()).append(" := ");
-                        sb.append(joint.readSourceVariables().stream().map(sourceVar -> "@" + sourceVar.getIndex())
-                                .collect(Collectors.joining("|")));
-                    }
-                }
                 sb.append("\n");
             }
         }

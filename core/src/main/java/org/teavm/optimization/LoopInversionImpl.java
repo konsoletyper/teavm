@@ -277,12 +277,15 @@ class LoopInversionImpl {
                     tryCatchCopy.setExceptionVariable(tryCatch.getExceptionVariable());
                     tryCatchCopy.setHandler(program.basicBlockAt(copiedNodes.getOrDefault(handler, handler)));
                     targetBlock.getTryCatchBlocks().add(tryCatchCopy);
-                    for (TryCatchJoint joint : tryCatch.getJoints()) {
-                        TryCatchJoint jointCopy = new TryCatchJoint();
-                        jointCopy.setTargetVariable(joint.getTargetVariable());
-                        jointCopy.getSourceVariables().addAll(joint.getSourceVariables());
-                        tryCatchCopy.getJoints().add(joint);
-                    }
+                }
+
+                for (TryCatchJoint joint : sourceBlock.getTryCatchJoints()) {
+                    TryCatchJoint jointCopy = new TryCatchJoint();
+                    jointCopy.setReceiver(joint.getReceiver());
+                    jointCopy.getSourceVariables().addAll(joint.getSourceVariables());
+                    int source = joint.getSource().getIndex();
+                    jointCopy.setSource(program.basicBlockAt(copiedNodes.getOrDefault(source, source)));
+                    targetBlock.getTryCatchJoints().add(joint);
                 }
             }
 

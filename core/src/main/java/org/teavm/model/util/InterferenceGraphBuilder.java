@@ -29,6 +29,7 @@ class InterferenceGraphBuilder {
         DefinitionExtractor defExtractor = new DefinitionExtractor();
         InstructionTransitionExtractor succExtractor = new InstructionTransitionExtractor();
         List<List<Incoming>> outgoings = ProgramUtils.getPhiOutputs(program);
+        List<List<TryCatchJoint>> outputJoints = ProgramUtils.getOutputJoints(program);
         Set<MutableGraphNode> live = new HashSet<>(128);
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
@@ -46,6 +47,11 @@ class InterferenceGraphBuilder {
                     live.add(nodes.get(j));
                 }
             }
+            for (TryCatchJoint joint : outputJoints.get(i)) {
+                for (Variable outputVar : joint.getSourceVariables()) {
+                    live.add(nodes.get(outputVar.getIndex()));
+                }
+            }
             for (Incoming outgoing : outgoings.get(i)) {
                 live.add(nodes.get(outgoing.getValue().getIndex()));
             }
@@ -53,23 +59,10 @@ class InterferenceGraphBuilder {
                 if (tryCatch.getExceptionVariable() != null) {
                     nodes.get(tryCatch.getExceptionVariable().getIndex()).connectAll(live);
                 }
-                for (TryCatchJoint joint : tryCatch.getJoints()) {
-                    nodes.get(joint.getTargetVariable().getIndex()).connectAll(live);
-                }
             }
             for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
                 if (tryCatch.getExceptionVariable() != null) {
                     live.remove(nodes.get(tryCatch.getExceptionVariable().getIndex()));
-                }
-                for (TryCatchJoint joint : tryCatch.getJoints()) {
-                    nodes.get(joint.getTargetVariable().getIndex()).connectAll(live);
-                }
-            }
-            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                for (TryCatchJoint joint : tryCatch.getJoints()) {
-                    for (Variable var : joint.getSourceVariables()) {
-                        live.add(nodes.get(var.getIndex()));
-                    }
                 }
             }
             for (int j = block.getInstructions().size() - 1; j >= 0; --j) {
@@ -98,8 +91,16 @@ class InterferenceGraphBuilder {
                     live.add(nodes.get(j));
                 }
             }
+
+            for (TryCatchJoint joint : block.getTryCatchJoints()) {
+                live.add(nodes.get(joint.getReceiver().getIndex()));
+            }
             for (Phi phi : block.getPhis()) {
                 live.add(nodes.get(phi.getReceiver().getIndex()));
+            }
+
+            for (TryCatchJoint joint : block.getTryCatchJoints()) {
+                nodes.get(joint.getReceiver().getIndex()).connectAll(live);
             }
             for (Phi phi : block.getPhis()) {
                 nodes.get(phi.getReceiver().getIndex()).connectAll(live);

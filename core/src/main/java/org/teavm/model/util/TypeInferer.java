@@ -51,6 +51,11 @@ public class TypeInferer {
                     builder.addEdge(incoming.getValue().getIndex(), phi.getReceiver().getIndex());
                 }
             }
+            for (TryCatchJointReader joint : block.readTryCatchJoints()) {
+                for (VariableReader sourceVar : joint.readSourceVariables()) {
+                    builder.addEdge(sourceVar.getIndex(), joint.getReceiver().getIndex());
+                }
+            }
             for (TryCatchBlockReader tryCatch : block.readTryCatchBlocks()) {
                 if (tryCatch.getExceptionVariable() != null) {
                     types[tryCatch.getExceptionVariable().getIndex()] = VariableType.OBJECT;

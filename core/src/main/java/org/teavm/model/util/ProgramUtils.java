@@ -81,6 +81,7 @@ public final class ProgramUtils {
             blockCopy.getInstructions().addAll(copyInstructions(block, 0, block.instructionCount(), copy));
             blockCopy.getPhis().addAll(copyPhis(block, copy));
             blockCopy.getTryCatchBlocks().addAll(copyTryCatches(block, copy));
+            blockCopy.getTryCatchJoints().addAll(copyTryCatchJoints(block, copy));
         }
         return copy;
     }
@@ -119,14 +120,20 @@ public final class ProgramUtils {
             tryCatchCopy.setExceptionVariable(target.variableAt(tryCatch.getExceptionVariable().getIndex()));
             tryCatchCopy.setHandler(target.basicBlockAt(tryCatch.getHandler().getIndex()));
             result.add(tryCatchCopy);
-            for (TryCatchJointReader joint : tryCatch.readJoints()) {
-                TryCatchJoint jointCopy = new TryCatchJoint();
-                jointCopy.setTargetVariable(target.variableAt(joint.getTargetVariable().getIndex()));
-                for (VariableReader jointSourceVar : joint.readSourceVariables()) {
-                    jointCopy.getSourceVariables().add(target.variableAt(jointSourceVar.getIndex()));
-                }
-                tryCatchCopy.getJoints().add(jointCopy);
+        }
+        return result;
+    }
+
+    public static List<TryCatchJoint> copyTryCatchJoints(BasicBlockReader block, Program target) {
+        List<TryCatchJoint> result = new ArrayList<>();
+        for (TryCatchJointReader joint : block.readTryCatchJoints()) {
+            TryCatchJoint jointCopy = new TryCatchJoint();
+            jointCopy.setSource(target.basicBlockAt(joint.getSource().getIndex()));
+            jointCopy.setReceiver(target.variableAt(joint.getReceiver().getIndex()));
+            for (VariableReader sourceVar : jointCopy.getSourceVariables()) {
+                jointCopy.getSourceVariables().add(target.variableAt(sourceVar.getIndex()));
             }
+            result.add(jointCopy);
         }
         return result;
     }
@@ -143,6 +150,22 @@ public final class ProgramUtils {
                 for (Incoming incoming : phi.getIncomings()) {
                     outputs.get(incoming.getSource().getIndex()).add(incoming);
                 }
+            }
+        }
+
+        return outputs;
+    }
+
+    public static List<List<TryCatchJoint>> getOutputJoints(Program program) {
+        List<List<TryCatchJoint>> outputs = new ArrayList<>(program.basicBlockCount());
+        for (int i = 0; i < program.basicBlockCount(); ++i) {
+            outputs.add(new ArrayList<>());
+        }
+
+        for (int i = 0; i < program.basicBlockCount(); ++i) {
+            BasicBlock block = program.basicBlockAt(i);
+            for (TryCatchJoint joint : block.getTryCatchJoints()) {
+                outputs.get(joint.getSource().getIndex()).add(joint);
             }
         }
 

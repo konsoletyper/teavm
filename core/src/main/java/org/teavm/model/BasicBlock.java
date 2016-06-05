@@ -18,16 +18,14 @@ package org.teavm.model;
 import java.util.*;
 import org.teavm.model.instructions.InstructionReader;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class BasicBlock implements BasicBlockReader {
     private Program program;
     private int index;
     private List<Phi> phis = new ArrayList<>();
     private List<Instruction> instructions = new ArrayList<>();
-    List<TryCatchBlock> tryCatchBlocks = new ArrayList<>();
+    private List<TryCatchBlock> tryCatchBlocks = new ArrayList<>();
+    private List<TryCatchJoint> joints = new ArrayList<>();
+    private List<TryCatchJointReader> immutableJoints = new ArrayList<>();
 
     BasicBlock(Program program, int index) {
         this.program = program;
@@ -199,6 +197,12 @@ public class BasicBlock implements BasicBlockReader {
                 }
             }
         }
+        for (int i = 0; i < joints.size(); ++i) {
+            TryCatchJoint joint = joints.get(i);
+            if (joint.getSource() == predecessor) {
+                joints.remove(i--);
+            }
+        }
     }
 
     private List<TryCatchBlock> immutableTryCatchBlocks = Collections.unmodifiableList(tryCatchBlocks);
@@ -250,5 +254,17 @@ public class BasicBlock implements BasicBlockReader {
 
     public List<TryCatchBlock> getTryCatchBlocks() {
         return safeTryCatchBlocks;
+    }
+
+    public List<TryCatchJoint> getTryCatchJoints() {
+        return joints;
+    }
+
+    @Override
+    public List<TryCatchJointReader> readTryCatchJoints() {
+        if (immutableJoints == null) {
+            immutableJoints = Collections.unmodifiableList(joints);
+        }
+        return immutableJoints;
     }
 }

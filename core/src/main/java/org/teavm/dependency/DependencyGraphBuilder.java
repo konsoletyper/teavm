@@ -44,6 +44,7 @@ import org.teavm.model.PhiReader;
 import org.teavm.model.Program;
 import org.teavm.model.RuntimeConstant;
 import org.teavm.model.TryCatchBlockReader;
+import org.teavm.model.TryCatchJointReader;
 import org.teavm.model.ValueType;
 import org.teavm.model.VariableReader;
 import org.teavm.model.emit.ProgramEmitter;
@@ -136,10 +137,17 @@ class DependencyGraphBuilder {
             BasicBlockReader block = program.basicBlockAt(i);
             currentExceptionConsumer = createExceptionConsumer(dep, block);
             block.readAllInstructions(reader);
+            for (TryCatchJointReader joint : block.readTryCatchJoints()) {
+                DependencyNode receiverNode = nodes[joint.getReceiver().getIndex()];
+                for (VariableReader source : joint.readSourceVariables()) {
+                    DependencyNode sourceNode = nodes[source.getIndex()];
+                    sourceNode.connect(receiverNode);
+                }
+            }
             for (PhiReader phi : block.readPhis()) {
+                DependencyNode receiverNode = nodes[phi.getReceiver().getIndex()];
                 for (IncomingReader incoming : phi.readIncomings()) {
                     DependencyNode incomingNode = nodes[incoming.getValue().getIndex()];
-                    DependencyNode receiverNode = nodes[phi.getReceiver().getIndex()];
                     if (incomingNode != null && receiverNode != null) {
                         incomingNode.connect(receiverNode);
                     }

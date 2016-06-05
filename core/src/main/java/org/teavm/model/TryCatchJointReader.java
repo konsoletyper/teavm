@@ -20,5 +20,7 @@ import java.util.List;
 public interface TryCatchJointReader {
     List<VariableReader> readSourceVariables();
 
-    VariableReader getTargetVariable();
+    VariableReader getReceiver();
+
+    BasicBlockReader getSource();
 }

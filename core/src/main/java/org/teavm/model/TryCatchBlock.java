@@ -15,17 +15,11 @@
  */
 package org.teavm.model;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 public class TryCatchBlock implements TryCatchBlockReader {
     BasicBlock protectedBlock;
     private BasicBlock handler;
     private String exceptionType;
     private Variable exceptionVariable;
-    private List<TryCatchJoint> joints = new ArrayList<>();
-    private List<TryCatchJointReader> immutableJoints = new ArrayList<>();
 
     @Override
     public BasicBlock getHandler() {
@@ -57,17 +51,5 @@ public class TryCatchBlock implements TryCatchBlockReader {
     @Override
     public BasicBlock getProtectedBlock() {
         return protectedBlock;
-    }
-
-    public List<TryCatchJoint> getJoints() {
-        return joints;
-    }
-
-    @Override
-    public List<TryCatchJointReader> readJoints() {
-        if (immutableJoints == null) {
-            immutableJoints = Collections.unmodifiableList(joints);
-        }
-        return immutableJoints;
     }
 }

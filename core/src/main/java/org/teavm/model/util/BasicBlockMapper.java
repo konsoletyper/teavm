@@ -19,10 +19,6 @@ import java.util.function.IntUnaryOperator;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class BasicBlockMapper implements InstructionVisitor {
     private IntUnaryOperator mapFunction;
 
@@ -47,6 +43,9 @@ public class BasicBlockMapper implements InstructionVisitor {
             return;
         }
         lastInsn.acceptVisitor(this);
+        for (TryCatchJoint joint : block.getTryCatchJoints()) {
+            joint.setSource(map(joint.getSource()));
+        }
         for (Phi phi : block.getPhis()) {
             for (Incoming incoming : phi.getIncomings()) {
                 incoming.setSource(map(incoming.getSource()));

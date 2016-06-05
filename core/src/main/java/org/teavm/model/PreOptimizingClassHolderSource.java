@@ -20,10 +20,6 @@ import java.util.Map;
 import org.teavm.optimization.GlobalValueNumbering;
 import org.teavm.optimization.UnusedVariableElimination;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class PreOptimizingClassHolderSource implements ClassHolderSource {
     private ClassHolderSource innerClassSource;
     private Map<String, ClassHolder> cache = new HashMap<>();
