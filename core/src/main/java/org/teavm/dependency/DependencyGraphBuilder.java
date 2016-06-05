@@ -139,9 +139,14 @@ class DependencyGraphBuilder {
             block.readAllInstructions(reader);
             for (TryCatchJointReader joint : block.readTryCatchJoints()) {
                 DependencyNode receiverNode = nodes[joint.getReceiver().getIndex()];
+                if (receiverNode == null) {
+                    continue;
+                }
                 for (VariableReader source : joint.readSourceVariables()) {
                     DependencyNode sourceNode = nodes[source.getIndex()];
-                    sourceNode.connect(receiverNode);
+                    if (sourceNode != null) {
+                        sourceNode.connect(receiverNode);
+                    }
                 }
             }
             for (PhiReader phi : block.readPhis()) {

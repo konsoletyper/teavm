@@ -130,7 +130,7 @@ public final class ProgramUtils {
             TryCatchJoint jointCopy = new TryCatchJoint();
             jointCopy.setSource(target.basicBlockAt(joint.getSource().getIndex()));
             jointCopy.setReceiver(target.variableAt(joint.getReceiver().getIndex()));
-            for (VariableReader sourceVar : jointCopy.getSourceVariables()) {
+            for (VariableReader sourceVar : joint.readSourceVariables()) {
                 jointCopy.getSourceVariables().add(target.variableAt(sourceVar.getIndex()));
             }
             result.add(jointCopy);

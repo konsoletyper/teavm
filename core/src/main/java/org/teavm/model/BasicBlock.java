@@ -25,7 +25,7 @@ public class BasicBlock implements BasicBlockReader {
     private List<Instruction> instructions = new ArrayList<>();
     private List<TryCatchBlock> tryCatchBlocks = new ArrayList<>();
     private List<TryCatchJoint> joints = new ArrayList<>();
-    private List<TryCatchJointReader> immutableJoints = new ArrayList<>();
+    private List<TryCatchJointReader> immutableJoints;
 
     BasicBlock(Program program, int index) {
         this.program = program;
