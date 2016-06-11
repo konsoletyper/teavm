@@ -49,7 +49,7 @@ public class ListingBuilder {
             }
 
             for (TryCatchJointReader joint : block.readTryCatchJoints()) {
-                sb.append("  @").append(joint.getReceiver().getIndex()).append(" := e-phi(");
+                sb.append("    @").append(joint.getReceiver().getIndex()).append(" := e-phi(");
                 sb.append(joint.readSourceVariables().stream().map(sourceVar -> "@" + sourceVar.getIndex())
                         .collect(Collectors.joining(", ")));
                 sb.append(") from $").append(joint.getSource().getIndex()).append("\n");

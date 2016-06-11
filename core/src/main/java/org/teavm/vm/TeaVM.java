@@ -95,6 +95,7 @@ import org.teavm.optimization.ArrayUnwrapMotion;
 import org.teavm.optimization.Devirtualization;
 import org.teavm.optimization.GlobalValueNumbering;
 import org.teavm.optimization.LoopInvariantMotion;
+import org.teavm.optimization.LoopInversion;
 import org.teavm.optimization.MethodOptimization;
 import org.teavm.optimization.UnusedVariableElimination;
 import org.teavm.vm.spi.RendererListener;
@@ -712,7 +713,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     }
 
     private List<MethodOptimization> getOptimizations() {
-        return Arrays.asList(new ArrayUnwrapMotion(), /*new LoopInversion(),*/ new LoopInvariantMotion(),
+        return Arrays.asList(new ArrayUnwrapMotion(), new LoopInversion(), new LoopInvariantMotion(),
                 new GlobalValueNumbering(), new UnusedVariableElimination());
     }
 

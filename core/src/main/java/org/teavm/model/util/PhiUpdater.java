@@ -15,8 +15,13 @@
  */
 package org.teavm.model.util;
 
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CoderResult;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,9 +29,12 @@ import org.teavm.common.DominatorTree;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphUtils;
 import org.teavm.model.BasicBlock;
+import org.teavm.model.ClassHolder;
 import org.teavm.model.Incoming;
 import org.teavm.model.Instruction;
 import org.teavm.model.InvokeDynamicInstruction;
+import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodHolder;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
 import org.teavm.model.TryCatchBlock;
@@ -69,6 +77,7 @@ import org.teavm.model.instructions.RaiseInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.instructions.SwitchInstruction;
 import org.teavm.model.instructions.UnwrapArrayInstruction;
+import org.teavm.parsing.ClasspathClassHolderSource;
 
 public class PhiUpdater {
     private Program program;
@@ -175,6 +184,7 @@ public class PhiUpdater {
             for (Phi phi : synthesizedPhis.get(index)) {
                 Variable var = program.createVariable();
                 var.getDebugNames().addAll(phi.getReceiver().getDebugNames());
+                propagateToTryCatch(phi.getReceiver(), var, null);
                 variableMap[phi.getReceiver().getIndex()] = var;
                 phi.setReceiver(var);
             }
@@ -208,12 +218,19 @@ public class PhiUpdater {
             }
 
             for (Incoming output : phiOutputs.get(index)) {
-                output.setValue(use(output.getValue()));
+                Variable var = output.getValue();
+                Variable exceptionVar = tryCatchVariableMap
+                        .getOrDefault(output.getPhi().getBasicBlock(), Collections.emptyMap())
+                        .get(var);
+                output.setValue(exceptionVar != null ? exceptionVar : use(var));
             }
             for (TryCatchJoint joint : existingOutputJoints.get(index)) {
                 for (int i = 0; i < joint.getSourceVariables().size(); ++i) {
                     Variable var = joint.getSourceVariables().get(i);
-                    joint.getSourceVariables().set(i, use(var));
+                    Variable exceptionVar = tryCatchVariableMap
+                            .getOrDefault(joint.getBlock(), Collections.emptyMap())
+                            .get(var);
+                    joint.getSourceVariables().set(i, exceptionVar != null ? exceptionVar : use(var));
                 }
             }
 
@@ -309,11 +326,14 @@ public class PhiUpdater {
 
             if (!fromHandler) {
                 for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                    if (tryCatch.getExceptionVariable() == var || !hasReassignmentTo(block, var)) {
+                        continue;
+                    }
                     BasicBlock frontierBlock = tryCatch.getHandler();
                     int frontier = frontierBlock.getIndex();
-                    boolean jointExists = frontierBlock.getTryCatchJoints().stream()
+                    boolean exists = frontierBlock.getTryCatchJoints().stream()
                             .anyMatch(joint -> joint.getSourceVariables().contains(var) && joint.getSource() == block);
-                    if (jointExists) {
+                    if (exists) {
                         continue;
                     }
 
@@ -336,18 +356,33 @@ public class PhiUpdater {
         }
     }
 
+    private boolean hasReassignmentTo(BasicBlock block, Variable var) {
+        DefinitionExtractor defExtractor = new DefinitionExtractor();
+        for (int i = 0; i < block.instructionCount(); ++i) {
+            block.getInstructions().get(i).acceptVisitor(defExtractor);
+            for (Variable definedVar : defExtractor.getDefinedVariables()) {
+                if (definedVar == var) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private boolean isExceptionHandler(BasicBlock source, BasicBlock target) {
         return source.getTryCatchBlocks().stream().anyMatch(tryCatch -> tryCatch.getHandler() == target);
     }
 
     private Variable define(Variable var) {
         Variable old = variableMap[var.getIndex()];
-        if (old == null) {
-            old = var;
-        }
         Variable original = var;
         var = introduce(var);
+        propagateToTryCatch(original, var, old);
+        variableMap[original.getIndex()] = var;
+        return var;
+    }
 
+    private void propagateToTryCatch(Variable original, Variable var, Variable old) {
         for (TryCatchBlock tryCatch : currentBlock.getTryCatchBlocks()) {
             if (tryCatch.getExceptionVariable() == original) {
                 continue;
@@ -360,14 +395,11 @@ public class PhiUpdater {
             if (joint == null) {
                 continue;
             }
-            if (joint.getSourceVariables().isEmpty()) {
+            if (joint.getSourceVariables().isEmpty() && old != null) {
                 joint.getSourceVariables().add(old);
             }
             joint.getSourceVariables().add(var);
         }
-
-        variableMap[original.getIndex()] = var;
-        return var;
     }
 
     private Variable introduce(Variable var) {
@@ -619,4 +651,35 @@ public class PhiUpdater {
             insn.setObjectRef(use(insn.getObjectRef()));
         }
     };
+
+    public static void main(String[] args) {
+        ClasspathClassHolderSource classSource = new ClasspathClassHolderSource();
+        ClassHolder cls = classSource.get(CharsetDecoder.class.getName());
+        MethodHolder method = cls.getMethod(new MethodDescriptor("decode", ByteBuffer.class, CharBuffer.class,
+                boolean.class, CoderResult.class));
+        Program program = method.getProgram();
+
+        System.out.println(new ListingBuilder().buildListing(program, ""));
+
+        Variable[] arguments = new Variable[method.parameterCount() + 1];
+        for (int i = 0; i <= method.parameterCount(); ++i) {
+            arguments[i] = program.variableAt(i);
+        }
+        new PhiUpdater().updatePhis(program, arguments);
+
+        System.out.println("After:");
+        System.out.println(new ListingBuilder().buildListing(program, ""));
+    }
+
+    private static void test() {
+        int a = 0;
+        try {
+            int x = Math.random() > 0.5 ? 50 : -50;
+            System.out.println("Foo " + x);
+        } catch (RuntimeException e) {
+            System.out.println("Foo " + a);
+            a = 23;
+        }
+        System.out.println("bar " + a);
+    }
 }
