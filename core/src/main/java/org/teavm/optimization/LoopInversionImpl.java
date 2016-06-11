@@ -40,12 +40,6 @@ import org.teavm.model.Program;
 import org.teavm.model.TryCatchBlock;
 import org.teavm.model.TryCatchJoint;
 import org.teavm.model.Variable;
-import org.teavm.model.instructions.ArrayLengthInstruction;
-import org.teavm.model.instructions.BinaryInstruction;
-import org.teavm.model.instructions.BinaryOperation;
-import org.teavm.model.instructions.NullCheckInstruction;
-import org.teavm.model.instructions.NumericOperandType;
-import org.teavm.model.instructions.UnwrapArrayInstruction;
 import org.teavm.model.util.BasicBlockMapper;
 import org.teavm.model.util.DefinitionExtractor;
 import org.teavm.model.util.InstructionCopyReader;
@@ -226,6 +220,7 @@ class LoopInversionImpl {
         private boolean isInversionProfitable(IntSet nodesToCopy) {
             UsageExtractor useExtractor = new UsageExtractor();
             DefinitionExtractor defExtractor = new DefinitionExtractor();
+            LoopInvariantAnalyzer invariantAnalyzer = new LoopInvariantAnalyzer();
             for (int node : nodes.toArray()) {
                 if (nodesToCopy.contains(node)) {
                     continue;
@@ -233,6 +228,11 @@ class LoopInversionImpl {
                 BasicBlock block = program.basicBlockAt(node);
                 Set<Variable> currentInvariants = new HashSet<>();
                 for (Instruction insn : block.getInstructions()) {
+                    invariantAnalyzer.reset();
+                    insn.acceptVisitor(invariantAnalyzer);
+                    if (!invariantAnalyzer.canMove && !invariantAnalyzer.constant) {
+                        continue;
+                    }
                     insn.acceptVisitor(useExtractor);
                     boolean invariant = Arrays.stream(useExtractor.getUsedVariables()).allMatch(var -> {
                         if (currentInvariants.contains(var)) {
@@ -241,10 +241,10 @@ class LoopInversionImpl {
                         BasicBlock definedAt = var.getIndex() < definitionPlaces.length
                                 ? definitionPlaces[var.getIndex()]
                                 : null;
-                        return definedAt == null || dom.dominates(definedAt.getIndex(), block.getIndex());
+                        return definedAt == null || dom.dominates(definedAt.getIndex(), head);
                     });
                     if (invariant) {
-                        if (becomesInvariant(insn)) {
+                        if (invariantAnalyzer.sideEffect) {
                             return true;
                         }
                         insn.acceptVisitor(defExtractor);
@@ -253,17 +253,6 @@ class LoopInversionImpl {
                 }
             }
             return false;
-        }
-
-        private boolean becomesInvariant(Instruction insn) {
-            if (insn instanceof BinaryInstruction) {
-                BinaryInstruction binary = (BinaryInstruction) insn;
-                return binary.getOperation() == BinaryOperation.DIVIDE
-                        && (binary.getOperandType() == NumericOperandType.INT
-                        || binary.getOperandType() == NumericOperandType.LONG);
-            }
-            return insn instanceof ArrayLengthInstruction || insn instanceof UnwrapArrayInstruction
-                    || insn instanceof NullCheckInstruction;
         }
 
         private boolean findCondition() {

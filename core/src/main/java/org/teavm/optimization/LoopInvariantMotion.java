@@ -52,7 +52,7 @@ public class LoopInvariantMotion implements MethodOptimization {
 
         DefinitionExtractor defExtractor = new DefinitionExtractor();
         UsageExtractor useExtractor = new UsageExtractor();
-        InstructionAnalyzer analyzer = new InstructionAnalyzer();
+        LoopInvariantAnalyzer analyzer = new LoopInvariantAnalyzer();
         CopyConstantVisitor constantCopier = new CopyConstantVisitor();
         int[][] loopExits = ControlFlowUtils.findLoopExits(graph);
 
@@ -70,9 +70,7 @@ public class LoopInvariantMotion implements MethodOptimization {
                 for (Variable def : defs) {
                     defLocation[def.getIndex()] = v;
                 }
-                analyzer.canMove = false;
-                analyzer.constant = false;
-                analyzer.sideEffect = false;
+                analyzer.reset();
                 insn.acceptVisitor(analyzer);
                 if (analyzer.constant) {
                     constantInstructions[defs[0].getIndex()] = insn;
@@ -207,186 +205,6 @@ public class LoopInvariantMotion implements MethodOptimization {
         }
 
         return preheader.getIndex();
-    }
-
-    private static class InstructionAnalyzer implements InstructionVisitor {
-        boolean canMove;
-        boolean constant;
-        boolean sideEffect;
-
-        @Override
-        public void visit(EmptyInstruction insn) {
-        }
-
-        @Override
-        public void visit(ClassConstantInstruction insn) {
-            constant = true;
-        }
-
-        @Override
-        public void visit(NullConstantInstruction insn) {
-            constant = true;
-        }
-
-        @Override
-        public void visit(IntegerConstantInstruction insn) {
-            constant = true;
-        }
-
-        @Override
-        public void visit(LongConstantInstruction insn) {
-            constant = true;
-        }
-
-        @Override
-        public void visit(FloatConstantInstruction insn) {
-            constant = true;
-        }
-
-        @Override
-        public void visit(DoubleConstantInstruction insn) {
-            constant = true;
-        }
-
-        @Override
-        public void visit(StringConstantInstruction insn) {
-            constant = true;
-        }
-
-        @Override
-        public void visit(BinaryInstruction insn) {
-            canMove = true;
-            if (insn.getOperation() == BinaryOperation.DIVIDE) {
-                sideEffect = insn.getOperandType() == NumericOperandType.INT
-                        || insn.getOperandType() == NumericOperandType.LONG;
-            }
-        }
-
-        @Override
-        public void visit(NegateInstruction insn) {
-            canMove = true;
-        }
-
-        @Override
-        public void visit(AssignInstruction insn) {
-            canMove = true;
-        }
-
-        @Override
-        public void visit(CastInstruction insn) {
-            canMove = true;
-        }
-
-        @Override
-        public void visit(CastNumberInstruction insn) {
-            canMove = true;
-        }
-
-        @Override
-        public void visit(CastIntegerInstruction insn) {
-            canMove = true;
-        }
-
-        @Override
-        public void visit(BranchingInstruction insn) {
-        }
-
-        @Override
-        public void visit(BinaryBranchingInstruction insn) {
-        }
-
-        @Override
-        public void visit(JumpInstruction insn) {
-        }
-
-        @Override
-        public void visit(SwitchInstruction insn) {
-        }
-
-        @Override
-        public void visit(ExitInstruction insn) {
-        }
-
-        @Override
-        public void visit(RaiseInstruction insn) {
-        }
-
-        @Override
-        public void visit(ConstructArrayInstruction insn) {
-        }
-
-        @Override
-        public void visit(ConstructInstruction insn) {
-        }
-
-        @Override
-        public void visit(ConstructMultiArrayInstruction insn) {
-        }
-
-        @Override
-        public void visit(GetFieldInstruction insn) {
-        }
-
-        @Override
-        public void visit(PutFieldInstruction insn) {
-        }
-
-        @Override
-        public void visit(ArrayLengthInstruction insn) {
-            canMove = true;
-            sideEffect = true;
-        }
-
-        @Override
-        public void visit(CloneArrayInstruction insn) {
-        }
-
-        @Override
-        public void visit(UnwrapArrayInstruction insn) {
-            canMove = true;
-            sideEffect = true;
-        }
-
-        @Override
-        public void visit(GetElementInstruction insn) {
-        }
-
-        @Override
-        public void visit(PutElementInstruction insn) {
-        }
-
-        @Override
-        public void visit(InvokeInstruction insn) {
-        }
-
-        @Override
-        public void visit(InvokeDynamicInstruction insn) {
-        }
-
-        @Override
-        public void visit(IsInstanceInstruction insn) {
-            canMove = true;
-        }
-
-        @Override
-        public void visit(InitClassInstruction insn) {
-        }
-
-        @Override
-        public void visit(NullCheckInstruction insn) {
-            canMove = true;
-            sideEffect = true;
-        }
-
-        @Override
-        public void visit(MonitorEnterInstruction insn) {
-
-        }
-
-        @Override
-        public void visit(MonitorExitInstruction insn) {
-
-        }
     }
 
     private class CopyConstantVisitor implements InstructionVisitor {
