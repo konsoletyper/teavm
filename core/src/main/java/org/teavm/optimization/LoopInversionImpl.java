@@ -151,10 +151,14 @@ class LoopInversionImpl {
     }
 
     private LoopWithExits getLoopWithExits(Map<Loop, LoopWithExits> cache, Loop loop) {
-        return cache.computeIfAbsent(loop, key ->
-                new LoopWithExits(key.getHead(), key.getParent() != null
-                        ? getLoopWithExits(cache, key.getParent())
-                        : null));
+        LoopWithExits result = cache.get(loop);
+        if (result == null) {
+            result = new LoopWithExits(loop.getHead(), loop.getParent() != null
+                    ? getLoopWithExits(cache, loop.getParent())
+                    : null);
+            cache.put(loop, result);
+        }
+        return result;
     }
 
     private void sortLoops(LoopWithExits loop, Set<LoopWithExits> visited, List<LoopWithExits> target) {
@@ -302,9 +306,7 @@ class LoopInversionImpl {
 
         private IntSet nodesToCopy() {
             IntSet result = new IntOpenHashSet();
-            int[] nodes = this.nodes.toArray();
-            Arrays.sort(nodes);
-            for (int node : nodes) {
+            for (int node : nodes.toArray()) {
                 if (node == head || (node != bodyStart && !dom.dominates(bodyStart, node))) {
                     result.add(node);
                 }
