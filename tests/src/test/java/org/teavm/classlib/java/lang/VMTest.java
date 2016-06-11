@@ -107,8 +107,8 @@ public class VMTest {
     // See https://github.com/konsoletyper/teavm/issues/167
     @Test
     public void passesStaticFieldToSuperClassConstructor()  {
-      SubClass obj = new SubClass();
-      assertNotNull(obj.getValue());
+        SubClass obj = new SubClass();
+        assertNotNull(obj.getValue());
     }
 
     // See https://github.com/konsoletyper/teavm/issues/196

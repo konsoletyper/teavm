@@ -40,10 +40,18 @@ import org.teavm.model.Program;
 import org.teavm.model.TryCatchBlock;
 import org.teavm.model.TryCatchJoint;
 import org.teavm.model.Variable;
+import org.teavm.model.instructions.ArrayLengthInstruction;
+import org.teavm.model.instructions.BinaryInstruction;
+import org.teavm.model.instructions.BinaryOperation;
+import org.teavm.model.instructions.NullCheckInstruction;
+import org.teavm.model.instructions.NumericOperandType;
+import org.teavm.model.instructions.UnwrapArrayInstruction;
 import org.teavm.model.util.BasicBlockMapper;
+import org.teavm.model.util.DefinitionExtractor;
 import org.teavm.model.util.InstructionCopyReader;
 import org.teavm.model.util.PhiUpdater;
 import org.teavm.model.util.ProgramUtils;
+import org.teavm.model.util.UsageExtractor;
 
 /**
  * Transforms loop in form:
@@ -82,10 +90,12 @@ class LoopInversionImpl {
     private DominatorTree dom;
     private boolean postponed;
     private boolean changed;
+    private BasicBlock[] definitionPlaces;
 
     LoopInversionImpl(Program program, int parameterCount) {
         this.program = program;
         this.parameterCount = parameterCount;
+        definitionPlaces = ProgramUtils.getVariableDefinitionPlaces(program);
     }
 
     void apply() {
@@ -194,7 +204,12 @@ class LoopInversionImpl {
                 return false;
             }
 
-            collectNodesToCopy();
+            IntSet nodesToCopy = nodesToCopy();
+            if (!isInversionProfitable(nodesToCopy)) {
+                return false;
+            }
+            copyBasicBlocks(nodesToCopy);
+
             copyCondition();
             moveBackEdges();
             removeInternalPhiInputsFromCondition();
@@ -202,6 +217,49 @@ class LoopInversionImpl {
 
             changed = true;
             return true;
+        }
+
+        private boolean isInversionProfitable(IntSet nodesToCopy) {
+            UsageExtractor useExtractor = new UsageExtractor();
+            DefinitionExtractor defExtractor = new DefinitionExtractor();
+            for (int node : nodes.toArray()) {
+                if (nodesToCopy.contains(node)) {
+                    continue;
+                }
+                BasicBlock block = program.basicBlockAt(node);
+                Set<Variable> currentInvariants = new HashSet<>();
+                for (Instruction insn : block.getInstructions()) {
+                    insn.acceptVisitor(useExtractor);
+                    boolean invariant = Arrays.stream(useExtractor.getUsedVariables()).allMatch(var -> {
+                        if (currentInvariants.contains(var)) {
+                            return true;
+                        }
+                        BasicBlock definedAt = var.getIndex() < definitionPlaces.length
+                                ? definitionPlaces[var.getIndex()]
+                                : null;
+                        return definedAt == null || dom.dominates(definedAt.getIndex(), block.getIndex());
+                    });
+                    if (invariant) {
+                        if (becomesInvariant(insn)) {
+                            return true;
+                        }
+                        insn.acceptVisitor(defExtractor);
+                        currentInvariants.addAll(Arrays.asList(defExtractor.getDefinedVariables()));
+                    }
+                }
+            }
+            return false;
+        }
+
+        private boolean becomesInvariant(Instruction insn) {
+            if (insn instanceof BinaryInstruction) {
+                BinaryInstruction binary = (BinaryInstruction) insn;
+                return binary.getOperation() == BinaryOperation.DIVIDE
+                        && (binary.getOperandType() == NumericOperandType.INT
+                        || binary.getOperandType() == NumericOperandType.LONG);
+            }
+            return insn instanceof ArrayLengthInstruction || insn instanceof UnwrapArrayInstruction
+                    || insn instanceof NullCheckInstruction;
         }
 
         private boolean findCondition() {
@@ -226,12 +284,12 @@ class LoopInversionImpl {
             return candidate != bodyStart;
         }
 
-        private void collectNodesToCopy() {
+        private void copyBasicBlocks(IntSet nodesToCopy) {
             int[] nodes = this.nodes.toArray();
             Arrays.sort(nodes);
             for (int node : nodes) {
                 nodesAndCopies.add(node);
-                if (node == head || (node != bodyStart && !dom.dominates(bodyStart, node))) {
+                if (nodesToCopy.contains(node)) {
                     int copy = program.createBasicBlock().getIndex();
                     if (head == node) {
                         headCopy = copy;
@@ -240,6 +298,18 @@ class LoopInversionImpl {
                     nodesAndCopies.add(copy);
                 }
             }
+        }
+
+        private IntSet nodesToCopy() {
+            IntSet result = new IntOpenHashSet();
+            int[] nodes = this.nodes.toArray();
+            Arrays.sort(nodes);
+            for (int node : nodes) {
+                if (node == head || (node != bodyStart && !dom.dominates(bodyStart, node))) {
+                    result.add(node);
+                }
+            }
+            return result;
         }
 
         private void copyCondition() {

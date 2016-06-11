@@ -171,4 +171,31 @@ public final class ProgramUtils {
 
         return outputs;
     }
+
+    public static BasicBlock[] getVariableDefinitionPlaces(Program program) {
+        BasicBlock[] places = new BasicBlock[program.variableCount()];
+        DefinitionExtractor defExtractor = new DefinitionExtractor();
+        for (int i = 0; i < program.basicBlockCount(); ++i) {
+            BasicBlock block = program.basicBlockAt(i);
+            for (Phi phi : block.getPhis()) {
+                places[phi.getReceiver().getIndex()] = block;
+            }
+            for (TryCatchJoint joint : block.getTryCatchJoints()) {
+                places[joint.getReceiver().getIndex()] = block;
+            }
+            for (Instruction insn : block.getInstructions()) {
+                insn.acceptVisitor(defExtractor);
+                for (Variable var : defExtractor.getDefinedVariables()) {
+                    places[var.getIndex()] = block;
+                }
+            }
+            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                Variable var = tryCatch.getExceptionVariable();
+                if (var != null) {
+                    places[var.getIndex()] = tryCatch.getHandler();
+                }
+            }
+        }
+        return places;
+    }
 }

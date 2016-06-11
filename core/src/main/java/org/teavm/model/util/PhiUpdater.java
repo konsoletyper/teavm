@@ -15,10 +15,6 @@
  */
 package org.teavm.model.util;
 
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CoderResult;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,12 +25,9 @@ import org.teavm.common.DominatorTree;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphUtils;
 import org.teavm.model.BasicBlock;
-import org.teavm.model.ClassHolder;
 import org.teavm.model.Incoming;
 import org.teavm.model.Instruction;
 import org.teavm.model.InvokeDynamicInstruction;
-import org.teavm.model.MethodDescriptor;
-import org.teavm.model.MethodHolder;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
 import org.teavm.model.TryCatchBlock;
@@ -77,7 +70,6 @@ import org.teavm.model.instructions.RaiseInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.instructions.SwitchInstruction;
 import org.teavm.model.instructions.UnwrapArrayInstruction;
-import org.teavm.parsing.ClasspathClassHolderSource;
 
 public class PhiUpdater {
     private Program program;
@@ -651,35 +643,4 @@ public class PhiUpdater {
             insn.setObjectRef(use(insn.getObjectRef()));
         }
     };
-
-    public static void main(String[] args) {
-        ClasspathClassHolderSource classSource = new ClasspathClassHolderSource();
-        ClassHolder cls = classSource.get(CharsetDecoder.class.getName());
-        MethodHolder method = cls.getMethod(new MethodDescriptor("decode", ByteBuffer.class, CharBuffer.class,
-                boolean.class, CoderResult.class));
-        Program program = method.getProgram();
-
-        System.out.println(new ListingBuilder().buildListing(program, ""));
-
-        Variable[] arguments = new Variable[method.parameterCount() + 1];
-        for (int i = 0; i <= method.parameterCount(); ++i) {
-            arguments[i] = program.variableAt(i);
-        }
-        new PhiUpdater().updatePhis(program, arguments);
-
-        System.out.println("After:");
-        System.out.println(new ListingBuilder().buildListing(program, ""));
-    }
-
-    private static void test() {
-        int a = 0;
-        try {
-            int x = Math.random() > 0.5 ? 50 : -50;
-            System.out.println("Foo " + x);
-        } catch (RuntimeException e) {
-            System.out.println("Foo " + a);
-            a = 23;
-        }
-        System.out.println("bar " + a);
-    }
 }

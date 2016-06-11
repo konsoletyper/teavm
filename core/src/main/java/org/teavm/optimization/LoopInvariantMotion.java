@@ -23,10 +23,6 @@ import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 import org.teavm.model.util.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class LoopInvariantMotion implements MethodOptimization {
     private int[] preheaders;
     private LoopGraph graph;
@@ -58,8 +54,14 @@ public class LoopInvariantMotion implements MethodOptimization {
         UsageExtractor useExtractor = new UsageExtractor();
         InstructionAnalyzer analyzer = new InstructionAnalyzer();
         CopyConstantVisitor constantCopier = new CopyConstantVisitor();
+        int[][] loopExits = ControlFlowUtils.findLoopExits(graph);
+
         while (!stack.isEmpty()) {
             int v = stack.pop();
+            Loop defLoop = graph.loopAt(v);
+            int[] exits = loopExits[v];
+            boolean dominatesExits = exits != null && Arrays.stream(exits)
+                    .allMatch(exit -> dom.dominates(v, exit));
             BasicBlock block = program.basicBlockAt(v);
             insnLoop: for (int i = 0; i < block.getInstructions().size(); ++i) {
                 Instruction insn = block.getInstructions().get(i);
@@ -70,6 +72,7 @@ public class LoopInvariantMotion implements MethodOptimization {
                 }
                 analyzer.canMove = false;
                 analyzer.constant = false;
+                analyzer.sideEffect = false;
                 insn.acceptVisitor(analyzer);
                 if (analyzer.constant) {
                     constantInstructions[defs[0].getIndex()] = insn;
@@ -77,8 +80,10 @@ public class LoopInvariantMotion implements MethodOptimization {
                 if (!analyzer.canMove) {
                     continue;
                 }
-                Loop defLoop = graph.loopAt(v);
                 if (defLoop == null) {
+                    continue;
+                }
+                if (analyzer.sideEffect && !dominatesExits) {
                     continue;
                 }
                 insn.acceptVisitor(useExtractor);
@@ -142,7 +147,7 @@ public class LoopInvariantMotion implements MethodOptimization {
         int preheader = preheaders[header];
         if (preheader < 0) {
             int[] entries = getLoopEntries(header);
-            if (entries.length == 1) {
+            if (entries.length == 1 && graph.outgoingEdgesCount(entries[0]) == 1) {
                 preheader = entries[0];
             } else {
                 preheader = insertPreheader(header);
@@ -206,7 +211,8 @@ public class LoopInvariantMotion implements MethodOptimization {
 
     private static class InstructionAnalyzer implements InstructionVisitor {
         boolean canMove;
-        public boolean constant;
+        boolean constant;
+        boolean sideEffect;
 
         @Override
         public void visit(EmptyInstruction insn) {
@@ -250,6 +256,10 @@ public class LoopInvariantMotion implements MethodOptimization {
         @Override
         public void visit(BinaryInstruction insn) {
             canMove = true;
+            if (insn.getOperation() == BinaryOperation.DIVIDE) {
+                sideEffect = insn.getOperandType() == NumericOperandType.INT
+                        || insn.getOperandType() == NumericOperandType.LONG;
+            }
         }
 
         @Override
@@ -323,8 +333,8 @@ public class LoopInvariantMotion implements MethodOptimization {
 
         @Override
         public void visit(ArrayLengthInstruction insn) {
-            // TODO: Sometimes we can cast NPE when array is null and its length is read only in certain cases
-            //canMove = true;
+            canMove = true;
+            sideEffect = true;
         }
 
         @Override
@@ -333,8 +343,8 @@ public class LoopInvariantMotion implements MethodOptimization {
 
         @Override
         public void visit(UnwrapArrayInstruction insn) {
-            // TODO: Sometimes we can cast NPE when array is null and is is unwrapped only in certain cases
-            //canMove = true;
+            canMove = true;
+            sideEffect = true;
         }
 
         @Override
@@ -365,6 +375,7 @@ public class LoopInvariantMotion implements MethodOptimization {
         @Override
         public void visit(NullCheckInstruction insn) {
             canMove = true;
+            sideEffect = true;
         }
 
         @Override
