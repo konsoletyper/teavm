@@ -85,6 +85,7 @@ class LoopInversionImpl {
     private boolean postponed;
     private boolean changed;
     private BasicBlock[] definitionPlaces;
+    private boolean affected;
 
     LoopInversionImpl(Program program, int parameterCount) {
         this.program = program;
@@ -92,7 +93,7 @@ class LoopInversionImpl {
         definitionPlaces = ProgramUtils.getVariableDefinitionPlaces(program);
     }
 
-    void apply() {
+    boolean apply() {
         do {
             cfg = ProgramUtils.buildControlFlowGraph(program);
             LoopGraph loopGraph = new LoopGraph(cfg);
@@ -105,6 +106,7 @@ class LoopInversionImpl {
                     loop.invert();
                 }
                 if (changed) {
+                    affected = true;
                     Variable[] inputs = new Variable[parameterCount];
                     for (int i = 0; i < inputs.length; ++i) {
                         inputs[i] = program.variableAt(i);
@@ -113,6 +115,7 @@ class LoopInversionImpl {
                 }
             }
         } while (postponed);
+        return affected;
     }
 
     private List<LoopWithExits> getLoopsWithExits(LoopGraph cfg) {

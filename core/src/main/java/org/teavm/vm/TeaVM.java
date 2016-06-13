@@ -92,6 +92,7 @@ import org.teavm.model.util.ModelUtils;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.model.util.RegisterAllocator;
 import org.teavm.optimization.ArrayUnwrapMotion;
+import org.teavm.optimization.ClassInitElimination;
 import org.teavm.optimization.Devirtualization;
 import org.teavm.optimization.GlobalValueNumbering;
 import org.teavm.optimization.LoopInvariantMotion;
@@ -699,9 +700,13 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         if (optimizedProgram == null) {
             optimizedProgram = ProgramUtils.copy(method.getProgram());
             if (optimizedProgram.basicBlockCount() > 0) {
-                for (MethodOptimization optimization : getOptimizations()) {
-                    optimization.optimize(method, optimizedProgram);
-                }
+                boolean changed;
+                do {
+                    changed = false;
+                    for (MethodOptimization optimization : getOptimizations()) {
+                        changed |= optimization.optimize(method, optimizedProgram);
+                    }
+                } while (changed);
                 RegisterAllocator allocator = new RegisterAllocator();
                 allocator.allocateRegisters(method, optimizedProgram);
             }
@@ -714,7 +719,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
     private List<MethodOptimization> getOptimizations() {
         return Arrays.asList(new ArrayUnwrapMotion(), new LoopInversion(), new LoopInvariantMotion(),
-                new GlobalValueNumbering(), new UnusedVariableElimination());
+                new GlobalValueNumbering(), new UnusedVariableElimination(), new ClassInitElimination());
     }
 
     private void logMethodBytecode(PrintWriter writer, MethodHolder method) {

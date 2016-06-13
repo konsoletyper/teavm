@@ -38,7 +38,8 @@ public class GlobalValueNumbering implements MethodOptimization {
     }
 
     @Override
-    public void optimize(MethodReader method, Program program) {
+    public boolean optimize(MethodReader method, Program program) {
+        boolean affected = false;
         this.program = program;
         knownValues.clear();
         Graph cfg = ProgramUtils.buildControlFlowGraph(program);
@@ -88,6 +89,7 @@ public class GlobalValueNumbering implements MethodOptimization {
                 Instruction currentInsn = block.getInstructions().get(i);
                 currentInsn.acceptVisitor(optimizer);
                 if (eliminate) {
+                    affected = true;
                     block.getInstructions().set(i, new EmptyInstruction());
                     eliminate = false;
                 }
@@ -124,6 +126,7 @@ public class GlobalValueNumbering implements MethodOptimization {
 
         program.pack();
         this.program = null;
+        return affected;
     }
 
     private void bind(int var, String value) {

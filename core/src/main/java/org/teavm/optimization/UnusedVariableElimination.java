@@ -21,9 +21,9 @@ import org.teavm.model.instructions.*;
 
 public class UnusedVariableElimination implements MethodOptimization {
     @Override
-    public void optimize(MethodReader method, Program program) {
+    public boolean optimize(MethodReader method, Program program) {
         if (method.getProgram() == null) {
-            return;
+            return false;
         }
         Graph graph = VariableUsageGraphBuilder.build(program);
         boolean[] escaping = VariableEscapeAnalyzer.findEscapingVariables(program);
@@ -73,6 +73,8 @@ public class UnusedVariableElimination implements MethodOptimization {
                 }
             }
         }
+
+        return false;
     }
 
     private static class InstructionOptimizer implements InstructionVisitor {

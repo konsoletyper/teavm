@@ -30,7 +30,8 @@ public class LoopInvariantMotion implements MethodOptimization {
     private Program program;
 
     @Override
-    public void optimize(MethodReader method, Program program) {
+    public boolean optimize(MethodReader method, Program program) {
+        boolean affected = false;
         this.program = program;
         graph = new LoopGraph(ProgramUtils.buildControlFlowGraph(program));
         dom = GraphUtils.buildDominatorTree(graph);
@@ -134,11 +135,14 @@ public class LoopInvariantMotion implements MethodOptimization {
                 newInstructions.add(insn);
                 preheaderInstructions.addAll(preheaderInstructions.size() - 1, newInstructions);
                 defLocation[defs[0].getIndex()] = commonUseLoop != null ? commonUseLoop.getHead() : 0;
+                affected = true;
             }
             for (int succ : domGraph.outgoingEdges(v)) {
                 stack.push(succ);
             }
         }
+
+        return affected;
     }
 
     private int getPreheader(int header) {

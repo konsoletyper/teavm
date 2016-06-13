@@ -22,16 +22,13 @@ import org.teavm.model.instructions.EmptyInstruction;
 import org.teavm.model.instructions.UnwrapArrayInstruction;
 import org.teavm.model.util.DefinitionExtractor;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class ArrayUnwrapMotion implements MethodOptimization {
     @Override
-    public void optimize(MethodReader method, Program program) {
+    public boolean optimize(MethodReader method, Program program) {
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             optimize(program.basicBlockAt(i));
         }
+        return false;
     }
 
     private void optimize(BasicBlock block) {

@@ -20,7 +20,7 @@ import org.teavm.model.Program;
 
 public class LoopInversion implements MethodOptimization {
     @Override
-    public void optimize(MethodReader method, Program program) {
-        new LoopInversionImpl(program, method.parameterCount() + 1).apply();
+    public boolean optimize(MethodReader method, Program program) {
+        return new LoopInversionImpl(program, method.parameterCount() + 1).apply();
     }
 }

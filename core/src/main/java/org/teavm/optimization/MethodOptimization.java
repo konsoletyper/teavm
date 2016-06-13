@@ -18,10 +18,6 @@ package org.teavm.optimization;
 import org.teavm.model.MethodReader;
 import org.teavm.model.Program;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface MethodOptimization {
-    void optimize(MethodReader method, Program program);
+    boolean optimize(MethodReader method, Program program);
 }

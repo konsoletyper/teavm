@@ -21,13 +21,10 @@ import org.teavm.model.Program;
 import org.teavm.model.instructions.JumpInstruction;
 import org.teavm.model.util.BasicBlockMapper;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class EmptyBlockElimination implements MethodOptimization {
     @Override
-    public void optimize(MethodReader method, final Program program) {
+    public boolean optimize(MethodReader method, final Program program) {
+        boolean affected = true;
         final int[] blockMapping = new int[program.basicBlockCount()];
         for (int i = 0; i < blockMapping.length; ++i) {
             blockMapping[i] = i;
@@ -48,8 +45,10 @@ public class EmptyBlockElimination implements MethodOptimization {
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             if (blockMapping[i] != i) {
                 program.deleteBasicBlock(i);
+                affected = true;
             }
         }
         program.pack();
+        return affected;
     }
 }
