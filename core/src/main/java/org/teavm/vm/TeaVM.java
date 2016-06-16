@@ -95,6 +95,7 @@ import org.teavm.optimization.ArrayUnwrapMotion;
 import org.teavm.optimization.ClassInitElimination;
 import org.teavm.optimization.Devirtualization;
 import org.teavm.optimization.GlobalValueNumbering;
+import org.teavm.optimization.Inlining;
 import org.teavm.optimization.LoopInvariantMotion;
 import org.teavm.optimization.LoopInversion;
 import org.teavm.optimization.MethodOptimization;
@@ -601,6 +602,20 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             for (final MethodHolder method : cls.getMethods()) {
                 if (method.getProgram() != null) {
                     devirtualization.apply(method);
+                }
+            }
+            reportProgress(++index);
+            if (wasCancelled()) {
+                return;
+            }
+        }
+
+        final Inlining inlining = new Inlining();
+        for (String className : classes.getClassNames()) {
+            ClassHolder cls = classes.get(className);
+            for (final MethodHolder method : cls.getMethods()) {
+                if (method.getProgram() != null) {
+                    inlining.apply(method.getProgram(), classes);
                 }
             }
             reportProgress(++index);
