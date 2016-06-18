@@ -28,6 +28,9 @@ public class GlobalValueNumbering implements MethodOptimization {
     private Map<String, KnownValue> knownValues = new HashMap<>();
     private boolean eliminate;
     private int[] map;
+    private Number[] numericConstants;
+    private Number evaluatedConstant;
+    private int receiver;
     private Program program;
     private int currentBlockIndex;
     private DominatorTree domTree;
@@ -46,6 +49,7 @@ public class GlobalValueNumbering implements MethodOptimization {
         domTree = GraphUtils.buildDominatorTree(cfg);
         Graph dom = GraphUtils.buildDominatorGraph(domTree, cfg.size());
         map = new int[program.variableCount()];
+        numericConstants = new Number[program.variableCount()];
         for (int i = 0; i < map.length; ++i) {
             map[i] = i;
         }
@@ -86,12 +90,35 @@ public class GlobalValueNumbering implements MethodOptimization {
                 }
             }*/
             for (int i = 0; i < block.getInstructions().size(); ++i) {
+                evaluatedConstant = null;
                 Instruction currentInsn = block.getInstructions().get(i);
                 currentInsn.acceptVisitor(optimizer);
                 if (eliminate) {
                     affected = true;
                     block.getInstructions().set(i, new EmptyInstruction());
                     eliminate = false;
+                } else if (evaluatedConstant != null) {
+                    if (evaluatedConstant instanceof Integer) {
+                        IntegerConstantInstruction newInsn = new IntegerConstantInstruction();
+                        newInsn.setConstant((Integer) evaluatedConstant);
+                        newInsn.setReceiver(program.variableAt(receiver));
+                        block.getInstructions().set(i, newInsn);
+                    } else if (evaluatedConstant instanceof Long) {
+                        LongConstantInstruction newInsn = new LongConstantInstruction();
+                        newInsn.setConstant((Long) evaluatedConstant);
+                        newInsn.setReceiver(program.variableAt(receiver));
+                        block.getInstructions().set(i, newInsn);
+                    } else if (evaluatedConstant instanceof Float) {
+                        FloatConstantInstruction newInsn = new FloatConstantInstruction();
+                        newInsn.setConstant((Float) evaluatedConstant);
+                        newInsn.setReceiver(program.variableAt(receiver));
+                        block.getInstructions().set(i, newInsn);
+                    } else if (evaluatedConstant instanceof Double) {
+                        DoubleConstantInstruction newInsn = new DoubleConstantInstruction();
+                        newInsn.setConstant((Double) evaluatedConstant);
+                        newInsn.setReceiver(program.variableAt(receiver));
+                        block.getInstructions().set(i, newInsn);
+                    }
                 }
             }
             for (TryCatchJoint joint : outputJoints.get(v)) {
@@ -157,18 +184,22 @@ public class GlobalValueNumbering implements MethodOptimization {
 
         @Override
         public void visit(IntegerConstantInstruction insn) {
+            numericConstants[insn.getReceiver().getIndex()] = insn.getConstant();
         }
 
         @Override
         public void visit(LongConstantInstruction insn) {
+            numericConstants[insn.getReceiver().getIndex()] = insn.getConstant();
         }
 
         @Override
         public void visit(FloatConstantInstruction insn) {
+            numericConstants[insn.getReceiver().getIndex()] = insn.getConstant();
         }
 
         @Override
         public void visit(DoubleConstantInstruction insn) {
+            numericConstants[insn.getReceiver().getIndex()] = insn.getConstant();
         }
 
         @Override
@@ -232,6 +263,189 @@ public class GlobalValueNumbering implements MethodOptimization {
             if (commutative) {
                 bind(insn.getReceiver().getIndex(), "@" + b + value + "@" + a);
             }
+
+            evaluateBinary(insn.getOperation(), insn.getOperandType(), a, b);
+            if (evaluatedConstant != null) {
+                numericConstants[insn.getReceiver().getIndex()] = evaluatedConstant;
+            }
+            receiver = insn.getReceiver().getIndex();
+        }
+
+        private void evaluateBinary(BinaryOperation operation, NumericOperandType type, int a, int b) {
+            Number first = numericConstants[a];
+            Number second = numericConstants[b];
+            if (first == null || second == null) {
+                return;
+            }
+
+            switch (type) {
+                case INT: {
+                    int p = first.intValue();
+                    int q = second.intValue();
+                    switch (operation) {
+                        case ADD:
+                            evaluatedConstant = p + q;
+                            break;
+                        case SUBTRACT:
+                            evaluatedConstant = p - q;
+                            break;
+                        case MULTIPLY:
+                            evaluatedConstant = p * q;
+                            break;
+                        case DIVIDE:
+                            if (q != 0) {
+                                evaluatedConstant = p / q;
+                            }
+                            break;
+                        case MODULO:
+                            if (q != 0) {
+                                evaluatedConstant = p % q;
+                            }
+                            break;
+                        case COMPARE:
+                            evaluatedConstant = Integer.compare(p, q);
+                            break;
+                        case AND:
+                            evaluatedConstant = p & q;
+                            break;
+                        case OR:
+                            evaluatedConstant = p | q;
+                            break;
+                        case XOR:
+                            evaluatedConstant = p ^ q;
+                            break;
+                        case SHIFT_LEFT:
+                            evaluatedConstant = p << q;
+                            break;
+                        case SHIFT_RIGHT:
+                            evaluatedConstant = p >> q;
+                            break;
+                        case SHIFT_RIGHT_UNSIGNED:
+                            evaluatedConstant = p >>> q;
+                            break;
+                    }
+                    break;
+                }
+                case LONG: {
+                    long p = first.longValue();
+                    long q = second.longValue();
+                    switch (operation) {
+                        case ADD:
+                            evaluatedConstant = p + q;
+                            break;
+                        case SUBTRACT:
+                            evaluatedConstant = p - q;
+                            break;
+                        case MULTIPLY:
+                            evaluatedConstant = p * q;
+                            break;
+                        case DIVIDE:
+                            if (q != 0) {
+                                evaluatedConstant = p / q;
+                            }
+                            break;
+                        case MODULO:
+                            if (q != 0) {
+                                evaluatedConstant = p % q;
+                            }
+                            break;
+                        case COMPARE:
+                            evaluatedConstant = Long.compare(p, q);
+                            break;
+                        case AND:
+                            evaluatedConstant = p & q;
+                            break;
+                        case OR:
+                            evaluatedConstant = p | q;
+                            break;
+                        case XOR:
+                            evaluatedConstant = p ^ q;
+                            break;
+                        case SHIFT_LEFT:
+                            evaluatedConstant = p << q;
+                            break;
+                        case SHIFT_RIGHT:
+                            evaluatedConstant = p >> q;
+                            break;
+                        case SHIFT_RIGHT_UNSIGNED:
+                            evaluatedConstant = p >>> q;
+                            break;
+                    }
+                    break;
+                }
+                case FLOAT: {
+                    float p = first.floatValue();
+                    float q = second.floatValue();
+                    switch (operation) {
+                        case ADD:
+                            evaluatedConstant = p + q;
+                            break;
+                        case SUBTRACT:
+                            evaluatedConstant = p - q;
+                            break;
+                        case MULTIPLY:
+                            evaluatedConstant = p * q;
+                            break;
+                        case DIVIDE:
+                            if (q != 0) {
+                                evaluatedConstant = p / q;
+                            }
+                            break;
+                        case MODULO:
+                            if (q != 0) {
+                                evaluatedConstant = p % q;
+                            }
+                            break;
+                        case COMPARE:
+                            evaluatedConstant = Float.compare(p, q);
+                            break;
+                        case AND:
+                        case OR:
+                        case XOR:
+                        case SHIFT_LEFT:
+                        case SHIFT_RIGHT:
+                        case SHIFT_RIGHT_UNSIGNED:
+                            break;
+                    }
+                    break;
+                }
+                case DOUBLE: {
+                    double p = first.doubleValue();
+                    double q = second.doubleValue();
+                    switch (operation) {
+                        case ADD:
+                            evaluatedConstant = p + q;
+                            break;
+                        case SUBTRACT:
+                            evaluatedConstant = p - q;
+                            break;
+                        case MULTIPLY:
+                            evaluatedConstant = p * q;
+                            break;
+                        case DIVIDE:
+                            if (q != 0) {
+                                evaluatedConstant = p / q;
+                            }
+                            break;
+                        case MODULO:
+                            if (q != 0) {
+                                evaluatedConstant = p % q;
+                            }
+                            break;
+                        case COMPARE:
+                            evaluatedConstant = Double.compare(p, q);
+                            break;
+                        case AND:
+                        case OR:
+                        case XOR:
+                        case SHIFT_LEFT:
+                        case SHIFT_RIGHT:
+                        case SHIFT_RIGHT_UNSIGNED:
+                            break;
+                    }
+                    break;
+                }
+            }
         }
 
         @Override
@@ -239,6 +453,26 @@ public class GlobalValueNumbering implements MethodOptimization {
             int a = map[insn.getOperand().getIndex()];
             insn.setOperand(program.variableAt(a));
             bind(insn.getReceiver().getIndex(), "-@" + a);
+
+            Number value = numericConstants[a];
+            if (value != null) {
+                switch (insn.getOperandType()) {
+                    case INT:
+                        evaluatedConstant = -value.intValue();
+                        break;
+                    case LONG:
+                        evaluatedConstant = -value.longValue();
+                        break;
+                    case FLOAT:
+                        evaluatedConstant = -value.floatValue();
+                        break;
+                    case DOUBLE:
+                        evaluatedConstant = -value.doubleValue();
+                        break;
+                }
+            }
+
+            receiver = insn.getReceiver().getIndex();
         }
 
         @Override
@@ -259,6 +493,26 @@ public class GlobalValueNumbering implements MethodOptimization {
             int a = map[insn.getValue().getIndex()];
             insn.setValue(program.variableAt(a));
             bind(insn.getReceiver().getIndex(), "@" + a + "::" + insn.getTargetType());
+
+            Number value = numericConstants[a];
+            if (value != null) {
+                switch (insn.getTargetType()) {
+                    case INT:
+                        evaluatedConstant = value.intValue();
+                        break;
+                    case LONG:
+                        evaluatedConstant = value.longValue();
+                        break;
+                    case FLOAT:
+                        evaluatedConstant = value.floatValue();
+                        break;
+                    case DOUBLE:
+                        evaluatedConstant = value.doubleValue();
+                        break;
+                }
+            }
+
+            receiver = insn.getReceiver().getIndex();
         }
 
         @Override
@@ -266,6 +520,30 @@ public class GlobalValueNumbering implements MethodOptimization {
             int a = map[insn.getValue().getIndex()];
             insn.setValue(program.variableAt(a));
             bind(insn.getReceiver().getIndex(), "@" + a + "::" + insn.getTargetType() + " " + insn.getDirection());
+
+            Number value = numericConstants[a];
+            if (value != null) {
+                switch (insn.getDirection()) {
+                    case TO_INTEGER:
+                        evaluatedConstant = value;
+                        break;
+                    case FROM_INTEGER: {
+                        switch (insn.getTargetType()) {
+                            case BYTE:
+                                evaluatedConstant = value.intValue() << 24 >> 24;
+                                break;
+                            case SHORT:
+                                evaluatedConstant = value.intValue() << 16 >> 16;
+                                break;
+                            case CHARACTER:
+                                evaluatedConstant = value.intValue() & 0xFFFF;
+                                break;
+                        }
+                    }
+                }
+            }
+
+            receiver = insn.getReceiver().getIndex();
         }
 
         @Override

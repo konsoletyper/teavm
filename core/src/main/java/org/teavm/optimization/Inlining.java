@@ -49,7 +49,7 @@ import org.teavm.model.util.ProgramUtils;
 
 public class Inlining {
     private static final int DEFAULT_THRESHOLD = 15;
-    private static final int MAX_DEPTH = 4;
+    private static final int MAX_DEPTH = 5;
 
     public void apply(Program program, ClassReaderSource classSource) {
         List<PlanEntry> plan = buildPlan(program, classSource, 0);
@@ -257,7 +257,7 @@ public class Inlining {
                 }
 
                 Program invokedProgram = ProgramUtils.copy(invokedMethod.getProgram());
-                int complexityThreshold = DEFAULT_THRESHOLD - depth;
+                int complexityThreshold = DEFAULT_THRESHOLD - depth * 2;
                 if (ownComplexity < DEFAULT_THRESHOLD) {
                     complexityThreshold += DEFAULT_THRESHOLD;
                 }
