@@ -84,15 +84,15 @@ public class Inlining {
         splitBlock.getInstructions().addAll(instructionsToMove);
         copyTryCatchBlocks(block, splitBlock);
 
-        JumpInstruction jumpToInlinedProgram = new JumpInstruction();
-        jumpToInlinedProgram.setTarget(firstInlineBlock);
-        block.getInstructions().set(planEntry.targetInstruction, jumpToInlinedProgram);
-
+        block.getInstructions().remove(block.getInstructions().size() - 1);
         if (invoke.getInstance() == null || invoke.getMethod().getName().equals("<init>")) {
             InitClassInstruction clinit = new InitClassInstruction();
             clinit.setClassName(invoke.getMethod().getClassName());
-            firstInlineBlock.getInstructions().add(clinit);
+            block.getInstructions().add(clinit);
         }
+        JumpInstruction jumpToInlinedProgram = new JumpInstruction();
+        jumpToInlinedProgram.setTarget(firstInlineBlock);
+        block.getInstructions().add(jumpToInlinedProgram);
 
         for (int i = 0; i < inlineProgram.basicBlockCount(); ++i) {
             BasicBlock blockToInline = inlineProgram.basicBlockAt(i);
@@ -214,12 +214,13 @@ public class Inlining {
             tryCatchCopy.setExceptionVariable(source.getProgram().createVariable());
             List<Incoming> handlerIncomings = tryCatch.getHandler().getPhis().stream()
                     .flatMap(phi -> phi.getIncomings().stream())
-                    .filter(incoming -> incoming.getValue() == tryCatch.getExceptionVariable())
+                    .filter(incoming -> incoming.getValue() == tryCatch.getExceptionVariable()
+                            && incoming.getSource() == source)
                     .collect(Collectors.toList());
             for (Incoming incoming : handlerIncomings) {
                 Incoming incomingCopy = new Incoming();
                 incomingCopy.setValue(tryCatchCopy.getExceptionVariable());
-                incomingCopy.setSource(incoming.getSource());
+                incomingCopy.setSource(target);
                 incoming.getPhi().getIncomings().add(incomingCopy);
             }
             copiedTryCatches.add(tryCatchCopy);
@@ -236,6 +237,9 @@ public class Inlining {
 
         for (int i = program.basicBlockCount() - 1; i >= 0; --i) {
             BasicBlock block = program.basicBlockAt(i);
+            if (!block.getTryCatchBlocks().isEmpty()) {
+                continue;
+            }
             List<Instruction> instructions = block.getInstructions();
             for (int j = instructions.size() - 1; j >= 0; --j) {
                 Instruction insn = instructions.get(j);

@@ -505,7 +505,10 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
             statement.setCondition(ExprOptimizer.invert(statement.getCondition()));
         }
         if (consequent.isEmpty()) {
-            resultStmt = Statement.empty();
+            SequentialStatement sequentialStatement = new SequentialStatement();
+            resultStmt = sequentialStatement;
+            statement.getCondition().acceptVisitor(new ExpressionSideEffectDecomposer(
+                    sequentialStatement.getSequence()));
             return;
         }
         statement.getConsequent().clear();

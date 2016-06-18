@@ -35,6 +35,7 @@ import org.teavm.common.LoopGraph;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Incoming;
 import org.teavm.model.Instruction;
+import org.teavm.model.MethodReader;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
 import org.teavm.model.TryCatchBlock;
@@ -78,6 +79,7 @@ import org.teavm.model.util.UsageExtractor;
  * all remaining nodes are *condition*.
  */
 class LoopInversionImpl {
+    private final MethodReader method;
     private final Program program;
     private final int parameterCount;
     private Graph cfg;
@@ -87,7 +89,8 @@ class LoopInversionImpl {
     private BasicBlock[] definitionPlaces;
     private boolean affected;
 
-    LoopInversionImpl(Program program, int parameterCount) {
+    LoopInversionImpl(MethodReader method, Program program, int parameterCount) {
+        this.method = method;
         this.program = program;
         this.parameterCount = parameterCount;
         definitionPlaces = ProgramUtils.getVariableDefinitionPlaces(program);
@@ -112,6 +115,7 @@ class LoopInversionImpl {
                         inputs[i] = program.variableAt(i);
                     }
                     new PhiUpdater().updatePhis(program, inputs);
+                    new UnusedVariableElimination().optimize(method, program);
                 }
             }
         } while (postponed);
