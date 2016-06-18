@@ -100,6 +100,7 @@ import org.teavm.optimization.Inlining;
 import org.teavm.optimization.LoopInvariantMotion;
 import org.teavm.optimization.LoopInversion;
 import org.teavm.optimization.MethodOptimization;
+import org.teavm.optimization.RedundantJumpElimination;
 import org.teavm.optimization.UnreachableBasicBlockElimination;
 import org.teavm.optimization.UnusedVariableElimination;
 import org.teavm.vm.spi.RendererListener;
@@ -735,9 +736,16 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     }
 
     private List<MethodOptimization> getOptimizations() {
-        return Arrays.asList(new ArrayUnwrapMotion(), new LoopInversion(), new LoopInvariantMotion(),
-                new GlobalValueNumbering(), new ConstantConditionElimination(), new UnusedVariableElimination(),
-                new ClassInitElimination(), new UnreachableBasicBlockElimination());
+        return Arrays.asList(
+                new ArrayUnwrapMotion(),
+                new LoopInversion(),
+                new LoopInvariantMotion(),
+                new GlobalValueNumbering(),
+                new ConstantConditionElimination(),
+                new RedundantJumpElimination(),
+                new UnusedVariableElimination(),
+                new ClassInitElimination(),
+                new UnreachableBasicBlockElimination());
     }
 
     private void logMethodBytecode(PrintWriter writer, MethodHolder method) {

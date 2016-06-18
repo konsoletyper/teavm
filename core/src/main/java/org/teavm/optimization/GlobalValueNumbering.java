@@ -95,28 +95,34 @@ public class GlobalValueNumbering implements MethodOptimization {
                 currentInsn.acceptVisitor(optimizer);
                 if (eliminate) {
                     affected = true;
-                    block.getInstructions().set(i, new EmptyInstruction());
+                    EmptyInstruction empty = new EmptyInstruction();
+                    empty.setLocation(currentInsn.getLocation());
+                    block.getInstructions().set(i, empty);
                     eliminate = false;
                 } else if (evaluatedConstant != null) {
                     if (evaluatedConstant instanceof Integer) {
                         IntegerConstantInstruction newInsn = new IntegerConstantInstruction();
                         newInsn.setConstant((Integer) evaluatedConstant);
                         newInsn.setReceiver(program.variableAt(receiver));
+                        newInsn.setLocation(currentInsn.getLocation());
                         block.getInstructions().set(i, newInsn);
                     } else if (evaluatedConstant instanceof Long) {
                         LongConstantInstruction newInsn = new LongConstantInstruction();
                         newInsn.setConstant((Long) evaluatedConstant);
                         newInsn.setReceiver(program.variableAt(receiver));
+                        newInsn.setLocation(currentInsn.getLocation());
                         block.getInstructions().set(i, newInsn);
                     } else if (evaluatedConstant instanceof Float) {
                         FloatConstantInstruction newInsn = new FloatConstantInstruction();
                         newInsn.setConstant((Float) evaluatedConstant);
                         newInsn.setReceiver(program.variableAt(receiver));
+                        newInsn.setLocation(currentInsn.getLocation());
                         block.getInstructions().set(i, newInsn);
                     } else if (evaluatedConstant instanceof Double) {
                         DoubleConstantInstruction newInsn = new DoubleConstantInstruction();
                         newInsn.setConstant((Double) evaluatedConstant);
                         newInsn.setReceiver(program.variableAt(receiver));
+                        newInsn.setLocation(currentInsn.getLocation());
                         block.getInstructions().set(i, newInsn);
                     }
                 }

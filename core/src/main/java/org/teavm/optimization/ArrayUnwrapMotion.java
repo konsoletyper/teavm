@@ -38,12 +38,15 @@ public class ArrayUnwrapMotion implements MethodOptimization {
             Instruction insn = instructions.get(i);
             if (insn instanceof UnwrapArrayInstruction) {
                 UnwrapArrayInstruction unwrap = (UnwrapArrayInstruction) insn;
-                instructions.set(i, new EmptyInstruction());
+                EmptyInstruction empty = new EmptyInstruction();
+                empty.setLocation(unwrap.getLocation());
+                instructions.set(i, empty);
                 int def = whereDefined(instructions, i, unwrap.getArray());
                 if (def < 0) {
                     newInstructions.add(unwrap);
                 } else {
                     instructions.add(def + 1, unwrap);
+                    unwrap.setLocation(instructions.get(def).getLocation());
                     ++i;
                 }
             }

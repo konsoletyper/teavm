@@ -55,7 +55,9 @@ public class ClassInitElimination implements MethodOptimization {
                 if (insn instanceof InitClassInstruction) {
                     InitClassInstruction initClass = (InitClassInstruction) insn;
                     if (!step.initializedClasses.add(initClass.getClassName())) {
-                        instructions.set(i, new EmptyInstruction());
+                        EmptyInstruction empty = new EmptyInstruction();
+                        empty.setLocation(initClass.getLocation());
+                        instructions.set(i, empty);
                     }
                     continue;
                 }

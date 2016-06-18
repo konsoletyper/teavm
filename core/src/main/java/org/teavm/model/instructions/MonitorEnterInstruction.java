@@ -23,28 +23,18 @@ import org.teavm.model.Variable;
  * @author shannah
  */
 public class MonitorEnterInstruction extends Instruction {
-
     private Variable objectRef;
-    
-    
-    
+
     @Override
     public void acceptVisitor(InstructionVisitor visitor) {
         visitor.visit(this);
     }
 
-    /**
-     * @return the objectRef
-     */
     public Variable getObjectRef() {
         return objectRef;
     }
 
-    /**
-     * @param objectRef the objectRef to set
-     */
     public void setObjectRef(Variable objectRef) {
         this.objectRef = objectRef;
     }
-    
 }

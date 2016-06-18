@@ -109,7 +109,10 @@ public class LoopInvariantMotion implements MethodOptimization {
                         continue insnLoop;
                     }
                 }
-                block.getInstructions().set(i, new EmptyInstruction());
+
+                EmptyInstruction empty = new EmptyInstruction();
+                empty.setLocation(insn.getLocation());
+                block.getInstructions().set(i, empty);
                 int preheader = getPreheader(defLoop.getHead());
                 List<Instruction> preheaderInstructions = program.basicBlockAt(preheader).getInstructions();
                 List<Instruction> newInstructions = new ArrayList<>();
