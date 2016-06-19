@@ -271,6 +271,8 @@ public final class MetaprogrammingImpl {
                     arguments[i] = new ValueImpl<>(var, nestedVarContext, argType);
                 }
 
+                generator.program.createBasicBlock();
+                generator.blockIndex = 1;
                 handler.invoke(new ValueImpl<>(thisVar, nestedVarContext, innerType), methodImpl, arguments);
                 close();
 
