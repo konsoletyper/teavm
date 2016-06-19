@@ -737,6 +737,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
     private List<MethodOptimization> getOptimizations() {
         return Arrays.asList(
+                new RedundantJumpElimination(),
                 new ArrayUnwrapMotion(),
                 new LoopInversion(),
                 new LoopInvariantMotion(),

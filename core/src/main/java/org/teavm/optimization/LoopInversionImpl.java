@@ -359,6 +359,9 @@ class LoopInversionImpl {
 
             for (int node = 0; node < cfg.size(); ++node) {
                 BasicBlock block = program.basicBlockAt(node);
+                if (copiedNodes.containsKey(block.getIndex())) {
+                    continue;
+                }
                 for (Phi phi : block.getPhis()) {
                     for (Incoming incoming : phi.getIncomings().toArray(new Incoming[0])) {
                         int source = incoming.getSource().getIndex();
