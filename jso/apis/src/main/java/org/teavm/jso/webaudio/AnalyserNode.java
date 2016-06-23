@@ -20,9 +20,6 @@ import org.teavm.jso.JSProperty;
 import org.teavm.jso.typedarrays.Float32Array;
 import org.teavm.jso.typedarrays.Uint8Array;
 
-/**
- *
- */
 public interface AnalyserNode extends AudioNode {
     @JSProperty
     void setFftSize(int size);

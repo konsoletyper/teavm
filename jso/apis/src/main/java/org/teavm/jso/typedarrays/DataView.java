@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 Alexey Andreev.
+ *  Copyright 2016 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,9 +18,6 @@ package org.teavm.jso.typedarrays;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSMethod;
 
-/**
- *
- */
 public abstract class DataView extends ArrayBufferView {
     @JSMethod
     public abstract byte getInt8(int byteOffset);
@@ -47,10 +44,10 @@ public abstract class DataView extends ArrayBufferView {
     public abstract int getInt32(int byteOffset, boolean littleEndian);
 
     @JSMethod
-    public abstract long getUInt32(int byteOffset);
+    public abstract int getUInt32(int byteOffset);
 
     @JSMethod
-    public abstract long getUInt32(int byteOffset, boolean littleEndian);
+    public abstract int getUInt32(int byteOffset, boolean littleEndian);
 
     @JSMethod
     public abstract float getFloat32(int byteOffset);
@@ -89,10 +86,10 @@ public abstract class DataView extends ArrayBufferView {
     public abstract void setInt32(int byteOffset, int value, boolean littleEndian);
 
     @JSMethod
-    public abstract void setUInt32(int byteOffset, long value);
+    public abstract void setUInt32(int byteOffset, int value);
 
     @JSMethod
-    public abstract void setUInt32(int byteOffset, long value, boolean littleEndian);
+    public abstract void setUInt32(int byteOffset, int value, boolean littleEndian);
 
     @JSMethod
     public abstract void setFloat32(int byteOffset, float value);

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 Alexey Andreev.
+ *  Copyright 2016 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,9 +19,6 @@ import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.events.EventListener;
 
-/**
- *
- */
 public interface OscillatorNode extends AudioNode {
     String TYPE_SINE = "sine";
     String TYPE_SQUARE = "square";
@@ -42,10 +39,10 @@ public interface OscillatorNode extends AudioNode {
     AudioParam getDetune();
 
     @JSProperty("onended")
-    void setOnEnded(EventListener listener);
+    void setOnEnded(EventListener<MediaEvent> listener);
 
     @JSProperty("onended")
-    EventListener getOnEnded();
+    EventListener<MediaEvent> getOnEnded();
 
     @JSMethod
     void start(double when);

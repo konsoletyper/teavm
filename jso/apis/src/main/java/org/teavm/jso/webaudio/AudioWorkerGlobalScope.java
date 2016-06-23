@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 Alexey Andreev.
+ *  Copyright 2016 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,24 +20,21 @@ import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.events.EventListener;
 
-/**
- *
- */
 public interface AudioWorkerGlobalScope extends JSObject {
     @JSProperty
     float getSampleRate();
 
     @JSProperty("onaudioprocess")
-    void setOnAudioProcess(EventListener event);
+    void setOnAudioProcess(EventListener<MediaEvent> event);
 
     @JSProperty("onaudioprocess")
-    EventListener getOnAudioProcess();
+    EventListener<MediaEvent> getOnAudioProcess();
 
     @JSProperty("onnodecreate")
-    void setOnNodeCreate(EventListener event);
+    void setOnNodeCreate(EventListener<MediaEvent> event);
 
     @JSProperty("onnodecreate")
-    EventListener getOnNodeCreate();
+    EventListener<MediaEvent> getOnNodeCreate();
 
     @JSProperty
     AudioWorkerParamDescriptor[] getParameters();

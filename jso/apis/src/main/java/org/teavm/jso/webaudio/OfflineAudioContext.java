@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 Alexey Andreev.
+ *  Copyright 2016 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,15 +19,12 @@ import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.events.EventListener;
 
-/**
- *
- */
 public abstract class OfflineAudioContext extends AudioContext {
     @JSProperty("oncomplete")
-    public abstract void setOnComplete(EventListener event);
+    public abstract void setOnComplete(EventListener<OfflineAudioCompletionEvent> event);
 
     @JSProperty("oncomplete")
-    public abstract EventListener getOnComplete();
+    public abstract EventListener<OfflineAudioCompletionEvent> getOnComplete();
 
     @JSMethod
     public abstract AudioBuffer startRendering();

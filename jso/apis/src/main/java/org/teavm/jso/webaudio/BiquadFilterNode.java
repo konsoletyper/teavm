@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 Alexey Andreev.
+ *  Copyright 2016 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,9 +19,6 @@ import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.typedarrays.Float32Array;
 
-/**
- *
- */
 public interface BiquadFilterNode extends AudioNode {
     String TYPE_LOW_PASS = "lowpass";
     String TYPE_LOW_SHELF = "lowshelf";

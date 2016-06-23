@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 Alexey Andreev.
+ *  Copyright 2016 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,15 +18,12 @@ package org.teavm.jso.webaudio;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.events.EventListener;
 
-/**
- *
- */
 public interface ScriptProcessorNode extends AudioNode {
     @JSProperty("onaudioprocess")
-    EventListener getOnAudioProcess();
+    EventListener<AudioProcessingEvent> getOnAudioProcess();
 
     @JSProperty("onaudioprocess")
-    void setOnAudioProcess(EventListener event);
+    void setOnAudioProcess(EventListener<AudioProcessingEvent> event);
 
     @JSProperty
     int getBufferSize();

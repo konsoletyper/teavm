@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 Alexey Andreev.
+ *  Copyright 2016 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,33 +20,33 @@ import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.events.EventListener;
 
-/**
- *
- */
 public interface AudioWorker extends JSObject {
     @JSProperty
     AudioWorkerParamDescriptor[] getParameters();
 
     @JSProperty(value = "onmessage")
-    void setOnMessage(EventListener event);
+    void setOnMessage(EventListener<MediaEvent> event);
 
     @JSProperty(value = "onmessage")
-    EventListener getOnMessage();
+    EventListener<MediaEvent> getOnMessage();
 
     @JSProperty(value = "onloaded")
-    void setOnLoaded(EventListener event);
+    void setOnLoaded(EventListener<MediaEvent> event);
 
     @JSProperty(value = "onloaded")
-    EventListener getOnLoaded();
+    EventListener<MediaEvent> getOnLoaded();
 
     @JSMethod
     void terminate();
 
     @JSMethod
-    void postMessage(Object message, Object... transfer);
+    void postMessage(JSObject message, JSObject[] transfer);
 
     @JSMethod
-    void postMessage(Object message);
+    void postMessage(JSObject message, JSObject transfer);
+
+    @JSMethod
+    void postMessage(JSObject message);
 
     @JSMethod
     AudioWorkerNode createNode(int numberOfInputs, int numberOfOutputs);

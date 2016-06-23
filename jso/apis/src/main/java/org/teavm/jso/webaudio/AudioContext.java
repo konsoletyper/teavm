@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 Alexey Andreev.
+ *  Copyright 2016 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,9 +24,6 @@ import org.teavm.jso.dom.html.HTMLMediaElement;
 import org.teavm.jso.typedarrays.ArrayBuffer;
 import org.teavm.jso.typedarrays.Float32Array;
 
-/**
- *
- */
 public abstract class AudioContext implements JSObject {
     String STATE_SUSPENDED = "suspended";
     String STATE_RUNNING = "running";
@@ -48,10 +45,10 @@ public abstract class AudioContext implements JSObject {
     public abstract String getState();
 
     @JSProperty("onstatechange")
-    public abstract void setOnStateChange(EventListener listener);
+    public abstract void setOnStateChange(EventListener<MediaEvent> listener);
 
     @JSProperty("onstatechange")
-    public abstract EventListener getOnStateChange();
+    public abstract EventListener<MediaEvent> getOnStateChange();
 
     @JSMethod
     public abstract void suspend();
