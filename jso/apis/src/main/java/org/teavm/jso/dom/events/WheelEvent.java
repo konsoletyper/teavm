@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2016 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -17,10 +17,11 @@ package org.teavm.jso.dom.events;
 
 import org.teavm.jso.JSProperty;
 
-/**
- *
- */
 public interface WheelEvent extends MouseEvent {
+    int DOM_DELTA_PIXEL = 0;
+    int DOM_DELTA_LINE = 1;
+    int DOM_DELTA_PAGE = 2;
+
     @JSProperty
     double getDeltaX();
 
@@ -31,5 +32,5 @@ public interface WheelEvent extends MouseEvent {
     double getDeltaZ();
 
     @JSProperty
-    long getDeltaMode();
+    int getDeltaMode();
 }

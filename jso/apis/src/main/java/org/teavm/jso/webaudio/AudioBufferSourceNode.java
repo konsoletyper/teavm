@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 Alexey Andreev.
+ *  Copyright 2016 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,9 +19,6 @@ import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.events.EventListener;
 
-/**
- *
- */
 public interface AudioBufferSourceNode extends AudioNode {
     @JSProperty
     AudioBuffer getBuffer();
@@ -54,10 +51,10 @@ public interface AudioBufferSourceNode extends AudioNode {
     void setLoopEnd(double end);
 
     @JSProperty("onended")
-    void setOnEnded(EventListener ent);
+    void setOnEnded(EventListener<MediaEvent> ent);
 
     @JSProperty("onended")
-    EventListener getOnEnded();
+    EventListener<MediaEvent> getOnEnded();
 
     @JSMethod
     void start(double when, double offset, double duration);

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2016 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,9 +15,6 @@
  */
 package org.teavm.jso.dom.events;
 
-/**
- *
- */
 public interface WheelEventTarget extends EventTarget {
     default void listenWheel(EventListener<WheelEvent> listener) {
         addEventListener("wheel", listener);
