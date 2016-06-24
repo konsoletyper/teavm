@@ -15,7 +15,6 @@
  */
 package org.teavm.optimization;
 
-import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodReader;
 import org.teavm.model.Program;
 

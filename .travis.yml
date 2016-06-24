@@ -10,8 +10,8 @@ branches:
     - /^release-.+$/
 script: >
   mvn test \
-   -Dteavm.test.skip=false \
-   -Dteavm.test.selenium="http://$SAUCE_USER_NAME:$SAUCE_ACCESS_KEY@ondemand.saucelabs.com:80/wd/hub" \
-   -Dteavm.test.threads=2
+   -Dteavm.junit.target=target/js-tests \
+   -Dteavm.junit.js.runner=htmlunit \
+   -Dteavm.junit.js.threads=2
 after_script:
   - rm -rf $HOME/.m2/repository/org/teavm
