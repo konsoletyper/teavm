@@ -8,11 +8,12 @@ branches:
   only:
     - master
     - /^release-.+$/
+env:
+  - MAVEN_OPTS=-Xmx1024m -XX:MaxPermSize=256m
 script: >
   mvn test \
    -Dteavm.junit.target=target/js-tests \
    -Dteavm.junit.js.runner=htmlunit \
-   -Dteavm.junit.js.threads=1 \
-   -Xmx1024m -XX:MaxPermSize=256m
+   -Dteavm.junit.js.threads=1
 after_script:
   - rm -rf $HOME/.m2/repository/org/teavm
