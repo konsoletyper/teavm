@@ -90,6 +90,7 @@
             <teavm.junit.target>${project.build.directory}/js-tests</teavm.junit.target>
             <teavm.junit.js.runner>htmlunit</teavm.junit.js.runner>
           </systemProperties>
+          <argLine>-Xmx512m</argLine>
         </configuration>
       </plugin>
       <plugin>
