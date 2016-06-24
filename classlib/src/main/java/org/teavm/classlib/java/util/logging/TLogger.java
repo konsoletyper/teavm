@@ -61,11 +61,11 @@ public class TLogger {
     public void log(TLogRecord record) {
         TString message = format(record.getMessage(), record.getParameters());
         if (record.getLevel().intValue() >= TLevel.SEVERE.intValue()) {
-            error(message);
+            errorInternal(message);
         } else if (record.getLevel().intValue() >= TLevel.WARNING.intValue()) {
-            warn(message);
+            warnInternal(message);
         } else {
-            info(message);
+            infoInternal(message);
         }
     }
 
@@ -142,6 +142,10 @@ public class TLogger {
         log(TLevel.WARNING, msg);
     }
 
+    public void info(TString msg) {
+        log(TLevel.INFO, msg);
+    }
+
     public void config(TString msg) {
         log(TLevel.CONFIG, msg);
     }
@@ -178,17 +182,17 @@ public class TLogger {
             + "if (console) {"
                 + "console.info(message);"
             + "}")
-    public static native void info(TString message);
+    public static native void infoInternal(TString message);
 
     @JSBody(params = "message", script = ""
             + "if (console) {"
                 + "console.warn(message);"
             + "}")
-    private static native void warn(TString message);
+    private static native void warnInternal(TString message);
 
     @JSBody(params = "message", script = ""
             + "if (console) {"
                 + "console.error(message);"
             + "}")
-    private static native void error(TString message);
+    private static native void errorInternal(TString message);
 }
