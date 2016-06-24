@@ -9,9 +9,9 @@ branches:
     - master
     - /^release-.+$/
 env:
-  - MAVEN_OPTS=-Xmx1024m -XX:MaxPermSize=256m
+  - MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=256m"
 script: >
-  mvn test \
+  mvn -e test \
    -Dteavm.junit.target=target/js-tests \
    -Dteavm.junit.js.runner=htmlunit \
    -Dteavm.junit.js.threads=1
