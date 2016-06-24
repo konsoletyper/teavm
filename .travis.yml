@@ -12,6 +12,7 @@ script: >
   mvn test \
    -Dteavm.junit.target=target/js-tests \
    -Dteavm.junit.js.runner=htmlunit \
-   -Dteavm.junit.js.threads=2
+   -Dteavm.junit.js.threads=1 \
+   -Xmx1024m -XX:MaxPermSize=256m
 after_script:
   - rm -rf $HOME/.m2/repository/org/teavm
