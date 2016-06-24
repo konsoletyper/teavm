@@ -25,9 +25,9 @@ import org.teavm.jso.typedarrays.ArrayBuffer;
 import org.teavm.jso.typedarrays.Float32Array;
 
 public abstract class AudioContext implements JSObject {
-    String STATE_SUSPENDED = "suspended";
-    String STATE_RUNNING = "running";
-    String STATE_CLOSE = "close";
+    public static final String STATE_SUSPENDED = "suspended";
+    public static final String STATE_RUNNING = "running";
+    public static final String STATE_CLOSE = "close";
 
     @JSProperty
     public abstract AudioDestinationNode getDestination();
