@@ -23,10 +23,6 @@ import org.teavm.model.instructions.*;
 import org.teavm.model.util.InstructionTransitionExtractor;
 import org.teavm.model.util.ProgramUtils;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class ProgramParser {
     private static final byte ROOT = 0;
     private static final byte SINGLE = 1;
