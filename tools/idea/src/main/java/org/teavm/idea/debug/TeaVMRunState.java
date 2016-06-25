@@ -42,7 +42,7 @@ class TeaVMRunState implements RunProfileState {
     @Override
     public ExecutionResult execute(Executor executor, @NotNull ProgramRunner runner) throws ExecutionException {
         XDebuggerManager debuggerManager = XDebuggerManager.getInstance(environment.getProject());
-        XDebugSession session = debuggerManager.startSession(environment, new XDebugProcessStarter() {
+        XDebugSession session = debuggerManager.startSessionAndShowTab("TeaVM debug", null, new XDebugProcessStarter() {
             @NotNull
             @Override
             public XDebugProcess start(@NotNull XDebugSession session) throws ExecutionException {
@@ -50,6 +50,6 @@ class TeaVMRunState implements RunProfileState {
             }
         });
 
-        return new DefaultExecutionResult(session.getConsoleView(), session.getDebugProcess().getProcessHandler());
+        return new DefaultExecutionResult(null, session.getDebugProcess().getProcessHandler());
     }
 }

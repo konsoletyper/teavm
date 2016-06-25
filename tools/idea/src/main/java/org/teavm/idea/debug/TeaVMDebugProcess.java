@@ -44,7 +44,6 @@ public class TeaVMDebugProcess extends XDebugProcess {
         innerDebugger.addListener(new DebuggerListener() {
             @Override
             public void resumed() {
-                getSession().resume();
             }
 
             @Override

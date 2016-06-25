@@ -61,7 +61,7 @@ public class TeaVMLineBreakpointHandler extends XBreakpointHandler<XLineBreakpoi
             return;
         }
 
-        Breakpoint innerBreakpoint = innerDebugger.createBreakpoint(path, breakpoint.getLine());
+        Breakpoint innerBreakpoint = innerDebugger.createBreakpoint(path, breakpoint.getLine() + 1);
         breakpoint.putUserData(TeaVMDebugProcess.INNER_BREAKPOINT_KEY, innerBreakpoint);
     }
 
