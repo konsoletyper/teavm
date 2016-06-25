@@ -27,11 +27,11 @@ import org.teavm.model.util.ProgramUtils;
  *
  * @author Alexey Andreev
  */
-public class ProgramParser implements VariableDebugInformation {
-    static final byte ROOT = 0;
-    static final byte SINGLE = 1;
-    static final byte DOUBLE_FIRST_HALF = 2;
-    static final byte DOUBLE_SECOND_HALF = 3;
+public class ProgramParser {
+    private static final byte ROOT = 0;
+    private static final byte SINGLE = 1;
+    private static final byte DOUBLE_FIRST_HALF = 2;
+    private static final byte DOUBLE_SECOND_HALF = 3;
     private String fileName;
     private StackFrame[] stackBefore;
     private StackFrame[] stackAfter;
@@ -60,17 +60,17 @@ public class ProgramParser implements VariableDebugInformation {
     }
 
     private static class StackFrame {
-        public final StackFrame next;
-        public final byte type;
-        public final int depth;
+        final StackFrame next;
+        final byte type;
+        final int depth;
 
-        public StackFrame(int depth) {
+        StackFrame(int depth) {
             this.next = null;
             this.type = ROOT;
             this.depth = depth;
         }
 
-        public StackFrame(StackFrame next, byte type) {
+        StackFrame(StackFrame next, byte type) {
             this.next = next;
             this.type = type;
             this.depth = next != null ? next.depth + 1 : 0;
@@ -148,21 +148,20 @@ public class ProgramParser implements VariableDebugInformation {
 
     private int popDouble() {
         if (stack == null || stack.type != DOUBLE_SECOND_HALF) {
-            throw new AssertionError("Illegal stack state at " + index);
+            throw new AssertionError("***Illegal stack state at " + index);
         }
         stack = stack.next;
         if (stack == null || stack.type != DOUBLE_FIRST_HALF) {
-            throw new AssertionError("Illegal stack state at " + index);
+            throw new AssertionError("***Illegal stack state at " + index);
         }
         int depth = stack.depth;
         stack = stack.next;
         return depth;
     }
 
-    @Override
     public Map<Integer, String> getDebugNames(Instruction insn) {
         Map<Integer, String> map = variableDebugNames.get(insn);
-        return map != null ? Collections.unmodifiableMap(map) : Collections.<Integer, String>emptyMap();
+        return map != null ? Collections.unmodifiableMap(map) : Collections.emptyMap();
     }
 
     private void prepare(MethodNode method) {
@@ -513,8 +512,8 @@ public class ProgramParser implements VariableDebugInformation {
             }
 
             insn.setMethod(new MethodDescriptor(name, MethodDescriptor.parseSignature(desc)));
-            for (int i = 0; i < bsmArgs.length; ++i) {
-                insn.getBootstrapArguments().add(convertConstant(bsmArgs[i]));
+            for (Object bsmArg : bsmArgs) {
+                insn.getBootstrapArguments().add(convertConstant(bsmArg));
             }
 
             addInstruction(insn);
@@ -1047,6 +1046,7 @@ public class ProgramParser implements VariableDebugInformation {
                 case Opcodes.POP2:
                     if (stack.type == SINGLE) {
                         popSingle();
+                        popSingle();
                     } else {
                         popDouble();
                     }
@@ -1199,8 +1199,9 @@ public class ProgramParser implements VariableDebugInformation {
                 case Opcodes.SWAP: {
                     int b = popSingle();
                     int a = popSingle();
-                    int tmp = pushSingle();
                     pushSingle();
+                    pushSingle();
+                    int tmp = b + 1;
                     emitAssignInsn(a, tmp);
                     emitAssignInsn(b, a);
                     emitAssignInsn(tmp, b);
@@ -1725,7 +1726,7 @@ public class ProgramParser implements VariableDebugInformation {
         }
     };
 
-    static MethodHandle parseHandle(Handle handle) {
+    private static MethodHandle parseHandle(Handle handle) {
         switch (handle.getTag()) {
             case Opcodes.H_GETFIELD:
                 return MethodHandle.fieldGetter(handle.getOwner().replace('/', '.'), handle.getName(),

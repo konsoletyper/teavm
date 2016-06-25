@@ -17,12 +17,9 @@ package org.teavm.model.util;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import org.teavm.model.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class ListingBuilder {
     public String buildListing(ProgramReader program, String prefix) {
         StringBuilder sb = new StringBuilder();
@@ -50,6 +47,13 @@ public class ListingBuilder {
             if (block == null) {
                 continue;
             }
+
+            for (TryCatchJointReader joint : block.readTryCatchJoints()) {
+                sb.append("  @").append(joint.getReceiver().getIndex()).append(" := e-phi(");
+                sb.append(joint.readSourceVariables().stream().map(sourceVar -> "@" + sourceVar.getIndex())
+                        .collect(Collectors.joining(", ")));
+                sb.append(") from $").append(joint.getSource().getIndex()).append("\n");
+            }
             for (PhiReader phi : block.readPhis()) {
                 sb.append(prefix).append("    ");
                 sb.append("@").append(phi.getReceiver().getIndex()).append(" := ");
@@ -64,6 +68,7 @@ public class ListingBuilder {
                 }
                 sb.append("\n");
             }
+
             InstructionLocation location = null;
             for (int j = 0; j < block.instructionCount(); ++j) {
                 insnSb.setLength(0);
@@ -78,7 +83,8 @@ public class ListingBuilder {
             for (TryCatchBlockReader tryCatch : block.readTryCatchBlocks()) {
                 sb.append(prefix).append("    catch ").append(tryCatch.getExceptionType()).append(" @")
                         .append(tryCatch.getExceptionVariable().getIndex())
-                        .append(" -> $").append(tryCatch.getHandler().getIndex()).append("\n");
+                        .append(" -> $").append(tryCatch.getHandler().getIndex());
+                sb.append("\n");
             }
         }
         return sb.toString();

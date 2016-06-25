@@ -29,7 +29,6 @@ import org.teavm.model.util.*;
  */
 public class LoopInvariantMotion implements MethodOptimization {
     private int[] preheaders;
-    private Instruction[] constantInstructions;
     private LoopGraph graph;
     private DominatorTree dom;
     private Program program;
@@ -45,7 +44,7 @@ public class LoopInvariantMotion implements MethodOptimization {
         IntegerStack stack = new IntegerStack(graph.size());
         int[] defLocation = new int[program.variableCount()];
         Arrays.fill(defLocation, -1);
-        constantInstructions = new Instruction[program.variableCount()];
+        Instruction[] constantInstructions = new Instruction[program.variableCount()];
         for (int i = 0; i <= method.parameterCount(); ++i) {
             defLocation[i] = 0;
         }
@@ -126,7 +125,8 @@ public class LoopInvariantMotion implements MethodOptimization {
                     }
                 }
                 if (variableMap != null) {
-                    insn.acceptVisitor(new VariableMapperImpl(variableMap));
+                    Variable[] currentVariableMap = variableMap;
+                    insn.acceptVisitor(new InstructionVariableMapper(var -> currentVariableMap[var.getIndex()]));
                 }
                 newInstructions.add(insn);
                 preheaderInstructions.addAll(preheaderInstructions.size() - 1, newInstructions);
@@ -165,18 +165,18 @@ public class LoopInvariantMotion implements MethodOptimization {
     }
 
     private int insertPreheader(int headerIndex) {
-        final BasicBlock preheader = program.createBasicBlock();
+        BasicBlock preheader = program.createBasicBlock();
         JumpInstruction escapeInsn = new JumpInstruction();
-        final BasicBlock header = program.basicBlockAt(headerIndex);
+        BasicBlock header = program.basicBlockAt(headerIndex);
         escapeInsn.setTarget(header);
         preheader.getInstructions().add(escapeInsn);
-        for (int i = 0; i < header.getPhis().size(); ++i) {
-            Phi phi = header.getPhis().get(i);
+
+        for (Phi phi : header.getPhis()) {
             Phi preheaderPhi = null;
-            for (int j = 0; j < phi.getIncomings().size(); ++j) {
-                Incoming incoming = phi.getIncomings().get(j);
+            for (int i = 0; i < phi.getIncomings().size(); ++i) {
+                Incoming incoming = phi.getIncomings().get(i);
                 if (!dom.dominates(headerIndex, incoming.getSource().getIndex())) {
-                    phi.getIncomings().remove(j--);
+                    phi.getIncomings().remove(i--);
                     if (preheaderPhi == null) {
                         preheaderPhi = new Phi();
                         preheaderPhi.setReceiver(program.createVariable());
@@ -192,37 +192,20 @@ public class LoopInvariantMotion implements MethodOptimization {
                 phi.getIncomings().add(incoming);
             }
         }
+
         for (int predIndex : graph.incomingEdges(headerIndex)) {
             if (!dom.dominates(headerIndex, predIndex)) {
                 BasicBlock pred = program.basicBlockAt(predIndex);
-                pred.getLastInstruction().acceptVisitor(new BasicBlockMapper() {
-                    @Override protected BasicBlock map(BasicBlock block) {
-                        if (block == header) {
-                            block = preheader;
-                        }
-                        return block;
-                    }
-                });
+                pred.getLastInstruction().acceptVisitor(new BasicBlockMapper(
+                        block -> block == header.getIndex() ? preheader.getIndex() : block));
             }
         }
+
         return preheader.getIndex();
     }
 
-    private static class VariableMapperImpl extends InstructionVariableMapper {
-        private Variable[] map;
-
-        public VariableMapperImpl(Variable[] map) {
-            this.map = map;
-        }
-
-        @Override
-        protected Variable map(Variable var) {
-            return map[var.getIndex()];
-        }
-    }
-
     private static class InstructionAnalyzer implements InstructionVisitor {
-        public boolean canMove;
+        boolean canMove;
         public boolean constant;
 
         @Override

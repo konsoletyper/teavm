@@ -15,10 +15,6 @@
  */
 package org.teavm.model;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TryCatchBlock implements TryCatchBlockReader {
     BasicBlock protectedBlock;
     private BasicBlock handler;

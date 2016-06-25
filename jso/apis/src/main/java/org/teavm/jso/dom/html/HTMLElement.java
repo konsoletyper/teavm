@@ -23,6 +23,7 @@ import org.teavm.jso.dom.events.FocusEventTarget;
 import org.teavm.jso.dom.events.KeyboardEventTarget;
 import org.teavm.jso.dom.events.LoadEventTarget;
 import org.teavm.jso.dom.events.MouseEventTarget;
+import org.teavm.jso.dom.events.WheelEventTarget;
 import org.teavm.jso.dom.xml.Element;
 import org.teavm.jso.dom.xml.Node;
 import org.teavm.jso.dom.xml.NodeList;
@@ -32,7 +33,7 @@ import org.teavm.jso.dom.xml.NodeList;
  * @author Alexey Andreev
  */
 public interface HTMLElement extends Element, ElementCSSInlineStyle, EventTarget, FocusEventTarget, MouseEventTarget,
-        KeyboardEventTarget, LoadEventTarget {
+        WheelEventTarget, KeyboardEventTarget, LoadEventTarget {
     @Override
     NodeList<? extends HTMLElement> getElementsByTagName(String name);
 
@@ -110,7 +111,7 @@ public interface HTMLElement extends Element, ElementCSSInlineStyle, EventTarget
     HTMLDocument getOwnerDocument();
 
     @JSProperty
-    int getInnerHTML();
+    String getInnerHTML();
 
     @JSProperty
     void setInnerHTML(String content);

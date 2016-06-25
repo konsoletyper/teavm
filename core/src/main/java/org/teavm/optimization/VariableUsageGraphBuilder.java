@@ -20,10 +20,6 @@ import org.teavm.common.GraphBuilder;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public final class VariableUsageGraphBuilder {
     private VariableUsageGraphBuilder() {
     }
@@ -39,6 +35,11 @@ public final class VariableUsageGraphBuilder {
             for (Phi phi : block.getPhis()) {
                 for (Incoming incoming : phi.getIncomings()) {
                     builder.addEdge(incoming.getValue().getIndex(), phi.getReceiver().getIndex());
+                }
+            }
+            for (TryCatchJoint joint : block.getTryCatchJoints()) {
+                for (Variable sourceVar : joint.getSourceVariables()) {
+                    builder.addEdge(sourceVar.getIndex(), joint.getReceiver().getIndex());
                 }
             }
         }

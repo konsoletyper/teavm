@@ -22,22 +22,18 @@ import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class MinifyingAliasProvider implements AliasProvider {
-    private static Set<String> keywords = new HashSet<>(Arrays.asList("do", "if", "else", "for", "case",
+    private static final Set<String> keywords = new HashSet<>(Arrays.asList("do", "if", "else", "for", "case",
             "goto", "in", "let", "new", "this", "try", "var", "void", "with"));
-    private static String startLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    private static String letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-    private static String startVirtualLetters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    private static final String startLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    private static final String letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    private static final String startVirtualLetters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private int lastSuffix;
     private int lastVirtual;
-    private Set<String> usedAliases = new HashSet<>();
+    private final Set<String> usedAliases = new HashSet<>();
 
     @Override
-    public String getAlias(FieldReference field) {
+    public String getFieldAlias(FieldReference field) {
         String result;
         do {
             result = getNewAlias(lastVirtual++, startVirtualLetters);
@@ -46,12 +42,21 @@ public class MinifyingAliasProvider implements AliasProvider {
     }
 
     @Override
-    public String getAlias(MethodReference method) {
+    public String getStaticFieldAlias(FieldReference field) {
+        String result;
+        do {
+            result = getNewAlias(lastSuffix++, startLetters);
+        } while (!usedAliases.add(result) || keywords.contains(result));
+        return result;
+    }
+
+    @Override
+    public String getStaticMethodAlias(MethodReference method) {
         return getNewAlias(lastSuffix++, startLetters);
     }
 
     @Override
-    public String getAlias(MethodDescriptor method) {
+    public String getMethodAlias(MethodDescriptor method) {
         String result;
         do {
             result = getNewAlias(lastVirtual++, startVirtualLetters);
@@ -60,7 +65,7 @@ public class MinifyingAliasProvider implements AliasProvider {
     }
 
     @Override
-    public String getAlias(String className) {
+    public String getClassAlias(String className) {
         return getNewAlias(lastSuffix++, startLetters);
     }
 

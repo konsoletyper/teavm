@@ -240,8 +240,7 @@ public final class GraphUtils {
         int[] set = new int[items.length];
         int sz = 0;
         int last = -1;
-        for (int i = 0; i < items.length; ++i) {
-            int item = items[i];
+        for (int item : items) {
             if (item != last) {
                 set[sz++] = item;
                 last = item;

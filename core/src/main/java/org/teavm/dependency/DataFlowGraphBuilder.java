@@ -26,10 +26,6 @@ import org.teavm.common.*;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class DataFlowGraphBuilder implements InstructionReader {
     private int lastIndex;
     private GraphBuilder builder = new GraphBuilder();
@@ -66,6 +62,11 @@ public class DataFlowGraphBuilder implements InstructionReader {
                     int from = incoming.getValue().getIndex();
                     int to = phi.getReceiver().getIndex();
                     builder.addEdge(from, to);
+                }
+            }
+            for (TryCatchJointReader joint : block.readTryCatchJoints()) {
+                for (VariableReader sourceVar : joint.readSourceVariables()) {
+                    builder.addEdge(sourceVar.getIndex(), joint.getReceiver().getIndex());
                 }
             }
             block.readAllInstructions(this);

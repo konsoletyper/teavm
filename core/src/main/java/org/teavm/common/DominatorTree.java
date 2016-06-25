@@ -29,4 +29,16 @@ public interface DominatorTree {
     int immediateDominatorOf(int a);
 
     int levelOf(int a);
+
+    default int commonDominatorOf(int[] nodes) {
+        if (nodes.length == 0) {
+            return -1;
+        }
+
+        int result = nodes[0];
+        for (int i = 1; i < nodes.length; ++i) {
+            result = commonDominatorOf(result, nodes[i]);
+        }
+        return result;
+    }
 }

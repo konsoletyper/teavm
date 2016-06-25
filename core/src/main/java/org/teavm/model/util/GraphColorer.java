@@ -21,10 +21,6 @@ import org.teavm.common.IntegerArray;
 import org.teavm.common.MutableGraphEdge;
 import org.teavm.common.MutableGraphNode;
 
-/**
- *
- * @author Alexey Andreev
- */
 class GraphColorer {
     public void colorize(List<MutableGraphNode> graph, int[] colors) {
         colorize(graph, colors, new int[graph.size()]);

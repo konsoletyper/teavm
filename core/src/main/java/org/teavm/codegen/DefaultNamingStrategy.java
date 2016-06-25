@@ -19,41 +19,24 @@ import java.util.HashMap;
 import java.util.Map;
 import org.teavm.model.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class DefaultNamingStrategy implements NamingStrategy {
-    private AliasProvider aliasProvider;
-    private ClassReaderSource classSource;
-    private Map<String, String> aliases = new HashMap<>();
-    private Map<String, String> privateAliases = new HashMap<>();
-    private Map<String, String> classAliases = new HashMap<>();
-    private Map<String, String> fieldAliases = new HashMap<>();
-    private Map<String, String> functionAliases = new HashMap<>();
-    private boolean minifying;
+    private final AliasProvider aliasProvider;
+    private final ClassReaderSource classSource;
+    private final Map<String, String> aliases = new HashMap<>();
+    private final Map<String, String> privateAliases = new HashMap<>();
+    private final Map<String, String> classAliases = new HashMap<>();
+    private final Map<String, String> fieldAliases = new HashMap<>();
+    private final Map<String, String> staticFieldAliases = new HashMap<>();
+    private final Map<String, String> functionAliases = new HashMap<>();
 
     public DefaultNamingStrategy(AliasProvider aliasProvider, ClassReaderSource classSource) {
         this.aliasProvider = aliasProvider;
         this.classSource = classSource;
     }
 
-    public boolean isMinifying() {
-        return minifying;
-    }
-
-    public void setMinifying(boolean minifying) {
-        this.minifying = minifying;
-    }
-
     @Override
     public String getNameFor(String cls) {
-        String name = classAliases.get(cls);
-        if (name == null) {
-            name = aliasProvider.getAlias(cls);
-            classAliases.put(cls, name);
-        }
-        return name;
+        return classAliases.computeIfAbsent(cls, key -> aliasProvider.getClassAlias(cls));
     }
 
     @Override
@@ -65,7 +48,7 @@ public class DefaultNamingStrategy implements NamingStrategy {
         String key = classifier + method.toString();
         String alias = aliases.get(key);
         if (alias == null) {
-            alias = aliasProvider.getAlias(method);
+            alias = aliasProvider.getMethodAlias(method);
             aliases.put(key, alias);
         }
         return alias;
@@ -87,16 +70,10 @@ public class DefaultNamingStrategy implements NamingStrategy {
         if (method == null) {
             throw new NamingException("Can't provide name for method as it was not found: " + originalMethod);
         }
-        if (!minifying) {
-            return getNameFor(method.getClassName()) + "_" + getNameFor(method.getDescriptor(), classifier);
-        }
-        String key = classifier + method.toString();
-        String alias = privateAliases.get(key);
-        if (alias == null) {
-            alias = aliasProvider.getAlias(method);
-            privateAliases.put(key, alias);
-        }
-        return alias;
+
+        MethodReference resolvedMethod = method;
+        return privateAliases.computeIfAbsent(classifier + method.toString(),
+                key -> aliasProvider.getStaticMethodAlias(resolvedMethod));
     }
 
     @Override
@@ -107,27 +84,26 @@ public class DefaultNamingStrategy implements NamingStrategy {
             fieldAliases.put(field.getClassName() + "#" + field, alias);
             return alias;
         } else {
-            String key = realCls + "#" + field;
-            String alias = fieldAliases.get(key);
-            if (alias == null) {
-                alias = aliasProvider.getAlias(field);
-                fieldAliases.put(key, alias);
-            }
+            return fieldAliases.computeIfAbsent(realCls + "#" + field, key -> aliasProvider.getFieldAlias(field));
+        }
+    }
+
+    @Override
+    public String getFullNameFor(FieldReference field) throws NamingException {
+        String realCls = getRealFieldOwner(field.getClassName(), field.getFieldName());
+        if (!realCls.equals(field.getClassName())) {
+            String alias = getNameFor(new FieldReference(realCls, field.getFieldName()));
+            staticFieldAliases.put(field.getClassName() + "#" + field, alias);
             return alias;
+        } else {
+            return staticFieldAliases.computeIfAbsent(realCls + "#" + field,
+                    key -> aliasProvider.getStaticFieldAlias(field));
         }
     }
 
     @Override
     public String getNameForFunction(String name) throws NamingException {
-        if (!minifying) {
-            return name;
-        }
-        String alias = functionAliases.get(name);
-        if (alias == null) {
-            alias = aliasProvider.getFunctionAlias(name);
-            functionAliases.put(name, alias);
-        }
-        return alias;
+        return functionAliases.computeIfAbsent(name, key -> aliasProvider.getFunctionAlias(name));
     }
 
     private MethodReference getRealMethod(MethodReference methodRef) {

@@ -74,9 +74,8 @@ public final class Platform {
         return (PlatformConsole) Window.current();
     }
 
-    public static int nextObjectId() {
-        return ((PlatformHelper) Window.current()).nextId();
-    }
+    @JSBody(params = {}, script = "return $rt_nextId();")
+    public static native int nextObjectId();
 
     public static <T> T newInstance(PlatformClass cls) {
         prepareNewInstance();

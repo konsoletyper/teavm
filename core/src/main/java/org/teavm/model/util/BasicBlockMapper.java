@@ -15,15 +15,21 @@
  */
 package org.teavm.model.util;
 
+import java.util.function.IntUnaryOperator;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 
-/**
- *
- * @author Alexey Andreev
- */
-public abstract class BasicBlockMapper implements InstructionVisitor {
-    protected abstract BasicBlock map(BasicBlock block);
+public class BasicBlockMapper implements InstructionVisitor {
+    private IntUnaryOperator mapFunction;
+
+    public BasicBlockMapper(IntUnaryOperator mapFunction) {
+        this.mapFunction = mapFunction;
+    }
+
+    private BasicBlock map(BasicBlock block) {
+        Program program = block.getProgram();
+        return program.basicBlockAt(mapFunction.applyAsInt(block.getIndex()));
+    }
 
     public void transform(Program program) {
         for (int i = 0; i < program.basicBlockCount(); ++i) {
@@ -37,6 +43,9 @@ public abstract class BasicBlockMapper implements InstructionVisitor {
             return;
         }
         lastInsn.acceptVisitor(this);
+        for (TryCatchJoint joint : block.getTryCatchJoints()) {
+            joint.setSource(map(joint.getSource()));
+        }
         for (Phi phi : block.getPhis()) {
             for (Incoming incoming : phi.getIncomings()) {
                 incoming.setSource(map(incoming.getSource()));

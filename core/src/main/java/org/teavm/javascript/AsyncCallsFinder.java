@@ -26,8 +26,8 @@ import org.teavm.model.MethodReference;
  * @author Alexey Andreev
  */
 class AsyncCallsFinder implements StatementVisitor, ExprVisitor {
-    Set<MethodReference> asyncCalls = new HashSet<>();
-    Set<MethodReference> allCalls = new HashSet<>();
+    final Set<MethodReference> asyncCalls = new HashSet<>();
+    final Set<MethodReference> allCalls = new HashSet<>();
 
     private void visitList(List<Statement> statements) {
         for (Statement stmt : statements) {
@@ -178,7 +178,9 @@ class AsyncCallsFinder implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(QualificationExpr expr) {
-        expr.getQualified().acceptVisitor(this);
+        if (expr.getQualified() != null) {
+            expr.getQualified().acceptVisitor(this);
+        }
     }
 
     @Override
@@ -200,9 +202,5 @@ class AsyncCallsFinder implements StatementVisitor, ExprVisitor {
     @Override
     public void visit(InstanceOfExpr expr) {
         expr.getExpr().acceptVisitor(this);
-    }
-
-    @Override
-    public void visit(StaticClassExpr expr) {
     }
 }

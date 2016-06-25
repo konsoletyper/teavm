@@ -21,18 +21,14 @@ import org.teavm.codegen.NameFrequencyConsumer;
 import org.teavm.javascript.ast.*;
 import org.teavm.model.*;
 
-/**
- *
- * @author Alexey Andreev
- */
-public class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, MethodNodeVisitor {
-    private NameFrequencyConsumer consumer;
-    private ClassReaderSource classSource;
+class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, MethodNodeVisitor {
+    private final NameFrequencyConsumer consumer;
+    private final ClassReaderSource classSource;
     private boolean async;
-    private Set<MethodReference> injectedMethods;
-    private Set<MethodReference> asyncFamilyMethods;
+    private final Set<MethodReference> injectedMethods;
+    private final Set<MethodReference> asyncFamilyMethods;
 
-    public NameFrequencyEstimator(NameFrequencyConsumer consumer, ClassReaderSource classSource,
+    NameFrequencyEstimator(NameFrequencyConsumer consumer, ClassReaderSource classSource,
             Set<MethodReference> injectedMethods, Set<MethodReference> asyncFamilyMethods) {
         this.consumer = consumer;
         this.classSource = classSource;
@@ -309,7 +305,9 @@ public class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, Me
 
     @Override
     public void visit(QualificationExpr expr) {
-        expr.getQualified().acceptVisitor(this);
+        if (expr.getQualified() != null) {
+            expr.getQualified().acceptVisitor(this);
+        }
         consumer.consume(expr.getField());
     }
 
@@ -348,10 +346,5 @@ public class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, Me
         } else {
             consumer.consumeFunction("$rt_isInstance");
         }
-    }
-
-    @Override
-    public void visit(StaticClassExpr expr) {
-        visitType(expr.getType());
     }
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2016 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,15 +13,26 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.parsing;
+package org.teavm.jso.webaudio;
 
-import java.util.Map;
-import org.teavm.model.Instruction;
+import org.teavm.jso.JSProperty;
 
-/**
- *
- * @author Alexey Andreev
- */
-public interface VariableDebugInformation {
-    Map<Integer, String> getDebugNames(Instruction insn);
+public interface DynamicsCompressorNode extends AudioNode {
+    @JSProperty
+    AudioParam getThreshold();
+
+    @JSProperty
+    AudioParam getKnee();
+
+    @JSProperty
+    AudioParam getRatio();
+
+    @JSProperty
+    float getReduction();
+
+    @JSProperty
+    AudioParam getAttack();
+
+    @JSProperty
+    AudioParam getRelease();
 }

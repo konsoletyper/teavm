@@ -19,10 +19,6 @@ import org.teavm.common.Graph;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class UnusedVariableElimination implements MethodOptimization {
     @Override
     public void optimize(MethodReader method, Program program) {
@@ -62,6 +58,12 @@ public class UnusedVariableElimination implements MethodOptimization {
                 block.getInstructions().get(j).acceptVisitor(insnOptimizer);
                 if (insnOptimizer.eliminate) {
                     block.getInstructions().remove(j--);
+                }
+            }
+            for (int j = 0; j < block.getTryCatchJoints().size(); ++j) {
+                TryCatchJoint joint = block.getTryCatchJoints().get(j);
+                if (!used[joint.getReceiver().getIndex()]) {
+                    block.getTryCatchJoints().remove(j--);
                 }
             }
             for (int j = 0; j < block.getPhis().size(); ++j) {
@@ -258,12 +260,10 @@ public class UnusedVariableElimination implements MethodOptimization {
 
         @Override
         public void visit(MonitorEnterInstruction insn) {
-
         }
 
         @Override
         public void visit(MonitorExitInstruction insn) {
-
         }
     }
 }

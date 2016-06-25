@@ -17,8 +17,8 @@
     <inspection_tool class="CloneCallsSuperClone" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
     <inspection_tool class="CloneDeclaresCloneNotSupported" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
     <inspection_tool class="CodeBlock2Expr" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
-    <inspection_tool class="ConstantConditions" enabled="true" level="WARNING" enabled_by_default="true">
-      <scope name="classlib" level="WEAK WARNING" enabled="true">
+    <inspection_tool class="ConstantConditions" enabled="false" level="WARNING" enabled_by_default="false">
+      <scope name="classlib" level="WEAK WARNING" enabled="false">
         <option name="SUGGEST_NULLABLE_ANNOTATIONS" value="false" />
         <option name="DONT_REPORT_TRUE_ASSERT_STATEMENTS" value="false" />
       </scope>

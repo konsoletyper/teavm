@@ -19,16 +19,12 @@ import java.util.Arrays;
 import java.util.List;
 import org.teavm.javascript.ast.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 class UnusedVariableEliminator implements ExprVisitor, StatementVisitor {
-    int[] variables;
-    int[] indexes;
+    private final int[] variables;
+    private final int[] indexes;
     int lastIndex;
 
-    public UnusedVariableEliminator(int parameterCount, List<Integer> variables) {
+    UnusedVariableEliminator(int parameterCount, List<Integer> variables) {
         this.variables = new int[variables.size()];
         int variableCount = 0;
         for (int i = 0; i < variables.size(); ++i) {
@@ -176,7 +172,9 @@ class UnusedVariableEliminator implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(QualificationExpr expr) {
-        expr.getQualified().acceptVisitor(this);
+        if (expr.getQualified() != null) {
+            expr.getQualified().acceptVisitor(this);
+        }
     }
 
     @Override
@@ -198,10 +196,6 @@ class UnusedVariableEliminator implements ExprVisitor, StatementVisitor {
     @Override
     public void visit(InstanceOfExpr expr) {
         expr.getExpr().acceptVisitor(this);
-    }
-
-    @Override
-    public void visit(StaticClassExpr expr) {
     }
 
     @Override

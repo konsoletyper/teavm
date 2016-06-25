@@ -20,10 +20,6 @@ import java.util.Objects;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class ProgramIO {
     private SymbolTable symbolTable;
     private SymbolTable fileTable;
@@ -70,6 +66,15 @@ public class ProgramIO {
                 data.writeShort(tryCatch.getExceptionVariable() != null
                         ? tryCatch.getExceptionVariable().getIndex() : -1);
                 data.writeShort(tryCatch.getHandler().getIndex());
+            }
+            data.writeShort(basicBlock.getTryCatchJoints().size());
+            for (TryCatchJoint joint : basicBlock.getTryCatchJoints()) {
+                data.writeShort(joint.getSource().getIndex());
+                data.writeShort(joint.getReceiver().getIndex());
+                data.writeShort(joint.getSourceVariables().size());
+                for (Variable sourceVar : joint.getSourceVariables()) {
+                    data.writeShort(sourceVar.getIndex());
+                }
             }
             InstructionLocation location = null;
             InstructionWriter insnWriter = new InstructionWriter(data);
@@ -139,6 +144,19 @@ public class ProgramIO {
                 tryCatch.setHandler(program.basicBlockAt(data.readShort()));
                 block.getTryCatchBlocks().add(tryCatch);
             }
+
+            int jointCount = data.readShort();
+            for (int j = 0; j < jointCount; ++j) {
+                TryCatchJoint joint = new TryCatchJoint();
+                joint.setSource(program.basicBlockAt(data.readShort()));
+                joint.setReceiver(program.variableAt(data.readShort()));
+                int jointSourceCount = data.readShort();
+                for (int k = 0; k < jointSourceCount; ++k) {
+                    joint.getSourceVariables().add(program.variableAt(data.readShort()));
+                }
+                block.getTryCatchJoints().add(joint);
+            }
+
             InstructionLocation location = null;
             insnLoop: while (true) {
                 byte insnType = data.readByte();

@@ -30,10 +30,6 @@ import org.teavm.model.util.LivenessAnalyzer;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.model.util.UsageExtractor;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class Optimizer {
     public void optimize(RegularMethodNode method, Program program) {
         ReadWriteStatsBuilder stats = new ReadWriteStatsBuilder(method.getVariables().size());

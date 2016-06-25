@@ -15,26 +15,88 @@
  */
 package org.teavm.vm;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.ServiceLoader;
+import java.util.Set;
 import org.teavm.cache.NoCache;
-import org.teavm.codegen.*;
+import org.teavm.codegen.AliasProvider;
+import org.teavm.codegen.DefaultAliasProvider;
+import org.teavm.codegen.DefaultNamingStrategy;
+import org.teavm.codegen.MinifyingAliasProvider;
+import org.teavm.codegen.SourceWriter;
+import org.teavm.codegen.SourceWriterBuilder;
 import org.teavm.common.ServiceRepository;
 import org.teavm.debugging.information.DebugInformationEmitter;
 import org.teavm.debugging.information.SourceLocation;
-import org.teavm.dependency.*;
+import org.teavm.dependency.BootstrapMethodSubstitutor;
+import org.teavm.dependency.DependencyChecker;
+import org.teavm.dependency.DependencyInfo;
+import org.teavm.dependency.DependencyListener;
+import org.teavm.dependency.Linker;
+import org.teavm.dependency.MethodDependency;
 import org.teavm.diagnostics.AccumulationDiagnostics;
 import org.teavm.diagnostics.ProblemProvider;
-import org.teavm.javascript.*;
+import org.teavm.javascript.Decompiler;
+import org.teavm.javascript.EmptyRegularMethodNodeCache;
+import org.teavm.javascript.MethodNodeCache;
+import org.teavm.javascript.Renderer;
+import org.teavm.javascript.RenderingException;
 import org.teavm.javascript.ast.ClassNode;
 import org.teavm.javascript.spi.GeneratedBy;
 import org.teavm.javascript.spi.Generator;
 import org.teavm.javascript.spi.InjectedBy;
 import org.teavm.javascript.spi.Injector;
-import org.teavm.model.*;
-import org.teavm.model.instructions.*;
-import org.teavm.model.util.*;
-import org.teavm.optimization.*;
+import org.teavm.model.BasicBlock;
+import org.teavm.model.CallLocation;
+import org.teavm.model.ClassHolder;
+import org.teavm.model.ClassHolderSource;
+import org.teavm.model.ClassHolderTransformer;
+import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ElementHolder;
+import org.teavm.model.ElementModifier;
+import org.teavm.model.InstructionLocation;
+import org.teavm.model.ListableClassHolderSource;
+import org.teavm.model.ListableClassReaderSource;
+import org.teavm.model.MethodHolder;
+import org.teavm.model.MethodReference;
+import org.teavm.model.MutableClassHolderSource;
+import org.teavm.model.Program;
+import org.teavm.model.ProgramCache;
+import org.teavm.model.ValueType;
+import org.teavm.model.Variable;
+import org.teavm.model.instructions.ConstructInstruction;
+import org.teavm.model.instructions.InvocationType;
+import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.instructions.RaiseInstruction;
+import org.teavm.model.instructions.StringConstantInstruction;
+import org.teavm.model.util.AsyncMethodFinder;
+import org.teavm.model.util.ListingBuilder;
+import org.teavm.model.util.MissingItemsProcessor;
+import org.teavm.model.util.ModelUtils;
+import org.teavm.model.util.ProgramUtils;
+import org.teavm.model.util.RegisterAllocator;
+import org.teavm.optimization.ArrayUnwrapMotion;
+import org.teavm.optimization.Devirtualization;
+import org.teavm.optimization.GlobalValueNumbering;
+import org.teavm.optimization.LoopInvariantMotion;
+import org.teavm.optimization.MethodOptimization;
+import org.teavm.optimization.UnusedVariableElimination;
 import org.teavm.vm.spi.RendererListener;
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
@@ -69,20 +131,20 @@ import org.teavm.vm.spi.TeaVMPlugin;
  * @author Alexey Andreev
  */
 public class TeaVM implements TeaVMHost, ServiceRepository {
-    private ClassReaderSource classSource;
-    private DependencyChecker dependencyChecker;
-    private AccumulationDiagnostics diagnostics = new AccumulationDiagnostics();
-    private ClassLoader classLoader;
+    private final ClassReaderSource classSource;
+    private final DependencyChecker dependencyChecker;
+    private final AccumulationDiagnostics diagnostics = new AccumulationDiagnostics();
+    private final ClassLoader classLoader;
     private boolean minifying = true;
     private boolean bytecodeLogging;
-    private OutputStream logStream = System.out;
-    private Map<String, TeaVMEntryPoint> entryPoints = new HashMap<>();
-    private Map<String, String> exportedClasses = new HashMap<>();
-    private Map<MethodReference, Generator> methodGenerators = new HashMap<>();
-    private Map<MethodReference, Injector> methodInjectors = new HashMap<>();
-    private List<RendererListener> rendererListeners = new ArrayList<>();
-    private Map<Class<?>, Object> services = new HashMap<>();
-    private Properties properties = new Properties();
+    private final OutputStream logStream = System.out;
+    private final Map<String, TeaVMEntryPoint> entryPoints = new HashMap<>();
+    private final Map<String, String> exportedClasses = new HashMap<>();
+    private final Map<MethodReference, Generator> methodGenerators = new HashMap<>();
+    private final Map<MethodReference, Injector> methodInjectors = new HashMap<>();
+    private final List<RendererListener> rendererListeners = new ArrayList<>();
+    private final Map<Class<?>, Object> services = new HashMap<>();
+    private final Properties properties = new Properties();
     private DebugInformationEmitter debugEmitter;
     private ProgramCache programCache;
     private MethodNodeCache astCache = new EmptyRegularMethodNodeCache();
@@ -90,8 +152,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     private TeaVMProgressListener progressListener;
     private boolean cancelled;
     private ListableClassHolderSource writtenClasses;
-    private Set<MethodReference> asyncMethods = new HashSet<>();
-    private Set<MethodReference> asyncFamilyMethods = new HashSet<>();
+    private final Set<MethodReference> asyncMethods = new HashSet<>();
+    private final Set<MethodReference> asyncFamilyMethods = new HashSet<>();
 
     TeaVM(ClassReaderSource classSource, ClassLoader classLoader) {
         this.classSource = classSource;
@@ -288,10 +350,6 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         exportedClasses.put(name, className);
     }
 
-    public void linkType(String className) {
-        dependencyChecker.linkClass(className, null).initClass(null);
-    }
-
     /**
      * Gets a {@link ClassReaderSource} which is used by this TeaVM instance. It is exactly what was
      * passed to {@link TeaVMBuilder#setClassSource(ClassHolderSource)}.
@@ -420,7 +478,6 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             return;
         }
         DefaultNamingStrategy naming = new DefaultNamingStrategy(aliasProvider, dependencyChecker.getClassSource());
-        naming.setMinifying(minifying);
         SourceWriterBuilder builder = new SourceWriterBuilder(naming);
         builder.setMinified(minifying);
         SourceWriter sourceWriter = builder.build(writer);
@@ -654,7 +711,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     }
 
     private List<MethodOptimization> getOptimizations() {
-        return Arrays.asList(new ArrayUnwrapMotion(), new LoopInvariantMotion(),
+        return Arrays.asList(new ArrayUnwrapMotion(), /*new LoopInversion(),*/ new LoopInvariantMotion(),
                 new GlobalValueNumbering(), new UnusedVariableElimination());
     }
 

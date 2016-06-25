@@ -19,10 +19,6 @@ import java.util.*;
 import org.teavm.common.MutableGraphNode;
 import org.teavm.model.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 class InterferenceGraphBuilder {
     public List<MutableGraphNode> build(Program program, int paramCount, LivenessAnalyzer liveness) {
         List<MutableGraphNode> nodes = new ArrayList<>();
@@ -32,7 +28,8 @@ class InterferenceGraphBuilder {
         UsageExtractor useExtractor = new UsageExtractor();
         DefinitionExtractor defExtractor = new DefinitionExtractor();
         InstructionTransitionExtractor succExtractor = new InstructionTransitionExtractor();
-        List<List<Incoming>> outgoings = getOutgoings(program);
+        List<List<Incoming>> outgoings = ProgramUtils.getPhiOutputs(program);
+        List<List<TryCatchJoint>> outputJoints = ProgramUtils.getOutputJoints(program);
         Set<MutableGraphNode> live = new HashSet<>(128);
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
@@ -48,6 +45,11 @@ class InterferenceGraphBuilder {
             for (int j = 0; j < liveOut.length(); ++j) {
                 if (liveOut.get(j)) {
                     live.add(nodes.get(j));
+                }
+            }
+            for (TryCatchJoint joint : outputJoints.get(i)) {
+                for (Variable outputVar : joint.getSourceVariables()) {
+                    live.add(nodes.get(outputVar.getIndex()));
                 }
             }
             for (Incoming outgoing : outgoings.get(i)) {
@@ -89,29 +91,21 @@ class InterferenceGraphBuilder {
                     live.add(nodes.get(j));
                 }
             }
+
+            for (TryCatchJoint joint : block.getTryCatchJoints()) {
+                live.add(nodes.get(joint.getReceiver().getIndex()));
+            }
             for (Phi phi : block.getPhis()) {
                 live.add(nodes.get(phi.getReceiver().getIndex()));
+            }
+
+            for (TryCatchJoint joint : block.getTryCatchJoints()) {
+                nodes.get(joint.getReceiver().getIndex()).connectAll(live);
             }
             for (Phi phi : block.getPhis()) {
                 nodes.get(phi.getReceiver().getIndex()).connectAll(live);
             }
         }
         return nodes;
-    }
-
-    private List<List<Incoming>> getOutgoings(Program program) {
-        List<List<Incoming>> outgoings = new ArrayList<>(program.basicBlockCount());
-        for (int i = 0; i < program.basicBlockCount(); ++i) {
-            outgoings.add(new ArrayList<Incoming>());
-        }
-        for (int i = 0; i < program.basicBlockCount(); ++i) {
-            BasicBlock block = program.basicBlockAt(i);
-            for (Phi phi : block.getPhis()) {
-                for (Incoming incoming : phi.getIncomings()) {
-                    outgoings.get(incoming.getSource().getIndex()).add(incoming);
-                }
-            }
-        }
-        return outgoings;
     }
 }

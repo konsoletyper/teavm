@@ -22,14 +22,14 @@ import java.util.*;
  * @author Alexey Andreev
  */
 public class MutableGraphNode {
-    int tag;
-    Map<MutableGraphNode, MutableGraphEdge> edges = new HashMap<>();
+    private int tag;
+    final Map<MutableGraphNode, MutableGraphEdge> edges = new LinkedHashMap<>();
 
     public MutableGraphNode(int tag) {
         this.tag = tag;
     }
 
-    public MutableGraphEdge connect(MutableGraphNode other) {
+    private MutableGraphEdge connect(MutableGraphNode other) {
         MutableGraphEdge edge = edges.get(other);
         if (edge == null) {
             edge = new MutableGraphEdge();

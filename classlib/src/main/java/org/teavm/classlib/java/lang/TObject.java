@@ -21,6 +21,7 @@ import org.teavm.javascript.spi.Superclass;
 import org.teavm.javascript.spi.Sync;
 import org.teavm.jso.browser.TimerHandler;
 import org.teavm.platform.Platform;
+import org.teavm.platform.PlatformObject;
 import org.teavm.platform.PlatformQueue;
 import org.teavm.platform.PlatformRunnable;
 import org.teavm.platform.async.AsyncCallback;
@@ -168,7 +169,6 @@ public class TObject {
 
     @Rename("<init>")
     private void init() {
-        Platform.getPlatformObject(this).setId(Platform.nextObjectId());
     }
 
     @Rename("getClass")
@@ -192,6 +192,10 @@ public class TObject {
     }
 
     int identity() {
+        PlatformObject platformThis = Platform.getPlatformObject(this);
+        if (platformThis.getId() == 0) {
+            platformThis.setId(Platform.nextObjectId());
+        }
         return Platform.getPlatformObject(this).getId();
     }
 

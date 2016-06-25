@@ -18,10 +18,6 @@ package org.teavm.model;
 import java.util.List;
 import org.teavm.model.instructions.InstructionReader;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface BasicBlockReader {
     ProgramReader getProgram();
 
@@ -36,4 +32,6 @@ public interface BasicBlockReader {
     void readAllInstructions(InstructionReader reader);
 
     List<? extends TryCatchBlockReader> readTryCatchBlocks();
+
+    List<TryCatchJointReader> readTryCatchJoints();
 }

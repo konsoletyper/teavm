@@ -24,10 +24,6 @@ import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 import org.teavm.model.util.ProgramUtils;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class GlobalValueNumbering implements MethodOptimization {
     private Map<String, KnownValue> knownValues = new HashMap<>();
     private boolean eliminate;
@@ -52,7 +48,8 @@ public class GlobalValueNumbering implements MethodOptimization {
         for (int i = 0; i < map.length; ++i) {
             map[i] = i;
         }
-        List<List<Incoming>> outgoings = findOutgoings(program);
+        List<List<Incoming>> outgoings = ProgramUtils.getPhiOutputs(program);
+        List<List<TryCatchJoint>> outputJoints = ProgramUtils.getOutputJoints(program);
 
         int[] stack = new int[cfg.size() * 2];
         int top = 0;
@@ -95,13 +92,21 @@ public class GlobalValueNumbering implements MethodOptimization {
                     eliminate = false;
                 }
             }
+            for (TryCatchJoint joint : outputJoints.get(v)) {
+                for (int i = 0; i < joint.getSourceVariables().size(); ++i) {
+                    int sourceVar = map[joint.getSourceVariables().get(i).getIndex()];
+                    joint.getSourceVariables().set(i, program.variableAt(sourceVar));
+                }
+            }
             for (Incoming incoming : outgoings.get(v)) {
                 int value = map[incoming.getValue().getIndex()];
                 incoming.setValue(program.variableAt(value));
             }
             for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                int var = map[tryCatch.getExceptionVariable().getIndex()];
-                tryCatch.setExceptionVariable(program.variableAt(var));
+                if (tryCatch.getExceptionVariable() != null) {
+                    int var = map[tryCatch.getExceptionVariable().getIndex()];
+                    tryCatch.setExceptionVariable(program.variableAt(var));
+                }
             }
             for (int succ : dom.outgoingEdges(v)) {
                 stack[top++] = succ;
@@ -119,21 +124,6 @@ public class GlobalValueNumbering implements MethodOptimization {
 
         program.pack();
         this.program = null;
-    }
-
-    private List<List<Incoming>> findOutgoings(Program program) {
-        List<List<Incoming>> outgoings = new ArrayList<>();
-        for (int i = 0; i < program.basicBlockCount(); ++i) {
-            outgoings.add(new ArrayList<>());
-        }
-        for (int i = 0; i < program.basicBlockCount(); ++i) {
-            for (Phi phi : program.basicBlockAt(i).getPhis()) {
-                for (Incoming incoming : phi.getIncomings()) {
-                    outgoings.get(incoming.getSource().getIndex()).add(incoming);
-                }
-            }
-        }
-        return outgoings;
     }
 
     private void bind(int var, String value) {
