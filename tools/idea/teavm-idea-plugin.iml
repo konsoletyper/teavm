@@ -12,7 +12,7 @@
     </content>
     <orderEntry type="jdk" jdkName="IntelliJ IDEA" jdkType="IDEA JDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="teavm-jps-plugin" />
-    <orderEntry type="library" name="teavm-all" level="project" />
+    <orderEntry type="module" module-name="teavm-jps-common" exported="" />
+    <orderEntry type="module" module-name="teavm-jps-plugin" exported="" />
   </component>
 </module>

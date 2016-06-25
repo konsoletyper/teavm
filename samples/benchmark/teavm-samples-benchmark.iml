@@ -63,4 +63,9 @@
     <orderEntry type="library" name="Maven: org.netbeans.html:net.java.html.boot:1.2.3" level="project" />
     <orderEntry type="library" name="Maven: org.netbeans.html:net.java.html:1.2.3" level="project" />
   </component>
+  <component name="teavm">
+    <option name="enabled" value="true" />
+    <option name="mainClass" value="org.teavm.samples.benchmark.teavm.BenchmarkStarter" />
+    <option name="targetDirectory" value="$MODULE_DIR$/target/generated/js/teavm" />
+  </component>
 </module>

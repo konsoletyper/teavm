@@ -15,11 +15,11 @@
  */
 package org.teavm.idea;
 
+import static org.teavm.idea.jps.remote.TeaVMBuilderAssistant.REMOTE_PORT;
 import com.intellij.compiler.server.BuildProcessParametersProvider;
 import java.util.Collections;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
-import org.teavm.idea.jps.TeaVMBuilder;
 
 public class TeaVMJPSConfigurator extends BuildProcessParametersProvider {
     private TeaVMJPSRemoteService remoteService;
@@ -31,6 +31,6 @@ public class TeaVMJPSConfigurator extends BuildProcessParametersProvider {
     @NotNull
     @Override
     public List<String> getVMArguments() {
-        return Collections.singletonList("-D" + TeaVMBuilder.REMOTE_PORT + "=" + remoteService.getPort());
+        return Collections.singletonList("-D" + REMOTE_PORT + "=" + remoteService.getPort());
     }
 }

@@ -15,6 +15,7 @@
  */
 package org.teavm.idea.jps;
 
+import static org.teavm.idea.jps.remote.TeaVMBuilderAssistant.REMOTE_PORT;
 import java.io.IOException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -35,7 +36,6 @@ import org.jetbrains.jps.model.module.JpsModule;
 import org.teavm.idea.jps.remote.TeaVMBuilderAssistant;
 
 public class TeaVMBuilder extends ModuleLevelBuilder {
-    public static final String REMOTE_PORT = "teavm.jps.remote-port";
     private static TeaVMBuilderAssistant assistant;
 
     public TeaVMBuilder() {

@@ -42,4 +42,9 @@
     <orderEntry type="library" scope="PROVIDED" name="Maven: joda-time:joda-time:2.7" level="project" />
     <orderEntry type="module" module-name="teavm-jso-apis" scope="PROVIDED" />
   </component>
+  <component name="teavm">
+    <option name="enabled" value="true" />
+    <option name="mainClass" value="org.teavm.samples.kotlin.HelloKt" />
+    <option name="targetDirectory" value="$MODULE_DIR$/target/generated/js/teavm" />
+  </component>
 </module>

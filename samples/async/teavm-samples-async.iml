@@ -38,4 +38,9 @@
     <orderEntry type="library" scope="PROVIDED" name="Maven: com.jcraft:jzlib:1.1.3" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: joda-time:joda-time:2.7" level="project" />
   </component>
+  <component name="teavm">
+    <option name="enabled" value="true" />
+    <option name="mainClass" value="org.teavm.samples.async.AsyncProgram" />
+    <option name="targetDirectory" value="$MODULE_DIR$/target/generated/js/teavm" />
+  </component>
 </module>

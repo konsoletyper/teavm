@@ -19,6 +19,7 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 
 public interface TeaVMBuilderAssistant extends Remote {
+    String REMOTE_PORT = "teavm.jps.remote-port";
     String ID = "TeaVM-JPS-Assistant";
 
     TeaVMElementLocation getMethodLocation(String className, String methodName, String methodDesc)

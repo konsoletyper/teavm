@@ -39,4 +39,9 @@
     <orderEntry type="module" module-name="teavm-jso" />
     <orderEntry type="library" name="Maven: org.scala-lang:scala-library:2.11.7" level="project" />
   </component>
+  <component name="teavm">
+    <option name="enabled" value="true" />
+    <option name="mainClass" value="org.teavm.samples.scala.Client" />
+    <option name="targetDirectory" value="$MODULE_DIR$/target/generated/js/teavm" />
+  </component>
 </module>
