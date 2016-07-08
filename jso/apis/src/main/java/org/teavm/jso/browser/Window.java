@@ -117,6 +117,12 @@ public abstract class Window implements JSObject, WindowEventTarget, StorageProv
     @JSBody(params = { "timeoutId" }, script = "clearInterval(timeoutId);")
     public static native void clearInterval(int timeoutId);
 
+    @JSBody(params = { "callback" }, script = "return requestAnimationFrame(callback);")
+    public static native int requestAnimationFrame(AnimationFrameCallback callback);
+
+    @JSBody(params = { "requestId" }, script = "cancelAnimationFrame(requestId);")
+    public static native void cancelAnimationFrame(int requestId);
+
     public abstract void blur();
 
     public abstract void focus();
