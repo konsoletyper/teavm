@@ -43,9 +43,7 @@ public class BasicBlockMapper implements InstructionVisitor {
             return;
         }
         lastInsn.acceptVisitor(this);
-        for (TryCatchJoint joint : block.getTryCatchJoints()) {
-            joint.setSource(map(joint.getSource()));
-        }
+
         for (Phi phi : block.getPhis()) {
             for (Incoming incoming : phi.getIncomings()) {
                 incoming.setSource(map(incoming.getSource()));

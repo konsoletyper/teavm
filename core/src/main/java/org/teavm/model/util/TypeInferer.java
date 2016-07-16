@@ -22,10 +22,6 @@ import org.teavm.common.IntegerStack;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TypeInferer {
     VariableType[] types;
     GraphBuilder builder;
@@ -45,20 +41,23 @@ public class TypeInferer {
         arrayElemBuilder = new GraphBuilder(sz);
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlockReader block = program.basicBlockAt(i);
+
+            if (block.getExceptionVariable() != null) {
+                types[block.getExceptionVariable().getIndex()] = VariableType.OBJECT;
+            }
+
             block.readAllInstructions(reader);
             for (PhiReader phi : block.readPhis()) {
                 for (IncomingReader incoming : phi.readIncomings()) {
                     builder.addEdge(incoming.getValue().getIndex(), phi.getReceiver().getIndex());
                 }
             }
-            for (TryCatchJointReader joint : block.readTryCatchJoints()) {
-                for (VariableReader sourceVar : joint.readSourceVariables()) {
-                    builder.addEdge(sourceVar.getIndex(), joint.getReceiver().getIndex());
-                }
-            }
+
             for (TryCatchBlockReader tryCatch : block.readTryCatchBlocks()) {
-                if (tryCatch.getExceptionVariable() != null) {
-                    types[tryCatch.getExceptionVariable().getIndex()] = VariableType.OBJECT;
+                for (TryCatchJointReader joint : tryCatch.readTryCatchJoints()) {
+                    for (VariableReader sourceVar : joint.readSourceVariables()) {
+                        builder.addEdge(sourceVar.getIndex(), joint.getReceiver().getIndex());
+                    }
                 }
             }
         }

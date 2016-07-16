@@ -60,12 +60,16 @@ public class UnusedVariableElimination implements MethodOptimization {
                     block.getInstructions().remove(j--);
                 }
             }
-            for (int j = 0; j < block.getTryCatchJoints().size(); ++j) {
-                TryCatchJoint joint = block.getTryCatchJoints().get(j);
-                if (!used[joint.getReceiver().getIndex()]) {
-                    block.getTryCatchJoints().remove(j--);
+
+            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                for (int j = 0; j < tryCatch.getTryCatchJoints().size(); ++j) {
+                    TryCatchJoint joint = tryCatch.getTryCatchJoints().get(j);
+                    if (!used[joint.getReceiver().getIndex()]) {
+                        tryCatch.getTryCatchJoints().remove(j--);
+                    }
                 }
             }
+
             for (int j = 0; j < block.getPhis().size(); ++j) {
                 Phi phi = block.getPhis().get(j);
                 if (!used[phi.getReceiver().getIndex()]) {

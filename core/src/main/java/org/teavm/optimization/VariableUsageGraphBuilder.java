@@ -37,9 +37,11 @@ public final class VariableUsageGraphBuilder {
                     builder.addEdge(incoming.getValue().getIndex(), phi.getReceiver().getIndex());
                 }
             }
-            for (TryCatchJoint joint : block.getTryCatchJoints()) {
-                for (Variable sourceVar : joint.getSourceVariables()) {
-                    builder.addEdge(sourceVar.getIndex(), joint.getReceiver().getIndex());
+            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                for (TryCatchJoint joint : tryCatch.getTryCatchJoints()) {
+                    for (Variable sourceVar : joint.getSourceVariables()) {
+                        builder.addEdge(sourceVar.getIndex(), joint.getReceiver().getIndex());
+                    }
                 }
             }
         }

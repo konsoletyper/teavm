@@ -34,10 +34,13 @@ public class InstructionVariableMapper implements InstructionVisitor {
     }
 
     public void apply(BasicBlock block) {
+        if (block.getExceptionVariable() != null) {
+            block.setExceptionVariable(map(block.getExceptionVariable()));
+        }
+
         applyToInstructions(block);
         applyToPhis(block);
         applyToTryCatchBlocks(block);
-        applyToTryCatchJoints(block);
     }
 
     public void applyToInstructions(BasicBlock block) {
@@ -57,18 +60,12 @@ public class InstructionVariableMapper implements InstructionVisitor {
 
     public void applyToTryCatchBlocks(BasicBlock block) {
         for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-            if (tryCatch.getExceptionVariable() != null) {
-                tryCatch.setExceptionVariable(map(tryCatch.getExceptionVariable()));
-            }
-        }
-    }
-
-    public void applyToTryCatchJoints(BasicBlock block) {
-        for (TryCatchJoint joint : block.getTryCatchJoints()) {
-            joint.setReceiver(map(joint.getReceiver()));
-            for (int i = 0; i < joint.getSourceVariables().size(); ++i) {
-                Variable var = joint.getSourceVariables().get(i);
-                joint.getSourceVariables().set(i, map(var));
+            for (TryCatchJoint joint : tryCatch.getTryCatchJoints()) {
+                joint.setReceiver(map(joint.getReceiver()));
+                for (int i = 0; i < joint.getSourceVariables().size(); ++i) {
+                    Variable var = joint.getSourceVariables().get(i);
+                    joint.getSourceVariables().set(i, map(var));
+                }
             }
         }
     }

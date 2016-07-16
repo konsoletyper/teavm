@@ -541,8 +541,8 @@ public class Decompiler {
             bookmark.offset = bookmark.block.body.size();
             bookmark.exceptionHandler = tryCatch.getHandler().getIndex();
             bookmark.exceptionType = tryCatch.getExceptionType();
-            bookmark.exceptionVariable = tryCatch.getExceptionVariable() != null
-                    ? tryCatch.getExceptionVariable().getIndex() : null;
+            bookmark.exceptionVariable = tryCatch.getHandler().getExceptionVariable() != null
+                    ? tryCatch.getHandler().getExceptionVariable().getIndex() : null;
             bookmark.block.tryCatches.add(bookmark);
             tryCatchBookmarks.add(bookmark);
         }

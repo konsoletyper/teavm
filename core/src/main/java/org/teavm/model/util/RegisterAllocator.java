@@ -33,6 +33,7 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
 import org.teavm.model.ProgramReader;
+import org.teavm.model.TryCatchBlock;
 import org.teavm.model.TryCatchJoint;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.AssignInstruction;
@@ -77,7 +78,9 @@ public class RegisterAllocator {
 
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             program.basicBlockAt(i).getPhis().clear();
-            program.basicBlockAt(i).getTryCatchJoints().clear();
+            for (TryCatchBlock tryCatch : program.basicBlockAt(i).getTryCatchBlocks()) {
+                tryCatch.getTryCatchJoints().clear();
+            }
         }
     }
 
@@ -116,14 +119,16 @@ public class RegisterAllocator {
     private void insertJointArgumentsCopies(Program program) {
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
-            block.getTryCatchJoints().forEach(this::insertCopy);
+            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                tryCatch.getTryCatchJoints().forEach(this::insertCopy);
+            }
         }
     }
 
     private void insertCopy(TryCatchJoint joint) {
         Set<Variable> variableSet = new HashSet<>(joint.getSourceVariables());
 
-        BasicBlock block = joint.getSource();
+        BasicBlock block = joint.getBlock().getProtectedBlock();
         DefinitionExtractor defExtractor = new DefinitionExtractor();
         for (int i = block.getInstructions().size() - 1; i >= 0; --i) {
             Instruction insn = block.getInstructions().get(i);
@@ -151,16 +156,12 @@ public class RegisterAllocator {
             Map<BasicBlock, BasicBlock> blockMap = new HashMap<>();
             for (Phi phi : program.basicBlockAt(i).getPhis()) {
                 for (Incoming incoming : phi.getIncomings()) {
-                    if (!isExceptionHandler(incoming)) {
-                        insertCopy(incoming, blockMap);
-                    }
+                    insertCopy(incoming, blockMap);
                 }
             }
             for (Phi phi : program.basicBlockAt(i).getPhis()) {
                 for (Incoming incoming : phi.getIncomings()) {
-                    if (!isExceptionHandler(incoming)) {
-                        insertCopy(incoming, blockMap);
-                    }
+                    insertCopy(incoming, blockMap);
                 }
             }
         }
@@ -192,11 +193,6 @@ public class RegisterAllocator {
         }
         source.getInstructions().add(source.getInstructions().size() - 1, copyInstruction);
         incoming.setValue(copyInstruction.getReceiver());
-    }
-
-    private boolean isExceptionHandler(Incoming incoming) {
-        return incoming.getSource().getTryCatchJoints().stream().anyMatch(
-                joint -> joint.getReceiver() == incoming.getValue());
     }
 
     private void removeRedundantCopies(Program program, List<MutableGraphNode> interferenceGraph,
@@ -301,9 +297,11 @@ public class RegisterAllocator {
                     classes.union(phi.getReceiver().getIndex(), incoming.getValue().getIndex());
                 }
             }
-            for (TryCatchJoint joint : block.getTryCatchJoints()) {
-                for (Variable sourceVar : joint.getSourceVariables()) {
-                    classes.union(sourceVar.getIndex(), joint.getReceiver().getIndex());
+            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                for (TryCatchJoint joint : tryCatch.getTryCatchJoints()) {
+                    for (Variable sourceVar : joint.getSourceVariables()) {
+                        classes.union(sourceVar.getIndex(), joint.getReceiver().getIndex());
+                    }
                 }
             }
         }

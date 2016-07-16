@@ -183,11 +183,13 @@ public class CompositeMethodGenerator {
             BasicBlockReader templateBlock = template.basicBlockAt(i);
             blockIndex = i == 0 ? startBlock : substitutor.blockOffset + i;
             BasicBlock targetBlock = program.basicBlockAt(blockIndex);
+            if (templateBlock.getExceptionVariable() != null) {
+                targetBlock.setExceptionVariable(substitutor.var(templateBlock.getExceptionVariable()));
+            }
 
             for (TryCatchBlockReader templateTryCatch : templateBlock.readTryCatchBlocks()) {
                 TryCatchBlock tryCatch = new TryCatchBlock();
                 tryCatch.setExceptionType(templateTryCatch.getExceptionType());
-                tryCatch.setExceptionVariable(substitutor.var(templateTryCatch.getExceptionVariable()));
                 tryCatch.setHandler(substitutor.block(templateTryCatch.getHandler()));
                 targetBlock.getTryCatchBlocks().add(tryCatch);
             }

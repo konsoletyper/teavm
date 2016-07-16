@@ -240,6 +240,7 @@ public class ProgramParser {
                 workStack.push(new Step(index, next));
             }
         }
+
         for (Object obj : method.tryCatchBlocks) {
             TryCatchBlockNode tryCatchNode = (TryCatchBlockNode) obj;
             if (tryCatchNode.start == tryCatchNode.handler) {
@@ -257,7 +258,7 @@ public class ProgramParser {
                         tryCatch.setExceptionType(tryCatchNode.type.replace('/', '.'));
                     }
                     tryCatch.setHandler(getBasicBlock(labelIndexes.get(tryCatchNode.handler.getLabel())));
-                    tryCatch.setExceptionVariable(getVariable(minLocal + method.maxLocals));
+                    tryCatch.getHandler().setExceptionVariable(program.variableAt(minLocal + method.maxLocals));
                     block.getTryCatchBlocks().add(tryCatch);
                 }
             }

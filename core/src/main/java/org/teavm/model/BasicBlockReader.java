@@ -33,5 +33,5 @@ public interface BasicBlockReader {
 
     List<? extends TryCatchBlockReader> readTryCatchBlocks();
 
-    List<TryCatchJointReader> readTryCatchJoints();
+    VariableReader getExceptionVariable();
 }

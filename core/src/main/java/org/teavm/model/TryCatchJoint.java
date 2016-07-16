@@ -20,11 +20,10 @@ import java.util.Collections;
 import java.util.List;
 
 public class TryCatchJoint implements TryCatchJointReader {
-    private BasicBlock source;
     private List<Variable> sourceVariables = new ArrayList<>();
     private List<VariableReader> readonlySourceVariables;
     private Variable receiver;
-    BasicBlock block;
+    TryCatchBlock block;
 
     @Override
     public List<VariableReader> readSourceVariables() {
@@ -47,16 +46,7 @@ public class TryCatchJoint implements TryCatchJointReader {
         this.receiver = receiver;
     }
 
-    @Override
-    public BasicBlock getSource() {
-        return source;
-    }
-
-    public void setSource(BasicBlock source) {
-        this.source = source;
-    }
-
-    public BasicBlock getBlock() {
+    public TryCatchBlock getBlock() {
         return block;
     }
 }

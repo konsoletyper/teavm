@@ -29,6 +29,7 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.Phi;
 import org.teavm.model.PrimitiveType;
 import org.teavm.model.Program;
+import org.teavm.model.TryCatchBlock;
 import org.teavm.model.TryCatchJoint;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
@@ -111,9 +112,11 @@ public class BoxingElimination {
                     union(phi.getReceiver().getIndex(), incoming.getValue().getIndex());
                 }
             }
-            for (TryCatchJoint joint : block.getTryCatchJoints()) {
-                for (Variable sourceVar : joint.getSourceVariables()) {
-                    union(sourceVar.getIndex(), joint.getReceiver().getIndex());
+            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                for (TryCatchJoint joint : tryCatch.getTryCatchJoints()) {
+                    for (Variable sourceVar : joint.getSourceVariables()) {
+                        union(sourceVar.getIndex(), joint.getReceiver().getIndex());
+                    }
                 }
             }
         }
@@ -161,7 +164,7 @@ public class BoxingElimination {
         Wrapper q = wrappers.get(set.find(b));
         int c = set.union(a, b);
         if (c >= wrappers.size()) {
-            wrappers.addAll(Collections.nCopies(c - wrappers.size() + 1, (Wrapper) null));
+            wrappers.addAll(Collections.nCopies(c - wrappers.size() + 1, null));
         }
         wrappers.set(c, union(p, q));
         return c;

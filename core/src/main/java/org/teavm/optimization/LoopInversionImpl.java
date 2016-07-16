@@ -317,6 +317,9 @@ class LoopInversionImpl {
             for (int node : copiedNodes.keys().toArray()) {
                 BasicBlock sourceBlock = program.basicBlockAt(node);
                 BasicBlock targetBlock = program.basicBlockAt(copiedNodes.get(node));
+
+                targetBlock.setExceptionVariable(sourceBlock.getExceptionVariable());
+
                 copier.resetLocation();
                 for (int i = 0; i < sourceBlock.instructionCount(); ++i) {
                     sourceBlock.readInstruction(i, copier);
@@ -342,18 +345,15 @@ class LoopInversionImpl {
                     TryCatchBlock tryCatchCopy = new TryCatchBlock();
                     int handler = tryCatch.getHandler().getIndex();
                     tryCatchCopy.setExceptionType(tryCatch.getExceptionType());
-                    tryCatchCopy.setExceptionVariable(tryCatch.getExceptionVariable());
                     tryCatchCopy.setHandler(program.basicBlockAt(copiedNodes.getOrDefault(handler, handler)));
                     targetBlock.getTryCatchBlocks().add(tryCatchCopy);
-                }
 
-                for (TryCatchJoint joint : sourceBlock.getTryCatchJoints()) {
-                    TryCatchJoint jointCopy = new TryCatchJoint();
-                    jointCopy.setReceiver(joint.getReceiver());
-                    jointCopy.getSourceVariables().addAll(joint.getSourceVariables());
-                    int source = joint.getSource().getIndex();
-                    jointCopy.setSource(program.basicBlockAt(copiedNodes.getOrDefault(source, source)));
-                    targetBlock.getTryCatchJoints().add(joint);
+                    for (TryCatchJoint joint : tryCatch.getTryCatchJoints()) {
+                        TryCatchJoint jointCopy = new TryCatchJoint();
+                        jointCopy.setReceiver(joint.getReceiver());
+                        jointCopy.getSourceVariables().addAll(joint.getSourceVariables());
+                        tryCatchCopy.getTryCatchJoints().add(joint);
+                    }
                 }
             }
 

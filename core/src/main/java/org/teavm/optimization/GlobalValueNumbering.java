@@ -54,7 +54,6 @@ public class GlobalValueNumbering implements MethodOptimization {
             map[i] = i;
         }
         List<List<Incoming>> outgoings = ProgramUtils.getPhiOutputs(program);
-        List<List<TryCatchJoint>> outputJoints = ProgramUtils.getOutputJoints(program);
 
         int[] stack = new int[cfg.size() * 2];
         int top = 0;
@@ -89,6 +88,12 @@ public class GlobalValueNumbering implements MethodOptimization {
                     block.getPhis().remove(i--);
                 }
             }*/
+
+            if (block.getExceptionVariable() != null) {
+                int var = map[block.getExceptionVariable().getIndex()];
+                block.setExceptionVariable(program.variableAt(var));
+            }
+
             for (int i = 0; i < block.getInstructions().size(); ++i) {
                 evaluatedConstant = null;
                 Instruction currentInsn = block.getInstructions().get(i);
@@ -127,22 +132,19 @@ public class GlobalValueNumbering implements MethodOptimization {
                     }
                 }
             }
-            for (TryCatchJoint joint : outputJoints.get(v)) {
-                for (int i = 0; i < joint.getSourceVariables().size(); ++i) {
-                    int sourceVar = map[joint.getSourceVariables().get(i).getIndex()];
-                    joint.getSourceVariables().set(i, program.variableAt(sourceVar));
+            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                for (TryCatchJoint joint : tryCatch.getTryCatchJoints()) {
+                    for (int i = 0; i < joint.getSourceVariables().size(); ++i) {
+                        int sourceVar = map[joint.getSourceVariables().get(i).getIndex()];
+                        joint.getSourceVariables().set(i, program.variableAt(sourceVar));
+                    }
                 }
             }
             for (Incoming incoming : outgoings.get(v)) {
                 int value = map[incoming.getValue().getIndex()];
                 incoming.setValue(program.variableAt(value));
             }
-            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                if (tryCatch.getExceptionVariable() != null) {
-                    int var = map[tryCatch.getExceptionVariable().getIndex()];
-                    tryCatch.setExceptionVariable(program.variableAt(var));
-                }
-            }
+
             for (int succ : dom.outgoingEdges(v)) {
                 stack[top++] = succ;
             }

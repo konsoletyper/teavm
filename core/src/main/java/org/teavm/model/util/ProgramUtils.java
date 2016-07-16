@@ -78,10 +78,12 @@ public final class ProgramUtils {
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlockReader block = program.basicBlockAt(i);
             BasicBlock blockCopy = copy.basicBlockAt(i);
+            if (block.getExceptionVariable() != null) {
+                blockCopy.setExceptionVariable(copy.variableAt(block.getExceptionVariable().getIndex()));
+            }
             blockCopy.getInstructions().addAll(copyInstructions(block, 0, block.instructionCount(), copy));
             blockCopy.getPhis().addAll(copyPhis(block, copy));
             blockCopy.getTryCatchBlocks().addAll(copyTryCatches(block, copy));
-            blockCopy.getTryCatchJoints().addAll(copyTryCatchJoints(block, copy));
         }
         return copy;
     }
@@ -117,18 +119,17 @@ public final class ProgramUtils {
         for (TryCatchBlockReader tryCatch : block.readTryCatchBlocks()) {
             TryCatchBlock tryCatchCopy = new TryCatchBlock();
             tryCatchCopy.setExceptionType(tryCatch.getExceptionType());
-            tryCatchCopy.setExceptionVariable(target.variableAt(tryCatch.getExceptionVariable().getIndex()));
             tryCatchCopy.setHandler(target.basicBlockAt(tryCatch.getHandler().getIndex()));
+            tryCatchCopy.getTryCatchJoints().addAll(copyTryCatchJoints(tryCatch, target));
             result.add(tryCatchCopy);
         }
         return result;
     }
 
-    public static List<TryCatchJoint> copyTryCatchJoints(BasicBlockReader block, Program target) {
+    public static List<TryCatchJoint> copyTryCatchJoints(TryCatchBlockReader block, Program target) {
         List<TryCatchJoint> result = new ArrayList<>();
         for (TryCatchJointReader joint : block.readTryCatchJoints()) {
             TryCatchJoint jointCopy = new TryCatchJoint();
-            jointCopy.setSource(target.basicBlockAt(joint.getSource().getIndex()));
             jointCopy.setReceiver(target.variableAt(joint.getReceiver().getIndex()));
             for (VariableReader sourceVar : joint.readSourceVariables()) {
                 jointCopy.getSourceVariables().add(target.variableAt(sourceVar.getIndex()));
@@ -156,43 +157,31 @@ public final class ProgramUtils {
         return outputs;
     }
 
-    public static List<List<TryCatchJoint>> getOutputJoints(Program program) {
-        List<List<TryCatchJoint>> outputs = new ArrayList<>(program.basicBlockCount());
-        for (int i = 0; i < program.basicBlockCount(); ++i) {
-            outputs.add(new ArrayList<>());
-        }
-
-        for (int i = 0; i < program.basicBlockCount(); ++i) {
-            BasicBlock block = program.basicBlockAt(i);
-            for (TryCatchJoint joint : block.getTryCatchJoints()) {
-                outputs.get(joint.getSource().getIndex()).add(joint);
-            }
-        }
-
-        return outputs;
-    }
-
     public static BasicBlock[] getVariableDefinitionPlaces(Program program) {
         BasicBlock[] places = new BasicBlock[program.variableCount()];
         DefinitionExtractor defExtractor = new DefinitionExtractor();
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
+
+            Variable exceptionVar = block.getExceptionVariable();
+            if (exceptionVar != null) {
+                places[exceptionVar.getIndex()] = block;
+            }
+
             for (Phi phi : block.getPhis()) {
                 places[phi.getReceiver().getIndex()] = block;
             }
-            for (TryCatchJoint joint : block.getTryCatchJoints()) {
-                places[joint.getReceiver().getIndex()] = block;
-            }
+
             for (Instruction insn : block.getInstructions()) {
                 insn.acceptVisitor(defExtractor);
                 for (Variable var : defExtractor.getDefinedVariables()) {
                     places[var.getIndex()] = block;
                 }
             }
+
             for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                Variable var = tryCatch.getExceptionVariable();
-                if (var != null) {
-                    places[var.getIndex()] = tryCatch.getHandler();
+                for (TryCatchJoint joint : tryCatch.getTryCatchJoints()) {
+                    places[joint.getReceiver().getIndex()] = block;
                 }
             }
         }

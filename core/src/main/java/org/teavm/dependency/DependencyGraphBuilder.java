@@ -137,18 +137,7 @@ class DependencyGraphBuilder {
             BasicBlockReader block = program.basicBlockAt(i);
             currentExceptionConsumer = createExceptionConsumer(dep, block);
             block.readAllInstructions(reader);
-            for (TryCatchJointReader joint : block.readTryCatchJoints()) {
-                DependencyNode receiverNode = nodes[joint.getReceiver().getIndex()];
-                if (receiverNode == null) {
-                    continue;
-                }
-                for (VariableReader source : joint.readSourceVariables()) {
-                    DependencyNode sourceNode = nodes[source.getIndex()];
-                    if (sourceNode != null) {
-                        sourceNode.connect(receiverNode);
-                    }
-                }
-            }
+
             for (PhiReader phi : block.readPhis()) {
                 DependencyNode receiverNode = nodes[phi.getReceiver().getIndex()];
                 for (IncomingReader incoming : phi.readIncomings()) {
@@ -158,9 +147,23 @@ class DependencyGraphBuilder {
                     }
                 }
             }
+
             for (TryCatchBlockReader tryCatch : block.readTryCatchBlocks()) {
                 if (tryCatch.getExceptionType() != null) {
                     dependencyChecker.linkClass(tryCatch.getExceptionType(), new CallLocation(caller.getMethod()));
+                }
+
+                for (TryCatchJointReader joint : tryCatch.readTryCatchJoints()) {
+                    DependencyNode receiverNode = nodes[joint.getReceiver().getIndex()];
+                    if (receiverNode == null) {
+                        continue;
+                    }
+                    for (VariableReader source : joint.readSourceVariables()) {
+                        DependencyNode sourceNode = nodes[source.getIndex()];
+                        if (sourceNode != null) {
+                            sourceNode.connect(receiverNode);
+                        }
+                    }
                 }
             }
         }
@@ -286,7 +289,7 @@ class DependencyGraphBuilder {
             if (tryCatch.getExceptionType() != null) {
                 exceptions[i] = dependencyChecker.getClassSource().get(tryCatch.getExceptionType());
             }
-            vars[i] = methodDep.getVariable(tryCatch.getExceptionVariable().getIndex());
+            vars[i] = methodDep.getVariable(tryCatch.getHandler().getExceptionVariable().getIndex());
         }
         return new ExceptionConsumer(dependencyChecker, exceptions, vars, methodDep);
     }

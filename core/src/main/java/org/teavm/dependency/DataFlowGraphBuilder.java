@@ -64,9 +64,11 @@ public class DataFlowGraphBuilder implements InstructionReader {
                     builder.addEdge(from, to);
                 }
             }
-            for (TryCatchJointReader joint : block.readTryCatchJoints()) {
-                for (VariableReader sourceVar : joint.readSourceVariables()) {
-                    builder.addEdge(sourceVar.getIndex(), joint.getReceiver().getIndex());
+            for (TryCatchBlockReader tryCatch : block.readTryCatchBlocks()) {
+                for (TryCatchJointReader joint : tryCatch.readTryCatchJoints()) {
+                    for (VariableReader sourceVar : joint.readSourceVariables()) {
+                        builder.addEdge(sourceVar.getIndex(), joint.getReceiver().getIndex());
+                    }
                 }
             }
             block.readAllInstructions(this);

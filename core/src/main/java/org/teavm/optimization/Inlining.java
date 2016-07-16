@@ -166,6 +166,10 @@ public class Inlining {
     }
 
     private void copyInlinedBlock(BasicBlock source, BasicBlock target) {
+        if (source.getExceptionVariable() != null) {
+            target.setExceptionVariable(source.getExceptionVariable());
+        }
+
         InstructionCopyReader insnCopier = new InstructionCopyReader(target.getProgram());
         for (int i = 0; i < source.instructionCount(); ++i) {
             source.readInstruction(i, insnCopier);
@@ -190,18 +194,15 @@ public class Inlining {
             TryCatchBlock tryCatchCopy = new TryCatchBlock();
             int handler = tryCatch.getHandler().getIndex();
             tryCatchCopy.setExceptionType(tryCatch.getExceptionType());
-            tryCatchCopy.setExceptionVariable(tryCatch.getExceptionVariable());
             tryCatchCopy.setHandler(target.getProgram().basicBlockAt(handler));
             target.getTryCatchBlocks().add(tryCatchCopy);
-        }
 
-        for (TryCatchJoint joint : source.getTryCatchJoints()) {
-            TryCatchJoint jointCopy = new TryCatchJoint();
-            jointCopy.setReceiver(joint.getReceiver());
-            jointCopy.getSourceVariables().addAll(joint.getSourceVariables());
-            int sourceIndex = joint.getSource().getIndex();
-            jointCopy.setSource(target.getProgram().basicBlockAt(sourceIndex));
-            target.getTryCatchJoints().add(joint);
+            for (TryCatchJoint joint : tryCatch.getTryCatchJoints()) {
+                TryCatchJoint jointCopy = new TryCatchJoint();
+                jointCopy.setReceiver(joint.getReceiver());
+                jointCopy.getSourceVariables().addAll(joint.getSourceVariables());
+                tryCatchCopy.getTryCatchJoints().add(joint);
+            }
         }
     }
 
@@ -211,18 +212,6 @@ public class Inlining {
             TryCatchBlock tryCatchCopy = new TryCatchBlock();
             tryCatchCopy.setExceptionType(tryCatch.getExceptionType());
             tryCatchCopy.setHandler(tryCatch.getHandler());
-            tryCatchCopy.setExceptionVariable(source.getProgram().createVariable());
-            List<Incoming> handlerIncomings = tryCatch.getHandler().getPhis().stream()
-                    .flatMap(phi -> phi.getIncomings().stream())
-                    .filter(incoming -> incoming.getValue() == tryCatch.getExceptionVariable()
-                            && incoming.getSource() == source)
-                    .collect(Collectors.toList());
-            for (Incoming incoming : handlerIncomings) {
-                Incoming incomingCopy = new Incoming();
-                incomingCopy.setValue(tryCatchCopy.getExceptionVariable());
-                incomingCopy.setSource(target);
-                incoming.getPhi().getIncomings().add(incomingCopy);
-            }
             copiedTryCatches.add(tryCatchCopy);
         }
         target.getTryCatchBlocks().addAll(copiedTryCatches);

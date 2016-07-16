@@ -15,11 +15,64 @@
  */
 package org.teavm.model;
 
+import java.util.AbstractList;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 public class TryCatchBlock implements TryCatchBlockReader {
     BasicBlock protectedBlock;
     private BasicBlock handler;
     private String exceptionType;
-    private Variable exceptionVariable;
+    private List<TryCatchJoint> joints = new ArrayList<>();
+    private List<TryCatchJointReader> immutableJoints;
+
+    private List<TryCatchJoint> safeJoints = new AbstractList<TryCatchJoint>() {
+        @Override
+        public TryCatchJoint get(int index) {
+            return joints.get(index);
+        }
+
+        @Override
+        public int size() {
+            return joints.size();
+        }
+
+        @Override
+        public void add(int index, TryCatchJoint e) {
+            if (e.getBlock() != null) {
+                throw new IllegalArgumentException("This joint is already in some basic block");
+            }
+            e.block = TryCatchBlock.this;
+            joints.add(index, e);
+        }
+
+        @Override
+        public TryCatchJoint set(int index, TryCatchJoint element) {
+            if (element.block != null) {
+                throw new IllegalArgumentException("This phi is already in some basic block");
+            }
+            TryCatchJoint oldJoint = joints.get(index);
+            oldJoint.block = null;
+            element.block = TryCatchBlock.this;
+            return joints.set(index, element);
+        }
+
+        @Override
+        public TryCatchJoint remove(int index) {
+            TryCatchJoint joint = joints.remove(index);
+            joint.block = null;
+            return joint;
+        }
+
+        @Override
+        public void clear() {
+            for (TryCatchJoint joint : joints) {
+                joint.block = null;
+            }
+            joints.clear();
+        }
+    };
 
     @Override
     public BasicBlock getHandler() {
@@ -40,16 +93,19 @@ public class TryCatchBlock implements TryCatchBlockReader {
     }
 
     @Override
-    public Variable getExceptionVariable() {
-        return exceptionVariable;
+    public BasicBlock getProtectedBlock() {
+        return protectedBlock;
     }
 
-    public void setExceptionVariable(Variable exceptionVariable) {
-        this.exceptionVariable = exceptionVariable;
+    public List<TryCatchJoint> getTryCatchJoints() {
+        return safeJoints;
     }
 
     @Override
-    public BasicBlock getProtectedBlock() {
-        return protectedBlock;
+    public List<TryCatchJointReader> readTryCatchJoints() {
+        if (immutableJoints == null) {
+            immutableJoints = Collections.unmodifiableList(safeJoints);
+        }
+        return immutableJoints;
     }
 }

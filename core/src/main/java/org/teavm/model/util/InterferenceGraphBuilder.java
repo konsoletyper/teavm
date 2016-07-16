@@ -29,11 +29,11 @@ class InterferenceGraphBuilder {
         DefinitionExtractor defExtractor = new DefinitionExtractor();
         InstructionTransitionExtractor succExtractor = new InstructionTransitionExtractor();
         List<List<Incoming>> outgoings = ProgramUtils.getPhiOutputs(program);
-        List<List<TryCatchJoint>> outputJoints = ProgramUtils.getOutputJoints(program);
         Set<MutableGraphNode> live = new HashSet<>(128);
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
             block.getLastInstruction().acceptVisitor(succExtractor);
+
             BitSet liveOut = new BitSet(program.variableCount());
             for (BasicBlock succ : succExtractor.getTargets()) {
                 liveOut.or(liveness.liveIn(succ.getIndex()));
@@ -47,24 +47,20 @@ class InterferenceGraphBuilder {
                     live.add(nodes.get(j));
                 }
             }
-            for (TryCatchJoint joint : outputJoints.get(i)) {
-                for (Variable outputVar : joint.getSourceVariables()) {
-                    live.add(nodes.get(outputVar.getIndex()));
-                }
-            }
+
             for (Incoming outgoing : outgoings.get(i)) {
                 live.add(nodes.get(outgoing.getValue().getIndex()));
             }
+
             for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                if (tryCatch.getExceptionVariable() != null) {
-                    nodes.get(tryCatch.getExceptionVariable().getIndex()).connectAll(live);
+                for (TryCatchJoint joint : tryCatch.getTryCatchJoints()) {
+                    for (Variable sourceVar : joint.getSourceVariables()) {
+                        live.add(nodes.get(sourceVar.getIndex()));
+                    }
+                    live.remove(nodes.get(joint.getReceiver().getIndex()));
                 }
             }
-            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                if (tryCatch.getExceptionVariable() != null) {
-                    live.remove(nodes.get(tryCatch.getExceptionVariable().getIndex()));
-                }
-            }
+
             for (int j = block.getInstructions().size() - 1; j >= 0; --j) {
                 Instruction insn = block.getInstructions().get(j);
                 insn.acceptVisitor(useExtractor);
@@ -79,11 +75,16 @@ class InterferenceGraphBuilder {
                     live.add(nodes.get(var.getIndex()));
                 }
             }
+            if (block.getExceptionVariable() != null) {
+                nodes.get(block.getExceptionVariable().getIndex()).connectAll(live);
+                live.remove(nodes.get(block.getExceptionVariable().getIndex()));
+            }
             if (block.getIndex() == 0) {
                 for (int j = 0; j <= paramCount; ++j) {
                     nodes.get(j).connectAll(live);
                 }
             }
+
             BitSet liveIn = liveness.liveIn(i);
             live.clear();
             for (int j = 0; j < liveOut.length(); ++j) {
@@ -92,16 +93,10 @@ class InterferenceGraphBuilder {
                 }
             }
 
-            for (TryCatchJoint joint : block.getTryCatchJoints()) {
-                live.add(nodes.get(joint.getReceiver().getIndex()));
-            }
             for (Phi phi : block.getPhis()) {
                 live.add(nodes.get(phi.getReceiver().getIndex()));
             }
 
-            for (TryCatchJoint joint : block.getTryCatchJoints()) {
-                nodes.get(joint.getReceiver().getIndex()).connectAll(live);
-            }
             for (Phi phi : block.getPhis()) {
                 nodes.get(phi.getReceiver().getIndex()).connectAll(live);
             }

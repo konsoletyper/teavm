@@ -50,6 +50,8 @@ public class ProgramIO {
         }
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock basicBlock = program.basicBlockAt(i);
+            data.writeShort(basicBlock.getExceptionVariable() != null
+                    ? basicBlock.getExceptionVariable().getIndex() : -1);
             data.writeShort(basicBlock.getPhis().size());
             data.writeShort(basicBlock.getTryCatchBlocks().size());
             for (Phi phi : basicBlock.getPhis()) {
@@ -63,17 +65,14 @@ public class ProgramIO {
             for (TryCatchBlock tryCatch : basicBlock.getTryCatchBlocks()) {
                 data.writeInt(tryCatch.getExceptionType() != null ? symbolTable.lookup(
                         tryCatch.getExceptionType()) : -1);
-                data.writeShort(tryCatch.getExceptionVariable() != null
-                        ? tryCatch.getExceptionVariable().getIndex() : -1);
                 data.writeShort(tryCatch.getHandler().getIndex());
-            }
-            data.writeShort(basicBlock.getTryCatchJoints().size());
-            for (TryCatchJoint joint : basicBlock.getTryCatchJoints()) {
-                data.writeShort(joint.getSource().getIndex());
-                data.writeShort(joint.getReceiver().getIndex());
-                data.writeShort(joint.getSourceVariables().size());
-                for (Variable sourceVar : joint.getSourceVariables()) {
-                    data.writeShort(sourceVar.getIndex());
+                data.writeShort(tryCatch.getTryCatchJoints().size());
+                for (TryCatchJoint joint : tryCatch.getTryCatchJoints()) {
+                    data.writeShort(joint.getReceiver().getIndex());
+                    data.writeShort(joint.getSourceVariables().size());
+                    for (Variable sourceVar : joint.getSourceVariables()) {
+                        data.writeShort(sourceVar.getIndex());
+                    }
                 }
             }
             InstructionLocation location = null;
@@ -117,6 +116,12 @@ public class ProgramIO {
         }
         for (int i = 0; i < basicBlockCount; ++i) {
             BasicBlock block = program.basicBlockAt(i);
+
+            short varIndex = data.readShort();
+            if (varIndex >= 0) {
+                block.setExceptionVariable(program.variableAt(varIndex));
+            }
+
             int phiCount = data.readShort();
             int tryCatchCount = data.readShort();
             for (int j = 0; j < phiCount; ++j) {
@@ -137,24 +142,20 @@ public class ProgramIO {
                 if (typeIndex >= 0) {
                     tryCatch.setExceptionType(symbolTable.at(typeIndex));
                 }
-                short varIndex = data.readShort();
-                if (varIndex >= 0) {
-                    tryCatch.setExceptionVariable(program.variableAt(varIndex));
-                }
                 tryCatch.setHandler(program.basicBlockAt(data.readShort()));
-                block.getTryCatchBlocks().add(tryCatch);
-            }
 
-            int jointCount = data.readShort();
-            for (int j = 0; j < jointCount; ++j) {
-                TryCatchJoint joint = new TryCatchJoint();
-                joint.setSource(program.basicBlockAt(data.readShort()));
-                joint.setReceiver(program.variableAt(data.readShort()));
-                int jointSourceCount = data.readShort();
-                for (int k = 0; k < jointSourceCount; ++k) {
-                    joint.getSourceVariables().add(program.variableAt(data.readShort()));
+                int jointCount = data.readShort();
+                for (int k = 0; k < jointCount; ++k) {
+                    TryCatchJoint joint = new TryCatchJoint();
+                    joint.setReceiver(program.variableAt(data.readShort()));
+                    int jointSourceCount = data.readShort();
+                    for (int m = 0; m < jointSourceCount; ++m) {
+                        joint.getSourceVariables().add(program.variableAt(data.readShort()));
+                    }
+                    tryCatch.getTryCatchJoints().add(joint);
                 }
-                block.getTryCatchJoints().add(joint);
+
+                block.getTryCatchBlocks().add(tryCatch);
             }
 
             InstructionLocation location = null;

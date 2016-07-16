@@ -53,6 +53,12 @@ class ReadWriteStatsBuilder {
         while (!stack.isEmpty()) {
             int node = stack.pop();
             BasicBlock block = program.basicBlockAt(node);
+
+            if (block.getExceptionVariable() != null) {
+                writes[block.getExceptionVariable().getIndex()]++;
+                reads[block.getExceptionVariable().getIndex()]++;
+            }
+
             for (Instruction insn : block.getInstructions()) {
                 insn.acceptVisitor(defExtractor);
                 insn.acceptVisitor(useExtractor);
@@ -64,12 +70,6 @@ class ReadWriteStatsBuilder {
                 }
             }
 
-            for (TryCatchJoint joint : block.getTryCatchJoints()) {
-                writes[joint.getReceiver().getIndex()] += joint.getSourceVariables().size();
-                for (Variable var : joint.getSourceVariables()) {
-                    reads[var.getIndex()]++;
-                }
-            }
             for (Phi phi : block.getPhis()) {
                 writes[phi.getReceiver().getIndex()] += phi.getIncomings().size();
                 for (Incoming incoming : phi.getIncomings()) {
@@ -79,8 +79,12 @@ class ReadWriteStatsBuilder {
                 }
             }
             for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                writes[tryCatch.getExceptionVariable().getIndex()]++;
-                reads[tryCatch.getExceptionVariable().getIndex()]++;
+                for (TryCatchJoint joint : tryCatch.getTryCatchJoints()) {
+                    writes[joint.getReceiver().getIndex()] += joint.getSourceVariables().size();
+                    for (Variable var : joint.getSourceVariables()) {
+                        reads[var.getIndex()]++;
+                    }
+                }
             }
 
             for (int succ : dom.outgoingEdges(node)) {
