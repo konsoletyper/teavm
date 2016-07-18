@@ -111,6 +111,9 @@ public class Program implements ProgramReader {
 
     @Override
     public Variable variableAt(int index) {
+        if (index < 0) {
+            throw new IllegalArgumentException("Index " + index + " is negative");
+        }
         return variables.get(index);
     }
 

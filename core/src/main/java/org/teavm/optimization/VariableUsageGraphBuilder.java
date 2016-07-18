@@ -38,7 +38,7 @@ public final class VariableUsageGraphBuilder {
                 }
             }
             for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                for (TryCatchJoint joint : tryCatch.getTryCatchJoints()) {
+                for (TryCatchJoint joint : tryCatch.getJoints()) {
                     for (Variable sourceVar : joint.getSourceVariables()) {
                         builder.addEdge(sourceVar.getIndex(), joint.getReceiver().getIndex());
                     }

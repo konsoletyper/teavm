@@ -71,7 +71,7 @@ public class LivenessAnalyzer {
             }
 
             for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                for (TryCatchJoint joint : tryCatch.getTryCatchJoints()) {
+                for (TryCatchJoint joint : tryCatch.getJoints()) {
                     definitions[joint.getReceiver().getIndex()] = i;
                     for (Variable sourceVar : joint.getSourceVariables()) {
                         Task task = new Task();

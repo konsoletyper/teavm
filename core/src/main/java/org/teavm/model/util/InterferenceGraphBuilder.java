@@ -53,7 +53,7 @@ class InterferenceGraphBuilder {
             }
 
             for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                for (TryCatchJoint joint : tryCatch.getTryCatchJoints()) {
+                for (TryCatchJoint joint : tryCatch.getJoints()) {
                     for (Variable sourceVar : joint.getSourceVariables()) {
                         live.add(nodes.get(sourceVar.getIndex()));
                     }

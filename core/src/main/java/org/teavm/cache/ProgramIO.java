@@ -66,8 +66,8 @@ public class ProgramIO {
                 data.writeInt(tryCatch.getExceptionType() != null ? symbolTable.lookup(
                         tryCatch.getExceptionType()) : -1);
                 data.writeShort(tryCatch.getHandler().getIndex());
-                data.writeShort(tryCatch.getTryCatchJoints().size());
-                for (TryCatchJoint joint : tryCatch.getTryCatchJoints()) {
+                data.writeShort(tryCatch.getJoints().size());
+                for (TryCatchJoint joint : tryCatch.getJoints()) {
                     data.writeShort(joint.getReceiver().getIndex());
                     data.writeShort(joint.getSourceVariables().size());
                     for (Variable sourceVar : joint.getSourceVariables()) {
@@ -152,7 +152,7 @@ public class ProgramIO {
                     for (int m = 0; m < jointSourceCount; ++m) {
                         joint.getSourceVariables().add(program.variableAt(data.readShort()));
                     }
-                    tryCatch.getTryCatchJoints().add(joint);
+                    tryCatch.getJoints().add(joint);
                 }
 
                 block.getTryCatchBlocks().add(tryCatch);

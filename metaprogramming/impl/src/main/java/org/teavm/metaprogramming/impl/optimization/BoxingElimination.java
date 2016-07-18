@@ -113,7 +113,7 @@ public class BoxingElimination {
                 }
             }
             for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                for (TryCatchJoint joint : tryCatch.getTryCatchJoints()) {
+                for (TryCatchJoint joint : tryCatch.getJoints()) {
                     for (Variable sourceVar : joint.getSourceVariables()) {
                         union(sourceVar.getIndex(), joint.getReceiver().getIndex());
                     }

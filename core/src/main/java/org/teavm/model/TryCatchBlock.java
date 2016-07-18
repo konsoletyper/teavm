@@ -97,12 +97,12 @@ public class TryCatchBlock implements TryCatchBlockReader {
         return protectedBlock;
     }
 
-    public List<TryCatchJoint> getTryCatchJoints() {
+    public List<TryCatchJoint> getJoints() {
         return safeJoints;
     }
 
     @Override
-    public List<TryCatchJointReader> readTryCatchJoints() {
+    public List<TryCatchJointReader> readJoints() {
         if (immutableJoints == null) {
             immutableJoints = Collections.unmodifiableList(safeJoints);
         }

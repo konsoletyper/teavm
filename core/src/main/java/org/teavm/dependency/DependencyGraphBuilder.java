@@ -153,7 +153,7 @@ class DependencyGraphBuilder {
                     dependencyChecker.linkClass(tryCatch.getExceptionType(), new CallLocation(caller.getMethod()));
                 }
 
-                for (TryCatchJointReader joint : tryCatch.readTryCatchJoints()) {
+                for (TryCatchJointReader joint : tryCatch.readJoints()) {
                     DependencyNode receiverNode = nodes[joint.getReceiver().getIndex()];
                     if (receiverNode == null) {
                         continue;
@@ -289,7 +289,9 @@ class DependencyGraphBuilder {
             if (tryCatch.getExceptionType() != null) {
                 exceptions[i] = dependencyChecker.getClassSource().get(tryCatch.getExceptionType());
             }
-            vars[i] = methodDep.getVariable(tryCatch.getHandler().getExceptionVariable().getIndex());
+            if (tryCatch.getHandler().getExceptionVariable() != null) {
+                vars[i] = methodDep.getVariable(tryCatch.getHandler().getExceptionVariable().getIndex());
+            }
         }
         return new ExceptionConsumer(dependencyChecker, exceptions, vars, methodDep);
     }

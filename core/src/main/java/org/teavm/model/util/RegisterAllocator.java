@@ -79,7 +79,7 @@ public class RegisterAllocator {
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             program.basicBlockAt(i).getPhis().clear();
             for (TryCatchBlock tryCatch : program.basicBlockAt(i).getTryCatchBlocks()) {
-                tryCatch.getTryCatchJoints().clear();
+                tryCatch.getJoints().clear();
             }
         }
     }
@@ -120,7 +120,7 @@ public class RegisterAllocator {
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
             for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                tryCatch.getTryCatchJoints().forEach(this::insertCopy);
+                tryCatch.getJoints().forEach(this::insertCopy);
             }
         }
     }
@@ -298,7 +298,7 @@ public class RegisterAllocator {
                 }
             }
             for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                for (TryCatchJoint joint : tryCatch.getTryCatchJoints()) {
+                for (TryCatchJoint joint : tryCatch.getJoints()) {
                     for (Variable sourceVar : joint.getSourceVariables()) {
                         classes.union(sourceVar.getIndex(), joint.getReceiver().getIndex());
                     }

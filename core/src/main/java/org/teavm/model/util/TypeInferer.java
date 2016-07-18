@@ -54,7 +54,7 @@ public class TypeInferer {
             }
 
             for (TryCatchBlockReader tryCatch : block.readTryCatchBlocks()) {
-                for (TryCatchJointReader joint : tryCatch.readTryCatchJoints()) {
+                for (TryCatchJointReader joint : tryCatch.readJoints()) {
                     for (VariableReader sourceVar : joint.readSourceVariables()) {
                         builder.addEdge(sourceVar.getIndex(), joint.getReceiver().getIndex());
                     }

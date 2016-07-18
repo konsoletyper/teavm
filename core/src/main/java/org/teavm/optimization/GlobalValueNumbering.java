@@ -133,7 +133,7 @@ public class GlobalValueNumbering implements MethodOptimization {
                 }
             }
             for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                for (TryCatchJoint joint : tryCatch.getTryCatchJoints()) {
+                for (TryCatchJoint joint : tryCatch.getJoints()) {
                     for (int i = 0; i < joint.getSourceVariables().size(); ++i) {
                         int sourceVar = map[joint.getSourceVariables().get(i).getIndex()];
                         joint.getSourceVariables().set(i, program.variableAt(sourceVar));

@@ -15,11 +15,16 @@
  */
 package org.teavm.model.util;
 
+import com.carrotsearch.hppc.IntOpenHashSet;
+import com.carrotsearch.hppc.IntSet;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.teavm.common.DominatorTree;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphUtils;
@@ -78,8 +83,10 @@ public class PhiUpdater {
     private BasicBlock currentBlock;
     private Phi[][] phiMap;
     private int[][] phiIndexMap;
-    private List<Map<BasicBlock, Map<Variable, TryCatchJoint>>> jointMap = new ArrayList<>();
+    private Map<TryCatchBlock, Map<Variable, TryCatchJoint>> jointMap = new HashMap<>();
     private List<List<Phi>> synthesizedPhis = new ArrayList<>();
+    private List<List<List<TryCatchJoint>>> synthesizedJoints = new ArrayList<>();
+    private Variable[] originalExceptionVariables;
     private boolean[] usedDefinitions;
 
     public void updatePhis(Program program, Variable[] arguments) {
@@ -98,18 +105,28 @@ public class PhiUpdater {
         }
         phiMap = new Phi[program.basicBlockCount()][];
         phiIndexMap = new int[program.basicBlockCount()][];
-        jointMap = new ArrayList<>();
+        jointMap.clear();
         for (int i = 0; i < phiMap.length; ++i) {
             phiMap[i] = new Phi[program.variableCount()];
             phiIndexMap[i] = new int[program.variableCount()];
-            jointMap.add(new HashMap<>());
         }
         domFrontiers = GraphUtils.findDominanceFrontiers(cfg, domTree);
 
         synthesizedPhis.clear();
+        synthesizedJoints.clear();
+
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             synthesizedPhis.add(new ArrayList<>());
+            synthesizedJoints.add(new ArrayList<>());
+            int catchCount = program.basicBlockAt(i).getTryCatchBlocks().size();
+            for (int j = 0; j < catchCount; ++j) {
+                synthesizedJoints.get(i).add(new ArrayList<>());
+            }
         }
+
+        originalExceptionVariables = new Variable[program.basicBlockCount()];
+        Arrays.setAll(originalExceptionVariables, i -> program.basicBlockAt(i).getExceptionVariable());
+
         estimatePhis();
         renameVariables();
     }
@@ -128,14 +145,22 @@ public class PhiUpdater {
             }
 
             for (Instruction insn : currentBlock.getInstructions()) {
+                currentBlock = program.basicBlockAt(i);
                 insn.acceptVisitor(definitionExtractor);
+                Set<Variable> definedVariables = new HashSet<>();
                 for (Variable var : definitionExtractor.getDefinedVariables()) {
                     markAssignment(var);
+                    definedVariables.add(var);
                 }
-            }
-            for (TryCatchBlock tryCatch : currentBlock.getTryCatchBlocks()) {
-                for (TryCatchJoint joint : tryCatch.getTryCatchJoints()) {
-                    markAssignment(joint.getReceiver());
+
+                Set<BasicBlock> handlers = currentBlock.getTryCatchBlocks().stream()
+                        .map(tryCatch -> tryCatch.getHandler())
+                        .collect(Collectors.toSet());
+                for (BasicBlock handler : handlers) {
+                    currentBlock = handler;
+                    for (Variable var : definedVariables) {
+                        markAssignment(var);
+                    }
                 }
             }
         }
@@ -144,7 +169,6 @@ public class PhiUpdater {
     private static class Task {
         Variable[] variables;
         BasicBlock block;
-        TryCatchBlock tryCatch;
     }
 
     private void renameVariables() {
@@ -156,7 +180,7 @@ public class PhiUpdater {
             if (domGraph.incomingEdgesCount(i) == 0) {
                 Task task = new Task();
                 task.block = program.basicBlockAt(i);
-                task.variables = Arrays.copyOf(variableMap, variableMap.length);
+                task.variables = variableMap.clone();
                 stack[head++] = task;
             }
         }
@@ -166,63 +190,68 @@ public class PhiUpdater {
         while (head > 0) {
             Task task = stack[--head];
 
-            if (task.tryCatch != null) {
-                TryCatchBlock tryCatch = task.tryCatch;
-                if (domTree.dominates(tryCatch.getProtectedBlock().getIndex(), tryCatch.getHandler().getIndex())) {
-                    Task next = new Task();
-                    next.block = tryCatch.getProtectedBlock();
-                    next.variables = Arrays.copyOf(variableMap, variableMap.length);
-                    for (TryCatchJoint joint : tryCatch.getTryCatchJoints()) {
-                        Variable mappedReceiver = introduce(joint.getReceiver());
-                        for (Variable sourceVariable : joint.getSourceVariables()) {
-                            next.variables[sourceVariable.getIndex()] = mappedReceiver;
-                        }
-                        next.variables[joint.getReceiver().getIndex()] = mappedReceiver;
-                        for (int i = 0; i < joint.getSourceVariables().size(); ++i) {
-                            Variable var = joint.getSourceVariables().get(i);
-                            joint.getSourceVariables().set(i, use(var));
-                        }
-                        joint.setReceiver(mappedReceiver);
+            currentBlock = task.block;
+            int index = currentBlock.getIndex();
+            variableMap = task.variables.clone();
+
+            if (currentBlock.getExceptionVariable() != null) {
+                currentBlock.setExceptionVariable(define(currentBlock.getExceptionVariable()));
+            }
+
+            for (Phi phi : synthesizedPhis.get(index)) {
+                Variable var = program.createVariable();
+                var.getDebugNames().addAll(phi.getReceiver().getDebugNames());
+                variableMap[phi.getReceiver().getIndex()] = var;
+                phi.setReceiver(var);
+            }
+            for (Phi phi : currentBlock.getPhis()) {
+                phi.setReceiver(define(phi.getReceiver()));
+            }
+
+            for (Instruction insn : currentBlock.getInstructions()) {
+                insn.acceptVisitor(consumer);
+            }
+
+            for (Incoming output : phiOutputs.get(index)) {
+                Variable var = output.getValue();
+                output.setValue(use(var));
+            }
+
+            for (TryCatchBlock tryCatch : currentBlock.getTryCatchBlocks()) {
+                for (TryCatchJoint joint : tryCatch.getJoints()) {
+                    for (int i = 0; i < joint.getSourceVariables().size(); ++i) {
+                        joint.getSourceVariables().set(i, use(joint.getSourceVariables().get(i)));
                     }
-                    stack[head++] = next;
+                    joint.setReceiver(define(joint.getReceiver()));
                 }
-                renameOutgoingPhis(tryCatch.getHandler().getIndex());
-            } else {
-                currentBlock = task.block;
-                int index = currentBlock.getIndex();
-                variableMap = Arrays.copyOf(task.variables, task.variables.length);
+            }
 
-                for (Phi phi : synthesizedPhis.get(index)) {
-                    Variable var = program.createVariable();
-                    var.getDebugNames().addAll(phi.getReceiver().getDebugNames());
-                    propagateToTryCatch(phi.getReceiver(), var, null);
-                    variableMap[phi.getReceiver().getIndex()] = var;
-                    phi.setReceiver(var);
-                }
-                for (Phi phi : currentBlock.getPhis()) {
-                    phi.setReceiver(define(phi.getReceiver()));
-                }
+            IntSet catchSuccessors = new IntOpenHashSet();
+            Variable[] regularVariableMap = variableMap;
+            Variable[] catchVariableMap = variableMap.clone();
 
-                for (Instruction insn : currentBlock.getInstructions()) {
-                    insn.acceptVisitor(consumer);
+            variableMap = catchVariableMap;
+            for (int i = 0; i < currentBlock.getTryCatchBlocks().size(); ++i) {
+                TryCatchBlock tryCatch = currentBlock.getTryCatchBlocks().get(i);
+                catchSuccessors.add(tryCatch.getHandler().getIndex());
+                for (TryCatchJoint joint : synthesizedJoints.get(index).get(i)) {
+                    joint.setReceiver(define(joint.getReceiver()));
                 }
+            }
+            variableMap = regularVariableMap;
 
-                for (Incoming output : phiOutputs.get(index)) {
-                    Variable var = output.getValue();
-                    output.setValue(use(var));
-                }
+            int[] successors = domGraph.outgoingEdges(index);
+            for (int successor : successors) {
+                Task next = new Task();
+                next.variables = (catchSuccessors.contains(successor) ? catchVariableMap : variableMap).clone();
+                next.block = program.basicBlockAt(successor);
+                stack[head++] = next;
+            }
 
-                int[] successors = domGraph.outgoingEdges(index);
-                for (int successor : successors) {
-                    Task next = new Task();
-                    next.variables = Arrays.copyOf(variableMap, variableMap.length);
-                    next.block = program.basicBlockAt(successor);
-                    stack[head++] = next;
-                }
-                successors = cfg.outgoingEdges(index);
-                for (int successor : successors) {
-                    renameOutgoingPhis(successor);
-                }
+            successors = cfg.outgoingEdges(index);
+            for (int successor : successors) {
+                variableMap = catchSuccessors.contains(successor) ? catchVariableMap : variableMap;
+                renameOutgoingPhis(successor);
             }
         }
 
@@ -230,6 +259,17 @@ public class PhiUpdater {
             for (Phi phi : synthesizedPhis.get(i)) {
                 if (!phi.getIncomings().isEmpty()) {
                     program.basicBlockAt(i).getPhis().add(phi);
+                }
+            }
+
+            List<List<TryCatchJoint>> joints = synthesizedJoints.get(i);
+            for (int j = 0; j < joints.size(); ++j) {
+                List<TryCatchJoint> jointList = joints.get(j);
+                TryCatchBlock targetTryCatch = program.basicBlockAt(i).getTryCatchBlocks().get(j);
+                for (TryCatchJoint joint : jointList) {
+                    if (!joint.getSourceVariables().isEmpty()) {
+                        targetTryCatch.getJoints().add(joint);
+                    }
                 }
             }
         }
@@ -296,19 +336,28 @@ public class PhiUpdater {
     }
 
     private void propagateToTryCatch(Variable original, Variable var, Variable old) {
-        for (TryCatchBlock tryCatch : currentBlock.getTryCatchBlocks()) {
-            if (tryCatch.getHandler().getExceptionVariable() == original) {
+        for (int i = 0; i < currentBlock.getTryCatchBlocks().size(); ++i) {
+            TryCatchBlock tryCatch = currentBlock.getTryCatchBlocks().get(i);
+            if (originalExceptionVariables[tryCatch.getHandler().getIndex()] == original) {
                 continue;
             }
 
-            Map<Variable, TryCatchJoint> joints = jointMap.get(tryCatch.getHandler().getIndex()).get(currentBlock);
+            Map<Variable, TryCatchJoint> joints = jointMap.get(tryCatch);
             if (joints == null) {
-                continue;
+                joints = new HashMap<>();
+                jointMap.put(tryCatch, joints);
             }
             TryCatchJoint joint = joints.get(original);
             if (joint == null) {
+                joint = new TryCatchJoint();
+                joint.setReceiver(original);
+                joints.put(original, joint);
+                synthesizedJoints.get(currentBlock.getIndex()).get(i).add(joint);
+            }
+            if (joint.getReceiver() == var) {
                 continue;
             }
+
             if (joint.getSourceVariables().isEmpty() && old != null) {
                 joint.getSourceVariables().add(old);
             }

@@ -60,7 +60,7 @@ public class InstructionVariableMapper implements InstructionVisitor {
 
     public void applyToTryCatchBlocks(BasicBlock block) {
         for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-            for (TryCatchJoint joint : tryCatch.getTryCatchJoints()) {
+            for (TryCatchJoint joint : tryCatch.getJoints()) {
                 joint.setReceiver(map(joint.getReceiver()));
                 for (int i = 0; i < joint.getSourceVariables().size(); ++i) {
                     Variable var = joint.getSourceVariables().get(i);

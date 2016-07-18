@@ -120,7 +120,7 @@ public final class ProgramUtils {
             TryCatchBlock tryCatchCopy = new TryCatchBlock();
             tryCatchCopy.setExceptionType(tryCatch.getExceptionType());
             tryCatchCopy.setHandler(target.basicBlockAt(tryCatch.getHandler().getIndex()));
-            tryCatchCopy.getTryCatchJoints().addAll(copyTryCatchJoints(tryCatch, target));
+            tryCatchCopy.getJoints().addAll(copyTryCatchJoints(tryCatch, target));
             result.add(tryCatchCopy);
         }
         return result;
@@ -128,7 +128,7 @@ public final class ProgramUtils {
 
     public static List<TryCatchJoint> copyTryCatchJoints(TryCatchBlockReader block, Program target) {
         List<TryCatchJoint> result = new ArrayList<>();
-        for (TryCatchJointReader joint : block.readTryCatchJoints()) {
+        for (TryCatchJointReader joint : block.readJoints()) {
             TryCatchJoint jointCopy = new TryCatchJoint();
             jointCopy.setReceiver(target.variableAt(joint.getReceiver().getIndex()));
             for (VariableReader sourceVar : joint.readSourceVariables()) {
@@ -180,7 +180,7 @@ public final class ProgramUtils {
             }
 
             for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                for (TryCatchJoint joint : tryCatch.getTryCatchJoints()) {
+                for (TryCatchJoint joint : tryCatch.getJoints()) {
                     places[joint.getReceiver().getIndex()] = block;
                 }
             }

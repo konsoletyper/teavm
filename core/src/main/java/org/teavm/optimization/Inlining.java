@@ -197,11 +197,11 @@ public class Inlining {
             tryCatchCopy.setHandler(target.getProgram().basicBlockAt(handler));
             target.getTryCatchBlocks().add(tryCatchCopy);
 
-            for (TryCatchJoint joint : tryCatch.getTryCatchJoints()) {
+            for (TryCatchJoint joint : tryCatch.getJoints()) {
                 TryCatchJoint jointCopy = new TryCatchJoint();
                 jointCopy.setReceiver(joint.getReceiver());
                 jointCopy.getSourceVariables().addAll(joint.getSourceVariables());
-                tryCatchCopy.getTryCatchJoints().add(joint);
+                tryCatchCopy.getJoints().add(joint);
             }
         }
     }

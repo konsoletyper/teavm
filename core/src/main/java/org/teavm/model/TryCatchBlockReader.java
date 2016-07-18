@@ -24,5 +24,5 @@ public interface TryCatchBlockReader {
 
     String getExceptionType();
 
-    List<TryCatchJointReader> readTryCatchJoints();
+    List<TryCatchJointReader> readJoints();
 }

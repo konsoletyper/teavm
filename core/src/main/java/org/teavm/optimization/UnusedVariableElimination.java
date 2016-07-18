@@ -53,6 +53,10 @@ public class UnusedVariableElimination implements MethodOptimization {
         InstructionOptimizer insnOptimizer = new InstructionOptimizer(used);
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
+            if (block.getExceptionVariable() != null && !used[block.getExceptionVariable().getIndex()]) {
+                block.setExceptionVariable(null);
+            }
+
             for (int j = 0; j < block.getInstructions().size(); ++j) {
                 insnOptimizer.eliminate = false;
                 block.getInstructions().get(j).acceptVisitor(insnOptimizer);
@@ -62,10 +66,10 @@ public class UnusedVariableElimination implements MethodOptimization {
             }
 
             for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                for (int j = 0; j < tryCatch.getTryCatchJoints().size(); ++j) {
-                    TryCatchJoint joint = tryCatch.getTryCatchJoints().get(j);
+                for (int j = 0; j < tryCatch.getJoints().size(); ++j) {
+                    TryCatchJoint joint = tryCatch.getJoints().get(j);
                     if (!used[joint.getReceiver().getIndex()]) {
-                        tryCatch.getTryCatchJoints().remove(j--);
+                        tryCatch.getJoints().remove(j--);
                     }
                 }
             }

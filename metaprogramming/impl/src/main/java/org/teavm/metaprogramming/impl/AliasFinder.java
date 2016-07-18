@@ -67,7 +67,7 @@ class AliasFinder {
                 }
             }
             for (TryCatchBlockReader tryCatch : block.readTryCatchBlocks()) {
-                for (TryCatchJointReader joint : tryCatch.readTryCatchJoints()) {
+                for (TryCatchJointReader joint : tryCatch.readJoints()) {
                     Set<Integer> inputs = joint.readSourceVariables().stream()
                             .map(sourceVar -> sourceVar.getIndex())
                             .collect(Collectors.toSet());

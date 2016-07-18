@@ -28,7 +28,7 @@ public class ListingBuilder {
         for (int i = 0; i < program.variableCount(); ++i) {
             sb.append(prefix).append("var @").append(i);
             VariableReader var = program.variableAt(i);
-            if (!var.readDebugNames().isEmpty()) {
+            if (var != null && !var.readDebugNames().isEmpty()) {
                 sb.append(" as ");
                 boolean first = true;
                 for (String debugName : var.readDebugNames()) {
@@ -49,7 +49,7 @@ public class ListingBuilder {
             }
 
             if (block.getExceptionVariable() != null) {
-                sb.append("@").append(block.getExceptionVariable().getIndex()).append(" = exception");
+                sb.append("    @").append(block.getExceptionVariable().getIndex()).append(" = exception\n");
             }
 
             for (PhiReader phi : block.readPhis()) {
@@ -82,7 +82,7 @@ public class ListingBuilder {
                 sb.append(prefix).append("    catch ").append(tryCatch.getExceptionType())
                         .append(" -> $").append(tryCatch.getHandler().getIndex());
                 sb.append("\n");
-                for (TryCatchJointReader joint : tryCatch.readTryCatchJoints()) {
+                for (TryCatchJointReader joint : tryCatch.readJoints()) {
                     sb.append("      @").append(joint.getReceiver().getIndex()).append(" := e-phi(");
                     sb.append(joint.readSourceVariables().stream().map(sourceVar -> "@" + sourceVar.getIndex())
                             .collect(Collectors.joining(", ")));
