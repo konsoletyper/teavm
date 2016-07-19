@@ -305,6 +305,9 @@ public class PhiUpdater {
 
             for (int frontier : frontiers) {
                 BasicBlock frontierBlock = program.basicBlockAt(frontier);
+                if (frontierBlock.getExceptionVariable() == var) {
+                    continue;
+                }
 
                 boolean exists = frontierBlock.getPhis().stream()
                         .flatMap(phi -> phi.getIncomings().stream())

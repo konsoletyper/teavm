@@ -19,11 +19,10 @@ import static org.junit.Assert.*;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
-/**
- *
- * @author Alexey Andreev
- */
+@RunWith(TeaVMTestRunner.class)
 public class ThreadTest {
     @Test
     public void sleeps() throws InterruptedException {

@@ -598,7 +598,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         if (wasCancelled()) {
             return;
         }
-        final Devirtualization devirtualization = new Devirtualization(dependency, classes);
+        Devirtualization devirtualization = new Devirtualization(dependency, classes);
         int index = 0;
         for (String className : classes.getClassNames()) {
             ClassHolder cls = classes.get(className);
@@ -613,7 +613,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             }
         }
 
-        final Inlining inlining = new Inlining();
+        Inlining inlining = new Inlining();
         for (String className : classes.getClassNames()) {
             ClassHolder cls = classes.get(className);
             for (final MethodHolder method : cls.getMethods()) {

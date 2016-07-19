@@ -23,10 +23,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
 
-/**
- *
- * @author Alexey Andreev
- */
 @RunWith(TeaVMTestRunner.class)
 public class BufferedReaderTest {
     @Test

@@ -81,25 +81,25 @@ if (typeof 'ArrayBuffer' !== 'undefined') {
         return new ($rt_arraycls(cls))(nativeArray);
     };
     $rt_createCharArray = function(sz) {
-        return $rt_createNumericArray($rt_charcls(), new Uint16Array(new ArrayBuffer(sz << 1)), 0);
+        return $rt_createNumericArray($rt_charcls(), new Uint16Array(sz));
     };
     $rt_createByteArray = function(sz) {
-        return $rt_createNumericArray($rt_bytecls(), new Int8Array(new ArrayBuffer(sz)), 0);
+        return $rt_createNumericArray($rt_bytecls(), new Int8Array(sz));
     };
     $rt_createShortArray = function(sz) {
-        return $rt_createNumericArray($rt_shortcls(), new Int16Array(new ArrayBuffer(sz << 1)), 0);
+        return $rt_createNumericArray($rt_shortcls(), new Int16Array(sz));
     };
     $rt_createIntArray = function(sz) {
-        return $rt_createNumericArray($rt_intcls(), new Int32Array(new ArrayBuffer(sz << 2)), 0);
+        return $rt_createNumericArray($rt_intcls(), new Int32Array(sz));
     };
     $rt_createBooleanArray = function(sz) {
-        return $rt_createNumericArray($rt_booleancls(), new Int8Array(new ArrayBuffer(sz)), 0);
+        return $rt_createNumericArray($rt_booleancls(), new Int8Array(sz));
     };
     $rt_createFloatArray = function(sz) {
-        return $rt_createNumericArray($rt_floatcls(), new Float32Array(new ArrayBuffer(sz << 2)), 0);
+        return $rt_createNumericArray($rt_floatcls(), new Float32Array(sz));
     };
     $rt_createDoubleArray = function(sz) {
-        return $rt_createNumericArray($rt_doublecls(), new Float64Array(new ArrayBuffer(sz << 3)), 0);
+        return $rt_createNumericArray($rt_doublecls(), new Float64Array(sz));
     };
 } else {
     $rt_createNumericArray = function(cls, sz) {
