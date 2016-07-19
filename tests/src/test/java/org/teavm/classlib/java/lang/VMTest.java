@@ -16,7 +16,6 @@
 package org.teavm.classlib.java.lang;
 
 import static org.junit.Assert.*;
-import java.lang.annotation.Retention;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
@@ -116,6 +115,21 @@ public class VMTest {
     public void stringConstantsInitializedProperly() {
         assertEquals("FIRST ", ClassWithStaticField.foo(true));
         assertEquals("SECOND ", ClassWithStaticField.foo(false));
+    }
+
+    @Test
+    public void variableReadInCatchBlock() {
+        int n = foo();
+        try {
+            for (int i = 0; i < 10; ++i) {
+                n += foo();
+            }
+            bar();
+            n += foo() * 5;
+        } catch (RuntimeException e) {
+            assertEquals(RuntimeException.class, e.getClass());
+            assertEquals(n, 22);
+        }
     }
 
     private static class ClassWithStaticField {

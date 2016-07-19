@@ -19,10 +19,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class Variable implements VariableReader {
     private Program program;
     private int index;

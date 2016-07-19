@@ -64,8 +64,8 @@ import org.teavm.idea.jps.model.TeaVMJpsConfiguration;
 import org.teavm.idea.jps.remote.TeaVMBuilderAssistant;
 import org.teavm.idea.jps.remote.TeaVMElementLocation;
 import org.teavm.model.CallLocation;
-import org.teavm.model.InstructionLocation;
 import org.teavm.model.MethodReference;
+import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
 import org.teavm.tooling.EmptyTeaVMToolLog;
 import org.teavm.tooling.TeaVMTool;
@@ -243,7 +243,7 @@ class TeaVMBuild {
         int endOffset = -1;
 
         if (callLocation != null) {
-            InstructionLocation insnLocation = callLocation.getSourceLocation();
+            TextLocation insnLocation = callLocation.getSourceLocation();
             if (insnLocation != null) {
                 path = insnLocation.getFileName();
                 line = insnLocation.getLine();
@@ -449,8 +449,6 @@ class TeaVMBuild {
                 return "Discovering classes to compile";
             case LINKING:
                 return "Resolving method invocations";
-            case DEVIRTUALIZATION:
-                return "Eliminating virtual calls";
             case DECOMPILATION:
                 return "Compiling classes";
             case RENDERING:

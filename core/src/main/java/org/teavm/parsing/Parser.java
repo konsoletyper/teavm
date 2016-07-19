@@ -98,10 +98,12 @@ public class Parser {
                     debugNames = newDebugNames;
                 }
                 for (Variable definedVar : defExtractor.getDefinedVariables()) {
+                    /*
                     int sourceVar = phiUpdater.getSourceVariable(definedVar.getIndex());
                     if (sourceVar >= 0) {
                         varMap.put(sourceVar, definedVar.getIndex());
                     }
+                    */
                 }
                 for (Map.Entry<Integer, String> debugName : debugNames.entrySet()) {
                     int receiver = varMap.getOrDefault(debugName.getKey(), -1);
@@ -147,6 +149,7 @@ public class Parser {
             IntIntMap varMap = new IntIntOpenHashMap(step.varMap);
             BasicBlock block = program.basicBlockAt(node);
 
+            /*
             for (TryCatchJoint joint : block.getTryCatchJoints()) {
                 int receiver = joint.getReceiver().getIndex();
                 int sourceVar = phiUpdater.getSourceVariable(receiver);
@@ -161,9 +164,11 @@ public class Parser {
                     varMap.put(sourceVar, receiver);
                 }
             }
+            */
 
             result[node] = new IntIntOpenHashMap(varMap);
 
+            /*
             for (Instruction insn : block.getInstructions()) {
                 insn.acceptVisitor(defExtractor);
                 for (Variable definedVar : defExtractor.getDefinedVariables()) {
@@ -173,6 +178,7 @@ public class Parser {
                     }
                 }
             }
+            */
 
             for (int successor : dom.outgoingEdges(node)) {
                 stack[top++] = new Step(successor, new IntIntOpenHashMap(varMap));

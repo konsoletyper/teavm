@@ -35,7 +35,7 @@
     <orderEntry type="module" module-name="teavm-classlib" scope="PROVIDED" />
     <orderEntry type="module" module-name="teavm-platform" scope="PROVIDED" />
     <orderEntry type="module" module-name="teavm-core" scope="PROVIDED" />
-    <orderEntry type="module" module-name="teavm-metaprogramming-api" scope="PROVIDED" />
+    <orderEntry type="module" module-name="teavm-interop" scope="PROVIDED" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: commons-io:commons-io:2.4" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: com.carrotsearch:hppc:0.6.1" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: org.objenesis:objenesis:2.4" level="project" />
@@ -62,10 +62,5 @@
     <orderEntry type="library" scope="PROVIDED" name="Maven: org.netbeans.html:net.java.html.sound:1.2.3" level="project" />
     <orderEntry type="library" name="Maven: org.netbeans.html:net.java.html.boot:1.2.3" level="project" />
     <orderEntry type="library" name="Maven: org.netbeans.html:net.java.html:1.2.3" level="project" />
-  </component>
-  <component name="teavm">
-    <option name="enabled" value="true" />
-    <option name="mainClass" value="org.teavm.samples.benchmark.teavm.BenchmarkStarter" />
-    <option name="targetDirectory" value="$MODULE_DIR$/target/generated/js/teavm" />
   </component>
 </module>
