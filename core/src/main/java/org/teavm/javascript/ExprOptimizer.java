@@ -15,7 +15,11 @@
  */
 package org.teavm.javascript;
 
-import org.teavm.javascript.ast.*;
+import org.teavm.ast.BinaryExpr;
+import org.teavm.ast.BinaryOperation;
+import org.teavm.ast.Expr;
+import org.teavm.ast.UnaryExpr;
+import org.teavm.ast.UnaryOperation;
 
 /**
  *

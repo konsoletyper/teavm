@@ -15,8 +15,8 @@
  */
 package org.teavm.javascript;
 
-import org.teavm.javascript.ast.AsyncMethodNode;
-import org.teavm.javascript.ast.RegularMethodNode;
+import org.teavm.ast.AsyncMethodNode;
+import org.teavm.ast.RegularMethodNode;
 import org.teavm.model.MethodReference;
 
 /**

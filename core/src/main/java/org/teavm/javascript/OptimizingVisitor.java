@@ -15,9 +15,47 @@
  */
 package org.teavm.javascript;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
-import org.teavm.javascript.ast.*;
+import org.teavm.ast.AssignmentStatement;
+import org.teavm.ast.BinaryExpr;
+import org.teavm.ast.BinaryOperation;
+import org.teavm.ast.BlockStatement;
+import org.teavm.ast.BreakStatement;
+import org.teavm.ast.ConditionalExpr;
+import org.teavm.ast.ConditionalStatement;
+import org.teavm.ast.ConstantExpr;
+import org.teavm.ast.ContinueStatement;
+import org.teavm.ast.Expr;
+import org.teavm.ast.ExprVisitor;
+import org.teavm.ast.GotoPartStatement;
+import org.teavm.ast.IdentifiedStatement;
+import org.teavm.ast.InitClassStatement;
+import org.teavm.ast.InstanceOfExpr;
+import org.teavm.ast.InvocationExpr;
+import org.teavm.ast.MonitorEnterStatement;
+import org.teavm.ast.MonitorExitStatement;
+import org.teavm.ast.NewArrayExpr;
+import org.teavm.ast.NewExpr;
+import org.teavm.ast.NewMultiArrayExpr;
+import org.teavm.ast.QualificationExpr;
+import org.teavm.ast.ReturnStatement;
+import org.teavm.ast.SequentialStatement;
+import org.teavm.ast.Statement;
+import org.teavm.ast.StatementVisitor;
+import org.teavm.ast.SubscriptExpr;
+import org.teavm.ast.SwitchClause;
+import org.teavm.ast.SwitchStatement;
+import org.teavm.ast.ThrowStatement;
+import org.teavm.ast.TryCatchStatement;
+import org.teavm.ast.UnaryExpr;
+import org.teavm.ast.UnaryOperation;
+import org.teavm.ast.UnwrapArrayExpr;
+import org.teavm.ast.VariableExpr;
+import org.teavm.ast.WhileStatement;
 
 class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     private Expr resultExpr;

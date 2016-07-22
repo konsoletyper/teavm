@@ -16,15 +16,15 @@
 package org.teavm.jso.impl;
 
 import java.io.IOException;
+import org.teavm.ast.ConstantExpr;
+import org.teavm.ast.Expr;
+import org.teavm.ast.InvocationExpr;
 import org.teavm.codegen.SourceWriter;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.javascript.Precedence;
 import org.teavm.javascript.Renderer;
-import org.teavm.javascript.ast.ConstantExpr;
-import org.teavm.javascript.ast.Expr;
-import org.teavm.javascript.ast.InvocationExpr;
 import org.teavm.javascript.spi.Generator;
 import org.teavm.javascript.spi.GeneratorContext;
 import org.teavm.javascript.spi.Injector;

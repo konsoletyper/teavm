@@ -18,7 +18,25 @@ package org.teavm.javascript;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.teavm.javascript.ast.*;
+import org.teavm.ast.AssignmentStatement;
+import org.teavm.ast.BlockStatement;
+import org.teavm.ast.BreakStatement;
+import org.teavm.ast.ConditionalStatement;
+import org.teavm.ast.ContinueStatement;
+import org.teavm.ast.GotoPartStatement;
+import org.teavm.ast.IdentifiedStatement;
+import org.teavm.ast.InitClassStatement;
+import org.teavm.ast.MonitorEnterStatement;
+import org.teavm.ast.MonitorExitStatement;
+import org.teavm.ast.ReturnStatement;
+import org.teavm.ast.SequentialStatement;
+import org.teavm.ast.Statement;
+import org.teavm.ast.StatementVisitor;
+import org.teavm.ast.SwitchClause;
+import org.teavm.ast.SwitchStatement;
+import org.teavm.ast.ThrowStatement;
+import org.teavm.ast.TryCatchStatement;
+import org.teavm.ast.WhileStatement;
 
 /**
  *

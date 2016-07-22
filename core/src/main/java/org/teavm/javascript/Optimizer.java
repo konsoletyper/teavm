@@ -17,10 +17,10 @@ package org.teavm.javascript;
 
 import java.util.BitSet;
 import java.util.List;
+import org.teavm.ast.AsyncMethodNode;
+import org.teavm.ast.AsyncMethodPart;
+import org.teavm.ast.RegularMethodNode;
 import org.teavm.common.Graph;
-import org.teavm.javascript.ast.AsyncMethodNode;
-import org.teavm.javascript.ast.AsyncMethodPart;
-import org.teavm.javascript.ast.RegularMethodNode;
 import org.teavm.model.Instruction;
 import org.teavm.model.Program;
 import org.teavm.model.Variable;

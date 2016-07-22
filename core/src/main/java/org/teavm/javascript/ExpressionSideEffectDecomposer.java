@@ -16,23 +16,23 @@
 package org.teavm.javascript;
 
 import java.util.List;
-import org.teavm.javascript.ast.BinaryExpr;
-import org.teavm.javascript.ast.ConditionalExpr;
-import org.teavm.javascript.ast.ConditionalStatement;
-import org.teavm.javascript.ast.ConstantExpr;
-import org.teavm.javascript.ast.Expr;
-import org.teavm.javascript.ast.ExprVisitor;
-import org.teavm.javascript.ast.InstanceOfExpr;
-import org.teavm.javascript.ast.InvocationExpr;
-import org.teavm.javascript.ast.NewArrayExpr;
-import org.teavm.javascript.ast.NewExpr;
-import org.teavm.javascript.ast.NewMultiArrayExpr;
-import org.teavm.javascript.ast.QualificationExpr;
-import org.teavm.javascript.ast.Statement;
-import org.teavm.javascript.ast.SubscriptExpr;
-import org.teavm.javascript.ast.UnaryExpr;
-import org.teavm.javascript.ast.UnwrapArrayExpr;
-import org.teavm.javascript.ast.VariableExpr;
+import org.teavm.ast.BinaryExpr;
+import org.teavm.ast.ConditionalExpr;
+import org.teavm.ast.ConditionalStatement;
+import org.teavm.ast.ConstantExpr;
+import org.teavm.ast.Expr;
+import org.teavm.ast.ExprVisitor;
+import org.teavm.ast.InstanceOfExpr;
+import org.teavm.ast.InvocationExpr;
+import org.teavm.ast.NewArrayExpr;
+import org.teavm.ast.NewExpr;
+import org.teavm.ast.NewMultiArrayExpr;
+import org.teavm.ast.QualificationExpr;
+import org.teavm.ast.Statement;
+import org.teavm.ast.SubscriptExpr;
+import org.teavm.ast.UnaryExpr;
+import org.teavm.ast.UnwrapArrayExpr;
+import org.teavm.ast.VariableExpr;
 
 public class ExpressionSideEffectDecomposer implements ExprVisitor {
     private List<Statement> target;
