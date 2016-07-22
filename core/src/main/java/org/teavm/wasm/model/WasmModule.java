@@ -15,11 +15,14 @@
  */
 package org.teavm.wasm.model;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 public class WasmModule {
     private Map<String, WasmFunction> functions = new LinkedHashMap<>();
+    private List<WasmFunction> functionTable = new ArrayList<>();
 
     public void add(WasmFunction function) {
         if (functions.containsKey(function.getName())) {
@@ -30,5 +33,9 @@ public class WasmModule {
         }
         functions.put(function.getName(), function);
         function.module = this;
+    }
+
+    public List<WasmFunction> getFunctionTable() {
+        return functionTable;
     }
 }
