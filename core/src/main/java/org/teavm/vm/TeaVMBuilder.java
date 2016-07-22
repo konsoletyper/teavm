@@ -18,15 +18,13 @@ package org.teavm.vm;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.parsing.ClasspathClassHolderSource;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TeaVMBuilder {
+    TeaVMTarget target;
     ClassHolderSource classSource;
     ClassLoader classLoader;
 
-    public TeaVMBuilder() {
+    public TeaVMBuilder(TeaVMTarget target) {
+        this.target = target;
         classLoader = TeaVMBuilder.class.getClassLoader();
         classSource = new ClasspathClassHolderSource(classLoader);
     }
@@ -50,6 +48,6 @@ public class TeaVMBuilder {
     }
 
     public TeaVM build() {
-        return new TeaVM(classSource, classLoader);
+        return new TeaVM(this);
     }
 }

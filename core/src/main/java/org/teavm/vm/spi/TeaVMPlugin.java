@@ -15,10 +15,6 @@
  */
 package org.teavm.vm.spi;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface TeaVMPlugin {
     void install(TeaVMHost host);
 }

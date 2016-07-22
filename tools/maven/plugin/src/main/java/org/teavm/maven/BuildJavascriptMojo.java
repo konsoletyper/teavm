@@ -56,9 +56,6 @@ public class BuildJavascriptMojo extends AbstractJavascriptMojo {
     private boolean mainPageIncluded;
 
     @Parameter
-    private boolean bytecodeLogging;
-
-    @Parameter
     private ClassAlias[] classAliases;
 
     @Parameter
@@ -86,7 +83,6 @@ public class BuildJavascriptMojo extends AbstractJavascriptMojo {
         setupTool(tool);
         tool.setLog(new MavenTeaVMToolLog(log));
         try {
-            tool.setBytecodeLogging(bytecodeLogging);
             tool.setMainClass(mainClass);
             tool.setMainPageIncluded(mainPageIncluded);
             tool.setRuntime(runtime);

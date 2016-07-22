@@ -24,15 +24,12 @@ import java.util.ServiceLoader;
 import org.teavm.classlib.impl.lambda.LambdaMetafactorySubstitutor;
 import org.teavm.classlib.impl.unicode.CLDRReader;
 import org.teavm.classlib.java.lang.reflect.AnnotationDependencyListener;
+import org.teavm.javascript.target.TeaVMJavaScriptHost;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.PlatformClass;
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class JCLPlugin implements TeaVMPlugin {
     @Override
     public void install(TeaVMHost host) {
@@ -40,7 +37,11 @@ public class JCLPlugin implements TeaVMPlugin {
         host.add(serviceLoaderSupp);
         MethodReference loadServicesMethod = new MethodReference(ServiceLoader.class, "loadServices",
                 PlatformClass.class, Object[].class);
-        host.add(loadServicesMethod, serviceLoaderSupp);
+        TeaVMJavaScriptHost jsExtension = host.getExtension(TeaVMJavaScriptHost.class);
+        if (jsExtension != null) {
+            jsExtension.add(loadServicesMethod, serviceLoaderSupp);
+        }
+
         JavacSupport javacSupport = new JavacSupport();
         host.add(javacSupport);
 

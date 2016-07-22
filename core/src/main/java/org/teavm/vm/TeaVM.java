@@ -19,58 +19,32 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
-import java.io.Writer;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.ServiceLoader;
-import java.util.Set;
+import java.util.stream.Collectors;
 import org.teavm.cache.NoCache;
-import org.teavm.codegen.AliasProvider;
-import org.teavm.codegen.DefaultAliasProvider;
-import org.teavm.codegen.DefaultNamingStrategy;
-import org.teavm.codegen.MinifyingAliasProvider;
-import org.teavm.codegen.SourceWriter;
-import org.teavm.codegen.SourceWriterBuilder;
 import org.teavm.common.ServiceRepository;
-import org.teavm.debugging.information.DebugInformationEmitter;
-import org.teavm.debugging.information.SourceLocation;
 import org.teavm.dependency.BootstrapMethodSubstitutor;
 import org.teavm.dependency.DependencyChecker;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.dependency.DependencyListener;
 import org.teavm.dependency.Linker;
-import org.teavm.dependency.MethodDependency;
 import org.teavm.diagnostics.AccumulationDiagnostics;
+import org.teavm.diagnostics.Diagnostics;
 import org.teavm.diagnostics.ProblemProvider;
-import org.teavm.javascript.Decompiler;
-import org.teavm.javascript.EmptyRegularMethodNodeCache;
-import org.teavm.javascript.MethodNodeCache;
-import org.teavm.javascript.Renderer;
 import org.teavm.javascript.RenderingException;
-import org.teavm.javascript.ast.ClassNode;
-import org.teavm.javascript.spi.GeneratedBy;
-import org.teavm.javascript.spi.Generator;
-import org.teavm.javascript.spi.InjectedBy;
-import org.teavm.javascript.spi.Injector;
-import org.teavm.model.BasicBlock;
-import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
-import org.teavm.model.ElementHolder;
-import org.teavm.model.ElementModifier;
-import org.teavm.model.InstructionLocation;
 import org.teavm.model.ListableClassHolderSource;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodHolder;
@@ -78,15 +52,6 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.MutableClassHolderSource;
 import org.teavm.model.Program;
 import org.teavm.model.ProgramCache;
-import org.teavm.model.ValueType;
-import org.teavm.model.Variable;
-import org.teavm.model.instructions.ConstructInstruction;
-import org.teavm.model.instructions.InvocationType;
-import org.teavm.model.instructions.InvokeInstruction;
-import org.teavm.model.instructions.RaiseInstruction;
-import org.teavm.model.instructions.StringConstantInstruction;
-import org.teavm.model.util.AsyncMethodFinder;
-import org.teavm.model.util.ListingBuilder;
 import org.teavm.model.util.MissingItemsProcessor;
 import org.teavm.model.util.ModelUtils;
 import org.teavm.model.util.ProgramUtils;
@@ -103,8 +68,8 @@ import org.teavm.optimization.MethodOptimization;
 import org.teavm.optimization.RedundantJumpElimination;
 import org.teavm.optimization.UnreachableBasicBlockElimination;
 import org.teavm.optimization.UnusedVariableElimination;
-import org.teavm.vm.spi.RendererListener;
 import org.teavm.vm.spi.TeaVMHost;
+import org.teavm.vm.spi.TeaVMHostExtension;
 import org.teavm.vm.spi.TeaVMPlugin;
 
 /**
@@ -141,29 +106,24 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     private final DependencyChecker dependencyChecker;
     private final AccumulationDiagnostics diagnostics = new AccumulationDiagnostics();
     private final ClassLoader classLoader;
-    private boolean minifying = true;
-    private boolean bytecodeLogging;
-    private final OutputStream logStream = System.out;
     private final Map<String, TeaVMEntryPoint> entryPoints = new HashMap<>();
+    private final Map<String, TeaVMEntryPoint> readonlyEntryPoints = Collections.unmodifiableMap(entryPoints);
     private final Map<String, String> exportedClasses = new HashMap<>();
-    private final Map<MethodReference, Generator> methodGenerators = new HashMap<>();
-    private final Map<MethodReference, Injector> methodInjectors = new HashMap<>();
-    private final List<RendererListener> rendererListeners = new ArrayList<>();
+    private final Map<String, String> readonlyExportedClasses = Collections.unmodifiableMap(exportedClasses);
     private final Map<Class<?>, Object> services = new HashMap<>();
     private final Properties properties = new Properties();
-    private DebugInformationEmitter debugEmitter;
     private ProgramCache programCache;
-    private MethodNodeCache astCache = new EmptyRegularMethodNodeCache();
     private boolean incremental;
     private TeaVMProgressListener progressListener;
     private boolean cancelled;
     private ListableClassHolderSource writtenClasses;
-    private final Set<MethodReference> asyncMethods = new HashSet<>();
-    private final Set<MethodReference> asyncFamilyMethods = new HashSet<>();
+    private TeaVMTarget target;
+    private Map<Class<?>, TeaVMHostExtension> extensions = new HashMap<>();
 
-    TeaVM(ClassReaderSource classSource, ClassLoader classLoader) {
-        this.classSource = classSource;
-        this.classLoader = classLoader;
+    TeaVM(TeaVMBuilder builder) {
+        target = builder.target;
+        classSource = builder.classSource;
+        classLoader = builder.classLoader;
         dependencyChecker = new DependencyChecker(this.classSource, classLoader, this, diagnostics);
         progressListener = new TeaVMProgressListener() {
             @Override public TeaVMProgressFeedback progressReached(int progress) {
@@ -173,6 +133,12 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                 return TeaVMProgressFeedback.CONTINUE;
             }
         };
+
+        for (TeaVMHostExtension extension : target.getHostExtensions()) {
+            for (Class<?> extensionType : getExtensionTypes(extension)) {
+                extensions.put(extensionType, extension);
+            }
+        }
     }
 
     @Override
@@ -186,56 +152,13 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     }
 
     @Override
-    public void add(MethodReference methodRef, Generator generator) {
-        methodGenerators.put(methodRef, generator);
-    }
-
-    @Override
-    public void add(MethodReference methodRef, Injector injector) {
-        methodInjectors.put(methodRef, injector);
-    }
-
-    @Override
     public void add(MethodReference methodRef, BootstrapMethodSubstitutor substitutor) {
         dependencyChecker.addBootstrapMethodSubstitutor(methodRef, substitutor);
     }
 
     @Override
-    public void add(RendererListener listener) {
-        rendererListeners.add(listener);
-    }
-
-    @Override
     public ClassLoader getClassLoader() {
         return classLoader;
-    }
-
-    /**
-     * Reports whether this TeaVM instance uses obfuscation when generating the JavaScript code.
-     *
-     * @see #setMinifying(boolean)
-     * @return whether TeaVM produces obfuscated code.
-     */
-    public boolean isMinifying() {
-        return minifying;
-    }
-
-    /**
-     * Specifies whether this TeaVM instance uses obfuscation when generating the JavaScript code.
-     *
-     * @see #isMinifying()
-     * @param minifying whether TeaVM should obfuscate code.
-     */
-    public void setMinifying(boolean minifying) {
-        this.minifying = minifying;
-    }
-
-    public boolean isBytecodeLogging() {
-        return bytecodeLogging;
-    }
-
-    public void setBytecodeLogging(boolean bytecodeLogging) {
-        this.bytecodeLogging = bytecodeLogging;
     }
 
     /**
@@ -255,14 +178,6 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     @Override
     public Properties getProperties() {
         return new Properties(properties);
-    }
-
-    public MethodNodeCache getAstCache() {
-        return astCache;
-    }
-
-    public void setAstCache(MethodNodeCache methodAstCache) {
-        this.astCache = methodAstCache;
     }
 
     public ProgramCache getProgramCache() {
@@ -391,14 +306,6 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         return writtenClasses;
     }
 
-    public DebugInformationEmitter getDebugEmitter() {
-        return debugEmitter;
-    }
-
-    public void setDebugEmitter(DebugInformationEmitter debugEmitter) {
-        this.debugEmitter = debugEmitter;
-    }
-
     /**
      * <p>Does actual build. Call this method after TeaVM is fully configured and all entry points
      * are specified. This method may fail if there are items (classes, methods and fields)
@@ -406,52 +313,23 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
      * actual generation happens and no exceptions thrown, but you can further call
      * {@link #getProblemProvider()} to learn the build state.</p>
      *
-     * @param writer where to generate JavaScript. Should not be null.
-     * @param target where to generate additional resources. Can be null, but if there are
+     * @param output where to generate JavaScript. Should not be null.
+     * @param buildTarget where to generate additional resources. Can be null, but if there are
      * plugins or inteceptors that generate additional resources, the build process will fail.
      *
      * @throws RenderingException when something went wrong during rendering phase.
      */
-    public void build(Appendable writer, BuildTarget target) throws RenderingException {
+    public void build(OutputStream output, BuildTarget buildTarget) throws RenderingException {
+        target.setController(targetController);
+
         // Check dependencies
         reportPhase(TeaVMPhase.DEPENDENCY_CHECKING, 1);
         if (wasCancelled()) {
             return;
         }
 
-        AliasProvider aliasProvider = minifying ? new MinifyingAliasProvider() : new DefaultAliasProvider();
         dependencyChecker.setInterruptor(() -> progressListener.progressReached(0) == TeaVMProgressFeedback.CONTINUE);
-        dependencyChecker.linkMethod(new MethodReference(Class.class.getName(), "getClass",
-                ValueType.object("org.teavm.platform.PlatformClass"), ValueType.parse(Class.class)), null).use();
-        dependencyChecker.linkMethod(new MethodReference(String.class, "<init>", char[].class, void.class),
-                null).use();
-        dependencyChecker.linkMethod(new MethodReference(String.class, "getChars", int.class, int.class, char[].class,
-                int.class, void.class), null).use();
-        MethodDependency internDep = dependencyChecker.linkMethod(new MethodReference(String.class, "intern",
-                String.class), null);
-        internDep.getVariable(0).propagate(dependencyChecker.getType("java.lang.String"));
-        internDep.use();
-        dependencyChecker.linkMethod(new MethodReference(String.class, "length", int.class), null).use();
-        dependencyChecker.linkMethod(new MethodReference(Object.class, "clone", Object.class), null).use();
-        dependencyChecker.linkMethod(new MethodReference(Thread.class, "currentThread", Thread.class), null).use();
-        dependencyChecker.linkMethod(new MethodReference(Thread.class, "getMainThread", Thread.class), null).use();
-        dependencyChecker.linkMethod(
-                new MethodReference(Thread.class, "setCurrentThread", Thread.class, void.class), null).use();
-        MethodDependency exceptionCons = dependencyChecker.linkMethod(new MethodReference(
-                NoClassDefFoundError.class, "<init>", String.class, void.class), null);
-        exceptionCons.use();
-        exceptionCons.getVariable(0).propagate(dependencyChecker.getType(NoClassDefFoundError.class.getName()));
-        exceptionCons.getVariable(1).propagate(dependencyChecker.getType("java.lang.String"));
-        exceptionCons = dependencyChecker.linkMethod(new MethodReference(NoSuchFieldError.class, "<init>",
-                String.class, void.class), null);
-        exceptionCons.use();
-        exceptionCons.getVariable(0).propagate(dependencyChecker.getType(NoSuchFieldError.class.getName()));
-        exceptionCons.getVariable(1).propagate(dependencyChecker.getType("java.lang.String"));
-        exceptionCons = dependencyChecker.linkMethod(new MethodReference(NoSuchMethodError.class, "<init>",
-                String.class, void.class), null);
-        exceptionCons.use();
-        exceptionCons.getVariable(0).propagate(dependencyChecker.getType(NoSuchMethodError.class.getName()));
-        exceptionCons.getVariable(1).propagate(dependencyChecker.getType("java.lang.String"));
+        target.contributeDependencies(dependencyChecker);
         dependencyChecker.processDependencies();
         if (wasCancelled() || !diagnostics.getSevereProblems().isEmpty()) {
             return;
@@ -469,73 +347,27 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
 
         // Optimize and allocate registers
+        reportPhase(TeaVMPhase.OPTIMIZATION, 1);
+
         if (!incremental) {
             devirtualize(classSet, dependencyChecker);
             if (wasCancelled()) {
                 return;
             }
+
+            inline(classSet);
+            if (wasCancelled()) {
+                return;
+            }
         }
 
-        List<ClassNode> clsNodes = modelToAst(classSet);
-
-        // Render
-        reportPhase(TeaVMPhase.RENDERING, classSet.getClassNames().size());
+        optimize(classSet);
         if (wasCancelled()) {
             return;
         }
-        DefaultNamingStrategy naming = new DefaultNamingStrategy(aliasProvider, dependencyChecker.getClassSource());
-        SourceWriterBuilder builder = new SourceWriterBuilder(naming);
-        builder.setMinified(minifying);
-        SourceWriter sourceWriter = builder.build(writer);
-        Renderer renderer = new Renderer(sourceWriter, classSet, classLoader, this, asyncMethods, asyncFamilyMethods,
-                diagnostics);
-        renderer.setProperties(properties);
-        renderer.setMinifying(minifying);
-        if (debugEmitter != null) {
-            int classIndex = 0;
-            for (String className : classSet.getClassNames()) {
-                ClassHolder cls = classSet.get(className);
-                for (MethodHolder method : cls.getMethods()) {
-                    if (method.getProgram() != null) {
-                        emitCFG(debugEmitter, method.getProgram());
-                    }
-                }
-                reportProgress(++classIndex);
-                if (wasCancelled()) {
-                    return;
-                }
-            }
-            renderer.setDebugEmitter(debugEmitter);
-        }
-        renderer.getDebugEmitter().setLocationProvider(sourceWriter);
-        for (Map.Entry<MethodReference, Injector> entry : methodInjectors.entrySet()) {
-            renderer.addInjector(entry.getKey(), entry.getValue());
-        }
-        try {
-            for (RendererListener listener : rendererListeners) {
-                listener.begin(renderer, target);
-            }
-            sourceWriter.append("\"use strict\";").newLine();
-            renderer.renderRuntime();
-            renderer.render(clsNodes);
-            renderer.renderStringPool();
-            renderer.renderStringConstants();
-            for (Map.Entry<String, TeaVMEntryPoint> entry : entryPoints.entrySet()) {
-                sourceWriter.append("var ").append(entry.getKey()).ws().append("=").ws();
-                MethodReference ref = entry.getValue().reference;
-                sourceWriter.append(naming.getFullNameFor(ref));
-                sourceWriter.append(";").newLine();
-            }
-            for (Map.Entry<String, String> entry : exportedClasses.entrySet()) {
-                sourceWriter.append("var ").append(entry.getKey()).ws().append("=").ws()
-                        .appendClass(entry.getValue()).append(";").newLine();
-            }
-            for (RendererListener listener : rendererListeners) {
-                listener.complete();
-            }
-        } catch (IOException e) {
-            throw new RenderingException("IO Error occured", e);
-        }
+
+        // Render
+        target.emit(classSet, output, buildTarget);
     }
 
     @SuppressWarnings("WeakerAccess")
@@ -568,38 +400,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
     }
 
-    private void reportProgress(int progress) {
-        if (progressListener.progressReached(progress) == TeaVMProgressFeedback.CANCEL) {
-            cancelled = true;
-        }
-    }
-
-    private void emitCFG(DebugInformationEmitter emitter, Program program) {
-        Map<InstructionLocation, InstructionLocation[]> cfg = ProgramUtils.getLocationCFG(program);
-        for (Map.Entry<InstructionLocation, InstructionLocation[]> entry : cfg.entrySet()) {
-            SourceLocation location = map(entry.getKey());
-            SourceLocation[] successors = new SourceLocation[entry.getValue().length];
-            for (int i = 0; i < entry.getValue().length; ++i) {
-                successors[i] = map(entry.getValue()[i]);
-            }
-            emitter.addSuccessors(location, successors);
-        }
-    }
-
-    private static SourceLocation map(InstructionLocation location) {
-        if (location == null) {
-            return null;
-        }
-        return new SourceLocation(location.getFileName(), location.getLine());
-    }
-
-    private void devirtualize(ListableClassHolderSource classes, DependencyInfo dependency)  {
-        reportPhase(TeaVMPhase.DEVIRTUALIZATION, classes.getClassNames().size());
+    private void devirtualize(ListableClassHolderSource classes, DependencyInfo dependency) {
         if (wasCancelled()) {
             return;
         }
         Devirtualization devirtualization = new Devirtualization(dependency, classes);
-        int index = 0;
         for (String className : classes.getClassNames()) {
             ClassHolder cls = classes.get(className);
             for (final MethodHolder method : cls.getMethods()) {
@@ -607,12 +412,13 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                     devirtualization.apply(method);
                 }
             }
-            reportProgress(++index);
             if (wasCancelled()) {
                 return;
             }
         }
+    }
 
+    private void inline(ListableClassHolderSource classes) {
         Inlining inlining = new Inlining();
         for (String className : classes.getClassNames()) {
             ClassHolder cls = classes.get(className);
@@ -621,90 +427,22 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                     inlining.apply(method.getProgram(), classes);
                 }
             }
-            reportProgress(++index);
             if (wasCancelled()) {
                 return;
             }
         }
     }
 
-    private List<ClassNode> modelToAst(ListableClassHolderSource classes) {
-        AsyncMethodFinder asyncFinder = new AsyncMethodFinder(dependencyChecker.getCallGraph(), diagnostics);
-        asyncFinder.find(classes);
-        asyncMethods.addAll(asyncFinder.getAsyncMethods());
-        asyncFamilyMethods.addAll(asyncFinder.getAsyncFamilyMethods());
-
-        progressListener.phaseStarted(TeaVMPhase.DECOMPILATION, classes.getClassNames().size());
-        Decompiler decompiler = new Decompiler(classes, classLoader, asyncMethods, asyncFamilyMethods);
-        decompiler.setRegularMethodCache(incremental ? astCache : null);
-
-        for (Map.Entry<MethodReference, Generator> entry : methodGenerators.entrySet()) {
-            decompiler.addGenerator(entry.getKey(), entry.getValue());
-        }
-        for (MethodReference injectedMethod : methodInjectors.keySet()) {
-            decompiler.addMethodToPass(injectedMethod);
-        }
-        List<String> classOrder = decompiler.getClassOrdering(classes.getClassNames());
-        List<ClassNode> classNodes = new ArrayList<>();
-        int index = 0;
-        try (PrintWriter bytecodeLogger = bytecodeLogging
-                ? new PrintWriter(new OutputStreamWriter(logStream, "UTF-8")) : null) {
-            for (String className : classOrder) {
-                ClassHolder cls = classes.get(className);
-                for (MethodHolder method : cls.getMethods()) {
-                    processMethod(method);
-                    preprocessNativeMethod(method);
-                    if (bytecodeLogging) {
-                        logMethodBytecode(bytecodeLogger, method);
-                    }
-                }
-                classNodes.add(decompiler.decompile(cls));
-                progressListener.progressReached(++index);
+    private void optimize(ListableClassHolderSource classSource) {
+        for (String className : classSource.getClassNames()) {
+            ClassHolder cls = classSource.get(className);
+            for (MethodHolder method : cls.getMethods()) {
+                processMethod(method);
             }
-        } catch (UnsupportedEncodingException e) {
-            throw new AssertionError("UTF-8 is expected to be supported");
+            if (wasCancelled()) {
+                return;
+            }
         }
-        return classNodes;
-    }
-
-    private void preprocessNativeMethod(MethodHolder method) {
-        if (!method.getModifiers().contains(ElementModifier.NATIVE)
-                || methodGenerators.get(method.getReference()) != null
-                || methodInjectors.get(method.getReference()) != null
-                || method.getAnnotations().get(GeneratedBy.class.getName()) != null
-                || method.getAnnotations().get(InjectedBy.class.getName()) != null) {
-            return;
-        }
-        method.getModifiers().remove(ElementModifier.NATIVE);
-
-        Program program = new Program();
-        method.setProgram(program);
-        BasicBlock block = program.createBasicBlock();
-        Variable exceptionVar = program.createVariable();
-        ConstructInstruction newExceptionInsn = new ConstructInstruction();
-        newExceptionInsn.setType(NoSuchMethodError.class.getName());
-        newExceptionInsn.setReceiver(exceptionVar);
-        block.getInstructions().add(newExceptionInsn);
-
-        Variable constVar = program.createVariable();
-        StringConstantInstruction constInsn = new StringConstantInstruction();
-        constInsn.setConstant("Native method implementation not found: " + method.getReference());
-        constInsn.setReceiver(constVar);
-        block.getInstructions().add(constInsn);
-
-        InvokeInstruction initExceptionInsn = new InvokeInstruction();
-        initExceptionInsn.setInstance(exceptionVar);
-        initExceptionInsn.setMethod(new MethodReference(NoSuchMethodError.class, "<init>", String.class, void.class));
-        initExceptionInsn.setType(InvocationType.SPECIAL);
-        initExceptionInsn.getArguments().add(constVar);
-        block.getInstructions().add(initExceptionInsn);
-
-        RaiseInstruction raiseInsn = new RaiseInstruction();
-        raiseInsn.setException(exceptionVar);
-        block.getInstructions().add(raiseInsn);
-
-        diagnostics.error(new CallLocation(method.getReference()), "Native method {{m0}} has no implementation",
-                method.getReference());
     }
 
     private void processMethod(MethodHolder method) {
@@ -725,8 +463,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                         changed |= optimization.optimize(method, optimizedProgram);
                     }
                 } while (changed);
-                RegisterAllocator allocator = new RegisterAllocator();
-                allocator.allocateRegisters(method, optimizedProgram);
+
+                if (target.requiresRegisterAllocation()) {
+                    RegisterAllocator allocator = new RegisterAllocator();
+                    allocator.allocateRegisters(method, optimizedProgram);
+                }
             }
             if (incremental && programCache != null) {
                 programCache.store(method.getReference(), optimizedProgram);
@@ -749,102 +490,9 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                 new UnreachableBasicBlockElimination());
     }
 
-    private void logMethodBytecode(PrintWriter writer, MethodHolder method) {
-        writer.print("    ");
-        printModifiers(writer, method);
-        writer.print(method.getName() + "(");
-        ValueType[] parameterTypes = method.getParameterTypes();
-        for (int i = 0; i < parameterTypes.length; ++i) {
-            if (i > 0) {
-                writer.print(", ");
-            }
-            printType(writer, parameterTypes[i]);
-        }
-        writer.println(")");
-        Program program = method.getProgram();
-        if (program != null && program.basicBlockCount() > 0) {
-            ListingBuilder builder = new ListingBuilder();
-            writer.print(builder.buildListing(program, "        "));
-            writer.print("        Register allocation:");
-            for (int i = 0; i < program.variableCount(); ++i) {
-                writer.print(i + ":" + program.variableAt(i).getRegister() + " ");
-            }
-            writer.println();
-            writer.println();
-            writer.flush();
-        } else {
-            writer.println();
-        }
-    }
-
-    private void printType(PrintWriter writer, ValueType type) {
-        if (type instanceof ValueType.Object) {
-            writer.print(((ValueType.Object) type).getClassName());
-        } else if (type instanceof ValueType.Array) {
-            printType(writer, ((ValueType.Array) type).getItemType());
-            writer.print("[]");
-        } else if (type instanceof ValueType.Primitive) {
-            switch (((ValueType.Primitive) type).getKind()) {
-                case BOOLEAN:
-                    writer.print("boolean");
-                    break;
-                case SHORT:
-                    writer.print("short");
-                    break;
-                case BYTE:
-                    writer.print("byte");
-                    break;
-                case CHARACTER:
-                    writer.print("char");
-                    break;
-                case DOUBLE:
-                    writer.print("double");
-                    break;
-                case FLOAT:
-                    writer.print("float");
-                    break;
-                case INTEGER:
-                    writer.print("int");
-                    break;
-                case LONG:
-                    writer.print("long");
-                    break;
-            }
-        }
-    }
-
-    private void printModifiers(PrintWriter writer, ElementHolder element) {
-        switch (element.getLevel()) {
-            case PRIVATE:
-                writer.print("private ");
-                break;
-            case PUBLIC:
-                writer.print("public ");
-                break;
-            case PROTECTED:
-                writer.print("protected ");
-                break;
-            default:
-                break;
-        }
-        Set<ElementModifier> modifiers = element.getModifiers();
-        if (modifiers.contains(ElementModifier.ABSTRACT)) {
-            writer.print("abstract ");
-        }
-        if (modifiers.contains(ElementModifier.FINAL)) {
-            writer.print("final ");
-        }
-        if (modifiers.contains(ElementModifier.STATIC)) {
-            writer.print("static ");
-        }
-        if (modifiers.contains(ElementModifier.NATIVE)) {
-            writer.print("native ");
-        }
-    }
-
     public void build(File dir, String fileName) throws RenderingException {
-        try (Writer writer = new OutputStreamWriter(new FileOutputStream(new File(dir, fileName)), "UTF-8")) {
-            build(writer, new DirectoryBuildTarget(dir));
+        try (OutputStream output = new FileOutputStream(new File(dir, fileName))) {
+            build(output, new DirectoryBuildTarget(dir));
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException("Platform does not support UTF-8", e);
         } catch (IOException e) {
@@ -877,4 +525,69 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     public <T> void registerService(Class<T> type, T instance) {
         services.put(type, instance);
     }
+
+    @Override
+    public <T extends TeaVMHostExtension> T getExtension(Class<T> extensionType) {
+        Object extension = extensions.get(extensionType);
+        return extension != null ? extensionType.cast(extension) : null;
+    }
+
+    private Collection<Class<? extends TeaVMHostExtension>> getExtensionTypes(TeaVMHostExtension extension) {
+        return Arrays.stream(extension.getClass().getInterfaces())
+                .filter(cls -> cls.isInterface() && TeaVMHostExtension.class.isAssignableFrom(cls))
+                .<Class<? extends TeaVMHostExtension>>map(cls -> cls.asSubclass(TeaVMHostExtension.class))
+                .collect(Collectors.toSet());
+    }
+
+    private TeaVMTargetController targetController = new TeaVMTargetController() {
+        @Override
+        public boolean wasCancelled() {
+            return TeaVM.this.wasCancelled();
+        }
+
+        @Override
+        public ClassLoader getClassLoader() {
+            return classLoader;
+        }
+
+        @Override
+        public ClassReaderSource getUnprocessedClassSource() {
+            return dependencyChecker.getClassSource();
+        }
+
+        @Override
+        public DependencyInfo getDependencyInfo() {
+            return dependencyChecker;
+        }
+
+        @Override
+        public Diagnostics getDiagnostics() {
+            return diagnostics;
+        }
+
+        @Override
+        public Properties getProperties() {
+            return properties;
+        }
+
+        @Override
+        public ServiceRepository getServices() {
+            return TeaVM.this;
+        }
+
+        @Override
+        public boolean isIncremental() {
+            return incremental;
+        }
+
+        @Override
+        public Map<String, TeaVMEntryPoint> getEntryPoints() {
+            return readonlyEntryPoints;
+        }
+
+        @Override
+        public Map<String, String> getExportedClasses() {
+            return readonlyExportedClasses;
+        }
+    };
 }

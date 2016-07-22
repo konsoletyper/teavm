@@ -15,15 +15,15 @@
  */
 package org.teavm.tests;
 
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import java.io.ByteArrayOutputStream;
 import java.util.List;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.teavm.diagnostics.Problem;
+import org.teavm.javascript.target.JavaScriptTarget;
 import org.teavm.jso.JSBody;
-import org.teavm.junit.SkipJVM;
-import org.teavm.junit.TeaVMTestRunner;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.vm.TeaVM;
@@ -96,10 +96,10 @@ public class JSOTest {
     private static native Object jsBodyWithWrongReturningType(String value);
 
     private List<Problem> build(String methodName) {
-        TeaVM vm = new TeaVMBuilder().build();
+        TeaVM vm = new TeaVMBuilder(new JavaScriptTarget()).build();
         vm.installPlugins();
         vm.entryPoint("org/teavm/metaprogramming/test", new MethodReference(JSOTest.class, methodName, void.class));
-        vm.build(new StringBuilder(), null);
+        vm.build(new ByteArrayOutputStream(), null);
         return vm.getProblemProvider().getSevereProblems();
     }
 }

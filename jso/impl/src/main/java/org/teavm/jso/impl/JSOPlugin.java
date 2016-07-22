@@ -15,22 +15,23 @@
  */
 package org.teavm.jso.impl;
 
+import org.teavm.javascript.target.TeaVMJavaScriptHost;
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class JSOPlugin implements TeaVMPlugin {
     @Override
     public void install(TeaVMHost host) {
+        if (host.getExtension(TeaVMJavaScriptHost.class) == null) {
+            return;
+        }
+
         JSBodyRepository repository = new JSBodyRepository();
         host.registerService(JSBodyRepository.class, repository);
         host.add(new JSObjectClassTransformer(repository));
         JSDependencyListener dependencyListener = new JSDependencyListener(repository);
         JSAliasRenderer aliasRenderer = new JSAliasRenderer(dependencyListener);
         host.add(dependencyListener);
-        host.add(aliasRenderer);
+        host.getExtension(TeaVMJavaScriptHost.class).add(aliasRenderer);
     }
 }

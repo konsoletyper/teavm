@@ -18,10 +18,6 @@ package org.teavm.vm;
 import java.io.IOException;
 import java.io.OutputStream;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface BuildTarget {
     OutputStream createResource(String fileName) throws IOException;
 }

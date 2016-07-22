@@ -20,8 +20,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
@@ -49,6 +47,7 @@ import org.junit.runners.model.InitializationError;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.diagnostics.DefaultProblemTextConsumer;
 import org.teavm.diagnostics.Problem;
+import org.teavm.javascript.target.JavaScriptTarget;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.model.MethodDescriptor;
@@ -345,12 +344,13 @@ public class TeaVMTestRunner extends Runner {
         MethodHolder methodHolder = classHolder.getMethod(getDescriptor(method));
         Class<?> runnerType = testAdapter.getRunner(methodHolder);
 
-        TeaVM vm = new TeaVMBuilder()
+        JavaScriptTarget jsTarget = new JavaScriptTarget();
+        jsTarget.setMinifying(false);
+        TeaVM vm = new TeaVMBuilder(jsTarget)
                 .setClassLoader(classLoader)
                 .setClassSource(classSource)
                 .build();
         vm.setIncremental(false);
-        vm.setMinifying(false);
         vm.installPlugins();
 
         new TestExceptionPlugin().install(vm);
@@ -360,7 +360,7 @@ public class TeaVMTestRunner extends Runner {
         applyProperties(method.getDeclaringClass(), properties);
         vm.setProperties(properties);
 
-        try (Writer innerWriter = new OutputStreamWriter(new FileOutputStream(outputFile), "UTF-8")) {
+        try (OutputStream innerWriter = new FileOutputStream(outputFile)) {
             MethodReference exceptionMsg = new MethodReference(ExceptionHelper.class, "showException",
                     Throwable.class, String.class);
             vm.entryPoint("runTest", new MethodReference(TestEntryPoint.class, "run", void.class)).async();

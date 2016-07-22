@@ -27,10 +27,6 @@ import org.teavm.vm.TeaVMPhase;
 import org.teavm.vm.TeaVMProgressFeedback;
 import org.teavm.vm.TeaVMProgressListener;
 
-/**
- *
- * @author Alexey Andreev
- */
 public final class TeaVMRunner {
     private static long startTime;
     private static long phaseStartTime;
@@ -68,10 +64,6 @@ public final class TeaVMRunner {
         options.addOption(OptionBuilder
                 .withDescription("causes TeaVM to include default main page")
                 .withLongOpt("mainpage")
-                .create());
-        options.addOption(OptionBuilder
-                .withDescription("causes TeaVM to log bytecode")
-                .withLongOpt("logbytecode")
                 .create());
         options.addOption(OptionBuilder
                 .withDescription("Generate debug information")
@@ -116,7 +108,6 @@ public final class TeaVMRunner {
         }
 
         TeaVMTool tool = new TeaVMTool();
-        tool.setBytecodeLogging(commandLine.hasOption("logbytecode"));
         if (commandLine.hasOption("d")) {
             tool.setTargetDirectory(new File(commandLine.getOptionValue("d")));
         }
@@ -269,7 +260,7 @@ public final class TeaVMRunner {
                     case LINKING:
                         System.out.print("Linking methods...");
                         break;
-                    case DEVIRTUALIZATION:
+                    case OPTIMIZATION:
                         System.out.print("Applying devirtualization...");
                         break;
                     case DECOMPILATION:

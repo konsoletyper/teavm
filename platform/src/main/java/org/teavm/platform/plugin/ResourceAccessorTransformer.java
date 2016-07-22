@@ -16,18 +16,15 @@
 package org.teavm.platform.plugin;
 
 import org.teavm.diagnostics.Diagnostics;
+import org.teavm.javascript.target.TeaVMJavaScriptHost;
 import org.teavm.model.*;
 import org.teavm.vm.spi.TeaVMHost;
 
-/**
- *
- * @author Alexey Andreev
- */
 class ResourceAccessorTransformer implements ClassHolderTransformer {
-    private TeaVMHost vm;
+    private TeaVMJavaScriptHost vm;
 
     public ResourceAccessorTransformer(TeaVMHost vm) {
-        this.vm = vm;
+        this.vm = vm.getExtension(TeaVMJavaScriptHost.class);
     }
 
     @Override

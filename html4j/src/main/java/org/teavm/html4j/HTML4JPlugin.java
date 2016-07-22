@@ -15,19 +15,20 @@
  */
 package org.teavm.html4j;
 
+import org.teavm.javascript.target.TeaVMJavaScriptHost;
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class HTML4JPlugin implements TeaVMPlugin {
     @Override
     public void install(TeaVMHost host) {
+        if (host.getExtension(TeaVMJavaScriptHost.class) == null) {
+            return;
+        }
         host.add(new JavaScriptBodyDependency());
         host.add(new JavaScriptBodyTransformer());
         host.add(new JCLHacks());
-        host.add(new JavaScriptResourceInterceptor());
+
+        host.getExtension(TeaVMJavaScriptHost.class).add(new JavaScriptResourceInterceptor());
     }
 }

@@ -15,8 +15,24 @@
  */
 package org.teavm.tooling;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Properties;
+import java.util.Set;
 import org.apache.commons.io.IOUtils;
 import org.teavm.cache.DiskCachedClassHolderSource;
 import org.teavm.cache.DiskProgramCache;
@@ -27,26 +43,37 @@ import org.teavm.debugging.information.DebugInformationBuilder;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.ProblemProvider;
 import org.teavm.javascript.RenderingContext;
-import org.teavm.model.*;
+import org.teavm.javascript.target.JavaScriptTarget;
+import org.teavm.model.ClassHolderSource;
+import org.teavm.model.ClassHolderTransformer;
+import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
+import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodReader;
+import org.teavm.model.MethodReference;
+import org.teavm.model.PreOptimizingClassHolderSource;
+import org.teavm.model.ProgramReader;
 import org.teavm.parsing.ClasspathClassHolderSource;
 import org.teavm.tooling.sources.SourceFileProvider;
 import org.teavm.tooling.sources.SourceFilesCopier;
-import org.teavm.vm.*;
+import org.teavm.vm.BuildTarget;
+import org.teavm.vm.DirectoryBuildTarget;
+import org.teavm.vm.TeaVM;
+import org.teavm.vm.TeaVMBuilder;
+import org.teavm.vm.TeaVMEntryPoint;
+import org.teavm.vm.TeaVMProgressListener;
+import org.teavm.vm.TeaVMTarget;
 import org.teavm.vm.spi.AbstractRendererListener;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TeaVMTool implements BaseTeaVMTool {
     private File targetDirectory = new File(".");
+    private TeaVMTargetType targetType = TeaVMTargetType.JAVASCRIPT;
     private String targetFileName = "classes.js";
     private boolean minifying = true;
     private String mainClass;
     private RuntimeCopyOperation runtime = RuntimeCopyOperation.SEPARATE;
     private Properties properties = new Properties();
     private boolean mainPageIncluded;
-    private boolean bytecodeLogging;
     private boolean debugInformationGenerated;
     private boolean sourceMapsFileGenerated;
     private boolean sourceFilesCopied;
@@ -66,6 +93,8 @@ public class TeaVMTool implements BaseTeaVMTool {
     private TeaVMProgressListener progressListener;
     private TeaVM vm;
     private List<SourceFileProvider> sourceFileProviders = new ArrayList<>();
+    private DebugInformationBuilder debugEmitter;
+    private JavaScriptTarget javaScriptTarget;
 
     public File getTargetDirectory() {
         return targetDirectory;
@@ -124,14 +153,6 @@ public class TeaVMTool implements BaseTeaVMTool {
 
     public void setMainPageIncluded(boolean mainPageIncluded) {
         this.mainPageIncluded = mainPageIncluded;
-    }
-
-    public boolean isBytecodeLogging() {
-        return bytecodeLogging;
-    }
-
-    public void setBytecodeLogging(boolean bytecodeLogging) {
-        this.bytecodeLogging = bytecodeLogging;
     }
 
     public boolean isDebugInformationGenerated() {
@@ -262,11 +283,34 @@ public class TeaVMTool implements BaseTeaVMTool {
         sourceFileProviders.add(sourceFileProvider);
     }
 
+    private TeaVMTarget prepareTarget() {
+        switch (targetType) {
+            case JAVASCRIPT:
+                return prepareJavaScriptTarget();
+        }
+        throw new IllegalStateException("Unknown target type: " + targetType);
+    }
+
+    private TeaVMTarget prepareJavaScriptTarget() {
+        javaScriptTarget = new JavaScriptTarget();
+        javaScriptTarget.setMinifying(minifying);
+
+        DebugInformationBuilder debugEmitter = debugInformationGenerated || sourceMapsFileGenerated
+                ? new DebugInformationBuilder() : null;
+        javaScriptTarget.setDebugEmitter(debugEmitter);
+
+        if (incremental) {
+            javaScriptTarget.setAstCache(astCache);
+        }
+
+        return javaScriptTarget;
+    }
+
     public void generate() throws TeaVMToolException {
         try {
             cancelled = false;
             log.info("Building JavaScript file");
-            TeaVMBuilder vmBuilder = new TeaVMBuilder();
+            TeaVMBuilder vmBuilder = new TeaVMBuilder(prepareTarget());
             if (incremental) {
                 cacheDirectory.mkdirs();
                 symbolTable = new FileSymbolTable(new File(cacheDirectory, "symbols"));
@@ -276,7 +320,10 @@ public class TeaVMTool implements BaseTeaVMTool {
                 cachedClassSource = new DiskCachedClassHolderSource(cacheDirectory, symbolTable, fileTable,
                         classSource, innerClassSource);
                 programCache = new DiskProgramCache(cacheDirectory, symbolTable, fileTable, innerClassSource);
-                astCache = new DiskRegularMethodNodeCache(cacheDirectory, symbolTable, fileTable, innerClassSource);
+
+                if (targetType == TeaVMTargetType.JAVASCRIPT) {
+                    astCache = new DiskRegularMethodNodeCache(cacheDirectory, symbolTable, fileTable, innerClassSource);
+                }
                 try {
                     symbolTable.update();
                     fileTable.update();
@@ -292,17 +339,11 @@ public class TeaVMTool implements BaseTeaVMTool {
             if (progressListener != null) {
                 vm.setProgressListener(progressListener);
             }
-            vm.setMinifying(minifying);
-            vm.setBytecodeLogging(bytecodeLogging);
+
             vm.setProperties(properties);
-            DebugInformationBuilder debugEmitter = debugInformationGenerated || sourceMapsFileGenerated
-                    ? new DebugInformationBuilder() : null;
-            vm.setDebugEmitter(debugEmitter);
+            vm.setProgramCache(programCache);
             vm.setIncremental(incremental);
-            if (incremental) {
-                vm.setAstCache(astCache);
-                vm.setProgramCache(programCache);
-            }
+
             vm.installPlugins();
             for (ClassHolderTransformer transformer : transformers) {
                 vm.add(transformer);
@@ -336,79 +377,93 @@ public class TeaVMTool implements BaseTeaVMTool {
                 }
             }
             targetDirectory.mkdirs();
-            try (Writer writer = new OutputStreamWriter(new BufferedOutputStream(
-                    new FileOutputStream(new File(targetDirectory, targetFileName)), 65536), "UTF-8")) {
+            try (OutputStream output = new BufferedOutputStream(
+                    new FileOutputStream(new File(targetDirectory, targetFileName)), 65536)) {
+                Writer writer = new OutputStreamWriter(output, "UTF-8");
                 if (runtime == RuntimeCopyOperation.MERGED) {
-                    vm.add(runtimeInjector);
+                    javaScriptTarget.add(runtimeInjector);
                 }
-                vm.build(writer, new DirectoryBuildTarget(targetDirectory));
+                vm.build(output, new DirectoryBuildTarget(targetDirectory));
                 if (vm.wasCancelled()) {
                     log.info("Build cancelled");
                     cancelled = true;
                     return;
                 }
-                if (mainClass != null) {
-                    writer.append("main = $rt_mainStarter(main);\n");
-                }
+
                 ProblemProvider problemProvider = vm.getProblemProvider();
                 if (problemProvider.getProblems().isEmpty()) {
-                    log.info("JavaScript file successfully built");
+                    log.info("Output file successfully built");
                 } else if (problemProvider.getSevereProblems().isEmpty()) {
-                    log.info("JavaScript file built with warnings");
+                    log.info("Output file built with warnings");
                     TeaVMProblemRenderer.describeProblems(vm, log);
                 } else {
-                    log.info("JavaScript file built with errors");
+                    log.info("Output file built with errors");
                     TeaVMProblemRenderer.describeProblems(vm, log);
                 }
-                if (debugInformationGenerated) {
-                    assert debugEmitter != null;
-                    DebugInformation debugInfo = debugEmitter.getDebugInformation();
-                    try (OutputStream debugInfoOut = new FileOutputStream(new File(targetDirectory,
-                            targetFileName + ".teavmdbg"))) {
-                        debugInfo.write(debugInfoOut);
-                    }
-                    log.info("Debug information successfully written");
+
+                if (targetType == TeaVMTargetType.JAVASCRIPT) {
+                    additionalJavaScriptOutput(writer);
                 }
-                if (sourceMapsFileGenerated) {
-                    assert debugEmitter != null;
-                    DebugInformation debugInfo = debugEmitter.getDebugInformation();
-                    String sourceMapsFileName = targetFileName + ".map";
-                    writer.append("\n//# sourceMappingURL=").append(sourceMapsFileName);
-                    try (Writer sourceMapsOut = new OutputStreamWriter(new FileOutputStream(
-                            new File(targetDirectory, sourceMapsFileName)), "UTF-8")) {
-                        debugInfo.writeAsSourceMaps(sourceMapsOut, "src", targetFileName);
-                    }
-                    log.info("Source maps successfully written");
-                }
-                if (sourceFilesCopied) {
-                    copySourceFiles();
-                    log.info("Source files successfully written");
-                }
+
                 if (incremental) {
                     programCache.flush();
-                    astCache.flush();
+                    if (astCache != null) {
+                        astCache.flush();
+                    }
                     cachedClassSource.flush();
                     symbolTable.flush();
                     fileTable.flush();
                     log.info("Cache updated");
                 }
             }
-            if (runtime == RuntimeCopyOperation.SEPARATE) {
-                resourceToFile("org/teavm/javascript/runtime.js", "runtime.js");
-            }
-            if (mainPageIncluded) {
-                String text;
-                try (Reader reader = new InputStreamReader(classLoader.getResourceAsStream(
-                        "org/teavm/tooling/main.html"), "UTF-8")) {
-                    text = IOUtils.toString(reader).replace("${classes.js}", targetFileName);
-                }
-                File mainPageFile = new File(targetDirectory, "main.html");
-                try (Writer writer = new OutputStreamWriter(new FileOutputStream(mainPageFile), "UTF-8")) {
-                    writer.append(text);
-                }
-            }
         } catch (IOException e) {
             throw new TeaVMToolException("IO error occured", e);
+        }
+    }
+
+    private void additionalJavaScriptOutput(Writer writer) throws IOException {
+        if (mainClass != null) {
+            writer.append("main = $rt_mainStarter(main);\n");
+        }
+
+        if (debugInformationGenerated) {
+            assert debugEmitter != null;
+            DebugInformation debugInfo = debugEmitter.getDebugInformation();
+            try (OutputStream debugInfoOut = new FileOutputStream(new File(targetDirectory,
+                    targetFileName + ".teavmdbg"))) {
+                debugInfo.write(debugInfoOut);
+            }
+            log.info("Debug information successfully written");
+        }
+        if (sourceMapsFileGenerated) {
+            assert debugEmitter != null;
+            DebugInformation debugInfo = debugEmitter.getDebugInformation();
+            String sourceMapsFileName = targetFileName + ".map";
+            writer.append("\n//# sourceMappingURL=").append(sourceMapsFileName);
+            try (Writer sourceMapsOut = new OutputStreamWriter(new FileOutputStream(
+                    new File(targetDirectory, sourceMapsFileName)), "UTF-8")) {
+                debugInfo.writeAsSourceMaps(sourceMapsOut, "src", targetFileName);
+            }
+            log.info("Source maps successfully written");
+        }
+        if (sourceFilesCopied) {
+            copySourceFiles();
+            log.info("Source files successfully written");
+        }
+
+        if (runtime == RuntimeCopyOperation.SEPARATE) {
+            resourceToFile("org/teavm/javascript/runtime.js", "runtime.js");
+        }
+        if (mainPageIncluded) {
+            String text;
+            try (Reader reader = new InputStreamReader(classLoader.getResourceAsStream(
+                    "org/teavm/tooling/main.html"), "UTF-8")) {
+                text = IOUtils.toString(reader).replace("${classes.js}", targetFileName);
+            }
+            File mainPageFile = new File(targetDirectory, "main.html");
+            try (Writer mainPageWriter = new OutputStreamWriter(new FileOutputStream(mainPageFile), "UTF-8")) {
+                mainPageWriter.append(text);
+            }
         }
     }
 
