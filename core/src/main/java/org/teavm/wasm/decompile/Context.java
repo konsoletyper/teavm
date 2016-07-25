@@ -13,17 +13,31 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.wasm.model.expression;
+package org.teavm.wasm.decompile;
 
-public enum WasmFloatBinaryOperation {
-    ADD,
-    SUB,
-    MUL,
-    DIV,
-    EQ,
-    NE,
-    LT,
-    LE,
-    GT,
-    GE
+import org.teavm.common.DominatorTree;
+import org.teavm.common.Graph;
+import org.teavm.common.LoopGraph;
+import org.teavm.model.Program;
+import org.teavm.model.util.VariableType;
+import org.teavm.wasm.model.WasmLocal;
+
+public interface Context {
+    void push(Step step);
+
+    void setLabel(int node, Label label);
+
+    Label getLabel(int node);
+
+    Graph getDomGraph();
+
+    LoopGraph getCfg();
+
+    Program getProgram();
+
+    DominatorTree getDomTree();
+
+    WasmLocal getLocal(int index);
+
+    VariableType getLocalType(int index);
 }

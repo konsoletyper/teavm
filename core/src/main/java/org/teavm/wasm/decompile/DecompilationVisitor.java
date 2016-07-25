@@ -15,6 +15,7 @@
  */
 package org.teavm.wasm.decompile;
 
+import java.util.List;
 import org.teavm.model.InvokeDynamicInstruction;
 import org.teavm.model.instructions.ArrayLengthInstruction;
 import org.teavm.model.instructions.AssignInstruction;
@@ -53,11 +54,19 @@ import org.teavm.model.instructions.RaiseInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.instructions.SwitchInstruction;
 import org.teavm.model.instructions.UnwrapArrayInstruction;
+import org.teavm.wasm.model.expression.WasmExpression;
 
 public class DecompilationVisitor implements InstructionVisitor {
+    private List<WasmExpression> expressions;
+    private Context context;
+
+    public DecompilationVisitor(List<WasmExpression> expressions, Context context) {
+        this.expressions = expressions;
+        this.context = context;
+    }
+
     @Override
     public void visit(EmptyInstruction insn) {
-
     }
 
     @Override

@@ -13,17 +13,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.wasm.model.expression;
+package org.teavm.wasm.decompile;
 
-public enum WasmFloatBinaryOperation {
-    ADD,
-    SUB,
-    MUL,
-    DIV,
-    EQ,
-    NE,
-    LT,
-    LE,
-    GT,
-    GE
+public interface Step {
+    void perform();
 }
