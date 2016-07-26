@@ -165,6 +165,36 @@ public final class GraphUtils {
         return graph.build();
     }
 
+    public static int[] dfs(Graph graph) {
+        int[] result = new int[graph.size()];
+        int[] state = new int[graph.size()];
+        int[] stack = new int[graph.size() * 2];
+        int top = 0;
+        stack[top++] = 0;
+        int index = graph.size();
+
+        while (top > 0) {
+            int node = stack[--top];
+            switch (state[node]) {
+                case 0:
+                    state[node] = 1;
+                    stack[top++] = node;
+                    for (int successor : graph.outgoingEdges(node)) {
+                        if (state[successor] == 0) {
+                            stack[top++] = node;
+                        }
+                    }
+                    break;
+                case 1:
+                    result[node] = --index;
+                    state[node] = 2;
+                    break;
+            }
+        }
+
+        return result;
+    }
+
     public static void splitIrreducibleGraph(Graph graph, int[] weights, GraphSplittingBackend backend) {
         new IrreducibleGraphConverter().convertToReducible(graph, weights, backend);
     }
