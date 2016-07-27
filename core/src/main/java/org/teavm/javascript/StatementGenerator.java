@@ -31,6 +31,8 @@ import org.teavm.ast.InvocationExpr;
 import org.teavm.ast.MonitorEnterStatement;
 import org.teavm.ast.MonitorExitStatement;
 import org.teavm.ast.NodeLocation;
+import org.teavm.ast.OperationType;
+import org.teavm.ast.PrimitiveCastExpr;
 import org.teavm.ast.ReturnStatement;
 import org.teavm.ast.Statement;
 import org.teavm.ast.SwitchClause;
@@ -150,156 +152,48 @@ class StatementGenerator implements InstructionVisitor {
         Variable result = insn.getReceiver();
         switch (insn.getOperation()) {
             case ADD:
-                switch (insn.getOperandType()) {
-                    case INT:
-                        intBinary(first, second, result, BinaryOperation.ADD);
-                        break;
-                    case LONG:
-                        binary(first, second, result, BinaryOperation.ADD_LONG);
-                        break;
-                    default:
-                        binary(first, second, result, BinaryOperation.ADD);
-                        break;
-                }
+                binary(insn.getOperandType(), first, second, result, BinaryOperation.ADD);
                 break;
             case SUBTRACT:
-                switch (insn.getOperandType()) {
-                    case INT:
-                        intBinary(first, second, result, BinaryOperation.SUBTRACT);
-                        break;
-                    case LONG:
-                        binary(first, second, result, BinaryOperation.SUBTRACT_LONG);
-                        break;
-                    default:
-                        binary(first, second, result, BinaryOperation.SUBTRACT);
-                        break;
-                }
+                binary(insn.getOperandType(), first, second, result, BinaryOperation.SUBTRACT);
                 break;
             case MULTIPLY:
-                switch (insn.getOperandType()) {
-                    case INT:
-                        intBinary(first, second, result, BinaryOperation.MULTIPLY);
-                        break;
-                    case LONG:
-                        binary(first, second, result, BinaryOperation.MULTIPLY_LONG);
-                        break;
-                    default:
-                        binary(first, second, result, BinaryOperation.MULTIPLY);
-                        break;
-                }
+                binary(insn.getOperandType(), first, second, result, BinaryOperation.MULTIPLY);
                 break;
             case DIVIDE:
-                switch (insn.getOperandType()) {
-                    case INT:
-                        intBinary(first, second, result, BinaryOperation.DIVIDE);
-                        break;
-                    case LONG:
-                        binary(first, second, result, BinaryOperation.DIVIDE_LONG);
-                        break;
-                    default:
-                        binary(first, second, result, BinaryOperation.DIVIDE);
-                        break;
-                }
+                binary(insn.getOperandType(), first, second, result, BinaryOperation.DIVIDE);
                 break;
             case MODULO:
-                switch (insn.getOperandType()) {
-                    case LONG:
-                        binary(first, second, result, BinaryOperation.MODULO_LONG);
-                        break;
-                    default:
-                        binary(first, second, result, BinaryOperation.MODULO);
-                        break;
-                }
+                binary(insn.getOperandType(), first, second, result, BinaryOperation.MODULO);
                 break;
             case COMPARE:
-                switch (insn.getOperandType()) {
-                    case LONG:
-                        binary(first, second, result, BinaryOperation.COMPARE_LONG);
-                        break;
-                    default:
-                        binary(first, second, result, BinaryOperation.COMPARE);
-                        break;
-                }
+                binary(insn.getOperandType(), first, second, result, BinaryOperation.COMPARE);
                 break;
             case AND:
-                switch (insn.getOperandType()) {
-                    case LONG:
-                        binary(first, second, result, BinaryOperation.BITWISE_AND_LONG);
-                        break;
-                    default:
-                        binary(first, second, result, BinaryOperation.BITWISE_AND);
-                        break;
-                }
+                binary(insn.getOperandType(), first, second, result, BinaryOperation.BITWISE_AND);
                 break;
             case OR:
-                switch (insn.getOperandType()) {
-                    case LONG:
-                        binary(first, second, result, BinaryOperation.BITWISE_OR_LONG);
-                        break;
-                    default:
-                        binary(first, second, result, BinaryOperation.BITWISE_OR);
-                        break;
-                }
+                binary(insn.getOperandType(), first, second, result, BinaryOperation.BITWISE_OR);
                 break;
             case XOR:
-                switch (insn.getOperandType()) {
-                    case LONG:
-                        binary(first, second, result, BinaryOperation.BITWISE_XOR_LONG);
-                        break;
-                    default:
-                        binary(first, second, result, BinaryOperation.BITWISE_XOR);
-                        break;
-                }
+                binary(insn.getOperandType(), first, second, result, BinaryOperation.BITWISE_XOR);
                 break;
             case SHIFT_LEFT:
-                switch (insn.getOperandType()) {
-                    case LONG:
-                        binary(first, second, result, BinaryOperation.LEFT_SHIFT_LONG);
-                        break;
-                    default:
-                        binary(first, second, result, BinaryOperation.LEFT_SHIFT);
-                        break;
-                }
+                binary(insn.getOperandType(), first, second, result, BinaryOperation.LEFT_SHIFT);
                 break;
             case SHIFT_RIGHT:
-                switch (insn.getOperandType()) {
-                    case LONG:
-                        binary(first, second, result, BinaryOperation.RIGHT_SHIFT_LONG);
-                        break;
-                    default:
-                        binary(first, second, result, BinaryOperation.RIGHT_SHIFT);
-                        break;
-                }
+                binary(insn.getOperandType(), first, second, result, BinaryOperation.RIGHT_SHIFT);
                 break;
             case SHIFT_RIGHT_UNSIGNED:
-                switch (insn.getOperandType()) {
-                    case LONG:
-                        binary(first, second, result, BinaryOperation.UNSIGNED_RIGHT_SHIFT_LONG);
-                        break;
-                    default:
-                        binary(first, second, result, BinaryOperation.UNSIGNED_RIGHT_SHIFT);
-                        break;
-                }
+                binary(insn.getOperandType(), first, second, result, BinaryOperation.UNSIGNED_RIGHT_SHIFT);
                 break;
         }
     }
 
     @Override
     public void visit(NegateInstruction insn) {
-        switch (insn.getOperandType()) {
-            case INT:
-                assign(castToInteger(Expr.unary(UnaryOperation.NEGATE, Expr.var(insn.getOperand().getIndex()))),
-                        insn.getReceiver());
-                break;
-            case LONG:
-                assign(Expr.unary(UnaryOperation.NEGATE_LONG, Expr.var(insn.getOperand().getIndex())),
-                        insn.getReceiver());
-                break;
-            default:
-                assign(Expr.unary(UnaryOperation.NEGATE, Expr.var(insn.getOperand().getIndex())),
-                        insn.getReceiver());
-                break;
-        }
+        assign(Expr.unary(UnaryOperation.NEGATE, mapOperandType(insn.getOperandType()),
+                Expr.var(insn.getOperand().getIndex())), insn.getReceiver());
     }
 
     @Override
@@ -318,44 +212,11 @@ class StatementGenerator implements InstructionVisitor {
 
     @Override
     public void visit(CastNumberInstruction insn) {
-        Expr value = Expr.var(insn.getValue().getIndex());
-        switch (insn.getTargetType()) {
-            case INT:
-                switch (insn.getSourceType()) {
-                    case DOUBLE:
-                    case FLOAT:
-                        value = castToInteger(value);
-                        break;
-                    case LONG:
-                        value = castLongToInt(value);
-                        break;
-                    default:
-                        break;
-                }
-                break;
-            case LONG:
-                switch (insn.getSourceType()) {
-                    case INT:
-                        value = castIntToLong(value);
-                        break;
-                    case FLOAT:
-                    case DOUBLE:
-                        value = castToLong(value);
-                        break;
-                    default:
-                        break;
-                }
-                break;
-            case FLOAT:
-            case DOUBLE:
-                if (insn.getSourceType() == NumericOperandType.LONG) {
-                    value = castFromLong(value);
-                }
-                break;
-            default:
-                break;
-        }
-        assign(value, insn.getReceiver());
+        PrimitiveCastExpr expr = new PrimitiveCastExpr();
+        expr.setSource(mapOperandType(insn.getSourceType()));
+        expr.setTarget(mapOperandType(insn.getTargetType()));
+        expr.setValue(Expr.var(insn.getValue().getIndex()));
+        assign(expr, insn.getReceiver());
     }
 
     @Override
@@ -365,13 +226,13 @@ class StatementGenerator implements InstructionVisitor {
             case FROM_INTEGER:
                 switch (insn.getTargetType()) {
                     case BYTE:
-                        value = Expr.unary(UnaryOperation.INT_TO_BYTE, value);
+                        value = Expr.unary(UnaryOperation.INT_TO_BYTE, null, value);
                         break;
                     case SHORT:
-                        value = Expr.unary(UnaryOperation.INT_TO_SHORT, value);
+                        value = Expr.unary(UnaryOperation.INT_TO_SHORT, null, value);
                         break;
                     case CHARACTER:
-                        value = Expr.unary(UnaryOperation.INT_TO_CHAR, value);
+                        value = Expr.unary(UnaryOperation.INT_TO_CHAR, null, value);
                         break;
                 }
                 break;
@@ -385,35 +246,35 @@ class StatementGenerator implements InstructionVisitor {
     public void visit(BranchingInstruction insn) {
         switch (insn.getCondition()) {
             case EQUAL:
-                branch(compare(BinaryOperation.EQUALS, insn.getOperand()), insn.getConsequent(),
+                branch(compare(BinaryOperation.EQUALS, OperationType.INT, insn.getOperand()), insn.getConsequent(),
                         insn.getAlternative());
                 break;
             case NOT_EQUAL:
-                branch(compare(BinaryOperation.NOT_EQUALS, insn.getOperand()), insn.getConsequent(),
+                branch(compare(BinaryOperation.NOT_EQUALS, OperationType.INT, insn.getOperand()), insn.getConsequent(),
                         insn.getAlternative());
                 break;
             case GREATER:
-                branch(compare(BinaryOperation.GREATER, insn.getOperand()), insn.getConsequent(),
+                branch(compare(BinaryOperation.GREATER, OperationType.INT, insn.getOperand()), insn.getConsequent(),
                         insn.getAlternative());
                 break;
             case GREATER_OR_EQUAL:
-                branch(compare(BinaryOperation.GREATER_OR_EQUALS, insn.getOperand()), insn.getConsequent(),
-                        insn.getAlternative());
+                branch(compare(BinaryOperation.GREATER_OR_EQUALS, OperationType.INT, insn.getOperand()),
+                        insn.getConsequent(), insn.getAlternative());
                 break;
             case LESS:
-                branch(compare(BinaryOperation.LESS, insn.getOperand()), insn.getConsequent(),
+                branch(compare(BinaryOperation.LESS, OperationType.INT, insn.getOperand()), insn.getConsequent(),
                         insn.getAlternative());
                 break;
             case LESS_OR_EQUAL:
-                branch(compare(BinaryOperation.LESS_OR_EQUALS, insn.getOperand()), insn.getConsequent(),
-                        insn.getAlternative());
+                branch(compare(BinaryOperation.LESS_OR_EQUALS, OperationType.INT, insn.getOperand()),
+                        insn.getConsequent(), insn.getAlternative());
                 break;
             case NOT_NULL:
-                branch(Expr.binary(BinaryOperation.STRICT_NOT_EQUALS, Expr.var(insn.getOperand().getIndex()),
+                branch(Expr.binary(BinaryOperation.STRICT_NOT_EQUALS, null, Expr.var(insn.getOperand().getIndex()),
                         Expr.constant(null)), insn.getConsequent(), insn.getAlternative());
                 break;
             case NULL:
-                branch(Expr.binary(BinaryOperation.STRICT_EQUALS, Expr.var(insn.getOperand().getIndex()),
+                branch(Expr.binary(BinaryOperation.STRICT_EQUALS, null, Expr.var(insn.getOperand().getIndex()),
                         Expr.constant(null)), insn.getConsequent(), insn.getAlternative());
                 break;
         }
@@ -427,19 +288,19 @@ class StatementGenerator implements InstructionVisitor {
         BasicBlock alternative = insn.getAlternative();
         switch (insn.getCondition()) {
             case EQUAL:
-                branch(withLocation(Expr.binary(BinaryOperation.EQUALS, Expr.var(a), Expr.var(b))),
+                branch(withLocation(Expr.binary(BinaryOperation.EQUALS, OperationType.INT, Expr.var(a), Expr.var(b))),
                         consequent, alternative);
                 break;
             case REFERENCE_EQUAL:
-                branch(withLocation(Expr.binary(BinaryOperation.STRICT_EQUALS, Expr.var(a), Expr.var(b))),
+                branch(withLocation(Expr.binary(BinaryOperation.STRICT_EQUALS, null, Expr.var(a), Expr.var(b))),
                         consequent, alternative);
                 break;
             case NOT_EQUAL:
-                branch(withLocation(Expr.binary(BinaryOperation.NOT_EQUALS, Expr.var(a), Expr.var(b))),
-                        consequent, alternative);
+                branch(withLocation(Expr.binary(BinaryOperation.NOT_EQUALS, OperationType.INT, Expr.var(a),
+                        Expr.var(b))), consequent, alternative);
                 break;
             case REFERENCE_NOT_EQUAL:
-                branch(withLocation(Expr.binary(BinaryOperation.STRICT_NOT_EQUALS, Expr.var(a), Expr.var(b))),
+                branch(withLocation(Expr.binary(BinaryOperation.STRICT_NOT_EQUALS, null, Expr.var(a), Expr.var(b))),
                         consequent, alternative);
                 break;
         }
@@ -562,7 +423,7 @@ class StatementGenerator implements InstructionVisitor {
 
     @Override
     public void visit(ArrayLengthInstruction insn) {
-        assign(Expr.unary(UnaryOperation.LENGTH, Expr.var(insn.getArray().getIndex())), insn.getReceiver());
+        assign(Expr.unary(UnaryOperation.LENGTH, null, Expr.var(insn.getArray().getIndex())), insn.getReceiver());
     }
 
     @Override
@@ -640,32 +501,22 @@ class StatementGenerator implements InstructionVisitor {
         statements.add(stmt);
     }
 
-    private Expr castToInteger(Expr value) {
-        return Expr.binary(BinaryOperation.BITWISE_OR, value, Expr.constant(0));
+    private void binary(NumericOperandType type, int first, int second, Variable result, BinaryOperation op) {
+        assign(Expr.binary(op, mapOperandType(type), Expr.var(first), Expr.var(second)), result);
     }
 
-    private Expr castLongToInt(Expr value) {
-        return Expr.unary(UnaryOperation.LONG_TO_INT, value);
-    }
-
-    private Expr castToLong(Expr value) {
-        return Expr.unary(UnaryOperation.NUM_TO_LONG, value);
-    }
-
-    private Expr castIntToLong(Expr value) {
-        return Expr.unary(UnaryOperation.INT_TO_LONG, value);
-    }
-
-    private Expr castFromLong(Expr value) {
-        return Expr.unary(UnaryOperation.LONG_TO_NUM, value);
-    }
-
-    private void binary(int first, int second, Variable result, BinaryOperation op) {
-        assign(Expr.binary(op, Expr.var(first), Expr.var(second)), result);
-    }
-
-    private void intBinary(int first, int second, Variable result, BinaryOperation op) {
-        assign(castToInteger(Expr.binary(op, Expr.var(first), Expr.var(second))), result);
+    private static OperationType mapOperandType(NumericOperandType type) {
+        switch (type) {
+            case INT:
+                return OperationType.INT;
+            case LONG:
+                return OperationType.LONG;
+            case FLOAT:
+                return OperationType.FLOAT;
+            case DOUBLE:
+                return OperationType.DOUBLE;
+        }
+        throw new IllegalArgumentException(type.toString());
     }
 
     Statement generateJumpStatement(BasicBlock target) {
@@ -706,8 +557,8 @@ class StatementGenerator implements InstructionVisitor {
                 alternative != null ? Arrays.asList(alternative) : Collections.emptyList()));
     }
 
-    private Expr compare(BinaryOperation op, Variable value) {
-        Expr expr = Expr.binary(op, Expr.var(value.getIndex()), Expr.constant(0));
+    private Expr compare(BinaryOperation op, OperationType type, Variable value) {
+        Expr expr = Expr.binary(op, type, Expr.var(value.getIndex()), Expr.constant(0));
         expr.setLocation(currentLocation);
         return expr;
     }
@@ -721,7 +572,7 @@ class StatementGenerator implements InstructionVisitor {
 
     @Override
     public void visit(NullCheckInstruction insn) {
-        assign(Expr.unary(UnaryOperation.NULL_CHECK, Expr.var(insn.getValue().getIndex())), insn.getReceiver());
+        assign(Expr.unary(UnaryOperation.NULL_CHECK, null, Expr.var(insn.getValue().getIndex())), insn.getReceiver());
     }
 
     @Override

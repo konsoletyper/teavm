@@ -25,6 +25,7 @@ import org.teavm.ast.BinaryExpr;
 import org.teavm.ast.BinaryOperation;
 import org.teavm.ast.BlockStatement;
 import org.teavm.ast.BreakStatement;
+import org.teavm.ast.CastExpr;
 import org.teavm.ast.ConditionalExpr;
 import org.teavm.ast.ConditionalStatement;
 import org.teavm.ast.ConstantExpr;
@@ -41,6 +42,7 @@ import org.teavm.ast.MonitorExitStatement;
 import org.teavm.ast.NewArrayExpr;
 import org.teavm.ast.NewExpr;
 import org.teavm.ast.NewMultiArrayExpr;
+import org.teavm.ast.PrimitiveCastExpr;
 import org.teavm.ast.QualificationExpr;
 import org.teavm.ast.ReturnStatement;
 import org.teavm.ast.SequentialStatement;
@@ -114,7 +116,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                 case GREATER:
                 case GREATER_OR_EQUALS: {
                     BinaryExpr comparison = (BinaryExpr) p;
-                    Expr result = BinaryExpr.binary(expr.getOperation(),
+                    Expr result = BinaryExpr.binary(expr.getOperation(), expr.getType(),
                             comparison.getFirstOperand(), comparison.getSecondOperand());
                     result.setLocation(comparison.getLocation());
                     if (invert) {
@@ -335,6 +337,20 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     }
 
     @Override
+    public void visit(CastExpr expr) {
+        expr.getValue().acceptVisitor(this);
+        expr.setValue(resultExpr);
+        resultExpr = expr;
+    }
+
+    @Override
+    public void visit(PrimitiveCastExpr expr) {
+        expr.getValue().acceptVisitor(this);
+        expr.setValue(resultExpr);
+        resultExpr = expr;
+    }
+
+    @Override
     public void visit(AssignmentStatement statement) {
         if (statement.getLeftValue() == null) {
             statement.getRightValue().acceptVisitor(this);
@@ -480,7 +496,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                         if (cond.getAlternative().isEmpty()) {
                             cond.getConsequent().clear();
                             cond.getConsequent().addAll(innerCond.getConsequent());
-                            cond.setCondition(Expr.binary(BinaryOperation.AND, cond.getCondition(),
+                            cond.setCondition(Expr.binary(BinaryOperation.AND, null, cond.getCondition(),
                                     innerCond.getCondition(), cond.getCondition().getLocation()));
                             --i;
                         } else if (cond.getAlternative().size() != 1
@@ -607,7 +623,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                     if (breakStmt.getTarget() == statement) {
                         statement.getBody().remove(0);
                         if (statement.getCondition() != null) {
-                            Expr newCondition = Expr.binary(BinaryOperation.AND, statement.getCondition(),
+                            Expr newCondition = Expr.binary(BinaryOperation.AND, null, statement.getCondition(),
                                     ExprOptimizer.invert(cond.getCondition()));
                             newCondition.setLocation(statement.getCondition().getLocation());
                             statement.setCondition(newCondition);

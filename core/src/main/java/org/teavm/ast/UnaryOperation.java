@@ -15,20 +15,10 @@
  */
 package org.teavm.ast;
 
-/**
- *
- * @author Alexey Andreev
- */
 public enum UnaryOperation {
     NOT,
-    NOT_LONG,
     NEGATE,
-    NEGATE_LONG,
     LENGTH,
-    LONG_TO_NUM,
-    LONG_TO_INT,
-    NUM_TO_LONG,
-    INT_TO_LONG,
     INT_TO_BYTE,
     INT_TO_SHORT,
     INT_TO_CHAR,

@@ -35,6 +35,7 @@ import org.teavm.ast.BinaryExpr;
 import org.teavm.ast.BinaryOperation;
 import org.teavm.ast.BlockStatement;
 import org.teavm.ast.BreakStatement;
+import org.teavm.ast.CastExpr;
 import org.teavm.ast.ClassNode;
 import org.teavm.ast.ConditionalExpr;
 import org.teavm.ast.ConditionalStatement;
@@ -58,6 +59,8 @@ import org.teavm.ast.NewExpr;
 import org.teavm.ast.NewMultiArrayExpr;
 import org.teavm.ast.NodeLocation;
 import org.teavm.ast.NodeModifier;
+import org.teavm.ast.OperationType;
+import org.teavm.ast.PrimitiveCastExpr;
 import org.teavm.ast.QualificationExpr;
 import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.ReturnStatement;
@@ -426,7 +429,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         } catch (NamingException e) {
             throw new RenderingException("Error rendering class " + cls.getName() + ". See cause for details", e);
         } catch (IOException e) {
-            throw new RenderingException("IO error occured", e);
+            throw new RenderingException("IO error occurred", e);
         }
     }
 
@@ -476,7 +479,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         } catch (NamingException e) {
             throw new RenderingException("Error rendering class " + cls.getName() + ". See a cause for details", e);
         } catch (IOException e) {
-            throw new RenderingException("IO error occured", e);
+            throw new RenderingException("IO error occurred", e);
         }
         debugEmitter.emitClass(null);
     }
@@ -552,7 +555,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         } catch (NamingException e) {
             throw new RenderingException("Error rendering class metadata. See a cause for details", e);
         } catch (IOException e) {
-            throw new RenderingException("IO error occured", e);
+            throw new RenderingException("IO error occurred", e);
         }
     }
 
@@ -690,7 +693,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 Renderer.this.async = methodNode.isAsync();
                 methodNode.getGenerator().generate(this, writer, methodNode.getReference());
             } catch (IOException e) {
-                throw new RenderingException("IO error occured", e);
+                throw new RenderingException("IO error occurred", e);
             }
         }
 
@@ -734,7 +737,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 currentPart = 0;
                 method.getBody().acceptVisitor(Renderer.this);
             } catch (IOException e) {
-                throw new RenderingException("IO error occured", e);
+                throw new RenderingException("IO error occurred", e);
             }
         }
 
@@ -846,7 +849,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 writer.append(pointerName()).append(");");
                 writer.softNewLine();
             } catch (IOException e) {
-                throw new RenderingException("IO error occured", e);
+                throw new RenderingException("IO error occurred", e);
             }
         }
 
@@ -969,7 +972,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                         variableName(receiver.getIndex()));
             }
         } catch (IOException e) {
-            throw new RenderingException("IO error occured", e);
+            throw new RenderingException("IO error occurred", e);
         }
     }
 
@@ -1011,7 +1014,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             }
             writer.outdent().append("}").softNewLine();
         } catch (IOException e) {
-            throw new RenderingException("IO error occured", e);
+            throw new RenderingException("IO error occurred", e);
         }
     }
 
@@ -1059,7 +1062,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             }
             writer.outdent().append("}").softNewLine();
         } catch (IOException e) {
-            throw new RenderingException("IO error occured", e);
+            throw new RenderingException("IO error occurred", e);
         }
     }
 
@@ -1094,7 +1097,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             end = oldEnd;
             writer.outdent().append("}").softNewLine();
         } catch (IOException e) {
-            throw new RenderingException("IO error occured", e);
+            throw new RenderingException("IO error occurred", e);
         }
     }
 
@@ -1124,7 +1127,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             visitStatements(statement.getBody());
             writer.outdent().append("}").softNewLine();
         } catch (IOException e) {
-            throw new RenderingException("IO error occured", e);
+            throw new RenderingException("IO error occurred", e);
         }
     }
 
@@ -1144,7 +1147,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 popLocation();
             }
         } catch (IOException e) {
-            throw new RenderingException("IO error occured", e);
+            throw new RenderingException("IO error occurred", e);
         }
     }
 
@@ -1164,7 +1167,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 popLocation();
             }
         } catch (IOException e) {
-            throw new RenderingException("IO error occured", e);
+            throw new RenderingException("IO error occurred", e);
         }
     }
 
@@ -1188,7 +1191,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 popLocation();
             }
         } catch (IOException e) {
-            throw new RenderingException("IO error occured", e);
+            throw new RenderingException("IO error occurred", e);
         }
     }
 
@@ -1209,7 +1212,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 popLocation();
             }
         } catch (IOException e) {
-            throw new RenderingException("IO error occured", e);
+            throw new RenderingException("IO error occurred", e);
         }
     }
 
@@ -1233,7 +1236,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 popLocation();
             }
         } catch (IOException e) {
-            throw new RenderingException("IO error occured", e);
+            throw new RenderingException("IO error occurred", e);
         }
     }
 
@@ -1298,19 +1301,37 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         return minifying ? "$T" : "$thread";
     }
 
-    private void visitBinary(BinaryExpr expr, String op) {
-        try {
-            if (expr.getLocation() != null) {
-                pushLocation(expr.getLocation());
-            }
+    private void visitBinary(BinaryExpr expr, String op, boolean guarded) {
+        if (expr.getLocation() != null) {
+            pushLocation(expr.getLocation());
+        }
+        if (guarded) {
+            visitBinary(BinaryOperation.OR, "|", () -> visitBinary(expr, op, false),
+                    () -> {
+                        try {
+                            writer.append("0");
+                        } catch (IOException e) {
+                            throw new RenderingException("IO error occurred", e);
+                        }
+                    });
+        } else {
+            visitBinary(expr.getOperation(), op, () -> expr.getFirstOperand().acceptVisitor(this),
+                    () -> expr.getSecondOperand().acceptVisitor(this));
+        }
+        if (expr.getLocation() != null) {
+            popLocation();
+        }
+    }
 
+    private void visitBinary(BinaryOperation operation, String infixText, Runnable a, Runnable b) {
+        try {
             Precedence outerPrecedence = precedence;
-            Precedence innerPrecedence = getPrecedence(expr.getOperation());
+            Precedence innerPrecedence = getPrecedence(operation);
             if (innerPrecedence.ordinal() < outerPrecedence.ordinal()) {
                 writer.append('(');
             }
 
-            switch (expr.getOperation()) {
+            switch (operation) {
                 case ADD:
                 case SUBTRACT:
                 case MULTIPLY:
@@ -1329,11 +1350,11 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 default:
                     precedence = innerPrecedence.next();
             }
-            expr.getFirstOperand().acceptVisitor(this);
+            a.run();
 
-            writer.ws().append(op).ws();
+            writer.ws().append(infixText).ws();
 
-            switch (expr.getOperation()) {
+            switch (operation) {
                 case ADD:
                 case MULTIPLY:
                 case AND:
@@ -1347,17 +1368,13 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     precedence = innerPrecedence.next();
                     break;
             }
-            expr.getSecondOperand().acceptVisitor(this);
+            b.run();
 
             if (innerPrecedence.ordinal() < outerPrecedence.ordinal()) {
                 writer.append(')');
             }
-
-            if (expr.getLocation() != null) {
-                popLocation();
-            }
         } catch (IOException e) {
-            throw new RenderingException("IO error occured", e);
+            throw new RenderingException("IO error occurred", e);
         }
     }
 
@@ -1422,109 +1439,116 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
 
     @Override
     public void visit(BinaryExpr expr) {
-        switch (expr.getOperation()) {
-            case ADD:
-                visitBinary(expr, "+");
-                break;
-            case ADD_LONG:
-                visitBinaryFunction(expr, "Long_add");
-                break;
-            case SUBTRACT:
-                visitBinary(expr, "-");
-                break;
-            case SUBTRACT_LONG:
-                visitBinaryFunction(expr, "Long_sub");
-                break;
-            case MULTIPLY:
-                visitBinary(expr, "*");
-                break;
-            case MULTIPLY_LONG:
-                visitBinaryFunction(expr, "Long_mul");
-                break;
-            case DIVIDE:
-                visitBinary(expr, "/");
-                break;
-            case DIVIDE_LONG:
-                visitBinaryFunction(expr, "Long_div");
-                break;
-            case MODULO:
-                visitBinary(expr, "%");
-                break;
-            case MODULO_LONG:
-                visitBinaryFunction(expr, "Long_rem");
-                break;
-            case EQUALS:
-                visitBinary(expr, "==");
-                break;
-            case NOT_EQUALS:
-                visitBinary(expr, "!=");
-                break;
-            case GREATER:
-                visitBinary(expr, ">");
-                break;
-            case GREATER_OR_EQUALS:
-                visitBinary(expr, ">=");
-                break;
-            case LESS:
-                visitBinary(expr, "<");
-                break;
-            case LESS_OR_EQUALS:
-                visitBinary(expr, "<=");
-                break;
-            case STRICT_EQUALS:
-                visitBinary(expr, "===");
-                break;
-            case STRICT_NOT_EQUALS:
-                visitBinary(expr, "!==");
-                break;
-            case COMPARE:
-                visitBinaryFunction(expr, naming.getNameForFunction("$rt_compare"));
-                break;
-            case COMPARE_LONG:
-                visitBinaryFunction(expr, "Long_compare");
-                break;
-            case OR:
-                visitBinary(expr, "||");
-                break;
-            case AND:
-                visitBinary(expr, "&&");
-                break;
-            case BITWISE_OR:
-                visitBinary(expr, "|");
-                break;
-            case BITWISE_OR_LONG:
-                visitBinaryFunction(expr, "Long_or");
-                break;
-            case BITWISE_AND:
-                visitBinary(expr, "&");
-                break;
-            case BITWISE_AND_LONG:
-                visitBinaryFunction(expr, "Long_and");
-                break;
-            case BITWISE_XOR:
-                visitBinary(expr, "^");
-                break;
-            case BITWISE_XOR_LONG:
-                visitBinaryFunction(expr, "Long_xor");
-                break;
-            case LEFT_SHIFT:
-                visitBinary(expr, "<<");
-                break;
-            case LEFT_SHIFT_LONG:
-                visitBinaryFunction(expr, "Long_shl");
-                break;
-            case RIGHT_SHIFT:
-                visitBinary(expr, ">>");
-                break;
-            case RIGHT_SHIFT_LONG:
-                visitBinaryFunction(expr, "Long_shr");
-                break;
-            case UNSIGNED_RIGHT_SHIFT:
-                visitBinary(expr, ">>>");
-                break;
-            case UNSIGNED_RIGHT_SHIFT_LONG:
-                visitBinaryFunction(expr, "Long_shru");
-                break;
+        if (expr.getType() == OperationType.LONG) {
+            switch (expr.getOperation()) {
+                case ADD:
+                    visitBinaryFunction(expr, "Long_add");
+                    break;
+                case SUBTRACT:
+                    visitBinaryFunction(expr, "Long_sub");
+                    break;
+                case MULTIPLY:
+                    visitBinaryFunction(expr, "Long_mul");
+                    break;
+                case DIVIDE:
+                    visitBinaryFunction(expr, "Long_div");
+                    break;
+                case MODULO:
+                    visitBinaryFunction(expr, "Long_rem");
+                    break;
+                case BITWISE_OR:
+                    visitBinaryFunction(expr, "Long_or");
+                    break;
+                case BITWISE_AND:
+                    visitBinaryFunction(expr, "Long_and");
+                    break;
+                case BITWISE_XOR:
+                    visitBinaryFunction(expr, "Long_xor");
+                    break;
+                case LEFT_SHIFT:
+                    visitBinaryFunction(expr, "Long_shl");
+                    break;
+                case RIGHT_SHIFT:
+                    visitBinaryFunction(expr, "Long_shr");
+                    break;
+                case UNSIGNED_RIGHT_SHIFT:
+                    visitBinaryFunction(expr, "Long_shru");
+                    break;
+                case COMPARE:
+                    visitBinaryFunction(expr, "Long_compare");
+                    break;
+                default:
+                    break;
+            }
+        } else {
+            switch (expr.getOperation()) {
+                case ADD:
+                    visitBinary(expr, "+", expr.getType() == OperationType.INT);
+                    break;
+                case SUBTRACT:
+                    visitBinary(expr, "-", expr.getType() == OperationType.INT);
+                    break;
+                case MULTIPLY:
+                    visitBinary(expr, "*", expr.getType() == OperationType.INT);
+                    break;
+                case DIVIDE:
+                    visitBinary(expr, "/", expr.getType() == OperationType.INT);
+                    break;
+                case MODULO:
+                    visitBinary(expr, "%", expr.getType() == OperationType.INT);
+                    break;
+                case EQUALS:
+                    visitBinary(expr, "==", false);
+                    break;
+                case NOT_EQUALS:
+                    visitBinary(expr, "!=", false);
+                    break;
+                case GREATER:
+                    visitBinary(expr, ">", false);
+                    break;
+                case GREATER_OR_EQUALS:
+                    visitBinary(expr, ">=", false);
+                    break;
+                case LESS:
+                    visitBinary(expr, "<", false);
+                    break;
+                case LESS_OR_EQUALS:
+                    visitBinary(expr, "<=", false);
+                    break;
+                case STRICT_EQUALS:
+                    visitBinary(expr, "===", false);
+                    break;
+                case STRICT_NOT_EQUALS:
+                    visitBinary(expr, "!==", false);
+                    break;
+                case COMPARE:
+                    visitBinaryFunction(expr, naming.getNameForFunction("$rt_compare"));
+                    break;
+                case OR:
+                    visitBinary(expr, "||", false);
+                    break;
+                case AND:
+                    visitBinary(expr, "&&", false);
+                    break;
+                case BITWISE_OR:
+                    visitBinary(expr, "|", expr.getType() == OperationType.INT);
+                    break;
+                case BITWISE_AND:
+                    visitBinary(expr, "&", expr.getType() == OperationType.INT);
+                    break;
+                case BITWISE_XOR:
+                    visitBinary(expr, "^", expr.getType() == OperationType.INT);
+                    break;
+                case LEFT_SHIFT:
+                    visitBinary(expr, "<<", expr.getType() == OperationType.INT);
+                    break;
+                case RIGHT_SHIFT:
+                    visitBinary(expr, ">>", expr.getType() == OperationType.INT);
+                    break;
+                case UNSIGNED_RIGHT_SHIFT:
+                    visitBinary(expr, ">>>", expr.getType() == OperationType.INT);
+                    break;
+            }
         }
     }
 
@@ -1537,67 +1561,46 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             Precedence outerPrecedence = precedence;
             switch (expr.getOperation()) {
                 case NOT: {
-                    if (outerPrecedence.ordinal() > Precedence.UNARY.ordinal()) {
-                        writer.append('(');
-                    }
-                    writer.append("!");
-                    precedence = Precedence.UNARY;
-                    expr.getOperand().acceptVisitor(this);
-                    if (outerPrecedence.ordinal() > Precedence.UNARY.ordinal()) {
+                    if (expr.getType() == OperationType.LONG) {
+                        writer.append("Long_not(");
+                        precedence = Precedence.min();
+                        expr.getOperand().acceptVisitor(this);
                         writer.append(')');
+                    } else {
+                        if (outerPrecedence.ordinal() > Precedence.UNARY.ordinal()) {
+                            writer.append('(');
+                        }
+                        writer.append(expr.getType() == null ? "!" : "~");
+                        precedence = Precedence.UNARY;
+                        expr.getOperand().acceptVisitor(this);
+                        if (outerPrecedence.ordinal() > Precedence.UNARY.ordinal()) {
+                            writer.append(')');
+                        }
                     }
                     break;
                 }
                 case NEGATE:
-                    if (outerPrecedence.ordinal() > Precedence.UNARY.ordinal()) {
-                        writer.append('(');
-                    }
-                    writer.append(" -");
-                    precedence = Precedence.UNARY;
-                    expr.getOperand().acceptVisitor(this);
-                    if (outerPrecedence.ordinal() > Precedence.UNARY.ordinal()) {
+                    if (expr.getType() == OperationType.LONG) {
+                        writer.append("Long_not(");
+                        precedence = Precedence.min();
+                        expr.getOperand().acceptVisitor(this);
                         writer.append(')');
+                    } else {
+                        if (outerPrecedence.ordinal() > Precedence.UNARY.ordinal()) {
+                            writer.append('(');
+                        }
+                        writer.append(" -");
+                        precedence = Precedence.UNARY;
+                        expr.getOperand().acceptVisitor(this);
+                        if (outerPrecedence.ordinal() > Precedence.UNARY.ordinal()) {
+                            writer.append(')');
+                        }
                     }
                     break;
                 case LENGTH:
                     precedence = Precedence.MEMBER_ACCESS;
                     expr.getOperand().acceptVisitor(this);
                     writer.append(".length");
-                    break;
-                case INT_TO_LONG:
-                    writer.append("Long_fromInt(");
-                    precedence = Precedence.min();
-                    expr.getOperand().acceptVisitor(this);
-                    writer.append(')');
-                    break;
-                case NUM_TO_LONG:
-                    writer.append("Long_fromNumber(");
-                    precedence = Precedence.min();
-                    expr.getOperand().acceptVisitor(this);
-                    writer.append(')');
-                    break;
-                case LONG_TO_NUM:
-                    writer.append("Long_toNumber(");
-                    precedence = Precedence.min();
-                    expr.getOperand().acceptVisitor(this);
-                    writer.append(')');
-                    break;
-                case LONG_TO_INT:
-                    precedence = Precedence.MEMBER_ACCESS;
-                    expr.getOperand().acceptVisitor(this);
-                    writer.append(".lo");
-                    break;
-                case NEGATE_LONG:
-                    writer.append("Long_neg(");
-                    precedence = Precedence.min();
-                    expr.getOperand().acceptVisitor(this);
-                    writer.append(')');
-                    break;
-                case NOT_LONG:
-                    writer.append("Long_not(");
-                    precedence = Precedence.min();
-                    expr.getOperand().acceptVisitor(this);
-                    writer.append(')');
                     break;
                 case INT_TO_BYTE:
                     if (outerPrecedence.ordinal() > Precedence.BITWISE_SHIFT.ordinal()) {
@@ -1641,6 +1644,73 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             }
             if (expr.getLocation() != null) {
                 popLocation();
+            }
+        } catch (IOException e) {
+            throw new RenderingException("IO error occured", e);
+        }
+    }
+
+    @Override
+    public void visit(CastExpr expr) {
+        expr.getValue().acceptVisitor(this);
+    }
+
+    @Override
+    public void visit(PrimitiveCastExpr expr) {
+        try {
+            if (expr.getLocation() != null) {
+                pushLocation(expr.getLocation());
+            }
+            switch (expr.getSource()) {
+                case INT:
+                    if (expr.getTarget() == OperationType.LONG) {
+                        writer.append("Long_fromInt(");
+                        precedence = Precedence.min();
+                        expr.getValue().acceptVisitor(this);
+                        writer.append(')');
+                    } else {
+                        expr.getValue().acceptVisitor(this);
+                    }
+                    break;
+                case LONG:
+                    switch (expr.getTarget()) {
+                        case INT:
+                            precedence = Precedence.MEMBER_ACCESS;
+                            expr.getValue().acceptVisitor(this);
+                            writer.append(".lo");
+                            break;
+                        case FLOAT:
+                        case DOUBLE:
+                            writer.append("Long_toNumber(");
+                            precedence = Precedence.min();
+                            expr.getValue().acceptVisitor(this);
+                            writer.append(')');
+                            break;
+                        default:
+                            expr.getValue().acceptVisitor(this);
+                    }
+                    break;
+                case FLOAT:
+                case DOUBLE:
+                    switch (expr.getTarget()) {
+                        case LONG:
+                            writer.append("Long_fromNumber(");
+                            precedence = Precedence.min();
+                            expr.getValue().acceptVisitor(this);
+                            writer.append(')');
+                            break;
+                        case INT:
+                            precedence = Precedence.BITWISE_OR;
+                            expr.getValue().acceptVisitor(this);
+                            writer.ws().append("|").ws().append("0");
+                            break;
+                        default:
+                            expr.getValue().acceptVisitor(this);
+                    }
+                    break;
+            }
+            if (expr.getLocation() != null) {
+                pushLocation(expr.getLocation());
             }
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);
@@ -1856,7 +1926,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 popLocation();
             }
         } catch (IOException e) {
-            throw new RenderingException("IO error occured", e);
+            throw new RenderingException("IO error occurred", e);
         }
     }
 
@@ -1873,7 +1943,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 popLocation();
             }
         } catch (IOException e) {
-            throw new RenderingException("IO error occured", e);
+            throw new RenderingException("IO error occurred", e);
         }
     }
 
@@ -1963,7 +2033,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 popLocation();
             }
         } catch (IOException e) {
-            throw new RenderingException("IO error occured", e);
+            throw new RenderingException("IO error occurred", e);
         }
     }
 
@@ -1986,7 +2056,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 popLocation();
             }
         } catch (IOException e) {
-            throw new RenderingException("IO error occured", e);
+            throw new RenderingException("IO error occurred", e);
         }
     }
 
@@ -2002,7 +2072,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 popLocation();
             }
         } catch (IOException e) {
-            throw new RenderingException("IO error occured", e);
+            throw new RenderingException("IO error occurred", e);
         }
     }
 
@@ -2075,7 +2145,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 popLocation();
             }
         } catch (IOException e) {
-            throw new RenderingException("IO error occured", e);
+            throw new RenderingException("IO error occurred", e);
         }
     }
 
@@ -2137,7 +2207,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 popLocation();
             }
         } catch (IOException e) {
-            throw new RenderingException("IO error occured", e);
+            throw new RenderingException("IO error occurred", e);
         }
     }
 
@@ -2168,7 +2238,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 popLocation();
             }
         } catch (IOException e) {
-            throw new RenderingException("IO error occured", e);
+            throw new RenderingException("IO error occurred", e);
         }
     }
 
@@ -2221,7 +2291,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             writer.outdent().append("}").softNewLine();
             writer.outdent().append("}").softNewLine();
         } catch (IOException e) {
-            throw new RenderingException("IO error occured", e);
+            throw new RenderingException("IO error occurred", e);
         }
     }
 
@@ -2236,7 +2306,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 writer.append("continue ").append(mainLoopName()).append(";").softNewLine();
             }
         } catch (IOException ex) {
-            throw new RenderingException("IO error occured", ex);
+            throw new RenderingException("IO error occurred", ex);
         }
     }
 
@@ -2260,7 +2330,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 writer.append(");").softNewLine();
             }
         } catch (IOException ex) {
-            throw new RenderingException("IO error occured", ex);
+            throw new RenderingException("IO error occurred", ex);
         }
     }
 
@@ -2290,7 +2360,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 writer.append(");").softNewLine();
             }
         } catch (IOException ex) {
-            throw new RenderingException("IO error occured", ex);
+            throw new RenderingException("IO error occurred", ex);
         }
     }
 

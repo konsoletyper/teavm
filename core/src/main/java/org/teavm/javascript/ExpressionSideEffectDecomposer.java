@@ -17,6 +17,7 @@ package org.teavm.javascript;
 
 import java.util.List;
 import org.teavm.ast.BinaryExpr;
+import org.teavm.ast.CastExpr;
 import org.teavm.ast.ConditionalExpr;
 import org.teavm.ast.ConditionalStatement;
 import org.teavm.ast.ConstantExpr;
@@ -27,6 +28,7 @@ import org.teavm.ast.InvocationExpr;
 import org.teavm.ast.NewArrayExpr;
 import org.teavm.ast.NewExpr;
 import org.teavm.ast.NewMultiArrayExpr;
+import org.teavm.ast.PrimitiveCastExpr;
 import org.teavm.ast.QualificationExpr;
 import org.teavm.ast.Statement;
 import org.teavm.ast.SubscriptExpr;
@@ -112,5 +114,15 @@ public class ExpressionSideEffectDecomposer implements ExprVisitor {
     @Override
     public void visit(InstanceOfExpr expr) {
         expr.getExpr().acceptVisitor(this);
+    }
+
+    @Override
+    public void visit(CastExpr expr) {
+        expr.getValue().acceptVisitor(this);
+    }
+
+    @Override
+    public void visit(PrimitiveCastExpr expr) {
+        expr.getValue().acceptVisitor(this);
     }
 }

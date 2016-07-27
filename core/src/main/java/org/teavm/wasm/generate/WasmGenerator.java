@@ -13,10 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.wasm.decompile;
+package org.teavm.wasm.generate;
 
-import org.teavm.wasm.model.expression.WasmBlock;
-
-public interface Label {
-    WasmBlock getTarget();
+public class WasmGenerator {
 }

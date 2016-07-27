@@ -17,12 +17,9 @@ package org.teavm.ast;
 
 import java.util.Map;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class BinaryExpr extends Expr {
     private BinaryOperation operation;
+    private OperationType type;
     private Expr firstOperand;
     private Expr secondOperand;
 
@@ -50,6 +47,14 @@ public class BinaryExpr extends Expr {
         this.secondOperand = secondOperand;
     }
 
+    public OperationType getType() {
+        return type;
+    }
+
+    public void setType(OperationType type) {
+        this.type = type;
+    }
+
     @Override
     public void acceptVisitor(ExprVisitor visitor) {
         visitor.visit(this);
@@ -66,6 +71,7 @@ public class BinaryExpr extends Expr {
         copy.setFirstOperand(firstOperand != null ? firstOperand.clone(cache) : null);
         copy.setSecondOperand(secondOperand != null ? secondOperand.clone(cache) : null);
         copy.setOperation(operation);
+        copy.setType(type);
         return copy;
     }
 }

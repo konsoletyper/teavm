@@ -23,6 +23,7 @@ import org.teavm.ast.AsyncMethodPart;
 import org.teavm.ast.BinaryExpr;
 import org.teavm.ast.BlockStatement;
 import org.teavm.ast.BreakStatement;
+import org.teavm.ast.CastExpr;
 import org.teavm.ast.ClassNode;
 import org.teavm.ast.ConditionalExpr;
 import org.teavm.ast.ConditionalStatement;
@@ -44,6 +45,7 @@ import org.teavm.ast.NewArrayExpr;
 import org.teavm.ast.NewExpr;
 import org.teavm.ast.NewMultiArrayExpr;
 import org.teavm.ast.NodeModifier;
+import org.teavm.ast.PrimitiveCastExpr;
 import org.teavm.ast.QualificationExpr;
 import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.ReturnStatement;
@@ -394,5 +396,15 @@ class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, MethodNod
         } else {
             consumer.consumeFunction("$rt_isInstance");
         }
+    }
+
+    @Override
+    public void visit(CastExpr expr) {
+        expr.getValue().acceptVisitor(this);
+    }
+
+    @Override
+    public void visit(PrimitiveCastExpr expr) {
+        expr.getValue().acceptVisitor(this);
     }
 }

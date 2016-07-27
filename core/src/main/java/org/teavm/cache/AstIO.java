@@ -31,6 +31,7 @@ import org.teavm.ast.BinaryExpr;
 import org.teavm.ast.BinaryOperation;
 import org.teavm.ast.BlockStatement;
 import org.teavm.ast.BreakStatement;
+import org.teavm.ast.CastExpr;
 import org.teavm.ast.ConditionalExpr;
 import org.teavm.ast.ConditionalStatement;
 import org.teavm.ast.ConstantExpr;
@@ -51,6 +52,8 @@ import org.teavm.ast.NewExpr;
 import org.teavm.ast.NewMultiArrayExpr;
 import org.teavm.ast.NodeLocation;
 import org.teavm.ast.NodeModifier;
+import org.teavm.ast.OperationType;
+import org.teavm.ast.PrimitiveCastExpr;
 import org.teavm.ast.QualificationExpr;
 import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.ReturnStatement;
@@ -428,6 +431,7 @@ public class AstIO {
             try {
                 output.writeByte(0);
                 output.writeByte(expr.getOperation().ordinal());
+                output.writeByte(expr.getType() != null ? expr.getType().ordinal() + 1 : 0);
                 writeExpr(expr.getFirstOperand());
                 writeExpr(expr.getSecondOperand());
             } catch (IOException e) {
@@ -440,6 +444,7 @@ public class AstIO {
             try {
                 output.writeByte(1);
                 output.writeByte(expr.getOperation().ordinal());
+                output.writeByte(expr.getType() != null ? expr.getType().ordinal() + 1 : 0);
                 writeExpr(expr.getOperand());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
@@ -603,6 +608,29 @@ public class AstIO {
                 output.writeByte(22);
                 writeExpr(expr.getExpr());
                 output.writeInt(symbolTable.lookup(expr.getType().toString()));
+            } catch (IOException e) {
+                throw new IOExceptionWrapper(e);
+            }
+        }
+
+        @Override
+        public void visit(CastExpr expr) {
+            try {
+                output.writeByte(23);
+                output.writeInt(symbolTable.lookup(expr.getTarget().toString()));
+                writeExpr(expr.getValue());
+            } catch (IOException e) {
+                throw new IOExceptionWrapper(e);
+            }
+        }
+
+        @Override
+        public void visit(PrimitiveCastExpr expr) {
+            try {
+                output.writeByte(24);
+                output.writeByte(expr.getSource().ordinal());
+                output.writeByte(expr.getTarget().ordinal());
+                writeExpr(expr.getValue());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -808,6 +836,8 @@ public class AstIO {
             case 0: {
                 BinaryExpr expr = new BinaryExpr();
                 expr.setOperation(binaryOperations[input.readByte()]);
+                byte valueType = input.readByte();
+                expr.setType(valueType > 0 ? OperationType.values()[valueType] : null);
                 expr.setFirstOperand(readExpr(input));
                 expr.setSecondOperand(readExpr(input));
                 return expr;
@@ -815,6 +845,8 @@ public class AstIO {
             case 1: {
                 UnaryExpr expr = new UnaryExpr();
                 expr.setOperation(unaryOperations[input.readByte()]);
+                byte valueType = input.readByte();
+                expr.setType(valueType > 0 ? OperationType.values()[valueType] : null);
                 expr.setOperand(readExpr(input));
                 return expr;
             }
@@ -921,6 +953,19 @@ public class AstIO {
                 InstanceOfExpr expr = new InstanceOfExpr();
                 expr.setExpr(readExpr(input));
                 expr.setType(ValueType.parse(symbolTable.at(input.readInt())));
+                return expr;
+            }
+            case 23: {
+                CastExpr expr = new CastExpr();
+                expr.setTarget(ValueType.parse(symbolTable.at(input.readInt())));
+                expr.setValue(readExpr(input));
+                return expr;
+            }
+            case 24: {
+                PrimitiveCastExpr expr = new PrimitiveCastExpr();
+                expr.setSource(OperationType.values()[input.readByte()]);
+                expr.setTarget(OperationType.values()[input.readByte()]);
+                expr.setValue(readExpr(input));
                 return expr;
             }
             default:

@@ -13,19 +13,11 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.wasm.decompile;
+package org.teavm.ast;
 
-import org.teavm.wasm.model.expression.WasmBlock;
-
-public class BlockBreakLabel implements Label {
-    private WasmBlock target;
-
-    public BlockBreakLabel(WasmBlock target) {
-        this.target = target;
-    }
-
-    @Override
-    public WasmBlock getTarget() {
-        return target;
-    }
+public enum OperationType {
+    INT,
+    LONG,
+    FLOAT,
+    DOUBLE
 }

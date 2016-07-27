@@ -21,10 +21,6 @@ import org.teavm.ast.Expr;
 import org.teavm.ast.UnaryExpr;
 import org.teavm.ast.UnaryOperation;
 
-/**
- *
- * @author Alexey Andreev
- */
 final class ExprOptimizer {
     private ExprOptimizer() {
     }
@@ -41,21 +37,21 @@ final class ExprOptimizer {
             Expr b = binary.getSecondOperand();
             switch (binary.getOperation()) {
                 case EQUALS:
-                    return Expr.binary(BinaryOperation.NOT_EQUALS, a, b, expr.getLocation());
+                    return Expr.binary(BinaryOperation.NOT_EQUALS, binary.getType(), a, b, expr.getLocation());
                 case NOT_EQUALS:
-                    return Expr.binary(BinaryOperation.EQUALS, a, b, expr.getLocation());
+                    return Expr.binary(BinaryOperation.EQUALS, binary.getType(), a, b, expr.getLocation());
                 case LESS:
-                    return Expr.binary(BinaryOperation.GREATER_OR_EQUALS, a, b, expr.getLocation());
+                    return Expr.binary(BinaryOperation.GREATER_OR_EQUALS, binary.getType(), a, b, expr.getLocation());
                 case LESS_OR_EQUALS:
-                    return Expr.binary(BinaryOperation.GREATER, a, b);
+                    return Expr.binary(BinaryOperation.GREATER, binary.getType(), a, b);
                 case GREATER:
-                    return Expr.binary(BinaryOperation.LESS_OR_EQUALS, a, b, expr.getLocation());
+                    return Expr.binary(BinaryOperation.LESS_OR_EQUALS, binary.getType(), a, b, expr.getLocation());
                 case GREATER_OR_EQUALS:
-                    return Expr.binary(BinaryOperation.LESS, a, b, expr.getLocation());
+                    return Expr.binary(BinaryOperation.LESS, binary.getType(), a, b, expr.getLocation());
                 case STRICT_EQUALS:
-                    return Expr.binary(BinaryOperation.STRICT_NOT_EQUALS, a, b, expr.getLocation());
+                    return Expr.binary(BinaryOperation.STRICT_NOT_EQUALS, binary.getType(), a, b, expr.getLocation());
                 case STRICT_NOT_EQUALS:
-                    return Expr.binary(BinaryOperation.STRICT_EQUALS, a, b, expr.getLocation());
+                    return Expr.binary(BinaryOperation.STRICT_EQUALS, binary.getType(), a, b, expr.getLocation());
                 default:
                     break;
             }

@@ -18,10 +18,6 @@ package org.teavm.model.instructions;
 import org.teavm.model.Instruction;
 import org.teavm.model.Variable;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class BinaryInstruction extends Instruction {
     private BinaryOperation operation;
     private Variable receiver;

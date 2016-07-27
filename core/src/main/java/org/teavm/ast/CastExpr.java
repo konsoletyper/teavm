@@ -16,34 +16,26 @@
 package org.teavm.ast;
 
 import java.util.Map;
+import org.teavm.model.ValueType;
 
-public class UnaryExpr extends Expr {
-    private UnaryOperation operation;
-    private Expr operand;
-    private OperationType type;
+public class CastExpr extends Expr {
+    private Expr value;
+    private ValueType target;
 
-    public UnaryOperation getOperation() {
-        return operation;
+    public Expr getValue() {
+        return value;
     }
 
-    public void setOperation(UnaryOperation operation) {
-        this.operation = operation;
+    public void setValue(Expr value) {
+        this.value = value;
     }
 
-    public Expr getOperand() {
-        return operand;
+    public ValueType getTarget() {
+        return target;
     }
 
-    public void setOperand(Expr operand) {
-        this.operand = operand;
-    }
-
-    public OperationType getType() {
-        return type;
-    }
-
-    public void setType(OperationType type) {
-        this.type = type;
+    public void setTarget(ValueType target) {
+        this.target = target;
     }
 
     @Override
@@ -53,14 +45,9 @@ public class UnaryExpr extends Expr {
 
     @Override
     protected Expr clone(Map<Expr, Expr> cache) {
-        Expr known = cache.get(this);
-        if (known != null) {
-            return known;
-        }
-        UnaryExpr copy = new UnaryExpr();
-        copy.setOperation(operation);
-        copy.setOperand(operand != null ? operand.clone(cache) : null);
-        copy.setType(type);
+        CastExpr copy = new CastExpr();
+        copy.value = value.clone(cache);
+        copy.target = target;
         return copy;
     }
 }

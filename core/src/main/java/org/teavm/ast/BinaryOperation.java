@@ -15,21 +15,12 @@
  */
 package org.teavm.ast;
 
-/**
- *
- * @author Alexey Andreev
- */
 public enum BinaryOperation {
     ADD,
-    ADD_LONG,
     SUBTRACT,
-    SUBTRACT_LONG,
     MULTIPLY,
-    MULTIPLY_LONG,
     DIVIDE,
-    DIVIDE_LONG,
     MODULO,
-    MODULO_LONG,
     EQUALS,
     NOT_EQUALS,
     STRICT_EQUALS,
@@ -41,17 +32,10 @@ public enum BinaryOperation {
     AND,
     OR,
     COMPARE,
-    COMPARE_LONG,
     BITWISE_AND,
-    BITWISE_AND_LONG,
     BITWISE_OR,
-    BITWISE_OR_LONG,
     BITWISE_XOR,
-    BITWISE_XOR_LONG,
     LEFT_SHIFT,
-    LEFT_SHIFT_LONG,
     RIGHT_SHIFT,
-    RIGHT_SHIFT_LONG,
-    UNSIGNED_RIGHT_SHIFT,
-    UNSIGNED_RIGHT_SHIFT_LONG
+    UNSIGNED_RIGHT_SHIFT
 }
