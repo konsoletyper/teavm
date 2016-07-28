@@ -20,10 +20,6 @@ import org.teavm.common.Mapper;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderSource;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class MapperClassHolderSource implements ClassHolderSource {
     private Mapper<String, ClassHolder> mapper;
 

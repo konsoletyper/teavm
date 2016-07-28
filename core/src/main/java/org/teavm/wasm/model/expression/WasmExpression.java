@@ -18,4 +18,6 @@ package org.teavm.wasm.model.expression;
 public abstract class WasmExpression {
     WasmExpression() {
     }
+
+    public abstract void acceptVisitor(WasmExpressionVisitor visitor);
 }

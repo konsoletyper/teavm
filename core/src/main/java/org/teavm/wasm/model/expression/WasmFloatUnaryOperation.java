@@ -23,13 +23,5 @@ public enum WasmFloatUnaryOperation {
     FLOOR,
     TRUNC,
     NEAREST,
-    MIN,
-    MAX,
-    SQRT,
-    EQ,
-    NE,
-    LT,
-    LE,
-    GT,
-    GE
+    SQRT
 }

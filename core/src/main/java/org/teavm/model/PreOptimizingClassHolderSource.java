@@ -15,14 +15,14 @@
  */
 package org.teavm.model;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.teavm.optimization.GlobalValueNumbering;
 import org.teavm.optimization.UnusedVariableElimination;
 
 public class PreOptimizingClassHolderSource implements ClassHolderSource {
     private ClassHolderSource innerClassSource;
-    private Map<String, ClassHolder> cache = new HashMap<>();
+    private Map<String, ClassHolder> cache = new LinkedHashMap<>();
 
     public PreOptimizingClassHolderSource(ClassHolderSource innerClassSource) {
         this.innerClassSource = innerClassSource;

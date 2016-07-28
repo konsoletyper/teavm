@@ -18,12 +18,15 @@ package org.teavm.wasm.model.expression;
 import java.util.Objects;
 import org.teavm.wasm.model.WasmLocal;
 
-public class WasmLocalReference extends WasmExpression {
+public class WasmSetLocal extends WasmExpression {
     private WasmLocal local;
+    private WasmExpression value;
 
-    public WasmLocalReference(WasmLocal local) {
+    public WasmSetLocal(WasmLocal local, WasmExpression value) {
         Objects.requireNonNull(local);
+        Objects.requireNonNull(value);
         this.local = local;
+        this.value = value;
     }
 
     public WasmLocal getLocal() {
@@ -33,5 +36,19 @@ public class WasmLocalReference extends WasmExpression {
     public void setLocal(WasmLocal local) {
         Objects.requireNonNull(local);
         this.local = local;
+    }
+
+    public WasmExpression getValue() {
+        return value;
+    }
+
+    public void setValue(WasmExpression value) {
+        Objects.requireNonNull(value);
+        this.value = value;
+    }
+
+    @Override
+    public void acceptVisitor(WasmExpressionVisitor visitor) {
+        visitor.visit(this);
     }
 }

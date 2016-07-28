@@ -25,7 +25,7 @@ public final class WasmMangling {
     }
 
     public static String mangleMethod(MethodReference method) {
-        StringBuilder sb = new StringBuilder("method$" + mangleString(method.getClassName()) + "$");
+        StringBuilder sb = new StringBuilder("method_" + mangleString(method.getClassName()) + "_");
         String name = mangleString(method.getName());
         sb.append(mangleType(method.getReturnType()));
         sb.append(name.length() + "_" + name);
@@ -41,8 +41,6 @@ public final class WasmMangling {
             char c = string.charAt(i);
             switch (c) {
                 case '$':
-                case '.':
-                case '-':
                     sb.append(c);
                     break;
                 case '_':

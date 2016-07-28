@@ -54,4 +54,9 @@ public class WasmBranch extends WasmExpression {
     public void setResult(WasmExpression result) {
         this.result = result;
     }
+
+    @Override
+    public void acceptVisitor(WasmExpressionVisitor visitor) {
+        visitor.visit(this);
+    }
 }

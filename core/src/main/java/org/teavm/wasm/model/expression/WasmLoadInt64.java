@@ -55,4 +55,9 @@ public class WasmLoadInt64 extends WasmExpression {
         Objects.requireNonNull(convertFrom);
         this.convertFrom = convertFrom;
     }
+
+    @Override
+    public void acceptVisitor(WasmExpressionVisitor visitor) {
+        visitor.visit(this);
+    }
 }

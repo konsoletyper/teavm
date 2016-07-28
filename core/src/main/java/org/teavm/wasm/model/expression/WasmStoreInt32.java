@@ -68,4 +68,9 @@ public class WasmStoreInt32 extends WasmExpression {
         Objects.requireNonNull(convertTo);
         this.convertTo = convertTo;
     }
+
+    @Override
+    public void acceptVisitor(WasmExpressionVisitor visitor) {
+        visitor.visit(this);
+    }
 }

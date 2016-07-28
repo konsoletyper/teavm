@@ -61,29 +61,31 @@ import org.teavm.ast.VariableExpr;
 import org.teavm.ast.WhileStatement;
 import org.teavm.wasm.model.WasmFunction;
 import org.teavm.wasm.model.WasmLocal;
-import org.teavm.wasm.model.expression.WasmAssignment;
 import org.teavm.wasm.model.expression.WasmBlock;
 import org.teavm.wasm.model.expression.WasmBranch;
 import org.teavm.wasm.model.expression.WasmBreak;
 import org.teavm.wasm.model.expression.WasmCall;
 import org.teavm.wasm.model.expression.WasmConditional;
 import org.teavm.wasm.model.expression.WasmConversion;
+import org.teavm.wasm.model.expression.WasmDrop;
 import org.teavm.wasm.model.expression.WasmExpression;
 import org.teavm.wasm.model.expression.WasmFloat32Constant;
 import org.teavm.wasm.model.expression.WasmFloat64Constant;
 import org.teavm.wasm.model.expression.WasmFloatBinary;
 import org.teavm.wasm.model.expression.WasmFloatBinaryOperation;
 import org.teavm.wasm.model.expression.WasmFloatType;
+import org.teavm.wasm.model.expression.WasmGetLocal;
 import org.teavm.wasm.model.expression.WasmInt32Constant;
 import org.teavm.wasm.model.expression.WasmInt64Constant;
 import org.teavm.wasm.model.expression.WasmIntBinary;
 import org.teavm.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.wasm.model.expression.WasmIntType;
-import org.teavm.wasm.model.expression.WasmLocalReference;
 import org.teavm.wasm.model.expression.WasmReturn;
+import org.teavm.wasm.model.expression.WasmSetLocal;
 import org.teavm.wasm.model.expression.WasmSwitch;
 
 class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
+    private int firstVariable;
     private WasmFunction function;
     private IdentifiedStatement currentContinueTarget;
     private IdentifiedStatement currentBreakTarget;
@@ -92,8 +94,9 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     private Set<WasmBlock> usedBlocks = new HashSet<>();
     WasmExpression result;
 
-    public WasmGenerationVisitor(WasmFunction function) {
+    public WasmGenerationVisitor(WasmFunction function, int firstVariable) {
         this.function = function;
+        this.firstVariable = firstVariable;
     }
 
     @Override
@@ -331,11 +334,14 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     @Override
     public void visit(AssignmentStatement statement) {
         Expr left = statement.getLeftValue();
-        if (left instanceof VariableExpr) {
-            VariableExpr varExpr = (VariableExpr) left;
-            WasmLocal local = function.getLocalVariables().get(varExpr.getIndex());
+        if (left == null) {
             statement.getRightValue().acceptVisitor(this);
-            result = new WasmAssignment(local, result);
+            result = new WasmDrop(result);
+        } else if (left instanceof VariableExpr) {
+            VariableExpr varExpr = (VariableExpr) left;
+            WasmLocal local = function.getLocalVariables().get(varExpr.getIndex() - firstVariable);
+            statement.getRightValue().acceptVisitor(this);
+            result = new WasmSetLocal(local, result);
         } else {
             throw new UnsupportedOperationException("This expression is not supported yet");
         }
@@ -396,7 +402,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(VariableExpr expr) {
-        result = new WasmLocalReference(function.getLocalVariables().get(expr.getIndex()));
+        result = new WasmGetLocal(function.getLocalVariables().get(expr.getIndex() - firstVariable));
     }
 
     @Override
@@ -456,6 +462,12 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         IdentifiedStatement oldContinueTarget = currentContinueTarget;
         currentBreakTarget = statement;
         currentContinueTarget = statement;
+
+        if (statement.getCondition() != null) {
+            statement.getCondition().acceptVisitor(this);
+            loop.getBody().add(new WasmBranch(result, wrapper));
+            usedBlocks.add(wrapper);
+        }
 
         for (Statement part : statement.getBody()) {
             part.acceptVisitor(this);

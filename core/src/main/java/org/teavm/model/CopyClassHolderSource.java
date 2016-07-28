@@ -18,10 +18,6 @@ package org.teavm.model;
 import org.teavm.model.util.ModelUtils;
 import org.teavm.resource.MapperClassHolderSource;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class CopyClassHolderSource implements ClassHolderSource {
     private ClassReaderSource innerSource;
     private MapperClassHolderSource mapperSource = new MapperClassHolderSource(this::copyClass);

@@ -15,6 +15,8 @@
  */
 package org.teavm.wasm;
 
+import org.teavm.wasm.runtime.WasmRuntime;
+
 public final class Example {
     private Example() {
     }
@@ -27,5 +29,6 @@ public final class Example {
             a = b;
             b = c;
         }
+        WasmRuntime.print(a);
     }
 }

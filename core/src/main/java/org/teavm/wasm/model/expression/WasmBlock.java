@@ -37,4 +37,9 @@ public class WasmBlock extends WasmExpression {
     public List<WasmExpression> getBody() {
         return body;
     }
+
+    @Override
+    public void acceptVisitor(WasmExpressionVisitor visitor) {
+        visitor.visit(this);
+    }
 }

@@ -29,4 +29,9 @@ public class WasmInt64Constant extends WasmExpression {
     public void setValue(long value) {
         this.value = value;
     }
+
+    @Override
+    public void acceptVisitor(WasmExpressionVisitor visitor) {
+        visitor.visit(this);
+    }
 }

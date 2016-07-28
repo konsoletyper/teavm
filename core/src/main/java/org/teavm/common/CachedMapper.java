@@ -17,16 +17,9 @@ package org.teavm.common;
 
 import java.util.*;
 
-/**
- *
- * @author Alexey Andreev
- *
- * @param <T> which type this mapper takes.
- * @param <R> which type this mapper produces.
- */
 public class CachedMapper<T, R> implements Mapper<T, R> {
     private Mapper<T, R> innerMapper;
-    private Map<T, Wrapper<R>> cache = new HashMap<>();
+    private Map<T, Wrapper<R>> cache = new LinkedHashMap<>();
     private List<KeyListener<T>> keyListeners = new ArrayList<>();
 
     private static class Wrapper<S> {

@@ -55,4 +55,9 @@ public class WasmStoreFloat64 extends WasmExpression {
         Objects.requireNonNull(value);
         this.value = value;
     }
+
+    @Override
+    public void acceptVisitor(WasmExpressionVisitor visitor) {
+        visitor.visit(this);
+    }
 }

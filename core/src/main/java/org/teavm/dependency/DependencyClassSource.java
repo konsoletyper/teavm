@@ -17,7 +17,7 @@ package org.teavm.dependency;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.teavm.diagnostics.Diagnostics;
@@ -30,16 +30,12 @@ import org.teavm.model.MethodHolder;
 import org.teavm.model.util.ModelUtils;
 import org.teavm.optimization.UnreachableBasicBlockEliminator;
 
-/**
- *
- * @author Alexey Andreev
- */
 class DependencyClassSource implements ClassHolderSource {
     private ClassReaderSource innerSource;
     private Diagnostics diagnostics;
-    private Map<String, ClassHolder> generatedClasses = new HashMap<>();
+    private Map<String, ClassHolder> generatedClasses = new LinkedHashMap<>();
     private List<ClassHolderTransformer> transformers = new ArrayList<>();
-    private Map<String, ClassHolder> cache = new HashMap<>();
+    private Map<String, ClassHolder> cache = new LinkedHashMap<>();
 
     public DependencyClassSource(ClassReaderSource innerSource, Diagnostics diagnostics) {
         this.innerSource = innerSource;

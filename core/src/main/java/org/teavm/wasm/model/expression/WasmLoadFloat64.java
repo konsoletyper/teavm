@@ -43,4 +43,9 @@ public class WasmLoadFloat64 extends WasmExpression {
         Objects.requireNonNull(index);
         this.index = index;
     }
+
+    @Override
+    public void acceptVisitor(WasmExpressionVisitor visitor) {
+        visitor.visit(this);
+    }
 }

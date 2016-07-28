@@ -15,15 +15,19 @@
  */
 package org.teavm.wasm.model.expression;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 public class WasmIndirectCall extends WasmExpression {
+    private String typeName;
     private WasmExpression selector;
-    private List<WasmExpression> arguments;
+    private List<WasmExpression> arguments = new ArrayList<>();
 
-    public WasmIndirectCall(WasmExpression selector) {
+    public WasmIndirectCall(String typeName, WasmExpression selector) {
+        Objects.requireNonNull(typeName);
         Objects.requireNonNull(selector);
+        this.typeName = typeName;
         this.selector = selector;
     }
 
@@ -36,7 +40,21 @@ public class WasmIndirectCall extends WasmExpression {
         this.selector = selector;
     }
 
+    public String getTypeName() {
+        return typeName;
+    }
+
+    public void setTypeName(String typeName) {
+        Objects.requireNonNull(typeName);
+        this.typeName = typeName;
+    }
+
     public List<WasmExpression> getArguments() {
         return arguments;
+    }
+
+    @Override
+    public void acceptVisitor(WasmExpressionVisitor visitor) {
+        visitor.visit(this);
     }
 }

@@ -15,9 +15,5 @@
  */
 package org.teavm.model;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface ListableClassHolderSource extends ClassHolderSource, ListableClassReaderSource {
 }

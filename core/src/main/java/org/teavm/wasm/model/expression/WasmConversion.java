@@ -68,4 +68,9 @@ public class WasmConversion extends WasmExpression {
         Objects.requireNonNull(operand);
         this.operand = operand;
     }
+
+    @Override
+    public void acceptVisitor(WasmExpressionVisitor visitor) {
+        visitor.visit(this);
+    }
 }

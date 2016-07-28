@@ -20,10 +20,6 @@ import java.util.*;
 import org.teavm.model.*;
 import org.teavm.parsing.ClassDateProvider;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class DiskCachedClassHolderSource implements ClassHolderSource {
     private static AccessLevel[] accessLevels = AccessLevel.values();
     private static ElementModifier[] elementModifiers = ElementModifier.values();
@@ -31,7 +27,7 @@ public class DiskCachedClassHolderSource implements ClassHolderSource {
     private SymbolTable symbolTable;
     private ClassHolderSource innerSource;
     private ClassDateProvider classDateProvider;
-    private Map<String, Item> cache = new HashMap<>();
+    private Map<String, Item> cache = new LinkedHashMap<>();
     private Set<String> newClasses = new HashSet<>();
     private ProgramIO programIO;
 

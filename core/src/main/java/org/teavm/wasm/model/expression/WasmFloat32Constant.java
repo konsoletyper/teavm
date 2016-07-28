@@ -29,4 +29,9 @@ public class WasmFloat32Constant extends WasmExpression {
     public void setValue(float value) {
         this.value = value;
     }
+
+    @Override
+    public void acceptVisitor(WasmExpressionVisitor visitor) {
+        visitor.visit(this);
+    }
 }

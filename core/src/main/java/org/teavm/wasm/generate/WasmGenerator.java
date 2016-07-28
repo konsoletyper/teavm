@@ -19,6 +19,7 @@ import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderSource;
+import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
@@ -47,20 +48,21 @@ public class WasmGenerator {
         inferer.inferTypes(program, methodReference);
 
         WasmFunction function = new WasmFunction(WasmMangling.mangleMethod(methodReference));
-        for (int i = 0; i < methodAst.getVariables().size(); ++i) {
+        int firstVariable = method.hasModifier(ElementModifier.STATIC) ? 1 : 0;
+        for (int i = firstVariable; i < methodAst.getVariables().size(); ++i) {
             int varIndex = methodAst.getVariables().get(i);
             VariableType type = inferer.typeOf(varIndex);
             function.add(new WasmLocal(WasmGeneratorUtil.mapType(type)));
         }
 
-        for (int i = 0; i <= methodReference.parameterCount(); ++i) {
-            function.getParameters().add(function.getLocalVariables().get(i).getType());
+        for (int i = firstVariable; i <= methodReference.parameterCount(); ++i) {
+            function.getParameters().add(function.getLocalVariables().get(i - firstVariable).getType());
         }
         if (methodReference.getReturnType() != ValueType.VOID) {
             function.setResult(WasmGeneratorUtil.mapType(methodReference.getReturnType()));
         }
 
-        WasmGenerationVisitor visitor = new WasmGenerationVisitor(function);
+        WasmGenerationVisitor visitor = new WasmGenerationVisitor(function, firstVariable);
         methodAst.getBody().acceptVisitor(visitor);
         function.getBody().add(visitor.result);
 

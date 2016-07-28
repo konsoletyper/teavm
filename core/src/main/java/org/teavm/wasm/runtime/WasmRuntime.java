@@ -42,4 +42,6 @@ public final class WasmRuntime {
     public static double remainder(double a, double b) {
         return a - (double) (long) (a / b) * b;
     }
+
+    public static native void print(int a);
 }

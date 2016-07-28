@@ -54,4 +54,9 @@ public class WasmCall extends WasmExpression {
     public void setImported(boolean imported) {
         this.imported = imported;
     }
+
+    @Override
+    public void acceptVisitor(WasmExpressionVisitor visitor) {
+        visitor.visit(this);
+    }
 }

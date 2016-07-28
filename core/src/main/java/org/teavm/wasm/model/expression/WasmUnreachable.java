@@ -16,8 +16,11 @@
 package org.teavm.wasm.model.expression;
 
 public class WasmUnreachable extends WasmExpression {
-    public static final WasmUnreachable INSTANCE = new WasmUnreachable();
+    public WasmUnreachable() {
+    }
 
-    private WasmUnreachable() {
+    @Override
+    public void acceptVisitor(WasmExpressionVisitor visitor) {
+        visitor.visit(this);
     }
 }

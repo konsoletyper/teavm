@@ -15,16 +15,12 @@
  */
 package org.teavm.model;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class MutableClassHolderSource implements ListableClassHolderSource {
-    private ConcurrentMap<String, ClassHolder> classes = new ConcurrentHashMap<>();
+    private Map<String, ClassHolder> classes = new LinkedHashMap<>();
 
     @Override
     public Set<String> getClassNames() {

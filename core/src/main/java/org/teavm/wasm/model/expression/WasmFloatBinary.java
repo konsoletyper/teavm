@@ -70,4 +70,9 @@ public class WasmFloatBinary extends WasmExpression {
         Objects.requireNonNull(second);
         this.second = second;
     }
+
+    @Override
+    public void acceptVisitor(WasmExpressionVisitor visitor) {
+        visitor.visit(this);
+    }
 }

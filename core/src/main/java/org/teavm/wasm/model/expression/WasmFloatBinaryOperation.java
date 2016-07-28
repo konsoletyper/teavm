@@ -25,5 +25,7 @@ public enum WasmFloatBinaryOperation {
     LT,
     LE,
     GT,
-    GE
+    GE,
+    MIN,
+    MAX
 }

@@ -29,4 +29,9 @@ public class WasmFloat64Constant extends WasmExpression {
     public void setValue(double value) {
         this.value = value;
     }
+
+    @Override
+    public void acceptVisitor(WasmExpressionVisitor visitor) {
+        visitor.visit(this);
+    }
 }

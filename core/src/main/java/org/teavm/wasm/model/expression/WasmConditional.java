@@ -43,4 +43,9 @@ public class WasmConditional extends WasmExpression {
     public WasmBlock getElseBlock() {
         return elseBlock;
     }
+
+    @Override
+    public void acceptVisitor(WasmExpressionVisitor visitor) {
+        visitor.visit(this);
+    }
 }

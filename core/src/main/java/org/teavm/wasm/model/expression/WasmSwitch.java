@@ -50,4 +50,9 @@ public class WasmSwitch extends WasmExpression {
     public List<WasmBlock> getTargets() {
         return targets;
     }
+
+    @Override
+    public void acceptVisitor(WasmExpressionVisitor visitor) {
+        visitor.visit(this);
+    }
 }

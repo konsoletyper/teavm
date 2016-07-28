@@ -33,4 +33,9 @@ public class WasmReturn extends WasmExpression {
     public void setValue(WasmExpression value) {
         this.value = value;
     }
+
+    @Override
+    public void acceptVisitor(WasmExpressionVisitor visitor) {
+        visitor.visit(this);
+    }
 }
