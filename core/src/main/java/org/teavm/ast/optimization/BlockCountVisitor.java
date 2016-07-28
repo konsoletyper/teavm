@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2016 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,18 +13,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript;
+package org.teavm.ast.optimization;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import org.teavm.ast.AssignmentStatement;
 import org.teavm.ast.BlockStatement;
 import org.teavm.ast.BreakStatement;
 import org.teavm.ast.ConditionalStatement;
 import org.teavm.ast.ContinueStatement;
 import org.teavm.ast.GotoPartStatement;
-import org.teavm.ast.IdentifiedStatement;
 import org.teavm.ast.InitClassStatement;
 import org.teavm.ast.MonitorEnterStatement;
 import org.teavm.ast.MonitorExitStatement;
@@ -42,13 +39,24 @@ import org.teavm.ast.WhileStatement;
  *
  * @author Alexey Andreev
  */
-class RedundantLabelEliminator implements StatementVisitor {
-    private IdentifiedStatement currentBlock;
-    private Set<IdentifiedStatement> hasRefs = new HashSet<>();
+class BlockCountVisitor implements StatementVisitor {
+    private BlockStatement blockToCount;
+    private int count;
 
-    void visitSequence(List<Statement> statements) {
-        for (Statement statement : statements) {
-            statement.acceptVisitor(this);
+    public BlockCountVisitor(BlockStatement blockToCount) {
+        this.blockToCount = blockToCount;
+    }
+
+    public int getCount() {
+        return count;
+    }
+
+    public void visit(List<Statement> statements) {
+        if (statements == null) {
+            return;
+        }
+        for (Statement part : statements) {
+            part.acceptVisitor(this);
         }
     }
 
@@ -58,63 +66,44 @@ class RedundantLabelEliminator implements StatementVisitor {
 
     @Override
     public void visit(SequentialStatement statement) {
-        visitSequence(statement.getSequence());
+        visit(statement.getSequence());
     }
 
     @Override
     public void visit(ConditionalStatement statement) {
-        visitSequence(statement.getConsequent());
-        visitSequence(statement.getAlternative());
+        visit(statement.getConsequent());
+        visit(statement.getAlternative());
     }
 
     @Override
     public void visit(SwitchStatement statement) {
-        IdentifiedStatement currentBlockBackup = currentBlock;
-        currentBlock = statement;
         for (SwitchClause clause : statement.getClauses()) {
-            visitSequence(clause.getBody());
+            visit(clause.getBody());
         }
-        visitSequence(statement.getDefaultClause());
-        if (!hasRefs.contains(currentBlock)) {
-            currentBlock.setId(null);
-        }
-        currentBlock = currentBlockBackup;
+        visit(statement.getDefaultClause());
     }
 
     @Override
     public void visit(WhileStatement statement) {
-        IdentifiedStatement currentBlockBackup = currentBlock;
-        currentBlock = statement;
-        visitSequence(statement.getBody());
-        if (!hasRefs.contains(currentBlock)) {
-            currentBlock.setId(null);
-        }
-        currentBlock = currentBlockBackup;
+        visit(statement.getBody());
     }
 
     @Override
     public void visit(BlockStatement statement) {
-        IdentifiedStatement currentBlockBackup = currentBlock;
-        currentBlock = null;
-        visitSequence(statement.getBody());
-        currentBlock = currentBlockBackup;
+        visit(statement.getBody());
     }
 
     @Override
     public void visit(BreakStatement statement) {
-        if (statement.getTarget() == currentBlock) {
-            statement.setTarget(null);
-        } else {
-            hasRefs.add(statement.getTarget());
+        if (statement.getTarget() == blockToCount) {
+            ++count;
         }
     }
 
     @Override
     public void visit(ContinueStatement statement) {
-        if (statement.getTarget() == currentBlock) {
-            statement.setTarget(null);
-        } else {
-            hasRefs.add(statement.getTarget());
+        if (statement.getTarget() == blockToCount) {
+            ++count;
         }
     }
 
@@ -132,8 +121,8 @@ class RedundantLabelEliminator implements StatementVisitor {
 
     @Override
     public void visit(TryCatchStatement statement) {
-        visitSequence(statement.getProtectedBody());
-        visitSequence(statement.getHandler());
+        visit(statement.getProtectedBody());
+        visit(statement.getHandler());
     }
 
     @Override

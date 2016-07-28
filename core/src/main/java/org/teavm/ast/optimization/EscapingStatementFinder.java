@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2016 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript;
+package org.teavm.ast.optimization;
 
 import java.util.List;
 import org.teavm.ast.AssignmentStatement;
@@ -22,7 +22,6 @@ import org.teavm.ast.BreakStatement;
 import org.teavm.ast.ConditionalStatement;
 import org.teavm.ast.ContinueStatement;
 import org.teavm.ast.GotoPartStatement;
-import org.teavm.ast.IdentifiedStatement;
 import org.teavm.ast.InitClassStatement;
 import org.teavm.ast.MonitorEnterStatement;
 import org.teavm.ast.MonitorExitStatement;
@@ -40,77 +39,105 @@ import org.teavm.ast.WhileStatement;
  *
  * @author Alexey Andreev
  */
-class BreakToContinueReplacer implements StatementVisitor {
-    private IdentifiedStatement replacedBreak;
-    private IdentifiedStatement replacement;
-    private ContinueStatement replaceBy;
+class EscapingStatementFinder implements StatementVisitor {
+    AllBlocksCountVisitor blockCountVisitor;
+    public boolean escaping;
 
-    public BreakToContinueReplacer(IdentifiedStatement replacedBreak, IdentifiedStatement replacement) {
-        this.replacedBreak = replacedBreak;
-        this.replacement = replacement;
+    public EscapingStatementFinder(AllBlocksCountVisitor blockCountVisitor) {
+        this.blockCountVisitor = blockCountVisitor;
+    }
+
+    private boolean isEmpty(Statement statement) {
+        if (!(statement instanceof SequentialStatement)) {
+            return false;
+        }
+        SequentialStatement seq = (SequentialStatement) statement;
+        for (int i = seq.getSequence().size() - 1; i >= 0; --i) {
+            if (!isEmpty(seq.getSequence().get(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public boolean check(List<Statement> statements) {
+        if (escaping) {
+            return true;
+        }
+        if (statements.isEmpty()) {
+            escaping = true;
+            return true;
+        }
+        for (int i = statements.size() - 1; i >= 0; --i) {
+            Statement stmt = statements.get(i);
+            if (!isEmpty(stmt)) {
+                stmt.acceptVisitor(this);
+                return escaping;
+            }
+        }
+        escaping = true;
+        return true;
     }
 
     @Override
     public void visit(AssignmentStatement statement) {
-    }
-
-    public void visitSequence(List<Statement> statements) {
-        if (statements == null) {
-            return;
-        }
-        for (int i = 0; i < statements.size(); ++i) {
-            Statement stmt = statements.get(i);
-            stmt.acceptVisitor(this);
-            if (replaceBy != null) {
-                statements.set(i, replaceBy);
-                replaceBy = null;
-            }
-        }
+        escaping |= true;
     }
 
     @Override
     public void visit(SequentialStatement statement) {
-        visitSequence(statement.getSequence());
+        check(statement.getSequence());
     }
 
     @Override
     public void visit(ConditionalStatement statement) {
-        visitSequence(statement.getConsequent());
-        visitSequence(statement.getAlternative());
+        if (!check(statement.getConsequent())) {
+            check(statement.getAlternative());
+        }
     }
 
     @Override
     public void visit(SwitchStatement statement) {
-        for (SwitchClause clause : statement.getClauses()) {
-            visitSequence(clause.getBody());
+        if (blockCountVisitor.getCount(statement) > 0) {
+            escaping = true;
+            return;
         }
-        visitSequence(statement.getDefaultClause());
+        for (SwitchClause clause : statement.getClauses()) {
+            if (check(clause.getBody())) {
+                break;
+            }
+        }
+        if (!escaping) {
+            check(statement.getDefaultClause());
+        }
     }
 
     @Override
     public void visit(WhileStatement statement) {
-        visitSequence(statement.getBody());
+        if (blockCountVisitor.getCount(statement) > 0) {
+            escaping = true;
+            return;
+        }
+        if (statement.getCondition() != null && check(statement.getBody())) {
+            escaping = true;
+        }
     }
 
     @Override
     public void visit(BlockStatement statement) {
-        visitSequence(statement.getBody());
+        if (blockCountVisitor.getCount(statement) > 0) {
+            escaping = true;
+            return;
+        }
+        check(statement.getBody());
     }
 
     @Override
     public void visit(BreakStatement statement) {
-        if (statement.getTarget() == replacedBreak) {
-            replaceBy = new ContinueStatement();
-            replaceBy.setTarget(replacement);
-            replaceBy.setLocation(statement.getLocation());
-        }
     }
 
     @Override
     public void visit(ContinueStatement statement) {
-        if (statement.getTarget() == replacedBreak) {
-            statement.setTarget(replacement);
-        }
     }
 
     @Override
@@ -123,12 +150,14 @@ class BreakToContinueReplacer implements StatementVisitor {
 
     @Override
     public void visit(InitClassStatement statement) {
+        escaping = true;
     }
 
     @Override
     public void visit(TryCatchStatement statement) {
-        visitSequence(statement.getProtectedBody());
-        visitSequence(statement.getHandler());
+        if (!check(statement.getProtectedBody())) {
+            check(statement.getHandler());
+        }
     }
 
     @Override
@@ -137,9 +166,11 @@ class BreakToContinueReplacer implements StatementVisitor {
 
     @Override
     public void visit(MonitorEnterStatement statement) {
+        escaping = true;
     }
 
     @Override
     public void visit(MonitorExitStatement statement) {
+        escaping = true;
     }
 }

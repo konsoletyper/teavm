@@ -632,6 +632,61 @@ function Long_toNumber(val) {
     }
     return 0x100000000 * hi + lo;
 }
+function Long_eq(a, b) {
+    return a.hi === b.hi && a.lo === b.lo;
+}
+function Long_ne(a, b) {
+    return a.hi !== b.hi || a.lo !== b.lo;
+}
+function Long_gt(a, b) {
+    if (a.hi < b.hi) {
+        return false;
+    }
+    if (a.hi > b.hi) {
+        return true;
+    }
+    if ((a.lo >>> 1) > (b.lo >>> 1)) {
+        return true;
+    }
+    return (a.lo & 1) > (b.lo & 1);
+}
+function Long_ge(a, b) {
+    if (a.hi < b.hi) {
+        return false;
+    }
+    if (a.hi > b.hi) {
+        return true;
+    }
+    if ((a.lo >>> 1) >= (b.lo >>> 1)) {
+        return true;
+    }
+    return (a.lo & 1) >= (b.lo & 1);
+}
+function Long_lt(a, b) {
+    if (a.hi > b.hi) {
+        return false;
+    }
+    if (a.hi < b.hi) {
+        return true;
+    }
+    if ((a.lo >>> 1) < (b.lo >>> 1)) {
+        return true;
+    }
+    return (a.lo & 1) < (b.lo & 1);
+}
+function Long_le(a, b) {
+    if (a.hi > b.hi) {
+        return false;
+    }
+    if (a.hi < b.hi) {
+        return true;
+    }
+    if ((a.lo >>> 1) <= (b.lo >>> 1)) {
+        return true;
+    }
+    return (a.lo & 1) <= (b.lo & 1);
+}
+
 function Long_add(a, b) {
     if (a.hi === (a.lo >> 31) && b.hi === (b.lo >> 31)) {
         return Long_fromNumber(a.lo + b.lo);

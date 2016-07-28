@@ -1,5 +1,5 @@
 /*
- *  Copyright 2012 Alexey Andreev.
+ *  Copyright 2016 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript;
+package org.teavm.ast.optimization;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -58,6 +58,7 @@ import org.teavm.ast.UnaryOperation;
 import org.teavm.ast.UnwrapArrayExpr;
 import org.teavm.ast.VariableExpr;
 import org.teavm.ast.WhileStatement;
+import org.teavm.javascript.ExpressionSideEffectDecomposer;
 
 class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     private Expr resultExpr;
@@ -116,7 +117,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                 case GREATER:
                 case GREATER_OR_EQUALS: {
                     BinaryExpr comparison = (BinaryExpr) p;
-                    Expr result = BinaryExpr.binary(expr.getOperation(), expr.getType(),
+                    Expr result = BinaryExpr.binary(expr.getOperation(), comparison.getType(),
                             comparison.getFirstOperand(), comparison.getSecondOperand());
                     result.setLocation(comparison.getLocation());
                     if (invert) {

@@ -1477,6 +1477,24 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 case COMPARE:
                     visitBinaryFunction(expr, "Long_compare");
                     break;
+                case EQUALS:
+                    visitBinaryFunction(expr, "Long_eq");
+                    break;
+                case NOT_EQUALS:
+                    visitBinaryFunction(expr, "Long_ne");
+                    break;
+                case LESS:
+                    visitBinaryFunction(expr, "Long_lt");
+                    break;
+                case LESS_OR_EQUALS:
+                    visitBinaryFunction(expr, "Long_le");
+                    break;
+                case GREATER:
+                    visitBinaryFunction(expr, "Long_gt");
+                    break;
+                case GREATER_OR_EQUALS:
+                    visitBinaryFunction(expr, "Long_ge");
+                    break;
                 default:
                     break;
             }
@@ -1531,22 +1549,22 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     visitBinary(expr, "&&", false);
                     break;
                 case BITWISE_OR:
-                    visitBinary(expr, "|", expr.getType() == OperationType.INT);
+                    visitBinary(expr, "|", false);
                     break;
                 case BITWISE_AND:
-                    visitBinary(expr, "&", expr.getType() == OperationType.INT);
+                    visitBinary(expr, "&", false);
                     break;
                 case BITWISE_XOR:
-                    visitBinary(expr, "^", expr.getType() == OperationType.INT);
+                    visitBinary(expr, "^", false);
                     break;
                 case LEFT_SHIFT:
-                    visitBinary(expr, "<<", expr.getType() == OperationType.INT);
+                    visitBinary(expr, "<<", false);
                     break;
                 case RIGHT_SHIFT:
-                    visitBinary(expr, ">>", expr.getType() == OperationType.INT);
+                    visitBinary(expr, ">>", false);
                     break;
                 case UNSIGNED_RIGHT_SHIFT:
-                    visitBinary(expr, ">>>", expr.getType() == OperationType.INT);
+                    visitBinary(expr, ">>>", false);
                     break;
             }
         }

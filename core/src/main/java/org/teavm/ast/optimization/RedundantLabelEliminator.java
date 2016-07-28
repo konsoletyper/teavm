@@ -1,5 +1,5 @@
 /*
- *  Copyright 2012 Alexey Andreev.
+ *  Copyright 2016 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,8 +13,11 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript;
+package org.teavm.ast.optimization;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import org.teavm.ast.AssignmentStatement;
 import org.teavm.ast.BlockStatement;
 import org.teavm.ast.BreakStatement;
@@ -39,12 +42,14 @@ import org.teavm.ast.WhileStatement;
  *
  * @author Alexey Andreev
  */
-class ReferenceCountingVisitor implements StatementVisitor {
-    private IdentifiedStatement target;
-    public int count;
+class RedundantLabelEliminator implements StatementVisitor {
+    private IdentifiedStatement currentBlock;
+    private Set<IdentifiedStatement> hasRefs = new HashSet<>();
 
-    public ReferenceCountingVisitor(IdentifiedStatement target) {
-        this.target = target;
+    void visitSequence(List<Statement> statements) {
+        for (Statement statement : statements) {
+            statement.acceptVisitor(this);
+        }
     }
 
     @Override
@@ -53,58 +58,63 @@ class ReferenceCountingVisitor implements StatementVisitor {
 
     @Override
     public void visit(SequentialStatement statement) {
-        for (Statement part : statement.getSequence()) {
-            part.acceptVisitor(this);
-        }
+        visitSequence(statement.getSequence());
     }
 
     @Override
     public void visit(ConditionalStatement statement) {
-        for (Statement part : statement.getConsequent()) {
-            part.acceptVisitor(this);
-        }
-        for (Statement part : statement.getAlternative()) {
-            part.acceptVisitor(this);
-        }
+        visitSequence(statement.getConsequent());
+        visitSequence(statement.getAlternative());
     }
 
     @Override
     public void visit(SwitchStatement statement) {
+        IdentifiedStatement currentBlockBackup = currentBlock;
+        currentBlock = statement;
         for (SwitchClause clause : statement.getClauses()) {
-            for (Statement part : clause.getBody()) {
-                part.acceptVisitor(this);
-            }
+            visitSequence(clause.getBody());
         }
-        for (Statement part : statement.getDefaultClause()) {
-            part.acceptVisitor(this);
+        visitSequence(statement.getDefaultClause());
+        if (!hasRefs.contains(currentBlock)) {
+            currentBlock.setId(null);
         }
+        currentBlock = currentBlockBackup;
     }
 
     @Override
     public void visit(WhileStatement statement) {
-        for (Statement part : statement.getBody()) {
-            part.acceptVisitor(this);
+        IdentifiedStatement currentBlockBackup = currentBlock;
+        currentBlock = statement;
+        visitSequence(statement.getBody());
+        if (!hasRefs.contains(currentBlock)) {
+            currentBlock.setId(null);
         }
+        currentBlock = currentBlockBackup;
     }
 
     @Override
     public void visit(BlockStatement statement) {
-        for (Statement part : statement.getBody()) {
-            part.acceptVisitor(this);
-        }
+        IdentifiedStatement currentBlockBackup = currentBlock;
+        currentBlock = null;
+        visitSequence(statement.getBody());
+        currentBlock = currentBlockBackup;
     }
 
     @Override
     public void visit(BreakStatement statement) {
-        if (statement.getTarget() == target) {
-            ++count;
+        if (statement.getTarget() == currentBlock) {
+            statement.setTarget(null);
+        } else {
+            hasRefs.add(statement.getTarget());
         }
     }
 
     @Override
     public void visit(ContinueStatement statement) {
-        if (statement.getTarget() == target) {
-            ++count;
+        if (statement.getTarget() == currentBlock) {
+            statement.setTarget(null);
+        } else {
+            hasRefs.add(statement.getTarget());
         }
     }
 
@@ -122,12 +132,8 @@ class ReferenceCountingVisitor implements StatementVisitor {
 
     @Override
     public void visit(TryCatchStatement statement) {
-        for (Statement part : statement.getProtectedBody()) {
-            part.acceptVisitor(this);
-        }
-        for (Statement part : statement.getHandler()) {
-            part.acceptVisitor(this);
-        }
+        visitSequence(statement.getProtectedBody());
+        visitSequence(statement.getHandler());
     }
 
     @Override

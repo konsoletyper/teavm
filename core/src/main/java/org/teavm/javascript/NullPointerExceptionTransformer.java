@@ -21,10 +21,6 @@ import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.NullCheckInstruction;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class NullPointerExceptionTransformer implements ClassHolderTransformer {
     @Override
     public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {

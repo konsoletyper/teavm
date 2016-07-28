@@ -15,10 +15,6 @@
  */
 package org.teavm.javascript;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class RenderingException extends RuntimeException {
     private static final long serialVersionUID = 631804556597569547L;
 

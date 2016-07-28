@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2016 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,22 +13,24 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript;
+package org.teavm.ast.decompilation;
 
-import org.teavm.ast.AsyncMethodNode;
-import org.teavm.ast.RegularMethodNode;
-import org.teavm.model.MethodReference;
+public class DecompilationException extends RuntimeException {
+    private static final long serialVersionUID = -1400142974526572669L;
 
-/**
- *
- * @author Alexey Andreev
- */
-public interface MethodNodeCache {
-    RegularMethodNode get(MethodReference methodReference);
+    public DecompilationException() {
+        super();
+    }
 
-    void store(MethodReference methodReference, RegularMethodNode node);
+    public DecompilationException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
-    AsyncMethodNode getAsync(MethodReference methodReference);
+    public DecompilationException(String message) {
+        super(message);
+    }
 
-    void storeAsync(MethodReference methodReference, AsyncMethodNode node);
+    public DecompilationException(Throwable cause) {
+        super(cause);
+    }
 }

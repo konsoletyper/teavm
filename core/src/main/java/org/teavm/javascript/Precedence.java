@@ -15,10 +15,6 @@
  */
 package org.teavm.javascript;
 
-/**
- *
- * @author Alexey Andreev
- */
 public enum Precedence {
     COMMA,
     ASSIGNMENT,

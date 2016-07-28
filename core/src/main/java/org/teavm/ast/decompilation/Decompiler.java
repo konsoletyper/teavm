@@ -1,5 +1,5 @@
 /*
- *  Copyright 2011 Alexey Andreev.
+ *  Copyright 2016 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript;
+package org.teavm.ast.decompilation;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -44,6 +44,8 @@ import org.teavm.ast.SequentialStatement;
 import org.teavm.ast.Statement;
 import org.teavm.ast.TryCatchStatement;
 import org.teavm.ast.WhileStatement;
+import org.teavm.ast.cache.MethodNodeCache;
+import org.teavm.ast.optimization.Optimizer;
 import org.teavm.cache.NoCache;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphIndexer;
@@ -70,10 +72,6 @@ import org.teavm.model.util.AsyncProgramSplitter;
 import org.teavm.model.util.ListingBuilder;
 import org.teavm.model.util.ProgramUtils;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class Decompiler {
     private ClassHolderSource classSource;
     private ClassLoader classLoader;
@@ -88,7 +86,7 @@ public class Decompiler {
     private RangeTree.Node currentNode;
     private RangeTree.Node parentNode;
     private Map<MethodReference, Generator> generators = new HashMap<>();
-    private Set<MethodReference> methodsToPass = new HashSet<>();
+    private Set<MethodReference> methodsToSkip = new HashSet<>();
     private MethodNodeCache regularMethodCache;
     private Set<MethodReference> asyncMethods;
     private Set<MethodReference> splitMethods = new HashSet<>();
@@ -169,8 +167,8 @@ public class Decompiler {
         generators.put(method, generator);
     }
 
-    public void addMethodToPass(MethodReference method) {
-        methodsToPass.add(method);
+    public void addMethodToSkip(MethodReference method) {
+        methodsToSkip.add(method);
     }
 
     private void orderClasses(String className, Set<String> visited, List<String> order) {
@@ -203,7 +201,7 @@ public class Decompiler {
                 continue;
             }
             if (method.getAnnotations().get(InjectedBy.class.getName()) != null
-                    || methodsToPass.contains(method.getReference())) {
+                    || methodsToSkip.contains(method.getReference())) {
                 continue;
             }
             MethodNode methodNode = decompile(method);

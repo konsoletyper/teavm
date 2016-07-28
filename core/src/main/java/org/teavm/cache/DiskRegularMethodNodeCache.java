@@ -69,7 +69,7 @@ import org.teavm.ast.UnaryExpr;
 import org.teavm.ast.UnwrapArrayExpr;
 import org.teavm.ast.VariableExpr;
 import org.teavm.ast.WhileStatement;
-import org.teavm.javascript.MethodNodeCache;
+import org.teavm.ast.cache.MethodNodeCache;
 import org.teavm.model.MethodReference;
 import org.teavm.parsing.ClassDateProvider;
 
