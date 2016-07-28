@@ -20,10 +20,6 @@ import java.util.List;
 import java.util.Set;
 import org.teavm.model.MethodReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class RegularMethodNode extends MethodNode {
     private Statement body;
     private List<Integer> variables = new ArrayList<>();

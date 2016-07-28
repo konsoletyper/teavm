@@ -20,10 +20,6 @@ import java.util.List;
 import java.util.Map;
 import org.teavm.model.MethodReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class InvocationExpr extends Expr {
     private MethodReference method;
     private InvocationType type;

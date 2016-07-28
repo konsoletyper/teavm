@@ -13,29 +13,33 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.ast;
+package org.teavm.wasm.model.expression;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Objects;
 
-public class WhileStatement extends IdentifiedStatement {
-    private Expr condition;
-    private List<Statement> body = new ArrayList<>();
+public class WasmBreak extends WasmExpression {
+    private WasmBlock target;
+    private WasmExpression result;
 
-    public Expr getCondition() {
-        return condition;
+    public WasmBreak(WasmBlock target) {
+        Objects.requireNonNull(target);
+        this.target = target;
     }
 
-    public void setCondition(Expr condition) {
-        this.condition = condition;
+    public WasmBlock getTarget() {
+        return target;
     }
 
-    public List<Statement> getBody() {
-        return body;
+    public void setTarget(WasmBlock target) {
+        Objects.requireNonNull(target);
+        this.target = target;
     }
 
-    @Override
-    public void acceptVisitor(StatementVisitor visitor) {
-        visitor.visit(this);
+    public WasmExpression getResult() {
+        return result;
+    }
+
+    public void setResult(WasmExpression result) {
+        this.result = result;
     }
 }

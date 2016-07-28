@@ -20,10 +20,6 @@ import java.util.List;
 import java.util.Set;
 import org.teavm.model.MethodReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class MethodNode {
     private MethodReference reference;
     private Set<NodeModifier> modifiers = EnumSet.noneOf(NodeModifier.class);

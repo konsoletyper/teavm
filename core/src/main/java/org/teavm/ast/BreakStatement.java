@@ -15,10 +15,6 @@
  */
 package org.teavm.ast;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class BreakStatement extends Statement {
     private IdentifiedStatement target;
     private NodeLocation location;

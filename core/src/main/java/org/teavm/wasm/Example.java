@@ -13,27 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.ast;
+package org.teavm.wasm;
 
-public enum BinaryOperation {
-    ADD,
-    SUBTRACT,
-    MULTIPLY,
-    DIVIDE,
-    MODULO,
-    EQUALS,
-    NOT_EQUALS,
-    LESS,
-    LESS_OR_EQUALS,
-    GREATER,
-    GREATER_OR_EQUALS,
-    AND,
-    OR,
-    COMPARE,
-    BITWISE_AND,
-    BITWISE_OR,
-    BITWISE_XOR,
-    LEFT_SHIFT,
-    RIGHT_SHIFT,
-    UNSIGNED_RIGHT_SHIFT
+public final class Example {
+    private Example() {
+    }
+
+    public static void main(String[] args) {
+        int a = 0;
+        int b = 1;
+        for (int i = 0; i < 10; ++i) {
+            int c = a + b;
+            a = b;
+            b = c;
+        }
+    }
 }

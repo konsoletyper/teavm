@@ -20,8 +20,11 @@ import java.util.Objects;
 public class WasmBranch extends WasmExpression {
     private WasmExpression condition;
     private WasmBlock target;
+    private WasmExpression result;
 
     public WasmBranch(WasmExpression condition, WasmBlock target) {
+        Objects.requireNonNull(condition);
+        Objects.requireNonNull(target);
         this.condition = condition;
         this.target = target;
     }
@@ -42,5 +45,13 @@ public class WasmBranch extends WasmExpression {
     public void setTarget(WasmBlock target) {
         Objects.requireNonNull(target);
         this.target = target;
+    }
+
+    public WasmExpression getResult() {
+        return result;
+    }
+
+    public void setResult(WasmExpression result) {
+        this.result = result;
     }
 }

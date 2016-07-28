@@ -270,11 +270,11 @@ class StatementGenerator implements InstructionVisitor {
                         insn.getConsequent(), insn.getAlternative());
                 break;
             case NOT_NULL:
-                branch(Expr.binary(BinaryOperation.STRICT_NOT_EQUALS, null, Expr.var(insn.getOperand().getIndex()),
+                branch(Expr.binary(BinaryOperation.NOT_EQUALS, null, Expr.var(insn.getOperand().getIndex()),
                         Expr.constant(null)), insn.getConsequent(), insn.getAlternative());
                 break;
             case NULL:
-                branch(Expr.binary(BinaryOperation.STRICT_EQUALS, null, Expr.var(insn.getOperand().getIndex()),
+                branch(Expr.binary(BinaryOperation.EQUALS, null, Expr.var(insn.getOperand().getIndex()),
                         Expr.constant(null)), insn.getConsequent(), insn.getAlternative());
                 break;
         }
@@ -292,7 +292,7 @@ class StatementGenerator implements InstructionVisitor {
                         consequent, alternative);
                 break;
             case REFERENCE_EQUAL:
-                branch(withLocation(Expr.binary(BinaryOperation.STRICT_EQUALS, null, Expr.var(a), Expr.var(b))),
+                branch(withLocation(Expr.binary(BinaryOperation.EQUALS, null, Expr.var(a), Expr.var(b))),
                         consequent, alternative);
                 break;
             case NOT_EQUAL:
@@ -300,7 +300,7 @@ class StatementGenerator implements InstructionVisitor {
                         Expr.var(b))), consequent, alternative);
                 break;
             case REFERENCE_NOT_EQUAL:
-                branch(withLocation(Expr.binary(BinaryOperation.STRICT_NOT_EQUALS, null, Expr.var(a), Expr.var(b))),
+                branch(withLocation(Expr.binary(BinaryOperation.NOT_EQUALS, null, Expr.var(a), Expr.var(b))),
                         consequent, alternative);
                 break;
         }

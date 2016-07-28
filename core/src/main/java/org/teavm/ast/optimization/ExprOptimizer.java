@@ -48,10 +48,6 @@ final class ExprOptimizer {
                     return Expr.binary(BinaryOperation.LESS_OR_EQUALS, binary.getType(), a, b, expr.getLocation());
                 case GREATER_OR_EQUALS:
                     return Expr.binary(BinaryOperation.LESS, binary.getType(), a, b, expr.getLocation());
-                case STRICT_EQUALS:
-                    return Expr.binary(BinaryOperation.STRICT_NOT_EQUALS, binary.getType(), a, b, expr.getLocation());
-                case STRICT_NOT_EQUALS:
-                    return Expr.binary(BinaryOperation.STRICT_EQUALS, binary.getType(), a, b, expr.getLocation());
                 default:
                     break;
             }

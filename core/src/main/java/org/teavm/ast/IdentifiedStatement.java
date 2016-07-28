@@ -15,10 +15,6 @@
  */
 package org.teavm.ast;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class IdentifiedStatement extends Statement {
     private String id;
 

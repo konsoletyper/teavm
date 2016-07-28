@@ -1391,8 +1391,6 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 return Precedence.LOGICAL_AND;
             case OR:
                 return Precedence.LOGICAL_OR;
-            case STRICT_EQUALS:
-            case STRICT_NOT_EQUALS:
             case EQUALS:
             case NOT_EQUALS:
                 return Precedence.EQUALITY;
@@ -1516,10 +1514,10 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     visitBinary(expr, "%", expr.getType() == OperationType.INT);
                     break;
                 case EQUALS:
-                    visitBinary(expr, "==", false);
+                    visitBinary(expr, "===", false);
                     break;
                 case NOT_EQUALS:
-                    visitBinary(expr, "!=", false);
+                    visitBinary(expr, "!==", false);
                     break;
                 case GREATER:
                     visitBinary(expr, ">", false);
@@ -1532,12 +1530,6 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     break;
                 case LESS_OR_EQUALS:
                     visitBinary(expr, "<=", false);
-                    break;
-                case STRICT_EQUALS:
-                    visitBinary(expr, "===", false);
-                    break;
-                case STRICT_NOT_EQUALS:
-                    visitBinary(expr, "!==", false);
                     break;
                 case COMPARE:
                     visitBinaryFunction(expr, naming.getNameForFunction("$rt_compare"));
