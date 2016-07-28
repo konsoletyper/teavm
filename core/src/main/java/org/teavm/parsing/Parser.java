@@ -35,11 +35,14 @@ import org.teavm.model.util.PhiUpdater;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.optimization.UnreachableBasicBlockEliminator;
 
-public final class Parser {
-    private Parser() {
+public class Parser {
+    private ReferenceCache referenceCache;
+
+    public Parser(ReferenceCache referenceCache) {
+        this.referenceCache = referenceCache;
     }
 
-    public static MethodHolder parseMethod(MethodNode node, String className, String fileName) {
+    public MethodHolder parseMethod(MethodNode node, String className, String fileName) {
         MethodNode nodeWithoutJsr = new MethodNode(Opcodes.ASM5, node.access, node.name, node.desc, node.signature,
                 node.exceptions.toArray(new String[0]));
         JSRInlinerAdapter adapter = new JSRInlinerAdapter(nodeWithoutJsr, node.access, node.name, node.desc,
@@ -50,7 +53,7 @@ public final class Parser {
         MethodHolder method = new MethodHolder(node.name, signature);
         parseModifiers(node.access, method);
 
-        ProgramParser programParser = new ProgramParser();
+        ProgramParser programParser = new ProgramParser(referenceCache);
         programParser.setFileName(fileName);
         Program program = programParser.parse(node, className);
         new UnreachableBasicBlockEliminator().optimize(program);
@@ -75,7 +78,7 @@ public final class Parser {
         return method;
     }
 
-    private static void applyDebugNames(Program program, PhiUpdater phiUpdater, ProgramParser parser,
+    private void applyDebugNames(Program program, PhiUpdater phiUpdater, ProgramParser parser,
             Variable[] argumentMapping) {
         if (program.basicBlockCount() == 0) {
             return;
@@ -110,7 +113,7 @@ public final class Parser {
         }
     }
 
-    private static IntIntMap[] getBlockEntryVariableMappings(Program program, PhiUpdater phiUpdater,
+    private IntIntMap[] getBlockEntryVariableMappings(Program program, PhiUpdater phiUpdater,
             Variable[] argumentMapping) {
         class Step {
             int node;
@@ -179,7 +182,7 @@ public final class Parser {
         return result;
     }
 
-    private static Variable[] applySignature(Program program, ValueType[] arguments) {
+    private Variable[] applySignature(Program program, ValueType[] arguments) {
         if (program.variableCount() == 0) {
             return new Variable[0];
         }
@@ -204,7 +207,7 @@ public final class Parser {
         return Arrays.copyOf(variableMap, index);
     }
 
-    public static ClassHolder parseClass(ClassNode node) {
+    public ClassHolder parseClass(ClassNode node) {
         ClassHolder cls = new ClassHolder(node.name.replace('/', '.'));
         parseModifiers(node.access, cls);
         if (node.superName != null) {
@@ -238,7 +241,7 @@ public final class Parser {
         return cls;
     }
 
-    public static FieldHolder parseField(FieldNode node) {
+    public FieldHolder parseField(FieldNode node) {
         FieldHolder field = new FieldHolder(node.name);
         field.setType(ValueType.parse(node.desc));
         field.setInitialValue(node.value);
@@ -247,7 +250,7 @@ public final class Parser {
         return field;
     }
 
-    public static void parseModifiers(int access, ElementHolder member) {
+    public void parseModifiers(int access, ElementHolder member) {
         if ((access & Opcodes.ACC_PRIVATE) != 0) {
             member.setLevel(AccessLevel.PRIVATE);
         } else if ((access & Opcodes.ACC_PROTECTED) != 0) {
@@ -306,7 +309,7 @@ public final class Parser {
         }
     }
 
-    private static void parseAnnotations(AnnotationContainer annotations, List<AnnotationNode> visibleAnnotations,
+    private void parseAnnotations(AnnotationContainer annotations, List<AnnotationNode> visibleAnnotations,
             List<AnnotationNode> invisibleAnnotations) {
         List<Object> annotNodes = new ArrayList<>();
         if (visibleAnnotations != null) {
@@ -328,7 +331,7 @@ public final class Parser {
         }
     }
 
-    private static void parseAnnotationValues(AnnotationHolder annot, List<Object> values) {
+    private void parseAnnotationValues(AnnotationHolder annot, List<Object> values) {
         if (values == null) {
             return;
         }
@@ -339,7 +342,7 @@ public final class Parser {
         }
     }
 
-    private static AnnotationValue parseAnnotationValue(Object value) {
+    private AnnotationValue parseAnnotationValue(Object value) {
         if (value instanceof String[]) {
             String[] enumInfo = (String[]) value;
             ValueType.Object object = (ValueType.Object) ValueType.parse(enumInfo[0]);

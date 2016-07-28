@@ -17,10 +17,6 @@ package org.teavm.model;
 
 import org.teavm.model.instructions.InstructionVisitor;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class Instruction {
     private BasicBlock basicBlock;
     private InstructionLocation location;

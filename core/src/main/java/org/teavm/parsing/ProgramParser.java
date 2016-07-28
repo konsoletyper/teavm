@@ -24,6 +24,7 @@ import org.teavm.model.util.InstructionTransitionExtractor;
 import org.teavm.model.util.ProgramUtils;
 
 public class ProgramParser {
+    private ReferenceCache referenceCache;
     private static final byte ROOT = 0;
     private static final byte SINGLE = 1;
     private static final byte DOUBLE_FIRST_HALF = 2;
@@ -44,6 +45,10 @@ public class ProgramParser {
     private String currentClassName;
     private Map<Integer, List<LocalVariableNode>> localVariableMap = new HashMap<>();
     private Map<Instruction, Map<Integer, String>> variableDebugNames = new HashMap<>();
+
+    public ProgramParser(ReferenceCache methodReferenceCache) {
+        this.referenceCache = methodReferenceCache;
+    }
 
     private static class Step {
         public final int source;
@@ -389,9 +394,9 @@ public class ProgramParser {
 
         private ValueType parseType(String type) {
             if (type.startsWith("[")) {
-                return ValueType.parse(type);
+                return referenceCache.parseValueTypeCached(type);
             } else {
-                return ValueType.object(type.replace('/', '.'));
+                return referenceCache.getCached(ValueType.object(type.replace('/', '.')));
             }
         }
 
@@ -507,7 +512,8 @@ public class ProgramParser {
                 insn.setReceiver(getVariable(returnType.getSize() == 2 ? pushDouble() : pushSingle()));
             }
 
-            insn.setMethod(new MethodDescriptor(name, MethodDescriptor.parseSignature(desc)));
+            insn.setMethod(referenceCache.getCached(
+                    new MethodDescriptor(name, MethodDescriptor.parseSignature(desc))));
             for (Object bsmArg : bsmArgs) {
                 insn.getBootstrapArguments().add(convertConstant(bsmArg));
             }
@@ -531,7 +537,7 @@ public class ProgramParser {
                 if (type.getSort() == Type.METHOD) {
                     return new RuntimeConstant(MethodDescriptor.parseSignature(type.getDescriptor()));
                 } else {
-                    return new RuntimeConstant(ValueType.parse(type.getDescriptor()));
+                    return new RuntimeConstant(referenceCache.parseValueTypeCached(type.getDescriptor()));
                 }
             } else if (value instanceof Handle) {
                 return new RuntimeConstant(parseHandle((Handle) value));
@@ -566,7 +572,8 @@ public class ProgramParser {
                     for (int i = types.length - 1; i >= 0; --i) {
                         args[--j] = types[i].getSize() == 2 ? getVariable(popDouble()) : getVariable(popSingle());
                     }
-                    MethodDescriptor method = new MethodDescriptor(name, MethodDescriptor.parseSignature(desc));
+                    MethodDescriptor method = referenceCache.getCached(
+                            new MethodDescriptor(name, MethodDescriptor.parseSignature(desc)));
                     int instance = -1;
                     if (opcode != Opcodes.INVOKESTATIC) {
                         instance = popSingle();
@@ -579,7 +586,7 @@ public class ProgramParser {
                     if (instance == -1) {
                         InvokeInstruction insn = new InvokeInstruction();
                         insn.setType(InvocationType.SPECIAL);
-                        insn.setMethod(new MethodReference(ownerCls, method));
+                        insn.setMethod(referenceCache.getCached(new MethodReference(ownerCls, method)));
                         if (result >= 0) {
                             insn.setReceiver(getVariable(result));
                         }
@@ -592,7 +599,7 @@ public class ProgramParser {
                         } else {
                             insn.setType(InvocationType.VIRTUAL);
                         }
-                        insn.setMethod(new MethodReference(ownerCls, method));
+                        insn.setMethod(referenceCache.getCached(new MethodReference(ownerCls, method)));
                         if (result >= 0) {
                             insn.setReceiver(getVariable(result));
                         }
@@ -656,7 +663,7 @@ public class ProgramParser {
                 addInstruction(insn);
             } else if (cst instanceof Type) {
                 ClassConstantInstruction insn = new ClassConstantInstruction();
-                insn.setConstant(ValueType.parse(((Type) cst).getDescriptor()));
+                insn.setConstant(referenceCache.getCached(ValueType.parse(((Type) cst).getDescriptor())));
                 insn.setReceiver(getVariable(pushSingle()));
                 addInstruction(insn);
             } else {
@@ -1652,11 +1659,11 @@ public class ProgramParser {
             switch (opcode) {
                 case Opcodes.GETFIELD: {
                     int instance = popSingle();
-                    ValueType type = ValueType.parse(desc);
+                    ValueType type = referenceCache.parseValueTypeCached(desc);
                     int value = desc.equals("D") || desc.equals("J") ? pushDouble() : pushSingle();
                     GetFieldInstruction insn = new GetFieldInstruction();
                     insn.setInstance(getVariable(instance));
-                    insn.setField(new FieldReference(ownerCls, name));
+                    insn.setField(referenceCache.getCached(new FieldReference(ownerCls, name)));
                     insn.setFieldType(type);
                     insn.setReceiver(getVariable(value));
                     addInstruction(insn);
@@ -1667,17 +1674,17 @@ public class ProgramParser {
                     int instance = popSingle();
                     PutFieldInstruction insn = new PutFieldInstruction();
                     insn.setInstance(getVariable(instance));
-                    insn.setField(new FieldReference(ownerCls, name));
+                    insn.setField(referenceCache.getCached(new FieldReference(ownerCls, name)));
                     insn.setValue(getVariable(value));
-                    insn.setFieldType(ValueType.parse(desc));
+                    insn.setFieldType(referenceCache.parseValueTypeCached(desc));
                     addInstruction(insn);
                     break;
                 }
                 case Opcodes.GETSTATIC: {
-                    ValueType type = ValueType.parse(desc);
+                    ValueType type = referenceCache.parseValueTypeCached(desc);
                     int value = desc.equals("D") || desc.equals("J") ? pushDouble() : pushSingle();
                     GetFieldInstruction insn = new GetFieldInstruction();
-                    insn.setField(new FieldReference(ownerCls, name));
+                    insn.setField(referenceCache.getCached(new FieldReference(ownerCls, name)));
                     insn.setFieldType(type);
                     insn.setReceiver(getVariable(value));
                     addInstruction(insn);
@@ -1691,7 +1698,7 @@ public class ProgramParser {
                     }
                     int value = desc.equals("D") || desc.equals("J") ? popDouble() : popSingle();
                     PutFieldInstruction insn = new PutFieldInstruction();
-                    insn.setField(new FieldReference(ownerCls, name));
+                    insn.setField(referenceCache.getCached(new FieldReference(ownerCls, name)));
                     insn.setValue(getVariable(value));
                     addInstruction(insn);
                     break;

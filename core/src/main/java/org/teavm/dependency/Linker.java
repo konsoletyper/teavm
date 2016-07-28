@@ -29,10 +29,6 @@ import org.teavm.model.instructions.InitClassInstruction;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.PutFieldInstruction;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class Linker {
     public void link(DependencyInfo dependency, ClassHolder cls) {
         for (MethodHolder method : cls.getMethods().toArray(new MethodHolder[0])) {

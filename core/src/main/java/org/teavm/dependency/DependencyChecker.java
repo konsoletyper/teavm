@@ -48,6 +48,7 @@ import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
+import org.teavm.model.ReferenceCache;
 import org.teavm.model.ValueType;
 import org.teavm.model.util.ModelUtils;
 import org.teavm.model.util.ProgramUtils;
@@ -156,7 +157,7 @@ public class DependencyChecker implements DependencyInfo {
         ClassNode node = new ClassNode();
         org.objectweb.asm.ClassReader reader = new org.objectweb.asm.ClassReader(data);
         reader.accept(node, 0);
-        submitClass(Parser.parseClass(node));
+        submitClass(new Parser(new ReferenceCache()).parseClass(node));
         return node.name;
     }
 

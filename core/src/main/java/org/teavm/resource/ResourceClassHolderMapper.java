@@ -21,13 +21,11 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
 import org.teavm.common.Mapper;
 import org.teavm.model.ClassHolder;
+import org.teavm.model.ReferenceCache;
 import org.teavm.parsing.Parser;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class ResourceClassHolderMapper implements Mapper<String, ClassHolder> {
+    private Parser parser = new Parser(new ReferenceCache());
     private ResourceReader resourceReader;
 
     public ResourceClassHolderMapper(ResourceReader resourceReader) {
@@ -47,6 +45,6 @@ public class ResourceClassHolderMapper implements Mapper<String, ClassHolder> {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return Parser.parseClass(clsNode);
+        return parser.parseClass(clsNode);
     }
 }

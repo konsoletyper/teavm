@@ -364,8 +364,7 @@ class DependencyGraphBuilder {
                 return;
             }
             MethodReference methodRef = new MethodReference(className, methodDesc);
-            final MethodDependency methodDep = checker.linkMethod(methodRef,
-                    new CallLocation(caller.getMethod(), location));
+            MethodDependency methodDep = checker.linkMethod(methodRef, new CallLocation(caller.getMethod(), location));
             if (!methodDep.isMissing() && knownMethods.add(methodRef)) {
                 methodDep.use();
                 DependencyNode[] targetParams = methodDep.getVariables();

@@ -17,10 +17,6 @@ package org.teavm.model;
 
 import java.util.Arrays;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class MethodDescriptor {
     private String name;
     private ValueType[] signature;
