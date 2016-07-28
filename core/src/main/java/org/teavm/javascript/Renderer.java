@@ -126,6 +126,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     private final List<String> cachedVariableNames = new ArrayList<>();
     private boolean end;
     private int currentPart;
+    private List<PostponedFieldInitializer> postponedFieldInitializers = new ArrayList<>();
 
     private static class InjectorHolder {
         public final Injector injector;
@@ -222,6 +223,17 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 writer.append('"').append(escapeString(stringPool.get(i))).append('"');
             }
             writer.append("]);").newLine();
+        } catch (IOException e) {
+            throw new RenderingException("IO error", e);
+        }
+    }
+
+    public void renderStringConstants() throws RenderingException {
+        try {
+            for (PostponedFieldInitializer initializer : postponedFieldInitializers) {
+                writer.appendStaticField(initializer.field).ws().append("=").ws()
+                        .append(constantToString(initializer.value)).append(";").softNewLine();
+            }
         } catch (IOException e) {
             throw new RenderingException("IO error", e);
         }
@@ -403,6 +415,11 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     value = getDefaultValue(field.getType());
                 }
                 FieldReference fieldRef = new FieldReference(cls.getName(), field.getName());
+                if (value instanceof String) {
+                    constantToString(value);
+                    postponedFieldInitializers.add(new PostponedFieldInitializer(fieldRef, (String) value));
+                    value = null;
+                }
                 writer.append("var ").appendStaticField(fieldRef).ws().append("=").ws()
                         .append(constantToString(value)).append(";").softNewLine();
             }
@@ -2390,5 +2407,15 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     @Override
     public <T> T getService(Class<T> type) {
         return services.getService(type);
+    }
+
+    private static class PostponedFieldInitializer {
+        FieldReference field;
+        String value;
+
+        public PostponedFieldInitializer(FieldReference field, String value) {
+            this.field = field;
+            this.value = value;
+        }
     }
 }

@@ -21,10 +21,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
 
-/**
- *
- * @author Alexey Andreev
- */
 @RunWith(TeaVMTestRunner.class)
 public class VMTest {
     @Test
@@ -113,6 +109,24 @@ public class VMTest {
     public void passesStaticFieldToSuperClassConstructor()  {
       SubClass obj = new SubClass();
       assertNotNull(obj.getValue());
+    }
+
+    // See https://github.com/konsoletyper/teavm/issues/196
+    @Test
+    public void stringConstantsInitializedProperly() {
+        assertEquals("FIRST ", ClassWithStaticField.foo(true));
+        assertEquals("SECOND ", ClassWithStaticField.foo(false));
+    }
+
+    private static class ClassWithStaticField {
+        public final static String CONST1 = "FIRST";
+        public final static String CONST2 = "SECOND";
+
+        public static String foo(boolean value) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(value ? CONST1 : CONST2).append(" ");
+            return sb.toString();
+        }
     }
 
     static class SuperClass {

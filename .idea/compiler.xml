@@ -53,8 +53,7 @@
         <module name="teavm-tooling" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="impl" target="1.8" />
+    <bytecodeTargetLevel target="1.8">
       <module name="teavm" target="1.5" />
       <module name="teavm-chrome-rdp" target="1.8" />
       <module name="teavm-classlib" target="1.8" />

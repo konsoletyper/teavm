@@ -513,6 +513,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             renderer.renderRuntime();
             renderer.render(clsNodes);
             renderer.renderStringPool();
+            renderer.renderStringConstants();
             for (Map.Entry<String, TeaVMEntryPoint> entry : entryPoints.entrySet()) {
                 sourceWriter.append("var ").append(entry.getKey()).ws().append("=").ws();
                 MethodReference ref = entry.getValue().reference;
