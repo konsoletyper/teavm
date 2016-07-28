@@ -26,10 +26,6 @@ import org.teavm.model.InstructionLocation;
 import org.teavm.model.MethodReference;
 import org.teavm.vm.TeaVM;
 
-/**
- *
- * @author Alexey Andreev
- */
 public final class TeaVMProblemRenderer {
     private TeaVMProblemRenderer() {
     }

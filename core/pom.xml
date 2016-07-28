@@ -37,7 +37,7 @@
     </dependency>
     <dependency>
       <groupId>org.teavm</groupId>
-      <artifactId>teavm-metaprogramming-api</artifactId>
+      <artifactId>teavm-interop</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

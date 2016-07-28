@@ -1,31 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="CompilerConfiguration">
-    <option name="DEFAULT_COMPILER" value="Javac" />
     <excludeFromCompile>
       <directory url="file://$PROJECT_DIR$/tools/maven/webapp/src/main/resources/archetype-resources" includeSubdirectories="true" />
     </excludeFromCompile>
-    <resourceExtensions />
-    <wildcardResourcePatterns>
-      <entry name="!?*.java" />
-      <entry name="!?*.form" />
-      <entry name="!?*.class" />
-      <entry name="!?*.groovy" />
-      <entry name="!?*.scala" />
-      <entry name="!?*.flex" />
-      <entry name="!?*.kt" />
-      <entry name="!?*.clj" />
-      <entry name="!?*.aj" />
-    </wildcardResourcePatterns>
     <annotationProcessing>
-      <profile default="true" name="Default" enabled="false">
-        <processorPath useClasspath="true" />
-      </profile>
-      <profile default="false" name="Maven default annotation processors profile" enabled="true">
+      <profile name="Maven default annotation processors profile" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <processorPath useClasspath="true" />
         <module name="impl" />
         <module name="teavm-chrome-rdp" />
         <module name="teavm-classlib" />
@@ -33,6 +16,7 @@
         <module name="teavm-core" />
         <module name="teavm-extras-slf4j" />
         <module name="teavm-html4j" />
+        <module name="teavm-interop" />
         <module name="teavm-jso" />
         <module name="teavm-jso-apis" />
         <module name="teavm-jso-impl" />
@@ -61,6 +45,7 @@
       <module name="teavm-core" target="1.8" />
       <module name="teavm-extras-slf4j" target="1.8" />
       <module name="teavm-html4j" target="1.8" />
+      <module name="teavm-interop" target="1.5" />
       <module name="teavm-jso" target="1.8" />
       <module name="teavm-jso-apis" target="1.8" />
       <module name="teavm-jso-impl" target="1.8" />

@@ -18,35 +18,103 @@ package org.teavm.wasm.render;
 import java.util.List;
 import org.teavm.wasm.model.WasmFunction;
 import org.teavm.wasm.model.WasmLocal;
+import org.teavm.wasm.model.WasmModule;
 import org.teavm.wasm.model.WasmType;
 import org.teavm.wasm.model.expression.WasmExpression;
 
 public class WasmRenderer {
     private WasmRenderingVisitor visitor = new WasmRenderingVisitor();
 
+    public WasmRenderer append(String text) {
+        visitor.append(text);
+        return this;
+    }
+
+    public WasmRenderer lf() {
+        visitor.lf();
+        return this;
+    }
+
+    public WasmRenderer indent() {
+        visitor.indent();
+        return this;
+    }
+
+    public WasmRenderer outdent() {
+        visitor.outdent();
+        return this;
+    }
+
+    public void render(WasmModule module) {
+        visitor.open().append("module");
+        for (WasmFunction function : module.getFunctions().values()) {
+            if (function.getImportName() == null) {
+                continue;
+            }
+            lf().renderImport(function);
+        }
+        for (WasmFunction function : module.getFunctions().values()) {
+            if (function.getImportName() != null) {
+                continue;
+            }
+            lf().render(function);
+        }
+        for (WasmFunction function : module.getFunctions().values()) {
+            if (function.getExportName() == null) {
+                continue;
+            }
+            lf().renderExport(function);
+        }
+        visitor.close().lf();
+    }
+
+    public void renderImport(WasmFunction function) {
+        String importModule = function.getImportModule();
+        if (importModule == null) {
+            importModule = "";
+        }
+        visitor.open().append("import $" + function.getName() + " \"" + importModule + "\" "
+                + "\"" + function.getName() + "\"");
+        renderSignature(function);
+        visitor.close();
+    }
+
+    public void renderExport(WasmFunction function) {
+        visitor.open().append("export \"" + function.getExportName() + "\" $" + function.getName()).close();
+    }
+
     public void render(WasmFunction function) {
-        visitor.open().append("func " + function.getName());
-        for (WasmType type : function.getParameters()) {
-            visitor.append(" ").open().append("param ").append(type).close();
-        }
-        if (function.getResult() != null) {
-            visitor.append(" ").open().append("result ").append(function.getResult()).close();
-        }
+        visitor.open().append("func $" + function.getName());
+        renderSignature(function);
 
         int firstLocalVariable = function.getParameters().size();
-        if (firstLocalVariable > function.getLocalVariables().size()) {
-            visitor.open().append("local");
+        if (firstLocalVariable < function.getLocalVariables().size()) {
+            visitor.lf().open().append("local");
             List<WasmLocal> locals = function.getLocalVariables().subList(firstLocalVariable,
                     function.getLocalVariables().size());
             for (WasmLocal local : locals) {
-                visitor.append(" " + local.getType());
+                visitor.append(" ").append(local.getType());
             }
             visitor.close();
         }
         for (WasmExpression part : function.getBody()) {
             visitor.line(part);
         }
-        visitor.close().lf().lf();
+        visitor.close().lf();
+        visitor.clear();
+    }
+
+    private void renderSignature(WasmFunction function) {
+        if (!function.getParameters().isEmpty()) {
+            visitor.append(" ").open().append("param");
+            for (WasmType type : function.getParameters()) {
+                visitor.append(" ").append(type);
+            }
+            visitor.close();
+        }
+        if (function.getResult() != null) {
+            visitor.append(" ").open().append("result ").append(function.getResult()).close();
+        }
     }
 
     @Override

@@ -24,7 +24,7 @@ import org.teavm.wasm.model.expression.WasmExpression;
 public class WasmFunction {
     WasmModule module;
     private String name;
-    private boolean exported;
+    private String exportName;
     private String importName;
     private String importModule;
     private List<WasmType> parameters = new ArrayList<>();
@@ -46,12 +46,12 @@ public class WasmFunction {
         return name;
     }
 
-    public boolean isExported() {
-        return exported;
+    public String getExportName() {
+        return exportName;
     }
 
-    public void setExported(boolean exported) {
-        this.exported = exported;
+    public void setExportName(String exportName) {
+        this.exportName = exportName;
     }
 
     public String getImportName() {

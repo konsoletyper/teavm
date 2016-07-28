@@ -59,6 +59,7 @@ import org.teavm.ast.UnaryExpr;
 import org.teavm.ast.UnwrapArrayExpr;
 import org.teavm.ast.VariableExpr;
 import org.teavm.ast.WhileStatement;
+import org.teavm.model.MethodReference;
 import org.teavm.wasm.model.WasmFunction;
 import org.teavm.wasm.model.WasmLocal;
 import org.teavm.wasm.model.expression.WasmBlock;
@@ -83,10 +84,12 @@ import org.teavm.wasm.model.expression.WasmIntType;
 import org.teavm.wasm.model.expression.WasmReturn;
 import org.teavm.wasm.model.expression.WasmSetLocal;
 import org.teavm.wasm.model.expression.WasmSwitch;
+import org.teavm.wasm.runtime.WasmRuntime;
 
 class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
-    private int firstVariable;
+    private WasmGenerationContext context;
     private WasmFunction function;
+    private int firstVariable;
     private IdentifiedStatement currentContinueTarget;
     private IdentifiedStatement currentBreakTarget;
     private Map<IdentifiedStatement, WasmBlock> breakTargets = new HashMap<>();
@@ -94,7 +97,8 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     private Set<WasmBlock> usedBlocks = new HashSet<>();
     WasmExpression result;
 
-    public WasmGenerationVisitor(WasmFunction function, int firstVariable) {
+    WasmGenerationVisitor(WasmGenerationContext context, WasmFunction function, int firstVariable) {
+        this.context = context;
         this.function = function;
         this.firstVariable = firstVariable;
     }
@@ -121,7 +125,9 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
                         generateBinary(WasmIntBinaryOperation.REM_SIGNED, expr);
                         break;
                     default:
-                        WasmCall call = new WasmCall("rt$remainder." + typeAsString(expr.getType()), false);
+                        Class<?> type = convertType(expr.getType());
+                        MethodReference method = new MethodReference(WasmRuntime.class, "remainder", type, type, type);
+                        WasmCall call = new WasmCall(WasmMangling.mangleMethod(method), false);
                         expr.getFirstOperand().acceptVisitor(this);
                         call.getArguments().add(result);
                         expr.getSecondOperand().acceptVisitor(this);
@@ -169,7 +175,9 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
                 generateBinary(WasmIntBinaryOperation.SHR_UNSIGNED, expr);
                 break;
             case COMPARE: {
-                WasmCall call = new WasmCall("rt$compare." + typeAsString(expr.getType()), false);
+                Class<?> type = convertType(expr.getType());
+                MethodReference method = new MethodReference(WasmRuntime.class, "compare", type, type, int.class);
+                WasmCall call = new WasmCall(WasmMangling.mangleMethod(method), false);
                 expr.getFirstOperand().acceptVisitor(this);
                 call.getArguments().add(result);
                 expr.getSecondOperand().acceptVisitor(this);
@@ -231,16 +239,16 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         }
     }
 
-    private String typeAsString(OperationType type) {
+    private Class<?> convertType(OperationType type) {
         switch (type) {
             case INT:
-                return "i32";
+                return int.class;
             case LONG:
-                return "i64";
+                return long.class;
             case FLOAT:
-                return "float";
+                return float.class;
             case DOUBLE:
-                return "double";
+                return double.class;
         }
         throw new AssertionError(type.toString());
     }
@@ -491,7 +499,11 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     public void visit(InvocationExpr expr) {
         if (expr.getType() == InvocationType.STATIC || expr.getType() == InvocationType.SPECIAL) {
             String methodName = WasmMangling.mangleMethod(expr.getMethod());
+
             WasmCall call = new WasmCall(methodName);
+            if (context.getImportedMethod(expr.getMethod()) != null) {
+                call.setImported(true);
+            }
             for (Expr argument : expr.getArguments()) {
                 argument.acceptVisitor(this);
                 call.getArguments().add(result);

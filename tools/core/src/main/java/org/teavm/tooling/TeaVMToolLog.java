@@ -15,10 +15,6 @@
  */
 package org.teavm.tooling;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface TeaVMToolLog {
     void info(String text);
 

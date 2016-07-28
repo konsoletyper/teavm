@@ -85,7 +85,7 @@ public class TeaVMEntryPoint {
         return reference;
     }
 
-    String getPublicName() {
+    public String getPublicName() {
         return publicName;
     }
 

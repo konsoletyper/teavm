@@ -394,7 +394,24 @@ public class TypeInferer {
         @Override
         public void binary(BinaryOperation op, VariableReader receiver, VariableReader first, VariableReader second,
                 NumericOperandType type) {
-            types[receiver.getIndex()] = convert(type);
+            switch (op) {
+                case ADD:
+                case SUBTRACT:
+                case MULTIPLY:
+                case DIVIDE:
+                case MODULO:
+                case AND:
+                case OR:
+                case XOR:
+                case SHIFT_LEFT:
+                case SHIFT_RIGHT:
+                case SHIFT_RIGHT_UNSIGNED:
+                    types[receiver.getIndex()] = convert(type);
+                    break;
+                case COMPARE:
+                    types[receiver.getIndex()] = VariableType.INT;
+                    break;
+            }
         }
 
         @Override

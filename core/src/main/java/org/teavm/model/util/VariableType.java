@@ -15,10 +15,6 @@
  */
 package org.teavm.model.util;
 
-/**
- *
- * @author Alexey Andreev
- */
 public enum VariableType {
     INT,
     LONG,

@@ -21,10 +21,6 @@ import java.util.Properties;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.tooling.sources.SourceFileProvider;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface BaseTeaVMTool {
     void setTargetDirectory(File targetDirectory);
 

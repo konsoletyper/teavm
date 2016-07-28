@@ -32,10 +32,12 @@ import org.teavm.wasm.model.WasmLocal;
 public class WasmGenerator {
     private Decompiler decompiler;
     private ClassHolderSource classSource;
+    private WasmGenerationContext context;
 
-    public WasmGenerator(Decompiler decompiler, ClassHolderSource classSource) {
+    public WasmGenerator(Decompiler decompiler, ClassHolderSource classSource, WasmGenerationContext context) {
         this.decompiler = decompiler;
         this.classSource = classSource;
+        this.context = context;
     }
 
     public WasmFunction generate(MethodReference methodReference) {
@@ -62,9 +64,24 @@ public class WasmGenerator {
             function.setResult(WasmGeneratorUtil.mapType(methodReference.getReturnType()));
         }
 
-        WasmGenerationVisitor visitor = new WasmGenerationVisitor(function, firstVariable);
+        WasmGenerationVisitor visitor = new WasmGenerationVisitor(context, function, firstVariable);
         methodAst.getBody().acceptVisitor(visitor);
         function.getBody().add(visitor.result);
+
+        return function;
+    }
+
+    public WasmFunction generateNative(MethodReference methodReference) {
+        WasmFunction function = new WasmFunction(WasmMangling.mangleMethod(methodReference));
+        for (int i = 0; i < methodReference.parameterCount(); ++i) {
+            function.getParameters().add(WasmGeneratorUtil.mapType(methodReference.parameterType(i)));
+        }
+
+        WasmGenerationContext.ImportedMethod importedMethod = context.getImportedMethod(methodReference);
+        if (importedMethod != null) {
+            function.setImportName(importedMethod.name);
+            function.setImportModule(importedMethod.module);
+        }
 
         return function;
     }

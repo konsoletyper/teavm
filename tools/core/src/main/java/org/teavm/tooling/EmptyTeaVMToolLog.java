@@ -15,10 +15,6 @@
  */
 package org.teavm.tooling;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class EmptyTeaVMToolLog implements TeaVMToolLog {
     @Override
     public void info(String text) {

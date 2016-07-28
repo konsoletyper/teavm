@@ -25,7 +25,8 @@ public final class WasmMangling {
     }
 
     public static String mangleMethod(MethodReference method) {
-        StringBuilder sb = new StringBuilder("method_" + mangleString(method.getClassName()) + "_");
+        String className = method.getClassName().length() + mangleString(method.getClassName());
+        StringBuilder sb = new StringBuilder("method$" + className + "_");
         String name = mangleString(method.getName());
         sb.append(mangleType(method.getReturnType()));
         sb.append(name.length() + "_" + name);
@@ -42,6 +43,15 @@ public final class WasmMangling {
             switch (c) {
                 case '$':
                     sb.append(c);
+                    break;
+                case '.':
+                    sb.append("_g");
+                    break;
+                case '<':
+                    sb.append("_h");
+                    break;
+                case '>':
+                    sb.append("_i");
                     break;
                 case '_':
                     sb.append("__");
@@ -88,7 +98,7 @@ public final class WasmMangling {
             return "A" + mangleType(((ValueType.Array) type).getItemType());
         } else if (type instanceof ValueType.Object) {
             String className = ((ValueType.Object) type).getClassName();
-            return "L" + className.length() + "_" + className;
+            return className.length() + "_" + mangleString(className);
         }
         throw new IllegalArgumentException("Don't know how to mangle " + type);
     }

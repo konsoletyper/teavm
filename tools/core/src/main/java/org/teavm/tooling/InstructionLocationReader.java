@@ -29,10 +29,6 @@ import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.NumericOperandType;
 import org.teavm.model.instructions.SwitchTableEntryReader;
 
-/**
- *
- * @author Alexey Andreev
- */
 class InstructionLocationReader implements InstructionReader {
     private Set<String> resources;
 

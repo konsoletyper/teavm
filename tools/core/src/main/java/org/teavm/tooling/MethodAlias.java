@@ -15,10 +15,6 @@
  */
 package org.teavm.tooling;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class MethodAlias {
     private String alias;
     private String className;

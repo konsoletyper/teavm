@@ -15,10 +15,6 @@
  */
 package org.teavm.tooling;
 
-/**
- *
- * @author Alexey Andreev
- */
 public enum RuntimeCopyOperation {
     SEPARATE,
     MERGED,

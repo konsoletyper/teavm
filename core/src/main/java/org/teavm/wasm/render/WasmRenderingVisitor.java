@@ -63,13 +63,11 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
     private Set<String> usedIdentifiers = new HashSet<>();
     StringBuilder sb = new StringBuilder();
     private Map<WasmBlock, String> blockIdentifiers = new HashMap<>();
-    private Map<WasmLocal, String> localIdentifiers = new HashMap<>();
     private int indentLevel;
     private boolean lfDeferred;
 
     void clear() {
         blockIdentifiers.clear();
-        localIdentifiers.clear();
         usedIdentifiers.clear();
     }
 
@@ -134,7 +132,7 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
     private void renderBlock(WasmBlock block, String name) {
         String id = getIdentifier("@block");
         blockIdentifiers.put(block, id);
-        open().append(name + " " + id);
+        open().append(name + " $" + id);
         for (WasmExpression part : block.getBody()) {
             line(part);
         }
@@ -144,7 +142,7 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
     @Override
     public void visit(WasmBranch expression) {
         String id = blockIdentifiers.get(expression.getTarget());
-        open().append("br_if " + id);
+        open().append("br_if $" + id);
         if (expression.getResult() != null) {
             line(expression.getResult());
         }
@@ -155,7 +153,7 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
     @Override
     public void visit(WasmBreak expression) {
         String id = blockIdentifiers.get(expression.getTarget());
-        open().append("br ").append(id);
+        open().append("br $").append(id);
         if (expression.getResult() != null) {
             line(expression.getResult());
         }
@@ -166,9 +164,9 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
     public void visit(WasmSwitch expression) {
         open().append("br_table ");
         for (WasmBlock target : expression.getTargets()) {
-            append(blockIdentifiers.get(target)).append(" ");
+            append("$" + blockIdentifiers.get(target)).append(" ");
         }
-        append(blockIdentifiers.get(expression.getDefaultTarget()));
+        append("$" + blockIdentifiers.get(expression.getDefaultTarget()));
         line(expression.getSelector());
         close();
     }
@@ -231,11 +229,8 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
         open().append("set_local " + asString(expression.getLocal())).line(expression.getValue()).close();
     }
 
-    private String asString(WasmLocal local) {
-        return localIdentifiers.computeIfAbsent(local, l -> {
-            String suggested = l.getName() != null ? l.getName() : "@local" + local.getIndex();
-            return getIdentifier(suggested);
-        });
+    String asString(WasmLocal local) {
+        return String.valueOf(local.getIndex());
     }
 
     @Override
@@ -337,7 +332,7 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmCall expression) {
-        open().append(expression.isImported() ? "call_import" : "call").append(" " + expression.getFunctionName());
+        open().append(expression.isImported() ? "call_import" : "call").append(" $" + expression.getFunctionName());
         for (WasmExpression argument : expression.getArguments()) {
             line(argument);
         }
@@ -356,7 +351,7 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmDrop expression) {
-        open().append("drop").line(expression.getOperand()).close();
+        append(expression.getOperand());
     }
 
     @Override

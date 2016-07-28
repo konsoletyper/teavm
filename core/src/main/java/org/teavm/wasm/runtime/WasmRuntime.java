@@ -15,6 +15,8 @@
  */
 package org.teavm.wasm.runtime;
 
+import org.teavm.interop.Import;
+
 public final class WasmRuntime {
     private WasmRuntime() {
     }
@@ -43,5 +45,6 @@ public final class WasmRuntime {
         return a - (double) (long) (a / b) * b;
     }
 
+    @Import(name = "print.i32")
     public static native void print(int a);
 }

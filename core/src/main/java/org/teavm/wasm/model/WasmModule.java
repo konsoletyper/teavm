@@ -16,12 +16,14 @@
 package org.teavm.wasm.model;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 public class WasmModule {
     private Map<String, WasmFunction> functions = new LinkedHashMap<>();
+    private Map<String, WasmFunction> readonlyFunctions = Collections.unmodifiableMap(functions);
     private List<WasmFunction> functionTable = new ArrayList<>();
 
     public void add(WasmFunction function) {
@@ -33,6 +35,10 @@ public class WasmModule {
         }
         functions.put(function.getName(), function);
         function.module = this;
+    }
+
+    public Map<String, WasmFunction> getFunctions() {
+        return readonlyFunctions;
     }
 
     public List<WasmFunction> getFunctionTable() {
