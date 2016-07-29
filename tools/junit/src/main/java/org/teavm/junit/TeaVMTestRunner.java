@@ -47,7 +47,7 @@ import org.junit.runners.model.InitializationError;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.diagnostics.DefaultProblemTextConsumer;
 import org.teavm.diagnostics.Problem;
-import org.teavm.javascript.target.JavaScriptTarget;
+import org.teavm.javascript.backend.JavaScriptTarget;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.model.MethodDescriptor;

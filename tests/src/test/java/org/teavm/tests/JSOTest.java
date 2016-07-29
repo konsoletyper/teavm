@@ -22,7 +22,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.List;
 import org.junit.Test;
 import org.teavm.diagnostics.Problem;
-import org.teavm.javascript.target.JavaScriptTarget;
+import org.teavm.javascript.backend.JavaScriptTarget;
 import org.teavm.jso.JSBody;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;

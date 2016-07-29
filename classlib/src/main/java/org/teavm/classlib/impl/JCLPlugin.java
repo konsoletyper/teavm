@@ -24,7 +24,7 @@ import java.util.ServiceLoader;
 import org.teavm.classlib.impl.lambda.LambdaMetafactorySubstitutor;
 import org.teavm.classlib.impl.unicode.CLDRReader;
 import org.teavm.classlib.java.lang.reflect.AnnotationDependencyListener;
-import org.teavm.javascript.target.TeaVMJavaScriptHost;
+import org.teavm.javascript.backend.TeaVMJavaScriptHost;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.PlatformClass;
 import org.teavm.vm.spi.TeaVMHost;

@@ -15,7 +15,7 @@
  */
 package org.teavm.jso.impl;
 
-import org.teavm.javascript.target.TeaVMJavaScriptHost;
+import org.teavm.javascript.backend.TeaVMJavaScriptHost;
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
 

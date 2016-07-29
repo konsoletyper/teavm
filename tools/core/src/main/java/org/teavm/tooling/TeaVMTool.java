@@ -43,7 +43,7 @@ import org.teavm.debugging.information.DebugInformationBuilder;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.ProblemProvider;
 import org.teavm.javascript.RenderingContext;
-import org.teavm.javascript.target.JavaScriptTarget;
+import org.teavm.javascript.backend.JavaScriptTarget;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReader;

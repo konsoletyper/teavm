@@ -16,7 +16,7 @@
 package org.teavm.platform.plugin;
 
 import org.teavm.diagnostics.Diagnostics;
-import org.teavm.javascript.target.TeaVMJavaScriptHost;
+import org.teavm.javascript.backend.TeaVMJavaScriptHost;
 import org.teavm.model.*;
 import org.teavm.vm.spi.TeaVMHost;
 
