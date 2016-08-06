@@ -45,6 +45,6 @@ public final class WasmRuntime {
         return a - (double) (long) (a / b) * b;
     }
 
-    @Import(name = "print.i32")
+    @Import(name = "print", module = "spectest")
     public static native void print(int a);
 }

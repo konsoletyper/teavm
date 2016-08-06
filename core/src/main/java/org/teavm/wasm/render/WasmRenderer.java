@@ -74,7 +74,7 @@ public class WasmRenderer {
             importModule = "";
         }
         visitor.open().append("import $" + function.getName() + " \"" + importModule + "\" "
-                + "\"" + function.getName() + "\"");
+                + "\"" + function.getImportName() + "\"");
         renderSignature(function);
         visitor.close();
     }

@@ -473,7 +473,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
         if (statement.getCondition() != null) {
             statement.getCondition().acceptVisitor(this);
-            loop.getBody().add(new WasmBranch(result, wrapper));
+            loop.getBody().add(new WasmBranch(negate(result), wrapper));
             usedBlocks.add(wrapper);
         }
 
@@ -481,6 +481,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             part.acceptVisitor(this);
             loop.getBody().add(result);
         }
+        loop.getBody().add(new WasmBreak(loop));
 
         currentBreakTarget = oldBreakTarget;
         currentContinueTarget = oldContinueTarget;

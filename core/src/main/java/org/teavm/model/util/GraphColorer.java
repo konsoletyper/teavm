@@ -28,6 +28,16 @@ class GraphColorer {
 
     public void colorize(List<MutableGraphNode> graph, int[] colors, int[] categories) {
         IntegerArray colorCategories = new IntegerArray(graph.size());
+        for (int i = 0; i < colors.length; ++i) {
+            int color = colors[i];
+            if (colors[i] < 0) {
+                continue;
+            }
+            while (colorCategories.size() <= color) {
+                colorCategories.add(-1);
+            }
+            colorCategories.set(color, categories[i]);
+        }
         BitSet usedColors = new BitSet();
         for (int v : getOrdering(graph)) {
             if (colors[v] >= 0) {
