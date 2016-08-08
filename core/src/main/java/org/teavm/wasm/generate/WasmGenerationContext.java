@@ -22,8 +22,11 @@ import org.teavm.model.AnnotationReader;
 import org.teavm.model.AnnotationValue;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
+import org.teavm.model.FieldReader;
+import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 
 public class WasmGenerationContext {
     private ClassReaderSource classSource;
@@ -56,6 +59,16 @@ public class WasmGenerationContext {
             }
             return new ImportedMethod(name, module);
         });
+    }
+
+    public ClassReaderSource getClassSource() {
+        return classSource;
+    }
+
+    public ValueType getFieldType(FieldReference fieldReference) {
+        ClassReader cls = classSource.get(fieldReference.getClassName());
+        FieldReader field = cls.getField(fieldReference.getFieldName());
+        return field.getType();
     }
 
     public class ImportedMethod {

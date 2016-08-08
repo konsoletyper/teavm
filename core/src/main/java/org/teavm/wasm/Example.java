@@ -30,5 +30,18 @@ public final class Example {
             b = c;
             WasmRuntime.print(a);
         }
+        WasmRuntime.print(new A(2).getValue() + new A(3).getValue());
+    }
+
+    private static class A {
+        private int value;
+
+        public A(int value) {
+            this.value = value;
+        }
+
+        public int getValue() {
+            return value;
+        }
     }
 }

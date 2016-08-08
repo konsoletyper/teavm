@@ -18,6 +18,7 @@ package org.teavm.wasm.render;
 import java.util.List;
 import org.teavm.wasm.model.WasmFunction;
 import org.teavm.wasm.model.WasmLocal;
+import org.teavm.wasm.model.WasmMemorySegment;
 import org.teavm.wasm.model.WasmModule;
 import org.teavm.wasm.model.WasmType;
 import org.teavm.wasm.model.expression.WasmExpression;
@@ -47,6 +48,7 @@ public class WasmRenderer {
 
     public void render(WasmModule module) {
         visitor.open().append("module");
+        renderMemory(module);
         for (WasmFunction function : module.getFunctions().values()) {
             if (function.getImportName() == null) {
                 continue;
@@ -64,6 +66,35 @@ public class WasmRenderer {
                 continue;
             }
             lf().renderExport(function);
+        }
+        visitor.close().lf();
+    }
+
+    public void renderMemory(WasmModule module) {
+        visitor.open().append("memory " + module.getMemorySize());
+        for (WasmMemorySegment segment : module.getSegments()) {
+            visitor.lf().open().append("segment " + segment.getLength());
+            visitor.indent();
+            for (int i = 0; i < segment.getLength(); i += 256) {
+                visitor.lf().append("\"");
+                byte[] part = segment.getData(i, Math.max(segment.getLength(), i + 256) - i);
+                StringBuilder sb = new StringBuilder();
+                for (int j = 0; j < part.length; ++j) {
+                    int b = part[j] << 24 >>> 24;
+                    if (b < ' ' || b > 126) {
+                        sb.append("\\0x" + Character.forDigit(b >> 4, 16) + Character.forDigit(b & 0xF, 16));
+                    } else if (b == '\\') {
+                        sb.append("\\\\");
+                    } else if (b == '"') {
+                        sb.append("\\\"");
+                    } else {
+                        sb.append((char) b);
+                    }
+                }
+                visitor.append(sb.toString()).append("\"");
+            }
+            visitor.outdent();
+            visitor.close();
         }
         visitor.close().lf();
     }

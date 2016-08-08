@@ -35,11 +35,14 @@ public class WasmGenerator {
     private Decompiler decompiler;
     private ClassHolderSource classSource;
     private WasmGenerationContext context;
+    private WasmClassGenerator classGenerator;
 
-    public WasmGenerator(Decompiler decompiler, ClassHolderSource classSource, WasmGenerationContext context) {
+    public WasmGenerator(Decompiler decompiler, ClassHolderSource classSource, WasmGenerationContext context,
+            WasmClassGenerator classGenerator) {
         this.decompiler = decompiler;
         this.classSource = classSource;
         this.context = context;
+        this.classGenerator = classGenerator;
     }
 
     public WasmFunction generate(MethodReference methodReference) {
@@ -79,7 +82,7 @@ public class WasmGenerator {
             function.setResult(WasmGeneratorUtil.mapType(methodReference.getReturnType()));
         }
 
-        WasmGenerationVisitor visitor = new WasmGenerationVisitor(context, function, firstVariable);
+        WasmGenerationVisitor visitor = new WasmGenerationVisitor(context, classGenerator, function, firstVariable);
         methodAst.getBody().acceptVisitor(visitor);
         function.getBody().add(visitor.result);
 

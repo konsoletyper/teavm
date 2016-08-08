@@ -26,13 +26,22 @@ import java.util.HashSet;
 import java.util.List;
 import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.dependency.DependencyChecker;
+import org.teavm.interop.Address;
 import org.teavm.interop.Import;
+import org.teavm.interop.StaticInit;
+import org.teavm.interop.Structure;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHolder;
+import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.ListableClassHolderSource;
+import org.teavm.model.ListableClassReaderSource;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
+import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
+import org.teavm.runtime.Allocator;
+import org.teavm.runtime.RuntimeClass;
 import org.teavm.vm.BuildTarget;
 import org.teavm.vm.TeaVM;
 import org.teavm.vm.TeaVMBuilder;
@@ -40,11 +49,25 @@ import org.teavm.vm.TeaVMEntryPoint;
 import org.teavm.vm.TeaVMTarget;
 import org.teavm.vm.TeaVMTargetController;
 import org.teavm.vm.spi.TeaVMHostExtension;
+import org.teavm.wasm.generate.WasmClassGenerator;
 import org.teavm.wasm.generate.WasmGenerationContext;
 import org.teavm.wasm.generate.WasmGenerator;
 import org.teavm.wasm.generate.WasmMangling;
 import org.teavm.wasm.model.WasmFunction;
 import org.teavm.wasm.model.WasmModule;
+import org.teavm.wasm.model.WasmType;
+import org.teavm.wasm.model.expression.WasmBlock;
+import org.teavm.wasm.model.expression.WasmBranch;
+import org.teavm.wasm.model.expression.WasmCall;
+import org.teavm.wasm.model.expression.WasmExpression;
+import org.teavm.wasm.model.expression.WasmInt32Constant;
+import org.teavm.wasm.model.expression.WasmInt32Subtype;
+import org.teavm.wasm.model.expression.WasmIntBinary;
+import org.teavm.wasm.model.expression.WasmIntBinaryOperation;
+import org.teavm.wasm.model.expression.WasmIntType;
+import org.teavm.wasm.model.expression.WasmLoadInt32;
+import org.teavm.wasm.model.expression.WasmReturn;
+import org.teavm.wasm.model.expression.WasmStoreInt32;
 import org.teavm.wasm.render.WasmRenderer;
 import org.teavm.wasm.runtime.WasmRuntime;
 
@@ -76,19 +99,46 @@ public class WasmTarget implements TeaVMTarget {
             MethodReference method = new MethodReference(WasmRuntime.class, "remainder", type, type, type);
             dependencyChecker.linkMethod(method, null).use();
         }
+
+        dependencyChecker.linkMethod(new MethodReference(Allocator.class, "allocate",
+                RuntimeClass.class, Address.class), null).use();
+        dependencyChecker.linkMethod(new MethodReference(Allocator.class, "<clinit>", void.class), null).use();
     }
 
     @Override
     public void emit(ListableClassHolderSource classes, OutputStream output, BuildTarget buildTarget) {
-        Decompiler decompiler = new Decompiler(classes, controller.getClassLoader(), new HashSet<>(), new HashSet<>());
+        int address = 256;
+
+        WasmClassGenerator classGenerator = new WasmClassGenerator(classes, address);
+        for (String className : classes.getClassNames()) {
+            classGenerator.addClass(className);
+            if (controller.wasCancelled()) {
+                return;
+            }
+        }
+        address = classGenerator.getAddress();
+
+        Decompiler decompiler = new Decompiler(classes, controller.getClassLoader(), new HashSet<>(),
+                new HashSet<>());
         WasmGenerationContext context = new WasmGenerationContext(classes);
-        WasmGenerator generator = new WasmGenerator(decompiler, classes, context);
+        WasmGenerator generator = new WasmGenerator(decompiler, classes, context, classGenerator);
 
         WasmModule module = new WasmModule();
+        module.setMemorySize(64);
+
         for (String className : classes.getClassNames()) {
             ClassHolder cls = classes.get(className);
             for (MethodHolder method : cls.getMethods()) {
+                if (method.getOwnerName().equals(Allocator.class.getName())
+                        && method.getName().equals("initialize")) {
+                    continue;
+                }
+
                 if (method.hasModifier(ElementModifier.NATIVE)) {
+                    if (method.getOwnerName().equals(Structure.class.getName())
+                            || method.getOwnerName().equals(Address.class.getName())) {
+                        continue;
+                    }
                     if (context.getImportedMethod(method.getReference()) == null) {
                         CallLocation location = new CallLocation(method.getReference());
                         controller.getDiagnostics().error(location, "Method {{m0}} is native but "
@@ -106,6 +156,27 @@ public class WasmTarget implements TeaVMTarget {
                 }
             }
         }
+
+        renderAllocatorInit(module, address);
+        renderClinit(classes, classGenerator, module);
+        if (controller.wasCancelled()) {
+            return;
+        }
+
+        WasmFunction initFunction = new WasmFunction("__start__");
+        classGenerator.contributeToInitializer(initFunction.getBody());
+        for (String className : classes.getClassNames()) {
+            ClassReader cls = classes.get(className);
+            if (cls.getAnnotations().get(StaticInit.class.getName()) == null) {
+                continue;
+            }
+            MethodReader clinit = cls.getMethod(new MethodDescriptor("<clinit>", void.class));
+            if (clinit == null) {
+                continue;
+            }
+            initFunction.getBody().add(new WasmCall(WasmMangling.mangleMethod(clinit.getReference())));
+        }
+        module.add(initFunction);
 
         for (TeaVMEntryPoint entryPoint : controller.getEntryPoints().values()) {
             String mangledName = WasmMangling.mangleMethod(entryPoint.getReference());
@@ -125,6 +196,57 @@ public class WasmTarget implements TeaVMTarget {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void renderClinit(ListableClassReaderSource classes, WasmClassGenerator classGenerator,
+            WasmModule module) {
+        for (String className : classes.getClassNames()) {
+            if (classGenerator.isStructure(className)) {
+                continue;
+            }
+
+            ClassReader cls = classes.get(className);
+            MethodReader method = cls.getMethod(new MethodDescriptor("<clinit>", void.class));
+            if (method == null) {
+                continue;
+            }
+
+            WasmFunction initFunction = new WasmFunction(WasmMangling.mangleInitializer(className));
+            module.add(initFunction);
+
+            WasmBlock block = new WasmBlock(false);
+
+            int index = classGenerator.getClassPointer(className);
+            WasmExpression initFlag = new WasmLoadInt32(4, new WasmInt32Constant(index), WasmInt32Subtype.INT32);
+            initFlag = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.AND, initFlag,
+                    new WasmInt32Constant(RuntimeClass.INITIALIZED));
+            block.getBody().add(new WasmBranch(initFlag, block));
+            initFunction.getBody().add(block);
+
+            initFlag = new WasmLoadInt32(4, new WasmInt32Constant(index), WasmInt32Subtype.INT32);
+            initFlag = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.OR, initFlag,
+                    new WasmInt32Constant(RuntimeClass.INITIALIZED));
+            block.getBody().add(new WasmStoreInt32(4, new WasmInt32Constant(index), initFlag,
+                    WasmInt32Subtype.INT32));
+
+            if (method != null) {
+                block.getBody().add(new WasmCall(WasmMangling.mangleMethod(method.getReference())));
+            }
+
+            if (controller.wasCancelled()) {
+                break;
+            }
+        }
+    }
+
+    private void renderAllocatorInit(WasmModule module, int address) {
+        address = (((address - 1) / 4096) + 1) * 4096;
+
+        WasmFunction function = new WasmFunction(WasmMangling.mangleMethod(new MethodReference(
+                Allocator.class, "initialize", Address.class)));
+        function.setResult(WasmType.INT32);
+        function.getBody().add(new WasmReturn(new WasmInt32Constant(address)));
+        module.add(function);
     }
 
     public static void main(String[] args) throws IOException {

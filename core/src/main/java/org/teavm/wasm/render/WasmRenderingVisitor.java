@@ -356,42 +356,134 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmLoadInt32 expression) {
-
+        open();
+        switch (expression.getConvertFrom()) {
+            case INT8:
+                append("i32.load8_s");
+                break;
+            case UINT8:
+                append("i32.load8_u");
+                break;
+            case INT16:
+                append("i32.load16_s");
+                break;
+            case UINT16:
+                append("i32.load16_u");
+                break;
+            case INT32:
+                append("i32.load");
+                break;
+        }
+        append(" align=" + expression.getAlignment());
+        line(expression.getIndex());
+        close();
     }
 
     @Override
     public void visit(WasmLoadInt64 expression) {
-
+        open();
+        switch (expression.getConvertFrom()) {
+            case INT8:
+                append("i64.load8_s");
+                break;
+            case UINT8:
+                append("i64.load8_u");
+                break;
+            case INT16:
+                append("i64.load16_s");
+                break;
+            case UINT16:
+                append("i64.load16_u");
+                break;
+            case INT32:
+                append("i64.load32_s");
+                break;
+            case UINT32:
+                append("i64.load32_u");
+                break;
+            case INT64:
+                append("i64.load");
+                break;
+        }
+        append(" align=" + expression.getAlignment());
+        line(expression.getIndex());
+        close();
     }
 
     @Override
     public void visit(WasmLoadFloat32 expression) {
-
+        open().append("f32.load align=" + expression.getAlignment());
+        line(expression.getIndex());
+        close();
     }
 
     @Override
     public void visit(WasmLoadFloat64 expression) {
-
+        open().append("f64.load align=" + expression.getAlignment());
+        line(expression.getIndex());
+        close();
     }
 
     @Override
     public void visit(WasmStoreInt32 expression) {
-
+        open();
+        switch (expression.getConvertTo()) {
+            case INT8:
+            case UINT8:
+                append("i32.store8");
+            case INT16:
+            case UINT16:
+                append("i32.store16");
+                break;
+            case INT32:
+                append("i32.store");
+                break;
+        }
+        append(" align=" + expression.getAlignment());
+        line(expression.getIndex());
+        line(expression.getValue());
+        close();
     }
 
     @Override
     public void visit(WasmStoreInt64 expression) {
-
+        open();
+        switch (expression.getConvertTo()) {
+            case INT8:
+            case UINT8:
+                append("i64.store8");
+            case INT16:
+            case UINT16:
+                append("i64.store16");
+                break;
+            case INT32:
+            case UINT32:
+                append("i64.store32");
+                break;
+            case INT64:
+                append("i64.store");
+                break;
+        }
+        append(" align=" + expression.getAlignment());
+        line(expression.getIndex());
+        line(expression.getValue());
+        close();
     }
 
     @Override
     public void visit(WasmStoreFloat32 expression) {
-
+        open().append("f32.store align=" + expression.getAlignment());
+        line(expression.getIndex());
+        line(expression.getValue());
+        close();
     }
 
     @Override
     public void visit(WasmStoreFloat64 expression) {
-
+        open().append("f64.store align=" + expression.getAlignment());
+        line(expression.getIndex());
+        line(expression.getValue());
+        close();
     }
 
     private String getIdentifier(String suggested) {

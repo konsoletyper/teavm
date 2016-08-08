@@ -36,6 +36,10 @@ public final class WasmMangling {
         return sb.toString();
     }
 
+    public static String mangleInitializer(String className) {
+        return "clinit$" + mangleString(className);
+    }
+
     private static String mangleString(String string) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < string.length(); ++i) {
