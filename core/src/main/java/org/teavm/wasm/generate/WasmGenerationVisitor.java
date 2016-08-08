@@ -635,11 +635,69 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
                     return binary.getFirst();
                 }
             }
+
+            WasmIntBinaryOperation negatedOp = negate(binary.getOperation());
+            if (negatedOp != null) {
+                return new WasmIntBinary(binary.getType(), negatedOp, binary.getFirst(), binary.getSecond());
+            }
+        } else if (expr instanceof WasmFloatBinary) {
+            WasmFloatBinary binary = (WasmFloatBinary) expr;
+            WasmFloatBinaryOperation negatedOp = negate(binary.getOperation());
+            if (negatedOp != null) {
+                return new WasmFloatBinary(binary.getType(), negatedOp, binary.getFirst(), binary.getSecond());
+            }
         }
+
         return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.XOR, expr, new WasmInt32Constant(1));
     }
 
     private boolean isOne(WasmExpression expression) {
         return expression instanceof WasmInt32Constant && ((WasmInt32Constant) expression).getValue() == 1;
+    }
+
+    private WasmIntBinaryOperation negate(WasmIntBinaryOperation op) {
+        switch (op) {
+            case EQ:
+                return WasmIntBinaryOperation.NE;
+            case NE:
+                return WasmIntBinaryOperation.EQ;
+            case LT_SIGNED:
+                return WasmIntBinaryOperation.GE_SIGNED;
+            case LT_UNSIGNED:
+                return WasmIntBinaryOperation.GE_UNSIGNED;
+            case LE_SIGNED:
+                return WasmIntBinaryOperation.GT_SIGNED;
+            case LE_UNSIGNED:
+                return WasmIntBinaryOperation.GT_UNSIGNED;
+            case GT_SIGNED:
+                return WasmIntBinaryOperation.LE_SIGNED;
+            case GT_UNSIGNED:
+                return WasmIntBinaryOperation.LE_UNSIGNED;
+            case GE_SIGNED:
+                return WasmIntBinaryOperation.LT_SIGNED;
+            case GE_UNSIGNED:
+                return WasmIntBinaryOperation.LT_UNSIGNED;
+            default:
+                return null;
+        }
+    }
+
+    private WasmFloatBinaryOperation negate(WasmFloatBinaryOperation op) {
+        switch (op) {
+            case EQ:
+                return WasmFloatBinaryOperation.NE;
+            case NE:
+                return WasmFloatBinaryOperation.EQ;
+            case LT:
+                return WasmFloatBinaryOperation.GE;
+            case LE:
+                return WasmFloatBinaryOperation.GT;
+            case GT:
+                return WasmFloatBinaryOperation.LE;
+            case GE:
+                return WasmFloatBinaryOperation.LT;
+            default:
+                return null;
+        }
     }
 }
