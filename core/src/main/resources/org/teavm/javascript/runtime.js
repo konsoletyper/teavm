@@ -645,8 +645,10 @@ function Long_gt(a, b) {
     if (a.hi > b.hi) {
         return true;
     }
-    if ((a.lo >>> 1) > (b.lo >>> 1)) {
-        return true;
+    var x = a.lo >>> 1;
+    var y = b.lo >>> 1;
+    if (x != y) {
+        return x > y;
     }
     return (a.lo & 1) > (b.lo & 1);
 }
@@ -657,8 +659,10 @@ function Long_ge(a, b) {
     if (a.hi > b.hi) {
         return true;
     }
-    if ((a.lo >>> 1) >= (b.lo >>> 1)) {
-        return true;
+    var x = a.lo >>> 1;
+    var y = b.lo >>> 1;
+    if (x != y) {
+        return x >= y;
     }
     return (a.lo & 1) >= (b.lo & 1);
 }
@@ -669,8 +673,10 @@ function Long_lt(a, b) {
     if (a.hi < b.hi) {
         return true;
     }
-    if ((a.lo >>> 1) < (b.lo >>> 1)) {
-        return true;
+    var x = a.lo >>> 1;
+    var y = b.lo >>> 1;
+    if (x != y) {
+        return x < y;
     }
     return (a.lo & 1) < (b.lo & 1);
 }
@@ -683,6 +689,11 @@ function Long_le(a, b) {
     }
     if ((a.lo >>> 1) <= (b.lo >>> 1)) {
         return true;
+    }
+    var x = a.lo >>> 1;
+    var y = b.lo >>> 1;
+    if (x != y) {
+        return x <= y;
     }
     return (a.lo & 1) <= (b.lo & 1);
 }

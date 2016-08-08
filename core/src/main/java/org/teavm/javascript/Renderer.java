@@ -1514,10 +1514,18 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                     visitBinary(expr, "%", expr.getType() == OperationType.INT);
                     break;
                 case EQUALS:
-                    visitBinary(expr, "===", false);
+                    if (expr.getType() == OperationType.INT) {
+                        visitBinary(expr, "==", false);
+                    } else {
+                        visitBinary(expr, "===", false);
+                    }
                     break;
                 case NOT_EQUALS:
-                    visitBinary(expr, "!==", false);
+                    if (expr.getType() == OperationType.INT) {
+                        visitBinary(expr, "!=", false);
+                    } else {
+                        visitBinary(expr, "!==", false);
+                    }
                     break;
                 case GREATER:
                     visitBinary(expr, ">", false);
@@ -1591,7 +1599,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 }
                 case NEGATE:
                     if (expr.getType() == OperationType.LONG) {
-                        writer.append("Long_not(");
+                        writer.append("Long_neg(");
                         precedence = Precedence.min();
                         expr.getOperand().acceptVisitor(this);
                         writer.append(')');
@@ -2231,7 +2239,11 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 String clsName = ((ValueType.Object) expr.getType()).getClassName();
                 ClassHolder cls = classSource.get(clsName);
                 if (cls != null && !cls.getModifiers().contains(ElementModifier.INTERFACE)) {
-                    precedence = Precedence.COMPARISON.next();
+                    boolean needsParentheses = Precedence.COMPARISON.ordinal() < precedence.ordinal();
+                    if (needsParentheses) {
+                        writer.append('(');
+                    }
+                    precedence = Precedence.CONDITIONAL.next();
                     expr.getExpr().acceptVisitor(this);
                     writer.append(" instanceof ").appendClass(clsName);
                     if (expr.getLocation() != null) {
