@@ -687,9 +687,6 @@ function Long_le(a, b) {
     if (a.hi < b.hi) {
         return true;
     }
-    if ((a.lo >>> 1) <= (b.lo >>> 1)) {
-        return true;
-    }
     var x = a.lo >>> 1;
     var y = b.lo >>> 1;
     if (x != y) {
