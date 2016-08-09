@@ -15,7 +15,7 @@
  */
 package org.teavm.classlib.java.lang.annotation;
 
-import org.teavm.javascript.spi.Rename;
+import org.teavm.interop.Rename;
 
 /**
  *

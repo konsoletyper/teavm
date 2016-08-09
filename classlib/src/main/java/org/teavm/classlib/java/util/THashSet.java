@@ -20,7 +20,7 @@ import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.TCloneNotSupportedException;
 import org.teavm.classlib.java.lang.TCloneable;
 import org.teavm.classlib.java.lang.TObject;
-import org.teavm.javascript.spi.Rename;
+import org.teavm.interop.Rename;
 
 /**
  *

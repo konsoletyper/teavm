@@ -1,5 +1,5 @@
 /*
- *  Copyright 2013 Alexey Andreev.
+ *  Copyright 2016 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,18 +13,16 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.javascript.spi;
+package org.teavm.interop;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
  *
  * @author Alexey Andreev
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface Remove {
+@Target({ ElementType.METHOD, ElementType.CONSTRUCTOR })
+public @interface Rename {
+    String value();
 }

@@ -36,7 +36,7 @@ import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.*;
-import org.teavm.javascript.spi.Rename;
+import org.teavm.interop.Rename;
 
 public class THashMap<K, V> extends TAbstractMap<K, V> implements TCloneable, TSerializable {
     transient int elementCount;

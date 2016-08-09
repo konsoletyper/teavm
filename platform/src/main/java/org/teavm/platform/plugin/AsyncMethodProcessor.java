@@ -17,9 +17,9 @@ package org.teavm.platform.plugin;
 
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.diagnostics.Diagnostics;
-import org.teavm.javascript.spi.Async;
+import org.teavm.interop.Async;
 import org.teavm.javascript.spi.GeneratedBy;
-import org.teavm.javascript.spi.Sync;
+import org.teavm.interop.Sync;
 import org.teavm.model.*;
 import org.teavm.platform.async.AsyncCallback;
 

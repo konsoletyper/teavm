@@ -34,7 +34,7 @@ import org.teavm.cache.NoCache;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.javascript.spi.GeneratedBy;
 import org.teavm.javascript.spi.InjectedBy;
-import org.teavm.javascript.spi.Sync;
+import org.teavm.interop.Sync;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSFunctor;
 import org.teavm.jso.JSIndexer;

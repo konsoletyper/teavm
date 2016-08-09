@@ -17,9 +17,9 @@ package org.teavm.classlib.java.lang;
 
 import org.teavm.classlib.java.io.TPrintStream;
 import org.teavm.classlib.java.util.TArrays;
-import org.teavm.javascript.spi.Remove;
-import org.teavm.javascript.spi.Rename;
-import org.teavm.javascript.spi.Superclass;
+import org.teavm.interop.Remove;
+import org.teavm.interop.Rename;
+import org.teavm.interop.Superclass;
 
 /**
  *

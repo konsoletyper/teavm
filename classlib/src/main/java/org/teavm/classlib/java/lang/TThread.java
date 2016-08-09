@@ -15,7 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
-import org.teavm.javascript.spi.Async;
+import org.teavm.interop.Async;
 import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformRunnable;
 import org.teavm.platform.async.AsyncCallback;
