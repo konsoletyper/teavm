@@ -1718,9 +1718,14 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                             writer.append(')');
                             break;
                         case INT:
-                            precedence = Precedence.BITWISE_OR;
-                            expr.getValue().acceptVisitor(this);
-                            writer.ws().append("|").ws().append("0");
+                            visitBinary(BinaryOperation.BITWISE_OR, "|", () -> expr.getValue().acceptVisitor(this),
+                                    () -> {
+                                        try {
+                                            writer.append("0");
+                                        } catch (IOException e) {
+                                            throw new RenderingException("IO error occurred", e);
+                                        }
+                                    });
                             break;
                         default:
                             expr.getValue().acceptVisitor(this);
