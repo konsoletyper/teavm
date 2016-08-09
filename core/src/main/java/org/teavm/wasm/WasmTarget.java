@@ -53,6 +53,7 @@ import org.teavm.wasm.generate.WasmClassGenerator;
 import org.teavm.wasm.generate.WasmGenerationContext;
 import org.teavm.wasm.generate.WasmGenerator;
 import org.teavm.wasm.generate.WasmMangling;
+import org.teavm.wasm.intrinsics.WasmRuntimeIntrinsic;
 import org.teavm.wasm.model.WasmFunction;
 import org.teavm.wasm.model.WasmModule;
 import org.teavm.wasm.model.WasmType;
@@ -69,7 +70,6 @@ import org.teavm.wasm.model.expression.WasmLoadInt32;
 import org.teavm.wasm.model.expression.WasmReturn;
 import org.teavm.wasm.model.expression.WasmStoreInt32;
 import org.teavm.wasm.render.WasmRenderer;
-import org.teavm.wasm.runtime.WasmRuntime;
 
 public class WasmTarget implements TeaVMTarget {
     private TeaVMTargetController controller;
@@ -121,6 +121,7 @@ public class WasmTarget implements TeaVMTarget {
         Decompiler decompiler = new Decompiler(classes, controller.getClassLoader(), new HashSet<>(),
                 new HashSet<>());
         WasmGenerationContext context = new WasmGenerationContext(classes);
+        context.addIntrinsic(new WasmRuntimeIntrinsic());
         WasmGenerator generator = new WasmGenerator(decompiler, classes, context, classGenerator);
 
         WasmModule module = new WasmModule();
@@ -131,6 +132,9 @@ public class WasmTarget implements TeaVMTarget {
             for (MethodHolder method : cls.getMethods()) {
                 if (method.getOwnerName().equals(Allocator.class.getName())
                         && method.getName().equals("initialize")) {
+                    continue;
+                }
+                if (context.getIntrinsic(method.getReference()) != null) {
                     continue;
                 }
 

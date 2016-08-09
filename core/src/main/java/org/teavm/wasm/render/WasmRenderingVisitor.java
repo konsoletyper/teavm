@@ -180,7 +180,7 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
         renderBlock(expression.getThenBlock(), "then");
 
         lf();
-        renderBlock(expression.getThenBlock(), "else");
+        renderBlock(expression.getElseBlock(), "else");
 
         close();
     }

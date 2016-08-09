@@ -67,6 +67,8 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.RuntimeClass;
+import org.teavm.wasm.intrinsics.WasmIntrinsic;
+import org.teavm.wasm.intrinsics.WasmIntrinsicManager;
 import org.teavm.wasm.model.WasmFunction;
 import org.teavm.wasm.model.WasmLocal;
 import org.teavm.wasm.model.WasmType;
@@ -102,7 +104,7 @@ import org.teavm.wasm.model.expression.WasmStoreFloat64;
 import org.teavm.wasm.model.expression.WasmStoreInt32;
 import org.teavm.wasm.model.expression.WasmStoreInt64;
 import org.teavm.wasm.model.expression.WasmSwitch;
-import org.teavm.wasm.runtime.WasmRuntime;
+import org.teavm.wasm.WasmRuntime;
 
 class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     private WasmGenerationContext context;
@@ -416,11 +418,11 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     @Override
     public void visit(ConditionalExpr expr) {
         expr.getCondition().acceptVisitor(this);
-        WasmConditional conditional = new WasmConditional(result);
+        WasmConditional conditional = new WasmConditional(forCondition(result));
         expr.getConsequent().acceptVisitor(this);
         conditional.getThenBlock().getBody().add(result);
         expr.getAlternative().acceptVisitor(this);
-        conditional.getThenBlock().getBody().add(result);
+        conditional.getElseBlock().getBody().add(result);
         result = conditional;
     }
 
@@ -456,7 +458,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     @Override
     public void visit(ConditionalStatement statement) {
         statement.getCondition().acceptVisitor(this);
-        WasmConditional conditional = new WasmConditional(result);
+        WasmConditional conditional = new WasmConditional(forCondition(result));
         for (Statement part : statement.getConsequent()) {
             part.acceptVisitor(this);
             if (result != null) {
@@ -566,6 +568,12 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     public void visit(InvocationExpr expr) {
         if (expr.getMethod().getClassName().equals(Address.class.getName())) {
             generateAddressInvocation(expr);
+            return;
+        }
+
+        WasmIntrinsic intrinsic = context.getIntrinsic(expr.getMethod());
+        if (intrinsic != null) {
+            result = intrinsic.apply(expr, intrinsicManager);
             return;
         }
 
@@ -900,6 +908,35 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         return expression instanceof WasmInt32Constant && ((WasmInt32Constant) expression).getValue() == 1;
     }
 
+    private boolean isZero(WasmExpression expression) {
+        return expression instanceof WasmInt32Constant && ((WasmInt32Constant) expression).getValue() == 0;
+    }
+
+    private WasmExpression forCondition(WasmExpression expression) {
+        if (expression instanceof WasmIntBinary) {
+            WasmIntBinary binary = (WasmIntBinary) expression;
+            switch (binary.getOperation()) {
+                case EQ:
+                    if (isZero(binary.getFirst())) {
+                        return negate(binary.getSecond());
+                    } else if (isZero(binary.getSecond())) {
+                        return negate(binary.getFirst());
+                    }
+                    break;
+                case NE:
+                    if (isZero(binary.getFirst())) {
+                        return binary.getSecond();
+                    } else if (isZero(binary.getSecond())) {
+                        return binary.getFirst();
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+        return expression;
+    }
+
     private WasmIntBinaryOperation negate(WasmIntBinaryOperation op) {
         switch (op) {
             case EQ:
@@ -945,4 +982,12 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
                 return null;
         }
     }
+
+    private WasmIntrinsicManager intrinsicManager = new WasmIntrinsicManager() {
+        @Override
+        public WasmExpression generate(Expr expr) {
+            expr.acceptVisitor(WasmGenerationVisitor.this);
+            return result;
+        }
+    };
 }

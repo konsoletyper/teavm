@@ -15,7 +15,9 @@
  */
 package org.teavm.wasm.generate;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.teavm.interop.Import;
 import org.teavm.model.AnnotationReader;
@@ -27,13 +29,26 @@ import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
+import org.teavm.wasm.intrinsics.WasmIntrinsic;
 
 public class WasmGenerationContext {
     private ClassReaderSource classSource;
     private Map<MethodReference, ImportedMethod> importedMethods = new HashMap<>();
+    private List<WasmIntrinsic> intrinsics = new ArrayList<>();
+    private Map<MethodReference, WasmIntrinsic> intrinsicCache = new HashMap<>();
 
     public WasmGenerationContext(ClassReaderSource classSource) {
         this.classSource = classSource;
+    }
+
+    public void addIntrinsic(WasmIntrinsic intrinsic) {
+        intrinsics.add(intrinsic);
+    }
+
+    public WasmIntrinsic getIntrinsic(MethodReference method) {
+        return intrinsicCache.computeIfAbsent(method, key -> intrinsics.stream()
+                .filter(intrinsic -> intrinsic.isApplicable(key))
+                .findFirst().orElse(null));
     }
 
     public ImportedMethod getImportedMethod(MethodReference reference) {

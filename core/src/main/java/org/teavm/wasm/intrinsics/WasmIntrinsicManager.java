@@ -13,33 +13,11 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.wasm;
+package org.teavm.wasm.intrinsics;
 
-public final class Example {
-    private Example() {
-    }
+import org.teavm.ast.Expr;
+import org.teavm.wasm.model.expression.WasmExpression;
 
-    public static void main(String[] args) {
-        int a = 0;
-        int b = 1;
-        for (int i = 0; i < 30; ++i) {
-            int c = a + b;
-            a = b;
-            b = c;
-            WasmRuntime.print(a);
-        }
-        WasmRuntime.print(new A(2).getValue() + new A(3).getValue());
-    }
-
-    private static class A {
-        private int value;
-
-        public A(int value) {
-            this.value = value;
-        }
-
-        public int getValue() {
-            return value;
-        }
-    }
+public interface WasmIntrinsicManager {
+    WasmExpression generate(Expr expr);
 }
