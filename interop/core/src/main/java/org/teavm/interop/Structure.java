@@ -16,11 +16,11 @@
 package org.teavm.interop;
 
 public class Structure {
-    public native <T extends Structure> T cast();
+    public final native <T extends Structure> T cast();
 
-    public native Address toAddress();
+    public final native Address toAddress();
 
-    public native int sizeOf(Class<? extends Structure> type);
+    public final native int sizeOf(Class<? extends Structure> type);
 
-    public native <T extends Structure> T add(T base, int offset);
+    public final native <T extends Structure> T add(T base, int offset);
 }

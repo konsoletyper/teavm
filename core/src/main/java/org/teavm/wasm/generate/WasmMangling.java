@@ -17,6 +17,7 @@ package org.teavm.wasm.generate;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 

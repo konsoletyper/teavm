@@ -15,8 +15,10 @@
  */
 package org.teavm.wasm.render;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.teavm.wasm.model.WasmLocal;
@@ -65,6 +67,8 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
     private Map<WasmBlock, String> blockIdentifiers = new HashMap<>();
     private int indentLevel;
     private boolean lfDeferred;
+    List<WasmSignature> signatureList = new ArrayList<>();
+    Map<WasmSignature, Integer> signatureMap = new HashMap<>();
 
     void clear() {
         blockIdentifiers.clear();
@@ -341,12 +345,25 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmIndirectCall expression) {
-        open().append("call_indirect").append(" " + expression.getTypeName());
+        WasmType[] types = new WasmType[expression.getParameterTypes().size() + 1];
+        types[0] = expression.getReturnType();
+        for (int i = 0; i < expression.getParameterTypes().size(); ++i) {
+            types[i + 1] = expression.getParameterTypes().get(i);
+        }
+
+        open().append("call_indirect").append(" $type" + getSignatureIndex(new WasmSignature(types)));
         line(expression.getSelector());
         for (WasmExpression argument : expression.getArguments()) {
             line(argument);
         }
         close();
+    }
+
+    int getSignatureIndex(WasmSignature signature) {
+        return signatureMap.computeIfAbsent(signature, key -> {
+            signatureList.add(key);
+            return signatureMap.size();
+        });
     }
 
     @Override

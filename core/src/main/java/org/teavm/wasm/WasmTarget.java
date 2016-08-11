@@ -24,22 +24,29 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.dependency.DependencyChecker;
 import org.teavm.interop.Address;
 import org.teavm.interop.Import;
 import org.teavm.interop.StaticInit;
 import org.teavm.interop.Structure;
+import org.teavm.model.BasicBlock;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
+import org.teavm.model.Instruction;
 import org.teavm.model.ListableClassHolderSource;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
+import org.teavm.model.Program;
+import org.teavm.model.classes.VirtualTableProvider;
+import org.teavm.model.instructions.InvocationType;
+import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.RuntimeClass;
 import org.teavm.vm.BuildTarget;
@@ -109,7 +116,8 @@ public class WasmTarget implements TeaVMTarget {
     public void emit(ListableClassHolderSource classes, OutputStream output, BuildTarget buildTarget) {
         int address = 256;
 
-        WasmClassGenerator classGenerator = new WasmClassGenerator(classes, address);
+        VirtualTableProvider vtableProvider = createVirtualTableProvider(classes);
+        WasmClassGenerator classGenerator = new WasmClassGenerator(classes, vtableProvider, address);
         for (String className : classes.getClassNames()) {
             classGenerator.addClass(className);
             if (controller.wasCancelled()) {
@@ -120,7 +128,7 @@ public class WasmTarget implements TeaVMTarget {
 
         Decompiler decompiler = new Decompiler(classes, controller.getClassLoader(), new HashSet<>(),
                 new HashSet<>());
-        WasmGenerationContext context = new WasmGenerationContext(classes);
+        WasmGenerationContext context = new WasmGenerationContext(classes, vtableProvider);
         context.addIntrinsic(new WasmRuntimeIntrinsic());
         WasmGenerator generator = new WasmGenerator(decompiler, classes, context, classGenerator);
 
@@ -168,7 +176,7 @@ public class WasmTarget implements TeaVMTarget {
         }
 
         WasmFunction initFunction = new WasmFunction("__start__");
-        classGenerator.contributeToInitializer(initFunction.getBody());
+        classGenerator.contributeToInitializer(initFunction.getBody(), module);
         for (String className : classes.getClassNames()) {
             ClassReader cls = classes.get(className);
             if (cls.getAnnotations().get(StaticInit.class.getName()) == null) {
@@ -181,6 +189,7 @@ public class WasmTarget implements TeaVMTarget {
             initFunction.getBody().add(new WasmCall(WasmMangling.mangleMethod(clinit.getReference())));
         }
         module.add(initFunction);
+        module.setStartFunction(initFunction);
 
         for (TeaVMEntryPoint entryPoint : controller.getEntryPoints().values()) {
             String mangledName = WasmMangling.mangleMethod(entryPoint.getReference());
@@ -251,6 +260,33 @@ public class WasmTarget implements TeaVMTarget {
         function.setResult(WasmType.INT32);
         function.getBody().add(new WasmReturn(new WasmInt32Constant(address)));
         module.add(function);
+    }
+
+    private VirtualTableProvider createVirtualTableProvider(ListableClassHolderSource classes) {
+        Set<MethodReference> virtualMethods = new HashSet<>();
+
+        for (String className : classes.getClassNames()) {
+            ClassHolder cls = classes.get(className);
+            for (MethodHolder method : cls.getMethods()) {
+                Program program = method.getProgram();
+                if (program == null) {
+                    continue;
+                }
+                for (int i = 0; i < program.basicBlockCount(); ++i) {
+                    BasicBlock block = program.basicBlockAt(i);
+                    for (Instruction insn : block.getInstructions()) {
+                        if (insn instanceof InvokeInstruction) {
+                            InvokeInstruction invoke = (InvokeInstruction) insn;
+                            if (invoke.getType() == InvocationType.VIRTUAL) {
+                                virtualMethods.add(invoke.getMethod());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return new VirtualTableProvider(classes, virtualMethods);
     }
 
     public static void main(String[] args) throws IOException {

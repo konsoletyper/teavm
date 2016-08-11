@@ -28,7 +28,7 @@ public final class Allocator {
         Address result = address;
         address = result.add(tag.size);
         RuntimeObject object = result.toStructure();
-        object.classInfo = tag;
+        object.classReference = tag.toAddress().toInt() >> 3;
         return result;
     }
 }

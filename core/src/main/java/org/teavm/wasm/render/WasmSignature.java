@@ -13,10 +13,32 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.runtime;
+package org.teavm.wasm.render;
 
-import org.teavm.interop.Structure;
+import java.util.Arrays;
+import org.teavm.wasm.model.WasmType;
 
-public class RuntimeObject extends Structure {
-    public int classReference;
+class WasmSignature {
+    WasmType[] types;
+
+    public WasmSignature(WasmType[] types) {
+        this.types = types;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        WasmSignature that = (WasmSignature) o;
+        return Arrays.equals(types, that.types);
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(types);
+    }
 }

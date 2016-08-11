@@ -29,16 +29,19 @@ import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
+import org.teavm.model.classes.VirtualTableProvider;
 import org.teavm.wasm.intrinsics.WasmIntrinsic;
 
 public class WasmGenerationContext {
     private ClassReaderSource classSource;
+    private VirtualTableProvider vtableProvider;
     private Map<MethodReference, ImportedMethod> importedMethods = new HashMap<>();
     private List<WasmIntrinsic> intrinsics = new ArrayList<>();
     private Map<MethodReference, WasmIntrinsic> intrinsicCache = new HashMap<>();
 
-    public WasmGenerationContext(ClassReaderSource classSource) {
+    public WasmGenerationContext(ClassReaderSource classSource, VirtualTableProvider vtableProvider) {
         this.classSource = classSource;
+        this.vtableProvider = vtableProvider;
     }
 
     public void addIntrinsic(WasmIntrinsic intrinsic) {
@@ -84,6 +87,10 @@ public class WasmGenerationContext {
         ClassReader cls = classSource.get(fieldReference.getClassName());
         FieldReader field = cls.getField(fieldReference.getFieldName());
         return field.getType();
+    }
+
+    public VirtualTableProvider getVirtualTableProvider() {
+        return vtableProvider;
     }
 
     public class ImportedMethod {

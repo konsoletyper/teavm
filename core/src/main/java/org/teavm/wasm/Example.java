@@ -29,6 +29,23 @@ public final class Example {
             WasmRuntime.print(a);
         }
         WasmRuntime.print(new A(2).getValue() + new A(3).getValue());
+
+        for (int i = 0; i < 4; ++i) {
+            WasmRuntime.print(instance(i).foo());
+        }
+    }
+
+    private static Base instance(int index) {
+        switch (index) {
+            case 0:
+                return new Derived1();
+            case 1:
+                return new Derived2();
+            case 2:
+                return new Derived3();
+            default:
+                return new Derived4();
+        }
     }
 
     private static class A {
@@ -40,6 +57,34 @@ public final class Example {
 
         public int getValue() {
             return value;
+        }
+    }
+
+    interface Base {
+        int foo();
+    }
+
+    static class Derived1 implements Base {
+        @Override
+        public int foo() {
+            return 234;
+        }
+    }
+
+    static class Derived2 implements Base {
+        @Override
+        public int foo() {
+            return 345;
+        }
+    }
+
+    static class Derived3 extends Derived2 {
+    }
+
+    static class Derived4 extends Derived1 {
+        @Override
+        public int foo() {
+            return 123;
         }
     }
 }

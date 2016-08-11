@@ -15,10 +15,8 @@
  */
 package org.teavm.wasm.generate;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.teavm.ast.AssignmentStatement;
@@ -60,13 +58,16 @@ import org.teavm.ast.UnwrapArrayExpr;
 import org.teavm.ast.VariableExpr;
 import org.teavm.ast.WhileStatement;
 import org.teavm.interop.Address;
+import org.teavm.interop.Structure;
 import org.teavm.model.ClassReader;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
+import org.teavm.model.classes.VirtualTableEntry;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.RuntimeClass;
+import org.teavm.wasm.WasmRuntime;
 import org.teavm.wasm.intrinsics.WasmIntrinsic;
 import org.teavm.wasm.intrinsics.WasmIntrinsicManager;
 import org.teavm.wasm.model.WasmFunction;
@@ -86,6 +87,7 @@ import org.teavm.wasm.model.expression.WasmFloatBinary;
 import org.teavm.wasm.model.expression.WasmFloatBinaryOperation;
 import org.teavm.wasm.model.expression.WasmFloatType;
 import org.teavm.wasm.model.expression.WasmGetLocal;
+import org.teavm.wasm.model.expression.WasmIndirectCall;
 import org.teavm.wasm.model.expression.WasmInt32Constant;
 import org.teavm.wasm.model.expression.WasmInt32Subtype;
 import org.teavm.wasm.model.expression.WasmInt64Constant;
@@ -104,7 +106,6 @@ import org.teavm.wasm.model.expression.WasmStoreFloat64;
 import org.teavm.wasm.model.expression.WasmStoreInt32;
 import org.teavm.wasm.model.expression.WasmStoreInt64;
 import org.teavm.wasm.model.expression.WasmSwitch;
-import org.teavm.wasm.WasmRuntime;
 
 class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     private WasmGenerationContext context;
@@ -116,6 +117,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     private Map<IdentifiedStatement, WasmBlock> breakTargets = new HashMap<>();
     private Map<IdentifiedStatement, WasmBlock> continueTargets = new HashMap<>();
     private Set<WasmBlock> usedBlocks = new HashSet<>();
+    private int temporaryInt32 = -1;
     WasmExpression result;
 
     WasmGenerationVisitor(WasmGenerationContext context, WasmClassGenerator classGenerator,
@@ -486,20 +488,16 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(SwitchStatement statement) {
-        List<WasmBlock> wrappers = new ArrayList<>();
+        WasmBlock defaultBlock = new WasmBlock(false);
+
+        breakTargets.put(statement, defaultBlock);
+        IdentifiedStatement oldBreakTarget = currentBreakTarget;
+        currentBreakTarget = statement;
 
         WasmBlock wrapper = new WasmBlock(false);
         statement.getValue().acceptVisitor(this);
         WasmSwitch wasmSwitch = new WasmSwitch(result, wrapper);
         wrapper.getBody().add(wasmSwitch);
-
-        WasmBlock defaultBlock = new WasmBlock(false);
-        defaultBlock.getBody().add(wrapper);
-        for (Statement part : statement.getDefaultClause()) {
-            part.acceptVisitor(this);
-            defaultBlock.getBody().add(result);
-        }
-        wrapper = defaultBlock;
 
         for (SwitchClause clause : statement.getClauses()) {
             WasmBlock caseBlock = new WasmBlock(false);
@@ -507,15 +505,25 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             wasmSwitch.getTargets().add(wrapper);
             for (Statement part : clause.getBody()) {
                 part.acceptVisitor(this);
-                caseBlock.getBody().add(result);
+                if (result != null) {
+                    caseBlock.getBody().add(result);
+                }
             }
-            wrappers.add(caseBlock);
             wrapper = caseBlock;
         }
 
-        for (WasmBlock nestedWrapper : wrappers) {
-            nestedWrapper.getBody().add(new WasmBreak(wrapper));
+        defaultBlock.getBody().add(wrapper);
+        for (Statement part : statement.getDefaultClause()) {
+            part.acceptVisitor(this);
+            if (result != null) {
+                defaultBlock.getBody().add(result);
+            }
         }
+        wasmSwitch.setDefaultTarget(wrapper);
+        wrapper = defaultBlock;
+
+        breakTargets.remove(statement);
+        currentBreakTarget = oldBreakTarget;
 
         result = wrapper;
     }
@@ -570,6 +578,10 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             generateAddressInvocation(expr);
             return;
         }
+        if (expr.getMethod().getClassName().equals(Structure.class.getName())) {
+            generateStructureInvocation(expr);
+            return;
+        }
 
         WasmIntrinsic intrinsic = context.getIntrinsic(expr.getMethod());
         if (intrinsic != null) {
@@ -589,6 +601,40 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
                 call.getArguments().add(result);
             }
             result = call;
+        } else {
+            expr.getArguments().get(0).acceptVisitor(this);
+            WasmExpression instance = result;
+            WasmBlock block = new WasmBlock(false);
+            WasmLocal instanceVar = function.getLocalVariables().get(getTemporaryInt32());
+            block.getBody().add(new WasmSetLocal(instanceVar, instance));
+            instance = new WasmGetLocal(instanceVar);
+
+            WasmExpression classIndex = new WasmLoadInt32(4, instance, WasmInt32Subtype.INT32);
+            classIndex = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SHL, classIndex,
+                    new WasmInt32Constant(3));
+
+            VirtualTableEntry vtableEntry = context.getVirtualTableProvider().lookup(expr.getMethod());
+            WasmExpression methodIndex = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD,
+                    classIndex, new WasmInt32Constant(vtableEntry.getIndex() * 4 + 8));
+            methodIndex = new WasmLoadInt32(4, methodIndex, WasmInt32Subtype.INT32);
+
+            WasmIndirectCall call = new WasmIndirectCall(methodIndex);
+            call.getParameterTypes().add(WasmType.INT32);
+            for (int i = 0; i < expr.getMethod().parameterCount(); ++i) {
+                call.getParameterTypes().add(WasmGeneratorUtil.mapType(expr.getMethod().parameterType(i)));
+            }
+            if (expr.getMethod().getReturnType() != ValueType.VOID) {
+                call.setReturnType(WasmGeneratorUtil.mapType(expr.getMethod().getReturnType()));
+            }
+
+            call.getArguments().add(instance);
+            for (int i = 1; i < expr.getArguments().size(); ++i) {
+                expr.getArguments().get(i).acceptVisitor(this);
+                call.getArguments().add(result);
+            }
+
+            block.getBody().add(call);
+            result = block;
         }
     }
 
@@ -697,6 +743,14 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
                 result = new WasmStoreFloat64(8, address, result);
                 break;
             }
+        }
+    }
+
+    private void generateStructureInvocation(InvocationExpr expr) {
+        switch (expr.getMethod().getName()) {
+            case "toAddress":
+                expr.getArguments().get(0).acceptVisitor(this);
+                break;
         }
     }
 
@@ -990,4 +1044,12 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             return result;
         }
     };
+
+    private int getTemporaryInt32() {
+        if (temporaryInt32 < 0) {
+            temporaryInt32 = function.getLocalVariables().size();
+            function.add(new WasmLocal(WasmType.INT32));
+        }
+        return temporaryInt32;
+    }
 }

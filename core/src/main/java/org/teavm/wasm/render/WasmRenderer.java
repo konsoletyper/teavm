@@ -49,6 +49,8 @@ public class WasmRenderer {
     public void render(WasmModule module) {
         visitor.open().append("module");
         renderMemory(module);
+        renderTypes(module);
+
         for (WasmFunction function : module.getFunctions().values()) {
             if (function.getImportName() == null) {
                 continue;
@@ -67,10 +69,15 @@ public class WasmRenderer {
             }
             lf().renderExport(function);
         }
+        renderTable(module);
+        if (module.getStartFunction() != null) {
+            visitor.lf().open().append("start $" + module.getStartFunction().getName()).close().lf();
+        }
         visitor.close().lf();
     }
 
     public void renderMemory(WasmModule module) {
+        visitor.lf();
         visitor.open().append("memory " + module.getMemorySize());
         for (WasmMemorySegment segment : module.getSegments()) {
             visitor.lf().open().append("segment " + segment.getLength());
@@ -136,16 +143,65 @@ public class WasmRenderer {
     }
 
     private void renderSignature(WasmFunction function) {
-        if (!function.getParameters().isEmpty()) {
-            visitor.append(" ").open().append("param");
-            for (WasmType type : function.getParameters()) {
-                visitor.append(" ").append(type);
+        WasmSignature signature = signatureFromFunction(function);
+        visitor.append(" ").open().append("type $type" + visitor.getSignatureIndex(signature)).close();
+    }
+
+    private WasmSignature signatureFromFunction(WasmFunction function) {
+        WasmType[] types = new WasmType[function.getParameters().size() + 1];
+        types[0] = function.getResult();
+        for (int i = 0; i < function.getParameters().size(); ++i) {
+            types[i + 1] = function.getParameters().get(i);
+        }
+        return new WasmSignature(types);
+    }
+
+    private void renderTypes(WasmModule module) {
+        WasmSignatureCollector signatureCollector = new WasmSignatureCollector(visitor);
+        for (WasmFunction function : module.getFunctions().values()) {
+            visitor.getSignatureIndex(signatureFromFunction(function));
+            for (WasmExpression part : function.getBody()) {
+                part.acceptVisitor(signatureCollector);
+            }
+        }
+
+        if (visitor.signatureList.isEmpty()) {
+            return;
+        }
+
+        visitor.lf();
+        int index = 0;
+        for (WasmSignature signature : visitor.signatureList) {
+            visitor.open().append("type $type" + index++ + " ");
+            visitor.open().append("func");
+            if (signature.types.length > 1) {
+                visitor.append(" ").open().append("param");
+                for (int i = 1; i < signature.types.length; ++i) {
+                    visitor.append(" ").append(signature.types[i]);
+                }
+                visitor.close();
+            }
+            if (signature.types[0] != null) {
+                visitor.append(" ").open().append("result ");
+                visitor.append(signature.types[0]);
+                visitor.close();
             }
             visitor.close();
+            visitor.close();
+            visitor.lf();
         }
-        if (function.getResult() != null) {
-            visitor.append(" ").open().append("result ").append(function.getResult()).close();
+    }
+
+    private void renderTable(WasmModule module) {
+        if (module.getFunctionTable().isEmpty()) {
+            return;
         }
+
+        visitor.lf().open().append("table");
+        for (WasmFunction function : module.getFunctionTable()) {
+            visitor.lf().append("$" + function.getName());
+        }
+        visitor.close().lf();
     }
 
     @Override

@@ -17,6 +17,7 @@ package org.teavm.wasm.generate;
 
 import com.carrotsearch.hppc.ObjectIntMap;
 import com.carrotsearch.hppc.ObjectIntOpenHashMap;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +28,12 @@ import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
+import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
+import org.teavm.model.classes.VirtualTable;
+import org.teavm.model.classes.VirtualTableEntry;
+import org.teavm.model.classes.VirtualTableProvider;
+import org.teavm.wasm.model.WasmModule;
 import org.teavm.wasm.model.expression.WasmExpression;
 import org.teavm.wasm.model.expression.WasmInt32Constant;
 import org.teavm.wasm.model.expression.WasmInt32Subtype;
@@ -37,9 +43,11 @@ public class WasmClassGenerator {
     private ClassReaderSource classSource;
     private int address;
     private Map<String, ClassBinaryData> binaryDataMap = new LinkedHashMap<>();
+    private VirtualTableProvider vtableProvider;
 
-    public WasmClassGenerator(ClassReaderSource classSource, int address) {
+    public WasmClassGenerator(ClassReaderSource classSource, VirtualTableProvider vtableProvider, int address) {
         this.classSource = classSource;
+        this.vtableProvider = vtableProvider;
         this.address = address;
     }
 
@@ -56,8 +64,11 @@ public class WasmClassGenerator {
         if (binaryData.start < 0) {
             return;
         }
-        binaryData.start = align(address, 4);
-        binaryData.end = binaryData.start + 8;
+
+        binaryData.start = align(address, 8);
+        binaryData.vtable = vtableProvider.lookup(className);
+        int vtableSize = binaryData.vtable != null ? binaryData.vtable.getEntries().size() : 0;
+        binaryData.end = binaryData.start + 8 + vtableSize * 4;
 
         address = binaryData.end;
     }
@@ -66,7 +77,9 @@ public class WasmClassGenerator {
         return address;
     }
 
-    public void contributeToInitializer(List<WasmExpression> initializer) {
+    public void contributeToInitializer(List<WasmExpression> initializer, WasmModule module) {
+        Map<MethodReference, Integer> functions = new HashMap<>();
+
         for (ClassBinaryData binaryData : binaryDataMap.values()) {
             if (binaryData.start < 0) {
                 continue;
@@ -74,6 +87,26 @@ public class WasmClassGenerator {
             WasmExpression index = new WasmInt32Constant(binaryData.start);
             WasmExpression size = new WasmInt32Constant(binaryData.size);
             initializer.add(new WasmStoreInt32(4, index, size, WasmInt32Subtype.INT32));
+
+            if (binaryData.vtable != null) {
+                for (VirtualTableEntry vtableEntry : binaryData.vtable.getEntries().values()) {
+                    index = new WasmInt32Constant(binaryData.start + 8 + vtableEntry.getIndex() * 4);
+                    int methodIndex;
+                    if (vtableEntry.getImplementor() == null) {
+                        methodIndex = -1;
+                    } else {
+                        methodIndex = functions.computeIfAbsent(vtableEntry.getImplementor(), implementor -> {
+                            int result = module.getFunctionTable().size();
+                            String name = WasmMangling.mangleMethod(implementor);
+                            module.getFunctionTable().add(module.getFunctions().get(name));
+                            return result;
+                        });
+                    }
+
+                    WasmExpression methodIndexExpr = new WasmInt32Constant(methodIndex);
+                    initializer.add(new WasmStoreInt32(4, index, methodIndexExpr, WasmInt32Subtype.INT32));
+                }
+            }
         }
     }
 
@@ -122,6 +155,9 @@ public class WasmClassGenerator {
     }
 
     private static int align(int base, int alignment) {
+        if (base == 0) {
+            return 0;
+        }
         return ((base - 1) / alignment + 1) * alignment;
     }
 
@@ -149,6 +185,7 @@ public class WasmClassGenerator {
         int start;
         int end;
 
+        VirtualTable vtable;
         int size;
         ObjectIntMap<String> fieldLayout = new ObjectIntOpenHashMap<>();
     }
