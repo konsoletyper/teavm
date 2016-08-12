@@ -17,6 +17,9 @@ package org.teavm.wasm.generate;
 
 import com.carrotsearch.hppc.ObjectIntMap;
 import com.carrotsearch.hppc.ObjectIntOpenHashMap;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -30,10 +33,11 @@ import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
+import org.teavm.model.classes.TagRegistry;
 import org.teavm.model.classes.VirtualTable;
 import org.teavm.model.classes.VirtualTableEntry;
 import org.teavm.model.classes.VirtualTableProvider;
-import org.teavm.wasm.model.WasmModule;
+import org.teavm.runtime.RuntimeClass;
 import org.teavm.wasm.model.expression.WasmExpression;
 import org.teavm.wasm.model.expression.WasmInt32Constant;
 import org.teavm.wasm.model.expression.WasmInt32Subtype;
@@ -43,12 +47,18 @@ public class WasmClassGenerator {
     private ClassReaderSource classSource;
     private int address;
     private Map<String, ClassBinaryData> binaryDataMap = new LinkedHashMap<>();
+    private List<WasmExpression> initializer;
+    private Map<MethodReference, Integer> functions = new HashMap<>();
+    private List<String> functionTable = new ArrayList<>();
     private VirtualTableProvider vtableProvider;
+    private TagRegistry tagRegistry;
 
-    public WasmClassGenerator(ClassReaderSource classSource, VirtualTableProvider vtableProvider, int address) {
+    public WasmClassGenerator(ClassReaderSource classSource, VirtualTableProvider vtableProvider,
+            TagRegistry tagRegistry, List<WasmExpression> initializer) {
         this.classSource = classSource;
         this.vtableProvider = vtableProvider;
-        this.address = address;
+        this.tagRegistry = tagRegistry;
+        this.initializer = initializer;
     }
 
     public void addClass(String className) {
@@ -58,6 +68,7 @@ public class WasmClassGenerator {
 
         ClassReader cls = classSource.get(className);
         ClassBinaryData binaryData = new ClassBinaryData();
+        binaryData.name = className;
         binaryDataMap.put(className, binaryData);
 
         calculateLayout(cls, binaryData);
@@ -65,49 +76,71 @@ public class WasmClassGenerator {
             return;
         }
 
-        binaryData.start = align(address, 8);
-        binaryData.vtable = vtableProvider.lookup(className);
-        int vtableSize = binaryData.vtable != null ? binaryData.vtable.getEntries().size() : 0;
-        binaryData.end = binaryData.start + 8 + vtableSize * 4;
-
-        address = binaryData.end;
+        address = align(address, 8);
+        binaryData.start = address;
+        contributeToInitializer(binaryData);
     }
 
     public int getAddress() {
         return address;
     }
 
-    public void contributeToInitializer(List<WasmExpression> initializer, WasmModule module) {
-        Map<MethodReference, Integer> functions = new HashMap<>();
+    public void setAddress(int address) {
+        this.address = address;
+    }
 
-        for (ClassBinaryData binaryData : binaryDataMap.values()) {
-            if (binaryData.start < 0) {
-                continue;
-            }
-            WasmExpression index = new WasmInt32Constant(binaryData.start);
-            WasmExpression size = new WasmInt32Constant(binaryData.size);
-            initializer.add(new WasmStoreInt32(4, index, size, WasmInt32Subtype.INT32));
+    public List<String> getFunctionTable() {
+        return functionTable;
+    }
 
-            if (binaryData.vtable != null) {
-                for (VirtualTableEntry vtableEntry : binaryData.vtable.getEntries().values()) {
-                    index = new WasmInt32Constant(binaryData.start + 8 + vtableEntry.getIndex() * 4);
-                    int methodIndex;
-                    if (vtableEntry.getImplementor() == null) {
-                        methodIndex = -1;
-                    } else {
-                        methodIndex = functions.computeIfAbsent(vtableEntry.getImplementor(), implementor -> {
-                            int result = module.getFunctionTable().size();
-                            String name = WasmMangling.mangleMethod(implementor);
-                            module.getFunctionTable().add(module.getFunctions().get(name));
-                            return result;
-                        });
-                    }
+    private void contributeToInitializer(ClassBinaryData binaryData) {
+        contributeInt32Value(binaryData.start + RuntimeClass.SIZE_OFFSET, binaryData.size);
 
-                    WasmExpression methodIndexExpr = new WasmInt32Constant(methodIndex);
-                    initializer.add(new WasmStoreInt32(4, index, methodIndexExpr, WasmInt32Subtype.INT32));
+        List<TagRegistry.Range> ranges = tagRegistry.getRanges(binaryData.name);
+        int lower = ranges.stream().mapToInt(range -> range.lower).min().orElse(0);
+        int upper = ranges.stream().mapToInt(range -> range.upper).max().orElse(0);
+        contributeInt32Value(binaryData.start + RuntimeClass.LOWER_TAG_OFFSET, lower);
+        contributeInt32Value(binaryData.start + RuntimeClass.UPPER_TAG_OFFSET, upper);
+        contributeInt32Value(binaryData.start + RuntimeClass.CANARY_OFFSET,
+                RuntimeClass.computeCanary(binaryData.size, lower, upper));
+
+        address = binaryData.start + RuntimeClass.VIRTUAL_TABLE_OFFSET;
+        VirtualTable vtable = vtableProvider.lookup(binaryData.name);
+        if (vtable != null) {
+            for (VirtualTableEntry vtableEntry : vtable.getEntries().values()) {
+                int methodIndex;
+                if (vtableEntry.getImplementor() == null) {
+                    methodIndex = -1;
+                } else {
+                    methodIndex = functions.computeIfAbsent(vtableEntry.getImplementor(), implementor -> {
+                        int result = functionTable.size();
+                        functionTable.add(WasmMangling.mangleMethod(implementor));
+                        return result;
+                    });
                 }
+
+                contributeInt32Value(address, methodIndex);
+                address += 4;
             }
         }
+
+        contributeInt32Value(binaryData.start + RuntimeClass.EXCLUDED_RANGE_COUNT_OFFSET, ranges.size() - 1);
+
+        if (ranges.size() > 1) {
+            contributeInt32Value(binaryData.start + RuntimeClass.EXCLUDED_RANGE_ADDRESS_OFFSET, address);
+
+            Collections.sort(ranges, Comparator.comparingInt(range -> range.lower));
+            for (int i = 1; i < ranges.size(); ++i) {
+                contributeInt32Value(address, ranges.get(i - 1).upper);
+                contributeInt32Value(address + 4, ranges.get(i).lower);
+                address += 8;
+            }
+        }
+    }
+
+    private void contributeInt32Value(int index, int value) {
+        initializer.add(new WasmStoreInt32(4, new WasmInt32Constant(index), new WasmInt32Constant(value),
+                WasmInt32Subtype.INT32));
     }
 
     public int getClassPointer(String className) {
@@ -182,11 +215,9 @@ public class WasmClassGenerator {
     }
 
     private class ClassBinaryData {
-        int start;
-        int end;
-
-        VirtualTable vtable;
+        String name;
         int size;
+        int start;
         ObjectIntMap<String> fieldLayout = new ObjectIntOpenHashMap<>();
     }
 }

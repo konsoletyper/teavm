@@ -615,7 +615,8 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
             VirtualTableEntry vtableEntry = context.getVirtualTableProvider().lookup(expr.getMethod());
             WasmExpression methodIndex = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD,
-                    classIndex, new WasmInt32Constant(vtableEntry.getIndex() * 4 + 8));
+                    classIndex, new WasmInt32Constant(vtableEntry.getIndex() * 4
+                    + RuntimeClass.VIRTUAL_TABLE_OFFSET));
             methodIndex = new WasmLoadInt32(4, methodIndex, WasmInt32Subtype.INT32);
 
             WasmIndirectCall call = new WasmIndirectCall(methodIndex);

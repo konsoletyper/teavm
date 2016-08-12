@@ -44,6 +44,7 @@ import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
+import org.teavm.model.classes.TagRegistry;
 import org.teavm.model.classes.VirtualTableProvider;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
@@ -115,9 +116,14 @@ public class WasmTarget implements TeaVMTarget {
     @Override
     public void emit(ListableClassHolderSource classes, OutputStream output, BuildTarget buildTarget) {
         int address = 256;
+        WasmModule module = new WasmModule();
+        WasmFunction initFunction = new WasmFunction("__start__");
 
         VirtualTableProvider vtableProvider = createVirtualTableProvider(classes);
-        WasmClassGenerator classGenerator = new WasmClassGenerator(classes, vtableProvider, address);
+        TagRegistry tagRegistry = new TagRegistry(classes);
+        WasmClassGenerator classGenerator = new WasmClassGenerator(classes, vtableProvider, tagRegistry,
+                initFunction.getBody());
+        classGenerator.setAddress(address);
         for (String className : classes.getClassNames()) {
             classGenerator.addClass(className);
             if (controller.wasCancelled()) {
@@ -132,7 +138,6 @@ public class WasmTarget implements TeaVMTarget {
         context.addIntrinsic(new WasmRuntimeIntrinsic());
         WasmGenerator generator = new WasmGenerator(decompiler, classes, context, classGenerator);
 
-        WasmModule module = new WasmModule();
         module.setMemorySize(64);
 
         for (String className : classes.getClassNames()) {
@@ -175,8 +180,6 @@ public class WasmTarget implements TeaVMTarget {
             return;
         }
 
-        WasmFunction initFunction = new WasmFunction("__start__");
-        classGenerator.contributeToInitializer(initFunction.getBody(), module);
         for (String className : classes.getClassNames()) {
             ClassReader cls = classes.get(className);
             if (cls.getAnnotations().get(StaticInit.class.getName()) == null) {
@@ -197,6 +200,10 @@ public class WasmTarget implements TeaVMTarget {
             if (function != null) {
                 function.setExportName(entryPoint.getPublicName());
             }
+        }
+
+        for (String function : classGenerator.getFunctionTable()) {
+            module.getFunctionTable().add(module.getFunctions().get(function));
         }
 
         WasmRenderer renderer = new WasmRenderer();
