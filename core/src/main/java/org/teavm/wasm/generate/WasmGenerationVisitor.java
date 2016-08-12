@@ -15,6 +15,7 @@
  */
 package org.teavm.wasm.generate;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -490,19 +491,36 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     public void visit(SwitchStatement statement) {
         WasmBlock defaultBlock = new WasmBlock(false);
 
+        int min = statement.getClauses().stream()
+                .flatMapToInt(clause -> Arrays.stream(clause.getConditions()))
+                .min().orElse(0);
+        int max = statement.getClauses().stream()
+                .flatMapToInt(clause -> Arrays.stream(clause.getConditions()))
+                .max().orElse(0);
+
         breakTargets.put(statement, defaultBlock);
         IdentifiedStatement oldBreakTarget = currentBreakTarget;
         currentBreakTarget = statement;
 
         WasmBlock wrapper = new WasmBlock(false);
         statement.getValue().acceptVisitor(this);
+        if (min > 0) {
+            result = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SUB, result,
+                    new WasmInt32Constant(min));
+        }
+
         WasmSwitch wasmSwitch = new WasmSwitch(result, wrapper);
         wrapper.getBody().add(wasmSwitch);
+        WasmBlock[] targets = new WasmBlock[max - min + 1];
 
         for (SwitchClause clause : statement.getClauses()) {
             WasmBlock caseBlock = new WasmBlock(false);
             caseBlock.getBody().add(wrapper);
-            wasmSwitch.getTargets().add(wrapper);
+
+            for (int condition : clause.getConditions()) {
+                targets[condition - min] = wrapper;
+            }
+
             for (Statement part : clause.getBody()) {
                 part.acceptVisitor(this);
                 if (result != null) {
@@ -521,6 +539,10 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         }
         wasmSwitch.setDefaultTarget(wrapper);
         wrapper = defaultBlock;
+
+        for (WasmBlock target : targets) {
+            wasmSwitch.getTargets().add(target != null ? target : wasmSwitch.getDefaultTarget());
+        }
 
         breakTargets.remove(statement);
         currentBreakTarget = oldBreakTarget;
