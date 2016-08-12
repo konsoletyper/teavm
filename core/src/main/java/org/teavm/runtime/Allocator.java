@@ -17,6 +17,7 @@ package org.teavm.runtime;
 
 import org.teavm.interop.Address;
 import org.teavm.interop.StaticInit;
+import org.teavm.interop.Structure;
 
 @StaticInit
 public final class Allocator {
@@ -29,6 +30,20 @@ public final class Allocator {
         address = result.add(tag.size);
         RuntimeObject object = result.toStructure();
         object.classReference = tag.toAddress().toInt() >> 3;
+        return result;
+    }
+
+    public static Address allocateArray(RuntimeClass tag, int size, byte depth) {
+        Address result = address;
+        int sizeInBytes = (size + 1) * 4 + Structure.sizeOf(RuntimeArray.class);
+        address = result.add(sizeInBytes);
+
+        RuntimeArray array = result.toStructure();
+        array.classReference = RuntimeClass.getArrayClass().toAddress().toInt() >> 3;
+        array.componentClassReference = tag.toAddress().toInt() >> 3;
+        array.size = size;
+        address.add(Structure.sizeOf(RuntimeArray.class)).putByte(depth);
+
         return result;
     }
 }

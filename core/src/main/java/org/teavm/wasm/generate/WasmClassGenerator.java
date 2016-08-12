@@ -47,6 +47,7 @@ public class WasmClassGenerator {
     private ClassReaderSource classSource;
     private int address;
     private Map<String, ClassBinaryData> binaryDataMap = new LinkedHashMap<>();
+    private ClassBinaryData arrayClassData;
     private List<WasmExpression> initializer;
     private Map<MethodReference, Integer> functions = new HashMap<>();
     private List<String> functionTable = new ArrayList<>();
@@ -79,6 +80,17 @@ public class WasmClassGenerator {
         address = align(address, 8);
         binaryData.start = address;
         contributeToInitializer(binaryData);
+    }
+
+    public void addArrayClass() {
+        if (arrayClassData != null) {
+            return;
+        }
+
+        arrayClassData = new ClassBinaryData();
+        arrayClassData.start = address;
+
+        address += RuntimeClass.VIRTUAL_TABLE_OFFSET;
     }
 
     public int getAddress() {
@@ -151,6 +163,15 @@ public class WasmClassGenerator {
     public int getFieldOffset(FieldReference field) {
         ClassBinaryData data = binaryDataMap.get(field.getClassName());
         return data.fieldLayout.get(field.getFieldName());
+    }
+
+    public int getClassSize(String className) {
+        ClassBinaryData data = binaryDataMap.get(className);
+        return data.size;
+    }
+
+    public int getArrayClassPointer() {
+        return arrayClassData.start;
     }
 
     public boolean isStructure(String className) {

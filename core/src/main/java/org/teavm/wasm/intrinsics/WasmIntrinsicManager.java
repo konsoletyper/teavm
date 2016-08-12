@@ -16,6 +16,8 @@
 package org.teavm.wasm.intrinsics;
 
 import org.teavm.ast.Expr;
+import org.teavm.wasm.generate.WasmClassGenerator;
+import org.teavm.wasm.generate.WasmGenerationContext;
 import org.teavm.wasm.model.expression.WasmExpression;
 
 public interface WasmIntrinsicManager {

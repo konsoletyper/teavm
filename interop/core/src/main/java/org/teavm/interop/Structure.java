@@ -20,7 +20,7 @@ public class Structure {
 
     public final native Address toAddress();
 
-    public final native int sizeOf(Class<? extends Structure> type);
+    public static native int sizeOf(Class<? extends Structure> type);
 
-    public final native <T extends Structure> T add(T base, int offset);
+    public static native <T extends Structure> T add(T base, int offset);
 }

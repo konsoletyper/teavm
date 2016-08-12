@@ -17,15 +17,11 @@ package org.teavm.model;
 
 import java.util.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class ClassHolder extends ElementHolder implements ClassReader {
     private String parent = Object.class.getName();
-    private Set<String> interfaces = new HashSet<>();
-    private Map<MethodDescriptor, MethodHolder> methods = new HashMap<>();
-    private Map<String, FieldHolder> fields = new HashMap<>();
+    private Set<String> interfaces = new LinkedHashSet<>();
+    private Map<MethodDescriptor, MethodHolder> methods = new LinkedHashMap<>();
+    private Map<String, FieldHolder> fields = new LinkedHashMap<>();
     private String ownerName;
 
     public ClassHolder(String name) {

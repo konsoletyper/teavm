@@ -30,7 +30,6 @@ import org.teavm.dependency.DependencyChecker;
 import org.teavm.interop.Address;
 import org.teavm.interop.Import;
 import org.teavm.interop.StaticInit;
-import org.teavm.interop.Structure;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHolder;
@@ -61,7 +60,10 @@ import org.teavm.wasm.generate.WasmClassGenerator;
 import org.teavm.wasm.generate.WasmGenerationContext;
 import org.teavm.wasm.generate.WasmGenerator;
 import org.teavm.wasm.generate.WasmMangling;
+import org.teavm.wasm.intrinsics.WasmAddressIntrinsic;
+import org.teavm.wasm.intrinsics.WasmRuntimeClassIntrinsic;
 import org.teavm.wasm.intrinsics.WasmRuntimeIntrinsic;
+import org.teavm.wasm.intrinsics.WasmStructureIntrinsic;
 import org.teavm.wasm.model.WasmFunction;
 import org.teavm.wasm.model.WasmModule;
 import org.teavm.wasm.model.WasmType;
@@ -110,6 +112,9 @@ public class WasmTarget implements TeaVMTarget {
 
         dependencyChecker.linkMethod(new MethodReference(Allocator.class, "allocate",
                 RuntimeClass.class, Address.class), null).use();
+        dependencyChecker.linkMethod(new MethodReference(Allocator.class, "allocateArray",
+                RuntimeClass.class, int.class, byte.class, Address.class), null).use();
+
         dependencyChecker.linkMethod(new MethodReference(Allocator.class, "<clinit>", void.class), null).use();
     }
 
@@ -130,12 +135,18 @@ public class WasmTarget implements TeaVMTarget {
                 return;
             }
         }
+        classGenerator.addArrayClass();
         address = classGenerator.getAddress();
 
         Decompiler decompiler = new Decompiler(classes, controller.getClassLoader(), new HashSet<>(),
                 new HashSet<>());
         WasmGenerationContext context = new WasmGenerationContext(classes, vtableProvider, tagRegistry);
+
+        context.addIntrinsic(new WasmAddressIntrinsic());
+        context.addIntrinsic(new WasmRuntimeClassIntrinsic(classGenerator));
+        context.addIntrinsic(new WasmStructureIntrinsic(classGenerator));
         context.addIntrinsic(new WasmRuntimeIntrinsic());
+
         WasmGenerator generator = new WasmGenerator(decompiler, classes, context, classGenerator);
 
         module.setMemorySize(64);
@@ -152,10 +163,6 @@ public class WasmTarget implements TeaVMTarget {
                 }
 
                 if (method.hasModifier(ElementModifier.NATIVE)) {
-                    if (method.getOwnerName().equals(Structure.class.getName())
-                            || method.getOwnerName().equals(Address.class.getName())) {
-                        continue;
-                    }
                     if (context.getImportedMethod(method.getReference()) == null) {
                         CallLocation location = new CallLocation(method.getReference());
                         controller.getDiagnostics().error(location, "Method {{m0}} is native but "

@@ -53,5 +53,5 @@ public class RuntimeClass extends Structure {
         return computeCanary(size, lowerTag, upperTag);
     }
 
-    private static native RuntimeClass getArrayClass();
+    public static native RuntimeClass getArrayClass();
 }

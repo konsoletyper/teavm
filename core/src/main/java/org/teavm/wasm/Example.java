@@ -34,6 +34,12 @@ public final class Example {
             WasmRuntime.print(instance(i).foo());
         }
 
+        Base[] array = { new Derived1(), new Derived2() };
+        WasmRuntime.print(array.length);
+        for (Base elem : array) {
+            WasmRuntime.print(elem.foo());
+        }
+
         WasmRuntime.print(new Derived2() instanceof Base ? 1 : 0);
         WasmRuntime.print(new Derived3() instanceof Base ? 1 : 0);
         WasmRuntime.print((Object) new Derived2() instanceof Derived1 ? 1 : 0);

@@ -448,6 +448,7 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
             case INT8:
             case UINT8:
                 append("i32.store8");
+                break;
             case INT16:
             case UINT16:
                 append("i32.store16");
@@ -469,6 +470,7 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
             case INT8:
             case UINT8:
                 append("i64.store8");
+                break;
             case INT16:
             case UINT16:
                 append("i64.store16");
