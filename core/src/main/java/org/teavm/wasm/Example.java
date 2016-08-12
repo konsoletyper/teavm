@@ -33,6 +33,12 @@ public final class Example {
         for (int i = 0; i < 4; ++i) {
             WasmRuntime.print(instance(i).foo());
         }
+
+        WasmRuntime.print(new Derived2() instanceof Base ? 1 : 0);
+        WasmRuntime.print(new Derived3() instanceof Base ? 1 : 0);
+        WasmRuntime.print((Object) new Derived2() instanceof Derived1 ? 1 : 0);
+        WasmRuntime.print((Object) new Derived2() instanceof A ? 1 : 0);
+        WasmRuntime.print(new A(23) instanceof Base ? 1 : 0);
     }
 
     private static Base instance(int index) {

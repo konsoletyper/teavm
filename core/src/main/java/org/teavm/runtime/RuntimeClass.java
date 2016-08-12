@@ -29,15 +29,14 @@ public class RuntimeClass extends Structure {
     public static int CANARY_OFFSET = 24;
     public static int VIRTUAL_TABLE_OFFSET = 28;
 
-    public static int ARRAY_CLASS = -1;
-    public static int BOOLEAN_CLASS = -2;
-    public static int BYTE_CLASS = -3;
-    public static int SHORT_CLASS = -4;
-    public static int CHAR_CLASS = -5;
-    public static int INT_CLASS = -6;
-    public static int LONG_CLASS = -7;
-    public static int FLOAT_CLASS = -8;
-    public static int DOUBLE_CLASS = -9;
+    public static int BOOLEAN_CLASS = -1;
+    public static int BYTE_CLASS = -2;
+    public static int SHORT_CLASS = -3;
+    public static int CHAR_CLASS = -4;
+    public static int INT_CLASS = -5;
+    public static int LONG_CLASS = -6;
+    public static int FLOAT_CLASS = -7;
+    public static int DOUBLE_CLASS = -8;
 
     public int size;
     public int flags;
@@ -53,4 +52,6 @@ public class RuntimeClass extends Structure {
     public int computeCanary() {
         return computeCanary(size, lowerTag, upperTag);
     }
+
+    private static native RuntimeClass getArrayClass();
 }

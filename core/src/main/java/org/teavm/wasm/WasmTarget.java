@@ -134,7 +134,7 @@ public class WasmTarget implements TeaVMTarget {
 
         Decompiler decompiler = new Decompiler(classes, controller.getClassLoader(), new HashSet<>(),
                 new HashSet<>());
-        WasmGenerationContext context = new WasmGenerationContext(classes, vtableProvider);
+        WasmGenerationContext context = new WasmGenerationContext(classes, vtableProvider, tagRegistry);
         context.addIntrinsic(new WasmRuntimeIntrinsic());
         WasmGenerator generator = new WasmGenerator(decompiler, classes, context, classGenerator);
 

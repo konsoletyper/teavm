@@ -16,8 +16,11 @@
 package org.teavm.wasm.generate;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.teavm.ast.AssignmentStatement;
@@ -65,6 +68,7 @@ import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
+import org.teavm.model.classes.TagRegistry;
 import org.teavm.model.classes.VirtualTableEntry;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.RuntimeClass;
@@ -631,13 +635,9 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             block.getBody().add(new WasmSetLocal(instanceVar, instance));
             instance = new WasmGetLocal(instanceVar);
 
-            WasmExpression classIndex = new WasmLoadInt32(4, instance, WasmInt32Subtype.INT32);
-            classIndex = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SHL, classIndex,
-                    new WasmInt32Constant(3));
-
             VirtualTableEntry vtableEntry = context.getVirtualTableProvider().lookup(expr.getMethod());
             WasmExpression methodIndex = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD,
-                    classIndex, new WasmInt32Constant(vtableEntry.getIndex() * 4
+                    getReferenceToClass(instance), new WasmInt32Constant(vtableEntry.getIndex() * 4
                     + RuntimeClass.VIRTUAL_TABLE_OFFSET));
             methodIndex = new WasmLoadInt32(4, methodIndex, WasmInt32Subtype.INT32);
 
@@ -897,7 +897,55 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(InstanceOfExpr expr) {
+        expr.getExpr().acceptVisitor(this);
 
+        if (expr.getType() instanceof ValueType.Object) {
+            ValueType.Object cls = (ValueType.Object) expr.getType();
+            List<TagRegistry.Range> ranges = context.getTagRegistry().getRanges(cls.getClassName());
+            Collections.sort(ranges, Comparator.comparingInt(range -> range.lower));
+
+            WasmBlock block = new WasmBlock(false);
+            WasmLocal tagVar = function.getLocalVariables().get(getTemporaryInt32());
+            WasmExpression tagPtr = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD,
+                    getReferenceToClass(result), new WasmInt32Constant(RuntimeClass.LOWER_TAG_OFFSET));
+            block.getBody().add(new WasmSetLocal(tagVar, new WasmLoadInt32(4, tagPtr, WasmInt32Subtype.INT32)));
+
+            WasmExpression lowerThanMinCond = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.LT_SIGNED,
+                    new WasmGetLocal(tagVar), new WasmInt32Constant(ranges.get(0).lower));
+            WasmBranch lowerThanMin = new WasmBranch(lowerThanMinCond, block);
+            lowerThanMin.setResult(new WasmInt32Constant(0));
+            block.getBody().add(lowerThanMin);
+
+            WasmExpression upperThanMaxCond = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.GT_SIGNED,
+                    new WasmGetLocal(tagVar), new WasmInt32Constant(ranges.get(ranges.size() - 1).upper));
+            WasmBranch upperThanMax = new WasmBranch(upperThanMaxCond, block);
+            upperThanMax.setResult(new WasmInt32Constant(0));
+            block.getBody().add(upperThanMax);
+
+            for (int i = 1; i < ranges.size(); ++i) {
+                WasmExpression upperThanExcluded = new WasmIntBinary(WasmIntType.INT32,
+                        WasmIntBinaryOperation.GT_SIGNED, new WasmGetLocal(tagVar),
+                        new WasmInt32Constant(ranges.get(i - 1).upper));
+                WasmConditional conditional = new WasmConditional(upperThanExcluded);
+                WasmExpression lowerThanExluded = new WasmIntBinary(WasmIntType.INT32,
+                        WasmIntBinaryOperation.LT_SIGNED, new WasmGetLocal(tagVar),
+                        new WasmInt32Constant(ranges.get(i).lower));
+
+                WasmBranch branch = new WasmBranch(lowerThanExluded, block);
+                branch.setResult(new WasmInt32Constant(0));
+                conditional.getThenBlock().getBody().add(branch);
+
+                block.getBody().add(conditional);
+            }
+
+            block.getBody().add(new WasmInt32Constant(1));
+
+            result = block;
+        } else if (expr.getType() instanceof ValueType.Array) {
+
+        } else {
+            throw new AssertionError();
+        }
     }
 
     @Override
@@ -1074,5 +1122,11 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             function.add(new WasmLocal(WasmType.INT32));
         }
         return temporaryInt32;
+    }
+
+    private WasmExpression getReferenceToClass(WasmExpression instance) {
+        WasmExpression classIndex = new WasmLoadInt32(4, instance, WasmInt32Subtype.INT32);
+        return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SHL, classIndex,
+                new WasmInt32Constant(3));
     }
 }
