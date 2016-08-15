@@ -696,14 +696,16 @@ public class Interpreter {
         }
 
         @Override
-        public void getElement(VariableReader receiver, VariableReader array, VariableReader index) {
+        public void getElement(VariableReader receiver, VariableReader array, VariableReader index,
+                ArrayElementType type) {
             Object jvmArray = variables[array.getIndex()];
             int indexValue = (Integer) variables[index.getIndex()];
             variables[receiver.getIndex()] = Array.get(jvmArray, indexValue);
         }
 
         @Override
-        public void putElement(VariableReader array, VariableReader index, VariableReader value) {
+        public void putElement(VariableReader array, VariableReader index, VariableReader value,
+                ArrayElementType type) {
             Object jvmArray = variables[array.getIndex()];
             int indexValue = (Integer) variables[index.getIndex()];
             Array.set(jvmArray, indexValue, variables[value.getIndex()]);

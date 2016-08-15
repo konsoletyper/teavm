@@ -655,7 +655,8 @@ class DependencyGraphBuilder {
         }
 
         @Override
-        public void getElement(VariableReader receiver, VariableReader array, VariableReader index) {
+        public void getElement(VariableReader receiver, VariableReader array, VariableReader index,
+                ArrayElementType type) {
             DependencyNode arrayNode = nodes[array.getIndex()];
             DependencyNode receiverNode = nodes[receiver.getIndex()];
             if (arrayNode != null && receiverNode != null && receiverNode != arrayNode.getArrayItem()) {
@@ -664,7 +665,8 @@ class DependencyGraphBuilder {
         }
 
         @Override
-        public void putElement(VariableReader array, VariableReader index, VariableReader value) {
+        public void putElement(VariableReader array, VariableReader index, VariableReader value,
+                ArrayElementType type) {
             DependencyNode valueNode = nodes[value.getIndex()];
             DependencyNode arrayNode = nodes[array.getIndex()];
             if (valueNode != null && arrayNode != null && valueNode != arrayNode.getArrayItem()) {

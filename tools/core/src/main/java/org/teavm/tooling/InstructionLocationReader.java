@@ -162,11 +162,13 @@ class InstructionLocationReader implements InstructionReader {
     }
 
     @Override
-    public void getElement(VariableReader receiver, VariableReader array, VariableReader index) {
+    public void getElement(VariableReader receiver, VariableReader array, VariableReader index,
+            ArrayElementType type) {
     }
 
     @Override
-    public void putElement(VariableReader array, VariableReader index, VariableReader value) {
+    public void putElement(VariableReader array, VariableReader index, VariableReader value,
+            ArrayElementType type) {
     }
 
     @Override

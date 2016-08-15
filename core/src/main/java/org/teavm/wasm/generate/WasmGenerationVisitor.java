@@ -528,7 +528,6 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         indexExpr.acceptVisitor(this);
         WasmExpression index = result;
 
-        classGenerator.addClass(RuntimeArray.class.getName());
         int base = classGenerator.getClassSize(RuntimeArray.class.getName());
         array = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, array, new WasmInt32Constant(base));
         index = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SHL, index, new WasmInt32Constant(2));
@@ -673,7 +672,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
             VirtualTableEntry vtableEntry = context.getVirtualTableProvider().lookup(expr.getMethod());
             WasmExpression methodIndex = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD,
-                    getReferenceToClass(instance), new WasmInt32Constant(vtableEntry.getIndex() * 4 + 16));
+                    getReferenceToClass(instance), new WasmInt32Constant(vtableEntry.getIndex() * 4 + 24));
             methodIndex = new WasmLoadInt32(4, methodIndex, WasmInt32Subtype.INT32);
 
             WasmIndirectCall call = new WasmIndirectCall(methodIndex);
@@ -788,7 +787,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(NewExpr expr) {
-        int tag = classGenerator.getClassPointer(expr.getConstructedClass());
+        int tag = classGenerator.getClassPointer(ValueType.object(expr.getConstructedClass()));
         String allocName = WasmMangling.mangleMethod(new MethodReference(Allocator.class, "allocate",
                 RuntimeClass.class, Address.class));
         WasmCall call = new WasmCall(allocName);
@@ -799,21 +798,14 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     @Override
     public void visit(NewArrayExpr expr) {
         ValueType type = expr.getType();
-        int depth = 0;
-        while (type instanceof ValueType.Array) {
-            ++depth;
-            type = ((ValueType.Array) type).getItemType();
-        }
 
-        ValueType.Object cls = (ValueType.Object) type;
-        int classPointer = classGenerator.getClassPointer(cls.getClassName());
+        int classPointer = classGenerator.getClassPointer(ValueType.arrayOf(type));
         String allocName = WasmMangling.mangleMethod(new MethodReference(Allocator.class, "allocateArray",
-                RuntimeClass.class, int.class, byte.class, Address.class));
+                RuntimeClass.class, int.class, Address.class));
         WasmCall call = new WasmCall(allocName);
         call.getArguments().add(new WasmInt32Constant(classPointer));
         expr.getLength().acceptVisitor(this);
         call.getArguments().add(result);
-        call.getArguments().add(new WasmInt32Constant(depth));
 
         result = call;
     }

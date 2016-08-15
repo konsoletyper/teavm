@@ -768,7 +768,8 @@ public class CompositeMethodGenerator {
         }
 
         @Override
-        public void getElement(VariableReader receiver, VariableReader array, VariableReader index) {
+        public void getElement(VariableReader receiver, VariableReader array, VariableReader index,
+                ArrayElementType type) {
             int arrayIndex = variableMapping[array.getIndex()];
 
             AliasFinder.ArrayElement elem = arrayElements[receiver.getIndex()];
@@ -780,7 +781,7 @@ public class CompositeMethodGenerator {
                 return;
             }
 
-            GetElementInstruction insn = new GetElementInstruction();
+            GetElementInstruction insn = new GetElementInstruction(type);
             insn.setArray(var(array));
             insn.setIndex(var(index));
             insn.setReceiver(var(receiver));
@@ -788,8 +789,9 @@ public class CompositeMethodGenerator {
         }
 
         @Override
-        public void putElement(VariableReader array, VariableReader index, VariableReader value) {
-            PutElementInstruction insn = new PutElementInstruction();
+        public void putElement(VariableReader array, VariableReader index, VariableReader value,
+                ArrayElementType type) {
+            PutElementInstruction insn = new PutElementInstruction(type);
             insn.setArray(var(array));
             insn.setIndex(var(index));
             insn.setValue(var(value));
@@ -1013,7 +1015,7 @@ public class CompositeMethodGenerator {
                     return true;
                 }
                 case "getArrayElement": {
-                    GetElementInstruction insn = new GetElementInstruction();
+                    GetElementInstruction insn = new GetElementInstruction(asArrayType(reflectClass.type));
                     insn.setArray(unwrapArray(reflectClass.type, var(arguments.get(0))));
                     insn.setIndex(var(arguments.get(1)));
                     insn.setReceiver(program.createVariable());
@@ -1047,7 +1049,7 @@ public class CompositeMethodGenerator {
                 indexInsn.setReceiver(program.createVariable());
                 add(indexInsn);
 
-                GetElementInstruction extractArgInsn = new GetElementInstruction();
+                GetElementInstruction extractArgInsn = new GetElementInstruction(ArrayElementType.OBJECT);
                 extractArgInsn.setArray(argumentsVar);
                 extractArgInsn.setIndex(indexInsn.getReceiver());
                 extractArgInsn.setReceiver(program.createVariable());

@@ -18,10 +18,6 @@ package org.teavm.model.instructions;
 import java.util.List;
 import org.teavm.model.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface InstructionReader {
     void location(InstructionLocation location);
 
@@ -87,9 +83,9 @@ public interface InstructionReader {
 
     void unwrapArray(VariableReader receiver, VariableReader array, ArrayElementType elementType);
 
-    void getElement(VariableReader receiver, VariableReader array, VariableReader index);
+    void getElement(VariableReader receiver, VariableReader array, VariableReader index, ArrayElementType elementType);
 
-    void putElement(VariableReader array, VariableReader index, VariableReader value);
+    void putElement(VariableReader array, VariableReader index, VariableReader value, ArrayElementType elementType);
 
     void invoke(VariableReader receiver, VariableReader instance, MethodReference method,
             List<? extends VariableReader> arguments, InvocationType type);

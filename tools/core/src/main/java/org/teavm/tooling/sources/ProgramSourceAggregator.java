@@ -20,10 +20,6 @@ import java.util.Set;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 class ProgramSourceAggregator implements InstructionReader {
     private Set<String> sourceFiles;
 
@@ -82,8 +78,10 @@ class ProgramSourceAggregator implements InstructionReader {
     @Override public void arrayLength(VariableReader receiver, VariableReader array) { }
     @Override public void cloneArray(VariableReader receiver, VariableReader array) { }
     @Override public void unwrapArray(VariableReader receiver, VariableReader array, ArrayElementType elementType) { }
-    @Override public void getElement(VariableReader receiver, VariableReader array, VariableReader index) { }
-    @Override public void putElement(VariableReader array, VariableReader index, VariableReader value) { }
+    @Override public void getElement(VariableReader receiver, VariableReader array, VariableReader index,
+            ArrayElementType type) { }
+    @Override public void putElement(VariableReader array, VariableReader index, VariableReader value,
+            ArrayElementType type) { }
     @Override public void invoke(VariableReader receiver, VariableReader instance, MethodReference method,
             List<? extends VariableReader> arguments, InvocationType type) { }
     @Override public void invokeDynamic(VariableReader receiver, VariableReader instance, MethodDescriptor method,

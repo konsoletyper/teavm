@@ -17,13 +17,10 @@ package org.teavm.ast;
 
 import java.util.Map;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class SubscriptExpr extends Expr {
     private Expr array;
     private Expr index;
+    private ArrayType type;
 
     public Expr getArray() {
         return array;
@@ -41,6 +38,14 @@ public class SubscriptExpr extends Expr {
         this.index = index;
     }
 
+    public ArrayType getType() {
+        return type;
+    }
+
+    public void setType(ArrayType type) {
+        this.type = type;
+    }
+
     @Override
     public void acceptVisitor(ExprVisitor visitor) {
         visitor.visit(this);
@@ -55,6 +60,7 @@ public class SubscriptExpr extends Expr {
         SubscriptExpr copy = new SubscriptExpr();
         copy.setArray(array != null ? array.clone(cache) : null);
         copy.setIndex(index != null ? index.clone(cache) : null);
+        copy.setType(type);
         return copy;
     }
 }

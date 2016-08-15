@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.teavm.ast.ArrayType;
 import org.teavm.ast.AssignmentStatement;
 import org.teavm.ast.AsyncMethodNode;
 import org.teavm.ast.AsyncMethodPart;
@@ -509,6 +510,7 @@ public class AstIO {
                 output.writeByte(11);
                 writeExpr(expr.getArray());
                 writeExpr(expr.getIndex());
+                output.writeByte(expr.getType().ordinal());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -899,6 +901,7 @@ public class AstIO {
                 SubscriptExpr expr = new SubscriptExpr();
                 expr.setArray(readExpr(input));
                 expr.setIndex(readExpr(input));
+                expr.setType(ArrayType.values()[input.readByte()]);
                 return expr;
             }
             case 12: {

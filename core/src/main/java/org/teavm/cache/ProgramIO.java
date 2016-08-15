@@ -536,6 +536,7 @@ public class ProgramIO {
         public void visit(GetElementInstruction insn) {
             try {
                 output.writeByte(31);
+                output.writeByte(insn.getType().ordinal());
                 output.writeShort(insn.getReceiver().getIndex());
                 output.writeShort(insn.getArray().getIndex());
                 output.writeShort(insn.getIndex().getIndex());
@@ -548,6 +549,7 @@ public class ProgramIO {
         public void visit(PutElementInstruction insn) {
             try {
                 output.writeByte(32);
+                output.writeByte(insn.getType().ordinal());
                 output.writeShort(insn.getArray().getIndex());
                 output.writeShort(insn.getIndex().getIndex());
                 output.writeShort(insn.getValue().getIndex());
@@ -965,14 +967,14 @@ public class ProgramIO {
                 return insn;
             }
             case 31: {
-                GetElementInstruction insn = new GetElementInstruction();
+                GetElementInstruction insn = new GetElementInstruction(arrayElementTypes[input.readByte()]);
                 insn.setReceiver(program.variableAt(input.readShort()));
                 insn.setArray(program.variableAt(input.readShort()));
                 insn.setIndex(program.variableAt(input.readShort()));
                 return insn;
             }
             case 32: {
-                PutElementInstruction insn = new PutElementInstruction();
+                PutElementInstruction insn = new PutElementInstruction(arrayElementTypes[input.readByte()]);
                 insn.setArray(program.variableAt(input.readShort()));
                 insn.setIndex(program.variableAt(input.readShort()));
                 insn.setValue(program.variableAt(input.readShort()));

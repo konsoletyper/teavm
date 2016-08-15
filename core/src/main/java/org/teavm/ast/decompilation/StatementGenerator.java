@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.teavm.ast.ArrayType;
 import org.teavm.ast.AssignmentStatement;
 import org.teavm.ast.BinaryOperation;
 import org.teavm.ast.BreakStatement;
@@ -49,6 +50,7 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
+import org.teavm.model.instructions.ArrayElementType;
 import org.teavm.model.instructions.ArrayLengthInstruction;
 import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.BinaryBranchingInstruction;
@@ -442,16 +444,40 @@ class StatementGenerator implements InstructionVisitor {
 
     @Override
     public void visit(GetElementInstruction insn) {
-        assign(Expr.subscript(Expr.var(insn.getArray().getIndex()), Expr.var(insn.getIndex().getIndex())),
-                insn.getReceiver());
+        Expr subscript = Expr.subscript(Expr.var(insn.getArray().getIndex()), Expr.var(insn.getIndex().getIndex()),
+                map(insn.getType()));
+        assign(subscript, insn.getReceiver());
     }
 
     @Override
     public void visit(PutElementInstruction insn) {
-        AssignmentStatement stmt = Statement.assign(Expr.subscript(Expr.var(insn.getArray().getIndex()),
-                Expr.var(insn.getIndex().getIndex())), Expr.var(insn.getValue().getIndex()));
+        Expr subscript = Expr.subscript(Expr.var(insn.getArray().getIndex()),
+                Expr.var(insn.getIndex().getIndex()), map(insn.getType()));
+        AssignmentStatement stmt = Statement.assign(subscript, Expr.var(insn.getValue().getIndex()));
         stmt.setLocation(currentLocation);
         statements.add(stmt);
+    }
+
+    private static ArrayType map(ArrayElementType type) {
+        switch (type) {
+            case BYTE:
+                return ArrayType.BYTE;
+            case SHORT:
+                return ArrayType.SHORT;
+            case CHAR:
+                return ArrayType.SHORT;
+            case INT:
+                return ArrayType.INT;
+            case LONG:
+                return ArrayType.LONG;
+            case FLOAT:
+                return ArrayType.FLOAT;
+            case DOUBLE:
+                return ArrayType.DOUBLE;
+            case OBJECT:
+                return ArrayType.OBJECT;
+        }
+        throw new AssertionError();
     }
 
     @Override

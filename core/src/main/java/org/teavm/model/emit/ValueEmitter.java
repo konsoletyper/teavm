@@ -844,7 +844,8 @@ public class ValueEmitter {
 
         ValueEmitter array = unwrapArray();
         Variable result = pe.getProgram().createVariable();
-        GetElementInstruction insn = new GetElementInstruction();
+        ValueType.Array arrayType = (ValueType.Array) array.getType();
+        GetElementInstruction insn = new GetElementInstruction(getArrayElementType(arrayType.getItemType()));
         insn.setArray(array.variable);
         insn.setIndex(index.widenToInteger().variable);
         insn.setReceiver(result);
@@ -861,7 +862,7 @@ public class ValueEmitter {
             throw new EmitException("Can't set element of non-array type: " + type);
         }
 
-        PutElementInstruction insn = new PutElementInstruction();
+        PutElementInstruction insn = new PutElementInstruction(getArrayElementType(value.getType()));
         insn.setArray(unwrapArray().variable);
         insn.setIndex(index.widenToInteger().variable);
         insn.setValue(value.variable);

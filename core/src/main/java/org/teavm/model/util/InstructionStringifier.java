@@ -307,13 +307,14 @@ public class InstructionStringifier implements InstructionReader {
     }
 
     @Override
-    public void getElement(VariableReader receiver, VariableReader array, VariableReader index) {
+    public void getElement(VariableReader receiver, VariableReader array, VariableReader index,
+            ArrayElementType type) {
         sb.append("@").append(receiver.getIndex()).append(" := @").append(array.getIndex()).append("[@")
                 .append(index.getIndex()).append("]");
     }
 
     @Override
-    public void putElement(VariableReader array, VariableReader index, VariableReader value) {
+    public void putElement(VariableReader array, VariableReader index, VariableReader value, ArrayElementType type) {
         sb.append("@").append(array.getIndex()).append("[@").append(index.getIndex()).append("] := @")
                 .append(value.getIndex());
     }

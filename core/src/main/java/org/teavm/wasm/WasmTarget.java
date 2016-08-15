@@ -43,6 +43,7 @@ import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
+import org.teavm.model.ValueType;
 import org.teavm.model.classes.TagRegistry;
 import org.teavm.model.classes.VirtualTableProvider;
 import org.teavm.model.instructions.InvocationType;
@@ -62,7 +63,6 @@ import org.teavm.wasm.generate.WasmGenerationContext;
 import org.teavm.wasm.generate.WasmGenerator;
 import org.teavm.wasm.generate.WasmMangling;
 import org.teavm.wasm.intrinsics.WasmAddressIntrinsic;
-import org.teavm.wasm.intrinsics.WasmRuntimeClassIntrinsic;
 import org.teavm.wasm.intrinsics.WasmRuntimeIntrinsic;
 import org.teavm.wasm.intrinsics.WasmStructureIntrinsic;
 import org.teavm.wasm.model.WasmFunction;
@@ -118,7 +118,7 @@ public class WasmTarget implements TeaVMTarget {
         dependencyChecker.linkMethod(new MethodReference(Allocator.class, "allocate",
                 RuntimeClass.class, Address.class), null).use();
         dependencyChecker.linkMethod(new MethodReference(Allocator.class, "allocateArray",
-                RuntimeClass.class, int.class, byte.class, Address.class), null).use();
+                RuntimeClass.class, int.class, Address.class), null).use();
 
         dependencyChecker.linkMethod(new MethodReference(Allocator.class, "<clinit>", void.class), null).use();
     }
@@ -131,22 +131,14 @@ public class WasmTarget implements TeaVMTarget {
         VirtualTableProvider vtableProvider = createVirtualTableProvider(classes);
         TagRegistry tagRegistry = new TagRegistry(classes);
         BinaryWriter binaryWriter = new BinaryWriter(256);
-        WasmClassGenerator classGenerator = new WasmClassGenerator(classes, vtableProvider, tagRegistry,
-                binaryWriter);
-        for (String className : classes.getClassNames()) {
-            classGenerator.addClass(className);
-            if (controller.wasCancelled()) {
-                return;
-            }
-        }
-        classGenerator.addArrayClass();
+        WasmClassGenerator classGenerator = new WasmClassGenerator(controller.getUnprocessedClassSource(),
+                vtableProvider, tagRegistry, binaryWriter);
 
         Decompiler decompiler = new Decompiler(classes, controller.getClassLoader(), new HashSet<>(),
                 new HashSet<>());
         WasmGenerationContext context = new WasmGenerationContext(classes, vtableProvider, tagRegistry);
 
         context.addIntrinsic(new WasmAddressIntrinsic());
-        context.addIntrinsic(new WasmRuntimeClassIntrinsic(classGenerator));
         context.addIntrinsic(new WasmStructureIntrinsic(classGenerator));
         context.addIntrinsic(new WasmRuntimeIntrinsic());
 
@@ -263,7 +255,7 @@ public class WasmTarget implements TeaVMTarget {
 
             WasmBlock block = new WasmBlock(false);
 
-            int index = classGenerator.getClassPointer(className);
+            int index = classGenerator.getClassPointer(ValueType.object(className));
             WasmExpression initFlag = new WasmLoadInt32(4, new WasmInt32Constant(index), WasmInt32Subtype.INT32);
             initFlag = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.AND, initFlag,
                     new WasmInt32Constant(RuntimeClass.INITIALIZED));

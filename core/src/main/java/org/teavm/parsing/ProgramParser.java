@@ -905,7 +905,7 @@ public class ProgramParser {
             unwrapInsn.setArray(getVariable(array));
             unwrapInsn.setReceiver(unwrapInsn.getArray());
             addInstruction(unwrapInsn);
-            GetElementInstruction insn = new GetElementInstruction();
+            GetElementInstruction insn = new GetElementInstruction(type);
             insn.setArray(getVariable(array));
             insn.setIndex(getVariable(arrIndex));
             insn.setReceiver(getVariable(var));
@@ -920,7 +920,7 @@ public class ProgramParser {
             unwrapInsn.setArray(getVariable(array));
             unwrapInsn.setReceiver(unwrapInsn.getArray());
             addInstruction(unwrapInsn);
-            PutElementInstruction insn = new PutElementInstruction();
+            PutElementInstruction insn = new PutElementInstruction(type);
             insn.setArray(getVariable(array));
             insn.setIndex(getVariable(arrIndex));
             insn.setValue(getVariable(value));

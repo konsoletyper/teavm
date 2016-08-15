@@ -33,16 +33,14 @@ public final class Allocator {
         return result;
     }
 
-    public static Address allocateArray(RuntimeClass tag, int size, byte depth) {
+    public static Address allocateArray(RuntimeClass tag, int size) {
         Address result = address;
-        int sizeInBytes = (size + 1) * 4 + Structure.sizeOf(RuntimeArray.class);
+        int sizeInBytes = tag.size * 4 + Structure.sizeOf(RuntimeArray.class);
         address = result.add(sizeInBytes);
 
         RuntimeArray array = result.toStructure();
-        array.classReference = RuntimeClass.getArrayClass().toAddress().toInt() >> 3;
-        array.componentClassReference = tag.toAddress().toInt() >> 3;
+        array.classReference = tag.toAddress().toInt() >> 3;
         array.size = size;
-        address.add(Structure.sizeOf(RuntimeArray.class)).putByte(depth);
 
         return result;
     }

@@ -18,14 +18,19 @@ package org.teavm.model.instructions;
 import org.teavm.model.Instruction;
 import org.teavm.model.Variable;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class PutElementInstruction extends Instruction {
+    private ArrayElementType type;
     private Variable array;
     private Variable index;
     private Variable value;
+
+    public PutElementInstruction(ArrayElementType type) {
+        this.type = type;
+    }
+
+    public ArrayElementType getType() {
+        return type;
+    }
 
     public Variable getArray() {
         return array;

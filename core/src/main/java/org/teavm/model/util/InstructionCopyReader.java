@@ -386,8 +386,9 @@ public class InstructionCopyReader implements InstructionReader {
     }
 
     @Override
-    public void getElement(VariableReader receiver, VariableReader array, VariableReader index) {
-        GetElementInstruction insnCopy = new GetElementInstruction();
+    public void getElement(VariableReader receiver, VariableReader array, VariableReader index,
+            ArrayElementType type) {
+        GetElementInstruction insnCopy = new GetElementInstruction(type);
         insnCopy.setArray(copyVar(array));
         insnCopy.setReceiver(copyVar(receiver));
         insnCopy.setIndex(copyVar(index));
@@ -396,8 +397,8 @@ public class InstructionCopyReader implements InstructionReader {
     }
 
     @Override
-    public void putElement(VariableReader array, VariableReader index, VariableReader value) {
-        PutElementInstruction insnCopy = new PutElementInstruction();
+    public void putElement(VariableReader array, VariableReader index, VariableReader value, ArrayElementType type) {
+        PutElementInstruction insnCopy = new PutElementInstruction(type);
         insnCopy.setArray(copyVar(array));
         insnCopy.setValue(copyVar(value));
         insnCopy.setIndex(copyVar(index));

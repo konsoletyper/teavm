@@ -13,26 +13,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.runtime;
+package org.teavm.ast;
 
-import org.teavm.interop.Structure;
-
-public class RuntimeClass extends Structure {
-    public static int INITIALIZED = 1;
-    public static int PRIMITIVE = 1;
-
-    public int size;
-    public int flags;
-    public int tag;
-    public int canary;
-    public RuntimeClass itemType;
-    public RuntimeClass arrayType;
-
-    public static int computeCanary(int size, int tag) {
-        return size ^ (tag << 8) ^ (tag >>> 24) ^ (0xAAAAAAAA);
-    }
-
-    public int computeCanary() {
-        return computeCanary(size, tag);
-    }
+public enum ArrayType {
+    BYTE,
+    SHORT,
+    CHAR,
+    INT,
+    LONG,
+    FLOAT,
+    DOUBLE,
+    OBJECT
 }

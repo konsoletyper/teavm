@@ -34,7 +34,7 @@ public class WasmStructureIntrinsic implements WasmIntrinsic {
     @Override
     public boolean isApplicable(MethodReference methodReference) {
         return !methodReference.getClassName().equals(Address.class.getName())
-                && classGenerator.getClassPointer(methodReference.getClassName()) < 0;
+                && classGenerator.getClassPointer(ValueType.object(methodReference.getClassName())) < 0;
     }
 
     @Override

@@ -234,7 +234,8 @@ public class TypeInferer {
         }
 
         @Override
-        public void putElement(VariableReader array, VariableReader index, VariableReader value) {
+        public void putElement(VariableReader array, VariableReader index, VariableReader value,
+                ArrayElementType type) {
         }
 
         @Override
@@ -325,7 +326,8 @@ public class TypeInferer {
         }
 
         @Override
-        public void getElement(VariableReader receiver, VariableReader array, VariableReader index) {
+        public void getElement(VariableReader receiver, VariableReader array, VariableReader index,
+                ArrayElementType type) {
             arrayElemBuilder.addEdge(array.getIndex(), receiver.getIndex());
         }
 

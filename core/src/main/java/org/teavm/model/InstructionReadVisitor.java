@@ -173,12 +173,12 @@ class InstructionReadVisitor implements InstructionVisitor {
 
     @Override
     public void visit(GetElementInstruction insn) {
-        reader.getElement(insn.getReceiver(), insn.getArray(), insn.getIndex());
+        reader.getElement(insn.getReceiver(), insn.getArray(), insn.getIndex(), insn.getType());
     }
 
     @Override
     public void visit(PutElementInstruction insn) {
-        reader.putElement(insn.getArray(), insn.getIndex(), insn.getValue());
+        reader.putElement(insn.getArray(), insn.getIndex(), insn.getValue(), insn.getType());
     }
 
     @Override

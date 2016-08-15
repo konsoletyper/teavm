@@ -266,7 +266,8 @@ class AliasFinder {
         }
 
         @Override
-        public void getElement(VariableReader receiver, VariableReader array, VariableReader index) {
+        public void getElement(VariableReader receiver, VariableReader array, VariableReader index,
+                ArrayElementType type) {
             ArrayElement elem = new ArrayElement();
             elem.array = array.getIndex();
             elem.index = index.getIndex();
@@ -274,7 +275,8 @@ class AliasFinder {
         }
 
         @Override
-        public void putElement(VariableReader array, VariableReader index, VariableReader value) {
+        public void putElement(VariableReader array, VariableReader index, VariableReader value,
+                ArrayElementType type) {
         }
 
         @Override

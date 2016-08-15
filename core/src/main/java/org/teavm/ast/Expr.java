@@ -75,10 +75,11 @@ public abstract class Expr implements Cloneable {
         return result;
     }
 
-    public static Expr subscript(Expr array, Expr index) {
+    public static Expr subscript(Expr array, Expr index, ArrayType type) {
         SubscriptExpr expr = new SubscriptExpr();
         expr.setArray(array);
         expr.setIndex(index);
+        expr.setType(type);
         return expr;
     }
 
