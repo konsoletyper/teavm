@@ -256,6 +256,18 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         expr.getSecondOperand().acceptVisitor(this);
         WasmExpression second = result;
 
+        if (expr.getType() == OperationType.LONG) {
+            switch (expr.getOperation()) {
+                case LEFT_SHIFT:
+                case RIGHT_SHIFT:
+                case UNSIGNED_RIGHT_SHIFT:
+                    second = new WasmConversion(WasmType.INT32, WasmType.INT64, false, second);
+                    break;
+                default:
+                    break;
+            }
+        }
+
         switch (expr.getType()) {
             case INT:
                 result = new WasmIntBinary(WasmIntType.INT32, intOp, first, second);
@@ -661,8 +673,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
             VirtualTableEntry vtableEntry = context.getVirtualTableProvider().lookup(expr.getMethod());
             WasmExpression methodIndex = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD,
-                    getReferenceToClass(instance), new WasmInt32Constant(vtableEntry.getIndex() * 4
-                    + RuntimeClass.VIRTUAL_TABLE_OFFSET));
+                    getReferenceToClass(instance), new WasmInt32Constant(vtableEntry.getIndex() * 4 + 16));
             methodIndex = new WasmLoadInt32(4, methodIndex, WasmInt32Subtype.INT32);
 
             WasmIndirectCall call = new WasmIndirectCall(methodIndex);
@@ -833,7 +844,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             WasmBlock block = new WasmBlock(false);
             WasmLocal tagVar = function.getLocalVariables().get(getTemporaryInt32());
             WasmExpression tagPtr = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD,
-                    getReferenceToClass(result), new WasmInt32Constant(RuntimeClass.LOWER_TAG_OFFSET));
+                    getReferenceToClass(result), new WasmInt32Constant(8));
             block.getBody().add(new WasmSetLocal(tagVar, new WasmLoadInt32(4, tagPtr, WasmInt32Subtype.INT32)));
 
             WasmExpression lowerThanMinCond = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.LT_SIGNED,
@@ -963,21 +974,56 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         return expression instanceof WasmInt32Constant && ((WasmInt32Constant) expression).getValue() == 0;
     }
 
+    private boolean isBoolean(WasmExpression expression) {
+        if (expression instanceof WasmIntBinary) {
+            WasmIntBinary binary = (WasmIntBinary) expression;
+            switch (binary.getOperation()) {
+                case EQ:
+                case NE:
+                case LT_SIGNED:
+                case LT_UNSIGNED:
+                case LE_SIGNED:
+                case LE_UNSIGNED:
+                case GT_SIGNED:
+                case GT_UNSIGNED:
+                case GE_SIGNED:
+                case GE_UNSIGNED:
+                    return true;
+                default:
+                    return false;
+            }
+        } else if (expression instanceof WasmFloatBinary) {
+            WasmFloatBinary binary = (WasmFloatBinary) expression;
+            switch (binary.getOperation()) {
+                case EQ:
+                case NE:
+                case LT:
+                case LE:
+                case GT:
+                case GE:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+        return false;
+    }
+
     private WasmExpression forCondition(WasmExpression expression) {
         if (expression instanceof WasmIntBinary) {
             WasmIntBinary binary = (WasmIntBinary) expression;
             switch (binary.getOperation()) {
                 case EQ:
-                    if (isZero(binary.getFirst())) {
+                    if (isZero(binary.getFirst()) && isBoolean(binary.getSecond())) {
                         return negate(binary.getSecond());
-                    } else if (isZero(binary.getSecond())) {
+                    } else if (isZero(binary.getSecond()) && isBoolean(binary.getFirst())) {
                         return negate(binary.getFirst());
                     }
                     break;
                 case NE:
-                    if (isZero(binary.getFirst())) {
+                    if (isZero(binary.getFirst()) && isBoolean(binary.getSecond())) {
                         return binary.getSecond();
-                    } else if (isZero(binary.getSecond())) {
+                    } else if (isZero(binary.getSecond()) && isBoolean(binary.getFirst())) {
                         return binary.getFirst();
                     }
                     break;

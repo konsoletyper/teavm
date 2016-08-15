@@ -46,6 +46,6 @@ public class WasmMemorySegment {
     }
 
     public byte[] getData(int offset, int size) {
-        return Arrays.copyOfRange(data, offset, size);
+        return Arrays.copyOfRange(data, offset, offset + size);
     }
 }

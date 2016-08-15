@@ -80,16 +80,16 @@ public class WasmRenderer {
         visitor.lf();
         visitor.open().append("memory " + module.getMemorySize());
         for (WasmMemorySegment segment : module.getSegments()) {
-            visitor.lf().open().append("segment " + segment.getLength());
+            visitor.lf().open().append("segment " + segment.getOffset());
             visitor.indent();
             for (int i = 0; i < segment.getLength(); i += 256) {
                 visitor.lf().append("\"");
-                byte[] part = segment.getData(i, Math.max(segment.getLength(), i + 256) - i);
+                byte[] part = segment.getData(i, Math.min(segment.getLength(), i + 256) - i);
                 StringBuilder sb = new StringBuilder();
                 for (int j = 0; j < part.length; ++j) {
                     int b = part[j] << 24 >>> 24;
                     if (b < ' ' || b > 126) {
-                        sb.append("\\0x" + Character.forDigit(b >> 4, 16) + Character.forDigit(b & 0xF, 16));
+                        sb.append("\\" + Character.forDigit(b >> 4, 16) + Character.forDigit(b & 0xF, 16));
                     } else if (b == '\\') {
                         sb.append("\\\\");
                     } else if (b == '"') {

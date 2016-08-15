@@ -18,8 +18,6 @@ package org.teavm.wasm.generate;
 import com.carrotsearch.hppc.ObjectIntMap;
 import com.carrotsearch.hppc.ObjectIntOpenHashMap;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -38,28 +36,35 @@ import org.teavm.model.classes.VirtualTable;
 import org.teavm.model.classes.VirtualTableEntry;
 import org.teavm.model.classes.VirtualTableProvider;
 import org.teavm.runtime.RuntimeClass;
-import org.teavm.wasm.model.expression.WasmExpression;
-import org.teavm.wasm.model.expression.WasmInt32Constant;
-import org.teavm.wasm.model.expression.WasmInt32Subtype;
-import org.teavm.wasm.model.expression.WasmStoreInt32;
+import org.teavm.wasm.binary.BinaryWriter;
+import org.teavm.wasm.binary.DataArray;
+import org.teavm.wasm.binary.DataPrimitives;
+import org.teavm.wasm.binary.DataStructure;
+import org.teavm.wasm.binary.DataType;
+import org.teavm.wasm.binary.DataValue;
 
 public class WasmClassGenerator {
     private ClassReaderSource classSource;
-    private int address;
     private Map<String, ClassBinaryData> binaryDataMap = new LinkedHashMap<>();
     private ClassBinaryData arrayClassData;
-    private List<WasmExpression> initializer;
+    private BinaryWriter binaryWriter;
     private Map<MethodReference, Integer> functions = new HashMap<>();
     private List<String> functionTable = new ArrayList<>();
     private VirtualTableProvider vtableProvider;
     private TagRegistry tagRegistry;
+    private DataStructure classStructure = new DataStructure(
+            (byte) 8,
+            DataPrimitives.INT, /* size */
+            DataPrimitives.INT, /* flags */
+            DataPrimitives.INT, /* tag */
+            DataPrimitives.INT  /* canary */);
 
     public WasmClassGenerator(ClassReaderSource classSource, VirtualTableProvider vtableProvider,
-            TagRegistry tagRegistry, List<WasmExpression> initializer) {
+            TagRegistry tagRegistry, BinaryWriter binaryWriter) {
         this.classSource = classSource;
         this.vtableProvider = vtableProvider;
         this.tagRegistry = tagRegistry;
-        this.initializer = initializer;
+        this.binaryWriter = binaryWriter;
     }
 
     public void addClass(String className) {
@@ -77,9 +82,7 @@ public class WasmClassGenerator {
             return;
         }
 
-        address = align(address, 8);
-        binaryData.start = address;
-        contributeToInitializer(binaryData);
+        binaryData.start = binaryWriter.append(createStructure(binaryData));
     }
 
     public void addArrayClass() {
@@ -88,71 +91,48 @@ public class WasmClassGenerator {
         }
 
         arrayClassData = new ClassBinaryData();
-        arrayClassData.start = address;
-
-        address += RuntimeClass.VIRTUAL_TABLE_OFFSET;
-    }
-
-    public int getAddress() {
-        return address;
-    }
-
-    public void setAddress(int address) {
-        this.address = address;
+        arrayClassData.start = binaryWriter.append(classStructure.createValue());
     }
 
     public List<String> getFunctionTable() {
         return functionTable;
     }
 
-    private void contributeToInitializer(ClassBinaryData binaryData) {
-        contributeInt32Value(binaryData.start + RuntimeClass.SIZE_OFFSET, binaryData.size);
-
-        List<TagRegistry.Range> ranges = tagRegistry.getRanges(binaryData.name);
-        int lower = ranges.stream().mapToInt(range -> range.lower).min().orElse(0);
-        int upper = ranges.stream().mapToInt(range -> range.upper).max().orElse(0);
-        contributeInt32Value(binaryData.start + RuntimeClass.LOWER_TAG_OFFSET, lower);
-        contributeInt32Value(binaryData.start + RuntimeClass.UPPER_TAG_OFFSET, upper);
-        contributeInt32Value(binaryData.start + RuntimeClass.CANARY_OFFSET,
-                RuntimeClass.computeCanary(binaryData.size, lower, upper));
-
-        address = binaryData.start + RuntimeClass.VIRTUAL_TABLE_OFFSET;
+    private DataValue createStructure(ClassBinaryData binaryData) {
         VirtualTable vtable = vtableProvider.lookup(binaryData.name);
-        if (vtable != null) {
-            for (VirtualTableEntry vtableEntry : vtable.getEntries().values()) {
-                int methodIndex;
-                if (vtableEntry.getImplementor() == null) {
-                    methodIndex = -1;
-                } else {
-                    methodIndex = functions.computeIfAbsent(vtableEntry.getImplementor(), implementor -> {
-                        int result = functionTable.size();
-                        functionTable.add(WasmMangling.mangleMethod(implementor));
-                        return result;
-                    });
-                }
+        int vtableSize = vtable != null ? vtable.getEntries().size() : 0;
 
-                contributeInt32Value(address, methodIndex);
-                address += 4;
-            }
+        DataType arrayType = new DataArray(DataPrimitives.INT, vtableSize);
+        DataValue wrapper = new DataStructure((byte) 0, classStructure, arrayType).createValue();
+        DataValue array = wrapper.getValue(1);
+        DataValue header = wrapper.getValue(0);
+
+        header.setInt(0, binaryData.size);
+        List<TagRegistry.Range> ranges = tagRegistry.getRanges(binaryData.name);
+        int tag = ranges.stream().mapToInt(range -> range.lower).min().orElse(0);
+        header.setInt(2, tag);
+        header.setInt(3, RuntimeClass.computeCanary(binaryData.size, tag));
+        if (vtable == null) {
+            return header;
         }
 
-        contributeInt32Value(binaryData.start + RuntimeClass.EXCLUDED_RANGE_COUNT_OFFSET, ranges.size() - 1);
-
-        if (ranges.size() > 1) {
-            contributeInt32Value(binaryData.start + RuntimeClass.EXCLUDED_RANGE_ADDRESS_OFFSET, address);
-
-            Collections.sort(ranges, Comparator.comparingInt(range -> range.lower));
-            for (int i = 1; i < ranges.size(); ++i) {
-                contributeInt32Value(address, ranges.get(i - 1).upper);
-                contributeInt32Value(address + 4, ranges.get(i).lower);
-                address += 8;
+        int index = 0;
+        for (VirtualTableEntry vtableEntry : vtable.getEntries().values()) {
+            int methodIndex;
+            if (vtableEntry.getImplementor() == null) {
+                methodIndex = -1;
+            } else {
+                methodIndex = functions.computeIfAbsent(vtableEntry.getImplementor(), implementor -> {
+                    int result = functionTable.size();
+                    functionTable.add(WasmMangling.mangleMethod(implementor));
+                    return result;
+                });
             }
-        }
-    }
 
-    private void contributeInt32Value(int index, int value) {
-        initializer.add(new WasmStoreInt32(4, new WasmInt32Constant(index), new WasmInt32Constant(value),
-                WasmInt32Subtype.INT32));
+            array.setInt(index++, methodIndex);
+        }
+
+        return wrapper;
     }
 
     public int getClassPointer(String className) {
@@ -197,9 +177,9 @@ public class WasmClassGenerator {
         for (FieldReader field : cls.getFields()) {
             int desiredAlignment = getDesiredAlignment(field.getType());
             if (field.hasModifier(ElementModifier.STATIC)) {
-                int offset = align(address, desiredAlignment);
+                /*int offset = align(address, desiredAlignment);
                 data.fieldLayout.put(field.getName(), offset);
-                address = offset + desiredAlignment;
+                address = offset + desiredAlignment;*/
             } else {
                 int offset = align(data.size, desiredAlignment);
                 data.fieldLayout.put(field.getName(), offset);

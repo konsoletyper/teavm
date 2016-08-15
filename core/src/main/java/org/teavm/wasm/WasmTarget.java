@@ -56,6 +56,7 @@ import org.teavm.vm.TeaVMEntryPoint;
 import org.teavm.vm.TeaVMTarget;
 import org.teavm.vm.TeaVMTargetController;
 import org.teavm.vm.spi.TeaVMHostExtension;
+import org.teavm.wasm.binary.BinaryWriter;
 import org.teavm.wasm.generate.WasmClassGenerator;
 import org.teavm.wasm.generate.WasmGenerationContext;
 import org.teavm.wasm.generate.WasmGenerator;
@@ -65,6 +66,7 @@ import org.teavm.wasm.intrinsics.WasmRuntimeClassIntrinsic;
 import org.teavm.wasm.intrinsics.WasmRuntimeIntrinsic;
 import org.teavm.wasm.intrinsics.WasmStructureIntrinsic;
 import org.teavm.wasm.model.WasmFunction;
+import org.teavm.wasm.model.WasmMemorySegment;
 import org.teavm.wasm.model.WasmModule;
 import org.teavm.wasm.model.WasmType;
 import org.teavm.wasm.model.expression.WasmBlock;
@@ -110,6 +112,9 @@ public class WasmTarget implements TeaVMTarget {
             dependencyChecker.linkMethod(method, null).use();
         }
 
+        dependencyChecker.linkMethod(new MethodReference(WasmRuntime.class, "decodeData", Address.class,
+                Address.class, void.class), null).use();
+
         dependencyChecker.linkMethod(new MethodReference(Allocator.class, "allocate",
                 RuntimeClass.class, Address.class), null).use();
         dependencyChecker.linkMethod(new MethodReference(Allocator.class, "allocateArray",
@@ -120,15 +125,14 @@ public class WasmTarget implements TeaVMTarget {
 
     @Override
     public void emit(ListableClassHolderSource classes, OutputStream output, BuildTarget buildTarget) {
-        int address = 256;
         WasmModule module = new WasmModule();
         WasmFunction initFunction = new WasmFunction("__start__");
 
         VirtualTableProvider vtableProvider = createVirtualTableProvider(classes);
         TagRegistry tagRegistry = new TagRegistry(classes);
+        BinaryWriter binaryWriter = new BinaryWriter(256);
         WasmClassGenerator classGenerator = new WasmClassGenerator(classes, vtableProvider, tagRegistry,
-                initFunction.getBody());
-        classGenerator.setAddress(address);
+                binaryWriter);
         for (String className : classes.getClassNames()) {
             classGenerator.addClass(className);
             if (controller.wasCancelled()) {
@@ -136,7 +140,6 @@ public class WasmTarget implements TeaVMTarget {
             }
         }
         classGenerator.addArrayClass();
-        address = classGenerator.getAddress();
 
         Decompiler decompiler = new Decompiler(classes, controller.getClassLoader(), new HashSet<>(),
                 new HashSet<>());
@@ -181,7 +184,24 @@ public class WasmTarget implements TeaVMTarget {
             }
         }
 
-        renderAllocatorInit(module, address);
+        WasmMemorySegment dataSegment = new WasmMemorySegment();
+        dataSegment.setData(binaryWriter.getData());
+        dataSegment.setOffset(256);
+        module.getSegments().add(dataSegment);
+
+        WasmMemorySegment metadataSegment = new WasmMemorySegment();
+        metadataSegment.setData(binaryWriter.getMetadata());
+        metadataSegment.setOffset(binaryWriter.getAddress());
+        module.getSegments().add(metadataSegment);
+
+        MethodReference initData = new MethodReference(WasmRuntime.class, "decodeData", Address.class,
+                Address.class, void.class);
+        WasmCall initDataCall = new WasmCall(WasmMangling.mangleMethod(initData));
+        initDataCall.getArguments().add(new WasmInt32Constant(256));
+        initDataCall.getArguments().add(new WasmInt32Constant(binaryWriter.getAddress()));
+        initFunction.getBody().add(initDataCall);
+
+        renderAllocatorInit(module, binaryWriter.getAddress());
         renderClinit(classes, classGenerator, module);
         if (controller.wasCancelled()) {
             return;
