@@ -177,15 +177,36 @@ public class WasmClassGenerator {
         for (FieldReader field : cls.getFields()) {
             int desiredAlignment = getDesiredAlignment(field.getType());
             if (field.hasModifier(ElementModifier.STATIC)) {
-                /*int offset = align(address, desiredAlignment);
-                data.fieldLayout.put(field.getName(), offset);
-                address = offset + desiredAlignment;*/
+                DataType type = asDataType(field.getType());
+                data.fieldLayout.put(field.getName(), binaryWriter.append(type.createValue()));
             } else {
                 int offset = align(data.size, desiredAlignment);
                 data.fieldLayout.put(field.getName(), offset);
                 data.size = offset + desiredAlignment;
             }
         }
+    }
+
+    private static DataType asDataType(ValueType type) {
+        if (type instanceof ValueType.Primitive) {
+            switch (((ValueType.Primitive) type).getKind()) {
+                case BOOLEAN:
+                case BYTE:
+                    return DataPrimitives.BYTE;
+                case SHORT:
+                case CHARACTER:
+                    return DataPrimitives.SHORT;
+                case INTEGER:
+                    return DataPrimitives.INT;
+                case LONG:
+                    return DataPrimitives.LONG;
+                case FLOAT:
+                    return DataPrimitives.FLOAT;
+                case DOUBLE:
+                    return DataPrimitives.DOUBLE;
+            }
+        }
+        return DataPrimitives.ADDRESS;
     }
 
     private static int align(int base, int alignment) {

@@ -123,41 +123,17 @@ public class BinaryWriter {
             result[offset++] = (byte) (v >> 8);
             result[offset++] = (byte) v;
         } else if (type == DataPrimitives.INT) {
-            offset = align(offset, 4);
-            int v = value.getInt(0);
-            result[offset++] = (byte) (v >> 24);
-            result[offset++] = (byte) (v >> 16);
-            result[offset++] = (byte) (v >> 8);
-            result[offset++] = (byte) v;
+            offset = writeInt(offset, result, value.getInt(0));
         } else if (type == DataPrimitives.LONG) {
-            offset = align(offset, 8);
-            long v = value.getInt(0);
-            result[offset++] = (byte) (v >> 56);
-            result[offset++] = (byte) (v >> 48);
-            result[offset++] = (byte) (v >> 40);
-            result[offset++] = (byte) (v >> 32);
-            result[offset++] = (byte) (v >> 24);
-            result[offset++] = (byte) (v >> 16);
-            result[offset++] = (byte) (v >> 8);
-            result[offset++] = (byte) v;
+            offset = writeLong(offset, result, value.getLong(0));
         } else if (type == DataPrimitives.FLOAT) {
-            offset = align(offset, 4);
-            int v = Float.floatToRawIntBits(value.getInt(0));
-            result[offset++] = (byte) (v >> 24);
-            result[offset++] = (byte) (v >> 16);
-            result[offset++] = (byte) (v >> 8);
-            result[offset++] = (byte) v;
+            int v = Float.floatToRawIntBits(value.getFloat(0));
+            offset = writeInt(offset, result, v);
         } else if (type == DataPrimitives.DOUBLE) {
-            offset = align(offset, 8);
             long v = Double.doubleToRawLongBits(value.getDouble(0));
-            result[offset++] = (byte) (v >> 56);
-            result[offset++] = (byte) (v >> 48);
-            result[offset++] = (byte) (v >> 40);
-            result[offset++] = (byte) (v >> 32);
-            result[offset++] = (byte) (v >> 24);
-            result[offset++] = (byte) (v >> 16);
-            result[offset++] = (byte) (v >> 8);
-            result[offset++] = (byte) v;
+            offset = writeLong(offset, result, v);
+        } else if (type == DataPrimitives.ADDRESS) {
+            offset = writeInt(offset, result, (int) value.getAddress(0));
         } else if (type instanceof DataArray) {
             DataArray array = (DataArray) type;
             for (int i = 0; i < array.getSize(); ++i) {
@@ -173,6 +149,28 @@ public class BinaryWriter {
                 offset = writeData(result, offset, value.getValue(i));
             }
         }
+        return offset;
+    }
+
+    private int writeInt(int offset, byte[] result, int v) {
+        offset = align(offset, 4);
+        result[offset++] = (byte) (v >> 24);
+        result[offset++] = (byte) (v >> 16);
+        result[offset++] = (byte) (v >> 8);
+        result[offset++] = (byte) v;
+        return offset;
+    }
+
+    private int writeLong(int offset, byte[] result, long v) {
+        offset = align(offset, 8);
+        result[offset++] = (byte) (v >> 56);
+        result[offset++] = (byte) (v >> 48);
+        result[offset++] = (byte) (v >> 40);
+        result[offset++] = (byte) (v >> 32);
+        result[offset++] = (byte) (v >> 24);
+        result[offset++] = (byte) (v >> 16);
+        result[offset++] = (byte) (v >> 8);
+        result[offset++] = (byte) v;
         return offset;
     }
 
