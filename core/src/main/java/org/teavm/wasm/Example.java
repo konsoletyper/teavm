@@ -45,6 +45,11 @@ public final class Example {
         WasmRuntime.print((Object) new Derived2() instanceof Derived1 ? 1 : 0);
         WasmRuntime.print((Object) new Derived2() instanceof A ? 1 : 0);
         WasmRuntime.print(new A(23) instanceof Base ? 1 : 0);
+
+        byte[] bytes = { 5, 6, 10, 15 };
+        for (byte bt : bytes) {
+            WasmRuntime.print(bt);
+        }
     }
 
     private static Base instance(int index) {

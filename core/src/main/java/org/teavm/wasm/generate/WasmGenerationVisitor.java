@@ -406,7 +406,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             storeField(lhs.getQualified(), lhs.getField(), statement.getRightValue());
         } else if (left instanceof SubscriptExpr) {
             SubscriptExpr lhs = (SubscriptExpr) left;
-            storeArrayItem(lhs.getArray(), lhs.getIndex(), statement.getRightValue());
+            storeArrayItem(lhs, statement.getRightValue());
         } else {
             throw new UnsupportedOperationException("This expression is not supported yet");
         }
@@ -446,10 +446,34 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         }
     }
 
-    private void storeArrayItem(Expr array, Expr index, Expr rightValue) {
-        WasmExpression ptr = getArrayElementPointer(array, index);
+    private void storeArrayItem(SubscriptExpr leftValue, Expr rightValue) {
+        WasmExpression ptr = getArrayElementPointer(leftValue);
         rightValue.acceptVisitor(this);
-        result = new WasmStoreInt32(4, ptr, result, WasmInt32Subtype.INT32);
+
+        switch (leftValue.getType()) {
+            case BYTE:
+                result = new WasmStoreInt32(1, ptr, result, WasmInt32Subtype.INT8);
+                break;
+            case SHORT:
+                result = new WasmStoreInt32(2, ptr, result, WasmInt32Subtype.INT16);
+                break;
+            case CHAR:
+                result = new WasmStoreInt32(2, ptr, result, WasmInt32Subtype.UINT16);
+                break;
+            case INT:
+            case OBJECT:
+                result = new WasmStoreInt32(4, ptr, result, WasmInt32Subtype.INT32);
+                break;
+            case LONG:
+                result = new WasmStoreInt64(8, ptr, result, WasmInt64Subtype.INT64);
+                break;
+            case FLOAT:
+                result = new WasmStoreFloat32(4, ptr, result);
+                break;
+            case DOUBLE:
+                result = new WasmStoreFloat64(8, ptr, result);
+                break;
+        }
     }
 
     @Override
@@ -518,19 +542,65 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(SubscriptExpr expr) {
-        WasmExpression ptr = getArrayElementPointer(expr.getArray(), expr.getIndex());
-        result = new WasmLoadInt32(4, ptr, WasmInt32Subtype.INT32);
+        WasmExpression ptr = getArrayElementPointer(expr);
+        switch (expr.getType()) {
+            case BYTE:
+                result = new WasmLoadInt32(1, ptr, WasmInt32Subtype.INT8);
+                break;
+            case SHORT:
+                result = new WasmLoadInt32(2, ptr, WasmInt32Subtype.INT16);
+                break;
+            case CHAR:
+                result = new WasmLoadInt32(2, ptr, WasmInt32Subtype.UINT16);
+                break;
+            case INT:
+            case OBJECT:
+                result = new WasmLoadInt32(4, ptr, WasmInt32Subtype.INT32);
+                break;
+            case LONG:
+                result = new WasmLoadInt64(8, ptr, WasmInt64Subtype.INT64);
+                break;
+            case FLOAT:
+                result = new WasmLoadFloat32(4, ptr);
+                break;
+            case DOUBLE:
+                result = new WasmLoadFloat64(8, ptr);
+                break;
+        }
     }
 
-    private WasmExpression getArrayElementPointer(Expr arrayExpr, Expr indexExpr) {
-        arrayExpr.acceptVisitor(this);
+    private WasmExpression getArrayElementPointer(SubscriptExpr expr) {
+        expr.getArray().acceptVisitor(this);
         WasmExpression array = result;
-        indexExpr.acceptVisitor(this);
+        expr.getIndex().acceptVisitor(this);
         WasmExpression index = result;
+
+        int size = -1;
+        switch (expr.getType()) {
+            case BYTE:
+                size = 0;
+                break;
+            case SHORT:
+            case CHAR:
+                size = 1;
+                break;
+            case INT:
+            case FLOAT:
+            case OBJECT:
+                size = 2;
+                break;
+            case LONG:
+            case DOUBLE:
+                size = 3;
+                break;
+        }
 
         int base = classGenerator.getClassSize(RuntimeArray.class.getName());
         array = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, array, new WasmInt32Constant(base));
-        index = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SHL, index, new WasmInt32Constant(2));
+        if (size != 0) {
+            index = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SHL, index,
+                    new WasmInt32Constant(size));
+        }
 
         return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, array, index);
     }
