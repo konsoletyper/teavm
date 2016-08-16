@@ -50,6 +50,12 @@ public final class Example {
         for (byte bt : bytes) {
             WasmRuntime.print(bt);
         }
+
+        String str = "foobar";
+        WasmRuntime.print(str.length());
+        for (int i = 0; i < str.length(); ++i) {
+            WasmRuntime.print(str.charAt(i));
+        }
     }
 
     private static Base instance(int index) {

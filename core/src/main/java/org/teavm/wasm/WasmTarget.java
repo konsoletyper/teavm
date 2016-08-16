@@ -62,6 +62,7 @@ import org.teavm.wasm.generate.WasmClassGenerator;
 import org.teavm.wasm.generate.WasmGenerationContext;
 import org.teavm.wasm.generate.WasmGenerator;
 import org.teavm.wasm.generate.WasmMangling;
+import org.teavm.wasm.generate.WasmStringPool;
 import org.teavm.wasm.intrinsics.WasmAddressIntrinsic;
 import org.teavm.wasm.intrinsics.WasmRuntimeIntrinsic;
 import org.teavm.wasm.intrinsics.WasmStructureIntrinsic;
@@ -136,7 +137,8 @@ public class WasmTarget implements TeaVMTarget {
 
         Decompiler decompiler = new Decompiler(classes, controller.getClassLoader(), new HashSet<>(),
                 new HashSet<>());
-        WasmGenerationContext context = new WasmGenerationContext(classes, vtableProvider, tagRegistry);
+        WasmStringPool stringPool = new WasmStringPool(classGenerator, binaryWriter);
+        WasmGenerationContext context = new WasmGenerationContext(classes, vtableProvider, tagRegistry, stringPool);
 
         context.addIntrinsic(new WasmAddressIntrinsic());
         context.addIntrinsic(new WasmStructureIntrinsic(classGenerator));
