@@ -43,6 +43,7 @@ import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.SequentialStatement;
 import org.teavm.ast.Statement;
 import org.teavm.ast.TryCatchStatement;
+import org.teavm.ast.VariableNode;
 import org.teavm.ast.WhileStatement;
 import org.teavm.ast.cache.MethodNodeCache;
 import org.teavm.ast.optimization.Optimizer;
@@ -71,6 +72,7 @@ import org.teavm.model.Variable;
 import org.teavm.model.util.AsyncProgramSplitter;
 import org.teavm.model.util.ListingBuilder;
 import org.teavm.model.util.ProgramUtils;
+import org.teavm.model.util.TypeInferer;
 
 public class Decompiler {
     private ClassHolderSource classSource;
@@ -267,9 +269,14 @@ public class Decompiler {
             sb.append(new ListingBuilder().buildListing(program, "  "));
             throw new DecompilationException(sb.toString(), e);
         }
+
+        TypeInferer typeInferer = new TypeInferer();
+        typeInferer.inferTypes(program, method.getReference());
         for (int i = 0; i < program.variableCount(); ++i) {
-            methodNode.getVariables().add(program.variableAt(i).getRegister());
+            VariableNode variable = new VariableNode(program.variableAt(i).getRegister(), typeInferer.typeOf(i));
+            methodNode.getVariables().add(variable);
         }
+
         Optimizer optimizer = new Optimizer();
         optimizer.optimize(methodNode, method.getProgram());
         methodNode.getModifiers().addAll(mapModifiers(method.getModifiers()));
@@ -328,10 +335,15 @@ public class Decompiler {
             }
             node.getBody().add(part);
         }
+
         Program program = method.getProgram();
+        TypeInferer typeInferer = new TypeInferer();
+        typeInferer.inferTypes(program, method.getReference());
         for (int i = 0; i < program.variableCount(); ++i) {
-            node.getVariables().add(program.variableAt(i).getRegister());
+            VariableNode variable = new VariableNode(program.variableAt(i).getRegister(), typeInferer.typeOf(i));
+            node.getVariables().add(variable);
         }
+
         Optimizer optimizer = new Optimizer();
         optimizer.optimize(node, splitter);
         node.getModifiers().addAll(mapModifiers(method.getModifiers()));

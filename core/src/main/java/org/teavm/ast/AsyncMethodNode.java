@@ -18,16 +18,12 @@ package org.teavm.ast;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.teavm.model.MethodReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class AsyncMethodNode extends MethodNode {
     private List<AsyncMethodPart> body = new ArrayList<>();
-    private List<Integer> variables = new ArrayList<>();
-    private List<Set<String>> parameterDebugNames = new ArrayList<>();
+    private List<VariableNode> variables = new ArrayList<>();
 
     public AsyncMethodNode(MethodReference reference) {
         super(reference);
@@ -37,14 +33,18 @@ public class AsyncMethodNode extends MethodNode {
         return body;
     }
 
-    public List<Integer> getVariables() {
+    public List<VariableNode> getVariables() {
         return variables;
     }
 
     @Override
     public List<Set<String>> getParameterDebugNames() {
-        return parameterDebugNames;
+        return variables.subList(0, getReference().parameterCount())
+                .stream()
+                .map(VariableNode::getDebugNames)
+                .collect(Collectors.toList());
     }
+
 
     @Override
     public void acceptVisitor(MethodNodeVisitor visitor) {

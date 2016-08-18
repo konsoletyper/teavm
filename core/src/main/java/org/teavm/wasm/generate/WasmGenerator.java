@@ -16,18 +16,14 @@
 package org.teavm.wasm.generate;
 
 import org.teavm.ast.RegularMethodNode;
+import org.teavm.ast.VariableNode;
 import org.teavm.ast.decompilation.Decompiler;
-import org.teavm.common.IntegerArray;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
-import org.teavm.model.Program;
 import org.teavm.model.ValueType;
-import org.teavm.model.Variable;
-import org.teavm.model.util.TypeInferer;
-import org.teavm.model.util.VariableType;
 import org.teavm.wasm.model.WasmFunction;
 import org.teavm.wasm.model.WasmLocal;
 
@@ -48,31 +44,13 @@ public class WasmGenerator {
     public WasmFunction generate(MethodReference methodReference) {
         ClassHolder cls = classSource.get(methodReference.getClassName());
         MethodHolder method = cls.getMethod(methodReference.getDescriptor());
-        Program program = method.getProgram();
 
         RegularMethodNode methodAst = decompiler.decompileRegular(method);
-        TypeInferer inferer = new TypeInferer();
-        inferer.inferTypes(program, methodReference);
-
-        IntegerArray variableRepresentatives = new IntegerArray(methodAst.getVariables().size());
-        for (int i = 0; i < program.variableCount(); ++i) {
-            Variable var = program.variableAt(i);
-            if (var.getRegister() < 0 || inferer.typeOf(i) == null) {
-                continue;
-            }
-            while (variableRepresentatives.size() <= var.getRegister()) {
-                variableRepresentatives.add(-1);
-            }
-            if (variableRepresentatives.get(var.getRegister()) < 0) {
-                variableRepresentatives.set(var.getRegister(), i);
-            }
-        }
-
         WasmFunction function = new WasmFunction(WasmMangling.mangleMethod(methodReference));
         int firstVariable = method.hasModifier(ElementModifier.STATIC) ? 1 : 0;
         for (int i = firstVariable; i < methodAst.getVariables().size(); ++i) {
-            VariableType type = inferer.typeOf(variableRepresentatives.get(i));
-            function.add(new WasmLocal(WasmGeneratorUtil.mapType(type)));
+            VariableNode variable = methodAst.getVariables().get(i);
+            function.add(new WasmLocal(WasmGeneratorUtil.mapType(variable.getType())));
         }
 
         for (int i = firstVariable; i <= methodReference.parameterCount(); ++i) {

@@ -46,13 +46,17 @@ public class Optimizer {
         method.getBody().acceptVisitor(optimizer);
         method.setBody(optimizer.resultStmt);
         int paramCount = method.getReference().parameterCount();
+
         UnusedVariableEliminator unusedEliminator = new UnusedVariableEliminator(paramCount, method.getVariables());
         method.getBody().acceptVisitor(unusedEliminator);
-        method.getVariables().subList(unusedEliminator.lastIndex, method.getVariables().size()).clear();
+        method.getVariables().clear();
+        method.getVariables().addAll(unusedEliminator.getReorderedVariables());
+
         RedundantLabelEliminator labelEliminator = new RedundantLabelEliminator();
         method.getBody().acceptVisitor(labelEliminator);
+
         for (int i = 0; i < method.getVariables().size(); ++i) {
-            method.getVariables().set(i, i);
+            method.getVariables().get(i).setIndex(i);
         }
     }
 
@@ -80,18 +84,21 @@ public class Optimizer {
             part.getStatement().acceptVisitor(optimizer);
             part.setStatement(optimizer.resultStmt);
         }
+
         int paramCount = method.getReference().parameterCount();
         UnusedVariableEliminator unusedEliminator = new UnusedVariableEliminator(paramCount, method.getVariables());
         for (AsyncMethodPart part : method.getBody()) {
             part.getStatement().acceptVisitor(unusedEliminator);
         }
-        method.getVariables().subList(unusedEliminator.lastIndex, method.getVariables().size()).clear();
+        method.getVariables().clear();
+        method.getVariables().addAll(unusedEliminator.getReorderedVariables());
+
         RedundantLabelEliminator labelEliminator = new RedundantLabelEliminator();
         for (AsyncMethodPart part : method.getBody()) {
             part.getStatement().acceptVisitor(labelEliminator);
         }
         for (int i = 0; i < method.getVariables().size(); ++i) {
-            method.getVariables().set(i, i);
+            method.getVariables().get(i).setIndex(i);
         }
     }
 

@@ -75,6 +75,7 @@ import org.teavm.ast.TryCatchStatement;
 import org.teavm.ast.UnaryExpr;
 import org.teavm.ast.UnwrapArrayExpr;
 import org.teavm.ast.VariableExpr;
+import org.teavm.ast.VariableNode;
 import org.teavm.ast.WhileStatement;
 import org.teavm.codegen.NamingException;
 import org.teavm.codegen.NamingOrderer;
@@ -709,8 +710,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 }
 
                 int variableCount = 0;
-                for (int var : method.getVariables()) {
-                    variableCount = Math.max(variableCount, var + 1);
+                for (VariableNode var : method.getVariables()) {
+                    variableCount = Math.max(variableCount, var.getIndex() + 1);
                 }
                 TryCatchFinder tryCatchFinder = new TryCatchFinder();
                 method.getBody().acceptVisitor(tryCatchFinder);
@@ -752,8 +753,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                             variableName(i));
                 }
                 int variableCount = 0;
-                for (int var : methodNode.getVariables()) {
-                    variableCount = Math.max(variableCount, var + 1);
+                for (VariableNode var : methodNode.getVariables()) {
+                    variableCount = Math.max(variableCount, var.getIndex() + 1);
                 }
                 List<String> variableNames = new ArrayList<>();
                 for (int i = ref.parameterCount() + 1; i < variableCount; ++i) {

@@ -21,10 +21,6 @@ import java.util.Set;
 import org.teavm.javascript.spi.Generator;
 import org.teavm.model.MethodReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class NativeMethodNode extends MethodNode {
     private Generator generator;
     private boolean async;

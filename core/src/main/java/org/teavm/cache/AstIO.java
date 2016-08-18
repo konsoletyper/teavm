@@ -70,12 +70,14 @@ import org.teavm.ast.UnaryExpr;
 import org.teavm.ast.UnaryOperation;
 import org.teavm.ast.UnwrapArrayExpr;
 import org.teavm.ast.VariableExpr;
+import org.teavm.ast.VariableNode;
 import org.teavm.ast.WhileStatement;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.model.instructions.ArrayElementType;
+import org.teavm.model.util.VariableType;
 
 public class AstIO {
     private static final NodeModifier[] nodeModifiers = NodeModifier.values();
@@ -94,15 +96,23 @@ public class AstIO {
     public void write(DataOutput output, RegularMethodNode method) throws IOException {
         output.writeInt(packModifiers(method.getModifiers()));
         output.writeShort(method.getVariables().size());
-        for (int var : method.getVariables()) {
-            output.writeShort(var);
+        for (VariableNode var : method.getVariables()) {
+            write(output, var);
         }
         output.writeShort(method.getParameterDebugNames().size());
-        writeParameters(output, method);
         try {
             method.getBody().acceptVisitor(new NodeWriter(output));
         } catch (IOExceptionWrapper e) {
             throw new IOException("Error writing method body", e.getCause());
+        }
+    }
+
+    private void write(DataOutput output, VariableNode variable) throws IOException {
+        output.writeShort(variable.getIndex());
+        output.writeByte(variable.getType().ordinal());
+        output.writeByte(variable.getDebugNames().size());
+        for (String debugName : variable.getDebugNames()) {
+            output.writeUTF(debugName);
         }
     }
 
@@ -111,18 +121,28 @@ public class AstIO {
         node.getModifiers().addAll(unpackModifiers(input.readInt()));
         int varCount = input.readShort();
         for (int i = 0; i < varCount; ++i) {
-            node.getVariables().add((int) input.readShort());
+            node.getVariables().add(readVariable(input));
         }
-        readParameters(input, node);
         node.setBody(readStatement(input));
         return node;
+    }
+
+    private VariableNode readVariable(DataInput input) throws IOException {
+        int index = input.readShort();
+        VariableType type = VariableType.values()[input.readByte()];
+        VariableNode variable = new VariableNode(index, type);
+        int nameCount = input.readByte();
+        for (int i = 0; i < nameCount; ++i) {
+            variable.getDebugNames().add(input.readUTF());
+        }
+        return variable;
     }
 
     public void writeAsync(DataOutput output, AsyncMethodNode method) throws IOException {
         output.writeInt(packModifiers(method.getModifiers()));
         output.writeShort(method.getVariables().size());
-        for (int var : method.getVariables()) {
-            output.writeShort(var);
+        for (VariableNode var : method.getVariables()) {
+            write(output, var);
         }
         output.writeShort(method.getParameterDebugNames().size());
         writeParameters(output, method);
@@ -152,7 +172,7 @@ public class AstIO {
         node.getModifiers().addAll(unpackModifiers(input.readInt()));
         int varCount = input.readShort();
         for (int i = 0; i < varCount; ++i) {
-            node.getVariables().add((int) input.readShort());
+            node.getVariables().add(readVariable(input));
         }
         readParameters(input, node);
         int partCount = input.readShort();

@@ -35,6 +35,7 @@ import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
+import org.teavm.model.FieldReference;
 import org.teavm.model.Instruction;
 import org.teavm.model.ListableClassHolderSource;
 import org.teavm.model.ListableClassReaderSource;
@@ -122,6 +123,8 @@ public class WasmTarget implements TeaVMTarget {
                 RuntimeClass.class, int.class, Address.class), null).use();
 
         dependencyChecker.linkMethod(new MethodReference(Allocator.class, "<clinit>", void.class), null).use();
+
+        dependencyChecker.linkField(new FieldReference("java.lang.Object", "monitor"), null);
     }
 
     @Override

@@ -15,6 +15,7 @@
  */
 package org.teavm.ast.optimization;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.teavm.ast.AssignmentStatement;
@@ -51,18 +52,23 @@ import org.teavm.ast.TryCatchStatement;
 import org.teavm.ast.UnaryExpr;
 import org.teavm.ast.UnwrapArrayExpr;
 import org.teavm.ast.VariableExpr;
+import org.teavm.ast.VariableNode;
 import org.teavm.ast.WhileStatement;
 
 class UnusedVariableEliminator implements ExprVisitor, StatementVisitor {
+    private final VariableNode[] variableNodes;
     private final int[] variables;
     private final int[] indexes;
+    private List<VariableNode> reorderedVariables = new ArrayList<>();
     int lastIndex;
 
-    UnusedVariableEliminator(int parameterCount, List<Integer> variables) {
+    UnusedVariableEliminator(int parameterCount, List<VariableNode> variables) {
+        variableNodes = new VariableNode[variables.size()];
         this.variables = new int[variables.size()];
         int variableCount = 0;
         for (int i = 0; i < variables.size(); ++i) {
-            int var = variables.get(i);
+            variableNodes[i] = variables.get(i);
+            int var = variables.get(i).getIndex();
             this.variables[i] = var;
             variableCount = Math.max(variableCount, var + 1);
         }
@@ -71,7 +77,12 @@ class UnusedVariableEliminator implements ExprVisitor, StatementVisitor {
         parameterCount = Math.min(parameterCount, indexes.length - 1);
         for (int i = 0; i <= parameterCount; ++i) {
             indexes[i] = lastIndex++;
+            reorderedVariables.add(variableNodes[i]);
         }
+    }
+
+    public List<VariableNode> getReorderedVariables() {
+        return reorderedVariables;
     }
 
     @Override
@@ -155,6 +166,7 @@ class UnusedVariableEliminator implements ExprVisitor, StatementVisitor {
         if (index == -1) {
             index = lastIndex++;
             indexes[variables[var]] = index;
+            reorderedVariables.add(variableNodes[var]);
         }
         return index;
     }
