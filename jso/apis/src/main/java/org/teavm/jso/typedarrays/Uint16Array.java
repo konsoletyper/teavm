@@ -29,12 +29,12 @@ public abstract class Uint16Array extends ArrayBufferView {
     @JSIndexer
     public abstract void set(int index, int value);
 
-    @JSBody(params = "length", script = "return new Uint8Array(length);")
+    @JSBody(params = "length", script = "return new Uint16Array(length);")
     public static native Uint16Array create(int length);
 
-    @JSBody(params = "buffer", script = "return new Uint8Array(buffer);")
+    @JSBody(params = "buffer", script = "return new Uint16Array(buffer);")
     public static native Uint16Array create(ArrayBuffer buffer);
 
-    @JSBody(params = { "buffer", "offset", "length" }, script = "return new Uint8Array(buffer, offset, length);")
+    @JSBody(params = { "buffer", "offset", "length" }, script = "return new Uint16Array(buffer, offset, length);")
     public static native Uint16Array create(ArrayBuffer buffer, int offset, int length);
 }
