@@ -28,6 +28,7 @@ public final class Allocator {
     public static Address allocate(RuntimeClass tag) {
         Address result = address;
         address = result.add(tag.size);
+        fillZero(result, tag.size);
         RuntimeObject object = result.toStructure();
         object.classReference = tag.toAddress().toInt() >> 3;
         return result;
@@ -37,6 +38,7 @@ public final class Allocator {
         Address result = address;
         int sizeInBytes = tag.size * 4 + Structure.sizeOf(RuntimeArray.class);
         address = result.add(sizeInBytes);
+        fillZero(result, sizeInBytes);
 
         RuntimeArray array = result.toStructure();
         array.classReference = tag.toAddress().toInt() >> 3;
@@ -44,4 +46,6 @@ public final class Allocator {
 
         return result;
     }
+
+    public static native void fillZero(Address address, int count);
 }

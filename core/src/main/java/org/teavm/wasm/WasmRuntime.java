@@ -191,4 +191,48 @@ public final class WasmRuntime {
 
     @Import(name = "print", module = "spectest")
     public static native void print(int a);
+
+    public static void fillZero(Address address, int count) {
+        int start = address.toInt();
+
+        int alignedStart = start >>> 2 << 2;
+        address = Address.fromInt(alignedStart);
+        switch (start - alignedStart) {
+            case 0:
+                address.putInt(0);
+                break;
+            case 1:
+                address.add(1).putByte((byte) 0);
+                address.add(2).putShort((short) 0);
+                break;
+            case 2:
+                address.add(2).putShort((short) 0);
+                break;
+            case 3:
+                address.add(3).putByte((byte) 0);
+                break;
+        }
+
+        int end = start + count;
+        int alignedEnd = end >>> 2 << 2;
+        address = Address.fromInt(alignedEnd);
+        switch (end - alignedEnd) {
+            case 0:
+                break;
+            case 1:
+                address.putByte((byte) 0);
+                break;
+            case 2:
+                address.putShort((short) 0);
+                break;
+            case 3:
+                address.putShort((short) 0);
+                address.add(2).putByte((byte) 0);
+                break;
+        }
+
+        for (address = Address.fromInt(alignedStart); address.toInt() < alignedEnd; address = address.add(4)) {
+            address.putInt(0);
+        }
+    }
 }

@@ -64,6 +64,7 @@ import org.teavm.wasm.generate.WasmGenerationContext;
 import org.teavm.wasm.generate.WasmGenerator;
 import org.teavm.wasm.generate.WasmMangling;
 import org.teavm.wasm.generate.WasmStringPool;
+import org.teavm.wasm.intrinsics.AllocatorIntrinsic;
 import org.teavm.wasm.intrinsics.WasmAddressIntrinsic;
 import org.teavm.wasm.intrinsics.WasmRuntimeIntrinsic;
 import org.teavm.wasm.intrinsics.WasmStructureIntrinsic;
@@ -116,6 +117,8 @@ public class WasmTarget implements TeaVMTarget {
 
         dependencyChecker.linkMethod(new MethodReference(WasmRuntime.class, "decodeData", Address.class,
                 Address.class, void.class), null).use();
+        dependencyChecker.linkMethod(new MethodReference(WasmRuntime.class, "fillZero", Address.class, int.class,
+                void.class), null).use();
 
         dependencyChecker.linkMethod(new MethodReference(Allocator.class, "allocate",
                 RuntimeClass.class, Address.class), null).use();
@@ -146,6 +149,7 @@ public class WasmTarget implements TeaVMTarget {
         context.addIntrinsic(new WasmAddressIntrinsic());
         context.addIntrinsic(new WasmStructureIntrinsic(classGenerator));
         context.addIntrinsic(new WasmRuntimeIntrinsic());
+        context.addIntrinsic(new AllocatorIntrinsic());
 
         WasmGenerator generator = new WasmGenerator(decompiler, classes, context, classGenerator);
 

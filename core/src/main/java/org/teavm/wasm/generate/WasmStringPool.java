@@ -28,7 +28,10 @@ public class WasmStringPool {
     private WasmClassGenerator classGenerator;
     private BinaryWriter binaryWriter;
     private Map<String, Integer> stringMap = new HashMap<>();
-    private DataStructure arrayHeaderType = new DataStructure((byte) 0, DataPrimitives.INT, DataPrimitives.INT);
+    private DataStructure arrayHeaderType = new DataStructure((byte) 0,
+            DataPrimitives.INT, /* class pointer */
+            DataPrimitives.ADDRESS, /* monitor */
+            DataPrimitives.INT /* size */);
     private DataStructure stringType = new DataStructure((byte) 0,
             DataPrimitives.INT, /* class pointer */
             DataPrimitives.ADDRESS, /* monitor */
@@ -49,7 +52,7 @@ public class WasmStringPool {
             DataValue characters = wrapper.getValue(1);
 
             header.setInt(0, classGenerator.getClassPointer(ValueType.arrayOf(ValueType.CHARACTER)));
-            header.setInt(1, str.length());
+            header.setInt(2, str.length());
             for (int i = 0; i < str.length(); ++i) {
                 characters.setShort(i, (short) str.charAt(i));
             }

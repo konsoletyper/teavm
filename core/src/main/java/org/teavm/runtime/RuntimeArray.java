@@ -16,5 +16,6 @@
 package org.teavm.runtime;
 
 public class RuntimeArray extends RuntimeObject {
+    RuntimeObject monitor;
     int size;
 }
