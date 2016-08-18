@@ -56,6 +56,10 @@ public final class Example {
         for (int i = 0; i < str.length(); ++i) {
             WasmRuntime.print(str.charAt(i));
         }
+
+        Initialized.foo();
+        Initialized.foo();
+        Initialized.foo();
     }
 
     private static Base instance(int index) {
@@ -108,6 +112,16 @@ public final class Example {
         @Override
         public int foo() {
             return 123;
+        }
+    }
+
+    static class Initialized {
+        static {
+            WasmRuntime.print(9999);
+        }
+
+        public static void foo() {
+            WasmRuntime.print(8888);
         }
     }
 }

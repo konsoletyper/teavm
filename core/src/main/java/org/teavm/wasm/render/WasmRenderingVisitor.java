@@ -183,8 +183,10 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
         lf();
         renderBlock(expression.getThenBlock(), "then");
 
-        lf();
-        renderBlock(expression.getElseBlock(), "else");
+        if (!expression.getElseBlock().getBody().isEmpty()) {
+            lf();
+            renderBlock(expression.getElseBlock(), "else");
+        }
 
         close();
     }

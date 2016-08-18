@@ -33,6 +33,7 @@ import org.teavm.model.classes.TagRegistry;
 import org.teavm.model.classes.VirtualTableProvider;
 import org.teavm.wasm.binary.BinaryWriter;
 import org.teavm.wasm.intrinsics.WasmIntrinsic;
+import org.teavm.wasm.model.expression.WasmExpression;
 
 public class WasmGenerationContext {
     private ClassReaderSource classSource;

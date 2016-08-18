@@ -21,11 +21,22 @@ import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ElementModifier;
+import org.teavm.model.FieldReference;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
+import org.teavm.runtime.RuntimeClass;
 import org.teavm.wasm.model.WasmFunction;
 import org.teavm.wasm.model.WasmLocal;
+import org.teavm.wasm.model.expression.WasmCall;
+import org.teavm.wasm.model.expression.WasmConditional;
+import org.teavm.wasm.model.expression.WasmExpression;
+import org.teavm.wasm.model.expression.WasmInt32Constant;
+import org.teavm.wasm.model.expression.WasmInt32Subtype;
+import org.teavm.wasm.model.expression.WasmIntBinary;
+import org.teavm.wasm.model.expression.WasmIntBinaryOperation;
+import org.teavm.wasm.model.expression.WasmIntType;
+import org.teavm.wasm.model.expression.WasmLoadInt32;
 
 public class WasmGenerator {
     private Decompiler decompiler;
@@ -60,11 +71,35 @@ public class WasmGenerator {
             function.setResult(WasmGeneratorUtil.mapType(methodReference.getReturnType()));
         }
 
+        if (needsClinitCall(method) && classGenerator.hasClinit(method.getOwnerName())) {
+            int index = classGenerator.getClassPointer(ValueType.object(method.getOwnerName()))
+                    + classGenerator.getFieldOffset(new FieldReference(RuntimeClass.class.getName(), "flags"));
+            WasmExpression initFlag = new WasmLoadInt32(4, new WasmInt32Constant(index), WasmInt32Subtype.INT32);
+            initFlag = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.AND, initFlag,
+                    new WasmInt32Constant(RuntimeClass.INITIALIZED));
+
+            WasmConditional conditional = new WasmConditional(initFlag);
+            MethodReference clinit = new MethodReference(method.getOwnerName(),
+                    "<clinit>", ValueType.VOID);
+            conditional.getThenBlock().getBody().add(new WasmCall(WasmMangling.mangleMethod(clinit)));
+            function.getBody().add(conditional);
+        }
+
         WasmGenerationVisitor visitor = new WasmGenerationVisitor(context, classGenerator, function, firstVariable);
         methodAst.getBody().acceptVisitor(visitor);
         function.getBody().add(visitor.result);
 
         return function;
+    }
+
+    private static boolean needsClinitCall(MethodHolder method) {
+        if (method.getName().equals("<clinit>")) {
+            return false;
+        }
+        if (method.getName().equals("<init>")) {
+            return true;
+        }
+        return method.hasModifier(ElementModifier.STATIC);
     }
 
     public WasmFunction generateNative(MethodReference methodReference) {

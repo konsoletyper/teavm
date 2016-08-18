@@ -264,7 +264,8 @@ public class WasmTarget implements TeaVMTarget {
 
             WasmBlock block = new WasmBlock(false);
 
-            int index = classGenerator.getClassPointer(ValueType.object(className));
+            int index = classGenerator.getClassPointer(ValueType.object(className))
+                    + classGenerator.getFieldOffset(new FieldReference(RuntimeClass.class.getName(), "flags"));
             WasmExpression initFlag = new WasmLoadInt32(4, new WasmInt32Constant(index), WasmInt32Subtype.INT32);
             initFlag = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.AND, initFlag,
                     new WasmInt32Constant(RuntimeClass.INITIALIZED));

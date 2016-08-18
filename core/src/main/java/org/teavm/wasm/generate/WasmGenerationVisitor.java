@@ -962,22 +962,11 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(InitClassStatement statement) {
-        if (hasClinit(statement.getClassName())) {
+        if (classGenerator.hasClinit(statement.getClassName())) {
             result = new WasmCall(WasmMangling.mangleInitializer(statement.getClassName()));
         } else {
             result = null;
         }
-    }
-
-    private boolean hasClinit(String className) {
-        if (classGenerator.isStructure(className)) {
-            return false;
-        }
-        ClassReader cls = context.getClassSource().get(className);
-        if (cls == null) {
-            return false;
-        }
-        return cls.getMethod(new MethodDescriptor("<clinit>", ValueType.VOID)) != null;
     }
 
     @Override
