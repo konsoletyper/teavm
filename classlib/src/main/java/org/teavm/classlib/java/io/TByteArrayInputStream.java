@@ -40,7 +40,7 @@ public class TByteArrayInputStream extends TInputStream {
 
     @Override
     public int read() {
-        return pos < count ? buf[pos++] : -1;
+        return pos < count ? buf[pos++] & 0xFF : -1;
     }
 
     @Override
