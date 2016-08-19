@@ -106,7 +106,7 @@ public final class TSystem extends TObject {
     }
 
     public static long nanoTime() {
-        return currentTimeMillis() * 10000000;
+        return currentTimeMillis() * 1000000;
     }
 
     public static int identityHashCode(Object x) {
