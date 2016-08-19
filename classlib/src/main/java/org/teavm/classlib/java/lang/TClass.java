@@ -114,11 +114,6 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
     }
 
     @SuppressWarnings("unchecked")
-    static TClass<TCharacter> charClass() {
-        return (TClass<TCharacter>) getClass(Platform.getPrimitives().getCharClass());
-    }
-
-    @SuppressWarnings("unchecked")
     static TClass<TByte> byteClass() {
         return (TClass<TByte>) getClass(Platform.getPrimitives().getByteClass());
     }

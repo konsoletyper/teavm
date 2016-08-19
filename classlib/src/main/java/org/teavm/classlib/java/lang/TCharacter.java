@@ -20,16 +20,12 @@ import org.teavm.platform.Platform;
 import org.teavm.platform.metadata.MetadataProvider;
 import org.teavm.platform.metadata.StringResource;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TCharacter extends TObject implements TComparable<TCharacter> {
     public static final int MIN_RADIX = 2;
     public static final int MAX_RADIX = 36;
     public static final char MIN_VALUE = '\0';
     public static final char MAX_VALUE = '\uFFFF';
-    public static final TClass<TCharacter> TYPE = TClass.charClass();
+    public static final Class<Character> TYPE = char.class;
     public static final byte UNASSIGNED = 0;
     public static final byte UPPERCASE_LETTER = 1;
     public static final byte LOWERCASE_LETTER = 2;

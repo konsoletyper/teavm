@@ -28,9 +28,6 @@ public interface PlatformPrimitives extends JSObject {
     @JSMethod("$rt_shortcls")
     PlatformClass getShortClass();
 
-    @JSMethod("$rt_charcls")
-    PlatformClass getCharClass();
-
     @JSMethod("$rt_longcls")
     PlatformClass getLongClass();
 

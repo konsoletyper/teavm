@@ -26,39 +26,35 @@ public final class Example {
     public static void main(String[] args) {
         int a = 0;
         int b = 1;
+        println("Fibonacci numbers:");
         for (int i = 0; i < 30; ++i) {
             int c = a + b;
             a = b;
             b = c;
-            WasmRuntime.print(a);
+            println(String.valueOf(a));
         }
-        WasmRuntime.print(new A(2).getValue() + new A(3).getValue());
+
+        println("A(2) + A(3) = " + new A(2).getValue() + new A(3).getValue());
 
         for (int i = 0; i < 4; ++i) {
-            WasmRuntime.print(instance(i).foo());
+            println("instance(" + i + ") = " + instance(i).foo());
         }
 
         Base[] array = { new Derived1(), new Derived2() };
-        WasmRuntime.print(array.length);
+        println("array.length = " + array.length);
         for (Base elem : array) {
-            WasmRuntime.print(elem.foo());
+            println("array[i]" + elem.foo());
         }
 
-        WasmRuntime.print(new Derived2() instanceof Base ? 1 : 0);
-        WasmRuntime.print(new Derived3() instanceof Base ? 1 : 0);
-        WasmRuntime.print((Object) new Derived2() instanceof Derived1 ? 1 : 0);
-        WasmRuntime.print((Object) new Derived2() instanceof A ? 1 : 0);
-        WasmRuntime.print(new A(23) instanceof Base ? 1 : 0);
+        println("Derived2 instanceof Base = " + (new Derived2() instanceof Base));
+        println("Derived3 instanceof Base = " + (new Derived3() instanceof Base));
+        println("Derived2 instanceof Derived1 = " + ((Object) new Derived2() instanceof Derived1));
+        println("Derived2 instanceof A = " + ((Object) new Derived2() instanceof A));
+        println("A instanceof Base = " + (new A(23) instanceof Base));
 
         byte[] bytes = { 5, 6, 10, 15 };
         for (byte bt : bytes) {
-            WasmRuntime.print(bt);
-        }
-
-        String str = "foobar";
-        WasmRuntime.print(str.length());
-        for (int i = 0; i < str.length(); ++i) {
-            WasmRuntime.print(str.charAt(i));
+            println("bytes[i] = " + bt);
         }
 
         Initialized.foo();
@@ -66,17 +62,17 @@ public final class Example {
         Initialized.foo();
 
         Object o = new Object();
-        WasmRuntime.print(o.hashCode());
-        WasmRuntime.print(o.hashCode());
-        WasmRuntime.print(new Object().hashCode());
-        WasmRuntime.print(new Object().hashCode());
+        println("hashCode1 = " + o.hashCode());
+        println("hashCode1 = " + o.hashCode());
+        println("hashCode2 = " + new Object().hashCode());
+        println("hashCode3 = " + new Object().hashCode());
 
         List<Integer> list = new ArrayList<>(Arrays.asList(333, 444, 555));
         list.add(1234);
         list.remove((Integer) 444);
 
         for (int item : list) {
-            WasmRuntime.print(item);
+            println("list[i] = " + item);
         }
     }
 
@@ -135,11 +131,22 @@ public final class Example {
 
     static class Initialized {
         static {
-            WasmRuntime.print(9999);
+            println("Initialized.<clinit>()");
         }
 
         public static void foo() {
-            WasmRuntime.print(8888);
+            println("Initialized.foo()");
         }
+    }
+
+    static void print(String value) {
+        for (int i = 0; i < value.length(); ++i) {
+            WasmRuntime.print(value.charAt(i));
+        }
+    }
+
+    static void println(String value) {
+        print(value);
+        WasmRuntime.print('\n');
     }
 }
