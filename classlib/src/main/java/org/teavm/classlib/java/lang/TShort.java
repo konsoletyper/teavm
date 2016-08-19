@@ -15,14 +15,10 @@
  */
 package org.teavm.classlib.java.lang;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TShort extends TNumber implements TComparable<TShort> {
     public static final short MIN_VALUE = -32768;
     public static final short MAX_VALUE = 32767;
-    public static final TClass<TShort> TYPE = TClass.shortClass();
+    public static final Class<Short> TYPE = short.class;
     public static final int SIZE = 16;
     private short value;
 

@@ -66,10 +66,6 @@ public final class Platform {
     @PluggableDependency(PlatformGenerator.class)
     public static native Class<?> asJavaClass(PlatformObject obj);
 
-    public static PlatformPrimitives getPrimitives() {
-        return (PlatformPrimitives) Window.current();
-    }
-
     public static PlatformConsole getConsole() {
         return (PlatformConsole) Window.current();
     }

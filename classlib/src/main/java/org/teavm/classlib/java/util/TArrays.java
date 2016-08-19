@@ -17,13 +17,18 @@ package org.teavm.classlib.java.util;
 
 import java.lang.reflect.Array;
 import java.util.Objects;
-import org.teavm.classlib.java.lang.*;
+import org.teavm.classlib.java.lang.TClass;
+import org.teavm.classlib.java.lang.TComparable;
+import org.teavm.classlib.java.lang.TDouble;
+import org.teavm.classlib.java.lang.TFloat;
+import org.teavm.classlib.java.lang.TIllegalArgumentException;
+import org.teavm.classlib.java.lang.TInteger;
+import org.teavm.classlib.java.lang.TMath;
+import org.teavm.classlib.java.lang.TObject;
+import org.teavm.classlib.java.lang.TString;
+import org.teavm.classlib.java.lang.TStringBuilder;
 import org.teavm.classlib.java.lang.reflect.TArray;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TArrays extends TObject {
     public static char[] copyOf(char[] array, int length) {
         char[] result = new char[length];

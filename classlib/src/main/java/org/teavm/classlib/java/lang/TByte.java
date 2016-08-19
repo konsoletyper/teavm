@@ -15,14 +15,10 @@
  */
 package org.teavm.classlib.java.lang;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TByte extends TNumber implements TComparable<TByte> {
     public static final byte MIN_VALUE = -128;
     public static final byte MAX_VALUE = 127;
-    public static final TClass<TByte> TYPE = TClass.byteClass();
+    public static final Class<Byte> TYPE = byte.class;
     public static final int SIZE = 8;
     private byte value;
 

@@ -34,7 +34,7 @@ public final class Example {
             println(String.valueOf(a));
         }
 
-        println("A(2) + A(3) = " + new A(2).getValue() + new A(3).getValue());
+        println("A(2) + A(3) = " + (new A(2).getValue() + new A(3).getValue()));
 
         for (int i = 0; i < 4; ++i) {
             println("instance(" + i + ") = " + instance(i).foo());
@@ -43,7 +43,7 @@ public final class Example {
         Base[] array = { new Derived1(), new Derived2() };
         println("array.length = " + array.length);
         for (Base elem : array) {
-            println("array[i]" + elem.foo());
+            println("array[i] = " + elem.foo());
         }
 
         println("Derived2 instanceof Base = " + (new Derived2() instanceof Base));

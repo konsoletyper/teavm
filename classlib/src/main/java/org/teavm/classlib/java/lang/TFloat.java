@@ -17,10 +17,6 @@ package org.teavm.classlib.java.lang;
 
 import org.teavm.jso.JSBody;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TFloat extends TNumber implements TComparable<TFloat> {
     public static final float POSITIVE_INFINITY = 1 / 0.0f;
     public static final float NEGATIVE_INFINITY = -POSITIVE_INFINITY;
@@ -31,7 +27,7 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
     public static final int MAX_EXPONENT = 127;
     public static final int MIN_EXPONENT = -126;
     public static final int SIZE = 32;
-    public static final TClass<TFloat> TYPE = TClass.floatClass();
+    public static final Class<Float> TYPE = float.class;
     private float value;
 
     public TFloat(float value) {

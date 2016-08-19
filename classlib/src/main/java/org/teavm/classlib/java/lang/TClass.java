@@ -108,36 +108,6 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
         return getClass(platformClass.getMetadata().getArrayItem());
     }
 
-    @SuppressWarnings("unchecked")
-    static TClass<TBoolean> booleanClass() {
-        return (TClass<TBoolean>) getClass(Platform.getPrimitives().getBooleanClass());
-    }
-
-    @SuppressWarnings("unchecked")
-    static TClass<TByte> byteClass() {
-        return (TClass<TByte>) getClass(Platform.getPrimitives().getByteClass());
-    }
-
-    @SuppressWarnings("unchecked")
-    static TClass<TShort> shortClass() {
-        return (TClass<TShort>) getClass(Platform.getPrimitives().getShortClass());
-    }
-
-    @SuppressWarnings("unchecked")
-    static TClass<TLong> longClass() {
-        return (TClass<TLong>) getClass(Platform.getPrimitives().getLongClass());
-    }
-
-    @SuppressWarnings("unchecked")
-    static TClass<TFloat> floatClass() {
-        return (TClass<TFloat>) getClass(Platform.getPrimitives().getFloatClass());
-    }
-
-    @SuppressWarnings("unchecked")
-    static TClass<TDouble> doubleClass() {
-        return (TClass<TDouble>) getClass(Platform.getPrimitives().getDoubleClass());
-    }
-
     public boolean desiredAssertionStatus() {
         return true;
     }

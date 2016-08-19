@@ -17,10 +17,6 @@ package org.teavm.classlib.java.lang;
 
 import org.teavm.jso.JSBody;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TDouble extends TNumber implements TComparable<TDouble> {
     public static final double POSITIVE_INFINITY = 1 / 0.0;
     public static final double NEGATIVE_INFINITY = -POSITIVE_INFINITY;
@@ -31,7 +27,7 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
     public static final int MAX_EXPONENT = 1023;
     public static final int MIN_EXPONENT = -1022;
     public static final int SIZE = 64;
-    public static final TClass<TDouble> TYPE = TClass.doubleClass();
+    public static final Class<Double> TYPE = double.class;
     private double value;
 
     public TDouble(double value) {

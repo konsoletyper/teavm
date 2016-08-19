@@ -36,7 +36,7 @@ public final class Allocator {
 
     public static Address allocateArray(RuntimeClass tag, int size) {
         Address result = address;
-        int sizeInBytes = tag.size * 4 + Structure.sizeOf(RuntimeArray.class);
+        int sizeInBytes = tag.itemType.size * size + Structure.sizeOf(RuntimeArray.class);
         address = result.add(sizeInBytes);
         fillZero(result, sizeInBytes);
 

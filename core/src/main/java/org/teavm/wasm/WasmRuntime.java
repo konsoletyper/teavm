@@ -147,22 +147,22 @@ public final class WasmRuntime {
     }
 
     private static int getInt(Address data) {
-        byte a = data.getByte();
-        byte b = data.add(1).getByte();
-        byte c = data.add(2).getByte();
-        byte d = data.add(3).getByte();
+        int a = data.getByte() & 0xFF;
+        int b = data.add(1).getByte() & 0xFF;
+        int c = data.add(2).getByte() & 0xFF;
+        int d = data.add(3).getByte() & 0xFF;
         return (a << 24) | (b << 16) | (c << 8) | d;
     }
 
     private static long getLong(Address data) {
-        long a = data.getByte();
-        long b = data.add(1).getByte();
-        long c = data.add(2).getByte();
-        long d = data.add(3).getByte();
-        long e = data.add(4).getByte();
-        long f = data.add(5).getByte();
-        long g = data.add(6).getByte();
-        long h = data.add(7).getByte();
+        long a = data.getByte() & 0xFF;
+        long b = data.add(1).getByte() & 0xFF;
+        long c = data.add(2).getByte() & 0xFF;
+        long d = data.add(3).getByte() & 0xFF;
+        long e = data.add(4).getByte() & 0xFF;
+        long f = data.add(5).getByte() & 0xFF;
+        long g = data.add(6).getByte() & 0xFF;
+        long h = data.add(7).getByte() & 0xFF;
         return (a << 56) | (b << 48) | (c << 40) | (d << 32) | (e << 24) | (f << 16) | (g << 8) | h;
     }
 
@@ -184,6 +184,7 @@ public final class WasmRuntime {
             value = index.getByte();
             index = index.add(1);
             result |= (value & 0x7F) << shift;
+            shift += 7;
         } while ((value & 0x80) != 0);
         offset = index;
         return result;

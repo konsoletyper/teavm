@@ -362,7 +362,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                 return;
             }
 
-            inline(classSet);
+            //inline(classSet);
             if (wasCancelled()) {
                 return;
             }

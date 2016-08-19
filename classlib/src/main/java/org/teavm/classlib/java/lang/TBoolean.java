@@ -17,14 +17,10 @@ package org.teavm.classlib.java.lang;
 
 import org.teavm.classlib.java.io.TSerializable;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TBoolean extends TObject implements TSerializable, TComparable<TBoolean> {
     public static final TBoolean TRUE = new TBoolean(true);
     public static final TBoolean FALSE = new TBoolean(false);
-    public static final TClass<TBoolean> TYPE = TClass.booleanClass();
+    public static final Class<Boolean> TYPE = boolean.class;
     private boolean value;
 
     public TBoolean(boolean value) {

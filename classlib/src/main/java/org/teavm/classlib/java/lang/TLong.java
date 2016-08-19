@@ -17,14 +17,10 @@ package org.teavm.classlib.java.lang;
 
 import org.teavm.javascript.spi.GeneratedBy;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TLong extends TNumber implements TComparable<TLong> {
     public static final long MIN_VALUE = -0x8000000000000000L;
     public static final long MAX_VALUE = 0x7FFFFFFFFFFFFFFFL;
-    public static final TClass<TLong> TYPE = TClass.longClass();
+    public static final Class<Long> TYPE = long.class;
     public static final int SIZE = 64;
     private long value;
 
