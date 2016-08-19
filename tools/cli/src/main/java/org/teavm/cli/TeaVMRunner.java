@@ -21,6 +21,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import org.apache.commons.cli.*;
 import org.teavm.tooling.RuntimeCopyOperation;
+import org.teavm.tooling.TeaVMTargetType;
 import org.teavm.tooling.TeaVMTool;
 import org.teavm.tooling.TeaVMToolException;
 import org.teavm.vm.TeaVMPhase;
@@ -39,6 +40,11 @@ public final class TeaVMRunner {
     @SuppressWarnings("static-access")
     public static void main(String[] args) {
         Options options = new Options();
+        options.addOption(OptionBuilder
+                .withArgName("target")
+                .hasArg()
+                .withDescription("target type (javascript/js, webassembly/wasm)")
+                .create('t'));
         options.addOption(OptionBuilder
                 .withArgName("directory")
                 .hasArg()
@@ -108,6 +114,18 @@ public final class TeaVMRunner {
         }
 
         TeaVMTool tool = new TeaVMTool();
+        if (commandLine.hasOption("t")) {
+            switch (commandLine.getOptionValue('t').toLowerCase()) {
+                case "javascript":
+                case "js":
+                    tool.setTargetType(TeaVMTargetType.JAVASCRIPT);
+                    break;
+                case "webassembly":
+                case "wasm":
+                    tool.setTargetType(TeaVMTargetType.WEBASSEMBLY);
+                    break;
+            }
+        }
         if (commandLine.hasOption("d")) {
             tool.setTargetDirectory(new File(commandLine.getOptionValue("d")));
         }

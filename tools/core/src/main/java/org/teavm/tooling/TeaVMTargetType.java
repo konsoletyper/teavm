@@ -16,5 +16,6 @@
 package org.teavm.tooling;
 
 public enum TeaVMTargetType {
-    JAVASCRIPT
+    JAVASCRIPT,
+    WEBASSEMBLY
 }

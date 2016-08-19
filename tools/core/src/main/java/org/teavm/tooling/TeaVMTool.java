@@ -64,11 +64,12 @@ import org.teavm.vm.TeaVMEntryPoint;
 import org.teavm.vm.TeaVMProgressListener;
 import org.teavm.vm.TeaVMTarget;
 import org.teavm.vm.spi.AbstractRendererListener;
+import org.teavm.wasm.WasmTarget;
 
 public class TeaVMTool implements BaseTeaVMTool {
     private File targetDirectory = new File(".");
     private TeaVMTargetType targetType = TeaVMTargetType.JAVASCRIPT;
-    private String targetFileName = "classes.js";
+    private String targetFileName = "";
     private boolean minifying = true;
     private String mainClass;
     private RuntimeCopyOperation runtime = RuntimeCopyOperation.SEPARATE;
@@ -95,6 +96,7 @@ public class TeaVMTool implements BaseTeaVMTool {
     private List<SourceFileProvider> sourceFileProviders = new ArrayList<>();
     private DebugInformationBuilder debugEmitter;
     private JavaScriptTarget javaScriptTarget;
+    private WasmTarget webAssemblyTarget;
 
     public File getTargetDirectory() {
         return targetDirectory;
@@ -217,6 +219,14 @@ public class TeaVMTool implements BaseTeaVMTool {
         this.log = log;
     }
 
+    public TeaVMTargetType getTargetType() {
+        return targetType;
+    }
+
+    public void setTargetType(TeaVMTargetType targetType) {
+        this.targetType = targetType;
+    }
+
     public ClassLoader getClassLoader() {
         return classLoader;
     }
@@ -287,6 +297,8 @@ public class TeaVMTool implements BaseTeaVMTool {
         switch (targetType) {
             case JAVASCRIPT:
                 return prepareJavaScriptTarget();
+            case WEBASSEMBLY:
+                return prepareWebAssemblyTarget();
         }
         throw new IllegalStateException("Unknown target type: " + targetType);
     }
@@ -295,7 +307,7 @@ public class TeaVMTool implements BaseTeaVMTool {
         javaScriptTarget = new JavaScriptTarget();
         javaScriptTarget.setMinifying(minifying);
 
-        DebugInformationBuilder debugEmitter = debugInformationGenerated || sourceMapsFileGenerated
+        debugEmitter = debugInformationGenerated || sourceMapsFileGenerated
                 ? new DebugInformationBuilder() : null;
         javaScriptTarget.setDebugEmitter(debugEmitter);
 
@@ -304,6 +316,11 @@ public class TeaVMTool implements BaseTeaVMTool {
         }
 
         return javaScriptTarget;
+    }
+
+    private WasmTarget prepareWebAssemblyTarget() {
+        webAssemblyTarget = new WasmTarget();
+        return webAssemblyTarget;
     }
 
     public void generate() throws TeaVMToolException {
@@ -378,7 +395,7 @@ public class TeaVMTool implements BaseTeaVMTool {
             }
             targetDirectory.mkdirs();
             try (OutputStream output = new BufferedOutputStream(
-                    new FileOutputStream(new File(targetDirectory, targetFileName)), 65536)) {
+                    new FileOutputStream(new File(targetDirectory, getResolvedTargetFileName())), 65536)) {
                 Writer writer = new OutputStreamWriter(output, "UTF-8");
                 if (runtime == RuntimeCopyOperation.MERGED) {
                     javaScriptTarget.add(runtimeInjector);
@@ -417,8 +434,22 @@ public class TeaVMTool implements BaseTeaVMTool {
                 }
             }
         } catch (IOException e) {
-            throw new TeaVMToolException("IO error occured", e);
+            throw new TeaVMToolException("IO error occurred", e);
         }
+    }
+
+    private String getResolvedTargetFileName() {
+        if (targetFileName.isEmpty()) {
+            switch (targetType) {
+                case JAVASCRIPT:
+                    return "classes.js";
+                case WEBASSEMBLY:
+                    return "classes.wast";
+                default:
+                    return "classes";
+            }
+        }
+        return targetFileName;
     }
 
     private void additionalJavaScriptOutput(Writer writer) throws IOException {
@@ -430,7 +461,7 @@ public class TeaVMTool implements BaseTeaVMTool {
             assert debugEmitter != null;
             DebugInformation debugInfo = debugEmitter.getDebugInformation();
             try (OutputStream debugInfoOut = new FileOutputStream(new File(targetDirectory,
-                    targetFileName + ".teavmdbg"))) {
+                    getResolvedTargetFileName() + ".teavmdbg"))) {
                 debugInfo.write(debugInfoOut);
             }
             log.info("Debug information successfully written");
@@ -438,11 +469,11 @@ public class TeaVMTool implements BaseTeaVMTool {
         if (sourceMapsFileGenerated) {
             assert debugEmitter != null;
             DebugInformation debugInfo = debugEmitter.getDebugInformation();
-            String sourceMapsFileName = targetFileName + ".map";
+            String sourceMapsFileName = getResolvedTargetFileName() + ".map";
             writer.append("\n//# sourceMappingURL=").append(sourceMapsFileName);
             try (Writer sourceMapsOut = new OutputStreamWriter(new FileOutputStream(
                     new File(targetDirectory, sourceMapsFileName)), "UTF-8")) {
-                debugInfo.writeAsSourceMaps(sourceMapsOut, "src", targetFileName);
+                debugInfo.writeAsSourceMaps(sourceMapsOut, "src", getResolvedTargetFileName());
             }
             log.info("Source maps successfully written");
         }
@@ -458,7 +489,7 @@ public class TeaVMTool implements BaseTeaVMTool {
             String text;
             try (Reader reader = new InputStreamReader(classLoader.getResourceAsStream(
                     "org/teavm/tooling/main.html"), "UTF-8")) {
-                text = IOUtils.toString(reader).replace("${classes.js}", targetFileName);
+                text = IOUtils.toString(reader).replace("${classes.js}", getResolvedTargetFileName());
             }
             File mainPageFile = new File(targetDirectory, "main.html");
             try (Writer mainPageWriter = new OutputStreamWriter(new FileOutputStream(mainPageFile), "UTF-8")) {
