@@ -49,6 +49,7 @@ import org.teavm.javascript.spi.Injector;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHolder;
+import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.InstructionLocation;
 import org.teavm.model.ListableClassHolderSource;
@@ -81,6 +82,11 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     private MethodNodeCache astCache = new EmptyRegularMethodNodeCache();
     private final Set<MethodReference> asyncMethods = new HashSet<>();
     private final Set<MethodReference> asyncFamilyMethods = new HashSet<>();
+
+    @Override
+    public List<ClassHolderTransformer> getTransformers() {
+        return Collections.emptyList();
+    }
 
     @Override
     public void setController(TeaVMTargetController controller) {

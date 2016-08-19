@@ -62,9 +62,7 @@ import org.teavm.ast.UnwrapArrayExpr;
 import org.teavm.ast.VariableExpr;
 import org.teavm.ast.WhileStatement;
 import org.teavm.interop.Address;
-import org.teavm.model.ClassReader;
 import org.teavm.model.FieldReference;
-import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.model.classes.TagRegistry;
@@ -111,6 +109,7 @@ import org.teavm.wasm.model.expression.WasmStoreFloat64;
 import org.teavm.wasm.model.expression.WasmStoreInt32;
 import org.teavm.wasm.model.expression.WasmStoreInt64;
 import org.teavm.wasm.model.expression.WasmSwitch;
+import org.teavm.wasm.model.expression.WasmUnreachable;
 
 class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     private WasmGenerationContext context;
@@ -735,6 +734,23 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
                 call.getArguments().add(result);
             }
             result = call;
+        } else if (expr.getType() == InvocationType.CONSTRUCTOR) {
+            WasmBlock block = new WasmBlock(false);
+            WasmLocal tmp = function.getLocalVariables().get(getTemporaryInt32());
+            block.getBody().add(new WasmSetLocal(tmp, allocateObject(expr.getMethod().getClassName())));
+
+            String methodName = WasmMangling.mangleMethod(expr.getMethod());
+            WasmCall call = new WasmCall(methodName);
+            call.getArguments().add(new WasmGetLocal(tmp));
+            for (Expr argument : expr.getArguments()) {
+                argument.acceptVisitor(this);
+                call.getArguments().add(result);
+            }
+            block.getBody().add(call);
+
+            block.getBody().add(new WasmGetLocal(tmp));
+
+            result = block;
         } else {
             expr.getArguments().get(0).acceptVisitor(this);
             WasmExpression instance = result;
@@ -860,12 +876,16 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(NewExpr expr) {
-        int tag = classGenerator.getClassPointer(ValueType.object(expr.getConstructedClass()));
+        result = allocateObject(expr.getConstructedClass());
+    }
+
+    private WasmExpression allocateObject(String className) {
+        int tag = classGenerator.getClassPointer(ValueType.object(className));
         String allocName = WasmMangling.mangleMethod(new MethodReference(Allocator.class, "allocate",
                 RuntimeClass.class, Address.class));
         WasmCall call = new WasmCall(allocName);
         call.getArguments().add(new WasmInt32Constant(tag));
-        result = call;
+        return call;
     }
 
     @Override
@@ -952,7 +972,13 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(ThrowStatement statement) {
+        WasmBlock block = new WasmBlock(false);
+        statement.getException().acceptVisitor(this);
+        block.getBody().add(result);
 
+        block.getBody().add(new WasmUnreachable());
+
+        result = block;
     }
 
     @Override

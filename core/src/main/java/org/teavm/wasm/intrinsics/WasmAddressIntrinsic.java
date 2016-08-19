@@ -53,6 +53,7 @@ public class WasmAddressIntrinsic implements WasmIntrinsic {
                 return new WasmConversion(WasmType.INT32, WasmType.INT64, false, value);
             }
             case "fromInt":
+            case "ofObject":
                 return manager.generate(invocation.getArguments().get(0));
             case "fromLong": {
                 WasmExpression value = manager.generate(invocation.getArguments().get(0));

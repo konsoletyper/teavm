@@ -18,10 +18,13 @@ package org.teavm.vm;
 import java.io.OutputStream;
 import java.util.List;
 import org.teavm.dependency.DependencyChecker;
+import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ListableClassHolderSource;
 import org.teavm.vm.spi.TeaVMHostExtension;
 
 public interface TeaVMTarget {
+    List<ClassHolderTransformer> getTransformers();
+
     void setController(TeaVMTargetController controller);
 
     List<TeaVMHostExtension> getHostExtensions();

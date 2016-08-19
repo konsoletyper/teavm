@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -33,6 +34,7 @@ import org.teavm.interop.StaticInit;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHolder;
+import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReference;
@@ -84,6 +86,7 @@ import org.teavm.wasm.model.expression.WasmIntType;
 import org.teavm.wasm.model.expression.WasmLoadInt32;
 import org.teavm.wasm.model.expression.WasmReturn;
 import org.teavm.wasm.model.expression.WasmStoreInt32;
+import org.teavm.wasm.patches.ObjectPatch;
 import org.teavm.wasm.render.WasmRenderer;
 
 public class WasmTarget implements TeaVMTarget {
@@ -102,6 +105,13 @@ public class WasmTarget implements TeaVMTarget {
     @Override
     public boolean requiresRegisterAllocation() {
         return true;
+    }
+
+    @Override
+    public List<ClassHolderTransformer> getTransformers() {
+        List<ClassHolderTransformer> transformers = new ArrayList<>();
+        transformers.add(new ObjectPatch());
+        return transformers;
     }
 
     @Override

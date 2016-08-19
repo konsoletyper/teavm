@@ -57,4 +57,6 @@ public final class Address {
     public static native Address fromInt(int value);
 
     public static native Address fromLong(long value);
+
+    public static native Address ofObject(Object obj);
 }

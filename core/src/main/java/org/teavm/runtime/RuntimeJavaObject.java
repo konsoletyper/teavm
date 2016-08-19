@@ -15,11 +15,7 @@
  */
 package org.teavm.runtime;
 
-import org.teavm.interop.Structure;
-
-public class RuntimeObject extends Structure {
-    public static final int GC_MARKED = 0x80000000;
-    public static final int MONITOR_EXISTS = 0x20000000;
-
-    public int classReference;
+public class RuntimeJavaObject extends RuntimeObject {
+    public static int nextId = 1;
+    public RuntimeObject monitor;
 }

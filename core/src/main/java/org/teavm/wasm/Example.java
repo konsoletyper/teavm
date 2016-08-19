@@ -60,6 +60,12 @@ public final class Example {
         Initialized.foo();
         Initialized.foo();
         Initialized.foo();
+
+        Object o = new Object();
+        WasmRuntime.print(o.hashCode());
+        WasmRuntime.print(o.hashCode());
+        WasmRuntime.print(new Object().hashCode());
+        WasmRuntime.print(new Object().hashCode());
     }
 
     private static Base instance(int index) {

@@ -15,7 +15,6 @@
  */
 package org.teavm.runtime;
 
-public class RuntimeArray extends RuntimeObject {
-    RuntimeObject monitor;
+public class RuntimeArray extends RuntimeJavaObject {
     int size;
 }
