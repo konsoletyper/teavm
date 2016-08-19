@@ -15,11 +15,9 @@
  */
 package org.teavm.runtime;
 
-import org.teavm.interop.Structure;
-
-public class RuntimeClass extends Structure {
+public class RuntimeClass extends RuntimeJavaObject {
     public static int INITIALIZED = 1;
-    public static int PRIMITIVE = 1;
+    public static int PRIMITIVE = 2;
 
     public int size;
     public int flags;

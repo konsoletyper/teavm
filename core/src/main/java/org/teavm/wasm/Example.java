@@ -15,6 +15,10 @@
  */
 package org.teavm.wasm;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 public final class Example {
     private Example() {
     }
@@ -66,6 +70,14 @@ public final class Example {
         WasmRuntime.print(o.hashCode());
         WasmRuntime.print(new Object().hashCode());
         WasmRuntime.print(new Object().hashCode());
+
+        /*List<Integer> list = new ArrayList<>(Arrays.asList(333, 444, 555));
+        list.add(1234);
+        list.remove(444);
+
+        for (int item : list) {
+            WasmRuntime.print(item);
+        }*/
     }
 
     private static Base instance(int index) {

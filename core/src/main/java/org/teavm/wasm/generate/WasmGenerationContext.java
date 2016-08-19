@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Import;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.AnnotationValue;
@@ -31,12 +32,11 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.model.classes.TagRegistry;
 import org.teavm.model.classes.VirtualTableProvider;
-import org.teavm.wasm.binary.BinaryWriter;
 import org.teavm.wasm.intrinsics.WasmIntrinsic;
-import org.teavm.wasm.model.expression.WasmExpression;
 
 public class WasmGenerationContext {
     private ClassReaderSource classSource;
+    private Diagnostics diagnostics;
     private VirtualTableProvider vtableProvider;
     private TagRegistry tagRegistry;
     private WasmStringPool stringPool;
@@ -44,9 +44,10 @@ public class WasmGenerationContext {
     private List<WasmIntrinsic> intrinsics = new ArrayList<>();
     private Map<MethodReference, WasmIntrinsic> intrinsicCache = new HashMap<>();
 
-    public WasmGenerationContext(ClassReaderSource classSource, VirtualTableProvider vtableProvider,
-            TagRegistry tagRegistry, WasmStringPool stringPool) {
+    public WasmGenerationContext(ClassReaderSource classSource, Diagnostics diagnostics,
+            VirtualTableProvider vtableProvider, TagRegistry tagRegistry, WasmStringPool stringPool) {
         this.classSource = classSource;
+        this.diagnostics = diagnostics;
         this.vtableProvider = vtableProvider;
         this.tagRegistry = tagRegistry;
         this.stringPool = stringPool;
@@ -107,6 +108,10 @@ public class WasmGenerationContext {
 
     public WasmStringPool getStringPool() {
         return stringPool;
+    }
+
+    public Diagnostics getDiagnostics() {
+        return diagnostics;
     }
 
     public class ImportedMethod {

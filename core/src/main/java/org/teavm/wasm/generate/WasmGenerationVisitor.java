@@ -62,7 +62,9 @@ import org.teavm.ast.UnwrapArrayExpr;
 import org.teavm.ast.VariableExpr;
 import org.teavm.ast.WhileStatement;
 import org.teavm.interop.Address;
+import org.teavm.model.CallLocation;
 import org.teavm.model.FieldReference;
+import org.teavm.model.InstructionLocation;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.model.classes.TagRegistry;
@@ -115,6 +117,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     private WasmGenerationContext context;
     private WasmClassGenerator classGenerator;
     private WasmFunction function;
+    private MethodReference method;
     private int firstVariable;
     private IdentifiedStatement currentContinueTarget;
     private IdentifiedStatement currentBreakTarget;
@@ -125,10 +128,11 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     WasmExpression result;
 
     WasmGenerationVisitor(WasmGenerationContext context, WasmClassGenerator classGenerator,
-            WasmFunction function, int firstVariable) {
+            WasmFunction function, MethodReference method, int firstVariable) {
         this.context = context;
         this.classGenerator = classGenerator;
         this.function = function;
+        this.method = method;
         this.firstVariable = firstVariable;
     }
 
@@ -759,9 +763,22 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             block.getBody().add(new WasmSetLocal(instanceVar, instance));
             instance = new WasmGetLocal(instanceVar);
 
+            int vtableOffset = classGenerator.getClassSize(RuntimeClass.class.getName());
             VirtualTableEntry vtableEntry = context.getVirtualTableProvider().lookup(expr.getMethod());
+            if (vtableEntry == null) {
+                result = new WasmInt32Constant(0);
+                InstructionLocation insnLocation = null;
+                if (expr.getLocation() != null) {
+                    insnLocation = new InstructionLocation(expr.getLocation().getFileName(),
+                            expr.getLocation().getLine());
+                }
+                CallLocation location = new CallLocation(method, insnLocation);
+                context.getDiagnostics().error(location, "Can't generate WebAssembly to call {{m0}} method",
+                        expr.getMethod());
+                return;
+            }
             WasmExpression methodIndex = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD,
-                    getReferenceToClass(instance), new WasmInt32Constant(vtableEntry.getIndex() * 4 + 24));
+                    getReferenceToClass(instance), new WasmInt32Constant(vtableEntry.getIndex() * 4 + vtableOffset));
             methodIndex = new WasmLoadInt32(4, methodIndex, WasmInt32Subtype.INT32);
 
             WasmIndirectCall call = new WasmIndirectCall(methodIndex);

@@ -18,14 +18,7 @@ package org.teavm.platform;
 import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSObject;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface PlatformPrimitives extends JSObject {
-    @JSMethod("$rt_voidcls")
-    PlatformClass getVoidClass();
-
     @JSMethod("$rt_booleancls")
     PlatformClass getBooleanClass();
 
@@ -37,9 +30,6 @@ public interface PlatformPrimitives extends JSObject {
 
     @JSMethod("$rt_charcls")
     PlatformClass getCharClass();
-
-    @JSMethod("$rt_intcls")
-    PlatformClass getIntClass();
 
     @JSMethod("$rt_longcls")
     PlatformClass getLongClass();

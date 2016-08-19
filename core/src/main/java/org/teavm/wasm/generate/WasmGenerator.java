@@ -28,6 +28,7 @@ import org.teavm.model.ValueType;
 import org.teavm.runtime.RuntimeClass;
 import org.teavm.wasm.model.WasmFunction;
 import org.teavm.wasm.model.WasmLocal;
+import org.teavm.wasm.model.WasmType;
 import org.teavm.wasm.model.expression.WasmCall;
 import org.teavm.wasm.model.expression.WasmConditional;
 import org.teavm.wasm.model.expression.WasmExpression;
@@ -61,7 +62,10 @@ public class WasmGenerator {
         int firstVariable = method.hasModifier(ElementModifier.STATIC) ? 1 : 0;
         for (int i = firstVariable; i < methodAst.getVariables().size(); ++i) {
             VariableNode variable = methodAst.getVariables().get(i);
-            function.add(new WasmLocal(WasmGeneratorUtil.mapType(variable.getType())));
+            WasmType type = variable.getType() != null
+                    ? WasmGeneratorUtil.mapType(variable.getType())
+                    : WasmType.INT32;
+            function.add(new WasmLocal(type));
         }
 
         for (int i = firstVariable; i <= methodReference.parameterCount(); ++i) {
@@ -85,7 +89,8 @@ public class WasmGenerator {
             function.getBody().add(conditional);
         }
 
-        WasmGenerationVisitor visitor = new WasmGenerationVisitor(context, classGenerator, function, firstVariable);
+        WasmGenerationVisitor visitor = new WasmGenerationVisitor(context, classGenerator, function, methodReference,
+                firstVariable);
         methodAst.getBody().acceptVisitor(visitor);
         function.getBody().add(visitor.result);
 

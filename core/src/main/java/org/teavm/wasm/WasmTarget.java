@@ -27,6 +27,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.teavm.ast.decompilation.Decompiler;
+import org.teavm.dependency.ClassDependency;
 import org.teavm.dependency.DependencyChecker;
 import org.teavm.interop.Address;
 import org.teavm.interop.Import;
@@ -37,6 +38,7 @@ import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
+import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
 import org.teavm.model.Instruction;
 import org.teavm.model.ListableClassHolderSource;
@@ -52,7 +54,10 @@ import org.teavm.model.classes.VirtualTableProvider;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.runtime.Allocator;
+import org.teavm.runtime.RuntimeArray;
 import org.teavm.runtime.RuntimeClass;
+import org.teavm.runtime.RuntimeJavaObject;
+import org.teavm.runtime.RuntimeObject;
 import org.teavm.vm.BuildTarget;
 import org.teavm.vm.TeaVM;
 import org.teavm.vm.TeaVMBuilder;
@@ -67,6 +72,11 @@ import org.teavm.wasm.generate.WasmGenerator;
 import org.teavm.wasm.generate.WasmMangling;
 import org.teavm.wasm.generate.WasmStringPool;
 import org.teavm.wasm.intrinsics.AllocatorIntrinsic;
+import org.teavm.wasm.intrinsics.ClassIntrinsic;
+import org.teavm.wasm.intrinsics.PlatformClassIntrinsic;
+import org.teavm.wasm.intrinsics.PlatformClassMetadataIntrinsic;
+import org.teavm.wasm.intrinsics.PlatformIntrinsic;
+import org.teavm.wasm.intrinsics.PlatformObjectIntrinsic;
 import org.teavm.wasm.intrinsics.WasmAddressIntrinsic;
 import org.teavm.wasm.intrinsics.WasmRuntimeIntrinsic;
 import org.teavm.wasm.intrinsics.WasmStructureIntrinsic;
@@ -86,6 +96,7 @@ import org.teavm.wasm.model.expression.WasmIntType;
 import org.teavm.wasm.model.expression.WasmLoadInt32;
 import org.teavm.wasm.model.expression.WasmReturn;
 import org.teavm.wasm.model.expression.WasmStoreInt32;
+import org.teavm.wasm.patches.ClassPatch;
 import org.teavm.wasm.patches.ObjectPatch;
 import org.teavm.wasm.render.WasmRenderer;
 
@@ -111,6 +122,7 @@ public class WasmTarget implements TeaVMTarget {
     public List<ClassHolderTransformer> getTransformers() {
         List<ClassHolderTransformer> transformers = new ArrayList<>();
         transformers.add(new ObjectPatch());
+        transformers.add(new ClassPatch());
         return transformers;
     }
 
@@ -138,6 +150,17 @@ public class WasmTarget implements TeaVMTarget {
         dependencyChecker.linkMethod(new MethodReference(Allocator.class, "<clinit>", void.class), null).use();
 
         dependencyChecker.linkField(new FieldReference("java.lang.Object", "monitor"), null);
+
+        ClassDependency runtimeClassDep = dependencyChecker.linkClass(RuntimeClass.class.getName(), null);
+        ClassDependency runtimeObjectDep = dependencyChecker.linkClass(RuntimeObject.class.getName(), null);
+        ClassDependency runtimeJavaObjectDep = dependencyChecker.linkClass(RuntimeJavaObject.class.getName(), null);
+        ClassDependency runtimeArrayDep = dependencyChecker.linkClass(RuntimeArray.class.getName(), null);
+        for (ClassDependency classDep : Arrays.asList(runtimeClassDep, runtimeObjectDep, runtimeJavaObjectDep,
+                runtimeArrayDep)) {
+            for (FieldReader field : classDep.getClassReader().getFields()) {
+                dependencyChecker.linkField(field.getReference(), null);
+            }
+        }
     }
 
     @Override
@@ -154,12 +177,18 @@ public class WasmTarget implements TeaVMTarget {
         Decompiler decompiler = new Decompiler(classes, controller.getClassLoader(), new HashSet<>(),
                 new HashSet<>());
         WasmStringPool stringPool = new WasmStringPool(classGenerator, binaryWriter);
-        WasmGenerationContext context = new WasmGenerationContext(classes, vtableProvider, tagRegistry, stringPool);
+        WasmGenerationContext context = new WasmGenerationContext(classes, controller.getDiagnostics(),
+                vtableProvider, tagRegistry, stringPool);
 
         context.addIntrinsic(new WasmAddressIntrinsic());
         context.addIntrinsic(new WasmStructureIntrinsic(classGenerator));
         context.addIntrinsic(new WasmRuntimeIntrinsic());
         context.addIntrinsic(new AllocatorIntrinsic());
+        context.addIntrinsic(new PlatformIntrinsic());
+        context.addIntrinsic(new PlatformClassIntrinsic());
+        context.addIntrinsic(new PlatformClassMetadataIntrinsic());
+        context.addIntrinsic(new PlatformObjectIntrinsic(classGenerator));
+        context.addIntrinsic(new ClassIntrinsic());
 
         WasmGenerator generator = new WasmGenerator(decompiler, classes, context, classGenerator);
 
@@ -180,7 +209,7 @@ public class WasmTarget implements TeaVMTarget {
                     if (context.getImportedMethod(method.getReference()) == null) {
                         CallLocation location = new CallLocation(method.getReference());
                         controller.getDiagnostics().error(location, "Method {{m0}} is native but "
-                                + "has no {{c1}} annotation on it", method.getReference(), Import.class);
+                                + "has no {{c1}} annotation on it", method.getReference(), Import.class.getName());
                     }
                     module.add(generator.generateNative(method.getReference()));
                     continue;
@@ -194,6 +223,8 @@ public class WasmTarget implements TeaVMTarget {
                 }
             }
         }
+
+        classGenerator.postProcess();
 
         WasmMemorySegment dataSegment = new WasmMemorySegment();
         dataSegment.setData(binaryWriter.getData());

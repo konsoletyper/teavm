@@ -15,15 +15,11 @@
  */
 package org.teavm.classlib.java.lang;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TInteger extends TNumber implements TComparable<TInteger> {
     public static final int SIZE = 32;
     public static final int MIN_VALUE = 0x80000000;
     public static final int MAX_VALUE = 0x7FFFFFFF;
-    public static final TClass<TInteger> TYPE = TClass.intClass();
+    public static final Class<Integer> TYPE = int.class;
     private static TInteger[] integerCache;
     private int value;
 

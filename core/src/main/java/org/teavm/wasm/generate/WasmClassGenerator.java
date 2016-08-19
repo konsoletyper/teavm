@@ -52,8 +52,12 @@ public class WasmClassGenerator {
     private List<String> functionTable = new ArrayList<>();
     private VirtualTableProvider vtableProvider;
     private TagRegistry tagRegistry;
+    private DataStructure objectStructure = new DataStructure((byte) 0,
+            DataPrimitives.INT, /* class */
+            DataPrimitives.ADDRESS /* monitor/hash code */);
     private DataStructure classStructure = new DataStructure(
             (byte) 8,
+            objectStructure,
             DataPrimitives.INT, /* size */
             DataPrimitives.INT, /* flags */
             DataPrimitives.INT, /* tag */
@@ -119,18 +123,18 @@ public class WasmClassGenerator {
 
             binaryData.size = 4;
             binaryData.data = classStructure.createValue();
-            binaryData.data.setInt(0, 4);
-            binaryData.data.setAddress(4, itemBinaryData.start);
+            binaryData.data.setInt(1, 4);
+            binaryData.data.setAddress(5, itemBinaryData.start);
             binaryData.start = binaryWriter.append(binaryData.data);
 
-            itemBinaryData.data.setAddress(5, binaryData.start);
+            itemBinaryData.data.setAddress(6, binaryData.start);
         }
     }
 
     private DataValue createPrimitiveClassData(int size) {
         DataValue value = classStructure.createValue();
-        value.setInt(0, size);
-        value.setInt(1, RuntimeClass.PRIMITIVE);
+        value.setInt(1, size);
+        value.setInt(2, RuntimeClass.PRIMITIVE);
         return value;
     }
 
@@ -150,11 +154,11 @@ public class WasmClassGenerator {
         DataValue header = wrapper.getValue(0);
         binaryData.data = header;
 
-        header.setInt(0, binaryData.size);
+        header.setInt(1, binaryData.size);
         List<TagRegistry.Range> ranges = tagRegistry.getRanges(name);
         int tag = ranges.stream().mapToInt(range -> range.lower).min().orElse(0);
-        header.setInt(2, tag);
-        header.setInt(3, RuntimeClass.computeCanary(binaryData.size, tag));
+        header.setInt(3, tag);
+        header.setInt(4, RuntimeClass.computeCanary(binaryData.size, tag));
         if (vtable == null) {
             return header;
         }
@@ -280,6 +284,18 @@ public class WasmClassGenerator {
             }
         }
         return 4;
+    }
+
+    public void postProcess() {
+        ClassBinaryData classClassData = binaryDataMap.get(ValueType.object("java.lang.Class"));
+        if (classClassData != null) {
+            int tag = classClassData.start >> 3;
+            for (ClassBinaryData classData : binaryDataMap.values()) {
+                if (classData.data != null) {
+                    classData.data.getValue(0).setInt(0, tag);
+                }
+            }
+        }
     }
 
     public boolean hasClinit(String className) {

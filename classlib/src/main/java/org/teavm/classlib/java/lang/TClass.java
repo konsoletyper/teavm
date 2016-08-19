@@ -26,16 +26,9 @@ import org.teavm.platform.PlatformClass;
 import org.teavm.platform.metadata.ClassResource;
 import org.teavm.platform.metadata.ClassScopedMetadataProvider;
 
-/**
- *
- * @author Alexey Andreev
- * @param <T> class type.
- */
 public class TClass<T> extends TObject implements TAnnotatedElement {
     TString name;
     TString simpleName;
-    private TClass<?> componentType;
-    private boolean componentTypeDirty = true;
     private PlatformClass platformClass;
     private TAnnotation[] annotationsCache;
     private Map<TClass<?>, TAnnotation> annotationsByType;
@@ -112,17 +105,7 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
     }
 
     public TClass<?> getComponentType() {
-        if (componentTypeDirty) {
-            PlatformClass arrayItem = platformClass.getMetadata().getArrayItem();
-            componentType = arrayItem != null ? getClass(arrayItem) : null;
-            componentTypeDirty = false;
-        }
-        return componentType;
-    }
-
-    @SuppressWarnings("unchecked")
-    static TClass<TVoid> voidClass() {
-        return (TClass<TVoid>) getClass(Platform.getPrimitives().getVoidClass());
+        return getClass(platformClass.getMetadata().getArrayItem());
     }
 
     @SuppressWarnings("unchecked")
@@ -143,11 +126,6 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
     @SuppressWarnings("unchecked")
     static TClass<TShort> shortClass() {
         return (TClass<TShort>) getClass(Platform.getPrimitives().getShortClass());
-    }
-
-    @SuppressWarnings("unchecked")
-    static TClass<TInteger> intClass() {
-        return (TClass<TInteger>) getClass(Platform.getPrimitives().getIntClass());
     }
 
     @SuppressWarnings("unchecked")
