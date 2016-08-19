@@ -13,23 +13,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.wasm.model.expression;
+package org.teavm.interop;
 
-import org.teavm.ast.NodeLocation;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public abstract class WasmExpression {
-    private NodeLocation location;
-
-    WasmExpression() {
-    }
-
-    public NodeLocation getLocation() {
-        return location;
-    }
-
-    public void setLocation(NodeLocation location) {
-        this.location = location;
-    }
-
-    public abstract void acceptVisitor(WasmExpressionVisitor visitor);
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface DelegateTo {
+    String value();
 }

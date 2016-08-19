@@ -137,6 +137,9 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         for (ClassHolderTransformer transformer : target.getTransformers()) {
             dependencyChecker.addClassTransformer(transformer);
         }
+        for (DependencyListener listener : target.getDependencyListeners()) {
+            dependencyChecker.addDependencyListener(listener);
+        }
 
         for (TeaVMHostExtension extension : target.getHostExtensions()) {
             for (Class<?> extensionType : getExtensionTypes(extension)) {

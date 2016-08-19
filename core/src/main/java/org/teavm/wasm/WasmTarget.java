@@ -15,7 +15,6 @@
  */
 package org.teavm.wasm;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -29,9 +28,12 @@ import java.util.Set;
 import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.dependency.ClassDependency;
 import org.teavm.dependency.DependencyChecker;
+import org.teavm.dependency.DependencyListener;
 import org.teavm.interop.Address;
+import org.teavm.interop.DelegateTo;
 import org.teavm.interop.Import;
 import org.teavm.interop.StaticInit;
+import org.teavm.model.AnnotationHolder;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHolder;
@@ -59,14 +61,13 @@ import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.RuntimeJavaObject;
 import org.teavm.runtime.RuntimeObject;
 import org.teavm.vm.BuildTarget;
-import org.teavm.vm.TeaVM;
-import org.teavm.vm.TeaVMBuilder;
 import org.teavm.vm.TeaVMEntryPoint;
 import org.teavm.vm.TeaVMTarget;
 import org.teavm.vm.TeaVMTargetController;
 import org.teavm.vm.spi.TeaVMHostExtension;
 import org.teavm.wasm.binary.BinaryWriter;
 import org.teavm.wasm.generate.WasmClassGenerator;
+import org.teavm.wasm.generate.WasmDependencyListener;
 import org.teavm.wasm.generate.WasmGenerationContext;
 import org.teavm.wasm.generate.WasmGenerator;
 import org.teavm.wasm.generate.WasmMangling;
@@ -127,6 +128,13 @@ public class WasmTarget implements TeaVMTarget {
     }
 
     @Override
+    public List<DependencyListener> getDependencyListeners() {
+        List<DependencyListener> listeners = new ArrayList<>();
+        listeners.add(new WasmDependencyListener());
+        return listeners;
+    }
+
+    @Override
     public void contributeDependencies(DependencyChecker dependencyChecker) {
         for (Class type : Arrays.asList(int.class, long.class, float.class, double.class)) {
             MethodReference method = new MethodReference(WasmRuntime.class, "compare", type, type, int.class);
@@ -171,8 +179,7 @@ public class WasmTarget implements TeaVMTarget {
         VirtualTableProvider vtableProvider = createVirtualTableProvider(classes);
         TagRegistry tagRegistry = new TagRegistry(classes);
         BinaryWriter binaryWriter = new BinaryWriter(256);
-        WasmClassGenerator classGenerator = new WasmClassGenerator(controller.getUnprocessedClassSource(),
-                vtableProvider, tagRegistry, binaryWriter);
+        WasmClassGenerator classGenerator = new WasmClassGenerator(classes, vtableProvider, tagRegistry, binaryWriter);
 
         Decompiler decompiler = new Decompiler(classes, controller.getClassLoader(), new HashSet<>(),
                 new HashSet<>());
@@ -205,7 +212,26 @@ public class WasmTarget implements TeaVMTarget {
                     continue;
                 }
 
-                if (method.hasModifier(ElementModifier.NATIVE)) {
+                MethodHolder implementor = method;
+                AnnotationHolder delegateAnnot = method.getAnnotations().get(DelegateTo.class.getName());
+                if (delegateAnnot != null) {
+                    String methodName = delegateAnnot.getValue("value").getString();
+                    boolean found = false;
+                    for (MethodHolder candidate : cls.getMethods()) {
+                        if (candidate.getName().equals(methodName)) {
+                            if (found) {
+                                controller.getDiagnostics().error(new CallLocation(method.getReference()),
+                                        "Method is delegated to " + methodName + " but several implementations "
+                                        + "found");
+                                break;
+                            }
+                            implementor = candidate;
+                            found = true;
+                        }
+                    }
+                }
+
+                if (implementor.hasModifier(ElementModifier.NATIVE)) {
                     if (context.getImportedMethod(method.getReference()) == null) {
                         CallLocation location = new CallLocation(method.getReference());
                         controller.getDiagnostics().error(location, "Method {{m0}} is native but "
@@ -214,10 +240,10 @@ public class WasmTarget implements TeaVMTarget {
                     module.add(generator.generateNative(method.getReference()));
                     continue;
                 }
-                if (method.getProgram() == null || method.getProgram().basicBlockCount() == 0) {
+                if (implementor.getProgram() == null || implementor.getProgram().basicBlockCount() == 0) {
                     continue;
                 }
-                module.add(generator.generate(method.getReference()));
+                module.add(generator.generate(method.getReference(), implementor));
                 if (controller.wasCancelled()) {
                     return;
                 }
@@ -364,15 +390,5 @@ public class WasmTarget implements TeaVMTarget {
         }
 
         return new VirtualTableProvider(classes, virtualMethods);
-    }
-
-    public static void main(String[] args) throws IOException {
-        TeaVM vm = new TeaVMBuilder(new WasmTarget()).build();
-        vm.installPlugins();
-        vm.entryPoint("main", new MethodReference(Example.class, "main", String[].class, void.class));
-        try (OutputStream output = new FileOutputStream(args[0])) {
-            vm.build(output, null);
-            System.err.println("Problems found: " + vm.getProblemProvider().getProblems().size());
-        }
     }
 }

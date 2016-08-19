@@ -17,13 +17,13 @@ package org.teavm.classlib.java.lang.reflect;
 
 import org.teavm.classlib.java.lang.*;
 import org.teavm.dependency.PluggableDependency;
+import org.teavm.interop.DelegateTo;
 import org.teavm.javascript.spi.GeneratedBy;
 import org.teavm.platform.PlatformClass;
+import org.teavm.runtime.Allocator;
+import org.teavm.runtime.RuntimeClass;
+import org.teavm.runtime.RuntimeObject;
 
-/**
- *
- * @author Alexey Andreev
- */
 public final class TArray extends TObject {
     @GeneratedBy(ArrayNativeGenerator.class)
     @PluggableDependency(ArrayNativeGenerator.class)
@@ -44,7 +44,13 @@ public final class TArray extends TObject {
 
     @GeneratedBy(ArrayNativeGenerator.class)
     @PluggableDependency(ArrayNativeGenerator.class)
+    @DelegateTo("newInstanceLowLevel")
     private static native TObject newInstanceImpl(PlatformClass componentType, int length);
+
+    @SuppressWarnings("unused")
+    private static RuntimeObject newInstanceLowLevel(RuntimeClass cls, int length) {
+        return Allocator.allocateArray(cls, length).toStructure();
+    }
 
     public static TObject get(TObject array, int index) throws TIllegalArgumentException,
             TArrayIndexOutOfBoundsException {

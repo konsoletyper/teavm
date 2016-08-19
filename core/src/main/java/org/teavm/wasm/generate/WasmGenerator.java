@@ -24,6 +24,7 @@ import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
+import org.teavm.model.Program;
 import org.teavm.model.ValueType;
 import org.teavm.runtime.RuntimeClass;
 import org.teavm.wasm.model.WasmFunction;
@@ -53,11 +54,11 @@ public class WasmGenerator {
         this.classGenerator = classGenerator;
     }
 
-    public WasmFunction generate(MethodReference methodReference) {
+    public WasmFunction generate(MethodReference methodReference, MethodHolder bodyMethod) {
         ClassHolder cls = classSource.get(methodReference.getClassName());
         MethodHolder method = cls.getMethod(methodReference.getDescriptor());
 
-        RegularMethodNode methodAst = decompiler.decompileRegular(method);
+        RegularMethodNode methodAst = decompiler.decompileRegular(bodyMethod);
         WasmFunction function = new WasmFunction(WasmMangling.mangleMethod(methodReference));
         int firstVariable = method.hasModifier(ElementModifier.STATIC) ? 1 : 0;
         for (int i = firstVariable; i < methodAst.getVariables().size(); ++i) {

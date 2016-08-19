@@ -39,6 +39,7 @@ import org.teavm.codegen.SourceWriterBuilder;
 import org.teavm.debugging.information.DebugInformationEmitter;
 import org.teavm.debugging.information.SourceLocation;
 import org.teavm.dependency.DependencyChecker;
+import org.teavm.dependency.DependencyListener;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.javascript.Renderer;
 import org.teavm.javascript.RenderingException;
@@ -85,6 +86,11 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
     @Override
     public List<ClassHolderTransformer> getTransformers() {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<DependencyListener> getDependencyListeners() {
         return Collections.emptyList();
     }
 

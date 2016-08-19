@@ -97,7 +97,11 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
     }
 
     WasmRenderingVisitor line(WasmExpression expression) {
-        return lf().append(expression);
+        if (expression.getLocation() != null) {
+            lf().append(";; " + expression.getLocation().getFileName() + ":" + expression.getLocation().getLine());
+        }
+        lf().append(expression);
+        return this;
     }
 
     WasmRenderingVisitor indent() {
