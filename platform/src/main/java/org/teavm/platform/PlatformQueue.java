@@ -15,17 +15,12 @@
  */
 package org.teavm.platform;
 
-import org.teavm.dependency.PluggableDependency;
 import org.teavm.backend.javascript.spi.InjectedBy;
+import org.teavm.dependency.PluggableDependency;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.platform.plugin.PlatformQueueGenerator;
 
-/**
- *
- * @author Alexey Andreev
- * @param <T>
- */
 public abstract class PlatformQueue<T> implements JSObject {
     @JSProperty
     public abstract int getLength();

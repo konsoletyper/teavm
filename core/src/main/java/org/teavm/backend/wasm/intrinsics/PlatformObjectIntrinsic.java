@@ -16,9 +16,6 @@
 package org.teavm.backend.wasm.intrinsics;
 
 import org.teavm.ast.InvocationExpr;
-import org.teavm.model.FieldReference;
-import org.teavm.model.MethodReference;
-import org.teavm.runtime.RuntimeObject;
 import org.teavm.backend.wasm.generate.WasmClassGenerator;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
@@ -27,6 +24,9 @@ import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
+import org.teavm.model.FieldReference;
+import org.teavm.model.MethodReference;
+import org.teavm.runtime.RuntimeObject;
 
 public class PlatformObjectIntrinsic implements WasmIntrinsic {
     private static final String PLATFORM_OBJECT = "org.teavm.platform.PlatformObject";

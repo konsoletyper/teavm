@@ -16,9 +16,9 @@
 package org.teavm.backend.wasm.generate;
 
 import org.teavm.ast.OperationType;
+import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.model.ValueType;
 import org.teavm.model.util.VariableType;
-import org.teavm.backend.wasm.model.WasmType;
 
 public final class WasmGeneratorUtil {
     private WasmGeneratorUtil() {

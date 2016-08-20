@@ -21,16 +21,12 @@ import java.io.StringWriter;
 import net.java.html.js.JavaScriptResource;
 import org.apache.commons.io.IOUtils;
 import org.teavm.backend.javascript.rendering.RenderingContext;
-import org.teavm.backend.javascript.rendering.RenderingException;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.ClassReader;
 import org.teavm.vm.BuildTarget;
+import org.teavm.vm.RenderingException;
 import org.teavm.vm.spi.AbstractRendererListener;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class JavaScriptResourceInterceptor extends AbstractRendererListener {
     @Override
     public void begin(RenderingContext context, BuildTarget buildTarget) throws IOException {

@@ -22,6 +22,12 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.teavm.backend.wasm.binary.BinaryWriter;
+import org.teavm.backend.wasm.binary.DataArray;
+import org.teavm.backend.wasm.binary.DataPrimitives;
+import org.teavm.backend.wasm.binary.DataStructure;
+import org.teavm.backend.wasm.binary.DataType;
+import org.teavm.backend.wasm.binary.DataValue;
 import org.teavm.interop.Address;
 import org.teavm.interop.Structure;
 import org.teavm.model.ClassReader;
@@ -37,12 +43,6 @@ import org.teavm.model.classes.VirtualTable;
 import org.teavm.model.classes.VirtualTableEntry;
 import org.teavm.model.classes.VirtualTableProvider;
 import org.teavm.runtime.RuntimeClass;
-import org.teavm.backend.wasm.binary.BinaryWriter;
-import org.teavm.backend.wasm.binary.DataArray;
-import org.teavm.backend.wasm.binary.DataPrimitives;
-import org.teavm.backend.wasm.binary.DataStructure;
-import org.teavm.backend.wasm.binary.DataType;
-import org.teavm.backend.wasm.binary.DataValue;
 
 public class WasmClassGenerator {
     private ClassReaderSource classSource;

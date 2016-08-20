@@ -15,24 +15,14 @@
  */
 package org.teavm.backend.javascript.rendering;
 
-import java.util.List;
 import java.util.Set;
 import org.teavm.ast.AssignmentStatement;
 import org.teavm.ast.AsyncMethodNode;
 import org.teavm.ast.AsyncMethodPart;
 import org.teavm.ast.BinaryExpr;
-import org.teavm.ast.BlockStatement;
-import org.teavm.ast.BreakStatement;
-import org.teavm.ast.CastExpr;
 import org.teavm.ast.ClassNode;
-import org.teavm.ast.ConditionalExpr;
-import org.teavm.ast.ConditionalStatement;
 import org.teavm.ast.ConstantExpr;
-import org.teavm.ast.ContinueStatement;
-import org.teavm.ast.Expr;
-import org.teavm.ast.ExprVisitor;
 import org.teavm.ast.FieldNode;
-import org.teavm.ast.GotoPartStatement;
 import org.teavm.ast.InitClassStatement;
 import org.teavm.ast.InstanceOfExpr;
 import org.teavm.ast.InvocationExpr;
@@ -44,22 +34,12 @@ import org.teavm.ast.NativeMethodNode;
 import org.teavm.ast.NewArrayExpr;
 import org.teavm.ast.NewExpr;
 import org.teavm.ast.NewMultiArrayExpr;
-import org.teavm.ast.PrimitiveCastExpr;
 import org.teavm.ast.QualificationExpr;
+import org.teavm.ast.RecursiveVisitor;
 import org.teavm.ast.RegularMethodNode;
-import org.teavm.ast.ReturnStatement;
-import org.teavm.ast.SequentialStatement;
-import org.teavm.ast.Statement;
-import org.teavm.ast.StatementVisitor;
-import org.teavm.ast.SubscriptExpr;
-import org.teavm.ast.SwitchClause;
-import org.teavm.ast.SwitchStatement;
 import org.teavm.ast.ThrowStatement;
 import org.teavm.ast.TryCatchStatement;
 import org.teavm.ast.UnaryExpr;
-import org.teavm.ast.UnwrapArrayExpr;
-import org.teavm.ast.VariableExpr;
-import org.teavm.ast.WhileStatement;
 import org.teavm.backend.javascript.codegen.NameFrequencyConsumer;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
@@ -70,7 +50,7 @@ import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
-class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, MethodNodeVisitor {
+class NameFrequencyEstimator extends RecursiveVisitor implements MethodNodeVisitor {
     private final NameFrequencyConsumer consumer;
     private final ClassReaderSource classSource;
     private boolean async;
@@ -83,12 +63,6 @@ class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, MethodNod
         this.classSource = classSource;
         this.injectedMethods = injectedMethods;
         this.asyncFamilyMethods = asyncFamilyMethods;
-    }
-
-    private void visit(List<Statement> statements) {
-        for (Statement part : statements) {
-            part.acceptVisitor(this);
-        }
     }
 
     public void estimate(ClassNode cls) {
@@ -159,61 +133,9 @@ class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, MethodNod
 
     @Override
     public void visit(AssignmentStatement statement) {
-        if (statement.getLeftValue() != null) {
-            statement.getLeftValue().acceptVisitor(this);
-        }
-        statement.getRightValue().acceptVisitor(this);
+        super.visit(statement);
         if (statement.isAsync()) {
             consumer.consumeFunction("$rt_suspending");
-        }
-    }
-
-    @Override
-    public void visit(SequentialStatement statement) {
-        visit(statement.getSequence());
-    }
-
-    @Override
-    public void visit(ConditionalStatement statement) {
-        statement.getCondition().acceptVisitor(this);
-        visit(statement.getConsequent());
-        visit(statement.getAlternative());
-    }
-
-    @Override
-    public void visit(SwitchStatement statement) {
-        statement.getValue().acceptVisitor(this);
-        for (SwitchClause clause : statement.getClauses()) {
-            visit(clause.getBody());
-        }
-        visit(statement.getDefaultClause());
-    }
-
-    @Override
-    public void visit(WhileStatement statement) {
-        if (statement.getCondition() != null) {
-            statement.getCondition().acceptVisitor(this);
-        }
-        visit(statement.getBody());
-    }
-
-    @Override
-    public void visit(BlockStatement statement) {
-        visit(statement.getBody());
-    }
-
-    @Override
-    public void visit(BreakStatement statement) {
-    }
-
-    @Override
-    public void visit(ContinueStatement statement) {
-    }
-
-    @Override
-    public void visit(ReturnStatement statement) {
-        if (statement.getResult() != null) {
-            statement.getResult().acceptVisitor(this);
         }
     }
 
@@ -230,19 +152,15 @@ class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, MethodNod
 
     @Override
     public void visit(TryCatchStatement statement) {
-        visit(statement.getProtectedBody());
-        visit(statement.getHandler());
+        super.visit(statement);
         if (statement.getExceptionType() != null) {
             consumer.consume(statement.getExceptionType());
         }
     }
 
     @Override
-    public void visit(GotoPartStatement statement) {
-    }
-
-    @Override
     public void visit(MonitorEnterStatement statement) {
+        super.visit(statement);
         if (async) {
             MethodReference monitorEnterRef = new MethodReference(
                     Object.class, "monitorEnter", Object.class, void.class);
@@ -257,6 +175,7 @@ class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, MethodNod
 
     @Override
     public void visit(MonitorExitStatement statement) {
+        super.visit(statement);
         if (async) {
             MethodReference monitorEnterRef = new MethodReference(
                     Object.class, "monitorExit", Object.class, void.class);
@@ -270,8 +189,7 @@ class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, MethodNod
 
     @Override
     public void visit(BinaryExpr expr) {
-        expr.getFirstOperand().acceptVisitor(this);
-        expr.getSecondOperand().acceptVisitor(this);
+        super.visit(expr);
         switch (expr.getOperation()) {
             case COMPARE:
                 consumer.consumeFunction("$rt_compare");
@@ -283,7 +201,7 @@ class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, MethodNod
 
     @Override
     public void visit(UnaryExpr expr) {
-        expr.getOperand().acceptVisitor(this);
+        super.visit(expr);
         switch (expr.getOperation()) {
             case NULL_CHECK:
                 consumer.consumeFunction("$rt_nullCheck");
@@ -291,13 +209,6 @@ class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, MethodNod
             default:
                 break;
         }
-    }
-
-    @Override
-    public void visit(ConditionalExpr expr) {
-        expr.getCondition().acceptVisitor(this);
-        expr.getConsequent().acceptVisitor(this);
-        expr.getAlternative().acceptVisitor(this);
     }
 
     @Override
@@ -317,24 +228,9 @@ class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, MethodNod
             consumer.consumeFunction("$rt_cls");
         }
     }
-
-    @Override
-    public void visit(VariableExpr expr) {
-    }
-
-    @Override
-    public void visit(SubscriptExpr expr) {
-        expr.getArray().acceptVisitor(this);
-        expr.getIndex().acceptVisitor(this);
-    }
-
-    @Override
-    public void visit(UnwrapArrayExpr expr) {
-        expr.getArray().acceptVisitor(this);
-    }
-
     @Override
     public void visit(InvocationExpr expr) {
+        super.visit(expr);
         if (injectedMethods.contains(expr.getMethod())) {
             return;
         }
@@ -354,21 +250,20 @@ class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, MethodNod
 
     @Override
     public void visit(QualificationExpr expr) {
-        if (expr.getQualified() != null) {
-            expr.getQualified().acceptVisitor(this);
-        }
+        super.visit(expr);
         consumer.consume(expr.getField());
     }
 
     @Override
     public void visit(NewExpr expr) {
+        super.visit(expr);
         consumer.consume(expr.getConstructedClass());
     }
 
     @Override
     public void visit(NewArrayExpr expr) {
+        super.visit(expr);
         visitType(expr.getType());
-        expr.getLength().acceptVisitor(this);
         if (!(expr.getType() instanceof ValueType.Primitive)) {
             consumer.consumeFunction("$rt_createArray");
         }
@@ -376,15 +271,13 @@ class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, MethodNod
 
     @Override
     public void visit(NewMultiArrayExpr expr) {
+        super.visit(expr);
         visitType(expr.getType());
-        for (Expr dimension : expr.getDimensions()) {
-            dimension.acceptVisitor(this);
-        }
     }
 
     @Override
     public void visit(InstanceOfExpr expr) {
-        expr.getExpr().acceptVisitor(this);
+        super.visit(expr);
         visitType(expr.getType());
         if (expr.getType() instanceof ValueType.Object) {
             String clsName = ((ValueType.Object) expr.getType()).getClassName();
@@ -395,15 +288,5 @@ class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, MethodNod
         } else {
             consumer.consumeFunction("$rt_isInstance");
         }
-    }
-
-    @Override
-    public void visit(CastExpr expr) {
-        expr.getValue().acceptVisitor(this);
-    }
-
-    @Override
-    public void visit(PrimitiveCastExpr expr) {
-        expr.getValue().acceptVisitor(this);
     }
 }

@@ -16,9 +16,6 @@
 package org.teavm.backend.wasm.intrinsics;
 
 import org.teavm.ast.InvocationExpr;
-import org.teavm.interop.Address;
-import org.teavm.model.MethodReference;
-import org.teavm.model.ValueType;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmConversion;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
@@ -35,6 +32,9 @@ import org.teavm.backend.wasm.model.expression.WasmStoreFloat32;
 import org.teavm.backend.wasm.model.expression.WasmStoreFloat64;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt32;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt64;
+import org.teavm.interop.Address;
+import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 
 public class WasmAddressIntrinsic implements WasmIntrinsic {
     @Override

@@ -15,16 +15,45 @@
  */
 package org.teavm.model.util;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.callgraph.CallGraphNode;
 import org.teavm.callgraph.CallSite;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Async;
-import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.interop.Sync;
-import org.teavm.model.*;
-import org.teavm.model.instructions.*;
+import org.teavm.model.BasicBlockReader;
+import org.teavm.model.CallLocation;
+import org.teavm.model.ClassReader;
+import org.teavm.model.ElementModifier;
+import org.teavm.model.FieldReference;
+import org.teavm.model.ListableClassReaderSource;
+import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodHandle;
+import org.teavm.model.MethodReader;
+import org.teavm.model.MethodReference;
+import org.teavm.model.ProgramReader;
+import org.teavm.model.RuntimeConstant;
+import org.teavm.model.TextLocation;
+import org.teavm.model.ValueType;
+import org.teavm.model.VariableReader;
+import org.teavm.model.instructions.ArrayElementType;
+import org.teavm.model.instructions.BinaryBranchingCondition;
+import org.teavm.model.instructions.BinaryOperation;
+import org.teavm.model.instructions.BranchingCondition;
+import org.teavm.model.instructions.CastIntegerDirection;
+import org.teavm.model.instructions.InstructionReader;
+import org.teavm.model.instructions.IntegerSubtype;
+import org.teavm.model.instructions.InvocationType;
+import org.teavm.model.instructions.NumericOperandType;
+import org.teavm.model.instructions.SwitchTableEntryReader;
 
 /**
  *

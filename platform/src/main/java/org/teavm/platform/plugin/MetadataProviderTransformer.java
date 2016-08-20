@@ -15,9 +15,9 @@
  */
 package org.teavm.platform.plugin;
 
+import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.cache.NoCache;
 import org.teavm.diagnostics.Diagnostics;
-import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.model.AccessLevel;
 import org.teavm.model.AnnotationHolder;
 import org.teavm.model.AnnotationReader;
@@ -36,10 +36,6 @@ import org.teavm.platform.PlatformClass;
 import org.teavm.platform.metadata.ClassScopedMetadataProvider;
 import org.teavm.platform.metadata.MetadataProvider;
 
-/**
- *
- * @author Alexey Andreev
- */
 class MetadataProviderTransformer implements ClassHolderTransformer {
     static int fieldIdGen;
 

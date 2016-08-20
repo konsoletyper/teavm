@@ -15,12 +15,21 @@
  */
 package org.teavm.platform.plugin;
 
+import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Async;
-import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.interop.Sync;
-import org.teavm.model.*;
+import org.teavm.model.AnnotationHolder;
+import org.teavm.model.AnnotationValue;
+import org.teavm.model.CallLocation;
+import org.teavm.model.ClassHolder;
+import org.teavm.model.ClassHolderTransformer;
+import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ElementModifier;
+import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodHolder;
+import org.teavm.model.ValueType;
 import org.teavm.platform.async.AsyncCallback;
 
 /**

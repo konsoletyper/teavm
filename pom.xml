@@ -80,6 +80,7 @@
 
   <modules>
     <module>metaprogramming/api</module>
+    <module>interop/core</module>
     <module>core</module>
     <module>classlib</module>
     <module>jso/core</module>

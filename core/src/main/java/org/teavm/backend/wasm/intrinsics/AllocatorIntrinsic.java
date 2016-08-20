@@ -17,19 +17,19 @@ package org.teavm.backend.wasm.intrinsics;
 
 import java.util.stream.Collectors;
 import org.teavm.ast.InvocationExpr;
-import org.teavm.interop.Address;
-import org.teavm.model.MethodReference;
-import org.teavm.runtime.Allocator;
 import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.generate.WasmMangling;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
+import org.teavm.interop.Address;
+import org.teavm.model.MethodReference;
+import org.teavm.runtime.Allocator;
 
 public class AllocatorIntrinsic implements WasmIntrinsic {
     @Override
     public boolean isApplicable(MethodReference methodReference) {
-        return methodReference.getClassName().equals(Allocator.class.getName()) &&
-                methodReference.getName().equals("fillZero");
+        return methodReference.getClassName().equals(Allocator.class.getName())
+                && methodReference.getName().equals("fillZero");
     }
 
     @Override

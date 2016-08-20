@@ -16,31 +16,13 @@
 package org.teavm.ast.optimization;
 
 import java.util.List;
-import org.teavm.ast.AssignmentStatement;
-import org.teavm.ast.BlockStatement;
 import org.teavm.ast.BreakStatement;
-import org.teavm.ast.ConditionalStatement;
 import org.teavm.ast.ContinueStatement;
-import org.teavm.ast.GotoPartStatement;
 import org.teavm.ast.IdentifiedStatement;
-import org.teavm.ast.InitClassStatement;
-import org.teavm.ast.MonitorEnterStatement;
-import org.teavm.ast.MonitorExitStatement;
-import org.teavm.ast.ReturnStatement;
-import org.teavm.ast.SequentialStatement;
+import org.teavm.ast.RecursiveVisitor;
 import org.teavm.ast.Statement;
-import org.teavm.ast.StatementVisitor;
-import org.teavm.ast.SwitchClause;
-import org.teavm.ast.SwitchStatement;
-import org.teavm.ast.ThrowStatement;
-import org.teavm.ast.TryCatchStatement;
-import org.teavm.ast.WhileStatement;
 
-/**
- *
- * @author Alexey Andreev
- */
-class BreakToContinueReplacer implements StatementVisitor {
+class BreakToContinueReplacer extends RecursiveVisitor {
     private IdentifiedStatement replacedBreak;
     private IdentifiedStatement replacement;
     private ContinueStatement replaceBy;
@@ -51,10 +33,7 @@ class BreakToContinueReplacer implements StatementVisitor {
     }
 
     @Override
-    public void visit(AssignmentStatement statement) {
-    }
-
-    public void visitSequence(List<Statement> statements) {
+    public void visit(List<Statement> statements) {
         if (statements == null) {
             return;
         }
@@ -66,35 +45,6 @@ class BreakToContinueReplacer implements StatementVisitor {
                 replaceBy = null;
             }
         }
-    }
-
-    @Override
-    public void visit(SequentialStatement statement) {
-        visitSequence(statement.getSequence());
-    }
-
-    @Override
-    public void visit(ConditionalStatement statement) {
-        visitSequence(statement.getConsequent());
-        visitSequence(statement.getAlternative());
-    }
-
-    @Override
-    public void visit(SwitchStatement statement) {
-        for (SwitchClause clause : statement.getClauses()) {
-            visitSequence(clause.getBody());
-        }
-        visitSequence(statement.getDefaultClause());
-    }
-
-    @Override
-    public void visit(WhileStatement statement) {
-        visitSequence(statement.getBody());
-    }
-
-    @Override
-    public void visit(BlockStatement statement) {
-        visitSequence(statement.getBody());
     }
 
     @Override
@@ -111,35 +61,5 @@ class BreakToContinueReplacer implements StatementVisitor {
         if (statement.getTarget() == replacedBreak) {
             statement.setTarget(replacement);
         }
-    }
-
-    @Override
-    public void visit(ReturnStatement statement) {
-    }
-
-    @Override
-    public void visit(ThrowStatement statement) {
-    }
-
-    @Override
-    public void visit(InitClassStatement statement) {
-    }
-
-    @Override
-    public void visit(TryCatchStatement statement) {
-        visitSequence(statement.getProtectedBody());
-        visitSequence(statement.getHandler());
-    }
-
-    @Override
-    public void visit(GotoPartStatement statement) {
-    }
-
-    @Override
-    public void visit(MonitorEnterStatement statement) {
-    }
-
-    @Override
-    public void visit(MonitorExitStatement statement) {
     }
 }

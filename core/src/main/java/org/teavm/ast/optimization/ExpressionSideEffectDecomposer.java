@@ -16,42 +16,18 @@
 package org.teavm.ast.optimization;
 
 import java.util.List;
-import org.teavm.ast.BinaryExpr;
-import org.teavm.ast.CastExpr;
 import org.teavm.ast.ConditionalExpr;
 import org.teavm.ast.ConditionalStatement;
-import org.teavm.ast.ConstantExpr;
-import org.teavm.ast.Expr;
-import org.teavm.ast.ExprVisitor;
-import org.teavm.ast.InstanceOfExpr;
 import org.teavm.ast.InvocationExpr;
-import org.teavm.ast.NewArrayExpr;
 import org.teavm.ast.NewExpr;
-import org.teavm.ast.NewMultiArrayExpr;
-import org.teavm.ast.PrimitiveCastExpr;
-import org.teavm.ast.QualificationExpr;
+import org.teavm.ast.RecursiveVisitor;
 import org.teavm.ast.Statement;
-import org.teavm.ast.SubscriptExpr;
-import org.teavm.ast.UnaryExpr;
-import org.teavm.ast.UnwrapArrayExpr;
-import org.teavm.ast.VariableExpr;
 
-public class ExpressionSideEffectDecomposer implements ExprVisitor {
+public class ExpressionSideEffectDecomposer extends RecursiveVisitor {
     private List<Statement> target;
 
     public ExpressionSideEffectDecomposer(List<Statement> target) {
         this.target = target;
-    }
-
-    @Override
-    public void visit(BinaryExpr expr) {
-        expr.getFirstOperand().acceptVisitor(this);
-        expr.getSecondOperand().acceptVisitor(this);
-    }
-
-    @Override
-    public void visit(UnaryExpr expr) {
-        expr.getOperand().acceptVisitor(this);
     }
 
     @Override
@@ -62,67 +38,13 @@ public class ExpressionSideEffectDecomposer implements ExprVisitor {
         expr.getAlternative().acceptVisitor(new ExpressionSideEffectDecomposer(statement.getAlternative()));
         target.add(statement);
     }
-
-    @Override
-    public void visit(ConstantExpr expr) {
-    }
-
-    @Override
-    public void visit(VariableExpr expr) {
-    }
-
-    @Override
-    public void visit(SubscriptExpr expr) {
-        expr.getArray().acceptVisitor(this);
-        expr.getIndex().acceptVisitor(this);
-    }
-
-    @Override
-    public void visit(UnwrapArrayExpr expr) {
-        expr.getArray().acceptVisitor(this);
-    }
-
     @Override
     public void visit(InvocationExpr expr) {
         target.add(Statement.assign(null, expr));
     }
 
     @Override
-    public void visit(QualificationExpr expr) {
-        if (expr.getQualified() != null) {
-            expr.getQualified().acceptVisitor(this);
-        }
-    }
-
-    @Override
     public void visit(NewExpr expr) {
         target.add(Statement.assign(null, expr));
-    }
-
-    @Override
-    public void visit(NewArrayExpr expr) {
-        expr.getLength().acceptVisitor(this);
-    }
-
-    @Override
-    public void visit(NewMultiArrayExpr expr) {
-        for (Expr dimension : expr.getDimensions()) {
-            dimension.acceptVisitor(this);
-        }
-    }
-
-    @Override
-    public void visit(InstanceOfExpr expr) {
-        expr.getExpr().acceptVisitor(this);
-    }
-
-    @Override
-    public void visit(CastExpr expr) {
-        expr.getValue().acceptVisitor(this);
-    }
-
-    @Override
-    public void visit(PrimitiveCastExpr expr) {
-        expr.getValue().acceptVisitor(this);
     }
 }

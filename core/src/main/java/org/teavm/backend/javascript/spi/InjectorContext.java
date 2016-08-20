@@ -19,8 +19,8 @@ import java.io.IOException;
 import java.util.Properties;
 import org.teavm.ast.Expr;
 import org.teavm.backend.javascript.codegen.SourceWriter;
-import org.teavm.common.ServiceRepository;
 import org.teavm.backend.javascript.rendering.Precedence;
+import org.teavm.common.ServiceRepository;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.ValueType;
 

@@ -17,11 +17,11 @@ package org.teavm.platform.plugin;
 
 import java.io.IOException;
 import org.teavm.backend.javascript.codegen.SourceWriter;
+import org.teavm.backend.javascript.spi.Generator;
+import org.teavm.backend.javascript.spi.GeneratorContext;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
-import org.teavm.backend.javascript.spi.Generator;
-import org.teavm.backend.javascript.spi.GeneratorContext;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;

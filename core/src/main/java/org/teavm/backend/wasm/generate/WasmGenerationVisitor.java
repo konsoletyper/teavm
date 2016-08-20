@@ -61,17 +61,6 @@ import org.teavm.ast.UnaryExpr;
 import org.teavm.ast.UnwrapArrayExpr;
 import org.teavm.ast.VariableExpr;
 import org.teavm.ast.WhileStatement;
-import org.teavm.interop.Address;
-import org.teavm.model.CallLocation;
-import org.teavm.model.FieldReference;
-import org.teavm.model.MethodReference;
-import org.teavm.model.TextLocation;
-import org.teavm.model.ValueType;
-import org.teavm.model.classes.TagRegistry;
-import org.teavm.model.classes.VirtualTableEntry;
-import org.teavm.runtime.Allocator;
-import org.teavm.runtime.RuntimeArray;
-import org.teavm.runtime.RuntimeClass;
 import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.intrinsics.WasmIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmIntrinsicManager;
@@ -112,6 +101,17 @@ import org.teavm.backend.wasm.model.expression.WasmStoreInt32;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt64;
 import org.teavm.backend.wasm.model.expression.WasmSwitch;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
+import org.teavm.interop.Address;
+import org.teavm.model.CallLocation;
+import org.teavm.model.FieldReference;
+import org.teavm.model.MethodReference;
+import org.teavm.model.TextLocation;
+import org.teavm.model.ValueType;
+import org.teavm.model.classes.TagRegistry;
+import org.teavm.model.classes.VirtualTableEntry;
+import org.teavm.runtime.Allocator;
+import org.teavm.runtime.RuntimeArray;
+import org.teavm.runtime.RuntimeClass;
 
 class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     private static FieldReference tagField = new FieldReference(RuntimeClass.class.getName(), "tag");
@@ -1031,7 +1031,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
             result = block;
         } else if (expr.getType() instanceof ValueType.Array) {
-
+            throw new UnsupportedOperationException();
         } else {
             throw new AssertionError();
         }

@@ -15,17 +15,22 @@
  */
 package org.teavm.model.util;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import org.teavm.common.Graph;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Instruction;
-import org.teavm.model.TextLocation;
 import org.teavm.model.Program;
+import org.teavm.model.TextLocation;
 
-/**
- *
- * @author Alexey Andreev
- */
 class LocationGraphBuilder {
     private Map<TextLocation, Set<TextLocation>> graphBuilder;
     private List<Set<TextLocation>> startLocations;

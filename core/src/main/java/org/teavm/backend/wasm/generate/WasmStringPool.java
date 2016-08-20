@@ -17,12 +17,12 @@ package org.teavm.backend.wasm.generate;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.teavm.model.ValueType;
 import org.teavm.backend.wasm.binary.BinaryWriter;
 import org.teavm.backend.wasm.binary.DataArray;
 import org.teavm.backend.wasm.binary.DataPrimitives;
 import org.teavm.backend.wasm.binary.DataStructure;
 import org.teavm.backend.wasm.binary.DataValue;
+import org.teavm.model.ValueType;
 
 public class WasmStringPool {
     private WasmClassGenerator classGenerator;

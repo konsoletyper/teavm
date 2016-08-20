@@ -15,10 +15,15 @@
  */
 package org.teavm.callgraph;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import org.teavm.model.FieldReference;
-import org.teavm.model.TextLocation;
 import org.teavm.model.MethodReference;
+import org.teavm.model.TextLocation;
 
 /**
  *

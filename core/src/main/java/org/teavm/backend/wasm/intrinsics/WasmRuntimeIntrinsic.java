@@ -16,7 +16,6 @@
 package org.teavm.backend.wasm.intrinsics;
 
 import org.teavm.ast.InvocationExpr;
-import org.teavm.model.MethodReference;
 import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.generate.WasmGeneratorUtil;
 import org.teavm.backend.wasm.model.WasmType;
@@ -27,12 +26,13 @@ import org.teavm.backend.wasm.model.expression.WasmFloatType;
 import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
+import org.teavm.model.MethodReference;
 
 public class WasmRuntimeIntrinsic implements WasmIntrinsic {
     @Override
     public boolean isApplicable(MethodReference methodReference) {
-        return methodReference.getClassName().equals(WasmRuntime.class.getName()) &&
-                (methodReference.getName().equals("lt") || methodReference.getName().equals("gt"));
+        return methodReference.getClassName().equals(WasmRuntime.class.getName())
+                && (methodReference.getName().equals("lt") || methodReference.getName().equals("gt"));
     }
 
     @Override

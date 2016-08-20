@@ -39,7 +39,6 @@ import org.teavm.dependency.Linker;
 import org.teavm.diagnostics.AccumulationDiagnostics;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.diagnostics.ProblemProvider;
-import org.teavm.backend.javascript.rendering.RenderingException;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ClassHolderTransformer;
@@ -52,10 +51,6 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.MutableClassHolderSource;
 import org.teavm.model.Program;
 import org.teavm.model.ProgramCache;
-import org.teavm.model.util.MissingItemsProcessor;
-import org.teavm.model.util.ModelUtils;
-import org.teavm.model.util.ProgramUtils;
-import org.teavm.model.util.RegisterAllocator;
 import org.teavm.model.optimization.ArrayUnwrapMotion;
 import org.teavm.model.optimization.ClassInitElimination;
 import org.teavm.model.optimization.ConstantConditionElimination;
@@ -68,6 +63,10 @@ import org.teavm.model.optimization.MethodOptimization;
 import org.teavm.model.optimization.RedundantJumpElimination;
 import org.teavm.model.optimization.UnreachableBasicBlockElimination;
 import org.teavm.model.optimization.UnusedVariableElimination;
+import org.teavm.model.util.MissingItemsProcessor;
+import org.teavm.model.util.ModelUtils;
+import org.teavm.model.util.ProgramUtils;
+import org.teavm.model.util.RegisterAllocator;
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMHostExtension;
 import org.teavm.vm.spi.TeaVMPlugin;
@@ -323,10 +322,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
      * @param output where to generate JavaScript. Should not be null.
      * @param buildTarget where to generate additional resources. Can be null, but if there are
      * plugins or inteceptors that generate additional resources, the build process will fail.
-     *
-     * @throws RenderingException when something went wrong during rendering phase.
      */
-    public void build(OutputStream output, BuildTarget buildTarget) throws RenderingException {
+    public void build(OutputStream output, BuildTarget buildTarget) {
         target.setController(targetController);
 
         // Check dependencies
@@ -497,13 +494,13 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                 new UnreachableBasicBlockElimination());
     }
 
-    public void build(File dir, String fileName) throws RenderingException {
+    public void build(File dir, String fileName) {
         try (OutputStream output = new FileOutputStream(new File(dir, fileName))) {
             build(output, new DirectoryBuildTarget(dir));
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException("Platform does not support UTF-8", e);
         } catch (IOException e) {
-            throw new RenderingException("IO error occured", e);
+            throw new RenderingException("IO error occurred", e);
         }
     }
 

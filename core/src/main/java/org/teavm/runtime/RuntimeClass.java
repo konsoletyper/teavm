@@ -16,8 +16,8 @@
 package org.teavm.runtime;
 
 public class RuntimeClass extends RuntimeJavaObject {
-    public static int INITIALIZED = 1;
-    public static int PRIMITIVE = 2;
+    public static final int INITIALIZED = 1;
+    public static final int PRIMITIVE = 2;
 
     public int size;
     public int flags;
@@ -27,7 +27,7 @@ public class RuntimeClass extends RuntimeJavaObject {
     public RuntimeClass arrayType;
 
     public static int computeCanary(int size, int tag) {
-        return size ^ (tag << 8) ^ (tag >>> 24) ^ (0xAAAAAAAA);
+        return size ^ (tag << 8) ^ (tag >>> 24) ^ 0xAAAAAAAA;
     }
 
     public int computeCanary() {

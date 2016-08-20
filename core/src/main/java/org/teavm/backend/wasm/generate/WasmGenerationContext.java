@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.teavm.backend.wasm.intrinsics.WasmIntrinsic;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Import;
 import org.teavm.model.AnnotationReader;
@@ -32,7 +33,6 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.model.classes.TagRegistry;
 import org.teavm.model.classes.VirtualTableProvider;
-import org.teavm.backend.wasm.intrinsics.WasmIntrinsic;
 
 public class WasmGenerationContext {
     private ClassReaderSource classSource;

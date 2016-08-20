@@ -592,7 +592,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         if (statement.getBody().size() == 1 && statement.getBody().get(0) instanceof WhileStatement) {
             WhileStatement innerLoop = (WhileStatement) statement.getBody().get(0);
             BreakToContinueReplacer replacer = new BreakToContinueReplacer(innerLoop, statement);
-            replacer.visitSequence(innerLoop.getBody());
+            replacer.visit(innerLoop.getBody());
             statement.getBody().clear();
             statement.getBody().addAll(innerLoop.getBody());
         }

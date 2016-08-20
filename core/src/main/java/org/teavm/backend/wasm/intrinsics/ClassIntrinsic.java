@@ -16,9 +16,9 @@
 package org.teavm.backend.wasm.intrinsics;
 
 import org.teavm.ast.InvocationExpr;
+import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
 
 public class ClassIntrinsic implements WasmIntrinsic {
     @Override

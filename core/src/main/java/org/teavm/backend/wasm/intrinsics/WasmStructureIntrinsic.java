@@ -17,12 +17,12 @@ package org.teavm.backend.wasm.intrinsics;
 
 import org.teavm.ast.ConstantExpr;
 import org.teavm.ast.InvocationExpr;
-import org.teavm.interop.Address;
-import org.teavm.model.MethodReference;
-import org.teavm.model.ValueType;
 import org.teavm.backend.wasm.generate.WasmClassGenerator;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
+import org.teavm.interop.Address;
+import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 
 public class WasmStructureIntrinsic implements WasmIntrinsic {
     private WasmClassGenerator classGenerator;

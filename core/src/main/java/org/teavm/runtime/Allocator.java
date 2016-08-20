@@ -21,6 +21,9 @@ import org.teavm.interop.Structure;
 
 @StaticInit
 public final class Allocator {
+    private Allocator() {
+    }
+
     private static Address address = initialize();
 
     private static native Address initialize();

@@ -34,6 +34,9 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import org.apache.commons.io.IOUtils;
+import org.teavm.backend.javascript.JavaScriptTarget;
+import org.teavm.backend.javascript.rendering.RenderingContext;
+import org.teavm.backend.wasm.WasmTarget;
 import org.teavm.cache.DiskCachedClassHolderSource;
 import org.teavm.cache.DiskProgramCache;
 import org.teavm.cache.DiskRegularMethodNodeCache;
@@ -42,8 +45,6 @@ import org.teavm.debugging.information.DebugInformation;
 import org.teavm.debugging.information.DebugInformationBuilder;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.ProblemProvider;
-import org.teavm.backend.javascript.rendering.RenderingContext;
-import org.teavm.backend.javascript.JavaScriptTarget;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReader;
@@ -64,7 +65,6 @@ import org.teavm.vm.TeaVMEntryPoint;
 import org.teavm.vm.TeaVMProgressListener;
 import org.teavm.vm.TeaVMTarget;
 import org.teavm.vm.spi.AbstractRendererListener;
-import org.teavm.backend.wasm.WasmTarget;
 
 public class TeaVMTool implements BaseTeaVMTool {
     private File targetDirectory = new File(".");

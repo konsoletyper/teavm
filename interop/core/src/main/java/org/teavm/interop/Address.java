@@ -16,43 +16,43 @@
 package org.teavm.interop;
 
 public final class Address {
-    public final native Address add(int offset);
+    public native Address add(int offset);
 
-    public final native Address add(long offset);
+    public native Address add(long offset);
 
-    public final native int toInt();
+    public native int toInt();
 
-    public final native long toLong();
+    public native long toLong();
 
-    public final native <T extends Structure> T toStructure();
+    public native <T extends Structure> T toStructure();
 
-    public final native byte getByte();
+    public native byte getByte();
 
-    public final native void putByte(byte value);
+    public native void putByte(byte value);
 
-    public final native char getChar();
+    public native char getChar();
 
-    public final native void putChar(char value);
+    public native void putChar(char value);
 
-    public final native short getShort();
+    public native short getShort();
 
-    public final native void putShort(short value);
+    public native void putShort(short value);
 
-    public final native int getInt();
+    public native int getInt();
 
-    public final native void putInt(int value);
+    public native void putInt(int value);
 
-    public final native long getLong();
+    public native long getLong();
 
-    public final native void putLong(long value);
+    public native void putLong(long value);
 
-    public final native float getFloat();
+    public native float getFloat();
 
-    public final native void putFloat(float value);
+    public native void putFloat(float value);
 
-    public final native double getDouble();
+    public native double getDouble();
 
-    public final native void putDouble(double value);
+    public native void putDouble(double value);
 
     public static native Address fromInt(int value);
 

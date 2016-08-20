@@ -17,10 +17,10 @@ package org.teavm.backend.wasm.intrinsics;
 
 import org.teavm.ast.InvocationExpr;
 import org.teavm.ast.QualificationExpr;
+import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 import org.teavm.runtime.RuntimeClass;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
 
 public class PlatformClassMetadataIntrinsic implements WasmIntrinsic {
     private static final String PLATFORM_CLASS_METADATA_NAME = "org.teavm.platform.PlatformClassMetadata";

@@ -42,17 +42,17 @@ import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldHolder;
 import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
-import org.teavm.model.TextLocation;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 import org.teavm.model.ReferenceCache;
+import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
+import org.teavm.model.optimization.UnreachableBasicBlockEliminator;
 import org.teavm.model.util.ModelUtils;
 import org.teavm.model.util.ProgramUtils;
-import org.teavm.model.optimization.UnreachableBasicBlockEliminator;
 import org.teavm.parsing.Parser;
 
 public class DependencyChecker implements DependencyInfo {

@@ -16,9 +16,9 @@
 package org.teavm.backend.wasm.intrinsics;
 
 import org.teavm.ast.InvocationExpr;
-import org.teavm.model.MethodReference;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
+import org.teavm.model.MethodReference;
 
 public class PlatformClassIntrinsic implements WasmIntrinsic {
     private static final String PLATFORM_CLASS_NAME = "org.teavm.platform.PlatformClass";

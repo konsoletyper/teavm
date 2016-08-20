@@ -16,11 +16,11 @@
 package org.teavm.platform.plugin;
 
 import java.io.IOException;
+import org.teavm.backend.javascript.spi.Injector;
+import org.teavm.backend.javascript.spi.InjectorContext;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
-import org.teavm.backend.javascript.spi.Injector;
-import org.teavm.backend.javascript.spi.InjectorContext;
 import org.teavm.model.CallLocation;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.PlatformObject;

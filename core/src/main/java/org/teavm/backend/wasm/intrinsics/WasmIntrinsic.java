@@ -16,8 +16,8 @@
 package org.teavm.backend.wasm.intrinsics;
 
 import org.teavm.ast.InvocationExpr;
-import org.teavm.model.MethodReference;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
+import org.teavm.model.MethodReference;
 
 public interface WasmIntrinsic {
     boolean isApplicable(MethodReference methodReference);
