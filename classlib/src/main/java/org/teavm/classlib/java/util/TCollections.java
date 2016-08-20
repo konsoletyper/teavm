@@ -238,6 +238,7 @@ public class TCollections extends TObject {
         return binarySearch(list, key, naturalOrder);
     }
 
+    @SuppressWarnings("unchecked")
     private static TComparator<Object> naturalOrder = (o1, o2) -> o1 != null
             ? ((TComparable<Object>) o1).compareTo(o2)
             : -((TComparable<Object>) o2).compareTo(o1);
