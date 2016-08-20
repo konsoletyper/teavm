@@ -17,15 +17,12 @@ package org.teavm.ast;
 
 import java.util.HashSet;
 import java.util.Set;
+import org.teavm.model.TextLocation;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class AssignmentStatement extends Statement {
     private Expr leftValue;
     private Expr rightValue;
-    private NodeLocation location;
+    private TextLocation location;
     private Set<String> debugNames = new HashSet<>();
     private boolean async;
 
@@ -45,11 +42,11 @@ public class AssignmentStatement extends Statement {
         this.rightValue = rightValue;
     }
 
-    public NodeLocation getLocation() {
+    public TextLocation getLocation() {
         return location;
     }
 
-    public void setLocation(NodeLocation location) {
+    public void setLocation(TextLocation location) {
         this.location = location;
     }
 

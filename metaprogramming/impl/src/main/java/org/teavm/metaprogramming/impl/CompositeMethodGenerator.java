@@ -39,7 +39,7 @@ import org.teavm.model.FieldReference;
 import org.teavm.model.Incoming;
 import org.teavm.model.IncomingReader;
 import org.teavm.model.Instruction;
-import org.teavm.model.InstructionLocation;
+import org.teavm.model.TextLocation;
 import org.teavm.model.InvokeDynamicInstruction;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHandle;
@@ -103,8 +103,8 @@ import org.teavm.model.instructions.UnwrapArrayInstruction;
 public class CompositeMethodGenerator {
     private Diagnostics diagnostics;
     Program program;
-    InstructionLocation location;
-    InstructionLocation forcedLocation;
+    TextLocation location;
+    TextLocation forcedLocation;
     int blockIndex;
     int returnBlockIndex;
     private Variable resultVar;
@@ -467,7 +467,7 @@ public class CompositeMethodGenerator {
         }
 
         @Override
-        public void location(InstructionLocation location) {
+        public void location(TextLocation location) {
             CompositeMethodGenerator.this.location = location;
         }
 

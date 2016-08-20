@@ -57,7 +57,6 @@ import org.teavm.ast.NativeMethodNode;
 import org.teavm.ast.NewArrayExpr;
 import org.teavm.ast.NewExpr;
 import org.teavm.ast.NewMultiArrayExpr;
-import org.teavm.ast.NodeLocation;
 import org.teavm.ast.NodeModifier;
 import org.teavm.ast.OperationType;
 import org.teavm.ast.PrimitiveCastExpr;
@@ -101,6 +100,7 @@ import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
+import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
 
 public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext {
@@ -141,9 +141,9 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     }
 
     private static class LocationStackEntry {
-        final NodeLocation location;
+        final TextLocation location;
 
-        LocationStackEntry(NodeLocation location) {
+        LocationStackEntry(TextLocation location) {
             this.location = location;
         }
     }
@@ -909,7 +909,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
         }
     }
 
-    private void pushLocation(NodeLocation location) {
+    private void pushLocation(TextLocation location) {
         LocationStackEntry prevEntry = locationStack.peek();
         if (location != null) {
             if (prevEntry == null || !location.equals(prevEntry.location)) {

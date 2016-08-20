@@ -55,7 +55,7 @@ import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldHolder;
 import org.teavm.model.Instruction;
-import org.teavm.model.InstructionLocation;
+import org.teavm.model.TextLocation;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
@@ -675,7 +675,7 @@ class JSClassProcessor {
     }
 
     private void addPropertyGet(String propertyName, Variable instance, Variable receiver,
-            InstructionLocation location) {
+            TextLocation location) {
         Variable nameVar = addStringWrap(addString(propertyName, location), location);
         InvokeInstruction insn = new InvokeInstruction();
         insn.setType(InvocationType.SPECIAL);
@@ -687,7 +687,7 @@ class JSClassProcessor {
         replacement.add(insn);
     }
 
-    private void addPropertySet(String propertyName, Variable instance, Variable value, InstructionLocation location) {
+    private void addPropertySet(String propertyName, Variable instance, Variable value, TextLocation location) {
         Variable nameVar = addStringWrap(addString(propertyName, location), location);
         InvokeInstruction insn = new InvokeInstruction();
         insn.setType(InvocationType.SPECIAL);
@@ -700,7 +700,7 @@ class JSClassProcessor {
         replacement.add(insn);
     }
 
-    private void addIndexerGet(Variable array, Variable index, Variable receiver, InstructionLocation location) {
+    private void addIndexerGet(Variable array, Variable index, Variable receiver, TextLocation location) {
         InvokeInstruction insn = new InvokeInstruction();
         insn.setType(InvocationType.SPECIAL);
         insn.setMethod(new MethodReference(JS.class, "get", JSObject.class, JSObject.class, JSObject.class));
@@ -711,7 +711,7 @@ class JSClassProcessor {
         replacement.add(insn);
     }
 
-    private void addIndexerSet(Variable array, Variable index, Variable value, InstructionLocation location) {
+    private void addIndexerSet(Variable array, Variable index, Variable value, TextLocation location) {
         InvokeInstruction insn = new InvokeInstruction();
         insn.setType(InvocationType.SPECIAL);
         insn.setMethod(new MethodReference(JS.class, "set", JSObject.class, JSObject.class,
@@ -723,7 +723,7 @@ class JSClassProcessor {
         replacement.add(insn);
     }
 
-    private void copyVar(Variable a, Variable b, InstructionLocation location) {
+    private void copyVar(Variable a, Variable b, TextLocation location) {
         AssignInstruction insn = new AssignInstruction();
         insn.setAssignee(a);
         insn.setReceiver(b);
@@ -731,11 +731,11 @@ class JSClassProcessor {
         replacement.add(insn);
     }
 
-    private Variable addStringWrap(Variable var, InstructionLocation location) {
+    private Variable addStringWrap(Variable var, TextLocation location) {
         return wrap(var, ValueType.object("java.lang.String"), location);
     }
 
-    private Variable addString(String str, InstructionLocation location) {
+    private Variable addString(String str, TextLocation location) {
         Variable var = program.createVariable();
         StringConstantInstruction nameInsn = new StringConstantInstruction();
         nameInsn.setReceiver(var);
@@ -957,7 +957,7 @@ class JSClassProcessor {
     }
 
     private Variable unwrap(Variable var, String methodName, ValueType argType, ValueType resultType,
-            InstructionLocation location) {
+            TextLocation location) {
         if (!argType.isObject(JSObject.class.getName())) {
             Variable castValue = program.createVariable();
             CastInstruction castInsn = new CastInstruction();
@@ -1013,7 +1013,7 @@ class JSClassProcessor {
         return functor;
     }
 
-    private Variable wrap(Variable var, ValueType type, InstructionLocation location) {
+    private Variable wrap(Variable var, ValueType type, TextLocation location) {
         if (type instanceof ValueType.Object) {
             String className = ((ValueType.Object) type).getClassName();
             if (!className.equals("java.lang.String")) {

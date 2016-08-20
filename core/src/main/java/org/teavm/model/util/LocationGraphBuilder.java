@@ -19,7 +19,7 @@ import java.util.*;
 import org.teavm.common.Graph;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Instruction;
-import org.teavm.model.InstructionLocation;
+import org.teavm.model.TextLocation;
 import org.teavm.model.Program;
 
 /**
@@ -27,11 +27,11 @@ import org.teavm.model.Program;
  * @author Alexey Andreev
  */
 class LocationGraphBuilder {
-    private Map<InstructionLocation, Set<InstructionLocation>> graphBuilder;
-    private List<Set<InstructionLocation>> startLocations;
+    private Map<TextLocation, Set<TextLocation>> graphBuilder;
+    private List<Set<TextLocation>> startLocations;
     private List<AdditionalConnection> additionalConnections;
 
-    public Map<InstructionLocation, InstructionLocation[]> build(Program program) {
+    public Map<TextLocation, TextLocation[]> build(Program program) {
         graphBuilder = new HashMap<>();
         Graph graph = ProgramUtils.buildControlFlowGraph(program);
         dfs(graph, program);
@@ -39,7 +39,7 @@ class LocationGraphBuilder {
     }
 
     private void dfs(Graph graph, Program program) {
-        startLocations = new ArrayList<>(Collections.<Set<InstructionLocation>>nCopies(graph.size(), null));
+        startLocations = new ArrayList<>(Collections.<Set<TextLocation>>nCopies(graph.size(), null));
         additionalConnections = new ArrayList<>();
         Deque<Step> stack = new ArrayDeque<>();
         for (int i = 0; i < graph.size(); ++i) {
@@ -48,7 +48,7 @@ class LocationGraphBuilder {
             }
         }
         boolean[] visited = new boolean[graph.size()];
-        InstructionLocation[] blockLocations = new InstructionLocation[graph.size()];
+        TextLocation[] blockLocations = new TextLocation[graph.size()];
 
         while (!stack.isEmpty()) {
             Step step = stack.pop();
@@ -61,7 +61,7 @@ class LocationGraphBuilder {
             visited[step.block] = true;
             startLocations.set(step.block, step.startLocations);
             BasicBlock block = program.basicBlockAt(step.block);
-            InstructionLocation location = step.location;
+            TextLocation location = step.location;
             boolean started = false;
             for (Instruction insn : block.getInstructions()) {
                 if (insn.getLocation() != null) {
@@ -80,7 +80,7 @@ class LocationGraphBuilder {
             }
             if (graph.outgoingEdgesCount(step.block) == 0) {
                 if (location != null) {
-                    addEdge(location, new InstructionLocation(null, -1));
+                    addEdge(location, new TextLocation(null, -1));
                 }
             } else {
                 for (int next : graph.outgoingEdges(step.block)) {
@@ -90,15 +90,15 @@ class LocationGraphBuilder {
         }
     }
 
-    private Map<InstructionLocation, InstructionLocation[]> assemble() {
+    private Map<TextLocation, TextLocation[]> assemble() {
         for (AdditionalConnection additionalConn : additionalConnections) {
-            for (InstructionLocation succ : additionalConn.successors) {
+            for (TextLocation succ : additionalConn.successors) {
                 addEdge(additionalConn.location, succ);
             }
         }
-        Map<InstructionLocation, InstructionLocation[]> locationGraph = new HashMap<>();
-        for (Map.Entry<InstructionLocation, Set<InstructionLocation>> entry : graphBuilder.entrySet()) {
-            InstructionLocation[] successors = entry.getValue().toArray(new InstructionLocation[0]);
+        Map<TextLocation, TextLocation[]> locationGraph = new HashMap<>();
+        for (Map.Entry<TextLocation, Set<TextLocation>> entry : graphBuilder.entrySet()) {
+            TextLocation[] successors = entry.getValue().toArray(new TextLocation[0]);
             for (int i = 0; i < successors.length; ++i) {
                 if (successors[i] != null && successors[i].getLine() < 0) {
                     successors[i] = null;
@@ -109,8 +109,8 @@ class LocationGraphBuilder {
         return locationGraph;
     }
 
-    private void addEdge(InstructionLocation source, InstructionLocation dest) {
-        Set<InstructionLocation> successors = graphBuilder.get(source);
+    private void addEdge(TextLocation source, TextLocation dest) {
+        Set<TextLocation> successors = graphBuilder.get(source);
         if (successors == null) {
             successors = new HashSet<>();
             graphBuilder.put(source, successors);
@@ -119,10 +119,10 @@ class LocationGraphBuilder {
     }
 
     static class Step {
-        InstructionLocation location;
-        Set<InstructionLocation> startLocations;
+        TextLocation location;
+        Set<TextLocation> startLocations;
         int block;
-        public Step(InstructionLocation location, Set<InstructionLocation> startLocations, int block) {
+        public Step(TextLocation location, Set<TextLocation> startLocations, int block) {
             this.location = location;
             this.startLocations = startLocations;
             this.block = block;
@@ -130,9 +130,9 @@ class LocationGraphBuilder {
     }
 
     static class AdditionalConnection {
-        InstructionLocation location;
-        Set<InstructionLocation> successors;
-        public AdditionalConnection(InstructionLocation location, Set<InstructionLocation> successors) {
+        TextLocation location;
+        Set<TextLocation> successors;
+        public AdditionalConnection(TextLocation location, Set<TextLocation> successors) {
             this.location = location;
             this.successors = successors;
         }

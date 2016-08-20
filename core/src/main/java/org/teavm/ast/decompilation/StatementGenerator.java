@@ -31,7 +31,6 @@ import org.teavm.ast.InitClassStatement;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.ast.MonitorEnterStatement;
 import org.teavm.ast.MonitorExitStatement;
-import org.teavm.ast.NodeLocation;
 import org.teavm.ast.OperationType;
 import org.teavm.ast.PrimitiveCastExpr;
 import org.teavm.ast.ReturnStatement;
@@ -48,6 +47,7 @@ import org.teavm.model.InvokeDynamicInstruction;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
+import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.ArrayElementType;
@@ -101,10 +101,10 @@ class StatementGenerator implements InstructionVisitor {
     Decompiler.Block[] blockMap;
     Program program;
     ClassHolderSource classSource;
-    private NodeLocation currentLocation;
+    private TextLocation currentLocation;
     boolean async;
 
-    void setCurrentLocation(NodeLocation currentLocation) {
+    void setCurrentLocation(TextLocation currentLocation) {
         this.currentLocation = currentLocation;
     }
 

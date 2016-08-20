@@ -18,10 +18,6 @@ package org.teavm.ast;
 import java.util.Collections;
 import java.util.List;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class Statement {
     public abstract void acceptVisitor(StatementVisitor visitor);
 

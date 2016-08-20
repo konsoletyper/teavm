@@ -132,10 +132,10 @@ public class Problem {
                 consumer.appendField((FieldReference) param);
                 break;
             case LOCATION:
-                if (!(param instanceof InstructionLocation)) {
+                if (!(param instanceof TextLocation)) {
                     return index;
                 }
-                consumer.appendLocation((InstructionLocation) param);
+                consumer.appendLocation((TextLocation) param);
                 break;
         }
         next += 2;

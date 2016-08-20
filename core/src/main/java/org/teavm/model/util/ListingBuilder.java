@@ -67,7 +67,7 @@ public class ListingBuilder {
                 sb.append("\n");
             }
 
-            InstructionLocation location = null;
+            TextLocation location = null;
             for (int j = 0; j < block.instructionCount(); ++j) {
                 insnSb.setLength(0);
                 block.readInstruction(j, stringifier);

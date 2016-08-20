@@ -19,7 +19,7 @@ import java.util.List;
 import org.teavm.model.*;
 
 public interface InstructionReader {
-    void location(InstructionLocation location);
+    void location(TextLocation location);
 
     void nop();
 

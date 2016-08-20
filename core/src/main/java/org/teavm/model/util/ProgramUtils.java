@@ -25,7 +25,7 @@ import org.teavm.model.BasicBlockReader;
 import org.teavm.model.Incoming;
 import org.teavm.model.IncomingReader;
 import org.teavm.model.Instruction;
-import org.teavm.model.InstructionLocation;
+import org.teavm.model.TextLocation;
 import org.teavm.model.Phi;
 import org.teavm.model.PhiReader;
 import org.teavm.model.Program;
@@ -62,7 +62,7 @@ public final class ProgramUtils {
         return graphBuilder.build();
     }
 
-    public static Map<InstructionLocation, InstructionLocation[]> getLocationCFG(Program program) {
+    public static Map<TextLocation, TextLocation[]> getLocationCFG(Program program) {
         return new LocationGraphBuilder().build(program);
     }
 

@@ -52,7 +52,7 @@ import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ElementModifier;
-import org.teavm.model.InstructionLocation;
+import org.teavm.model.TextLocation;
 import org.teavm.model.ListableClassHolderSource;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
@@ -338,8 +338,8 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     }
 
     private void emitCFG(DebugInformationEmitter emitter, Program program) {
-        Map<InstructionLocation, InstructionLocation[]> cfg = ProgramUtils.getLocationCFG(program);
-        for (Map.Entry<InstructionLocation, InstructionLocation[]> entry : cfg.entrySet()) {
+        Map<TextLocation, TextLocation[]> cfg = ProgramUtils.getLocationCFG(program);
+        for (Map.Entry<TextLocation, TextLocation[]> entry : cfg.entrySet()) {
             SourceLocation location = map(entry.getKey());
             SourceLocation[] successors = new SourceLocation[entry.getValue().length];
             for (int i = 0; i < entry.getValue().length; ++i) {
@@ -349,7 +349,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         }
     }
 
-    private static SourceLocation map(InstructionLocation location) {
+    private static SourceLocation map(TextLocation location) {
         if (location == null) {
             return null;
         }

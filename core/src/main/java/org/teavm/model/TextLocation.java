@@ -17,15 +17,11 @@ package org.teavm.model;
 
 import java.util.Objects;
 
-/**
- *
- * @author Alexey Andreev
- */
-public class InstructionLocation {
+public class TextLocation {
     private String fileName;
     private int line = -1;
 
-    public InstructionLocation(String fileName, int line) {
+    public TextLocation(String fileName, int line) {
         this.fileName = fileName;
         this.line = line;
     }
@@ -52,10 +48,10 @@ public class InstructionLocation {
         if (this == obj) {
             return true;
         }
-        if (!(obj instanceof InstructionLocation)) {
+        if (!(obj instanceof TextLocation)) {
             return false;
         }
-        InstructionLocation other = (InstructionLocation) obj;
+        TextLocation other = (TextLocation) obj;
         return Objects.equals(fileName, other.fileName) && line == other.line;
     }
 

@@ -42,7 +42,7 @@ import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldHolder;
 import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
-import org.teavm.model.InstructionLocation;
+import org.teavm.model.TextLocation;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
@@ -273,7 +273,7 @@ public class DependencyChecker implements DependencyInfo {
         return dep;
     }
 
-    private boolean addClassAccess(DefaultCallGraphNode node, String className, InstructionLocation loc) {
+    private boolean addClassAccess(DefaultCallGraphNode node, String className, TextLocation loc) {
         if (!node.addClassAccess(className, loc)) {
             return false;
         }

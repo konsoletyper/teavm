@@ -26,19 +26,19 @@ import org.teavm.model.instructions.*;
  * @author Alexey Andreev
  */
 public class InstructionStringifier implements InstructionReader {
-    private InstructionLocation location;
+    private TextLocation location;
     private StringBuilder sb;
 
     public InstructionStringifier(StringBuilder sb) {
         this.sb = sb;
     }
 
-    public InstructionLocation getLocation() {
+    public TextLocation getLocation() {
         return location;
     }
 
     @Override
-    public void location(InstructionLocation location) {
+    public void location(TextLocation location) {
         this.location = location;
     }
 

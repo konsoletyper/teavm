@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 import org.teavm.common.DisjointSet;
 import org.teavm.model.BasicBlockReader;
 import org.teavm.model.FieldReference;
-import org.teavm.model.InstructionLocation;
+import org.teavm.model.TextLocation;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHandle;
 import org.teavm.model.MethodReference;
@@ -134,7 +134,7 @@ class AliasFinder {
         }
 
         @Override
-        public void location(InstructionLocation location) {
+        public void location(TextLocation location) {
         }
 
         @Override

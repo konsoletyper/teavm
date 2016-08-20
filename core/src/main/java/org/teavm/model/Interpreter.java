@@ -121,7 +121,7 @@ public class Interpreter {
         private Objenesis objenesis = new ObjenesisStd();
 
         @Override
-        public void location(InstructionLocation location) {
+        public void location(TextLocation location) {
         }
 
         @Override

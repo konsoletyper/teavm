@@ -22,7 +22,7 @@ import org.teavm.callgraph.CallSite;
 import org.teavm.diagnostics.DefaultProblemTextConsumer;
 import org.teavm.diagnostics.Problem;
 import org.teavm.model.CallLocation;
-import org.teavm.model.InstructionLocation;
+import org.teavm.model.TextLocation;
 import org.teavm.model.MethodReference;
 import org.teavm.vm.TeaVM;
 
@@ -72,7 +72,7 @@ public final class TeaVMProblemRenderer {
         }
     }
 
-    public static void renderCallLocation(MethodReference method, InstructionLocation location, StringBuilder sb) {
+    public static void renderCallLocation(MethodReference method, TextLocation location, StringBuilder sb) {
         if (method != null) {
             sb.append(method.getClassName() + "." + method.getName());
         } else {

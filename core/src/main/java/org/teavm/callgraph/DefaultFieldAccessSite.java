@@ -17,25 +17,25 @@ package org.teavm.callgraph;
 
 import java.util.Objects;
 import org.teavm.model.FieldReference;
-import org.teavm.model.InstructionLocation;
+import org.teavm.model.TextLocation;
 
 /**
  *
  * @author Alexey Andreev
  */
 public class DefaultFieldAccessSite implements FieldAccessSite {
-    private InstructionLocation location;
+    private TextLocation location;
     private CallGraphNode callee;
     private FieldReference field;
 
-    DefaultFieldAccessSite(InstructionLocation location, CallGraphNode callee, FieldReference field) {
+    DefaultFieldAccessSite(TextLocation location, CallGraphNode callee, FieldReference field) {
         this.location = location;
         this.callee = callee;
         this.field = field;
     }
 
     @Override
-    public InstructionLocation getLocation() {
+    public TextLocation getLocation() {
         return null;
     }
 

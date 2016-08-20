@@ -16,14 +16,14 @@
 package org.teavm.callgraph;
 
 import org.teavm.model.FieldReference;
-import org.teavm.model.InstructionLocation;
+import org.teavm.model.TextLocation;
 
 /**
  *
  * @author Alexey Andreev
  */
 public interface FieldAccessSite {
-    InstructionLocation getLocation();
+    TextLocation getLocation();
 
     CallGraphNode getCallee();
 

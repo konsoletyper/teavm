@@ -237,7 +237,7 @@ public class AsyncMethodFinder {
         boolean async;
 
         @Override
-        public void location(InstructionLocation location) {
+        public void location(TextLocation location) {
         }
 
         @Override

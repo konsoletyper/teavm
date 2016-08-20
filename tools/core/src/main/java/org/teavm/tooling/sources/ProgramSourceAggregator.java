@@ -35,7 +35,7 @@ class ProgramSourceAggregator implements InstructionReader {
     }
 
     @Override
-    public void location(InstructionLocation location) {
+    public void location(TextLocation location) {
         if (location != null && location.getFileName() != null && !location.getFileName().isEmpty()) {
             sourceFiles.add(location.getFileName());
         }

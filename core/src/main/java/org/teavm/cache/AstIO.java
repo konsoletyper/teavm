@@ -51,7 +51,6 @@ import org.teavm.ast.MonitorExitStatement;
 import org.teavm.ast.NewArrayExpr;
 import org.teavm.ast.NewExpr;
 import org.teavm.ast.NewMultiArrayExpr;
-import org.teavm.ast.NodeLocation;
 import org.teavm.ast.NodeModifier;
 import org.teavm.ast.OperationType;
 import org.teavm.ast.PrimitiveCastExpr;
@@ -75,6 +74,7 @@ import org.teavm.ast.WhileStatement;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
+import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
 import org.teavm.model.instructions.ArrayElementType;
 import org.teavm.model.util.VariableType;
@@ -227,7 +227,7 @@ public class AstIO {
             expr.acceptVisitor(this);
         }
 
-        private void writeLocation(NodeLocation location) throws IOException {
+        private void writeLocation(TextLocation location) throws IOException {
             if (location == null || location.getFileName() == null) {
                 output.writeShort(-1);
             } else {
@@ -659,12 +659,12 @@ public class AstIO {
         }
     }
 
-    private NodeLocation readLocation(DataInput input) throws IOException {
+    private TextLocation readLocation(DataInput input) throws IOException {
         int fileIndex = input.readShort();
         if (fileIndex == -1) {
             return null;
         } else {
-            return new NodeLocation(fileTable.at(fileIndex), input.readShort());
+            return new TextLocation(fileTable.at(fileIndex), input.readShort());
         }
     }
 
@@ -846,7 +846,7 @@ public class AstIO {
     }
 
     private Expr readExpr(DataInput input) throws IOException {
-        NodeLocation location = readLocation(input);
+        TextLocation location = readLocation(input);
         Expr expr = readExprWithoutLocation(input);
         expr.setLocation(location);
         return expr;

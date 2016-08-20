@@ -15,14 +15,14 @@
  */
 package org.teavm.callgraph;
 
-import org.teavm.model.InstructionLocation;
+import org.teavm.model.TextLocation;
 
 /**
  *
  * @author Alexey Andreev
  */
 public interface ClassAccessSite {
-    InstructionLocation getLocation();
+    TextLocation getLocation();
 
     CallGraphNode getCallee();
 

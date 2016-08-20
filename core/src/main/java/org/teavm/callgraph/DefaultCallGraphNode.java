@@ -17,7 +17,7 @@ package org.teavm.callgraph;
 
 import java.util.*;
 import org.teavm.model.FieldReference;
-import org.teavm.model.InstructionLocation;
+import org.teavm.model.TextLocation;
 import org.teavm.model.MethodReference;
 
 /**
@@ -67,7 +67,7 @@ public class DefaultCallGraphNode implements CallGraphNode {
         return safeCallersCallSites;
     }
 
-    public boolean addCallSite(MethodReference method, InstructionLocation location) {
+    public boolean addCallSite(MethodReference method, TextLocation location) {
         DefaultCallGraphNode callee = graph.getNode(method);
         DefaultCallSite callSite = new DefaultCallSite(location, callee, this);
         if (callSites.add(callSite)) {
@@ -90,7 +90,7 @@ public class DefaultCallGraphNode implements CallGraphNode {
         return safeFieldAccessSites;
     }
 
-    public boolean addFieldAccess(FieldReference field, InstructionLocation location) {
+    public boolean addFieldAccess(FieldReference field, TextLocation location) {
         DefaultFieldAccessSite site = new DefaultFieldAccessSite(location, this, field);
         if (fieldAccessSites.add(site)) {
             graph.addFieldAccess(site);
@@ -108,7 +108,7 @@ public class DefaultCallGraphNode implements CallGraphNode {
         return safeClassAccessSites;
     }
 
-    public boolean addClassAccess(String className, InstructionLocation location) {
+    public boolean addClassAccess(String className, TextLocation location) {
         DefaultClassAccessSite site = new DefaultClassAccessSite(location, this, className);
         if (classAccessSites.add(site)) {
             graph.addClassAccess(site);

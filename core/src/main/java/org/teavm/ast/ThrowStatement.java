@@ -15,13 +15,11 @@
  */
 package org.teavm.ast;
 
-/**
- *
- * @author Alexey Andreev
- */
+import org.teavm.model.TextLocation;
+
 public class ThrowStatement extends Statement {
     private Expr exception;
-    private NodeLocation location;
+    private TextLocation location;
 
     public Expr getException() {
         return exception;
@@ -31,11 +29,11 @@ public class ThrowStatement extends Statement {
         this.exception = exception;
     }
 
-    public NodeLocation getLocation() {
+    public TextLocation getLocation() {
         return location;
     }
 
-    public void setLocation(NodeLocation location) {
+    public void setLocation(TextLocation location) {
         this.location = location;
     }
 

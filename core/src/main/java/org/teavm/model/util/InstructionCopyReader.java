@@ -21,7 +21,7 @@ import org.teavm.model.BasicBlock;
 import org.teavm.model.BasicBlockReader;
 import org.teavm.model.FieldReference;
 import org.teavm.model.Instruction;
-import org.teavm.model.InstructionLocation;
+import org.teavm.model.TextLocation;
 import org.teavm.model.InvokeDynamicInstruction;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHandle;
@@ -82,7 +82,7 @@ import org.teavm.model.instructions.UnwrapArrayInstruction;
 public class InstructionCopyReader implements InstructionReader {
     private Instruction copy;
     private Program programCopy;
-    private InstructionLocation location;
+    private TextLocation location;
 
     public InstructionCopyReader(Program programCopy) {
         this.programCopy = programCopy;
@@ -97,7 +97,7 @@ public class InstructionCopyReader implements InstructionReader {
     }
 
     @Override
-    public void location(InstructionLocation location) {
+    public void location(TextLocation location) {
         this.location = location;
     }
 

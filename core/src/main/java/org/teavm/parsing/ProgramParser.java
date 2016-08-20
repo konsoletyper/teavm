@@ -269,7 +269,7 @@ public class ProgramParser {
         BasicBlock basicBlock = null;
         Map<Integer, String> accumulatedDebugNames = new HashMap<>();
         Integer lastLineNumber = null;
-        InstructionLocation lastLocation = null;
+        TextLocation lastLocation = null;
         for (int i = 0; i < basicBlocks.size(); ++i) {
             BasicBlock newBasicBlock = basicBlocks.get(i);
             if (newBasicBlock != null) {
@@ -303,7 +303,7 @@ public class ProgramParser {
                 Integer lineNumber = lineNumbers.get(label);
                 if (lineNumber != null && !lineNumber.equals(lastLineNumber)) {
                     lastLineNumber = lineNumber;
-                    lastLocation = new InstructionLocation(fileName, lastLineNumber);
+                    lastLocation = new TextLocation(fileName, lastLineNumber);
                 }
             }
             if (builtInstructions != null) {

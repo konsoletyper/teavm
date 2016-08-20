@@ -21,7 +21,7 @@ import org.teavm.model.ClassReaderSource;
 import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
 import org.teavm.model.Instruction;
-import org.teavm.model.InstructionLocation;
+import org.teavm.model.TextLocation;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
@@ -56,7 +56,7 @@ public final class ProgramEmitter {
     private Program program;
     private BasicBlock block;
     ClassReaderSource classSource;
-    private InstructionLocation currentLocation;
+    private TextLocation currentLocation;
 
     private ProgramEmitter(Program program, BasicBlock block, ClassReaderSource classSource) {
         this.program = program;
@@ -373,11 +373,11 @@ public final class ProgramEmitter {
         return var(program.createVariable(), type);
     }
 
-    public InstructionLocation getCurrentLocation() {
+    public TextLocation getCurrentLocation() {
         return currentLocation;
     }
 
-    public void setCurrentLocation(InstructionLocation currentLocation) {
+    public void setCurrentLocation(TextLocation currentLocation) {
         this.currentLocation = currentLocation;
     }
 

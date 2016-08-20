@@ -45,7 +45,6 @@ import org.teavm.ast.MonitorExitStatement;
 import org.teavm.ast.NewArrayExpr;
 import org.teavm.ast.NewExpr;
 import org.teavm.ast.NewMultiArrayExpr;
-import org.teavm.ast.NodeLocation;
 import org.teavm.ast.OperationType;
 import org.teavm.ast.PrimitiveCastExpr;
 import org.teavm.ast.QualificationExpr;
@@ -65,8 +64,8 @@ import org.teavm.ast.WhileStatement;
 import org.teavm.interop.Address;
 import org.teavm.model.CallLocation;
 import org.teavm.model.FieldReference;
-import org.teavm.model.InstructionLocation;
 import org.teavm.model.MethodReference;
+import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
 import org.teavm.model.classes.TagRegistry;
 import org.teavm.model.classes.VirtualTableEntry;
@@ -446,7 +445,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         }
     }
 
-    private void storeField(Expr qualified, FieldReference field, Expr value, NodeLocation location) {
+    private void storeField(Expr qualified, FieldReference field, Expr value, TextLocation location) {
         WasmExpression address = getAddress(qualified, field, location);
         ValueType type = context.getFieldType(field);
         value.acceptVisitor(this);
@@ -800,9 +799,9 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             VirtualTableEntry vtableEntry = context.getVirtualTableProvider().lookup(expr.getMethod());
             if (vtableEntry == null) {
                 result = new WasmInt32Constant(0);
-                InstructionLocation insnLocation = null;
+                TextLocation insnLocation = null;
                 if (expr.getLocation() != null) {
-                    insnLocation = new InstructionLocation(expr.getLocation().getFileName(),
+                    insnLocation = new TextLocation(expr.getLocation().getFileName(),
                             expr.getLocation().getLine());
                 }
                 CallLocation location = new CallLocation(method, insnLocation);
@@ -891,7 +890,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         }
     }
 
-    private WasmExpression getAddress(Expr qualified, FieldReference field, NodeLocation location) {
+    private WasmExpression getAddress(Expr qualified, FieldReference field, TextLocation location) {
         int offset = classGenerator.getFieldOffset(field);
         if (qualified == null) {
             WasmExpression result = new WasmInt32Constant(offset);
@@ -942,7 +941,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         result = allocateObject(expr.getConstructedClass(), expr.getLocation());
     }
 
-    private WasmExpression allocateObject(String className, NodeLocation location) {
+    private WasmExpression allocateObject(String className, TextLocation location) {
         int tag = classGenerator.getClassPointer(ValueType.object(className));
         String allocName = WasmMangling.mangleMethod(new MethodReference(Allocator.class, "allocate",
                 RuntimeClass.class, Address.class));

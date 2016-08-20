@@ -21,7 +21,7 @@ import java.util.Map;
 import org.teavm.model.*;
 
 public abstract class Expr implements Cloneable {
-    private NodeLocation location;
+    private TextLocation location;
 
     public abstract void acceptVisitor(ExprVisitor visitor);
 
@@ -53,7 +53,7 @@ public abstract class Expr implements Cloneable {
         return expr;
     }
 
-    public static Expr binary(BinaryOperation op, OperationType type, Expr first, Expr second, NodeLocation loc) {
+    public static Expr binary(BinaryOperation op, OperationType type, Expr first, Expr second, TextLocation loc) {
         Expr expr = binary(op, type, first, second);
         expr.setLocation(loc);
         return expr;
@@ -151,11 +151,11 @@ public abstract class Expr implements Cloneable {
         return expr;
     }
 
-    public NodeLocation getLocation() {
+    public TextLocation getLocation() {
         return location;
     }
 
-    public void setLocation(NodeLocation location) {
+    public void setLocation(TextLocation location) {
         this.location = location;
     }
 }

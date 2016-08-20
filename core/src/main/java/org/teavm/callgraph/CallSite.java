@@ -15,7 +15,7 @@
  */
 package org.teavm.callgraph;
 
-import org.teavm.model.InstructionLocation;
+import org.teavm.model.TextLocation;
 
 /**
  * <p>Call site that represents exact place in the code that calls a method.</p>.
@@ -27,7 +27,7 @@ public interface CallSite {
      *
      * @return location of the call site or <code>null</code> if no debug information found for this call site.
      */
-    InstructionLocation getLocation();
+    TextLocation getLocation();
 
     /**
      * <p>Gets a method that this call site invokes.</p>

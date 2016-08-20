@@ -15,12 +15,10 @@
  */
 package org.teavm.ast;
 
-/**
- *
- * @author shannah
- */
+import org.teavm.model.TextLocation;
+
 public class MonitorExitStatement extends Statement {
-    private NodeLocation location;
+    private TextLocation location;
     private Expr objectRef;
 
     @Override
@@ -28,11 +26,11 @@ public class MonitorExitStatement extends Statement {
         visitor.visit(this);
     }
 
-    public NodeLocation getLocation() {
+    public TextLocation getLocation() {
         return location;
     }
 
-    public void setLocation(NodeLocation location) {
+    public void setLocation(TextLocation location) {
         this.location = location;
     }
 

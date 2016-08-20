@@ -37,7 +37,6 @@ import org.teavm.ast.GotoPartStatement;
 import org.teavm.ast.IdentifiedStatement;
 import org.teavm.ast.MethodNode;
 import org.teavm.ast.NativeMethodNode;
-import org.teavm.ast.NodeLocation;
 import org.teavm.ast.NodeModifier;
 import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.SequentialStatement;
@@ -62,7 +61,7 @@ import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldHolder;
 import org.teavm.model.Instruction;
-import org.teavm.model.InstructionLocation;
+import org.teavm.model.TextLocation;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
@@ -456,17 +455,15 @@ public class Decompiler {
 
             if (node >= 0) {
                 generator.statements.clear();
-                InstructionLocation lastLocation = null;
-                NodeLocation nodeLocation = null;
+                TextLocation lastLocation = null;
                 List<Instruction> instructions = generator.currentBlock.getInstructions();
                 for (int j = 0; j < instructions.size(); ++j) {
                     Instruction insn = generator.currentBlock.getInstructions().get(j);
                     if (insn.getLocation() != null && lastLocation != insn.getLocation()) {
                         lastLocation = insn.getLocation();
-                        nodeLocation = new NodeLocation(lastLocation.getFileName(), lastLocation.getLine());
                     }
                     if (insn.getLocation() != null) {
-                        generator.setCurrentLocation(nodeLocation);
+                        generator.setCurrentLocation(lastLocation);
                     }
                     insn.acceptVisitor(generator);
                 }

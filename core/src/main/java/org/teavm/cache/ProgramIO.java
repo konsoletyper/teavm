@@ -75,7 +75,7 @@ public class ProgramIO {
                     }
                 }
             }
-            InstructionLocation location = null;
+            TextLocation location = null;
             InstructionWriter insnWriter = new InstructionWriter(data);
             for (Instruction insn : basicBlock.getInstructions()) {
                 try {
@@ -158,7 +158,7 @@ public class ProgramIO {
                 block.getTryCatchBlocks().add(tryCatch);
             }
 
-            InstructionLocation location = null;
+            TextLocation location = null;
             insnLoop: while (true) {
                 byte insnType = data.readByte();
                 switch (insnType) {
@@ -170,7 +170,7 @@ public class ProgramIO {
                     case -3: {
                         String file = fileTable.at(data.readShort());
                         short line = data.readShort();
-                        location = new InstructionLocation(file, line);
+                        location = new TextLocation(file, line);
                         break;
                     }
                     default: {

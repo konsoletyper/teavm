@@ -15,19 +15,19 @@
  */
 package org.teavm.wasm.model.expression;
 
-import org.teavm.ast.NodeLocation;
+import org.teavm.model.TextLocation;
 
 public abstract class WasmExpression {
-    private NodeLocation location;
+    private TextLocation location;
 
     WasmExpression() {
     }
 
-    public NodeLocation getLocation() {
+    public TextLocation getLocation() {
         return location;
     }
 
-    public void setLocation(NodeLocation location) {
+    public void setLocation(TextLocation location) {
         this.location = location;
     }
 

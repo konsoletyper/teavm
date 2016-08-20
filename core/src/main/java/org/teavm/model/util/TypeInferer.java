@@ -271,7 +271,7 @@ public class TypeInferer {
         }
 
         @Override
-        public void location(InstructionLocation location) {
+        public void location(TextLocation location) {
         }
 
         @Override

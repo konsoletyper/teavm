@@ -17,7 +17,7 @@ package org.teavm.metaprogramming.impl;
 
 import org.teavm.metaprogramming.LazyComputation;
 import org.teavm.metaprogramming.Value;
-import org.teavm.model.InstructionLocation;
+import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
 
 public class LazyValueImpl<T> implements Value<T> {
@@ -25,10 +25,10 @@ public class LazyValueImpl<T> implements Value<T> {
     VariableContext context;
     LazyComputation<T> computation;
     ValueType type;
-    InstructionLocation forcedLocation;
+    TextLocation forcedLocation;
 
     public LazyValueImpl(VariableContext context, LazyComputation<T> computation, ValueType type,
-            InstructionLocation forcedLocation) {
+            TextLocation forcedLocation) {
         this.context = context;
         this.computation = computation;
         this.type = type;

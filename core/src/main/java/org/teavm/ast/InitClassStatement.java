@@ -15,12 +15,10 @@
  */
 package org.teavm.ast;
 
-/**
- *
- * @author Alexey Andreev
- */
+import org.teavm.model.TextLocation;
+
 public class InitClassStatement extends Statement {
-    private NodeLocation location;
+    private TextLocation location;
     private String className;
 
     public String getClassName() {
@@ -31,11 +29,11 @@ public class InitClassStatement extends Statement {
         this.className = className;
     }
 
-    public NodeLocation getLocation() {
+    public TextLocation getLocation() {
         return location;
     }
 
-    public void setLocation(NodeLocation location) {
+    public void setLocation(TextLocation location) {
         this.location = location;
     }
 

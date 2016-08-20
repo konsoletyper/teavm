@@ -17,19 +17,15 @@ package org.teavm.model;
 
 import java.util.Objects;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class CallLocation {
     private MethodReference method;
-    private InstructionLocation sourceLocation;
+    private TextLocation sourceLocation;
 
     public CallLocation(MethodReference method) {
         this(method, null);
     }
 
-    public CallLocation(MethodReference method, InstructionLocation sourceLocation) {
+    public CallLocation(MethodReference method, TextLocation sourceLocation) {
         if (method == null) {
             throw new IllegalArgumentException("Method must not be null");
         }
@@ -41,7 +37,7 @@ public class CallLocation {
         return method;
     }
 
-    public InstructionLocation getSourceLocation() {
+    public TextLocation getSourceLocation() {
         return sourceLocation;
     }
 

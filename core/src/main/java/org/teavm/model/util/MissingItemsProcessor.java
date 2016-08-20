@@ -95,7 +95,7 @@ public class MissingItemsProcessor {
         block.getInstructions().addAll(instructionsToAdd);
     }
 
-    private void emitExceptionThrow(InstructionLocation location, String exceptionName, String text) {
+    private void emitExceptionThrow(TextLocation location, String exceptionName, String text) {
         Variable exceptionVar = program.createVariable();
         ConstructInstruction newExceptionInsn = new ConstructInstruction();
         newExceptionInsn.setType(exceptionName);
@@ -125,7 +125,7 @@ public class MissingItemsProcessor {
         instructionsToAdd.add(raiseInsn);
     }
 
-    private boolean checkClass(InstructionLocation location, String className) {
+    private boolean checkClass(TextLocation location, String className) {
         if (!achievableClasses.contains(className) || !dependencyInfo.getClass(className).isMissing()) {
             return true;
         }
@@ -135,7 +135,7 @@ public class MissingItemsProcessor {
         return false;
     }
 
-    private boolean checkClass(InstructionLocation location, ValueType type) {
+    private boolean checkClass(TextLocation location, ValueType type) {
         while (type instanceof ValueType.Array) {
             type = ((ValueType.Array) type).getItemType();
         }
@@ -145,7 +145,7 @@ public class MissingItemsProcessor {
         return true;
     }
 
-    private boolean checkMethod(InstructionLocation location, MethodReference method) {
+    private boolean checkMethod(TextLocation location, MethodReference method) {
         if (!checkClass(location, method.getClassName())) {
             return false;
         }
@@ -158,7 +158,7 @@ public class MissingItemsProcessor {
         return true;
     }
 
-    private boolean checkField(InstructionLocation location, FieldReference field) {
+    private boolean checkField(TextLocation location, FieldReference field) {
         if (!checkClass(location, field.getClassName())) {
             return false;
         }

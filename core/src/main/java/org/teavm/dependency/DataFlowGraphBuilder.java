@@ -128,7 +128,7 @@ public class DataFlowGraphBuilder implements InstructionReader {
     }
 
     @Override
-    public void location(InstructionLocation location) {
+    public void location(TextLocation location) {
     }
 
     @Override

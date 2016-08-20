@@ -33,7 +33,7 @@ import org.teavm.model.FieldReference;
 import org.teavm.model.Incoming;
 import org.teavm.model.IncomingReader;
 import org.teavm.model.Instruction;
-import org.teavm.model.InstructionLocation;
+import org.teavm.model.TextLocation;
 import org.teavm.model.InvokeDynamicInstruction;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHandle;
@@ -73,7 +73,7 @@ class DependencyGraphBuilder {
     private DependencyNode resultNode;
     private Program program;
     private DefaultCallGraphNode caller;
-    private InstructionLocation currentLocation;
+    private TextLocation currentLocation;
     private ExceptionConsumer currentExceptionConsumer;
 
     public DependencyGraphBuilder(DependencyChecker dependencyChecker) {
@@ -334,13 +334,13 @@ class DependencyGraphBuilder {
         private final DependencyNode[] parameters;
         private final DependencyNode result;
         private final DefaultCallGraphNode caller;
-        private final InstructionLocation location;
+        private final TextLocation location;
         private final Set<MethodReference> knownMethods = new HashSet<>();
         private ExceptionConsumer exceptionConsumer;
 
         public VirtualCallConsumer(DependencyNode node, ClassReader filterClass,
                 MethodDescriptor methodDesc, DependencyChecker checker, DependencyNode[] parameters,
-                DependencyNode result, DefaultCallGraphNode caller, InstructionLocation location,
+                DependencyNode result, DefaultCallGraphNode caller, TextLocation location,
                 ExceptionConsumer exceptionConsumer) {
             this.node = node;
             this.filterClass = filterClass;
@@ -392,7 +392,7 @@ class DependencyGraphBuilder {
 
     private InstructionReader reader = new InstructionReader() {
         @Override
-        public void location(InstructionLocation location) {
+        public void location(TextLocation location) {
             currentLocation = location;
         }
 
