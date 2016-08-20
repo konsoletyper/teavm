@@ -21,7 +21,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -37,7 +36,6 @@ import org.teavm.ast.GotoPartStatement;
 import org.teavm.ast.IdentifiedStatement;
 import org.teavm.ast.MethodNode;
 import org.teavm.ast.NativeMethodNode;
-import org.teavm.ast.NodeModifier;
 import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.SequentialStatement;
 import org.teavm.ast.Statement;
@@ -61,10 +59,10 @@ import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldHolder;
 import org.teavm.model.Instruction;
-import org.teavm.model.TextLocation;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
+import org.teavm.model.TextLocation;
 import org.teavm.model.TryCatchBlock;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
@@ -193,7 +191,7 @@ public class Decompiler {
         ClassNode clsNode = new ClassNode(cls.getName(), cls.getParent());
         for (FieldHolder field : cls.getFields()) {
             FieldNode fieldNode = new FieldNode(field.getName(), field.getType());
-            fieldNode.getModifiers().addAll(mapModifiers(field.getModifiers()));
+            fieldNode.getModifiers().addAll(field.getModifiers());
             fieldNode.setInitialValue(field.getInitialValue());
             clsNode.getFields().add(fieldNode);
         }
@@ -209,7 +207,7 @@ public class Decompiler {
             clsNode.getMethods().add(methodNode);
         }
         clsNode.getInterfaces().addAll(cls.getInterfaces());
-        clsNode.getModifiers().addAll(mapModifiers(cls.getModifiers()));
+        clsNode.getModifiers().addAll(cls.getModifiers());
         return clsNode;
     }
 
@@ -238,7 +236,7 @@ public class Decompiler {
         }
         NativeMethodNode methodNode = new NativeMethodNode(new MethodReference(method.getOwnerName(),
                 method.getDescriptor()));
-        methodNode.getModifiers().addAll(mapModifiers(method.getModifiers()));
+        methodNode.getModifiers().addAll(method.getModifiers());
         methodNode.setGenerator(generator);
         methodNode.setAsync(asyncMethods.contains(method.getReference()));
         return methodNode;
@@ -278,7 +276,7 @@ public class Decompiler {
 
         Optimizer optimizer = new Optimizer();
         optimizer.optimize(methodNode, method.getProgram());
-        methodNode.getModifiers().addAll(mapModifiers(method.getModifiers()));
+        methodNode.getModifiers().addAll(method.getModifiers());
         int paramCount = Math.min(method.getSignature().length, program.variableCount());
         for (int i = 0; i < paramCount; ++i) {
             Variable var = program.variableAt(i);
@@ -345,7 +343,7 @@ public class Decompiler {
 
         Optimizer optimizer = new Optimizer();
         optimizer.optimize(node, splitter);
-        node.getModifiers().addAll(mapModifiers(method.getModifiers()));
+        node.getModifiers().addAll(method.getModifiers());
         int paramCount = Math.min(method.getSignature().length, program.variableCount());
         for (int i = 0; i < paramCount; ++i) {
             Variable var = program.variableAt(i);
@@ -553,23 +551,6 @@ public class Decompiler {
             bookmark.block.tryCatches.add(bookmark);
             tryCatchBookmarks.add(bookmark);
         }
-    }
-
-    private Set<NodeModifier> mapModifiers(Set<ElementModifier> modifiers) {
-        Set<NodeModifier> result = EnumSet.noneOf(NodeModifier.class);
-        if (modifiers.contains(ElementModifier.STATIC)) {
-            result.add(NodeModifier.STATIC);
-        }
-        if (modifiers.contains(ElementModifier.INTERFACE)) {
-            result.add(NodeModifier.INTERFACE);
-        }
-        if (modifiers.contains(ElementModifier.ENUM)) {
-            result.add(NodeModifier.ENUM);
-        }
-        if (modifiers.contains(ElementModifier.SYNCHRONIZED)) {
-            result.add(NodeModifier.SYNCHRONIZED);
-        }
-        return result;
     }
 
     private List<Block> createBlocks(int start) {

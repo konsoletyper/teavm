@@ -19,15 +19,12 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import org.teavm.model.ElementModifier;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class ClassNode {
     private String name;
     private String parentName;
-    private Set<NodeModifier> modifiers = EnumSet.noneOf(NodeModifier.class);
+    private Set<ElementModifier> modifiers = EnumSet.noneOf(ElementModifier.class);
     private List<FieldNode> fields = new ArrayList<>();
     private List<MethodNode> methods = new ArrayList<>();
     private List<String> interfaces = new ArrayList<>();
@@ -57,7 +54,7 @@ public class ClassNode {
         return interfaces;
     }
 
-    public Set<NodeModifier> getModifiers() {
+    public Set<ElementModifier> getModifiers() {
         return modifiers;
     }
 }

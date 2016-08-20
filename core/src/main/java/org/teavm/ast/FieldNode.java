@@ -17,16 +17,13 @@ package org.teavm.ast;
 
 import java.util.EnumSet;
 import java.util.Set;
+import org.teavm.model.ElementModifier;
 import org.teavm.model.ValueType;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class FieldNode {
     private String name;
     private ValueType type;
-    private Set<NodeModifier> modifiers = EnumSet.noneOf(NodeModifier.class);
+    private Set<ElementModifier> modifiers = EnumSet.noneOf(ElementModifier.class);
     private Object initialValue;
 
     public FieldNode(String name, ValueType type) {
@@ -38,7 +35,7 @@ public class FieldNode {
         return name;
     }
 
-    public Set<NodeModifier> getModifiers() {
+    public Set<ElementModifier> getModifiers() {
         return modifiers;
     }
 

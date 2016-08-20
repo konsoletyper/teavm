@@ -18,11 +18,12 @@ package org.teavm.ast;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodReference;
 
 public abstract class MethodNode {
     private MethodReference reference;
-    private Set<NodeModifier> modifiers = EnumSet.noneOf(NodeModifier.class);
+    private Set<ElementModifier> modifiers = EnumSet.noneOf(ElementModifier.class);
 
     public MethodNode(MethodReference reference) {
         this.reference = reference;
@@ -33,7 +34,7 @@ public abstract class MethodNode {
         return reference;
     }
 
-    public Set<NodeModifier> getModifiers() {
+    public Set<ElementModifier> getModifiers() {
         return modifiers;
     }
 

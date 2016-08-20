@@ -51,7 +51,6 @@ import org.teavm.ast.MonitorExitStatement;
 import org.teavm.ast.NewArrayExpr;
 import org.teavm.ast.NewExpr;
 import org.teavm.ast.NewMultiArrayExpr;
-import org.teavm.ast.NodeModifier;
 import org.teavm.ast.OperationType;
 import org.teavm.ast.PrimitiveCastExpr;
 import org.teavm.ast.QualificationExpr;
@@ -71,6 +70,7 @@ import org.teavm.ast.UnwrapArrayExpr;
 import org.teavm.ast.VariableExpr;
 import org.teavm.ast.VariableNode;
 import org.teavm.ast.WhileStatement;
+import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
@@ -80,7 +80,7 @@ import org.teavm.model.instructions.ArrayElementType;
 import org.teavm.model.util.VariableType;
 
 public class AstIO {
-    private static final NodeModifier[] nodeModifiers = NodeModifier.values();
+    private static final ElementModifier[] nodeModifiers = ElementModifier.values();
     private static final BinaryOperation[] binaryOperations = BinaryOperation.values();
     private static final UnaryOperation[] unaryOperations = UnaryOperation.values();
     private static final ArrayElementType[] arrayElementTypes = ArrayElementType.values();
@@ -196,16 +196,16 @@ public class AstIO {
         }
     }
 
-    private int packModifiers(Set<NodeModifier> modifiers) {
+    private int packModifiers(Set<ElementModifier> modifiers) {
         int packed = 0;
-        for (NodeModifier modifier : modifiers) {
+        for (ElementModifier modifier : modifiers) {
             packed |= 1 << modifier.ordinal();
         }
         return packed;
     }
 
-    private Set<NodeModifier> unpackModifiers(int packed) {
-        EnumSet<NodeModifier> modifiers = EnumSet.noneOf(NodeModifier.class);
+    private Set<ElementModifier> unpackModifiers(int packed) {
+        EnumSet<ElementModifier> modifiers = EnumSet.noneOf(ElementModifier.class);
         while (packed != 0) {
             int shift = Integer.numberOfTrailingZeros(packed);
             modifiers.add(nodeModifiers[shift]);

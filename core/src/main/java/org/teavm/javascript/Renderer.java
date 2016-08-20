@@ -57,7 +57,6 @@ import org.teavm.ast.NativeMethodNode;
 import org.teavm.ast.NewArrayExpr;
 import org.teavm.ast.NewExpr;
 import org.teavm.ast.NewMultiArrayExpr;
-import org.teavm.ast.NodeModifier;
 import org.teavm.ast.OperationType;
 import org.teavm.ast.PrimitiveCastExpr;
 import org.teavm.ast.QualificationExpr;
@@ -382,7 +381,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             List<FieldNode> nonStaticFields = new ArrayList<>();
             List<FieldNode> staticFields = new ArrayList<>();
             for (FieldNode field : cls.getFields()) {
-                if (field.getModifiers().contains(NodeModifier.STATIC)) {
+                if (field.getModifiers().contains(ElementModifier.STATIC)) {
                     staticFields.add(field);
                 } else {
                     nonStaticFields.add(field);
@@ -443,7 +442,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             boolean needsClinit = clinit != null;
             List<MethodNode> clinitMethods = new ArrayList<>();
             for (MethodNode method : cls.getMethods()) {
-                if (needsClinit && (method.getModifiers().contains(NodeModifier.STATIC)
+                if (needsClinit && (method.getModifiers().contains(ElementModifier.STATIC)
                         || method.getReference().getName().equals("<init>"))) {
                     clinitMethods.add(method);
                 } else {
@@ -463,10 +462,10 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                         .append("();").softNewLine();
                 writer.outdent().append("}").newLine();
             }
-            if (!cls.getModifiers().contains(NodeModifier.INTERFACE)) {
+            if (!cls.getModifiers().contains(ElementModifier.INTERFACE)) {
                 for (MethodNode method : cls.getMethods()) {
                     cls.getMethods();
-                    if (!method.getModifiers().contains(NodeModifier.STATIC)) {
+                    if (!method.getModifiers().contains(ElementModifier.STATIC)) {
                         if (method.getReference().getName().equals("<init>")) {
                             renderInitializer(method);
                         }
@@ -512,7 +511,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 }
                 writer.append("],").ws();
                 int flags = 0;
-                if (cls.getModifiers().contains(NodeModifier.ENUM)) {
+                if (cls.getModifiers().contains(ElementModifier.ENUM)) {
                     flags |= 1;
                 }
                 writer.append(flags).append(',').ws();
@@ -528,11 +527,11 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 List<String> stubNames = new ArrayList<>();
                 List<MethodNode> virtualMethods = new ArrayList<>();
                 for (MethodNode method : cls.getMethods()) {
-                    if (clinit != null && (method.getModifiers().contains(NodeModifier.STATIC)
+                    if (clinit != null && (method.getModifiers().contains(ElementModifier.STATIC)
                             || method.getReference().getName().equals("<init>"))) {
                         stubNames.add(naming.getFullNameFor(method.getReference()));
                     }
-                    if (!method.getModifiers().contains(NodeModifier.STATIC)) {
+                    if (!method.getModifiers().contains(ElementModifier.STATIC)) {
                         virtualMethods.add(method);
                     }
                 }
@@ -665,7 +664,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             writer.append("function ").append(name).append("(");
         }
         int startParam = 0;
-        if (method.getModifiers().contains(NodeModifier.STATIC)) {
+        if (method.getModifiers().contains(ElementModifier.STATIC)) {
             startParam = 1;
         }
         for (int i = startParam; i <= ref.parameterCount(); ++i) {
@@ -784,7 +783,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 }
 
                 int firstToSave = 0;
-                if (methodNode.getModifiers().contains(NodeModifier.STATIC)) {
+                if (methodNode.getModifiers().contains(ElementModifier.STATIC)) {
                     firstToSave = 1;
                 }
 
@@ -804,7 +803,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 writer.softNewLine();
                 writer.outdent().append("}").softNewLine();
 
-                if (methodNode.getModifiers().contains(NodeModifier.SYNCHRONIZED)) {
+                if (methodNode.getModifiers().contains(ElementModifier.SYNCHRONIZED)) {
                     writer.append("try").ws().append('{').indent().softNewLine();
                 }
                 writer.append(mainLoopName()).append(":").ws().append("while").ws().append("(true)")
@@ -813,7 +812,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                         .append('{').softNewLine();
                 for (int i = 0; i < methodNode.getBody().size(); ++i) {
                     writer.append("case ").append(i).append(":").indent().softNewLine();
-                    if (i == 0 && methodNode.getModifiers().contains(NodeModifier.SYNCHRONIZED)) {
+                    if (i == 0 && methodNode.getModifiers().contains(ElementModifier.SYNCHRONIZED)) {
                         writer.appendMethodBody(new MethodReference(Object.class, "monitorEnter",
                                 Object.class, void.class));
                         writer.append("(");
@@ -830,7 +829,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 writer.append("default:").ws().appendFunction("$rt_invalidPointer").append("();").softNewLine();
                 writer.append("}}").softNewLine();
 
-                if (methodNode.getModifiers().contains(NodeModifier.SYNCHRONIZED)) {
+                if (methodNode.getModifiers().contains(ElementModifier.SYNCHRONIZED)) {
                     writer.outdent().append("}").ws().append("finally").ws().append('{').indent().softNewLine();
                     writer.append("if").ws().append("(!").appendFunction("$rt_suspending").append("())")
                             .ws().append("{").indent().softNewLine();
@@ -901,7 +900,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     }
 
     private void appendMonitor(MethodNode methodNode) throws IOException {
-        if (methodNode.getModifiers().contains(NodeModifier.STATIC)) {
+        if (methodNode.getModifiers().contains(ElementModifier.STATIC)) {
             writer.appendFunction("$rt_cls").append("(")
                     .appendClass(methodNode.getReference().getClassName()).append(")");
         } else {

@@ -44,7 +44,6 @@ import org.teavm.ast.NativeMethodNode;
 import org.teavm.ast.NewArrayExpr;
 import org.teavm.ast.NewExpr;
 import org.teavm.ast.NewMultiArrayExpr;
-import org.teavm.ast.NodeModifier;
 import org.teavm.ast.PrimitiveCastExpr;
 import org.teavm.ast.QualificationExpr;
 import org.teavm.ast.RegularMethodNode;
@@ -100,7 +99,7 @@ class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, MethodNod
         }
         for (FieldNode field : cls.getFields()) {
             consumer.consume(new FieldReference(cls.getName(), field.getName()));
-            if (field.getModifiers().contains(NodeModifier.STATIC)) {
+            if (field.getModifiers().contains(ElementModifier.STATIC)) {
                 consumer.consume(cls.getName());
             }
         }
@@ -113,11 +112,11 @@ class NameFrequencyEstimator implements StatementVisitor, ExprVisitor, MethodNod
             if (asyncFamilyMethods.contains(method.getReference())) {
                 consumer.consume(method.getReference());
             }
-            if (clinit != null && (method.getModifiers().contains(NodeModifier.STATIC)
+            if (clinit != null && (method.getModifiers().contains(ElementModifier.STATIC)
                     || method.getReference().getName().equals("<init>"))) {
                 consumer.consume(method.getReference());
             }
-            if (!method.getModifiers().contains(NodeModifier.STATIC)) {
+            if (!method.getModifiers().contains(ElementModifier.STATIC)) {
                 consumer.consume(method.getReference().getDescriptor());
                 consumer.consume(method.getReference());
             }
