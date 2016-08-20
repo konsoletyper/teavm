@@ -22,8 +22,8 @@ import java.util.Base64;
 import java.util.HashSet;
 import java.util.Set;
 import org.apache.commons.io.IOUtils;
-import org.teavm.codegen.SourceWriter;
-import org.teavm.javascript.RenderingContext;
+import org.teavm.backend.javascript.codegen.SourceWriter;
+import org.teavm.backend.javascript.rendering.RenderingContext;
 import org.teavm.vm.BuildTarget;
 import org.teavm.vm.spi.AbstractRendererListener;
 

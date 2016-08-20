@@ -15,7 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
-import org.teavm.javascript.spi.GeneratedBy;
+import org.teavm.backend.javascript.spi.GeneratedBy;
 
 /**
  *

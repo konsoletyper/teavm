@@ -17,7 +17,7 @@ package org.teavm.platform.plugin;
 
 import java.lang.reflect.Method;
 import java.util.*;
-import org.teavm.codegen.SourceWriter;
+import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.platform.metadata.Resource;
 import org.teavm.platform.metadata.ResourceArray;
 import org.teavm.platform.metadata.ResourceMap;

@@ -18,7 +18,7 @@ package org.teavm.platform.plugin;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import org.teavm.codegen.SourceWriter;
+import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.platform.metadata.Resource;
 import org.teavm.platform.metadata.ResourceMap;
 

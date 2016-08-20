@@ -15,7 +15,7 @@
  */
 package org.teavm.html4j;
 
-import org.teavm.javascript.spi.GeneratedBy;
+import org.teavm.backend.javascript.spi.GeneratedBy;
 
 /**
  *

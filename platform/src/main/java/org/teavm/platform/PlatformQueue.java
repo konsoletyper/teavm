@@ -16,7 +16,7 @@
 package org.teavm.platform;
 
 import org.teavm.dependency.PluggableDependency;
-import org.teavm.javascript.spi.InjectedBy;
+import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.platform.plugin.PlatformQueueGenerator;

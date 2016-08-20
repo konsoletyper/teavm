@@ -23,8 +23,8 @@ import org.junit.Test;
 import org.mozilla.javascript.CompilerEnvirons;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ast.AstRoot;
-import org.teavm.codegen.SourceWriter;
-import org.teavm.codegen.SourceWriterBuilder;
+import org.teavm.backend.javascript.codegen.SourceWriter;
+import org.teavm.backend.javascript.codegen.SourceWriterBuilder;
 import org.teavm.jso.impl.AstWriter;
 import org.teavm.jso.impl.JSParser;
 
@@ -42,18 +42,6 @@ public class AstWriterTest {
         builder.setMinified(true);
         sourceWriter = builder.build(sb);
         writer = new AstWriter(sourceWriter);
-    }
-
-    @Test
-    public void renamesVariable() throws IOException {
-        writer.declareAlias("a", "b");
-        assertThat(transform("return a;"), is("return b;"));
-    }
-
-    @Test
-    public void renamesDeclaredVariable() throws IOException {
-        writer.declareAlias("a", "b");
-        assertThat(transform("var b; return a + b;"), is("var b_0;return b+b_0;"));
     }
 
     @Test

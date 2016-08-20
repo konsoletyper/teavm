@@ -42,8 +42,8 @@ import org.teavm.debugging.information.DebugInformation;
 import org.teavm.debugging.information.DebugInformationBuilder;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.ProblemProvider;
-import org.teavm.javascript.RenderingContext;
-import org.teavm.javascript.backend.JavaScriptTarget;
+import org.teavm.backend.javascript.rendering.RenderingContext;
+import org.teavm.backend.javascript.JavaScriptTarget;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReader;
@@ -64,7 +64,7 @@ import org.teavm.vm.TeaVMEntryPoint;
 import org.teavm.vm.TeaVMProgressListener;
 import org.teavm.vm.TeaVMTarget;
 import org.teavm.vm.spi.AbstractRendererListener;
-import org.teavm.wasm.WasmTarget;
+import org.teavm.backend.wasm.WasmTarget;
 
 public class TeaVMTool implements BaseTeaVMTool {
     private File targetDirectory = new File(".");
@@ -483,7 +483,7 @@ public class TeaVMTool implements BaseTeaVMTool {
         }
 
         if (runtime == RuntimeCopyOperation.SEPARATE) {
-            resourceToFile("org/teavm/javascript/runtime.js", "runtime.js");
+            resourceToFile("org/teavm/backend/javascript/runtime.js", "runtime.js");
         }
         if (mainPageIncluded) {
             String text;
@@ -512,7 +512,7 @@ public class TeaVMTool implements BaseTeaVMTool {
         @Override
         public void begin(RenderingContext context, BuildTarget buildTarget) throws IOException {
             StringWriter writer = new StringWriter();
-            resourceToWriter("org/teavm/javascript/runtime.js", writer);
+            resourceToWriter("org/teavm/backend/javascript/runtime.js", writer);
             writer.close();
             context.getWriter().append(writer.toString()).newLine();
         }

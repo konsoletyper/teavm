@@ -58,7 +58,6 @@ import org.teavm.ast.UnaryOperation;
 import org.teavm.ast.UnwrapArrayExpr;
 import org.teavm.ast.VariableExpr;
 import org.teavm.ast.WhileStatement;
-import org.teavm.javascript.ExpressionSideEffectDecomposer;
 
 class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     private Expr resultExpr;

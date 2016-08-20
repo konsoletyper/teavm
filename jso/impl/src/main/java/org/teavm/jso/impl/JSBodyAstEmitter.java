@@ -19,10 +19,10 @@ import java.io.IOException;
 import org.mozilla.javascript.Node;
 import org.mozilla.javascript.ast.AstNode;
 import org.mozilla.javascript.ast.Block;
-import org.teavm.codegen.SourceWriter;
-import org.teavm.javascript.Precedence;
-import org.teavm.javascript.spi.GeneratorContext;
-import org.teavm.javascript.spi.InjectorContext;
+import org.teavm.backend.javascript.codegen.SourceWriter;
+import org.teavm.backend.javascript.rendering.Precedence;
+import org.teavm.backend.javascript.spi.GeneratorContext;
+import org.teavm.backend.javascript.spi.InjectorContext;
 import org.teavm.model.MethodReference;
 
 /**

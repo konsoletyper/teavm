@@ -16,7 +16,7 @@
 package org.teavm.vm.spi;
 
 import java.io.IOException;
-import org.teavm.javascript.RenderingContext;
+import org.teavm.backend.javascript.rendering.RenderingContext;
 import org.teavm.vm.BuildTarget;
 
 /**

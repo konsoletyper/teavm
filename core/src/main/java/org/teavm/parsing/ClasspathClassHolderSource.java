@@ -18,9 +18,9 @@ package org.teavm.parsing;
 import java.util.Date;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderSource;
-import org.teavm.resource.ClasspathResourceReader;
-import org.teavm.resource.MapperClassHolderSource;
-import org.teavm.resource.ResourceClassHolderMapper;
+import org.teavm.parsing.resource.ClasspathResourceReader;
+import org.teavm.parsing.resource.MapperClassHolderSource;
+import org.teavm.parsing.resource.ResourceClassHolderMapper;
 
 public class ClasspathClassHolderSource implements ClassHolderSource, ClassDateProvider {
     private MapperClassHolderSource innerClassSource;

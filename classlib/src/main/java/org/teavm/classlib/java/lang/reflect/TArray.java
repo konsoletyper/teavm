@@ -18,7 +18,7 @@ package org.teavm.classlib.java.lang.reflect;
 import org.teavm.classlib.java.lang.*;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.interop.DelegateTo;
-import org.teavm.javascript.spi.GeneratedBy;
+import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.platform.PlatformClass;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.RuntimeClass;

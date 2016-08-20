@@ -15,7 +15,7 @@
  */
 package org.teavm.platform.plugin;
 
-import org.teavm.codegen.SourceWriter;
+import org.teavm.backend.javascript.codegen.SourceWriter;
 
 /**
  *

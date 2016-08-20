@@ -17,7 +17,7 @@ package org.teavm.platform.plugin;
 
 import org.teavm.cache.NoCache;
 import org.teavm.diagnostics.Diagnostics;
-import org.teavm.javascript.spi.GeneratedBy;
+import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.model.AccessLevel;
 import org.teavm.model.AnnotationHolder;
 import org.teavm.model.AnnotationReader;

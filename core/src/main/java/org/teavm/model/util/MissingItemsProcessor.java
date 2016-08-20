@@ -22,7 +22,7 @@ import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
-import org.teavm.optimization.UnreachableBasicBlockEliminator;
+import org.teavm.model.optimization.UnreachableBasicBlockEliminator;
 
 /**
  *

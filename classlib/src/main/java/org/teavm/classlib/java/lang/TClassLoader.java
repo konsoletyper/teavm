@@ -18,7 +18,7 @@ package org.teavm.classlib.java.lang;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import org.teavm.classlib.impl.Base64;
-import org.teavm.javascript.spi.InjectedBy;
+import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.jso.JSIndexer;
 import org.teavm.jso.JSObject;
 

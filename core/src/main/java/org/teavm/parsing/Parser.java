@@ -33,7 +33,7 @@ import org.teavm.model.*;
 import org.teavm.model.util.DefinitionExtractor;
 import org.teavm.model.util.PhiUpdater;
 import org.teavm.model.util.ProgramUtils;
-import org.teavm.optimization.UnreachableBasicBlockEliminator;
+import org.teavm.model.optimization.UnreachableBasicBlockEliminator;
 
 public class Parser {
     private ReferenceCache referenceCache;

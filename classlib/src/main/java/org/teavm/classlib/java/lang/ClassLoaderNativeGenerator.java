@@ -9,10 +9,10 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import org.apache.commons.io.IOUtils;
 import org.teavm.classlib.ResourceSupplier;
-import org.teavm.codegen.SourceWriter;
-import org.teavm.javascript.Renderer;
-import org.teavm.javascript.spi.Injector;
-import org.teavm.javascript.spi.InjectorContext;
+import org.teavm.backend.javascript.codegen.SourceWriter;
+import org.teavm.backend.javascript.rendering.Renderer;
+import org.teavm.backend.javascript.spi.Injector;
+import org.teavm.backend.javascript.spi.InjectorContext;
 import org.teavm.model.MethodReference;
 
 /**

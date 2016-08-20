@@ -52,7 +52,7 @@ import org.teavm.model.ReferenceCache;
 import org.teavm.model.ValueType;
 import org.teavm.model.util.ModelUtils;
 import org.teavm.model.util.ProgramUtils;
-import org.teavm.optimization.UnreachableBasicBlockEliminator;
+import org.teavm.model.optimization.UnreachableBasicBlockEliminator;
 import org.teavm.parsing.Parser;
 
 public class DependencyChecker implements DependencyInfo {

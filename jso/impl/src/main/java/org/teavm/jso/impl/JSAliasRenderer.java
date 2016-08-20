@@ -17,8 +17,8 @@ package org.teavm.jso.impl;
 
 import java.io.IOException;
 import java.util.Map;
-import org.teavm.codegen.SourceWriter;
-import org.teavm.javascript.RenderingContext;
+import org.teavm.backend.javascript.codegen.SourceWriter;
+import org.teavm.backend.javascript.rendering.RenderingContext;
 import org.teavm.jso.impl.JSDependencyListener.ExposedClass;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;

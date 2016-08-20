@@ -21,7 +21,7 @@ import org.teavm.callgraph.CallGraphNode;
 import org.teavm.callgraph.CallSite;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Async;
-import org.teavm.javascript.spi.InjectedBy;
+import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.interop.Sync;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;

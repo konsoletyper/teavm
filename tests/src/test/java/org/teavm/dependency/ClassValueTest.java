@@ -19,7 +19,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.junit.Test;
-import org.teavm.javascript.backend.JavaScriptTarget;
+import org.teavm.backend.javascript.JavaScriptTarget;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.tooling.TeaVMProblemRenderer;

@@ -18,17 +18,13 @@ package org.teavm.html4j;
 import java.io.IOException;
 import java.util.List;
 import net.java.html.js.JavaScriptBody;
-import org.teavm.codegen.NamingStrategy;
-import org.teavm.codegen.SourceWriter;
-import org.teavm.javascript.Renderer;
-import org.teavm.javascript.spi.Generator;
-import org.teavm.javascript.spi.GeneratorContext;
+import org.teavm.backend.javascript.codegen.NamingStrategy;
+import org.teavm.backend.javascript.codegen.SourceWriter;
+import org.teavm.backend.javascript.rendering.Renderer;
+import org.teavm.backend.javascript.spi.Generator;
+import org.teavm.backend.javascript.spi.GeneratorContext;
 import org.teavm.model.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class JavaScriptBodyGenerator implements Generator {
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {

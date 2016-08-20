@@ -16,10 +16,10 @@
 package org.teavm.classlib.java.lang;
 
 import java.io.IOException;
-import org.teavm.codegen.SourceWriter;
+import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.dependency.*;
-import org.teavm.javascript.spi.Generator;
-import org.teavm.javascript.spi.GeneratorContext;
+import org.teavm.backend.javascript.spi.Generator;
+import org.teavm.backend.javascript.spi.GeneratorContext;
 import org.teavm.model.CallLocation;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;

@@ -69,13 +69,9 @@ import org.mozilla.javascript.ast.UnaryExpression;
 import org.mozilla.javascript.ast.VariableDeclaration;
 import org.mozilla.javascript.ast.VariableInitializer;
 import org.mozilla.javascript.ast.WhileLoop;
-import org.teavm.codegen.SourceWriter;
+import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.model.MethodReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class AstWriter {
     public static final int PRECEDENCE_MEMBER = 2;
     public static final int PRECEDENCE_FUNCTION = 3;
@@ -117,18 +113,6 @@ public class AstWriter {
                 return;
             }
         }
-    }
-
-    public void declareAlias(String name, String alias) {
-        if (!aliases.add(alias)) {
-            throw new IllegalArgumentException("Alias " + alias + " is already occupied");
-        }
-        nameMap.put(name, p -> writer.append(alias));
-    }
-
-    public void reserveName(String name) {
-        aliases.add(name);
-        nameMap.put(name, p -> writer.append(name));
     }
 
     public void declareNameEmitter(String name, NameEmitter emitter) {

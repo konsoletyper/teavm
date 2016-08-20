@@ -17,8 +17,8 @@ package org.teavm.model;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import org.teavm.optimization.GlobalValueNumbering;
-import org.teavm.optimization.UnusedVariableElimination;
+import org.teavm.model.optimization.GlobalValueNumbering;
+import org.teavm.model.optimization.UnusedVariableElimination;
 
 public class PreOptimizingClassHolderSource implements ClassHolderSource {
     private ClassHolderSource innerClassSource;

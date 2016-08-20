@@ -16,7 +16,7 @@
 package org.teavm.platform.plugin;
 
 import java.io.IOException;
-import org.teavm.codegen.SourceWriter;
+import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.platform.metadata.ClassResource;
 
 /**

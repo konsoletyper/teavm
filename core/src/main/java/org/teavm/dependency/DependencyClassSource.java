@@ -28,7 +28,7 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.util.ModelUtils;
-import org.teavm.optimization.UnreachableBasicBlockEliminator;
+import org.teavm.model.optimization.UnreachableBasicBlockEliminator;
 
 class DependencyClassSource implements ClassHolderSource {
     private ClassReaderSource innerSource;

@@ -15,7 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
-import org.teavm.javascript.spi.GeneratedBy;
+import org.teavm.backend.javascript.spi.GeneratedBy;
 
 public class TLong extends TNumber implements TComparable<TLong> {
     public static final long MIN_VALUE = -0x8000000000000000L;

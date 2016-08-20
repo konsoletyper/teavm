@@ -6,7 +6,7 @@
         <additionalProperties>
           <property key="Export-Package" value="org.teavm.*" />
           <property key="Bundle-Name" value="TeaVM core" />
-          <property key="Include-Resource" value="org/teavm/javascript/runtime.js=$MODULE_DIR$/src/main/resources/org/teavm/javascript/runtime.js" />
+          <property key="Include-Resource" value="org/teavm/backend/javascript/runtime.js=$MODULE_DIR$/src/main/resources/org/teavm/backend/javascript/runtime.js" />
         </additionalProperties>
         <additionalJARContents />
       </configuration>

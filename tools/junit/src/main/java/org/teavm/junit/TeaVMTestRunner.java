@@ -47,7 +47,7 @@ import org.junit.runners.model.InitializationError;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.diagnostics.DefaultProblemTextConsumer;
 import org.teavm.diagnostics.Problem;
-import org.teavm.javascript.backend.JavaScriptTarget;
+import org.teavm.backend.javascript.JavaScriptTarget;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.model.MethodDescriptor;
@@ -335,7 +335,7 @@ public class TeaVMTestRunner extends Runner {
         File outputFile = new File(path, "test.js");
         result.file = outputFile;
 
-        resourceToFile("org/teavm/javascript/runtime.js", new File(path, "runtime.js"));
+        resourceToFile("org/teavm/backend/javascript/runtime.js", new File(path, "runtime.js"));
         resourceToFile("teavm-run-test.html", new File(path, "run-test.html"));
 
         ClassLoader classLoader = TeaVMTestRunner.class.getClassLoader();

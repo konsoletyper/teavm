@@ -16,7 +16,7 @@
 package org.teavm.debugging.information;
 
 import java.util.*;
-import org.teavm.codegen.LocationProvider;
+import org.teavm.backend.javascript.codegen.LocationProvider;
 import org.teavm.common.RecordArray;
 import org.teavm.common.RecordArrayBuilder;
 import org.teavm.model.MethodDescriptor;
@@ -152,7 +152,7 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
     @Override
     public DeferredCallSite emitCallSite() {
         final RecordArrayBuilder.Record record = add(callSiteMapping, DebuggerCallSite.NONE);
-        DeferredCallSite callSite = new DeferredCallSite() {
+        return new DeferredCallSite() {
             @Override
             public void setVirtualMethod(MethodReference method) {
                 record.set(2, DebuggerCallSite.VIRTUAL);
@@ -181,7 +181,6 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
                 return exactMethodIndex;
             }
         };
-        return callSite;
     }
 
     @Override

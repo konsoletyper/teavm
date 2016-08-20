@@ -15,7 +15,7 @@
  */
 package org.teavm.html4j;
 
-import org.teavm.javascript.backend.TeaVMJavaScriptHost;
+import org.teavm.backend.javascript.TeaVMJavaScriptHost;
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
 
