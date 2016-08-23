@@ -20,6 +20,7 @@ import java.util.List;
 
 class CExpression {
     private String text;
+    private boolean relocatable;
     private List<CLine> lines = new ArrayList<>();
 
     public CExpression(String text) {
@@ -27,6 +28,14 @@ class CExpression {
     }
 
     public CExpression() {
+    }
+
+    public boolean isRelocatable() {
+        return relocatable;
+    }
+
+    public void setRelocatable(boolean relocatable) {
+        this.relocatable = relocatable;
     }
 
     public String getText() {
@@ -39,5 +48,11 @@ class CExpression {
 
     public List<CLine> getLines() {
         return lines;
+    }
+
+    public static CExpression relocatable(String text) {
+        CExpression expression = new CExpression(text);
+        expression.setRelocatable(true);
+        return expression;
     }
 }
