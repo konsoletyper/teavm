@@ -15,6 +15,9 @@
  */
 package org.teavm.classlib.java.util;
 
+import java.util.function.BiFunction;
+import java.util.function.Function;
+
 /**
  *
  * @author Alexey Andreev
@@ -43,7 +46,7 @@ public interface TMap<K, V> {
     V put(K key, V value);
 
     V remove(Object key);
-
+    
     void putAll(TMap<? extends K, ? extends V> m);
 
     void clear();
@@ -53,4 +56,74 @@ public interface TMap<K, V> {
     TCollection<V> values();
 
     TSet<Entry<K, V>> entrySet();
+    
+    default boolean replace(K key, V value, V newValue) {
+        if (containsKey(key) && TObjects.equals(get(key), value)) {
+            put(key, newValue);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    default V replace(K key, V value) {
+        if (containsKey(key)) {
+            return put(key, value);
+        } else {
+            return null;
+        }
+    }
+
+    default V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
+        V v = get(key);
+        if (v == null) {
+            V newValue = mappingFunction.apply(key);
+            if (newValue != null) {
+                put(key, newValue);
+            }
+            return newValue;
+        }
+        return v;
+    }
+
+    default V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+        V v = get(key);
+        if (v != null) {
+            V oldValue = v;
+            V newValue = remappingFunction.apply(key, oldValue);
+            if (newValue != null) {
+                return put(key, newValue);
+            } else {
+                return remove(key);
+            }
+        }
+        return v;
+    }
+
+    default V compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+        V oldValue = get(key);
+        V newValue = remappingFunction.apply(key, oldValue);
+        if (oldValue != null) {
+            if (newValue != null) {
+                return put(key, newValue);
+            } else {
+                return remove(key);
+            }
+        } else if (newValue != null) {
+            return put(key, newValue);
+        } else {
+            return null;
+        }
+    }
+
+    default V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+        V oldValue = get(key);
+        V newValue = (oldValue == null) ? value
+                : remappingFunction.apply(oldValue, value);
+        if (newValue == null) {
+            return remove(key);
+        } else {
+            return put(key, newValue);
+        }
+    }
 }
