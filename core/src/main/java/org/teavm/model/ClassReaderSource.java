@@ -24,10 +24,6 @@ import java.util.Set;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface ClassReaderSource {
     ClassReader get(String name);
 
@@ -104,7 +100,7 @@ public interface ClassReaderSource {
                 .findFirst().orElse(null);
     }
 
-    default Stream<MethodReader> overridenMethods(MethodReference method) {
+    default Stream<MethodReader> overriddenMethods(MethodReference method) {
         return getAncestorClasses(method.getClassName())
                 .map(cls -> cls.getMethod(method.getDescriptor()))
                 .filter(candidate -> candidate != null);

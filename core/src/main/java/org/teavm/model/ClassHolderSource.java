@@ -42,6 +42,6 @@ public interface ClassHolderSource extends ClassReaderSource {
     }
 
     default Stream<MethodHolder> mutableOverridenMethods(MethodReference method) {
-        return overridenMethods(method).map(m -> (MethodHolder) m);
+        return overriddenMethods(method).map(m -> (MethodHolder) m);
     }
 }

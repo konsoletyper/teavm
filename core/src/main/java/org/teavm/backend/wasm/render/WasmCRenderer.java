@@ -140,13 +140,13 @@ public class WasmCRenderer {
         line(functionDeclaration(function) + " {");
         indent();
 
+        WasmCRenderingVisitor visitor = new WasmCRenderingVisitor(function.getResult(), function.getModule());
         List<WasmLocal> variables = function.getLocalVariables().subList(function.getParameters().size(),
                 function.getLocalVariables().size());
         for (WasmLocal variable : variables) {
-            line(WasmCRenderingVisitor.mapType(variable.getType()) + " var_" + variable.getIndex() + ";");
+            line(WasmCRenderingVisitor.mapType(variable.getType()) + " " + visitor.getVariableName(variable) + ";");
         }
 
-        WasmCRenderingVisitor visitor = new WasmCRenderingVisitor(function.getResult(), function.getModule());
         List<WasmExpression> body = function.getBody();
         List<CLine> lines = new ArrayList<>();
         if (!body.isEmpty()) {

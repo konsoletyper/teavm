@@ -150,12 +150,20 @@ public class GlobalValueNumbering implements MethodOptimization {
             }
         }
 
+        String[] debugNames = new String[program.variableCount()];
+        for (int i = 0; i < program.variableCount(); ++i) {
+            debugNames[i] = program.variableAt(i).getDebugName();
+            program.variableAt(i).setDebugName(null);
+        }
         for (int i = 0; i < map.length; ++i) {
             if (map[i] != i) {
-                Variable var = program.variableAt(i);
                 Variable mapVar = program.variableAt(map[i]);
-                mapVar.setDebugName(var.getDebugName());
+                if (debugNames[i] != null && mapVar.getDebugName() == null) {
+                    mapVar.setDebugName(debugNames[i]);
+                }
                 program.deleteVariable(i);
+            } else {
+                program.variableAt(i).setDebugName(debugNames[i]);
             }
         }
 
@@ -165,7 +173,7 @@ public class GlobalValueNumbering implements MethodOptimization {
     }
 
     private void bind(int var, String value) {
-        String name = program.variableAt(var).getDebugName();
+        String name = program.variableAt(map[var]).getDebugName();
         if (name == null) {
             name = "";
         }

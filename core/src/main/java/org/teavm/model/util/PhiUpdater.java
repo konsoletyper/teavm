@@ -28,6 +28,7 @@ import java.util.stream.Collectors;
 import org.teavm.common.DominatorTree;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphUtils;
+import org.teavm.common.IntegerArray;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Incoming;
 import org.teavm.model.Instruction;
@@ -88,6 +89,11 @@ public class PhiUpdater {
     private List<List<List<TryCatchJoint>>> synthesizedJoints = new ArrayList<>();
     private Variable[] originalExceptionVariables;
     private boolean[] usedDefinitions;
+    private IntegerArray variableToSourceMap = new IntegerArray(10);
+
+    public int getSourceVariable(int var) {
+        return variableToSourceMap.get(var);
+    }
 
     public void updatePhis(Program program, Variable[] arguments) {
         if (program.basicBlockCount() == 0) {
@@ -102,6 +108,9 @@ public class PhiUpdater {
         for (int i = 0; i < arguments.length; ++i) {
             variableMap[i] = arguments[i];
             usedDefinitions[i] = true;
+        }
+        for (int i = 0; i < program.variableCount(); ++i) {
+            variableToSourceMap.add(-1);
         }
         phiMap = new Phi[program.basicBlockCount()][];
         phiIndexMap = new int[program.basicBlockCount()][];
@@ -201,7 +210,7 @@ public class PhiUpdater {
             for (Phi phi : synthesizedPhis.get(index)) {
                 Variable var = program.createVariable();
                 var.setDebugName(phi.getReceiver().getDebugName());
-                variableMap[phi.getReceiver().getIndex()] = var;
+                mapVariable(phi.getReceiver().getIndex(), var);
                 phi.setReceiver(var);
             }
             for (Phi phi : currentBlock.getPhis()) {
@@ -334,7 +343,7 @@ public class PhiUpdater {
         Variable original = var;
         var = introduce(var);
         propagateToTryCatch(original, var, old);
-        variableMap[original.getIndex()] = var;
+        mapVariable(original.getIndex(), var);
         return var;
     }
 
@@ -366,6 +375,14 @@ public class PhiUpdater {
             }
             joint.getSourceVariables().add(var);
         }
+    }
+
+    private void mapVariable(int index, Variable var) {
+        variableMap[index] = var;
+        while (variableToSourceMap.size() <= var.getIndex()) {
+            variableToSourceMap.add(-1);
+        }
+        variableToSourceMap.set(var.getIndex(), index);
     }
 
     private Variable introduce(Variable var) {

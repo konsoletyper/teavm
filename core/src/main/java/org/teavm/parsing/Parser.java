@@ -86,6 +86,8 @@ public class Parser {
         applyDebugNames(program, phiUpdater, programParser, argumentMapping);
 
         parseAnnotations(method.getAnnotations(), node.visibleAnnotations, node.invisibleAnnotations);
+        applyDebugNames(program, phiUpdater, programParser,
+                applySignature(program, method.getDescriptor().getParameterTypes()));
         while (program.variableCount() <= method.parameterCount()) {
             program.createVariable();
         }
@@ -100,7 +102,7 @@ public class Parser {
         return method;
     }
 
-    private void applyDebugNames(Program program, PhiUpdater phiUpdater, ProgramParser parser,
+    private static void applyDebugNames(Program program, PhiUpdater phiUpdater, ProgramParser parser,
             Variable[] argumentMapping) {
         if (program.basicBlockCount() == 0) {
             return;
@@ -130,14 +132,14 @@ public class Parser {
                 for (Map.Entry<Integer, String> debugName : debugNames.entrySet()) {
                     int receiver = varMap.getOrDefault(debugName.getKey(), -1);
                     if (receiver >= 0) {
-                        program.variableAt(receiver).getDebugNames().add(debugName.getValue());
+                        program.variableAt(receiver).setDebugName(debugName.getValue());
                     }
                 }
             }
         }
     }
 
-    private IntIntMap[] getBlockEntryVariableMappings(Program program, PhiUpdater phiUpdater,
+    private static IntIntMap[] getBlockEntryVariableMappings(Program program, PhiUpdater phiUpdater,
             Variable[] argumentMapping) {
         class Step {
             int node;
@@ -171,36 +173,29 @@ public class Parser {
             IntIntMap varMap = new IntIntOpenHashMap(step.varMap);
             BasicBlock block = program.basicBlockAt(node);
 
-            /*
-            for (TryCatchJoint joint : block.getTryCatchJoints()) {
-                int receiver = joint.getReceiver().getIndex();
-                int sourceVar = phiUpdater.getSourceVariable(receiver);
-                if (sourceVar >= 0) {
-                    varMap.put(sourceVar, receiver);
-                }
-            }
             for (Phi phi : block.getPhis()) {
                 int receiver = phi.getReceiver().getIndex();
+                /*
                 int sourceVar = phiUpdater.getSourceVariable(receiver);
                 if (sourceVar >= 0) {
                     varMap.put(sourceVar, receiver);
                 }
+                */
             }
-            */
 
             result[node] = new IntIntOpenHashMap(varMap);
 
-            /*
             for (Instruction insn : block.getInstructions()) {
                 insn.acceptVisitor(defExtractor);
                 for (Variable definedVar : defExtractor.getDefinedVariables()) {
+                    /*
                     int sourceVar = phiUpdater.getSourceVariable(definedVar.getIndex());
                     if (sourceVar >= 0) {
                         varMap.put(sourceVar, definedVar.getIndex());
                     }
+                    */
                 }
             }
-            */
 
             for (int successor : dom.outgoingEdges(node)) {
                 stack[top++] = new Step(successor, new IntIntOpenHashMap(varMap));
