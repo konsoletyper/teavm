@@ -129,7 +129,6 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     private Map<IdentifiedStatement, WasmBlock> continueTargets = new HashMap<>();
     private Set<WasmBlock> usedBlocks = new HashSet<>();
     private List<Deque<WasmLocal>> temporaryVariablesByType = new ArrayList<>();
-    private List<WasmLocal> currentTemporaries = new ArrayList<>();
     WasmExpression result;
 
     WasmGenerationVisitor(WasmGenerationContext context, WasmClassGenerator classGenerator,
@@ -1275,7 +1274,6 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             variable = new WasmLocal(type);
             function.add(variable);
         }
-        currentTemporaries.add(variable);
         return variable;
     }
 

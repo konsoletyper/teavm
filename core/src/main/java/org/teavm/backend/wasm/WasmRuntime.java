@@ -203,14 +203,14 @@ public final class WasmRuntime {
                 address.putInt(0);
                 break;
             case 1:
-                address.add(1).putByte((byte) 0);
-                address.add(2).putShort((short) 0);
+                address.add(3).putByte((byte) 0);
                 break;
             case 2:
                 address.add(2).putShort((short) 0);
                 break;
             case 3:
-                address.add(3).putByte((byte) 0);
+                address.add(1).putByte((byte) 0);
+                address.add(2).putShort((short) 0);
                 break;
         }
 
@@ -232,7 +232,7 @@ public final class WasmRuntime {
                 break;
         }
 
-        for (address = Address.fromInt(alignedStart); address.toInt() < alignedEnd; address = address.add(4)) {
+        for (address = Address.fromInt(alignedStart + 1); address.toInt() < alignedEnd; address = address.add(4)) {
             address.putInt(0);
         }
     }
