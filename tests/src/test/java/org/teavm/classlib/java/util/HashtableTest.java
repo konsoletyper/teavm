@@ -693,6 +693,63 @@ public class HashtableTest {
         }
     }
 
+    @Test
+    public void test_computeUpdatesValueIfPresent() {
+        Hashtable<String, String> ht10 = new Hashtable<>();
+        for(int i = 0; i < 10; i++) {
+            ht10.put("Key" + i, "Val" + i);
+        }
+        
+        String newVal = ht10.compute("Key5", (k,v) -> "changed");
+        assertEquals("changed", newVal);
+        assertEquals(10, ht10.size());
+        
+        for(int i = 0; i < 10; i++) {
+            if(i == 5) {
+                assertEquals("Value was incorrectly changed", "changed", ht10.get("Key" + i));
+            } else {
+                assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+            }
+        }
+    }
+
+    @Test
+    public void test_computePutsNewEntryIfKeyIsAbsent() {
+        Hashtable<String, String> ht10 = new Hashtable<>();
+        for(int i = 0; i < 10; i++) {
+            ht10.put("Key" + i, "Val" + i);
+        }
+        
+        String newVal = ht10.compute("absent key", (k,v) -> "added");
+        assertEquals("added", newVal);
+        assertEquals(11, ht10.size());
+        
+        for(int i = 0; i < 10; i++) {
+            assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+        }
+        assertEquals("New value expected","added", ht10.get("absent key"));
+    }
+
+    @Test
+    public void test_computeRemovesEntryOnNullMapping() {
+        Hashtable<String, String> ht10 = new Hashtable<>();
+        for(int i = 0; i < 10; i++) {
+            ht10.put("Key" + i, "Val" + i);
+        }
+        
+        String newVal = ht10.compute("Key5", (k,v) -> null);
+        assertEquals(null, newVal);
+        assertEquals(9, ht10.size());
+        
+        for(int i = 0; i < 10; i++) {
+            if(i == 5) {
+                assertEquals("Value was unexpectedly present in map", null, ht10.get("Key" + i));
+            } else {
+                assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+            }
+        }
+    }
+    
     @SuppressWarnings("unchecked")
     protected <K, V> Hashtable<K, V> hashtableClone(Hashtable<K, V> s) {
         return (Hashtable<K, V>) s.clone();

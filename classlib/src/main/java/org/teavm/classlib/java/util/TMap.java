@@ -105,15 +105,14 @@ public interface TMap<K, V> {
         V newValue = remappingFunction.apply(key, oldValue);
         if (oldValue != null) {
             if (newValue != null) {
-                return put(key, newValue);
+                put(key, newValue);
             } else {
-                return remove(key);
+                remove(key);
             }
         } else if (newValue != null) {
-            return put(key, newValue);
-        } else {
-            return null;
+            put(key, newValue);
         }
+        return newValue;
     }
 
     default V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
