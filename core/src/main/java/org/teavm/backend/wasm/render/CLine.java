@@ -16,4 +16,5 @@
 package org.teavm.backend.wasm.render;
 
 abstract class CLine {
+    abstract void render(WasmCRenderer target);
 }

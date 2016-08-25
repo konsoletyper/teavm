@@ -67,13 +67,17 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
     private WasmType functionType;
     private WasmModule module;
 
-    public WasmCRenderingVisitor(WasmType functionType, WasmModule module) {
+    WasmCRenderingVisitor(WasmType functionType, WasmModule module) {
         this.functionType = functionType;
         this.module = module;
     }
 
     public CExpression getValue() {
         return value;
+    }
+
+    void setRequiredType(WasmType requiredType) {
+        this.requiredType = requiredType;
     }
 
     @Override
@@ -99,7 +103,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
             result.getLines().addAll(value.getLines());
             if (info.type != null) {
                 if (info.temporaryVariable != null) {
-                    result.getLines().add(new CSingleLine(info.temporaryVariable + " = " + result.getText()));
+                    result.getLines().add(new CSingleLine(info.temporaryVariable + " = " + value.getText() + ";"));
                     result.setText(info.temporaryVariable);
                 } else {
                     result.setText(value.getText());
@@ -110,14 +114,15 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
                 result.getLines().add(0, declareVariable(info.temporaryVariable, info.type));
             }
 
-            if (info.label != null || expression.isLoop()) {
+            if (expression.isLoop()) {
                 List<CLine> lines = new ArrayList<>();
-                String header = expression.isLoop() ? "for(;;) " : "";
-                lines.add(new CSingleLine(info.label + ": " + header + "{"));
+                lines.add(new CSingleLine(getLabel(info) + ": do {"));
                 lines.add(new CBlock(result.getLines()));
-                lines.add(new CSingleLine("}"));
+                lines.add(new CSingleLine("} while(0);"));
                 result.getLines().clear();
                 result.getLines().addAll(lines);
+            } else if (info.label != null) {
+                result.getLines().add(new CSingleLine(info.label + ": ;"));
             }
         }
 
@@ -132,9 +137,9 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         requiredType = WasmType.INT32;
         expression.getCondition().acceptVisitor(this);
         result.getLines().addAll(value.getLines());
-        reportLocation(expression.getLocation(), result.getLines());
-        result.getLines().add(new CSingleLine("if (" + value.getText() + ") {"));
-        CBlock breakBlock = new CBlock(generateBreak(expression.getResult(), expression.getTarget()));
+        result.addLine("if (" + value.getText() + ") {", expression.getLocation());
+        CBlock breakBlock = new CBlock(generateBreak(expression.getResult(), expression.getTarget(),
+                expression.getLocation()));
         result.getLines().add(breakBlock);
         result.getLines().add(new CSingleLine("}"));
 
@@ -144,11 +149,12 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
     @Override
     public void visit(WasmBreak expression) {
         CExpression result = new CExpression();
-        result.getLines().addAll(generateBreak(expression.getResult(), expression.getTarget()));
+        result.getLines().addAll(generateBreak(expression.getResult(), expression.getTarget(),
+                expression.getLocation()));
         value = result;
     }
 
-    private List<CLine> generateBreak(WasmExpression result, WasmBlock target) {
+    private List<CLine> generateBreak(WasmExpression result, WasmBlock target, TextLocation location) {
         List<CLine> lines = new ArrayList<>();
         BlockInfo targetInfo = blockInfoMap.get(target);
 
@@ -156,23 +162,22 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
             if (targetInfo.temporaryVariable == null) {
                 targetInfo.temporaryVariable = "tmp_" + temporaryIndex++;
             }
-            if (targetInfo.label == null) {
-                targetInfo.label = "block_" + blockIndex++;
-            }
             requiredType = targetInfo.type;
             result.acceptVisitor(this);
             lines.addAll(value.getLines());
-            reportLocation(result.getLocation(), lines);
-            lines.add(new CSingleLine(targetInfo.temporaryVariable + " = " + value.getText() + ";"));
+            lines.add(new CSingleLine(targetInfo.temporaryVariable + " = " + value.getText() + ";",
+                    result.getLocation()));
         }
-        reportLocation(result.getLocation(), lines);
-        if (target.isLoop()) {
-            lines.add(new CSingleLine("break " + targetInfo.label + ";"));
-        } else {
-            lines.add(new CSingleLine("continue " + targetInfo.label + ";"));
-        }
+        lines.add(new CSingleLine("goto " + getLabel(targetInfo) + ";", location));
 
         return lines;
+    }
+
+    private String getLabel(BlockInfo blockInfo) {
+        if (blockInfo.label == null) {
+            blockInfo.label = "block_" + blockIndex++;
+        }
+        return blockInfo.label;
     }
 
     @Override
@@ -182,24 +187,17 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         requiredType = WasmType.INT32;
         expression.getSelector().acceptVisitor(this);
         result.getLines().addAll(value.getLines());
-        reportLocation(expression.getLocation(), result.getLines());
-        result.getLines().add(new CSingleLine("switch (" + value.getLines() + ") {"));
+        result.addLine("switch (" + value.getText() + ") {", expression.getLocation());
 
         CBlock switchBlock = new CBlock();
         result.getLines().add(switchBlock);
         for (int i = 0; i < expression.getTargets().size(); ++i) {
             BlockInfo targetInfo = blockInfoMap.get(expression.getTargets().get(i));
-            if (targetInfo.label == null) {
-                targetInfo.label = "block_" + blockIndex++;
-            }
-            switchBlock.getLines().add(new CSingleLine("case " + i + ": break " + targetInfo.label + ";"));
+            switchBlock.getLines().add(new CSingleLine("case " + i + ": goto " + getLabel(targetInfo) + ";"));
         }
 
         BlockInfo defaultTargetInfo = blockInfoMap.get(expression.getDefaultTarget());
-        if (defaultTargetInfo.label == null) {
-            defaultTargetInfo.label = "block_" + blockIndex++;
-        }
-        switchBlock.getLines().add(new CSingleLine("default: break " + defaultTargetInfo.label + ";"));
+        switchBlock.getLines().add(new CSingleLine("default: goto " + getLabel(defaultTargetInfo) + ";"));
 
         result.getLines().add(new CSingleLine("}"));
 
@@ -241,17 +239,18 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
             CBlock thenBlock = new CBlock();
             thenBlock.getLines().addAll(thenExpression.getLines());
             if (temporary != null) {
-                thenBlock.getLines().add(new CSingleLine(temporary + " = " + thenExpression.getText()));
+                thenBlock.getLines().add(new CSingleLine(temporary + " = " + thenExpression.getText() + ";"));
             }
             result.getLines().add(thenBlock);
 
-            if (!elseExpression.getText().isEmpty() || elseExpression.getText() != null) {
+            if (elseExpression.getText() != null || !elseExpression.getLines().isEmpty()) {
                 result.getLines().add(new CSingleLine("} else {"));
                 CBlock elseBlock = new CBlock();
-                elseBlock.getLines().addAll(elseBlock.getLines());
+                elseBlock.getLines().addAll(elseExpression.getLines());
                 if (temporary != null) {
-                    elseBlock.getLines().add(new CSingleLine(temporary + " = " + elseExpression.getText()));
+                    elseBlock.getLines().add(new CSingleLine(temporary + " = " + elseExpression.getText() + ";"));
                 }
+                result.getLines().add(elseBlock);
             }
 
             result.getLines().add(new CSingleLine("}"));
@@ -267,11 +266,9 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
             requiredType = functionType;
             expression.getValue().acceptVisitor(this);
             result.getLines().addAll(value.getLines());
-            reportLocation(expression.getLocation(), result.getLines());
-            result.getLines().add(new CSingleLine("return " + value.getText() + ";"));
+            result.addLine("return " + value.getText() + ";", expression.getLocation());
         } else {
-            reportLocation(expression.getLocation(), result.getLines());
-            result.getLines().add(new CSingleLine("return;"));
+            result.addLine("return;", expression.getLocation());
         }
 
         value = result;
@@ -280,8 +277,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
     @Override
     public void visit(WasmUnreachable expression) {
         CExpression result = new CExpression();
-        reportLocation(expression.getLocation(), result.getLines());
-        result.getLines().add(new CSingleLine("assert(false);"));
+        result.addLine("assert(0);", expression.getLocation());
         value = result;
     }
 
@@ -317,7 +313,8 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         expression.getValue().acceptVisitor(this);
         result.getLines().addAll(value.getLines());
 
-        reportLocation(expression.getLocation(), result.getLines());
+        result.addLine("var_" + expression.getLocal().getIndex() + " = " + value.getText() + ";",
+                expression.getLocation());
 
         value = result;
     }
@@ -514,7 +511,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         if (expression.isRelocatable()) {
             return expression;
         }
-        String var = "tmp_" + temporaryIndex;
+        String var = "tmp_" + temporaryIndex++;
         target.getLines().add(new CSingleLine(mapType(type) + " " + var + " = " + expression.getText() + ";"));
         return CExpression.relocatable(var);
     }
@@ -615,7 +612,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         CExpression operand = value;
 
         result.getLines().addAll(operand.getLines());
-        if (type != null && expression.getSourceType() != expression.getSourceType()) {
+        if (type != null && expression.getSourceType() != expression.getTargetType()) {
             switch (expression.getTargetType()) {
                 case INT32:
                     if (expression.isSigned()) {
@@ -652,7 +649,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
             }
         }
 
-        value = operand;
+        value = result;
     }
 
     @Override
@@ -668,8 +665,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         result.setText(sb.toString());
 
         if (type == null) {
-            reportLocation(expression.getLocation(), result.getLines());
-            result.getLines().add(new CSingleLine(result.getText()));
+            result.addLine(result.getText() + ";", expression.getLocation());
             result.setText(null);
         }
         value = result;
@@ -688,19 +684,19 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
             }
             sb.append(mapType(expression.getParameterTypes().get(i)));
         }
-        sb.append(") ");
+        sb.append(")) ");
 
         requiredType = WasmType.INT32;
         expression.getSelector().acceptVisitor(this);
         value = cacheIfNeeded(WasmType.INT32, value, result);
         result.getLines().addAll(value.getLines());
-        sb.append("wasm_table[" + result.getText() + "])(");
+        sb.append("wasm_table[" + value.getText() + "])(");
         translateArguments(expression.getArguments(), expression.getParameterTypes(), result, sb);
         sb.append(")");
+        result.setText(sb.toString());
 
         if (type == null) {
-            reportLocation(expression.getLocation(), result.getLines());
-            result.getLines().add(new CSingleLine(result.getText()));
+            result.addLine(result.getText() + ";", expression.getLocation());
             result.setText(null);
         }
         value = result;
@@ -742,7 +738,6 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
     public void visit(WasmDrop expression) {
         CExpression result = new CExpression();
         requiredType = null;
-        reportLocation(expression.getLocation(), result.getLines());
         expression.getOperand().acceptVisitor(this);
         result.getLines().addAll(value.getLines());
         value = result;
@@ -754,7 +749,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         WasmType type = requiredType;
 
         requiredType = WasmType.INT32;
-        expression.getIndex();
+        expression.getIndex().acceptVisitor(this);
         CExpression index = value;
         if (type == null) {
             value = index;
@@ -764,19 +759,19 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         result.getLines().addAll(index.getLines());
         switch (expression.getConvertFrom()) {
             case INT8:
-                result.setText("(int32_t) (int8_t) wasm_heap[" + index + "]");
+                result.setText("(int32_t) (int8_t) wasm_heap[" + index.getText() + "]");
                 break;
             case UINT8:
-                result.setText("(int32_t) (uint8_t) wasm_heap[" + index + "]");
+                result.setText("(int32_t) (uint8_t) wasm_heap[" + index.getText() + "]");
                 break;
             case INT16:
-                result.setText("(int32_t) *((int16_t *) &wasm_heap[" + index + "])");
+                result.setText("(int32_t) *((int16_t *) &wasm_heap[" + index.getText() + "])");
                 break;
             case UINT16:
-                result.setText("(int32_t) *((uint16_t *) &wasm_heap[" + index + "])");
+                result.setText("(int32_t) *((uint16_t *) &wasm_heap[" + index.getText() + "])");
                 break;
             case INT32:
-                result.setText("*((int32_t *) &wasm_heap[" + index + "])");
+                result.setText("*((int32_t *) &wasm_heap[" + index.getText() + "])");
                 break;
         }
 
@@ -789,7 +784,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         WasmType type = requiredType;
 
         requiredType = WasmType.INT32;
-        expression.getIndex();
+        expression.getIndex().acceptVisitor(this);
         CExpression index = value;
         if (type == null) {
             value = index;
@@ -799,25 +794,25 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         result.getLines().addAll(index.getLines());
         switch (expression.getConvertFrom()) {
             case INT8:
-                result.setText("(int64_t) (int8_t) wasm_heap[" + index + "]");
+                result.setText("(int64_t) (int8_t) wasm_heap[" + index.getText() + "]");
                 break;
             case UINT8:
-                result.setText("(int64_t) (uint8_t) wasm_heap[" + index + "]");
+                result.setText("(int64_t) (uint8_t) wasm_heap[" + index.getText() + "]");
                 break;
             case INT16:
-                result.setText("(int64_t) *((int16_t *) &wasm_heap[" + index + "])");
+                result.setText("(int64_t) *((int16_t *) &wasm_heap[" + index.getText() + "])");
                 break;
             case UINT16:
-                result.setText("(int64_t) *((uint16_t *) &wasm_heap[" + index + "])");
+                result.setText("(int64_t) *((uint16_t *) &wasm_heap[" + index.getText() + "])");
                 break;
             case INT32:
-                result.setText("(int64_t) *((int32_t *) &wasm_heap[" + index + "])");
+                result.setText("(int64_t) *((int32_t *) &wasm_heap[" + index.getText() + "])");
                 break;
             case UINT32:
-                result.setText("(int64_t) *((uint32_t *) &wasm_heap[" + index + "])");
+                result.setText("(int64_t) *((uint32_t *) &wasm_heap[" + index.getText() + "])");
                 break;
             case INT64:
-                result.setText("*((int64_t *) &wasm_heap[" + index + "])");
+                result.setText("*((int64_t *) &wasm_heap[" + index.getText() + "])");
                 break;
         }
 
@@ -830,7 +825,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         WasmType type = requiredType;
 
         requiredType = WasmType.INT32;
-        expression.getIndex();
+        expression.getIndex().acceptVisitor(this);
         CExpression index = value;
         if (type == null) {
             value = index;
@@ -838,7 +833,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         }
 
         result.getLines().addAll(index.getLines());
-        result.setText("*((float *) &wasm_heap[" + index + "])");
+        result.setText("*((float *) &wasm_heap[" + index.getText() + "])");
 
         value = result;
     }
@@ -849,7 +844,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         WasmType type = requiredType;
 
         requiredType = WasmType.INT32;
-        expression.getIndex();
+        expression.getIndex().acceptVisitor(this);
         CExpression index = value;
         if (type == null) {
             value = index;
@@ -857,42 +852,145 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         }
 
         result.getLines().addAll(index.getLines());
-        result.setText("*((double *) &wasm_heap[" + index + "])");
+        result.setText("*((double *) &wasm_heap[" + index.getText() + "])");
 
         value = result;
     }
 
     @Override
     public void visit(WasmStoreInt32 expression) {
+        CExpression result = new CExpression();
 
+        requiredType = WasmType.INT32;
+        expression.getIndex().acceptVisitor(this);
+        CExpression index = value;
+
+        requiredType = WasmType.INT32;
+        expression.getValue().acceptVisitor(this);
+        CExpression valueToStore = value;
+
+        result.getLines().addAll(index.getLines());
+        result.getLines().addAll(valueToStore.getLines());
+
+        String line;
+        switch (expression.getConvertTo()) {
+            case INT8:
+                line = "wasm_heap[" + index.getText() + "] = " + valueToStore.getText() + ";";
+                break;
+            case UINT8:
+                line = "*((uint8_t *) &wasm_heap[" + index.getText() + "]) = " + valueToStore.getText() + ";";
+                break;
+            case INT16:
+                line = "*((int16_t *) &wasm_heap[" + index.getText() + "]) = " + valueToStore.getText() + ";";
+                break;
+            case UINT16:
+                line = "*((uint16_t *) &wasm_heap[" + index.getText() + "]) = " + valueToStore.getText() + ";";
+                break;
+            case INT32:
+                line = "*((int32_t *) &wasm_heap[" + index.getText() + "]) = " + valueToStore.getText() + ";";
+                break;
+            default:
+                throw new AssertionError(expression.getConvertTo().toString());
+        }
+        result.addLine(line, expression.getLocation());
+
+        value = result;
     }
 
     @Override
     public void visit(WasmStoreInt64 expression) {
+        CExpression result = new CExpression();
 
+        requiredType = WasmType.INT32;
+        expression.getIndex().acceptVisitor(this);
+        CExpression index = value;
+
+        requiredType = WasmType.INT64;
+        expression.getValue().acceptVisitor(this);
+        CExpression valueToStore = value;
+
+        result.getLines().addAll(index.getLines());
+        result.getLines().addAll(valueToStore.getLines());
+
+        String line;
+        switch (expression.getConvertTo()) {
+            case INT8:
+                line = "wasm_heap[" + index.getText() + "] = " + valueToStore.getText();
+                break;
+            case UINT8:
+                line = "*((uint8_t *) &wasm_heap[" + index.getText() + "]) = " + valueToStore.getText() + ";";
+                break;
+            case INT16:
+                line = "*((int16_t *) &wasm_heap[" + index.getText() + "]) = " + valueToStore.getText() + ";";
+                break;
+            case UINT16:
+                line = "*((uint16_t *) &wasm_heap[" + index.getText() + "]) = " + valueToStore.getText() + ";";
+                break;
+            case INT32:
+                line = "*((int32_t *) &wasm_heap[" + index.getText() + "]) = " + valueToStore.getText() + ";";
+                break;
+            case UINT32:
+                line = "*((uint32_t *) &wasm_heap[" + index.getText() + "]) = " + valueToStore.getText() + ";";
+                break;
+            case INT64:
+                line = "*((int64_t *) &wasm_heap[" + index.getText() + "]) = " + valueToStore.getText() + ";";
+                break;
+            default:
+                throw new AssertionError();
+        }
+
+        result.addLine(line, expression.getLocation());
+
+        value = result;
     }
 
     @Override
     public void visit(WasmStoreFloat32 expression) {
+        CExpression result = new CExpression();
 
+        requiredType = WasmType.INT32;
+        expression.getIndex().acceptVisitor(this);
+        CExpression index = value;
+
+        requiredType = WasmType.FLOAT32;
+        expression.getValue().acceptVisitor(this);
+        CExpression valueToStore = value;
+
+        result.getLines().addAll(index.getLines());
+        result.getLines().addAll(valueToStore.getLines());
+
+        result.addLine("*((float *) &wasm_heap[" + index.getText() + "]) = " + valueToStore.getText() + ";",
+                expression.getLocation());
+
+        value = result;
     }
 
     @Override
     public void visit(WasmStoreFloat64 expression) {
+        CExpression result = new CExpression();
 
+        requiredType = WasmType.INT32;
+        expression.getIndex().acceptVisitor(this);
+        CExpression index = value;
+
+        requiredType = WasmType.FLOAT64;
+        expression.getValue().acceptVisitor(this);
+        CExpression valueToStore = value;
+
+        result.getLines().addAll(index.getLines());
+        result.getLines().addAll(valueToStore.getLines());
+
+        result.addLine("*((double *) &wasm_heap[" + index.getText() + "]) = " + valueToStore.getText() + ";",
+                expression.getLocation());
+
+        value = result;
     }
 
     private CLine declareVariable(String name, WasmType type) {
         return new CSingleLine(mapType(type) + " " + name + ";");
     }
 
-    private void reportLocation(TextLocation location, List<CLine> lines) {
-        if (location != null) {
-            lines.add(new CSingleLine("#line " + location.getFileName() + " " + location.getLine()));
-        }
-    }
-
-    private static String mapType(WasmType type) {
+    static String mapType(WasmType type) {
         if (type == null) {
             return "void";
         }
@@ -929,7 +1027,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         throw new AssertionError(type.toString());
     }
 
-    static class BlockInfo {
+    private static class BlockInfo {
         int index;
         String label;
         String temporaryVariable;

@@ -31,4 +31,13 @@ class CBlock extends CLine {
     public List<CLine> getLines() {
         return lines;
     }
+
+    @Override
+    void render(WasmCRenderer target) {
+        target.indent();
+        for (CLine line : lines) {
+            line.render(target);
+        }
+        target.outdent();
+    }
 }

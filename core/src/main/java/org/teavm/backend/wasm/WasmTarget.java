@@ -60,7 +60,7 @@ import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt32;
 import org.teavm.backend.wasm.patches.ClassPatch;
 import org.teavm.backend.wasm.patches.ObjectPatch;
-import org.teavm.backend.wasm.render.WasmRenderer;
+import org.teavm.backend.wasm.render.WasmCRenderer;
 import org.teavm.dependency.ClassDependency;
 import org.teavm.dependency.DependencyChecker;
 import org.teavm.dependency.DependencyListener;
@@ -103,6 +103,7 @@ import org.teavm.vm.spi.TeaVMHostExtension;
 
 public class WasmTarget implements TeaVMTarget {
     private TeaVMTargetController controller;
+    private boolean debugging;
 
     @Override
     public void setController(TeaVMTargetController controller) {
@@ -132,6 +133,14 @@ public class WasmTarget implements TeaVMTarget {
         List<DependencyListener> listeners = new ArrayList<>();
         listeners.add(new WasmDependencyListener());
         return listeners;
+    }
+
+    public boolean isDebugging() {
+        return debugging;
+    }
+
+    public void setDebugging(boolean debugging) {
+        this.debugging = debugging;
     }
 
     @Override
@@ -301,7 +310,8 @@ public class WasmTarget implements TeaVMTarget {
             module.getFunctionTable().add(module.getFunctions().get(function));
         }
 
-        WasmRenderer renderer = new WasmRenderer();
+        WasmCRenderer renderer = new WasmCRenderer();
+        renderer.setOutputLineNumbers(debugging);
         renderer.render(module);
 
         try {

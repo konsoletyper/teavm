@@ -15,14 +15,52 @@
  */
 package org.teavm.backend.wasm.render;
 
+import java.util.Objects;
+import org.teavm.model.TextLocation;
+
 class CSingleLine extends CLine {
     private String text;
+    private TextLocation location;
 
     public CSingleLine(String text) {
+        this(text, null);
+    }
+
+    public CSingleLine(String text, TextLocation location) {
         this.text = text;
+        this.location = location;
     }
 
     public String getText() {
         return text;
+    }
+
+    public TextLocation getLocation() {
+        return location;
+    }
+
+    public void setLocation(TextLocation location) {
+        this.location = location;
+    }
+
+    @Override
+    void render(WasmCRenderer target) {
+        if (target.outputLineNumbers) {
+            TextLocation location = this.location;
+            if (location == null) {
+                location = target.lastReportedLocation;
+            }
+            if (location != null) {
+                if (!Objects.equals(target.currentFile, location.getFileName())) {
+                    target.line("#line " + (location.getLine() - 1) + " \"" + location.getFileName() + "\"");
+                } else if (location.getLine() != target.currentLine) {
+                    target.line("#line " + (location.getLine() - 1));
+                }
+                target.currentFile = location.getFileName();
+                target.currentLine = location.getLine() + 1;
+                target.lastReportedLocation = location;
+            }
+        }
+        target.line(text);
     }
 }

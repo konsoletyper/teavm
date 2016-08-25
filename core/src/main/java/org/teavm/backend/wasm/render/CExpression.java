@@ -17,6 +17,7 @@ package org.teavm.backend.wasm.render;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.teavm.model.TextLocation;
 
 class CExpression {
     private String text;
@@ -48,6 +49,14 @@ class CExpression {
 
     public List<CLine> getLines() {
         return lines;
+    }
+
+    public void addLine(String text, TextLocation location) {
+        lines.add(new CSingleLine(text, location));
+    }
+
+    public void addLine(String text) {
+        addLine(text, null);
     }
 
     public static CExpression relocatable(String text) {
