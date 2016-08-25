@@ -170,8 +170,7 @@ class JSClassProcessor {
                 InstructionVariableMapper variableMapper = new InstructionVariableMapper(var ->
                          program.variableAt(var.getIndex() + 1));
                 for (int i = program.variableCount() - 1; i > 0; --i) {
-                    program.variableAt(i).getDebugNames().addAll(program.variableAt(i - 1).getDebugNames());
-                    program.variableAt(i - 1).getDebugNames().clear();
+                    program.variableAt(i).setDebugName(program.variableAt(i - 1).getDebugName());
                 }
                 for (int i = 0; i < program.basicBlockCount(); ++i) {
                     BasicBlock block = program.basicBlockAt(i);

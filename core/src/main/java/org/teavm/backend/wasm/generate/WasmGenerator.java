@@ -65,7 +65,7 @@ public class WasmGenerator {
             WasmType type = variable.getType() != null
                     ? WasmGeneratorUtil.mapType(variable.getType())
                     : WasmType.INT32;
-            function.add(new WasmLocal(type));
+            function.add(new WasmLocal(type, variable.getName()));
         }
 
         for (int i = firstVariable; i <= methodReference.parameterCount(); ++i) {

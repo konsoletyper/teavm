@@ -257,14 +257,13 @@ public class RegisterAllocator {
             BasicBlock block = program.basicBlockAt(i);
             mapper.apply(block);
         }
-        String[][] originalNames = new String[program.variableCount()][];
+        String[] originalNames = new String[program.variableCount()];
         for (int i = 0; i < program.variableCount(); ++i) {
             Variable var = program.variableAt(i);
-            originalNames[i] = var.getDebugNames().toArray(new String[0]);
-            var.getDebugNames().clear();
+            originalNames[i] = var.getDebugName();
         }
         for (int i = 0; i < program.variableCount(); ++i) {
-            program.variableAt(varMap[i]).getDebugNames().addAll(Arrays.asList(originalNames[i]));
+            program.variableAt(varMap[i]).setDebugName(originalNames[i]);
         }
     }
 

@@ -24,6 +24,7 @@ import org.teavm.tooling.RuntimeCopyOperation;
 import org.teavm.tooling.TeaVMTargetType;
 import org.teavm.tooling.TeaVMTool;
 import org.teavm.tooling.TeaVMToolException;
+import org.teavm.vm.TeaVMOptimizationLevel;
 import org.teavm.vm.TeaVMPhase;
 import org.teavm.vm.TeaVMProgressFeedback;
 import org.teavm.vm.TeaVMProgressListener;
@@ -61,6 +62,9 @@ public final class TeaVMRunner {
                 .withDescription("causes TeaVM to generate minimized JavaScript file")
                 .withLongOpt("minify")
                 .create("m"));
+        options.addOption(OptionBuilder
+                .withDescription("optimization level (1-3)")
+                .create("O"));
         options.addOption(OptionBuilder
                 .withArgName("separate|merge|none")
                 .hasArg()
@@ -160,6 +164,33 @@ public final class TeaVMRunner {
         if (commandLine.hasOption('D')) {
             tool.setDebugInformationGenerated(true);
         }
+
+        if (commandLine.hasOption("O")) {
+            int level;
+            try {
+                level = Integer.parseInt(commandLine.getOptionValue("O"));
+            } catch (NumberFormatException e) {
+                System.err.print("Wrong optimization level");
+                printUsage(options);
+                return;
+            }
+            switch (level) {
+                case 1:
+                    tool.setOptimizationLevel(TeaVMOptimizationLevel.SIMPLE);
+                    break;
+                case 2:
+                    tool.setOptimizationLevel(TeaVMOptimizationLevel.ADVANCED);
+                    break;
+                case 3:
+                    tool.setOptimizationLevel(TeaVMOptimizationLevel.FULL);
+                    break;
+                default:
+                    System.err.print("Wrong optimization level");
+                    printUsage(options);
+                    return;
+            }
+        }
+
         if (commandLine.hasOption('S')) {
             tool.setSourceMapsFileGenerated(true);
         }
@@ -174,6 +205,7 @@ public final class TeaVMRunner {
         if (commandLine.hasOption('p')) {
             classPath = commandLine.getOptionValues('p');
         }
+
         boolean interactive = commandLine.hasOption('w');
         args = commandLine.getArgs();
         if (args.length > 1) {

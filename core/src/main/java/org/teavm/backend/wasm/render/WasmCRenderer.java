@@ -182,12 +182,16 @@ public class WasmCRenderer {
         }
         sb.append(WasmCRenderingVisitor.mapType(function.getResult())).append(' ');
         sb.append(function.getName()).append("(");
+        WasmCRenderingVisitor visitor = new WasmCRenderingVisitor(function.getResult(), function.getModule());
         for (int i = 0; i < function.getParameters().size(); ++i) {
             if (i > 0) {
                 sb.append(", ");
             }
             sb.append(WasmCRenderingVisitor.mapType(function.getParameters().get(i)));
-            sb.append(" var_" + i);
+            WasmLocal local = i < function.getLocalVariables().size()
+                    ? function.getLocalVariables().get(i)
+                    : null;
+            sb.append(" ").append(local != null ? visitor.getVariableName(local) : "var_" + i);
         }
         sb.append(")");
 

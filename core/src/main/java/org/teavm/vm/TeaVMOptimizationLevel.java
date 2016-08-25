@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2016 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,14 +13,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.model;
+package org.teavm.vm;
 
-public interface VariableReader {
-    int getIndex();
-
-    ProgramReader getProgram();
-
-    String getDebugName();
-
-    int getRegister();
+public enum TeaVMOptimizationLevel {
+    SIMPLE,
+    ADVANCED,
+    FULL
 }

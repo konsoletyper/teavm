@@ -126,8 +126,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     private boolean async;
     private Precedence precedence;
     private final Map<String, String> blockIdMap = new HashMap<>();
-    private final List<Set<String>> debugNames = new ArrayList<>();
     private final List<String> cachedVariableNames = new ArrayList<>();
+    private MethodNode currentMethod;
     private boolean end;
     private int currentPart;
     private List<PostponedFieldInitializer> postponedFieldInitializers = new ArrayList<>();
@@ -652,9 +652,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     }
 
     private void renderBody(MethodNode method, boolean inner) throws IOException {
-        debugNames.clear();
+        currentMethod = method;
         cachedVariableNames.clear();
-        debugNames.addAll(method.getParameterDebugNames());
         blockIdMap.clear();
         MethodReference ref = method.getReference();
         debugEmitter.emitMethod(ref.getDescriptor());
@@ -704,8 +703,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 Renderer.this.async = false;
                 this.async = false;
                 MethodReference ref = method.getReference();
-                for (int i = 0; i < method.getParameterDebugNames().size(); ++i) {
-                    debugEmitter.emitVariable(method.getParameterDebugNames().get(i).toArray(new String[0]),
+                for (int i = 0; i < method.getVariables().size(); ++i) {
+                    debugEmitter.emitVariable(new String[] { method.getVariables().get(i).getName() },
                             variableName(i));
                 }
 
@@ -748,8 +747,8 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
                 Renderer.this.async = true;
                 this.async = true;
                 MethodReference ref = methodNode.getReference();
-                for (int i = 0; i < methodNode.getParameterDebugNames().size(); ++i) {
-                    debugEmitter.emitVariable(methodNode.getParameterDebugNames().get(i).toArray(new String[0]),
+                for (int i = 0; i < methodNode.getVariables().size(); ++i) {
+                    debugEmitter.emitVariable(new String[] { methodNode.getVariables().get(i).getName() },
                             variableName(i));
                 }
                 int variableCount = 0;
@@ -966,11 +965,6 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             }
             if (statement.getLocation() != null) {
                 popLocation();
-            }
-            if (statement.getLeftValue() instanceof VariableExpr) {
-                VariableExpr receiver = (VariableExpr) statement.getLeftValue();
-                debugEmitter.emitVariable(statement.getDebugNames().toArray(new String[0]),
-                        variableName(receiver.getIndex()));
             }
         } catch (IOException e) {
             throw new RenderingException("IO error occurred", e);
@@ -1258,7 +1252,6 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             return minifying ? "$t" : "$this";
         }
 
-        Set<String> names = index < debugNames.size() ? debugNames.get(index) : null;
         StringBuilder sb = new StringBuilder();
         --index;
         if (index < variableNames.length()) {
@@ -1267,11 +1260,13 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             sb.append(Character.toString(variableNames.charAt(index % variableNames.length()))
                     + index / variableNames.length());
         }
-        if (!minifying && names != null && !names.isEmpty()) {
-            List<String> nameList = new ArrayList<>(names);
-            Collections.sort(nameList);
-            for (String name : nameList) {
-                sb.append('_').append(escapeName(name));
+        if (!minifying) {
+            VariableNode variable = index < currentMethod.getVariables().size()
+                    ? currentMethod.getVariables().get(index)
+                    : null;
+            if (variable != null && variable.getName() != null) {
+                sb.setLength(0);
+                sb.append(escapeName(variable.getName()));
             }
         }
         return sb.toString();

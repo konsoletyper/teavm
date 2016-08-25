@@ -20,7 +20,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -45,7 +44,6 @@ import org.teavm.ast.InitClassStatement;
 import org.teavm.ast.InstanceOfExpr;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.ast.InvocationType;
-import org.teavm.ast.MethodNode;
 import org.teavm.ast.MonitorEnterStatement;
 import org.teavm.ast.MonitorExitStatement;
 import org.teavm.ast.NewArrayExpr;
@@ -99,7 +97,6 @@ public class AstIO {
         for (VariableNode var : method.getVariables()) {
             write(output, var);
         }
-        output.writeShort(method.getParameterDebugNames().size());
         try {
             method.getBody().acceptVisitor(new NodeWriter(output));
         } catch (IOExceptionWrapper e) {
@@ -110,10 +107,7 @@ public class AstIO {
     private void write(DataOutput output, VariableNode variable) throws IOException {
         output.writeShort(variable.getIndex());
         output.writeByte(variable.getType().ordinal());
-        output.writeByte(variable.getDebugNames().size());
-        for (String debugName : variable.getDebugNames()) {
-            output.writeUTF(debugName);
-        }
+        output.writeUTF(variable.getName() != null ? variable.getName() : "");
     }
 
     public RegularMethodNode read(DataInput input, MethodReference method) throws IOException {
@@ -133,7 +127,10 @@ public class AstIO {
         VariableNode variable = new VariableNode(index, type);
         int nameCount = input.readByte();
         for (int i = 0; i < nameCount; ++i) {
-            variable.getDebugNames().add(input.readUTF());
+            variable.setName(input.readUTF());
+            if (variable.getName().isEmpty()) {
+                variable.setName(null);
+            }
         }
         return variable;
     }
@@ -144,8 +141,6 @@ public class AstIO {
         for (VariableNode var : method.getVariables()) {
             write(output, var);
         }
-        output.writeShort(method.getParameterDebugNames().size());
-        writeParameters(output, method);
         try {
              output.writeShort(method.getBody().size());
              for (int i = 0; i < method.getBody().size(); ++i) {
@@ -156,17 +151,6 @@ public class AstIO {
         }
     }
 
-    private void writeParameters(DataOutput output, MethodNode method) throws IOException {
-        for (Set<String> debugNames : method.getParameterDebugNames()) {
-            output.writeShort(debugNames != null ? debugNames.size() : 0);
-            if (debugNames != null) {
-                for (String debugName : debugNames) {
-                    output.writeUTF(debugName);
-                }
-            }
-        }
-    }
-
     public AsyncMethodNode readAsync(DataInput input, MethodReference method) throws IOException {
         AsyncMethodNode node = new AsyncMethodNode(method);
         node.getModifiers().addAll(unpackModifiers(input.readInt()));
@@ -174,7 +158,6 @@ public class AstIO {
         for (int i = 0; i < varCount; ++i) {
             node.getVariables().add(readVariable(input));
         }
-        readParameters(input, node);
         int partCount = input.readShort();
         for (int i = 0; i < partCount; ++i) {
             AsyncMethodPart part = new AsyncMethodPart();
@@ -182,18 +165,6 @@ public class AstIO {
             node.getBody().add(part);
         }
         return node;
-    }
-
-    private void readParameters(DataInput input, MethodNode node) throws IOException {
-        int paramDebugNameCount = input.readShort();
-        for (int i = 0; i < paramDebugNameCount; ++i) {
-            int debugNameCount = input.readShort();
-            Set<String> debugNames = new HashSet<>();
-            for (int j = 0; j < debugNameCount; ++j) {
-                debugNames.add(input.readUTF());
-            }
-            node.getParameterDebugNames().add(debugNames);
-        }
     }
 
     private int packModifiers(Set<ElementModifier> modifiers) {
@@ -257,10 +228,6 @@ public class AstIO {
             try {
                 output.writeByte(statement.getLeftValue() != null ? 0 : 1);
                 writeLocation(statement.getLocation());
-                output.writeShort(statement.getDebugNames().size());
-                for (String name : statement.getDebugNames()) {
-                    output.writeUTF(name);
-                }
                 if (statement.getLeftValue() != null) {
                     writeExpr(statement.getLeftValue());
                 }
@@ -674,10 +641,6 @@ public class AstIO {
             case 0: {
                 AssignmentStatement stmt = new AssignmentStatement();
                 stmt.setLocation(readLocation(input));
-                int debugNameCount = input.readShort();
-                for (int i = 0; i < debugNameCount; ++i) {
-                    stmt.getDebugNames().add(input.readUTF());
-                }
                 stmt.setLeftValue(readExpr(input));
                 stmt.setRightValue(readExpr(input));
                 stmt.setAsync(input.readBoolean());
@@ -686,10 +649,6 @@ public class AstIO {
             case 1: {
                 AssignmentStatement stmt = new AssignmentStatement();
                 stmt.setLocation(readLocation(input));
-                int debugNameCount = input.readShort();
-                for (int i = 0; i < debugNameCount; ++i) {
-                    stmt.getDebugNames().add(input.readUTF());
-                }
                 stmt.setRightValue(readExpr(input));
                 stmt.setAsync(input.readBoolean());
                 return stmt;

@@ -17,7 +17,6 @@ package org.teavm.ast;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.model.MethodReference;
 
@@ -52,7 +51,7 @@ public class NativeMethodNode extends MethodNode {
     }
 
     @Override
-    public List<Set<String>> getParameterDebugNames() {
+    public List<VariableNode> getVariables() {
         return Collections.emptyList();
     }
 }

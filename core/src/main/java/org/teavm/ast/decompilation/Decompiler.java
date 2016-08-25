@@ -65,7 +65,6 @@ import org.teavm.model.Program;
 import org.teavm.model.TextLocation;
 import org.teavm.model.TryCatchBlock;
 import org.teavm.model.ValueType;
-import org.teavm.model.Variable;
 import org.teavm.model.util.AsyncProgramSplitter;
 import org.teavm.model.util.ListingBuilder;
 import org.teavm.model.util.ProgramUtils;
@@ -271,17 +270,14 @@ public class Decompiler {
         typeInferer.inferTypes(program, method.getReference());
         for (int i = 0; i < program.variableCount(); ++i) {
             VariableNode variable = new VariableNode(program.variableAt(i).getRegister(), typeInferer.typeOf(i));
+            variable.setName(program.variableAt(i).getDebugName());
             methodNode.getVariables().add(variable);
         }
 
         Optimizer optimizer = new Optimizer();
         optimizer.optimize(methodNode, method.getProgram());
         methodNode.getModifiers().addAll(method.getModifiers());
-        int paramCount = Math.min(method.getSignature().length, program.variableCount());
-        for (int i = 0; i < paramCount; ++i) {
-            Variable var = program.variableAt(i);
-            methodNode.getParameterDebugNames().add(new HashSet<>(var.getDebugNames()));
-        }
+
         return methodNode;
     }
 
@@ -338,17 +334,14 @@ public class Decompiler {
         typeInferer.inferTypes(program, method.getReference());
         for (int i = 0; i < program.variableCount(); ++i) {
             VariableNode variable = new VariableNode(program.variableAt(i).getRegister(), typeInferer.typeOf(i));
+            variable.setName(program.variableAt(i).getDebugName());
             node.getVariables().add(variable);
         }
 
         Optimizer optimizer = new Optimizer();
         optimizer.optimize(node, splitter);
         node.getModifiers().addAll(method.getModifiers());
-        int paramCount = Math.min(method.getSignature().length, program.variableCount());
-        for (int i = 0; i < paramCount; ++i) {
-            Variable var = program.variableAt(i);
-            node.getParameterDebugNames().add(new HashSet<>(var.getDebugNames()));
-        }
+
         return node;
     }
 

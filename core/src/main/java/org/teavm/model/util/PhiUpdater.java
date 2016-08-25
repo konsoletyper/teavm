@@ -200,7 +200,7 @@ public class PhiUpdater {
 
             for (Phi phi : synthesizedPhis.get(index)) {
                 Variable var = program.createVariable();
-                var.getDebugNames().addAll(phi.getReceiver().getDebugNames());
+                var.setDebugName(phi.getReceiver().getDebugName());
                 variableMap[phi.getReceiver().getIndex()] = var;
                 phi.setReceiver(var);
             }
@@ -287,7 +287,7 @@ public class PhiUpdater {
                 incoming.setSource(currentBlock);
                 incoming.setValue(var);
                 phi.getIncomings().add(incoming);
-                phi.getReceiver().getDebugNames().addAll(var.getDebugNames());
+                phi.getReceiver().setDebugName(var.getDebugName());
             }
         }
     }

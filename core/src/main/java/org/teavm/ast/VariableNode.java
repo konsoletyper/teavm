@@ -15,14 +15,12 @@
  */
 package org.teavm.ast;
 
-import java.util.HashSet;
-import java.util.Set;
 import org.teavm.model.util.VariableType;
 
 public class VariableNode {
     private int index;
     private VariableType type;
-    private Set<String> debugNames = new HashSet<>();
+    private String name;
 
     public VariableNode(int index, VariableType type) {
         this.index = index;
@@ -45,7 +43,11 @@ public class VariableNode {
         this.type = type;
     }
 
-    public Set<String> getDebugNames() {
-        return debugNames;
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }

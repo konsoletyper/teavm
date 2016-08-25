@@ -62,6 +62,7 @@ import org.teavm.vm.DirectoryBuildTarget;
 import org.teavm.vm.TeaVM;
 import org.teavm.vm.TeaVMBuilder;
 import org.teavm.vm.TeaVMEntryPoint;
+import org.teavm.vm.TeaVMOptimizationLevel;
 import org.teavm.vm.TeaVMProgressListener;
 import org.teavm.vm.TeaVMTarget;
 import org.teavm.vm.spi.AbstractRendererListener;
@@ -93,6 +94,7 @@ public class TeaVMTool implements BaseTeaVMTool {
     private boolean cancelled;
     private TeaVMProgressListener progressListener;
     private TeaVM vm;
+    private TeaVMOptimizationLevel optimizationLevel = TeaVMOptimizationLevel.SIMPLE;
     private List<SourceFileProvider> sourceFileProviders = new ArrayList<>();
     private DebugInformationBuilder debugEmitter;
     private JavaScriptTarget javaScriptTarget;
@@ -225,6 +227,14 @@ public class TeaVMTool implements BaseTeaVMTool {
 
     public void setTargetType(TeaVMTargetType targetType) {
         this.targetType = targetType;
+    }
+
+    public TeaVMOptimizationLevel getOptimizationLevel() {
+        return optimizationLevel;
+    }
+
+    public void setOptimizationLevel(TeaVMOptimizationLevel optimizationLevel) {
+        this.optimizationLevel = optimizationLevel;
     }
 
     public ClassLoader getClassLoader() {
@@ -361,6 +371,7 @@ public class TeaVMTool implements BaseTeaVMTool {
             vm.setProperties(properties);
             vm.setProgramCache(programCache);
             vm.setIncremental(incremental);
+            vm.setOptimizationLevel(optimizationLevel);
 
             vm.installPlugins();
             for (ClassHolderTransformer transformer : transformers) {

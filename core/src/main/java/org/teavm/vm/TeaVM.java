@@ -20,6 +20,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -113,6 +114,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     private final Properties properties = new Properties();
     private ProgramCache programCache;
     private boolean incremental;
+    private TeaVMOptimizationLevel optimizationLevel = TeaVMOptimizationLevel.SIMPLE;
     private TeaVMProgressListener progressListener;
     private boolean cancelled;
     private ListableClassHolderSource writtenClasses;
@@ -200,6 +202,14 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
     public void setIncremental(boolean incremental) {
         this.incremental = incremental;
+    }
+
+    public TeaVMOptimizationLevel getOptimizationLevel() {
+        return optimizationLevel;
+    }
+
+    public void setOptimizationLevel(TeaVMOptimizationLevel optimizationLevel) {
+        this.optimizationLevel = optimizationLevel;
     }
 
     public TeaVMProgressListener getProgressListener() {
@@ -359,12 +369,13 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                 return;
             }
 
-            //inline(classSet);
+            inline(classSet);
             if (wasCancelled()) {
                 return;
             }
         }
 
+        removeDebugNames(classSet);
         optimize(classSet);
         if (wasCancelled()) {
             return;
@@ -423,12 +434,34 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     }
 
     private void inline(ListableClassHolderSource classes) {
+        if (optimizationLevel != TeaVMOptimizationLevel.FULL) {
+            return;
+        }
         Inlining inlining = new Inlining();
         for (String className : classes.getClassNames()) {
             ClassHolder cls = classes.get(className);
-            for (final MethodHolder method : cls.getMethods()) {
+            for (MethodHolder method : cls.getMethods()) {
                 if (method.getProgram() != null) {
                     inlining.apply(method.getProgram(), classes);
+                }
+            }
+            if (wasCancelled()) {
+                return;
+            }
+        }
+    }
+
+    private void removeDebugNames(ListableClassHolderSource classes) {
+        if (optimizationLevel == TeaVMOptimizationLevel.SIMPLE) {
+            return;
+        }
+        for (String className : classes.getClassNames()) {
+            ClassHolder cls = classes.get(className);
+            for (MethodHolder method : cls.getMethods()) {
+                if (method.getProgram() != null) {
+                    for (int i = 0; i < method.getProgram().variableCount(); ++i) {
+                        method.getProgram().variableAt(i).setDebugName(null);
+                    }
                 }
             }
             if (wasCancelled()) {
@@ -481,17 +514,22 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     }
 
     private List<MethodOptimization> getOptimizations() {
-        return Arrays.asList(
-                new RedundantJumpElimination(),
-                new ArrayUnwrapMotion(),
-                new LoopInversion(),
-                new LoopInvariantMotion(),
-                new GlobalValueNumbering(),
-                new ConstantConditionElimination(),
-                new RedundantJumpElimination(),
-                new UnusedVariableElimination(),
-                new ClassInitElimination(),
-                new UnreachableBasicBlockElimination());
+        List<MethodOptimization> optimizations = new ArrayList<>();
+        optimizations.add(new RedundantJumpElimination());
+        optimizations.add(new ArrayUnwrapMotion());
+        if (optimizationLevel.ordinal() >= TeaVMOptimizationLevel.ADVANCED.ordinal()) {
+            optimizations.add(new LoopInversion());
+            optimizations.add(new LoopInvariantMotion());
+        }
+        optimizations.add(new GlobalValueNumbering());
+        if (optimizationLevel.ordinal() >= TeaVMOptimizationLevel.ADVANCED.ordinal()) {
+            optimizations.add(new ConstantConditionElimination());
+            optimizations.add(new RedundantJumpElimination());
+            optimizations.add(new UnusedVariableElimination());
+        }
+        optimizations.add(new ClassInitElimination());
+        optimizations.add(new UnreachableBasicBlockElimination());
+        return optimizations;
     }
 
     public void build(File dir, String fileName) {

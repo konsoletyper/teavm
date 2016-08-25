@@ -28,16 +28,8 @@ public class ListingBuilder {
         for (int i = 0; i < program.variableCount(); ++i) {
             sb.append(prefix).append("var @").append(i);
             VariableReader var = program.variableAt(i);
-            if (var != null && !var.readDebugNames().isEmpty()) {
-                sb.append(" as ");
-                boolean first = true;
-                for (String debugName : var.readDebugNames()) {
-                    if (!first) {
-                        sb.append(", ");
-                    }
-                    first = false;
-                    sb.append(debugName);
-                }
+            if (var != null && var.getDebugName() != null) {
+                sb.append(" as ").append(var.getDebugName());
             }
             sb.append('\n');
         }

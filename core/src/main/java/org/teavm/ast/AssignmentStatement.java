@@ -15,15 +15,12 @@
  */
 package org.teavm.ast;
 
-import java.util.HashSet;
-import java.util.Set;
 import org.teavm.model.TextLocation;
 
 public class AssignmentStatement extends Statement {
     private Expr leftValue;
     private Expr rightValue;
     private TextLocation location;
-    private Set<String> debugNames = new HashSet<>();
     private boolean async;
 
     public Expr getLeftValue() {
@@ -48,10 +45,6 @@ public class AssignmentStatement extends Statement {
 
     public void setLocation(TextLocation location) {
         this.location = location;
-    }
-
-    public Set<String> getDebugNames() {
-        return debugNames;
     }
 
     public boolean isAsync() {

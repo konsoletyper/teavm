@@ -193,7 +193,7 @@ public class AsyncProgramSplitter {
             copy.createVariable();
             Variable varCopy = copy.variableAt(i);
             varCopy.setRegister(var.getRegister());
-            varCopy.getDebugNames().addAll(var.getDebugNames());
+            varCopy.setDebugName(var.getDebugName());
         }
         return copy;
     }

@@ -225,7 +225,7 @@ public class LoopInvariantMotion implements MethodOptimization {
         @Override
         public void visit(ClassConstantInstruction insn) {
             var = program.createVariable();
-            var.getDebugNames().addAll(insn.getReceiver().getDebugNames());
+            var.setDebugName(insn.getReceiver().getDebugName());
             ClassConstantInstruction copy = new ClassConstantInstruction();
             copy.setConstant(insn.getConstant());
             copy.setReceiver(var);
@@ -235,7 +235,7 @@ public class LoopInvariantMotion implements MethodOptimization {
         @Override
         public void visit(NullConstantInstruction insn) {
             var = program.createVariable();
-            var.getDebugNames().addAll(insn.getReceiver().getDebugNames());
+            var.setDebugName(insn.getReceiver().getDebugName());
             NullConstantInstruction copy = new NullConstantInstruction();
             copy.setReceiver(var);
             this.copy = copy;
@@ -244,7 +244,7 @@ public class LoopInvariantMotion implements MethodOptimization {
         @Override
         public void visit(IntegerConstantInstruction insn) {
             var = program.createVariable();
-            var.getDebugNames().addAll(insn.getReceiver().getDebugNames());
+            var.setDebugName(insn.getReceiver().getDebugName());
             IntegerConstantInstruction copy = new IntegerConstantInstruction();
             copy.setConstant(insn.getConstant());
             copy.setReceiver(var);
@@ -254,7 +254,7 @@ public class LoopInvariantMotion implements MethodOptimization {
         @Override
         public void visit(LongConstantInstruction insn) {
             var = program.createVariable();
-            var.getDebugNames().addAll(insn.getReceiver().getDebugNames());
+            var.setDebugName(insn.getReceiver().getDebugName());
             LongConstantInstruction copy = new LongConstantInstruction();
             copy.setConstant(insn.getConstant());
             copy.setReceiver(var);
@@ -264,7 +264,7 @@ public class LoopInvariantMotion implements MethodOptimization {
         @Override
         public void visit(FloatConstantInstruction insn) {
             var = program.createVariable();
-            var.getDebugNames().addAll(insn.getReceiver().getDebugNames());
+            var.setDebugName(insn.getReceiver().getDebugName());
             FloatConstantInstruction copy = new FloatConstantInstruction();
             copy.setConstant(insn.getConstant());
             copy.setReceiver(var);
@@ -274,7 +274,7 @@ public class LoopInvariantMotion implements MethodOptimization {
         @Override
         public void visit(DoubleConstantInstruction insn) {
             var = program.createVariable();
-            var.getDebugNames().addAll(insn.getReceiver().getDebugNames());
+            var.setDebugName(insn.getReceiver().getDebugName());
             DoubleConstantInstruction copy = new DoubleConstantInstruction();
             copy.setConstant(insn.getConstant());
             copy.setReceiver(var);
@@ -284,7 +284,7 @@ public class LoopInvariantMotion implements MethodOptimization {
         @Override
         public void visit(StringConstantInstruction insn) {
             var = program.createVariable();
-            var.getDebugNames().addAll(insn.getReceiver().getDebugNames());
+            var.setDebugName(insn.getReceiver().getDebugName());
             StringConstantInstruction copy = new StringConstantInstruction();
             copy.setConstant(insn.getConstant());
             copy.setReceiver(var);

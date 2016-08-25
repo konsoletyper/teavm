@@ -49,7 +49,7 @@ public final class TArray extends TObject {
 
     @SuppressWarnings("unused")
     private static RuntimeObject newInstanceLowLevel(RuntimeClass cls, int length) {
-        return Allocator.allocateArray(cls, length).toStructure();
+        return Allocator.allocateArray(cls.arrayType, length).toStructure();
     }
 
     public static TObject get(TObject array, int index) throws TIllegalArgumentException,

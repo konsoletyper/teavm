@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.teavm.backend.wasm.model.WasmFunction;
+import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
@@ -303,7 +304,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmGetLocal expression) {
-        value = new CExpression("var_" + expression.getLocal().getIndex());
+        value = new CExpression(getVariableName(expression.getLocal()));
     }
 
     @Override
@@ -313,7 +314,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         expression.getValue().acceptVisitor(this);
         result.getLines().addAll(value.getLines());
 
-        result.addLine("var_" + expression.getLocal().getIndex() + " = " + value.getText() + ";",
+        result.addLine(getVariableName(expression.getLocal()) + " = " + value.getText() + ";",
                 expression.getLocation());
 
         value = result;
@@ -1032,5 +1033,12 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         String label;
         String temporaryVariable;
         WasmType type;
+    }
+
+    String getVariableName(WasmLocal local) {
+        if (local.getName() != null) {
+            return local.getName();
+        }
+        return "var_" + local.getIndex();
     }
 }

@@ -43,10 +43,7 @@ public class ProgramIO {
         for (int i = 0; i < program.variableCount(); ++i) {
             Variable var = program.variableAt(i);
             data.writeShort(var.getRegister());
-            data.writeShort(var.getDebugNames().size());
-            for (String debugString : var.getDebugNames()) {
-                data.writeUTF(debugString);
-            }
+            data.writeUTF(var.getDebugName() != null ? var.getDebugName() : "");
         }
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock basicBlock = program.basicBlockAt(i);
@@ -106,9 +103,9 @@ public class ProgramIO {
         for (int i = 0; i < varCount; ++i) {
             Variable var = program.createVariable();
             var.setRegister(data.readShort());
-            int debugNameCount = data.readShort();
-            for (int j = 0; j < debugNameCount; ++j) {
-                var.getDebugNames().add(data.readUTF());
+            var.setDebugName(data.readUTF());
+            if (var.getDebugName().isEmpty()) {
+                var.setDebugName(null);
             }
         }
         for (int i = 0; i < basicBlockCount; ++i) {

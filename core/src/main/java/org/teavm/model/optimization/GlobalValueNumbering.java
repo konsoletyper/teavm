@@ -154,7 +154,7 @@ public class GlobalValueNumbering implements MethodOptimization {
             if (map[i] != i) {
                 Variable var = program.variableAt(i);
                 Variable mapVar = program.variableAt(map[i]);
-                mapVar.getDebugNames().addAll(var.getDebugNames());
+                mapVar.setDebugName(var.getDebugName());
                 program.deleteVariable(i);
             }
         }
@@ -165,7 +165,12 @@ public class GlobalValueNumbering implements MethodOptimization {
     }
 
     private void bind(int var, String value) {
-        KnownValue known = knownValues.get(value);
+        String name = program.variableAt(var).getDebugName();
+        if (name == null) {
+            name = "";
+        }
+
+        KnownValue known = knownValues.get(name + ":" + value);
         if (known != null && domTree.dominates(known.location, currentBlockIndex) && known.value != var) {
             eliminate = true;
             map[var] = known.value;
@@ -173,7 +178,7 @@ public class GlobalValueNumbering implements MethodOptimization {
             known = new KnownValue();
             known.location = currentBlockIndex;
             known.value = var;
-            knownValues.put(value, known);
+            knownValues.put(name + ":" + value, known);
         }
     }
 

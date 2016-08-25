@@ -42,5 +42,5 @@ public abstract class MethodNode {
 
     public abstract boolean isAsync();
 
-    public abstract List<Set<String>> getParameterDebugNames();
+    public abstract List<VariableNode> getVariables();
 }
