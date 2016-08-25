@@ -92,12 +92,13 @@ public interface TMap<K, V> {
             V oldValue = v;
             V newValue = remappingFunction.apply(key, oldValue);
             if (newValue != null) {
-                return put(key, newValue);
+                put(key, newValue);
             } else {
-                return remove(key);
+                remove(key);
             }
+            return newValue;
         }
-        return v;
+        return null;
     }
 
     default V compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
@@ -120,9 +121,10 @@ public interface TMap<K, V> {
         V newValue = (oldValue == null) ? value
                 : remappingFunction.apply(oldValue, value);
         if (newValue == null) {
-            return remove(key);
+            remove(key);
         } else {
-            return put(key, newValue);
+            put(key, newValue);
         }
+        return newValue;
     }
 }
