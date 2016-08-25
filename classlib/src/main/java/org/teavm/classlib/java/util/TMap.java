@@ -46,7 +46,7 @@ public interface TMap<K, V> {
     V put(K key, V value);
 
     V remove(Object key);
-    
+
     void putAll(TMap<? extends K, ? extends V> m);
 
     void clear();
