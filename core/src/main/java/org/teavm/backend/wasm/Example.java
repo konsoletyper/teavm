@@ -24,6 +24,17 @@ public final class Example {
     }
 
     public static void main(String[] args) {
+        testFibonacci();
+        testClasses();
+        testVirtualCall();
+        testInstanceOf();
+        testPrimitiveArray();
+        testLazyInitialization();
+        testHashCode();
+        testArrayList();
+    }
+
+    private static void testFibonacci() {
         int a = 0;
         int b = 1;
         println("Fibonacci numbers:");
@@ -33,9 +44,13 @@ public final class Example {
             b = c;
             println(String.valueOf(a));
         }
+    }
 
+    private static void testClasses() {
         println("A(2) + A(3) = " + (new A(2).getValue() + new A(3).getValue()));
+    }
 
+    private static void testVirtualCall() {
         for (int i = 0; i < 4; ++i) {
             println("instance(" + i + ") = " + instance(i).foo());
         }
@@ -45,28 +60,38 @@ public final class Example {
         for (Base elem : array) {
             println("array[i] = " + elem.foo());
         }
+    }
 
+    private static void testInstanceOf() {
         println("Derived2 instanceof Base = " + (new Derived2() instanceof Base));
         println("Derived3 instanceof Base = " + (new Derived3() instanceof Base));
         println("Derived2 instanceof Derived1 = " + ((Object) new Derived2() instanceof Derived1));
         println("Derived2 instanceof A = " + ((Object) new Derived2() instanceof A));
         println("A instanceof Base = " + (new A(23) instanceof Base));
+    }
 
+    private static void testPrimitiveArray() {
         byte[] bytes = { 5, 6, 10, 15 };
         for (byte bt : bytes) {
             println("bytes[i] = " + bt);
         }
+    }
 
+    private static void testLazyInitialization() {
         Initialized.foo();
         Initialized.foo();
         Initialized.foo();
+    }
 
+    private static void testHashCode() {
         Object o = new Object();
         println("hashCode1 = " + o.hashCode());
         println("hashCode1 = " + o.hashCode());
         println("hashCode2 = " + new Object().hashCode());
         println("hashCode3 = " + new Object().hashCode());
+    }
 
+    private static void testArrayList() {
         List<Integer> list = new ArrayList<>(Arrays.asList(333, 444, 555));
         list.add(1234);
         list.remove((Integer) 444);

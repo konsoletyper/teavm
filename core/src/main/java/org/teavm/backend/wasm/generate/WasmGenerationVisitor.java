@@ -15,9 +15,12 @@
  */
 package org.teavm.backend.wasm.generate;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -125,7 +128,8 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     private Map<IdentifiedStatement, WasmBlock> breakTargets = new HashMap<>();
     private Map<IdentifiedStatement, WasmBlock> continueTargets = new HashMap<>();
     private Set<WasmBlock> usedBlocks = new HashSet<>();
-    private int temporaryInt32 = -1;
+    private List<Deque<WasmLocal>> temporaryVariablesByType = new ArrayList<>();
+    private List<WasmLocal> currentTemporaries = new ArrayList<>();
     WasmExpression result;
 
     WasmGenerationVisitor(WasmGenerationContext context, WasmClassGenerator classGenerator,
@@ -135,6 +139,18 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         this.function = function;
         this.method = method;
         this.firstVariable = firstVariable;
+        int typeCount = WasmType.values().length;
+        for (int i = 0; i < typeCount; ++i) {
+            temporaryVariablesByType.add(new ArrayDeque<>());
+        }
+    }
+
+    private void accept(Expr expr) {
+        expr.acceptVisitor(this);
+    }
+
+    private void accept(Statement statement) {
+        statement.acceptVisitor(this);
     }
 
     @Override
@@ -162,10 +178,13 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
                         Class<?> type = convertType(expr.getType());
                         MethodReference method = new MethodReference(WasmRuntime.class, "remainder", type, type, type);
                         WasmCall call = new WasmCall(WasmMangling.mangleMethod(method), false);
-                        expr.getFirstOperand().acceptVisitor(this);
+
+                        accept(expr.getFirstOperand());
                         call.getArguments().add(result);
-                        expr.getSecondOperand().acceptVisitor(this);
+
+                        accept(expr.getSecondOperand());
                         call.getArguments().add(result);
+
                         call.setLocation(expr.getLocation());
                         result = call;
                         break;
@@ -213,10 +232,13 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
                 Class<?> type = convertType(expr.getType());
                 MethodReference method = new MethodReference(WasmRuntime.class, "compare", type, type, int.class);
                 WasmCall call = new WasmCall(WasmMangling.mangleMethod(method), false);
-                expr.getFirstOperand().acceptVisitor(this);
+
+                accept(expr.getFirstOperand());
                 call.getArguments().add(result);
-                expr.getSecondOperand().acceptVisitor(this);
+
+                accept(expr.getSecondOperand());
                 call.getArguments().add(result);
+
                 call.setLocation(expr.getLocation());
                 result = call;
                 break;
@@ -231,9 +253,9 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     }
 
     private void generateBinary(WasmIntBinaryOperation intOp, WasmFloatBinaryOperation floatOp, BinaryExpr expr) {
-        expr.getFirstOperand().acceptVisitor(this);
+        accept(expr.getFirstOperand());
         WasmExpression first = result;
-        expr.getSecondOperand().acceptVisitor(this);
+        accept(expr.getSecondOperand());
         WasmExpression second = result;
 
         if (expr.getType() == null) {
@@ -258,9 +280,9 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     }
 
     private void generateBinary(WasmIntBinaryOperation intOp, BinaryExpr expr) {
-        expr.getFirstOperand().acceptVisitor(this);
+        accept(expr.getFirstOperand());
         WasmExpression first = result;
-        expr.getSecondOperand().acceptVisitor(this);
+        accept(expr.getSecondOperand());
         WasmExpression second = result;
 
         if (expr.getType() == OperationType.LONG) {
@@ -307,14 +329,14 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     private void generateAnd(BinaryExpr expr) {
         WasmBlock block = new WasmBlock(false);
 
-        expr.getFirstOperand().acceptVisitor(this);
+        accept(expr.getFirstOperand());
         WasmBranch branch = new WasmBranch(negate(result), block);
         branch.setResult(new WasmInt32Constant(0));
         branch.setLocation(expr.getLocation());
         branch.getResult().setLocation(expr.getLocation());
         block.getBody().add(branch);
 
-        expr.getSecondOperand().acceptVisitor(this);
+        accept(expr.getSecondOperand());
         block.getBody().add(result);
 
         block.setLocation(expr.getLocation());
@@ -325,14 +347,14 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     private void generateOr(BinaryExpr expr) {
         WasmBlock block = new WasmBlock(false);
 
-        expr.getFirstOperand().acceptVisitor(this);
+        accept(expr.getFirstOperand());
         WasmBranch branch = new WasmBranch(result, block);
         branch.setResult(new WasmInt32Constant(1));
         branch.setLocation(expr.getLocation());
         branch.getResult().setLocation(expr.getLocation());
         block.getBody().add(branch);
 
-        expr.getSecondOperand().acceptVisitor(this);
+        accept(expr.getSecondOperand());
         block.getBody().add(result);
 
         block.setLocation(expr.getLocation());
@@ -344,7 +366,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     public void visit(UnaryExpr expr) {
         switch (expr.getOperation()) {
             case INT_TO_BYTE:
-                expr.getOperand().acceptVisitor(this);
+                accept(expr.getOperand());
                 result = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SHL,
                         result, new WasmInt32Constant(24));
                 result.setLocation(expr.getLocation());
@@ -353,7 +375,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
                 result.setLocation(expr.getLocation());
                 break;
             case INT_TO_SHORT:
-                expr.getOperand().acceptVisitor(this);
+                accept(expr.getOperand());
                 result = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SHL,
                         result, new WasmInt32Constant(16));
                 result.setLocation(expr.getLocation());
@@ -362,7 +384,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
                 result.setLocation(expr.getLocation());
                 break;
             case INT_TO_CHAR:
-                expr.getOperand().acceptVisitor(this);
+                accept(expr.getOperand());
                 result = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SHL,
                         result, new WasmInt32Constant(16));
                 result.setLocation(expr.getLocation());
@@ -371,15 +393,15 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
                 result.setLocation(expr.getLocation());
                 break;
             case LENGTH:
-                expr.getOperand().acceptVisitor(this);
+                accept(expr.getOperand());
                 result = generateArrayLength(result);
                 break;
             case NOT:
-                expr.getOperand().acceptVisitor(this);
+                accept(expr.getOperand());
                 result = negate(result);
                 break;
             case NEGATE:
-                expr.getOperand().acceptVisitor(this);
+                accept(expr.getOperand());
                 switch (expr.getType()) {
                     case INT:
                         result = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SUB,
@@ -404,7 +426,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
                 }
                 break;
             case NULL_CHECK:
-                expr.getOperand().acceptVisitor(this);
+                accept(expr.getOperand());
                 break;
         }
     }
@@ -425,13 +447,13 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     public void visit(AssignmentStatement statement) {
         Expr left = statement.getLeftValue();
         if (left == null) {
-            statement.getRightValue().acceptVisitor(this);
+            accept(statement.getRightValue());
             result = new WasmDrop(result);
             result.setLocation(statement.getLocation());
         } else if (left instanceof VariableExpr) {
             VariableExpr varExpr = (VariableExpr) left;
             WasmLocal local = function.getLocalVariables().get(varExpr.getIndex() - firstVariable);
-            statement.getRightValue().acceptVisitor(this);
+            accept(statement.getRightValue());
             result = new WasmSetLocal(local, result);
             result.setLocation(statement.getLocation());
         } else if (left instanceof QualificationExpr) {
@@ -448,7 +470,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     private void storeField(Expr qualified, FieldReference field, Expr value, TextLocation location) {
         WasmExpression address = getAddress(qualified, field, location);
         ValueType type = context.getFieldType(field);
-        value.acceptVisitor(this);
+        accept(value);
         if (type instanceof ValueType.Primitive) {
             switch (((ValueType.Primitive) type).getKind()) {
                 case BOOLEAN:
@@ -482,7 +504,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     private void storeArrayItem(SubscriptExpr leftValue, Expr rightValue) {
         WasmExpression ptr = getArrayElementPointer(leftValue);
-        rightValue.acceptVisitor(this);
+        accept(rightValue);
 
         switch (leftValue.getType()) {
             case BYTE:
@@ -512,12 +534,15 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(ConditionalExpr expr) {
-        expr.getCondition().acceptVisitor(this);
+        accept(expr.getCondition());
         WasmConditional conditional = new WasmConditional(forCondition(result));
-        expr.getConsequent().acceptVisitor(this);
+
+        accept(expr.getConsequent());
         conditional.getThenBlock().getBody().add(result);
-        expr.getAlternative().acceptVisitor(this);
+
+        accept(expr.getAlternative());
         conditional.getElseBlock().getBody().add(result);
+
         result = conditional;
     }
 
@@ -525,7 +550,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     public void visit(SequentialStatement statement) {
         WasmBlock block = new WasmBlock(false);
         for (Statement part : statement.getSequence()) {
-            part.acceptVisitor(this);
+            accept(part);
             if (result != null) {
                 block.getBody().add(result);
             }
@@ -555,16 +580,17 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(ConditionalStatement statement) {
-        statement.getCondition().acceptVisitor(this);
+        accept(statement.getCondition());
         WasmConditional conditional = new WasmConditional(forCondition(result));
+
         for (Statement part : statement.getConsequent()) {
-            part.acceptVisitor(this);
+            accept(part);
             if (result != null) {
                 conditional.getThenBlock().getBody().add(result);
             }
         }
         for (Statement part : statement.getAlternative()) {
-            part.acceptVisitor(this);
+            accept(part);
             if (result != null) {
                 conditional.getElseBlock().getBody().add(result);
             }
@@ -607,9 +633,10 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     }
 
     private WasmExpression getArrayElementPointer(SubscriptExpr expr) {
-        expr.getArray().acceptVisitor(this);
+        accept(expr.getArray());
         WasmExpression array = result;
-        expr.getIndex().acceptVisitor(this);
+
+        accept(expr.getIndex());
         WasmExpression index = result;
 
         int size = -1;
@@ -658,7 +685,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         currentBreakTarget = statement;
 
         WasmBlock wrapper = new WasmBlock(false);
-        statement.getValue().acceptVisitor(this);
+        accept(statement.getValue());
         if (min > 0) {
             result = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SUB, result,
                     new WasmInt32Constant(min));
@@ -677,7 +704,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             }
 
             for (Statement part : clause.getBody()) {
-                part.acceptVisitor(this);
+                accept(part);
                 if (result != null) {
                     caseBlock.getBody().add(result);
                 }
@@ -687,7 +714,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
         defaultBlock.getBody().add(wrapper);
         for (Statement part : statement.getDefaultClause()) {
-            part.acceptVisitor(this);
+            accept(part);
             if (result != null) {
                 defaultBlock.getBody().add(result);
             }
@@ -707,7 +734,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(UnwrapArrayExpr expr) {
-        expr.getArray().acceptVisitor(this);
+        accept(expr.getArray());
     }
 
     @Override
@@ -723,13 +750,13 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         currentContinueTarget = statement;
 
         if (statement.getCondition() != null) {
-            statement.getCondition().acceptVisitor(this);
+            accept(statement.getCondition());
             loop.getBody().add(new WasmBranch(negate(result), wrapper));
             usedBlocks.add(wrapper);
         }
 
         for (Statement part : statement.getBody()) {
-            part.acceptVisitor(this);
+            accept(part);
             if (result != null) {
                 loop.getBody().add(result);
             }
@@ -765,13 +792,13 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
                 call.setImported(true);
             }
             for (Expr argument : expr.getArguments()) {
-                argument.acceptVisitor(this);
+                accept(argument);
                 call.getArguments().add(result);
             }
             result = call;
         } else if (expr.getType() == InvocationType.CONSTRUCTOR) {
             WasmBlock block = new WasmBlock(false);
-            WasmLocal tmp = function.getLocalVariables().get(getTemporaryInt32());
+            WasmLocal tmp = getTemporary(WasmType.INT32);
             block.getBody().add(new WasmSetLocal(tmp, allocateObject(expr.getMethod().getClassName(),
                     expr.getLocation())));
 
@@ -779,19 +806,21 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             WasmCall call = new WasmCall(methodName);
             call.getArguments().add(new WasmGetLocal(tmp));
             for (Expr argument : expr.getArguments()) {
-                argument.acceptVisitor(this);
+                accept(argument);
                 call.getArguments().add(result);
             }
             block.getBody().add(call);
 
             block.getBody().add(new WasmGetLocal(tmp));
+            releaseTemporary(tmp);
 
             result = block;
         } else {
-            expr.getArguments().get(0).acceptVisitor(this);
+            accept(expr.getArguments().get(0));
             WasmExpression instance = result;
             WasmBlock block = new WasmBlock(false);
-            WasmLocal instanceVar = function.getLocalVariables().get(getTemporaryInt32());
+
+            WasmLocal instanceVar = getTemporary(WasmType.INT32);
             block.getBody().add(new WasmSetLocal(instanceVar, instance));
             instance = new WasmGetLocal(instanceVar);
 
@@ -824,11 +853,12 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
             call.getArguments().add(instance);
             for (int i = 1; i < expr.getArguments().size(); ++i) {
-                expr.getArguments().get(i).acceptVisitor(this);
+                accept(expr.getArguments().get(i));
                 call.getArguments().add(result);
             }
 
             block.getBody().add(call);
+            releaseTemporary(instanceVar);
             result = block;
         }
     }
@@ -842,7 +872,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         }
 
         for (Statement part : statement.getBody()) {
-            part.acceptVisitor(this);
+            accept(part);
             if (result != null) {
                 block.getBody().add(result);
             }
@@ -897,7 +927,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             result.setLocation(location);
             return result;
         } else {
-            qualified.acceptVisitor(this);
+            accept(qualified);
             if (offset != 0) {
                 WasmExpression offsetExpr = new WasmInt32Constant(offset);
                 offsetExpr.setLocation(qualified.getLocation());
@@ -960,7 +990,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
                 RuntimeClass.class, int.class, Address.class));
         WasmCall call = new WasmCall(allocName);
         call.getArguments().add(new WasmInt32Constant(classPointer));
-        expr.getLength().acceptVisitor(this);
+        accept(expr.getLength());
         call.getArguments().add(result);
         call.setLocation(expr.getLocation());
 
@@ -974,7 +1004,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     @Override
     public void visit(ReturnStatement statement) {
         if (statement.getResult() != null) {
-            statement.getResult().acceptVisitor(this);
+            accept(statement.getResult());
         } else {
             result = null;
         }
@@ -984,7 +1014,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(InstanceOfExpr expr) {
-        expr.getExpr().acceptVisitor(this);
+        accept(expr.getExpr());
 
         if (expr.getType() instanceof ValueType.Object) {
             ValueType.Object cls = (ValueType.Object) expr.getType();
@@ -993,7 +1023,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
             WasmBlock block = new WasmBlock(false);
             block.setLocation(expr.getLocation());
-            WasmLocal tagVar = function.getLocalVariables().get(getTemporaryInt32());
+            WasmLocal tagVar = getTemporary(WasmType.INT32);
             int tagOffset = classGenerator.getFieldOffset(tagField);
             WasmExpression tagPtr = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD,
                     getReferenceToClass(result), new WasmInt32Constant(tagOffset));
@@ -1028,6 +1058,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             }
 
             block.getBody().add(new WasmInt32Constant(1));
+            releaseTemporary(tagVar);
 
             result = block;
         } else if (expr.getType() instanceof ValueType.Array) {
@@ -1041,7 +1072,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     public void visit(ThrowStatement statement) {
         WasmBlock block = new WasmBlock(false);
         block.setLocation(statement.getLocation());
-        statement.getException().acceptVisitor(this);
+        accept(statement.getException());
         block.getBody().add(result);
 
         block.getBody().add(new WasmUnreachable());
@@ -1051,7 +1082,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(CastExpr expr) {
-        expr.getValue().acceptVisitor(this);
+        accept(expr.getValue());
     }
 
     @Override
@@ -1066,7 +1097,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(PrimitiveCastExpr expr) {
-        expr.getValue().acceptVisitor(this);
+        accept(expr.getValue());
         result = new WasmConversion(WasmGeneratorUtil.mapType(expr.getSource()),
                 WasmGeneratorUtil.mapType(expr.getTarget()), true, result);
         result.setLocation(expr.getLocation());
@@ -1232,17 +1263,25 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     private WasmIntrinsicManager intrinsicManager = new WasmIntrinsicManager() {
         @Override
         public WasmExpression generate(Expr expr) {
-            expr.acceptVisitor(WasmGenerationVisitor.this);
+            accept(expr);
             return result;
         }
     };
 
-    private int getTemporaryInt32() {
-        if (temporaryInt32 < 0) {
-            temporaryInt32 = function.getLocalVariables().size();
-            function.add(new WasmLocal(WasmType.INT32));
+    private WasmLocal getTemporary(WasmType type) {
+        Deque<WasmLocal> stack = temporaryVariablesByType.get(type.ordinal());
+        WasmLocal variable = stack.pollFirst();
+        if (variable == null) {
+            variable = new WasmLocal(type);
+            function.add(variable);
         }
-        return temporaryInt32;
+        currentTemporaries.add(variable);
+        return variable;
+    }
+
+    private void releaseTemporary(WasmLocal variable) {
+        Deque<WasmLocal> stack = temporaryVariablesByType.get(variable.getType().ordinal());
+        stack.push(variable);
     }
 
     private WasmExpression getReferenceToClass(WasmExpression instance) {

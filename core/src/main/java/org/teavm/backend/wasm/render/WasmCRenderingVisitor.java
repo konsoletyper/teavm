@@ -303,7 +303,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmGetLocal expression) {
-        value = CExpression.relocatable("var_" + expression.getLocal().getIndex());
+        value = new CExpression("var_" + expression.getLocal().getIndex());
     }
 
     @Override
@@ -713,7 +713,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
             requiredType = signature.get(i);
             wasmArguments.get(i).acceptVisitor(this);
             arguments.add(value);
-            if (!result.getLines().isEmpty() && needsCachingUntil == 0) {
+            if (!value.getLines().isEmpty() && needsCachingUntil == 0) {
                 needsCachingUntil = i;
             }
         }
