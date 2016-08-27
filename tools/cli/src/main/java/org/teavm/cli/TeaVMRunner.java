@@ -64,6 +64,8 @@ public final class TeaVMRunner {
                 .create("m"));
         options.addOption(OptionBuilder
                 .withDescription("optimization level (1-3)")
+                .hasArg()
+                .withArgName("number")
                 .create("O"));
         options.addOption(OptionBuilder
                 .withArgName("separate|merge|none")

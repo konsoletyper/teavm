@@ -67,13 +67,33 @@ public class RegisterAllocator {
             maxClass = Math.max(maxClass, cls + 1);
         }
         int[] categories = getVariableCategories(program, method.getReference());
+        String[] names = getVariableNames(program);
         int[] classCategories = new int[maxClass];
+        String[] classNames = new String[maxClass];
         for (int i = 0; i < categories.length; ++i) {
             classCategories[classArray[i]] = categories[i];
+            classNames[classArray[i]] = names[i];
         }
-        colorer.colorize(interferenceGraph, colors, classCategories);
+        colorer.colorize(interferenceGraph, colors, classCategories, classNames);
+
+        int maxColor = 0;
         for (int i = 0; i < colors.length; ++i) {
             program.variableAt(i).setRegister(colors[i]);
+            maxColor = Math.max(maxClass, colors[i]);
+        }
+
+        String[] namesByRegister = new String[maxColor];
+        for (int i = 0; i < colors.length; ++i) {
+            Variable var = program.variableAt(i);
+            if (var.getDebugName() != null && var.getRegister() >= 0) {
+                namesByRegister[var.getRegister()] = var.getDebugName();
+            }
+        }
+        for (int i = 0; i < colors.length; ++i) {
+            Variable var = program.variableAt(i);
+            if (var.getRegister() >= 0) {
+                var.setDebugName(namesByRegister[var.getRegister()]);
+            }
         }
 
         for (int i = 0; i < program.basicBlockCount(); ++i) {
@@ -93,6 +113,14 @@ public class RegisterAllocator {
             categories[i] = type != null ? type.ordinal() : 255;
         }
         return categories;
+    }
+
+    private String[] getVariableNames(ProgramReader program) {
+        String[] names = new String[program.variableCount()];
+        for (int i = 0; i < names.length; ++i) {
+            names[i] = program.variableAt(i).getDebugName();
+        }
+        return names;
     }
 
     private static void joinClassNodes(List<MutableGraphNode> graph, DisjointSet classes) {
@@ -257,13 +285,15 @@ public class RegisterAllocator {
             BasicBlock block = program.basicBlockAt(i);
             mapper.apply(block);
         }
-        String[] originalNames = new String[program.variableCount()];
+        String[] originalNames = getVariableNames(program);
         for (int i = 0; i < program.variableCount(); ++i) {
-            Variable var = program.variableAt(i);
-            originalNames[i] = var.getDebugName();
+            program.variableAt(i).setDebugName(null);
         }
         for (int i = 0; i < program.variableCount(); ++i) {
-            program.variableAt(varMap[i]).setDebugName(originalNames[i]);
+            Variable var = program.variableAt(varMap[i]);
+            if (originalNames[i] != null) {
+                var.setDebugName(originalNames[i]);
+            }
         }
     }
 

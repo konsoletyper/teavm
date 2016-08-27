@@ -137,10 +137,25 @@ public class WasmCRenderer {
     }
 
     private void renderFunction(WasmFunction function) {
-        line(functionDeclaration(function) + " {");
+        WasmCRenderingVisitor visitor = new WasmCRenderingVisitor(function.getResult(),
+                function.getLocalVariables().size(), function.getModule());
+
+        StringBuilder declaration = new StringBuilder();
+        renderFunctionModifiers(declaration, function);
+        declaration.append(WasmCRenderingVisitor.mapType(function.getResult())).append(' ');
+        declaration.append(function.getName()).append('(');
+        for (int i = 0; i < function.getParameters().size(); ++i) {
+            if (i > 0) {
+                declaration.append(", ");
+            }
+            declaration.append(WasmCRenderingVisitor.mapType(function.getParameters().get(i)));
+            WasmLocal var = function.getLocalVariables().get(i);
+            declaration.append(' ').append(visitor.getVariableName(var));
+        }
+        declaration.append(") {");
+        line(declaration.toString());
         indent();
 
-        WasmCRenderingVisitor visitor = new WasmCRenderingVisitor(function.getResult(), function.getModule());
         List<WasmLocal> variables = function.getLocalVariables().subList(function.getParameters().size(),
                 function.getLocalVariables().size());
         for (WasmLocal variable : variables) {
@@ -175,27 +190,26 @@ public class WasmCRenderer {
 
     private String functionDeclaration(WasmFunction function) {
         StringBuilder sb = new StringBuilder();
-        if (function.getImportName() != null) {
-            sb.append("extern ");
-        } else if (function.getExportName() == null) {
-            sb.append("static ");
-        }
+        renderFunctionModifiers(sb, function);
         sb.append(WasmCRenderingVisitor.mapType(function.getResult())).append(' ');
         sb.append(function.getName()).append("(");
-        WasmCRenderingVisitor visitor = new WasmCRenderingVisitor(function.getResult(), function.getModule());
         for (int i = 0; i < function.getParameters().size(); ++i) {
             if (i > 0) {
                 sb.append(", ");
             }
             sb.append(WasmCRenderingVisitor.mapType(function.getParameters().get(i)));
-            WasmLocal local = i < function.getLocalVariables().size()
-                    ? function.getLocalVariables().get(i)
-                    : null;
-            sb.append(" ").append(local != null ? visitor.getVariableName(local) : "var_" + i);
         }
         sb.append(")");
 
         return sb.toString();
+    }
+
+    private static void renderFunctionModifiers(StringBuilder sb, WasmFunction function) {
+        if (function.getImportName() != null) {
+            sb.append("extern ");
+        } else if (function.getExportName() == null) {
+            sb.append("static ");
+        }
     }
 
     @Override

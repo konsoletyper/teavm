@@ -15,6 +15,7 @@
  */
 package org.teavm.model.util;
 
+import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 import org.teavm.common.IntegerArray;
@@ -23,11 +24,12 @@ import org.teavm.common.MutableGraphNode;
 
 class GraphColorer {
     public void colorize(List<MutableGraphNode> graph, int[] colors) {
-        colorize(graph, colors, new int[graph.size()]);
+        colorize(graph, colors, new int[graph.size()], new String[graph.size()]);
     }
 
-    public void colorize(List<MutableGraphNode> graph, int[] colors, int[] categories) {
+    public void colorize(List<MutableGraphNode> graph, int[] colors, int[] categories, String[] names) {
         IntegerArray colorCategories = new IntegerArray(graph.size());
+        List<String> colorNames = new ArrayList<>();
         for (int i = 0; i < colors.length; ++i) {
             int color = colors[i];
             if (colors[i] < 0) {
@@ -36,7 +38,11 @@ class GraphColorer {
             while (colorCategories.size() <= color) {
                 colorCategories.add(-1);
             }
+            while (colorNames.size() <= color) {
+                colorNames.add(null);
+            }
             colorCategories.set(color, categories[i]);
+            colorNames.set(color, names[i]);
         }
         BitSet usedColors = new BitSet();
         for (int v : getOrdering(graph)) {
@@ -56,11 +62,19 @@ class GraphColorer {
                 color = usedColors.nextClearBit(color);
                 while (colorCategories.size() <= color) {
                     colorCategories.add(-1);
+                    colorNames.add(null);
                 }
                 int category = colorCategories.get(color);
-                if (category < 0 || category == categories[v]) {
+                String name = colorNames.get(color);
+                if ((category < 0 || category == categories[v])
+                        && (name == null || names[v] == null || name.equals(names[v]))) {
                     colors[v] = color;
                     colorCategories.set(color, categories[v]);
+                    if (names[v] != null) {
+                        colorNames.set(color, names[v]);
+                    } else {
+                        names[v] = name;
+                    }
                     break;
                 }
                 ++color;

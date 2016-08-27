@@ -375,7 +375,6 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             }
         }
 
-        removeDebugNames(classSet);
         optimize(classSet);
         if (wasCancelled()) {
             return;
@@ -451,25 +450,6 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
     }
 
-    private void removeDebugNames(ListableClassHolderSource classes) {
-        if (optimizationLevel == TeaVMOptimizationLevel.SIMPLE) {
-            return;
-        }
-        for (String className : classes.getClassNames()) {
-            ClassHolder cls = classes.get(className);
-            for (MethodHolder method : cls.getMethods()) {
-                if (method.getProgram() != null) {
-                    for (int i = 0; i < method.getProgram().variableCount(); ++i) {
-                        method.getProgram().variableAt(i).setDebugName(null);
-                    }
-                }
-            }
-            if (wasCancelled()) {
-                return;
-            }
-        }
-    }
-
     private void optimize(ListableClassHolderSource classSource) {
         for (String className : classSource.getClassNames()) {
             ClassHolder cls = classSource.get(className);
@@ -521,7 +501,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             optimizations.add(new LoopInversion());
             optimizations.add(new LoopInvariantMotion());
         }
-        optimizations.add(new GlobalValueNumbering());
+        optimizations.add(new GlobalValueNumbering(optimizationLevel == TeaVMOptimizationLevel.SIMPLE));
         if (optimizationLevel.ordinal() >= TeaVMOptimizationLevel.ADVANCED.ordinal()) {
             optimizations.add(new ConstantConditionElimination());
             optimizations.add(new RedundantJumpElimination());

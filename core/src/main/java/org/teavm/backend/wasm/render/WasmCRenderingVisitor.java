@@ -18,8 +18,10 @@ package org.teavm.backend.wasm.render;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmModule;
@@ -67,8 +69,11 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
     private int blockIndex;
     private WasmType functionType;
     private WasmModule module;
+    private String[] localVariableNames;
+    private Set<String> usedVariableNames = new HashSet<>();
 
-    WasmCRenderingVisitor(WasmType functionType, WasmModule module) {
+    WasmCRenderingVisitor(WasmType functionType, int variableCount, WasmModule module) {
+        localVariableNames = new String[variableCount];
         this.functionType = functionType;
         this.module = module;
     }
@@ -1036,9 +1041,23 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
     }
 
     String getVariableName(WasmLocal local) {
-        if (local.getName() != null) {
-            return local.getName();
+        String result = localVariableNames[local.getIndex()];
+        if (result == null) {
+            if (local.getName() != null) {
+                result = local.getName();
+            } else {
+                result = "localVar" + local.getIndex();
+            }
+            if (!usedVariableNames.add(result)) {
+                String base = result;
+                int suffix = 1;
+                while (!usedVariableNames.add(base + suffix)) {
+                    ++suffix;
+                }
+                result = base + suffix;
+            }
+            localVariableNames[local.getIndex()] = result;
         }
-        return "var_" + local.getIndex();
+        return result;
     }
 }

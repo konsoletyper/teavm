@@ -34,10 +34,15 @@ public class GlobalValueNumbering implements MethodOptimization {
     private Program program;
     private int currentBlockIndex;
     private DominatorTree domTree;
+    private boolean namesPreserved;
 
     private static class KnownValue {
         int value;
         int location;
+    }
+
+    public GlobalValueNumbering(boolean namesPreserved) {
+        this.namesPreserved = namesPreserved;
     }
 
     @Override
@@ -66,28 +71,6 @@ public class GlobalValueNumbering implements MethodOptimization {
             int v = stack[--top];
             currentBlockIndex = v;
             BasicBlock block = program.basicBlockAt(v);
-            /*for (int i = 0; i < block.getPhis().size(); ++i) {
-                Phi phi = block.getPhis().get(i);
-                int sharedValue = -2;
-                for (Incoming incoming : phi.getIncomings()) {
-                    int value = map[incoming.getValue().getIndex()];
-                    incoming.setValue(program.variableAt(value));
-                    if (sharedValue != -2 && sharedValue != incoming.getValue().getIndex()) {
-                        sharedValue = -1;
-                    } else {
-                        sharedValue = incoming.getValue().getIndex();
-                    }
-                }
-                if (sharedValue != -1) {
-                    if (sharedValue != -2) {
-                        AssignInstruction assignInsn = new AssignInstruction();
-                        assignInsn.setReceiver(phi.getReceiver());
-                        assignInsn.setAssignee(program.variableAt(sharedValue));
-                        block.getInstructions().add(0, assignInsn);
-                    }
-                    block.getPhis().remove(i--);
-                }
-            }*/
 
             if (block.getExceptionVariable() != null) {
                 int var = map[block.getExceptionVariable().getIndex()];
@@ -149,21 +132,9 @@ public class GlobalValueNumbering implements MethodOptimization {
                 stack[top++] = succ;
             }
         }
-
-        String[] debugNames = new String[program.variableCount()];
-        for (int i = 0; i < program.variableCount(); ++i) {
-            debugNames[i] = program.variableAt(i).getDebugName();
-            program.variableAt(i).setDebugName(null);
-        }
         for (int i = 0; i < map.length; ++i) {
             if (map[i] != i) {
-                Variable mapVar = program.variableAt(map[i]);
-                if (debugNames[i] != null && mapVar.getDebugName() == null) {
-                    mapVar.setDebugName(debugNames[i]);
-                }
                 program.deleteVariable(i);
-            } else {
-                program.variableAt(i).setDebugName(debugNames[i]);
             }
         }
 
@@ -174,19 +145,38 @@ public class GlobalValueNumbering implements MethodOptimization {
 
     private void bind(int var, String value) {
         String name = program.variableAt(map[var]).getDebugName();
-        if (name == null) {
+        if (name == null || namesPreserved) {
             name = "";
         }
 
         KnownValue known = knownValues.get(name + ":" + value);
-        if (known != null && domTree.dominates(known.location, currentBlockIndex) && known.value != var) {
+        if (known == null) {
+            known = knownValues.get(":" + value);
+        }
+        boolean namesCompatible = !namesPreserved;
+        if (!namesCompatible && known != null) {
+            String knownName = program.variableAt(known.value).getDebugName();
+            if (knownName == null) {
+                knownName = "";
+            }
+            namesCompatible = knownName.isEmpty() || name.isEmpty() || knownName.equals(name);
+        }
+        if (known != null && domTree.dominates(known.location, currentBlockIndex) && known.value != var
+                && namesCompatible) {
             eliminate = true;
             map[var] = known.value;
+            if (!name.isEmpty()) {
+                program.variableAt(known.value).setDebugName(name);
+                knownValues.put(name + ":" + value, known);
+            }
         } else {
             known = new KnownValue();
             known.location = currentBlockIndex;
             known.value = var;
             knownValues.put(name + ":" + value, known);
+            if (!name.isEmpty()) {
+                knownValues.put(":" + value, known);
+            }
         }
     }
 
@@ -498,6 +488,16 @@ public class GlobalValueNumbering implements MethodOptimization {
 
         @Override
         public void visit(AssignInstruction insn) {
+            if (namesPreserved) {
+                if (insn.getReceiver().getDebugName() != null && insn.getAssignee().getDebugName() != null) {
+                    if (!insn.getAssignee().getDebugName().equals(insn.getReceiver().getDebugName())) {
+                        return;
+                    }
+                }
+            }
+            if (insn.getReceiver().getDebugName() != null) {
+                insn.getAssignee().setDebugName(insn.getReceiver().getDebugName());
+            }
             map[insn.getReceiver().getIndex()] = map[insn.getAssignee().getIndex()];
             eliminate = true;
         }

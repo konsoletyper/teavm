@@ -60,6 +60,10 @@ class UnusedVariableEliminator extends RecursiveVisitor {
             indexes[variables[var]] = index;
             reorderedVariables.add(variableNodes[var]);
         }
+        VariableNode node = variableNodes[var];
+        if (node.getName() != null) {
+            reorderedVariables.get(index).setName(node.getName());
+        }
         return index;
     }
 
