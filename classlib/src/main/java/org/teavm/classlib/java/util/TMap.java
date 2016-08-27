@@ -15,6 +15,9 @@
  */
 package org.teavm.classlib.java.util;
 
+import java.util.function.BiFunction;
+import java.util.function.Function;
+
 /**
  *
  * @author Alexey Andreev
@@ -53,4 +56,75 @@ public interface TMap<K, V> {
     TCollection<V> values();
 
     TSet<Entry<K, V>> entrySet();
+    
+    default boolean replace(K key, V value, V newValue) {
+        if (containsKey(key) && TObjects.equals(get(key), value)) {
+            put(key, newValue);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    default V replace(K key, V value) {
+        if (containsKey(key)) {
+            return put(key, value);
+        } else {
+            return null;
+        }
+    }
+
+    default V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
+        V v = get(key);
+        if (v == null) {
+            V newValue = mappingFunction.apply(key);
+            if (newValue != null) {
+                put(key, newValue);
+            }
+            return newValue;
+        }
+        return v;
+    }
+
+    default V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+        V v = get(key);
+        if (v != null) {
+            V oldValue = v;
+            V newValue = remappingFunction.apply(key, oldValue);
+            if (newValue != null) {
+                put(key, newValue);
+            } else {
+                remove(key);
+            }
+            return newValue;
+        }
+        return null;
+    }
+
+    default V compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+        V oldValue = get(key);
+        V newValue = remappingFunction.apply(key, oldValue);
+        if (oldValue != null) {
+            if (newValue != null) {
+                put(key, newValue);
+            } else {
+                remove(key);
+            }
+        } else if (newValue != null) {
+            put(key, newValue);
+        }
+        return newValue;
+    }
+
+    default V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+        V oldValue = get(key);
+        V newValue = (oldValue == null) ? value
+                : remappingFunction.apply(oldValue, value);
+        if (newValue == null) {
+            remove(key);
+        } else {
+            put(key, newValue);
+        }
+        return newValue;
+    }
 }

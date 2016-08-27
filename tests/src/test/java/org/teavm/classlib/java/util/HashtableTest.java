@@ -693,6 +693,315 @@ public class HashtableTest {
         }
     }
 
+    @Test
+    public void test_computeUpdatesValueIfPresent() {
+        Hashtable<String, String> ht10 = new Hashtable<>();
+        for(int i = 0; i < 10; i++) {
+            ht10.put("Key" + i, "Val" + i);
+        }
+        
+        String newVal = ht10.compute("Key5", (k,v) -> "changed");
+        assertEquals("changed", newVal);
+        assertEquals(10, ht10.size());
+        
+        for(int i = 0; i < 10; i++) {
+            if(i == 5) {
+                assertEquals("Value was incorrectly changed", "changed", ht10.get("Key" + i));
+            } else {
+                assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+            }
+        }
+    }
+
+    @Test
+    public void test_computePutsNewEntryIfKeyIsAbsent() {
+        Hashtable<String, String> ht10 = new Hashtable<>();
+        for(int i = 0; i < 10; i++) {
+            ht10.put("Key" + i, "Val" + i);
+        }
+        
+        String newVal = ht10.compute("absent key", (k,v) -> "added");
+        assertEquals("added", newVal);
+        assertEquals(11, ht10.size());
+        
+        for(int i = 0; i < 10; i++) {
+            assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+        }
+        assertEquals("New value expected","added", ht10.get("absent key"));
+    }
+
+    @Test
+    public void test_computeRemovesEntryWhenNullProduced() {
+        Hashtable<String, String> ht10 = new Hashtable<>();
+        for(int i = 0; i < 10; i++) {
+            ht10.put("Key" + i, "Val" + i);
+        }
+        
+        String newVal = ht10.compute("Key5", (k,v) -> null);
+        assertEquals(null, newVal);
+        assertEquals(9, ht10.size());
+        
+        for(int i = 0; i < 10; i++) {
+            if(i == 5) {
+                assertEquals("Value was unexpectedly present in map", null, ht10.get("Key" + i));
+            } else {
+                assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+            }
+        }
+    }
+    
+    @Test
+    public void test_computeIfAbsentNominal() {
+        Hashtable<String, String> ht10 = new Hashtable<>();
+        for(int i = 0; i < 10; i++) {
+            ht10.put("Key" + i, "Val" + i);
+        }
+        
+        String newVal = ht10.computeIfAbsent("absent key", (k) -> "added");
+        assertEquals("added", newVal);
+        assertEquals(11, ht10.size());
+        
+        for(int i = 0; i < 10; i++) {
+            assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+        }
+        assertEquals("New value expected","added", ht10.get("absent key"));
+    }
+    
+    @Test
+    public void test_computeIfAbsentIgnoresExistingEntry() {
+        Hashtable<String, String> ht10 = new Hashtable<>();
+        for(int i = 0; i < 10; i++) {
+            ht10.put("Key" + i, "Val" + i);
+        }
+        
+        String newVal = ht10.computeIfAbsent("Key5", (v) -> "changed");
+        assertEquals("Val5", newVal);
+        assertEquals(10, ht10.size());
+        
+        for(int i = 0; i < 10; i++) {
+            assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+        }
+    }
+    
+    @Test
+    public void test_computeIfAbsentDoesNothingIfNullProduced() {
+        Hashtable<String, String> ht10 = new Hashtable<>();
+        for(int i = 0; i < 10; i++) {
+            ht10.put("Key" + i, "Val" + i);
+        }
+        
+        String newVal = ht10.computeIfAbsent("absent key", (v) -> null);
+        assertEquals(null, newVal);
+        assertEquals(10, ht10.size());
+        
+        for(int i = 0; i < 10; i++) {
+            assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+        }
+    }
+    
+    @Test
+    public void test_computeIfPresentNominal() {
+        Hashtable<String, String> ht10 = new Hashtable<>();
+        for(int i = 0; i < 10; i++) {
+            ht10.put("Key" + i, "Val" + i);
+        }
+        
+        String newVal = ht10.computeIfPresent("Key5", (k, v) -> "changed");
+        assertEquals("changed", newVal);
+        assertEquals(10, ht10.size());
+        
+        for(int i = 0; i < 10; i++) {
+            if(i == 5) {
+                assertEquals("Value was incorrectly updated", "changed", ht10.get("Key" + i));
+            } else {
+                assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+            }
+        }
+    }
+    
+    @Test
+    public void test_computeIfPresentIgnoresAbsentKeys() {
+        Hashtable<String, String> ht10 = new Hashtable<>();
+        for(int i = 0; i < 10; i++) {
+            ht10.put("Key" + i, "Val" + i);
+        }
+        
+        String newVal = ht10.computeIfPresent("absent key", (k, v) -> "added");
+        assertEquals(null, newVal);
+        assertEquals(10, ht10.size());
+        
+        for(int i = 0; i < 10; i++) {
+            assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+        }
+    }
+    
+    @Test
+    public void test_computeIfPresentRemovesEntryWhenNullProduced() {
+        Hashtable<String, String> ht10 = new Hashtable<>();
+        for(int i = 0; i < 10; i++) {
+            ht10.put("Key" + i, "Val" + i);
+        }
+        
+        String newVal = ht10.computeIfPresent("Key5", (k, v) -> null);
+        assertEquals(null, newVal);
+        assertEquals(9, ht10.size());
+        
+        for(int i = 0; i < 10; i++) {
+            if(i == 5) {
+                assertNull("Value unexpectedly present", ht10.get("Key" + i));
+            } else {
+                assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+            }
+        }
+    }
+    
+
+    @Test
+    public void test_mergeKeyAbsentCase() {
+        Hashtable<String, String> ht10 = new Hashtable<>();
+        for (int i = 0; i < 10; i++) {
+            ht10.put("Key" + i, "Val" + i);
+        }
+
+        String newVal = ht10.merge("absent key", "changed", (k, v) -> "remapped");
+        assertEquals("changed", newVal);
+        assertEquals(11, ht10.size());
+
+        for (int i = 0; i < 10; i++) {
+            assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+        }
+        assertEquals("New value expected", "changed", ht10.get("absent key"));
+    }
+
+    @Test
+    public void test_mergeKeyPresentCase() {
+        Hashtable<String, String> ht10 = new Hashtable<>();
+        for (int i = 0; i < 10; i++) {
+            ht10.put("Key" + i, "Val" + i);
+        }
+
+        String newVal = ht10.merge("Key5", "changed", (k, v) -> "remapped");
+        assertEquals("remapped", newVal);
+        assertEquals(10, ht10.size());
+
+        for (int i = 0; i < 10; i++) {
+            if (i == 5) {
+                assertEquals("Value was incorrectly updated", "remapped", ht10.get("Key" + i));
+            } else {
+                assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+            }
+        }
+    }
+
+    @Test
+    public void test_mergeKeyAbsentCase_remapToNull() {
+        Hashtable<String, String> ht10 = new Hashtable<>();
+        for (int i = 0; i < 10; i++) {
+            ht10.put("Key" + i, "Val" + i);
+        }
+
+        String newVal = ht10.merge("absent key", "changed", (k, v) -> null);
+        assertEquals("changed", newVal);
+        assertEquals(11, ht10.size());
+
+        for (int i = 0; i < 10; i++) {
+            assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+        }
+        assertEquals("New value expected", "changed", ht10.get("absent key"));
+    }
+
+    @Test
+    public void test_mergeKeyPresentCase_remapToNull() {
+        Hashtable<String, String> ht10 = new Hashtable<>();
+        for (int i = 0; i < 10; i++) {
+            ht10.put("Key" + i, "Val" + i);
+        }
+
+        String newVal = ht10.merge("Key5", "changed", (k, v) -> null);
+        assertEquals(null, newVal);
+        assertEquals(9, ht10.size());
+
+        for (int i = 0; i < 10; i++) {
+            if (i == 5) {
+                assertNull("Null value expected", ht10.get("Key" + i));
+            } else {
+                assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+            }
+        }
+    }
+
+    @Test
+    public void test_replaceNominal() {
+        Hashtable<String, String> ht10 = new Hashtable<>();
+        for (int i = 0; i < 10; i++) {
+            ht10.put("Key" + i, "Val" + i);
+        }
+
+        String newVal = ht10.replace("Key5", "changed");
+        assertEquals("Val5", newVal);
+        assertEquals(10, ht10.size());
+
+        for (int i = 0; i < 10; i++) {
+            if (i == 5) {
+                assertEquals("Value was incorrectly updated", "changed", ht10.get("Key" + i));
+            } else {
+                assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+            }
+        }
+    }
+
+    @Test
+    public void test_replaceAbsentKey() {
+        Hashtable<String, String> ht10 = new Hashtable<>();
+        for (int i = 0; i < 10; i++) {
+            ht10.put("Key" + i, "Val" + i);
+        }
+
+        String newVal = ht10.replace("absent key", "changed");
+        assertEquals(null, newVal);
+        assertEquals(10, ht10.size());
+
+        for (int i = 0; i < 10; i++) {
+            assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+        }
+    }
+
+    @Test
+    public void test_replace2Nominal() {
+        Hashtable<String, String> ht10 = new Hashtable<>();
+        for (int i = 0; i < 10; i++) {
+            ht10.put("Key" + i, "Val" + i);
+        }
+
+        boolean replaced = ht10.replace("Key5", "Val5", "changed");
+        assertEquals(true, replaced);
+        assertEquals(10, ht10.size());
+
+        for (int i = 0; i < 10; i++) {
+            if (i == 5) {
+                assertEquals("Value was incorrectly updated", "changed", ht10.get("Key" + i));
+            } else {
+                assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+            }
+        }
+    }
+    
+    @Test
+    public void test_replace2WithIncorrectExpectation() {
+        Hashtable<String, String> ht10 = new Hashtable<>();
+        for (int i = 0; i < 10; i++) {
+            ht10.put("Key" + i, "Val" + i);
+        }
+
+        boolean replaced = ht10.replace("Key5", "incorrect value", "changed");
+        assertEquals(false, replaced);
+        assertEquals(10, ht10.size());
+
+        for (int i = 0; i < 10; i++) {
+            assertEquals("Value was unexpectedly changed", "Val" + i, ht10.get("Key" + i));
+        }
+    }
+    
     @SuppressWarnings("unchecked")
     protected <K, V> Hashtable<K, V> hashtableClone(Hashtable<K, V> s) {
         return (Hashtable<K, V>) s.clone();
